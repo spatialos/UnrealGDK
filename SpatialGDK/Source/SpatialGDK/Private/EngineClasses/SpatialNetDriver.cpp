@@ -35,6 +35,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialWorkerFlags.h"
+#include "Interop/WellKnownEntitySystem.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
@@ -392,14 +393,14 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())
 	{
-		RPCService =
-			MakeUnique<SpatialGDK::SpatialRPCService>(ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC),
-													  StaticComponentView, USpatialLatencyTracer::GetTracer(GetWorld()));
+		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
+			ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView,
+			USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer());
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
-	Sender->Init(this, &TimerManager, RPCService.Get());
-	Receiver->Init(this, &TimerManager, RPCService.Get());
+	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
+	Receiver->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
 	PlayerSpawner->Init(this, &TimerManager);
@@ -420,6 +421,17 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	// The interest factory depends on the package map, so is created last.
 	InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
+
+	if (!IsServer())
+	{
+		return;
+	}
+
+	SpatialGDK::FSubView& WellKnownSubView = Connection->GetCoordinator().CreateSubView(
+		SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+	WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Receiver, Connection,
+																		  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
+																		  *VirtualWorkerTranslator, *GlobalStateManager);
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
@@ -468,7 +480,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 			// is not fully async right now, but could be if we replaced this with a "send and flush", which would
 			// be hard to do now due to short circuiting, but in the near future when LB runs on its own worker then
 			// we can make that optimisation.
-			Connection->GetCoordinator().SendComponentUpdate(AuthorityUpdate.EntityId, MoveTemp(AuthorityUpdate.Update));
+			Connection->GetCoordinator().SendComponentUpdate(AuthorityUpdate.EntityId, MoveTemp(AuthorityUpdate.Update), {});
 		};
 	LoadBalanceEnforcer = MakeUnique<SpatialGDK::SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), LBSubView,
 																			 VirtualWorkerTranslator.Get(), MoveTemp(AclUpdateSender));
@@ -1784,6 +1796,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
 		}
 
+		if (WellKnownEntitySystem.IsValid())
+		{
+			WellKnownEntitySystem->Advance();
+		}
+
 		if (!bIsReadyToStart)
 		{
 			TryFinishStartup();
@@ -2696,13 +2713,4 @@ FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 		}
 	}
 	return FUnrealObjectRef::NULL_OBJECT_REF;
-}
-
-// This is only called if this worker has been selected by SpatialOS to be authoritative
-// for the TranslationManager, otherwise the manager will never be instantiated.
-void USpatialNetDriver::InitializeVirtualWorkerTranslationManager()
-{
-	VirtualWorkerTranslationManager =
-		MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator.Get());
-	VirtualWorkerTranslationManager->SetNumberOfVirtualWorkers(LoadBalanceStrategy->GetMinimumRequiredWorkers());
 }

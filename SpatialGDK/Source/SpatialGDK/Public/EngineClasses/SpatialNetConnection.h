@@ -60,6 +60,8 @@ public:
 
 	void ClientNotifyClientHasQuit();
 
+	void OnControllerDestroyed(AActor* DestroyedActor);
+
 	UPROPERTY()
 	bool bReliableSpatialConnection;
 

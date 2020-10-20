@@ -61,9 +61,9 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 	bTranslationQueryInFlight = false;
 }
 
-void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Data)
+void UGlobalStateManager::ApplyDeploymentMapData(Schema_ComponentData* Data)
 {
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
 
@@ -74,9 +74,9 @@ void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Dat
 	SchemaHash = Schema_GetUint32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH);
 }
 
-void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentData& Data)
+void UGlobalStateManager::ApplyStartupActorManagerData(Schema_ComponentData* Data)
 {
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 
@@ -112,9 +112,9 @@ void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
 	NetDriver->Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &Update);
 }
 
-void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update)
+void UGlobalStateManager::ApplyDeploymentMapUpdate(Schema_ComponentUpdate* Update)
 {
-	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
 
 	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID) == 1)
 	{
@@ -181,14 +181,17 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 	}
 }
 
-void UGlobalStateManager::OnShutdownComponentUpdate(const Worker_ComponentUpdate& Update)
+#if WITH_EDITOR
+void UGlobalStateManager::OnShutdownComponentUpdate(Schema_ComponentUpdate* Update)
 {
-	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update.schema_type);
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update);
+	// TODO(UNR-4395): Probably should be a bool in state - probably a non-persistent entity
 	if (Schema_GetObjectCount(EventsObject, SpatialConstants::SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID) > 0)
 	{
 		ReceiveShutdownAdditionalServersEvent();
 	}
 }
+#endif // WITH_EDITOR
 
 void UGlobalStateManager::ReceiveShutdownAdditionalServersEvent()
 {
@@ -220,9 +223,9 @@ void UGlobalStateManager::SendShutdownAdditionalServersEvent()
 }
 #endif // WITH_EDITOR
 
-void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentUpdate& Update)
+void UGlobalStateManager::ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update)
 {
-	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
 
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 	bCanSpawnWithAuthority = true;
@@ -388,14 +391,17 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 		return;
 	}
 
-	// Non-replicated Actors should always be authoritative.
-	bool bAuthoritative = !Actor->GetIsReplicated();
+	if (!Actor->GetIsReplicated())
+	{
+		return;
+	}
+
 	// Replicated level Actors should only be initially authority if:
 	//  - these are workers starting as part of a fresh deployment (tracked by the bCanSpawnWithAuthority bool),
 	//  - these actors are marked as NotPersistent and we're loading from a saved snapshot (which means bCanSpawnWithAuthority is false)
 	//  - the load balancing strategy says this server should be authoritative (as opposed to some other server).
-	bAuthoritative |= (bCanSpawnWithAuthority || Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
-					  && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+	const bool bAuthoritative = (bCanSpawnWithAuthority || Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
+						  && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
 
 	Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
 	Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
@@ -516,10 +522,10 @@ void UGlobalStateManager::QueryTranslation()
 	}
 
 	// Build a constraint for the Virtual Worker Translation.
-	Worker_ComponentConstraint TranslationComponentConstraint{};
+	Worker_ComponentConstraint TranslationComponentConstraint;
 	TranslationComponentConstraint.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
 
-	Worker_Constraint TranslationConstraint{};
+	Worker_Constraint TranslationConstraint;
 	TranslationConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
 	TranslationConstraint.constraint.component_constraint = TranslationComponentConstraint;
 
@@ -573,7 +579,7 @@ void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_E
 		Worker_ComponentData Data = Op.results[0].components[i];
 		if (Data.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
 		{
-			ApplyDeploymentMapData(Data);
+			ApplyDeploymentMapData(Data.schema_type);
 		}
 	}
 }
