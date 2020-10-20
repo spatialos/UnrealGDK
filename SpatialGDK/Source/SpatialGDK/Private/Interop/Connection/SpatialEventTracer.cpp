@@ -107,7 +107,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::CreateSpan()
 		return {};
 	}
 
-	if (SpanIdStack.HasSpanId())
+	if (SpanIdStack.HasLayer())
 	{
 		TArray<Trace_SpanId> CauseSpanIds = SpanIdStack.GetTopLayer();
 		return Trace_EventTracer_AddSpan(EventTracer, CauseSpanIds.GetData(), CauseSpanIds.Num());
@@ -282,7 +282,7 @@ TArray<Trace_SpanId> SpatialEventTracer::GetLatentPropertyUpdateSpanIds(const En
 	}
 
 	TArray<Trace_SpanId> SpanIds = Stack->PopLayer();
-	if (!Stack->HasSpanId())
+	if (!Stack->HasLayer())
 	{
 		EntityComponentSpanIdStacks.Remove(Id);
 	}

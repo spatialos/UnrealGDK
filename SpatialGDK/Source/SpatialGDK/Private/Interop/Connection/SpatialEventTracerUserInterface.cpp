@@ -145,7 +145,7 @@ void USpatialEventTracerUserInterface::AddLatentSpanId(UObject* WorldContextObje
 		AddLatentComponentSpanId(WorldContextObject, *Component, SpanId);
 	}
 	UE_LOG(LogSpatialEventTracerUserInterface, Warning,
-		   TEXT("USpatialEventTracerUserInterface::AddLatentSpanId - Could not add latent SpanId for %s"), Object->GetName());
+		   TEXT("USpatialEventTracerUserInterface::AddLatentSpanId - Could not add latent SpanId for %s"), *Object->GetName());
 }
 
 SpatialGDK::SpatialEventTracer* USpatialEventTracerUserInterface::GetEventTracer(UObject* WorldContextObject)
