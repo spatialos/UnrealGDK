@@ -37,6 +37,15 @@ const FString& FRuntimeVariantVersion::GetVersionForCloud() const
 	return CloudRuntimeVersion;
 }
 
+const FString& FInspectorVersion::GetInspectorVersion() const
+{
+	if (bUseGDKPinnedInspectorVersion || InspectorVersion.IsEmpty())
+	{
+		return PinnedVersion;
+	}
+	return InspectorVersion;
+}
+
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, bShowSpatialServiceButton(false)
@@ -45,6 +54,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, RuntimeVariant(ESpatialOSRuntimeVariant::Standard)
 	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
 	, CompatibilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
+	, InspectorVersion(SpatialGDKServicesConstants::SpatialOSInspectorPinnedStandardVersion)
 	, ExposedRuntimeIP(TEXT(""))
 	, bAutoStartLocalDeployment(true)
 	, bSpatialDebuggerEditorEnabled(false)
@@ -81,6 +91,12 @@ FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpa
 	default:
 		return StandardRuntimeVersion;
 	}
+}
+
+FInspectorVersion& USpatialGDKEditorSettings::GetInspectorVersion()
+{
+	return InspectorVersion;
+	
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)

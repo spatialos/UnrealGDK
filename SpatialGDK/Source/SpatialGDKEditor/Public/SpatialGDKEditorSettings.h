@@ -231,6 +231,7 @@ enum Type
 };
 }
 
+
 USTRUCT()
 struct SPATIALGDKEDITOR_API FRuntimeVariantVersion
 {
@@ -287,6 +288,45 @@ private:
 	FString PinnedVersion;
 };
 
+USTRUCT()
+struct SPATIALGDKEDITOR_API FInspectorVersion
+{
+	friend class USpatialGDKEditorSettings;
+
+	GENERATED_BODY()
+
+	FInspectorVersion()
+		: PinnedVersion(SpatialGDKServicesConstants::SpatialOSInspectorPinnedStandardVersion)
+	{
+	}
+
+	FInspectorVersion(const FString& InPinnedVersion)
+		: PinnedVersion(InPinnedVersion)
+	{
+	}
+
+	/** Returns the Inspector version to use, either the pinned one, or the user-specified one depending on the settings. */
+	const FString& GetInspectorVersion() const;
+
+	bool GetUseGDKPinnedInspectorVersion() const { return bUseGDKPinnedInspectorVersion; }
+
+	const FString& GetPinnedVersion() const { return PinnedVersion; }
+
+private:
+	/** Whether to use the GDK-associated SpatialOS inspector version for local deployments, or to use the one specified in the InspectorVersion
+	 * field. */
+	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (DisplayName = "Use GDK pinned inspector version"))
+	bool bUseGDKPinnedInspectorVersion = true;
+
+	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
+	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (EditCondition = "!bUseGDKPinnedInspectorVersion"))
+	FString InspectorVersion;
+
+private:
+	/** Pinned version for this variant. */
+	FString PinnedVersion;
+};
+
 /** Different modes to automatically stop of the local SpatialOS deployment. */
 UENUM()
 enum class EAutoStopLocalDeploymentMode : uint8
@@ -328,7 +368,7 @@ public:
 	/** Returns which runtime variant we should use. */
 	TEnumAsByte<ESpatialOSRuntimeVariant::Type> GetSpatialOSRuntimeVariant() const { return RuntimeVariant; }
 
-	/** Returns the version information for the currently set variant*/
+	/** Returns the version information for the currently set runtime variant*/
 	const FRuntimeVariantVersion& GetSelectedRuntimeVariantVersion() const
 	{
 		return const_cast<USpatialGDKEditorSettings*>(this)->GetRuntimeVariantVersion(RuntimeVariant);
@@ -343,10 +383,21 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
 	FRuntimeVariantVersion CompatibilityModeRuntimeVersion;
 
+	/** Returns the version information for the currently set inspector*/
+	const FInspectorVersion& GetSelectedInspectorVersion() const
+	{
+		return const_cast<USpatialGDKEditorSettings*>(this)->GetInspectorVersion();
+	}
+
+	UPROPERTY(EditAnywhere, config, Category = "Inspector", AdvancedDisplay)
+	FInspectorVersion InspectorVersion;
+
 	mutable FOnDefaultTemplateNameRequireUpdate OnDefaultTemplateNameRequireUpdate;
 
 private:
 	FRuntimeVariantVersion& GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type);
+
+	FInspectorVersion& GetInspectorVersion();
 
 	/** If you are not using auto-generate launch configuration file, specify a launch configuration `.json` file and location here.  */
 	UPROPERTY(EditAnywhere, config, Category = "Launch",
