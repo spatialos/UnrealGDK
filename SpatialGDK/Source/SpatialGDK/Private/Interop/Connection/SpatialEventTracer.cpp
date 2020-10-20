@@ -4,6 +4,8 @@
 
 #include <inttypes.h>
 
+#include "HAL/PlatformFile.h"
+#include "HAL/PlatformFilemanager.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialGDKSettings.h"
 
