@@ -4,7 +4,11 @@
 
 #include <inttypes.h>
 
+#include "CoreMinimal.h"
+//#include "HAL/PlatformFile.h" - Purposefully commented out so I can see failures
+//#include "HAL/PlatformFilemanager.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
+//#include "Misc/CommandLine.h"
 #include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);

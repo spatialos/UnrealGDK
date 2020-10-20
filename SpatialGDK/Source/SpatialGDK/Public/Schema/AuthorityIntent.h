@@ -4,6 +4,7 @@
 
 #include "Schema/Component.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>

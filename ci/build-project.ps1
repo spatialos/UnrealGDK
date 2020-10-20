@@ -42,6 +42,16 @@ if ($lastExitCode -ne 0) {
     throw "Failed to generate files for the testing project."
 }
 
+New-Item -ItemType File -Force -Path "$unreal_path\Engine\Saved\UnrealBuildTool\BuildConfiguration.xml"
+Set-Content -Path "$unreal_path\Engine\Saved\UnrealBuildTool\BuildConfiguration.xml" -Value @"
+<?xml version="1.0" encoding="utf-8" ?>
+<Configuration xmlns="https://www.unrealengine.com/BuildConfiguration">
+	<BuildConfiguration>
+		<bUsePCHFiles>false</bUsePCHFiles>
+	</BuildConfiguration>
+</Configuration>
+"@
+
 Write-Output "Building project"
 $build_configuration = $build_state + $(If ("$build_target" -eq "") { "" } Else { " $build_target" })
 & "$msbuild_exe" `

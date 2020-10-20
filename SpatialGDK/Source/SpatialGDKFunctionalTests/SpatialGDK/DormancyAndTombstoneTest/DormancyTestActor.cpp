@@ -8,12 +8,7 @@
 
 ADormancyTestActor::ADormancyTestActor()
 {
-	bReplicates = true;
 	TestIntProp = 0;
-
-	GetStaticMeshComponent()->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'")));
-	GetStaticMeshComponent()->SetMaterial(
-		0, LoadObject<UMaterial>(nullptr, TEXT("Material'/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial'")));
 
 	NetDormancy = DORM_Initial; // By default dormant initially, as we have no way to correctly set this at runtime.
 }

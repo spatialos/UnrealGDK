@@ -2,6 +2,7 @@
 
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 
+#include "Editor.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
