@@ -2,30 +2,23 @@
 
 #pragma once
 
-#include "Containers/Set.h"
 #include "SpatialView/MessagesToSend.h"
 #include "SpatialView/OpList/OpList.h"
 #include "SpatialView/ViewDelta.h"
 
 namespace SpatialGDK
 {
-class SpatialEventTracer;
-
 class WorkerView
 {
 public:
-	explicit WorkerView(SpatialEventTracer* InEventTracer);
+	WorkerView();
 
-	// Process queued op lists to create a new view delta.
-	// The view delta will exist until the next call to advance.
-	void AdvanceViewDelta();
+	// Process op lists to create a new view delta.
+	// The view delta will exist until the next call to AdvanceViewDelta.
+	void AdvanceViewDelta(TArray<OpList> OpLists);
 
 	const ViewDelta& GetViewDelta() const;
 	const EntityView& GetView() const;
-	const EntityView* GetViewPtr() const;
-
-	// Add an OpList to generate the next ViewDelta.
-	void EnqueueOpList(OpList Ops);
 
 	// Ensure all local changes have been applied and return the resulting MessagesToSend.
 	TUniquePtr<MessagesToSend> FlushLocalChanges();
@@ -47,12 +40,6 @@ private:
 	EntityView View;
 	ViewDelta Delta;
 
-	TArray<OpList> QueuedOps;
-	TArray<OpList> OpenCriticalSectionOps;
-
 	TUniquePtr<MessagesToSend> LocalChanges;
-
-	SpatialEventTracer* EventTracer;
 };
-
 } // namespace SpatialGDK

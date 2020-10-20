@@ -173,8 +173,8 @@ void SpatialEventTracer::Enable(const FString& FileName)
 	{
 		EventTracePath = FPaths::GetPath(AbsLogPath);
 	}
-	const FString FolderPath = EventTracePath;
 
+	FolderPath = EventTracePath;
 	const FString FullFileName = FString::Printf(TEXT("EventTrace_%s_%s.trace"), *FileName, *FDateTime::Now().ToString());
 	const FString FilePath = FPaths::Combine(FolderPath, FullFileName);
 
@@ -191,32 +191,27 @@ void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) c
 	Io_Stream_Destroy(StreamToDestroy);
 }
 
-void SpatialEventTracer::AddComponent(const Worker_Op& Op)
+void SpatialEventTracer::AddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId)
 {
-	const Worker_AddComponentOp& AddComponentOp = Op.op.add_component;
-	EntityComponentId Id(AddComponentOp.entity_id, AddComponentOp.data.component_id);
-	EntityComponentSpanIds.FindOrAdd(Id, Op.span_id);
+	EntityComponentSpanIds.FindOrAdd({ EntityId, ComponentId }, SpanId);
 }
 
-void SpatialEventTracer::RemoveComponent(const Worker_Op& Op)
+void SpatialEventTracer::RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
-	const Worker_RemoveComponentOp& RemoveComponentOp = Op.op.remove_component;
-	EntityComponentId Id(RemoveComponentOp.entity_id, RemoveComponentOp.component_id);
-	EntityComponentSpanIds.Remove(Id);
+	EntityComponentSpanIds.Remove({ EntityId, ComponentId });
 }
 
-void SpatialEventTracer::UpdateComponent(const Worker_Op& Op)
+void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId)
 {
-	const Worker_ComponentUpdateOp& ComponentUpdateOp = Op.op.component_update;
-	EntityComponentId Id = { ComponentUpdateOp.entity_id, ComponentUpdateOp.update.component_id };
+	const EntityComponentId Id = { EntityId, ComponentId };
 
-	Trace_SpanId& OldSpanId = EntityComponentSpanIds.FindChecked(Id);
+	Trace_SpanId& StoredSpanId = EntityComponentSpanIds.FindChecked(Id);
 
-	Trace_SpanId MergeCauses[2] = { Op.span_id, OldSpanId };
-	TOptional<Trace_SpanId> SpanId = CreateSpan(MergeCauses, 2);
-	TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponent(Id.EntityId, Id.ComponentId), SpanId);
+	Trace_SpanId MergeCauses[2] = { SpanId, StoredSpanId };
+	TOptional<Trace_SpanId> NewSpanId = CreateSpan(MergeCauses, 2);
+	TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(Id.EntityId, Id.ComponentId), NewSpanId);
 
-	OldSpanId = SpanId.GetValue();
+	StoredSpanId = NewSpanId.GetValue();
 }
 
 Trace_SpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
@@ -231,4 +226,14 @@ Trace_SpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
 
 		return *SpanId;
 }
+FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
+{
+	FString HexStr;
+	for (int i = 0; i < 16; i++)
+	{
+		HexStr += FString::Printf(TEXT("%02x"), SpanId.data[i]);
+	}
+	return HexStr;
+}
+
 } // namespace SpatialGDK
