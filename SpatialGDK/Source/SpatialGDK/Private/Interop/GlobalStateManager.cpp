@@ -182,17 +182,17 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 	}
 }
 
+#if WITH_EDITOR
 void UGlobalStateManager::OnShutdownComponentUpdate(Schema_ComponentUpdate* Update)
 {
-#if WITH_EDITOR
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update);
 	// TODO: Probably should be a bool in state - probably a non-persistent entity
 	if (Schema_GetObjectCount(EventsObject, SpatialConstants::SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID) > 0)
 	{
 		ReceiveShutdownAdditionalServersEvent();
 	}
-#endif // WITH_EDITOR
 }
+#endif // WITH_EDITOR
 
 void UGlobalStateManager::ReceiveShutdownAdditionalServersEvent()
 {

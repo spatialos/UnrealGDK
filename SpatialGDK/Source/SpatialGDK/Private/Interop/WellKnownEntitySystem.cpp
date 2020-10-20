@@ -64,7 +64,9 @@ void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId Comp
 		GlobalStateManager->ApplyStartupActorManagerUpdate(Update);
 		break;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
+#if WITH_EDITOR
 		GlobalStateManager->OnShutdownComponentUpdate(Update);
+#endif // WITH_EDITOR
 		break;
 	default:
 		break;

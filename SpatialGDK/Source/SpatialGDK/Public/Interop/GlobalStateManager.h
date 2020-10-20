@@ -56,8 +56,6 @@ public:
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 	bool HandlesComponent(const Worker_ComponentId ComponentId) const;
 
-	void OnShutdownComponentUpdate(Schema_ComponentUpdate* Update);
-
 	void ResetGSM();
 
 	void BeginDestroy() override;
@@ -88,8 +86,11 @@ public:
 #if WITH_EDITOR
 	void OnPrePIEEnded(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
+
+	void OnShutdownComponentUpdate(Schema_ComponentUpdate* Update);
 	void ReceiveShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
+
 private:
 	void SetDeploymentMapURL(const FString& MapURL);
 	void SendSessionIdUpdate();
