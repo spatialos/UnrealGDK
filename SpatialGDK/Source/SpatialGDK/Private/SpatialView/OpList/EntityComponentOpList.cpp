@@ -1,6 +1,7 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/OpList/EntityComponentOpList.h"
+#include "CoreMinimal.h"
 
 namespace SpatialGDK
 {

@@ -17,6 +17,7 @@
 #include "Utils/InspectionColors.h"
 
 #include "Debug/DebugDrawService.h"
+#include "Editor.h"
 #include "Engine/Engine.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"

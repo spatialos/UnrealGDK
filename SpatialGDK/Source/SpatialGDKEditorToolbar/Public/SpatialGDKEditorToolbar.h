@@ -10,6 +10,7 @@
 #include "Templates/SharedPointer.h"
 #include "TickableEditorObject.h"
 #include "UObject/UnrealType.h"
+#include "UnrealEdMisc.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
 #include "CloudDeploymentConfiguration.h"

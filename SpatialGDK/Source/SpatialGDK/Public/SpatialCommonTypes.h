@@ -4,6 +4,7 @@
 
 #include "Containers/Array.h"
 #include "Containers/Map.h"
+#include "CoreMinimal.h"
 #include "HAL/Platform.h"
 #include <WorkerSDK/improbable/c_worker.h>
 

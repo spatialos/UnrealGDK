@@ -6,6 +6,7 @@
 #include "Serialization/BitWriter.h"
 
 #include "Schema/UnrealObjectRef.h"
+#include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_schema.h>

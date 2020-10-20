@@ -2,6 +2,7 @@
 
 #include "ReplicatedTestActorBase.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Materials/Material.h"
 
 AReplicatedTestActorBase::AReplicatedTestActorBase()

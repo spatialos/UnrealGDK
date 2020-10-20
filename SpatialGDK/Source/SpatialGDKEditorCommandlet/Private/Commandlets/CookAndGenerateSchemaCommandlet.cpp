@@ -8,6 +8,7 @@
 #include "SpatialGDKServicesConstants.h"
 
 #include "Misc/CommandLine.h"
+#include "UObject/UObjectHash.h"
 
 using namespace SpatialGDKEditor::Schema;
 

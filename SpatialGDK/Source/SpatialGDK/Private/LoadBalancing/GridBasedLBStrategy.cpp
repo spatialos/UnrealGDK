@@ -2,6 +2,7 @@
 
 #include "LoadBalancing/GridBasedLBStrategy.h"
 
+#include "Editor.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Utils/SpatialActorUtils.h"

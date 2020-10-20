@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 
+#include "Misc/Paths.h"
 #include "Runtime/EngineSettings/Classes/GeneralProjectSettings.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/TestDefinitions.h"

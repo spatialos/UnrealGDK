@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "EngineClasses/SpatialWorldSettings.h"
 
+#include "Editor.h"
 #include "EngineUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialStatics.h"

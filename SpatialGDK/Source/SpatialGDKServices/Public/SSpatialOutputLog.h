@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Developer/OutputLog/Private/SOutputLog.h"
+#include "Engine/EngineTypes.h"
 #include "HAL/FileManagerGeneric.h"
 #include "IDirectoryWatcher.h"
 #include "SlateFwd.h"

@@ -4,6 +4,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Classes/Camera/CameraComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Materials/Material.h"
 #include "Net/UnrealNetwork.h"
 

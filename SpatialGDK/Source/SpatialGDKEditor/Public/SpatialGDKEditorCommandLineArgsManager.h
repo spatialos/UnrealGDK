@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Input/Reply.h"
+#include "Launch/Resources/Version.h"
 #include "Templates/SharedPointer.h"
 
 using ILauncherRef = TSharedRef<class ILauncher>;

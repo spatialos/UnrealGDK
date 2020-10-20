@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+
 namespace SpatialGDK
 {
 struct FSpatialTraceEvent
