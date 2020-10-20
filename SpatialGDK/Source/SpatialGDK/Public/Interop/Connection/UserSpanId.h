@@ -9,12 +9,10 @@ struct FUserSpanId
 {
 	GENERATED_BODY()
 
-	FUserSpanId() { Data.Reserve(16); }
-
+	FUserSpanId() {}
 	explicit FUserSpanId(const TArray<uint8>& InData)
 		: Data(InData)
 	{
-		Data.Reserve(16);
 	}
 
 	UPROPERTY(BlueprintReadOnly, Category = "UserSpanId")

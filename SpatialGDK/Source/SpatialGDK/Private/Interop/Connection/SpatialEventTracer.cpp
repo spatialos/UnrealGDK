@@ -90,6 +90,7 @@ FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
 FUserSpanId SpatialEventTracer::SpanIdToUserSpanId(const Trace_SpanId& SpanId)
 {
 	FUserSpanId UserSpanId;
+	UserSpanId.Data.Reserve(16);
 
 	for (int i = 0; i < 16; i++)
 	{
@@ -134,6 +135,19 @@ TOptional<Trace_SpanId> SpatialEventTracer::CreateSpan(const Trace_SpanId* Cause
 
 	if (Causes != nullptr && NumCauses > 0)
 	{
+		if (SpanIdStack.HasLayer())
+		{
+			TArray<Trace_SpanId> CauseSpanIds;
+			for (int i = 0; i < NumCauses; ++i)
+			{
+				CauseSpanIds.Add(Causes[i]);
+			}
+
+			CauseSpanIds += SpanIdStack.GetTopLayer();
+
+			return Trace_EventTracer_AddSpan(EventTracer, CauseSpanIds.GetData(), CauseSpanIds.Num());
+		}
+
 		return Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses);
 	}
 
@@ -277,7 +291,7 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanIds(const EntityComponentId&
 	Stack.AddToLayer(SpanId);
 }
 
-TArray<Trace_SpanId> SpatialEventTracer::GetLatentPropertyUpdateSpanIds(const EntityComponentId& Id)
+TArray<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanIds(const EntityComponentId& Id)
 {
 	if (!IsEnabled())
 	{

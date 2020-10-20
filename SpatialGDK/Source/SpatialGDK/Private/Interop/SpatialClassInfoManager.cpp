@@ -375,9 +375,9 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 	return nullptr;
 }
 
-uint32 USpatialClassInfoManager::GetComponentIdForSpecificSubObject(const UClass& ParentClass, const UClass& SubClass) const
+uint32 USpatialClassInfoManager::GetComponentIdForSpecificSubObject(const UClass& ParentClass, const UClass& SubObjectClass) const
 {
-	const FString& SubClassPath = SubClass.GetPathName();
+	const FString& SubClassPath = SubObjectClass.GetPathName();
 	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(ParentClass.GetPathName()))
 	{
 		for (const auto& Pair : ActorSchemaData->SubobjectData)

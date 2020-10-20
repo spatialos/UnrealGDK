@@ -46,7 +46,7 @@ public:
 	const FString& GetFolderPath() const { return FolderPath; }
 
 	void AddLatentPropertyUpdateSpanIds(const EntityComponentId& Id, const Trace_SpanId& SpanId);
-	TArray<Trace_SpanId> GetLatentPropertyUpdateSpanIds(const EntityComponentId& Id);
+	TArray<Trace_SpanId> PopLatentPropertyUpdateSpanIds(const EntityComponentId& Id);
 
 	FSpatialSpanIdStack SpanIdStack;
 
