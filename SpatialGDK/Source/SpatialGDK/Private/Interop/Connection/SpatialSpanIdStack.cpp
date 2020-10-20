@@ -24,7 +24,7 @@ void FSpatialSpanIdStack::AddToLayer(const Trace_SpanId& SpanId)
 TArray<Trace_SpanId> FSpatialSpanIdStack::PopLayer()
 {
 	const int32 Size = Stack.Num();
-	const TArray<Trace_SpanId> TopLayer = Stack[Size - 1];
+	const TArray<Trace_SpanId> TopLayer = MoveTemp(Stack[Size - 1]);
 	Stack.RemoveAt(Size - 1);
 	return TopLayer;
 }

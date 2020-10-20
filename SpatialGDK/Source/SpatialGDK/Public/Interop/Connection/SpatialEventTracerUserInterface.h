@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Interop/Connection/SpatialTraceEvent.h"
+#include "Interop/Connection/UserSpanId.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 
 #include <WorkerSDK/improbable/c_trace.h>
@@ -29,27 +30,29 @@ class SPATIALGDK_API USpatialEventTracerUserInterface : public UBlueprintFunctio
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static FString CreateSpanId(UObject* WorldContextObject);
+
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static FString CreateSpanIdWithCauses(UObject* WorldContextObject, const TArray<FString>& Causes);
+	static FUserSpanId CreateSpanId(UObject* WorldContextObject);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static void TraceEvent(UObject* WorldContextObject, const FString& SpanId, FSpatialTraceEvent SpatialTraceEvent);
+	static FUserSpanId CreateSpanIdWithCauses(UObject* WorldContextObject, const TArray<FUserSpanId>& Causes);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static void SetActiveSpanId(UObject* WorldContextObject, FEventTracerDynamicDelegate Delegate, const FString& SpanId);
+	static void TraceEvent(UObject* WorldContextObject, const FUserSpanId& SpanId, FSpatialTraceEvent SpatialTraceEvent);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static void AddLatentSpanId(UObject* WorldContextObject, UObject* Object, const FString& SpanId);
+	static void SetActiveSpanId(UObject* WorldContextObject, FEventTracerDynamicDelegate Delegate, const FUserSpanId& SpanId);
 
-	static void AddSpanIdToStack(UObject* WorldContextObject, const FString& SpanId);
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
+	static void AddLatentSpanId(UObject* WorldContextObject, UObject* Object, const FUserSpanId& SpanId);
+
+	static void AddSpanIdToStack(UObject* WorldContextObject, const FUserSpanId& SpanId);
 	static void PopSpanIdFromStack(UObject* WorldContextObject);
 
 private:
-	static void AddLatentActorSpanId(UObject* WorldContextObject, const AActor& Actor, const FString& SpanId);
-	static void AddLatentComponentSpanId(UObject* WorldContextObject, const UActorComponent& Component, const FString& SpanId);
+	static void AddLatentActorSpanId(UObject* WorldContextObject, const AActor& Actor, const FUserSpanId& SpanId);
+	static void AddLatentComponentSpanId(UObject* WorldContextObject, const UActorComponent& Component, const FUserSpanId& SpanId);
 
 	static SpatialGDK::SpatialEventTracer* GetEventTracer(UObject* WorldContextObject);
 	static USpatialNetDriver* GetSpatialNetDriver(UObject* WorldContextObject);

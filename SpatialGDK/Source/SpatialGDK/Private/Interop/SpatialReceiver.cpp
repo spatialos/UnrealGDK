@@ -2213,22 +2213,18 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		}
 		else
 		{
-			bool bUseEventTracer = EventTracer->IsEnabled() && RPCType != ERPCType::CrossServer;
+			uint64 RPCId = RPCService->GetLastAckedRPCId(EntityId, RPCType) + 1;
+			bool bUseEventTracer = EventTracer->IsEnabled() &&
+								   RPCType != ERPCType::CrossServer &&
+								   RPCId != 0;
 			if (bUseEventTracer)
 			{
-				uint64 RPCId = RPCService->GetLastAckedRPCId(EntityId, RPCType) + 1;
-				if (RPCId != 0)
-				{
-					Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
-					RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
-					uint32 FieldId = Descriptor.GetRingBufferElementFieldId(RPCId);
-
-					EntityComponentId Id = EntityComponentId(EntityId, ComponentId);
-					Trace_SpanId CauseSpanId = EventTracer->GetSpanId(Id);
-					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
-					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function), SpanId);
-					EventTracer->SpanIdStack.AddToLayer(SpanId.GetValue());
-				}
+				Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
+				EntityComponentId Id = EntityComponentId(EntityId, ComponentId);
+				Trace_SpanId CauseSpanId = EventTracer->GetSpanId(Id);
+				TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+				EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function), SpanId);
+				EventTracer->SpanIdStack.AddToLayer(SpanId.GetValue());
 			}
 
 			TargetObject->ProcessEvent(Function, Parms);

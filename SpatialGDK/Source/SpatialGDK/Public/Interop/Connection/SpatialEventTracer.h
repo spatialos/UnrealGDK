@@ -4,6 +4,7 @@
 
 #include "Interop/Connection/SpatialSpanIdStack.h"
 #include "Interop/Connection/SpatialTraceEvent.h"
+#include "Interop/Connection/UserSpanId.h"
 #include "SpatialView/EntityComponentId.h"
 
 #include <WorkerSDK/improbable/c_io.h>
@@ -15,6 +16,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
 namespace SpatialGDK
 {
+
 // SpatialEventTracer wraps Trace_EventTracer related functionality
 class SPATIALGDK_API SpatialEventTracer
 {
@@ -38,7 +40,9 @@ public:
 	Trace_SpanId GetSpanId(const EntityComponentId& Id) const;
 
 	static FString SpanIdToString(const Trace_SpanId& SpanId);
-	static Trace_SpanId StringToSpanId(const FString& SpanIdString);
+
+	static FUserSpanId SpanIdToUserSpanId(const Trace_SpanId& SpanId);
+	static Trace_SpanId UserSpanIdToSpanId(const FUserSpanId & ByteArray);
 
 	const FString& GetFolderPath() const { return FolderPath; }
 

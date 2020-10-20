@@ -1145,8 +1145,11 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 		}
 	};
 
-	Replicator.RepLayout->PreRepNotify.BindLambda(PreCallRepNotify);
-	Replicator.RepLayout->PostRepNotify.BindLambda(PostCallRepNotify);
+	if (EventTracer != nullptr && EventTracer->IsEnabled() && PropertySpanIds.Num() > 0)
+	{
+		Replicator.RepLayout->PreRepNotify.BindLambda(PreCallRepNotify);
+		Replicator.RepLayout->PostRepNotify.BindLambda(PostCallRepNotify);
+	}
 
 	Replicator.CallRepNotifies(false);
 }

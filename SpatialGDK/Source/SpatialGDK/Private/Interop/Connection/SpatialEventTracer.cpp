@@ -87,15 +87,24 @@ FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
 	return HexStr;
 }
 
-Trace_SpanId SpatialEventTracer::StringToSpanId(const FString& SpanIdString)
+FUserSpanId SpatialEventTracer::SpanIdToUserSpanId(const Trace_SpanId& SpanId)
+{
+	FUserSpanId UserSpanId;
+
+	for (int i = 0; i < 16; i++)
+	{
+		UserSpanId.Data.Add(static_cast<uint8>(SpanId.data[i]));
+	}
+
+	return UserSpanId;
+}
+
+Trace_SpanId SpatialEventTracer::UserSpanIdToSpanId(const FUserSpanId& UserSpanId)
 {
 	Trace_SpanId SpanId;
 	for (int i = 0; i < 16; i++)
 	{
-		FString SubString = SpanIdString.Mid(i * 2, 2);
-		unsigned int Value;
-		sscanf(TCHAR_TO_ANSI(*SubString), "%02x", &Value);
-		SpanId.data[i] = Value;
+		SpanId.data[i] = static_cast<unsigned char>(UserSpanId.Data[i]);
 	}
 	return SpanId;
 }
@@ -123,7 +132,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::CreateSpan(const Trace_SpanId* Cause
 		return {};
 	}
 
-	if (NumCauses > 0)
+	if (Causes != nullptr && NumCauses > 0)
 	{
 		return Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses);
 	}
