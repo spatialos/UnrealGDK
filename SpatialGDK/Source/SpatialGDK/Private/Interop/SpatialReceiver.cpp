@@ -2004,8 +2004,8 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 			SpanId);
 		return;
 	}
-	if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID &&
-		Op.op.command_response.response.command_index == SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID)
+	if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID
+		&& Op.op.command_response.response.command_index == SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID)
 	{
 		ReceiveClaimPartitionResponse(Op.op.command_response);
 		return;
@@ -2020,8 +2020,10 @@ void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandRespons
 
 	if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("ClaimPartition command timed out. "
-            "Worker sytem entity: %lld. Retrying"), Op.entity_id);
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning,
+			   TEXT("ClaimPartition command timed out. "
+					"Worker sytem entity: %lld. Retrying"),
+			   Op.entity_id);
 
 		// We don't worry about checking if we're resending this request twice, setting to the same value should be idempotent.
 		Sender->SendClaimPartitionRequest(Op.entity_id, PartitionId);
@@ -2030,13 +2032,17 @@ void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandRespons
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("ClaimPartition command failed for a reason other than timeout. "
-            "This is fatal. Partition entity: %lld. Reason: %s"), PartitionId, UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error,
+			   TEXT("ClaimPartition command failed for a reason other than timeout. "
+					"This is fatal. Partition entity: %lld. Reason: %s"),
+			   PartitionId, UTF8_TO_TCHAR(Op.message));
 		return;
 	}
 
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("ClaimPartition command successed. "
-        "Worker sytem entity: %lld. Parititon entity: %lld"), Op.entity_id, PartitionId);
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
+		   TEXT("ClaimPartition command successed. "
+				"Worker sytem entity: %lld. Parititon entity: %lld"),
+		   Op.entity_id, PartitionId);
 }
 
 void USpatialReceiver::FlushRetryRPCs()

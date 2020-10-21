@@ -156,7 +156,8 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 	return PartitionInterest;
 }
 
-void InterestFactory::AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, Interest& OutInterest) const
+void InterestFactory::AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker,
+													Interest& OutInterest) const
 {
 	// Add load balancing query
 	Query PartitionQuery{};
@@ -223,15 +224,16 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	ClientQuery.ResultComponentIds = ServerAuthInterestResultType;
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ClientQuery);
 
-	// If USLB disabled, add a query for the load balancing worker (delegated the EntityACL) to read the components it needs to write updates.
+	// If USLB disabled, add a query for the load balancing worker (delegated the EntityACL) to read the components it needs to write
+	// updates.
 	if (!GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
 	{
 		// Add a query for the load balancing worker (whoever is delegated the ACL) to read the authority intent
 		Query LoadBalanceQuery;
 		LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
 		LoadBalanceQuery.ResultComponentIds =
-            SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
-                              SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID };
+			SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
+							  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID };
 		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 	}
 }

@@ -273,7 +273,8 @@ void USpatialPlayerSpawner::PassSpawnRequestToNetDriver(const Schema_Object* Pla
 
 	// Set a prioritized PlayerStart for the new player to spawn at. Passing nullptr is a no-op.
 	GameMode->SetPrioritizedPlayerStart(PlayerStart);
-	NetDriver->AcceptNewPlayer(SpawnRequest.LoginURL, SpawnRequest.UniqueId, SpawnRequest.OnlinePlatformName, SpawnRequest.ClientSystemEntityId);
+	NetDriver->AcceptNewPlayer(SpawnRequest.LoginURL, SpawnRequest.UniqueId, SpawnRequest.OnlinePlatformName,
+							   SpawnRequest.ClientSystemEntityId);
 	GameMode->SetPrioritizedPlayerStart(nullptr);
 }
 

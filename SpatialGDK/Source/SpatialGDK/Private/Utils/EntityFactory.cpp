@@ -69,11 +69,14 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	// Add Load Balancer Attribute. If this is a single worker deployment, this will be just be the single worker.
 	const VirtualWorkerId IntendedVirtualWorkerId = NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId();
 	checkf(IntendedVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
-		TEXT("Load balancing strategy provided invalid local virtual worker ID during Actor spawn. "
-			"Actor: %s. Strategy: %s"), *Actor->GetName(), *NetDriver->LoadBalanceStrategy->GetName());
+		   TEXT("Load balancing strategy provided invalid local virtual worker ID during Actor spawn. "
+				"Actor: %s. Strategy: %s"),
+		   *Actor->GetName(), *NetDriver->LoadBalanceStrategy->GetName());
 
-	const PhysicalWorkerName* IntendedAuthoritativePhysicalWorkerName = NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
-	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { { FString::Format(TEXT("workerId:{0}"), { *IntendedAuthoritativePhysicalWorkerName }) } };
+	const PhysicalWorkerName* IntendedAuthoritativePhysicalWorkerName =
+		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
+	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { { FString::Format(TEXT("workerId:{0}"),
+																					   { *IntendedAuthoritativePhysicalWorkerName }) } };
 
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
@@ -209,7 +212,8 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
-	ComponentDatas.Add(NetOwningClientWorker(GetConnectionOwningWorkerId(Channel->Actor), GetConnectionOwningPartitionId(Channel->Actor)).CreateNetOwningClientWorkerData());
+	ComponentDatas.Add(NetOwningClientWorker(GetConnectionOwningWorkerId(Channel->Actor), GetConnectionOwningPartitionId(Channel->Actor))
+						   .CreateNetOwningClientWorkerData());
 	ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
 
 	if (ShouldActorHaveVisibleComponent(Actor))
@@ -389,8 +393,8 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		for (auto ComponentIdIt = ComponentWriteAcl.CreateConstIterator(); ComponentIdIt; ++ComponentIdIt)
 		{
 			const Worker_ComponentId ComponentId = ComponentIdIt.Key();
-			const Worker_PartitionId PartitionId = IsClientAuthoritativeComponent(ComponentId)
-				? AuthoritativeClientPartitionId : AuthoritativeServerPartitionId;
+			const Worker_PartitionId PartitionId =
+				IsClientAuthoritativeComponent(ComponentId) ? AuthoritativeClientPartitionId : AuthoritativeServerPartitionId;
 			DelegationMap.Add(ComponentId, PartitionId);
 		}
 		DelegationMap.Add(AuthorityDelegation::ComponentId, AuthoritativeServerPartitionId);
@@ -495,7 +499,9 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 }
 
 TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const Worker_EntityId EntityId,
-	const InterestFactory* InterestFactory, const UAbstractLBStrategy* LbStrategy, VirtualWorkerId VirtualWorker)
+																			const InterestFactory* InterestFactory,
+																			const UAbstractLBStrategy* LbStrategy,
+																			VirtualWorkerId VirtualWorker)
 {
 	check(GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing);
 

@@ -292,7 +292,8 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 
 	// The load balance strategy won't be set up at this point, but we call this function again later when it is ready in
 	// order to set the interest of the server worker according to the strategy.
-	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(EntityId, NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
+	Components.Add(NetDriver->InterestFactory
+					   ->CreateServerWorkerInterest(EntityId, NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
 					   .CreateInterestData());
 
 	// GDK known entities completeness tags
@@ -304,74 +305,74 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &EntityId);
 
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
-	OnCreateWorkerEntityResponse.BindLambda([WeakSender = TWeakObjectPtr<USpatialSender>(this), EntityId, AttemptCounter](const Worker_CreateEntityResponseOp& Op)
-	{
-		if (!WeakSender.IsValid())
-		{
-			return;
-		}
-		USpatialSender* Sender = WeakSender.Get();
-
-		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
-		{
-			Sender->NetDriver->WorkerEntityId = Op.entity_id;
-
-			if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
+	OnCreateWorkerEntityResponse.BindLambda(
+		[WeakSender = TWeakObjectPtr<USpatialSender>(this), EntityId, AttemptCounter](const Worker_CreateEntityResponseOp& Op) {
+			if (!WeakSender.IsValid())
 			{
-				// SUPER MEGA DEATH HACK
-				// We only want 1 worker to claim the snapshot partition entity. If every worker tries, we could have a
-				// situation where multiple workers receive and subsequently lose authority before authority settles with
-				// the last worker to have their request processed. However, all server-side workers all request entity IDs
-				// at startup, but only the first request with be returned a range of entity IDs beginning at the first
-				// non-taken entity ID in the snapshot (which is 5 at this point in time). If the server worker entity ID
-				// is 5, we know that this worker uniquely perform that entity reservation, and so will be the only worker
-				// to meet this conditional and claim the snapshot partition entity.
-				if (Op.entity_id == SpatialConstants::FIRST_AVAILABLE_ENTITY_ID)
+				return;
+			}
+			USpatialSender* Sender = WeakSender.Get();
+
+			if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+			{
+				Sender->NetDriver->WorkerEntityId = Op.entity_id;
+
+				if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
 				{
-					Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerSystemEntityId(),
-						SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+					// SUPER MEGA DEATH HACK
+					// We only want 1 worker to claim the snapshot partition entity. If every worker tries, we could have a
+					// situation where multiple workers receive and subsequently lose authority before authority settles with
+					// the last worker to have their request processed. However, all server-side workers all request entity IDs
+					// at startup, but only the first request with be returned a range of entity IDs beginning at the first
+					// non-taken entity ID in the snapshot (which is 5 at this point in time). If the server worker entity ID
+					// is 5, we know that this worker uniquely perform that entity reservation, and so will be the only worker
+					// to meet this conditional and claim the snapshot partition entity.
+					if (Op.entity_id == SpatialConstants::FIRST_AVAILABLE_ENTITY_ID)
+					{
+						Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerSystemEntityId(),
+														  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+					}
+
+					// We claim each server worker entity as a partition so server worker interest which is necessary for getting
+					// interest in the VirtualWorkerTranslator component.
+					Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerSystemEntityId(), Op.entity_id);
 				}
 
-				// We claim each server worker entity as a partition so server worker interest which is necessary for getting
-				// interest in the VirtualWorkerTranslator component.
-				Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerSystemEntityId(), Op.entity_id);
+				return;
 			}
 
-			return;
-		}
+			// Given the nature of commands, it's possible we have multiple create commands in flight at once. If a command fails where
+			// we've already set the worker entity ID locally, this means we already successfully create the entity, so nothing needs doing.
+			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS && Sender->NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+			{
+				return;
+			}
 
-		// Given the nature of commands, it's possible we have multiple create commands in flight at once. If a command fails where
-		// we've already set the worker entity ID locally, this means we already successfully create the entity, so nothing needs doing.
-		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS && Sender->NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
-		{
-			return;
-		}
+			if (Op.status_code != WORKER_STATUS_CODE_TIMEOUT)
+			{
+				UE_LOG(LogSpatialSender, Error, TEXT("Worker entity creation request failed: \"%s\""), UTF8_TO_TCHAR(Op.message));
+				return;
+			}
 
-		if (Op.status_code != WORKER_STATUS_CODE_TIMEOUT)
-		{
-			UE_LOG(LogSpatialSender, Error, TEXT("Worker entity creation request failed: \"%s\""), UTF8_TO_TCHAR(Op.message));
-			return;
-		}
+			if (AttemptCounter == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+			{
+				UE_LOG(LogSpatialSender, Error, TEXT("Worker entity creation request timed out too many times. (%u attempts)"),
+					   SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
+				return;
+			}
 
-		if (AttemptCounter == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			UE_LOG(LogSpatialSender, Error, TEXT("Worker entity creation request timed out too many times. (%u attempts)"),
-				   SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
-			return;
-		}
-
-		UE_LOG(LogSpatialSender, Warning, TEXT("Worker entity creation request timed out and will retry."));
-		FTimerHandle RetryTimer;
-		Sender->TimerManager->SetTimer(
-			RetryTimer,
-			[WeakSender, EntityId, AttemptCounter]() {
-				if (USpatialSender* SpatialSender = WeakSender.Get())
-				{
-					SpatialSender->RetryServerWorkerEntityCreation(EntityId, AttemptCounter + 1);
-				}
-			},
-			SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
-	});
+			UE_LOG(LogSpatialSender, Warning, TEXT("Worker entity creation request timed out and will retry."));
+			FTimerHandle RetryTimer;
+			Sender->TimerManager->SetTimer(
+				RetryTimer,
+				[WeakSender, EntityId, AttemptCounter]() {
+					if (USpatialSender* SpatialSender = WeakSender.Get())
+					{
+						SpatialSender->RetryServerWorkerEntityCreation(EntityId, AttemptCounter + 1);
+					}
+				},
+				SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
+		});
 
 	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
 }
@@ -392,10 +393,13 @@ bool USpatialSender::ValidateOrExit_IsSupportedClass(const FString& PathName)
 
 void USpatialSender::SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const
 {
-	UE_LOG(LogSpatialSender, Log, TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId. %lld. "
-		"PartitionId: %lld"), *Connection->GetWorkerId(), SystemWorkerEntityId, PartitionId);
+	UE_LOG(LogSpatialSender, Log,
+		   TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId. %lld. "
+				"PartitionId: %lld"),
+		   *Connection->GetWorkerId(), SystemWorkerEntityId, PartitionId);
 	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionId);
-	const Worker_RequestId RequestId = Connection->SendCommandRequest(SystemWorkerEntityId, &CommandRequest, SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID);
+	const Worker_RequestId RequestId =
+		Connection->SendCommandRequest(SystemWorkerEntityId, &CommandRequest, SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID);
 	Receiver->PendingPartitionAssignments.Add(RequestId, PartitionId);
 }
 
@@ -635,13 +639,13 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
 	check(AuthorityIntentComponent != nullptr);
 	checkf(AuthorityIntentComponent->VirtualWorkerId != NewAuthoritativeVirtualWorkerId,
-		TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
-		*GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId)
+		   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
+		   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId)
 
-	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
+		AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
 	UE_LOG(LogSpatialSender, Log,
-           TEXT("(%s) Sending AuthorityIntent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
-           *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
+		   TEXT("(%s) Sending AuthorityIntent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
+		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
 
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 
