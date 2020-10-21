@@ -39,7 +39,15 @@ bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Act
 
 	if (!Actor->IsActorReady())
 	{
-		OutFailureReason = TEXT("is not ready");
+		if (Actor->GetGameTimeSinceCreation() > 0.1)
+		{
+			OutFailureReason = TEXT("is not ready");
+		}
+		else
+		{
+			// Setting the failure reason to empty to suppress the logs for newly created actors
+			OutFailureReason = TEXT("");
+		}
 		return false;
 	}
 

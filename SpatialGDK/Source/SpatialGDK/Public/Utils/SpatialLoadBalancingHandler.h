@@ -82,9 +82,9 @@ protected:
 				// although it has the risk of creating an infinite lock if the child is unable to become ready.
 				if (bNetOwnerHasAuth)
 				{
-					if (Actor->GetGameTimeSinceCreation() > 0.1)
+					if (FailureReason != "")
 					{
-						// Delay time for printing logs as may be too soon after creation and create false warnings
+						// If a failure reason is returned log warning
 						AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 						UE_LOG(LogSpatialLoadBalancingHandler, Warning,
 							   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *HierarchyRoot->GetName(),
