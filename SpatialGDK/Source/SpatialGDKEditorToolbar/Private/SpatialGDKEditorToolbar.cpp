@@ -926,10 +926,11 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		InspectorURL = SpatialGDKServicesConstants::InspectorURL;
 	}
 
-	FString WebError;
+	
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetSelectedInspectorVersion().GetInspectorVersion(); 
 	if (FSpatialPackageManager::TryFetchInspectorBinary(InspectorVersion)) {
+		FString WebError;
 		FPlatformProcess::LaunchURL(*InspectorURL, TEXT(""), &WebError);
 		if (!WebError.IsEmpty())
 		{

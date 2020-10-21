@@ -2,7 +2,8 @@
 
 #include "SpatialPackageManager.h"
 #include "SpatialGDKServicesConstants.h"
-
+#include "Async/Async.h"
+#include "Misc\MonitoredProcess.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageManager);
 
@@ -30,14 +31,10 @@ bool FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 	// Download the zip to // UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\Runtime\*version* and unzip
 	else
 	{
-		FString RuntimeRetrieveArgs =
-			FString::Printf(TEXT("package retrieve runtime x86_64-win32 %s runtime/version-%s --unzip"), *RuntimeVersion, *RuntimeVersion);
-		FString RuntimeRetrieveResult;
-		int32 ExitCode;
-		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, RuntimeRetrieveArgs,
-														SpatialGDKServicesConstants::GDKProgramPath, RuntimeRetrieveResult, ExitCode);
-		UE_LOG(LogSpatialPackageManager, Log, TEXT("OUTPUT %s"), *RuntimeRetrieveResult);
-		return (ExitCode == ExitCodeSuccess);
+		FString Params = FString::Printf(TEXT("package retrieve runtime x86_64-win32 %s runtime/version-%s --unzip"), *RuntimeVersion, *RuntimeVersion);
+		FSpatialPackageManager FSpatialPackageManager = {};
+		FSpatialPackageManager.StartProcess(Params, "Runtime Fetching");
+
 	}
 	
 	return true;
@@ -58,17 +55,43 @@ bool FSpatialPackageManager::TryFetchInspectorBinary(FString InspectorVersion)
 	// Download the package to // UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs
 	else
 	{
-		FString InspectorGetArgs = FString::Printf(TEXT("package get inspector x86_64-win32 %s ./inspector/version-%s/%s"),
-												   *InspectorVersion, *InspectorVersion, *SpatialGDKServicesConstants::InspectorExe);
-		FString InspectorGetResult;
-		int32 ExitCode;
-		FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, InspectorGetArgs,
-														SpatialGDKServicesConstants::GDKProgramPath, InspectorGetResult, ExitCode);
-		UE_LOG(LogSpatialPackageManager, Log, TEXT("OUTPUT %s"), *InspectorGetResult);
-		return (ExitCode == ExitCodeSuccess);
+
+		FString Params = FString::Printf(TEXT("package get inspector x86_64-win32 %s ./inspector/version-%s/%s"), *InspectorVersion,
+										 *InspectorVersion, *SpatialGDKServicesConstants::InspectorExe);
+		FSpatialPackageManager FSpatialPackageManager = {};
+		FSpatialPackageManager.StartProcess(Params, "Inspector Fetching");
+
 	}
 
 	return true;
 }
 
+void FSpatialPackageManager::StartProcess(FString Params, FString ProcessName)
+{
+	FString WorkingDir = SpatialGDKServicesConstants::GDKProgramPath;
+	auto ExePath = SpatialGDKServicesConstants::SpatialExe;
+	FetchingProcess = {ExePath, Params, WorkingDir, true, true };
+	bool IsStartingUp = true;
+	FetchingProcess->OnOutput().BindLambda([&](const FString& Output) {
+		UE_LOG(LogSpatialPackageManager, Display, TEXT("Runtime: %s"), *Output);
+	});
+	FetchingProcess->Launch();
+
+	while (IsStartingUp && FetchingProcess->Update())
+	{
+		if (FetchingProcess->GetDuration().GetTotalSeconds() > 60)
+		{
+			UE_LOG(LogSpatialPackageManager, Error, TEXT("Timed out waiting for the %s fetching to start."));
+			KillProcess(ProcessName);
+			break;
+		}
+	}
+}
+
+void FSpatialPackageManager::KillProcess(FString ProcessName)
+{
+	UE_LOG(LogSpatialPackageManager, Warning, TEXT("Killing %s."), *ProcessName);
+	auto Handle = FetchingProcess->GetProcessHandle();
+	FPlatformProcess::TerminateProc(Handle);
+}
 #undef LOCTEXT_NAMESPACE
