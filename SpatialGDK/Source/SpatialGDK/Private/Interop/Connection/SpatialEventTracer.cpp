@@ -105,7 +105,7 @@ FUserSpanId SpatialEventTracer::SpanIdToUserSpanId(const Trace_SpanId& SpanId)
 
 Trace_SpanId SpatialEventTracer::UserSpanIdToSpanId(const FUserSpanId& UserSpanId)
 {
-	Trace_SpanId SpanId;
+	Trace_SpanId SpanId = {};
 	if (!UserSpanId.IsValid())
 	{
 		return SpanId;
@@ -303,13 +303,18 @@ TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanIds(const
 		return {};
 	}
 
-	Trace_SpanId SpanIds = Stack->PopLayer();
+	TOptional<Trace_SpanId> SpanId = Stack->PopLayer();
+	if (!SpanId.IsSet())
+	{
+		return {};
+	}
+
 	if (!Stack->HasLayer())
 	{
 		EntityComponentSpanIdStacks.Remove(Id);
 	}
 
-	return SpanIds;
+	return SpanId;
 }
 
 } // namespace SpatialGDK

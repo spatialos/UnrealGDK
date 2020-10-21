@@ -93,7 +93,13 @@ bool USpatialEventTracerUserInterface::GetActiveSpanId(UObject* WorldContextObje
 		return false;
 	}
 
-	OutUserSpanId = SpatialGDK::SpatialEventTracer::SpanIdToUserSpanId(EventTracer->SpanIdStack.GetTopLayer());
+	TOptional<Trace_SpanId> SpanId = EventTracer->SpanIdStack.GetTopSpanId();
+	if (!SpanId.IsSet())
+	{
+		return false;
+	}
+
+	OutUserSpanId = SpatialGDK::SpatialEventTracer::SpanIdToUserSpanId(SpanId.GetValue());
 	return true;
 }
 

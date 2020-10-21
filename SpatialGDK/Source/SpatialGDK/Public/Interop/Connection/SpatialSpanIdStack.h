@@ -18,8 +18,8 @@ public:
 
 	void AddNewLayer(const Trace_SpanId& SpanId);
 	void AddToLayer(const Trace_SpanId& SpanId);
-	Trace_SpanId PopLayer();
-	Trace_SpanId GetTopLayer() const;
+	TOptional<Trace_SpanId> PopLayer();
+	TOptional<Trace_SpanId> GetTopSpanId() const;
 	bool HasLayer() const;
 
 private:

@@ -35,12 +35,12 @@ void FSpatialSpanIdStack::AddToLayer(const Trace_SpanId& SpanId)
 	Stack[Size - 1] = EventTracer->CreateSpan(MergeCauses, 2).GetValue();
 }
 
-Trace_SpanId FSpatialSpanIdStack::PopLayer()
+TOptional<Trace_SpanId> FSpatialSpanIdStack::PopLayer()
 {
 	return Stack.Pop();
 }
 
-Trace_SpanId FSpatialSpanIdStack::GetTopLayer() const
+TOptional<Trace_SpanId> FSpatialSpanIdStack::GetTopSpanId() const
 {
 	if (!HasLayer())
 	{
