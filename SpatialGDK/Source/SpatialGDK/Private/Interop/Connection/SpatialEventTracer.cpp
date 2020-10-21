@@ -283,7 +283,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::GetSpanId(const EntityComponentId& I
 	const Trace_SpanId* SpanId = EntityComponentSpanIds.Find(Id);
 	check(SpanId != nullptr)
 
-	return *SpanId;
+		return *SpanId;
 }
 
 void SpatialEventTracer::AddLatentPropertyUpdateSpanIds(const EntityComponentId& Id, const Trace_SpanId& SpanId)
