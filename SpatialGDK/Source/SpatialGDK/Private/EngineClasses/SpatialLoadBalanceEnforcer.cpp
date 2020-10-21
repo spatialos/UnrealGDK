@@ -14,6 +14,8 @@
 #include "SpatialView/SubView.h"
 #include "SpatialView/ViewDelta.h"
 
+#include "Containers/UnrealString.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
 namespace SpatialGDK

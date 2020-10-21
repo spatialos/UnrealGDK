@@ -21,7 +21,9 @@ struct NetOwningClientWorker : Component
 
 	NetOwningClientWorker(const TSchemaOption<PhysicalWorkerName>& InWorkerId, const TSchemaOption<Worker_PartitionId>& InPartitionId)
 		: WorkerId(InWorkerId)
-		, ClientPartitionId(InPartitionId) {}
+		, ClientPartitionId(InPartitionId)
+	{
+	}
 
 	NetOwningClientWorker(const Worker_ComponentData& Data)
 		: NetOwningClientWorker(Data.schema_type)
@@ -45,12 +47,10 @@ struct NetOwningClientWorker : Component
 		}
 	}
 
-	Worker_ComponentData CreateNetOwningClientWorkerData()
-	{
-		return CreateNetOwningClientWorkerData(WorkerId, ClientPartitionId);
-	}
+	Worker_ComponentData CreateNetOwningClientWorkerData() { return CreateNetOwningClientWorkerData(WorkerId, ClientPartitionId); }
 
-	static Worker_ComponentData CreateNetOwningClientWorkerData(const TSchemaOption<PhysicalWorkerName>& WorkerId, const TSchemaOption<Worker_PartitionId>& PartitionId)
+	static Worker_ComponentData CreateNetOwningClientWorkerData(const TSchemaOption<PhysicalWorkerName>& WorkerId,
+																const TSchemaOption<Worker_PartitionId>& PartitionId)
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -75,7 +75,8 @@ struct NetOwningClientWorker : Component
 		return CreateNetOwningClientWorkerUpdate(WorkerId, ClientPartitionId);
 	}
 
-	static Worker_ComponentUpdate CreateNetOwningClientWorkerUpdate(const TSchemaOption<PhysicalWorkerName>& WorkerId, const TSchemaOption<Worker_PartitionId>& PartitionId)
+	static Worker_ComponentUpdate CreateNetOwningClientWorkerUpdate(const TSchemaOption<PhysicalWorkerName>& WorkerId,
+																	const TSchemaOption<Worker_PartitionId>& PartitionId)
 	{
 		Worker_ComponentUpdate Update = {};
 		Update.component_id = ComponentId;
@@ -103,10 +104,7 @@ struct NetOwningClientWorker : Component
 		return Update;
 	}
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
-	{
-		ApplyComponentUpdate(Update.schema_type);
-	}
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) { ApplyComponentUpdate(Update.schema_type); }
 
 	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
 	{
@@ -116,7 +114,7 @@ struct NetOwningClientWorker : Component
 		{
 			WorkerId = GetStringFromSchema(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID);
 		}
-		else if (Schema_IsComponentUpdateFieldCleared(Update.schema_type, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID))
+		else if (Schema_IsComponentUpdateFieldCleared(Update, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID))
 		{
 			WorkerId = TSchemaOption<PhysicalWorkerName>();
 		}
@@ -125,7 +123,7 @@ struct NetOwningClientWorker : Component
 		{
 			ClientPartitionId = Schema_GetEntityId(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID);
 		}
-		else if (Schema_IsComponentUpdateFieldCleared(Update.schema_type, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID))
+		else if (Schema_IsComponentUpdateFieldCleared(Update, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID))
 		{
 			ClientPartitionId = TSchemaOption<Worker_PartitionId>();
 		}

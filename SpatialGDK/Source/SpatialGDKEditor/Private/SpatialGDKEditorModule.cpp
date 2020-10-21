@@ -89,7 +89,7 @@ void FSpatialGDKEditorModule::TakeSnapshot(UWorld* World, FSpatialSnapshotTakenF
 
 bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
 {
-	return GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking()
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
 		   && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment;
 }
 
@@ -105,7 +105,7 @@ bool FSpatialGDKEditorModule::ShouldStartPIEClientsWithLocalLaunchOnDevice() con
 
 bool FSpatialGDKEditorModule::ShouldConnectToCloudDeployment() const
 {
-	return GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking()
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
 		   && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment;
 }
 
@@ -189,7 +189,7 @@ bool FSpatialGDKEditorModule::CanStartSession(FText& OutErrorMessage) const
 
 bool FSpatialGDKEditorModule::CanStartPlaySession(FText& OutErrorMessage) const
 {
-	if (!GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking())
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
 		return true;
 	}
@@ -199,7 +199,7 @@ bool FSpatialGDKEditorModule::CanStartPlaySession(FText& OutErrorMessage) const
 
 bool FSpatialGDKEditorModule::CanStartLaunchSession(FText& OutErrorMessage) const
 {
-	if (!GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking())
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
 		return true;
 	}
@@ -356,7 +356,7 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 
 bool FSpatialGDKEditorModule::ShouldStartLocalServer() const
 {
-	if (!GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking())
+	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
 		// Always start the PIE server(s) if Spatial networking is disabled.
 		return true;

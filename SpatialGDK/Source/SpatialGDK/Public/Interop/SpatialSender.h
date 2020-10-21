@@ -8,7 +8,6 @@
 #include "Interop/SpatialRPCService.h"
 #include "Schema/RPCPayload.h"
 #include "TimerManager.h"
-#include "Utils/RepDataUtils.h"
 #include "Utils/RPCContainer.h"
 #include "Utils/RepDataUtils.h"
 
@@ -107,9 +106,6 @@ public:
 	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const;
-	void EnforceAuthority(const SpatialLoadBalanceEnforcer::AuthorityStateChange& Request) const;
-	void SendAuthorityDelegationUpdate(const SpatialLoadBalanceEnforcer::AuthorityStateChange& Request) const;
-	void SendEntityACLUpdate(const SpatialLoadBalanceEnforcer::AuthorityStateChange& Request) const;
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	void RetireEntity(const Worker_EntityId EntityId, bool bIsNetStartupActor);

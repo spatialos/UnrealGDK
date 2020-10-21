@@ -752,7 +752,7 @@ void ASpatialDebugger::EditorRefreshWorkerRegions()
 bool ASpatialDebugger::EditorAllowWorkerBoundaries() const
 {
 	// Check if spatial networking is enabled.
-	return GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking();
+	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 }
 
 void ASpatialDebugger::EditorInitialiseWorkerRegions()

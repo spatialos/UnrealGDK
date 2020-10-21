@@ -39,7 +39,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 {
 	bool bHasSpatialNetDriver = false;
 
-	const bool bUseSpatial = GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking();
+	const bool bUseSpatial = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 
 	if (WorldContext != nullptr)
 	{
