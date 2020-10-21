@@ -60,30 +60,14 @@ public:
 	void Advance();
 	void ShortCircuitMaybeRefreshAcl(const Worker_EntityId EntityId);
 
-	static bool HandlesComponent(Worker_ComponentId ComponentId);
-
-	void OnLoadBalancingComponentAdded(const Worker_AddComponentOp& Op);
-	void OnLoadBalancingComponentUpdated(const Worker_ComponentUpdateOp& Op);
-	void OnLoadBalancingComponentRemoved(const Worker_RemoveComponentOp& Op);
-	void OnEntityRemoved(const Worker_RemoveEntityOp& Op);
-	void OnAclAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
-
-	void MaybeQueueAuthorityChange(const Worker_EntityId EntityId);
-	bool EntityNeedsToBeEnforced(const Worker_EntityId EntityId) const;
-
-	// Visible for testing
-	bool AuthorityChangeRequestIsQueued(const Worker_EntityId EntityId) const;
-	bool GetAuthorityChangeState(Worker_EntityId EntityId, AuthorityStateChange& OutAuthorityChange) const;
-
-	TArray<AuthorityStateChange> ProcessAuthorityChangeRequests();
-
 private:
-	bool CanEnforce(Worker_EntityId EntityId) const;
 	void PopulateDataStore(const Worker_EntityId EntityId);
 	bool ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 	bool ApplyComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 
 	void RefreshAuthority(const Worker_EntityId EntityId);
+	Worker_ComponentUpdate CreateAuthorityDelegationUpdate(const Worker_EntityId EntityId);
+	Worker_ComponentUpdate CreateEntityAcLUpdate(const Worker_EntityId EntityId);
 
 	const PhysicalWorkerName WorkerId;
 	const FSubView* SubView;

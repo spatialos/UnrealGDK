@@ -1193,9 +1193,8 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		break;
 	}
 
-	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS &&
-		GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing &&
-		Actor->IsA<APlayerController>())
+	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS
+		&& GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing && Actor->IsA<APlayerController>())
 	{
 		// With USLB, we want the client worker that results in the spawning of a PlayerController to claim the
 		// PlayerController entity as a partition entity so the client can become authoritative over necessary
@@ -1315,13 +1314,17 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
 	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID));
-	SpatialGDK::NetOwningClientWorker* CurrentNetOwningClientData = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
-	const FString CurrentClientWorkerId = CurrentNetOwningClientData->WorkerId.IsSet() ? CurrentNetOwningClientData->WorkerId.GetValue() : FString();
+	SpatialGDK::NetOwningClientWorker* CurrentNetOwningClientData =
+		NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
+	const FString CurrentClientWorkerId =
+		CurrentNetOwningClientData->WorkerId.IsSet() ? CurrentNetOwningClientData->WorkerId.GetValue() : FString();
 	const FString NewClientConnectionWorkerId = SpatialGDK::GetConnectionOwningWorkerId(Actor);
 	if (CurrentClientWorkerId != NewClientConnectionWorkerId)
 	{
 		// Update the NetOwningClientWorker component.
 		CurrentNetOwningClientData->SetWorkerId(NewClientConnectionWorkerId);
+		// Owning client worker ID and the relative client partition are a bijection so we only check the worker ID
+		// as the entry point to this conditional.
 		CurrentNetOwningClientData->SetPartitionId(SpatialGDK::GetConnectionOwningPartitionId(Actor));
 		FWorkerComponentUpdate Update = CurrentNetOwningClientData->CreateNetOwningClientWorkerUpdate();
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);

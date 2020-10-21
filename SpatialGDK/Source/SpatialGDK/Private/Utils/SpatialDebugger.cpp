@@ -417,7 +417,8 @@ void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& Aut
 	}
 
 	const VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
-	const FColor LocalVirtualWorkerColor = SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
+	const FColor LocalVirtualWorkerColor =
+		SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
 
 	SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(AuthOp.entity_id);
 	if (DebuggingInfo == nullptr)
@@ -751,7 +752,7 @@ void ASpatialDebugger::EditorRefreshWorkerRegions()
 bool ASpatialDebugger::EditorAllowWorkerBoundaries() const
 {
 	// Check if spatial networking is enabled.
-	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+	return GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking();
 }
 
 void ASpatialDebugger::EditorInitialiseWorkerRegions()

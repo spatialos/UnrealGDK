@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "CoreMinimal.h"
+#include "SpatialProjectSettings.h"
 
 #include "Runtime/EngineSettings/Classes/GeneralProjectSettings.h"
 #include "Tests/AutomationCommon.h"
@@ -18,12 +19,12 @@ const FString CurrentFlagReport = TEXT("Spatial activation Flag [Current]:");
 
 void InitializeSpatialFlagEarlyValues()
 {
-	bEarliestFlag = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+	bEarliestFlag = GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking();
 }
 
 GDK_SLOW_TEST(Core, UGeneralProjectSettings, SpatialActivationReport)
 {
-	const UGeneralProjectSettings* ProjectSettings = GetDefault<UGeneralProjectSettings>();
+	const USpatialProjectSettings* ProjectSettings = GetDefault<USpatialProjectSettings>();
 
 	UE_LOG(LogTemp, Display, TEXT("%s %i"), *EarliestFlagReport, bEarliestFlag);
 	UE_LOG(LogTemp, Display, TEXT("%s %i"), *CurrentFlagReport, ProjectSettings->UsesSpatialNetworking());

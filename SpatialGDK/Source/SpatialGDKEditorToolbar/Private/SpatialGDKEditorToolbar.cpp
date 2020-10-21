@@ -108,7 +108,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	// However, it is no longer required in 4.25 and beyond, due to the editor flow refactors.
 #if ENGINE_MINOR_VERSION < 25
 	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor) {
-		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		if (GIsAutomationTesting && GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking())
 		{
 			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
 			LocalDeploymentManager->GetLocalDeploymentStatus();
@@ -761,7 +761,7 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 	if (MapChangeType == EMapChangeType::LoadMap || MapChangeType == EMapChangeType::NewMap)
 	{
 		// If Spatial networking is enabled then initialize the editor debugging facilities.
-		if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		if (GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking())
 		{
 			InitialiseSpatialDebuggerEditor(World);
 		}
@@ -776,7 +776,7 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnapshot /* = ""*/)
 {
 	// Don't try and start a local deployment if spatial networking is disabled.
-	if (!GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+	if (!GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking())
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but spatial networking is disabled."));
 		return;
@@ -937,7 +937,7 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 
 bool FSpatialGDKEditorToolbarModule::StartNativeIsVisible() const
 {
-	return !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+	return !GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking();
 }
 
 bool FSpatialGDKEditorToolbarModule::StartNativeCanExecute() const
@@ -947,7 +947,7 @@ bool FSpatialGDKEditorToolbarModule::StartNativeCanExecute() const
 
 bool FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentIsVisible() const
 {
-	return !LocalDeploymentManager->IsLocalDeploymentRunning() && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
+	return !LocalDeploymentManager->IsLocalDeploymentRunning() && GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking()
 		   && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment;
 }
 
@@ -958,7 +958,7 @@ bool FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentCanExecute() con
 
 bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentIsVisible() const
 {
-	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
+	return GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking()
 		   && GetDefault<USpatialGDKEditorSettings>()->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment;
 }
 
@@ -1026,7 +1026,7 @@ void FSpatialGDKEditorToolbarModule::OnToggleSpatialNetworking()
 
 bool FSpatialGDKEditorToolbarModule::OnIsSpatialNetworkingEnabled() const
 {
-	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+	return GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking();
 }
 
 void FSpatialGDKEditorToolbarModule::GDKEditorSettingsClicked() const
@@ -1080,14 +1080,14 @@ void FSpatialGDKEditorToolbarModule::CloudDeploymentClicked()
 bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentIPEditable()
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
+	return GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking()
 		   && (SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::LocalDeployment);
 }
 
 bool FSpatialGDKEditorToolbarModule::AreCloudDeploymentPropertiesEditable()
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
+	return GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking()
 		   && (SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment);
 }
 
@@ -1273,7 +1273,7 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 		{
 			// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
 			UEditorEngine::TryStartSpatialDeployment.BindLambda([this](FString ForceSnapshot) {
-				if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+				if (GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking())
 				{
 					VerifyAndStartDeployment(ForceSnapshot);
 				}

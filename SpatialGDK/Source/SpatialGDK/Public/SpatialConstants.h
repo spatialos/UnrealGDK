@@ -75,6 +75,8 @@ enum EntityIds
 	FIRST_AVAILABLE_ENTITY_ID = 5,
 };
 
+const Worker_PartitionId INVALID_PARTITION_ID = INVALID_ENTITY_ID;
+
 const Worker_ComponentId INVALID_COMPONENT_ID = 0;
 
 const Worker_ComponentId ENTITY_ACL_COMPONENT_ID = 50;

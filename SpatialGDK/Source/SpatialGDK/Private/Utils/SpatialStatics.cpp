@@ -47,7 +47,7 @@ bool CanProcessActor(const AActor* Actor)
 
 bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
-	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+	return GetDefault<USpatialProjectSettings>()->UsesSpatialNetworking();
 }
 
 bool USpatialStatics::IsHandoverEnabled(const UObject* WorldContextObject)
