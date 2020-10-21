@@ -338,8 +338,6 @@ void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, Spa
 			break;
 		case WORKER_OP_TYPE_FLAG_UPDATE:
 			break;
-		case WORKER_OP_TYPE_LOG_MESSAGE:
-			break;
 		case WORKER_OP_TYPE_METRICS:
 			break;
 		case WORKER_OP_TYPE_CRITICAL_SECTION:

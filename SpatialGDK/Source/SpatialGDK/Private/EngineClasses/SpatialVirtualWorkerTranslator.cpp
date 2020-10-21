@@ -121,7 +121,7 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 		const Worker_PartitionId PartitionEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_PARTITION_ID);
 
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log,
-			   TEXT("Translator assignment: Virtual Worker %d to %s with server worker entity: %lld"), VirtualWorkerId, *PhysicalWorkerName,
+			   TEXT("Translator assignment: Virtual Worker %d to %s with server worker entity: %lld"), VirtualWorkerId, *WorkerName,
 			   ServerWorkerEntityId);
 
 		// Insert each into the provided map.

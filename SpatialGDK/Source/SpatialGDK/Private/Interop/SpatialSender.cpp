@@ -171,7 +171,7 @@ void USpatialSender::SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerC
 	Connection->SendComponentUpdate(EntityId, &Update);
 
 	// Short circuit an enforcer update if possible.
-	NetDriver->LoadBalanceEnforcer->MaybeQueueAuthorityChange(EntityId);
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
 
 	for (FWorkerComponentData& ComponentData : ComponentDatas)
 	{
@@ -259,10 +259,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
-	Components.Add(ServerWorker(Connection->GetWorkerId(), false, Connection->GetWorkerEntityId()).CreateServerWorkerData());
-	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in order
-	// to set the interest of the server worker according to the strategy.
-	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
+	Components.Add(ServerWorker(Connection->GetWorkerId(), false, Connection->GetWorkerSystemEntityId()).CreateServerWorkerData());
 
 	WriteAclMap ComponentWriteAcl{};
 
@@ -290,14 +287,12 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	}
 
 	Components.Add(EntityAcl(SpatialConstants::UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(ServerWorker(Connection->GetWorkerId(), false).CreateServerWorkerData());
 
 	check(NetDriver != nullptr);
 
 	// The load balance strategy won't be set up at this point, but we call this function again later when it is ready in
 	// order to set the interest of the server worker according to the strategy.
-	Components.Add(NetDriver->InterestFactory
-					   ->CreateServerWorkerInterest(EntityId, NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
+	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(EntityId, NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
 					   .CreateInterestData());
 
 	// GDK known entities completeness tags
@@ -333,13 +328,13 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 				// to meet this conditional and claim the snapshot partition entity.
 				if (Op.entity_id == SpatialConstants::FIRST_AVAILABLE_ENTITY_ID)
 				{
-					Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerEntityId(),
+					Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerSystemEntityId(),
 						SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 				}
 
 				// We claim each server worker entity as a partition so server worker interest which is necessary for getting
 				// interest in the VirtualWorkerTranslator component.
-				Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerEntityId(), Op.entity_id);
+				Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerSystemEntityId(), Op.entity_id);
 			}
 
 			return;

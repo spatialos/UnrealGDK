@@ -24,6 +24,7 @@ public:
 	virtual void SendMessages(TUniquePtr<MessagesToSend> Messages) override;
 	virtual const FString& GetWorkerId() const override;
 	virtual const TArray<FString>& GetWorkerAttributes() const override;
+	virtual Worker_EntityId GetWorkerSystemEntityId() const override;
 
 private:
 	enum

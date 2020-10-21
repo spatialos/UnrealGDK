@@ -503,6 +503,7 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(cons
 	DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, EntityId);
 	DelegationMap.Add(SpatialConstants::METADATA_COMPONENT_ID, EntityId);
 	DelegationMap.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, EntityId);
+	DelegationMap.Add(SpatialConstants::INTEREST_COMPONENT_ID, EntityId);
 	DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, EntityId);
 	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, EntityId);
 

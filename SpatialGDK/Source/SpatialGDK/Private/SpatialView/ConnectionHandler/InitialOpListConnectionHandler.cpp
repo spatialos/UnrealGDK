@@ -72,6 +72,11 @@ const TArray<FString>& InitialOpListConnectionHandler::GetWorkerAttributes() con
 	return InnerHandler->GetWorkerAttributes();
 }
 
+Worker_EntityId InitialOpListConnectionHandler::GetWorkerSystemEntityId() const
+{
+	return InnerHandler->GetWorkerSystemEntityId();
+}
+
 OpList InitialOpListConnectionHandler::QueueAndExtractOps()
 {
 	TUniquePtr<ExtractedOpListData> ExtractedOpList = MakeUnique<ExtractedOpListData>();

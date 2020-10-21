@@ -192,6 +192,7 @@ public:
 	void SetShowWorkerRegions(const bool bNewShow);
 
 	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
+	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
 #if WITH_EDITOR
 	void EditorRefreshWorkerRegions();

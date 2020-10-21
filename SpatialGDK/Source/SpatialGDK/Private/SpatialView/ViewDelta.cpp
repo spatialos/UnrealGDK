@@ -340,9 +340,6 @@ void ViewDelta::ProcessOpList(const OpList& Ops)
 			ConnectionStatusCode = Op.op.disconnect.connection_status_code;
 			ConnectionStatusMessage = Op.op.disconnect.reason;
 			break;
-		case WORKER_OP_TYPE_LOG_MESSAGE:
-			// Log messages deprecated.
-			break;
 		case WORKER_OP_TYPE_CRITICAL_SECTION:
 			// Ignore critical sections.
 			break;
@@ -367,12 +364,6 @@ void ViewDelta::ProcessOpList(const OpList& Ops)
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
 			ComponentChanges.Emplace(Op.op.remove_component);
-			break;
-		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			if (Op.op.authority_change.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
-			{
-				AuthorityChanges.Emplace(Op.op.authority_change);
-			}
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			ComponentChanges.Emplace(Op.op.component_update);

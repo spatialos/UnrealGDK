@@ -101,26 +101,25 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, co
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateServerWorkerInterest(Worker_EntityId EntityId, const UAbstractLBStrategy* LBStrategy, bool bDebug)
+Interest InterestFactory::CreateServerWorkerInterest(Worker_EntityId EntityId, const UAbstractLBStrategy* LBStrategy, bool bDebug) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	// Build the Interest component as we go by updating the component-> query list mappings.
+	Interest ServerInterest;
 
 	// In USLB, we put the load balancing strategy interest query on the partition entity.
 	// Without USLB, we need to put the query on the server worker entity. However, we can
 	// only do this once a worker knows its virtual worker ID, this is true if the load
 	// balancing strategy is ready.
-	if (!SpatialGDKSettings->bEnableUserSpaceLoadBalancing && LBStrategy->IsReady())
+	if (LBStrategy->IsReady() && !SpatialGDKSettings->bEnableUserSpaceLoadBalancing)
 	{
-		return CreatePartitionInterest(LBStrategy, LBStrategy->GetLocalVirtualWorkerId());
+		AddLoadBalancingInterestQuery(LBStrategy, LBStrategy->GetLocalVirtualWorkerId(), ServerInterest);
 	}
 
-	// Build the Interest component as we go by updating the component-> query list mappings.
-	Interest ServerInterest;
-	ComponentInterest ServerComponentInterest;
-	Query ServerQuery;
-	QueryConstraint Constraint;
+	Query ServerQuery{};
 
-	// Ensure server worker receives always relevant entities.
+	// Ensure server worker receives AlwaysRelevant entities.
 	ServerQuery.ResultComponentIds = ServerNonAuthInterestResultType;
 	ServerQuery.Constraint = CreateAlwaysRelevantConstraint();
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
@@ -151,24 +150,19 @@ Interest InterestFactory::CreateServerWorkerInterest(Worker_EntityId EntityId, c
 
 Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker) const
 {
-	Interest PartitionInterest;
+	// Add load balancing query
+	Interest PartitionInterest{};
+	AddLoadBalancingInterestQuery(LBStrategy, VirtualWorker, PartitionInterest);
+	return PartitionInterest;
+}
 
+void InterestFactory::AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, Interest& OutInterest) const
+{
+	// Add load balancing query
 	Query PartitionQuery{};
 	PartitionQuery.ResultComponentIds = InterestFactory::ServerNonAuthInterestResultType;
-
-	QueryConstraint NewConstraint;
-	// Make sure we have the large constraint at the front. This is more likely to be efficient.
-	NewConstraint.OrConstraint.Add(LBStrategy->GetWorkerInterestQueryConstraint(VirtualWorker));
-	NewConstraint.OrConstraint.Add(CreateAlwaysRelevantConstraint());
-	PartitionQuery.Constraint = NewConstraint;
-	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::POSITION_COMPONENT_ID, PartitionQuery);
-
-	Query SystemWorkerEntityQuery;
-	SystemWorkerEntityQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::WORKER_COMPONENT_ID };
-	SystemWorkerEntityQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
-	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::POSITION_COMPONENT_ID, SystemWorkerEntityQuery);
-
-	return PartitionInterest;
+	PartitionQuery.Constraint = LBStrategy->GetWorkerInterestQueryConstraint(VirtualWorker);
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, PartitionQuery);
 }
 
 Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const

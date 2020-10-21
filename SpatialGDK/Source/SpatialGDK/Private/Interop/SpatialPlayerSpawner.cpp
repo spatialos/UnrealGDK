@@ -141,7 +141,7 @@ SpatialGDK::SpawnPlayerRequest USpatialPlayerSpawner::ObtainPlayerParams() const
 
 	const FName OnlinePlatformName = WorldContext->OwningGameInstance->GetOnlinePlatformName();
 
-	const Worker_EntityId ClientSystemEntityId = NetDriver->Connection->GetWorkerEntityId();
+	const Worker_EntityId ClientSystemEntityId = NetDriver->Connection->GetWorkerSystemEntityId();
 
 	return { LoginURL, UniqueId, OnlinePlatformName, bIsSimulatedPlayer, ClientSystemEntityId };
 }

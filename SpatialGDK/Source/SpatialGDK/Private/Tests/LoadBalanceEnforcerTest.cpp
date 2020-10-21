@@ -90,7 +90,8 @@ SpatialGDK::ComponentUpdate MakeComponentUpdateFromUpdate(Worker_ComponentUpdate
 void AddLBEntityToView(
 	SpatialGDK::EntityView& View, const Worker_EntityId EntityId, const WorkerRequirementSet AuthRequirementSet,
 	const VirtualWorkerId IntentWorkerId,
-	const SpatialGDK::TSchemaOption<PhysicalWorkerName> ClientWorkerName = SpatialGDK::TSchemaOption<PhysicalWorkerName>())
+	const SpatialGDK::TSchemaOption<PhysicalWorkerName> ClientWorkerName = SpatialGDK::TSchemaOption<PhysicalWorkerName>(),
+	Worker_PartitionId PartitionId = 1)
 {
 	AddEntityToView(View, EntityId);
 
@@ -114,7 +115,7 @@ void AddLBEntityToView(
 	AddComponentToView(View, EntityId,
 					   MakeComponentDataFromData(SpatialGDK::ComponentPresence::CreateComponentPresenceData(PresentComponents)));
 	AddComponentToView(View, EntityId,
-					   MakeComponentDataFromData(SpatialGDK::NetOwningClientWorker::CreateNetOwningClientWorkerData(ClientWorkerName)));
+					   MakeComponentDataFromData(SpatialGDK::NetOwningClientWorker::CreateNetOwningClientWorkerData(ClientWorkerName, PartitionId)));
 	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID));
 	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::HEARTBEAT_COMPONENT_ID));
 	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
@@ -334,7 +335,7 @@ LOADBALANCEENFORCER_TEST(
 	PopulateViewDeltaWithComponentUpdated(
 		Delta, View, EntityIdOne,
 		MakeComponentUpdateFromUpdate(SpatialGDK::NetOwningClientWorker::CreateNetOwningClientWorkerUpdate(
-			FString::Printf(TEXT("workerId:%s"), *OtherClientWorker))));
+			FString::Printf(TEXT("workerId:%s"), *OtherClientWorker), SpatialConstants::INVALID_PARTITION_ID)));
 	SubView.Advance(Delta);
 	LoadBalanceEnforcer.Advance();
 

@@ -55,11 +55,11 @@ VirtualWorkerId UDebugLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) co
 	return WrappedStrategy->WhoShouldHaveAuthority(Actor);
 }
 
-SpatialGDK::QueryConstraint UDebugLBStrategy::GetWorkerInterestQueryConstraint() const
+SpatialGDK::QueryConstraint UDebugLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
 {
 	check(WrappedStrategy);
 
-	SpatialGDK::QueryConstraint DefaultConstraint = WrappedStrategy->GetWorkerInterestQueryConstraint();
+	SpatialGDK::QueryConstraint DefaultConstraint = WrappedStrategy->GetWorkerInterestQueryConstraint(VirtualWorker);
 	SpatialGDK::QueryConstraint AdditionalConstraint = DebugCtx->ComputeAdditionalEntityQueryConstraint();
 	DebugCtx->ClearNeedEntityInterestUpdate();
 
