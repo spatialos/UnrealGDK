@@ -35,7 +35,7 @@ FUserSpanId USpatialEventTracerUserInterface::CreateSpanIdWithCauses(UObject* Wo
 	{
 		if (!SpanIdCause.IsValid())
 		{
-			continue;;
+			continue;
 		}
 
 		SpanIds.Add(SpatialGDK::SpatialEventTracer::UserSpanIdToSpanId(SpanIdCause));
