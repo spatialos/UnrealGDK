@@ -17,4 +17,6 @@ struct FUserSpanId
 
 	UPROPERTY(BlueprintReadOnly, Category = "UserSpanId")
 	TArray<uint8> Data;
+
+	bool IsValid() const { return Data.Num() == 16; }
 };

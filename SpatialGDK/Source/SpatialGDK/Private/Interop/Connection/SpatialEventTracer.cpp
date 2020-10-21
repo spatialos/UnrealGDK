@@ -104,6 +104,11 @@ FUserSpanId SpatialEventTracer::SpanIdToUserSpanId(const Trace_SpanId& SpanId)
 Trace_SpanId SpatialEventTracer::UserSpanIdToSpanId(const FUserSpanId& UserSpanId)
 {
 	Trace_SpanId SpanId;
+	if (!UserSpanId.IsValid())
+	{
+		return SpanId;
+	}
+
 	for (int i = 0; i < 16; i++)
 	{
 		SpanId.data[i] = static_cast<unsigned char>(UserSpanId.Data[i]);
@@ -263,7 +268,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::GetSpanId(const EntityComponentId& I
 	const Trace_SpanId* SpanId = EntityComponentSpanIds.Find(Id);
 	check(SpanId != nullptr)
 
-	return *SpanId;
+		return *SpanId;
 }
 
 void SpatialEventTracer::AddLatentPropertyUpdateSpanIds(const EntityComponentId& Id, const Trace_SpanId& SpanId)

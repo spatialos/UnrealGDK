@@ -11,7 +11,6 @@ class SpatialEventTracer;
 class FSpatialSpanIdStack
 {
 public:
-
 	FSpatialSpanIdStack() {}
 	explicit FSpatialSpanIdStack(const SpatialEventTracer* InEventTracer);
 
@@ -24,7 +23,6 @@ public:
 	bool HasLayer() const;
 
 private:
-
 	const SpatialEventTracer* EventTracer;
 	TArray<Trace_SpanId> Stack;
 };

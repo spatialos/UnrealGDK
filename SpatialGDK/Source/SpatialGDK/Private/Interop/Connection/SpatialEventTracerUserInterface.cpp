@@ -33,6 +33,11 @@ FUserSpanId USpatialEventTracerUserInterface::CreateSpanIdWithCauses(UObject* Wo
 	TArray<Trace_SpanId> SpanIds;
 	for (const FUserSpanId& SpanIdCause : Causes)
 	{
+		if (!SpanIdCause.IsValid())
+		{
+			continue;;
+		}
+
 		SpanIds.Add(SpatialGDK::SpatialEventTracer::UserSpanIdToSpanId(SpanIdCause));
 	}
 
@@ -48,6 +53,11 @@ void USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, c
 		return;
 	}
 
+	if (!SpanId.IsValid())
+	{
+		return;
+	}
+
 	EventTracer->TraceEvent(SpatialTraceEvent, SpatialGDK::SpatialEventTracer::UserSpanIdToSpanId(SpanId));
 }
 
@@ -56,6 +66,11 @@ void USpatialEventTracerUserInterface::SetActiveSpanId(UObject* WorldContextObje
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
 	if (EventTracer == nullptr || !EventTracer->IsEnabled())
+	{
+		return;
+	}
+
+	if (!SpanId.IsValid())
 	{
 		return;
 	}

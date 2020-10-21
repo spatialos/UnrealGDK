@@ -6,7 +6,6 @@
 
 namespace SpatialGDK
 {
-
 FSpatialSpanIdStack::FSpatialSpanIdStack(const SpatialEventTracer* InEventTracer)
 	: EventTracer(InEventTracer)
 {
