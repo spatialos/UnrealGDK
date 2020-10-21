@@ -1846,7 +1846,7 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 		if (!ActorReceivingRPC.IsValid())
 		{
 			UE_LOG(LogSpatialReceiver, Log,
-				   TEXT("Entity receiving ring buffer RPC does not exist in PackageMap! Entity: %lld, Component: %d"), Op.entity_id,
+				   TEXT("Entity receiving ring buffer RPC does not exist in PackageMap, possibly due to corresponding actor being destroyed. Entity: %lld, Component: %d"), Op.entity_id,
 				   Op.update.component_id);
 			return;
 		}
