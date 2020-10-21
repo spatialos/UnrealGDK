@@ -43,7 +43,6 @@ void ASpatialTestCharacterMigration::OnOverlapBeginOrigin(AActor* OverlappedActo
 	{
 		bCharacterReachedOrigin = true;
 	}
-
 }
 
 void ASpatialTestCharacterMigration::PrepareTest()
@@ -66,14 +65,15 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	AddActorStepDefinition.TimeLimit = 0.0f;
 	AddActorStepDefinition.NativeStartEvent.BindLambda([this]() {
 		AController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
-		
+
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = PlayerController;
 		AActor* TestActor = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FTransform(), SpawnParams);
-		//ATestMigrationActor* TestMigrationActor =
+		// ATestMigrationActor* TestMigrationActor =
 		//	GetWorld()->SpawnActor<ATestMigrationActor>(ATestMigrationActor::StaticClass(), FTransform(), SpawnParams);
 
-		//TestActor->SetReplicates(true); <- this causes parent not to migrate, created dummy actor class that replicates but has the same issue
+		// TestActor->SetReplicates(true); <- this causes parent not to migrate, created dummy actor class that replicates but has the same
+		// issue
 		RegisterAutoDestroyActor(TestActor);
 		FinishStep();
 	});
@@ -87,7 +87,6 @@ void ASpatialTestCharacterMigration::PrepareTest()
 		FinishStep();
 	});*/
 	MoveForwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
-		
 		AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 		ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
@@ -98,9 +97,8 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the autonomous proxy."));
 			FinishStep();
 		}
-
 	});
-	
+
 	// Move character backward
 	FSpatialFunctionalTestStepDefinition MoveBackwardStepDefinition(/*bIsNativeDefinition*/ true);
 	MoveBackwardStepDefinition.StepName = TEXT("Client1MoveBackward");
@@ -121,7 +119,6 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			FinishStep();
 		}
 	});
-
 
 	// Universal setup step to create the TriggerBox and to set the helper variable
 	AddStep(TEXT("UniversalSetupStep"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
@@ -192,9 +189,9 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	for (int i = 0; i < 5; i++)
 	{
 		AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
-		
+
 		AddStepFromDefinition(MoveForwardStepDefinition, FWorkerDefinition::Client(1));
-	
+
 		AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
 
 		AddStepFromDefinition(MoveBackwardStepDefinition, FWorkerDefinition::Client(1));
