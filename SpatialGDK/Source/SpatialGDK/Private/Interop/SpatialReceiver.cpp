@@ -1845,7 +1845,7 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 		const TWeakObjectPtr<UObject> ActorReceivingRPC = PackageMap->GetObjectFromEntityId(Op.entity_id);
 		if (!ActorReceivingRPC.IsValid())
 		{
-			UE_LOG(LogSpatialReceiver, Error,
+			UE_LOG(LogSpatialReceiver, Log,
 				   TEXT("Entity receiving ring buffer RPC does not exist in PackageMap! Entity: %lld, Component: %d"), Op.entity_id,
 				   Op.update.component_id);
 			return;
