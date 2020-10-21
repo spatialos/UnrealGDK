@@ -16,28 +16,28 @@ void FSpatialSpanIdStack::SetEventTracer(const SpatialEventTracer* InEventTracer
 	EventTracer = InEventTracer;
 }
 
-void FSpatialSpanIdStack::AddNewLayer(const Trace_SpanId& SpanId)
+void FSpatialSpanIdStack::Stack(const Trace_SpanId& SpanId)
 {
-	Stack.Add(SpanId);
+	SpanIdStack.Add(SpanId);
 }
 
-void FSpatialSpanIdStack::AddToLayer(const Trace_SpanId& SpanId)
+void FSpatialSpanIdStack::Add(const Trace_SpanId& SpanId)
 {
-	const int32 Size = Stack.Num();
+	const int32 Size = SpanIdStack.Num();
 	if (Size == 0)
 	{
-		AddNewLayer(SpanId);
+		Stack(SpanId);
 		return;
 	}
 
-	Trace_SpanId TopSpanId = Stack[Size - 1];
+	Trace_SpanId TopSpanId = SpanIdStack[Size - 1];
 	Trace_SpanId MergeCauses[2] = { SpanId, TopSpanId };
-	Stack[Size - 1] = EventTracer->CreateSpan(MergeCauses, 2).GetValue();
+	SpanIdStack[Size - 1] = EventTracer->CreateSpan(MergeCauses, 2).GetValue();
 }
 
 TOptional<Trace_SpanId> FSpatialSpanIdStack::PopLayer()
 {
-	return Stack.Pop();
+	return SpanIdStack.Pop();
 }
 
 TOptional<Trace_SpanId> FSpatialSpanIdStack::GetTopSpanId() const
@@ -47,11 +47,11 @@ TOptional<Trace_SpanId> FSpatialSpanIdStack::GetTopSpanId() const
 		return {};
 	}
 
-	return Stack[Stack.Num() - 1];
+	return SpanIdStack[SpanIdStack.Num() - 1];
 }
 
 bool FSpatialSpanIdStack::HasLayer() const
 {
-	return Stack.Num() > 0;
+	return SpanIdStack.Num() > 0;
 }
 } // namespace SpatialGDK

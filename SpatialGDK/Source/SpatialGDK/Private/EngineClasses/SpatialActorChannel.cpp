@@ -1133,7 +1133,7 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 		const Trace_SpanId* SpanId = PropertySpanIds.Find(Property);
 		if (SpanId != nullptr)
 		{
-			EventTracer->SpanIdStack.AddNewLayer(*SpanId);
+			EventTracer->SpanIdStack.Stack(*SpanId);
 		}
 	};
 

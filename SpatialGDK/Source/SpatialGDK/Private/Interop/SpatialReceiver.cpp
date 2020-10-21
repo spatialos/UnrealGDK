@@ -2185,7 +2185,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 				{
 					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
 					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function), SpanId);
-					EventTracer->SpanIdStack.AddToLayer(SpanId.GetValue());
+					EventTracer->SpanIdStack.Add(SpanId.GetValue());
 				}
 			}
 

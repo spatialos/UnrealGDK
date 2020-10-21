@@ -16,14 +16,14 @@ public:
 
 	void SetEventTracer(const SpatialEventTracer* InEventTracer);
 
-	void AddNewLayer(const Trace_SpanId& SpanId);
-	void AddToLayer(const Trace_SpanId& SpanId);
+	void Stack(const Trace_SpanId& SpanId);
+	void Add(const Trace_SpanId& SpanId);
 	TOptional<Trace_SpanId> PopLayer();
 	TOptional<Trace_SpanId> GetTopSpanId() const;
 	bool HasLayer() const;
 
 private:
 	const SpatialEventTracer* EventTracer;
-	TArray<Trace_SpanId> Stack;
+	TArray<Trace_SpanId> SpanIdStack;
 };
 } // namespace SpatialGDK

@@ -37,7 +37,7 @@ public:
 	static FUserSpanId CreateSpanIdWithCauses(UObject* WorldContextObject, const TArray<FUserSpanId>& Causes);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static void TraceEvent(UObject* WorldContextObject, const FUserSpanId& SpanId, FSpatialTraceEvent SpatialTraceEvent);
+	static void TraceEvent(UObject* WorldContextObject, const FUserSpanId& UserSpanId, FSpatialTraceEvent SpatialTraceEvent);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
 	static void SetActiveSpanId(UObject* WorldContextObject, FEventTracerDynamicDelegate Delegate, const FUserSpanId& SpanId);
@@ -46,11 +46,11 @@ public:
 	static bool GetActiveSpanId(UObject* WorldContextObject, FUserSpanId& OutUserSpanId);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static void AddLatentSpanId(UObject* WorldContextObject, UObject* Object, const FUserSpanId& SpanId);
+	static void AddLatentSpanId(UObject* WorldContextObject, UObject* Object, const FUserSpanId& UserSpanId);
 
 private:
-	static void AddLatentActorSpanId(UObject* WorldContextObject, const AActor& Actor, const FUserSpanId& SpanId);
-	static void AddLatentComponentSpanId(UObject* WorldContextObject, const UActorComponent& Component, const FUserSpanId& SpanId);
+	static void AddLatentActorSpanId(UObject* WorldContextObject, const AActor& Actor, const FUserSpanId& UserSpanId);
+	static void AddLatentComponentSpanId(UObject* WorldContextObject, const UActorComponent& Component, const FUserSpanId& UserSpanId);
 
 	static SpatialGDK::SpatialEventTracer* GetEventTracer(UObject* WorldContextObject);
 	static USpatialNetDriver* GetSpatialNetDriver(UObject* WorldContextObject);

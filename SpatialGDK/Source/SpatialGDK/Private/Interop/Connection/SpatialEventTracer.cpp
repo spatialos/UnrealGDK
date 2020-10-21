@@ -103,14 +103,14 @@ FUserSpanId SpatialEventTracer::SpanIdToUserSpanId(const Trace_SpanId& SpanId)
 	return UserSpanId;
 }
 
-Trace_SpanId SpatialEventTracer::UserSpanIdToSpanId(const FUserSpanId& UserSpanId)
+TOptional<Trace_SpanId> SpatialEventTracer::UserSpanIdToSpanId(const FUserSpanId& UserSpanId)
 {
-	Trace_SpanId SpanId = {};
 	if (!UserSpanId.IsValid())
 	{
-		return SpanId;
+		return {};
 	}
 
+	Trace_SpanId SpanId;
 	for (int i = 0; i < 16; i++)
 	{
 		SpanId.data[i] = static_cast<unsigned char>(UserSpanId.Data[i]);
@@ -250,12 +250,11 @@ void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_Compon
 		return;
 	}
 
-	const EntityComponentId Id = { EntityId, ComponentId };
-	Trace_SpanId& StoredSpanId = EntityComponentSpanIds.FindChecked(Id);
+	Trace_SpanId& StoredSpanId = EntityComponentSpanIds.FindChecked({ EntityId, ComponentId });
 
 	Trace_SpanId MergeCauses[2] = { SpanId, StoredSpanId };
 	TOptional<Trace_SpanId> NewSpanId = CreateSpan(MergeCauses, 2);
-	TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(Id.EntityId, Id.ComponentId), NewSpanId);
+	TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(EntityId, ComponentId), NewSpanId);
 
 	StoredSpanId = NewSpanId.GetValue();
 }
@@ -287,7 +286,7 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanIds(const EntityComponentId&
 		Stack->SetEventTracer(this);
 	}
 
-	Stack->AddToLayer(SpanId);
+	Stack->Add(SpanId);
 }
 
 TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanIds(const EntityComponentId& Id)
@@ -304,11 +303,6 @@ TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanIds(const
 	}
 
 	TOptional<Trace_SpanId> SpanId = Stack->PopLayer();
-	if (!SpanId.IsSet())
-	{
-		return {};
-	}
-
 	if (!Stack->HasLayer())
 	{
 		EntityComponentSpanIdStacks.Remove(Id);
