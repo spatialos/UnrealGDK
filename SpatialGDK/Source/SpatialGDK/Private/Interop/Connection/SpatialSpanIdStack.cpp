@@ -2,11 +2,24 @@
 
 #include "Interop/Connection/SpatialSpanIdStack.h"
 
+#include "Interop/Connection/SpatialEventTracer.h"
+
 namespace SpatialGDK
 {
+
+FSpatialSpanIdStack::FSpatialSpanIdStack(const SpatialEventTracer* InEventTracer)
+	: EventTracer(InEventTracer)
+{
+}
+
+void FSpatialSpanIdStack::SetEventTracer(const SpatialEventTracer* InEventTracer)
+{
+	EventTracer = InEventTracer;
+}
+
 void FSpatialSpanIdStack::AddNewLayer(const Trace_SpanId& SpanId)
 {
-	Stack.Add({ SpanId });
+	Stack.Add(SpanId);
 }
 
 void FSpatialSpanIdStack::AddToLayer(const Trace_SpanId& SpanId)
@@ -18,15 +31,17 @@ void FSpatialSpanIdStack::AddToLayer(const Trace_SpanId& SpanId)
 		return;
 	}
 
-	Stack[Size - 1].Add(SpanId);
+	Trace_SpanId TopSpanId = Stack[Size - 1];
+	Trace_SpanId MergeCauses[2] = { SpanId, TopSpanId };
+	Stack[Size - 1] = EventTracer->CreateSpan(MergeCauses, 2).GetValue();
 }
 
-TArray<Trace_SpanId> FSpatialSpanIdStack::PopLayer()
+Trace_SpanId FSpatialSpanIdStack::PopLayer()
 {
 	return Stack.Pop();
 }
 
-TArray<Trace_SpanId> FSpatialSpanIdStack::GetTopLayer() const
+Trace_SpanId FSpatialSpanIdStack::GetTopLayer() const
 {
 	if (!HasLayer())
 	{

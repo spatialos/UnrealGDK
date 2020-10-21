@@ -43,10 +43,10 @@ public:
 	static void SetActiveSpanId(UObject* WorldContextObject, FEventTracerDynamicDelegate Delegate, const FUserSpanId& SpanId);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static void AddLatentSpanId(UObject* WorldContextObject, UObject* Object, const FUserSpanId& SpanId);
+	static bool GetActiveSpanId(UObject* WorldContextObject, FUserSpanId& OutUserSpanId);
 
-	static void AddSpanIdToStack(UObject* WorldContextObject, const FUserSpanId& SpanId);
-	static void PopSpanIdFromStack(UObject* WorldContextObject);
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
+	static void AddLatentSpanId(UObject* WorldContextObject, UObject* Object, const FUserSpanId& SpanId);
 
 private:
 	static void AddLatentActorSpanId(UObject* WorldContextObject, const AActor& Actor, const FUserSpanId& SpanId);

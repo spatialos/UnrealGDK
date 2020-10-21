@@ -26,8 +26,8 @@ public:
 	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
 	Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
-	TOptional<Trace_SpanId> CreateSpan();
-	TOptional<Trace_SpanId> CreateSpan(const Trace_SpanId* Causes, int32 NumCauses);
+	TOptional<Trace_SpanId> CreateSpan() const;
+	TOptional<Trace_SpanId> CreateSpan(const Trace_SpanId* Causes, int32 NumCauses) const;
 	void TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const TOptional<Trace_SpanId>& OptionalSpanId);
 
 	bool IsEnabled() const;
@@ -46,7 +46,7 @@ public:
 	const FString& GetFolderPath() const { return FolderPath; }
 
 	void AddLatentPropertyUpdateSpanIds(const EntityComponentId& Id, const Trace_SpanId& SpanId);
-	TArray<Trace_SpanId> PopLatentPropertyUpdateSpanIds(const EntityComponentId& Id);
+	TOptional<Trace_SpanId> PopLatentPropertyUpdateSpanIds(const EntityComponentId& Id);
 
 	FSpatialSpanIdStack SpanIdStack;
 
