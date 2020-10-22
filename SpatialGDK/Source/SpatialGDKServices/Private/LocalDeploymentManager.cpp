@@ -56,12 +56,9 @@ void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
 
 void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 {
-	// Check if a runtime process is already running. This can either be an old editor started runtime or a runtime started outside the
-	// editor.
-	if (FPlatformProcess::IsApplicationRunning(TEXT("runtime.exe")))
-	{
-		bExistingRuntimeStarted = true;
-	}
+	// Kill any existing runtime processes.
+	// We cannot attach to old runtime processes as they may be 'zombie' and not killable. UNR-???? investigate this.
+	KillExistingRuntime();
 }
 
 // TOOD: Do we need this with local standalone or just for the classic platform deployments?
@@ -222,41 +219,6 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 	return bSuccess;
 }
 
-bool FLocalDeploymentManager::UseExistingRuntime()
-{
-	if (bExistingRuntimeStarted)
-	{
-		bExistingRuntimeStarted = false;
-
-		// If an existing runtime still exists, ask if the user wants to restart it or carry on using it.
-		if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillExistingRuntime",
-															 "An existing local deployment runtime is still running."
-															 "Would you like to restart the local deployment?"))
-			== EAppReturnType::Yes)
-		{
-			// If yes kill the old runtime and move forward.
-			KillExistingRuntime();
-		}
-		else
-		{
-			// If no, get a handle for the old runtime and use it for the current local deployment.
-			FPlatformProcess::FProcEnumerator ProcessIt;
-			do
-			{
-				if (ProcessIt.GetCurrent().GetName().Equals(TEXT("runtime.exe")))
-				{
-					RuntimeProcID = ProcessIt.GetCurrent().GetPID();
-					RuntimeProc = FPlatformProcess::OpenProcess(RuntimeProcID);
-				}
-			} while (ProcessIt.MoveNext());
-
-			return true;
-		}
-	}
-
-	return false;
-}
-
 // TODO: Change this to starting the runtime binary
 bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName,
 													FString RuntimeIPToExpose)
@@ -307,7 +269,7 @@ bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FStrin
 
 	if (RuntimeProc.IsValid())
 	{
-		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("RuntimeProc is valid"));
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("RuntimeProc is valid"));
 	}
 	else
 	{
@@ -316,7 +278,7 @@ bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FStrin
 
 	if (FPlatformProcess::IsProcRunning(RuntimeProc))
 	{
-		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("RuntimeProc is running"));
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("RuntimeProc is running"));
 	}
 	else
 	{
@@ -324,7 +286,6 @@ bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FStrin
 	}
 
 	bStartingDeployment = false;
-	bool bSuccess = false;
 	bLocalDeploymentRunning = true;
 
 	AsyncTask(ENamedThreads::GameThread, [this] {
@@ -347,12 +308,6 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		{
 			CallBack(false);
 		}
-		return;
-	}
-
-	if (UseExistingRuntime())
-	{
-		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Using existing runtime that was started before the editor was booted."));
 		return;
 	}
 
@@ -390,18 +345,7 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	FPlatformProcess::ClosePipe(0, ReadPipe);
 	FPlatformProcess::ClosePipe(0, WritePipe);
 
-	FPlatformProcess::TerminateProc(RuntimeProc, true);
-
-	// bool bSuccess = SpatialCommandUtils::TryKillProcessWithPID(FString::Printf(TEXT("%u"), RuntimeProcID));
-
-	if (!FPlatformProcess::IsProcRunning(RuntimeProc))
-	{
-		UE_LOG(LogSpatialDeploymentManager, Warning, TEXT("Stopped local runtime."));
-	}
-	else
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to stop local runtime."));
-	}
+	FPlatformProcess::TerminateProc(RuntimeProc, false);
 
 	FPlatformProcess::CloseProc(RuntimeProc);
 

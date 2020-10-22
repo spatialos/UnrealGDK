@@ -138,8 +138,11 @@ bool FSendReserveEntityIdsRequest::Update()
 {
 	uint32_t NumOfEntities = 1;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendReserveEntityIdsRequest(NumOfEntities);
-	Connection->Flush();
+	if (Connection)
+	{
+		Connection->SendReserveEntityIdsRequest(NumOfEntities);
+		Connection->Flush();
+	}
 
 	return true;
 }
@@ -150,8 +153,11 @@ bool FSendCreateEntityRequest::Update()
 	TArray<FWorkerComponentData> Components;
 	const Worker_EntityId* EntityId = nullptr;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId);
-	Connection->Flush();
+	if (Connection)
+	{
+		Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId);
+		Connection->Flush();
+	}
 
 	return true;
 }
@@ -161,8 +167,11 @@ bool FSendDeleteEntityRequest::Update()
 {
 	const Worker_EntityId EntityId = 0;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendDeleteEntityRequest(EntityId);
-	Connection->Flush();
+	if (Connection)
+	{
+		Connection->SendDeleteEntityRequest(EntityId);
+		Connection->Flush();
+	}
 
 	return true;
 }
@@ -173,13 +182,16 @@ bool FFindWorkerResponseOfType::Update()
 {
 	bool bFoundOpOfExpectedType = false;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->Advance();
-	for (const auto& Op : Connection->GetWorkerMessages())
+	if (Connection)
 	{
-		if (Op.op_type == ExpectedOpType)
+		Connection->Advance();
+		for (const auto& Op : Connection->GetWorkerMessages())
 		{
-			bFoundOpOfExpectedType = true;
-			break;
+			if (Op.op_type == ExpectedOpType)
+			{
+				bFoundOpOfExpectedType = true;
+				break;
+			}
 		}
 	}
 

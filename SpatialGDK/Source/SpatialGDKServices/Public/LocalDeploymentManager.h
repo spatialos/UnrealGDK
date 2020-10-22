@@ -26,7 +26,6 @@ public:
 	bool CheckIfPortIsBound(int32 Port);
 	bool KillProcessBlockingPort(int32 Port);
 	bool LocalDeploymentPreRunChecks();
-	bool UseExistingRuntime();
 
 	using LocalDeploymentCallback = TFunction<void(bool)>;
 
