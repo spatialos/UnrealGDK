@@ -946,7 +946,6 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("INSPECTOR BINARIES DON'T EXIST"));
 	}
-	
 }
 
 bool FSpatialGDKEditorToolbarModule::StartNativeIsVisible() const
