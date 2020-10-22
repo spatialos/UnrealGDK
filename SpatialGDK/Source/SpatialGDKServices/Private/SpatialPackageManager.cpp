@@ -13,10 +13,10 @@ FSpatialPackageManager::FSpatialPackageManager() {}
 
 void FSpatialPackageManager::Init() {}
 
-bool FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
+void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 {
 
-	UE_LOG(LogSpatialPackageManager, Log, TEXT("RUNTIME VERSION %s"), *RuntimeVersion);
+	UE_LOG(LogSpatialPackageManager, Log, TEXT("Trying to fetch runtime version %s"), *RuntimeVersion);
 
 	FString RuntimePath = FString::Printf(TEXT("%s/runtime/version-%s/%s"), *SpatialGDKServicesConstants::GDKProgramPath, *RuntimeVersion,
 										  *SpatialGDKServicesConstants::RuntimeExe);
@@ -24,23 +24,19 @@ bool FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 	// Check if the binary already exists for a given version
 	if (FPaths::FileExists(RuntimePath))
 	{
-		UE_LOG(LogSpatialPackageManager, Log, TEXT("RUNTIME BINARIES ALREADY EXIST"));
+		UE_LOG(LogSpatialPackageManager, Log, TEXT("Runtime Binaries already exist."));
+		return;
 	}
 
 	// If it does not exist then fetch the binary using `spatial worker package retrieve`
 	// Download the zip to // UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\Runtime\*version* and unzip
-	else
-	{
-		FString Params = FString::Printf(TEXT("package retrieve runtime x86_64-win32 %s runtime/version-%s --unzip"), *RuntimeVersion, *RuntimeVersion);
-		FSpatialPackageManager FSpatialPackageManager = {};
-		FSpatialPackageManager.StartProcess(Params, "Runtime Fetching");
-
-	}
-	
-	return true;
+	FString Params =
+		FString::Printf(TEXT("package retrieve runtime x86_64-win32 %s runtime/version-%s --unzip"), *RuntimeVersion, *RuntimeVersion);
+	FSpatialPackageManager FSpatialPackageManager = {};
+	FSpatialPackageManager.StartProcess(Params, "Runtime Fetching");
 }
 
-bool FSpatialPackageManager::TryFetchInspectorBinary(FString InspectorVersion)
+void FSpatialPackageManager::TryFetchInspectorBinary(FString InspectorVersion)
 {
 
 	FString InspectorPath = FString::Printf(TEXT("%s/inspector/version-%s/%s"), *SpatialGDKServicesConstants::GDKProgramPath, *InspectorVersion, *SpatialGDKServicesConstants::InspectorExe);
@@ -48,22 +44,16 @@ bool FSpatialPackageManager::TryFetchInspectorBinary(FString InspectorVersion)
 	// Check if the binary already exists
 	if (FPaths::FileExists(InspectorPath))
 	{
-		UE_LOG(LogSpatialPackageManager, Log, TEXT("INSPECTOR BINARIES ALREADY EXIST"));
+		UE_LOG(LogSpatialPackageManager, Log, TEXT("Inspector binaries already exist."));
+		return;
 	}
 
 	// If it does not exist then fetch the binary using `spatial worker package get`
 	// Download the package to // UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs
-	else
-	{
-
-		FString Params = FString::Printf(TEXT("package get inspector x86_64-win32 %s ./inspector/version-%s/%s"), *InspectorVersion,
-										 *InspectorVersion, *SpatialGDKServicesConstants::InspectorExe);
-		FSpatialPackageManager FSpatialPackageManager = {};
-		FSpatialPackageManager.StartProcess(Params, "Inspector Fetching");
-
-	}
-
-	return true;
+	FString Params = FString::Printf(TEXT("package get inspector x86_64-win32 %s ./inspector/version-%s/%s"), *InspectorVersion,
+									 *InspectorVersion, *SpatialGDKServicesConstants::InspectorExe);
+	FSpatialPackageManager FSpatialPackageManager = {};
+	FSpatialPackageManager.StartProcess(Params, "Inspector Fetching");
 }
 
 void FSpatialPackageManager::StartProcess(FString Params, FString ProcessName)
@@ -71,13 +61,12 @@ void FSpatialPackageManager::StartProcess(FString Params, FString ProcessName)
 	FString WorkingDir = SpatialGDKServicesConstants::GDKProgramPath;
 	auto ExePath = SpatialGDKServicesConstants::SpatialExe;
 	FetchingProcess = {ExePath, Params, WorkingDir, true, true };
-	bool IsStartingUp = true;
 	FetchingProcess->OnOutput().BindLambda([&](const FString& Output) {
 		UE_LOG(LogSpatialPackageManager, Display, TEXT("Runtime: %s"), *Output);
 	});
 	FetchingProcess->Launch();
 
-	while (IsStartingUp && FetchingProcess->Update())
+	while (FetchingProcess->Update())
 	{
 		if (FetchingProcess->GetDuration().GetTotalSeconds() > 60)
 		{

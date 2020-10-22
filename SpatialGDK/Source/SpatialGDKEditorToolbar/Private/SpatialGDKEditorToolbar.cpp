@@ -892,7 +892,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 {
 	VerifyAndStartDeployment();
-	// UNR-4334 - Also plug into the new runtime fetching using SpatialPackageManager
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 	FSpatialPackageManager::TryFetchRuntimeBinary(RuntimeVersion);

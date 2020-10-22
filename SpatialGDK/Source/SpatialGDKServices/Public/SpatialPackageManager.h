@@ -20,8 +20,8 @@ public:
 
 	void Init();
 
-	static bool TryFetchRuntimeBinary(FString RuntimeVersion);
-	static bool TryFetchInspectorBinary(FString InspectorVersion);
+	static void TryFetchRuntimeBinary(FString RuntimeVersion);
+	static void TryFetchInspectorBinary(FString InspectorVersion);
 	void StartProcess(FString Params, FString ProcessName);
 	void KillProcess(FString ProcessName);
 

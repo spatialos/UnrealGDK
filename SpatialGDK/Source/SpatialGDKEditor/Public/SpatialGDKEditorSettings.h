@@ -231,7 +231,6 @@ enum Type
 };
 }
 
-
 USTRUCT()
 struct SPATIALGDKEDITOR_API FRuntimeVariantVersion
 {
