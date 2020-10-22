@@ -307,7 +307,7 @@ struct SPATIALGDKEDITOR_API FInspectorVersion
 	/** Returns the Inspector version to use, either the pinned one, or the user-specified one depending on the settings. */
 	const FString& GetInspectorVersion() const;
 
-	bool GetUseGDKPinnedInspectorVersion() const { return bUseGDKPinnedInspectorVersion; }
+	bool UseGDKPinnedInspectorVersion() const { return bUseGDKPinnedInspectorVersion; }
 
 	const FString& GetPinnedVersion() const { return PinnedVersion; }
 
