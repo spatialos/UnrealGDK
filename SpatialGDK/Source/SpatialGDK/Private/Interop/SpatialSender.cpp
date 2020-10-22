@@ -96,6 +96,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 
 	ComponentDatas.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(ComponentDatas)).CreateComponentPresenceData());
 
+	// Add Actor completeness tags.
+	// This has to come after the component presence list, so that Actor completeness tags don't get delegated.
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
+
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan();
@@ -274,11 +278,11 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 					   ->CreateServerWorkerInterest(EntityId, NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
 					   .CreateInterestData());
 
-	// GDK known entities completeness tags
-	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
-
 	// Presence component. Must be calculated after all other components have been added.
 	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
+
+	// GDK known entities completeness tags.
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &EntityId);
 
