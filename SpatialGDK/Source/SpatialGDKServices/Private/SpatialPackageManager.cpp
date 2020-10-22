@@ -9,7 +9,6 @@ DEFINE_LOG_CATEGORY(LogSpatialPackageManager);
 
 FSpatialPackageManager::FSpatialPackageManager() {}
 
-void FSpatialPackageManager::Init() {}
 
 void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 {
