@@ -230,7 +230,7 @@ void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) c
 
 void SpatialEventTracer::AddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId)
 {
-	if (Trace_SpanId_Equal(SpanId, {}))
+	if (Trace_SpanId_Equal(SpanId, Trace_SpanId_Null()))
 	{
 		return;
 	}
@@ -245,7 +245,7 @@ void SpatialEventTracer::RemoveComponent(Worker_EntityId EntityId, Worker_Compon
 
 void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId)
 {
-	if (Trace_SpanId_Equal(SpanId, {}))
+	if (Trace_SpanId_Equal(SpanId, Trace_SpanId_Null()))
 	{
 		return;
 	}
