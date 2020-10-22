@@ -14,7 +14,6 @@ class SPATIALGDKSERVICES_API FSpatialPackageManager
 public:
 	FSpatialPackageManager();
 
-	void Init();
 
 	static void TryFetchRuntimeBinary(FString RuntimeVersion);
 	static void TryFetchInspectorBinary(FString InspectorVersion);
