@@ -31,7 +31,7 @@ void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 	// If it does not exist then fetch the binary using `spatial worker package retrieve`
 	// Download the zip to // UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\Runtime\*version* and unzip
 	FString Params =
-		FString::Printf(TEXT("package retrieve runtime x86_64-win32 %s runtime/version-%s --unzip"), *RuntimeVersion, *RuntimeVersion);
+		FString::Printf(TEXT("package retrieve runtime x86_64-win32 %s runtime/%s --unzip"), *RuntimeVersion, *RuntimeVersion);
 	FSpatialPackageManager FSpatialPackageManager = {};
 	FSpatialPackageManager.StartProcess(Params, "Runtime Fetching");
 }
