@@ -71,7 +71,7 @@ void USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, c
 }
 
 void USpatialEventTracerUserInterface::TraceRPC(UObject* WorldContextObject, FEventTracerRPCDelegate Delegate,
-													   const FUserSpanId& UserSpanId)
+												const FUserSpanId& UserSpanId)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
 	if (EventTracer == nullptr || !EventTracer->IsEnabled())

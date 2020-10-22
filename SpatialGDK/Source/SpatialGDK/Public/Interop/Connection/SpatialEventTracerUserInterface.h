@@ -30,7 +30,6 @@ class SPATIALGDK_API USpatialEventTracerUserInterface : public UBlueprintFunctio
 	GENERATED_BODY()
 
 public:
-
 	/**
 	 * Creates a SpanId to be used to trace a root event.
 	 * (This API is subject to change)
