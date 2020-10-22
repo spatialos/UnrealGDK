@@ -23,5 +23,4 @@ public:
 private:
 	TOptional<FMonitoredProcess> FetchingProcess = {};
 	static const int32 ExitCodeSuccess = 0;
-	static const int32 ExitCodeNotRunning = 4;
 };
