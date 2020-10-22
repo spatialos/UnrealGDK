@@ -24,13 +24,13 @@ FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddObject(FString Key, cons
 	{
 		if (const AActor* Actor = Cast<AActor>(Object))
 		{
-			AddKeyValue(TEXT("ActorPosition"), Actor->GetTransform().GetTranslation().ToString());
+			AddKeyValue(Key + TEXT("ActorPosition"), Actor->GetTransform().GetTranslation().ToString());
 		}
 		if (UWorld* World = Object->GetWorld())
 		{
 			if (USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 			{
-				AddKeyValue(TEXT("NetGuid"), NetDriver->PackageMap->GetNetGUIDFromObject(Object).ToString());
+				AddKeyValue(Key + TEXT("NetGuid"), NetDriver->PackageMap->GetNetGUIDFromObject(Object).ToString());
 			}
 		}
 		AddKeyValue(MoveTemp(Key), Object->GetName());
@@ -284,7 +284,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(Virtua
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateAuthorityChange(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
 																	const Worker_Authority Authority)
 {
-	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "authority_loss_imminent")
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "authority_change")
 		.AddEntityId(TEXT("EntityId"), EntityId)
 		.AddComponentId(TEXT("ComponentId"), ComponentId)
 		.AddAuthority(TEXT("Authority"), Authority)
