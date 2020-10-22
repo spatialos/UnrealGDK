@@ -927,23 +927,18 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 
 	
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	const FString InspectorVersion = SpatialGDKEditorSettings->GetSelectedInspectorVersion().GetInspectorVersion(); 
-	if (FSpatialPackageManager::TryFetchInspectorBinary(InspectorVersion)) {
-		FString WebError;
-		FPlatformProcess::LaunchURL(*InspectorURL, TEXT(""), &WebError);
-		if (!WebError.IsEmpty())
-		{
-			FNotificationInfo Info(FText::FromString(WebError));
-			Info.ExpireDuration = 3.0f;
-			Info.bUseSuccessFailIcons = true;
-			TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-			NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-			NotificationItem->ExpireAndFadeout();
-		}
-	}
-	else
+	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
+	FSpatialPackageManager::TryFetchInspectorBinary(InspectorVersion);
+	FString WebError;
+	FPlatformProcess::LaunchURL(*InspectorURL, TEXT(""), &WebError);
+	if (!WebError.IsEmpty())
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("INSPECTOR BINARIES DON'T EXIST"));
+		FNotificationInfo Info(FText::FromString(WebError));
+		Info.ExpireDuration = 3.0f;
+		Info.bUseSuccessFailIcons = true;
+		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+		NotificationItem->ExpireAndFadeout();
 	}
 }
 
