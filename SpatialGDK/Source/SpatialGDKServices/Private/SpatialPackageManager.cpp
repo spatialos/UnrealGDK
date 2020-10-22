@@ -3,7 +3,6 @@
 #include "SpatialPackageManager.h"
 #include "SpatialGDKServicesConstants.h"
 #include "Async/Async.h"
-#include "Misc\MonitoredProcess.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageManager);
 
