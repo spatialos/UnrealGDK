@@ -96,7 +96,6 @@ FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpa
 FInspectorVersion& USpatialGDKEditorSettings::GetInspectorVersion()
 {
 	return InspectorVersion;
-	
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
