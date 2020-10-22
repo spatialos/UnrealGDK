@@ -70,7 +70,7 @@ void USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, c
 	EventTracer->TraceEvent(SpatialTraceEvent, SpanId.GetValue());
 }
 
-void USpatialEventTracerUserInterface::SetActiveSpanId(UObject* WorldContextObject, FEventTracerDynamicDelegate Delegate,
+void USpatialEventTracerUserInterface::TraceRPC(UObject* WorldContextObject, FEventTracerRPCDelegate Delegate,
 													   const FUserSpanId& UserSpanId)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
@@ -178,7 +178,7 @@ void USpatialEventTracerUserInterface::AddLatentComponentSpanId(UObject* WorldCo
 	EventTracer->AddLatentPropertyUpdateSpanIds({ EntityId, ComponentId }, SpanId.GetValue());
 }
 
-void USpatialEventTracerUserInterface::AddLatentSpanId(UObject* WorldContextObject, UObject* Object, const FUserSpanId& UserSpanId)
+void USpatialEventTracerUserInterface::TraceProperty(UObject* WorldContextObject, UObject* Object, const FUserSpanId& UserSpanId)
 {
 	if (AActor* Actor = Cast<AActor>(Object))
 	{

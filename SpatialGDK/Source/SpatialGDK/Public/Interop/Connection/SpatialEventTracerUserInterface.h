@@ -10,7 +10,7 @@
 
 #include "SpatialEventTracerUserInterface.generated.h"
 
-DECLARE_DYNAMIC_DELEGATE(FEventTracerDynamicDelegate);
+DECLARE_DYNAMIC_DELEGATE(FEventTracerRPCDelegate);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracerUserInterface, Log, All);
 
@@ -30,23 +30,50 @@ class SPATIALGDK_API USpatialEventTracerUserInterface : public UBlueprintFunctio
 	GENERATED_BODY()
 
 public:
+
+	/**
+	 * Creates a SpanId to be used to trace a root event.
+	 * (This API is subject to change)
+	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
 	static FUserSpanId CreateSpanId(UObject* WorldContextObject);
 
+	/**
+	 * Creates a SpanId to be used to trace an event with a set of causes.
+	 * (This API is subject to change)
+	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
 	static FUserSpanId CreateSpanIdWithCauses(UObject* WorldContextObject, const TArray<FUserSpanId>& Causes);
 
+	/**
+	 * Will trace an event using the input data and associate it with the input SpanId
+	 * (This API is subject to change)
+	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
 	static void TraceEvent(UObject* WorldContextObject, const FUserSpanId& UserSpanId, FSpatialTraceEvent SpatialTraceEvent);
 
+	/**
+	 * Will ensure that the input SpanId is used to continue the tracing of the RPC flow.
+	 * Use the Delegate to call your RPC
+	 * (This API is subject to change)
+	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static void SetActiveSpanId(UObject* WorldContextObject, FEventTracerDynamicDelegate Delegate, const FUserSpanId& SpanId);
+	static void TraceRPC(UObject* WorldContextObject, FEventTracerRPCDelegate Delegate, const FUserSpanId& SpanId);
 
+	/**
+	 * Will ensure that the input SpanId is used to continue the tracing of the property update flow.
+	 * The input Object should be the object that contains the property
+	 * (This API is subject to change)
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
+	static void TraceProperty(UObject* WorldContextObject, UObject* Object, const FUserSpanId& UserSpanId);
+
+	/**
+	 * Used to get the active SpanId from the GDK. Use this to cause your own trace events.
+	 * (This API is subject to change)
+	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
 	static bool GetActiveSpanId(UObject* WorldContextObject, FUserSpanId& OutUserSpanId);
-
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static void AddLatentSpanId(UObject* WorldContextObject, UObject* Object, const FUserSpanId& UserSpanId);
 
 private:
 	static void AddLatentActorSpanId(UObject* WorldContextObject, const AActor& Actor, const FUserSpanId& UserSpanId);
