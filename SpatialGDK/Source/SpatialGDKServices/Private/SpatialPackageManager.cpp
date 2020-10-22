@@ -15,11 +15,10 @@ void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 {
 
 	UE_LOG(LogSpatialPackageManager, Log, TEXT("Trying to fetch runtime version %s"), *RuntimeVersion);
-	FString RuntimePath = FString::Printf(TEXT("%s/runtime/%s/%s"), *SpatialGDKServicesConstants::GDKProgramPath, *RuntimeVersion,
-										  *SpatialGDKServicesConstants::RuntimeExe);
+	FString RuntimePath = FString::Printf(TEXT("%s/runtime/%s"), *SpatialGDKServicesConstants::GDKProgramPath, *RuntimeVersion);
 
 	// Check if the binary already exists for a given version
-	if (FPaths::FileExists(RuntimePath))
+	if (FPaths::FileExists(FString::Printf(TEXT("%s/%s"),*RuntimePath, *SpatialGDKServicesConstants::RuntimeExe)))
 	{
 		UE_LOG(LogSpatialPackageManager, Log, TEXT("Runtime Binaries already exist."));
 		return;
@@ -28,7 +27,7 @@ void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 	// If it does not exist then fetch the binary using `spatial worker package retrieve`
 	// Download the zip to // UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\Runtime\*version* and unzip
 	FString Params =
-		FString::Printf(TEXT("package retrieve runtime x86_64-win32 %s runtime/%s --unzip"), *RuntimeVersion, *RuntimeVersion);
+		FString::Printf(TEXT("package retrieve runtime %s %s %s --unzip"), *SpatialGDKServicesConstants::PlatformVersion, *RuntimeVersion, *RuntimePath);
 	FSpatialPackageManager FSpatialPackageManager = {};
 	FSpatialPackageManager.StartProcess(Params, "Runtime Fetching");
 }
@@ -36,10 +35,10 @@ void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 void FSpatialPackageManager::TryFetchInspectorBinary(FString InspectorVersion)
 {
 
-	FString InspectorPath = FString::Printf(TEXT("%s/inspector/%s/%s"), *SpatialGDKServicesConstants::GDKProgramPath, *InspectorVersion, *SpatialGDKServicesConstants::InspectorExe);
+	FString InspectorPath = FString::Printf(TEXT("%s/inspector/%s"), *SpatialGDKServicesConstants::GDKProgramPath, *InspectorVersion);
 
 	// Check if the binary already exists
-	if (FPaths::FileExists(InspectorPath))
+	if (FPaths::FileExists(FString::Printf(TEXT("%s/%s"), *InspectorPath, *SpatialGDKServicesConstants::InspectorExe)))
 	{
 		UE_LOG(LogSpatialPackageManager, Log, TEXT("Inspector binaries already exist."));
 		return;
@@ -47,17 +46,16 @@ void FSpatialPackageManager::TryFetchInspectorBinary(FString InspectorVersion)
 
 	// If it does not exist then fetch the binary using `spatial worker package get`
 	// Download the package to // UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs
-	FString Params = FString::Printf(TEXT("package get inspector x86_64-win32 %s ./inspector/%s/%s"), *InspectorVersion,
-									 *InspectorVersion, *SpatialGDKServicesConstants::InspectorExe);
+	FString Params = FString::Printf(TEXT("package get inspector %s %s %s/%s"), *SpatialGDKServicesConstants::PlatformVersion, *InspectorVersion,
+									 *InspectorPath, *SpatialGDKServicesConstants::InspectorExe);
 	FSpatialPackageManager FSpatialPackageManager = {};
 	FSpatialPackageManager.StartProcess(Params, "Inspector Fetching");
 }
 
 void FSpatialPackageManager::StartProcess(FString Params, FString ProcessName)
 {
-	FString WorkingDir = SpatialGDKServicesConstants::GDKProgramPath;
 	auto ExePath = SpatialGDKServicesConstants::SpatialExe;
-	FetchingProcess = {ExePath, Params, WorkingDir, true, true };
+	FetchingProcess = {ExePath, Params, true, true };
 	FetchingProcess->OnOutput().BindLambda([&](const FString& Output) {
 		UE_LOG(LogSpatialPackageManager, Display, TEXT("Runtime: %s"), *Output);
 	});
