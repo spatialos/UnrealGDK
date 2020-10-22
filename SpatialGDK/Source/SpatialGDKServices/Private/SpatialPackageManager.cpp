@@ -80,4 +80,3 @@ void FSpatialPackageManager::KillProcess(FString ProcessName)
 	auto Handle = FetchingProcess->GetProcessHandle();
 	FPlatformProcess::TerminateProc(Handle);
 }
-#undef LOCTEXT_NAMESPACE
