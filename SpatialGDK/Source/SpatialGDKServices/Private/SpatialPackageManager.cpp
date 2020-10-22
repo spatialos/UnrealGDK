@@ -6,7 +6,6 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageManager);
 
-#define LOCTEXT_NAMESPACE "FSpatialPackageManager"
 
 FSpatialPackageManager::FSpatialPackageManager() {}
 
