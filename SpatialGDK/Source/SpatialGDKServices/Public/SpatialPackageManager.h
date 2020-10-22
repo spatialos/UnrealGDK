@@ -4,7 +4,6 @@
 
 #include "Async/Future.h"
 #include "CoreMinimal.h"
-#include "Templates/SharedPointer.h"
 #include "TimerManager.h"
 #include "Misc/MonitoredProcess.h"
 
