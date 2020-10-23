@@ -190,6 +190,14 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
 		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
 
+
+		Worker_EntityId EntityId = Channel.GetEntityId();
+		TOptional<Trace_SpanId> CauseSpanId;
+		if (bEventTracerEnabled)
+		{
+			CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
+		}
+
 		for (uint32 FieldId : UpdatedIds)
 		{
 			// FieldId is the same as rep handle
@@ -320,17 +328,12 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 				}
 
 				TOptional<Trace_SpanId> SpanId;
-				if (bEventTracerEnabled)
+				if (bEventTracerEnabled && CauseSpanId.IsSet())
 				{
-					Worker_EntityId EntityId = Channel.GetEntityId();
-					TOptional<Trace_SpanId> CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
-					if (CauseSpanId.IsSet())
-					{
-						SpanId = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
-						EventTracer->TraceEvent(
-							FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(&Object, EntityId, ComponentId, Cmd.Property->GetName()),
-							SpanId);
-					}
+					SpanId = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
+					EventTracer->TraceEvent(
+						FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(&Object, EntityId, ComponentId, Cmd.Property->GetName()),
+						SpanId);
 				}
 
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened

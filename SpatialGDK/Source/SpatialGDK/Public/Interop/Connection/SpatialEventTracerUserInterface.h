@@ -81,8 +81,6 @@ public:
 	static bool GetActiveSpanId(UObject* WorldContextObject, FUserSpanId& OutUserSpanId);
 
 private:
-	static void TracePropertyOnActor(UObject* WorldContextObject, const AActor& Actor, const FUserSpanId& UserSpanId);
-	static void TracePropertyOnComponent(UObject* WorldContextObject, const UActorComponent& Component, const FUserSpanId& UserSpanId);
 
 	static SpatialGDK::SpatialEventTracer* GetEventTracer(UObject* WorldContextObject);
 	static USpatialNetDriver* GetSpatialNetDriver(UObject* WorldContextObject);

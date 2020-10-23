@@ -45,8 +45,8 @@ public:
 
 	const FString& GetFolderPath() const { return FolderPath; }
 
-	void AddLatentPropertyUpdateSpanId(const EntityComponentId& Id, const Trace_SpanId& SpanId);
-	TOptional<Trace_SpanId> PopLatentPropertyUpdateSpanId(const EntityComponentId& Id);
+	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject> Object, const Trace_SpanId& SpanId);
+	TOptional<Trace_SpanId> PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject> Object);
 
 	FSpatialSpanIdStack SpanIdStack;
 
@@ -66,7 +66,7 @@ private:
 	Trace_EventTracer* EventTracer = nullptr;
 
 	TMap<EntityComponentId, Trace_SpanId> EntityComponentSpanIds;
-	TMap<EntityComponentId, FSpatialSpanIdStack> EntityComponentSpanIdStacks;
+	TMap<TWeakObjectPtr<UObject>, FSpatialSpanIdStack> ObjectSpanIdStacks;
 
 	bool bEnabled = false;
 	uint64 BytesWrittenToStream = 0;

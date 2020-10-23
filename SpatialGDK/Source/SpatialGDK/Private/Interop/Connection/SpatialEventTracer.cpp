@@ -272,31 +272,31 @@ TOptional<Trace_SpanId> SpatialEventTracer::GetSpanId(const EntityComponentId& I
 		return *SpanId;
 }
 
-void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const EntityComponentId& Id, const Trace_SpanId& SpanId)
+void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject> Object, const Trace_SpanId& SpanId)
 {
 	if (!IsEnabled())
 	{
 		return;
 	}
 
-	FSpatialSpanIdStack* Stack = EntityComponentSpanIdStacks.Find(Id);
+	FSpatialSpanIdStack* Stack = ObjectSpanIdStacks.Find(Object);
 	if (Stack == nullptr)
 	{
-		Stack = &EntityComponentSpanIdStacks.Add(Id);
+		Stack = &ObjectSpanIdStacks.Add(Object);
 		Stack->SetEventTracer(this);
 	}
 
 	Stack->Add(SpanId);
 }
 
-TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanId(const EntityComponentId& Id)
+TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject> Object)
 {
 	if (!IsEnabled())
 	{
 		return {};
 	}
 
-	FSpatialSpanIdStack* Stack = EntityComponentSpanIdStacks.Find(Id);
+	FSpatialSpanIdStack* Stack = ObjectSpanIdStacks.Find(Object);
 	if (Stack == nullptr)
 	{
 		return {};
@@ -305,7 +305,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanId(const 
 	TOptional<Trace_SpanId> SpanId = Stack->Pop();
 	if (!Stack->HasSpanId())
 	{
-		EntityComponentSpanIdStacks.Remove(Id);
+		ObjectSpanIdStacks.Remove(Object);
 	}
 
 	return SpanId;

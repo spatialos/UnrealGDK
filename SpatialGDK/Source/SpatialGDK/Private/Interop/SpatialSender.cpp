@@ -448,6 +448,8 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	TArray<FWorkerComponentUpdate> ComponentUpdates =
 		UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
 
+	TOptional<Trace_SpanId> CauseSpanId = EventTracer->PopLatentPropertyUpdateSpanId(Object);
+
 	for (int i = 0; i < ComponentUpdates.Num(); i++)
 	{
 		FWorkerComponentUpdate& Update = ComponentUpdates[i];
@@ -467,7 +469,6 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			continue;
 		}
 
-		TOptional<Trace_SpanId> CauseSpanId = EventTracer->PopLatentPropertyUpdateSpanId({ EntityId, Update.component_id });
 		TOptional<Trace_SpanId> SpanId =
 			CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id), SpanId);
