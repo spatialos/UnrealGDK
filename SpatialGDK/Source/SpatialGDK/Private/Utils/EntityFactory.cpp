@@ -403,13 +403,6 @@ TArray<Worker_ComponentId> EntityFactory::GetComponentPresenceList(const TArray<
 	ComponentPresenceList.Reserve(ComponentDatas.Num() + 1);
 	for (int i = 0; i < ComponentDatas.Num(); i++)
 	{
-		// Skip entity completeness tags, as we do not want them to be a part of ComponentPresence, and thus be delegated.
-		// This would create false completeness for workers which happened to be delegated the tag components.
-		if (ComponentDatas[i].component_id >= SpatialConstants::FIRST_EC_COMPONENT_ID
-			&& ComponentDatas[i].component_id <= SpatialConstants::LAST_EC_COMPONENT_ID)
-		{
-			continue;
-		}
 		ComponentPresenceList.Add(ComponentDatas[i].component_id);
 	}
 	ComponentPresenceList.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID);
