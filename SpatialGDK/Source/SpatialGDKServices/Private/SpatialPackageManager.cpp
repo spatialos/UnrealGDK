@@ -25,7 +25,7 @@ void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 	}
 
 	// If it does not exist then fetch the binary using `spatial worker package retrieve`
-	// Download the zip to // UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\Runtime\*version* and unzip
+	// Download and unzip the executable to "UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\Runtime\*version*"
 	FString Params =
 		FString::Printf(TEXT("package retrieve runtime %s %s %s --unzip"), *SpatialGDKServicesConstants::PlatformVersion, *RuntimeVersion, *RuntimePath);
 	FSpatialPackageManager FSpatialPackageManager = {};
