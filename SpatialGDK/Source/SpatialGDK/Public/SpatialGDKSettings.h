@@ -387,4 +387,17 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
 	float ActorMigrationLogRate;
+	/*
+	 * -- EXPERIMENTAL --
+	 * This will enable event tracing for the Unreal client/worker.
+	 */
+	UPROPERTY(Config)
+	bool bEventTracingEnabled;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * The maximum size of the event tracing file, in bytes
+	 */
+	UPROPERTY(Config)
+	uint64 MaxEventTracingFileSizeBytes;
 };

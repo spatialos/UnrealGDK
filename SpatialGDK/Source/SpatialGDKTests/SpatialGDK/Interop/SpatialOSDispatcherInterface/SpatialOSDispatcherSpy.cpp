@@ -30,13 +30,13 @@ bool SpatialOSDispatcherSpy::OnExtractIncomingRPC(Worker_EntityId EntityId, ERPC
 	return false;
 }
 
-void SpatialOSDispatcherSpy::OnCommandRequest(const Worker_CommandRequestOp& Op) {}
+void SpatialOSDispatcherSpy::OnCommandRequest(const Worker_Op& Op) {}
 
-void SpatialOSDispatcherSpy::OnCommandResponse(const Worker_CommandResponseOp& Op) {}
+void SpatialOSDispatcherSpy::OnCommandResponse(const Worker_Op& Op) {}
 
 void SpatialOSDispatcherSpy::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op) {}
 
-void SpatialOSDispatcherSpy::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op) {}
+void SpatialOSDispatcherSpy::OnCreateEntityResponse(const Worker_Op& Op) {}
 
 void SpatialOSDispatcherSpy::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel) {}
 

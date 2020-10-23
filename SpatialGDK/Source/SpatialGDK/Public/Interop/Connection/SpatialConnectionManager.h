@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Interop/Connection/ConnectionConfig.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialGDKSettings.h"
@@ -66,7 +67,7 @@ public:
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
-	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
+	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture, TSharedPtr<SpatialGDK::SpatialEventTracer> InEventTracer);
 
 	void OnConnectionSuccess();
 	void OnConnectionFailure(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
@@ -77,6 +78,11 @@ private:
 	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
 	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
 	void ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens);
+
+	TSharedPtr<SpatialGDK::SpatialEventTracer> CreateEventTracer(const FString& WorkerId)
+	{
+		return MakeShared<SpatialGDK::SpatialEventTracer>(WorkerId);
+	};
 
 private:
 	UPROPERTY()
