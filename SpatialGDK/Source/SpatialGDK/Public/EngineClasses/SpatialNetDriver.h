@@ -217,7 +217,7 @@ public:
 	float GetElapsedTime() { return Time; }
 #endif
 
-	// Check if we have already logged this actor / migration failure 
+	// Check if we have already logged this actor / migration failure
 	bool IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
 
 	// Record this actor / migration failure

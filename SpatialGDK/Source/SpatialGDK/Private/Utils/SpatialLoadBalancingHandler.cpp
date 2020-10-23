@@ -208,8 +208,8 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 
 			AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 			UE_LOG(LogSpatialLoadBalancingHandler, Warning,
-				   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s on worker 0x%x"), *HierarchyRoot->GetName(),
-				   *Actor->GetName(), ActorEntityId, *FailureReason, this);
+				   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s on worker 0x%x"),
+				   *HierarchyRoot->GetName(), *Actor->GetName(), ActorEntityId, *FailureReason, this);
 		}
 	}
 }
