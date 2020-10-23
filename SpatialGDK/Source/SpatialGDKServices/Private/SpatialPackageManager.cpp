@@ -20,7 +20,7 @@ void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 	// Check if the binary already exists for a given version
 	if (FPaths::FileExists(FString::Printf(TEXT("%s/%s"),*RuntimePath, *SpatialGDKServicesConstants::RuntimeExe)))
 	{
-		UE_LOG(LogSpatialPackageManager, Log, TEXT("Runtime Binaries already exist."));
+		UE_LOG(LogSpatialPackageManager, Verbose, TEXT("Runtime binary already exist."));
 		return;
 	}
 
