@@ -352,13 +352,11 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (EditCondition = "!bUseGDKPinnedInspectorVersion"))
 	FString InspectorVersionOverride;
 
-	FString InspectorPinnedVersion;
-
 	/** Returns the version information for the currently set inspector*/
 	const FString GetInspectorVersion() const
 	{
 		if (bUseGDKPinnedInspectorVersion) {
-			return InspectorPinnedVersion;
+			return SpatialGDKServicesConstants::SpatialOSInspectorPinnedVersion;
 		}
 		else
 		{
@@ -370,8 +368,6 @@ public:
 
 private:
 	FRuntimeVariantVersion& GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type);
-
-	FString GetInspectorVersion();
 
 	/** If you are not using auto-generate launch configuration file, specify a launch configuration `.json` file and location here.  */
 	UPROPERTY(EditAnywhere, config, Category = "Launch",
