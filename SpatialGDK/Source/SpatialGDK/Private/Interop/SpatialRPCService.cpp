@@ -33,7 +33,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 
 	if (EventTracer != nullptr)
 	{
-		TOptional<Trace_SpanId> CauseSpanId = EventTracer->SpanIdStack.GetTopSpanId();
+		TOptional<Trace_SpanId> CauseSpanId = EventTracer->SpanIdStack.GetSpanId();
 		TOptional<Trace_SpanId> SpanId =
 			CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(Target, Function), SpanId);
@@ -554,16 +554,6 @@ void SpatialRPCService::ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Ty
 			LastSeenRPCIds[EntityTypePair] = LastProcessedRPCId;
 		}
 	}
-}
-
-uint64 SpatialRPCService::GetLastAckedRPCId(Worker_EntityId EntityId, ERPCType Type) const
-{
-	EntityRPCType EntityTypePair = EntityRPCType(EntityId, Type);
-	if (const uint64* LastAckedRPCId = LastAckedRPCIds.Find(EntityTypePair))
-	{
-		return *LastAckedRPCId;
-	}
-	return 0;
 }
 
 void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType Type)

@@ -5,7 +5,7 @@
 AUserSendPropertyEventTracingTest::AUserSendPropertyEventTracingTest()
 {
 	Author = "Matthew Sandford";
-	Description = TEXT("Test checking user event traces can cause component update events");
+	Description = TEXT("Test checking user event traces can cause send property update events");
 
 	FilterEventNames = { UserSendPropertyEventName, UserSendComponentPropertyEventName, SendPropertyUpdatesEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
@@ -19,7 +19,7 @@ void AUserSendPropertyEventTracingTest::FinishEventTraceTest()
 	for (const auto& Pair : TraceEvents)
 	{
 		const FString& SpanIdString = Pair.Key;
-		const FName EventName = Pair.Value;
+		const FName& EventName = Pair.Value;
 
 		if (EventName == UserSendPropertyEventName || EventName == UserSendComponentPropertyEventName)
 		{
@@ -45,7 +45,7 @@ void AUserSendPropertyEventTracingTest::FinishEventTraceTest()
 	int EventsFailed = UserEventSpanIds.Num();
 	bool bSuccess = EventsTested > 0 && EventsFailed == 0;
 	AssertTrue(bSuccess,
-			   FString::Printf(TEXT("User event have caused the expected component update events. Events Tested: %d, Events Failed: %d"),
+			   FString::Printf(TEXT("User event have caused the expected send property update events. Events Tested: %d, Events Failed: %d"),
 							   EventsTested, EventsFailed));
 
 	FinishStep();

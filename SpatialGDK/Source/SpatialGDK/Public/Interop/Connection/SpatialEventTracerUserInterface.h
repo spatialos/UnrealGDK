@@ -49,7 +49,7 @@ public:
 	 * (This API is subject to change)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static void TraceEvent(UObject* WorldContextObject, const FUserSpanId& UserSpanId, FSpatialTraceEvent SpatialTraceEvent);
+	static void TraceEvent(UObject* WorldContextObject, const FUserSpanId& UserSpanId, const FSpatialTraceEvent& SpatialTraceEvent);
 
 	/**
 	 * Will ensure that the input SpanId is used to continue the tracing of the RPC flow.
@@ -75,8 +75,8 @@ public:
 	static bool GetActiveSpanId(UObject* WorldContextObject, FUserSpanId& OutUserSpanId);
 
 private:
-	static void AddLatentActorSpanId(UObject* WorldContextObject, const AActor& Actor, const FUserSpanId& UserSpanId);
-	static void AddLatentComponentSpanId(UObject* WorldContextObject, const UActorComponent& Component, const FUserSpanId& UserSpanId);
+	static void TracePropertyOnActor(UObject* WorldContextObject, const AActor& Actor, const FUserSpanId& UserSpanId);
+	static void TracePropertyOnComponent(UObject* WorldContextObject, const UActorComponent& Component, const FUserSpanId& UserSpanId);
 
 	static SpatialGDK::SpatialEventTracer* GetEventTracer(UObject* WorldContextObject);
 	static USpatialNetDriver* GetSpatialNetDriver(UObject* WorldContextObject);

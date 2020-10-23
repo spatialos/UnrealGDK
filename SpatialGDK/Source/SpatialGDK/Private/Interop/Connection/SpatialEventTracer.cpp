@@ -143,7 +143,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::CreateSpan(const Trace_SpanId* Cause
 	return Trace_EventTracer_AddSpan(EventTracer, nullptr, 0);
 }
 
-void SpatialEventTracer::TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const TOptional<Trace_SpanId>& OptionalSpanId)
+void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const TOptional<Trace_SpanId>& OptionalSpanId)
 {
 	if (!IsEnabled())
 	{
@@ -272,7 +272,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::GetSpanId(const EntityComponentId& I
 		return *SpanId;
 }
 
-void SpatialEventTracer::AddLatentPropertyUpdateSpanIds(const EntityComponentId& Id, const Trace_SpanId& SpanId)
+void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const EntityComponentId& Id, const Trace_SpanId& SpanId)
 {
 	if (!IsEnabled())
 	{
@@ -289,7 +289,7 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanIds(const EntityComponentId&
 	Stack->Add(SpanId);
 }
 
-TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanIds(const EntityComponentId& Id)
+TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanId(const EntityComponentId& Id)
 {
 	if (!IsEnabled())
 	{
@@ -302,8 +302,8 @@ TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanIds(const
 		return {};
 	}
 
-	TOptional<Trace_SpanId> SpanId = Stack->PopLayer();
-	if (!Stack->HasLayer())
+	TOptional<Trace_SpanId> SpanId = Stack->Pop();
+	if (!Stack->HasSpanId())
 	{
 		EntityComponentSpanIdStacks.Remove(Id);
 	}

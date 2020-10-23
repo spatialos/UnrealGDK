@@ -28,7 +28,7 @@ public:
 
 	TOptional<Trace_SpanId> CreateSpan() const;
 	TOptional<Trace_SpanId> CreateSpan(const Trace_SpanId* Causes, int32 NumCauses) const;
-	void TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const TOptional<Trace_SpanId>& OptionalSpanId);
+	void TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const TOptional<Trace_SpanId>& OptionalSpanId);
 
 	bool IsEnabled() const;
 
@@ -41,12 +41,12 @@ public:
 	static FString SpanIdToString(const Trace_SpanId& SpanId);
 
 	static FUserSpanId SpanIdToUserSpanId(const Trace_SpanId& SpanId);
-	static TOptional<Trace_SpanId> UserSpanIdToSpanId(const FUserSpanId& ByteArray);
+	static TOptional<Trace_SpanId> UserSpanIdToSpanId(const FUserSpanId& UserSpanId);
 
 	const FString& GetFolderPath() const { return FolderPath; }
 
-	void AddLatentPropertyUpdateSpanIds(const EntityComponentId& Id, const Trace_SpanId& SpanId);
-	TOptional<Trace_SpanId> PopLatentPropertyUpdateSpanIds(const EntityComponentId& Id);
+	void AddLatentPropertyUpdateSpanId(const EntityComponentId& Id, const Trace_SpanId& SpanId);
+	TOptional<Trace_SpanId> PopLatentPropertyUpdateSpanId(const EntityComponentId& Id);
 
 	FSpatialSpanIdStack SpanIdStack;
 

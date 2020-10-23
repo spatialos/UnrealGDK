@@ -2173,8 +2173,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		}
 		else
 		{
-			uint64 RPCId = RPCService->GetLastAckedRPCId(EntityId, RPCType) + 1;
-			bool bUseEventTracer = EventTracer->IsEnabled() && RPCType != ERPCType::CrossServer && RPCId != 0;
+			bool bUseEventTracer = EventTracer->IsEnabled() && RPCType != ERPCType::CrossServer;
 			if (bUseEventTracer)
 			{
 				Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
@@ -2193,7 +2192,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 
 			if (bUseEventTracer)
 			{
-				EventTracer->SpanIdStack.PopLayer();
+				EventTracer->SpanIdStack.Pop();
 			}
 
 			if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && RPCType != ERPCType::CrossServer

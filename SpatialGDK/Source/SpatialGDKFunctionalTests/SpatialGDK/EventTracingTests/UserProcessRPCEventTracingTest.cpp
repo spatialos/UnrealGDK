@@ -18,7 +18,7 @@ void AUserProcessRPCEventTracingTest::FinishEventTraceTest()
 	for (const auto& Pair : TraceEvents)
 	{
 		const FString& SpanIdString = Pair.Key;
-		const FName EventName = Pair.Value;
+		const FName& EventName = Pair.Value;
 
 		if (EventName != UserProcessRPCEventName)
 		{

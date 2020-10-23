@@ -18,9 +18,9 @@ public:
 
 	void Stack(const Trace_SpanId& SpanId);
 	void Add(const Trace_SpanId& SpanId);
-	TOptional<Trace_SpanId> PopLayer();
-	TOptional<Trace_SpanId> GetTopSpanId() const;
-	bool HasLayer() const;
+	TOptional<Trace_SpanId> Pop();
+	TOptional<Trace_SpanId> GetSpanId() const;
+	bool HasSpanId() const;
 
 private:
 	const SpatialEventTracer* EventTracer;
