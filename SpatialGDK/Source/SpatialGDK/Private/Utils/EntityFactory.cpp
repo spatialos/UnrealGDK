@@ -400,12 +400,12 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 TArray<Worker_ComponentId> EntityFactory::GetComponentPresenceList(const TArray<FWorkerComponentData>& ComponentDatas)
 {
 	TArray<Worker_ComponentId> ComponentPresenceList;
-	ComponentPresenceList.Reserve(ComponentDatas.Num() + 1);
+	ComponentPresenceList.SetNum(ComponentDatas.Num() + 1);
 	for (int i = 0; i < ComponentDatas.Num(); i++)
 	{
-		ComponentPresenceList.Add(ComponentDatas[i].component_id);
+		ComponentPresenceList[i] = ComponentDatas[i].component_id;
 	}
-	ComponentPresenceList.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID);
+	ComponentPresenceList[ComponentDatas.Num()] = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
 	return ComponentPresenceList;
 }
 
