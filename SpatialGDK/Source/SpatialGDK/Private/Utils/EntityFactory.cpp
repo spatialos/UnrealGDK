@@ -389,6 +389,9 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 
+	// Add Actor completeness tags.
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
+
 	return ComponentDatas;
 }
 
@@ -397,10 +400,17 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 TArray<Worker_ComponentId> EntityFactory::GetComponentPresenceList(const TArray<FWorkerComponentData>& ComponentDatas)
 {
 	TArray<Worker_ComponentId> ComponentPresenceList;
-	ComponentPresenceList.SetNum(ComponentDatas.Num() + 1);
+	ComponentPresenceList.Reserve(ComponentDatas.Num() + 1);
 	for (int i = 0; i < ComponentDatas.Num(); i++)
 	{
-		ComponentPresenceList[i] = ComponentDatas[i].component_id;
+		// Skip entity completeness tags, as we do not want them to be a part of ComponentPresence, and thus be delegated.
+		// This would create false completeness for workers which happened to be delegated the tag components.
+		if (ComponentDatas[i].component_id >= SpatialConstants::FIRST_EC_COMPONENT_ID
+			&& ComponentDatas[i].component_id <= SpatialConstants::LAST_EC_COMPONENT_ID)
+		{
+			continue;
+		}
+		ComponentPresenceList.Add(ComponentDatas[i].component_id);
 	}
 	ComponentPresenceList[ComponentDatas.Num()] = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
 	return ComponentPresenceList;
