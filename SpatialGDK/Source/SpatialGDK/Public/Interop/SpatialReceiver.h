@@ -122,7 +122,7 @@ private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
 
-	AActor* ReceiveActor(Worker_EntityId EntityId);
+	void ReceiveActor(Worker_EntityId EntityId);
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 
 	AActor* TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData,
