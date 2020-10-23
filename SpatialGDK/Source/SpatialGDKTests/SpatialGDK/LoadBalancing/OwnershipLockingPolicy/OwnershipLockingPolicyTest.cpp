@@ -352,7 +352,7 @@ void SpawnABCDEHierarchy(FAutomationTestBase* Test, TSharedPtr<TestData> Data)
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLocked_is_called_THEN_returns_false_with_no_lock_tokens)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -369,7 +369,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLocked_is_
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_is_called_THEN_it_errors_and_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -385,7 +385,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_is_called
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is_not_authoritative_THEN_AcquireLock_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -402,7 +402,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is_deleted_THEN_ReleaseLock_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -422,7 +422,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_twice_WHEN_the_locked_Actor_is_deleted_THEN_ReleaseLock_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -443,7 +443,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_twice_WHEN_the_locked_Ac
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -462,7 +462,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Is
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_twice_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -485,7 +485,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_twice_W
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_ReleaseLock_is_called_again_THEN_it_errors_and_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -505,7 +505,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Re
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_AcquireLock_is_called_again_THEN_it_succeeds)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -529,7 +529,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Ac
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_leaf_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -558,7 +558,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_path_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -587,7 +587,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_root_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -616,7 +616,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_and_ReleaseLock_are_called_on_multiple_hierarchy_Actors_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -655,7 +655,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_WHEN_explicitly_locked_Actor_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -681,7 +681,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_WHEN_hierarchy_path_Actor_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -707,7 +707,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_WHEN_hierarchy_root_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -733,7 +733,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_hierarchy_root_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -759,7 +759,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_WHEN_hierarchy_root_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -785,7 +785,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_WHEN_hierarchy_path_Actor_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -813,7 +813,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -845,7 +845,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_WHEN_hierarchy_path_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -875,7 +875,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_WHEN_explicitly_locked_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -903,7 +903,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_explictly_locked_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -933,7 +933,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -965,7 +965,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_hierarchy_leaf_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -993,7 +993,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_root_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -1025,7 +1025,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_root_WHEN_hierarchy_path_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -1056,7 +1056,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_is_executed_THEN_it_errors_and_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -1073,7 +1073,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_and_ReleaseLock_delegates_are_executed_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -1093,7 +1093,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_and_ReleaseLock_delegates_are_executed_twice_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -1117,7 +1117,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLockDelegate_and_ReleaseLockDelegate_are_executed_WHEN_ReleaseLockDelegate_is_executed_again_THEN_it_errors_and_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 

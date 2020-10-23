@@ -3,11 +3,14 @@
 #pragma once
 
 #include "Containers/UnrealString.h"
+#include "Engine/EngineBaseTypes.h"
 #include "Internationalization/Regex.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
+
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+
 #include <WorkerSDK/improbable/c_worker.h>
 
 struct FConnectionConfig

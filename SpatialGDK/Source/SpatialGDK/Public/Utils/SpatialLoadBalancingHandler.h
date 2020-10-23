@@ -81,7 +81,7 @@ protected:
 				// although it has the risk of creating an infinite lock if the child is unable to become ready.
 				if (bNetOwnerHasAuth)
 				{
-					AActor* HierarchyRoot = SpatialGDK::GetHierarchyRoot(Actor);
+					AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 					UE_LOG(LogSpatialLoadBalancingHandler, Warning,
 						   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) is not ready."),
 						   *HierarchyRoot->GetName(), *Actor->GetName(), NetDriver->PackageMap->GetEntityIdFromObject(Actor));

@@ -2,7 +2,9 @@
 
 #pragma once
 
+#include "ReceivedOpEventHandler.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
+#include "SpatialView/CriticalSectionFilter.h"
 #include "SpatialView/Dispatcher.h"
 #include "SpatialView/WorkerView.h"
 #include "SubView.h"
@@ -10,10 +12,12 @@
 
 namespace SpatialGDK
 {
+class SpatialEventTracer;
+
 class ViewCoordinator
 {
 public:
-	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler);
+	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer);
 
 	~ViewCoordinator();
 
@@ -44,17 +48,19 @@ public:
 	const FString& GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
-	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data);
-	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId);
+	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId);
+	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
 	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-											 TOptional<uint32> TimeoutMillis = {});
-	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis = {});
+											 TOptional<uint32> TimeoutMillis = {}, const TOptional<Trace_SpanId>& SpanId = {});
+	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis = {},
+											 const TOptional<Trace_SpanId>& SpanId = {});
 	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis = {});
-	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {});
-	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response);
-	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message);
+	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {},
+											  const TOptional<Trace_SpanId>& SpanId = {});
+	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const TOptional<Trace_SpanId>& SpanId);
+	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const TOptional<Trace_SpanId>& SpanId);
 	void SendMetrics(SpatialMetrics Metrics);
 	void SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message);
 
@@ -79,9 +85,15 @@ public:
 private:
 	WorkerView View;
 	TUniquePtr<AbstractConnectionHandler> ConnectionHandler;
+
+	FCriticalSectionFilter CriticalSectionFilter;
+
 	Worker_RequestId NextRequestId;
 	FDispatcher Dispatcher;
+
 	TArray<TUniquePtr<FSubView>> SubViews;
+
+	FReceivedOpEventHandler ReceivedOpEventHandler;
 };
 
 } // namespace SpatialGDK

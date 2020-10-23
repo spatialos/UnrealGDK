@@ -62,6 +62,7 @@ UObject* FUnrealObjectRef::ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpati
 					   TEXT("Object ref did not map to valid object. Streaming level not loaded or actor deleted. Will be set to nullptr: "
 							"%s %s"),
 					   *ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
+				bOutUnresolved = true;
 			}
 
 			return Value;

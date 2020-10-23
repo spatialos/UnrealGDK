@@ -47,6 +47,12 @@ struct FWorkerRegionInfo
 
 	UPROPERTY()
 	FBox2D Extents;
+
+	UPROPERTY()
+	FString WorkerName;
+
+	UPROPERTY()
+	uint32 VirtualWorkerID;
 };
 
 UENUM()
@@ -205,7 +211,8 @@ private:
 	// FDebugDrawDelegate
 	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
 
-	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
+	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
+				 const bool bCentre);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
 	void CreateWorkerRegions();
@@ -216,6 +223,7 @@ private:
 
 #if WITH_EDITOR
 	void EditorInitialiseWorkerRegions();
+	void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);
 #endif
 
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;

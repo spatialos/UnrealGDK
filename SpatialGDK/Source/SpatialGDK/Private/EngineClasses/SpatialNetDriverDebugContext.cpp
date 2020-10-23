@@ -278,7 +278,7 @@ void USpatialNetDriverDebugContext::RemoveTagDelegation(FName Tag)
 
 TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorHierarchyExplicitDelegation(const AActor* Actor)
 {
-	const AActor* NetOwner = SpatialGDK::GetHierarchyRoot(Actor);
+	const AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 	return GetActorHierarchyExplicitDelegation_Traverse(NetOwner);
 }
 

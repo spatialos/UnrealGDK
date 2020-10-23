@@ -40,6 +40,12 @@ public:
 	static bool IsSpatialNetworkingEnabled();
 
 	/**
+	 * Returns whether handover is disabled in offloading scenarios.
+	 */
+	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool IsHandoverEnabled(const UObject* WorldContextObject);
+
+	/**
 	 * Returns true if spatial networking and multi worker are enabled.
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))

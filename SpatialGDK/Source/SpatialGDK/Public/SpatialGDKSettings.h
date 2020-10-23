@@ -22,7 +22,8 @@ namespace ESettingsWorkerLogVerbosity
 {
 enum Type
 {
-	Fatal = 1,
+	NoLogging = 0,
+	Fatal,
 	Error,
 	Warning,
 	Display,
@@ -144,13 +145,6 @@ public:
 	float OpsUpdateRate;
 
 	/**
-	 * Replicate handover properties between servers, required for zoned worker deployments. If Unreal Load Balancing is enabled, this will
-	 * be set based on the load balancing strategy.
-	 */
-	UPROPERTY(EditAnywhere, config, Category = "Replication")
-	bool bEnableHandover;
-
-	/**
 	 * Maximum NetCullDistanceSquared value used in Spatial networking. Not respected when using the Replication Graph.
 	 * Set to 0.0 to disable. This is temporary and will be removed when the runtime issue is resolved.
 	 */
@@ -241,9 +235,19 @@ public:
 			  meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
-	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
-	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
+	/** Deprecated!
+	Upgraded into the two settings below for local/cloud configurations.
+	Ticket for removal UNR-4348 */
+	UPROPERTY(config, meta = (DeprecatedProperty, DeprecationMessage = "Use LocalWorkerLogLevel or CloudWorkerLogLevel"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
+
+	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
+	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Local Worker Log Level"))
+	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> LocalWorkerLogLevel;
+
+	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
+	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Cloud Worker Log Level"))
+	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> CloudWorkerLogLevel;
 
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
@@ -255,7 +259,7 @@ public:
 	bool UseRPCRingBuffer() const;
 
 #if WITH_EDITOR
-	void SetMultiWorkerEnabled(const bool bIsEnabled);
+	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);
 	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
 #endif // WITH_EDITOR
 
@@ -377,4 +381,18 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
 	float StartupLogRate;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * This will enable event tracing for the Unreal client/worker.
+	 */
+	UPROPERTY(Config)
+	bool bEventTracingEnabled;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * The maximum size of the event tracing file, in bytes
+	 */
+	UPROPERTY(Config)
+	uint64 MaxEventTracingFileSizeBytes;
 };

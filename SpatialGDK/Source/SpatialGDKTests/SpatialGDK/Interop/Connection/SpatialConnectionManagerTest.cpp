@@ -377,5 +377,5 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Empty)
 
 	// THEN
 	TestEqual("Success", bSuccess, false);
-	return  true;
+	return true;
 }
