@@ -44,9 +44,9 @@ void AUserSendPropertyEventTracingTest::FinishEventTraceTest()
 
 	int EventsFailed = UserEventSpanIds.Num();
 	bool bSuccess = EventsTested > 0 && EventsFailed == 0;
-	AssertTrue(bSuccess,
-			   FString::Printf(TEXT("User event have caused the expected send property update events. Events Tested: %d, Events Failed: %d"),
-							   EventsTested, EventsFailed));
+	AssertTrue(bSuccess, FString::Printf(
+							 TEXT("User event have caused the expected send property update events. Events Tested: %d, Events Failed: %d"),
+							 EventsTested, EventsFailed));
 
 	FinishStep();
 }

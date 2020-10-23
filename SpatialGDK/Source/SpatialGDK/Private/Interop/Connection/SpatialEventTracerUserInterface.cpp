@@ -35,7 +35,7 @@ FUserSpanId USpatialEventTracerUserInterface::CreateSpanIdWithCauses(UObject* Wo
 		if (!UserSpanIdCause.IsValid())
 		{
 			UE_LOG(LogSpatialEventTracerUserInterface, Warning,
-				TEXT("USpatialEventTracerUserInterface::CreateSpanIdWithCauses - Invalid input cause"));
+				   TEXT("USpatialEventTracerUserInterface::CreateSpanIdWithCauses - Invalid input cause"));
 			continue;
 		}
 
@@ -50,7 +50,7 @@ FUserSpanId USpatialEventTracerUserInterface::CreateSpanIdWithCauses(UObject* Wo
 }
 
 void USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const FUserSpanId& UserSpanId,
-	const FSpatialTraceEvent& SpatialTraceEvent)
+												  const FSpatialTraceEvent& SpatialTraceEvent)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
 	if (EventTracer == nullptr)

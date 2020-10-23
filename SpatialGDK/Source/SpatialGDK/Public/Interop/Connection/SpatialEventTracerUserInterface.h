@@ -31,6 +31,7 @@ class SPATIALGDK_API USpatialEventTracerUserInterface : public UBlueprintFunctio
 
 public:
 	/**
+	 * EXPERIMENTAL
 	 * Creates a SpanId to be used to trace a root event.
 	 * (This API is subject to change)
 	 */
@@ -38,6 +39,7 @@ public:
 	static FUserSpanId CreateSpanId(UObject* WorldContextObject);
 
 	/**
+	 * EXPERIMENTAL
 	 * Creates a SpanId to be used to trace an event with a set of causes.
 	 * (This API is subject to change)
 	 */
@@ -45,6 +47,7 @@ public:
 	static FUserSpanId CreateSpanIdWithCauses(UObject* WorldContextObject, const TArray<FUserSpanId>& Causes);
 
 	/**
+	 * EXPERIMENTAL
 	 * Will trace an event using the input data and associate it with the input SpanId
 	 * (This API is subject to change)
 	 */
@@ -52,6 +55,7 @@ public:
 	static void TraceEvent(UObject* WorldContextObject, const FUserSpanId& UserSpanId, const FSpatialTraceEvent& SpatialTraceEvent);
 
 	/**
+	 * EXPERIMENTAL
 	 * Will ensure that the input SpanId is used to continue the tracing of the RPC flow.
 	 * Use the Delegate to call your RPC
 	 * (This API is subject to change)
@@ -60,6 +64,7 @@ public:
 	static void TraceRPC(UObject* WorldContextObject, FEventTracerRPCDelegate Delegate, const FUserSpanId& SpanId);
 
 	/**
+	 * EXPERIMENTAL
 	 * Will ensure that the input SpanId is used to continue the tracing of the property update flow.
 	 * The input Object should be the object that contains the property
 	 * (This API is subject to change)
@@ -68,6 +73,7 @@ public:
 	static void TraceProperty(UObject* WorldContextObject, UObject* Object, const FUserSpanId& UserSpanId);
 
 	/**
+	 * EXPERIMENTAL
 	 * Used to get the active SpanId from the GDK. Use this to cause your own trace events.
 	 * (This API is subject to change)
 	 */
