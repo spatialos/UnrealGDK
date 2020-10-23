@@ -68,7 +68,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = PlayerController;
 		AActor* TestActor = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FTransform(), SpawnParams);
-		TestActor->SetReplicates(true); // NOTE: this currently causes parent not to migrate after a delay
+		TestActor->SetReplicates(true); // NOTE: this currently causes parent not to migrate after a delay and outputs a warning in the test
 		RegisterAutoDestroyActor(TestActor);
 		FinishStep();
 	});
