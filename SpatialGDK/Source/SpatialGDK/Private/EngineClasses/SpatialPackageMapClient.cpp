@@ -4,6 +4,7 @@
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitReader.h"
+#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
@@ -16,6 +17,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "UObject/UObjectGlobals.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
@@ -701,7 +703,11 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRe
 		if (Iterator->Path.IsSet())
 		{
 			FString TempPath(*Iterator->Path);
+#if ENGINE_MINOR_VERSION >= 26
+			GEngine->NetworkRemapPath(Cast<USpatialNetDriver>(Driver)->GetSpatialOSNetConnection(), TempPath, bReading);
+#else
 			GEngine->NetworkRemapPath(Driver, TempPath, bReading);
+#endif
 			Iterator->Path = TempPath;
 		}
 		if (!Iterator->Outer.IsSet())
@@ -738,7 +744,11 @@ FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPathForStaticObject(const 
 {
 	// Put the PIE prefix back (if applicable) so that the correct object can be found.
 	FString TempPath = PathName;
-	GEngine->NetworkRemapPath(Driver, TempPath, true);
+#if ENGINE_MINOR_VERSION >= 26
+	GEngine->NetworkRemapPath(Cast<USpatialNetDriver>(Driver)->GetSpatialOSNetConnection(), TempPath, true);
+#else
+	GEngine->NetworkRemapPath(Driver->GetSpatialOSNetConnection(), TempPath, true);
+#endif
 
 	// This function should only be called for stably named object references, not dynamic ones.
 	FNetGuidCacheObject CacheObject;

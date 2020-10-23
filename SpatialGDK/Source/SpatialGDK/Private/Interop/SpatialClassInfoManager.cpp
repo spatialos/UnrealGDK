@@ -15,6 +15,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #endif
 
+#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
@@ -116,7 +117,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
 	// Remove PIE prefix on class if it exists to properly look up the class.
 	FString ClassPath = Class->GetPathName();
+#if ENGINE_MINOR_VERSION >= 26
+	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), ClassPath, false);
+#else
 	GEngine->NetworkRemapPath(NetDriver, ClassPath, false);
+#endif
 
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;

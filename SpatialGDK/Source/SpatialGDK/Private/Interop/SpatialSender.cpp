@@ -2,10 +2,12 @@
 
 #include "Interop/SpatialSender.h"
 
+#include "Engine/Engine.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
+#include "Net/NetworkProfiler.h"
+#include "Runtime/Launch/Resources/Version.h"
 
-#include "Engine/Engine.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -18,7 +20,6 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "Net/NetworkProfiler.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/ComponentPresence.h"
@@ -396,7 +397,11 @@ bool USpatialSender::ValidateOrExit_IsSupportedClass(const FString& PathName)
 {
 	// Level blueprint classes could have a PIE prefix, this will remove it.
 	FString RemappedPathName = PathName;
+#if ENGINE_MINOR_VERSION >= 26
+	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), RemappedPathName, false);
+#else
 	GEngine->NetworkRemapPath(NetDriver, RemappedPathName, false);
+#endif
 
 	return ClassInfoManager->ValidateOrExit_IsSupportedClass(RemappedPathName);
 }

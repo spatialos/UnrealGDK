@@ -3,6 +3,7 @@
 #include "Utils/EntityFactory.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
@@ -31,6 +32,7 @@
 #include "Engine/LevelScriptActor.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 DEFINE_LOG_CATEGORY(LogEntityFactory);
 
@@ -173,7 +175,11 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 		// No path in SpatialOS should contain a PIE prefix.
 		FString TempPath = Actor->GetFName().ToString();
+#if ENGINE_MINOR_VERSION >= 26
+		GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), TempPath, false /*bIsReading*/);
+#else
 		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
+#endif
 
 		StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
 		bNetStartup = Actor->bNetStartup;
@@ -394,7 +400,11 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 
 	// No path in SpatialOS should contain a PIE prefix.
 	FString TempPath = Actor->GetFName().ToString();
+#if ENGINE_MINOR_VERSION >= 26
+	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), TempPath, false /*bIsReading*/);
+#else
 	GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
+#endif
 	const TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
 
 	TArray<FWorkerComponentData> Components;
