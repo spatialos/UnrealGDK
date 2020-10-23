@@ -7,10 +7,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
-//#include "TestMigrationActor.h"
 
 /**
- * This test moves a character between two workers. Based on the SpatialTestCharacterMovement test.
+ * This test moves a character backward and forward repeatedly between two workers, adding actors. Based on the SpatialTestCharacterMovement test.
  * This test requires the CharacterMovementTestGameMode, trying to run this test on a different game mode will fail.
  *
  * The test includes two servers and one client worker. The client worker begins with a PlayerController and a TestCharacterMovement
@@ -69,11 +68,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = PlayerController;
 		AActor* TestActor = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FTransform(), SpawnParams);
-		// ATestMigrationActor* TestMigrationActor =
-		//	GetWorld()->SpawnActor<ATestMigrationActor>(ATestMigrationActor::StaticClass(), FTransform(), SpawnParams);
-
-		// TestActor->SetReplicates(true); <- this causes parent not to migrate, created dummy actor class that replicates but has the same
-		// issue
+		TestActor->SetReplicates(true); // NOTE: this currently causes parent not to migrate after a delay
 		RegisterAutoDestroyActor(TestActor);
 		FinishStep();
 	});
@@ -82,10 +77,6 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	FSpatialFunctionalTestStepDefinition MoveForwardStepDefinition(/*bIsNativeDefinition*/ true);
 	MoveForwardStepDefinition.StepName = TEXT("Client1MoveForward");
 	MoveForwardStepDefinition.TimeLimit = 0.0f;
-	/*MoveForwardStepDefinition.NativeStartEvent.BindLambda([this]() { // Setting this here breaks the test so moved it to its own step
-		bCharacterReachedDestination = false;
-		FinishStep();
-	});*/
 	MoveForwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 		ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
@@ -103,10 +94,6 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	FSpatialFunctionalTestStepDefinition MoveBackwardStepDefinition(/*bIsNativeDefinition*/ true);
 	MoveBackwardStepDefinition.StepName = TEXT("Client1MoveBackward");
 	MoveBackwardStepDefinition.TimeLimit = 0.0f;
-	/*MoveBackwardStepDefinition.NativeStartEvent.BindLambda([this]() {
-		bCharacterReachedOrigin = false;
-		FinishStep();
-	});*/
 	MoveBackwardStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 		ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
@@ -176,10 +163,6 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			{
 				PlayerCharacter->SetActorLocation(FVector(0.0f, -25.0f, 50.0f));
 			}
-			/*if (FlowControllerId == 2)
-			{
-				PlayerCharacter->SetActorLocation(FVector(0.0f, 25.0f, 50.0f));
-			}*/
 		}
 
 		FinishStep();
@@ -188,11 +171,17 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	// Repeatedly move character forwards and backwards over the worker boundary and adding actors every time
 	for (int i = 0; i < 5; i++)
 	{
-		AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
+		if (i < 1)
+		{
+			AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
+		}
 
 		AddStepFromDefinition(MoveForwardStepDefinition, FWorkerDefinition::Client(1));
 
-		AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
+		if (i < 1)
+		{
+			AddStepFromDefinition(AddActorStepDefinition, FWorkerDefinition::AllServers);
+		}
 
 		AddStepFromDefinition(MoveBackwardStepDefinition, FWorkerDefinition::Client(1));
 

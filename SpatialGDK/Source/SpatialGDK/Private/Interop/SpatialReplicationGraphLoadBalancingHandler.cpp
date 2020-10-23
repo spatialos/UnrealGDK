@@ -50,18 +50,16 @@ FActorRepListRefView FSpatialReplicationGraphLoadBalancingContext::GetDependentA
 	return EmptyList;
 }
 
-bool FSpatialReplicationGraphLoadBalancingContext::IsActorReadyForMigration(AActor* Actor, FString& OutFailureReason)
+EActorMigrationResult FSpatialReplicationGraphLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
 {
 	if (!Actor->HasAuthority())
 	{
-		OutFailureReason = TEXT("does not have authority");
-		return false;
+		return EActorMigrationResult::NotAuthoritative;
 	}
 
 	if (!Actor->IsActorReady())
 	{
-		OutFailureReason = TEXT("is not ready");
-		return false;
+		return EActorMigrationResult::NotReady;
 	}
 
 	// The following checks are extracted from UReplicationGraph::ReplicateActorListsForConnections_Default
@@ -70,17 +68,14 @@ bool FSpatialReplicationGraphLoadBalancingContext::IsActorReadyForMigration(AAct
 
 	if (!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 	{
-		OutFailureReason = TEXT("does not have spatial class flags");
-		return false;
+		return EActorMigrationResult::NoSpatialClassFlags;
 	}
 
 	FConnectionReplicationActorInfo& ConnectionData = InfoMap.FindOrAdd(Actor);
 	if (ConnectionData.bDormantOnConnection)
 	{
-		OutFailureReason = TEXT("is dormant on connection");
-		return false;
+		return EActorMigrationResult::DormantOnConnection;
 	}
 
-	OutFailureReason = TEXT("");
-	return true;
+	return EActorMigrationResult::Success;
 }

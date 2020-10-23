@@ -29,59 +29,44 @@ void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
 	}
 }
 
-bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor, FString& OutFailureReason)
+EActorMigrationResult FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
 {
 	if (!Actor->HasAuthority())
 	{
-		OutFailureReason = TEXT("does not have authority");
-		return false;
+		return EActorMigrationResult::NotAuthoritative;
 	}
 
 	if (!Actor->IsActorReady())
 	{
-		if (Actor->GetGameTimeSinceCreation() > 0.1)
-		{
-			OutFailureReason = TEXT("is not ready");
-		}
-		else
-		{
-			// Setting the failure reason to empty to suppress the logs for newly created actors
-			OutFailureReason = TEXT("");
-		}
-		return false;
+		return EActorMigrationResult::NotReady;
 	}
 
 	// These checks are extracted from UNetDriver::ServerReplicateActors_BuildNetworkObjects
 
 	if (Actor->IsPendingKillPending())
 	{
-		OutFailureReason = TEXT("is pending kill");
-		return false;
+		return EActorMigrationResult::PendingKill;
 	}
 
 	// Verify the actor is actually initialized (it might have been intentionally spawn deferred until a later frame)
 	if (!Actor->IsActorInitialized())
 	{
-		OutFailureReason = TEXT("is not initialized");
-		return false;
+		return EActorMigrationResult::NotInitialized;
 	}
 
 	// Don't send actors that may still be streaming in or out
 	ULevel* Level = Actor->GetLevel();
 	if (Level->HasVisibilityChangeRequestPending() || Level->bIsAssociatingLevel)
 	{
-		OutFailureReason = TEXT("is streaming in or out");
-		return false;
+		return EActorMigrationResult::Streaming;
 	}
 
 	if (Actor->NetDormancy == DORM_Initial && Actor->IsNetStartupActor())
 	{
-		OutFailureReason = TEXT("is startup actor and initially net dormant");
-		return false;
+		return EActorMigrationResult::NetDormant;
 	}
 
-	OutFailureReason = TEXT("");
-	return true;
+	return EActorMigrationResult::Success;
 }
 
 FSpatialNetDriverLoadBalancingContext::FNetworkObjectsArrayAdaptor FSpatialNetDriverLoadBalancingContext::GetActorsBeingReplicated()

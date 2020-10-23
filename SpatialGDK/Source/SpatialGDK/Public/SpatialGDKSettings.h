@@ -381,4 +381,10 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
 	float StartupLogRate;
+
+	/**
+	 * Time in seconds, controls at which frequency the logs related to actor migration are emitted.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
+	float ActorMigrationLogRate;
 };

@@ -3,8 +3,7 @@
 #pragma once
 
 #include "Engine/NetworkObjectList.h"
-
-class USpatialNetDriver;
+#include "EngineClasses/SpatialNetDriver.h"
 
 struct FSpatialNetDriverLoadBalancingContext
 {
@@ -48,7 +47,7 @@ struct FSpatialNetDriverLoadBalancingContext
 
 	void UpdateWithAdditionalActors();
 
-	bool IsActorReadyForMigration(AActor* Actor, FString& OutFailureReason);
+	EActorMigrationResult IsActorReadyForMigration(AActor* Actor);
 
 protected:
 	USpatialNetDriver* NetDriver;

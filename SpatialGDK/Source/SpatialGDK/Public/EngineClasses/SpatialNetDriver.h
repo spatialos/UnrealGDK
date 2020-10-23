@@ -52,6 +52,19 @@ DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialCo
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Relevant Actors"), STAT_SpatialActorsRelevant, STATGROUP_SpatialNet, );
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Changed Relevant Actors"), STAT_SpatialActorsChanged, STATGROUP_SpatialNet, );
 
+enum EActorMigrationResult : uint8
+{
+	Success,
+	NotAuthoritative,
+	NotReady,
+	PendingKill,
+	NotInitialized,
+	Streaming,
+	NetDormant,
+	NoSpatialClassFlags,
+	DormantOnConnection
+};
+
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 {
@@ -204,6 +217,12 @@ public:
 	float GetElapsedTime() { return Time; }
 #endif
 
+	// Check if we have already logged this actor / migration failure 
+	bool IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
+
+	// Record this actor / migration failure
+	void AddLogRecord(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
+
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
@@ -306,7 +325,13 @@ private:
 
 	void ProcessOwnershipChanges();
 
+	// Has a certain interval (in seconds) been passed since the previous timestamp
+	bool HasTimedOut(const float Interval, uint64& TimeStamp);
+
 	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
 	uint64 StartupTimestamp;
 	FString StartupClientDebugString;
+
+	TMultiMap<Worker_EntityId, EActorMigrationResult> MigrationFailureLogStore;
+	uint64 MigrationTimestamp;
 };

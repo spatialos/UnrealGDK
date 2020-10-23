@@ -152,3 +152,64 @@ uint64 FSpatialLoadBalancingHandler::GetLatestAuthorityChangeFromHierarchy(const
 
 	return LatestTimestamp;
 }
+
+void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult ActorMigrationResult, AActor* Actor)
+{
+	FString FailureReason;
+
+	switch (ActorMigrationResult)
+	{
+	case EActorMigrationResult::NotAuthoritative:
+		FailureReason = TEXT("does not have authority");
+		break;
+	case EActorMigrationResult::NotReady:
+		if (Actor->GetGameTimeSinceCreation() > 1)
+		{
+			FailureReason = TEXT("is not ready");
+		}
+		else
+		{
+			// Setting the failure reason to empty to suppress the logs for newly created actors
+			FailureReason = TEXT("");
+		}
+		break;
+	case EActorMigrationResult::PendingKill:
+		FailureReason = TEXT("is pending kill");
+		break;
+	case EActorMigrationResult::NotInitialized:
+		FailureReason = TEXT("is not initialized");
+		break;
+	case EActorMigrationResult::Streaming:
+		FailureReason = TEXT("is streaming in or out");
+		break;
+	case EActorMigrationResult::NetDormant:
+		FailureReason = TEXT("is startup actor and initially net dormant");
+		break;
+	case EActorMigrationResult::NoSpatialClassFlags:
+		FailureReason = TEXT("does not have spatial class flags");
+		break;
+	case EActorMigrationResult::DormantOnConnection:
+		FailureReason = TEXT("is dormant on connection");
+		break;
+	default:
+		FailureReason = TEXT("");
+		break;
+	}
+
+	// If a failure reason is returned log warning
+	if (FailureReason != "")
+	{
+		Worker_EntityId ActorEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+
+		// Check if we have recently logged this actor / reason and if so suppress the log
+		if (!NetDriver->IsLogged(ActorEntityId, ActorMigrationResult))
+		{
+			NetDriver->AddLogRecord(ActorEntityId, ActorMigrationResult);
+
+			AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
+			UE_LOG(LogSpatialLoadBalancingHandler, Warning,
+				   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s on worker 0x%x"), *HierarchyRoot->GetName(),
+				   *Actor->GetName(), ActorEntityId, *FailureReason, this);
+		}
+	}
+}
