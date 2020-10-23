@@ -412,7 +412,7 @@ TArray<Worker_ComponentId> EntityFactory::GetComponentPresenceList(const TArray<
 		}
 		ComponentPresenceList.Add(ComponentDatas[i].component_id);
 	}
-	ComponentPresenceList[ComponentDatas.Num()] = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
+	ComponentPresenceList.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID);
 	return ComponentPresenceList;
 }
 
