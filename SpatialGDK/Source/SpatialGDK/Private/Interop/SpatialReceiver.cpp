@@ -105,14 +105,18 @@ void USpatialReceiver::LeaveCriticalSection()
 
 	for (Worker_EntityId& PendingAddEntity : PendingAddActors)
 	{
-		ReceiveActor(PendingAddEntity);
+		AActor* ReceivedActor = ReceiveActor(PendingAddEntity);
 		if (!IsEntityWaitingForAsyncLoad(PendingAddEntity))
 		{
 			OnEntityAddedDelegate.Broadcast(PendingAddEntity);
 		}
-		PendingAddComponents.RemoveAll([PendingAddEntity](const PendingAddComponentWrapper& Component) {
-			return Component.EntityId == PendingAddEntity && Component.ComponentId != SpatialConstants::GDK_DEBUG_COMPONENT_ID;
-		});
+
+		if (ReceivedActor == nullptr || !ReceivedActor->IsActorReady())
+		{
+			PendingAddComponents.RemoveAll([PendingAddEntity](const PendingAddComponentWrapper& Component) {
+				return Component.EntityId == PendingAddEntity && Component.ComponentId != SpatialConstants::GDK_DEBUG_COMPONENT_ID;
+			});
+		}
 	}
 
 	// The reason the AuthorityChange processing is split according to authority is to avoid cases
@@ -851,7 +855,7 @@ bool USpatialReceiver::IsReceivedEntityTornOff(Worker_EntityId EntityId)
 	return false;
 }
 
-void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
+AActor* USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverReceiveActor);
 
@@ -873,15 +877,19 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	if (SpatialGDKSettings->bAsyncLoadNewClassesOnEntityCheckout && NeedToLoadClass(ClassPath))
 	{
 		StartAsyncLoadingClass(ClassPath, EntityId);
-		return;
+		return nullptr;
 	}
 
 	AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 	if (EntityActor != nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
-			   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
-		return;
+		if (!EntityActor->IsActorReady())
+		{
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
+				*NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
+		}
+
+		return EntityActor;
 	}
 
 	UE_LOG(LogSpatialReceiver, Verbose,
@@ -895,7 +903,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		UE_LOG(LogSpatialReceiver, Warning,
 			   TEXT("The received actor with entity ID %lld couldn't be loaded. The actor (%s) will not be spawned."), EntityId,
 			   *UnrealMetadataComp->ClassPath);
-		return;
+		return nullptr;
 	}
 
 	// Make sure ClassInfo exists
@@ -907,7 +915,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	{
 		UE_LOG(LogSpatialReceiver, Verbose,
 			   TEXT("The received actor with entity ID %lld was already torn off. The actor will not be spawned."), EntityId);
-		return;
+		return nullptr;
 	}
 
 	EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp, NetOwningClientWorkerComp);
@@ -917,7 +925,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// This could be nullptr if:
 		// a stably named actor could not be found
 		// the class couldn't be loaded
-		return;
+		return nullptr;
 	}
 
 	// RemoveActor immediately if we've received the tombstone component.
@@ -928,7 +936,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
 		PackageMap->ResolveEntityActor(EntityActor, EntityId);
 		RemoveActor(EntityId);
-		return;
+		return nullptr;
 	}
 
 	UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
@@ -946,7 +954,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	{
 		UE_LOG(LogSpatialReceiver, Error,
 			   TEXT("Unable to find SpatialOSNetConnection! Has this worker been disconnected from SpatialOS due to a timeout?"));
-		return;
+		return nullptr;
 	}
 
 	if (!PackageMap->ResolveEntityActor(EntityActor, EntityId))
@@ -955,7 +963,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			   TEXT("Failed to resolve entity actor when receiving entity %lld. The actor (%s) will not be spawned."), EntityId,
 			   *EntityActor->GetName());
 		EntityActor->Destroy(true);
-		return;
+		return nullptr;
 	}
 
 	// Set up actor channel.
@@ -972,7 +980,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			   TEXT("Failed to create an actor channel when receiving entity %lld. The actor (%s) will not be spawned."), EntityId,
 			   *EntityActor->GetName());
 		EntityActor->Destroy(true);
-		return;
+		return nullptr;
 	}
 
 	if (Channel->Actor == nullptr)
@@ -1052,6 +1060,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	{
 		NetDriver->AddPendingDormantChannel(Channel);
 	}
+
+	return EntityActor;
 }
 
 void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
