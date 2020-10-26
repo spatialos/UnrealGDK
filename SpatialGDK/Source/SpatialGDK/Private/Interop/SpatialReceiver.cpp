@@ -250,17 +250,19 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		check(bInCriticalSection);
 
 		// PendingAddActor should only be populated with actors we actually want to check out.
-		// So a local and ready actor should not be considered as a actor pending addition.
+		// So a local and ready actor should not be considered as an actor pending addition.
 		// Nitty-gritty implementation side effect is also that we do not want to stomp
 		// the local state of a not ready-actor, because it is locally authoritative and will remain
 		// that way until it is marked as ready. Putting it in PendingAddActor has the side effect
 		// that the received component data will get dropped (likely outdated data), and is
 		// something we do not wish to happen for ready actor (likely new data received through
 		// a component refresh on authority delegation).
-		AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id));
-		if (EntityActor == nullptr || !EntityActor->IsActorReady())
 		{
-			PendingAddActors.AddUnique(Op.entity_id);
+			AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id));
+			if (EntityActor == nullptr || !EntityActor->IsActorReady())
+			{
+				PendingAddActors.AddUnique(Op.entity_id);
+			}
 		}
 		return;
 	case SpatialConstants::WORKER_COMPONENT_ID:
@@ -896,7 +898,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		if (!EntityActor->IsActorReady())
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
-				*NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
+				   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
 		}
 
 		return;
