@@ -2675,12 +2675,12 @@ bool USpatialNetDriver::IsLogged(Worker_EntityId ActorEntityId, EActorMigrationR
 	}
 
 	// Check if the pair of actor and failure reason have already been logged
-	return MigrationFailureLogStore.FindPair(ActorEntityId, ActorMigrationFailure) != nullptr;
-}
-
-void USpatialNetDriver::AddLogRecord(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure)
-{
-	MigrationFailureLogStore.AddUnique(ActorEntityId, ActorMigrationFailure);
+	bool bIsLogged = MigrationFailureLogStore.FindPair(ActorEntityId, ActorMigrationFailure) != nullptr;
+	if (!bIsLogged)
+	{
+		MigrationFailureLogStore.AddUnique(ActorEntityId, ActorMigrationFailure);
+	}
+	return bIsLogged;
 }
 
 bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)

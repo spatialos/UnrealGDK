@@ -204,8 +204,6 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 		// Check if we have recently logged this actor / reason and if so suppress the log
 		if (!NetDriver->IsLogged(ActorEntityId, ActorMigrationResult))
 		{
-			NetDriver->AddLogRecord(ActorEntityId, ActorMigrationResult);
-
 			AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 			UE_LOG(LogSpatialLoadBalancingHandler, Warning,
 				   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s on worker 0x%x"),

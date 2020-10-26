@@ -219,11 +219,8 @@ public:
 	float GetElapsedTime() { return Time; }
 #endif
 
-	// Check if we have already logged this actor / migration failure
+	// Check if we have already logged this actor / migration failure, if not update the log record
 	bool IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
-
-	// Record this actor / migration failure
-	void AddLogRecord(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
 
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
