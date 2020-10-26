@@ -118,6 +118,12 @@ Worker_ComponentUpdate SpatialLoadBalanceEnforcer::CreateAuthorityDelegationUpda
 	// Ensure that every component ID in ComponentPresence will be set in the delegation.
 	for (const Worker_ComponentId RequiredComponentId : ComponentPresenceComponent.ComponentList)
 	{
+		// Skip entity completeness tags, as we do not want them to be delegated.
+		// This would create false completeness for workers which happened to be delegated the tag components.
+		if (SpatialConstants::IsEntityCompletenessComponent(RequiredComponentId))
+		{
+			continue;
+		}
 		ComponentIds.AddUnique(RequiredComponentId);
 	}
 
