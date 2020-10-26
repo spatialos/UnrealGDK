@@ -373,6 +373,11 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 								HEARTBEAT_COMPONENT_ID
 	};
 
+inline bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId)
+{
+	return ComponentId >= SpatialConstants::FIRST_EC_COMPONENT_ID && ComponentId <= SpatialConstants::LAST_EC_COMPONENT_ID;
+}
+
 inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {
 	switch (RPCType)
