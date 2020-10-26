@@ -346,7 +346,7 @@ public:
 	/** Whether to use the GDK-associated SpatialOS inspector version for local deployments, or to use the one specified in the
 	 * InspectorVersion field. */
 	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (DisplayName = "Use GDK Pinned Inspector Version"))
-	bool bUseGDKPinnedInspectorVersion = true;
+	bool bUseGDKPinnedInspectorVersion;
 
 	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
 	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (EditCondition = "!bUseGDKPinnedInspectorVersion"))
