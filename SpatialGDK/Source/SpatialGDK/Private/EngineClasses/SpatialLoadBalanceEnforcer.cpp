@@ -111,6 +111,12 @@ EntityComponentUpdate SpatialLoadBalanceEnforcer::ConstructAclUpdate(const Worke
 	// Ensure that every component ID in ComponentPresence is set in the write ACL.
 	for (const Worker_ComponentId RequiredComponentId : ComponentPresenceComponent.ComponentList)
 	{
+		// Skip entity completeness tags, as we do not want them to be delegated.
+		// This would create false completeness for workers which happened to be delegated the tag components.
+		if (SpatialConstants::IsEntityCompletenessComponent(RequiredComponentId))
+		{
+			continue;
+		}
 		ComponentIds.AddUnique(RequiredComponentId);
 	}
 
