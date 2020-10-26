@@ -120,7 +120,6 @@ public:
 	Worker_ComponentId ComputeActorInterestComponentId(const AActor* Actor) const;
 
 	bool IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const;
-	bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId) const;
 
 	const TArray<Worker_ComponentId>& GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const;
 
