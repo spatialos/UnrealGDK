@@ -550,6 +550,11 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 	HandleActorAuthority(Op);
 }
 
+void USpatialReceiver::OnComponentSetAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op)
+{
+	// Op.authority
+}
+
 void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, APlayerController* PlayerController)
 {
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("HandlePlayerLifecycleAuthority for PlayerController %s."),

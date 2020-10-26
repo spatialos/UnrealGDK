@@ -82,6 +82,9 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
 			Receiver->OnAuthorityChange(Op.op.authority_change);
 			break;
+		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
+			Receiver->OnComponentSetAuthorityChange(Op.op.component_set_authority_change);
+			break;
 
 		// World Command Responses
 		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
