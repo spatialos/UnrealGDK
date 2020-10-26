@@ -331,6 +331,6 @@ private:
 	uint64 StartupTimestamp;
 	FString StartupClientDebugString;
 
-	TMultiMap<Worker_EntityId, EActorMigrationResult> MigrationFailureLogStore;
+	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
 };
