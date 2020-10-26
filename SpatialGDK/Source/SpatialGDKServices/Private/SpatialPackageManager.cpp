@@ -1,14 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Async/Async.h"
 #include "SpatialPackageManager.h"
+#include "Async/Async.h"
 #include "SpatialGDKServicesConstants.h"
+#include "CoreMinimal.h"
+#include "Misc/MonitoredProcess.h"
+#include "TimerManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageManager);
 
 FSpatialPackageManager::FSpatialPackageManager() {}
 
-void FSpatialPackageManager::FetchRuntimeBinary(FString RuntimeVersion)
+void FSpatialPackageManager::FetchRuntimeBinary(const FString& RuntimeVersion)
 {
 	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVersion);
 
@@ -29,7 +32,7 @@ void FSpatialPackageManager::FetchRuntimeBinary(FString RuntimeVersion)
 	FSpatialPackageManager.StartProcess(Params, "Runtime Fetching");
 }
 
-void FSpatialPackageManager::FetchInspectorBinary(FString InspectorVersion)
+void FSpatialPackageManager::FetchInspectorBinary(const FString& InspectorVersion)
 {
 	FString InspectorPath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("inspector"), InspectorVersion);
 
@@ -48,11 +51,11 @@ void FSpatialPackageManager::FetchInspectorBinary(FString InspectorVersion)
 	FSpatialPackageManager.StartProcess(Params, "Inspector Fetching");
 }
 
-void FSpatialPackageManager::StartProcess(FString Params, FString ProcessName)
+void FSpatialPackageManager::StartProcess(const FString& Params, const FString& ProcessName)
 {
-	auto ExePath = SpatialGDKServicesConstants::SpatialExe;
+	const FString& ExePath = SpatialGDKServicesConstants::SpatialExe;
 	FetchingProcess = {ExePath, Params, true, true };
-	FetchingProcess->OnOutput().BindLambda([&](const FString& Output) {
+	FetchingProcess->OnOutput().BindLambda([](const FString& Output) {
 		UE_LOG(LogSpatialPackageManager, Display, TEXT("Runtime: %s"), *Output);
 	});
 	FetchingProcess->Launch();
@@ -61,19 +64,19 @@ void FSpatialPackageManager::StartProcess(FString Params, FString ProcessName)
 	{
 		if (FetchingProcess->GetDuration().GetTotalSeconds() > SpatialGDKServicesConstants::ProcessTimeoutTime)
 		{
-			UE_LOG(LogSpatialPackageManager, Error, TEXT("Timed out waiting for the %s fetching to start."), *ProcessName);
+			UE_LOG(LogSpatialPackageManager, Error, TEXT("Timed out waiting for the %s to start."), *ProcessName);
 			KillProcess(ProcessName);
 			break;
 		}
 	}
 }
 
-bool FSpatialPackageManager::KillProcess(FString ProcessName)
+bool FSpatialPackageManager::KillProcess(const FString& ProcessName)
 {
-	UE_LOG(LogSpatialPackageManager, Warning, TEXT("Killing %s."), *ProcessName);
+	UE_LOG(LogSpatialPackageManager, Warning, TEXT("Killing process %s."), *ProcessName);
 	if (FetchingProcess->Update())
 	{
-		auto Handle = FetchingProcess->GetProcessHandle();
+		FProcHandle Handle = FetchingProcess->GetProcessHandle();
 		if (Handle.IsValid())
 		{
 			FPlatformProcess::TerminateProc(Handle);

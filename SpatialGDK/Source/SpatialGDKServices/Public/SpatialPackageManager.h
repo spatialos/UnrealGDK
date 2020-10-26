@@ -1,8 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
-
-#include "Async/Future.h"
 #include "CoreMinimal.h"
 #include "Misc/MonitoredProcess.h"
 #include "TimerManager.h"
@@ -14,12 +12,12 @@ class SPATIALGDKSERVICES_API FSpatialPackageManager
 public:
 	FSpatialPackageManager();
 
-	static void FetchRuntimeBinary(FString RuntimeVersion);
-	static void FetchInspectorBinary(FString InspectorVersion);
-	void StartProcess(FString Params, FString ProcessName);
-	bool KillProcess(FString ProcessName);
+	static void FetchRuntimeBinary(const FString& RuntimeVersion);
+	static void FetchInspectorBinary(const FString& InspectorVersion);
+	void StartProcess(const FString& Params, const FString& ProcessName);
+	bool KillProcess(const FString& ProcessName);
 
 private:
-	TOptional<FMonitoredProcess> FetchingProcess = {};
+	TOptional<FMonitoredProcess> FetchingProcess;
 	static const int32 ExitCodeSuccess = 0;
 };
