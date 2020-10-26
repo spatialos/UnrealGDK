@@ -1072,8 +1072,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	{
 		NetDriver->AddPendingDormantChannel(Channel);
 	}
-
-	return;
 }
 
 void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
