@@ -276,7 +276,6 @@ void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 
 	if (!ErrorMatcher.FindNext())
 	{
-
 		UE_LOG(LogSpatialOutputLog, Error, TEXT("Failed to parse log line: %s"), *LogLine);
 		return;
 	}
@@ -303,45 +302,33 @@ void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 
 void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 {
-
-	/////////////
-	// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
-	 const FRegexPattern LogPattern = FRegexPattern(TEXT("(.*)? level=(.*) msg=\"(.*)\" loggerName=(.*\\.)?(.*)"));
+	 const FRegexPattern LogPattern = FRegexPattern(TEXT("\\[(\\w*)\\] \\[(\\w*)\\] (.*)"));
 	 FRegexMatcher LogMatcher(LogPattern, LogLine);
 
-//	 if (!LogMatcher.FindNext())
-//	{
-		// If this log line did not match the log line regex then it is an error line which is parsed differently.
-	//	FormatAndPrintRawErrorLine(LogLine);
-		//return;
-	//}
-
-	 FString LogTimeStamp = LogMatcher.GetCaptureGroup(0);
-	 FString LogLevelText = LogMatcher.GetCaptureGroup(1);
-	 FString LogMessage = LogMatcher.GetCaptureGroup(2);
-	 FString LogCategory = LogMatcher.GetCaptureGroup(4);
-
-	// For worker logs 'WorkerLogMessageHandler' we use the worker name as the category. The worker name can be found in the msg.
-	// msg=[WORKER_NAME:WORKER_TYPE] ... e.g. msg=[UnrealWorkerF5C56488482FEDC37B10E382770067E3:UnrealWorker]
-	 if (LogCategory == TEXT("WorkerLogMessageHandler") || LogCategory == TEXT("Runtime"))
+	 if (!LogMatcher.FindNext())
 	{
-		const FRegexPattern WorkerLogPattern = FRegexPattern(TEXT("\\[([^:]*):([^\\]]*)\\] (.*)"));
-		FRegexMatcher WorkerLogMatcher(WorkerLogPattern, LogMessage);
-
-		if (WorkerLogMatcher.FindNext())
-		{
-			LogCategory = WorkerLogMatcher.GetCaptureGroup(1);		  // Worker Name
-			FString WorkerType = WorkerLogMatcher.GetCaptureGroup(2); // Worker Type
-
-			if (LogCategory.StartsWith(WorkerType))
-			{
-				// We shorten the category name to make it more human readable. e.g. UnrealWorkerF5C56
-				LogCategory = LogCategory.Left(WorkerType.Len() + 8);
-			}
-
-			LogMessage = WorkerLogMatcher.GetCaptureGroup(3);
-		}
+		// If this log line did not match the log line regex then it is an error line which is parsed differently.
+		FormatAndPrintRawErrorLine(LogLine);
+		return;
 	}
+	 FString LogCategory = LogMatcher.GetCaptureGroup(1);
+	 FString LogLevelText = LogMatcher.GetCaptureGroup(2);
+	 FString LogMessage = LogMatcher.GetCaptureGroup(3);
+
+	 const FRegexPattern LogMessagePattern = FRegexPattern(TEXT("\\[(.*)\\] (.*)"));
+	 FRegexMatcher LogMatcherMessage(LogMessagePattern, LogMessage);
+
+	 if (LogMatcherMessage.FindNext())
+	 {
+		 FString WorkerType = "UnrealWorker";
+		 FString LogMessageCategory = LogMatcherMessage.GetCaptureGroup(1);
+		 LogMessage = LogMatcherMessage.GetCaptureGroup(2);
+		 LogCategory = LogMessageCategory.Left(WorkerType.Len() + 5);
+	 }
+	 else
+	 {
+		 LogCategory = "Runtime";
+	 }
 
 	 ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
 
@@ -369,11 +356,6 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	 //Serialization must be done on the game thread.
 	 AsyncTask(ENamedThreads::GameThread, [this, LogMessage, LogVerbosity, LogCategory] {
 		Serialize(*LogMessage, LogVerbosity, FName(*LogCategory));
-	});
-
-	// TODO: Fix up serialization
-	AsyncTask(ENamedThreads::GameThread, [this, LogLine] {
-		Serialize(*LogLine, ELogVerbosity::Log, FName(TEXT("Runtime")));
 	});
 }
 
