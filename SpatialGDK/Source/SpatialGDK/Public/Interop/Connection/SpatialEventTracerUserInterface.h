@@ -81,7 +81,6 @@ public:
 	static bool GetActiveSpanId(UObject* WorldContextObject, FUserSpanId& OutUserSpanId);
 
 private:
-
 	static SpatialGDK::SpatialEventTracer* GetEventTracer(UObject* WorldContextObject);
 	static USpatialNetDriver* GetSpatialNetDriver(UObject* WorldContextObject);
 };

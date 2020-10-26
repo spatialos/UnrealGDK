@@ -190,7 +190,6 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
 		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
 
-
 		Worker_EntityId EntityId = Channel.GetEntityId();
 		TOptional<Trace_SpanId> CauseSpanId;
 		if (bEventTracerEnabled)
