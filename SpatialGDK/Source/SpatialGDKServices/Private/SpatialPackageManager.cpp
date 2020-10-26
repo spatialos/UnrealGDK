@@ -4,7 +4,6 @@
 #include "SpatialPackageManager.h"
 #include "SpatialGDKServicesConstants.h"
 
-
 DEFINE_LOG_CATEGORY(LogSpatialPackageManager);
 
 
@@ -13,11 +12,10 @@ FSpatialPackageManager::FSpatialPackageManager() {}
 
 void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 {
-
-	FString RuntimePath = FString::Printf(TEXT("%s/runtime/%s"), *SpatialGDKServicesConstants::GDKProgramPath, *RuntimeVersion);
+	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVersion);
 
 	// Check if the binary already exists for a given version
-	if (FPaths::FileExists(FString::Printf(TEXT("%s/%s"),*RuntimePath, *SpatialGDKServicesConstants::RuntimeExe)))
+	if (FPaths::FileExists(FPaths::Combine(RuntimePath, SpatialGDKServicesConstants::RuntimeExe)))
 	{
 		UE_LOG(LogSpatialPackageManager, Verbose, TEXT("Runtime binary already exist."));
 		return;
@@ -36,10 +34,10 @@ void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 void FSpatialPackageManager::TryFetchInspectorBinary(FString InspectorVersion)
 {
 
-	FString InspectorPath = FString::Printf(TEXT("%s/inspector/%s"), *SpatialGDKServicesConstants::GDKProgramPath, *InspectorVersion);
+	FString InspectorPath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("inspector"), InspectorVersion);
 
 	// Check if the binary already exists
-	if (FPaths::FileExists(FString::Printf(TEXT("%s/%s"), *InspectorPath, *SpatialGDKServicesConstants::InspectorExe)))
+	if (FPaths::FileExists(FPaths::Combine (InspectorPath, SpatialGDKServicesConstants::InspectorExe)))
 	{
 		UE_LOG(LogSpatialPackageManager, Verbose, TEXT("Inspector binaries already exist."));
 		return;

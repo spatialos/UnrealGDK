@@ -356,12 +356,6 @@ public:
 	const FString GetInspectorVersion() const
 	{
 		return bUseGDKPinnedInspectorVersion ? SpatialGDKServicesConstants::SpatialOSInspectorPinnedVersion : InspectorVersionOverride;
-			return SpatialGDKServicesConstants::SpatialOSInspectorPinnedVersion;
-		}
-		else
-		{
-			return InspectorVersionOverride;
-		}
 	}
 
 	mutable FOnDefaultTemplateNameRequireUpdate OnDefaultTemplateNameRequireUpdate;
