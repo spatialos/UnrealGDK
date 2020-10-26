@@ -309,6 +309,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	{
 		// If this log line did not match the log line regex then it is an error line which is parsed differently.
 		FormatAndPrintRawErrorLine(LogLine);
+		//UE_LOG(LogSpatialOutputLog, Error, TEXT("Failed to parse log line: %s"), *LogLine);
 		return;
 	}
 	 FString LogCategory = LogMatcher.GetCaptureGroup(1);
