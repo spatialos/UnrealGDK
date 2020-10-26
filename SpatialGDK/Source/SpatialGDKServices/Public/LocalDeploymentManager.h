@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "FileCache.h"
 #include "Improbable/SpatialGDKSettingsBridge.h"
+#include "Misc/MonitoredProcess.h"
 #include "Modules/ModuleManager.h"
 #include "Templates/SharedPointer.h"
 #include "TimerManager.h"
@@ -57,14 +58,9 @@ public:
 	FDelegateHandle WorkerConfigDirectoryChangedDelegateHandle;
 	IDirectoryWatcher::FDirectoryChanged WorkerConfigDirectoryChangedDelegate;
 
-	const FString& GetLocalRunningDeploymentID() { return LocalRunningDeploymentID; }
-
 private:
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
-
-	bool FinishLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName,
-							   FString RuntimeIPToExpose);
 
 	void KillExistingRuntime();
 
@@ -72,6 +68,8 @@ private:
 
 	static const int32 ExitCodeSuccess = 0;
 	static const int32 ExitCodeNotRunning = 4;
+
+	TOptional<FMonitoredProcess> RuntimeProcess = {};
 
 	// TODO: This RequiredRuntimePort might no longer be required.
 	static const int32 RequiredRuntimePort = 5301;
@@ -97,16 +95,7 @@ private:
 
 	FString ExposedRuntimeIP;
 
-	FString LocalRunningDeploymentID;
-
 	bool bRedeployRequired = false;
 	bool bAutoDeploy = false;
 	bool bIsInChina = false;
-
-	bool bExistingRuntimeStarted = false;
-
-	FProcHandle RuntimeProc;
-	uint32 RuntimeProcID;
-	void* ReadPipe = nullptr;
-	void* WritePipe = nullptr;
 };
