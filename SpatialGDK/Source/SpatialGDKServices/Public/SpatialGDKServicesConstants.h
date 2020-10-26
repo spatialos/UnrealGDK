@@ -36,6 +36,8 @@ const FString PlatformVersion = TEXT("x86_64-win32");
 const FString RuntimeExe = TEXT("runtime.exe");
 const FString InspectorExe = TEXT("inspector.exe");
 
+const int32 ProcessTimeoutTime = 60;
+
 const FString SpatialOSRuntimePinnedStandardVersion = TEXT("0.5.1");
 const FString SpatialOSRuntimePinnedCompatbilityModeVersion = TEXT("14.5.4");
 

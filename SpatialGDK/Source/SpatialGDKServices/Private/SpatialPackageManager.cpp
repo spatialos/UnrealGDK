@@ -6,9 +6,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageManager);
 
-
 FSpatialPackageManager::FSpatialPackageManager() {}
-
 
 void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 {
@@ -33,7 +31,6 @@ void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 
 void FSpatialPackageManager::TryFetchInspectorBinary(FString InspectorVersion)
 {
-
 	FString InspectorPath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("inspector"), InspectorVersion);
 
 	// Check if the binary already exists
@@ -62,9 +59,9 @@ void FSpatialPackageManager::StartProcess(FString Params, FString ProcessName)
 
 	while (FetchingProcess->Update())
 	{
-		if (FetchingProcess->GetDuration().GetTotalSeconds() > 60)
+		if (FetchingProcess->GetDuration().GetTotalSeconds() > SpatialGDKServicesConstants::ProcessTimeoutTime)
 		{
-			UE_LOG(LogSpatialPackageManager, Error, TEXT("Timed out waiting for the %s fetching to start."));
+			UE_LOG(LogSpatialPackageManager, Error, TEXT("Timed out waiting for the %s fetching to start."), *ProcessName);
 			KillProcess(ProcessName);
 			break;
 		}
@@ -85,6 +82,5 @@ void FSpatialPackageManager::KillProcess(FString ProcessName)
 		{
 			UE_LOG(LogSpatialPackageManager, Error, TEXT("Killing %s was unsuccessful. Invalid Proc Handle."), *ProcessName);
 		}
-		
 	}
 }
