@@ -219,88 +219,12 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 	return bSuccess;
 }
 
-// TODO: Change this to starting the runtime binary
-bool FLocalDeploymentManager::FinishLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs, FString SnapshotName,
-													FString RuntimeIPToExpose)
-{
-	// runtime.exe --config=squid_config.json --snapshot=snapshots\default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
-
-	LaunchConfig = TEXT("B:\\UnrealEngine425\\Samples\\UnrealGDKExampleProject\\spatial\\squid_config.json");
-	FString SnapshotPath = TEXT("B:\\UnrealEngine425\\Samples\\UnrealGDKExampleProject\\spatial\\snapshots\\default.snapshot");
-
-	FString RuntimeArgs = FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port %s --grpc-port %s %s"),
-										  *LaunchConfig, *SnapshotPath, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-										  *FString::FromInt(GRPCPort), *LaunchArgs);
-
-	FDateTime StartTime = FDateTime::Now();
-
-	FString RuntimePath = TEXT("B:\\UnrealEngine425\\Samples\\UnrealGDKExampleProject\\spatial\\runtime.exe");
-
-	uint32 OutProcessID;
-
-	FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
-
-	// const TCHAR* URL, const TCHAR* Parms, bool bLaunchDetached, bool bLaunchHidden, bool bLaunchReallyHidden, uint32* OutProcessID, int32
-	// PriorityModifier, const TCHAR* OptionalWorkingDirectory, void* PipeWriteChild, void * PipeReadChild)
-	// TODO: Ignore the pipes for now but implement later.
-	RuntimeProc = FPlatformProcess::CreateProc(*RuntimePath, *RuntimeArgs, false, true, true, &OutProcessID, 0, nullptr, WritePipe);
-
-	RuntimeProcID = OutProcessID;
-
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
-		while (FPlatformProcess::IsProcRunning(RuntimeProc))
-		{
-			FString RuntimeLogs = FPlatformProcess::ReadPipe(ReadPipe);
-
-			// Split the logs into newlines
-			TArray<FString> RuntimeLogLines;
-			RuntimeLogs.ParseIntoArrayLines(RuntimeLogLines);
-
-			for (FString LogLine : RuntimeLogLines)
-			{
-				// TODO: We might want to log these to a separate place or to disk.
-				// TODO: This will need proper categories
-				UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime: %s"), *LogLine);
-			}
-
-			FPlatformProcess::Sleep(0.01f);
-		}
-	});
-
-	if (RuntimeProc.IsValid())
-	{
-		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("RuntimeProc is valid"));
-	}
-	else
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("RuntimeProc is not valid"));
-	}
-
-	if (FPlatformProcess::IsProcRunning(RuntimeProc))
-	{
-		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("RuntimeProc is running"));
-	}
-	else
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("RuntimeProc is not running"));
-	}
-
-	bStartingDeployment = false;
-	bLocalDeploymentRunning = true;
-
-	AsyncTask(ENamedThreads::GameThread, [this] {
-		OnDeploymentStart.Broadcast();
-	});
-
-	return true;
-}
-
-// TODO: Might not need all these additional checks now
 void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs,
 													  FString SnapshotName, FString RuntimeIPToExpose,
 													  const LocalDeploymentCallback& CallBack)
 {
-	// TODO: Can probs get rid of this now.
+	FDateTime StartTime = FDateTime::Now();
+
 	if (bLocalDeploymentRunning)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start a local deployment but one is already running."));
@@ -322,11 +246,59 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		return;
 	}
 
-	LocalRunningDeploymentID.Empty();
-
 	bStartingDeployment = true;
 
-	FinishLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose);
+	FString CompiledSchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema"));
+	FString SchemaBundleOutput = FPaths::Combine(CompiledSchemaDir, TEXT("schema.sb"));
+
+	// Example: runtime.exe --config=squid_config.json --snapshot=snapshots\default.snapshot --worker-port 8018 --http-port 5006 --grpc-port
+	// 7777
+	FString RuntimeArgs = FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port %s --grpc-port %s %s"),
+										  *LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
+										  *FString::FromInt(GRPCPort), *LaunchArgs);
+
+	// TODO: Build the path using the pinned runtime version
+	FString RuntimeVerison = TEXT("0.5.1");
+	FString RuntimeExecutable = TEXT("runtime.exe");
+	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVerison, RuntimeExecutable);
+
+	RuntimeProcess = { *RuntimePath, *RuntimeArgs, SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
+					   /*InCreatePipes*/ true };
+
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
+
+	RuntimeProcess->OnOutput().BindLambda([&, SpatialOutputLog](const FString& Output) {
+		SpatialOutputLog.Pin()->FormatAndPrintRawLogLine(Output);
+
+		// Timeout detection.
+		if (bStartingDeployment && Output.Contains(TEXT("startup completed")))
+		{
+			bStartingDeployment = false;
+		}
+	});
+
+	RuntimeProcess->Launch();
+
+	while (bStartingDeployment && RuntimeProcess->Update())
+	{
+		if (RuntimeProcess->GetDuration().GetTotalSeconds() > 5.0)
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to start."));
+			bStartingDeployment = false;
+			break;
+		}
+	}
+
+	bStartingDeployment = false;
+	bLocalDeploymentRunning = true;
+
+	FTimespan Span = FDateTime::Now() - StartTime;
+	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
+
+	AsyncTask(ENamedThreads::GameThread, [this] {
+		OnDeploymentStart.Broadcast();
+	});
 
 	return;
 }
@@ -340,14 +312,10 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 		return false;
 	}
 
+	// TODO: Stopping deployment should no longer be required.
 	bStoppingDeployment = true;
 
-	FPlatformProcess::ClosePipe(0, ReadPipe);
-	FPlatformProcess::ClosePipe(0, WritePipe);
-
-	FPlatformProcess::TerminateProc(RuntimeProc, false);
-
-	FPlatformProcess::CloseProc(RuntimeProc);
+	RuntimeProcess->Stop();
 
 	bLocalDeploymentRunning = false;
 	bStoppingDeployment = false;
@@ -365,6 +333,7 @@ bool FLocalDeploymentManager::IsDeploymentStarting() const
 	return bStartingDeployment;
 }
 
+// TODO: Stopping deployment should no longer be required.
 bool FLocalDeploymentManager::IsDeploymentStopping() const
 {
 	return bStoppingDeployment;
@@ -436,9 +405,9 @@ void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World,
 							FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 						FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 
+						// TODO: This needs a full rework for standalone runtime.
 						FString SpatialPath = SpatialGDKServicesConstants::SpatialOSDirectory;
-						SnapshotSearchDirectory =
-							SpatialPath + TEXT("logs/localdeployment/") + LocalDeploymentManager->GetLocalRunningDeploymentID();
+						SnapshotSearchDirectory = SpatialPath + TEXT("logs/localdeployment/");
 
 						IFileManager& FileManager = FFileManagerGeneric::Get();
 
