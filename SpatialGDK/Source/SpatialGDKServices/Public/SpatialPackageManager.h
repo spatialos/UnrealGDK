@@ -7,7 +7,6 @@
 #include "Misc/MonitoredProcess.h"
 #include "TimerManager.h"
 
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageManager, Log, All);
 
 class SPATIALGDKSERVICES_API FSpatialPackageManager
@@ -15,11 +14,10 @@ class SPATIALGDKSERVICES_API FSpatialPackageManager
 public:
 	FSpatialPackageManager();
 
-
-	static void TryFetchRuntimeBinary(FString RuntimeVersion);
-	static void TryFetchInspectorBinary(FString InspectorVersion);
+	static void FetchRuntimeBinary(FString RuntimeVersion);
+	static void FetchInspectorBinary(FString InspectorVersion);
 	void StartProcess(FString Params, FString ProcessName);
-	void KillProcess(FString ProcessName);
+	bool KillProcess(FString ProcessName);
 
 private:
 	TOptional<FMonitoredProcess> FetchingProcess = {};

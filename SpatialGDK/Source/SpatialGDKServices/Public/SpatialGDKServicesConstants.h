@@ -43,7 +43,7 @@ const FString SpatialOSRuntimePinnedCompatbilityModeVersion = TEXT("14.5.4");
 
 const FString InspectorURL = TEXT("http://localhost:31000/inspector");
 const FString InspectorV2URL = TEXT("http://localhost:31000/inspector-v2");
-const FString SpatialOSInspectorPinnedVersion = TEXT("1.1.2");
+const FString InspectorPinnedVersion = TEXT("1.1.2");
 
 const FString PinnedStandardRuntimeTemplate = TEXT("n1standard4_std40_action1g1");
 const FString PinnedCompatibilityModeRuntimeTemplate = TEXT("n1standard4_std40_r0500");

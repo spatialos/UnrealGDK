@@ -8,14 +8,14 @@ DEFINE_LOG_CATEGORY(LogSpatialPackageManager);
 
 FSpatialPackageManager::FSpatialPackageManager() {}
 
-void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
+void FSpatialPackageManager::FetchRuntimeBinary(FString RuntimeVersion)
 {
 	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVersion);
 
 	// Check if the binary already exists for a given version
 	if (FPaths::FileExists(FPaths::Combine(RuntimePath, SpatialGDKServicesConstants::RuntimeExe)))
 	{
-		UE_LOG(LogSpatialPackageManager, Verbose, TEXT("Runtime binary already exist."));
+		UE_LOG(LogSpatialPackageManager, Verbose, TEXT("Runtime binary already exists."));
 		return;
 	}
 
@@ -25,26 +25,26 @@ void FSpatialPackageManager::TryFetchRuntimeBinary(FString RuntimeVersion)
 	// Download and unzip the executable to "UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\Runtime\*version*"
 	FString Params =
 		FString::Printf(TEXT("package retrieve runtime %s %s %s --unzip"), *SpatialGDKServicesConstants::PlatformVersion, *RuntimeVersion, *RuntimePath);
-	FSpatialPackageManager FSpatialPackageManager = {};
+	FSpatialPackageManager FSpatialPackageManager;
 	FSpatialPackageManager.StartProcess(Params, "Runtime Fetching");
 }
 
-void FSpatialPackageManager::TryFetchInspectorBinary(FString InspectorVersion)
+void FSpatialPackageManager::FetchInspectorBinary(FString InspectorVersion)
 {
 	FString InspectorPath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("inspector"), InspectorVersion);
 
 	// Check if the binary already exists
 	if (FPaths::FileExists(FPaths::Combine (InspectorPath, SpatialGDKServicesConstants::InspectorExe)))
 	{
-		UE_LOG(LogSpatialPackageManager, Verbose, TEXT("Inspector binaries already exist."));
+		UE_LOG(LogSpatialPackageManager, Verbose, TEXT("Inspector binary already exists."));
 		return;
 	}
 
 	// If it does not exist then fetch the binary using `spatial worker package get`
-	// Download the package to // UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs
+	// Download the package to UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs
 	FString Params = FString::Printf(TEXT("package get inspector %s %s %s/%s"), *SpatialGDKServicesConstants::PlatformVersion, *InspectorVersion,
 									 *InspectorPath, *SpatialGDKServicesConstants::InspectorExe);
-	FSpatialPackageManager FSpatialPackageManager = {};
+	FSpatialPackageManager FSpatialPackageManager;
 	FSpatialPackageManager.StartProcess(Params, "Inspector Fetching");
 }
 
@@ -68,7 +68,7 @@ void FSpatialPackageManager::StartProcess(FString Params, FString ProcessName)
 	}
 }
 
-void FSpatialPackageManager::KillProcess(FString ProcessName)
+bool FSpatialPackageManager::KillProcess(FString ProcessName)
 {
 	UE_LOG(LogSpatialPackageManager, Warning, TEXT("Killing %s."), *ProcessName);
 	if (FetchingProcess->Update())
@@ -77,10 +77,11 @@ void FSpatialPackageManager::KillProcess(FString ProcessName)
 		if (Handle.IsValid())
 		{
 			FPlatformProcess::TerminateProc(Handle);
+			return true;
 		}
-		else
-		{
-			UE_LOG(LogSpatialPackageManager, Error, TEXT("Killing %s was unsuccessful. Invalid Proc Handle."), *ProcessName);
-		}
+		UE_LOG(LogSpatialPackageManager, Error, TEXT("Killing process %s was unsuccessful. Invalid Proc Handle."), *ProcessName);
+		return false;
 	}
+	UE_LOG(LogSpatialPackageManager, Error, TEXT("Killing process %s was unsuccessful. This process is not currently running."), *ProcessName);
+	return false;
 }
