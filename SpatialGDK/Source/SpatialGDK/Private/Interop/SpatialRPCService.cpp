@@ -182,10 +182,13 @@ void SpatialRPCService::PushOverflowedRPCs()
 				NumProcessed++;
 				break;
 			case EPushRPCResult::QueueOverflowed:
-				UE_LOG(LogSpatialRPCService, Log,
-					   TEXT("SpatialRPCService::PushOverflowedRPCs: Sent some but not all overflowed RPCs. RPCs sent %d, RPCs still "
-							"overflowed: %d, Entity: %lld, RPC type: %s"),
-					   NumProcessed, OverflowedRPCArray.Num() - NumProcessed, EntityId, *SpatialConstants::RPCTypeToString(Type));
+				if (NumProcessed > 0)
+				{
+					UE_LOG(LogSpatialRPCService, Log,
+						   TEXT("SpatialRPCService::PushOverflowedRPCs: Sent some but not all overflowed RPCs. RPCs sent %d, RPCs still "
+								"overflowed: %d, Entity: %lld, RPC type: %s"),
+						   NumProcessed, OverflowedRPCArray.Num() - NumProcessed, EntityId, *SpatialConstants::RPCTypeToString(Type));
+				}
 				if (EventTracer != nullptr)
 				{
 					Trace_SpanId CauseSpanId = PendingPayload.SpanId.IsSet() ? PendingPayload.SpanId.GetValue() : Trace_SpanId();
