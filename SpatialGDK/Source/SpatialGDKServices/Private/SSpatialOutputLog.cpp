@@ -51,10 +51,6 @@ void SSpatialOutputLog::Construct(const FArguments& InArgs)
 	GLog->RemoveOutputDevice(this);
 
 	LogReader.Reset();
-
-	//StartUpLogDirectoryWatcher(LocalDeploymentLogsDir);
-		// Set the LogReader to the latest launch.log if we can.
-	//ReadLatestLogFile();
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
@@ -328,6 +324,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	 }
 	 else
 	 {
+		 //If the Log Category is not of type Worker, then it should be categorised as Runtime instead
 		 LogCategory = "Runtime";
 	 }
 
