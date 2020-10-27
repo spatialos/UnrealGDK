@@ -7,6 +7,8 @@
 #include "SpatialView/ConnectionHandler/InitialOpListConnectionHandler.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
 
+#pragma optimize("", off)
+
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 namespace
@@ -325,6 +327,7 @@ void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, Spa
 		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
 			if (IsStartupComponent(Op.op.authority_change.component_id))
 			{
+				checkNoEntry();
 				ExtractedOpList.AddOp(Op);
 			}
 			break;
@@ -353,3 +356,5 @@ void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, Spa
 		}
 	}
 }
+
+#pragma optimize("", on)
