@@ -138,6 +138,10 @@ public:
 			  meta = (ToolTip = "Select the actor you want to debug at runtime"))
 	bool bSelectActor = false;
 
+	// This will be drawn at the center of the screen.
+	UPROPERTY(EditDefaultsOnly, Category = Visualization, meta = (ToolTip = "Select the image you want to display as a crosshair"))
+	UTexture2D* CrosshairTexture;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
 	bool bAutoStart = false;
 
