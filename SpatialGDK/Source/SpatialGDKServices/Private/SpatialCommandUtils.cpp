@@ -539,7 +539,7 @@ void SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, cons
 
 	while (FetchingProcess->Update())
 	{
-		if (FetchingProcess->GetDuration().GetTotalSeconds() > SpatialCommandUtils::ProcessTimeoutTime)
+		if (FetchingProcess->GetDuration().GetTotalSeconds() > ProcessTimeoutTime)
 		{
 			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Timed out waiting for the %s process fetching to start."), *PackageName);
 
