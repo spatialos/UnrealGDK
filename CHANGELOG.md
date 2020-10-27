@@ -63,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a crash that would sometimes occur when connection to SpatialOS fails.
 - Fixed a crash that occurred when an actor subobject became invalid after applying initial component data.
 - Non-replicated Actors net roles are not touched during startup. 
+- Fixed a bug which dropped component updates on authority delegation.
 
 ## [`0.11.0`] - 2020-09-03
 
