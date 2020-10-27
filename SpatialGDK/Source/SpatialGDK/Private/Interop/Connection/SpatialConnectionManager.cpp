@@ -55,30 +55,30 @@ struct ConfigureConnection
 
 		Params.network.connection_type = Config.LinkProtocol;
 		Params.network.use_external_ip = Config.UseExternalIp;
-		Params.network.modular_tcp.multiplex_level = Config.TcpMultiplexLevel;
+		Params.network.tcp.multiplex_level = Config.TcpMultiplexLevel;
 		if (Config.TcpNoDelay)
 		{
-			Params.network.modular_tcp.downstream_tcp.flush_delay_millis = 0;
-			Params.network.modular_tcp.upstream_tcp.flush_delay_millis = 0;
+			Params.network.tcp.downstream_tcp.flush_delay_millis = 0;
+			Params.network.tcp.upstream_tcp.flush_delay_millis = 0;
 		}
 
 		// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
-		Params.network.modular_kcp.upstream_compression = nullptr;
-		Params.network.modular_kcp.downstream_compression = &EnableCompressionParams;
+		Params.network.kcp.upstream_compression = nullptr;
+		Params.network.kcp.downstream_compression = &EnableCompressionParams;
 
-		Params.network.modular_kcp.upstream_kcp.flush_interval_millis = Config.UdpUpstreamIntervalMS;
-		Params.network.modular_kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
+		Params.network.kcp.upstream_kcp.flush_interval_millis = Config.UdpUpstreamIntervalMS;
+		Params.network.kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
 
 #if WITH_EDITOR
-		Params.network.modular_tcp.downstream_heartbeat = &HeartbeatParams;
-		Params.network.modular_tcp.upstream_heartbeat = &HeartbeatParams;
-		Params.network.modular_kcp.downstream_heartbeat = &HeartbeatParams;
-		Params.network.modular_kcp.upstream_heartbeat = &HeartbeatParams;
+		Params.network.tcp.downstream_heartbeat = &HeartbeatParams;
+		Params.network.tcp.upstream_heartbeat = &HeartbeatParams;
+		Params.network.kcp.downstream_heartbeat = &HeartbeatParams;
+		Params.network.kcp.upstream_heartbeat = &HeartbeatParams;
 #endif
 
 		// Use insecure connections default.
-		Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
-		Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+		Params.network.kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+		Params.network.tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
 
 		// Override the security type to be secure only if the user has requested it and we are not using an editor build.
 		if ((!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection)
@@ -88,12 +88,10 @@ struct ConfigureConnection
 			UE_LOG(LogSpatialWorkerConnection, Warning,
 				   TEXT("Secure connection requested but this is not supported in Editor builds. Connection will be insecure."));
 #else
-			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
-			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+			Params.network.kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+			Params.network.tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
 #endif
 		}
-
-		Params.enable_dynamic_components = true;
 	}
 
 	FString FormatWorkerSDKLogFilePrefix() const
@@ -275,7 +273,8 @@ void USpatialConnectionManager::RequestDeploymentLoginTokens()
 	LTParams.worker_type = WorkerType.Get();
 	LTParams.use_insecure_connection = false;
 
-	if (Worker_LoginTokensResponseFuture* LTFuture = Worker_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &LTParams))
+	if (Worker_LoginTokensResponseFuture* LTFuture =
+			Worker_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &LTParams))
 	{
 		Worker_LoginTokensResponseFuture_Get(LTFuture, nullptr, this, &USpatialConnectionManager::OnLoginTokens);
 	}
@@ -311,7 +310,8 @@ void USpatialConnectionManager::StartDevelopmentAuth(const FString& DevAuthToken
 	PITParams.metadata = MetaData.Get();
 	PITParams.use_insecure_connection = false;
 
-	if (Worker_PlayerIdentityTokenResponseFuture* PITFuture = Worker_CreateDevelopmentPlayerIdentityTokenAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &PITParams))
+	if (Worker_PlayerIdentityTokenResponseFuture* PITFuture = Worker_CreateDevelopmentPlayerIdentityTokenAsync(
+			TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &PITParams))
 	{
 		Worker_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialConnectionManager::OnPlayerIdentityToken);
 	}

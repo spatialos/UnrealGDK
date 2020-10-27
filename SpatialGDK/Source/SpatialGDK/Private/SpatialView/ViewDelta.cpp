@@ -202,7 +202,7 @@ bool ViewDelta::DifferentEntityComponent::operator()(const ReceivedComponentChan
 
 bool ViewDelta::DifferentEntityComponent::operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const
 {
-	return Op.component_id != ComponentId || Op.entity_id != EntityId;
+	return Op.component_set_id != ComponentId || Op.entity_id != EntityId;
 }
 
 bool ViewDelta::EntityComponentComparison::operator()(const ReceivedComponentChange& Lhs, const ReceivedComponentChange& Rhs) const
@@ -221,7 +221,7 @@ bool ViewDelta::EntityComponentComparison::operator()(const Worker_ComponentSetA
 	{
 		return Lhs.entity_id < Rhs.entity_id;
 	}
-	return Lhs.component_id < Rhs.component_id;
+	return Lhs.component_set_id < Rhs.component_set_id;
 }
 
 bool ViewDelta::EntityComparison::operator()(const ReceivedEntityChange& Lhs, const ReceivedEntityChange& Rhs) const
@@ -559,7 +559,7 @@ Worker_ComponentSetAuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(W
 	for (;;)
 	{
 		// Find the last element for this entity-component.
-		const Worker_ComponentId ComponentId = It->component_id;
+		const Worker_ComponentSetId ComponentId = It->component_set_id; // TODO: fix this moving from component to component set
 		It = std::find_if(It, End, DifferentEntityComponent{ EntityId, ComponentId }) - 1;
 		const int32 AuthorityIndex = EntityAuthority.Find(ComponentId);
 		const bool bHasAuthority = AuthorityIndex != INDEX_NONE;

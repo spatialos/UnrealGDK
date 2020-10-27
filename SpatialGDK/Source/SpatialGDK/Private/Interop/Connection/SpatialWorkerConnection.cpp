@@ -318,13 +318,6 @@ void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, Spa
 				ExtractedOpList.AddOp(Op);
 			}
 			break;
-		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
-			if (IsStartupComponent(Op.op.component_set_authority_change.component_set_id))
-			{
-				checkNoEntry();
-				ExtractedOpList.AddOp(Op);
-			}
-			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			if (IsStartupComponent(Op.op.component_update.update.component_id))
 			{

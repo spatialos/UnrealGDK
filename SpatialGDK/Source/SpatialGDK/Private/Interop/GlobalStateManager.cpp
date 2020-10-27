@@ -291,14 +291,14 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 void UGlobalStateManager::AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp)
 {
 	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."),
-		   AuthOp.component_id, AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
+		   AuthOp.component_set_id, AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
 
 	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		return;
 	}
 
-	switch (AuthOp.component_id)
+	switch (AuthOp.component_set_id)
 	{
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 	{
@@ -488,7 +488,6 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 
 	Worker_EntityQuery GSMQuery{};
 	GSMQuery.constraint = GSMConstraint;
-	GSMQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	Worker_RequestId RequestID;
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
@@ -531,7 +530,6 @@ void UGlobalStateManager::QueryTranslation()
 
 	Worker_EntityQuery TranslationQuery{};
 	TranslationQuery.constraint = TranslationConstraint;
-	TranslationQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery);
 	bTranslationQueryInFlight = true;
