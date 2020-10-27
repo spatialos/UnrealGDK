@@ -146,12 +146,6 @@ void USpatialWorkerConnection::SendLogMessage(uint8_t Level, const FName& Logger
 	Coordinator->SendLogMessage(static_cast<Worker_LogLevel>(Level), LoggerName, Message);
 }
 
-void USpatialWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
-{
-	// Deprecated.
-	checkNoEntry();
-}
-
 Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
 {
 	check(Coordinator.IsValid());

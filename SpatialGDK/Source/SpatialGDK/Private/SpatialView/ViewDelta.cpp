@@ -190,7 +190,7 @@ bool ViewDelta::DifferentEntity::operator()(const ReceivedComponentChange& Op) c
 	return Op.EntityId != EntityId;
 }
 
-bool ViewDelta::DifferentEntity::operator()(const Worker_AuthorityChangeOp& Op) const
+bool ViewDelta::DifferentEntity::operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const
 {
 	return Op.entity_id != EntityId;
 }
@@ -200,7 +200,7 @@ bool ViewDelta::DifferentEntityComponent::operator()(const ReceivedComponentChan
 	return Op.ComponentId != ComponentId || Op.EntityId != EntityId;
 }
 
-bool ViewDelta::DifferentEntityComponent::operator()(const Worker_AuthorityChangeOp& Op) const
+bool ViewDelta::DifferentEntityComponent::operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const
 {
 	return Op.component_id != ComponentId || Op.entity_id != EntityId;
 }
@@ -214,7 +214,8 @@ bool ViewDelta::EntityComponentComparison::operator()(const ReceivedComponentCha
 	return Lhs.ComponentId < Rhs.ComponentId;
 }
 
-bool ViewDelta::EntityComponentComparison::operator()(const Worker_AuthorityChangeOp& Lhs, const Worker_AuthorityChangeOp& Rhs) const
+bool ViewDelta::EntityComponentComparison::operator()(const Worker_ComponentSetAuthorityChangeOp& Lhs,
+													  const Worker_ComponentSetAuthorityChangeOp& Rhs) const
 {
 	if (Lhs.entity_id != Rhs.entity_id)
 	{
@@ -399,7 +400,7 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 	// Add sentinel elements to the ends of the arrays.
 	// Prevents the need for bounds checks on the iterators.
 	ComponentChanges.Emplace(Worker_RemoveComponentOp{ SENTINEL_ENTITY_ID, 0 });
-	AuthorityChanges.Emplace(Worker_AuthorityChangeOp{ SENTINEL_ENTITY_ID, 0, 0 });
+	AuthorityChanges.Emplace(Worker_ComponentSetAuthorityChangeOp{ SENTINEL_ENTITY_ID, 0, 0 });
 	EntityChanges.Emplace(ReceivedEntityChange{ SENTINEL_ENTITY_ID, false });
 
 	auto ComponentIt = ComponentChanges.GetData();
@@ -407,7 +408,7 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 	auto EntityIt = EntityChanges.GetData();
 
 	ReceivedComponentChange* ComponentChangesEnd = ComponentIt + ComponentChanges.Num();
-	Worker_AuthorityChangeOp* AuthorityChangesEnd = AuthorityIt + AuthorityChanges.Num();
+	Worker_ComponentSetAuthorityChangeOp* AuthorityChangesEnd = AuthorityIt + AuthorityChanges.Num();
 	ReceivedEntityChange* EntityChangesEnd = EntityIt + EntityChanges.Num();
 
 	// At the beginning of each loop each iterator should point to the first element for an entity.
@@ -545,8 +546,10 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 	}
 }
 
-Worker_AuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_AuthorityChangeOp* It, Worker_AuthorityChangeOp* End,
-																   TArray<Worker_ComponentId>& EntityAuthority, EntityDelta& Delta)
+Worker_ComponentSetAuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_ComponentSetAuthorityChangeOp* It,
+																			   Worker_ComponentSetAuthorityChangeOp* End,
+																			   TArray<Worker_ComponentId>& EntityAuthority,
+																			   EntityDelta& Delta)
 {
 	int32 GainCount = 0;
 	int32 LossCount = 0;
