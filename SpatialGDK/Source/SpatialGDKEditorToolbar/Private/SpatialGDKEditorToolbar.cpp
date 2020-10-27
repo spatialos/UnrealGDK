@@ -48,7 +48,6 @@
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
-#include "SpatialPackageManager.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "Utils/SpatialDebugger.h"

@@ -33,6 +33,11 @@ public:
 	SPATIALGDKSERVICES_API static bool TryKillProcessWithPID(const FString& PID);
 	SPATIALGDKSERVICES_API static void FetchRuntimeBinary(const FString& RuntimeVersion);
 	SPATIALGDKSERVICES_API static void FetchInspectorBinary(const FString& InspectorVersion);
-	SPATIALGDKSERVICES_API static void GetPackage(const FString& PackageVersion, const FString& PackageExe, const FString& PackageName,
+	SPATIALGDKSERVICES_API static void FetchPackageBinary(const FString& PackageVersion, const FString& PackageExe,
+														  const FString& PackageName,
 												  const FString& SaveLocation, const bool Unzip);
+
+private:
+	// Timeout given in seconds.
+	static const int32 ProcessTimeoutTime = 60;
 };

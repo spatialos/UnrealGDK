@@ -353,7 +353,7 @@ public:
 	FString InspectorVersionOverride;
 
 	/** Returns the version information for the currently set inspector*/
-	const FString GetInspectorVersion() const
+	const FString& GetInspectorVersion() const
 	{
 		return bUseGDKPinnedInspectorVersion ? SpatialGDKServicesConstants::InspectorPinnedVersion : InspectorVersionOverride;
 	}
