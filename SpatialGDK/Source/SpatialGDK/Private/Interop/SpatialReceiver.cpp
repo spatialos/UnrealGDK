@@ -509,7 +509,7 @@ void USpatialReceiver::OnAuthorityChange(const Worker_ComponentSetAuthorityChang
 {
 	if (HasEntityBeenRequestedForDelete(Op.entity_id))
 	{
-		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Op.component_set_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
 			HandleEntityDeletedAuthority(Op.entity_id);
 		}
@@ -531,11 +531,11 @@ void USpatialReceiver::OnAuthorityChange(const Worker_ComponentSetAuthorityChang
 	// be correctly configured to process RPCs sent during Actor creation
 	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
-			|| Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
-			|| Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+		if (Op.component_set_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+			|| Op.component_set_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
+			|| Op.component_set_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 		{
-			RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_id);
+			RPCService->OnEndpointAuthorityGained(Op.entity_id, Op.component_set_id);
 		}
 	}
 
@@ -557,8 +557,8 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_ComponentSetA
 
 	// Server initializes heartbeat logic based on its authority over the position component,
 	// client does the same for heartbeat component
-	if ((NetDriver->IsServer() && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
-		|| (!NetDriver->IsServer() && Op.component_id == SpatialConstants::HEARTBEAT_COMPONENT_ID))
+	if ((NetDriver->IsServer() && Op.component_set_id == SpatialConstants::POSITION_COMPONENT_ID)
+		|| (!NetDriver->IsServer() && Op.component_set_id == SpatialConstants::HEARTBEAT_COMPONENT_ID))
 	{
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
@@ -588,7 +588,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_ComponentSetA
 void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityChangeOp& Op)
 {
 	if (NetDriver->SpatialDebugger != nullptr && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE
-		&& Op.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
+		&& Op.component_set_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
 	{
 		NetDriver->SpatialDebugger->ActorAuthorityChanged(Op);
 	}
@@ -606,17 +606,18 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 
 	if (Channel != nullptr)
 	{
-		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
+		if (Op.component_set_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
 			Channel->SetServerAuthority(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
 		}
-		else if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+		else if (Op.component_set_id
+				 == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 		{
 			Channel->SetClientAuthority(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
 		}
 	}
 
-	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (Op.component_set_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		check(!NetDriver->IsServer());
 		if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(Op.entity_id))
@@ -640,7 +641,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
-			Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id, Op.component_id);
+			Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id, Op.component_set_id);
 		}
 
 		// If we became authoritative over the position component. set our role to be ROLE_Authority
@@ -650,7 +651,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 		// is player controlled when gaining authority over the pawn and need to wait for the player
 		// state. Likewise, it's possible that the player state doesn't have a pointer to its pawn
 		// yet, so we need to wait for the pawn to arrive.
-		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
+		if (Op.component_set_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
@@ -733,14 +734,14 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 		}
 
 		// Subobject Delegation
-		TPair<Worker_EntityId_Key, Worker_ComponentId> EntityComponentPair =
-			MakeTuple(static_cast<Worker_EntityId_Key>(Op.entity_id), Op.component_id);
+		TPair<Worker_EntityId_Key, Worker_ComponentSetId> EntityComponentPair =
+			MakeTuple(static_cast<Worker_EntityId_Key>(Op.entity_id), Op.component_set_id);
 		if (TSharedRef<FPendingSubobjectAttachment>* PendingSubobjectAttachmentPtr =
 				PendingEntitySubobjectDelegations.Find(EntityComponentPair))
 		{
 			FPendingSubobjectAttachment& PendingSubobjectAttachment = PendingSubobjectAttachmentPtr->Get();
 
-			PendingSubobjectAttachment.PendingAuthorityDelegations.Remove(Op.component_id);
+			PendingSubobjectAttachment.PendingAuthorityDelegations.Remove(Op.component_set_id);
 
 			if (PendingSubobjectAttachment.PendingAuthorityDelegations.Num() == 0)
 			{
@@ -758,7 +759,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 			PendingEntitySubobjectDelegations.Remove(EntityComponentPair);
 		}
 	}
-	else if (Op.component_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+	else if (Op.component_set_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 	{
 		// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
 		if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
@@ -767,19 +768,19 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 		}
 	}
 
-	if (Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
-		|| Op.component_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
-		|| Op.component_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+	if (Op.component_set_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+		|| Op.component_set_id == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
+		|| Op.component_set_id == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 	{
 		if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				if (Op.component_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+				if (Op.component_set_id != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 				{
 					// If we have just received authority over the client endpoint, then we are a client.  In that case,
 					// we want to scrape the server endpoint for any server -> client RPCs that are waiting to be called.
-					const Worker_ComponentId ComponentToExtractFrom = Op.component_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+					const Worker_ComponentId ComponentToExtractFrom = Op.component_set_id == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
 																		  ? SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
 																		  : SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 					RPCService->ExtractRPCsForEntity(Op.entity_id, ComponentToExtractFrom);
@@ -787,32 +788,32 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 			}
 			else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 			{
-				RPCService->OnEndpointAuthorityLost(Op.entity_id, Op.component_id);
+				RPCService->OnEndpointAuthorityLost(Op.entity_id, Op.component_set_id);
 			}
 		}
 		else
 		{
 			UE_LOG(LogSpatialReceiver, Error,
 				   TEXT("USpatialReceiver::HandleActorAuthority: Gained authority over ring buffer endpoint but ring buffers not enabled! "
-						"Entity: %lld, Component: %d"),
-				   Op.entity_id, Op.component_id);
+						"Entity: %lld, Component Set: %d"),
+				   Op.entity_id, Op.component_set_id);
 		}
 	}
 
 	if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
+		if (Op.component_set_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
 		{
 			Sender->SendClientEndpointReadyUpdate(Op.entity_id);
 		}
-		if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
+		if (Op.component_set_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY)
 		{
 			Sender->SendServerEndpointReadyUpdate(Op.entity_id);
 		}
 	}
 
 	if (NetDriver->DebugCtx && Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE
-		&& Op.component_id == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+		&& Op.component_set_id == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
 	{
 		NetDriver->DebugCtx->OnDebugComponentAuthLost(Op.entity_id);
 	}
@@ -2991,7 +2992,7 @@ void USpatialReceiver::QueueAuthorityOpForAsyncLoad(const Worker_ComponentSetAut
 {
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
 
-	AsyncLoadEntity.PendingOps.SetAuthority(Op.entity_id, Op.component_id, static_cast<Worker_Authority>(Op.authority));
+	AsyncLoadEntity.PendingOps.SetAuthority(Op.entity_id, Op.component_set_id, static_cast<Worker_Authority>(Op.authority));
 }
 
 void USpatialReceiver::QueueComponentUpdateOpForAsyncLoad(const Worker_ComponentUpdateOp& Op)
@@ -3030,7 +3031,7 @@ EntityComponentOpListBuilder USpatialReceiver::ExtractAuthorityOps(Worker_Entity
 	{
 		if (PendingAuthorityChange.entity_id == Entity)
 		{
-			ExtractedOps.SetAuthority(Entity, PendingAuthorityChange.component_id,
+			ExtractedOps.SetAuthority(Entity, PendingAuthorityChange.component_set_id,
 									  static_cast<Worker_Authority>(PendingAuthorityChange.authority));
 		}
 		else

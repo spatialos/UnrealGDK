@@ -375,9 +375,9 @@ void SpatialRPCService::OnRemoveMulticastRPCComponentForEntity(Worker_EntityId E
 	LastSeenMulticastRPCIds.Remove(EntityId);
 }
 
-void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId)
 {
-	switch (ComponentId)
+	switch (ComponentSetId)
 	{
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	{
@@ -413,7 +413,7 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 
 			RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::NetMulticast);
 			Schema_Object* SchemaObject =
-				Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }, nullptr));
+				Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentSetId }, nullptr));
 			Schema_AddUint64(SchemaObject, Descriptor.LastSentRPCFieldId, Component->InitiallyPresentMulticastRPCsCount);
 		}
 		else
@@ -429,9 +429,9 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 	}
 }
 
-void SpatialRPCService::OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void SpatialRPCService::OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId)
 {
-	switch (ComponentId)
+	switch (ComponentSetId)
 	{
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	{

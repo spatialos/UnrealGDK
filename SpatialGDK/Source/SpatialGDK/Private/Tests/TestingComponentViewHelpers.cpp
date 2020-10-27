@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+// TODO: rework this
 void TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(USpatialStaticComponentView& StaticComponentView,
 																		  const Worker_EntityId EntityId,
 																		  const Worker_ComponentId ComponentId,
@@ -18,7 +19,7 @@ void TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(USpati
 
 	Worker_ComponentSetAuthorityChangeOp AuthorityChangeOp;
 	AuthorityChangeOp.entity_id = EntityId;
-	AuthorityChangeOp.component_id = ComponentId;
+	AuthorityChangeOp.component_set_id = ComponentId;
 	AuthorityChangeOp.authority = Authority;
 	StaticComponentView.OnAuthorityChange(AuthorityChangeOp);
 }
