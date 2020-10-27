@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ReceivedOpEventHandler.h"
 
@@ -38,10 +38,11 @@ void FReceivedOpEventHandler::ProcessOpLists(const OpList& Ops)
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
 			EventTracer->RemoveComponent(Op.op.remove_component.entity_id, Op.op.remove_component.component_id);
 			break;
-		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
 			EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::CreateAuthorityChange(Op.op.authority_change.entity_id, Op.op.authority_change.component_id,
-																 static_cast<Worker_Authority>(Op.op.authority_change.authority)),
+				FSpatialTraceEventBuilder::CreateAuthorityChange(
+					Op.op.component_set_authority_change.entity_id, Op.op.component_set_authority_change.component_set_id,
+					static_cast<Worker_Authority>(Op.op.component_set_authority_change.authority)),
 				EventTracer->CreateSpan(&Op.span_id, 1));
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:

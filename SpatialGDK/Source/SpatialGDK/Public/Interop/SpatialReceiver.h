@@ -78,8 +78,7 @@ public:
 	virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) override;
 	virtual void FlushRemoveComponentOps() override;
 	virtual void DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId) override;
-	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) override;
-	virtual void OnComponentSetAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op) override;
+	virtual void OnAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op) override;
 
 	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
 
@@ -136,8 +135,8 @@ private:
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 
-	void HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
-	void HandleActorAuthority(const Worker_AuthorityChangeOp& Op);
+	void HandlePlayerLifecycleAuthority(const Worker_ComponentSetAuthorityChangeOp& Op, class APlayerController* PlayerController);
+	void HandleActorAuthority(const Worker_ComponentSetAuthorityChangeOp& Op);
 
 	void HandleRPCLegacy(const Worker_ComponentUpdateOp& Op);
 	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp& Op,
@@ -189,7 +188,7 @@ private:
 
 	void QueueAddComponentOpForAsyncLoad(const Worker_AddComponentOp& Op);
 	void QueueRemoveComponentOpForAsyncLoad(const Worker_RemoveComponentOp& Op);
-	void QueueAuthorityOpForAsyncLoad(const Worker_AuthorityChangeOp& Op);
+	void QueueAuthorityOpForAsyncLoad(const Worker_ComponentSetAuthorityChangeOp& Op);
 	void QueueComponentUpdateOpForAsyncLoad(const Worker_ComponentUpdateOp& Op);
 
 	TArray<PendingAddComponentWrapper> ExtractAddComponents(Worker_EntityId Entity);
@@ -204,7 +203,7 @@ private:
 
 		bool bInCriticalSection;
 		TArray<Worker_EntityId> PendingAddActors;
-		TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
+		TArray<Worker_ComponentSetAuthorityChangeOp> PendingAuthorityChanges;
 		TArray<PendingAddComponentWrapper> PendingAddComponents;
 	};
 
@@ -257,7 +256,7 @@ private:
 
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddActors;
-	TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
+	TArray<Worker_ComponentSetAuthorityChangeOp> PendingAuthorityChanges;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_RemoveComponentOp> QueuedRemoveComponentOps;
 

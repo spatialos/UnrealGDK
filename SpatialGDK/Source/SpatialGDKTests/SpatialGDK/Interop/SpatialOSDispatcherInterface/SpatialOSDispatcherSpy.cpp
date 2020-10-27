@@ -19,7 +19,7 @@ void SpatialOSDispatcherSpy::FlushRemoveComponentOps() {}
 
 void SpatialOSDispatcherSpy::DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId) {}
 
-void SpatialOSDispatcherSpy::OnAuthorityChange(const Worker_AuthorityChangeOp& Op) {}
+void SpatialOSDispatcherSpy::OnAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op) {}
 
 void SpatialOSDispatcherSpy::OnComponentUpdate(const Worker_ComponentUpdateOp& Op) {}
 

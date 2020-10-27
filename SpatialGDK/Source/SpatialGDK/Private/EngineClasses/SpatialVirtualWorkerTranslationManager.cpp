@@ -38,9 +38,9 @@ void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uin
 	}
 }
 
-void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
+void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp)
 {
-	check(AuthOp.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
+	check(AuthOp.component_set_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
 
 	const bool bAuthoritative = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;
 
@@ -74,11 +74,13 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Autho
 
 void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntitiesForVirtualWorkerIds()
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Spawning partition entities for %d virtual workers"), VirtualWorkersToAssign.Num());
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Spawning partition entities for %d virtual workers"),
+		   VirtualWorkersToAssign.Num());
 	for (VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
 	{
 		const Worker_EntityId PartitionEntityId = Translator->NetDriver->PackageMap->AllocateNewEntityId();
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("- Virtual Worker: %d. Entity: %lld. "), VirtualWorkerId, PartitionEntityId);
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("- Virtual Worker: %d. Entity: %lld. "), VirtualWorkerId,
+			   PartitionEntityId);
 		SpawnPartitionEntity(PartitionEntityId, VirtualWorkerId);
 	}
 }
@@ -189,34 +191,39 @@ void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate() co
 
 void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorkerId)
 {
-	TArray<FWorkerComponentData> Components = SpatialGDK::EntityFactory::CreatePartitionEntityComponents(PartitionEntityId,
-		Translator->NetDriver->InterestFactory.Get(),Translator->LoadBalanceStrategy.Get(), VirtualWorkerId);
+	TArray<FWorkerComponentData> Components = SpatialGDK::EntityFactory::CreatePartitionEntityComponents(
+		PartitionEntityId, Translator->NetDriver->InterestFactory.Get(), Translator->LoadBalanceStrategy.Get(), VirtualWorkerId);
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionEntityId);
 
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
-	OnCreateWorkerEntityResponse.BindLambda([this, VirtualWorkerId](const Worker_CreateEntityResponseOp& Op)
-	{
-        if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
-        {
-			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Successfully created partition entity. "
-				"Entity: %lld. Virtual Worker: %d"), Op.entity_id, VirtualWorkerId);
-            OnPartitionEntityCreation(Op.entity_id, VirtualWorkerId);
-            return;
-        }
+	OnCreateWorkerEntityResponse.BindLambda([this, VirtualWorkerId](const Worker_CreateEntityResponseOp& Op) {
+		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+		{
+			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
+				   TEXT("Successfully created partition entity. "
+						"Entity: %lld. Virtual Worker: %d"),
+				   Op.entity_id, VirtualWorkerId);
+			OnPartitionEntityCreation(Op.entity_id, VirtualWorkerId);
+			return;
+		}
 
-        if (Op.status_code != WORKER_STATUS_CODE_TIMEOUT)
-        {
-            UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("Partition entity creation failed: \"%s\". "
-            	"Entity: %lld. Virtual Worker: %d"), UTF8_TO_TCHAR(Op.message), Op.entity_id, VirtualWorkerId);
-        	return;
-        }
+		if (Op.status_code != WORKER_STATUS_CODE_TIMEOUT)
+		{
+			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error,
+				   TEXT("Partition entity creation failed: \"%s\". "
+						"Entity: %lld. Virtual Worker: %d"),
+				   UTF8_TO_TCHAR(Op.message), Op.entity_id, VirtualWorkerId);
+			return;
+		}
 
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Retrying timed out partition entity creation. "
-			"Entity: %lld. Virtual Worker: %d"), Op.entity_id, VirtualWorkerId);
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning,
+			   TEXT("Retrying timed out partition entity creation. "
+					"Entity: %lld. Virtual Worker: %d"),
+			   Op.entity_id, VirtualWorkerId);
 
 		this->SpawnPartitionEntity(Op.entity_id, VirtualWorkerId);
-    });
+	});
 
 	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
 }
@@ -225,23 +232,24 @@ void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_En
 {
 	Partitions.Emplace(PartitionInfo{ PartitionEntityId, VirtualWorker, SpatialConstants::INVALID_ENTITY_ID });
 
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Adding translation manager mapping. Virtual worker %d -> Parition entity %lld"),
-		VirtualWorker, PartitionEntityId);
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
+		   TEXT("Adding translation manager mapping. Virtual worker %d -> Parition entity %lld"), VirtualWorker, PartitionEntityId);
 
 	if (Partitions.Num() == VirtualWorkersToAssign.Num())
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Found all %d required partitions, querying for server worker entities"),
-			VirtualWorkersToAssign.Num());
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
+			   TEXT("Found all %d required partitions, querying for server worker entities"), VirtualWorkersToAssign.Num());
 		QueryForServerWorkerEntities();
 	}
 	else
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Didn't find all %d required partitions, only found %d, currently have:"),
-			VirtualWorkersToAssign.Num(), Partitions.Num());
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
+			   TEXT("Didn't find all %d required partitions, only found %d, currently have:"), VirtualWorkersToAssign.Num(),
+			   Partitions.Num());
 		for (const PartitionInfo& Partition : Partitions)
 		{
 			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT(" - virtual worker %d -> partition entity %lld"),
-				Partition.VirtualWorker, Partition.PartitionEntityId);
+				   Partition.VirtualWorker, Partition.PartitionEntityId);
 		}
 	}
 }
@@ -268,7 +276,6 @@ void SpatialVirtualWorkerTranslationManager::QueryForServerWorkerEntities()
 
 	Worker_EntityQuery WorkerEntityQuery{};
 	WorkerEntityQuery.constraint = WorkerEntityConstraint;
-	WorkerEntityQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	// Make the query.
 	check(Connection != nullptr);
@@ -313,7 +320,8 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	uint32 ServerWorkersNotReady;
 	if (!AllServerWorkersAreReady(Op, ServerWorkersNotReady))
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Query found correct number of server workers but %d were not ready."), ServerWorkersNotReady);
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning,
+			   TEXT("Query found correct number of server workers but %d were not ready."), ServerWorkersNotReady);
 		QueryForServerWorkerEntities();
 		return;
 	}
@@ -325,12 +333,14 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 }
 
 void SpatialVirtualWorkerTranslationManager::AssignPartitionToWorker(const PhysicalWorkerName& WorkerName,
-	const Worker_EntityId& ServerWorkerEntityId, const Worker_EntityId& SystemEntityId, PartitionInfo Partition)
+																	 const Worker_EntityId& ServerWorkerEntityId,
+																	 const Worker_EntityId& SystemEntityId, PartitionInfo Partition)
 {
-	VirtualToPhysicalWorkerMapping.Add(Partition.VirtualWorker,
-		SpatialVirtualWorkerTranslator::WorkerInformation{ WorkerName, ServerWorkerEntityId, Partition.PartitionEntityId });
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on worker %s"),
-		Partition.VirtualWorker, Partition.PartitionEntityId, *WorkerName);
+	VirtualToPhysicalWorkerMapping.Add(Partition.VirtualWorker, SpatialVirtualWorkerTranslator::WorkerInformation{
+																	WorkerName, ServerWorkerEntityId, Partition.PartitionEntityId });
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
+		   TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on worker %s"), Partition.VirtualWorker,
+		   Partition.PartitionEntityId, *WorkerName);
 
 	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
 	{

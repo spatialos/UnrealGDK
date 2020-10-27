@@ -46,7 +46,7 @@ public:
 	void SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers);
 
 	// The translation manager only cares about changes to the authority of the translation mapping.
-	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
+	void AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthChangeOp);
 
 	void SpawnPartitionEntitiesForVirtualWorkerIds();
 	const TArray<PartitionInfo>& GetAllPartitions() const { return Partitions; };
@@ -76,7 +76,8 @@ private:
 	void AssignPartitionsToEachServerWorkerFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SendVirtualWorkerMappingUpdate() const;
 
-	void AssignPartitionToWorker(const PhysicalWorkerName& WorkerName, const Worker_EntityId& ServerWorkerEntityId, const Worker_EntityId& SystemEntityId, PartitionInfo Partition);
+	void AssignPartitionToWorker(const PhysicalWorkerName& WorkerName, const Worker_EntityId& ServerWorkerEntityId,
+								 const Worker_EntityId& SystemEntityId, PartitionInfo Partition);
 
 	void SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker);
 	void OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker);

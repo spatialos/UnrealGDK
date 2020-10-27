@@ -25,9 +25,9 @@ EntityQueryDelegate* SetupQueryDelegateTests(SpatialVirtualWorkerTranslationMana
 											 SpatialOSWorkerConnectionSpy* Connection)
 {
 	// Build an authority change op which gives the worker authority over the translation.
-	Worker_AuthorityChangeOp QueryOp;
+	Worker_ComponentSetAuthorityChangeOp QueryOp;
 	QueryOp.entity_id = SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID;
-	QueryOp.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
+	QueryOp.component_set_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
 	QueryOp.authority = WORKER_AUTHORITY_AUTHORITATIVE;
 
 	// Let the Manager know it should have authority. This should trigger an EntityQuery and register a response delegate.
@@ -49,9 +49,9 @@ VIRTUALWORKERTRANSLATIONMANAGER_TEST(Given_an_authority_change_THEN_query_for_wo
 		MakeUnique<SpatialVirtualWorkerTranslationManager>(Dispatcher.Get(), Connection.Get(), nullptr);
 
 	// Build an authority change op which gives the worker authority over the translation.
-	Worker_AuthorityChangeOp QueryOp;
+	Worker_ComponentSetAuthorityChangeOp QueryOp;
 	QueryOp.entity_id = SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID;
-	QueryOp.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
+	QueryOp.component_set_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
 	QueryOp.authority = WORKER_AUTHORITY_AUTHORITATIVE;
 
 	Manager->AuthorityChanged(QueryOp);

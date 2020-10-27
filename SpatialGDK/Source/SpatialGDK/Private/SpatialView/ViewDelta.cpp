@@ -366,11 +366,8 @@ void ViewDelta::ProcessOpList(const OpList& Ops)
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
 			ComponentChanges.Emplace(Op.op.remove_component);
 			break;
-		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			AuthorityChanges.Emplace(Op.op.authority_change);
-			break;
 		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
-			checkNoEntry();
+			AuthorityChanges.Emplace(Op.op.component_set_authority_change);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			ComponentChanges.Emplace(Op.op.component_update);

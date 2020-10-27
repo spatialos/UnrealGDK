@@ -406,7 +406,7 @@ void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 	EntityActorMapping.Remove(EntityId);
 }
 
-void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const
+void ASpatialDebugger::ActorAuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp) const
 {
 	check(AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE && AuthOp.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 

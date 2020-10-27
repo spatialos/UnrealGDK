@@ -25,7 +25,7 @@ public:
 	virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) override;
 	virtual void FlushRemoveComponentOps() override;
 	virtual void DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId) override;
-	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) override;
+	virtual void OnAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op) override;
 
 	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
 

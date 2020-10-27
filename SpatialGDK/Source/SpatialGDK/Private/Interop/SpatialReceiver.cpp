@@ -120,7 +120,7 @@ void USpatialReceiver::LeaveCriticalSection()
 	// We process Lose Auth -> Add Components -> Gain Auth. A common thing that happens is that on handover we get
 	// ComponentData -> Gain Auth, and with this split you receive data as if you were a client to get the most up-to-date state,
 	// and then gain authority. Similarly, you first lose authority, and then receive data, in the opposite situation.
-	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
+	for (Worker_ComponentSetAuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
 		if (PendingAuthorityChange.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 		{
@@ -167,7 +167,7 @@ void USpatialReceiver::LeaveCriticalSection()
 		HandleIndividualAddComponent(PendingAddComponent.EntityId, PendingAddComponent.ComponentId, MoveTemp(PendingAddComponent.Data));
 	}
 
-	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
+	for (Worker_ComponentSetAuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
 		if (PendingAuthorityChange.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
@@ -505,7 +505,7 @@ void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
 	ActorChannel->UpdateShadowData();
 }
 
-void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
+void USpatialReceiver::OnAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op)
 {
 	if (HasEntityBeenRequestedForDelete(Op.entity_id))
 	{
@@ -550,12 +550,7 @@ void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 	HandleActorAuthority(Op);
 }
 
-void USpatialReceiver::OnComponentSetAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op)
-{
-	// Op.authority
-}
-
-void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, APlayerController* PlayerController)
+void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_ComponentSetAuthorityChangeOp& Op, APlayerController* PlayerController)
 {
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("HandlePlayerLifecycleAuthority for PlayerController %s."),
 		   *AActor::GetDebugName(PlayerController));
@@ -590,7 +585,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 	}
 }
 
-void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
+void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityChangeOp& Op)
 {
 	if (NetDriver->SpatialDebugger != nullptr && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE
 		&& Op.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
@@ -2992,7 +2987,7 @@ void USpatialReceiver::QueueRemoveComponentOpForAsyncLoad(const Worker_RemoveCom
 	AsyncLoadEntity.PendingOps.RemoveComponent(Op.entity_id, Op.component_id);
 }
 
-void USpatialReceiver::QueueAuthorityOpForAsyncLoad(const Worker_AuthorityChangeOp& Op)
+void USpatialReceiver::QueueAuthorityOpForAsyncLoad(const Worker_ComponentSetAuthorityChangeOp& Op)
 {
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
 
@@ -3029,9 +3024,9 @@ TArray<PendingAddComponentWrapper> USpatialReceiver::ExtractAddComponents(Worker
 EntityComponentOpListBuilder USpatialReceiver::ExtractAuthorityOps(Worker_EntityId Entity)
 {
 	EntityComponentOpListBuilder ExtractedOps;
-	TArray<Worker_AuthorityChangeOp> RemainingOps;
+	TArray<Worker_ComponentSetAuthorityChangeOp> RemainingOps;
 
-	for (const Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
+	for (const Worker_ComponentSetAuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
 	{
 		if (PendingAuthorityChange.entity_id == Entity)
 		{
@@ -3057,8 +3052,8 @@ void USpatialReceiver::HandleQueuedOpForAsyncLoad(const Worker_Op& Op)
 	case WORKER_OP_TYPE_REMOVE_COMPONENT:
 		ProcessRemoveComponent(Op.op.remove_component);
 		break;
-	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		HandleActorAuthority(Op.op.authority_change);
+	case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
+		HandleActorAuthority(Op.op.component_set_authority_change);
 		break;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
 		OnComponentUpdate(Op.op.component_update);

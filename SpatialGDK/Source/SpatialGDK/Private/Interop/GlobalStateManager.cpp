@@ -288,7 +288,7 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
+void UGlobalStateManager::AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp)
 {
 	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."),
 		   AuthOp.component_id, AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
@@ -401,7 +401,7 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 	//  - these actors are marked as NotPersistent and we're loading from a saved snapshot (which means bCanSpawnWithAuthority is false)
 	//  - the load balancing strategy says this server should be authoritative (as opposed to some other server).
 	const bool bAuthoritative = (bCanSpawnWithAuthority || Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
-						  && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+								&& NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
 
 	Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
 	Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;

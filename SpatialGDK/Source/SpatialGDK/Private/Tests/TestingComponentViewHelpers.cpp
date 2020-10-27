@@ -16,7 +16,7 @@ void TestingComponentViewHelpers::AddEntityComponentToStaticComponentView(USpati
 	AddComponentOp.data.schema_type = ComponentData;
 	StaticComponentView.OnAddComponent(AddComponentOp);
 
-	Worker_AuthorityChangeOp AuthorityChangeOp;
+	Worker_ComponentSetAuthorityChangeOp AuthorityChangeOp;
 	AuthorityChangeOp.entity_id = EntityId;
 	AuthorityChangeOp.component_id = ComponentId;
 	AuthorityChangeOp.authority = Authority;

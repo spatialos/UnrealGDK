@@ -191,7 +191,7 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 	}
 }
 
-void USpatialStaticComponentView::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
+void USpatialStaticComponentView::OnAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op)
 {
 	EntityComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_id) = (Worker_Authority)Op.authority;
 }
