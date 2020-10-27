@@ -31,4 +31,8 @@ public:
 	SPATIALGDKSERVICES_API static bool GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName);
 	SPATIALGDKSERVICES_API static bool GetProcessName(const FString& PID, FString& OutProcessName);
 	SPATIALGDKSERVICES_API static bool TryKillProcessWithPID(const FString& PID);
+	SPATIALGDKSERVICES_API static void FetchRuntimeBinary(const FString& RuntimeVersion);
+	SPATIALGDKSERVICES_API static void FetchInspectorBinary(const FString& InspectorVersion);
+	SPATIALGDKSERVICES_API static void GetPackage(const FString& PackageVersion, const FString& PackageExe, const FString& PackageName,
+												  const FString& SaveLocation, const bool Unzip);
 };
