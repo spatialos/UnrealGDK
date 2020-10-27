@@ -106,7 +106,7 @@ struct ServerWorker : Component
 
 	static void CreateForwardPlayerSpawnSchemaRequest(Schema_CommandRequest* Request, const FUnrealObjectRef& PlayerStartObjectRef,
 													  const Schema_Object* OriginalPlayerSpawnRequest,
-													  const PhysicalWorkerName& ClientWorkerID)
+													  const Worker_EntityId& ClientWorkerID)
 	{
 		Schema_Object* RequestFields = Schema_GetCommandRequestObject(Request);
 
@@ -115,7 +115,7 @@ struct ServerWorker : Component
 		Schema_Object* PlayerSpawnData = Schema_AddObject(RequestFields, SpatialConstants::FORWARD_SPAWN_PLAYER_DATA_ID);
 		PlayerSpawner::CopySpawnDataBetweenObjects(OriginalPlayerSpawnRequest, PlayerSpawnData);
 
-		AddStringToSchema(RequestFields, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_WORKER_ID, ClientWorkerID);
+		Schema_AddEntityId(RequestFields, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_WORKER_ID, ClientWorkerID);
 	}
 
 	PhysicalWorkerName WorkerName;
