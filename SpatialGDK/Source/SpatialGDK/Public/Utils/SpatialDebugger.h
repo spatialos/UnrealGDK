@@ -134,6 +134,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show Actor Name for every entity in range"))
 	bool bShowActorName = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Select the actor you want to debug at runtime"))
+	bool bSelectActor = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
 	bool bAutoStart = false;
 

@@ -656,6 +656,15 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 			}
 		}
 	}
+
+	if (bSelectActor)
+	{
+		UE_LOG(LogSpatialDebugger, Warning, TEXT("Select actor"));
+		// Allow user to select an actor for debugging
+		// TODO display a crosshair icon in the centre of the screen
+		// TODO use this position and the current camera rotation as the point and direction for sending the raycast into the world
+		// TODO Use the current mouse/keyboard/gamepad controls to move the camera and thereby select the desired actor. 
+	}
 }
 
 void GetReplicatedActorsInHierarchy(const AActor* Actor, TArray<const AActor*>& HierarchyActors)
