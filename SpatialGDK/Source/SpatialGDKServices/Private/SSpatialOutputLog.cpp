@@ -355,7 +355,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	}
 
 	 //Serialization must be done on the game thread.
-	 AsyncTask(ENamedThreads::GameThread, [this, LogMessage, LogVerbosity, LogCategory] {
+	AsyncTask(ENamedThreads::GameThread, [this, LogMessage, LogVerbosity, LogCategory] {
 		Serialize(*LogMessage, LogVerbosity, FName(*LogCategory));
 	});
 }
