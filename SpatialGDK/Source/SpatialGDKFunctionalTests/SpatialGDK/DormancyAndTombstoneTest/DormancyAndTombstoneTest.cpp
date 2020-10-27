@@ -28,9 +28,9 @@ ADormancyAndTombstoneTest::ADormancyAndTombstoneTest()
 	Description = TEXT("Test Actor Dormancy and Tombstones");
 }
 
-void ADormancyAndTombstoneTest::BeginPlay()
+void ADormancyAndTombstoneTest::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	{ // Step 1 - Set TestIntProp to 1.
 		AddStep(TEXT("ServerSetTestIntPropTo1"), FWorkerDefinition::Server(1), nullptr, [this]() {

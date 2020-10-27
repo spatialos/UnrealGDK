@@ -16,7 +16,7 @@ public:
 
 	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	// Array used to store the locations in which the character will perform the references check and the number of cubes that should be
 	// visible at that location

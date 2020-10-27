@@ -14,7 +14,7 @@ class ASpatialTestCharacterMovement : public ASpatialFunctionalTest
 public:
 	ASpatialTestCharacterMovement();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	bool bCharacterReachedDestination;
 

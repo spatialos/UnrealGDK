@@ -41,9 +41,9 @@ AOwnerOnlyPropertyReplication::AOwnerOnlyPropertyReplication()
 	Description = TEXT("UNR-3066 OwnerOnly replication test");
 }
 
-void AOwnerOnlyPropertyReplication::BeginPlay()
+void AOwnerOnlyPropertyReplication::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	{ // Step 1 - Set TestIntProp to 42.
 		AddStep(TEXT("ServerCreateActor"), FWorkerDefinition::Server(1), nullptr, [this]() {

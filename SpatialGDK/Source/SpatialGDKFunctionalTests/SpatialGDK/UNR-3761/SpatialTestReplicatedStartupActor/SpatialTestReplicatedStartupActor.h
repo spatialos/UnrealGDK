@@ -16,7 +16,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestReplicatedStartupActor : public 
 public:
 	ASpatialTestReplicatedStartupActor();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

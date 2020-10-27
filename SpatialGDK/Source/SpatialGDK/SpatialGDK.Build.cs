@@ -41,7 +41,9 @@ public class SpatialGDK : ModuleRules
                 "OnlineSubsystemUtils",
                 "Projects",
                 "ReplicationGraph",
-                "Sockets"
+                "Sockets",
+                "Slate",
+                "UMG"
             });
 
         if (Target.bBuildDeveloperTools || (Target.Configuration != UnrealTargetConfiguration.Shipping &&

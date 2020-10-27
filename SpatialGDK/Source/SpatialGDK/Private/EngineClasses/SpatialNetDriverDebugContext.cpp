@@ -4,6 +4,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialSender.h"
+#include "Interop/SpatialStaticComponentView.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "Utils/SpatialActorUtils.h"
 
@@ -277,7 +278,7 @@ void USpatialNetDriverDebugContext::RemoveTagDelegation(FName Tag)
 
 TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorHierarchyExplicitDelegation(const AActor* Actor)
 {
-	const AActor* NetOwner = SpatialGDK::GetHierarchyRoot(Actor);
+	const AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 	return GetActorHierarchyExplicitDelegation_Traverse(NetOwner);
 }
 

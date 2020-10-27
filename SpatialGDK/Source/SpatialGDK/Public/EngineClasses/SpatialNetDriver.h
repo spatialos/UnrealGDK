@@ -12,6 +12,7 @@
 #include "Interop/SpatialSnapshotManager.h"
 #include "SpatialView/OpList/OpList.h"
 #include "Utils/InterestFactory.h"
+#include "Utils/SpatialBasicAwaiter.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
@@ -19,6 +20,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
+#include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
 
@@ -154,6 +156,9 @@ public:
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 	UPROPERTY()
 	ASpatialDebugger* SpatialDebugger;
+	// Fires on a client once is has received the spatial debugger through replication. Does not fire on servers.
+	UPROPERTY()
+	USpatialBasicAwaiter* SpatialDebuggerReady;
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
 	UPROPERTY()
@@ -164,14 +169,15 @@ public:
 	USpatialNetDriverDebugContext* DebugCtx;
 
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
-	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
+	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+
+	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	// If this worker is authoritative over the translation, the manager will be instantiated.
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
-	void InitializeVirtualWorkerTranslationManager();
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
@@ -303,4 +309,6 @@ private:
 	void ProcessOwnershipChanges();
 
 	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
+	uint64 StartupTimestamp;
+	FString StartupClientDebugString;
 };

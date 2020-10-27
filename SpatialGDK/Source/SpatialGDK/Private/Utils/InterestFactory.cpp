@@ -101,7 +101,7 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, co
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy, bool bDebug)
+Interest InterestFactory::CreateServerWorkerInterest(Worker_EntityId EntityId, const UAbstractLBStrategy* LBStrategy, bool bDebug)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
@@ -151,6 +151,12 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::WORKER_COMPONENT_ID };
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+
+	// Add a self query to ensure we see the well known entity tag.
+	Query AuthoritySelfQuery = {};
+	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+	AuthoritySelfQuery.Constraint.EntityIdConstraint = EntityId;
+	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_COMPONENT_ID, AuthoritySelfQuery);
 
 	// Query to know about all the actors tagged with a debug component
 	if (bDebug)
@@ -219,9 +225,7 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	// Add a query for components all servers need to read client data
 	Query ClientQuery;
 	ClientQuery.Constraint.EntityIdConstraint = EntityId;
-	// Temp fix for invalid initial auth server checkout constraints - UNR-3683
-	// Using full snapshot ensures all components are available on checkout. Remove when root issue is resolved.
-	ClientQuery.FullSnapshotResult = true;
+	ClientQuery.ResultComponentIds = ServerAuthInterestResultType;
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ClientQuery);
 
 	// Add a query for the load balancing worker (whoever is delegated the ACL) to read the authority intent
@@ -229,7 +233,7 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
 	LoadBalanceQuery.ResultComponentIds =
 		SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
-						  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
+						  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID };
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 }
 

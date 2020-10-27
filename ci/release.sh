@@ -11,7 +11,7 @@ release () {
   local RELEASE_BRANCH="${4}"
   local PR_URL="${5}"
   local GITHUB_ORG="${6}"
-  local ENGINE_VERSIONS_LOCAL_VAR=$(echo ${ENGINE_VERSIONS[*]// })
+  local RELEASE_ENGINE_BRANCHES_LOCAL_VAR="$(echo ${RELEASE_ENGINE_BRANCHES[*]// })"
 
   echo "--- Releasing ${REPO_NAME}: Merging ${CANDIDATE_BRANCH} into ${RELEASE_BRANCH} :package:"
 
@@ -26,9 +26,10 @@ release () {
         --candidate-branch="${CANDIDATE_BRANCH}" \
         --release-branch="${RELEASE_BRANCH}" \
         --github-key-file="/var/github/github_token" \
-        --pull-request-url="${PR_URL}" \
+        --pull-request-url="\"${PR_URL}\"" \
+        --git-repository-name="${REPO_NAME}" \
         --github-organization="${GITHUB_ORG}" \
-        --engine-versions="${ENGINE_VERSIONS_LOCAL_VAR}"
+        --engine-versions="\"${RELEASE_ENGINE_BRANCHES_LOCAL_VAR}\""
 }
 
 set -e -u -o pipefail
@@ -109,18 +110,21 @@ USER_ID=$(id -u)
 # Release UnrealEngine must run before UnrealGDK so that the resulting commits can be included in that repo's unreal-engine.version.
 # We go over the array in reverse order here, just to release the least relevant engine version first, so the most relevant one will
 # end up on top of the releases page.
+RELEASE_ENGINE_BRANCHES=()
 for (( idx=${#ENGINE_VERSIONS[@]}-1 ; idx>=0 ; idx-- )) ; do
     ENGINE_VERSION=${ENGINE_VERSIONS[idx]}
+    RELEASE_BRANCH_NAME="${DRY_RUN_PREFIX}${ENGINE_VERSION}-release"
     release "UnrealEngine" \
     "${ENGINE_VERSION}" \
     "${ENGINE_VERSION}-${GDK_VERSION}-rc" \
-    "${DRY_RUN_PREFIX}${ENGINE_VERSION}-release" \
+    "${RELEASE_BRANCH_NAME}" \
     "$(buildkite-agent meta-data get UnrealEngine-${ENGINE_VERSION}-pr-url)" \
     "improbableio"
+    RELEASE_ENGINE_BRANCHES+=("${RELEASE_BRANCH_NAME}")
 done
 
 release "UnrealGDK"               "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "$(buildkite-agent meta-data get UnrealGDK-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"               "spatialos"
 release "UnrealGDKExampleProject" "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "$(buildkite-agent meta-data get UnrealGDKExampleProject-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)" "spatialos"
 release "UnrealGDKTestGyms"       "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "$(buildkite-agent meta-data get UnrealGDKTestGyms-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"       "spatialos"
 release "UnrealGDKEngineNetTest"  "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "$(buildkite-agent meta-data get UnrealGDKEngineNetTest-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"  "improbable"
-release "TestGymBuildKite"        "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${DRY_RUN_PREFIX}release" "$(buildkite-agent meta-data get TestGymBuildKite-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"        "improbable"
+release "TestGymBuildKite"        "$(buildkite-agent meta-data get gdk-source-branch)" "${GDK_VERSION}-rc" "${GDK_VERSION}"           "$(buildkite-agent meta-data get TestGymBuildKite-$(buildkite-agent meta-data get gdk-source-branch)-pr-url)"        "improbable"

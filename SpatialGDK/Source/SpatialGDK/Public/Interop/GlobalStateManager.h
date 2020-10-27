@@ -29,16 +29,16 @@ class SPATIALGDK_API UGlobalStateManager : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver);
 
-	void ApplyDeploymentMapData(const Worker_ComponentData& Data);
-	void ApplyStartupActorManagerData(const Worker_ComponentData& Data);
+	void ApplyDeploymentMapData(Schema_ComponentData* Data);
+	void ApplyStartupActorManagerData(Schema_ComponentData* Data);
 
-	void ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update);
-	void ApplyStartupActorManagerUpdate(const Worker_ComponentUpdate& Update);
+	void ApplyDeploymentMapUpdate(Schema_ComponentUpdate* Update);
+	void ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update);
 
 	DECLARE_DELEGATE_OneParam(QueryDelegate, const Worker_EntityQueryResponseOp&);
 	void QueryGSM(const QueryDelegate& Callback);
-	bool GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers,
-														  int32& OutSessionId);
+	static bool GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers,
+																 int32& OutSessionId);
 	void ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const;
 	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
@@ -87,9 +87,10 @@ public:
 	void OnPrePIEEnded(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
 
-	void OnShutdownComponentUpdate(const Worker_ComponentUpdate& Update);
+	void OnShutdownComponentUpdate(Schema_ComponentUpdate* Update);
 	void ReceiveShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
+
 private:
 	void SetDeploymentMapURL(const FString& MapURL);
 	void SendSessionIdUpdate();

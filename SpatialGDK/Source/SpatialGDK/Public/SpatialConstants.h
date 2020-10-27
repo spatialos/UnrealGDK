@@ -123,14 +123,14 @@ const Worker_ComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID = 9971;
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
 // System query tags for entity completeness
+const Worker_ComponentId FIRST_EC_COMPONENT_ID = 2001;
 const Worker_ComponentId SERVER_AUTH_TAG_COMPONENT_ID = 2001;
 const Worker_ComponentId SERVER_NON_AUTH_TAG_COMPONENT_ID = 2002;
 const Worker_ComponentId CLIENT_AUTH_TAG_COMPONENT_ID = 2003;
 const Worker_ComponentId CLIENT_NON_AUTH_TAG_COMPONENT_ID = 2004;
 const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
-const Worker_ComponentId SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2006;
-const Worker_ComponentId SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
-const Worker_ComponentId CLIENT_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2008;
+const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
+const Worker_ComponentId LAST_EC_COMPONENT_ID = 2008;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
@@ -313,6 +313,9 @@ const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 const FString SCHEMA_DATABASE_FILE_PATH = TEXT("Spatial/SchemaDatabase");
 const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 
+// An empty map with the game mode override set to GameModeBase.
+const FString EMPTY_TEST_MAP_PATH = TEXT("/SpatialGDK/Maps/Empty");
+
 const FString DEV_LOGIN_TAG = TEXT("dev_login");
 
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
@@ -354,7 +357,10 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 								VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
 
 								// Authority intent component to handle scattered hierarchies
-								AUTHORITY_INTENT_COMPONENT_ID
+								AUTHORITY_INTENT_COMPONENT_ID,
+
+								// Well known entity tag
+								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID
 	};
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
@@ -366,6 +372,11 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 								// Heartbeat
 								HEARTBEAT_COMPONENT_ID
 	};
+
+inline bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId)
+{
+	return ComponentId >= SpatialConstants::FIRST_EC_COMPONENT_ID && ComponentId <= SpatialConstants::LAST_EC_COMPONENT_ID;
+}
 
 inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {

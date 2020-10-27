@@ -69,7 +69,7 @@ void USpatialReplicationGraph::PreReplicateActors(UNetReplicationGraphConnection
 		for (AActor* Actor : LoadBalancingCtx.AdditionalActorsToReplicate)
 		{
 			// Only add net owners to the list as they will visit their dependents when replicated.
-			AActor* NetOwner = SpatialGDK::GetHierarchyRoot(Actor);
+			AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 			if (NetOwner == Actor)
 			{
 				FConnectionReplicationActorInfo& ConnectionData = ConnectionManager->ActorInfoMap.FindOrAdd(Actor);

@@ -1,13 +1,13 @@
 ﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "ComponentTestUtils.h"
 #include "SpatialView/Callbacks.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/Dispatcher.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/ViewDelta.h"
-#include "SpatialViewUtils.h"
+#include "Tests/SpatialView/ComponentTestUtils.h"
+#include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"
 
 #define DISPATCHER_TEST(TestName) GDK_TEST(Core, Dispatcher, TestName)

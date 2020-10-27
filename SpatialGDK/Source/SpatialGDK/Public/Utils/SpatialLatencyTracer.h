@@ -11,7 +11,7 @@
 #include "Utils/GDKPropertyMacros.h"
 
 #if TRACE_LIB_ACTIVE
-#include "WorkerSDK/improbable/trace.h"
+#include "WorkerSDK/improbable/legacy/trace.h"
 #endif
 
 #include "SpatialLatencyTracer.generated.h"
@@ -129,6 +129,9 @@ public:
 
 	// Internal GDK usage, shouldn't be used by game code
 	static USpatialLatencyTracer* GetTracer(UObject* WorldContextObject);
+
+	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static FString GetTraceMetadata(UObject* WorldContextObject);
 
 #if TRACE_LIB_ACTIVE
 

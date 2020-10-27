@@ -42,7 +42,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 
 	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
-		AActor* NetOwner = SpatialGDK::GetHierarchyRoot(Actor);
+		AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 		const bool bNetOwnerHasAuth = NetOwner->HasAuthority();
 
 		// Load balance if we are not supposed to be on this worker, or if we are separated from our owner.

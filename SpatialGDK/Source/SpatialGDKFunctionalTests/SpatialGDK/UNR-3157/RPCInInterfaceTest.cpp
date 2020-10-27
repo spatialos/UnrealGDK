@@ -17,9 +17,9 @@ ARPCInInterfaceTest::ARPCInInterfaceTest()
 	Description = TEXT("Test RPCs in interfaces");
 }
 
-void ARPCInInterfaceTest::BeginPlay()
+void ARPCInInterfaceTest::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	{ // Step 1 - Create actor
 		AddStep(TEXT("ServerCreateActor"), FWorkerDefinition::Server(1), nullptr, [this]() {

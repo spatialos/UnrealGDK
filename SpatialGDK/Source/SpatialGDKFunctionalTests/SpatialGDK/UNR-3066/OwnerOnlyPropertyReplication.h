@@ -15,7 +15,7 @@ class SPATIALGDKFUNCTIONALTESTS_API AOwnerOnlyPropertyReplication : public ASpat
 public:
 	AOwnerOnlyPropertyReplication();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

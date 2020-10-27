@@ -3,11 +3,14 @@
 #pragma once
 
 #include "Containers/UnrealString.h"
+#include "Engine/EngineBaseTypes.h"
 #include "Internationalization/Regex.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
+
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+
 #include <WorkerSDK/improbable/c_worker.h>
 
 struct FConnectionConfig
@@ -234,9 +237,13 @@ public:
 			FString URLAddress;
 			FParse::Token(CommandLine, URLAddress, false /* UseEscape */);
 			const FURL URL(nullptr /* Base */, *URLAddress, TRAVEL_Absolute);
-			if (URL.Valid)
+			if (URL.Valid && !URLAddress.IsEmpty())
 			{
 				SetupFromURL(URL);
+			}
+			else if (!bReceptionistPortParsed)
+			{
+				return false;
 			}
 		}
 		else

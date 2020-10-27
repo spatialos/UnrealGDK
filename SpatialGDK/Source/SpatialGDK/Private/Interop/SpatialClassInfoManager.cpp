@@ -19,8 +19,10 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
@@ -275,17 +277,14 @@ bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 {
 	// There's currently a bug that lets handover data get sent to clients in the initial
 	// burst of data for an entity, which leads to log spam in the SpatialReceiver. By tracking handover
-	// properties on clients, we can prevent that spam.
+	// properties on clients, we can prevent that spam. Cannot be removed yet because of Kraken,
+	// UNR-4358 will remove this in a squid-only world.
 	if (!NetDriver->IsServer())
 	{
 		return true;
 	}
 
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-
-	const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
-	check(Strategy != nullptr);
-	return Strategy->RequiresHandoverData() || Settings->bEnableHandover;
+	return USpatialStatics::IsHandoverEnabled(NetDriver);
 }
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
@@ -352,7 +351,7 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 	}
 	else
 	{
-		UE_LOG(LogSpatialClassInfoManager, Warning,
+		UE_LOG(LogSpatialClassInfoManager, Log,
 			   TEXT("Class corresponding to component %d has been unloaded! Will try to reload based on the component id."), ComponentId);
 
 		// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use
@@ -562,7 +561,8 @@ bool USpatialClassInfoManager::IsNetCullDistanceComponent(Worker_ComponentId Com
 
 bool USpatialClassInfoManager::IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const
 {
-	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId);
+	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId)
+		   || SpatialConstants::IsEntityCompletenessComponent(ComponentId);
 }
 
 void USpatialClassInfoManager::QuitGame()

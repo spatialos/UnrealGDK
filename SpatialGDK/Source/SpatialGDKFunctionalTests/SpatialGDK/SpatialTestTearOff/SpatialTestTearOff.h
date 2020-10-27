@@ -17,7 +17,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestTearOff : public ASpatialFunctio
 public:
 	ASpatialTestTearOff();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	// Variable used to reference the ReplicatedTearOffActor placed in the map.
 	AReplicatedTearOffActor* StartupTearOffActor;

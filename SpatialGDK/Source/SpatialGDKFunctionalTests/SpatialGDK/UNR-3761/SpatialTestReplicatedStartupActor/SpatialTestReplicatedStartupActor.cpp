@@ -51,9 +51,9 @@ void ASpatialTestReplicatedStartupActor::GetLifetimeReplicatedProps(TArray<FLife
 	DOREPLIFETIME(ASpatialTestReplicatedStartupActor, bIsValidReference);
 }
 
-void ASpatialTestReplicatedStartupActor::BeginPlay()
+void ASpatialTestReplicatedStartupActor::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	// Common Setup
 

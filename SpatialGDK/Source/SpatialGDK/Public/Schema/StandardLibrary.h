@@ -86,8 +86,13 @@ struct EntityAcl : Component
 	}
 
 	EntityAcl(const Worker_ComponentData& Data)
+		: EntityAcl(Data.schema_type)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	}
+
+	EntityAcl(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 		ReadAcl = GetWorkerRequirementSetFromSchema(ComponentObject, 1);
 

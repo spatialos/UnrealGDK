@@ -10,6 +10,12 @@
 
 namespace SpatialGDK
 {
+struct FSubViewDelta
+{
+	TArray<EntityDelta> EntityDeltas;
+	const TArray<Worker_Op>* WorkerMessages;
+};
+
 /**
  * Lists of changes made to a view as a list of EntityDeltas and miscellaneous other messages.
  * EntityDeltas are sorted by entity ID.
@@ -31,14 +37,20 @@ class ViewDelta
 {
 public:
 	void SetFromOpList(TArray<OpList> OpLists, EntityView& View);
+	// Produces a projection of a given main view delta to a sub view delta. The passed SubViewDelta is populated with
+	// the projection. The given arrays represent the state of the sub view and dictates the projection.
+	// Entity ID arrays are assumed to be sorted for view delta projection.
+	void Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
+				 const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
+				 const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const;
 	void Clear();
 
 	const TArray<EntityDelta>& GetEntityDeltas() const;
 	const TArray<Worker_Op>& GetWorkerMessages() const;
 
-	bool HasDisconnected() const;
-	Worker_ConnectionStatusCode GetConnectionStatus() const;
-	FString GetDisconnectReason() const;
+	bool HasConnectionStatusChanged() const;
+	Worker_ConnectionStatusCode GetConnectionStatusChange() const;
+	FString GetConnectionStatusChangeMessage() const;
 
 private:
 	struct ReceivedComponentChange
@@ -117,7 +129,7 @@ private:
 	// The accumulated component change in this range must be an update or a complete-update.
 	static ComponentChange CalculateUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, ComponentData& Component);
 
-	void ProcessOp(Worker_Op& Op);
+	void ProcessOpList(const OpList& Ops);
 	void PopulateEntityDeltas(EntityView& View);
 
 	// Adds component changes to `Delta` and updates `Components` accordingly.
@@ -140,6 +152,11 @@ private:
 	ReceivedEntityChange* ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End, EntityDelta& Delta,
 													   EntityViewElement** ViewElement, EntityView& View);
 
+	// The sentinel entity ID has the property that when converted to a uint64 it will be greater than INT64_MAX.
+	// If we convert all entity IDs to uint64s before comparing them we can then be assured that the sentinel values
+	// will be greater than all valid IDs.
+	static const Worker_EntityId SENTINEL_ENTITY_ID = -1;
+
 	TArray<ReceivedEntityChange> EntityChanges;
 	TArray<ReceivedComponentChange> ComponentChanges;
 	TArray<Worker_AuthorityChangeOp> AuthorityChanges;
@@ -159,5 +176,4 @@ private:
 	TArray<ComponentChange> ComponentsRefreshedForDelta;
 	TArray<OpList> OpListStorage;
 };
-
 } // namespace SpatialGDK

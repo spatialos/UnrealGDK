@@ -59,6 +59,13 @@ void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 	{
 		CurrentStep.Tick(DeltaSeconds);
 	}
+
+	// Did it stop now or before the Tick was called?
+	if (!CurrentStep.bIsRunning)
+	{
+		SetActorTickEnabled(false);
+		CurrentStep.Reset();
+	}
 }
 
 void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation(int NewWorkerId)
@@ -75,22 +82,15 @@ void ASpatialFunctionalTestFlowController::OnReadyToRegisterWithTest()
 
 	OwningTest->RegisterFlowController(this);
 
-	if (IsLocalController())
+	if (OwningTest->HasPreparedTest())
 	{
-		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-		{
-			bIsReadyToRunTest = true;
-		}
-		else
-		{
-			ServerSetReadyToRunTest();
-		}
+		SetReadyToRunTest(true);
 	}
 }
 
-void ASpatialFunctionalTestFlowController::ServerSetReadyToRunTest_Implementation()
+void ASpatialFunctionalTestFlowController::ServerSetReadyToRunTest_Implementation(bool bIsReady)
 {
-	bIsReadyToRunTest = true;
+	bIsReadyToRunTest = bIsReady;
 }
 
 void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(int StepIndex)
@@ -183,6 +183,26 @@ void ASpatialFunctionalTestFlowController::OnTestFinished()
 	{
 		ServerAckFinishedTest();
 	}
+	SetReadyToRunTest(false);
+}
+
+void ASpatialFunctionalTestFlowController::SetReadyToRunTest(bool bIsReady)
+{
+	if (bIsReady == bIsReadyToRunTest)
+	{
+		return;
+	}
+	if (IsLocalController())
+	{
+		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+		{
+			bIsReadyToRunTest = bIsReady;
+		}
+		else
+		{
+			ServerSetReadyToRunTest(bIsReady);
+		}
+	}
 }
 
 void ASpatialFunctionalTestFlowController::ClientStartStep_Implementation(int StepIndex)
@@ -200,8 +220,7 @@ void ASpatialFunctionalTestFlowController::StartStepInternal(const int StepIndex
 
 void ASpatialFunctionalTestFlowController::StopStepInternal()
 {
-	SetActorTickEnabled(false);
-	CurrentStep.Reset();
+	CurrentStep.bIsRunning = false;
 }
 
 void ASpatialFunctionalTestFlowController::ServerNotifyFinishTest_Implementation(EFunctionalTestResult TestResult, const FString& Message)
