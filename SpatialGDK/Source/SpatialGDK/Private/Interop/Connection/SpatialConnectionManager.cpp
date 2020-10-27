@@ -384,7 +384,9 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 
 			USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
 
-			if (Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection) == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
+			const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
+
+			if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 			{
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
@@ -396,10 +398,8 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 			{
 				Worker_Connection_Destroy(NewCAPIWorkerConnection);
 
-				const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
 				const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
 
-				// TODO: Try to reconnect - UNR-576
 				SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
 			}
 		});
