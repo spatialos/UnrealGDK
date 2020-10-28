@@ -42,7 +42,7 @@ TOptional<Trace_SpanId> FSpatialSpanIdStack::Pop()
 
 TOptional<Trace_SpanId> FSpatialSpanIdStack::GetSpanId() const
 {
-	if (!HasSpanId())
+	if (IsEmpty())
 	{
 		return {};
 	}
@@ -50,8 +50,8 @@ TOptional<Trace_SpanId> FSpatialSpanIdStack::GetSpanId() const
 	return SpanIdStack[SpanIdStack.Num() - 1];
 }
 
-bool FSpatialSpanIdStack::HasSpanId() const
+bool FSpatialSpanIdStack::IsEmpty() const
 {
-	return SpanIdStack.Num() > 0;
+	return SpanIdStack.Num() == 0;
 }
 } // namespace SpatialGDK

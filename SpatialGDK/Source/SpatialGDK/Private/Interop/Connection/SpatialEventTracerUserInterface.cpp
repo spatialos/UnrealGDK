@@ -105,7 +105,7 @@ bool USpatialEventTracerUserInterface::GetActiveSpanId(UObject* WorldContextObje
 		return false;
 	}
 
-	if (!EventTracer->SpanIdStack.HasSpanId())
+	if (EventTracer->SpanIdStack.IsEmpty())
 	{
 		return false;
 	}

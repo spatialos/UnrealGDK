@@ -14,6 +14,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
+#define TRACE_SPAN_ID_LENGTH 16
+
 namespace SpatialGDK
 {
 // SpatialEventTracer wraps Trace_EventTracer related functionality
@@ -45,8 +47,8 @@ public:
 
 	const FString& GetFolderPath() const { return FolderPath; }
 
-	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject> Object, const Trace_SpanId& SpanId);
-	TOptional<Trace_SpanId> PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject> Object);
+	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const Trace_SpanId& SpanId);
+	TOptional<Trace_SpanId> PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
 
 	FSpatialSpanIdStack SpanIdStack;
 

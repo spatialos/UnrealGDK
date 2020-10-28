@@ -20,7 +20,7 @@ public:
 	void Add(const Trace_SpanId& SpanId);
 	TOptional<Trace_SpanId> Pop();
 	TOptional<Trace_SpanId> GetSpanId() const;
-	bool HasSpanId() const;
+	bool IsEmpty() const;
 
 private:
 	const SpatialEventTracer* EventTracer;

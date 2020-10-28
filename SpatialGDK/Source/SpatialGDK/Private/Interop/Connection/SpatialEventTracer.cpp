@@ -83,7 +83,7 @@ SpatialEventTracer::~SpatialEventTracer()
 FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
 {
 	FString HexStr;
-	for (int i = 0; i < 16; i++)
+	for (int i = 0; i < TRACE_SPAN_ID_LENGTH; i++)
 	{
 		HexStr += FString::Printf(TEXT("%02x"), SpanId.data[i]);
 	}
@@ -93,13 +93,9 @@ FString SpatialEventTracer::SpanIdToString(const Trace_SpanId& SpanId)
 FUserSpanId SpatialEventTracer::SpanIdToUserSpanId(const Trace_SpanId& SpanId)
 {
 	FUserSpanId UserSpanId;
-	UserSpanId.Data.Reserve(16);
-
-	for (int i = 0; i < 16; i++)
-	{
-		UserSpanId.Data.Add(static_cast<uint8>(SpanId.data[i]));
-	}
-
+	UserSpanId.Data.SetNum(TRACE_SPAN_ID_LENGTH);
+	const int32 Size = TRACE_SPAN_ID_LENGTH * sizeof(uint8);
+	FMemory::Memcpy(UserSpanId.Data.GetData(), SpanId.data, Size);
 	return UserSpanId;
 }
 
@@ -111,10 +107,8 @@ TOptional<Trace_SpanId> SpatialEventTracer::UserSpanIdToSpanId(const FUserSpanId
 	}
 
 	Trace_SpanId SpanId;
-	for (int i = 0; i < 16; i++)
-	{
-		SpanId.data[i] = static_cast<unsigned char>(UserSpanId.Data[i]);
-	}
+	const int32 Size = TRACE_SPAN_ID_LENGTH * sizeof(uint8);
+	FMemory::Memcpy(SpanId.data, UserSpanId.Data.GetData(), Size);
 	return SpanId;
 }
 
@@ -272,7 +266,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::GetSpanId(const EntityComponentId& I
 		return *SpanId;
 }
 
-void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject> Object, const Trace_SpanId& SpanId)
+void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const Trace_SpanId& SpanId)
 {
 	if (!IsEnabled())
 	{
@@ -282,14 +276,13 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 	FSpatialSpanIdStack* Stack = ObjectSpanIdStacks.Find(Object);
 	if (Stack == nullptr)
 	{
-		Stack = &ObjectSpanIdStacks.Add(Object);
-		Stack->SetEventTracer(this);
+		Stack = &ObjectSpanIdStacks.Emplace(Object, this);
 	}
 
 	Stack->Add(SpanId);
 }
 
-TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject> Object)
+TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object)
 {
 	if (!IsEnabled())
 	{
@@ -303,7 +296,7 @@ TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanId(const 
 	}
 
 	TOptional<Trace_SpanId> SpanId = Stack->Pop();
-	if (!Stack->HasSpanId())
+	if (Stack->IsEmpty())
 	{
 		ObjectSpanIdStacks.Remove(Object);
 	}
