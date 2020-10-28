@@ -105,7 +105,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MetricsReportRate(2.0f)
 	, bUseFrameTimeAsLoad(false)
 	, bBatchSpatialPositionUpdates(false)
-	, MaxDynamicallyAttachedSubobjectsPerClass(3)
+	, MaxDynamicallyAttachedSubobjectsPerClassDefault(3)
 	, ServicesRegion(EServicesRegion::Default)
 	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning) // Deprecated - UNR-4348
 	, LocalWorkerLogLevel(WorkerLogLevel)
