@@ -822,10 +822,10 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 
 void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 {
-	VerifyAndStartDeployment();
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 	SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion);
+	VerifyAndStartDeployment();
 }
 
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()

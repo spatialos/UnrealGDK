@@ -257,10 +257,8 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 										  *LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
 										  *FString::FromInt(GRPCPort), *LaunchArgs);
 
-	// TODO: Build the path using the pinned runtime version
-	FString RuntimeVerison = TEXT("0.5.1");
 	FString RuntimeExecutable = TEXT("runtime.exe");
-	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVerison, RuntimeExecutable);
+	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVersion, RuntimeExecutable);
 
 	RuntimeProcess = { *RuntimePath, *RuntimeArgs, SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
 					   /*InCreatePipes*/ true };
