@@ -160,7 +160,8 @@ public:
 		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			// If the entity already exists, make sure we have spatial authority before we replicate.
-			if (!bCreatingNewEntity && !NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
+			if (!bCreatingNewEntity
+				&& !NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID))
 			{
 				return false;
 			}
@@ -195,7 +196,7 @@ public:
 	{
 		if (NetDriver->IsServer())
 		{
-			SetServerAuthority(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID));
+			SetServerAuthority(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID));
 		}
 		else
 		{

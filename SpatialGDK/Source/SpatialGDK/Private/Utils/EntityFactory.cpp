@@ -506,11 +506,7 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(cons
 	check(GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing);
 
 	AuthorityDelegationMap DelegationMap;
-	DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, EntityId);
-	DelegationMap.Add(SpatialConstants::METADATA_COMPONENT_ID, EntityId);
-	DelegationMap.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, EntityId);
-	DelegationMap.Add(SpatialConstants::INTEREST_COMPONENT_ID, EntityId);
-	DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, EntityId);
+	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, EntityId);
 	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, EntityId);
 
 	TArray<FWorkerComponentData> Components;

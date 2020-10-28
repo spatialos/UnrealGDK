@@ -1253,7 +1253,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
 {
 	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID
-		&& NetDriver->StaticComponentView->HasAuthority(InEntityId, SpatialConstants::POSITION_COMPONENT_ID))
+		&& NetDriver->StaticComponentView->HasAuthority(InEntityId, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID))
 	{
 		Sender->SendPositionUpdate(InEntityId, NewPosition);
 	}
