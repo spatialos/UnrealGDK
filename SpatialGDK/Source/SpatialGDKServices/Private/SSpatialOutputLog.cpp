@@ -312,7 +312,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	FString LogMessage = LogMatcher.GetCaptureGroup(3);
 
 	const FRegexPattern LogMessagePattern = FRegexPattern(TEXT("\\[(.*)\\] (.*)"));
-	FRegexMatcher LogMatcherMessage(LogMessagePattern, LogMessage);
+	FRegexMatcher WorkerLogMatcher(LogMessagePattern, LogMessage);
 
 	if (LogMatcherMessage.FindNext())
 	{
