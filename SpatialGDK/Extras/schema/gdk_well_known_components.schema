@@ -7,7 +7,7 @@ import "unreal/gdk/virtual_worker_translation.schema";
 import "unreal/gdk/spawner.schema";
 
 component_set GDKWellKnownComponents {
-  id = 9999;
+  id = 9000;
   components = [
     ComponentPresence,
 	DeploymentMap,
