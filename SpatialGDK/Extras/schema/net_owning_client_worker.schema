@@ -19,6 +19,6 @@ component NetOwningClientWorker {
     // connection. This entity ID is the partition entity ID that the client 
     // worker claims in order to gain authority over entity components in the 
     // world. Currently, this will always be the PlayerController spawned during
-    // the connection
+    // the connection.
     option<EntityId> partition_entity_id = 2;
 }

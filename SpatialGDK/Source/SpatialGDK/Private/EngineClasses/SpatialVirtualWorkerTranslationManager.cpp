@@ -17,6 +17,7 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(S
 																			   SpatialVirtualWorkerTranslator* InTranslator)
 	: Receiver(InReceiver)
 	, Connection(InConnection)
+	, Translator(InTranslator)
 	, Partitions({})
 	, bWorkerEntityQueryInFlight(false)
 {
@@ -61,7 +62,7 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Autho
 	}
 	else
 	{
-		// When USLB is enabled, the translator stores the partition entities we create.
+		// When USLB is enabled, we keep track of partition entities as we create them.
 		// When USLB is disabled, we'll just fill it with invalid IDs.
 		Partitions.Reserve(VirtualWorkersToAssign.Num());
 		for (VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
@@ -292,12 +293,9 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning,
-			   TEXT("Could not find ServerWorker Entities via entity query: %s, retrying."), UTF8_TO_TCHAR(Op.message));
-	}
-	else
-	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Processing ServerWorker Entity query response"));
-		AssignPartitionsToEachServerWorkerFromQueryResponse(Op);
+			   TEXT("Server worker entity query failed: %s, retrying."), UTF8_TO_TCHAR(Op.message));
+		QueryForServerWorkerEntities();
+		return;
 	}
 
 	if (Op.result_count != Partitions.Num())
@@ -313,7 +311,7 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	uint32 ServerWorkersNotReady;
 	if (!AllServerWorkersAreReady(Op, ServerWorkersNotReady))
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Query found correct number of server workers but %d were not ready."), ServerWorkersNotReady);
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Query found correct number of server workers but %d were not ready."), ServerWorkersNotReady);
 		QueryForServerWorkerEntities();
 		return;
 	}
