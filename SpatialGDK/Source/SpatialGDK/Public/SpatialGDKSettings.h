@@ -214,10 +214,15 @@ public:
 	UPROPERTY(config)
 	bool bBatchSpatialPositionUpdates;
 
+	/** The default maximum number of ActorComponents/Subobjects of the same class that can be attached to an Actor.*/
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation",
+			  meta = (DisplayName = "Maximum Dynamically Attached Subobjects Per Class (default)"))
+	uint32 MaxDynamicallyAttachedSubobjectsPerClassDefault;
+
 	/** Maximum number of ActorComponents/Subobjects of the same class that can be attached to an Actor.*/
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation",
 			  meta = (DisplayName = "Maximum Dynamically Attached Subobjects Per Class"))
-	uint32 MaxDynamicallyAttachedSubobjectsPerClass;
+	TMap<UClass*, uint32> MaxDynamicallyAttachedSubobjectsPerClassMap;
 
 	/** The receptionist host to use if no 'receptionistHost' argument is passed to the command line. */
 	UPROPERTY(EditAnywhere, config, Category = "Local Connection")

@@ -49,7 +49,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	const int DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
+	const int DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClassDefault;
 	StepTimer = 0.0f;
 
 	{ // Step 0 - The server spawn a TestMovementCharacter and makes Client 1 possess it.

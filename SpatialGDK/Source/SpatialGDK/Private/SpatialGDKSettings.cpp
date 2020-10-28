@@ -173,7 +173,8 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 
 	// TODO(UNR-3569): Engine PR to remove bEnableOffloading from ULevelEditorPlaySettings.
 
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClass))
+	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClassDefault)
+		|| Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClassMap))
 	{
 		FMessageDialog::Open(
 			EAppMsgType::Ok,

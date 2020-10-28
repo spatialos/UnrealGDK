@@ -462,7 +462,10 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 	// Use the max number of dynamically attached subobjects per class to generate
 	// that many schema components for this subobject.
-	const uint32 DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	const uint32 DynamicComponentsPerClass = SpatialGDKSettings->MaxDynamicallyAttachedSubobjectsPerClassMap.Contains(Class)
+												 ? SpatialGDKSettings->MaxDynamicallyAttachedSubobjectsPerClassMap[Class]
+												 : SpatialGDKSettings->MaxDynamicallyAttachedSubobjectsPerClassDefault;
 
 	FSubobjectSchemaData SubobjectSchemaData;
 
