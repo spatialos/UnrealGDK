@@ -505,7 +505,8 @@ void SpatialCommandUtils::FetchRuntimeBinary(const FString& RuntimeVersion)
 
 void SpatialCommandUtils::FetchInspectorBinary(const FString& InspectorVersion)
 {
-	FString InspectorPath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("inspector"), InspectorVersion, SpatialGDKServicesConstants::InspectorExe);
+	FString InspectorPackageName = TEXT("inspector");
+	FString InspectorPath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, InspectorPackageName, InspectorVersion, SpatialGDKServicesConstants::InspectorExe);
 	SpatialCommandUtils::FetchPackageBinary(InspectorVersion, SpatialGDKServicesConstants::InspectorExe, InspectorPackageName, InspectorPath, false);
 }
 
