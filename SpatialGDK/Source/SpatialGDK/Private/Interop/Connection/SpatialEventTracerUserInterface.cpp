@@ -78,17 +78,20 @@ void USpatialEventTracerUserInterface::TraceRPC(UObject* WorldContextObject, FEv
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
 	if (EventTracer == nullptr || !EventTracer->IsEnabled())
 	{
+		Delegate.Execute();
 		return;
 	}
 
 	if (!UserSpanId.IsValid())
 	{
+		Delegate.Execute();
 		return;
 	}
 
 	TOptional<Trace_SpanId> SpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToSpanId(UserSpanId);
 	if (!SpanId.IsSet())
 	{
+		Delegate.Execute();
 		return;
 	}
 
@@ -153,7 +156,7 @@ SpatialGDK::SpatialEventTracer* USpatialEventTracerUserInterface::GetEventTracer
 		return nullptr;
 	}
 
-	return NetDriver->Connection->GetEventTracer();
+	return NetDriver->Connection ? NetDriver->Connection->GetEventTracer() : nullptr;
 }
 
 USpatialNetDriver* USpatialEventTracerUserInterface::GetSpatialNetDriver(UObject* WorldContextObject)
