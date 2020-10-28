@@ -1,14 +1,9 @@
-FROM microsoft/dotnet:2.2-sdk as build
+FROM ubuntu:18.04
 
 # Copy everything and build
 WORKDIR /app
 COPY ./ci ./
-RUN dotnet publish -c Release -o out
-
-# Build runtime image
-FROM mcr.microsoft.com/dotnet/core/runtime:2.2
-WORKDIR /app
-COPY --from=build /app/*/out ./
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg  add - && apt-get update -y && apt-get install google-cloud-sdk -y
 
 # Setup GIT
 RUN apt-get update && \
@@ -24,7 +19,7 @@ VOLUME /var/github
 # Volume to output logs & Buildkite metadata to
 VOLUME /var/logs
 
-COPY ./ci/docker/entrypoint.sh ./
+COPY ./ci/docker/mobile-test-tools-entrypoint.sh ./entrypoint.sh
 
 RUN ["chmod", "+x", "./entrypoint.sh"]
 

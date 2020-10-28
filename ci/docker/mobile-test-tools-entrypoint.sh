@@ -26,4 +26,4 @@ mkdir -p /${HOME}/.ssh
     touch /${HOME}/.ssh/known_hosts
     ssh-keyscan github.com >> /${HOME}/.ssh/known_hosts
 
-gosu user dotnet ReleaseTool.dll "$@"
+gosu user bash "$@"
