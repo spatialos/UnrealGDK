@@ -265,11 +265,8 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	RuntimeProcess = { *RuntimePath, *RuntimeArgs, SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
 					   /*InCreatePipes*/ true };
 
-	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
-
-	RuntimeProcess->OnOutput().BindLambda([&, SpatialOutputLog](const FString& Output) {
-		SpatialOutputLog.Pin()->FormatAndPrintRawLogLine(Output);
+	RuntimeProcess->OnOutput().BindLambda([&](const FString& Output) {
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime: %s"), *Output);
 
 		// Timeout detection.
 		if (bStartingDeployment && Output.Contains(TEXT("startup completed")))
