@@ -16,7 +16,7 @@ component PlayerSpawner {
     command SpawnPlayerResponse spawn_player(SpawnPlayerRequest);
 }
 
-component_set PlayerSpawner {
+component_set PlayerSpawnerSet {
   id = 9998;
   components = [
     PlayerSpawner

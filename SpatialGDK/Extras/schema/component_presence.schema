@@ -13,7 +13,7 @@ component ComponentPresence {
 }
 
 
-component_set ComponentPresence {
+component_set ComponentPresenceSet {
   id = 9972;
   components = [
     ComponentPresence
