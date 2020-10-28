@@ -122,13 +122,13 @@ Interest InterestFactory::CreateServerWorkerInterest(Worker_EntityId EntityId, c
 	// Ensure server worker receives AlwaysRelevant entities.
 	ServerQuery.ResultComponentIds = ServerNonAuthInterestResultType;
 	ServerQuery.Constraint = CreateAlwaysRelevantConstraint();
-	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ServerQuery);
 
 	// Workers have interest in all system worker entities, probably for a good reason?
 	ServerQuery = Query();
 	ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::WORKER_COMPONENT_ID };
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
-	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ServerQuery);
 
 	// Add a self query to ensure we see the well known entity tag.
 	Query AuthoritySelfQuery = {};
@@ -142,7 +142,7 @@ Interest InterestFactory::CreateServerWorkerInterest(Worker_EntityId EntityId, c
 		ServerQuery = Query();
 		ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::GDK_DEBUG_COMPONENT_ID };
 		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
-		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ServerQuery);
 	}
 
 	return ServerInterest;
@@ -163,7 +163,7 @@ void InterestFactory::AddLoadBalancingInterestQuery(const UAbstractLBStrategy* L
 	Query PartitionQuery{};
 	PartitionQuery.ResultComponentIds = InterestFactory::ServerNonAuthInterestResultType;
 	PartitionQuery.Constraint = LBStrategy->GetWorkerInterestQueryConstraint(VirtualWorker);
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, PartitionQuery);
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, PartitionQuery);
 }
 
 Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
@@ -222,7 +222,7 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	Query ClientQuery;
 	ClientQuery.Constraint.EntityIdConstraint = EntityId;
 	ClientQuery.ResultComponentIds = ServerAuthInterestResultType;
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ClientQuery);
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ClientQuery);
 
 	// If USLB disabled, add a query for the load balancing worker (delegated the EntityACL) to read the components it needs to write
 	// updates.
@@ -278,7 +278,7 @@ void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AAct
 	if (OwnerChainQuery.Constraint.OrConstraint.Num() != 0)
 	{
 		OwnerChainQuery.ResultComponentIds = ServerNonAuthInterestResultType;
-		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, OwnerChainQuery);
+		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, OwnerChainQuery);
 	}
 }
 
@@ -325,7 +325,7 @@ void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest,
 		ServerSystemQuery.Constraint = ServerSystemConstraint;
 		ServerSystemQuery.ResultComponentIds = ServerNonAuthInterestResultType;
 
-		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerSystemQuery);
+		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ServerSystemQuery);
 	}
 }
 
@@ -385,7 +385,7 @@ void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor*
 			ServerUserQuery.Frequency = FrequencyToConstraints.Key;
 			ServerUserQuery.ResultComponentIds = ServerNonAuthInterestResultType;
 
-			AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerUserQuery);
+			AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ServerUserQuery);
 		}
 	}
 }
@@ -487,7 +487,7 @@ void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const Que
 			ServerQuery.Frequency = CheckoutRadiusConstraintFrequencyPair.Frequency;
 			ServerQuery.ResultComponentIds = ServerNonAuthInterestResultType;
 
-			AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::POSITION_COMPONENT_ID, ServerQuery);
+			AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ServerQuery);
 		}
 	}
 }
