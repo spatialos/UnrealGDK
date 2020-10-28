@@ -500,7 +500,7 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 bool SpatialCommandUtils::FetchRuntimeBinary(const FString& RuntimeVersion)
 {
 	const FString& RuntimePackageName = TEXT("runtime");
-	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVersion);
+	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, RuntimePackageName, RuntimeVersion);
 	return SpatialCommandUtils::FetchPackageBinary(RuntimeVersion, SpatialGDKServicesConstants::RuntimeExe, RuntimePackageName, RuntimePath, true);
 }
 
