@@ -266,13 +266,9 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
 	{
 		AuthorityDelegationMap DelegationMap;
-		DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, EntityId);
-		DelegationMap.Add(SpatialConstants::METADATA_COMPONENT_ID, EntityId);
-		DelegationMap.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, EntityId);
-		DelegationMap.Add(SpatialConstants::INTEREST_COMPONENT_ID, EntityId);
+		DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, EntityId);
 		DelegationMap.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, EntityId);
 		DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, EntityId);
-		DelegationMap.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, EntityId);
 		Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 	}
 	else

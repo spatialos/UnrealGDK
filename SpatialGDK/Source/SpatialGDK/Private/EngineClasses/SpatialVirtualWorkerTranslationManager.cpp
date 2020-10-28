@@ -18,7 +18,6 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(S
 	: Translator(InTranslator)
 	, Receiver(InReceiver)
 	, Connection(InConnection)
-	, Translator(InTranslator)
 	, Partitions({})
 	, bWorkerEntityQueryInFlight(false)
 {
@@ -300,8 +299,8 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning,
-			   TEXT("Server worker entity query failed: %s, retrying."), UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Server worker entity query failed: %s, retrying."),
+			   UTF8_TO_TCHAR(Op.message));
 		QueryForServerWorkerEntities();
 		return;
 	}

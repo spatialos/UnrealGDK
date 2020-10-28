@@ -20,3 +20,10 @@ component ServerWorker {
     bool ready_to_begin_play = 2;
     command ForwardSpawnPlayerResponse forward_spawn_player(ForwardSpawnPlayerRequest);
 }
+
+component_set ServerWorkerSet {
+  id = 9974;
+  components = [
+    ServerWorker
+  ];
+}
