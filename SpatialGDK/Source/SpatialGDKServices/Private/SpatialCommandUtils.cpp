@@ -533,7 +533,7 @@ void SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, cons
 	const FString& ExePath = SpatialGDKServicesConstants::SpatialExe;
 	FetchingProcess = { ExePath, Params, true, true };
 	FetchingProcess->OnOutput().BindLambda([](const FString& Output) {
-		UE_LOG(LogSpatialCommandUtils, Display, TEXT("Runtime: %s"), *Output);
+		UE_LOG(LogSpatialCommandUtils, Display, TEXT("FetchingProcess: %s"), *Output);
 	});
 	FetchingProcess->Launch();
 
