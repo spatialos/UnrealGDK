@@ -96,6 +96,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, SessionId(0)
 	, NextRPCIndex(0)
 	, StartupTimestamp(0)
+	, MigrationTimestamp(0)
 {
 	// Due to changes in 4.23, we now use an outdated flow in ComponentReader::ApplySchemaObject
 	// Native Unreal now iterates over all commands on clients, and no longer has access to a BaseHandleToCmdIndex
@@ -2587,18 +2588,8 @@ void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Dela
 void USpatialNetDriver::TryFinishStartup()
 {
 	// Limit Log frequency.
-	bool bShouldLogStartup = [this]() {
-		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-
-		const uint64 WatchdogTimer = Settings->StartupLogRate / FPlatformTime::GetSecondsPerCycle64();
-		const uint64 CurrentTime = FPlatformTime::Cycles64();
-		if (CurrentTime - StartupTimestamp > WatchdogTimer)
-		{
-			StartupTimestamp = CurrentTime;
-			return true;
-		}
-		return false;
-	}();
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	bool bShouldLogStartup = HasTimedOut(Settings->StartupLogRate, StartupTimestamp);
 
 	if (IsServer())
 	{
@@ -2684,6 +2675,36 @@ void USpatialNetDriver::TrackTombstone(const Worker_EntityId EntityId)
 bool USpatialNetDriver::IsReady() const
 {
 	return bIsReadyToStart;
+}
+
+bool USpatialNetDriver::IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure)
+{
+	// Clear the log migration store at the specified interval
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (HasTimedOut(Settings->ActorMigrationLogRate, MigrationTimestamp))
+	{
+		MigrationFailureLogStore.Empty();
+	}
+
+	// Check if the pair of actor and failure reason have already been logged
+	bool bIsLogged = MigrationFailureLogStore.FindPair(ActorEntityId, ActorMigrationFailure) != nullptr;
+	if (!bIsLogged)
+	{
+		MigrationFailureLogStore.AddUnique(ActorEntityId, ActorMigrationFailure);
+	}
+	return bIsLogged;
+}
+
+bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
+{
+	const uint64 WatchdogTimer = Interval / FPlatformTime::GetSecondsPerCycle64();
+	const uint64 CurrentTime = FPlatformTime::Cycles64();
+	if (CurrentTime - TimeStamp > WatchdogTimer)
+	{
+		TimeStamp = CurrentTime;
+		return true;
+	}
+	return false;
 }
 
 // This should only be called once on each client, in the SpatialDebugger constructor after the class is replicated to each client.

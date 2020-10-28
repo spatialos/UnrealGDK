@@ -130,6 +130,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableClientQueriesOnServer(false)
 	, bEnableCrossLayerActorSpawning(true)
 	, StartupLogRate(5.0f)
+	, ActorMigrationLogRate(5.0f)
 	, bEventTracingEnabled(false)
 	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
 {
