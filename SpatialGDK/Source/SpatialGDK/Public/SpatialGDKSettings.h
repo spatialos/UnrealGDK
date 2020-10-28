@@ -219,7 +219,9 @@ public:
 			  meta = (DisplayName = "Maximum Dynamically Attached Subobjects Per Class (default)"))
 	uint32 MaxDynamicallyAttachedSubobjectsPerClassDefault;
 
-	/** Maximum number of ActorComponents/Subobjects of the same class that can be attached to an Actor.*/
+	/** Maximum number of ActorComponents/Subobjects of the same class that can be attached to an Actor. Note that changing this REQUIRES
+	 * schema to be regenerated.
+	 */
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation",
 			  meta = (DisplayName = "Maximum Dynamically Attached Subobjects Per Class"))
 	TMap<UClass*, uint32> MaxDynamicallyAttachedSubobjectsPerClassMap;
