@@ -45,6 +45,8 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, RuntimeVariant(ESpatialOSRuntimeVariant::Standard)
 	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
 	, CompatibilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
+	, bUseGDKPinnedInspectorVersion(true)
+	, InspectorVersionOverride(TEXT(""))
 	, ExposedRuntimeIP(TEXT(""))
 	, bAutoStartLocalDeployment(true)
 	, bSpatialDebuggerEditorEnabled(false)

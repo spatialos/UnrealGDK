@@ -892,6 +892,9 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 {
 	VerifyAndStartDeployment();
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
+	SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion);
 }
 
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
@@ -922,6 +925,10 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		InspectorURL = SpatialGDKServicesConstants::InspectorURL;
 	}
 
+	
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
+	SpatialCommandUtils::FetchInspectorBinary(InspectorVersion);
 	FString WebError;
 	FPlatformProcess::LaunchURL(*InspectorURL, TEXT(""), &WebError);
 	if (!WebError.IsEmpty())

@@ -3,6 +3,7 @@
 #include "SpatialCommandUtils.h"
 
 #include "Internationalization/Regex.h"
+#include "Misc/MonitoredProcess.h"
 #include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
@@ -496,4 +497,58 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 	return false;
 }
 
+bool SpatialCommandUtils::FetchRuntimeBinary(const FString& RuntimeVersion)
+{
+	const FString& RuntimePackageName = TEXT("runtime");
+	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, RuntimePackageName, RuntimeVersion);
+	return SpatialCommandUtils::FetchPackageBinary(RuntimeVersion, SpatialGDKServicesConstants::RuntimeExe, RuntimePackageName, RuntimePath, true);
+}
+
+bool SpatialCommandUtils::FetchInspectorBinary(const FString& InspectorVersion)
+{
+	const FString& InspectorPackageName = TEXT("inspector");
+	FString InspectorPath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, InspectorPackageName, InspectorVersion, SpatialGDKServicesConstants::InspectorExe);
+	return SpatialCommandUtils::FetchPackageBinary(InspectorVersion, SpatialGDKServicesConstants::InspectorExe, InspectorPackageName, InspectorPath, false);
+}
+
+bool SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, const FString& PackageExe, const FString& PackageName, const FString& SaveLocation, const bool bUnzip)
+{
+	FString PackagePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, *PackageName, PackageVersion);
+
+	// Check if the binary already exists for a given version
+	if (FPaths::FileExists(FPaths::Combine(PackagePath, PackageExe)))
+	{
+		UE_LOG(LogSpatialCommandUtils, Verbose, TEXT("%s binary already exists."), *PackageName);
+		return true;
+	}
+
+	// If it does not exist then fetch the binary using `spatial worker package retrieve`
+	UE_LOG(LogSpatialCommandUtils, Log, TEXT("Trying to fetch %s version %s"), *PackageName, *PackageVersion);
+	FString Params = FString::Printf(TEXT("package retrieve %s %s %s %s"), *PackageName, *SpatialGDKServicesConstants::PlatformVersion,
+									 *PackageVersion, *SaveLocation);
+	if (bUnzip)
+	{
+		Params += TEXT(" --unzip");
+	}
+
+	TOptional<FMonitoredProcess> FetchingProcess;
+	const FString& ExePath = SpatialGDKServicesConstants::SpatialExe;
+	FetchingProcess = { ExePath, Params, true, true };
+	FetchingProcess->OnOutput().BindLambda([](const FString& Output) {
+		UE_LOG(LogSpatialCommandUtils, Display, TEXT("FetchingProcess: %s"), *Output);
+	});
+	FetchingProcess->Launch();
+
+	while (FetchingProcess->Update())
+	{
+		if (FetchingProcess->GetDuration().GetTotalSeconds() > ProcessTimeoutTime)
+		{
+			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Timed out waiting for the %s process fetching to start."), *PackageName);
+
+			FetchingProcess->Exit();
+			return false;
+		}
+	}
+	return true;
+}
 #undef LOCTEXT_NAMESPACE

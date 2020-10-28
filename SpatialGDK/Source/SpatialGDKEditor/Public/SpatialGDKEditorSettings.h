@@ -328,7 +328,7 @@ public:
 	/** Returns which runtime variant we should use. */
 	TEnumAsByte<ESpatialOSRuntimeVariant::Type> GetSpatialOSRuntimeVariant() const { return RuntimeVariant; }
 
-	/** Returns the version information for the currently set variant*/
+	/** Returns the version information for the currently set runtime variant*/
 	const FRuntimeVariantVersion& GetSelectedRuntimeVariantVersion() const
 	{
 		return const_cast<USpatialGDKEditorSettings*>(this)->GetRuntimeVariantVersion(RuntimeVariant);
@@ -342,6 +342,21 @@ public:
 
 	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
 	FRuntimeVariantVersion CompatibilityModeRuntimeVersion;
+
+	/** Whether to use the GDK-associated SpatialOS inspector version for local deployments, or to use the one specified in the
+	 * InspectorVersion field. */
+	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (DisplayName = "Use GDK Pinned Inspector Version"))
+	bool bUseGDKPinnedInspectorVersion;
+
+	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
+	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (EditCondition = "!bUseGDKPinnedInspectorVersion"))
+	FString InspectorVersionOverride;
+
+	/** Returns the version information for the currently set inspector*/
+	const FString& GetInspectorVersion() const
+	{
+		return bUseGDKPinnedInspectorVersion ? SpatialGDKServicesConstants::InspectorPinnedVersion : InspectorVersionOverride;
+	}
 
 	mutable FOnDefaultTemplateNameRequireUpdate OnDefaultTemplateNameRequireUpdate;
 
