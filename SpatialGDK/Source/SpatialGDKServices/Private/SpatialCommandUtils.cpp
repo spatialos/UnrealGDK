@@ -497,20 +497,21 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 	return false;
 }
 
-void SpatialCommandUtils::FetchRuntimeBinary(const FString& RuntimeVersion)
+bool SpatialCommandUtils::FetchRuntimeBinary(const FString& RuntimeVersion)
 {
+	const FString& RuntimePackageName = TEXT("runtime");
 	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVersion);
-	SpatialCommandUtils::FetchPackageBinary(RuntimeVersion, SpatialGDKServicesConstants::RuntimeExe, "runtime", RuntimePath, true);
+	return SpatialCommandUtils::FetchPackageBinary(RuntimeVersion, SpatialGDKServicesConstants::RuntimeExe, RuntimePackageName, RuntimePath, true);
 }
 
-void SpatialCommandUtils::FetchInspectorBinary(const FString& InspectorVersion)
+bool SpatialCommandUtils::FetchInspectorBinary(const FString& InspectorVersion)
 {
-	FString InspectorPackageName = TEXT("inspector");
+	const FString& InspectorPackageName = TEXT("inspector");
 	FString InspectorPath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, InspectorPackageName, InspectorVersion, SpatialGDKServicesConstants::InspectorExe);
-	SpatialCommandUtils::FetchPackageBinary(InspectorVersion, SpatialGDKServicesConstants::InspectorExe, InspectorPackageName, InspectorPath, false);
+	return SpatialCommandUtils::FetchPackageBinary(InspectorVersion, SpatialGDKServicesConstants::InspectorExe, InspectorPackageName, InspectorPath, false);
 }
 
-void SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, const FString& PackageExe, const FString& PackageName, const FString& SaveLocation, const bool bUnzip)
+bool SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, const FString& PackageExe, const FString& PackageName, const FString& SaveLocation, const bool bUnzip)
 {
 	FString PackagePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, *PackageName, PackageVersion);
 
@@ -518,7 +519,7 @@ void SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, cons
 	if (FPaths::FileExists(FPaths::Combine(PackagePath, PackageExe)))
 	{
 		UE_LOG(LogSpatialCommandUtils, Verbose, TEXT("%s binary already exists."), *PackageName);
-		return;
+		return true;
 	}
 
 	// If it does not exist then fetch the binary using `spatial worker package retrieve`
@@ -527,7 +528,7 @@ void SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, cons
 									 *PackageVersion, *SaveLocation);
 	if (bUnzip)
 	{
-		Params += " --unzip";
+		Params += TEXT(" --unzip");
 	}
 
 	TOptional<FMonitoredProcess> FetchingProcess;
@@ -545,8 +546,9 @@ void SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, cons
 			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Timed out waiting for the %s process fetching to start."), *PackageName);
 
 			FetchingProcess->Exit();
-			break;
+			return false;
 		}
 	}
+	return true;
 }
 #undef LOCTEXT_NAMESPACE
