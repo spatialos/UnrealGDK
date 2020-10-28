@@ -35,7 +35,7 @@ public:
 	SPATIALGDKSERVICES_API static void FetchInspectorBinary(const FString& InspectorVersion);
 	SPATIALGDKSERVICES_API static void FetchPackageBinary(const FString& PackageVersion, const FString& PackageExe,
 														  const FString& PackageName,
-												  const FString& SaveLocation, const bool Unzip);
+												  const FString& SaveLocation, const bool bUnzip);
 
 private:
 	// Timeout given in seconds.
