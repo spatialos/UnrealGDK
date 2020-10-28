@@ -22,3 +22,10 @@ component NetOwningClientWorker {
     // the connection.
     option<EntityId> partition_entity_id = 2;
 }
+
+component_set NetOwningClientWorkerSet {
+  id = 9971;
+  components = [
+    NetOwningClientWorker
+  ];
+}

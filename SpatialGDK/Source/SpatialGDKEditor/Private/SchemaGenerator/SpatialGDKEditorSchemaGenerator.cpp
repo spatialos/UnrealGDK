@@ -953,11 +953,9 @@ bool RunSchemaCompiler()
 void WriteComponentSetToFile(FCodeWriter& Writer, const FString& ComponentName, Worker_ComponentId ComponentId)
 {
 	Writer.PrintNewLine();
-	Writer.Printf("component_set {0}Set {", *ComponentName);
-	Writer.Indent();
+	Writer.Printf("component_set {0}Set {", *ComponentName).Indent();
 	Writer.Printf("id = {0};", ComponentId);
-	Writer.Printf("components = [");
-	Writer.Indent();
+	Writer.Printf("components = [").Indent();
 	Writer.Printf("{0}", *ComponentName);
 	Writer.Outdent().Print("];");
 	Writer.Outdent().Print("}");

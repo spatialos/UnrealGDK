@@ -323,8 +323,9 @@ FString GetRPCFieldPrefix(ERPCType RPCType)
 void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_ComponentId ComponentId, TArray<ERPCType> SentRPCTypes,
 						 TArray<ERPCType> AckedRPCTypes)
 {
+	FString ComponentName = TEXT("Unreal") + EndpointName;
 	Writer.PrintNewLine();
-	Writer.Printf("component Unreal{0} {", *EndpointName).Indent();
+	Writer.Printf("component {0} {", *ComponentName).Indent();
 	Writer.Printf("id = {0};", ComponentId);
 
 	Schema_FieldId FieldId = 1;
@@ -352,6 +353,8 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 	}
 
 	Writer.Outdent().Print("}");
+
+	WriteComponentSetToFile(Writer, ComponentName, ComponentId);
 }
 
 } // anonymous namespace
