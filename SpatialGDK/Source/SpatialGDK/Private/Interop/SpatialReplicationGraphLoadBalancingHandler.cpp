@@ -50,11 +50,16 @@ FActorRepListRefView FSpatialReplicationGraphLoadBalancingContext::GetDependentA
 	return EmptyList;
 }
 
-bool FSpatialReplicationGraphLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
+EActorMigrationResult FSpatialReplicationGraphLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
 {
-	if (!Actor->HasAuthority() || !Actor->IsActorReady())
+	if (!Actor->HasAuthority())
 	{
-		return false;
+		return EActorMigrationResult::NotAuthoritative;
+	}
+
+	if (!Actor->IsActorReady())
+	{
+		return EActorMigrationResult::NotReady;
 	}
 
 	// The following checks are extracted from UReplicationGraph::ReplicateActorListsForConnections_Default
@@ -63,14 +68,14 @@ bool FSpatialReplicationGraphLoadBalancingContext::IsActorReadyForMigration(AAct
 
 	if (!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 	{
-		return false;
+		return EActorMigrationResult::NoSpatialClassFlags;
 	}
 
 	FConnectionReplicationActorInfo& ConnectionData = InfoMap.FindOrAdd(Actor);
 	if (ConnectionData.bDormantOnConnection)
 	{
-		return false;
+		return EActorMigrationResult::DormantOnConnection;
 	}
 
-	return true;
+	return EActorMigrationResult::Success;
 }
