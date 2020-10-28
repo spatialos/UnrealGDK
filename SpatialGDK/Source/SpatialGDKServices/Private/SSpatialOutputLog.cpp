@@ -316,10 +316,9 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 
 	if (LogMatcherMessage.FindNext())
 	{
-		FString WorkerType = "UnrealWorker";
 		FString LogMessageCategory = LogMatcherMessage.GetCaptureGroup(1);
 		LogMessage = LogMatcherMessage.GetCaptureGroup(2);
-		LogCategory = LogMessageCategory.Left(WorkerType.Len() + 5);
+		LogCategory = LogMessageCategory.Left(20);
 	}
 	else
 	{
