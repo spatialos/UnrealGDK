@@ -157,43 +157,43 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 {
 	FString FailureReason;
 
-	switch (ActorMigrationResult)
+	if (Actor->GetGameTimeSinceCreation() > 1)
 	{
-	case EActorMigrationResult::NotAuthoritative:
-		FailureReason = TEXT("does not have authority");
-		break;
-	case EActorMigrationResult::NotReady:
-		if (Actor->GetGameTimeSinceCreation() > 1)
+		switch (ActorMigrationResult)
 		{
+		case EActorMigrationResult::NotAuthoritative:
+			FailureReason = TEXT("does not have authority");
+			break;
+		case EActorMigrationResult::NotReady:
 			FailureReason = TEXT("is not ready");
-		}
-		else
-		{
-			// Setting the failure reason to empty to suppress the logs for newly created actors
+			break;
+		case EActorMigrationResult::PendingKill:
+			FailureReason = TEXT("is pending kill");
+			break;
+		case EActorMigrationResult::NotInitialized:
+			FailureReason = TEXT("is not initialized");
+			break;
+		case EActorMigrationResult::Streaming:
+			FailureReason = TEXT("is streaming in or out");
+			break;
+		case EActorMigrationResult::NetDormant:
+			FailureReason = TEXT("is startup actor and initially net dormant");
+			break;
+		case EActorMigrationResult::NoSpatialClassFlags:
+			FailureReason = TEXT("does not have spatial class flags");
+			break;
+		case EActorMigrationResult::DormantOnConnection:
+			FailureReason = TEXT("is dormant on connection");
+			break;
+		default:
 			FailureReason = TEXT("");
+			break;
 		}
-		break;
-	case EActorMigrationResult::PendingKill:
-		FailureReason = TEXT("is pending kill");
-		break;
-	case EActorMigrationResult::NotInitialized:
-		FailureReason = TEXT("is not initialized");
-		break;
-	case EActorMigrationResult::Streaming:
-		FailureReason = TEXT("is streaming in or out");
-		break;
-	case EActorMigrationResult::NetDormant:
-		FailureReason = TEXT("is startup actor and initially net dormant");
-		break;
-	case EActorMigrationResult::NoSpatialClassFlags:
-		FailureReason = TEXT("does not have spatial class flags");
-		break;
-	case EActorMigrationResult::DormantOnConnection:
-		FailureReason = TEXT("is dormant on connection");
-		break;
-	default:
+	}
+	else
+	{
+		// Setting the failure reason to empty to suppress the logs for newly created actors
 		FailureReason = TEXT("");
-		break;
 	}
 
 	// If a failure reason is returned log warning
