@@ -59,6 +59,13 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	PlayerSpawnerData.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 	PlayerSpawnerData.schema_type = Schema_CreateComponentData();
 
+	Interest SelfInterest;
+	Query AuthoritySelfQuery = {};
+	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+	AuthoritySelfQuery.Constraint.EntityIdConstraint = SpawnerEntity.entity_id;
+	SelfInterest.ComponentInterestMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID);
+	SelfInterest.ComponentInterestMap[SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID].Queries.Add(AuthoritySelfQuery);
+
 	TArray<FWorkerComponentData> Components;
 
 	AuthorityDelegationMap DelegationMap;
@@ -70,6 +77,7 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Metadata(TEXT("SpatialSpawner")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(PlayerSpawnerData);
+	Components.Add(SelfInterest.CreateInterestData());
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
@@ -124,16 +132,21 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Worker_Entity GSM;
 	GSM.entity_id = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
+	Interest SelfInterest;
+	Query AuthoritySelfQuery = {};
+	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+	AuthoritySelfQuery.Constraint.EntityIdConstraint = GSM.entity_id;
+	SelfInterest.ComponentInterestMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID);
+	SelfInterest.ComponentInterestMap[SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID].Queries.Add(AuthoritySelfQuery);
+
 	TArray<FWorkerComponentData> Components;
 
 	AuthorityDelegationMap DelegationMap;
-	DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-
-	const WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
 
 	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
@@ -141,6 +154,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(CreateDeploymentData());
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
+	Components.Add(SelfInterest.CreateInterestData());
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
@@ -168,19 +182,25 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 	Worker_Entity VirtualWorkerTranslator;
 	VirtualWorkerTranslator.entity_id = SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID;
 
+	Interest SelfInterest;
+	Query AuthoritySelfQuery = {};
+	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+	AuthoritySelfQuery.Constraint.EntityIdConstraint = VirtualWorkerTranslator.entity_id;
+	SelfInterest.ComponentInterestMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID);
+	SelfInterest.ComponentInterestMap[SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID].Queries.Add(AuthoritySelfQuery);
+
 	TArray<FWorkerComponentData> Components;
 
 	AuthorityDelegationMap DelegationMap;
-	DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-
-	WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
 
 	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("VirtualWorkerTranslator")).CreateMetadataData());
 	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(CreateVirtualWorkerTranslatorData());
+	Components.Add(SelfInterest.CreateInterestData());
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
@@ -203,10 +223,8 @@ bool CreateSnapshotPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	TArray<FWorkerComponentData> Components;
 
 	AuthorityDelegationMap DelegationMap;
-	DelegationMap.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-
-	const WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
 
 	Components.Add(Position(DeploymentOrigin).CreatePositionData());
 	Components.Add(Metadata(TEXT("SnapshotPartitionEntity")).CreateMetadataData());
