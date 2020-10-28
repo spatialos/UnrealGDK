@@ -85,6 +85,8 @@ const Worker_ComponentId POSITION_COMPONENT_ID = 54;
 const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
 const Worker_ComponentId INTEREST_COMPONENT_ID = 58;
 
+const Worker_ComponentSetId WELL_KNOWN_COMPONENT_SET_ID = 50;
+
 // This is a component on per-worker system entities.
 const Worker_ComponentId WORKER_COMPONENT_ID = 60;
 const Worker_ComponentId PLAYERIDENTITY_COMPONENT_ID = 61;
@@ -100,6 +102,8 @@ const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
 const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
 const Worker_ComponentId HEARTBEAT_COMPONENT_ID = 9991;
+
+const Worker_ComponentSetId GDK_WELL_KNOWN_COMPONENT_SET_ID = 9999;
 
 // Marking the event-based RPC components as legacy while the ring buffer
 // implementation is under a feature flag.

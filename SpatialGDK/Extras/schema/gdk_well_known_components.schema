@@ -1,0 +1,19 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+import "unreal/gdk/component_presence.schema";
+import "unreal/gdk/global_state_manager.schema";
+import "unreal/gdk/virtual_worker_translation.schema";
+import "unreal/gdk/spawner.schema";
+
+component_set GDKWellKnownComponents {
+  id = 9999;
+  components = [
+    ComponentPresence,
+	DeploymentMap,
+	GSMShutdown,
+	StartupActorManager,
+	VirtualWorkerTranslation,
+	PlayerSpawner
+  ];
+}

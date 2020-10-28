@@ -31,9 +31,9 @@ using FReliableRPCMap = TMap<Worker_RequestId_Key, TSharedRef<struct FReliableRP
 
 using FObjectToRepStateMap = TMap<struct FUnrealObjectRef, TSet<FChannelObjectPair>>;
 
-using AuthorityDelegationMap = TMap<Worker_ComponentId, Worker_PartitionId>;
+using AuthorityDelegationMap = TMap<Worker_ComponentSetId, Worker_PartitionId>;
 
-template<typename T>
+template <typename T>
 struct FTrackableWorkerType : public T
 {
 	FTrackableWorkerType() = default;
