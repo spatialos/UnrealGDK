@@ -16,8 +16,10 @@
 #include "SpatialCommonTypes.h"
 #include "Utils/InspectionColors.h"
 
+//#include "Camera/CameraActor.h"
 #include "Debug/DebugDrawService.h"
 #include "Engine/Engine.h"
+//#include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
@@ -662,22 +664,62 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 		// Allow user to select an actor for debugging
 
 		// Display a crosshair icon in the centre of the screen
-		if (CrosshairTexture)
+		//if (CrosshairTexture)
+		//{
+			//// Find the center of our canvas.
+			//FVector2D Center(Canvas->ClipX * 0.5f, Canvas->ClipY * 0.5f);
+
+			//// Offset by half of the texture's dimensions so that the center of the texture aligns with the center of the Canvas.
+			//FVector2D CrossHairDrawPosition(Center.X - (CrosshairTexture->GetSurfaceWidth() * 0.5f),
+			//								Center.Y - (CrosshairTexture->GetSurfaceHeight() * 0.5f));
+
+			//// Draw the crosshair at the centerpoint.
+			//FCanvasTileItem TileItem(CrossHairDrawPosition, CrosshairTexture->Resource, FLinearColor::White);
+			//TileItem.BlendMode = SE_BLEND_Translucent;
+			//Canvas->DrawItem(TileItem);
+
+			// TODO: Change mouse cursor to crosshair
+			//LocalPlayerController->CurrentMouseCursor = EMouseCursor::Crosshairs;
+
+		// Use the mouse position as the point for sending the raycast into the world
+		const APlayerCameraManager* CameraManager = Cast<APlayerCameraManager>(LocalPlayerController->PlayerCameraManager);
+		if (CameraManager)
 		{
-			// Find the center of our canvas.
-			FVector2D Center(Canvas->ClipX * 0.5f, Canvas->ClipY * 0.5f);
+			FHitResult HitResult;
+			// FVector StartTrace = CameraManager->GetCameraLocation();
+			// FVector EndTrace = StartTrace + CameraManager->GetActorForwardVector() * MaxDistance;
+			FVector WorldLocation;
+			FVector WorldRotation;
+			// LocalPlayerController->DeprojectScreenPositionToWorld(Center.X, Center.Y, WorldLocation, WorldRotation); // Center of screen
+			FVector2D MousePosition;
+			bool success = LocalPlayerController->GetMousePosition(MousePosition.X, MousePosition.Y);
+			LocalPlayerController->DeprojectScreenPositionToWorld(MousePosition.X, MousePosition.Y, WorldLocation,
+																  WorldRotation); // Mouse cursor position
+			FVector StartTrace = WorldLocation;
+			FVector EndTrace = StartTrace + WorldRotation * MaxRange;
 
-			// Offset by half of the texture's dimensions so that the center of the texture aligns with the center of the Canvas.
-			FVector2D CrossHairDrawPosition(Center.X - (CrosshairTexture->GetSurfaceWidth() * 0.5f),
-											Center.Y - (CrosshairTexture->GetSurfaceHeight() * 0.5f));
+			const FName TraceTag("MyTraceTag");
+			GetWorld()->DebugDrawTraceTag = TraceTag;
+			FCollisionQueryParams CollisionParams;
+			CollisionParams.TraceTag = TraceTag; // For debugging only
+			// bool hit = GetWorld()->LineTraceSingleByChannel(HitResult, StartTrace, EndTrace, ECollisionChannel::ECC_WorldStatic,
+			// CollisionParams);
+			bool hit = GetWorld()->LineTraceSingleByChannel(HitResult, StartTrace, EndTrace,
+															ECollisionChannel::ECC_Visibility); //,CollisionParams);
+			if (hit)
+			{
+				UE_LOG(LogSpatialDebugger, Warning, TEXT("SpatialDebugger hit actor %s ."), *HitResult.GetActor()->GetName());
 
-			// Draw the crosshair at the centerpoint.
-			FCanvasTileItem TileItem(CrossHairDrawPosition, CrosshairTexture->Resource, FLinearColor::White);
-			TileItem.BlendMode = SE_BLEND_Translucent;
-			Canvas->DrawItem(TileItem);
+				// When the raycast hits an actor then the debug information for that actor is displayed above it, whilst the actor remains
+				// under the crosshair.
+			}
 		}
-		// TODO use this position and the current camera rotation as the point and direction for sending the raycast into the world
-		// TODO Use the current mouse/keyboard/gamepad controls to move the camera and thereby select the desired actor.
+		//}
+	}
+	else
+	{
+		// TODO: change mouse cursor back to normal
+		//LocalPlayerController->CurrentMouseCursor = EMouseCursor::Default;
 	}
 }
 
