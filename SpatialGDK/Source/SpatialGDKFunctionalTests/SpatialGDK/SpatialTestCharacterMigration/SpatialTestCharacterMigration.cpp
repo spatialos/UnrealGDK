@@ -26,9 +26,7 @@ ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
 
 void ASpatialTestCharacterMigration::OnOverlapBeginDestination(AActor* OverlappedActor, AActor* OtherActor)
 {
-	ATestMovementCharacter* OveralappingCharacter = Cast<ATestMovementCharacter>(OtherActor);
-
-	if (OveralappingCharacter)
+	if (Cast<ATestMovementCharacter>(OtherActor))
 	{
 		bCharacterReachedDestination = true;
 	}
@@ -36,9 +34,7 @@ void ASpatialTestCharacterMigration::OnOverlapBeginDestination(AActor* Overlappe
 
 void ASpatialTestCharacterMigration::OnOverlapBeginOrigin(AActor* OverlappedActor, AActor* OtherActor)
 {
-	ATestMovementCharacter* OveralappingCharacter = Cast<ATestMovementCharacter>(OtherActor);
-
-	if (OveralappingCharacter)
+	if (Cast<ATestMovementCharacter>(OtherActor))
 	{
 		bCharacterReachedOrigin = true;
 	}
@@ -117,8 +113,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			GetWorld()->SpawnActor<ATriggerBox>(FVector(132.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
 		TriggerBoxDestination->Tags.Add("Destination");
 
-		UBoxComponent* BoxComponentDestination = Cast<UBoxComponent>(TriggerBoxDestination->GetCollisionComponent());
-		if (BoxComponentDestination)
+		if (UBoxComponent* BoxComponentDestination = Cast<UBoxComponent>(TriggerBoxDestination->GetCollisionComponent()))
 		{
 			BoxComponentDestination->SetBoxExtent(FVector(10.0f, 1.0f, 1.0f));
 		}
@@ -131,8 +126,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			GetWorld()->SpawnActor<ATriggerBox>(FVector(-132.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
 		TriggerBoxDestination->Tags.Add("Origin");
 
-		UBoxComponent* BoxComponentOrigin = Cast<UBoxComponent>(TriggerBoxOrigin->GetCollisionComponent());
-		if (BoxComponentOrigin)
+		if (UBoxComponent* BoxComponentOrigin = Cast<UBoxComponent>(TriggerBoxOrigin->GetCollisionComponent()))
 		{
 			BoxComponentOrigin->SetBoxExtent(FVector(10.0f, 1.0f, 1.0f));
 		}

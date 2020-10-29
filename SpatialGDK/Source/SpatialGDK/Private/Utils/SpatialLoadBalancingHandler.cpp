@@ -157,6 +157,7 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 {
 	FString FailureReason;
 
+	// Waiting before creating logs to suppress the logs for newly created actors
 	if (Actor->GetGameTimeSinceCreation() > 1)
 	{
 		switch (ActorMigrationResult)
@@ -186,18 +187,12 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 			FailureReason = TEXT("is dormant on connection");
 			break;
 		default:
-			FailureReason = TEXT("");
 			break;
 		}
 	}
-	else
-	{
-		// Setting the failure reason to empty to suppress the logs for newly created actors
-		FailureReason = TEXT("");
-	}
 
 	// If a failure reason is returned log warning
-	if (FailureReason != "")
+	if (!FailureReason.IsEmpty())
 	{
 		Worker_EntityId ActorEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 
