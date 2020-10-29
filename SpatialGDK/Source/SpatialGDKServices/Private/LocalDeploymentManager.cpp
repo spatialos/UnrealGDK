@@ -56,7 +56,7 @@ void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
 void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 {
 	// Kill any existing runtime processes.
-	// We cannot attach to old runtime processes as they may be 'zombie' and not killable. UNR-???? investigate this.
+	// We cannot attach to old runtime processes as they may be 'zombie' and not killable (even if they are not blocking ports).
 	KillExistingRuntime();
 }
 
@@ -177,7 +177,7 @@ void FLocalDeploymentManager::KillExistingRuntime()
 	FPlatformProcess::FProcEnumerator ProcessIt;
 	do
 	{
-		if (ProcessIt.GetCurrent().GetName().Equals(TEXT("runtime.exe")))
+		if (ProcessIt.GetCurrent().GetName().Equals(SpatialGDKServicesConstants::RuntimeExe))
 		{
 			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Killing runtime process: %d"), ProcessIt.GetCurrent().GetPID());
 			auto Handle = FPlatformProcess::OpenProcess(ProcessIt.GetCurrent().GetPID());
@@ -255,13 +255,14 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 										  *LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
 										  *FString::FromInt(GRPCPort), *RuntimeIPToExpose, *SnapshotPath, *LaunchArgs);
 
-	FString RuntimeExecutable = TEXT("runtime.exe");
-	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVersion, RuntimeExecutable);
+	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVersion,
+										  SpatialGDKServicesConstants::RuntimeExe);
 
 	RuntimeProcess = { *RuntimePath, *RuntimeArgs, SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
 					   /*InCreatePipes*/ true };
 
 	RuntimeProcess->OnOutput().BindLambda([&](const FString& Output) {
+		// TODO: Proper logging is handled in UNR-4338
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime: %s"), *Output);
 
 		// Timeout detection.
@@ -307,10 +308,18 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	bStoppingDeployment = true;
 	RuntimeProcess->Stop();
 
+	double RuntimeStopTime = RuntimeProcess->GetDuration().GetTotalSeconds();
+
 	// Update returns true while the process is still running. Wait for it to finish.
 	while (RuntimeProcess->Update())
 	{
-		// Do nothing.
+		// If the runtime did not stop after some timeout then inform the user as something is amiss.
+		if (RuntimeProcess->GetDuration().GetTotalSeconds() > RuntimeStopTime + 5.0)
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to stop."));
+			bStoppingDeployment = false;
+			return false;
+		}
 	}
 
 	bLocalDeploymentRunning = false;
@@ -361,7 +370,7 @@ void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
 	bAutoDeploy = bInAutoDeploy;
 }
 
-// TODO: UNR-???? Change this to taking a snapshot without the services
+// TODO: UNR-4423 Change this to taking a snapshot without the services
 void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World, bool bUseStandardRuntime,
 																  FSpatialSnapshotTakenFunc OnSnapshotTaken)
 {

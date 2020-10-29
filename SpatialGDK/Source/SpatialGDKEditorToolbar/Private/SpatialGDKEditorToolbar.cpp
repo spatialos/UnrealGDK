@@ -815,8 +815,15 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 			return;
 		}
 
+		FLocalDeploymentManager::LocalDeploymentCallback CallBack = [this](bool bSuccess) {
+			if (!bSuccess)
+			{
+				OnShowFailedNotification(TEXT("Local deployment failed to start"));
+			}
+		};
+
 		LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotPath,
-														GetOptionalExposedRuntimeIP(), nullptr);
+														GetOptionalExposedRuntimeIP(), CallBack);
 	});
 }
 
@@ -826,9 +833,14 @@ void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeVersion] {
-		if (SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion)) // TODO: Hook up fetching code to use notifications.
+		if (SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion))
 		{
 			VerifyAndStartDeployment();
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but could not fetch the local runtime."));
+			OnShowFailedNotification(TEXT("Failed to fetch local runtime!"));
 		}
 	});
 }
