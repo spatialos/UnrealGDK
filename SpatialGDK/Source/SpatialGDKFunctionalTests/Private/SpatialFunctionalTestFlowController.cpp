@@ -58,9 +58,7 @@ void ASpatialFunctionalTestFlowController::BeginPlay()
 	}
 }
 
-void ASpatialFunctionalTestFlowController::OnAuthorityGained()
-{
-}
+void ASpatialFunctionalTestFlowController::OnAuthorityGained() {}
 
 void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 {
