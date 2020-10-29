@@ -1193,8 +1193,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		break;
 	}
 
-	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS
-		&& GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing && Actor->IsA<APlayerController>())
+	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS && Actor->IsA<APlayerController>())
 	{
 		// With USLB, we want the client worker that results in the spawning of a PlayerController to claim the
 		// PlayerController entity as a partition entity so the client can become authoritative over necessary

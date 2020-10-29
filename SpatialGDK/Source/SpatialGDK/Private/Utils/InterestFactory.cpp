@@ -108,15 +108,6 @@ Interest InterestFactory::CreateServerWorkerInterest(Worker_EntityId EntityId, c
 	// Build the Interest component as we go by updating the component-> query list mappings.
 	Interest ServerInterest;
 
-	// In USLB, we put the load balancing strategy interest query on the partition entity.
-	// Without USLB, we need to put the query on the server worker entity. However, we can
-	// only do this once a worker knows its virtual worker ID, this is true if the load
-	// balancing strategy is ready.
-	if (LBStrategy->IsReady() && !SpatialGDKSettings->bEnableUserSpaceLoadBalancing)
-	{
-		AddLoadBalancingInterestQuery(LBStrategy, LBStrategy->GetLocalVirtualWorkerId(), ServerInterest);
-	}
-
 	Query ServerQuery{};
 
 	// Ensure server worker receives AlwaysRelevant entities.
@@ -224,28 +215,13 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	ClientQuery.ResultComponentIds = ServerAuthInterestResultType;
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ClientQuery);
 
-	// If USLB disabled, add a query for the load balancing worker (delegated the EntityACL) to read the components it needs to write
-	// updates.
-	if (!GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
-	{
-		// Add a query for the load balancing worker (whoever is delegated the ACL) to read the authority intent
-		Query LoadBalanceQuery;
-		LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
-		LoadBalanceQuery.ResultComponentIds =
-			SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
-							  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID };
-		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
-	}
-	else
-	{
-		// Add a query for the load balancing worker (whoever is delegated the auth delegation component) to read the authority intent
-		Query LoadBalanceQuery;
-		LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
-		LoadBalanceQuery.ResultComponentIds =
-			SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
-							  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID };
-		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, LoadBalanceQuery);
-	}
+	// Add a query for the load balancing worker (whoever is delegated the auth delegation component) to read the authority intent
+	Query LoadBalanceQuery;
+	LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
+	LoadBalanceQuery.ResultComponentIds =
+		SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
+						  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID };
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, LoadBalanceQuery);
 }
 
 bool InterestFactory::DoOwnersHaveEntityId(const AActor* Actor) const

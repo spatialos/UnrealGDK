@@ -858,8 +858,7 @@ void USpatialNetDriver::BeginDestroy()
 	if (Connection != nullptr)
 	{
 		// Delete all load-balancing partition entities if we're translator authoritative.
-		if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing
-			&& VirtualWorkerTranslationManager != nullptr)
+		if (VirtualWorkerTranslationManager != nullptr)
 		{
 			for (const auto& Partition : VirtualWorkerTranslationManager->GetAllPartitions())
 			{
@@ -2013,8 +2012,8 @@ TOptional<FString> ExtractWorkerIDFromAttribute(const FString& WorkerAttribute)
 }
 } // namespace
 
-bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, const Worker_EntityId& ClientSystemEntityId,
-												   USpatialNetConnection** OutConn)
+bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
+												   const Worker_EntityId& ClientSystemEntityId, USpatialNetConnection** OutConn)
 {
 	check(*OutConn == nullptr);
 	*OutConn = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
@@ -2133,7 +2132,8 @@ void USpatialNetDriver::ProcessPendingDormancy()
 	PendingDormantChannels = MoveTemp(RemainingChannels);
 }
 
-void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, const Worker_EntityId& ClientSystemEntityId)
+void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
+										const Worker_EntityId& ClientSystemEntityId)
 {
 	USpatialNetConnection* SpatialConnection = nullptr;
 
@@ -2154,16 +2154,12 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 		SpatialConnection->FlushNet(true);
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
-	{
-		// Set the PlayerController entity so the AuthorityDelegation client authoritative components can be set
-		// correctly at spawn.
-		USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(SpatialConnection->PlayerController);
-		USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Channel->Actor->GetNetConnection());
-		check(NetConnection != nullptr);
-		NetConnection->PlayerControllerEntity = Channel->GetEntityId();
-	}
-
+	// Set the PlayerController entity so the AuthorityDelegation client authoritative components can be set
+	// correctly at spawn.
+	USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(SpatialConnection->PlayerController);
+	USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Channel->Actor->GetNetConnection());
+	check(NetConnection != nullptr);
+	NetConnection->PlayerControllerEntity = Channel->GetEntityId();
 }
 
 // This function is called for server workers who received the PC over the wire
@@ -2180,7 +2176,8 @@ void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerContr
 	// We create a connection here so that any code that searches for owning connection, etc on the server
 	// resolves ownership correctly
 	USpatialNetConnection* OwnershipConnection = nullptr;
-	if (!CreateSpatialNetConnection(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), SpatialConstants::INVALID_ENTITY_ID, &OwnershipConnection))
+	if (!CreateSpatialNetConnection(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(),
+									SpatialConstants::INVALID_ENTITY_ID, &OwnershipConnection))
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to create SpatialNetConnection!"));
 		return;
@@ -2618,15 +2615,6 @@ void USpatialNetDriver::TryFinishStartup()
 				USpatialNetDriverDebugContext::EnableDebugSpatialGDK(this);
 			}
 #endif
-
-			if (!GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
-			{
-				// If USLB is disabled, the partition interest query is placed on the server worker entity.
-				// We cannot set this correctly when spawning the server worker entity because at that point
-				// the worker doesn't know its virtual worker ID. At this point, we're guaranteed to know it
-				// because the translator mapping is complete, so we send another interest update.
-				Sender->UpdateServerWorkerEntityInterestAndPosition();
-			}
 
 			// We've found and dispatched all ops we need for startup,
 			// trigger BeginPlay() on the GSM and process the queued ops.

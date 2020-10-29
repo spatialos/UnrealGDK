@@ -256,10 +256,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (DisplayName = "Enable multi-worker in editor"))
 	bool bEnableMultiWorker;
 
-	/** If USLB will be enabled. */
-	UPROPERTY(EditAnywhere, config, Category = "Load Balancing")
-	bool bEnableUserSpaceLoadBalancing;
-
 	/** RPC ring buffers is enabled when either the matching setting is set, or load balancing is enabled */
 	bool UseRPCRingBuffer() const;
 

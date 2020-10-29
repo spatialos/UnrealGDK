@@ -54,23 +54,8 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Compo
 
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("This worker now has authority over the VirtualWorker translation."));
 
-	// If USLB is enabled, we need to create partition entities before we start assigning virtual workers.
-	// If USLB is disabled, we can skip this.
-	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
-	{
-		SpawnPartitionEntitiesForVirtualWorkerIds();
-	}
-	else
-	{
-		// When USLB is enabled, we keep track of partition entities as we create them.
-		// When USLB is disabled, we'll just fill it with invalid IDs.
-		Partitions.Reserve(VirtualWorkersToAssign.Num());
-		for (VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
-		{
-			Partitions.Emplace(PartitionInfo{ SpatialConstants::INVALID_ENTITY_ID, VirtualWorkerId, SpatialConstants::INVALID_ENTITY_ID });
-		}
-		QueryForServerWorkerEntities();
-	}
+	// We need to create partition entities before we start assigning virtual workers.
+	SpawnPartitionEntitiesForVirtualWorkerIds();
 }
 
 void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntitiesForVirtualWorkerIds()
@@ -340,8 +325,5 @@ void SpatialVirtualWorkerTranslationManager::AssignPartitionToWorker(const Physi
 		   TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on worker %s"), Partition.VirtualWorker,
 		   Partition.PartitionEntityId, *WorkerName);
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
-	{
-		Translator->NetDriver->Sender->SendClaimPartitionRequest(SystemEntityId, Partition.PartitionEntityId);
-	}
+	Translator->NetDriver->Sender->SendClaimPartitionRequest(SystemEntityId, Partition.PartitionEntityId);
 }

@@ -433,8 +433,6 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(cons
 																			const UAbstractLBStrategy* LbStrategy,
 																			VirtualWorkerId VirtualWorker)
 {
-	check(GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing);
-
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, EntityId);
 	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, EntityId);
