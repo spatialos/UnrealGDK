@@ -474,7 +474,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	const SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AuthorityUpdate)> AclUpdateSender =
+	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AuthorityUpdate)> AuthorityUpdateSender =
 		[this](SpatialGDK::EntityComponentUpdate AuthorityUpdate) {
 			// We pass the component update function of the view coordinator rather than the connection. This
 			// is so any updates are written to the local view before being sent. This does mean the connection send
@@ -483,8 +483,8 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 			// we can make that optimisation.
 			Connection->GetCoordinator().SendComponentUpdate(AuthorityUpdate.EntityId, MoveTemp(AuthorityUpdate.Update), {});
 		};
-	LoadBalanceEnforcer = MakeUnique<SpatialGDK::SpatialLoadBalanceEnforcer>(Connection->GetWorkerId(), LBSubView,
-																			 VirtualWorkerTranslator.Get(), MoveTemp(AclUpdateSender));
+	LoadBalanceEnforcer = MakeUnique<SpatialGDK::SpatialLoadBalanceEnforcer>(
+		Connection->GetWorkerId(), LBSubView, VirtualWorkerTranslator.Get(), MoveTemp(AuthorityUpdateSender));
 
 	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
 	LockingPolicy->Init(AcquireLockDelegate, ReleaseLockDelegate);

@@ -134,7 +134,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	{
 		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding write acls
+		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding to delegation component
 		TWeakObjectPtr<UObject> Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, SubobjectInfoPair.Key));
 		if (!Subobject.IsValid())
 		{
@@ -323,7 +323,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	{
 		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding write acls
+		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding to delegation component
 		TWeakObjectPtr<UObject> WeakSubobject =
 			PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
 		if (!WeakSubobject.IsValid())
@@ -440,7 +440,6 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(cons
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("ParitionEntity:{0}"), { VirtualWorker })).CreateMetadataData());
-	// This entity is only relevant for USLB enabled, no reason to do write ACL map.
 	Components.Add(InterestFactory->CreatePartitionInterest(LbStrategy, VirtualWorker).CreateInterestData());
 	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 	Components.Add(ComponentPresence(GetComponentPresenceList(Components)).CreateComponentPresenceData());

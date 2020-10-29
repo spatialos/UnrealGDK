@@ -39,8 +39,6 @@ DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdate
 DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ServerProcessOwnershipChange"), STAT_ServerProcessOwnershipChange, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ClientProcessOwnershipChange"), STAT_ClientProcessOwnershipChange, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("CallUpdateEntityACLs"), STAT_CallUpdateEntityACLs, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("OnUpdateEntityACLSuccess"), STAT_OnUpdateEntityACLSuccess, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("IsAuthoritativeServer"), STAT_IsAuthoritativeServer, STATGROUP_SpatialNet);
 
 namespace
@@ -800,7 +798,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	}
 	else
 	{
-		// If we don't, modify the entity ACL to gain authority.
+		// If we don't, modify the auth delegation to gain authority.
 		PendingDynamicSubobjects.Add(TWeakObjectPtr<UObject>(Object));
 		Sender->GainAuthorityThenAddComponent(this, Object, Info);
 	}
@@ -1328,8 +1326,8 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		FWorkerComponentUpdate Update = CurrentNetOwningClientData->CreateNetOwningClientWorkerUpdate();
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 
-		// Notify the load balance enforcer of a potential short circuit if we are the ACL authoritative worker.
-		NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
+		// Notify the load balance enforcer of a potential short circuit if we are the delegation authoritative worker.
+		NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
 
 		bUpdatedThisActor = true;
 	}

@@ -171,7 +171,7 @@ void USpatialSender::SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerC
 	Connection->SendComponentUpdate(EntityId, &Update);
 
 	// Short circuit an enforcer update if possible.
-	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
 
 	for (FWorkerComponentData& ComponentData : ComponentDatas)
 	{
@@ -204,15 +204,15 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 	});
 
 	// Update the ComponentPresence component with the new component IDs. This component is used to inform the enforcer
-	// of the component IDs to add to the EntityACL / AuthorityDelegation.
+	// of the component IDs to add to the AuthorityDelegation.
 	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
 	ComponentPresenceData->AddComponentIds(NewComponentIds);
 	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 
-	// Notify the load balance enforcer of a potential short circuit if we are the ACL / AuthorityDelegation authoritative worker.
-	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
+	// Notify the load balance enforcer of a potential short circuit if we are the AuthorityDelegation authoritative worker.
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
 }
 
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
@@ -631,7 +631,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 
 	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
 	// This should always happen with USLB.
-	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
 
 	if (NetDriver->SpatialDebugger != nullptr)
 	{

@@ -76,12 +76,12 @@ void SpatialLoadBalanceEnforcer::Advance()
 	}
 }
 
-void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAcl(const Worker_EntityId EntityId)
+void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAuthorityDelegation(const Worker_EntityId EntityId)
 {
 	const EntityViewElement& Element = SubView->GetView()[EntityId];
 	if (Element.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::LB_TAG_COMPONENT_ID }))
 	{
-		// Our entity will be out of date during a short circuit. Refresh the state here before refreshing the ACL.
+		// Our entity will be out of date during a short circuit. Refresh the state here before refreshing the authority delegation.
 		DataStore.Remove(EntityId);
 		PopulateDataStore(EntityId);
 		RefreshAuthority(EntityId);
