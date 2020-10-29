@@ -261,28 +261,11 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
 	Components.Add(ServerWorker(Connection->GetWorkerId(), false, Connection->GetWorkerSystemEntityId()).CreateServerWorkerData());
 
-	WriteAclMap ComponentWriteAcl{};
-
-	if (GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing)
-	{
-		AuthorityDelegationMap DelegationMap;
-		DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, EntityId);
-		DelegationMap.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, EntityId);
-		DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, EntityId);
-		Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
-	}
-	else
-	{
-		const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
-		ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, WorkerIdPermission);
-		ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, WorkerIdPermission);
-		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
-		ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
-		ComponentWriteAcl.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, WorkerIdPermission);
-		ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, WorkerIdPermission);
-	}
-
-	Components.Add(EntityAcl(SpatialConstants::UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
+	AuthorityDelegationMap DelegationMap;
+	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, EntityId);
+	DelegationMap.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, EntityId);
+	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, EntityId);
+	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 
 	check(NetDriver != nullptr);
 

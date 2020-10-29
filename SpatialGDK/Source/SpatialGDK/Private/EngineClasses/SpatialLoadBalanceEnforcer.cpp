@@ -90,9 +90,7 @@ void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAcl(const Worker_Entity
 
 void SpatialLoadBalanceEnforcer::RefreshAuthority(const Worker_EntityId EntityId)
 {
-	const Worker_ComponentUpdate Update = GetDefault<USpatialGDKSettings>()->bEnableUserSpaceLoadBalancing
-											  ? CreateAuthorityDelegationUpdate(EntityId)
-											  : CreateEntityAcLUpdate(EntityId);
+	const Worker_ComponentUpdate Update = CreateAuthorityDelegationUpdate(EntityId);
 
 	UpdateSender(EntityComponentUpdate{ EntityId, ComponentUpdate(OwningComponentUpdatePtr(Update.schema_type), Update.component_id) });
 }
@@ -147,56 +145,6 @@ Worker_ComponentUpdate SpatialLoadBalanceEnforcer::CreateAuthorityDelegationUpda
 	return AuthorityDelegationComponent.CreateAuthorityDelegationUpdate();
 }
 
-Worker_ComponentUpdate SpatialLoadBalanceEnforcer::CreateEntityAcLUpdate(const Worker_EntityId EntityId)
-{
-	LBComponents& Components = DataStore[EntityId];
-
-	const AuthorityIntent& AuthorityIntentComponent = Components.Intent;
-	const ComponentPresence& ComponentPresenceComponent = Components.Presence;
-	const NetOwningClientWorker& NetOwningClientWorkerComponent = Components.OwningClientWorker;
-
-	EntityAcl& Acl = Components.Acl;
-
-	// Get the authoritative server worker ID.
-	const PhysicalWorkerName* DestinationWorkerId =
-		VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(AuthorityIntentComponent.VirtualWorkerId);
-	const FString& WriteWorkerId = FString::Printf(TEXT("workerId:%s"), **DestinationWorkerId);
-	const WorkerAttributeSet OwningServerWorkerAttributeSet = { WriteWorkerId };
-
-	// Get the client worker ID net-owning this Actor from the NetOwningClientWorker.
-	const PhysicalWorkerName PossessingClientId =
-		NetOwningClientWorkerComponent.WorkerId.IsSet() ? NetOwningClientWorkerComponent.WorkerId.GetValue() : FString();
-
-	TArray<Worker_ComponentId> ComponentIds;
-	Acl.ComponentWriteAcl.GetKeys(ComponentIds);
-
-	// Ensure that every component ID in ComponentPresence is set in the write ACL.
-	for (const Worker_ComponentId RequiredComponentId : ComponentPresenceComponent.ComponentList)
-	{
-		ComponentIds.AddUnique(RequiredComponentId);
-	}
-
-	for (const Worker_ComponentId ComponentId : ComponentIds)
-	{
-		switch (ComponentId)
-		{
-		case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-		case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
-		case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
-			Acl.ComponentWriteAcl.Add(ComponentId, { { PossessingClientId } });
-			break;
-		case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-			Acl.ComponentWriteAcl.Add(ComponentId, { SpatialConstants::UnrealServerAttributeSet });
-			break;
-		default:
-			Acl.ComponentWriteAcl.Add(ComponentId, { OwningServerWorkerAttributeSet });
-			break;
-		}
-	}
-
-	return Acl.CreateEntityAclUpdate();
-}
-
 void SpatialLoadBalanceEnforcer::PopulateDataStore(const Worker_EntityId EntityId)
 {
 	LBComponents& Components = DataStore.Emplace(EntityId, LBComponents{});
@@ -206,9 +154,6 @@ void SpatialLoadBalanceEnforcer::PopulateDataStore(const Worker_EntityId EntityI
 		{
 		case SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID:
 			Components.Delegation = AuthorityDelegation(Data.GetUnderlying());
-			break;
-		case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-			Components.Acl = EntityAcl(Data.GetUnderlying());
 			break;
 		case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 			Components.Intent = AuthorityIntent(Data.GetUnderlying());
@@ -252,9 +197,6 @@ bool SpatialLoadBalanceEnforcer::ApplyComponentRefresh(const Worker_EntityId Ent
 	{
 	case SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID:
 		DataStore[EntityId].Delegation = AuthorityDelegation(Data);
-		break;
-	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		DataStore[EntityId].Acl = EntityAcl(Data);
 		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		DataStore[EntityId].Intent = AuthorityIntent(Data);

@@ -21,7 +21,7 @@ class FSubView;
 struct LBComponents
 {
 	AuthorityDelegation Delegation;
-	EntityAcl Acl;
+	// EntityAcl Acl;
 	AuthorityIntent Intent;
 	ComponentPresence Presence;
 	NetOwningClientWorker OwningClientWorker;
@@ -30,7 +30,7 @@ struct LBComponents
 struct AuthorityStateChange
 {
 	Worker_EntityId EntityId = 0;
-	WorkerRequirementSet ReadAcl;
+	// WorkerRequirementSet ReadAcl;
 	TArray<Worker_ComponentId> ComponentIds;
 	VirtualWorkerId TargetVirtualWorker;
 };
@@ -67,7 +67,6 @@ private:
 
 	void RefreshAuthority(const Worker_EntityId EntityId);
 	Worker_ComponentUpdate CreateAuthorityDelegationUpdate(const Worker_EntityId EntityId);
-	Worker_ComponentUpdate CreateEntityAcLUpdate(const Worker_EntityId EntityId);
 
 	const PhysicalWorkerName WorkerId;
 	const FSubView* SubView;

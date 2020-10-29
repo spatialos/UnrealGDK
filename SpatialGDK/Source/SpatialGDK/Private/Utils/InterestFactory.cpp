@@ -507,7 +507,7 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 {
 	if (!OutInterest.ComponentInterestMap.Contains(ComponentId))
 	{
-		ComponentInterest NewComponentInterest;
+		ComponentSetInterest NewComponentInterest;
 		OutInterest.ComponentInterestMap.Add(ComponentId, NewComponentInterest);
 	}
 	OutInterest.ComponentInterestMap[ComponentId].Queries.Add(QueryToAdd);

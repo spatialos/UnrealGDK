@@ -11,11 +11,11 @@
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
 SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy,
-															   PhysicalWorkerName InPhysicalWorkerName)
+															   PhysicalWorkerName InLocalPhysicalWorkerName)
 	: NetDriver(nullptr)
 	, LoadBalanceStrategy(InLoadBalanceStrategy)
 	, bIsReady(false)
-	, LocalPhysicalWorkerName(InPhysicalWorkerName)
+	, LocalPhysicalWorkerName(InLocalPhysicalWorkerName)
 	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 	, LocalPartitionId(SpatialConstants::INVALID_ENTITY_ID)
 {

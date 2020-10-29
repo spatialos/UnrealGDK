@@ -21,10 +21,6 @@ using ActorLockToken = int64;
 using TraceKey = int32;
 constexpr TraceKey InvalidTraceKey{ -1 };
 
-using WorkerAttributeSet = TArray<FString>;
-using WorkerRequirementSet = TArray<WorkerAttributeSet>;
-using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
-
 using FChannelObjectPair = TPair<TWeakObjectPtr<class USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 using FObjectReferencesMap = TMap<int32, struct FObjectReferences>;
 using FReliableRPCMap = TMap<Worker_RequestId_Key, TSharedRef<struct FReliableRPCForRetry>>;

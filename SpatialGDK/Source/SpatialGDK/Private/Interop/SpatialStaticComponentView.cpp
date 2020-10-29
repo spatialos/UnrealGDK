@@ -52,9 +52,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	TUniquePtr<SpatialGDK::Component> Data;
 	switch (Op.data.component_id)
 	{
-	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::EntityAcl>(Op.data);
-		break;
 	case SpatialConstants::METADATA_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::Metadata>(Op.data);
 		break;
@@ -142,9 +139,6 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 
 	switch (Op.update.component_id)
 	{
-	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::EntityAcl>(Op.entity_id);
-		break;
 	case SpatialConstants::POSITION_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::Position>(Op.entity_id);
 		break;

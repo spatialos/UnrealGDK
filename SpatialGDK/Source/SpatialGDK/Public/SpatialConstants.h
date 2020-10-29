@@ -260,13 +260,6 @@ const FString INVALID_WORKER_NAME = TEXT("");
 
 static const FName DefaultLayer = FName(TEXT("DefaultLayer"));
 
-const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{ DefaultServerWorkerType.ToString() };
-const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{ DefaultClientWorkerType.ToString() };
-
-const WorkerRequirementSet UnrealServerPermission{ { UnrealServerAttributeSet } };
-const WorkerRequirementSet UnrealClientPermission{ { UnrealClientAttributeSet } };
-const WorkerRequirementSet ClientOrServerPermission{ { UnrealClientAttributeSet, UnrealServerAttributeSet } };
-
 const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
 

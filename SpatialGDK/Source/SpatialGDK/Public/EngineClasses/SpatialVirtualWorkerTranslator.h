@@ -27,7 +27,7 @@ public:
 	};
 
 	SpatialVirtualWorkerTranslator() = delete;
-	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, PhysicalWorkerName InPhysicalWorkerName);
+	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, PhysicalWorkerName InLocalPhysicalWorkerName);
 
 	void SetNetDriver(USpatialNetDriver* InNetDriver) { NetDriver = InNetDriver; };
 
@@ -68,5 +68,6 @@ private:
 	void ApplyMappingFromSchema(Schema_Object* Object);
 	bool IsValidMapping(Schema_Object* Object) const;
 
-	void UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName WorkerName, Worker_PartitionId PartitionEntityId, Worker_EntityId ServerWorkerEntityId);
+	void UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName WorkerName, Worker_PartitionId PartitionEntityId,
+					   Worker_EntityId ServerWorkerEntityId);
 };
