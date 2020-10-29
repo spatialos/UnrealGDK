@@ -47,7 +47,6 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
 {
 	// Ensure the worker.jsons are up to date.
-	// TOOD: Probably remove this
 	WorkerBuildConfigAsync();
 
 	// Watch the worker config directory for changes.
@@ -61,7 +60,6 @@ void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
 	KillExistingRuntime();
 }
 
-// TOOD: Do we need this with local standalone or just for the classic platform deployments?
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 {
 	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
@@ -86,7 +84,6 @@ void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 	}
 }
 
-// TOOD: Do we need this with local standalone or just for the classic platform deployments?
 void FLocalDeploymentManager::OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
 {
 	UE_LOG(LogSpatialDeploymentManager, Log,
@@ -94,7 +91,6 @@ void FLocalDeploymentManager::OnWorkerConfigDirectoryChanged(const TArray<FFileC
 	WorkerBuildConfigAsync();
 }
 
-// TOOD: Do we need this with local standalone or just for the classic platform deployments?
 void FLocalDeploymentManager::WorkerBuildConfigAsync()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
@@ -248,14 +244,16 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	bStartingDeployment = true;
 
-	FString CompiledSchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema"));
-	FString SchemaBundleOutput = FPaths::Combine(CompiledSchemaDir, TEXT("schema.sb"));
+	// TODO: Use this as an additional input arg when we can use 15.0.0 (when we have ComponentSets)
+	FString SchemaBundle = SpatialGDKServicesConstants::SchemaBundlePath;
+	FString SnapshotPath = SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath;
 
-	// Example: runtime.exe --config=squid_config.json --snapshot=snapshots\default.snapshot --worker-port 8018 --http-port 5006 --grpc-port
-	// 7777
-	FString RuntimeArgs = FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port %s --grpc-port %s %s"),
+	// runtime.exe --config=squid_config.json --snapshot=snapshots\default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
+	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots.
+	FString RuntimeArgs = FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port %s --grpc-port %s "
+											   "--worker-external-host %s --snapshots-directory=\"%s\" %s"),
 										  *LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-										  *FString::FromInt(GRPCPort), *LaunchArgs);
+										  *FString::FromInt(GRPCPort), *RuntimeIPToExpose, *SnapshotPath, *LaunchArgs);
 
 	FString RuntimeExecutable = TEXT("runtime.exe");
 	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVersion, RuntimeExecutable);
@@ -298,7 +296,6 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	return;
 }
 
-// TODO: Change this to killing the runtime binary
 bool FLocalDeploymentManager::TryStopLocalDeployment()
 {
 	if (!bLocalDeploymentRunning)
@@ -307,10 +304,14 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 		return false;
 	}
 
-	// TODO: Stopping deployment should no longer be required.
 	bStoppingDeployment = true;
-
 	RuntimeProcess->Stop();
+
+	// Update returns true while the process is still running. Wait for it to finish.
+	while (RuntimeProcess->Update())
+	{
+		// Do nothing.
+	}
 
 	bLocalDeploymentRunning = false;
 	bStoppingDeployment = false;
@@ -328,7 +329,6 @@ bool FLocalDeploymentManager::IsDeploymentStarting() const
 	return bStartingDeployment;
 }
 
-// TODO: Stopping deployment should no longer be required.
 bool FLocalDeploymentManager::IsDeploymentStopping() const
 {
 	return bStoppingDeployment;
@@ -361,7 +361,7 @@ void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
 	bAutoDeploy = bInAutoDeploy;
 }
 
-// TODO: Change this to taking a snapshot without the services
+// TODO: UNR-???? Change this to taking a snapshot without the services
 void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World, bool bUseStandardRuntime,
 																  FSpatialSnapshotTakenFunc OnSnapshotTaken)
 {

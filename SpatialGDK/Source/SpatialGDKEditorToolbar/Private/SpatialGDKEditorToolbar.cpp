@@ -824,21 +824,21 @@ void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
-	SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion);
-	VerifyAndStartDeployment();
+
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeVersion] {
+		if (SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion)) // TODO: Hook up fetching code to use notifications.
+		{
+			VerifyAndStartDeployment();
+		}
+	});
 }
 
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
-		// OnShowTaskStartNotification(TEXT("Stopping local deployment..."));
-		if (LocalDeploymentManager->TryStopLocalDeployment())
+		if (!LocalDeploymentManager->TryStopLocalDeployment())
 		{
-			// OnShowSuccessNotification(TEXT("Successfully stopped local deployment"));
-		}
-		else
-		{
-			// OnShowFailedNotification(TEXT("Failed to stop local deployment!"));
+			OnShowFailedNotification(TEXT("Failed to stop local deployment!"));
 		}
 	});
 }
@@ -856,7 +856,6 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		InspectorURL = SpatialGDKServicesConstants::InspectorURL;
 	}
 
-	
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
 	SpatialCommandUtils::FetchInspectorBinary(InspectorVersion);

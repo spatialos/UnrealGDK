@@ -71,7 +71,6 @@ private:
 
 	TOptional<FMonitoredProcess> RuntimeProcess = {};
 
-	// TODO: This RequiredRuntimePort might no longer be required.
 	static const int32 RequiredRuntimePort = 5301;
 	static const int32 WorkerPort = 8018;
 	static const int32 HTTPPort = 5006;

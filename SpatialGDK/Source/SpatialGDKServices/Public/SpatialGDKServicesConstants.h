@@ -31,6 +31,10 @@ const FString SpotExe = CreateExePath(GDKProgramPath, TEXT("spot"));
 const FString SchemaCompilerExe = CreateExePath(GDKProgramPath, TEXT("schema_compiler"));
 const FString SpatialOSDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")));
 const FString SpatialOSConfigFileName = TEXT("spatialos.json");
+const FString CompiledSchemaDir = FPaths::Combine(SpatialOSDirectory, TEXT("build/assembly/schema"));
+const FString SchemaBundlePath = FPaths::Combine(CompiledSchemaDir, TEXT("schema.sb"));
+const FString SpatialOSSnapshotFolderPath =
+	FPaths::Combine(SpatialOSDirectory, TEXT("snapshots")); // TODO: Delete the old function in SpatialGDKEditorSettings.
 const FString ChinaEnvironmentArgument = TEXT(" --environment=cn-production");
 const FString PlatformVersion = TEXT("x86_64-win32");
 const FString RuntimeExe = TEXT("runtime.exe");
