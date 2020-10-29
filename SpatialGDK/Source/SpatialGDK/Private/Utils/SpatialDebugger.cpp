@@ -20,6 +20,7 @@
 #include "Debug/DebugDrawService.h"
 #include "Engine/Engine.h"
 //#include "Engine/World.h"
+#include "Framework/Application/SlateApplication.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
@@ -659,67 +660,86 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 		}
 	}
 
-	if (bSelectActor)
+	if (bSelectActor && LocalPlayerController != nullptr)
 	{
 		// Allow user to select an actor for debugging
 
-		// Display a crosshair icon in the centre of the screen
-		//if (CrosshairTexture)
-		//{
-			//// Find the center of our canvas.
-			//FVector2D Center(Canvas->ClipX * 0.5f, Canvas->ClipY * 0.5f);
+		FVector2D MousePosition;
 
-			//// Offset by half of the texture's dimensions so that the center of the texture aligns with the center of the Canvas.
-			//FVector2D CrossHairDrawPosition(Center.X - (CrosshairTexture->GetSurfaceWidth() * 0.5f),
-			//								Center.Y - (CrosshairTexture->GetSurfaceHeight() * 0.5f));
-
-			//// Draw the crosshair at the centerpoint.
-			//FCanvasTileItem TileItem(CrossHairDrawPosition, CrosshairTexture->Resource, FLinearColor::White);
-			//TileItem.BlendMode = SE_BLEND_Translucent;
-			//Canvas->DrawItem(TileItem);
-
-			// TODO: Change mouse cursor to crosshair
-			//LocalPlayerController->CurrentMouseCursor = EMouseCursor::Crosshairs;
-
-		// Use the mouse position as the point for sending the raycast into the world
-		const APlayerCameraManager* CameraManager = Cast<APlayerCameraManager>(LocalPlayerController->PlayerCameraManager);
-		if (CameraManager)
+		if (LocalPlayerController->GetMousePosition(MousePosition.X, MousePosition.Y))
 		{
-			FHitResult HitResult;
-			// FVector StartTrace = CameraManager->GetCameraLocation();
-			// FVector EndTrace = StartTrace + CameraManager->GetActorForwardVector() * MaxDistance;
-			FVector WorldLocation;
-			FVector WorldRotation;
-			// LocalPlayerController->DeprojectScreenPositionToWorld(Center.X, Center.Y, WorldLocation, WorldRotation); // Center of screen
-			FVector2D MousePosition;
-			bool success = LocalPlayerController->GetMousePosition(MousePosition.X, MousePosition.Y);
-			LocalPlayerController->DeprojectScreenPositionToWorld(MousePosition.X, MousePosition.Y, WorldLocation,
-																  WorldRotation); // Mouse cursor position
-			FVector StartTrace = WorldLocation;
-			FVector EndTrace = StartTrace + WorldRotation * MaxRange;
-
-			const FName TraceTag("MyTraceTag");
-			GetWorld()->DebugDrawTraceTag = TraceTag;
-			FCollisionQueryParams CollisionParams;
-			CollisionParams.TraceTag = TraceTag; // For debugging only
-			// bool hit = GetWorld()->LineTraceSingleByChannel(HitResult, StartTrace, EndTrace, ECollisionChannel::ECC_WorldStatic,
-			// CollisionParams);
-			bool hit = GetWorld()->LineTraceSingleByChannel(HitResult, StartTrace, EndTrace,
-															ECollisionChannel::ECC_Visibility); //,CollisionParams);
-			if (hit)
+			bool CursorChanged = false;
+			if (CrosshairTexture)
 			{
-				UE_LOG(LogSpatialDebugger, Warning, TEXT("SpatialDebugger hit actor %s ."), *HitResult.GetActor()->GetName());
+				// Display a crosshair icon for the mouse cursor
 
-				// When the raycast hits an actor then the debug information for that actor is displayed above it, whilst the actor remains
-				// under the crosshair.
+				// Offset by half of the texture's dimensions so that the center of the texture aligns with the center of the Canvas.
+				FVector2D CrossHairDrawPosition(MousePosition.X - (CrosshairTexture->GetSurfaceWidth() * 0.5f),
+												MousePosition.Y - (CrosshairTexture->GetSurfaceHeight() * 0.5f));
+
+				// Find the center of our canvas.
+				// FVector2D Center(Canvas->ClipX * 0.5f, Canvas->ClipY * 0.5f);
+
+				//// Offset by half of the texture's dimensions so that the center of the texture aligns with the center of the Canvas.
+				// FVector2D CrossHairDrawPosition(Center.X - (CrosshairTexture->GetSurfaceWidth() * 0.5f),
+				//								Center.Y - (CrosshairTexture->GetSurfaceHeight() * 0.5f));
+
+				// Draw the crosshair at the mouse position.
+				FCanvasTileItem TileItem(CrossHairDrawPosition, CrosshairTexture->Resource, FLinearColor::White);
+				TileItem.BlendMode = SE_BLEND_Translucent;
+				Canvas->DrawItem(TileItem);
+				CursorChanged = true;
+			}
+
+			if (CursorChanged)
+			{
+				// Hide the mouse cursor as we will draw our own custom crosshair
+				LocalPlayerController->bShowMouseCursor = false;
+				// Sets back the focus to the game viewport - need to hide mouse cursor instantly
+				FSlateApplication::Get().SetAllUserFocusToGameViewport();
+			}
+
+			// Use the mouse position as the point for sending the raycast into the world
+			const APlayerCameraManager* CameraManager = Cast<APlayerCameraManager>(LocalPlayerController->PlayerCameraManager);
+			if (CameraManager)
+			{
+				FHitResult HitResult;
+				// FVector StartTrace = CameraManager->GetCameraLocation();
+				// FVector EndTrace = StartTrace + CameraManager->GetActorForwardVector() * MaxDistance;
+				FVector WorldLocation;
+				FVector WorldRotation;
+				// LocalPlayerController->DeprojectScreenPositionToWorld(Center.X, Center.Y, WorldLocation, WorldRotation); // Center of
+				// screen
+				/*FVector2D MousePosition;
+				bool success = LocalPlayerController->GetMousePosition(MousePosition.X, MousePosition.Y);*/
+				LocalPlayerController->DeprojectScreenPositionToWorld(MousePosition.X, MousePosition.Y, WorldLocation,
+																	  WorldRotation); // Mouse cursor position
+				FVector StartTrace = WorldLocation;
+				FVector EndTrace = StartTrace + WorldRotation * MaxRange;
+
+				const FName TraceTag("MyTraceTag");
+				GetWorld()->DebugDrawTraceTag = TraceTag;
+				FCollisionQueryParams CollisionParams;
+				CollisionParams.TraceTag = TraceTag; // For debugging only
+				// bool hit = GetWorld()->LineTraceSingleByChannel(HitResult, StartTrace, EndTrace, ECollisionChannel::ECC_WorldStatic,
+				// CollisionParams);
+				bool hit = GetWorld()->LineTraceSingleByChannel(HitResult, StartTrace, EndTrace,
+																ECollisionChannel::ECC_Visibility); //,CollisionParams);
+				if (hit)
+				{
+					UE_LOG(LogSpatialDebugger, Warning, TEXT("SpatialDebugger hit actor %s ."), *HitResult.GetActor()->GetName());
+
+					// When the raycast hits an actor then the debug information for that actor is displayed above it, whilst the actor
+					// remains under the crosshair.
+				}
 			}
 		}
-		//}
+	
 	}
 	else
 	{
-		// TODO: change mouse cursor back to normal
-		//LocalPlayerController->CurrentMouseCursor = EMouseCursor::Default;
+		// Change mouse cursor back to normal
+		LocalPlayerController->bShowMouseCursor = true;
 	}
 }
 
