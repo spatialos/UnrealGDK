@@ -2194,26 +2194,27 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		}
 		else
 		{
+			TOptional<Trace_SpanId> CauseSpanId;
 			bool bUseEventTracer = EventTracer->IsEnabled() && RPCType != ERPCType::CrossServer;
 			if (bUseEventTracer)
 			{
 				Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
 				EntityComponentId Id = EntityComponentId(EntityId, ComponentId);
 
-				TOptional<Trace_SpanId> CauseSpanId = EventTracer->GetSpanId(Id);
+				CauseSpanId = EventTracer->GetSpanId(Id);
 				if (CauseSpanId.IsSet())
 				{
 					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
 					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function), SpanId);
-					EventTracer->SpanIdStack.Add(SpanId.GetValue());
+					EventTracer->AddToStack(SpanId.GetValue());
 				}
 			}
 
 			TargetObject->ProcessEvent(Function, Parms);
 
-			if (bUseEventTracer)
+			if (bUseEventTracer && CauseSpanId.IsSet())
 			{
-				EventTracer->SpanIdStack.Pop();
+				EventTracer->PopFromStack();
 			}
 
 			if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && RPCType != ERPCType::CrossServer

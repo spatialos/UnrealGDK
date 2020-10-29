@@ -33,7 +33,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 
 	if (EventTracer != nullptr)
 	{
-		TOptional<Trace_SpanId> CauseSpanId = EventTracer->SpanIdStack.GetSpanId();
+		TOptional<Trace_SpanId> CauseSpanId = EventTracer->GetFromStack();
 		TOptional<Trace_SpanId> SpanId =
 			CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(Target, Function), SpanId);

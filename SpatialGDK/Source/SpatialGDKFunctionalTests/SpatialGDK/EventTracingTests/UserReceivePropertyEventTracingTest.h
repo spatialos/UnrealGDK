@@ -16,8 +16,6 @@ public:
 	AUserReceivePropertyEventTracingTest();
 
 private:
-	FName UserReceivePropertyEventName = "user.receive_property";
-	FName UserReceiveComponentPropertyEventName = "user.receive_component_property";
 
 	virtual void FinishEventTraceTest() override;
 };

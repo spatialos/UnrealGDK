@@ -16,8 +16,6 @@ public:
 	AUserSendPropertyEventTracingTest();
 
 private:
-	FName UserSendPropertyEventName = "user.send_property";
-	FName UserSendComponentPropertyEventName = "user.send_component_property";
 
 	virtual void FinishEventTraceTest() override;
 };

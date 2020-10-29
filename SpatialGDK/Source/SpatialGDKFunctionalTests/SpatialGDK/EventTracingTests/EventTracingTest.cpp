@@ -14,6 +14,14 @@
 
 using namespace SpatialGDK;
 
+FName AEventTracingTest::ReceiveOpEventName = "worker.receive_op";
+FName AEventTracingTest::SendPropertyUpdatesEventName = "unreal_gdk.send_property_updates";
+FName AEventTracingTest::ReceivePropertyUpdateEventName = "unreal_gdk.receive_property_update";
+FName AEventTracingTest::SendRPCEventName = "unreal_gdk.send_rpc";
+FName AEventTracingTest::ProcessRPCEventName = "unreal_gdk.process_rpc";
+FName AEventTracingTest::ComponentUpdateEventName = "unreal_gdk.component_update";
+FName AEventTracingTest::MergeComponentUpdateEventName = "unreal_gdk.merge_component_update";
+
 AEventTracingTest::AEventTracingTest()
 {
 	Author = "Matthew Sandford";

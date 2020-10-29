@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Interop/Connection/SpatialSpanIdStack.h"
 #include "Interop/Connection/SpatialTraceEvent.h"
 #include "Interop/Connection/UserSpanId.h"
 #include "SpatialView/EntityComponentId.h"
@@ -13,8 +12,6 @@
 // Documentation for event tracing in the GDK can be found here: https://brevi.link/gdk-event-tracing-documentation
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
-
-#define TRACE_SPAN_ID_LENGTH 16
 
 namespace SpatialGDK
 {
@@ -47,10 +44,13 @@ public:
 
 	const FString& GetFolderPath() const { return FolderPath; }
 
+	void AddToStack(const Trace_SpanId& SpanId);
+	TOptional<Trace_SpanId> PopFromStack();
+	TOptional<Trace_SpanId> GetFromStack() const;
+	bool IsStackEmpty() const;
+
 	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const Trace_SpanId& SpanId);
 	TOptional<Trace_SpanId> PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
-
-	FSpatialSpanIdStack SpanIdStack;
 
 private:
 	struct StreamDeleter
@@ -60,6 +60,8 @@ private:
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
 
+	static const int32 TraceSpanIdLength = 16;
+
 	void Enable(const FString& FileName);
 
 	FString FolderPath;
@@ -67,8 +69,9 @@ private:
 	TUniquePtr<Io_Stream, StreamDeleter> Stream;
 	Trace_EventTracer* EventTracer = nullptr;
 
+	TArray<Trace_SpanId> SpanIdStack;
 	TMap<EntityComponentId, Trace_SpanId> EntityComponentSpanIds;
-	TMap<TWeakObjectPtr<UObject>, FSpatialSpanIdStack> ObjectSpanIdStacks;
+	TMap<TWeakObjectPtr<UObject>, Trace_SpanId> ObjectSpanIdStacks;
 
 	bool bEnabled = false;
 	uint64 BytesWrittenToStream = 0;

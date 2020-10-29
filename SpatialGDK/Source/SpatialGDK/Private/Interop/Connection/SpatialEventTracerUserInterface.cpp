@@ -95,9 +95,9 @@ void USpatialEventTracerUserInterface::TraceRPC(UObject* WorldContextObject, FEv
 		return;
 	}
 
-	EventTracer->SpanIdStack.Stack(SpanId.GetValue());
+	EventTracer->AddToStack(SpanId.GetValue());
 	Delegate.Execute();
-	EventTracer->SpanIdStack.Pop();
+	EventTracer->PopFromStack();
 }
 
 bool USpatialEventTracerUserInterface::GetActiveSpanId(UObject* WorldContextObject, FUserSpanId& OutUserSpanId)
@@ -108,12 +108,12 @@ bool USpatialEventTracerUserInterface::GetActiveSpanId(UObject* WorldContextObje
 		return false;
 	}
 
-	if (EventTracer->SpanIdStack.IsEmpty())
+	if (EventTracer->IsStackEmpty())
 	{
 		return false;
 	}
 
-	TOptional<Trace_SpanId> SpanId = EventTracer->SpanIdStack.GetSpanId();
+	TOptional<Trace_SpanId> SpanId = EventTracer->GetFromStack();
 	if (!SpanId.IsSet())
 	{
 		return false;
@@ -156,7 +156,7 @@ SpatialGDK::SpatialEventTracer* USpatialEventTracerUserInterface::GetEventTracer
 		return nullptr;
 	}
 
-	return NetDriver->Connection ? NetDriver->Connection->GetEventTracer() : nullptr;
+	return NetDriver->Connection->GetEventTracer();
 }
 
 USpatialNetDriver* USpatialEventTracerUserInterface::GetSpatialNetDriver(UObject* WorldContextObject)
@@ -164,7 +164,7 @@ USpatialNetDriver* USpatialEventTracerUserInterface::GetSpatialNetDriver(UObject
 	const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull);
 	if (World == nullptr)
 	{
-		UE_LOG(LogSpatialEventTracerUserInterface, Error, TEXT("USpatialEventTracerUserInterface::GetSpatialNetDriver - World is null"));
+		UE_LOG(LogSpatialEventTracerUserInterface, Error, TEXT("USpatialEventTracerUserInterface::GetSpatialNetDriver - World is null, will use GWorld instead"));
 		World = GWorld;
 	}
 
