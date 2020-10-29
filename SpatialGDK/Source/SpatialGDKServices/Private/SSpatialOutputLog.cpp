@@ -20,6 +20,7 @@ DEFINE_LOG_CATEGORY(LogSpatialOutputLog);
 static const FString LocalDeploymentLogsDir(FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("logs/localdeployment")));
 static const FString LaunchLogFilename(TEXT("launch.log"));
 static const float PollTimeInterval(0.05f);
+auto ErrorLogFlagInfo = TTuple<bool, FString>(false, "");
 
 void FArchiveLogFileReader::UpdateFileSize()
 {
@@ -269,30 +270,39 @@ void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 {
 	const FRegexPattern ErrorPattern = FRegexPattern(TEXT("level=(.*) msg=(.*) code=(.*) code_string=(.*) error=(.*) stack=(.*)"));
 	FRegexMatcher ErrorMatcher(ErrorPattern, LogLine);
+	FString LogMessage;
+	FString LogCategory = TEXT("SpatialService");
 
 	if (!ErrorMatcher.FindNext())
 	{
 		UE_LOG(LogSpatialOutputLog, Error, TEXT("Failed to parse log line: %s"), *LogLine);
-		return;
+
+		LogMessage = *LogLine;
+		if (ErrorLogFlagInfo.Key)
+		{
+			LogCategory = ErrorLogFlagInfo.Value;
+		}
+	}
+	else
+	{
+		FString ErrorLevelText = ErrorMatcher.GetCaptureGroup(1);
+		FString Message = ErrorMatcher.GetCaptureGroup(2);
+		FString ErrorCode = ErrorMatcher.GetCaptureGroup(3);
+		FString ErrorCodeString = ErrorMatcher.GetCaptureGroup(4);
+		FString ErrorMessage = ErrorMatcher.GetCaptureGroup(5);
+		FString Stack = ErrorMatcher.GetCaptureGroup(6);
+
+		// The stack message comes with double escaped characters.
+		Stack = Stack.ReplaceEscapedCharWithChar();
+
+		// Format the log message to be easy to read.
+		LogMessage = FString::Printf(TEXT("%s \n Code: %s \n Code String: %s \n Error: %s \n Stack: %s"), *Message, *ErrorCode,
+											 *ErrorCodeString, *ErrorMessage, *Stack);
 	}
 
-	FString ErrorLevelText = ErrorMatcher.GetCaptureGroup(1);
-	FString Message = ErrorMatcher.GetCaptureGroup(2);
-	FString ErrorCode = ErrorMatcher.GetCaptureGroup(3);
-	FString ErrorCodeString = ErrorMatcher.GetCaptureGroup(4);
-	FString ErrorMessage = ErrorMatcher.GetCaptureGroup(5);
-	FString Stack = ErrorMatcher.GetCaptureGroup(6);
-
-	// The stack message comes with double escaped characters.
-	Stack = Stack.ReplaceEscapedCharWithChar();
-
-	// Format the log message to be easy to read.
-	FString LogMessage = FString::Printf(TEXT("%s \n Code: %s \n Code String: %s \n Error: %s \n Stack: %s"), *Message, *ErrorCode,
-										 *ErrorCodeString, *ErrorMessage, *Stack);
-
 	// Serialization must be done on the game thread.
-	AsyncTask(ENamedThreads::GameThread, [this, LogMessage] {
-		Serialize(*LogMessage, ELogVerbosity::Error, FName(TEXT("SpatialService")));
+	AsyncTask(ENamedThreads::GameThread, [this, LogMessage, LogCategory] {
+		Serialize(*LogMessage, ELogVerbosity::Error, FName(*LogCategory));
 	});
 }
 
@@ -327,10 +337,13 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	}
 
 	ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
+	ErrorLogFlagInfo.Key = false;
 
 	if (LogLevelText.Contains(TEXT("error")))
 	{
 		LogVerbosity = ELogVerbosity::Error;
+		ErrorLogFlagInfo.Key = true;
+		ErrorLogFlagInfo.Value = LogCategory;
 	}
 	else if (LogLevelText.Contains(TEXT("warn")))
 	{
