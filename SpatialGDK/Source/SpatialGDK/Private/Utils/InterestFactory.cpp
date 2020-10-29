@@ -236,6 +236,16 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 							  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID };
 		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::ENTITY_ACL_COMPONENT_ID, LoadBalanceQuery);
 	}
+	else
+	{
+		// Add a query for the load balancing worker (whoever is delegated the auth delegation component) to read the authority intent
+		Query LoadBalanceQuery;
+		LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
+		LoadBalanceQuery.ResultComponentIds =
+			SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
+							  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID };
+		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, LoadBalanceQuery);
+	}
 }
 
 bool InterestFactory::DoOwnersHaveEntityId(const AActor* Actor) const
