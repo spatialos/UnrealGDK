@@ -136,6 +136,12 @@ Worker_ComponentUpdate SpatialLoadBalanceEnforcer::CreateAuthorityDelegationUpda
 		case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 			AuthorityDelegationComponent.Delegations.Add(ComponentId, ClientWorkerPartitionId);
 			break;
+		case SpatialConstants::POSITION_COMPONENT_ID:
+		case SpatialConstants::INTEREST_COMPONENT_ID:
+		case SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID:
+		case SpatialConstants::METADATA_COMPONENT_ID:
+		case SpatialConstants::PERSISTENCE_COMPONENT_ID:
+			break;
 		default:
 			AuthorityDelegationComponent.Delegations.Add(ComponentId, AuthoritativeServerPartition);
 			break;
