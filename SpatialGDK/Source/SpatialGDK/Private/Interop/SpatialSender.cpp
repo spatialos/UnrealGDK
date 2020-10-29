@@ -652,6 +652,11 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
 	// This should always happen with USLB.
 	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
+
+	if (NetDriver->SpatialDebugger != nullptr)
+	{
+		NetDriver->SpatialDebugger->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
+	}
 }
 
 FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)

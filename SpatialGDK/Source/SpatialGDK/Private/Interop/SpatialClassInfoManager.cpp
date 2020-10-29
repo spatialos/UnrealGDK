@@ -592,7 +592,9 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 		return SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceInterest)
+	// Don't add NCD component to player controller and server only actors as we don't want client's to gain interest in them
+	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceInterest && !Actor->IsA<APlayerController>()
+		&& !Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
 		Worker_ComponentId NCDComponentId = GetComponentIdForNetCullDistance(ActorForRelevancy->NetCullDistanceSquared);
 		if (NCDComponentId != SpatialConstants::INVALID_COMPONENT_ID)
