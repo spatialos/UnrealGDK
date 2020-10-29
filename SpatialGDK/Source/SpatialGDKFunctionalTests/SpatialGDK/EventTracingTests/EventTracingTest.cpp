@@ -21,6 +21,12 @@ FName AEventTracingTest::SendRPCEventName = "unreal_gdk.send_rpc";
 FName AEventTracingTest::ProcessRPCEventName = "unreal_gdk.process_rpc";
 FName AEventTracingTest::ComponentUpdateEventName = "unreal_gdk.component_update";
 FName AEventTracingTest::MergeComponentUpdateEventName = "unreal_gdk.merge_component_update";
+FName AEventTracingTest::UserProcessRPCEventName = "user.process_rpc";
+FName AEventTracingTest::UserReceivePropertyEventName = "user.receive_property";
+FName AEventTracingTest::UserReceiveComponentPropertyEventName = "user.receive_component_property";
+FName AEventTracingTest::UserSendPropertyEventName = "user.send_property";
+FName AEventTracingTest::UserSendComponentPropertyEventName = "user.send_component_property";
+FName AEventTracingTest::UserSendRPCEventName = "user.send_rpc";
 
 AEventTracingTest::AEventTracingTest()
 {

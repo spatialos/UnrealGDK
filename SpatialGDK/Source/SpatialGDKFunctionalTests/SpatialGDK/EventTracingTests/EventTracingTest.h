@@ -27,26 +27,25 @@ public:
 
 	virtual void PrepareTest() override;
 
-	UPROPERTY(BlueprintReadOnly, Category = "EventTracingTest")
-	FName UserProcessRPCEventName = "user.process_rpc";
+	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
+	static FName GetUserProcessRPCEventName() { return UserProcessRPCEventName; }
 
-	UPROPERTY(BlueprintReadOnly, Category = "EventTracingTest")
-	FName UserReceivePropertyEventName = "user.receive_property";
+	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
+	static FName GetUserReceivePropertyEventName() { return UserReceivePropertyEventName; }
 
-	UPROPERTY(BlueprintReadOnly, Category = "EventTracingTest")
-	FName UserReceiveComponentPropertyEventName = "user.receive_component_property";
+	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
+	static FName GetUserReceiveComponentPropertyEventName() { return UserReceiveComponentPropertyEventName; }
 
-	UPROPERTY(BlueprintReadOnly, Category = "EventTracingTest")
-	FName UserSendPropertyEventName = "user.send_property";
+	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
+	static FName GetUserSendPropertyEventName() { return UserSendPropertyEventName; }
 
-	UPROPERTY(BlueprintReadOnly, Category = "EventTracingTest")
-	FName UserSendComponentPropertyEventName = "user.send_component_property";
+	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
+	static FName GetUserSendComponentPropertyEventName() { return UserSendComponentPropertyEventName; }
 
-	UPROPERTY(BlueprintReadOnly, Category = "EventTracingTest")
-	FName UserSendRPCEventName = "user.send_rpc";
+	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
+	static FName GetUserSendRPCEventName() { return UserSendRPCEventName; }
 
 protected:
-
 	static FName ReceiveOpEventName;
 	static FName SendPropertyUpdatesEventName;
 	static FName ReceivePropertyUpdateEventName;
@@ -54,6 +53,12 @@ protected:
 	static FName ProcessRPCEventName;
 	static FName ComponentUpdateEventName;
 	static FName MergeComponentUpdateEventName;
+	static FName UserProcessRPCEventName;
+	static FName UserReceivePropertyEventName;
+	static FName UserReceiveComponentPropertyEventName;
+	static FName UserSendPropertyEventName;
+	static FName UserSendComponentPropertyEventName;
+	static FName UserSendRPCEventName;
 
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
