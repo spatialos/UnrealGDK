@@ -47,8 +47,8 @@ void ASpatialFunctionalTestFlowController::BeginPlay()
 	if (HasAuthority())
 	{
 		// Super hack
-		 FTimerHandle Handle;
-		 GetWorldTimerManager().SetTimer(
+		FTimerHandle Handle;
+		GetWorldTimerManager().SetTimer(
 			Handle,
 			[this]() {
 				bReadyToRegisterWithTest = true;
