@@ -16,6 +16,5 @@ public:
 	AUserReceivePropertyEventTracingTest();
 
 private:
-
 	virtual void FinishEventTraceTest() override;
 };

@@ -16,6 +16,5 @@ public:
 	AUserProcessRPCEventTracingTest();
 
 private:
-
 	virtual void FinishEventTraceTest() override;
 };

@@ -16,6 +16,5 @@ public:
 	AUserSendRPCEventTracingTest();
 
 private:
-
 	virtual void FinishEventTraceTest() override;
 };
