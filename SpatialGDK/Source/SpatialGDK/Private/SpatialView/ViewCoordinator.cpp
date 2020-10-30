@@ -9,11 +9,6 @@ ViewCoordinator::ViewCoordinator(TUniquePtr<AbstractConnectionHandler> Connectio
 	: ConnectionHandler(MoveTemp(ConnectionHandler))
 	, NextRequestId(1)
 	, ReceivedOpEventHandler(MoveTemp(EventTracer))
-	, ReserveEntityIdRetryHandler(&View)
-	, CreateEntityRetryHandler(&View)
-	, DeleteEntityRetryHandler(&View)
-	, EntityQueryRetryHandler(&View)
-	, EntityCommandRetryHandler(&View)
 {
 }
 
@@ -32,19 +27,13 @@ void ViewCoordinator::Advance(float DeltaTimeS)
 	for (uint32 i = 0; i < OpListCount; ++i)
 	{
 		OpList Ops = ConnectionHandler->GetNextOpList();
-		CriticalSectionFilter.AddOpList(ConnectionHandler->GetNextOpList());
 		ReserveEntityIdRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
 		CreateEntityRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
 		DeleteEntityRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
 		EntityQueryRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
 		EntityCommandRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
-		View.EnqueueOpList(MoveTemp(Ops));
+		CriticalSectionFilter.AddOpList(MoveTemp(Ops));
 	}
-	// Flush command retries.
-	FlushMessagesToSend();
-
-	View.AdvanceViewDelta();
-	Dispatcher.InvokeCallbacks(View.GetViewDelta().GetEntityDeltas());
 
 	// Process ops.
 	TArray<OpList> OpLists = CriticalSectionFilter.GetReadyOpLists();
