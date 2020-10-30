@@ -21,6 +21,7 @@ static const FString LocalDeploymentLogsDir(FPaths::Combine(SpatialGDKServicesCo
 static const FString LaunchLogFilename(TEXT("launch.log"));
 static const float PollTimeInterval(0.05f);
 TTuple<bool, FString> ErrorLogFlagInfo;
+const FString ErrorLogDefaultCategory = TEXT("Runtime");
 
 void FArchiveLogFileReader::UpdateFileSize()
 {
@@ -268,7 +269,7 @@ void SSpatialOutputLog::StartPollTimer(const FString& LogFilePath)
 
 void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 {
-	FString LogCategory;
+	FString LogCategory = ErrorLogDefaultCategory;
 
 	if (ErrorLogFlagInfo.Key)
 	{
@@ -283,6 +284,7 @@ void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 
 void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 {
+	// Log lines have the format [time] [category] [level] [message] or [time] [category] [level] [UnrealWorkerCF00FF...5B:UnrealWorker] [message]
 	const FRegexPattern LogPattern = FRegexPattern(TEXT("\\[(\\w*)\\] \\[(\\w*)\\] (.*)"));
 	FRegexMatcher LogMatcher(LogPattern, LogLine);
 
@@ -296,6 +298,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	FString LogLevelText = LogMatcher.GetCaptureGroup(2);
 	FString LogMessage = LogMatcher.GetCaptureGroup(3);
 
+	// Log message could have the format [UnrealWorkerCF00FF5D420435E4C4827D8AAC7FFA5B:UnrealWorker] [message]
 	const FRegexPattern WorkerLogPattern = FRegexPattern(TEXT("\\[(.*)\\] (.*)"));
 	FRegexMatcher WorkerLogMatcher(WorkerLogPattern, LogMessage);
 
@@ -308,7 +311,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	else
 	{
 		// If the Log Category is not of type Worker, then it should be categorised as Runtime instead.
-		LogCategory = TEXT("Runtime");
+		LogCategory = ErrorLogDefaultCategory;
 	}
 
 	ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
@@ -330,7 +333,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	}
 	else if (LogLevelText.Contains(TEXT("trace")))
 	{
-		LogVerbosity = ELogVerbosity::Verbose;
+		LogVerbosity = ELogVerbosity::VeryVerbose;
 	}
 	else
 	{
@@ -339,7 +342,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 
 	// Serialization must be done on the game thread.
 	AsyncTask(ENamedThreads::GameThread, [this, LogMessage, LogVerbosity, LogCategory] {
-	Serialize(*LogMessage, LogVerbosity, FName(*LogCategory));
+		Serialize(*LogMessage, LogVerbosity, FName(*LogCategory));
 	});
 }
 
