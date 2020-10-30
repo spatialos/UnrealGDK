@@ -328,7 +328,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	{
 		LogVerbosity = ELogVerbosity::Verbose;
 	}
-	else if (LogLevelText.Contains(TEXT("verbose")))
+	else if (LogLevelText.Contains(TEXT("trace")))
 	{
 		LogVerbosity = ELogVerbosity::Verbose;
 	}
