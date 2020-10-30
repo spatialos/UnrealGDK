@@ -304,4 +304,16 @@ TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanId(const 
 	return SpanId;
 }
 
+EventTraceUniqueId SpatialEventTracer::GenerateUniqueId()
+{
+	// TODO: Worker can provide us with a good distributed random
+	FRandomStream RandomStream(FPlatformTime::Cycles());
+	EventTraceUniqueId id;
+	for (int i = 0; i < sizeof(id.internal_bytes); i++)
+	{
+		id.internal_bytes[i] = static_cast<uint8>(RandomStream.GetFraction() * 255.0f);
+	}
+	return id;
+}
+
 } // namespace SpatialGDK
