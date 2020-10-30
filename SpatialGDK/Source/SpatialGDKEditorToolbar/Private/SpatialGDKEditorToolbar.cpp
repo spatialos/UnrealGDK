@@ -795,6 +795,13 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotPath, RuntimeVersion] {
+		if (!SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion))
+		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but could not fetch the local runtime."));
+			OnShowFailedNotification(TEXT("Failed to fetch local runtime!"));
+			return;
+		}
+
 		// If the last local deployment is still stopping then wait until it's finished.
 		while (LocalDeploymentManager->IsDeploymentStopping())
 		{
@@ -827,20 +834,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 
 void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 {
-	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
-
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeVersion] {
-		if (SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion))
-		{
-			VerifyAndStartDeployment();
-		}
-		else
-		{
-			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but could not fetch the local runtime."));
-			OnShowFailedNotification(TEXT("Failed to fetch local runtime!"));
-		}
-	});
+	VerifyAndStartDeployment();
 }
 
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
