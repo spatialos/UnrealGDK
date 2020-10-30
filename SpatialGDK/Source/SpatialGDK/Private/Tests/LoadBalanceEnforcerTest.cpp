@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Tests/TestDefinitions.h"
 
@@ -109,7 +109,7 @@ void AddLBEntityToView(
 		WriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, AuthClientRequirementSet);
 	}
 
-	AddComponentToView(View, EntityId, MakeComponentDataFromData(SpatialGDK::EntityAcl(ReadAcl, WriteAcl).CreateEntityAclData()));
+	AddComponentToView(View, EntityId, MakeComponentDataFromData(SpatialGDK::EntityAcl(ReadAcl, WriteAcl).CreateComponentData()));
 	AddComponentToView(View, EntityId, MakeComponentDataFromData(SpatialGDK::AuthorityIntent::CreateAuthorityIntentData(IntentWorkerId)));
 	AddComponentToView(View, EntityId,
 					   MakeComponentDataFromData(SpatialGDK::ComponentPresence::CreateComponentPresenceData(PresentComponents)));

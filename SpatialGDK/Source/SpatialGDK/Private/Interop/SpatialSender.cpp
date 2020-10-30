@@ -262,9 +262,9 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, WorkerIdPermission);
 
 	TArray<FWorkerComponentData> Components;
-	Components.Add(Position().CreatePositionData());
-	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
-	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(Position().CreateComponentData());
+	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateComponentData());
+	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateComponentData());
 	Components.Add(ServerWorker(Connection->GetWorkerId(), false).CreateServerWorkerData());
 	check(NetDriver != nullptr);
 
@@ -1137,7 +1137,7 @@ void USpatialSender::AddTombstoneToEntity(const Worker_EntityId EntityId)
 
 	Worker_AddComponentOp AddComponentOp{};
 	AddComponentOp.entity_id = EntityId;
-	AddComponentOp.data = Tombstone().CreateData();
+	AddComponentOp.data = Tombstone().CreateComponentData();
 	SendAddComponents(EntityId, { AddComponentOp.data });
 	StaticComponentView->OnAddComponent(AddComponentOp);
 

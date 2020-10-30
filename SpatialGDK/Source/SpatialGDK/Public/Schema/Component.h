@@ -13,4 +13,13 @@ struct Component
 	virtual void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) {}
 };
 
+struct DataComponent : Component
+{
+	virtual struct Worker_ComponentData CreateComponentData()
+	{
+		checkNoEntry();
+		return Worker_ComponentData{};
+	}
+};
+
 } // namespace SpatialGDK

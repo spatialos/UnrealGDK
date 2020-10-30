@@ -69,10 +69,10 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
-	Components.Add(Position(DeploymentOrigin).CreatePositionData());
-	Components.Add(Metadata(TEXT("SpatialSpawner")).CreateMetadataData());
-	Components.Add(Persistence().CreatePersistenceData());
-	Components.Add(EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(Position(DeploymentOrigin).CreateComponentData());
+	Components.Add(Metadata(TEXT("SpatialSpawner")).CreateComponentData());
+	Components.Add(Persistence().CreateComponentData());
+	Components.Add(EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateComponentData());
 	Components.Add(PlayerSpawnerData);
 
 	// GDK known entities completeness tags.
@@ -141,13 +141,13 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 
 	WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
 
-	Components.Add(Position(DeploymentOrigin).CreatePositionData());
-	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
-	Components.Add(Persistence().CreatePersistenceData());
+	Components.Add(Position(DeploymentOrigin).CreateComponentData());
+	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateComponentData());
+	Components.Add(Persistence().CreateComponentData());
 	Components.Add(CreateDeploymentData());
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
-	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateComponentData());
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
@@ -186,11 +186,11 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 
 	WorkerRequirementSet ReadACL = { SpatialConstants::UnrealServerAttributeSet };
 
-	Components.Add(Position(DeploymentOrigin).CreatePositionData());
-	Components.Add(Metadata(TEXT("VirtualWorkerTranslator")).CreateMetadataData());
-	Components.Add(Persistence().CreatePersistenceData());
+	Components.Add(Position(DeploymentOrigin).CreateComponentData());
+	Components.Add(Metadata(TEXT("VirtualWorkerTranslator")).CreateComponentData());
+	Components.Add(Persistence().CreateComponentData());
 	Components.Add(CreateVirtualWorkerTranslatorData());
-	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateComponentData());
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));

@@ -22,7 +22,7 @@ using SubobjectToOffsetMap = TMap<UObject*, uint32>;
 
 namespace SpatialGDK
 {
-struct UnrealMetadata : Component
+struct UnrealMetadata : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 
@@ -52,7 +52,7 @@ struct UnrealMetadata : Component
 		}
 	}
 
-	Worker_ComponentData CreateUnrealMetadataData()
+	Worker_ComponentData CreateComponentData()
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;

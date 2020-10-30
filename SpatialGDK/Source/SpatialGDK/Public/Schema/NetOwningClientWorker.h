@@ -13,7 +13,7 @@
 
 namespace SpatialGDK
 {
-struct NetOwningClientWorker : Component
+struct NetOwningClientWorker : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID;
 
@@ -38,7 +38,7 @@ struct NetOwningClientWorker : Component
 		}
 	}
 
-	Worker_ComponentData CreateNetOwningClientWorkerData() { return CreateNetOwningClientWorkerData(WorkerId); }
+	Worker_ComponentData CreateComponentData() { return CreateNetOwningClientWorkerData(WorkerId); }
 
 	static Worker_ComponentData CreateNetOwningClientWorkerData(const TSchemaOption<PhysicalWorkerName>& WorkerId)
 	{

@@ -14,7 +14,7 @@ namespace SpatialGDK
 // entity in SpatialOS, Unreal will use the AuthorityIntent to indicate which Unreal server worker
 // should be authoritative for the entity. No Unreal worker should write to an entity if the
 // VirtualWorkerId set here doesn't match the worker's Id.
-struct AuthorityIntent : Component
+struct AuthorityIntent : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID;
 
@@ -40,7 +40,7 @@ struct AuthorityIntent : Component
 		VirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID);
 	}
 
-	Worker_ComponentData CreateAuthorityIntentData() { return CreateAuthorityIntentData(VirtualWorkerId); }
+	Worker_ComponentData CreateComponentData() { return CreateAuthorityIntentData(VirtualWorkerId); }
 
 	static Worker_ComponentData CreateAuthorityIntentData(VirtualWorkerId InVirtualWorkerId)
 	{

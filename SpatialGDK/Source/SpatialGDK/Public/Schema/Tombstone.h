@@ -10,13 +10,13 @@
 
 namespace SpatialGDK
 {
-struct Tombstone : Component
+struct Tombstone : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::TOMBSTONE_COMPONENT_ID;
 
 	Tombstone() = default;
 
-	FORCEINLINE Worker_ComponentData CreateData()
+	FORCEINLINE Worker_ComponentData CreateComponentData()
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;

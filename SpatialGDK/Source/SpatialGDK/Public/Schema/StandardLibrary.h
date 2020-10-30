@@ -73,7 +73,7 @@ inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId
 	return IndexCoordinateFromSchema(Object, Id, 0);
 }
 
-struct EntityAcl : Component
+struct EntityAcl : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::ENTITY_ACL_COMPONENT_ID;
 
@@ -132,7 +132,7 @@ struct EntityAcl : Component
 		}
 	}
 
-	Worker_ComponentData CreateEntityAclData()
+	Worker_ComponentData CreateComponentData()
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -174,7 +174,7 @@ struct EntityAcl : Component
 	WriteAclMap ComponentWriteAcl;
 };
 
-struct Metadata : Component
+struct Metadata : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::METADATA_COMPONENT_ID;
 
@@ -192,7 +192,7 @@ struct Metadata : Component
 		EntityType = GetStringFromSchema(ComponentObject, 1);
 	}
 
-	Worker_ComponentData CreateMetadataData()
+	Worker_ComponentData CreateComponentData()
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -207,7 +207,7 @@ struct Metadata : Component
 	FString EntityType;
 };
 
-struct Position : Component
+struct Position : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::POSITION_COMPONENT_ID;
 
@@ -225,7 +225,7 @@ struct Position : Component
 		Coords = GetCoordinateFromSchema(ComponentObject, 1);
 	}
 
-	Worker_ComponentData CreatePositionData()
+	Worker_ComponentData CreateComponentData()
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -261,14 +261,14 @@ struct Position : Component
 	Coordinates Coords;
 };
 
-struct Persistence : Component
+struct Persistence : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::PERSISTENCE_COMPONENT_ID;
 
 	Persistence() = default;
 	Persistence(const Worker_ComponentData& Data) {}
 
-	FORCEINLINE Worker_ComponentData CreatePersistenceData()
+	FORCEINLINE Worker_ComponentData CreateComponentData()
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;

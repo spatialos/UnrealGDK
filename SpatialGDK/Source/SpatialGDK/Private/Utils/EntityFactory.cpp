@@ -44,19 +44,69 @@ EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapC
 {
 }
 
-TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel,
-																   FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs,
-																   uint32& OutBytesWritten)
+EntityComponents EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
+{
+	UClass* Class = Actor->GetClass();
+
+	WorkerRequirementSet ReadAcl;
+	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+	{
+		ReadAcl = SpatialConstants::UnrealServerPermission;
+	}
+	else
+	{
+		ReadAcl = SpatialConstants::ClientOrServerPermission;
+	}
+
+	WriteAclMap ComponentWriteAcl;
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+
+	EntityComponents EntityComps;
+	EntityComps.ModifiableComponents.Reserve(5); // Premature optimization in the purest form, using a magical constant
+	EntityComps.ComponentDatas.Reserve(5);
+	EntityComps.ModifiableComponents.Add(Position::ComponentId,
+										 MakeUnique<Position>(Coordinates::FromFVector(GetActorSpatialPosition(Actor))));
+	EntityComps.ModifiableComponents.Add(Metadata::ComponentId, MakeUnique<Metadata>(Class->GetName()));
+	EntityComps.ModifiableComponents.Add(SpawnData::ComponentId, MakeUnique<SpawnData>(Actor));
+
+	if (ShouldActorHaveVisibleComponent(Actor))
+	{
+		EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID));
+	}
+
+	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
+	{
+		EntityComps.ComponentDatas.Add(Persistence().CreateComponentData());
+	}
+
+	if (Actor->NetDormancy >= DORM_DormantAll)
+	{
+		EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID));
+	}
+
+	if (Actor->IsA<APlayerController>())
+	{
+		EntityComps.ComponentDatas.Add(Heartbeat().CreateComponentData());
+	}
+
+	EntityComps.ModifiableComponents.Add(EntityAcl::ComponentId, MakeUnique<EntityAcl>(ReadAcl, ComponentWriteAcl));
+
+	// Add Actor completeness tags.
+	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
+
+	return EntityComps;
+}
+
+void EntityFactory::WriteLBComponents(EntityComponents& EntityComps, USpatialActorChannel* Channel) {}
+
+void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatialActorChannel* Channel,
+										  FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs, uint32& OutBytesWritten)
 {
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	FString ClientWorkerAttribute = GetConnectionOwningWorkerId(Actor);
-
-	WorkerRequirementSet AnyServerRequirementSet = { SpatialConstants::UnrealServerAttributeSet };
-	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealServerAttributeSet,
-															 SpatialConstants::UnrealClientAttributeSet };
 
 	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
 
@@ -83,73 +133,58 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttributeOrSpecificWorker };
 
-	WorkerRequirementSet ReadAcl;
-	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
-	{
-		ReadAcl = AnyServerRequirementSet;
-	}
-	else if (Actor->IsA<APlayerController>())
-	{
-		ReadAcl = AnyServerOrOwningClientRequirementSet;
-	}
-	else
-	{
-		ReadAcl = AnyServerOrClientRequirementSet;
-	}
-
-	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AnyServerRequirementSet);
-	ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	EntityAcl* Acl = (static_cast<EntityAcl*>(EntityComps.ModifiableComponents[EntityAcl::ComponentId].Get())); // no idea which cast
+	Acl->ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	Acl->ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	Acl->ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	Acl->ComponentWriteAcl.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	Acl->ComponentWriteAcl.Add(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	Acl->ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	Acl->ComponentWriteAcl.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	Acl->ComponentWriteAcl.Add(SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	Acl->ComponentWriteAcl.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialSettings->UseRPCRingBuffer() && RPCService != nullptr)
 	{
-		ComponentWriteAcl.Add(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
-		ComponentWriteAcl.Add(SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-		ComponentWriteAcl.Add(SpatialConstants::MULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+		Acl->ComponentWriteAcl.Add(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
+		Acl->ComponentWriteAcl.Add(SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+		Acl->ComponentWriteAcl.Add(SpatialConstants::MULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	}
 	else
 	{
-		ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
-		ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
-		ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, OwningClientOnlyRequirementSet);
+		Acl->ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
+		Acl->ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
+		Acl->ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, OwningClientOnlyRequirementSet);
 
 		// If there are pending RPCs, add this component.
 		if (OutgoingOnCreateEntityRPCs.Contains(Actor))
 		{
-			ComponentWriteAcl.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, AuthoritativeWorkerRequirementSet);
+			Acl->ComponentWriteAcl.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, AuthoritativeWorkerRequirementSet);
 		}
 	}
 
 	if (Actor->IsNetStartupActor())
 	{
-		ComponentWriteAcl.Add(SpatialConstants::TOMBSTONE_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+		Acl->ComponentWriteAcl.Add(SpatialConstants::TOMBSTONE_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	}
 
 	// If Actor is a PlayerController, add the heartbeat component.
 	if (Actor->IsA<APlayerController>())
 	{
 #if !UE_BUILD_SHIPPING
-		ComponentWriteAcl.Add(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+		Acl->ComponentWriteAcl.Add(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 #endif // !UE_BUILD_SHIPPING
-		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnlyRequirementSet);
+		Acl->ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 	}
 
-	ComponentWriteAcl.Add(SpatialConstants::VISIBLE_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	Acl->ComponentWriteAcl.Add(SpatialConstants::VISIBLE_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 
 	// Add all Interest component IDs to allow us to change it if needed.
-	ComponentWriteAcl.Add(SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	Acl->ComponentWriteAcl.Add(SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	for (const auto ComponentId : ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
 	{
-		ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
+		Acl->ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
 	}
 
 	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
@@ -161,7 +196,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 			return;
 		}
 
-		ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
+		Acl->ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
 	});
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
@@ -182,7 +217,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 				return;
 			}
 
-			ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
+			Acl->ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
 		});
 	}
 
@@ -212,26 +247,12 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		bNetStartup = Actor->bNetStartup;
 	}
 
-	TArray<FWorkerComponentData> ComponentDatas;
-	ComponentDatas.Add(Position(Coordinates::FromFVector(GetActorSpatialPosition(Actor))).CreatePositionData());
-	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
-	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
-	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
-	ComponentDatas.Add(NetOwningClientWorker(GetConnectionOwningWorkerId(Channel->Actor)).CreateNetOwningClientWorkerData());
-	ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
-
-	if (ShouldActorHaveVisibleComponent(Actor))
-	{
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID));
-	}
-
-	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
-	{
-		ComponentDatas.Add(Persistence().CreatePersistenceData());
-	}
+	EntityComps.ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateComponentData());
+	EntityComps.ComponentDatas.Add(NetOwningClientWorker(GetConnectionOwningWorkerId(Channel->Actor)).CreateComponentData());
+	EntityComps.ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
 
 #if !UE_BUILD_SHIPPING
-	ComponentWriteAcl.Add(SpatialConstants::GDK_DEBUG_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	Acl->ComponentWriteAcl.Add(SpatialConstants::GDK_DEBUG_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
 		check(NetDriver->VirtualWorkerTranslator != nullptr);
@@ -246,28 +267,22 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 		SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId,
 									   IntentColor, bIsLocked);
-		ComponentDatas.Add(DebuggingInfo.CreateSpatialDebuggingData());
-		ComponentWriteAcl.Add(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+		EntityComps.ComponentDatas.Add(DebuggingInfo.CreateSpatialDebuggingData());
+		Acl->ComponentWriteAcl.Add(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	}
 #endif
 
 	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
+		EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
 	}
 
-	if (Actor->NetDormancy >= DORM_DormantAll)
-	{
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID));
-	}
-
+#if !UE_BUILD_SHIPPING
 	if (Actor->IsA<APlayerController>())
 	{
-#if !UE_BUILD_SHIPPING
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DEBUG_METRICS_COMPONENT_ID));
-#endif // !UE_BUILD_SHIPPING
-		ComponentDatas.Add(Heartbeat().CreateHeartbeatData());
+		EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DEBUG_METRICS_COMPONENT_ID));
 	}
+#endif // !UE_BUILD_SHIPPING
 
 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Actor);
 
@@ -279,29 +294,30 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	TArray<FWorkerComponentData> DynamicComponentDatas =
 		DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges, OutBytesWritten);
 
-	ComponentDatas.Append(DynamicComponentDatas);
+	EntityComps.ComponentDatas.Append(DynamicComponentDatas);
 
-	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
+	EntityComps.ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
 
 	Channel->SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));
 
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
+	EntityComps.ComponentDatas.Add(
+		ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
 
 	if (SpatialSettings->UseRPCRingBuffer() && RPCService != nullptr)
 	{
-		ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
+		EntityComps.ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
 	}
 	else
 	{
-		ComponentDatas.Add(ClientRPCEndpointLegacy().CreateRPCEndpointData());
-		ComponentDatas.Add(ServerRPCEndpointLegacy().CreateRPCEndpointData());
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY));
+		EntityComps.ComponentDatas.Add(ClientRPCEndpointLegacy().CreateRPCEndpointData());
+		EntityComps.ComponentDatas.Add(ServerRPCEndpointLegacy().CreateRPCEndpointData());
+		EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY));
 
 		if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
 		{
 			if (QueuedRPCs->HasRPCPayloadData())
 			{
-				ComponentDatas.Add(QueuedRPCs->CreateRPCPayloadData());
+				EntityComps.ComponentDatas.Add(QueuedRPCs->CreateRPCPayloadData());
 			}
 			OutgoingOnCreateEntityRPCs.Remove(Actor);
 		}
@@ -338,14 +354,14 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 			ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 				if (SubobjectInfo.SchemaComponents[Type] != SpatialConstants::INVALID_COMPONENT_ID)
 				{
-					ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
+					Acl->ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
 				}
 			});
 
 			TArray<FWorkerComponentData> ActorSubobjectDatas =
 				DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
 
-			ComponentDatas.Append(ActorSubobjectDatas);
+			EntityComps.ComponentDatas.Append(ActorSubobjectDatas);
 		}
 	}
 
@@ -382,19 +398,33 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		FWorkerComponentData SubobjectHandoverData = DataFactory.CreateHandoverComponentData(
 			SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges, OutBytesWritten);
 
-		ComponentDatas.Add(SubobjectHandoverData);
+		EntityComps.ComponentDatas.Add(SubobjectHandoverData);
 
-		ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeWorkerRequirementSet);
+		Acl->ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeWorkerRequirementSet);
 	}
 
-	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
+	if (Actor->IsA<APlayerController>())
+	{
+		Acl->ReadAcl = AnyServerOrOwningClientRequirementSet; // This will overwrite the previous value, whatever it was.
+		// Not sure what's the best way here. If for some reason we create skeleton entities for player controllers, not sure who should see
+		// them. Maybe we should restrict to just servers if we do not have players yet?
+	}
 
 	// Add Actor completeness tags.
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID));
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
+	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
+	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID));
+	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
+}
 
-	return ComponentDatas;
+TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel,
+																   FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs,
+																   uint32& OutBytesWritten)
+{
+	EntityComponents EntityComps = CreateSkeletonEntityComponents(Channel->Actor);
+	WriteUnrealComponents(EntityComps, Channel, OutgoingOnCreateEntityRPCs, OutBytesWritten);
+	WriteLBComponents(EntityComps, Channel);
+	EntityComps.ShiftToComponentDatas();
+	return EntityComps.ComponentDatas;
 }
 
 // This method should be called once all the components besides ComponentPresence have been added to the
@@ -446,11 +476,11 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	const TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
 
 	TArray<FWorkerComponentData> Components;
-	Components.Add(Position(Coordinates::FromFVector(GetActorSpatialPosition(Actor))).CreatePositionData());
-	Components.Add(Metadata(Class->GetName()).CreateMetadataData());
-	Components.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), true).CreateUnrealMetadataData());
-	Components.Add(Tombstone().CreateData());
-	Components.Add(EntityAcl(ReadAcl, WriteAclMap()).CreateEntityAclData());
+	Components.Add(Position(Coordinates::FromFVector(GetActorSpatialPosition(Actor))).CreateComponentData());
+	Components.Add(Metadata(Class->GetName()).CreateComponentData());
+	Components.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), true).CreateComponentData());
+	Components.Add(Tombstone().CreateComponentData());
+	Components.Add(EntityAcl(ReadAcl, WriteAclMap()).CreateComponentData());
 
 	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
 	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
@@ -465,7 +495,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 
 	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
 	{
-		Components.Add(Persistence().CreatePersistenceData());
+		Components.Add(Persistence().CreateComponentData());
 	}
 
 	// Add Actor completeness tags.

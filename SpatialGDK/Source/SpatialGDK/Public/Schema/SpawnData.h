@@ -14,7 +14,7 @@
 
 namespace SpatialGDK
 {
-struct SpawnData : Component
+struct SpawnData : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::SPAWN_DATA_COMPONENT_ID;
 
@@ -40,7 +40,7 @@ struct SpawnData : Component
 		Velocity = GetVectorFromSchema(ComponentObject, 4);
 	}
 
-	Worker_ComponentData CreateSpawnDataData()
+	Worker_ComponentData CreateComponentData()
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
