@@ -20,6 +20,8 @@ DEFINE_LOG_CATEGORY(LogSpatialOutputLog);
 static const FString LocalDeploymentLogsDir(FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("logs/localdeployment")));
 static const FString LaunchLogFilename(TEXT("launch.log"));
 static const float PollTimeInterval(0.05f);
+TTuple<bool, FString> ErrorLogFlagInfo;
+const FString DefaultLogCategory = TEXT("Runtime");
 
 void FArchiveLogFileReader::UpdateFileSize()
 {
@@ -51,11 +53,6 @@ void SSpatialOutputLog::Construct(const FArguments& InArgs)
 	GLog->RemoveOutputDevice(this);
 
 	LogReader.Reset();
-
-	StartUpLogDirectoryWatcher(LocalDeploymentLogsDir);
-
-	// Set the LogReader to the latest launch.log if we can.
-	ReadLatestLogFile();
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
@@ -272,39 +269,23 @@ void SSpatialOutputLog::StartPollTimer(const FString& LogFilePath)
 
 void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 {
-	const FRegexPattern ErrorPattern = FRegexPattern(TEXT("level=(.*) msg=(.*) code=(.*) code_string=(.*) error=(.*) stack=(.*)"));
-	FRegexMatcher ErrorMatcher(ErrorPattern, LogLine);
+	FString LogCategory = DefaultLogCategory;
 
-	if (!ErrorMatcher.FindNext())
+	if (ErrorLogFlagInfo.Key)
 	{
-		UE_LOG(LogSpatialOutputLog, Error, TEXT("Failed to parse log line: %s"), *LogLine);
-		return;
+		LogCategory = ErrorLogFlagInfo.Value;
 	}
 
-	FString ErrorLevelText = ErrorMatcher.GetCaptureGroup(1);
-	FString Message = ErrorMatcher.GetCaptureGroup(2);
-	FString ErrorCode = ErrorMatcher.GetCaptureGroup(3);
-	FString ErrorCodeString = ErrorMatcher.GetCaptureGroup(4);
-	FString ErrorMessage = ErrorMatcher.GetCaptureGroup(5);
-	FString Stack = ErrorMatcher.GetCaptureGroup(6);
-
-	// The stack message comes with double escaped characters.
-	Stack = Stack.ReplaceEscapedCharWithChar();
-
-	// Format the log message to be easy to read.
-	FString LogMessage = FString::Printf(TEXT("%s \n Code: %s \n Code String: %s \n Error: %s \n Stack: %s"), *Message, *ErrorCode,
-										 *ErrorCodeString, *ErrorMessage, *Stack);
-
 	// Serialization must be done on the game thread.
-	AsyncTask(ENamedThreads::GameThread, [this, LogMessage] {
-		Serialize(*LogMessage, ELogVerbosity::Error, FName(TEXT("SpatialService")));
+	AsyncTask(ENamedThreads::GameThread, [this, LogLine, LogCategory] {
+		Serialize(*LogLine, ELogVerbosity::Error, FName(*LogCategory));
 	});
 }
 
 void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 {
-	// Log lines have the format time=LOG_TIME level=LOG_LEVEL logger=LOG_CATEGORY msg=LOG_MESSAGE
-	const FRegexPattern LogPattern = FRegexPattern(TEXT("level=(.*) msg=\"(.*)\" loggerName=(.*\\.)?(.*)"));
+	// Log line format [time] [category] [level] [message] or [time] [category] [level] [UnrealWorkerCF00FF...5B:UnrealWorker] [message]
+	const FRegexPattern LogPattern = FRegexPattern(TEXT("\\[(\\w*)\\] \\[(\\w*)\\] (.*)"));
 	FRegexMatcher LogMatcher(LogPattern, LogLine);
 
 	if (!LogMatcher.FindNext())
@@ -313,38 +294,34 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 		FormatAndPrintRawErrorLine(LogLine);
 		return;
 	}
+	FString LogCategory = LogMatcher.GetCaptureGroup(1);
+	FString LogLevelText = LogMatcher.GetCaptureGroup(2);
+	FString LogMessage = LogMatcher.GetCaptureGroup(3);
 
-	FString LogLevelText = LogMatcher.GetCaptureGroup(1);
-	FString LogMessage = LogMatcher.GetCaptureGroup(2);
-	FString LogCategory = LogMatcher.GetCaptureGroup(4);
+	// Log message could have the format [UnrealWorkerCF00FF5D420435E4C4827D8AAC7FFA5B:UnrealWorker] [message]
+	const FRegexPattern WorkerLogPattern = FRegexPattern(TEXT("\\[(.*)\\] (.*)"));
+	FRegexMatcher WorkerLogMatcher(WorkerLogPattern, LogMessage);
 
-	// For worker logs 'WorkerLogMessageHandler' we use the worker name as the category. The worker name can be found in the msg.
-	// msg=[WORKER_NAME:WORKER_TYPE] ... e.g. msg=[UnrealWorkerF5C56488482FEDC37B10E382770067E3:UnrealWorker]
-	if (LogCategory == TEXT("WorkerLogMessageHandler") || LogCategory == TEXT("Runtime"))
+	if (WorkerLogMatcher.FindNext())
 	{
-		const FRegexPattern WorkerLogPattern = FRegexPattern(TEXT("\\[([^:]*):([^\\]]*)\\] (.*)"));
-		FRegexMatcher WorkerLogMatcher(WorkerLogPattern, LogMessage);
-
-		if (WorkerLogMatcher.FindNext())
-		{
-			LogCategory = WorkerLogMatcher.GetCaptureGroup(1);		  // Worker Name
-			FString WorkerType = WorkerLogMatcher.GetCaptureGroup(2); // Worker Type
-
-			if (LogCategory.StartsWith(WorkerType))
-			{
-				// We shorten the category name to make it more human readable. e.g. UnrealWorkerF5C56
-				LogCategory = LogCategory.Left(WorkerType.Len() + 5);
-			}
-
-			LogMessage = WorkerLogMatcher.GetCaptureGroup(3);
-		}
+		FString LogMessageCategory = WorkerLogMatcher.GetCaptureGroup(1);
+		LogMessage = WorkerLogMatcher.GetCaptureGroup(2);
+		LogCategory = LogMessageCategory.Left(20);
+	}
+	else
+	{
+		// If the Log Category is not of type Worker, then it should be categorised as Runtime instead.
+		LogCategory = DefaultLogCategory;
 	}
 
-	ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
+	ELogVerbosity::Type LogVerbosity;
+	ErrorLogFlagInfo.Key = false;
 
 	if (LogLevelText.Contains(TEXT("error")))
 	{
 		LogVerbosity = ELogVerbosity::Error;
+		ErrorLogFlagInfo.Key = true;
+		ErrorLogFlagInfo.Value = LogCategory;
 	}
 	else if (LogLevelText.Contains(TEXT("warn")))
 	{
@@ -354,9 +331,9 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	{
 		LogVerbosity = ELogVerbosity::Verbose;
 	}
-	else if (LogLevelText.Contains(TEXT("verbose")))
+	else if (LogLevelText.Contains(TEXT("trace")))
 	{
-		LogVerbosity = ELogVerbosity::Verbose;
+		LogVerbosity = ELogVerbosity::VeryVerbose;
 	}
 	else
 	{

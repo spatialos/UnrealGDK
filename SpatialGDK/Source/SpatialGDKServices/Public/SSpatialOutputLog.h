@@ -36,15 +36,15 @@ public:
 
 	TUniquePtr<FArchiveLogFileReader> CreateLogFileReader(const TCHAR* InFilename, uint32 Flags, uint32 BufferSize);
 
+	void FormatAndPrintRawLogLine(const FString& LogLine);
+	void FormatAndPrintRawErrorLine(const FString& LogLine);
+
 private:
 	void ReadLatestLogFile();
 	void ResetPollingLogFile(const FString& LogFilePath);
 	void StartPollTimer(const FString& LogFilePath);
 	void PollLogFile(const FString& LogFilePath);
 	void CloseLogReader();
-
-	void FormatAndPrintRawLogLine(const FString& LogLine);
-	void FormatAndPrintRawErrorLine(const FString& LogLine);
 
 	void StartUpLogDirectoryWatcher(const FString& LogDirectory);
 	void ShutdownLogDirectoryWatcher(const FString& LogDirectory);

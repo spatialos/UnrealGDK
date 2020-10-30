@@ -20,6 +20,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
+#include "SSpatialOutputLog.h"
 #include "SocketSubsystem.h"
 #include "Sockets.h"
 #include "SpatialCommandUtils.h"
@@ -261,9 +262,11 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	RuntimeProcess = { *RuntimePath, *RuntimeArgs, SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
 					   /*InCreatePipes*/ true };
 
-	RuntimeProcess->OnOutput().BindLambda([&](const FString& Output) {
-		// TODO: Proper logging is handled in UNR-4338
-		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime: %s"), *Output);
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
+
+	RuntimeProcess->OnOutput().BindLambda([&, SpatialOutputLog](const FString& Output) {
+		SpatialOutputLog.Pin()->FormatAndPrintRawLogLine(Output);
 
 		// Timeout detection.
 		if (bStartingDeployment && Output.Contains(TEXT("startup completed")))
