@@ -307,7 +307,7 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	}
 	else
 	{
-		// If the Log Category is not of type Worker, then it should be categorised as Runtime instead
+		// If the Log Category is not of type Worker, then it should be categorised as Runtime instead.
 		LogCategory = TEXT("Runtime");
 	}
 
