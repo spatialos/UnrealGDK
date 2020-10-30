@@ -469,9 +469,16 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			continue;
 		}
 
+		EventTraceUniqueId EventTraceId = EventTracer->GenerateUniqueId();
+		if (EventTracer->IsEnabled())
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+			EventTraceUniqueId::WriteToSchemaObject(EventTraceId, ComponentObject, SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD);
+		}
+
 		TOptional<Trace_SpanId> SpanId =
 			CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id), SpanId);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id, EventTraceId), SpanId);
 
 		Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 	}
