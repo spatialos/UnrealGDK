@@ -43,7 +43,7 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 			TraceId = EventTracer->GenerateUniqueId();
 			EventTracer->SetActiveUniqueId(TraceId);
 		}
-		
+
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(Target, Function, TraceId), SpanId);
 		EventTracer->SetActiveUniqueId(EventTraceUniqueId{});
 

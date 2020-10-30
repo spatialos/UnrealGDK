@@ -2,11 +2,11 @@
 
 #pragma once
 
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 #include "Utils/SpatialLatencyTracer.h"
-#include "Interop/Connection/SpatialEventTracer.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>

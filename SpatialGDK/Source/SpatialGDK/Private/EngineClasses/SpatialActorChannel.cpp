@@ -1119,8 +1119,9 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	return &Replicator;
 }
 
-void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-													const TMap<GDK_PROPERTY(Property) *, TPair<Trace_SpanId, SpatialGDK::EventTraceUniqueId>>& PropertySpanIds)
+void USpatialActorChannel::PostReceiveSpatialUpdate(
+	UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+	const TMap<GDK_PROPERTY(Property) *, TPair<Trace_SpanId, SpatialGDK::EventTraceUniqueId>>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
@@ -1136,7 +1137,6 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 			EventTracer->SpanIdStack.Stack(SpanIdPair->Get<0>());
 			EventTracer->SetActiveUniqueId(SpanIdPair->Get<1>());
 		}
-	
 	};
 
 	auto PostCallRepNotify = [EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {

@@ -343,7 +343,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 					if (SpanId.IsSet())
 					{
-						PropertySpanAndUniqueIds.Add(Parent.Property, TPair<Trace_SpanId, EventTraceUniqueId>(SpanId.GetValue(), EventTraceUniqueId{})); // TODO:
+						PropertySpanAndUniqueIds.Add(
+							Parent.Property, TPair<Trace_SpanId, EventTraceUniqueId>(SpanId.GetValue(), EventTraceUniqueId{})); // TODO:
 					}
 
 					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.

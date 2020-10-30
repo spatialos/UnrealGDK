@@ -60,6 +60,7 @@ public:
 	EventTraceUniqueId GetActiveUniqueId() const { return ActiveRPCUniqueId; }
 
 	EventTraceUniqueId GenerateUniqueId();
+
 private:
 	struct StreamDeleter
 	{

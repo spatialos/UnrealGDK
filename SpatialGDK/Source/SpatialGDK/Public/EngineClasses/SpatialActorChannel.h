@@ -256,8 +256,9 @@ public:
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
 	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
-	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-								  const TMap<GDK_PROPERTY(Property) *, TPair<Trace_SpanId, SpatialGDK::EventTraceUniqueId>>& PropertySpanIds);
+	void PostReceiveSpatialUpdate(
+		UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+		const TMap<GDK_PROPERTY(Property) *, TPair<Trace_SpanId, SpatialGDK::EventTraceUniqueId>>& PropertySpanIds);
 
 	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 

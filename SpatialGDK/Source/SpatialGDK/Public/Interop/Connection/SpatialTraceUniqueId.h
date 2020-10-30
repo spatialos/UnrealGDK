@@ -8,25 +8,25 @@
 
 namespace SpatialGDK
 {
-	struct EventTraceUniqueId
+struct EventTraceUniqueId
+{
+	uint8 internal_bytes[8] = { 0 }; // This size may need to be adjusted in the future. Usage should not be direct.
+
+	FString GetString() const;
+
+	bool IsValid() const
 	{
-		uint8 internal_bytes[8] = { 0 }; // This size may need to be adjusted in the future. Usage should not be direct.
-
-		FString GetString() const;
-
-		bool IsValid() const
+		for (int i = 0; i < sizeof(internal_bytes); i++)
 		{
-			for (int i = 0; i < sizeof(internal_bytes); i++)
+			if (internal_bytes[i] != 0)
 			{
-				if (internal_bytes[i] != 0)
-				{
-					return true;
-				}
+				return true;
 			}
-			return false;
 		}
+		return false;
+	}
 
-		static EventTraceUniqueId ReadFromSchemaObject(Schema_Object* Obj, Schema_FieldId FieldId);
-		static void WriteToSchemaObject(EventTraceUniqueId Id, Schema_Object* Obj, Schema_FieldId FieldId);
-	};
-}
+	static EventTraceUniqueId ReadFromSchemaObject(Schema_Object* Obj, Schema_FieldId FieldId);
+	static void WriteToSchemaObject(EventTraceUniqueId Id, Schema_Object* Obj, Schema_FieldId FieldId);
+};
+} // namespace SpatialGDK
