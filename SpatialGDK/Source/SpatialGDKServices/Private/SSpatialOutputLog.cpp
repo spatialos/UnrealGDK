@@ -20,7 +20,7 @@ DEFINE_LOG_CATEGORY(LogSpatialOutputLog);
 static const FString LocalDeploymentLogsDir(FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("logs/localdeployment")));
 static const FString LaunchLogFilename(TEXT("launch.log"));
 static const float PollTimeInterval(0.05f);
-auto ErrorLogFlagInfo = TTuple<bool, FString>(false, "");
+TTuple<bool, FString> ErrorLogFlagInfo;
 
 void FArchiveLogFileReader::UpdateFileSize()
 {
