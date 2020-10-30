@@ -21,7 +21,7 @@ static const FString LocalDeploymentLogsDir(FPaths::Combine(SpatialGDKServicesCo
 static const FString LaunchLogFilename(TEXT("launch.log"));
 static const float PollTimeInterval(0.05f);
 TTuple<bool, FString> ErrorLogFlagInfo;
-const FString ErrorLogDefaultCategory = TEXT("Runtime");
+const FString DefaultLogCategory = TEXT("Runtime");
 
 void FArchiveLogFileReader::UpdateFileSize()
 {
@@ -269,7 +269,7 @@ void SSpatialOutputLog::StartPollTimer(const FString& LogFilePath)
 
 void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 {
-	FString LogCategory = ErrorLogDefaultCategory;
+	FString LogCategory = DefaultLogCategory;
 
 	if (ErrorLogFlagInfo.Key)
 	{
@@ -284,7 +284,7 @@ void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 
 void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 {
-	// Log lines have the format [time] [category] [level] [message] or [time] [category] [level] [UnrealWorkerCF00FF...5B:UnrealWorker] [message]
+	// Log line format [time] [category] [level] [message] or [time] [category] [level] [UnrealWorkerCF00FF...5B:UnrealWorker] [message]
 	const FRegexPattern LogPattern = FRegexPattern(TEXT("\\[(\\w*)\\] \\[(\\w*)\\] (.*)"));
 	FRegexMatcher LogMatcher(LogPattern, LogLine);
 
@@ -311,10 +311,10 @@ void SSpatialOutputLog::FormatAndPrintRawLogLine(const FString& LogLine)
 	else
 	{
 		// If the Log Category is not of type Worker, then it should be categorised as Runtime instead.
-		LogCategory = ErrorLogDefaultCategory;
+		LogCategory = DefaultLogCategory;
 	}
 
-	ELogVerbosity::Type LogVerbosity = ELogVerbosity::Display;
+	ELogVerbosity::Type LogVerbosity;
 	ErrorLogFlagInfo.Key = false;
 
 	if (LogLevelText.Contains(TEXT("error")))
