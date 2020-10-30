@@ -268,7 +268,6 @@ void SSpatialOutputLog::StartPollTimer(const FString& LogFilePath)
 
 void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 {
-	FString LogMessage = *LogLine;
 	FString LogCategory = "";
 
 	if (ErrorLogFlagInfo.Key)
@@ -277,8 +276,8 @@ void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 	}
 
 	// Serialization must be done on the game thread.
-	AsyncTask(ENamedThreads::GameThread, [this, LogMessage, LogCategory] {
-		Serialize(*LogMessage, ELogVerbosity::Error, FName(*LogCategory));
+	AsyncTask(ENamedThreads::GameThread, [this, LogLine, LogCategory] {
+		Serialize(*LogLine, ELogVerbosity::Error, FName(*LogCategory));
 	});
 }
 
