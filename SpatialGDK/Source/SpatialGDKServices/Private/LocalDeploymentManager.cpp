@@ -276,7 +276,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	while (bStartingDeployment && RuntimeProcess->Update())
 	{
-		if (RuntimeProcess->GetDuration().GetTotalSeconds() > 5.0)
+		if (RuntimeProcess->GetDuration().GetTotalSeconds() > RuntimeTimeout)
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to start."));
 			bStartingDeployment = false;
@@ -314,7 +314,7 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	while (RuntimeProcess->Update())
 	{
 		// If the runtime did not stop after some timeout then inform the user as something is amiss.
-		if (RuntimeProcess->GetDuration().GetTotalSeconds() > RuntimeStopTime + 5.0)
+		if (RuntimeProcess->GetDuration().GetTotalSeconds() > RuntimeStopTime + RuntimeTimeout)
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to stop."));
 			bStoppingDeployment = false;

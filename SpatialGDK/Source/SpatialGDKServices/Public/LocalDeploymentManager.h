@@ -76,9 +76,7 @@ private:
 	static const int32 HTTPPort = 5006;
 	static const int32 GRPCPort = 7777;
 
-	// This is the frequency at which check the 'spatial service status' to ensure we have the correct state as the user can change spatial
-	// service outside of the editor.
-	static const int32 RefreshFrequency = 3;
+	const float RuntimeTimeout = 5.0;
 
 	bool bLocalDeploymentManagerEnabled = true;
 
