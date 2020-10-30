@@ -73,7 +73,8 @@ protected:
 	{
 		if (Actor->GetIsReplicated())
 		{
-			if (!iCtx.IsActorReadyForMigration(Actor))
+			EActorMigrationResult ActorMigration = iCtx.IsActorReadyForMigration(Actor);
+			if (ActorMigration != EActorMigrationResult::Success)
 			{
 				// Prevents an Actor hierarchy from migrating if one of its actor is not ready.
 				// Child Actors are always allowed to join the owner.
@@ -81,11 +82,7 @@ protected:
 				// although it has the risk of creating an infinite lock if the child is unable to become ready.
 				if (bNetOwnerHasAuth)
 				{
-					AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
-					UE_LOG(LogSpatialLoadBalancingHandler, Warning,
-						   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) is not ready."),
-						   *HierarchyRoot->GetName(), *Actor->GetName(), NetDriver->PackageMap->GetEntityIdFromObject(Actor));
-
+					LogMigrationFailure(ActorMigration, Actor);
 					return false;
 				}
 			}
@@ -105,6 +102,8 @@ protected:
 
 		return true;
 	}
+
+	void LogMigrationFailure(EActorMigrationResult ActorMigrationResult, AActor* Actor);
 
 	USpatialNetDriver* NetDriver;
 
