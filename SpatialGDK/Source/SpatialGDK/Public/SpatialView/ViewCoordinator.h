@@ -102,7 +102,6 @@ private:
 	TArray<TUniquePtr<FSubView>> SubViews;
 
 	FReceivedOpEventHandler ReceivedOpEventHandler;
-	Worker_RequestId NextRequestId;
 
 	TCommandRetryHandler<FReserveEntityIdsRetryHandlerImpl> ReserveEntityIdRetryHandler;
 	TCommandRetryHandler<FCreateEntityRetryHandlerImpl> CreateEntityRetryHandler;
