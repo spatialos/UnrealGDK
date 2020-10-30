@@ -268,7 +268,7 @@ void SSpatialOutputLog::StartPollTimer(const FString& LogFilePath)
 
 void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 {
-	FString LogCategory = "";
+	FString LogCategory;
 
 	if (ErrorLogFlagInfo.Key)
 	{
