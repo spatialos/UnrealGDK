@@ -6,6 +6,7 @@
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ComponentUpdate.h"
 #include "SpatialView/OpList/OpList.h"
+#include "StringStorage.h"
 #include "Templates/UniquePtr.h"
 
 namespace SpatialGDK
@@ -16,7 +17,7 @@ struct EntityComponentOpListData : OpListData
 	TArray<Worker_Op> Ops;
 	TArray<ComponentData> DataStorage;
 	TArray<ComponentUpdate> UpdateStorage;
-	TUniquePtr<char[]> DisconnectReason;
+	TArray<StringStorage> MessageStorage;
 };
 
 class EntityComponentOpListBuilder
@@ -31,6 +32,20 @@ public:
 	EntityComponentOpListBuilder& RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	EntityComponentOpListBuilder& SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority);
 	EntityComponentOpListBuilder& SetDisconnect(Worker_ConnectionStatusCode StatusCode, const FString& DisconnectReason);
+	EntityComponentOpListBuilder& AddCreateEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
+																 Worker_StatusCode StatusCode, const FString& Message);
+	EntityComponentOpListBuilder& AddEntityQueryCommandResponse(Worker_RequestId RequestId, TArray<Worker_Entity> Results,
+																Worker_StatusCode StatusCode, const FString& Message);
+	EntityComponentOpListBuilder& AddEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
+														   Worker_StatusCode StatusCode, const FString& Message);
+	EntityComponentOpListBuilder& AddDeleteEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
+																 Worker_StatusCode StatusCode, const FString& Message);
+	EntityComponentOpListBuilder& AddReserveEntityIdsCommandResponse(Worker_EntityId EntityID, uint32 NumberOfEntities,
+																	 Worker_RequestId RequestId, Worker_StatusCode StatusCode,
+																	 const FString& Message);
+
+	const char* StoreString(FString Message) const;
+	const Worker_Entity* StoreQueryEntities(TArray<Worker_Entity> Entities);
 
 	OpList CreateOpList() &&;
 
