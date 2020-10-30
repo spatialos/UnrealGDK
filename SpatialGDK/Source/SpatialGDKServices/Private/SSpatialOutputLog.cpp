@@ -268,36 +268,12 @@ void SSpatialOutputLog::StartPollTimer(const FString& LogFilePath)
 
 void SSpatialOutputLog::FormatAndPrintRawErrorLine(const FString& LogLine)
 {
-	const FRegexPattern ErrorPattern = FRegexPattern(TEXT("level=(.*) msg=(.*) code=(.*) code_string=(.*) error=(.*) stack=(.*)"));
-	FRegexMatcher ErrorMatcher(ErrorPattern, LogLine);
-	FString LogMessage;
-	FString LogCategory = TEXT("SpatialService");
+	FString LogMessage = *LogLine;
+	FString LogCategory = "";
 
-	if (!ErrorMatcher.FindNext())
+	if (ErrorLogFlagInfo.Key)
 	{
-		UE_LOG(LogSpatialOutputLog, Error, TEXT("Failed to parse log line: %s"), *LogLine);
-
-		LogMessage = *LogLine;
-		if (ErrorLogFlagInfo.Key)
-		{
-			LogCategory = ErrorLogFlagInfo.Value;
-		}
-	}
-	else
-	{
-		FString ErrorLevelText = ErrorMatcher.GetCaptureGroup(1);
-		FString Message = ErrorMatcher.GetCaptureGroup(2);
-		FString ErrorCode = ErrorMatcher.GetCaptureGroup(3);
-		FString ErrorCodeString = ErrorMatcher.GetCaptureGroup(4);
-		FString ErrorMessage = ErrorMatcher.GetCaptureGroup(5);
-		FString Stack = ErrorMatcher.GetCaptureGroup(6);
-
-		// The stack message comes with double escaped characters.
-		Stack = Stack.ReplaceEscapedCharWithChar();
-
-		// Format the log message to be easy to read.
-		LogMessage = FString::Printf(TEXT("%s \n Code: %s \n Code String: %s \n Error: %s \n Stack: %s"), *Message, *ErrorCode,
-											 *ErrorCodeString, *ErrorMessage, *Stack);
+		LogCategory = ErrorLogFlagInfo.Value;
 	}
 
 	// Serialization must be done on the game thread.
