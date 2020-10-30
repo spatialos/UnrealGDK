@@ -106,7 +106,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateProcessRPC(const UObject* Ob
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "process_rpc")
 		.AddObject(TEXT("Object"), Object)
 		.AddFunction(TEXT("Function"), Function)
-		.AddKeyValue(TEXT("unique_trace_id"), UniqueTraceId.GetString())
+		.AddKeyValue(TEXT("linear_resolution_id"), UniqueTraceId.GetString())
 		.GetEvent();
 }
 
@@ -116,7 +116,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendRPC(const UObject* Objec
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_rpc")
 		.AddObject(TEXT("Object"), Object)
 		.AddFunction(TEXT("Function"), Function)
-		.AddKeyValue(TEXT("unique_trace_id"), UniqueTraceId.GetString())
+		.AddKeyValue(TEXT("linear_resolution_id"), UniqueTraceId.GetString())
 		.GetEvent();
 }
 
