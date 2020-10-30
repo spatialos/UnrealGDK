@@ -46,19 +46,19 @@ public:
 	static FName GetUserSendRPCEventName() { return UserSendRPCEventName; }
 
 protected:
-	static FName ReceiveOpEventName;
-	static FName SendPropertyUpdatesEventName;
-	static FName ReceivePropertyUpdateEventName;
-	static FName SendRPCEventName;
-	static FName ProcessRPCEventName;
-	static FName ComponentUpdateEventName;
-	static FName MergeComponentUpdateEventName;
-	static FName UserProcessRPCEventName;
-	static FName UserReceivePropertyEventName;
-	static FName UserReceiveComponentPropertyEventName;
-	static FName UserSendPropertyEventName;
-	static FName UserSendComponentPropertyEventName;
-	static FName UserSendRPCEventName;
+	const static FName ReceiveOpEventName;
+	const static FName SendPropertyUpdatesEventName;
+	const static FName ReceivePropertyUpdateEventName;
+	const static FName SendRPCEventName;
+	const static FName ProcessRPCEventName;
+	const static FName ComponentUpdateEventName;
+	const static FName MergeComponentUpdateEventName;
+	const static FName UserProcessRPCEventName;
+	const static FName UserReceivePropertyEventName;
+	const static FName UserReceiveComponentPropertyEventName;
+	const static FName UserSendPropertyEventName;
+	const static FName UserSendComponentPropertyEventName;
+	const static FName UserSendRPCEventName;
 
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;

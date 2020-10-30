@@ -323,9 +323,10 @@ TOptional<Trace_SpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanId(const 
 		return {};
 	}
 
+	Trace_SpanId TempSpanId = *ExistingSpanId;
 	ObjectSpanIdStacks.Remove(Object);
 
-	return *ExistingSpanId;
+	return TempSpanId;
 }
 
 } // namespace SpatialGDK
