@@ -110,9 +110,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor) {
 		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
-			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
-			LocalDeploymentManager->GetLocalDeploymentStatus();
-
+			// TODO: This can most likely be removed now we do not support 4.24
 			VerifyAndStartDeployment(GetDefault<ULevelEditorPlaySettings>()->GetSnapshotOverride());
 		}
 	});
