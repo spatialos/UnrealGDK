@@ -5,15 +5,15 @@
 #include "CoreMinimal.h"
 #include "EventTracingTest.h"
 
-#include "PropertyUpdateEventTracingTest.generated.h"
+#include "UserReceivePropertyEventTracingTest.generated.h"
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API APropertyUpdateEventTracingTest : public AEventTracingTest
+class SPATIALGDKFUNCTIONALTESTS_API AUserReceivePropertyEventTracingTest : public AEventTracingTest
 {
 	GENERATED_BODY()
 
 public:
-	APropertyUpdateEventTracingTest();
+	AUserReceivePropertyEventTracingTest();
 
 private:
 	virtual void FinishEventTraceTest() override;

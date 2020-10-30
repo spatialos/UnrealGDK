@@ -16,7 +16,5 @@ public:
 	AComponentUpdateEventTracingTest();
 
 private:
-	FName ComponentUpdateEventName = "unreal_gdk.component_update";
-
 	virtual void FinishEventTraceTest() override;
 };
