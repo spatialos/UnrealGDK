@@ -391,7 +391,7 @@ public:
 	 * -- EXPERIMENTAL --
 	 * This will enable event tracing for the Unreal client/worker.
 	 */
-	UPROPERTY(Config)
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
 	bool bEventTracingEnabled;
 
 	/*

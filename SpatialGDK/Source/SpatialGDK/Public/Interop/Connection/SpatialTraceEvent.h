@@ -2,20 +2,49 @@
 
 #pragma once
 
-namespace SpatialGDK
+#include "CoreMinimal.h"
+
+#include "SpatialTraceEvent.generated.h"
+
+USTRUCT(Blueprintable)
+struct FTraceData
 {
+	GENERATED_BODY()
+
+	FTraceData(){};
+	explicit FTraceData(FString InKey, FString InValue)
+		: Key(MoveTemp(InKey))
+		, Value(MoveTemp(InValue))
+	{
+	}
+
+	UPROPERTY(BlueprintReadWrite, Category = "TraceData")
+	FString Key;
+
+	UPROPERTY(BlueprintReadWrite, Category = "TraceData")
+	FString Value;
+};
+
+USTRUCT(Blueprintable)
 struct FSpatialTraceEvent
 {
+	GENERATED_BODY()
+
+	FSpatialTraceEvent(){};
 	explicit FSpatialTraceEvent(FString InType, FString InMessage)
 		: Type(MoveTemp(InType))
 		, Message(MoveTemp(InMessage))
 	{
 	}
 
-	void AddData(FString Key, FString Value) { Data.Add(MakeTuple(MoveTemp(Key), MoveTemp(Value))); }
+	void AddData(FString Key, FString Value) { Data.Add(FTraceData(MoveTemp(Key), MoveTemp(Value))); }
 
+	UPROPERTY(BlueprintReadWrite, Category = "SpatialTraceEvent")
 	FString Type;
+
+	UPROPERTY(BlueprintReadWrite, Category = "SpatialTraceEvent")
 	FString Message;
-	TArray<TTuple<FString, FString>> Data;
+
+	UPROPERTY(BlueprintReadWrite, Category = "SpatialTraceEvent")
+	TArray<FTraceData> Data;
 };
-} // namespace SpatialGDK
