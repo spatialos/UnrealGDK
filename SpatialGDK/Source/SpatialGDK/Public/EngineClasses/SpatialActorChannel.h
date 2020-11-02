@@ -312,7 +312,9 @@ public:
 
 	TSet<TWeakObjectPtr<UObject>, TWeakPointerKeyFuncs<TWeakObjectPtr<UObject>, false>> PendingDynamicSubobjects;
 
-	TMap<TWeakObjectPtr<UObject>, FSpatialObjectRepState, FDefaultSetAllocator, TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UObject>, FSpatialObjectRepState, false>> ObjectReferenceMap;
+	TMap<TWeakObjectPtr<UObject>, FSpatialObjectRepState, FDefaultSetAllocator,
+		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UObject>, FSpatialObjectRepState, false>>
+		ObjectReferenceMap;
 
 private:
 	Worker_EntityId EntityId;
@@ -356,7 +358,9 @@ private:
 	// the state of those properties at the last time we sent them, and is used to detect
 	// when those properties change.
 	TArray<uint8>* ActorHandoverShadowData;
-	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>, FDefaultSetAllocator, TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>, false>> HandoverShadowDataMap;
+	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>, FDefaultSetAllocator,
+		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>, false>>
+		HandoverShadowDataMap;
 
 	// Band-aid until we get Actor Sets.
 	// Used on server-side workers only.

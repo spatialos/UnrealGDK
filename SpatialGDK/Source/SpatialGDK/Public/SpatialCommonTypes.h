@@ -49,7 +49,7 @@ struct FTrackableWorkerType : public T
 #endif
 };
 
-template<typename ElementType, bool bInAllowDuplicateKeys /*= false*/>
+template <typename ElementType, bool bInAllowDuplicateKeys /*= false*/>
 struct TWeakPointerKeyFuncs : DefaultKeyFuncs<ElementType, bInAllowDuplicateKeys>
 {
 	using typename DefaultKeyFuncs<ElementType, bInAllowDuplicateKeys>::KeyInitType;
@@ -57,10 +57,7 @@ struct TWeakPointerKeyFuncs : DefaultKeyFuncs<ElementType, bInAllowDuplicateKeys
 	/**
 	 * @return True if the keys match.
 	 */
-	static FORCEINLINE bool Matches(KeyInitType A, KeyInitType B)
-	{
-		return A.HasSameIndexAndSerialNumber(B);
-	}
+	static FORCEINLINE bool Matches(KeyInitType A, KeyInitType B) { return A.HasSameIndexAndSerialNumber(B); }
 };
 
 // TODO: These can be removed once event tracing is enabled UNR-3981
