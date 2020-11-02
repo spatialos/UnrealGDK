@@ -288,10 +288,15 @@ TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorHierarchyExpli
 	for (const AActor* Child : Actor->Children)
 	{
 		TOptional<VirtualWorkerId> ChildDelegation = GetActorHierarchyExplicitDelegation_Traverse(Child);
-		ensureMsgf(!CandidateDelegation.IsSet() || !ChildDelegation.IsSet() || CandidateDelegation.GetValue() == ChildDelegation.GetValue(),
-				   TEXT("Inconsistent delegation. Actor %s is delegated to %i but a child is delegated to %i"), *Actor->GetName(),
-				   CandidateDelegation.GetValue(), ChildDelegation.GetValue());
-		CandidateDelegation = ChildDelegation;
+		if (ChildDelegation)
+		{
+			ensureMsgf(
+				!CandidateDelegation.IsSet() || !ChildDelegation.IsSet() || CandidateDelegation.GetValue() == ChildDelegation.GetValue(),
+				TEXT("Inconsistent delegation. Actor %s is delegated to %i but a child is delegated to %i"), *Actor->GetName(),
+				CandidateDelegation.GetValue(), ChildDelegation.GetValue());
+
+			CandidateDelegation = ChildDelegation;
+		}
 	}
 
 	return CandidateDelegation;
@@ -328,10 +333,12 @@ TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorExplicitDelega
 	{
 		if (VirtualWorkerId* Worker = SemanticDelegations.Find(Tag))
 		{
-			ensureMsgf(!CandidateDelegation.IsSet() || CandidateDelegation.GetValue() == *Worker,
-					   TEXT("Inconsistent delegation. Actor %s delegated to both %i and %i"), *Actor->GetName(),
-					   CandidateDelegation.GetValue(), *Worker);
-			CandidateDelegation = *Worker;
+			if (ensureMsgf(!CandidateDelegation.IsSet() || CandidateDelegation.GetValue() == *Worker,
+						   TEXT("Inconsistent delegation. Actor %s delegated to both %i and %i"), *Actor->GetName(),
+						   CandidateDelegation.GetValue(), *Worker))
+			{
+				CandidateDelegation = *Worker;
+			}
 		}
 	}
 
