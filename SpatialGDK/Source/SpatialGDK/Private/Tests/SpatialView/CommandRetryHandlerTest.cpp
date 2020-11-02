@@ -25,6 +25,18 @@ const static FString ApplicationErrorMessage = TEXT("Application Error");
 const static float TimeAdvanced = 5.f;
 static OpList EmptyOpList = { nullptr, 0, nullptr };
 
+EntityQuery CreateTestEntityQuery()
+{
+	Worker_EntityQuery WorkerEntityQuery;
+	WorkerEntityQuery.constraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
+	WorkerEntityQuery.constraint.constraint.entity_id_constraint = Worker_EntityIdConstraint{ TestEntityId };
+	WorkerEntityQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
+	WorkerEntityQuery.snapshot_result_type_component_id_count = 1;
+	TArray<Worker_ComponentId> WorkerComponentIds = { TestComponentId };
+	WorkerEntityQuery.snapshot_result_type_component_ids = WorkerComponentIds.GetData();
+	return EntityQuery(WorkerEntityQuery);
+}
+
 COMMANDRETRYHANDLER_TEST(GIVEN_success_WHEN_process_ops_THEN_no_retry)
 {
 	WorkerView View;
@@ -67,7 +79,9 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_create_entity_THEN_retry)
 	Handler.ProcessOps(TimeAdvanced, EmptyOpList, View);
 
 	ExpectedMessagesToSend MessagesToSend;
-	MessagesToSend.AddCreateEntityRequest(RetryRequestId, TestEntityId, TestComponentId, TestComponentValue);
+	TArray<ComponentData> TestComponents;
+	TestComponents.Add(CreateTestComponentData(TestComponentId, TestComponentValue));
+	MessagesToSend.AddCreateEntityRequest(RetryRequestId, TestEntityId, MoveTemp(TestComponents));
 	TestTrue("MessagesToSend are equal", MessagesToSend.Compare(View.FlushLocalChanges()));
 	return true;
 }
@@ -137,6 +151,32 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_delete_entity_THEN_retry)
 	return true;
 }
 
+COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_query_entity_THEN_retry)
+{
+	WorkerView View;
+	TCommandRetryHandler<FEntityQueryRetryHandlerImpl> Handler;
+
+	EntityComponentOpListBuilder Builder;
+	TArray<Worker_ComponentData> EntityComponents;
+	EntityComponents.Add(CreateTestComponentData(TestComponentId, TestComponentValue).GetWorkerComponentData());
+	TArray<Worker_Entity> Entities;
+	Entities.Add(Worker_Entity{ TestEntityId, 1, EntityComponents.GetData() });
+	Builder.AddEntityQueryCommandResponse(TestRequestId, MoveTemp(Entities), WORKER_STATUS_CODE_TIMEOUT, TimeOutMessage);
+	OpList FirstOpList = MoveTemp(Builder).CreateOpList();
+	Handler.SendRequest(TestRequestId, CreateTestEntityQuery(), RETRY_UNTIL_COMPLETE, View);
+	View.FlushLocalChanges();
+
+	Handler.ProcessOps(TimeAdvanced, FirstOpList, View);
+	View.FlushLocalChanges();
+
+	Handler.ProcessOps(TimeAdvanced, EmptyOpList, View);
+
+	ExpectedMessagesToSend MessagesToSend;
+	MessagesToSend.AddEntityQueryRequest(RetryRequestId, CreateTestEntityQuery());
+	TestTrue("MessagesToSend are equal", MessagesToSend.Compare(View.FlushLocalChanges()));
+	return true;
+}
+
 COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_entity_command_request_THEN_retry)
 {
 	WorkerView View;
@@ -154,7 +194,7 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_entity_command_request_THEN_retry)
 	Handler.ProcessOps(TimeAdvanced, EmptyOpList, View);
 
 	ExpectedMessagesToSend MessagesToSend;
-	MessagesToSend.AddEntityCommandRequest(RetryRequestId, TestEntityId);
+	MessagesToSend.AddEntityCommandRequest(RetryRequestId, TestEntityId, TestComponentId, TestCommandIndex);
 	TestTrue("MessagesToSend are equal", MessagesToSend.Compare(View.FlushLocalChanges()));
 	return true;
 }
@@ -171,12 +211,9 @@ COMMANDRETRYHANDLER_TEST(GIVEN_authority_lost_WHEN_entity_command_request_THEN_r
 	View.FlushLocalChanges();
 
 	Handler.ProcessOps(TimeAdvanced, FirstOpList, View);
-	View.FlushLocalChanges();
-
-	Handler.ProcessOps(TimeAdvanced, EmptyOpList, View);
 
 	ExpectedMessagesToSend MessagesToSend;
-	MessagesToSend.AddEntityCommandRequest(RetryRequestId, TestEntityId);
+	MessagesToSend.AddEntityCommandRequest(RetryRequestId, TestEntityId, TestComponentId, TestCommandIndex);
 	TestTrue("MessagesToSend are equal", MessagesToSend.Compare(View.FlushLocalChanges()));
 	return true;
 }

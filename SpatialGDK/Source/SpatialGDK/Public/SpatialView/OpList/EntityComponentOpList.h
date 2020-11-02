@@ -18,6 +18,8 @@ struct EntityComponentOpListData : OpListData
 	TArray<ComponentData> DataStorage;
 	TArray<ComponentUpdate> UpdateStorage;
 	TArray<StringStorage> MessageStorage;
+	TArray<TArray<Worker_Entity>> QueriedEntities;
+	TArray<TArray<Worker_ComponentData>> QueriedComponents;
 };
 
 class EntityComponentOpListBuilder
@@ -45,7 +47,7 @@ public:
 																	 const FString& Message);
 
 	const char* StoreString(FString Message) const;
-	const Worker_Entity* StoreQueryEntities(TArray<Worker_Entity> Entities);
+	const Worker_Entity* StoreQueriedEntities(TArray<Worker_Entity> Entities) const;
 
 	OpList CreateOpList() &&;
 

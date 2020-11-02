@@ -176,8 +176,10 @@ struct FEntityCommandRetryHandlerImpl
 		{
 		case WORKER_STATUS_CODE_TIMEOUT:
 			RetryData.RetryAndBackOff();
+			break;
 		case WORKER_STATUS_CODE_AUTHORITY_LOST:
 			RetryData.RetryWithoutBackOff();
+			break;
 		default:
 			RetryData.StopRetries();
 		}

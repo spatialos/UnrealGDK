@@ -141,8 +141,8 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityQueryComman
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE;
-	Op.op.entity_query_response.results = StoreQueryEntities(Results);
 	Op.op.entity_query_response.result_count = Results.Num();
+	Op.op.entity_query_response.results = StoreQueriedEntities(MoveTemp(Results));
 	Op.op.entity_query_response.request_id = RequestId;
 	Op.op.entity_query_response.status_code = StatusCode;
 	Op.op.entity_query_response.message = StoreString(Message);
@@ -169,11 +169,25 @@ const char* EntityComponentOpListBuilder::StoreString(FString Message) const
 	return OpListData->MessageStorage.Last().Get();
 }
 
-const Worker_Entity* EntityComponentOpListBuilder::StoreQueryEntities(TArray<Worker_Entity> Entities)
+const Worker_Entity* EntityComponentOpListBuilder::StoreQueriedEntities(TArray<Worker_Entity> Entities) const
 {
-	// TODO
-	TArray<Worker_Entity> Data;
-	return Data.GetData();
+	OpListData->QueriedEntities.Push(TArray<Worker_Entity>());
+	for (auto& Entity : Entities)
+	{
+		Worker_Entity CurrentEntity;
+		CurrentEntity.entity_id = Entity.entity_id;
+		OpListData->QueriedComponents.Push(TArray<Worker_ComponentData>());
+		for (auto p = Entity.components; p < Entity.components + Entity.component_count; ++p)
+		{
+			Worker_ComponentData Data = { nullptr, p->component_id, Schema_CopyComponentData(p->schema_type), nullptr };
+			OpListData->QueriedComponents.Last().Push(Data);
+		}
+		CurrentEntity.components = OpListData->QueriedComponents.Last().GetData();
+		CurrentEntity.component_count = OpListData->QueriedComponents.Last().Num();
+		OpListData->QueriedEntities.Last().Push(CurrentEntity);
+	}
+
+	return OpListData->QueriedEntities.Last().GetData();
 }
 
 OpList EntityComponentOpListBuilder::CreateOpList() &&
