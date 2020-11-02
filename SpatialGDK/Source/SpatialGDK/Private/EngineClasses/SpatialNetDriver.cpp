@@ -105,8 +105,13 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
 
-	// TODO possibly placement on where this should be registerd. Also maybe just make this an overrideable function?
-	GetWorkerIDDelegate.BindLambda([this]() {
+	// TODO where this should be registered. 
+	GetClientIDDelegate.BindLambda([this]() {
+		if (IsServer())
+		{
+			return (int64)SpatialConstants::INVALID_ENTITY_ID;
+		}
+
 		if (USpatialNetConnection* NetConnection = GetSpatialOSNetConnection())
 		{
 			if (APlayerController* PlayerController = Cast<APlayerController>(NetConnection->OwningActor))
