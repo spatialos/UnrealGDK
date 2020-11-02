@@ -609,6 +609,17 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 	}
 #endif
 
+	if (bSelectActor)
+	{
+		SelectActorToTag(Canvas);
+		return;
+	}
+	else
+	{
+		// Change mouse cursor back to normal
+		LocalPlayerController->bShowMouseCursor = true;
+	}
+
 	if (ActorTagDrawMode >= EActorTagDrawMode::LocalPlayer)
 	{
 		DrawDebugLocalPlayer(Canvas);
@@ -660,10 +671,13 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 		}
 	}
 
-	if (bSelectActor && LocalPlayerController != nullptr)
-	{
-		// Allow user to select an actor for debugging
 
+}
+
+void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
+{
+	if (LocalPlayerController.IsValid())
+	{
 		FVector2D MousePosition;
 
 		if (LocalPlayerController->GetMousePosition(MousePosition.X, MousePosition.Y))
@@ -672,17 +686,9 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 			if (CrosshairTexture)
 			{
 				// Display a crosshair icon for the mouse cursor
-
 				// Offset by half of the texture's dimensions so that the center of the texture aligns with the center of the Canvas.
 				FVector2D CrossHairDrawPosition(MousePosition.X - (CrosshairTexture->GetSurfaceWidth() * 0.5f),
 												MousePosition.Y - (CrosshairTexture->GetSurfaceHeight() * 0.5f));
-
-				// Find the center of our canvas.
-				// FVector2D Center(Canvas->ClipX * 0.5f, Canvas->ClipY * 0.5f);
-
-				//// Offset by half of the texture's dimensions so that the center of the texture aligns with the center of the Canvas.
-				// FVector2D CrossHairDrawPosition(Center.X - (CrosshairTexture->GetSurfaceWidth() * 0.5f),
-				//								Center.Y - (CrosshairTexture->GetSurfaceHeight() * 0.5f));
 
 				// Draw the crosshair at the mouse position.
 				FCanvasTileItem TileItem(CrossHairDrawPosition, CrosshairTexture->Resource, FLinearColor::White);
@@ -703,43 +709,74 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 			const APlayerCameraManager* CameraManager = Cast<APlayerCameraManager>(LocalPlayerController->PlayerCameraManager);
 			if (CameraManager)
 			{
-				FHitResult HitResult;
-				// FVector StartTrace = CameraManager->GetCameraLocation();
-				// FVector EndTrace = StartTrace + CameraManager->GetActorForwardVector() * MaxDistance;
 				FVector WorldLocation;
 				FVector WorldRotation;
-				// LocalPlayerController->DeprojectScreenPositionToWorld(Center.X, Center.Y, WorldLocation, WorldRotation); // Center of
-				// screen
-				/*FVector2D MousePosition;
-				bool success = LocalPlayerController->GetMousePosition(MousePosition.X, MousePosition.Y);*/
 				LocalPlayerController->DeprojectScreenPositionToWorld(MousePosition.X, MousePosition.Y, WorldLocation,
 																	  WorldRotation); // Mouse cursor position
 				FVector StartTrace = WorldLocation;
 				FVector EndTrace = StartTrace + WorldRotation * MaxRange;
 
-				const FName TraceTag("MyTraceTag");
-				GetWorld()->DebugDrawTraceTag = TraceTag;
-				FCollisionQueryParams CollisionParams;
-				CollisionParams.TraceTag = TraceTag; // For debugging only
-				// bool hit = GetWorld()->LineTraceSingleByChannel(HitResult, StartTrace, EndTrace, ECollisionChannel::ECC_WorldStatic,
-				// CollisionParams);
-				bool hit = GetWorld()->LineTraceSingleByChannel(HitResult, StartTrace, EndTrace,
-																ECollisionChannel::ECC_Visibility); //,CollisionParams);
+				FCollisionObjectQueryParams CollisionObjectParams;
+				CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldStatic);
+				CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldDynamic);
+				CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Pawn);
+				CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Destructible);
+				CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Vehicle);
+				CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_PhysicsBody);
+
+				TArray<FHitResult> HitResults;
+				bool hit = GetWorld()->LineTraceMultiByObjectType(HitResults, StartTrace, EndTrace, CollisionObjectParams);
 				if (hit)
 				{
-					UE_LOG(LogSpatialDebugger, Warning, TEXT("SpatialDebugger hit actor %s ."), *HitResult.GetActor()->GetName());
-
 					// When the raycast hits an actor then the debug information for that actor is displayed above it, whilst the actor
 					// remains under the crosshair.
+					for(FHitResult HitResult : HitResults)
+					{
+						AActor* HitActor = HitResult.GetActor();
+
+						if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(HitResult.GetActor()))
+						{
+							// TODO : refactor duplicated code
+							FVector PlayerLocation = FVector::ZeroVector;
+							if (LocalPawn.IsValid())
+							{
+								PlayerLocation = LocalPawn->GetActorLocation();
+							}
+							// TODO : refactor duplicated code
+							if (HitActor != nullptr)
+							{
+								FVector ActorLocation = HitActor->GetActorLocation();
+
+								if (ActorLocation.IsZero())
+								{
+									return;
+								}
+
+								if (FVector::Dist(PlayerLocation, ActorLocation) > MaxRange)
+								{
+									return;
+								}
+
+								FVector2D ScreenLocation = FVector2D::ZeroVector;
+								if (LocalPlayerController.IsValid())
+								{
+									SCOPE_CYCLE_COUNTER(STAT_Projection);
+									UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(),
+																		   ActorLocation + WorldSpaceActorTagOffset, ScreenLocation, false);
+								}
+
+								if (ScreenLocation.IsZero())
+								{
+									return;
+								}
+
+								DrawTag(Canvas, ScreenLocation, *HitEntityId, HitActor->GetName(), true /*bCentre*/);
+							}
+						}
+					}
 				}
 			}
 		}
-	
-	}
-	else
-	{
-		// Change mouse cursor back to normal
-		LocalPlayerController->bShowMouseCursor = true;
 	}
 }
 
