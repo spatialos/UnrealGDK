@@ -219,8 +219,12 @@ private:
 	// FDebugDrawDelegate
 	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
 
+	FVector GetLocalPawnLocation();
+
 	// Allow user to select an actor for debugging
 	void SelectActorToTag(UCanvas* Canvas);
+
+	void ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector PlayerLocation, FVector2D& ScreenLocation);
 
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
 				 const bool bCentre);
