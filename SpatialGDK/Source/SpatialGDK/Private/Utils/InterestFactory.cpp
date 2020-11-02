@@ -123,7 +123,8 @@ Interest InterestFactory::CreateServerWorkerInterest(Worker_EntityId EntityId, c
 
 	// and server worker entities
 	ServerQuery = Query();
-	ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+	ServerQuery.ResultComponentIds =
+		SchemaResultType{ SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ServerQuery);
 
