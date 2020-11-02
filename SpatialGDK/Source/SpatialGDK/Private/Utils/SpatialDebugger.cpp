@@ -628,7 +628,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 	if (ActorTagDrawMode == EActorTagDrawMode::All)
 	{
 		FVector PlayerLocation = GetLocalPawnLocation();
-		
+
 		for (TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
 		{
 			const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
