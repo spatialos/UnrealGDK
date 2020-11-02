@@ -207,7 +207,13 @@ bool ConvertToClassicConfig(const FString& LaunchConfigPath, const FSpatialLaunc
 	// TODO: Perhaps make a function for this.
 	FString ClassicConfigFilePath = FString::Printf(TEXT("%s_classic.json"), *LaunchConfigPath.LeftChop(5));
 
-	bool bSuccess = PlatformFile.DeleteFile(*ClassicConfigFilePath);
+	bool bSuccess = true;
+
+	if (FPaths::FileExists(ClassicConfigFilePath))
+	{
+		bSuccess = PlatformFile.DeleteFile(*ClassicConfigFilePath);
+	}
+
 	if (!bSuccess)
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Failed to remove old converted classic style launch config %s"),
