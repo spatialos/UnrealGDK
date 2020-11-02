@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Interop/Connection/SpatialTraceEvent.h"
+#include "Interop/Connection/UserSpanId.h"
 #include "SpatialView/EntityComponentId.h"
 
 #include <WorkerSDK/improbable/c_io.h>
@@ -24,9 +25,9 @@ public:
 	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
 	Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
-	TOptional<Trace_SpanId> CreateSpan();
-	TOptional<Trace_SpanId> CreateSpan(const Trace_SpanId* Causes, int32 NumCauses);
-	void TraceEvent(FSpatialTraceEvent SpatialTraceEvent, const TOptional<Trace_SpanId>& OptionalSpanId);
+	TOptional<Trace_SpanId> CreateSpan() const;
+	TOptional<Trace_SpanId> CreateSpan(const Trace_SpanId* Causes, int32 NumCauses) const;
+	void TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const TOptional<Trace_SpanId>& OptionalSpanId);
 
 	bool IsEnabled() const;
 
@@ -34,11 +35,22 @@ public:
 	void RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId);
 
-	Trace_SpanId GetSpanId(const EntityComponentId& Id) const;
+	TOptional<Trace_SpanId> GetSpanId(const EntityComponentId& Id) const;
+
+	static FString SpanIdToString(const Trace_SpanId& SpanId);
+
+	static FUserSpanId SpanIdToUserSpanId(const Trace_SpanId& SpanId);
+	static TOptional<Trace_SpanId> UserSpanIdToSpanId(const FUserSpanId& UserSpanId);
 
 	const FString& GetFolderPath() const { return FolderPath; }
 
-	static FString SpanIdToString(const Trace_SpanId& SpanId);
+	void AddToStack(const Trace_SpanId& SpanId);
+	TOptional<Trace_SpanId> PopFromStack();
+	TOptional<Trace_SpanId> GetFromStack() const;
+	bool IsStackEmpty() const;
+
+	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const Trace_SpanId& SpanId);
+	TOptional<Trace_SpanId> PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
 
 private:
 	struct StreamDeleter
@@ -48,6 +60,8 @@ private:
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
 
+	static const int32 TraceSpanIdLength = 16;
+
 	void Enable(const FString& FileName);
 
 	FString FolderPath;
@@ -55,7 +69,9 @@ private:
 	TUniquePtr<Io_Stream, StreamDeleter> Stream;
 	Trace_EventTracer* EventTracer = nullptr;
 
+	TArray<Trace_SpanId> SpanIdStack;
 	TMap<EntityComponentId, Trace_SpanId> EntityComponentSpanIds;
+	TMap<TWeakObjectPtr<UObject>, Trace_SpanId> ObjectSpanIdStacks;
 
 	bool bEnabled = false;
 	uint64 BytesWrittenToStream = 0;

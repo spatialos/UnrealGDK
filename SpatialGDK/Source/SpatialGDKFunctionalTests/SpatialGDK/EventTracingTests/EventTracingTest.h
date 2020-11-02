@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialFunctionalTest.h"
+#include "SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
 
 #include "EventTracingTest.generated.h"
 
@@ -27,9 +27,38 @@ public:
 
 	virtual void PrepareTest() override;
 
+	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
+	static FName GetUserProcessRPCEventName() { return UserProcessRPCEventName; }
+
+	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
+	static FName GetUserReceivePropertyEventName() { return UserReceivePropertyEventName; }
+
+	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
+	static FName GetUserReceiveComponentPropertyEventName() { return UserReceiveComponentPropertyEventName; }
+
+	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
+	static FName GetUserSendPropertyEventName() { return UserSendPropertyEventName; }
+
+	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
+	static FName GetUserSendComponentPropertyEventName() { return UserSendComponentPropertyEventName; }
+
+	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
+	static FName GetUserSendRPCEventName() { return UserSendRPCEventName; }
+
 protected:
-	FName ReceiveOpEventName = "worker.receive_op";
-	FName MergeComponentUpdateEventName = "unreal_gdk.merge_component_update";
+	const static FName ReceiveOpEventName;
+	const static FName SendPropertyUpdatesEventName;
+	const static FName ReceivePropertyUpdateEventName;
+	const static FName SendRPCEventName;
+	const static FName ProcessRPCEventName;
+	const static FName ComponentUpdateEventName;
+	const static FName MergeComponentUpdateEventName;
+	const static FName UserProcessRPCEventName;
+	const static FName UserReceivePropertyEventName;
+	const static FName UserReceiveComponentPropertyEventName;
+	const static FName UserSendPropertyEventName;
+	const static FName UserSendComponentPropertyEventName;
+	const static FName UserSendRPCEventName;
 
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
