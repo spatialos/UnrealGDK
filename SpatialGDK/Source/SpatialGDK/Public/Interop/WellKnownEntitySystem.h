@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -25,6 +25,7 @@ private:
 	void ProcessEntityAdd(const Worker_EntityId EntityId);
 
 	void InitializeVirtualWorkerTranslationManager();
+	void MaybeClaimSnapshotPartition();
 
 	const FSubView* SubView;
 

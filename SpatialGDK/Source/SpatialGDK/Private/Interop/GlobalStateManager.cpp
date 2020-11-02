@@ -407,6 +407,25 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 	Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 }
 
+worker::c::Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
+{
+	if (ensure(NetDriver != nullptr))
+	{
+		return NetDriver->WorkerEntityId;
+	}
+
+	return SpatialConstants::INVALID_ENTITY_ID;
+}
+
+void UGlobalStateManager::ClaimSnapshotPartition()
+{
+	if (ensure(Sender != nullptr))
+	{
+		Sender->SendClaimPartitionRequest(NetDriver->Connection->GetWorkerSystemEntityId(),
+										  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	}
+}
+
 void UGlobalStateManager::TriggerBeginPlay()
 {
 	const bool bHasStartupActorAuthority =

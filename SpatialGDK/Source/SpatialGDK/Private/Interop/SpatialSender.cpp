@@ -296,19 +296,19 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 			{
 				Sender->NetDriver->WorkerEntityId = Op.entity_id;
 
-				// SUPER MEGA DEATH HACK
-				// We only want 1 worker to claim the snapshot partition entity. If every worker tries, we could have a
-				// situation where multiple workers receive and subsequently lose authority before authority settles with
-				// the last worker to have their request processed. However, all server-side workers all request entity IDs
-				// at startup, but only the first request with be returned a range of entity IDs beginning at the first
-				// non-taken entity ID in the snapshot (which is 5 at this point in time). If the server worker entity ID
-				// is 5, we know that this worker uniquely perform that entity reservation, and so will be the only worker
-				// to meet this conditional and claim the snapshot partition entity.
-				if (Op.entity_id == SpatialConstants::FIRST_AVAILABLE_ENTITY_ID)
-				{
-					Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerSystemEntityId(),
-													  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-				}
+// 				// SUPER MEGA DEATH HACK
+// 				// We only want 1 worker to claim the snapshot partition entity. If every worker tries, we could have a
+// 				// situation where multiple workers receive and subsequently lose authority before authority settles with
+// 				// the last worker to have their request processed. However, all server-side workers all request entity IDs
+// 				// at startup, but only the first request with be returned a range of entity IDs beginning at the first
+// 				// non-taken entity ID in the snapshot (which is 5 at this point in time). If the server worker entity ID
+// 				// is 5, we know that this worker uniquely perform that entity reservation, and so will be the only worker
+// 				// to meet this conditional and claim the snapshot partition entity.
+// 				if (Op.entity_id == SpatialConstants::FIRST_AVAILABLE_ENTITY_ID)
+// 				{
+// 					Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerSystemEntityId(),
+// 													  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+// 				}
 
 				// We claim each server worker entity as a partition so server worker interest which is necessary for getting
 				// interest in the VirtualWorkerTranslator component.

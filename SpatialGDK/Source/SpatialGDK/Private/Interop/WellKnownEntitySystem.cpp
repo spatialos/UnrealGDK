@@ -1,8 +1,10 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/WellKnownEntitySystem.h"
 
 #include "Interop/SpatialReceiver.h"
+
+#pragma optimize("", off)
 
 namespace SpatialGDK
 {
@@ -86,6 +88,9 @@ void WellKnownEntitySystem::ProcessComponentAdd(const Worker_ComponentId Compone
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Data);
 		break;
+	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
+		MaybeClaimSnapshotPartition();
+		break;
 	default:
 		break;
 	}
@@ -130,4 +135,41 @@ void WellKnownEntitySystem::InitializeVirtualWorkerTranslationManager()
 	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator);
 	VirtualWorkerTranslationManager->SetNumberOfVirtualWorkers(NumberOfWorkers);
 }
+
+void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
+{
+	Worker_EntityId LocalServerWorkerEntityId = GlobalStateManager->GetLocalServerWorkerEntityId();
+	Worker_EntityId LowestEntityId = SpatialConstants::INVALID_ENTITY_ID;
+
+	if (LocalServerWorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return;
+	}
+
+	int ServerCount = 0;
+	for (const auto& Iter : SubView->GetView())
+	{
+		const Worker_EntityId EntityId = Iter.Key;
+		const SpatialGDK::EntityViewElement& Element = Iter.Value;
+		if (Element.Components.ContainsByPredicate([](const SpatialGDK::ComponentData& CompData) {
+				return CompData.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID;
+			}))
+		{
+			ServerCount++;
+
+			if (LowestEntityId == SpatialConstants::INVALID_ENTITY_ID || EntityId < LowestEntityId)
+			{
+				LowestEntityId = EntityId;
+			}
+		}
+	}
+
+	if (LocalServerWorkerEntityId == LowestEntityId && ServerCount == NumberOfWorkers)
+	{
+		GlobalStateManager->ClaimSnapshotPartition();
+	}
+}
+
 } // Namespace SpatialGDK
+
+#pragma optimize("", on)
