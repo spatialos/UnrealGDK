@@ -6,38 +6,39 @@
 using namespace SpatialGDK;
 
 ExpectedMessagesToSend& ExpectedMessagesToSend::AddCreateEntityRequest(Worker_RequestId RequestId, Worker_EntityId EntityId,
-																	   Worker_ComponentId ComponentId, double ComponentValue)
+																	   TArray<ComponentData> ComponentData)
 {
 	CreateEntityRequest TestCreateEntityRequest;
 	TestCreateEntityRequest.RequestId = RequestId;
 	TestCreateEntityRequest.EntityId = EntityId;
-	TestCreateEntityRequest.EntityComponents.Add(CreateTestComponentData(ComponentId, ComponentValue));
+	TestCreateEntityRequest.EntityComponents = MoveTemp(ComponentData);
 	TestCreateEntityRequest.TimeoutMillis = 0;
 	CreateEntityRequests.Push(MoveTemp(TestCreateEntityRequest));
 	return *this;
 }
 
-ExpectedMessagesToSend& ExpectedMessagesToSend::AddEntityCommandRequest(Worker_RequestId RequestId, Worker_EntityId EntityId)
+ExpectedMessagesToSend& ExpectedMessagesToSend::AddEntityCommandRequest(Worker_RequestId RequestId, Worker_EntityId EntityId,
+																		Worker_ComponentId ComponentId, Worker_CommandIndex CommandIndex)
 {
-	EntityCommandRequests.Push({ EntityId, RequestId, CommandRequest(1, 1) });
+	EntityCommandRequests.Push({ EntityId, RequestId, CommandRequest(ComponentId, CommandIndex), 0 });
 	return *this;
 }
 
 ExpectedMessagesToSend& ExpectedMessagesToSend::AddDeleteEntityCommandRequest(Worker_RequestId RequestId, Worker_EntityId EntityId)
 {
-	DeleteEntityRequests.Push({ RequestId, EntityId });
+	DeleteEntityRequests.Push({ RequestId, EntityId, 0 });
 	return *this;
 }
 
 ExpectedMessagesToSend& ExpectedMessagesToSend::AddReserveEntityIdsRequest(Worker_RequestId RequestId, uint32 NumOfEntities)
 {
-	ReserveEntityIdsRequests.Push({ RequestId, NumOfEntities });
+	ReserveEntityIdsRequests.Push({ RequestId, NumOfEntities, 0 });
 	return *this;
 }
 
-ExpectedMessagesToSend& ExpectedMessagesToSend::AddEntityQueryRequest(Worker_RequestId RequestId)
+ExpectedMessagesToSend& ExpectedMessagesToSend::AddEntityQueryRequest(Worker_RequestId RequestId, EntityQuery Query)
 {
-	// TODO;
+	EntityQueryRequests.Push({ RequestId, MoveTemp(Query), 0 });
 	return *this;
 }
 
@@ -55,7 +56,7 @@ ExpectedMessagesToSend& ExpectedMessagesToSend::AddEntityCommandFailure(Worker_R
 	return *this;
 }
 
-bool ExpectedMessagesToSend::Compare(const TUniquePtr<MessagesToSend> MessagesToSend) const
+bool ExpectedMessagesToSend::Compare(TUniquePtr<MessagesToSend> MessagesToSend) const
 {
 	if (MessagesToSend == nullptr)
 	{

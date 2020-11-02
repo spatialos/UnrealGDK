@@ -7,6 +7,7 @@
 
 namespace SpatialGDK
 {
+bool CompareListOfWorkerConstraints(const Worker_Constraint* Lhs, const Worker_Constraint* Rhs, const int32 LhsNum, const int32 RhsNum);
 inline bool CompareReseverEntityIdsRequests(const ReserveEntityIdsRequest& Lhs, const ReserveEntityIdsRequest& Rhs)
 {
 	if (Lhs.RequestId != Rhs.RequestId)
@@ -19,8 +20,7 @@ inline bool CompareReseverEntityIdsRequests(const ReserveEntityIdsRequest& Lhs, 
 		return false;
 	}
 
-	return Lhs.TimeoutMillis != Rhs.TimeoutMillis;
-	// TODO span comparison?
+	return Lhs.TimeoutMillis == Rhs.TimeoutMillis;
 }
 
 inline bool CompareCreateEntityRequests(const CreateEntityRequest& Lhs, const CreateEntityRequest& Rhs)
@@ -55,7 +55,50 @@ inline bool CompareDeleteEntityRequests(const DeleteEntityRequest& Lhs, const De
 		return false;
 	}
 
-	return Lhs.TimeoutMillis != Rhs.TimeoutMillis;
+	return Lhs.TimeoutMillis == Rhs.TimeoutMillis;
+}
+
+inline bool CompareWorkerConstraints(const Worker_Constraint& Lhs, const Worker_Constraint Rhs)
+{
+	if (Lhs.constraint_type != Rhs.constraint_type)
+	{
+		return false;
+	}
+
+	switch (Lhs.constraint_type)
+	{
+	case WORKER_CONSTRAINT_TYPE_ENTITY_ID:
+		return Lhs.constraint.entity_id_constraint.entity_id == Rhs.constraint.entity_id_constraint.entity_id;
+	case WORKER_CONSTRAINT_TYPE_COMPONENT:
+		return Lhs.constraint.component_constraint.component_id == Rhs.constraint.component_constraint.component_id;
+	case WORKER_CONSTRAINT_TYPE_SPHERE:
+		return Lhs.constraint.sphere_constraint.radius == Rhs.constraint.sphere_constraint.radius
+			   && Lhs.constraint.sphere_constraint.x == Rhs.constraint.sphere_constraint.x
+			   && Lhs.constraint.sphere_constraint.y == Rhs.constraint.sphere_constraint.y
+			   && Lhs.constraint.sphere_constraint.z == Rhs.constraint.sphere_constraint.z;
+	case WORKER_CONSTRAINT_TYPE_AND:
+		return CompareListOfWorkerConstraints(Lhs.constraint.and_constraint.constraints, Rhs.constraint.and_constraint.constraints,
+											  Lhs.constraint.and_constraint.constraint_count,
+											  Rhs.constraint.and_constraint.constraint_count);
+	case WORKER_CONSTRAINT_TYPE_OR:
+		return CompareListOfWorkerConstraints(Lhs.constraint.or_constraint.constraints, Rhs.constraint.or_constraint.constraints,
+											  Lhs.constraint.or_constraint.constraint_count, Rhs.constraint.or_constraint.constraint_count);
+	case WORKER_CONSTRAINT_TYPE_NOT:
+		return CompareWorkerConstraints(*Lhs.constraint.not_constraint.constraint, *Rhs.constraint.not_constraint.constraint);
+	default:
+		return false;
+	}
+}
+
+inline bool CompareListOfWorkerConstraints(const Worker_Constraint* Lhs, const Worker_Constraint* Rhs, const int32 LhsNum,
+										   const int32 RhsNum)
+{
+	if (LhsNum != RhsNum)
+	{
+		return false;
+	}
+
+	return std::is_permutation(Lhs, Lhs + LhsNum, Rhs, CompareWorkerConstraints);
 }
 
 inline bool CompareEntityQueryRequests(const EntityQueryRequest& Lhs, const EntityQueryRequest& Rhs)
@@ -76,20 +119,12 @@ inline bool CompareEntityQueryRequests(const EntityQueryRequest& Lhs, const Enti
 		return false;
 	}
 
-	if (Lhs.Query.GetWorkerQuery().constraint.constraint_type != Rhs.Query.GetWorkerQuery().constraint.constraint_type)
+	if (Lhs.TimeoutMillis != Rhs.TimeoutMillis)
 	{
 		return false;
 	}
 
-	if (Lhs.Query.GetWorkerQuery().constraint.constraint.entity_id_constraint.entity_id
-		!= Rhs.Query.GetWorkerQuery().constraint.constraint.entity_id_constraint.entity_id)
-	{
-		return false;
-	}
-
-	// TODO
-
-	return Lhs.TimeoutMillis != Rhs.TimeoutMillis;
+	return CompareWorkerConstraints(Lhs.Query.GetWorkerQuery().constraint, Rhs.Query.GetWorkerQuery().constraint);
 }
 
 inline bool CompareCommandRequests(const CommandRequest& Lhs, const CommandRequest& Rhs)
@@ -159,6 +194,6 @@ inline bool CompareEntityCommandFailuers(const EntityCommandFailure& Lhs, const 
 		return false;
 	}
 
-	return Lhs.Message == Rhs.Message;
+	return Lhs.Message.Equals(Rhs.Message);
 }
 } // namespace SpatialGDK
