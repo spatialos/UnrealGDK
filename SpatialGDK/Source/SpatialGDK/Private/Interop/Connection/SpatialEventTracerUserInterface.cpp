@@ -2,6 +2,7 @@
 
 #include "Interop/Connection/SpatialEventTracerUserInterface.h"
 
+#include "Engine/Engine.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialEventTracer.h"
@@ -165,8 +166,8 @@ USpatialNetDriver* USpatialEventTracerUserInterface::GetSpatialNetDriver(UObject
 	if (World == nullptr)
 	{
 		UE_LOG(LogSpatialEventTracerUserInterface, Error,
-			   TEXT("USpatialEventTracerUserInterface::GetSpatialNetDriver - World is null."));
-		return nullptr;
+			   TEXT("USpatialEventTracerUserInterface::GetSpatialNetDriver - World is null, will use GWorld instead"));
+		World = GWorld;
 	}
 
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
