@@ -50,7 +50,7 @@ struct FTrackableWorkerType : public T
 };
 
 template <typename ElementType, bool bInAllowDuplicateKeys /*= false*/>
-struct TWeakPointerKeyFuncs : DefaultKeyFuncs<ElementType, bInAllowDuplicateKeys>
+struct TWeakObjectPtrKeyFuncs : DefaultKeyFuncs<ElementType, bInAllowDuplicateKeys>
 {
 	using typename DefaultKeyFuncs<ElementType, bInAllowDuplicateKeys>::KeyInitType;
 	using typename DefaultKeyFuncs<ElementType, bInAllowDuplicateKeys>::ElementInitType;

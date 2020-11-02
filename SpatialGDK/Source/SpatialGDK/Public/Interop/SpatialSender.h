@@ -68,7 +68,7 @@ using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, SpatialGDK:
 									  TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<const UObject>, SpatialGDK::RPCsOnEntityCreation, false>>;
 using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<FWorkerComponentUpdate>>;
 using FChannelsToUpdatePosition =
-	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakPointerKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>>;
+	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>>;
 
 UCLASS()
 class SPATIALGDK_API USpatialSender : public UObject

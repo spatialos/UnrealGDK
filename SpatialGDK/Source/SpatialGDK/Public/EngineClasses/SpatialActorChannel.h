@@ -310,7 +310,7 @@ public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
 	bool bCreatingNewEntity;
 
-	TSet<TWeakObjectPtr<UObject>, TWeakPointerKeyFuncs<TWeakObjectPtr<UObject>, false>> PendingDynamicSubobjects;
+	TSet<TWeakObjectPtr<UObject>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<UObject>, false>> PendingDynamicSubobjects;
 
 	TMap<TWeakObjectPtr<UObject>, FSpatialObjectRepState, FDefaultSetAllocator,
 		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UObject>, FSpatialObjectRepState, false>>
