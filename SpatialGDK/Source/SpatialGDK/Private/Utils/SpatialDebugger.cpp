@@ -670,8 +670,6 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 			}
 		}
 	}
-
-
 }
 
 void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
@@ -730,7 +728,7 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 				{
 					// When the raycast hits an actor then the debug information for that actor is displayed above it, whilst the actor
 					// remains under the crosshair.
-					for(FHitResult HitResult : HitResults)
+					for (FHitResult HitResult : HitResults)
 					{
 						AActor* HitActor = HitResult.GetActor();
 
