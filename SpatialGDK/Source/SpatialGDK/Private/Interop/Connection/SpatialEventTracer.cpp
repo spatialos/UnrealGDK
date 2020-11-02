@@ -146,7 +146,7 @@ void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent,
 	auto MessageSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Message);
 	const ANSICHAR* Message = MessageSrc.Get();
 
-	auto TypeSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Type);
+	auto TypeSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Type.ToString());
 	const ANSICHAR* Type = TypeSrc.Get();
 
 	Trace_Event TraceEvent{ OptionalSpanId.GetValue(), /* unix_timestamp_millis: ignored */ 0, Message, Type, nullptr };

@@ -8,12 +8,12 @@
 
 namespace SpatialGDK
 {
-FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(FString InType)
+FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(FName InType)
 	: SpatialTraceEvent(MoveTemp(InType), "")
 {
 }
 
-FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(FString InType, FString InMessage)
+FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(FName InType, FString InMessage)
 	: SpatialTraceEvent(MoveTemp(InType), MoveTemp(InMessage))
 {
 }
