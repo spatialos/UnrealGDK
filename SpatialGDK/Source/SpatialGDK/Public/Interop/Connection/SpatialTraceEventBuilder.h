@@ -13,8 +13,8 @@ namespace SpatialGDK
 class SPATIALGDK_API FSpatialTraceEventBuilder
 {
 public:
-	FSpatialTraceEventBuilder(FString InType);
-	FSpatialTraceEventBuilder(FString InType, FString InMessage);
+	FSpatialTraceEventBuilder(FName InType);
+	FSpatialTraceEventBuilder(FName InType, FString InMessage);
 
 	FSpatialTraceEventBuilder AddObject(FString Key, const UObject* Object);
 	FSpatialTraceEventBuilder AddFunction(FString Key, const UFunction* Function);

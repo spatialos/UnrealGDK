@@ -26,6 +26,14 @@ enum class ERPCType : uint8
 	CrossServer
 };
 
+UENUM()
+enum class EEventTraceSamplingMode : uint8
+{
+	ShouldNotSample,
+	ShouldSample,
+	ShouldSampleWithoutData
+};
+
 enum ESchemaComponentType : int32
 {
 	SCHEMA_Invalid = -1,
