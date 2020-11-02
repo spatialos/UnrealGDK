@@ -16,15 +16,20 @@ public class SpatialGDKFunctionalTests : ModuleRules
         }
 #pragma warning restore 0618
 
+        PublicDependencyModuleNames.Add("FunctionalTesting");
+
         PrivateDependencyModuleNames.AddRange(
             new string[] {
                 "SpatialGDK",
-                "SpatialGDKServices",
                 "Core",
                 "CoreUObject",
                 "Engine",
-                "FunctionalTesting",
                 "HTTP"
             });
+
+        if (Target.bBuildEditor)
+        {
+            PrivateDependencyModuleNames.Add("SpatialGDKServices");
+        }
     }
 }

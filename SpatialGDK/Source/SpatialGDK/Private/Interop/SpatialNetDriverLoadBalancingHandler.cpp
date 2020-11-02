@@ -29,39 +29,44 @@ void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
 	}
 }
 
-bool FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
+EActorMigrationResult FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
 {
-	if (!Actor->HasAuthority() || !Actor->IsActorReady())
+	if (!Actor->HasAuthority())
 	{
-		return false;
+		return EActorMigrationResult::NotAuthoritative;
+	}
+
+	if (!Actor->IsActorReady())
+	{
+		return EActorMigrationResult::NotReady;
 	}
 
 	// These checks are extracted from UNetDriver::ServerReplicateActors_BuildNetworkObjects
 
 	if (Actor->IsPendingKillPending())
 	{
-		return false;
+		return EActorMigrationResult::PendingKill;
 	}
 
 	// Verify the actor is actually initialized (it might have been intentionally spawn deferred until a later frame)
 	if (!Actor->IsActorInitialized())
 	{
-		return false;
+		return EActorMigrationResult::NotInitialized;
 	}
 
 	// Don't send actors that may still be streaming in or out
 	ULevel* Level = Actor->GetLevel();
 	if (Level->HasVisibilityChangeRequestPending() || Level->bIsAssociatingLevel)
 	{
-		return false;
+		return EActorMigrationResult::Streaming;
 	}
 
 	if (Actor->NetDormancy == DORM_Initial && Actor->IsNetStartupActor())
 	{
-		return false;
+		return EActorMigrationResult::NetDormant;
 	}
 
-	return true;
+	return EActorMigrationResult::Success;
 }
 
 FSpatialNetDriverLoadBalancingContext::FNetworkObjectsArrayAdaptor FSpatialNetDriverLoadBalancingContext::GetActorsBeingReplicated()

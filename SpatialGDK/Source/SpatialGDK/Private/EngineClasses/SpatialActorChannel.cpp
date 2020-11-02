@@ -18,6 +18,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineStats.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -1118,12 +1119,37 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	return &Replicator;
 }
 
-void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies)
+void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+													const TMap<GDK_PROPERTY(Property) *, Trace_SpanId>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
 
 	Replicator.RepState->GetReceivingRepState()->RepNotifies = RepNotifies;
+
+	SpatialGDK::SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+
+	auto PreCallRepNotify = [EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
+		const Trace_SpanId* SpanId = PropertySpanIds.Find(Property);
+		if (SpanId != nullptr)
+		{
+			EventTracer->AddToStack(*SpanId);
+		}
+	};
+
+	auto PostCallRepNotify = [EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
+		const Trace_SpanId* SpanId = PropertySpanIds.Find(Property);
+		if (SpanId != nullptr)
+		{
+			EventTracer->PopFromStack();
+		}
+	};
+
+	if (EventTracer != nullptr && EventTracer->IsEnabled() && PropertySpanIds.Num() > 0)
+	{
+		Replicator.RepLayout->PreRepNotify.BindLambda(PreCallRepNotify);
+		Replicator.RepLayout->PostRepNotify.BindLambda(PostCallRepNotify);
+	}
 
 	Replicator.CallRepNotifies(false);
 }

@@ -110,6 +110,7 @@ void USpatialReceiver::LeaveCriticalSection()
 		{
 			OnEntityAddedDelegate.Broadcast(PendingAddEntity);
 		}
+
 		PendingAddComponents.RemoveAll([PendingAddEntity](const PendingAddComponentWrapper& Component) {
 			return Component.EntityId == PendingAddEntity && Component.ComponentId != SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 		});
@@ -247,7 +248,22 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		// This means we need to be inside a critical section, otherwise we may not have all the requisite
 		// information at the point of creating the Actor.
 		check(bInCriticalSection);
-		PendingAddActors.AddUnique(Op.entity_id);
+
+		// PendingAddActor should only be populated with actors we actually want to check out.
+		// So a local and ready actor should not be considered as an actor pending addition.
+		// Nitty-gritty implementation side effect is also that we do not want to stomp
+		// the local state of a not ready-actor, because it is locally authoritative and will remain
+		// that way until it is marked as ready. Putting it in PendingAddActor has the side effect
+		// that the received component data will get dropped (likely outdated data), and is
+		// something we do not wish to happen for ready actor (likely new data received through
+		// a component refresh on authority delegation).
+		{
+			AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id));
+			if (EntityActor == nullptr || !EntityActor->IsActorReady())
+			{
+				PendingAddActors.AddUnique(Op.entity_id);
+			}
+		}
 		return;
 	case SpatialConstants::WORKER_COMPONENT_ID:
 		if (NetDriver->IsServer() && !WorkerConnectionEntities.Contains(Op.entity_id))
@@ -879,8 +895,12 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 	if (EntityActor != nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
-			   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
+		if (!EntityActor->IsActorReady())
+		{
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
+				   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
+		}
+
 		return;
 	}
 
@@ -1746,10 +1766,13 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	Trace_SpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(Op.entity_id, Op.update.component_id));
-	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
-	EventTracer->TraceEvent(
-		FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, Op.entity_id, Op.update.component_id), SpanId);
+	TOptional<Trace_SpanId> CauseSpanId = EventTracer->GetSpanId(EntityComponentId(Op.entity_id, Op.update.component_id));
+	if (CauseSpanId.IsSet())
+	{
+		TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
+		EventTracer->TraceEvent(
+			FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, Op.entity_id, Op.update.component_id), SpanId);
+	}
 
 	ESchemaComponentType Category = ClassInfoManager->GetCategoryByComponentId(Op.update.component_id);
 
@@ -2171,23 +2194,28 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 		}
 		else
 		{
-			if (EventTracer->IsEnabled() && RPCType != ERPCType::CrossServer)
+			TOptional<Trace_SpanId> CauseSpanId;
+			bool bUseEventTracer = EventTracer->IsEnabled() && RPCType != ERPCType::CrossServer;
+			if (bUseEventTracer)
 			{
-				uint64 RPCId = RPCService->GetLastAckedRPCId(EntityId, RPCType) + 1;
-				if (RPCId != 0)
-				{
-					Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
-					RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
-					uint32 FieldId = Descriptor.GetRingBufferElementFieldId(RPCId);
+				Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
+				EntityComponentId Id = EntityComponentId(EntityId, ComponentId);
 
-					EntityComponentId Id = EntityComponentId(EntityId, ComponentId);
-					Trace_SpanId CauseSpanId = EventTracer->GetSpanId(Id);
-					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+				CauseSpanId = EventTracer->GetSpanId(Id);
+				if (CauseSpanId.IsSet())
+				{
+					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
 					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function), SpanId);
+					EventTracer->AddToStack(SpanId.GetValue());
 				}
 			}
 
 			TargetObject->ProcessEvent(Function, Parms);
+
+			if (bUseEventTracer && CauseSpanId.IsSet())
+			{
+				EventTracer->PopFromStack();
+			}
 
 			if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && RPCType != ERPCType::CrossServer
 				&& RPCType != ERPCType::NetMulticast)
@@ -2591,7 +2619,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 			DependentChannel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, RepLayout, RepState->ReferenceMap, ReplicatingObject);
 
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
-			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies);
+			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies, {});
 		}
 
 		RepState->UnresolvedRefs.Remove(ObjectRef);
