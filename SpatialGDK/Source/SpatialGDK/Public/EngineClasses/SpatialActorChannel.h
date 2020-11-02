@@ -310,9 +310,9 @@ public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
 	bool bCreatingNewEntity;
 
-	TSet<TWeakObjectPtr<UObject>> PendingDynamicSubobjects;
+	TSet<TWeakObjectPtr<UObject>, TWeakPointerKeyFuncs<TWeakObjectPtr<UObject>, false>> PendingDynamicSubobjects;
 
-	TMap<TWeakObjectPtr<UObject>, FSpatialObjectRepState> ObjectReferenceMap;
+	TMap<TWeakObjectPtr<UObject>, FSpatialObjectRepState, FDefaultSetAllocator, TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UObject>, FSpatialObjectRepState, false>> ObjectReferenceMap;
 
 private:
 	Worker_EntityId EntityId;
@@ -356,7 +356,7 @@ private:
 	// the state of those properties at the last time we sent them, and is used to detect
 	// when those properties change.
 	TArray<uint8>* ActorHandoverShadowData;
-	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>> HandoverShadowDataMap;
+	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>, FDefaultSetAllocator, TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>, false>> HandoverShadowDataMap;
 
 	// Band-aid until we get Actor Sets.
 	// Used on server-side workers only.
