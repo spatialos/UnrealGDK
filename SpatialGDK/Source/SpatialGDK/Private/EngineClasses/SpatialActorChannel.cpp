@@ -735,7 +735,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 				if (ObjectRef.IsValid())
 				{
-					OnSubobjectDeleted(ObjectRef, RepComp.Key());
+					OnSubobjectDeleted(ObjectRef, RepComp.Key(), RepComp.Value()->GetWeakObjectPtr());
 
 					Sender->SendRemoveComponentForClassInfo(EntityId,
 															NetDriver->ClassInfoManager->GetClassInfoByComponentId(ObjectRef.Offset));
@@ -1403,15 +1403,15 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	}
 }
 
-void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object)
+void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object, const TWeakObjectPtr<UObject>& ObjectWeakPtr)
 {
 	CreateSubObjects.Remove(Object);
-
+	
 	Receiver->MoveMappedObjectToUnmapped(ObjectRef);
-	if (FSpatialObjectRepState* SubObjectRefMap = ObjectReferenceMap.Find(Object))
+	if (FSpatialObjectRepState* SubObjectRefMap = ObjectReferenceMap.Find(ObjectWeakPtr))
 	{
 		Receiver->CleanupRepStateMap(*SubObjectRefMap);
-		ObjectReferenceMap.Remove(Object);
+		ObjectReferenceMap.Remove(ObjectWeakPtr);
 	}
 }
 
