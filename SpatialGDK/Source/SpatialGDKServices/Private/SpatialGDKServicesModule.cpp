@@ -102,19 +102,6 @@ bool FSpatialGDKServicesModule::SpatialPreRunChecks(bool bIsInChina)
 		return false;
 	}
 
-	FString SpotExistenceCheckResult;
-	FString StdErr;
-	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpotExe, TEXT("version"), &ExitCode, &SpotExistenceCheckResult, &StdErr);
-
-	if (ExitCode != 0)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Warning,
-			   TEXT("%s does not exist on this machine! Please make sure to run Setup.bat in the UnrealGDK Plugin before trying to start a "
-					"local deployment."),
-			   *SpatialGDKServicesConstants::SpotExe);
-		return false;
-	}
-
 	return true;
 }
 

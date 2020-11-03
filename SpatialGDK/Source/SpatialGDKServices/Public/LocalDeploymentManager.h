@@ -81,14 +81,9 @@ private:
 	bool bLocalDeploymentManagerEnabled = true;
 
 	bool bLocalDeploymentRunning;
-	bool bSpatialServiceRunning;
-	bool bSpatialServiceInProjectDirectory;
 
 	bool bStartingDeployment;
 	bool bStoppingDeployment;
-
-	bool bStartingSpatialService;
-	bool bStoppingSpatialService;
 
 	FString ExposedRuntimeIP;
 
