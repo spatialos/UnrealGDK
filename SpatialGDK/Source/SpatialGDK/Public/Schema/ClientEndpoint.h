@@ -16,8 +16,10 @@ struct ClientEndpoint : Component
 	static const Worker_ComponentId ComponentId = SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 
 	ClientEndpoint(const Worker_ComponentData& Data);
+	ClientEndpoint(Schema_ComponentData* Data);
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update);
 
 	RPCRingBuffer ReliableRPCBuffer;
 	RPCRingBuffer UnreliableRPCBuffer;
