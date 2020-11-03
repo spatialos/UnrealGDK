@@ -9,7 +9,9 @@ AUserReceivePropertyEventTracingTest::AUserReceivePropertyEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking user event traces can be caused by receive property update events");
 
-	FilterEventNames = { UEventTracingTestConstants::GetUserReceivePropertyEventName(), UEventTracingTestConstants::GetUserReceiveComponentPropertyEventName(), UEventTracingTestConstants::GetReceivePropertyUpdateEventName() };
+	FilterEventNames = { UEventTracingTestConstants::GetUserReceivePropertyEventName(),
+						 UEventTracingTestConstants::GetUserReceiveComponentPropertyEventName(),
+						 UEventTracingTestConstants::GetReceivePropertyUpdateEventName() };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 

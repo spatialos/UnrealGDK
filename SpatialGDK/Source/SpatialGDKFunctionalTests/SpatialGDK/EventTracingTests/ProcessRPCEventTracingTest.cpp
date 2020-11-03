@@ -9,7 +9,8 @@ AProcessRPCEventTracingTest::AProcessRPCEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking the process RPC trace events have appropriate causes");
 
-	FilterEventNames = { UEventTracingTestConstants::GetProcessRPCEventName(), UEventTracingTestConstants::GetReceiveOpEventName(), UEventTracingTestConstants::GetMergeComponentUpdateEventName() };
+	FilterEventNames = { UEventTracingTestConstants::GetProcessRPCEventName(), UEventTracingTestConstants::GetReceiveOpEventName(),
+						 UEventTracingTestConstants::GetMergeComponentUpdateEventName() };
 	WorkerDefinition = FWorkerDefinition::Server(1);
 }
 

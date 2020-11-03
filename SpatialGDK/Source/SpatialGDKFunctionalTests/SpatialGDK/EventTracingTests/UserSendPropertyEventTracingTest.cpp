@@ -9,7 +9,9 @@ AUserSendPropertyEventTracingTest::AUserSendPropertyEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking user event traces can cause send property update events");
 
-	FilterEventNames = { UEventTracingTestConstants::GetUserSendPropertyEventName(), UEventTracingTestConstants::GetUserSendComponentPropertyEventName(), UEventTracingTestConstants::GetSendPropertyUpdatesEventName() };
+	FilterEventNames = { UEventTracingTestConstants::GetUserSendPropertyEventName(),
+						 UEventTracingTestConstants::GetUserSendComponentPropertyEventName(),
+						 UEventTracingTestConstants::GetSendPropertyUpdatesEventName() };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 

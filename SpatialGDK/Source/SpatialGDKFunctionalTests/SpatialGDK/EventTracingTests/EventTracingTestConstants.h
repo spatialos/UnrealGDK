@@ -13,7 +13,6 @@ class SPATIALGDKFUNCTIONALTESTS_API UEventTracingTestConstants : public UBluepri
 	GENERATED_BODY()
 
 public:
-
 	static FName GetReceiveOpEventName() { return ReceiveOpEventName; }
 	static FName GetSendPropertyUpdatesEventName() { return SendPropertyUpdatesEventName; }
 	static FName GetReceivePropertyUpdateEventName() { return ReceivePropertyUpdateEventName; }
@@ -23,22 +22,22 @@ public:
 	static FName GetMergeComponentUpdateEventName() { return MergeComponentUpdateEventName; }
 
 	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
-		static FName GetUserProcessRPCEventName() { return UserProcessRPCEventName; }
+	static FName GetUserProcessRPCEventName() { return UserProcessRPCEventName; }
 
 	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
-		static FName GetUserReceivePropertyEventName() { return UserReceivePropertyEventName; }
+	static FName GetUserReceivePropertyEventName() { return UserReceivePropertyEventName; }
 
 	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
-		static FName GetUserReceiveComponentPropertyEventName() { return UserReceiveComponentPropertyEventName; }
+	static FName GetUserReceiveComponentPropertyEventName() { return UserReceiveComponentPropertyEventName; }
 
 	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
-		static FName GetUserSendPropertyEventName() { return UserSendPropertyEventName; }
+	static FName GetUserSendPropertyEventName() { return UserSendPropertyEventName; }
 
 	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
-		static FName GetUserSendComponentPropertyEventName() { return UserSendComponentPropertyEventName; }
+	static FName GetUserSendComponentPropertyEventName() { return UserSendComponentPropertyEventName; }
 
 	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
-		static FName GetUserSendRPCEventName() { return UserSendRPCEventName; }
+	static FName GetUserSendRPCEventName() { return UserSendRPCEventName; }
 
 private:
 	const static FName ReceiveOpEventName;

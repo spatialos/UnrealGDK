@@ -17,7 +17,6 @@ struct Trace_Item;
 } // namespace c
 } // namespace worker
 
-
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API AEventTracingTest : public ASpatialFunctionalTest
 {
@@ -29,7 +28,6 @@ public:
 	virtual void PrepareTest() override;
 
 protected:
-
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
 

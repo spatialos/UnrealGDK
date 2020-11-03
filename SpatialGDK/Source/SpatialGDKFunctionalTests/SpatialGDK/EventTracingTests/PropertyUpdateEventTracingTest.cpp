@@ -9,7 +9,9 @@ APropertyUpdateEventTracingTest::APropertyUpdateEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking the property update trace events have appropriate causes");
 
-	FilterEventNames = { UEventTracingTestConstants::GetReceivePropertyUpdateEventName(), UEventTracingTestConstants::GetReceiveOpEventName(), UEventTracingTestConstants::GetMergeComponentUpdateEventName() };
+	FilterEventNames = { UEventTracingTestConstants::GetReceivePropertyUpdateEventName(),
+						 UEventTracingTestConstants::GetReceiveOpEventName(),
+						 UEventTracingTestConstants::GetMergeComponentUpdateEventName() };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 

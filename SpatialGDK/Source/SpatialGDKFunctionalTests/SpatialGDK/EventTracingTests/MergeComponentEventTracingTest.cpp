@@ -9,7 +9,8 @@ AMergeComponentEventTracingTest::AMergeComponentEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking the merge component field trace events have appropriate causes");
 
-	FilterEventNames = { UEventTracingTestConstants::GetMergeComponentUpdateEventName(), UEventTracingTestConstants::GetReceiveOpEventName() };
+	FilterEventNames = { UEventTracingTestConstants::GetMergeComponentUpdateEventName(),
+						 UEventTracingTestConstants::GetReceiveOpEventName() };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
