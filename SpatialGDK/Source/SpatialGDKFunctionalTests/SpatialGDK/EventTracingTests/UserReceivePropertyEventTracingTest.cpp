@@ -2,17 +2,23 @@
 
 #include "UserReceivePropertyEventTracingTest.h"
 
+#include "EventTracingTestConstants.h"
+
 AUserReceivePropertyEventTracingTest::AUserReceivePropertyEventTracingTest()
 {
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking user event traces can be caused by receive property update events");
 
-	FilterEventNames = { UserReceivePropertyEventName, UserReceiveComponentPropertyEventName, ReceivePropertyUpdateEventName };
+	FilterEventNames = { UEventTracingTestConstants::GetUserReceivePropertyEventName(), UEventTracingTestConstants::GetUserReceiveComponentPropertyEventName(), UEventTracingTestConstants::GetReceivePropertyUpdateEventName() };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
 void AUserReceivePropertyEventTracingTest::FinishEventTraceTest()
 {
+	FName UserReceivePropertyEventName = UEventTracingTestConstants::GetUserReceivePropertyEventName();
+	FName UserReceiveComponentPropertyEventName = UEventTracingTestConstants::GetUserReceiveComponentPropertyEventName();
+	FName ReceivePropertyUpdateEventName = UEventTracingTestConstants::GetReceivePropertyUpdateEventName();
+
 	int EventsTested = 0;
 	int EventsFailed = 0;
 	for (const auto& Pair : TraceEvents)

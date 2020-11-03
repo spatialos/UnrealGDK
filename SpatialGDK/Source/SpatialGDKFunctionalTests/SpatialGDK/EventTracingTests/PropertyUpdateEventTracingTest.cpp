@@ -2,17 +2,23 @@
 
 #include "PropertyUpdateEventTracingTest.h"
 
+#include "EventTracingTestConstants.h"
+
 APropertyUpdateEventTracingTest::APropertyUpdateEventTracingTest()
 {
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking the property update trace events have appropriate causes");
 
-	FilterEventNames = { ReceivePropertyUpdateEventName, ReceiveOpEventName, MergeComponentUpdateEventName };
+	FilterEventNames = { UEventTracingTestConstants::GetReceivePropertyUpdateEventName(), UEventTracingTestConstants::GetReceiveOpEventName(), UEventTracingTestConstants::GetMergeComponentUpdateEventName() };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
 void APropertyUpdateEventTracingTest::FinishEventTraceTest()
 {
+	FName ReceivePropertyUpdateEventName = UEventTracingTestConstants::GetReceivePropertyUpdateEventName();
+	FName ReceiveOpEventName = UEventTracingTestConstants::GetReceiveOpEventName();
+	FName MergeComponentUpdateEventName = UEventTracingTestConstants::GetMergeComponentUpdateEventName();
+
 	int EventsTested = 0;
 	int EventsFailed = 0;
 	for (const auto& Pair : TraceEvents)

@@ -2,12 +2,14 @@
 
 #include "MergeComponentEventTracingTest.h"
 
+#include "EventTracingTestConstants.h"
+
 AMergeComponentEventTracingTest::AMergeComponentEventTracingTest()
 {
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking the merge component field trace events have appropriate causes");
 
-	FilterEventNames = { MergeComponentUpdateEventName, ReceiveOpEventName };
+	FilterEventNames = { UEventTracingTestConstants::GetMergeComponentUpdateEventName(), UEventTracingTestConstants::GetReceiveOpEventName() };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
@@ -15,6 +17,10 @@ void AMergeComponentEventTracingTest::FinishEventTraceTest()
 {
 	int EventsTested = 0;
 	int EventsFailed = 0;
+
+	FName MergeComponentUpdateEventName = UEventTracingTestConstants::GetMergeComponentUpdateEventName();
+	FName ReceiveOpEventName = UEventTracingTestConstants::GetReceiveOpEventName();
+
 	for (const auto& Pair : TraceEvents)
 	{
 		const FString& SpanIdString = Pair.Key;

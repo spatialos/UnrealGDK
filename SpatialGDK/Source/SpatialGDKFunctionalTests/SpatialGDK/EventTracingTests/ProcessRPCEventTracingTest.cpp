@@ -2,17 +2,23 @@
 
 #include "ProcessRPCEventTracingTest.h"
 
+#include "EventTracingTestConstants.h"
+
 AProcessRPCEventTracingTest::AProcessRPCEventTracingTest()
 {
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking the process RPC trace events have appropriate causes");
 
-	FilterEventNames = { ProcessRPCEventName, ReceiveOpEventName, MergeComponentUpdateEventName };
+	FilterEventNames = { UEventTracingTestConstants::GetProcessRPCEventName(), UEventTracingTestConstants::GetReceiveOpEventName(), UEventTracingTestConstants::GetMergeComponentUpdateEventName() };
 	WorkerDefinition = FWorkerDefinition::Server(1);
 }
 
 void AProcessRPCEventTracingTest::FinishEventTraceTest()
 {
+	FName ProcessRPCEventName = UEventTracingTestConstants::GetProcessRPCEventName();
+	FName ReceiveOpEventName = UEventTracingTestConstants::GetReceiveOpEventName();
+	FName MergeComponentUpdateEventName = UEventTracingTestConstants::GetMergeComponentUpdateEventName();
+
 	int EventsTested = 0;
 	int EventsFailed = 0;
 	for (const auto& Pair : TraceEvents)

@@ -2,17 +2,23 @@
 
 #include "UserSendPropertyEventTracingTest.h"
 
+#include "EventTracingTestConstants.h"
+
 AUserSendPropertyEventTracingTest::AUserSendPropertyEventTracingTest()
 {
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking user event traces can cause send property update events");
 
-	FilterEventNames = { UserSendPropertyEventName, UserSendComponentPropertyEventName, SendPropertyUpdatesEventName };
+	FilterEventNames = { UEventTracingTestConstants::GetUserSendPropertyEventName(), UEventTracingTestConstants::GetUserSendComponentPropertyEventName(), UEventTracingTestConstants::GetSendPropertyUpdatesEventName() };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
 void AUserSendPropertyEventTracingTest::FinishEventTraceTest()
 {
+	FName UserSendPropertyEventName = UEventTracingTestConstants::GetUserSendPropertyEventName();
+	FName UserSendComponentPropertyEventName = UEventTracingTestConstants::GetUserSendComponentPropertyEventName();
+	FName SendPropertyUpdatesEventName = UEventTracingTestConstants::GetSendPropertyUpdatesEventName();
+
 	TArray<FString> UserEventSpanIds;
 	TArray<FString> SendPropertyUpdatesCauseSpanIds;
 
