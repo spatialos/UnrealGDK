@@ -16,7 +16,7 @@
 
 namespace SpatialGDK
 {
-struct ComponentPresence : Component
+struct ComponentPresence : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
 
@@ -38,7 +38,7 @@ struct ComponentPresence : Component
 		CopyListFromComponentObject(ComponentObject);
 	}
 
-	Worker_ComponentData CreateComponentPresenceData() { return CreateComponentPresenceData(ComponentList); }
+	Worker_ComponentData CreateComponentData() const override { return CreateComponentPresenceData(ComponentList); }
 
 	static Worker_ComponentData CreateComponentPresenceData(const TArray<Worker_ComponentId>& ComponentList)
 	{

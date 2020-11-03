@@ -28,14 +28,20 @@ using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntit
 struct EntityComponents
 {
 	TMap<Worker_ComponentId, TUniquePtr<DataComponent>> ModifiableComponents;
+	TMap<Worker_ComponentId, FWorkerComponentData> ComponentsToDelegateToAuthoritativeWorker;
 	TArray<FWorkerComponentData> ComponentDatas;
 
-	// Hmm, will this incur overhead? Probably...
+	// PRCOMMENT: Hmm, will this incur overhead? Probably...
 	void ShiftToComponentDatas()
 	{
 		for (auto& Pair : ModifiableComponents)
 		{
 			ComponentDatas.Add(Pair.Value->CreateComponentData());
+		}
+
+		for (auto& Pair : ComponentsToDelegateToAuthoritativeWorker)
+		{
+			ComponentDatas.Add(Pair.Value);
 		}
 
 		ModifiableComponents.Empty();
@@ -51,7 +57,7 @@ public:
 	static EntityComponents CreateSkeletonEntityComponents(AActor* Actor);
 	void WriteUnrealComponents(EntityComponents& EntityComps, USpatialActorChannel* Channel,
 							   FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs, uint32& OutBytesWritten);
-	void WriteLBComponents(EntityComponents& EntityComps, USpatialActorChannel* Channel);
+	void WriteLBComponents(EntityComponents& EntityComps, AActor* Actor);
 	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs,
 														uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor);

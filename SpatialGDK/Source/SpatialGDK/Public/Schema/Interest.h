@@ -413,7 +413,7 @@ inline ComponentInterest GetComponentInterestFromSchema(Schema_Object* Object, S
 	return NewComponentInterest;
 }
 
-struct Interest : Component
+struct Interest : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::INTEREST_COMPONENT_ID;
 
@@ -456,7 +456,7 @@ struct Interest : Component
 		}
 	}
 
-	Worker_ComponentData CreateInterestData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -480,7 +480,7 @@ struct Interest : Component
 		return ComponentUpdate;
 	}
 
-	void FillComponentData(Schema_Object* InterestComponentObject)
+	void FillComponentData(Schema_Object* InterestComponentObject) const
 	{
 		for (const auto& KVPair : ComponentInterestMap)
 		{

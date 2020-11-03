@@ -38,7 +38,7 @@ struct NetOwningClientWorker : DataComponent
 		}
 	}
 
-	Worker_ComponentData CreateComponentData() { return CreateNetOwningClientWorkerData(WorkerId); }
+	Worker_ComponentData CreateComponentData() const { return CreateNetOwningClientWorkerData(WorkerId); }
 
 	static Worker_ComponentData CreateNetOwningClientWorkerData(const TSchemaOption<PhysicalWorkerName>& WorkerId)
 	{

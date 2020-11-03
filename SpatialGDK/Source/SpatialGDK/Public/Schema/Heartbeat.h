@@ -18,7 +18,7 @@ struct Heartbeat : DataComponent
 	Heartbeat() = default;
 	Heartbeat(const Worker_ComponentData& Data) {}
 
-	FORCEINLINE Worker_ComponentData CreateComponentData()
+	Worker_ComponentData CreateComponentData() const
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;

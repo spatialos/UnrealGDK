@@ -94,7 +94,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
 
-	ComponentDatas.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(ComponentDatas)).CreateComponentPresenceData());
+	ComponentDatas.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(ComponentDatas)).CreateComponentData());
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
@@ -272,13 +272,13 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	// order to set the interest of the server worker according to the strategy.
 	Components.Add(NetDriver->InterestFactory
 					   ->CreateServerWorkerInterest(EntityId, NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
-					   .CreateInterestData());
+					   .CreateComponentData());
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
 
 	// Presence component. Must be calculated after all other components have been added.
-	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
+	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &EntityId);
 
@@ -1117,7 +1117,7 @@ void USpatialSender::CreateTombstoneEntity(AActor* Actor)
 
 	Components.Add(CreateLevelComponentData(Actor));
 
-	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
+	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentData());
 
 	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
 

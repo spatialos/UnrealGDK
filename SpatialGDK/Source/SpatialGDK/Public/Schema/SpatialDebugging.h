@@ -12,7 +12,7 @@ namespace SpatialGDK
 {
 // The SpatialDebugging component exists to hold information which needs to be displayed by the
 // SpatialDebugger on clients but which would not normally be available to clients.
-struct SpatialDebugging : Component
+struct SpatialDebugging : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID;
 
@@ -47,7 +47,7 @@ struct SpatialDebugging : Component
 		IsLocked = Schema_GetBool(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_IS_LOCKED) != 0;
 	}
 
-	Worker_ComponentData CreateSpatialDebuggingData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;

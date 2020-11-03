@@ -12,7 +12,7 @@
 
 namespace SpatialGDK
 {
-struct DebugComponent : Component
+struct DebugComponent : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 
@@ -24,7 +24,7 @@ struct DebugComponent : Component
 		ReadFromSchema(ComponentObject);
 	}
 
-	Worker_ComponentData CreateDebugComponent() const
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;

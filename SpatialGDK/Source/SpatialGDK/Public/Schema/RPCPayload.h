@@ -65,7 +65,7 @@ struct RPCPayload
 	TraceKey Trace = InvalidTraceKey;
 };
 
-struct RPCsOnEntityCreation : Component
+struct RPCsOnEntityCreation : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::RPCS_ON_ENTITY_CREATION_ID;
 
@@ -86,7 +86,7 @@ struct RPCsOnEntityCreation : Component
 		}
 	}
 
-	Worker_ComponentData CreateRPCPayloadData() const
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;

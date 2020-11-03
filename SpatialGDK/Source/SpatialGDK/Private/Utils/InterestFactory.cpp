@@ -92,7 +92,7 @@ SchemaResultType InterestFactory::CreateServerAuthInterestResultType()
 
 Worker_ComponentData InterestFactory::CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
 {
-	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestData();
+	return CreateInterest(InActor, InInfo, InEntityId).CreateComponentData();
 }
 
 Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo,

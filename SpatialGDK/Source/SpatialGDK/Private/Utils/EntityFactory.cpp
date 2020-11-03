@@ -62,8 +62,6 @@ EntityComponents EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
 	EntityComponents EntityComps;
-	EntityComps.ModifiableComponents.Reserve(5); // Premature optimization in the purest form, using a magical constant
-	EntityComps.ComponentDatas.Reserve(5);
 	EntityComps.ModifiableComponents.Add(Position::ComponentId,
 										 MakeUnique<Position>(Coordinates::FromFVector(GetActorSpatialPosition(Actor))));
 	EntityComps.ModifiableComponents.Add(Metadata::ComponentId, MakeUnique<Metadata>(Class->GetName()));
@@ -92,19 +90,16 @@ EntityComponents EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
 	EntityComps.ModifiableComponents.Add(EntityAcl::ComponentId, MakeUnique<EntityAcl>(ReadAcl, ComponentWriteAcl));
 
 	// Add Actor completeness tags.
+	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
+	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID));
 	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 
 	return EntityComps;
 }
 
-void EntityFactory::WriteLBComponents(EntityComponents& EntityComps, USpatialActorChannel* Channel) {}
-
-void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatialActorChannel* Channel,
-										  FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs, uint32& OutBytesWritten)
+void EntityFactory::WriteLBComponents(EntityComponents& EntityComps, AActor* Actor)
 {
-	AActor* Actor = Channel->Actor;
-	UClass* Class = Actor->GetClass();
-	Worker_EntityId EntityId = Channel->GetEntityId();
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 	FString ClientWorkerAttribute = GetConnectionOwningWorkerId(Actor);
 
@@ -112,8 +107,6 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 
 	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { SpatialConstants::UnrealServerAttributeSet, OwningClientAttributeSet };
 	WorkerRequirementSet OwningClientOnlyRequirementSet = { OwningClientAttributeSet };
-
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 	// Add Load Balancer Attribute. If this is a single worker deployment, this will be just be the single worker.
 	WorkerAttributeSet WorkerAttributeOrSpecificWorker = SpatialConstants::UnrealServerAttributeSet;
@@ -156,12 +149,6 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 		Acl->ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
 		Acl->ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY, AuthoritativeWorkerRequirementSet);
 		Acl->ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, OwningClientOnlyRequirementSet);
-
-		// If there are pending RPCs, add this component.
-		if (OutgoingOnCreateEntityRPCs.Contains(Actor))
-		{
-			Acl->ComponentWriteAcl.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, AuthoritativeWorkerRequirementSet);
-		}
 	}
 
 	if (Actor->IsNetStartupActor())
@@ -187,8 +174,6 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 		Acl->ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
 	}
 
-	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
-
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
 		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
@@ -199,27 +184,56 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 		Acl->ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
 	});
 
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
+	// Add debugging utilities, if we are not compiling a shipping build
+#if !UE_BUILD_SHIPPING
+	Acl->ComponentWriteAcl.Add(SpatialConstants::GDK_DEBUG_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	if (NetDriver->SpatialDebugger != nullptr)
 	{
-		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
+		check(NetDriver->VirtualWorkerTranslator != nullptr);
 
-		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding write acls
-		TWeakObjectPtr<UObject> Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, SubobjectInfoPair.Key));
-		if (!Subobject.IsValid())
-		{
-			continue;
-		}
+		const PhysicalWorkerName* PhysicalWorkerName =
+			NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
+		FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
+		FColor IntentColor =
+			PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
 
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
-			if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
-			{
-				return;
-			}
+		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
 
-			Acl->ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
-		});
+		SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId,
+									   IntentColor, bIsLocked);
+		EntityComps.ComponentDatas.Add(DebuggingInfo.CreateComponentData());
+		Acl->ComponentWriteAcl.Add(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	}
+#endif
+
+	for (const auto& Pair : EntityComps.ComponentsToDelegateToAuthoritativeWorker)
+	{
+		Acl->ComponentWriteAcl.Add(Pair.Key, AuthoritativeWorkerRequirementSet);
+	}
+
+	if (Actor->IsA<APlayerController>())
+	{
+		Acl->ReadAcl = AnyServerOrOwningClientRequirementSet; // This will overwrite the previous value, whatever it was.
+		// Not sure what's the best way here. If for some reason we create skeleton entities for player controllers, not sure who should see
+		// them. Maybe we should restrict to just servers if we do not have players yet?
+	}
+
+	// Add actual load balancing components
+	EntityComps.ComponentDatas.Add(NetOwningClientWorker(GetConnectionOwningWorkerId(Actor)).CreateComponentData());
+	EntityComps.ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
+}
+
+void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatialActorChannel* Channel,
+										  FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs, uint32& OutBytesWritten)
+{
+	AActor* Actor = Channel->Actor;
+	UClass* Class = Actor->GetClass();
+	Worker_EntityId EntityId = Channel->GetEntityId();
+
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
+
+	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 	// We want to have a stably named ref if this is an Actor placed in the world.
 	// We use this to indicate if a new Actor should be created, or to link a pre-existing Actor when receiving an AddEntityOp.
@@ -248,29 +262,6 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 	}
 
 	EntityComps.ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateComponentData());
-	EntityComps.ComponentDatas.Add(NetOwningClientWorker(GetConnectionOwningWorkerId(Channel->Actor)).CreateComponentData());
-	EntityComps.ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
-
-#if !UE_BUILD_SHIPPING
-	Acl->ComponentWriteAcl.Add(SpatialConstants::GDK_DEBUG_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	if (NetDriver->SpatialDebugger != nullptr)
-	{
-		check(NetDriver->VirtualWorkerTranslator != nullptr);
-
-		const PhysicalWorkerName* PhysicalWorkerName =
-			NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
-		FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
-		FColor IntentColor =
-			PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
-
-		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
-
-		SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId,
-									   IntentColor, bIsLocked);
-		EntityComps.ComponentDatas.Add(DebuggingInfo.CreateSpatialDebuggingData());
-		Acl->ComponentWriteAcl.Add(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
-	}
-#endif
 
 	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 	{
@@ -309,15 +300,16 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 	}
 	else
 	{
-		EntityComps.ComponentDatas.Add(ClientRPCEndpointLegacy().CreateRPCEndpointData());
-		EntityComps.ComponentDatas.Add(ServerRPCEndpointLegacy().CreateRPCEndpointData());
+		EntityComps.ComponentDatas.Add(ClientRPCEndpointLegacy().CreateComponentData());
+		EntityComps.ComponentDatas.Add(ServerRPCEndpointLegacy().CreateComponentData());
 		EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY));
 
 		if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
 		{
 			if (QueuedRPCs->HasRPCPayloadData())
 			{
-				EntityComps.ComponentDatas.Add(QueuedRPCs->CreateRPCPayloadData());
+				EntityComps.ComponentsToDelegateToAuthoritativeWorker.Add(RPCsOnEntityCreation::ComponentId,
+																		  QueuedRPCs->CreateComponentData());
 			}
 			OutgoingOnCreateEntityRPCs.Remove(Actor);
 		}
@@ -351,17 +343,15 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-			ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-				if (SubobjectInfo.SchemaComponents[Type] != SpatialConstants::INVALID_COMPONENT_ID)
-				{
-					Acl->ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
-				}
-			});
-
 			TArray<FWorkerComponentData> ActorSubobjectDatas =
 				DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
 
-			EntityComps.ComponentDatas.Append(ActorSubobjectDatas);
+			// PRCOMMENT: This is a slight change from the previous flow, as we now add things to ACLs that we created in the data factory
+			// previously, we did ForAllSchemaComps, and then if not invalid, add. Should be functionally the same...
+			for (const FWorkerComponentData& ActorSubobjectData : ActorSubobjectDatas)
+			{
+				EntityComps.ComponentsToDelegateToAuthoritativeWorker.Add(ActorSubobjectData.component_id, ActorSubobjectData);
+			}
 		}
 	}
 
@@ -398,22 +388,8 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 		FWorkerComponentData SubobjectHandoverData = DataFactory.CreateHandoverComponentData(
 			SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges, OutBytesWritten);
 
-		EntityComps.ComponentDatas.Add(SubobjectHandoverData);
-
-		Acl->ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeWorkerRequirementSet);
+		EntityComps.ComponentsToDelegateToAuthoritativeWorker.Add(SubobjectHandoverData.component_id, SubobjectHandoverData);
 	}
-
-	if (Actor->IsA<APlayerController>())
-	{
-		Acl->ReadAcl = AnyServerOrOwningClientRequirementSet; // This will overwrite the previous value, whatever it was.
-		// Not sure what's the best way here. If for some reason we create skeleton entities for player controllers, not sure who should see
-		// them. Maybe we should restrict to just servers if we do not have players yet?
-	}
-
-	// Add Actor completeness tags.
-	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
-	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID));
-	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 }
 
 TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel,
@@ -422,7 +398,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 {
 	EntityComponents EntityComps = CreateSkeletonEntityComponents(Channel->Actor);
 	WriteUnrealComponents(EntityComps, Channel, OutgoingOnCreateEntityRPCs, OutBytesWritten);
-	WriteLBComponents(EntityComps, Channel);
+	WriteLBComponents(EntityComps, Channel->Actor);
 	EntityComps.ShiftToComponentDatas();
 	return EntityComps.ComponentDatas;
 }

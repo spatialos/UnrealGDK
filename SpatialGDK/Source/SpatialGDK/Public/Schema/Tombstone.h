@@ -16,7 +16,7 @@ struct Tombstone : DataComponent
 
 	Tombstone() = default;
 
-	FORCEINLINE Worker_ComponentData CreateComponentData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;

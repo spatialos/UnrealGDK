@@ -132,7 +132,7 @@ struct EntityAcl : DataComponent
 		}
 	}
 
-	Worker_ComponentData CreateComponentData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -192,7 +192,7 @@ struct Metadata : DataComponent
 		EntityType = GetStringFromSchema(ComponentObject, 1);
 	}
 
-	Worker_ComponentData CreateComponentData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -225,7 +225,7 @@ struct Position : DataComponent
 		Coords = GetCoordinateFromSchema(ComponentObject, 1);
 	}
 
-	Worker_ComponentData CreateComponentData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -268,7 +268,7 @@ struct Persistence : DataComponent
 	Persistence() = default;
 	Persistence(const Worker_ComponentData& Data) {}
 
-	FORCEINLINE Worker_ComponentData CreateComponentData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;

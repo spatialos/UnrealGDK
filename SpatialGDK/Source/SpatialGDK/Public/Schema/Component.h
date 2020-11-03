@@ -15,11 +15,7 @@ struct Component
 
 struct DataComponent : Component
 {
-	virtual struct Worker_ComponentData CreateComponentData()
-	{
-		checkNoEntry();
-		return Worker_ComponentData{};
-	}
+	virtual struct Worker_ComponentData CreateComponentData() const = 0;
 };
 
 } // namespace SpatialGDK

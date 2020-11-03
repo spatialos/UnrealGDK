@@ -40,7 +40,7 @@ struct AuthorityIntent : DataComponent
 		VirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::AUTHORITY_INTENT_VIRTUAL_WORKER_ID);
 	}
 
-	Worker_ComponentData CreateComponentData() { return CreateAuthorityIntentData(VirtualWorkerId); }
+	Worker_ComponentData CreateComponentData() const override { return CreateAuthorityIntentData(VirtualWorkerId); }
 
 	static Worker_ComponentData CreateAuthorityIntentData(VirtualWorkerId InVirtualWorkerId)
 	{

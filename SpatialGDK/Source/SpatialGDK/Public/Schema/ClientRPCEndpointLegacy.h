@@ -11,7 +11,7 @@
 
 namespace SpatialGDK
 {
-struct ClientRPCEndpointLegacy : Component
+struct ClientRPCEndpointLegacy : DataComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 
@@ -32,7 +32,7 @@ struct ClientRPCEndpointLegacy : Component
 		}
 	}
 
-	Worker_ComponentData CreateRPCEndpointData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data{};
 		Data.component_id = ComponentId;
