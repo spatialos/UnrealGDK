@@ -8,7 +8,6 @@
 #include "SpatialView/EntityComponentId.h"
 
 #include <WorkerSDK/improbable/c_io.h>
-#include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_trace.h>
 
 // Documentation for event tracing in the GDK can be found here: https://brevi.link/gdk-event-tracing-documentation
