@@ -132,7 +132,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateRetryRPC()
 
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendPropertyUpdates(
 	const UObject* Object, const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-	const EventTraceUniqueId& UniqueTraceId) // TODO: Property unique trace
+	const EventTraceUniqueId& UniqueTraceId)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_property_updates")
 		.AddObject(TEXT("Object"), Object)

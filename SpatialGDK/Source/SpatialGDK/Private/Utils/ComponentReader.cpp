@@ -184,7 +184,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient);
 
 	TArray<GDK_PROPERTY(Property)*> RepNotifies;
-	TMap<GDK_PROPERTY(Property)*, Trace_SpanId> PropertySpanAndUniqueIds;
+	TMap<GDK_PROPERTY(Property)*, Trace_SpanId> PropertySpanIds;
 
 	{
 		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
@@ -346,7 +346,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 					if (SpanId.IsSet())
 					{
-						PropertySpanAndUniqueIds.Add(Parent.Property, SpanId.GetValue()); // TODO:
+						PropertySpanIds.Add(Parent.Property, SpanId.GetValue()); // TODO:
 					}
 
 					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
@@ -371,7 +371,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 	Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator->RepLayout, RootObjectReferencesMap, &Object);
 
-	Channel.PostReceiveSpatialUpdate(&Object, RepNotifies, PropertySpanAndUniqueIds);
+	Channel.PostReceiveSpatialUpdate(&Object, RepNotifies, PropertySpanIds);
 }
 
 void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel,

@@ -8,10 +8,9 @@ using namespace SpatialGDK;
 
 namespace
 {
-// TODO: Nicer way to represent this?
-void ToHex(uint8 N, char OutHex[3])
+void ToHex(uint8 N, TCHAR OutHex[3])
 {
-	const char* Chars = "0123456789ABCDEF";
+	const TCHAR* Chars = TEXT("0123456789ABCDEF");
 	OutHex[0] = Chars[(N >> 4) & 0xF];
 	OutHex[1] = Chars[N & 0xF];
 #if !PLATFORM_LITTLE_ENDIAN
@@ -24,7 +23,7 @@ void ToHex(uint8 N, char OutHex[3])
 FString EventTraceUniqueId::GetString() const
 {
 	FString Str;
-	char Tmp[3];
+	TCHAR Tmp[3];
 	for (int i = 0; i < sizeof(internal_bytes); i++)
 	{
 		ToHex(internal_bytes[i], Tmp);
@@ -55,7 +54,7 @@ EventTraceUniqueId EventTraceUniqueId::ReadFromSchemaObject(Schema_Object* Obj, 
 
 EventTraceUniqueId EventTraceUniqueId::GenerateUnique()
 {
-	// Worker api will provide us a function to generate an id which will replace this
+	FGuid guid = FGuid::NewGuid();
 	FRandomStream RandomStream(FPlatformTime::Cycles());
 	EventTraceUniqueId id;
 	for (int i = 0; i < sizeof(id.internal_bytes); i++)
