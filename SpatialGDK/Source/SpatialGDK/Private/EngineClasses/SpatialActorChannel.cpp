@@ -1119,9 +1119,8 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	return &Replicator;
 }
 
-void USpatialActorChannel::PostReceiveSpatialUpdate(
-	UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-	const TMap<GDK_PROPERTY(Property) *, Trace_SpanId>& PropertySpanIds)
+void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+													const TMap<GDK_PROPERTY(Property) *, Trace_SpanId>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
@@ -1404,10 +1403,11 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	}
 }
 
-void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object, const TWeakObjectPtr<UObject>& ObjectWeakPtr)
+void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object,
+											  const TWeakObjectPtr<UObject>& ObjectWeakPtr)
 {
 	CreateSubObjects.Remove(Object);
-	
+
 	Receiver->MoveMappedObjectToUnmapped(ObjectRef);
 	if (FSpatialObjectRepState* SubObjectRefMap = ObjectReferenceMap.Find(ObjectWeakPtr))
 	{
