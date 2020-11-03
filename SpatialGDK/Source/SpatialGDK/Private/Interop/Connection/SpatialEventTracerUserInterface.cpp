@@ -2,6 +2,7 @@
 
 #include "Interop/Connection/SpatialEventTracerUserInterface.h"
 
+#include "Engine/Engine.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialEventTracer.h"

@@ -2109,7 +2109,7 @@ TWeakObjectPtr<USpatialNetConnection> USpatialNetDriver::FindClientConnectionFro
 
 void USpatialNetDriver::ProcessPendingDormancy()
 {
-	TSet<TWeakObjectPtr<USpatialActorChannel>> RemainingChannels;
+	decltype(PendingDormantChannels) RemainingChannels;
 	for (auto& PendingDormantChannel : PendingDormantChannels)
 	{
 		if (PendingDormantChannel.IsValid())

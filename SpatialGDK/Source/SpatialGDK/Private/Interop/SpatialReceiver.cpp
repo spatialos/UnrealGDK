@@ -499,7 +499,8 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 		{
 			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 			{
-				Channel->OnSubobjectDeleted(ObjectRef, Object);
+				TWeakObjectPtr<UObject> WeakPtr(Object);
+				Channel->OnSubobjectDeleted(ObjectRef, Object, WeakPtr);
 
 				Actor->OnSubobjectDestroyFromReplication(Object);
 

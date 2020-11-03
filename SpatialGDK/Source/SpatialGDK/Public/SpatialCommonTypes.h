@@ -49,6 +49,17 @@ struct FTrackableWorkerType : public T
 #endif
 };
 
+template <typename ElementType, bool bInAllowDuplicateKeys /*= false*/>
+struct TWeakObjectPtrKeyFuncs : DefaultKeyFuncs<ElementType, bInAllowDuplicateKeys>
+{
+	using typename DefaultKeyFuncs<ElementType, bInAllowDuplicateKeys>::KeyInitType;
+	using typename DefaultKeyFuncs<ElementType, bInAllowDuplicateKeys>::ElementInitType;
+	/**
+	 * @return True if the keys match.
+	 */
+	static FORCEINLINE bool Matches(KeyInitType A, KeyInitType B) { return A.HasSameIndexAndSerialNumber(B); }
+};
+
 // TODO: These can be removed once event tracing is enabled UNR-3981
 using FWorkerComponentUpdate = FTrackableWorkerType<Worker_ComponentUpdate>;
 using FWorkerComponentData = FTrackableWorkerType<Worker_ComponentData>;

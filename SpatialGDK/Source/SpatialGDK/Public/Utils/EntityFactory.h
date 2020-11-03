@@ -21,7 +21,8 @@ class InterestFactory;
 class SpatialRPCService;
 
 struct RPCsOnEntityCreation;
-using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation>;
+using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation, FDefaultSetAllocator,
+									  TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<const UObject>, SpatialGDK::RPCsOnEntityCreation, false>>;
 
 class SPATIALGDK_API EntityFactory
 {
