@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Interop/Connection/SpatialSpanIdStack.h"
 #include "Interop/Connection/SpatialTraceEvent.h"
 #include "Interop/Connection/SpatialTraceUniqueId.h"
 #include "Interop/Connection/UserSpanId.h"
@@ -54,11 +53,6 @@ public:
 
 	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const Trace_SpanId& SpanId);
 	TOptional<Trace_SpanId> PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
-
-	EventTraceUniqueId ActiveRPCUniqueId; // An ID which is valid to check when an RPC/RepNotify is being executed.
-
-	void SetActiveUniqueId(const EventTraceUniqueId& Id) { ActiveRPCUniqueId = Id; }
-	EventTraceUniqueId GetActiveUniqueId() const { return ActiveRPCUniqueId; }
 
 	EventTraceUniqueId GenerateUniqueId();
 

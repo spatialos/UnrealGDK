@@ -2210,8 +2210,6 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 						FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function, PendingRPCParams.Payload.UniqueEventTraceId),
 						SpanId);
 				}
-				EventTracer->SetActiveUniqueId(
-					PendingRPCParams.Payload.UniqueEventTraceId); // TODO: Why is this not relevant when !CrossServer?
 			}
 
 			TargetObject->ProcessEvent(Function, Parms);
@@ -2219,7 +2217,6 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 			if (bUseEventTracer && CauseSpanId.IsSet())
 			{
 				EventTracer->PopFromStack();
-				EventTracer->SetActiveUniqueId(EventTraceUniqueId{});
 			}
 
 			if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr && RPCType != ERPCType::CrossServer

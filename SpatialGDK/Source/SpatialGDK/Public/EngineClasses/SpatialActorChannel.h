@@ -258,7 +258,7 @@ public:
 	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(
 		UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-		const TMap<GDK_PROPERTY(Property) *, TPair<Trace_SpanId, SpatialGDK::EventTraceUniqueId>>& PropertySpanIds);
+		const TMap<GDK_PROPERTY(Property) *, Trace_SpanId>& PropertySpanIds);
 
 	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 

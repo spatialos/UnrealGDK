@@ -52,3 +52,15 @@ EventTraceUniqueId EventTraceUniqueId::ReadFromSchemaObject(Schema_Object* Obj, 
 	}
 	return Id;
 }
+
+EventTraceUniqueId EventTraceUniqueId::GenerateUnique()
+{
+	// Worker api will provide us a function to generate an id which will replace this
+	FRandomStream RandomStream(FPlatformTime::Cycles());
+	EventTraceUniqueId id;
+	for (int i = 0; i < sizeof(id.internal_bytes); i++)
+	{
+		id.internal_bytes[i] = static_cast<uint8>(RandomStream.GetFraction() * 255.0f);
+	}
+	return id;
+}
