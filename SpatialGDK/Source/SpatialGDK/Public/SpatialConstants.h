@@ -124,10 +124,8 @@ const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
 // System query tags for entity completeness
 const Worker_ComponentId FIRST_EC_COMPONENT_ID = 2001;
-const Worker_ComponentId SERVER_AUTH_TAG_COMPONENT_ID = 2001;
-const Worker_ComponentId SERVER_NON_AUTH_TAG_COMPONENT_ID = 2002;
-const Worker_ComponentId CLIENT_AUTH_TAG_COMPONENT_ID = 2003;
-const Worker_ComponentId CLIENT_NON_AUTH_TAG_COMPONENT_ID = 2004;
+const Worker_ComponentId ACTOR_AUTH_TAG_COMPONENT_ID = 2001;
+const Worker_ComponentId ACTOR_NON_AUTH_TAG_COMPONENT_ID = 2002;
 const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
 const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
 const Worker_ComponentId LAST_EC_COMPONENT_ID = 2008;
@@ -330,14 +328,20 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 	DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID,
 
 	// Debugging information
-	DEBUG_METRICS_COMPONENT_ID, SPATIAL_DEBUGGING_COMPONENT_ID
+	DEBUG_METRICS_COMPONENT_ID, SPATIAL_DEBUGGING_COMPONENT_ID,
+
+	// Non auth actor tag
+	ACTOR_NON_AUTH_TAG_COMPONENT_ID
 };
 
 // A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
 	TArray<Worker_ComponentId>{ // RPCs from the server
-								SERVER_ENDPOINT_COMPONENT_ID, SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+								SERVER_ENDPOINT_COMPONENT_ID, SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
+
+								// Actor auth tag
+								ACTOR_AUTH_TAG_COMPONENT_ID
 	};
 
 // A list of components servers require on top of any generated data and handover components in order to handle non-authoritative actors
@@ -359,8 +363,8 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 								// Authority intent component to handle scattered hierarchies
 								AUTHORITY_INTENT_COMPONENT_ID,
 
-								// Well known entity tag
-								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID
+								// Tags: Well known entities, and non-auth actors
+								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_NON_AUTH_TAG_COMPONENT_ID
 	};
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
@@ -370,7 +374,10 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 								CLIENT_ENDPOINT_COMPONENT_ID, CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
 
 								// Heartbeat
-								HEARTBEAT_COMPONENT_ID
+								HEARTBEAT_COMPONENT_ID,
+
+								// Auth actor tag
+								ACTOR_AUTH_TAG_COMPONENT_ID
 	};
 
 inline bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId)

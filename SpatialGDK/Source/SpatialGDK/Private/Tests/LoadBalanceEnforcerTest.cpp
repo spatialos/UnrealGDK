@@ -74,12 +74,12 @@ TUniquePtr<SpatialVirtualWorkerTranslator> CreateVirtualWorkerTranslator()
 	return VirtualWorkerTranslator;
 }
 
-SpatialGDK::ComponentData MakeComponentDataFromData(Worker_ComponentData Data)
+SpatialGDK::ComponentData MakeComponentDataFromData(const Worker_ComponentData Data)
 {
 	return SpatialGDK::ComponentData(SpatialGDK::OwningComponentDataPtr(Data.schema_type), Data.component_id);
 }
 
-SpatialGDK::ComponentUpdate MakeComponentUpdateFromUpdate(Worker_ComponentUpdate Update)
+SpatialGDK::ComponentUpdate MakeComponentUpdateFromUpdate(const Worker_ComponentUpdate Update)
 {
 	return SpatialGDK::ComponentUpdate(SpatialGDK::OwningComponentUpdatePtr(Update.schema_type), Update.component_id);
 }

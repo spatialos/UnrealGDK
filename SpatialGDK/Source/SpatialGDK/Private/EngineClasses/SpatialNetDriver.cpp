@@ -409,12 +409,19 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	CreateAndInitializeLoadBalancingClasses();
 
-	if (SpatialSettings->UseRPCRingBuffer())
-	{
-		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
-			ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView,
-			USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer());
-	}
+	const FFilterPredicate ActorFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+		return !Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
+	};
+	const TArray<FDispatcherRefreshCallback> RefreshCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+		SpatialConstants::TOMBSTONE_COMPONENT_ID) };
+
+	const SpatialGDK::FSubView& ActorAuthSubview =
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, ActorFilter, RefreshCallbacks);
+	const SpatialGDK::FSubView& ActorNonAuthSubview =
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, RefreshCallbacks);
+
+	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
+		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
@@ -1801,6 +1808,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 			Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
+		}
+
+		if (RPCService.IsValid())
+		{
+			RPCService->Advance(GetElapsedTime());
 		}
 
 		if (WellKnownEntitySystem.IsValid())
