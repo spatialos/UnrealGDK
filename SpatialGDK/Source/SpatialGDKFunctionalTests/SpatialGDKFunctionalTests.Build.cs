@@ -19,16 +19,12 @@ public class SpatialGDKFunctionalTests : ModuleRules
         PrivateDependencyModuleNames.AddRange(
             new string[] {
                 "SpatialGDK",
+                "SpatialGDKServices",
                 "Core",
                 "CoreUObject",
                 "Engine",
                 "FunctionalTesting",
                 "HTTP"
             });
-
-        if (Target.bBuildEditor)
-        {
-            PrivateDependencyModuleNames.Add("SpatialGDKServices");
-        }
     }
 }
