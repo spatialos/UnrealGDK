@@ -92,6 +92,13 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, StandardRuntimeVersion))
+	{
+		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+		GDKServices.GetLocalDeploymentManager()->SetRedeployRequired();
+
+		OnDefaultTemplateNameRequireUpdate.Broadcast();
+	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, PrimaryDeploymentRegionCode))
 	{
 		OnDefaultTemplateNameRequireUpdate.Broadcast();
