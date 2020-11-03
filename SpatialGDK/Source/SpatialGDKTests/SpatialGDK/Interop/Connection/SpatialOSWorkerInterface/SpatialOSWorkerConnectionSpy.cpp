@@ -59,7 +59,8 @@ void SpatialOSWorkerConnectionSpy::SendComponentUpdate(Worker_EntityId EntityId,
 }
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
-																  uint32_t CommandId, const TOptional<Trace_SpanId>& SpanId)
+																  uint32_t CommandId, bool EnableRetry,
+																  const TOptional<Trace_SpanId>& SpanId)
 {
 	return NextRequestId++;
 }

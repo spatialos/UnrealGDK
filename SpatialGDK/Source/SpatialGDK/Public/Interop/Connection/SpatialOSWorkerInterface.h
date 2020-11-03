@@ -25,7 +25,7 @@ public:
 	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 									 const TOptional<Trace_SpanId>& SpanId = {}) = 0;
 	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
-												const TOptional<Trace_SpanId>& SpanId) = 0;
+												bool EnableRetry, const TOptional<Trace_SpanId>& SpanId) = 0;
 	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
 									 const TOptional<Trace_SpanId>& SpanId = {}) = 0;
 	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const TOptional<Trace_SpanId>& SpanId = {}) = 0;
