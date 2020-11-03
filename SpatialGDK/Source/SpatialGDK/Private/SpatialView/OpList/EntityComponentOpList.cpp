@@ -171,24 +171,24 @@ const char* EntityComponentOpListBuilder::StoreString(StringStorage Message) con
 
 const Worker_Entity* EntityComponentOpListBuilder::StoreQueriedEntities(TArray<OpListEntity> Entities) const
 {
-	OpListData->QueriedEntities.Push(TArray<Worker_Entity>());
+	TArray<Worker_Entity> WorkerEntities = OpListData->QueriedEntities.Add_GetRef(TArray<Worker_Entity>());
 	for (auto& Entity : Entities)
 	{
 		Worker_Entity CurrentEntity;
 		CurrentEntity.entity_id = Entity.EntityId;
-		OpListData->QueriedComponents.Push(TArray<Worker_ComponentData>());
+		TArray<Worker_ComponentData> Components = OpListData->QueriedComponents.Add_GetRef(TArray<Worker_ComponentData>());
 		for (auto& Component : Entity.Components)
 		{
+			OpListData->QueriedComponents.Last().Push(Component.GetWorkerComponentData());
 			OpListData->DataStorage.Add(MoveTemp(Component));
-			OpListData->QueriedComponents.Last().Push(OpListData->DataStorage.Last().GetWorkerComponentData());
 		}
 
-		CurrentEntity.components = OpListData->QueriedComponents.Last().GetData();
-		CurrentEntity.component_count = OpListData->QueriedComponents.Last().Num();
-		OpListData->QueriedEntities.Last().Push(MoveTemp(CurrentEntity));
+		CurrentEntity.components = Components.GetData();
+		CurrentEntity.component_count = Components.Num();
+		WorkerEntities.Push(MoveTemp(CurrentEntity));
 	}
 
-	return OpListData->QueriedEntities.Last().GetData();
+	return WorkerEntities.GetData();
 }
 
 OpList EntityComponentOpListBuilder::CreateOpList() &&

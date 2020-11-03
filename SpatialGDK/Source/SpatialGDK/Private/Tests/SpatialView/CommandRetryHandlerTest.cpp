@@ -11,7 +11,7 @@ using namespace SpatialGDK;
 
 #define COMMANDRETRYHANDLER_TEST(TestName) GDK_TEST(Core, CommandRetryHandler, TestName)
 
-namespace
+namespace SpatialGDK
 {
 const Worker_EntityId TestEntityId = 1;
 const Worker_RequestId TestRequestId = 2;
@@ -21,8 +21,9 @@ const double TestComponentValue = 20;
 const Worker_CommandIndex TestCommandIndex = 4;
 const uint32 TestNumOfEntities = 10;
 const float TimeAdvanced = 5.f;
-OpList EmptyOpList = { nullptr, 0, nullptr };
-} // namespace
+OpList EmptyOpList = {};
+} // namespace SpatialGDK
+
 EntityQuery CreateTestEntityQuery()
 {
 	Worker_EntityQuery WorkerEntityQuery;
