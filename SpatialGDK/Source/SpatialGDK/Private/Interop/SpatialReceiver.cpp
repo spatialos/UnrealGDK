@@ -2207,7 +2207,7 @@ FRPCErrorInfo USpatialReceiver::ApplyRPCInternal(UObject* TargetObject, UFunctio
 				{
 					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
 					EventTracer->TraceEvent(
-						FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function, PendingRPCParams.Payload.UniqueEventTraceId),
+						FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function, PendingRPCParams.Payload.LinearTraceId),
 						SpanId);
 				}
 			}

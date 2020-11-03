@@ -24,17 +24,17 @@ FString EventTraceUniqueId::GetString() const
 {
 	FString Str;
 	TCHAR Tmp[3];
-	for (int i = 0; i < sizeof(internal_bytes); i++)
+	for (int i = 0; i < sizeof(InternalBytes); i++)
 	{
-		ToHex(internal_bytes[i], Tmp);
+		ToHex(InternalBytes[i], Tmp);
 		Str += Tmp;
 	}
 	return Str;
 }
 
-void EventTraceUniqueId::WriteToSchemaObject(EventTraceUniqueId Id, Schema_Object* Obj, Schema_FieldId FieldId)
+void EventTraceUniqueId::WriteToSchemaObject(const EventTraceUniqueId& Id, Schema_Object* Obj, Schema_FieldId FieldId)
 {
-	SpatialGDK::AddBytesToSchema(Obj, FieldId, Id.internal_bytes, sizeof(internal_bytes));
+	SpatialGDK::AddBytesToSchema(Obj, FieldId, Id.InternalBytes, sizeof(InternalBytes));
 }
 
 EventTraceUniqueId EventTraceUniqueId::ReadFromSchemaObject(Schema_Object* Obj, Schema_FieldId FieldId)
@@ -42,11 +42,11 @@ EventTraceUniqueId EventTraceUniqueId::ReadFromSchemaObject(Schema_Object* Obj, 
 	EventTraceUniqueId Id;
 	const uint8* Bytes = Schema_GetBytes(Obj, FieldId);
 	uint32_t BytesLen = Schema_GetBytesLength(Obj, FieldId);
-	if (BytesLen == sizeof(internal_bytes))
+	if (BytesLen == sizeof(InternalBytes))
 	{
-		for (int i = 0; i < sizeof(internal_bytes); i++)
+		for (int i = 0; i < sizeof(InternalBytes); i++)
 		{
-			Id.internal_bytes[i] = Bytes[i];
+			Id.InternalBytes[i] = Bytes[i];
 		}
 	}
 	return Id;
@@ -54,12 +54,11 @@ EventTraceUniqueId EventTraceUniqueId::ReadFromSchemaObject(Schema_Object* Obj, 
 
 EventTraceUniqueId EventTraceUniqueId::GenerateUnique()
 {
-	FGuid guid = FGuid::NewGuid();
 	FRandomStream RandomStream(FPlatformTime::Cycles());
-	EventTraceUniqueId id;
-	for (int i = 0; i < sizeof(id.internal_bytes); i++)
+	EventTraceUniqueId Id;
+	for (int i = 0; i < sizeof(Id.InternalBytes); i++)
 	{
-		id.internal_bytes[i] = static_cast<uint8>(RandomStream.GetFraction() * 255.0f);
+		Id.InternalBytes[i] = static_cast<uint8>(RandomStream.GetFraction() * 255.0f);
 	}
-	return id;
+	return Id;
 }

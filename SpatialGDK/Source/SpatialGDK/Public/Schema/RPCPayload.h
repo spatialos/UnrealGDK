@@ -32,7 +32,7 @@ struct RPCPayload
 		PayloadData = SpatialGDK::GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
 		if (Schema_GetObjectCount(RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID) > 0)
 		{
-			UniqueEventTraceId = EventTraceUniqueId::ReadFromSchemaObject(RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID);
+			LinearTraceId = EventTraceUniqueId::ReadFromSchemaObject(RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID);
 		}
 #if TRACE_LIB_ACTIVE
 		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
@@ -47,9 +47,9 @@ struct RPCPayload
 	void WriteToSchemaObject(Schema_Object* RPCObject) const
 	{
 		WriteToSchemaObject(RPCObject, Offset, Index, PayloadData.GetData(), PayloadData.Num());
-		if (UniqueEventTraceId.IsValid())
+		if (LinearTraceId.IsValid())
 		{
-			EventTraceUniqueId::WriteToSchemaObject(UniqueEventTraceId, RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID);
+			EventTraceUniqueId::WriteToSchemaObject(LinearTraceId, RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID);
 		}
 #if TRACE_LIB_ACTIVE
 		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
@@ -70,7 +70,7 @@ struct RPCPayload
 	uint32 Index;
 	TArray<uint8> PayloadData;
 	TraceKey Trace = InvalidTraceKey;
-	EventTraceUniqueId UniqueEventTraceId;
+	EventTraceUniqueId LinearTraceId;
 };
 
 struct RPCsOnEntityCreation : Component
