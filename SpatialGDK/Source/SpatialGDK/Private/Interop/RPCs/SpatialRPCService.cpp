@@ -64,6 +64,10 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 		PendingPayload.SpanId = SpanId;
 	}
 
+#if TRACE_LIB_ACTIVE
+	TraceKey Trace = Payload.Trace;
+#endif
+
 	if (RPCRingBufferUtils::ShouldQueueOverflowed(Type) && ClientServerRPCs.ContainsOverflowedRPC(EntityType))
 	{
 		if (EventTracer != nullptr)
@@ -81,7 +85,6 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 	else
 	{
 		Result = PushRPCInternal(EntityId, Type, PendingPayload, bCreatedEntity);
-
 		if (Result == EPushRPCResult::QueueOverflowed)
 		{
 			ClientServerRPCs.AddOverflowedRPC(EntityType, MoveTemp(PendingPayload));
@@ -89,7 +92,7 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 	}
 
 #if TRACE_LIB_ACTIVE
-	ProcessResultToLatencyTrace(Result, Payload.Trace);
+	ProcessResultToLatencyTrace(Result, Trace);
 #endif
 
 	return Result;
