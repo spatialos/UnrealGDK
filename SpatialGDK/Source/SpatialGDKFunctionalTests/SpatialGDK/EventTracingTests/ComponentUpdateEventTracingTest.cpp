@@ -2,24 +2,17 @@
 
 #include "ComponentUpdateEventTracingTest.h"
 
-#include "EventTracingTestConstants.h"
-
 AComponentUpdateEventTracingTest::AComponentUpdateEventTracingTest()
 {
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking the component update trace events have appropriate causes");
 
-	FilterEventNames = { UEventTracingTestConstants::GetComponentUpdateEventName(), UEventTracingTestConstants::GetReceiveOpEventName(),
-						 UEventTracingTestConstants::GetMergeComponentUpdateEventName() };
+	FilterEventNames = { ComponentUpdateEventName, ReceiveOpEventName, MergeComponentUpdateEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
 void AComponentUpdateEventTracingTest::FinishEventTraceTest()
 {
-	FName ComponentUpdateEventName = UEventTracingTestConstants::GetComponentUpdateEventName();
-	FName ReceiveOpEventName = UEventTracingTestConstants::GetReceiveOpEventName();
-	FName MergeComponentUpdateEventName = UEventTracingTestConstants::GetMergeComponentUpdateEventName();
-
 	int EventsTested = 0;
 	int EventsFailed = 0;
 	for (const auto& Pair : TraceEvents)

@@ -2,14 +2,12 @@
 
 #include "UserSendRPCEventTracingTest.h"
 
-#include "EventTracingTestConstants.h"
-
 AUserSendRPCEventTracingTest::AUserSendRPCEventTracingTest()
 {
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking user event traces can cause rpcs send events");
 
-	FilterEventNames = { UEventTracingTestConstants::GetUserSendRPCEventName(), UEventTracingTestConstants::GetSendRPCEventName() };
+	FilterEventNames = { SendRPCEventName, UserSendRPCEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
@@ -17,9 +15,6 @@ void AUserSendRPCEventTracingTest::FinishEventTraceTest()
 {
 	TArray<FString> UserEventSpanIds;
 	TArray<FString> SendRPCCauseSpanIds;
-
-	FName UserSendRPCEventName = UEventTracingTestConstants::GetUserSendRPCEventName();
-	FName SendRPCEventName = UEventTracingTestConstants::GetSendRPCEventName();
 
 	for (const auto& Pair : TraceEvents)
 	{

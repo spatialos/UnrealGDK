@@ -2,22 +2,17 @@
 
 #include "UserProcessRPCEventTracingTest.h"
 
-#include "EventTracingTestConstants.h"
-
 AUserProcessRPCEventTracingTest::AUserProcessRPCEventTracingTest()
 {
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking user event traces can be caused by rpcs process events");
 
-	FilterEventNames = { UEventTracingTestConstants::GetUserProcessRPCEventName(), UEventTracingTestConstants::GetProcessRPCEventName() };
+	FilterEventNames = { UserProcessRPCEventName, ProcessRPCEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
 void AUserProcessRPCEventTracingTest::FinishEventTraceTest()
 {
-	FName UserProcessRPCEventName = UEventTracingTestConstants::GetUserProcessRPCEventName();
-	FName ProcessRPCEventName = UEventTracingTestConstants::GetProcessRPCEventName();
-
 	int EventsTested = 0;
 	int EventsFailed = 0;
 	for (const auto& Pair : TraceEvents)
