@@ -81,7 +81,7 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 	}
 	else
 	{
-		Result = PushRPCInternal(EntityId, Type, MoveTemp(PendingPayload), bCreatedEntity);
+		Result = PushRPCInternal(EntityId, Type, PendingPayload, bCreatedEntity);
 
 		if (Result == EPushRPCResult::QueueOverflowed)
 		{
@@ -288,7 +288,7 @@ void SpatialRPCService::ClearPendingRPCs(Worker_EntityId EntityId)
 	IncomingRPCs.DropForEntity(EntityId);
 }
 
-EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId, const ERPCType Type, PendingRPCPayload&& Payload,
+EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId, const ERPCType Type, PendingRPCPayload Payload,
 												  const bool bCreatedEntity)
 {
 	const Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
