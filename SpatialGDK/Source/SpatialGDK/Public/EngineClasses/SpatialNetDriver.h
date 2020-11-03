@@ -2,15 +2,16 @@
 
 #pragma once
 
+#include "Interop/CrossServerRPCHandler.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
+#include "Interop/CrossServerRPCSender.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialOutputDevice.h"
 #include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSnapshotManager.h"
-#include "SpatialView/OpList/OpList.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialBasicAwaiter.h"
 
@@ -21,6 +22,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "Interop/WellKnownEntitySystem.h"
+#include "Interop/RPCExecutor.h"
+#include "Interop/RPCExecutorInterface.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
 
@@ -228,6 +231,8 @@ private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
+	TUniquePtr<SpatialGDK::CrossServerRPCSender> CSRPCSender;
+	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CSRPCHandler;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
@@ -236,6 +241,7 @@ private:
 	TMap<FString, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 
 	FTimerManager TimerManager;
+	SpatialGDK::RPCExecutorInterface* RPCExecutor;
 
 	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;
