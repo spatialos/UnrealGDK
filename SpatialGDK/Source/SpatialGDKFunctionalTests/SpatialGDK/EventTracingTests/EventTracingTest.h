@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
+#include "SpatialFunctionalTest.h"
 
 #include "EventTracingTest.generated.h"
 
@@ -28,7 +28,6 @@ public:
 	virtual void PrepareTest() override;
 
 protected:
-
 	const static FName ReceiveOpEventName;
 	const static FName SendPropertyUpdatesEventName;
 	const static FName ReceivePropertyUpdateEventName;
