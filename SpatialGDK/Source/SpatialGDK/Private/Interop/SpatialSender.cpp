@@ -715,7 +715,7 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 		EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateUnique();
 		SpanId = EventTracer->CreateSpan();
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(TargetObject, Function, LinearTraceId), SpanId);
-		Payload.LinearTraceId = LinearTraceId; // TODO: Check this propogates
+		Payload.LinearTraceId = LinearTraceId;
 	}
 
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
