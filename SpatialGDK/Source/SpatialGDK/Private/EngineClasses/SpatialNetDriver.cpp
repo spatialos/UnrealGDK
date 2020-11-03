@@ -106,7 +106,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
 
-	// TODO where this should be registered.
+	// TODO Decide on where this should be registered
 	GetClientIDDelegate.BindLambda([this]() {
 		if (IsServer())
 		{
