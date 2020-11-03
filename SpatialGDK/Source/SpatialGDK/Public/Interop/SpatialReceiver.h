@@ -118,6 +118,8 @@ public:
 
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
 
+	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
+
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -183,8 +185,6 @@ private:
 
 	void StartAsyncLoadingClass(const FString& ClassPath, Worker_EntityId EntityId);
 	void OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result);
-
-	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
 
 	void QueueAddComponentOpForAsyncLoad(const Worker_AddComponentOp& Op);
 	void QueueRemoveComponentOpForAsyncLoad(const Worker_RemoveComponentOp& Op);

@@ -4,12 +4,12 @@
 
 #include "CoreMinimal.h"
 
+#include "Interop/CrossServerRPCHandler.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialRPCService.h"
 #include "Schema/RPCPayload.h"
-#include "TimerManager.h"
 #include "Utils/RPCContainer.h"
 #include "Utils/RepDataUtils.h"
 
@@ -33,33 +33,6 @@ namespace SpatialGDK
 {
 class SpatialEventTracer;
 }
-
-struct FReliableRPCForRetry
-{
-	FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex,
-						 const TArray<uint8>& InPayload, int InRetryIndex, const TOptional<Trace_SpanId>& InSpanId);
-
-	TWeakObjectPtr<UObject> TargetObject;
-	UFunction* Function;
-	Worker_ComponentId ComponentId;
-	Schema_FieldId RPCIndex;
-	TArray<uint8> Payload;
-	int Attempts; // For reliable RPCs
-
-	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
-	TOptional<Trace_SpanId> SpanId;
-};
-
-struct FPendingRPC
-{
-	FPendingRPC() = default;
-	FPendingRPC(FPendingRPC&& Other) = default;
-
-	uint32 Offset;
-	Schema_FieldId Index;
-	TArray<uint8> Data;
-	Schema_EntityId Entity;
-};
 
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
@@ -117,16 +90,12 @@ public:
 	void SendClientEndpointReadyUpdate(Worker_EntityId EntityId);
 	void SendServerEndpointReadyUpdate(Worker_EntityId EntityId);
 
-	void EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
-	void FlushRetryRPCs();
-	void RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
-
 	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
 	void ProcessPositionUpdates();
 
 	void UpdateInterestComponent(AActor* Actor);
 
-	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
+	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, ERPCType Type, SpatialGDK::RPCPayload&& InPayload);
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	void FlushRPCService();
@@ -165,10 +134,6 @@ private:
 	// RPC Construction
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters) const;
 
-	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, const SpatialGDK::RPCPayload& Payload,
-												  Worker_ComponentId ComponentId, Schema_FieldId CommandIndex,
-												  Worker_EntityId& OutEntityId);
-	Worker_CommandRequest CreateRetryRPCCommandRequest(const FReliableRPCForRetry& RPC, uint32 TargetObjectOffset);
 	FWorkerComponentUpdate CreateRPCEventUpdate(UObject* TargetObject, const SpatialGDK::RPCPayload& Payload,
 												Worker_ComponentId ComponentId, Schema_FieldId EventIndext);
 
