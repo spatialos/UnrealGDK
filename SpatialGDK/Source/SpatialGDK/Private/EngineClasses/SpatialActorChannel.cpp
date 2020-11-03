@@ -1119,8 +1119,9 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	return &Replicator;
 }
 
-void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-													const TMap<GDK_PROPERTY(Property) *, Trace_SpanId>& PropertySpanIds)
+void USpatialActorChannel::PostReceiveSpatialUpdate(
+	UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+	const TMap<GDK_PROPERTY(Property) *, TPair<Trace_SpanId, SpatialGDK::EventTraceUniqueId>>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
@@ -1130,18 +1131,20 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	SpatialGDK::SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
 
 	auto PreCallRepNotify = [EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
-		const Trace_SpanId* SpanId = PropertySpanIds.Find(Property);
-		if (SpanId != nullptr)
+		const TPair<Trace_SpanId, SpatialGDK::EventTraceUniqueId>* SpanIdPair = PropertySpanIds.Find(Property);
+		if (SpanIdPair != nullptr)
 		{
-			EventTracer->AddToStack(*SpanId);
+			EventTracer->SpanIdStack.Stack(SpanIdPair->Get<0>());
+			EventTracer->SetActiveUniqueId(SpanIdPair->Get<1>());
 		}
 	};
 
 	auto PostCallRepNotify = [EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
-		const Trace_SpanId* SpanId = PropertySpanIds.Find(Property);
+		const TPair<Trace_SpanId, SpatialGDK::EventTraceUniqueId>* SpanId = PropertySpanIds.Find(Property);
 		if (SpanId != nullptr)
 		{
 			EventTracer->PopFromStack();
+			EventTracer->SetActiveUniqueId(SpatialGDK::EventTraceUniqueId{});
 		}
 	};
 

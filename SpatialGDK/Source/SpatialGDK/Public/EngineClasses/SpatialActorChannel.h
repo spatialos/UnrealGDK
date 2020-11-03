@@ -5,6 +5,7 @@
 #include "Engine/ActorChannel.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialStaticComponentView.h"
@@ -255,8 +256,9 @@ public:
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
 	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
-	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-								  const TMap<GDK_PROPERTY(Property) *, Trace_SpanId>& PropertySpanIds);
+	void PostReceiveSpatialUpdate(
+		UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+		const TMap<GDK_PROPERTY(Property) *, TPair<Trace_SpanId, SpatialGDK::EventTraceUniqueId>>& PropertySpanIds);
 
 	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 

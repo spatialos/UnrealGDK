@@ -167,6 +167,7 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
+		Writer.Printf("bytes eventTracedData = {0};", SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD);
 		Writer.Printf("data unreal.generated.{0};", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
 
@@ -192,6 +193,7 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.Printf("component {0} {", *(PropertyName + TEXT("Handover")));
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
+		Writer.Printf("bytes eventTracedData = {0};", SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD);
 		Writer.Printf("data unreal.generated.{0};", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
 
@@ -321,6 +323,7 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 	Writer.PrintNewLine();
 	Writer.Printf("component Unreal{0} {", *EndpointName).Indent();
 	Writer.Printf("id = {0};", ComponentId);
+	Writer.Printf("bytes eventTracedData = {0};", SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD);
 
 	Schema_FieldId FieldId = 1;
 	for (ERPCType SentRPCType : SentRPCTypes)
@@ -509,6 +512,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Printf("component {0} {", *ComponentName);
 			Writer.Indent();
 			Writer.Printf("id = {0};", ComponentId);
+			Writer.Printf("bytes eventTracedData = {0};", SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD);
 			Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, Class));
 			Writer.Outdent().Print("}");
 
@@ -534,6 +538,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Printf("component {0} {", *ComponentName);
 			Writer.Indent();
 			Writer.Printf("id = {0};", ComponentId);
+			Writer.Printf("bytes eventTracedData = {0};", SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD);
 			Writer.Printf("data {0};", *SchemaHandoverDataName(Class));
 			Writer.Outdent().Print("}");
 
@@ -607,6 +612,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		Writer.Printf("component {0} {", *SchemaReplicatedDataName(Group, Class));
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
+		Writer.Printf("bytes eventTracedData = {0};", SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD);
 
 		AddComponentId(ComponentId, ActorSchemaData.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
 
@@ -639,6 +645,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		Writer.Printf("component {0} {", *SchemaHandoverDataName(Class));
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
+		Writer.Printf("bytes eventTracedData = {0};", SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD);
 
 		AddComponentId(ComponentId, ActorSchemaData.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
 

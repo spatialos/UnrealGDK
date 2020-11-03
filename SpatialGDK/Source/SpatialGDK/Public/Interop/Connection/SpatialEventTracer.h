@@ -2,11 +2,14 @@
 
 #pragma once
 
+#include "Interop/Connection/SpatialSpanIdStack.h"
 #include "Interop/Connection/SpatialTraceEvent.h"
+#include "Interop/Connection/SpatialTraceUniqueId.h"
 #include "Interop/Connection/UserSpanId.h"
 #include "SpatialView/EntityComponentId.h"
 
 #include <WorkerSDK/improbable/c_io.h>
+#include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_trace.h>
 
 // Documentation for event tracing in the GDK can be found here: https://brevi.link/gdk-event-tracing-documentation
@@ -51,6 +54,13 @@ public:
 
 	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const Trace_SpanId& SpanId);
 	TOptional<Trace_SpanId> PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
+
+	EventTraceUniqueId ActiveRPCUniqueId; // An ID which is valid to check when an RPC/RepNotify is being executed.
+
+	void SetActiveUniqueId(const EventTraceUniqueId& Id) { ActiveRPCUniqueId = Id; }
+	EventTraceUniqueId GetActiveUniqueId() const { return ActiveRPCUniqueId; }
+
+	EventTraceUniqueId GenerateUniqueId();
 
 private:
 	struct StreamDeleter
