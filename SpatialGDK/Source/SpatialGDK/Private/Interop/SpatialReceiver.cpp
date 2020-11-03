@@ -1967,7 +1967,6 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	}
 }
 
-						SpanId);
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverReserveEntityIds);
