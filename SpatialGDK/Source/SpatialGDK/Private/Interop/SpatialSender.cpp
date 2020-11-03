@@ -674,7 +674,6 @@ void USpatialSender::SendOnEntityCreationRPC(UObject* TargetObject, UFunction* F
 #endif // !UE_BUILD_SHIPPING
 }
 
-
 FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload,
 											USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
 {
