@@ -346,7 +346,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 					if (SpanId.IsSet())
 					{
-						PropertySpanIds.Add(Parent.Property, SpanId.GetValue()); // TODO:
+						PropertySpanIds.Add(Parent.Property, SpanId.GetValue());
 					}
 
 					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.

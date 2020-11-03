@@ -130,9 +130,9 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateRetryRPC()
 	return FSpatialTraceEventBuilder("retry_rpc").GetEvent();
 }
 
-FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendPropertyUpdates(
-	const UObject* Object, const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-	const EventTraceUniqueId& UniqueTraceId)
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendPropertyUpdates(const UObject* Object, const Worker_EntityId EntityId,
+																		const Worker_ComponentId ComponentId,
+																		const EventTraceUniqueId& UniqueTraceId)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_property_updates")
 		.AddObject(TEXT("Object"), Object)
