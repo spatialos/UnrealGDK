@@ -6,10 +6,9 @@
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
+#include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialClassInfoManager.h"
-#include "Interop/SpatialRPCService.h"
 #include "Schema/RPCPayload.h"
-#include "TimerManager.h"
 #include "Utils/RPCContainer.h"
 #include "Utils/RepDataUtils.h"
 
@@ -113,9 +112,6 @@ public:
 
 	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
-
-	void SendClientEndpointReadyUpdate(Worker_EntityId EntityId);
-	void SendServerEndpointReadyUpdate(Worker_EntityId EntityId);
 
 	void EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
 	void FlushRetryRPCs();
