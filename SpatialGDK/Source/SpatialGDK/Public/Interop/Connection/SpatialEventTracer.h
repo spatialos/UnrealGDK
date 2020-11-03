@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Interop/Connection/SpatialTraceEvent.h"
-#include "Interop/Connection/SpatialTraceUniqueId.h"
 #include "Interop/Connection/UserSpanId.h"
 #include "SpatialView/EntityComponentId.h"
 

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceUniqueId.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
