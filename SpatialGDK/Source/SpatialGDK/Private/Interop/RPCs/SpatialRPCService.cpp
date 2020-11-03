@@ -63,7 +63,7 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 		EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateUnique();
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(Target, Function, LinearTraceId), SpanId);
 		PendingPayload.SpanId = SpanId;
-		PendingPayload.LinearTraceId = LinearTraceId;
+		PendingPayload.Payload.LinearTraceId = LinearTraceId;
 	}
 
 #if TRACE_LIB_ACTIVE
@@ -461,7 +461,9 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 				if (CauseSpanId.IsSet())
 				{
 					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
-					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function, PendingRPCParams.Payload.LinearTraceId), SpanId);
+					EventTracer->TraceEvent(
+						FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function, PendingRPCParams.Payload.LinearTraceId),
+						SpanId);
 					EventTracer->AddToStack(SpanId.GetValue());
 				}
 			}
