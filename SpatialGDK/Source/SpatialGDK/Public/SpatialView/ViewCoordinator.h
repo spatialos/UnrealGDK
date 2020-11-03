@@ -67,10 +67,11 @@ public:
 
 	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, FRetryData RetryData);
 	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-											 FRetryData RetryData);
-	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData);
+											 FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId);
+	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId);
 	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, FRetryData RetryData);
-	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData);
+	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData,
+											  const TOptional<Trace_SpanId>& SpanId);
 
 	CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
 	CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);

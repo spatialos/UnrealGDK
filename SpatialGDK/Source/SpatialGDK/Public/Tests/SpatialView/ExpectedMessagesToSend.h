@@ -21,7 +21,7 @@ public:
 	ExpectedMessagesToSend& AddEntityCommandResponse(Worker_RequestId RequestId, Worker_ComponentId ComponentId,
 													 Worker_CommandIndex CommandIndex);
 	ExpectedMessagesToSend& AddEntityCommandFailure(Worker_RequestId RequestId, FString Message);
-	bool Compare(TUniquePtr<MessagesToSend> MessagesToSend) const;
+	bool Compare(const MessagesToSend& MessagesToSend) const;
 
 private:
 	TArray<ReserveEntityIdsRequest> ReserveEntityIdsRequests;

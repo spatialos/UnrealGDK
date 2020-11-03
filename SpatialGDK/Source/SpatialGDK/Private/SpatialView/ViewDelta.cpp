@@ -135,11 +135,6 @@ const TArray<EntityDelta>& ViewDelta::GetEntityDeltas() const
 	return EntityDeltas;
 }
 
-TArray<Worker_Op>& ViewDelta::GetWorkerMessages()
-{
-	return WorkerMessages;
-}
-
 const TArray<Worker_Op>& ViewDelta::GetWorkerMessages() const
 {
 	return WorkerMessages;

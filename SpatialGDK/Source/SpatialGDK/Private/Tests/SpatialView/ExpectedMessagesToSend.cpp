@@ -3,8 +3,8 @@
 #include "Tests/SpatialView/ExpectedMessagesToSend.h"
 #include "Tests/SpatialView/CommandTestUtils.h"
 
-using namespace SpatialGDK;
-
+namespace SpatialGDK
+{
 ExpectedMessagesToSend& ExpectedMessagesToSend::AddCreateEntityRequest(Worker_RequestId RequestId, Worker_EntityId EntityId,
 																	   TArray<ComponentData> ComponentData)
 {
@@ -56,42 +56,38 @@ ExpectedMessagesToSend& ExpectedMessagesToSend::AddEntityCommandFailure(Worker_R
 	return *this;
 }
 
-bool ExpectedMessagesToSend::Compare(TUniquePtr<MessagesToSend> MessagesToSend) const
+bool ExpectedMessagesToSend::Compare(const MessagesToSend& MessagesToSend) const
 {
-	if (MessagesToSend == nullptr)
+	if (!AreEquivalent(ReserveEntityIdsRequests, MessagesToSend.ReserveEntityIdsRequests, CompareReseverEntityIdsRequests))
 	{
 		return false;
 	}
 
-	if (!AreEquivalent(ReserveEntityIdsRequests, MessagesToSend->ReserveEntityIdsRequests, CompareReseverEntityIdsRequests))
+	if (!AreEquivalent(CreateEntityRequests, MessagesToSend.CreateEntityRequests, CompareCreateEntityRequests))
 	{
 		return false;
 	}
 
-	if (!AreEquivalent(CreateEntityRequests, MessagesToSend->CreateEntityRequests, CompareCreateEntityRequests))
+	if (!AreEquivalent(DeleteEntityRequests, MessagesToSend.DeleteEntityRequests, CompareDeleteEntityRequests))
 	{
 		return false;
 	}
 
-	if (!AreEquivalent(DeleteEntityRequests, MessagesToSend->DeleteEntityRequests, CompareDeleteEntityRequests))
+	if (!AreEquivalent(EntityQueryRequests, MessagesToSend.EntityQueryRequests, CompareEntityQueryRequests))
 	{
 		return false;
 	}
 
-	if (!AreEquivalent(EntityQueryRequests, MessagesToSend->EntityQueryRequests, CompareEntityQueryRequests))
+	if (!AreEquivalent(EntityCommandRequests, MessagesToSend.EntityCommandRequests, CompareEntityCommandRequests))
 	{
 		return false;
 	}
 
-	if (!AreEquivalent(EntityCommandRequests, MessagesToSend->EntityCommandRequests, CompareEntityCommandRequests))
+	if (!AreEquivalent(EntityCommandResponses, MessagesToSend.EntityCommandResponses, CompareEntityCommandResponses))
 	{
 		return false;
 	}
 
-	if (!AreEquivalent(EntityCommandResponses, MessagesToSend->EntityCommandResponses, CompareEntityCommandResponses))
-	{
-		return false;
-	}
-
-	return AreEquivalent(EntityCommandFailures, MessagesToSend->EntityCommandFailures, CompareEntityCommandFailuers);
+	return AreEquivalent(EntityCommandFailures, MessagesToSend.EntityCommandFailures, CompareEntityCommandFailuers);
 }
+} // namespace SpatialGDK
