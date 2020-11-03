@@ -213,7 +213,8 @@ void EntityFactory::WriteLBComponents(EntityComponents& EntityComps, AActor* Act
 
 	if (Actor->IsA<APlayerController>())
 	{
-		Acl->ReadAcl = AnyServerOrOwningClientRequirementSet; // This will overwrite the previous value, whatever it was.
+		Acl->ReadAcl = AnyServerOrOwningClientRequirementSet;
+		// PRCOMMENT: This will overwrite the previous value, whatever it was.
 		// Not sure what's the best way here. If for some reason we create skeleton entities for player controllers, not sure who should see
 		// them. Maybe we should restrict to just servers if we do not have players yet?
 	}
