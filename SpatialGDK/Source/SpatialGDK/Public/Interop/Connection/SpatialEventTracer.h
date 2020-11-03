@@ -52,8 +52,6 @@ public:
 	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const Trace_SpanId& SpanId);
 	TOptional<Trace_SpanId> PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
 
-	EventTraceUniqueId GenerateUniqueId();
-
 private:
 	struct StreamDeleter
 	{
