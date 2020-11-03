@@ -11,20 +11,18 @@ using namespace SpatialGDK;
 
 #define COMMANDRETRYHANDLER_TEST(TestName) GDK_TEST(Core, CommandRetryHandler, TestName)
 
-const static Worker_EntityId TestEntityId = 1;
-const static Worker_RequestId TestRequestId = 2;
-const static Worker_RequestId RetryRequestId = -TestRequestId;
-const static Worker_ComponentId TestComponentId = 3;
-const static double TestComponentValue = 20;
-const static Worker_CommandIndex TestCommandIndex = 4;
-const static uint32 TestNumOfEntities = 10;
-const static FString TimeOutMessage = TEXT("Time out");
-const static FString AuthorityLostMessage = TEXT("Authority Lost");
-const static FString SuccessMessage = TEXT("Success");
-const static FString ApplicationErrorMessage = TEXT("Application Error");
-const static float TimeAdvanced = 5.f;
-static OpList EmptyOpList = { nullptr, 0, nullptr };
-
+namespace
+{
+const Worker_EntityId TestEntityId = 1;
+const Worker_RequestId TestRequestId = 2;
+const Worker_RequestId RetryRequestId = -TestRequestId;
+const Worker_ComponentId TestComponentId = 3;
+const double TestComponentValue = 20;
+const Worker_CommandIndex TestCommandIndex = 4;
+const uint32 TestNumOfEntities = 10;
+const float TimeAdvanced = 5.f;
+OpList EmptyOpList = { nullptr, 0, nullptr };
+} // namespace
 EntityQuery CreateTestEntityQuery()
 {
 	Worker_EntityQuery WorkerEntityQuery;
@@ -43,7 +41,7 @@ COMMANDRETRYHANDLER_TEST(GIVEN_success_WHEN_process_ops_THEN_no_retry)
 	TCommandRetryHandler<FCreateEntityRetryHandlerImpl> Handler;
 
 	EntityComponentOpListBuilder Builder;
-	Builder.AddCreateEntityCommandResponse(TestEntityId, TestRequestId, WORKER_STATUS_CODE_SUCCESS, SuccessMessage);
+	Builder.AddCreateEntityCommandResponse(TestEntityId, TestRequestId, WORKER_STATUS_CODE_SUCCESS, StringStorage("Success"));
 	OpList FirstOpList = MoveTemp(Builder).CreateOpList();
 	TArray<ComponentData> EntityComponents;
 	EntityComponents.Add(CreateTestComponentData(TestComponentId, TestComponentValue));
@@ -55,7 +53,8 @@ COMMANDRETRYHANDLER_TEST(GIVEN_success_WHEN_process_ops_THEN_no_retry)
 
 	Handler.ProcessOps(TimeAdvanced, EmptyOpList, View);
 
-	TestTrue("MessagesToSend are equal", ExpectedMessagesToSend().Compare(View.FlushLocalChanges()));
+	const TUniquePtr<MessagesToSend> ActualMessagesPtr = View.FlushLocalChanges();
+	TestTrue("MessagesToSend are equal", ExpectedMessagesToSend().Compare(*ActualMessagesPtr.Get()));
 	return true;
 }
 
@@ -67,7 +66,7 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_create_entity_THEN_retry)
 	EntityComponents.Add(CreateTestComponentData(TestComponentId, TestComponentValue));
 
 	EntityComponentOpListBuilder Builder;
-	Builder.AddCreateEntityCommandResponse(TestEntityId, TestRequestId, WORKER_STATUS_CODE_TIMEOUT, TimeOutMessage);
+	Builder.AddCreateEntityCommandResponse(TestEntityId, TestRequestId, WORKER_STATUS_CODE_TIMEOUT, StringStorage("Time out"));
 	OpList FirstOpList = MoveTemp(Builder).CreateOpList();
 
 	Handler.SendRequest(TestRequestId, { MoveTemp(EntityComponents), TestEntityId }, RETRY_UNTIL_COMPLETE, View);
@@ -78,11 +77,12 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_create_entity_THEN_retry)
 
 	Handler.ProcessOps(TimeAdvanced, EmptyOpList, View);
 
-	ExpectedMessagesToSend MessagesToSend;
+	ExpectedMessagesToSend TestMessages;
 	TArray<ComponentData> TestComponents;
 	TestComponents.Add(CreateTestComponentData(TestComponentId, TestComponentValue));
-	MessagesToSend.AddCreateEntityRequest(RetryRequestId, TestEntityId, MoveTemp(TestComponents));
-	TestTrue("MessagesToSend are equal", MessagesToSend.Compare(View.FlushLocalChanges()));
+	TestMessages.AddCreateEntityRequest(RetryRequestId, TestEntityId, MoveTemp(TestComponents));
+	const TUniquePtr<MessagesToSend> ActualMessagesPtr = View.FlushLocalChanges();
+	TestTrue("MessagesToSend are equal", TestMessages.Compare(*ActualMessagesPtr.Get()));
 	return true;
 }
 
@@ -92,7 +92,8 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_reserve_entity_ids_THEN_retry)
 	TCommandRetryHandler<FReserveEntityIdsRetryHandlerImpl> Handler;
 
 	EntityComponentOpListBuilder Builder;
-	Builder.AddReserveEntityIdsCommandResponse(TestEntityId, TestNumOfEntities, TestRequestId, WORKER_STATUS_CODE_TIMEOUT, TimeOutMessage);
+	Builder.AddReserveEntityIdsCommandResponse(TestEntityId, TestNumOfEntities, TestRequestId, WORKER_STATUS_CODE_TIMEOUT,
+											   StringStorage("Time out"));
 	OpList FirstOpList = MoveTemp(Builder).CreateOpList();
 	Handler.SendRequest(TestRequestId, TestNumOfEntities, RETRY_UNTIL_COMPLETE, View);
 	View.FlushLocalChanges();
@@ -102,9 +103,10 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_reserve_entity_ids_THEN_retry)
 
 	Handler.ProcessOps(TimeAdvanced, EmptyOpList, View);
 
-	ExpectedMessagesToSend MessagesToSend;
-	MessagesToSend.AddReserveEntityIdsRequest(RetryRequestId, TestNumOfEntities);
-	TestTrue("MessagesToSend are equal", MessagesToSend.Compare(View.FlushLocalChanges()));
+	ExpectedMessagesToSend TestMessages;
+	TestMessages.AddReserveEntityIdsRequest(RetryRequestId, TestNumOfEntities);
+	const TUniquePtr<MessagesToSend> ActualMessagesPtr = View.FlushLocalChanges();
+	TestTrue("MessagesToSend are equal", TestMessages.Compare(*ActualMessagesPtr.Get()));
 	return true;
 }
 
@@ -115,7 +117,7 @@ COMMANDRETRYHANDLER_TEST(GIVEN_application_error_WHEN_reserve_entity_ids_THEN_no
 
 	EntityComponentOpListBuilder Builder;
 	Builder.AddReserveEntityIdsCommandResponse(TestEntityId, TestNumOfEntities, TestRequestId, WORKER_STATUS_CODE_APPLICATION_ERROR,
-											   ApplicationErrorMessage);
+											   StringStorage("Application Error"));
 	OpList FirstOpList = MoveTemp(Builder).CreateOpList();
 	Handler.SendRequest(TestRequestId, TestNumOfEntities, RETRY_UNTIL_COMPLETE, View);
 	View.FlushLocalChanges();
@@ -125,7 +127,8 @@ COMMANDRETRYHANDLER_TEST(GIVEN_application_error_WHEN_reserve_entity_ids_THEN_no
 
 	Handler.ProcessOps(TimeAdvanced, EmptyOpList, View);
 
-	TestTrue("MessagesToSend are equal", ExpectedMessagesToSend().Compare(View.FlushLocalChanges()));
+	const TUniquePtr<MessagesToSend> ActualMessagesPtr = View.FlushLocalChanges();
+	TestTrue("MessagesToSend are equal", ExpectedMessagesToSend().Compare(*ActualMessagesPtr.Get()));
 	return true;
 }
 
@@ -135,9 +138,9 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_delete_entity_THEN_retry)
 	TCommandRetryHandler<FDeleteEntityRetryHandlerImpl> Handler;
 
 	EntityComponentOpListBuilder Builder;
-	Builder.AddDeleteEntityCommandResponse(TestEntityId, TestRequestId, WORKER_STATUS_CODE_TIMEOUT, TimeOutMessage);
+	Builder.AddDeleteEntityCommandResponse(TestEntityId, TestRequestId, WORKER_STATUS_CODE_TIMEOUT, StringStorage("Time out"));
 	OpList FirstOpList = MoveTemp(Builder).CreateOpList();
-	Handler.SendRequest(TestRequestId, TestEntityId, RETRY_UNTIL_COMPLETE, View);
+	Handler.SendRequest(TestRequestId, { TestEntityId }, RETRY_UNTIL_COMPLETE, View);
 	View.FlushLocalChanges();
 
 	Handler.ProcessOps(TimeAdvanced, FirstOpList, View);
@@ -145,9 +148,10 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_delete_entity_THEN_retry)
 
 	Handler.ProcessOps(TimeAdvanced, EmptyOpList, View);
 
-	ExpectedMessagesToSend MessagesToSend;
-	MessagesToSend.AddDeleteEntityCommandRequest(RetryRequestId, TestEntityId);
-	TestTrue("MessagesToSend are equal", MessagesToSend.Compare(View.FlushLocalChanges()));
+	ExpectedMessagesToSend TestMessages;
+	TestMessages.AddDeleteEntityCommandRequest(RetryRequestId, TestEntityId);
+	const TUniquePtr<MessagesToSend> ActualMessagesPtr = View.FlushLocalChanges();
+	TestTrue("MessagesToSend are equal", TestMessages.Compare(*ActualMessagesPtr.Get()));
 	return true;
 }
 
@@ -157,11 +161,12 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_query_entity_THEN_retry)
 	TCommandRetryHandler<FEntityQueryRetryHandlerImpl> Handler;
 
 	EntityComponentOpListBuilder Builder;
-	TArray<Worker_ComponentData> EntityComponents;
-	EntityComponents.Add(CreateTestComponentData(TestComponentId, TestComponentValue).GetWorkerComponentData());
-	TArray<Worker_Entity> Entities;
-	Entities.Add(Worker_Entity{ TestEntityId, 1, EntityComponents.GetData() });
-	Builder.AddEntityQueryCommandResponse(TestRequestId, MoveTemp(Entities), WORKER_STATUS_CODE_TIMEOUT, TimeOutMessage);
+	TArray<OpListEntity> Entities;
+	OpListEntity Entity;
+	Entity.EntityId = TestEntityId;
+	Entity.Components.Add(CreateTestComponentData(TestComponentId, TestComponentValue));
+	Entities.Add(MoveTemp(Entity));
+	Builder.AddEntityQueryCommandResponse(TestRequestId, MoveTemp(Entities), WORKER_STATUS_CODE_TIMEOUT, StringStorage("Time out"));
 	OpList FirstOpList = MoveTemp(Builder).CreateOpList();
 	Handler.SendRequest(TestRequestId, CreateTestEntityQuery(), RETRY_UNTIL_COMPLETE, View);
 	View.FlushLocalChanges();
@@ -171,9 +176,10 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_query_entity_THEN_retry)
 
 	Handler.ProcessOps(TimeAdvanced, EmptyOpList, View);
 
-	ExpectedMessagesToSend MessagesToSend;
-	MessagesToSend.AddEntityQueryRequest(RetryRequestId, CreateTestEntityQuery());
-	TestTrue("MessagesToSend are equal", MessagesToSend.Compare(View.FlushLocalChanges()));
+	ExpectedMessagesToSend TestMessages;
+	TestMessages.AddEntityQueryRequest(RetryRequestId, CreateTestEntityQuery());
+	const TUniquePtr<MessagesToSend> ActualMessagesPtr = View.FlushLocalChanges();
+	TestTrue("MessagesToSend are equal", TestMessages.Compare(*ActualMessagesPtr.Get()));
 	return true;
 }
 
@@ -183,7 +189,7 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_entity_command_request_THEN_retry)
 	TCommandRetryHandler<FEntityCommandRetryHandlerImpl> Handler;
 
 	EntityComponentOpListBuilder Builder;
-	Builder.AddEntityCommandResponse(TestEntityId, TestRequestId, WORKER_STATUS_CODE_TIMEOUT, TimeOutMessage);
+	Builder.AddEntityCommandResponse(TestEntityId, TestRequestId, WORKER_STATUS_CODE_TIMEOUT, StringStorage("Time out"));
 	OpList FirstOpList = MoveTemp(Builder).CreateOpList();
 	Handler.SendRequest(TestRequestId, { TestEntityId, CommandRequest(TestComponentId, TestCommandIndex) }, RETRY_UNTIL_COMPLETE, View);
 	View.FlushLocalChanges();
@@ -193,9 +199,10 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_entity_command_request_THEN_retry)
 
 	Handler.ProcessOps(TimeAdvanced, EmptyOpList, View);
 
-	ExpectedMessagesToSend MessagesToSend;
-	MessagesToSend.AddEntityCommandRequest(RetryRequestId, TestEntityId, TestComponentId, TestCommandIndex);
-	TestTrue("MessagesToSend are equal", MessagesToSend.Compare(View.FlushLocalChanges()));
+	ExpectedMessagesToSend TestMessages;
+	TestMessages.AddEntityCommandRequest(RetryRequestId, TestEntityId, TestComponentId, TestCommandIndex);
+	const TUniquePtr<MessagesToSend> ActualMessagesPtr = View.FlushLocalChanges();
+	TestTrue("MessagesToSend are equal", TestMessages.Compare(*ActualMessagesPtr.Get()));
 	return true;
 }
 
@@ -205,15 +212,16 @@ COMMANDRETRYHANDLER_TEST(GIVEN_authority_lost_WHEN_entity_command_request_THEN_r
 	TCommandRetryHandler<FEntityCommandRetryHandlerImpl> Handler;
 
 	EntityComponentOpListBuilder Builder;
-	Builder.AddEntityCommandResponse(TestEntityId, TestRequestId, WORKER_STATUS_CODE_AUTHORITY_LOST, AuthorityLostMessage);
+	Builder.AddEntityCommandResponse(TestEntityId, TestRequestId, WORKER_STATUS_CODE_AUTHORITY_LOST, StringStorage("Authority Lost"));
 	OpList FirstOpList = MoveTemp(Builder).CreateOpList();
 	Handler.SendRequest(TestRequestId, { TestEntityId, CommandRequest(TestComponentId, TestCommandIndex) }, RETRY_UNTIL_COMPLETE, View);
 	View.FlushLocalChanges();
 
 	Handler.ProcessOps(TimeAdvanced, FirstOpList, View);
 
-	ExpectedMessagesToSend MessagesToSend;
-	MessagesToSend.AddEntityCommandRequest(RetryRequestId, TestEntityId, TestComponentId, TestCommandIndex);
-	TestTrue("MessagesToSend are equal", MessagesToSend.Compare(View.FlushLocalChanges()));
+	ExpectedMessagesToSend TestMessages;
+	TestMessages.AddEntityCommandRequest(RetryRequestId, TestEntityId, TestComponentId, TestCommandIndex);
+	const TUniquePtr<MessagesToSend> ActualMessagesPtr = View.FlushLocalChanges();
+	TestTrue("MessagesToSend are equal", TestMessages.Compare(*ActualMessagesPtr.Get()));
 	return true;
 }

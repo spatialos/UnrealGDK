@@ -11,7 +11,11 @@ namespace SpatialGDK
 {
 struct FDeleteEntityRetryHandlerImpl
 {
-	using CommandData = Worker_EntityId;
+	struct CommandData
+	{
+		Worker_EntityId EntityId;
+		TOptional<Trace_SpanId> SpanId;
+	};
 
 	static bool CanHandleOp(const Worker_Op& Op) { return Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE; }
 
@@ -34,9 +38,14 @@ struct FDeleteEntityRetryHandlerImpl
 		}
 	}
 
-	static void SendCommandRequest(Worker_RequestId RequestId, Worker_EntityId EntityId, uint32 TimeoutMillis, WorkerView& View)
+	static void SendCommandRequest(Worker_RequestId RequestId, const CommandData& Data, uint32 TimeoutMillis, WorkerView& View)
 	{
-		View.SendDeleteEntityRequest(DeleteEntityRequest{ RequestId, EntityId, TimeoutMillis });
+		View.SendDeleteEntityRequest(DeleteEntityRequest{ RequestId, Data.EntityId, TimeoutMillis, Data.SpanId });
+	}
+
+	static void SendCommandRequest(Worker_RequestId RequestId, CommandData&& Data, uint32 TimeoutMillis, WorkerView& View)
+	{
+		View.SendDeleteEntityRequest(DeleteEntityRequest{ RequestId, Data.EntityId, TimeoutMillis, Data.SpanId });
 	}
 };
 
@@ -46,6 +55,7 @@ struct FCreateEntityRetryHandlerImpl
 	{
 		TArray<ComponentData> Components;
 		TOptional<Worker_EntityId> EntityId;
+		TOptional<Trace_SpanId> SpanId;
 	};
 
 	static bool CanHandleOp(const Worker_Op& Op) { return Op.op_type == WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE; }
@@ -77,12 +87,13 @@ struct FCreateEntityRetryHandlerImpl
 			return Component.DeepCopy();
 		});
 
-		View.SendCreateEntityRequest(CreateEntityRequest{ RequestId, MoveTemp(ComponentsCopy), Data.EntityId, TimeoutMillis });
+		View.SendCreateEntityRequest(CreateEntityRequest{ RequestId, MoveTemp(ComponentsCopy), Data.EntityId, TimeoutMillis, Data.SpanId });
 	}
 
 	static void SendCommandRequest(Worker_RequestId RequestId, CommandData&& Data, uint32 TimeoutMillis, WorkerView& View)
 	{
-		View.SendCreateEntityRequest(CreateEntityRequest{ RequestId, MoveTemp(Data.Components), Data.EntityId, TimeoutMillis });
+		View.SendCreateEntityRequest(
+			CreateEntityRequest{ RequestId, MoveTemp(Data.Components), Data.EntityId, TimeoutMillis, Data.SpanId });
 	}
 };
 
@@ -159,6 +170,7 @@ struct FEntityCommandRetryHandlerImpl
 	{
 		Worker_EntityId EntityId;
 		CommandRequest Request;
+		TOptional<Trace_SpanId> SpanId;
 	};
 
 	static bool CanHandleOp(const Worker_Op& Op) { return Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE; }
@@ -187,12 +199,14 @@ struct FEntityCommandRetryHandlerImpl
 
 	static void SendCommandRequest(Worker_RequestId RequestId, const CommandData& Query, uint32 TimeoutMillis, WorkerView& View)
 	{
-		View.SendEntityCommandRequest(EntityCommandRequest{ Query.EntityId, RequestId, Query.Request.DeepCopy(), TimeoutMillis });
+		View.SendEntityCommandRequest(
+			EntityCommandRequest{ Query.EntityId, RequestId, Query.Request.DeepCopy(), TimeoutMillis, Query.SpanId });
 	}
 
 	static void SendCommandRequest(Worker_RequestId RequestId, CommandData&& Query, uint32 TimeoutMillis, WorkerView& View)
 	{
-		View.SendEntityCommandRequest(EntityCommandRequest{ Query.EntityId, RequestId, MoveTemp(Query.Request), TimeoutMillis });
+		View.SendEntityCommandRequest(
+			EntityCommandRequest{ Query.EntityId, RequestId, MoveTemp(Query.Request), TimeoutMillis, Query.SpanId });
 	}
 };
 } // namespace SpatialGDK

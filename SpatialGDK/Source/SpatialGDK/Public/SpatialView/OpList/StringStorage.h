@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
+
 #include "Containers/Array.h"
 #include "Containers/StringConv.h"
 #include "Templates/UniquePtr.h"
@@ -11,11 +13,6 @@ namespace SpatialGDK
 class StringStorage
 {
 public:
-	StringStorage(const StringStorage& InStorage)
-		: StringStorage(InStorage.Get())
-	{
-	}
-
 	StringStorage(const FString& InString)
 	{
 		const int32 SourceLength = TCString<TCHAR>::Strlen(*InString);
@@ -24,6 +21,7 @@ public:
 		Storage = MakeUnique<char[]>(BufferSize);
 		FTCHARToUTF8_Convert::Convert(Storage.Get(), BufferSize, *InString, SourceLength + 1);
 	}
+
 	StringStorage(const char* InString)
 	{
 		// Add one to include the null terminator.
@@ -31,6 +29,7 @@ public:
 		Storage = MakeUnique<char[]>(BufferSize);
 		std::memcpy(Storage.Get(), InString, BufferSize);
 	}
+
 	const char* Get() const { return Storage.Get(); }
 
 private:

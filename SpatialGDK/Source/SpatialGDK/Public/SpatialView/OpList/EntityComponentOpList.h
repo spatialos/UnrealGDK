@@ -11,6 +11,12 @@
 
 namespace SpatialGDK
 {
+struct OpListEntity
+{
+	Worker_EntityId EntityId;
+	TArray<ComponentData> Components;
+};
+
 // Data for a set of ops representing
 struct EntityComponentOpListData : OpListData
 {
@@ -33,26 +39,25 @@ public:
 	EntityComponentOpListBuilder& UpdateComponent(Worker_EntityId EntityId, ComponentUpdate Update);
 	EntityComponentOpListBuilder& RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	EntityComponentOpListBuilder& SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority);
-	EntityComponentOpListBuilder& SetDisconnect(Worker_ConnectionStatusCode StatusCode, const FString& DisconnectReason);
+	EntityComponentOpListBuilder& SetDisconnect(Worker_ConnectionStatusCode StatusCode, StringStorage DisconnectReason);
 	EntityComponentOpListBuilder& AddCreateEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
-																 Worker_StatusCode StatusCode, const FString& Message);
-	EntityComponentOpListBuilder& AddEntityQueryCommandResponse(Worker_RequestId RequestId, TArray<Worker_Entity> Results,
-																Worker_StatusCode StatusCode, const FString& Message);
+																 Worker_StatusCode StatusCode, StringStorage Message);
+	EntityComponentOpListBuilder& AddEntityQueryCommandResponse(Worker_RequestId RequestId, TArray<OpListEntity> Results,
+																Worker_StatusCode StatusCode, StringStorage Message);
 	EntityComponentOpListBuilder& AddEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
-														   Worker_StatusCode StatusCode, const FString& Message);
+														   Worker_StatusCode StatusCode, StringStorage Message);
 	EntityComponentOpListBuilder& AddDeleteEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
-																 Worker_StatusCode StatusCode, const FString& Message);
+																 Worker_StatusCode StatusCode, StringStorage Message);
 	EntityComponentOpListBuilder& AddReserveEntityIdsCommandResponse(Worker_EntityId EntityID, uint32 NumberOfEntities,
 																	 Worker_RequestId RequestId, Worker_StatusCode StatusCode,
-																	 const FString& Message);
-
-	const char* StoreString(FString Message) const;
-	const Worker_Entity* StoreQueriedEntities(TArray<Worker_Entity> Entities) const;
+																	 StringStorage Message);
 
 	OpList CreateOpList() &&;
 
 private:
 	TUniquePtr<EntityComponentOpListData> OpListData;
+	const char* StoreString(StringStorage Message) const;
+	const Worker_Entity* StoreQueriedEntities(TArray<OpListEntity> Entities) const;
 };
 
 } // namespace SpatialGDK
