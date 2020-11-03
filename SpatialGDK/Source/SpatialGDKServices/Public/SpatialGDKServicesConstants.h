@@ -41,7 +41,6 @@ const FString RuntimeExe = TEXT("runtime.exe");
 const FString InspectorExe = TEXT("inspector.exe");
 
 const FString SpatialOSRuntimePinnedStandardVersion = TEXT("0.5.1");
-const FString SpatialOSRuntimePinnedCompatbilityModeVersion = TEXT("14.5.4");
 
 const FString InspectorURL = TEXT("http://localhost:31000/inspector");
 const FString InspectorV2URL = TEXT("http://localhost:31000/inspector-v2");

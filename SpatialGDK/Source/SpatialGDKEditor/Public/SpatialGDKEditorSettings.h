@@ -227,7 +227,7 @@ namespace ESpatialOSRuntimeVariant
 enum Type
 {
 	Standard,
-	CompatibilityMode
+	CompatibilityMode_DEPRECATED
 };
 }
 
@@ -326,22 +326,16 @@ public:
 	bool bGenerateDefaultLaunchConfig;
 
 	/** Returns which runtime variant we should use. */
-	TEnumAsByte<ESpatialOSRuntimeVariant::Type> GetSpatialOSRuntimeVariant() const { return RuntimeVariant; }
+	TEnumAsByte<ESpatialOSRuntimeVariant::Type> GetSpatialOSRuntimeVariant() const { return ESpatialOSRuntimeVariant::Standard; }
 
 	/** Returns the version information for the currently set runtime variant*/
 	const FRuntimeVariantVersion& GetSelectedRuntimeVariantVersion() const
 	{
-		return const_cast<USpatialGDKEditorSettings*>(this)->GetRuntimeVariantVersion(RuntimeVariant);
+		return const_cast<USpatialGDKEditorSettings*>(this)->GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Standard);
 	}
 
-	UPROPERTY(EditAnywhere, config, Category = "Runtime")
-	TEnumAsByte<ESpatialOSRuntimeVariant::Type> RuntimeVariant;
-
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Runtime Versions"))
 	FRuntimeVariantVersion StandardRuntimeVersion;
-
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
-	FRuntimeVariantVersion CompatibilityModeRuntimeVersion;
 
 	/** Whether to use the GDK-associated SpatialOS inspector version for local deployments, or to use the one specified in the
 	 * InspectorVersion field. */

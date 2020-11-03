@@ -42,9 +42,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bShowSpatialServiceButton(false)
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
-	, RuntimeVariant(ESpatialOSRuntimeVariant::Standard)
 	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
-	, CompatibilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
 	, bUseGDKPinnedInspectorVersion(true)
 	, InspectorVersionOverride(TEXT(""))
 	, ExposedRuntimeIP(TEXT(""))
@@ -76,13 +74,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
 {
-	switch (Variant)
-	{
-	case ESpatialOSRuntimeVariant::CompatibilityMode:
-		return CompatibilityModeRuntimeVersion;
-	default:
-		return StandardRuntimeVersion;
-	}
+	return StandardRuntimeVersion;
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
@@ -99,13 +91,6 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
-	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, RuntimeVariant))
-	{
-		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-		GDKServices.GetLocalDeploymentManager()->SetRedeployRequired();
-
-		OnDefaultTemplateNameRequireUpdate.Broadcast();
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, PrimaryDeploymentRegionCode))
 	{
@@ -521,7 +506,7 @@ const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVari
 {
 	switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
 	{
-	case ESpatialOSRuntimeVariant::CompatibilityMode:
+	case ESpatialOSRuntimeVariant::CompatibilityMode_DEPRECATED:
 		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
 		{
 			return SpatialGDKServicesConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
