@@ -112,10 +112,10 @@ protected:
 		T::UpdateRetries(Op, Data.Retry);
 		if (Data.Retry.Retries >= 0)
 		{
-			// Effectively remove the op by setting its request ID to something invalid.
-			RequestId *= -1;
 			CommandsToSendHeap.HeapPush(FDataToSend{ RequestId, MoveTemp(Data.Data), TimeElapsedS + Data.Retry.BackOffTimeS, Data.Retry },
 										CompareByTimeToSend);
+			// Effectively remove the op by setting its request ID to something invalid.
+			RequestId *= -1;
 		}
 
 		It.RemoveCurrent();
