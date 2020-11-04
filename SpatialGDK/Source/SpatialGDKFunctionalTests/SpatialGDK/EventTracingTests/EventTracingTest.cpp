@@ -33,7 +33,7 @@ AEventTracingTest::AEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Base class for event tracing tests");
 
-	SetNumRequiredClients(2);
+	SetNumRequiredClients(1);
 }
 
 void AEventTracingTest::PrepareTest()
@@ -121,7 +121,6 @@ void AEventTracingTest::GatherData()
 	{
 		GatherDataFromFile(FileCreationTimes[0].FilePath);
 		GatherDataFromFile(FileCreationTimes[1].FilePath);
-		GatherDataFromFile(FileCreationTimes[2].FilePath);
 	}
 
 	FinishStep();
