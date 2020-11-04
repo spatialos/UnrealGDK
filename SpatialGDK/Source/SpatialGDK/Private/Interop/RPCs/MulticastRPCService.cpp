@@ -27,7 +27,7 @@ void MulticastRPCService::Advance()
 		switch (Delta.Type)
 		{
 		case EntityDelta::UPDATE:
-			{
+		{
 			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
 			{
 				// We process auth lost temporarily twice. Once before updates and once after, so as not
