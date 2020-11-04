@@ -121,6 +121,7 @@ void AEventTracingTest::GatherData()
 	{
 		GatherDataFromFile(FileCreationTimes[0].FilePath);
 		GatherDataFromFile(FileCreationTimes[1].FilePath);
+		GatherDataFromFile(FileCreationTimes[2].FilePath);
 	}
 
 	FinishStep();
