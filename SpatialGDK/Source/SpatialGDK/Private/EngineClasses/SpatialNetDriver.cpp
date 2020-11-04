@@ -1804,15 +1804,15 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			Connection->Flush();
 		}
 
+		if (RPCService.IsValid())
+		{
+			RPCService->Advance(GetElapsedTime());
+		}
+
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 			Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
-		}
-
-		if (RPCService.IsValid())
-		{
-			RPCService->Advance(GetElapsedTime());
 		}
 
 		if (WellKnownEntitySystem.IsValid())
