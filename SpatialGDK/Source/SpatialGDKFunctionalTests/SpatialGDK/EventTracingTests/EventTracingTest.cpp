@@ -33,7 +33,7 @@ AEventTracingTest::AEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Base class for event tracing tests");
 
-	SetNumRequiredClients(1);
+	SetNumRequiredClients(2);
 }
 
 void AEventTracingTest::PrepareTest()
