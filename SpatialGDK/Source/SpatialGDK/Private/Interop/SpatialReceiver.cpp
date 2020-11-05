@@ -1791,44 +1791,9 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 			break;
 		}
 
-		Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId, Op.span_id);
-		return;
+		Sender->SendEmptyCommandResponse(CommandRequestOp.request.component_id, CommandIndex, CommandRequestOp.request_id, Op.span_id);
 	}
 #endif // !UE_BUILD_SHIPPING
-
-	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
-
-	RPCPayload Payload(RequestObject);
-	const FUnrealObjectRef ObjectRef = FUnrealObjectRef(EntityId, Payload.Offset);
-	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
-	if (TargetObject == nullptr)
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object found for EntityId %d"), EntityId);
-		Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId, Op.span_id);
-		return;
-	}
-
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-	UFunction* Function = Info.RPCs[Payload.Index];
-
-	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"), EntityId, ComponentId,
-		   *Function->GetName());
-
-	RPCService->ProcessOrQueueIncomingRPC(ObjectRef, MoveTemp(Payload), /* RPCIdForLinearEventTrace */ TOptional<uint64>{});
-	Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId, Op.span_id);
-
-	AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
-#if TRACE_LIB_ACTIVE
-	TraceKey TraceId = Payload.Trace;
-#else
-	TraceKey TraceId = InvalidTraceKey;
-#endif
-
-	UObject* TraceTargetObject = TargetActor != TargetObject ? TargetObject : nullptr;
-	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Op.span_id, 1);
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest("RPC_COMMAND_REQUEST", TargetActor, TraceTargetObject,
-																				   Function, TraceId, RequestId),
-							SpanId);
 }
 
 void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
@@ -1855,14 +1820,12 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 			SpanId);
 		return;
 	}
-	if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID
+	else if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID
 		&& Op.op.command_response.response.command_index == SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID)
 	{
 		ReceiveClaimPartitionResponse(Op.op.command_response);
 		return;
 	}
-
-	ReceiveCommandResponse(Op);
 }
 
 void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op)
@@ -1882,87 +1845,6 @@ void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandRespons
 		   TEXT("ClaimPartition command succeeded. "
 				"Worker sytem entity: %lld. Partition entity: %lld"),
 		   Op.entity_id, PartitionId);
-}
-
-void USpatialReceiver::FlushRetryRPCs()
-{
-	Sender->FlushRetryRPCs();
-}
-
-void USpatialReceiver::ReceiveCommandResponse(const Worker_Op& Op)
-{
-	const Worker_CommandResponseOp& CommandResponseOp = Op.op.command_response;
-	const Worker_CommandResponse& Repsonse = CommandResponseOp.response;
-	const Worker_EntityId EntityId = CommandResponseOp.entity_id;
-	const Worker_ComponentId ComponentId = Repsonse.component_id;
-	const Worker_RequestId RequestId = CommandResponseOp.request_id;
-	const uint8_t StatusCode = CommandResponseOp.status_code;
-
-	AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
-	TSharedRef<FReliableRPCForRetry>* ReliableRPCPtr = PendingReliableRPCs.Find(RequestId);
-	if (ReliableRPCPtr == nullptr)
-	{
-		// We received a response for some other command, ignore.
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TargetActor, RequestId, false), Op.span_id);
-		return;
-	}
-
-	TSharedRef<FReliableRPCForRetry> ReliableRPC = *ReliableRPCPtr;
-	PendingReliableRPCs.Remove(RequestId);
-
-	UObject* TargetObject = ReliableRPC->TargetObject.Get() != TargetActor ? ReliableRPC->TargetObject.Get() : nullptr;
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TargetActor, TargetObject, ReliableRPC->Function,
-																					RequestId, WORKER_STATUS_CODE_SUCCESS),
-							Op.span_id);
-
-	if (StatusCode != WORKER_STATUS_CODE_SUCCESS)
-	{
-		bool bCanRetry = false;
-
-		// Only attempt to retry if the error code indicates it makes sense too
-		if ((StatusCode == WORKER_STATUS_CODE_TIMEOUT || StatusCode == WORKER_STATUS_CODE_NOT_FOUND)
-			&& (ReliableRPC->Attempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS))
-		{
-			bCanRetry = true;
-		}
-		// Don't apply the retry limit on auth lost, as it should eventually succeed
-		else if (StatusCode == WORKER_STATUS_CODE_AUTHORITY_LOST)
-		{
-			bCanRetry = true;
-		}
-
-		if (bCanRetry)
-		{
-			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(ReliableRPC->Attempts);
-			UE_LOG(LogSpatialReceiver, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"),
-				   *ReliableRPC->Function->GetName(), WaitTime, (int)StatusCode, UTF8_TO_TCHAR(CommandResponseOp.message));
-
-			if (!ReliableRPC->TargetObject.IsValid())
-			{
-				UE_LOG(LogSpatialReceiver, Warning, TEXT("%s: target object was destroyed before we could deliver the RPC."),
-					   *ReliableRPC->Function->GetName());
-				return;
-			}
-
-			// Queue retry
-			FTimerHandle RetryTimer;
-			TimerManager->SetTimer(
-				RetryTimer,
-				[WeakSender = TWeakObjectPtr<USpatialSender>(Sender), ReliableRPC]() {
-					if (USpatialSender* SpatialSender = WeakSender.Get())
-					{
-						SpatialSender->EnqueueRetryRPC(ReliableRPC);
-					}
-				},
-				WaitTime, false);
-		}
-		else
-		{
-			UE_LOG(LogSpatialReceiver, Error, TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"),
-				   *ReliableRPC->Function->GetName(), SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)StatusCode,
-				   UTF8_TO_TCHAR(CommandResponseOp.message));
-		}
-	}
 }
 
 void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject,
