@@ -59,13 +59,17 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	AddActorStepDefinition.StepName = TEXT("Add actor to player controller");
 	AddActorStepDefinition.TimeLimit = 0.0f;
 	AddActorStepDefinition.NativeStartEvent.BindLambda([this]() {
-		AController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
+		{
+			AController* PlayerController = Cast<AController>(FlowController->GetOwner());
 
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = PlayerController;
-		AActor* TestActor = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FTransform(), SpawnParams);
-		TestActor->SetReplicates(true); // NOTE: this currently causes parent not to migrate after a delay and outputs a warning in the test
-		RegisterAutoDestroyActor(TestActor);
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = PlayerController;
+			AActor* TestActor = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FTransform(), SpawnParams);
+			TestActor->SetReplicates(
+				true); // NOTE: this currently causes parent not to migrate after a delay and outputs a warning in the test
+			RegisterAutoDestroyActor(TestActor);
+		}
 		FinishStep();
 	});
 
@@ -156,6 +160,10 @@ void ASpatialTestCharacterMigration::PrepareTest()
 			if (FlowControllerId == 1)
 			{
 				PlayerCharacter->SetActorLocation(FVector(0.0f, -25.0f, 50.0f));
+			}
+			else
+			{
+				PlayerCharacter->SetActorLocation(FVector(0.0f, 50.0f * FlowControllerId, 50.0f));
 			}
 		}
 
