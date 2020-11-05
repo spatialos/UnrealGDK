@@ -128,7 +128,7 @@ void FLocalDeploymentManager::OnWorkerConfigDirectoryChanged(const TArray<FFileC
 		if (FileChange.Filename.EndsWith(".worker.json"))
 		{
 			UE_LOG(LogSpatialDeploymentManager, Log,
-                   TEXT("Worker config files updated. Regenerating worker descriptors ('spatial worker build build-config')."));
+				TEXT("Worker config files updated. Regenerating worker descriptors ('spatial worker build build-config')."));
 
 			WorkerBuildConfigAsync();
 			return;
