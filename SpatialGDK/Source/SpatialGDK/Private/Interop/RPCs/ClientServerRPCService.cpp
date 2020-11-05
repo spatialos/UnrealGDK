@@ -246,8 +246,8 @@ void ClientServerRPCService::HandleRPC(const Worker_EntityId EntityId, const Wor
 		{
 			UE_LOG(LogClientServerRPCService, Log,
 				   TEXT("Entity receiving ring buffer RPC does not exist in PackageMap, possibly due to corresponding actor getting "
-                    						"destroyed. Entity: %lld, Component: %d"),
-                    				   EntityId, ComponentId);
+						"destroyed. Entity: %lld, Component: %d"),
+				   EntityId, ComponentId);
 			return;
 		}
 
