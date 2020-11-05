@@ -11,7 +11,6 @@ fi
 pushd "$(dirname "$0")"
 
 PINNED_CORE_SDK_VERSION=$(cat ./SpatialGDK/Extras/core-sdk.version)
-PINNED_SPOT_VERSION=$(cat ./SpatialGDK/Extras/spot.version)
 BUILD_DIR="$(pwd)/SpatialGDK/Build"
 CORE_SDK_DIR="${BUILD_DIR}/core_sdk"
 WORKER_SDK_DIR="$(pwd)/SpatialGDK/Source/SpatialGDK/Public/WorkerSDK"
@@ -107,8 +106,6 @@ then
 fi
 
 spatial package retrieve worker_sdk  csharp                                  "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/csharp.zip
-spatial package retrieve spot        spot-macos                              "${PINNED_SPOT_VERSION}"       ${DOMAIN_ENVIRONMENT_VAR:-}   "${BINARIES_DIR}"/Programs/spot
-chmod +x "${BINARIES_DIR}"/Programs/spot
 
 echo "Unpack dependencies"
 unzip -oq "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip                 -d "${BINARIES_DIR}"/Programs/

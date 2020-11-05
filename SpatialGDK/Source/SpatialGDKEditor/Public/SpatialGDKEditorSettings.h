@@ -226,8 +226,7 @@ namespace ESpatialOSRuntimeVariant
 {
 enum Type
 {
-	Standard,
-	CompatibilityMode_DEPRECATED
+	Standard
 };
 }
 

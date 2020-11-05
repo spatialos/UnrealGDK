@@ -511,26 +511,13 @@ const FString& FSpatialLaunchConfigDescription::GetTemplate() const
 
 const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVariant() const
 {
-	switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
+	if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
 	{
-	case ESpatialOSRuntimeVariant::CompatibilityMode_DEPRECATED:
-		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
-		{
-			return SpatialGDKServicesConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
-		}
-		else
-		{
-			return SpatialGDKServicesConstants::PinnedCompatibilityModeRuntimeTemplate;
-		}
-	default:
-		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
-		{
-			return SpatialGDKServicesConstants::PinnedChinaStandardRuntimeTemplate;
-		}
-		else
-		{
-			return SpatialGDKServicesConstants::PinnedStandardRuntimeTemplate;
-		}
+		return SpatialGDKServicesConstants::PinnedChinaStandardRuntimeTemplate;
+	}
+	else
+	{
+		return SpatialGDKServicesConstants::PinnedStandardRuntimeTemplate;
 	}
 }
 
