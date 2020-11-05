@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 
-#include <WorkerSDK/improbable/c_trace.h>
 #include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_trace.h>
 
 namespace SpatialGDK
 {
@@ -17,7 +17,7 @@ struct EventTraceUniqueId
 
 	bool IsValid() const
 	{
-		for(auto& Byte : InternalBytes)
+		for (auto& Byte : InternalBytes)
 		{
 			if (Byte != 0)
 			{
