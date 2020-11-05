@@ -118,7 +118,8 @@ public:
 	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
-	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, const Worker_EntityId& ClientSystemEntityId);
+	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
+						 const Worker_EntityId& ClientSystemEntityId);
 	void PostSpawnPlayerController(APlayerController* PlayerController, const FString& ConnectionOwningWorkerId);
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
@@ -287,8 +288,8 @@ private:
 #endif
 
 	void ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters);
-	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName, const Worker_EntityId& ClientSystemEntityId,
-									USpatialNetConnection** OutConn);
+	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
+									const Worker_EntityId& ClientSystemEntityId, USpatialNetConnection** OutConn);
 
 	void ProcessPendingDormancy();
 	void PollPendingLoads();
