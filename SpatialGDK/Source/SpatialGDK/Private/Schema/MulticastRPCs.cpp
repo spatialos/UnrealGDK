@@ -5,14 +5,24 @@
 namespace SpatialGDK
 {
 MulticastRPCs::MulticastRPCs(const Worker_ComponentData& Data)
+	: MulticastRPCs(Data.schema_type)
+{
+}
+
+MulticastRPCs::MulticastRPCs(Schema_ComponentData* Data)
 	: MulticastRPCBuffer(ERPCType::NetMulticast)
 {
-	ReadFromSchema(Schema_GetComponentDataFields(Data.schema_type));
+	ReadFromSchema(Schema_GetComponentDataFields(Data));
 }
 
 void MulticastRPCs::ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 {
-	ReadFromSchema(Schema_GetComponentUpdateFields(Update.schema_type));
+	ApplyComponentUpdate(Update.schema_type);
+}
+
+void MulticastRPCs::ApplyComponentUpdate(Schema_ComponentUpdate* Update)
+{
+	ReadFromSchema(Schema_GetComponentUpdateFields(Update));
 }
 
 void MulticastRPCs::ReadFromSchema(Schema_Object* SchemaObject)

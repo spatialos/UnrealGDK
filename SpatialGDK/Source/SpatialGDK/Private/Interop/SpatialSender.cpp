@@ -948,22 +948,6 @@ void USpatialSender::ClearRPCsOnEntityCreation(Worker_EntityId EntityId)
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void USpatialSender::SendClientEndpointReadyUpdate(Worker_EntityId EntityId)
-{
-	ClientRPCEndpointLegacy Endpoint;
-	Endpoint.bReady = true;
-	FWorkerComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
-}
-
-void USpatialSender::SendServerEndpointReadyUpdate(Worker_EntityId EntityId)
-{
-	ServerRPCEndpointLegacy Endpoint;
-	Endpoint.bReady = true;
-	FWorkerComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
-}
-
 void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);

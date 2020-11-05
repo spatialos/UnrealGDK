@@ -21,7 +21,7 @@ inline ComponentData CreateTestComponentData(const Worker_ComponentId Id, const 
 	ComponentData Data{ Id };
 	Schema_Object* Fields = Data.GetFields();
 	Schema_AddDouble(Fields, EntityComponentTestUtils::TEST_DOUBLE_FIELD_ID, Value);
-	return Data;
+	return MoveTemp(Data);
 }
 
 // Assumes the passed data has the TEST_DOUBLE_FIELD_ID field populated.

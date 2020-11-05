@@ -57,10 +57,10 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 
 		// Find the intersection between complete entities and the entity IDs in the view delta, add them to this
 		// delta.
-		if (CompleteIt && DeltaIt && CompleteId == CurrentEntityId && DeltaId == CurrentEntityId)
+		if (CompleteId == CurrentEntityId && DeltaId == CurrentEntityId)
 		{
 			EntityDelta CompleteDelta = *DeltaIt;
-			if (TemporarilyIncompleteIt && *TemporarilyIncompleteIt == CurrentEntityId)
+			if (TemporarilyIncompleteId == CurrentEntityId)
 			{
 				// This is a delta for a complete entity which was also temporarily removed. Change its type to
 				// reflect that.
@@ -69,29 +69,29 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 			}
 			SubDelta.EntityDeltas.Emplace(CompleteDelta);
 		}
+		// Temporarily incomplete entities which aren't present in the projecting view delta are represented as marker
+		// temporarily removed entities with no state.
+		else if (TemporarilyIncompleteId == CurrentEntityId)
+		{
+			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::TEMPORARILY_REMOVED });
+			++TemporarilyIncompleteIt;
+		}
 		// Newly complete entities are represented as marker add entities with no state.
-		if (NewlyCompleteIt && NewlyCompleteId == CurrentEntityId)
+		else if (NewlyCompleteId == CurrentEntityId)
 		{
 			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::ADD });
 			++NewlyCompleteIt;
 		}
 		// Newly incomplete entities are represented as marker remove entities with no state.
-		if (NewlyIncompleteIt && NewlyIncompleteId == CurrentEntityId)
+		else if (NewlyIncompleteId == CurrentEntityId)
 		{
 			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::REMOVE });
 			++NewlyIncompleteIt;
 		}
-		// Temporarily incomplete entities which aren't present in the projecting view delta are represented as marker
-		// temporarily removed entities with no state.
-		if (TemporarilyIncompleteIt && TemporarilyIncompleteId == CurrentEntityId)
-		{
-			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::TEMPORARILY_REMOVED });
-			++TemporarilyIncompleteIt;
-		}
 
 		// Logic for incrementing complete and delta iterators. If either iterator is done, null the other,
 		// as there can no longer be any intersection.
-		if (CompleteIt && CompleteId == CurrentEntityId)
+		if (CompleteId == CurrentEntityId)
 		{
 			++CompleteIt;
 			if (!CompleteIt)
@@ -99,7 +99,7 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 				DeltaIt.SetToEnd();
 			}
 		}
-		if (DeltaIt && DeltaId == CurrentEntityId)
+		if (DeltaId == CurrentEntityId)
 		{
 			++DeltaIt;
 			if (!DeltaIt)
