@@ -27,7 +27,6 @@ static inline const FString CreateExePath(FString Path, FString ExecutableName)
 const FString GDKProgramPath =
 	FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs"));
 const FString SpatialExe = CreateExePath(SpatialPath, TEXT("spatial"));
-const FString SpotExe = CreateExePath(GDKProgramPath, TEXT("spot"));
 const FString SchemaCompilerExe = CreateExePath(GDKProgramPath, TEXT("schema_compiler"));
 const FString SpatialOSDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")));
 const FString SpatialOSConfigFileName = TEXT("spatialos.json");
@@ -36,12 +35,11 @@ const FString SchemaBundlePath = FPaths::Combine(CompiledSchemaDir, TEXT("schema
 const FString SpatialOSSnapshotFolderPath =
 	FPaths::Combine(SpatialOSDirectory, TEXT("snapshots")); // TODO: Delete the old function in SpatialGDKEditorSettings.
 const FString ChinaEnvironmentArgument = TEXT(" --environment=cn-production");
-const FString PlatformVersion = TEXT("x86_64-win32");
-const FString RuntimeExe = TEXT("runtime.exe");
-const FString InspectorExe = TEXT("inspector.exe");
+const FString PlatformVersion = TEXT("x86_64-win32"); // TODO: Change to use platform macros (to work with macos)
+const FString RuntimeExe = TEXT("runtime.exe");		  // TODO: Change to use CreateExePath
+const FString InspectorExe = TEXT("inspector.exe");	  // TODO: Change to use CreateExePath
 
 const FString SpatialOSRuntimePinnedStandardVersion = TEXT("0.5.1");
-const FString SpatialOSRuntimePinnedCompatbilityModeVersion = TEXT("14.5.4");
 
 const FString InspectorURL = TEXT("http://localhost:31000/inspector");
 const FString InspectorV2URL = TEXT("http://localhost:31000/inspector-v2");

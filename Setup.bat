@@ -50,7 +50,6 @@ call :MarkEndOfBlock "Check dependencies"
 
 call :MarkStartOfBlock "Setup variables"
     set /p PINNED_CORE_SDK_VERSION=<.\SpatialGDK\Extras\core-sdk.version
-    set /p PINNED_SPOT_VERSION=<.\SpatialGDK\Extras\spot.version
     set BUILD_DIR=%~dp0SpatialGDK\Build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
     set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\SpatialGDK\Public\WorkerSDK
@@ -124,7 +123,6 @@ if defined DOWNLOAD_MOBILE (
     spatial package retrieve worker_sdk      c-dynamic-x86_64-clang_ndk21-android      %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_clang_ndk21-android.zip"
 )
     spatial package retrieve worker_sdk      csharp                                     %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\csharp.zip"
-    spatial package retrieve spot            spot-win64                                 %PINNED_SPOT_VERSION%       %DOMAIN_ENVIRONMENT_VAR%   "%BINARIES_DIR%\Programs\spot.exe"
 call :MarkEndOfBlock "Retrieve dependencies"
 
 REM There is a race condition between retrieve and unzip, add version call to stall briefly
