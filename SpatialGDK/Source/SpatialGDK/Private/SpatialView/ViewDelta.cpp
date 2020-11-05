@@ -91,7 +91,7 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 
 		// Logic for incrementing complete and delta iterators. If either iterator is done, null the other,
 		// as there can no longer be any intersection.
-		if (CompleteIt && CurrentEntityId)
+		if (CompleteIt && CompleteId == CurrentEntityId)
 		{
 			++CompleteIt;
 			if (!CompleteIt)
