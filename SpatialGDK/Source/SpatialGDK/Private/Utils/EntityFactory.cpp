@@ -204,7 +204,7 @@ void EntityFactory::WriteLBComponents(EntityComponents& EntityComps, AActor* Act
 		EntityComps.ComponentDatas.Add(DebuggingInfo.CreateComponentData());
 		Acl->ComponentWriteAcl.Add(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	}
-#endif
+#endif // !UE_BUILD_SHIPPING
 
 	for (const auto& Pair : EntityComps.ComponentsToDelegateToAuthoritativeWorker)
 	{
