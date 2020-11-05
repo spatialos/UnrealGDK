@@ -123,7 +123,7 @@ void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 
 void FLocalDeploymentManager::OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
 {
-	for (auto& FileChange : FileChanges)
+	for (const auto& FileChange : FileChanges)
 	{
 		if (FileChange.Filename.EndsWith(".worker.json"))
 		{
