@@ -138,10 +138,6 @@ public:
 			  meta = (ToolTip = "Select the actor you want to debug at runtime"))
 	bool bSelectActor = false;
 
-	// This will be drawn at the center of the screen.
-	UPROPERTY(EditDefaultsOnly, Category = Visualization, meta = (ToolTip = "Select the image you want to display as a crosshair"))
-	UTexture2D* CrosshairTexture;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
 	bool bAutoStart = false;
 
@@ -174,6 +170,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Box Icon"))
 	UTexture2D* BoxTexture;
+
+	// This will be drawn instead of the mouse cursor when selecting an actor
+	UPROPERTY(EditDefaultsOnly, Category = Visualization, meta = (ToolTip = "Texture to use when selecting an actor"))
+	UTexture2D* CrosshairTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
 	FVector WorldSpaceActorTagOffset = FVector(0.0f, 0.0f, 200.0f);
