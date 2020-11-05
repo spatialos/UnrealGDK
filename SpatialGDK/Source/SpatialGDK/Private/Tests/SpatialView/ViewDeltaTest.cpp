@@ -19,7 +19,6 @@ const static Worker_ComponentId TestComponentId = 1;
 const static double TestComponentValue = 20;
 const static double OtherTestComponentValue = 30;
 const static double TestEventValue = 25;
-const static FString DisconnectReason = TEXT("Test disconnection reason");
 
 VIEWDELTA_TEST(GIVEN_empty_view_WHEN_add_entity_THEN_get_entity_in_view_and_delta)
 {
@@ -193,13 +192,13 @@ VIEWDELTA_TEST(GIVEN_connected_view_WHEN_disconnect_op_THEN_disconnected_view)
 	EntityView InputView;
 
 	EntityComponentOpListBuilder OpListBuilder;
-	OpListBuilder.SetDisconnect(WORKER_CONNECTION_STATUS_CODE_REJECTED, DisconnectReason);
+	OpListBuilder.SetDisconnect(WORKER_CONNECTION_STATUS_CODE_REJECTED, StringStorage("Test disconnection reason"));
 	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder));
 
 	EntityView ExpectedView;
 
 	ExpectedViewDelta ExpectedDelta;
-	ExpectedDelta.AddDisconnect(WORKER_CONNECTION_STATUS_CODE_REJECTED, DisconnectReason);
+	ExpectedDelta.AddDisconnect(WORKER_CONNECTION_STATUS_CODE_REJECTED, TEXT("Test disconnection reason"));
 
 	TestTrue("View Deltas are equal", ExpectedDelta.Compare(InputDelta));
 	TestTrue("Views are equal", CompareViews(InputView, ExpectedView));
