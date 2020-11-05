@@ -47,6 +47,7 @@ void CrossServerRPCHandler::ProcessPendingCommandOps()
 				break;
 			}
 
+			RPCGuidsInFlight.Remove(Command.Payload.UniqueId);
 			++ProcessedRPCs;
 		}
 
@@ -69,6 +70,12 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 	if (Params.RequestId == -1)
 	{
 		Coordinator.SendEntityCommandFailure(CommandOp.request_id, "Failed to parse cross server RPC", Op.span_id);
+		return;
+	}
+
+	if (RPCGuidsInFlight.Contains(Params.Payload.UniqueId))
+	{
+		// This RPC is already in flight. No need to store it again.
 		return;
 	}
 
@@ -106,5 +113,10 @@ bool CrossServerRPCHandler::TryExecuteCommandRequest(const FCrossServerRPCParams
 
 void CrossServerRPCHandler::DropQueueForEntity(const Worker_EntityId_Key EntityId)
 {
+	for (auto& Command : QueuedCrossServerRPCs[EntityId])
+	{
+		RPCGuidsInFlight.Remove(Command.Payload.UniqueId);
+	}
+
 	QueuedCrossServerRPCs.Remove(EntityId);
 }

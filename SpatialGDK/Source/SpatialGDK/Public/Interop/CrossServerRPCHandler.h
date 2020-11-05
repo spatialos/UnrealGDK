@@ -21,6 +21,7 @@ public:
 private:
 	ViewCoordinator& Coordinator;
 	TUniquePtr<RPCExecutorInterface> RPCExecutor;
+	TSet<uint32> RPCGuidsInFlight;
 
 	double TimeElapsedS = 0.0;
 	double CommandRetryTime = 0.0;
