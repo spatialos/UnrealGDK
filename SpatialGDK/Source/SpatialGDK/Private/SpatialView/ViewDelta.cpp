@@ -76,7 +76,7 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 			++NewlyCompleteIt;
 		}
 		// Newly incomplete entities are represented as marker remove entities with no state.
-		if (NewlyCompleteIt && NewlyIncompleteId == CurrentEntityId)
+		if (NewlyIncompleteIt && NewlyIncompleteId == CurrentEntityId)
 		{
 			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::REMOVE });
 			++NewlyIncompleteIt;
@@ -91,7 +91,7 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 
 		// Logic for incrementing complete and delta iterators. If either iterator is done, null the other,
 		// as there can no longer be any intersection.
-		if (CompleteId == CurrentEntityId)
+		if (CompleteIt && CurrentEntityId)
 		{
 			++CompleteIt;
 			if (!CompleteIt)
