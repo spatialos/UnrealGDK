@@ -1,6 +1,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/CrossServerRPCSender.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialView/CommandRequest.h"
 #include "SpatialView/CommandRetryHandler.h"
