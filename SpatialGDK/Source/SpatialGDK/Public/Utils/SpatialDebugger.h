@@ -221,7 +221,8 @@ private:
 
 	FVector GetLocalPawnLocation();
 
-	// Allow user to select an actor for debugging - the mesh on the actor must have collision presets enabled to block on at least one of the object channels
+	// Allow user to select an actor for debugging - the mesh on the actor must have collision presets enabled to block on at least one of
+	// the object channels
 	void SelectActorToTag(UCanvas* Canvas);
 
 	FVector2D ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector PlayerLocation);
