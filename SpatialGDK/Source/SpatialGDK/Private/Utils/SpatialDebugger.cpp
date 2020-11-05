@@ -634,8 +634,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 
 			if (Actor != nullptr)
 			{
-				FVector2D ScreenLocation;
-				ProjectActorToScreen(Actor, PlayerLocation, ScreenLocation);
+				FVector2D ScreenLocation = ProjectActorToScreen(Actor, PlayerLocation);
 				if (ScreenLocation.IsZero())
 				{
 					continue;
@@ -655,7 +654,7 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 
 		if (LocalPlayerController->GetMousePosition(MousePosition.X, MousePosition.Y))
 		{
-			bool CursorChanged = false;
+			bool bCursorChanged = false;
 			if (CrosshairTexture)
 			{
 				// Display a crosshair icon for the mouse cursor
@@ -667,10 +666,10 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 				FCanvasTileItem TileItem(CrossHairDrawPosition, CrosshairTexture->Resource, FLinearColor::White);
 				TileItem.BlendMode = SE_BLEND_Translucent;
 				Canvas->DrawItem(TileItem);
-				CursorChanged = true;
+				bCursorChanged = true;
 			}
 
-			if (CursorChanged)
+			if (bCursorChanged)
 			{
 				// Hide the mouse cursor as we will draw our own custom crosshair
 				LocalPlayerController->bShowMouseCursor = false;
@@ -679,8 +678,7 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 			}
 
 			// Use the mouse position as the point for sending the raycast into the world
-			const APlayerCameraManager* CameraManager = Cast<APlayerCameraManager>(LocalPlayerController->PlayerCameraManager);
-			if (CameraManager)
+			if (const APlayerCameraManager* CameraManager = Cast<APlayerCameraManager>(LocalPlayerController->PlayerCameraManager))
 			{
 				FVector WorldLocation;
 				FVector WorldRotation;
@@ -698,8 +696,8 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 				CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_PhysicsBody);
 
 				TArray<FHitResult> HitResults;
-				bool hit = GetWorld()->LineTraceMultiByObjectType(HitResults, StartTrace, EndTrace, CollisionObjectParams);
-				if (hit)
+				bool bHit = GetWorld()->LineTraceMultiByObjectType(HitResults, StartTrace, EndTrace, CollisionObjectParams);
+				if (bHit)
 				{
 					// When the raycast hits an actor then the debug information for that actor is displayed above it, whilst the actor
 					// remains under the crosshair.
@@ -713,8 +711,7 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 
 							if (HitActor != nullptr)
 							{
-								FVector2D ScreenLocation;
-								ProjectActorToScreen(HitActor, PlayerLocation, ScreenLocation);
+								FVector2D ScreenLocation = ProjectActorToScreen(HitActor, PlayerLocation);
 								if (ScreenLocation.IsZero())
 								{
 									continue;
@@ -732,18 +729,18 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 
 FVector2D ASpatialDebugger::ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector PlayerLocation)
 {
-	ScreenLocation = FVector2D::ZeroVector;
+	FVector2D ScreenLocation = FVector2D::ZeroVector;
 
 	FVector ActorLocation = Actor->GetActorLocation();
 
 	if (ActorLocation.IsZero())
 	{
-		return;
+		return ScreenLocation;
 	}
 
 	if (FVector::Dist(PlayerLocation, ActorLocation) > MaxRange)
 	{
-		return;
+		return ScreenLocation;
 	}
 
 	if (LocalPlayerController.IsValid())
@@ -751,7 +748,9 @@ FVector2D ASpatialDebugger::ProjectActorToScreen(const TWeakObjectPtr<AActor> Ac
 		SCOPE_CYCLE_COUNTER(STAT_Projection);
 		UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + WorldSpaceActorTagOffset, ScreenLocation,
 											   false);
+		return ScreenLocation;
 	}
+	return ScreenLocation;
 }
 
 FVector ASpatialDebugger::GetLocalPawnLocation()
