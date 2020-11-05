@@ -68,7 +68,7 @@ void USpatialWorkerConnection::DestroyConnection()
 Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendReserveEntityIdsRequest(NumOfEntities);
+	return Coordinator->SendReserveEntityIdsRequest(NumOfEntities, SpatialGDK::RETRY_UNTIL_COMPLETE);
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
@@ -82,13 +82,14 @@ Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorke
 	{
 		Data.Emplace(SpatialGDK::OwningComponentDataPtr(Component.schema_type), Component.component_id);
 	}
-	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id, TOptional<uint32>(), SpanId);
+
+	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
 }
 
 Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendDeleteEntityRequest(EntityId, TOptional<uint32>(), SpanId);
+	return Coordinator->SendDeleteEntityRequest(EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
 }
 
 void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
@@ -113,9 +114,16 @@ void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWo
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
-															  const TOptional<Trace_SpanId>& SpanId)
+															  bool EnableRetry = false, const TOptional<Trace_SpanId>& SpanId)
 {
-	check(Coordinator.IsValid());
+	if (EnableRetry)
+	{
+		return Coordinator->SendEntityCommandRequest(EntityId,
+													 SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type),
+																				Request->component_id, Request->command_index),
+													 SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
+	}
+
 	return Coordinator->SendEntityCommandRequest(EntityId,
 												 SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type),
 																			Request->component_id, Request->command_index),
