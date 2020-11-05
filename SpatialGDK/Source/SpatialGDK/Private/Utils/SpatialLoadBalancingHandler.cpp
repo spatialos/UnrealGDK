@@ -203,6 +203,12 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 			UE_LOG(LogSpatialLoadBalancingHandler, Warning,
 				   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *HierarchyRoot->GetName(),
 				   *Actor->GetName(), ActorEntityId, *FailureReason);
+
+			if (ActorMigrationResult == EActorMigrationResult::NotAuthoritative)
+			{
+				// Request further diagnostics to be logged on authoritative server
+				Actor->MigrationDiagnostic();
+			}
 		}
 	}
 }
