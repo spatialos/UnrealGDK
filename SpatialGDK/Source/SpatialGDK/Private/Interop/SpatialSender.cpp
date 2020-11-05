@@ -470,11 +470,10 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 		}
 
 		TOptional<Trace_SpanId> SpanId;
-		if (EventTracer->IsEnabled())
+		if (EventTracer != nullptr && EventTracer->IsEnabled())
 		{
-			EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateUnique();
-
 			SpanId = CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
+			EventTraceUniqueId LinearTraceId = SpanId.IsSet() ? EventTraceUniqueId::GenerateUnique(SpanId.GetValue()) : EventTraceUniqueId{};
 			EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id, LinearTraceId), SpanId);
 
@@ -710,10 +709,10 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 	Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 
 	TOptional<Trace_SpanId> SpanId;
-	if (EventTracer != nullptr)
+	if (EventTracer != nullptr && EventTracer->IsEnabled())
 	{
-		EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateUnique();
 		SpanId = EventTracer->CreateSpan();
+		EventTraceUniqueId LinearTraceId = SpanId.IsSet() ? EventTraceUniqueId::GenerateUnique(SpanId.GetValue()) : EventTraceUniqueId{};
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(TargetObject, Function, LinearTraceId), SpanId);
 		Payload.LinearTraceId = LinearTraceId;
 	}

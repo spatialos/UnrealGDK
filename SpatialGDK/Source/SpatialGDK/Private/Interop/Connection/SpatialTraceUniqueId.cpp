@@ -52,13 +52,11 @@ EventTraceUniqueId EventTraceUniqueId::ReadFromSchemaObject(Schema_Object* Obj, 
 	return Id;
 }
 
-EventTraceUniqueId EventTraceUniqueId::GenerateUnique()
+EventTraceUniqueId EventTraceUniqueId::GenerateUnique(const Trace_SpanId& SpanId)
 {
-	FRandomStream RandomStream(FPlatformTime::Cycles());
+	// This will be replaced with a worker-supplied generation method.
+	static_assert(sizeof(InternalBytes) == sizeof(SpanId.data), "InternalBytes expected to be the same size as Trace_SpanId");
 	EventTraceUniqueId Id;
-	for (int i = 0; i < sizeof(Id.InternalBytes); i++)
-	{
-		Id.InternalBytes[i] = static_cast<uint8>(RandomStream.GetFraction() * 255.0f);
-	}
+	memcpy(Id.InternalBytes, SpanId.data, sizeof(InternalBytes));
 	return Id;
 }
