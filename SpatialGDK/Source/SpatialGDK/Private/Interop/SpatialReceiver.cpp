@@ -925,7 +925,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			continue;
 		}
 
-		if (PendingAddComponent.EntityId == EntityId)
+		if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.ComponentId != SpatialConstants::GDK_DEBUG_COMPONENT_ID)
 		{
 			ApplyComponentDataOnActorCreation(EntityId, PendingAddComponent.Data->Data.GetWorkerComponentData(), *Channel, ActorClassInfo,
 											  ObjectsToResolvePendingOpsFor);
