@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
+#include "SpatialFunctionalTest.h"
 
 #include "EventTracingTest.generated.h"
 
@@ -26,24 +26,6 @@ public:
 	AEventTracingTest();
 
 	virtual void PrepareTest() override;
-
-	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
-	static FName GetUserProcessRPCEventName() { return UserProcessRPCEventName; }
-
-	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
-	static FName GetUserReceivePropertyEventName() { return UserReceivePropertyEventName; }
-
-	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
-	static FName GetUserReceiveComponentPropertyEventName() { return UserReceiveComponentPropertyEventName; }
-
-	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
-	static FName GetUserSendPropertyEventName() { return UserSendPropertyEventName; }
-
-	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
-	static FName GetUserSendComponentPropertyEventName() { return UserSendComponentPropertyEventName; }
-
-	UFUNCTION(BlueprintCallable, Category = "EventTracingTest")
-	static FName GetUserSendRPCEventName() { return UserSendRPCEventName; }
 
 protected:
 	const static FName ReceiveOpEventName;
