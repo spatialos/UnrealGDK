@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Non-replicated Actors net roles are not touched during startup. 
 - Fixed a bug which dropped component updates on authority delegation.
 - The DeploymentLauncher checks the validity of the simulated players deployment name.
+- Worker configuration watcher only rebuilds worker configs when `*.worker.json` files are changed.
 
 ## [`0.11.0`] - 2020-09-03
 
