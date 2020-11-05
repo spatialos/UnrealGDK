@@ -730,7 +730,7 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 	}
 }
 
-void ASpatialDebugger::ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, FVector PlayerLocation, FVector2D& ScreenLocation)
+FVector2D ASpatialDebugger::ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector PlayerLocation)
 {
 	ScreenLocation = FVector2D::ZeroVector;
 
