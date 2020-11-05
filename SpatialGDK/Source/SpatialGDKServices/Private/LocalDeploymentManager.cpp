@@ -123,16 +123,19 @@ void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 
 void FLocalDeploymentManager::OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
 {
-	for (const auto& FileChange : FileChanges)
+	const bool ShouldRebuild = FileChanges.ContainsByPredicate([&](FFileChangeData& FileChange)
 	{
-		if (FileChange.Filename.EndsWith(".worker.json"))
-		{
-			UE_LOG(LogSpatialDeploymentManager, Log,
-				   TEXT("Worker config files updated. Regenerating worker descriptors ('spatial worker build build-config')."));
+		return FileChange.Filename.EndsWith(".worker.json");
+	});
 
-			WorkerBuildConfigAsync();
-			return;
-		}
+	if (ShouldRebuild)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Log,
+		       TEXT(
+			       "Worker config files updated. Regenerating worker descriptors ('spatial worker build build-config')."
+		       ));
+
+		WorkerBuildConfigAsync();
 	}
 }
 
