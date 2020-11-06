@@ -62,8 +62,6 @@ ASpatialFunctionalTestFlowController* SpatialFunctionalTestFlowControllerSpawner
 						   INVALID_FLOW_CONTROLLER_ID }; // by default have invalid id, Test Authority will set it to ensure uniqueness
 
 	FlowController->FinishSpawning(OwningTest->GetActorTransform(), true);
-	// TODO: Replace locking with custom LB strategy - UNR-3393
-	LockFlowControllerDelegations(FlowController);
 
 	return FlowController;
 }
