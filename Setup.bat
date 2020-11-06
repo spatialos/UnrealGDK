@@ -115,7 +115,7 @@ call :MarkStartOfBlock "Retrieve dependencies"
     spatial package retrieve schema          standard_library                           %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\schema\standard_library.zip"
     spatial package retrieve worker_sdk      c_headers                                  %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c_headers.zip"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-vc141_md-win32            %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc141_md-win32.zip"
-    spatial package retrieve worker_sdk      c-static-x86_64-clang1000-linux            %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang1000-linux.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-clang1000-linux           %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang1000-linux.zip"
 if defined DOWNLOAD_MOBILE (
     spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang-ios         %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip"
     spatial package retrieve worker_sdk      c-dynamic-arm64v8a-clang_ndk21-android     %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_clang_ndk21-android.zip"

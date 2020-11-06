@@ -41,7 +41,7 @@ Worker_PartitionId SpatialVirtualWorkerTranslator::GetPartitionEntityForVirtualW
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-Worker_PartitionId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const
+Worker_EntityId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const
 {
 	if (const SpatialVirtualWorkerTranslator::WorkerInformation* PhysicalWorkerInfo = VirtualToPhysicalWorkerMapping.Find(Id))
 	{
