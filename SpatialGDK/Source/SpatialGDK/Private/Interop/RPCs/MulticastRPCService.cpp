@@ -38,6 +38,10 @@ void MulticastRPCService::Advance()
 			{
 				AuthorityLost(Delta.EntityId, Change.ComponentId);
 			}
+			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
+			{
+				ComponentRefresh(Delta.EntityId, Change.ComponentId);
+			}
 			for (const ComponentChange& Change : Delta.ComponentUpdates)
 			{
 				ComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update);
@@ -83,8 +87,18 @@ void MulticastRPCService::EntityAdded(const Worker_EntityId EntityId)
 	}
 }
 
+void MulticastRPCService::ComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+{
+	if (ComponentId != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+	{
+		return;
+	}
+	MulticastDataStore.Remove(EntityId);
+	PopulateDataStore(EntityId);
+}
+
 void MulticastRPCService::ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-										  Schema_ComponentUpdate* Update)
+                                          Schema_ComponentUpdate* Update)
 {
 	if (ComponentId != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 	{

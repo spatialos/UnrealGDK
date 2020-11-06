@@ -28,6 +28,7 @@ public:
 private:
 	// Process relevant view delta changes.
 	void EntityAdded(Worker_EntityId EntityId);
+	void ComponentRefresh(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void ComponentUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 	void AuthorityGained(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void AuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
