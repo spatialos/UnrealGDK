@@ -30,10 +30,16 @@ SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const F
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateRaw(this, &SpatialRPCService::ApplyRPC));
 }
 
-void SpatialRPCService::Advance(const float NetDriverTime)
+void SpatialRPCService::AdvanceView()
 {
-	ClientServerRPCs.Advance();
-	MulticastRPCs.Advance();
+	ClientServerRPCs.AdvanceView();
+	MulticastRPCs.AdvanceView();
+}
+
+void SpatialRPCService::ProcessChanges(const float NetDriverTime)
+{
+	ClientServerRPCs.ProcessChanges();
+	MulticastRPCs.ProcessChanges();
 
 	if (NetDriverTime - LastProcessingTime > GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCRetryTime)
 	{
