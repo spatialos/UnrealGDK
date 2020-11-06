@@ -223,6 +223,7 @@ private:
 
 #if WITH_EDITOR
 	void EditorInitialiseWorkerRegions();
+	void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);
 #endif
 
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;

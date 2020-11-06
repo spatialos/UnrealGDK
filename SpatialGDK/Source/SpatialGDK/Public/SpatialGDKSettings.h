@@ -145,13 +145,6 @@ public:
 	float OpsUpdateRate;
 
 	/**
-	 * Replicate handover properties between servers, required for zoned worker deployments. If Unreal Load Balancing is enabled, this will
-	 * be set based on the load balancing strategy.
-	 */
-	UPROPERTY(EditAnywhere, config, Category = "Replication")
-	bool bEnableHandover;
-
-	/**
 	 * Maximum NetCullDistanceSquared value used in Spatial networking. Not respected when using the Replication Graph.
 	 * Set to 0.0 to disable. This is temporary and will be removed when the runtime issue is resolved.
 	 */
@@ -388,4 +381,23 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
 	float StartupLogRate;
+
+	/**
+	 * Time in seconds, controls at which frequency the logs related to failed actor migration are emitted.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
+	float ActorMigrationLogRate;
+	/*
+	 * -- EXPERIMENTAL --
+	 * This will enable event tracing for the Unreal client/worker.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
+	bool bEventTracingEnabled;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * The maximum size of the event tracing file, in bytes
+	 */
+	UPROPERTY(Config)
+	uint64 MaxEventTracingFileSizeBytes;
 };

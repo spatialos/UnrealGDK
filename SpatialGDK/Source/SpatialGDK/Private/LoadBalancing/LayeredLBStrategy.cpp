@@ -141,6 +141,18 @@ SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint
 	}
 }
 
+bool ULayeredLBStrategy::RequiresHandoverData() const
+{
+	for (const auto& Elem : LayerNameToLBStrategy)
+	{
+		if (Elem.Value->RequiresHandoverData())
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 FVector ULayeredLBStrategy::GetWorkerEntityPosition() const
 {
 	check(IsReady());

@@ -86,6 +86,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 	AssemblyNameInputErrorReporting->SetError(TEXT(""));
 	DeploymentNameInputErrorReporting = SNew(SPopupErrorText);
 	DeploymentNameInputErrorReporting->SetError(TEXT(""));
+	SimulatedPlayersDeploymentNameInputErrorReporting = SNew(SPopupErrorText);
+	SimulatedPlayersDeploymentNameInputErrorReporting->SetError(TEXT(""));
 	ChildSlot
 		[SNew(SBorder)
 			 .HAlign(HAlign_Fill)
@@ -379,6 +381,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 																					   &SSpatialGDKCloudDeploymentConfiguration::
 																						   OnSimulatedPlayerDeploymentNameCommited,
 																					   ETextCommit::Default)
+																		.ErrorReporting(SimulatedPlayersDeploymentNameInputErrorReporting)
 																		.IsEnabled_UObject(
 																			SpatialGDKSettings,
 																			&USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)]]
@@ -779,8 +782,16 @@ void SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerDeploymentRegionC
 
 void SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
+	const FString& InputSimulatedPlayersDeploymentName = InText.ToString();
+	if (!USpatialGDKEditorSettings::IsDeploymentNameValid(InputSimulatedPlayersDeploymentName))
+	{
+		SimulatedPlayersDeploymentNameInputErrorReporting->SetError(SpatialConstants::DeploymentPatternHint);
+		return;
+	}
+	SimulatedPlayersDeploymentNameInputErrorReporting->SetError(TEXT(""));
+
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetSimulatedPlayerDeploymentName(InText.ToString());
+	SpatialGDKSettings->SetSimulatedPlayerDeploymentName(InputSimulatedPlayersDeploymentName);
 }
 
 void SSpatialGDKCloudDeploymentConfiguration::OnNumberOfSimulatedPlayersCommited(uint32 NewValue)

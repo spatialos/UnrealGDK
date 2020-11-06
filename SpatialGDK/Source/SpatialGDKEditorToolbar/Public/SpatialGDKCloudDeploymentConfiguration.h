@@ -44,6 +44,7 @@ private:
 	TSharedPtr<IErrorReportingWidget> ProjectNameInputErrorReporting;
 	TSharedPtr<IErrorReportingWidget> AssemblyNameInputErrorReporting;
 	TSharedPtr<IErrorReportingWidget> DeploymentNameInputErrorReporting;
+	TSharedPtr<IErrorReportingWidget> SimulatedPlayersDeploymentNameInputErrorReporting;
 
 	/** Delegate to commit project name */
 	void OnProjectNameCommitted(const FText& InText, ETextCommit::Type InCommitType);

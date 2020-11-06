@@ -129,7 +129,7 @@ private:
 	// The accumulated component change in this range must be an update or a complete-update.
 	static ComponentChange CalculateUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, ComponentData& Component);
 
-	void ProcessOp(Worker_Op& Op);
+	void ProcessOpList(const OpList& Ops);
 	void PopulateEntityDeltas(EntityView& View);
 
 	// Adds component changes to `Delta` and updates `Components` accordingly.
@@ -176,5 +176,4 @@ private:
 	TArray<ComponentChange> ComponentsRefreshedForDelta;
 	TArray<OpList> OpListStorage;
 };
-
 } // namespace SpatialGDK

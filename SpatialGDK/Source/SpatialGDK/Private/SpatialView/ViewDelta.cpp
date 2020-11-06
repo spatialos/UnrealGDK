@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ViewDelta.h"
+
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialView/EntityComponentTypes.h"
 
 #include "Algo/StableSort.h"
@@ -11,15 +13,9 @@ namespace SpatialGDK
 void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
 {
 	Clear();
-
 	for (OpList& Ops : OpLists)
 	{
-		const uint32 Count = Ops.Count;
-		Worker_Op* OpData = Ops.Ops;
-		for (uint32 i = 0; i < Count; ++i)
-		{
-			ProcessOp(OpData[i]);
-		}
+		ProcessOpList(Ops);
 	}
 	OpListStorage = MoveTemp(OpLists);
 
@@ -61,10 +57,10 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 
 		// Find the intersection between complete entities and the entity IDs in the view delta, add them to this
 		// delta.
-		if (CompleteIt && DeltaIt && CompleteId == CurrentEntityId && DeltaId == CurrentEntityId)
+		if (CompleteId == CurrentEntityId && DeltaId == CurrentEntityId)
 		{
 			EntityDelta CompleteDelta = *DeltaIt;
-			if (TemporarilyIncompleteIt && *TemporarilyIncompleteIt == CurrentEntityId)
+			if (TemporarilyIncompleteId == CurrentEntityId)
 			{
 				// This is a delta for a complete entity which was also temporarily removed. Change its type to
 				// reflect that.
@@ -73,29 +69,29 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 			}
 			SubDelta.EntityDeltas.Emplace(CompleteDelta);
 		}
+		// Temporarily incomplete entities which aren't present in the projecting view delta are represented as marker
+		// temporarily removed entities with no state.
+		else if (TemporarilyIncompleteId == CurrentEntityId)
+		{
+			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::TEMPORARILY_REMOVED });
+			++TemporarilyIncompleteIt;
+		}
 		// Newly complete entities are represented as marker add entities with no state.
-		if (NewlyCompleteIt && NewlyCompleteId == CurrentEntityId)
+		else if (NewlyCompleteId == CurrentEntityId)
 		{
 			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::ADD });
 			++NewlyCompleteIt;
 		}
 		// Newly incomplete entities are represented as marker remove entities with no state.
-		if (NewlyIncompleteIt && NewlyIncompleteId == CurrentEntityId)
+		else if (NewlyIncompleteId == CurrentEntityId)
 		{
 			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::REMOVE });
 			++NewlyIncompleteIt;
 		}
-		// Temporarily incomplete entities which aren't present in the projecting view delta are represented as marker
-		// temporarily removed entities with no state.
-		if (TemporarilyIncompleteIt && TemporarilyIncompleteId == CurrentEntityId)
-		{
-			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::TEMPORARILY_REMOVED });
-			++TemporarilyIncompleteIt;
-		}
 
 		// Logic for incrementing complete and delta iterators. If either iterator is done, null the other,
 		// as there can no longer be any intersection.
-		if (CompleteIt && CompleteId == CurrentEntityId)
+		if (CompleteId == CurrentEntityId)
 		{
 			++CompleteIt;
 			if (!CompleteIt)
@@ -103,7 +99,7 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 				DeltaIt.SetToEnd();
 			}
 		}
-		if (DeltaIt && DeltaId == CurrentEntityId)
+		if (DeltaId == CurrentEntityId)
 		{
 			++DeltaIt;
 			if (!DeltaIt)
@@ -333,53 +329,57 @@ ComponentChange ViewDelta::CalculateUpdate(ReceivedComponentChange* Start, Recei
 	return ComponentChange(Start->ComponentId, Update);
 }
 
-void ViewDelta::ProcessOp(Worker_Op& Op)
+void ViewDelta::ProcessOpList(const OpList& Ops)
 {
-	switch (static_cast<Worker_OpType>(Op.op_type))
+	for (uint32 i = 0; i < Ops.Count; ++i)
 	{
-	case WORKER_OP_TYPE_DISCONNECT:
-		ConnectionStatusCode = Op.op.disconnect.connection_status_code;
-		ConnectionStatusMessage = Op.op.disconnect.reason;
-		break;
-	case WORKER_OP_TYPE_LOG_MESSAGE:
-		// Log messages deprecated.
-		break;
-	case WORKER_OP_TYPE_CRITICAL_SECTION:
-		// Ignore critical sections.
-		break;
-	case WORKER_OP_TYPE_ADD_ENTITY:
-		EntityChanges.Push(ReceivedEntityChange{ Op.op.add_entity.entity_id, true });
-		break;
-	case WORKER_OP_TYPE_REMOVE_ENTITY:
-		EntityChanges.Push(ReceivedEntityChange{ Op.op.remove_entity.entity_id, false });
-		break;
-	case WORKER_OP_TYPE_METRICS:
-	case WORKER_OP_TYPE_FLAG_UPDATE:
-	case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-	case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-	case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
-	case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
-	case WORKER_OP_TYPE_COMMAND_REQUEST:
-	case WORKER_OP_TYPE_COMMAND_RESPONSE:
-		WorkerMessages.Push(Op);
-		break;
-	case WORKER_OP_TYPE_ADD_COMPONENT:
-		ComponentChanges.Emplace(Op.op.add_component);
-		break;
-	case WORKER_OP_TYPE_REMOVE_COMPONENT:
-		ComponentChanges.Emplace(Op.op.remove_component);
-		break;
-	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		if (Op.op.authority_change.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
+		const Worker_Op& Op = Ops.Ops[i];
+		switch (static_cast<Worker_OpType>(Op.op_type))
 		{
-			AuthorityChanges.Emplace(Op.op.authority_change);
+		case WORKER_OP_TYPE_DISCONNECT:
+			ConnectionStatusCode = Op.op.disconnect.connection_status_code;
+			ConnectionStatusMessage = Op.op.disconnect.reason;
+			break;
+		case WORKER_OP_TYPE_LOG_MESSAGE:
+			// Log messages deprecated.
+			break;
+		case WORKER_OP_TYPE_CRITICAL_SECTION:
+			// Ignore critical sections.
+			break;
+		case WORKER_OP_TYPE_ADD_ENTITY:
+			EntityChanges.Push(ReceivedEntityChange{ Op.op.add_entity.entity_id, true });
+			break;
+		case WORKER_OP_TYPE_REMOVE_ENTITY:
+			EntityChanges.Push(ReceivedEntityChange{ Op.op.remove_entity.entity_id, false });
+			break;
+		case WORKER_OP_TYPE_METRICS:
+		case WORKER_OP_TYPE_FLAG_UPDATE:
+		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
+		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
+		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
+		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
+		case WORKER_OP_TYPE_COMMAND_REQUEST:
+		case WORKER_OP_TYPE_COMMAND_RESPONSE:
+			WorkerMessages.Push(Op);
+			break;
+		case WORKER_OP_TYPE_ADD_COMPONENT:
+			ComponentChanges.Emplace(Op.op.add_component);
+			break;
+		case WORKER_OP_TYPE_REMOVE_COMPONENT:
+			ComponentChanges.Emplace(Op.op.remove_component);
+			break;
+		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+			if (Op.op.authority_change.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
+			{
+				AuthorityChanges.Emplace(Op.op.authority_change);
+			}
+			break;
+		case WORKER_OP_TYPE_COMPONENT_UPDATE:
+			ComponentChanges.Emplace(Op.op.component_update);
+			break;
+		default:
+			break;
 		}
-		break;
-	case WORKER_OP_TYPE_COMPONENT_UPDATE:
-		ComponentChanges.Emplace(Op.op.component_update);
-		break;
-	default:
-		break;
 	}
 }
 
