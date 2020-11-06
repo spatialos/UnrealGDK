@@ -409,12 +409,19 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	CreateAndInitializeLoadBalancingClasses();
 
-	if (SpatialSettings->UseRPCRingBuffer())
-	{
-		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
-			ExtractRPCDelegate::CreateUObject(Receiver, &USpatialReceiver::OnExtractIncomingRPC), StaticComponentView,
-			USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer());
-	}
+	const FFilterPredicate ActorFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+		return !Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
+	};
+	const TArray<FDispatcherRefreshCallback> RefreshCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+		SpatialConstants::TOMBSTONE_COMPONENT_ID) };
+
+	const SpatialGDK::FSubView& ActorAuthSubview =
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, ActorFilter, RefreshCallbacks);
+	const SpatialGDK::FSubView& ActorNonAuthSubview =
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, RefreshCallbacks);
+
+	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
+		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
@@ -1780,7 +1787,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-		Connection->Advance();
+		Connection->Advance(DeltaTime);
 
 		if (Connection->HasDisconnected())
 		{
@@ -1795,6 +1802,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			// Immediately flush. The messages to spatial created by the load balance enforcer in response
 			// to other workers should be looped back as quick as possible.
 			Connection->Flush();
+		}
+
+		if (RPCService.IsValid())
+		{
+			RPCService->Advance(GetElapsedTime());
 		}
 
 		{
@@ -2604,6 +2616,8 @@ void USpatialNetDriver::TryFinishStartup()
 		else
 		{
 			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));
+			bIsReadyToStart = true;
+			Connection->SetStartupComplete();
 
 #if WITH_EDITORONLY_DATA
 			ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
@@ -2621,9 +2635,6 @@ void USpatialNetDriver::TryFinishStartup()
 			// Note that FindAndDispatchStartupOps() will have notified the Dispatcher
 			// to skip the startup ops that we've processed already.
 			GlobalStateManager->TriggerBeginPlay();
-
-			bIsReadyToStart = true;
-			Connection->SetStartupComplete();
 		}
 	}
 	else

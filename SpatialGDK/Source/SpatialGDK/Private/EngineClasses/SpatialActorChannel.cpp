@@ -305,7 +305,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 
 		if (CloseReason == EChannelCloseReason::Destroyed || CloseReason == EChannelCloseReason::LevelUnloaded)
 		{
-			Receiver->ClearPendingRPCs(EntityId);
+			NetDriver->GetRPCService()->ClearPendingRPCs(EntityId);
 			Sender->ClearPendingRPCs(EntityId);
 		}
 		NetDriver->RemoveActorChannel(EntityId, *this);
@@ -1403,10 +1403,11 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	}
 }
 
-void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object, const TWeakObjectPtr<UObject>& ObjectWeakPtr)
+void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object,
+											  const TWeakObjectPtr<UObject>& ObjectWeakPtr)
 {
 	CreateSubObjects.Remove(Object);
-	
+
 	Receiver->MoveMappedObjectToUnmapped(ObjectRef);
 	if (FSpatialObjectRepState* SubObjectRefMap = ObjectReferenceMap.Find(ObjectWeakPtr))
 	{

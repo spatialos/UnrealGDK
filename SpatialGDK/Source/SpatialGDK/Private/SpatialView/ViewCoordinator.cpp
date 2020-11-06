@@ -17,7 +17,7 @@ ViewCoordinator::~ViewCoordinator()
 	FlushMessagesToSend();
 }
 
-void ViewCoordinator::Advance()
+void ViewCoordinator::Advance(float DeltaTimeS)
 {
 	// Get new op lists.
 	ConnectionHandler->Advance();
@@ -26,7 +26,13 @@ void ViewCoordinator::Advance()
 	// Hold back open critical sections.
 	for (uint32 i = 0; i < OpListCount; ++i)
 	{
-		CriticalSectionFilter.AddOpList(ConnectionHandler->GetNextOpList());
+		OpList Ops = ConnectionHandler->GetNextOpList();
+		ReserveEntityIdRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
+		CreateEntityRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
+		DeleteEntityRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
+		EntityQueryRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
+		EntityCommandRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
+		CriticalSectionFilter.AddOpList(MoveTemp(Ops));
 	}
 
 	// Process ops.
@@ -141,6 +147,39 @@ void ViewCoordinator::SendMetrics(SpatialMetrics Metrics)
 void ViewCoordinator::SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message)
 {
 	View.SendLogMessage({ Level, LoggerName, MoveTemp(Message) });
+}
+
+Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, FRetryData RetryData)
+{
+	ReserveEntityIdRetryHandler.SendRequest(NextRequestId, NumberOfEntityIds, RetryData, View);
+	return NextRequestId++;
+}
+
+Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
+														  FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId)
+{
+	CreateEntityRetryHandler.SendRequest(NextRequestId, { MoveTemp(EntityComponents), EntityId, SpanId }, RetryData, View);
+	return NextRequestId++;
+}
+
+Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData,
+														  const TOptional<Trace_SpanId>& SpanId)
+{
+	DeleteEntityRetryHandler.SendRequest(NextRequestId, { EntityId, SpanId }, RetryData, View);
+	return NextRequestId++;
+}
+
+Worker_RequestId ViewCoordinator::SendEntityQueryRequest(EntityQuery Query, FRetryData RetryData)
+{
+	EntityQueryRetryHandler.SendRequest(NextRequestId, MoveTemp(Query), RetryData, View);
+	return NextRequestId++;
+}
+
+Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData,
+														   const TOptional<Trace_SpanId>& SpanId)
+{
+	EntityCommandRetryHandler.SendRequest(NextRequestId, { EntityId, MoveTemp(Request), SpanId }, RetryData, View);
+	return NextRequestId++;
 }
 
 CallbackId ViewCoordinator::RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
