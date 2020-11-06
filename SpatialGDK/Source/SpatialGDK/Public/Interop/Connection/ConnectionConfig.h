@@ -21,7 +21,7 @@ struct FConnectionConfig
 		, EnableWorkerSDKOpLogging(false)
 		, WorkerSDKLogFileSize(10 * 1024 * 1024)
 		, WorkerSDKLogLevel(WORKER_LOG_LEVEL_INFO)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
 		, TcpNoDelay(0)
@@ -106,7 +106,7 @@ private:
 		}
 		else if (!LinkProtocolString.IsEmpty())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."),
+			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to TCP."),
 				   *LinkProtocolString);
 		}
 	}
