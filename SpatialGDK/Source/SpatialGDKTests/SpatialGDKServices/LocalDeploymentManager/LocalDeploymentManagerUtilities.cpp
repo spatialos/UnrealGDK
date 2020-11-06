@@ -78,9 +78,11 @@ bool FStartDeployment::Update()
 
 			FSpatialLaunchConfigDescription LaunchConfigDescription;
 
-			FWorkerTypeLaunchSection Conf;
+			FWorkerTypeLaunchSection AutomationWorkerConfig;
+			AutomationWorkerConfig.WorkerTypeName = TEXT("AutomationWorker");
+			LaunchConfigDescription.AdditionalWorkerConfigs.Add(AutomationWorkerConfig);
 
-			if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, Conf))
+			if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, /*bGenerateCloudConfig*/ false))
 			{
 				return;
 			}

@@ -31,12 +31,26 @@ void ULaunchConfigurationEditor::PostInitProperties()
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
-	LaunchConfiguration.ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+	LaunchConfiguration.ServerWorkerConfiguration.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+}
+
+void ULaunchConfigurationEditor::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	// Use MemberProperty here so we report the correct member name for nested changes
+	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
+
+	if (Name == GET_MEMBER_NAME_CHECKED(ULaunchConfigurationEditor, LaunchConfiguration))
+	{
+		// Force override the server worker name as it MUST be UnrealWorker.
+		LaunchConfiguration.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
+	}
 }
 
 void ULaunchConfigurationEditor::SaveConfiguration()
 {
-	if (!ValidateGeneratedLaunchConfig(LaunchConfiguration, LaunchConfiguration.ServerWorkerConfig))
+	if (!ValidateGeneratedLaunchConfig(LaunchConfiguration))
 	{
 		return;
 	}
@@ -52,7 +66,7 @@ void ULaunchConfigurationEditor::SaveConfiguration()
 
 	if (bSaved && Filenames.Num() > 0)
 	{
-		if (GenerateLaunchConfig(Filenames[0], &LaunchConfiguration, LaunchConfiguration.ServerWorkerConfig))
+		if (GenerateLaunchConfig(Filenames[0], &LaunchConfiguration, bIsCloudConfiguration))
 		{
 			OnConfigurationSaved.ExecuteIfBound(Filenames[0]);
 		}

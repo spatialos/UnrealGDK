@@ -756,31 +756,31 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 
 		FSpatialLaunchConfigDescription LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 
-		FWorkerTypeLaunchSection Conf = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig;
 		// Force manual connection to true as this is the config for PIE.
-		Conf.bManualWorkerConnectionOnly = true;
-		if (Conf.bAutoNumEditorInstances)
+		LaunchConfigDescription.ServerWorkerConfiguration.bManualWorkerConnectionOnly = true;
+		if (LaunchConfigDescription.ServerWorkerConfiguration.bAutoNumEditorInstances)
 		{
-			Conf.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+			LaunchConfigDescription.ServerWorkerConfiguration.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
 		}
 
-		if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription, Conf))
+		if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription))
 		{
 			return;
 		}
 
-		GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, Conf);
+		GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, /*bGenerateCloudConfig*/ false);
 
 		// Also create default launch config for cloud deployments.
 		{
 			// Revert to the setting's flag value for manual connection.
-			Conf.bManualWorkerConnectionOnly = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig.bManualWorkerConnectionOnly;
+			LaunchConfigDescription.ServerWorkerConfiguration.bManualWorkerConnectionOnly =
+				SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfiguration.bManualWorkerConnectionOnly;
 			FString CloudLaunchConfig =
 				FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()),
 								FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
-			Conf.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
+			LaunchConfigDescription.ServerWorkerConfiguration.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
 
-			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, Conf);
+			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, /*bGenerateCloudConfig*/ true);
 		}
 	}
 	else
@@ -1207,7 +1207,7 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
+void FSpatialGDKEditorToolbarModule::GenerateCloudConfigFromCurrentMap()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 
@@ -1218,10 +1218,10 @@ void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
 												 FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
 
 	FSpatialLaunchConfigDescription LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
-	FWorkerTypeLaunchSection& ServerWorkerConfig = LaunchConfiguration.ServerWorkerConfig;
-	ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
 
-	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
+	LaunchConfiguration.ServerWorkerConfiguration.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
+
+	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, /*bGenerateCloudConfig*/ true);
 
 	SpatialGDKEditorSettings->SetPrimaryLaunchConfigPath(LaunchConfig);
 }
@@ -1239,7 +1239,7 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 
 	if (SpatialGDKSettings->ShouldAutoGenerateCloudLaunchConfig())
 	{
-		GenerateConfigFromCurrentMap();
+		GenerateCloudConfigFromCurrentMap();
 	}
 
 	AddDeploymentTagIfMissing(SpatialConstants::DEV_LOGIN_TAG);

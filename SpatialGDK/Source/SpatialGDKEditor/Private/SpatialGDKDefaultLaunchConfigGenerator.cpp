@@ -49,11 +49,11 @@ bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& Wo
 	return true;
 }
 
-bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerTypeName, const FWorkerTypeLaunchSection& WorkerConfig)
+bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunchSection& WorkerConfig)
 {
 	Writer->WriteObjectStart();
 
-	Writer->WriteValue(TEXT("worker_type"), *WorkerTypeName.ToString());
+	Writer->WriteValue(TEXT("worker_type"), *WorkerConfig.WorkerTypeName.ToString());
 
 	Writer->WriteArrayStart(TEXT("flags"));
 	for (const auto& Flag : WorkerConfig.Flags)
@@ -70,7 +70,8 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerTyp
 	Writer->WriteValue(TEXT("entity_query"), WorkerConfig.WorkerPermissions.bAllowEntityQuery);
 	Writer->WriteObjectEnd();
 
-	Writer->WriteValue(TEXT("attribute"), WorkerTypeName.ToString());
+	// We always use the workers name as the attribute
+	Writer->WriteValue(TEXT("attribute"), *WorkerConfig.WorkerTypeName.ToString());
 
 	if (WorkerConfig.NumEditorInstances > 0)
 	{
@@ -99,7 +100,7 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World, bool bForceNonEditor
 }
 
 bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription,
-						  const FWorkerTypeLaunchSection& InWorker)
+						  bool bGenerateCloudConfig)
 {
 	if (InLaunchConfigDescription != nullptr)
 	{
@@ -118,16 +119,37 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		Writer->WriteArrayEnd();
 
 		Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
-		if (InWorker.NumEditorInstances > 0)
-		{
-			// TODO: We need to detect what worker configurations the user has on disk and add them to the launch config dynamically. This
-			// could be quite complex.
-			WriteWorkerSection(Writer, SpatialConstants::DefaultServerWorkerType, InWorker);
-		}
-		// Write the client worker section
+
+		// Write the default server worker config (UnrealWorker)
+		WriteWorkerSection(Writer, InLaunchConfigDescription->ServerWorkerConfiguration);
+
+		// Write the client worker section (UnrealClient)
 		FWorkerTypeLaunchSection ClientWorker;
-		ClientWorker.NumEditorInstances = 0; // TODO: This is probably incorrect.
-		WriteWorkerSection(Writer, SpatialConstants::DefaultClientWorkerType, ClientWorker);
+		ClientWorker.NumEditorInstances = 0;
+		ClientWorker.WorkerTypeName = SpatialConstants::DefaultClientWorkerType;
+		WriteWorkerSection(Writer, ClientWorker);
+
+		// For cloud configs we always add the SimulatedPlayerCoordinator and DeploymentManager.
+		if (bGenerateCloudConfig)
+		{
+			// Write the Simulated Player Coordinator section
+			FWorkerTypeLaunchSection SimulatedPlayerCoordinator;
+			SimulatedPlayerCoordinator.NumEditorInstances = 0;
+			SimulatedPlayerCoordinator.WorkerTypeName = TEXT("SimulatedPlayerCoordinator");
+			WriteWorkerSection(Writer, SimulatedPlayerCoordinator);
+
+			// Write the Deployment Manager section
+			FWorkerTypeLaunchSection DeploymentManagerConfig;
+			DeploymentManagerConfig.NumEditorInstances = 0;
+			DeploymentManagerConfig.WorkerTypeName = TEXT("DeploymentManager");
+			WriteWorkerSection(Writer, DeploymentManagerConfig);
+		}
+
+		// Write any additional worker configs that may have been added.
+		for (FWorkerTypeLaunchSection AdditionalWorkerConfig : LaunchConfigDescription.AdditionalWorkerConfigs)
+		{
+			WriteWorkerSection(Writer, AdditionalWorkerConfig);
+		}
 
 		Writer->WriteArrayEnd(); // Worker section end
 
@@ -149,7 +171,12 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 			return false;
 		}
 
-		return ConvertToClassicConfig(LaunchConfigPath, InLaunchConfigDescription);
+		if (bGenerateCloudConfig)
+		{
+			return ConvertToClassicConfig(LaunchConfigPath, InLaunchConfigDescription);
+		}
+
+		return true;
 	}
 
 	return false;
@@ -197,65 +224,58 @@ bool ConvertToClassicConfig(const FString& LaunchConfigPath, const FSpatialLaunc
 		   TEXT("Successfully converted generated launch config to classic style config for config '%s'. Conversion output: %s"),
 		   *LaunchConfigPath, *Output);
 
-	// TODO: Perhaps make a function for this.
 	FString GeneratedClassicConfigFilePath = FPaths::Combine(LaunchConfigDir, TEXT("launch_config.json"));
 
-	// Rename the generated 'launch_config.json' to the originally generated config file name with `_classic` appended.
 	IPlatformFile& PlatformFile = IPlatformFile::GetPlatformPhysical();
-
-	// The file path will have `.json` at the end so remove that.
-	// TODO: Perhaps make a function for this.
-	FString ClassicConfigFilePath = FString::Printf(TEXT("%s_classic.json"), *LaunchConfigPath.LeftChop(5));
 
 	bool bSuccess = true;
 
-	if (FPaths::FileExists(ClassicConfigFilePath))
+	// Delete the previously generated config that is not classic format.
+	if (FPaths::FileExists(LaunchConfigPath))
 	{
-		bSuccess = PlatformFile.DeleteFile(*ClassicConfigFilePath);
+		bSuccess = PlatformFile.DeleteFile(*LaunchConfigPath);
 	}
 
 	if (!bSuccess)
 	{
-		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error, TEXT("Failed to remove old converted classic style launch config %s"),
-			   *ClassicConfigFilePath);
+		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error,
+			   TEXT("Failed to remove local launch configuration '%s' when converting to cloud launch configuration."), *LaunchConfigPath);
 		return bSuccess;
 	}
 
-	bSuccess = PlatformFile.MoveFile(*ClassicConfigFilePath, *GeneratedClassicConfigFilePath);
+	bSuccess = PlatformFile.MoveFile(*LaunchConfigPath, *GeneratedClassicConfigFilePath);
 	if (!bSuccess)
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error,
 			   TEXT("Failed to rename converted classic style launch config. From: %s. To: %s"), *GeneratedClassicConfigFilePath,
-			   *ClassicConfigFilePath);
+			   *LaunchConfigPath);
 	}
 
 	return bSuccess;
 }
 
-bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& LaunchConfigDesc, const FWorkerTypeLaunchSection& InWorker)
+bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& LaunchConfigDesc)
 {
-	// TODO: Validate if this is still needed or not.
+	const USpatialGDKSettings* SpatialGDKRuntimeSettings = GetDefault<USpatialGDKSettings>();
+	if (const FString* EnableChunkInterest = LaunchConfigDesc.RuntimeFlags.Find(TEXT("enable_chunk_interest")))
+	{
+		if (*EnableChunkInterest == TEXT("true"))
+		{
+			const EAppReturnType::Type Result = FMessageDialog::Open(
+				EAppMsgType::YesNo,
+				LOCTEXT(
+					"ChunkInterestNotSupported_Prompt",
+					"The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. Chunk interest is not "
+					"supported and this flag needs to be set to false.\n\nDo you want to configure your launch config settings now?"));
 
-	// const USpatialGDKSettings* SpatialGDKRuntimeSettings = GetDefault<USpatialGDKSettings>();
-	// if (const FString* EnableChunkInterest = LaunchConfigDesc.World.RuntimeFlags.Find(TEXT("enable_chunk_interest")))
-	//{
-	//	if (*EnableChunkInterest == TEXT("true"))
-	//	{
-	//		const EAppReturnType::Type Result = FMessageDialog::Open(
-	//			EAppMsgType::YesNo,
-	//			LOCTEXT(
-	//				"ChunkInterestNotSupported_Prompt",
-	//				"The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. Chunk interest is not "
-	//				"supported and this flag needs to be set to false.\n\nDo you want to configure your launch config settings now?"));
+			if (Result == EAppReturnType::Yes)
+			{
+				FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
+			}
 
-	//		if (Result == EAppReturnType::Yes)
-	//		{
-	//			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
-	//		}
-
-	//		return false;
-	//	}
-	//}
+			return false;
+		}
+	}
 	return true;
 }
 

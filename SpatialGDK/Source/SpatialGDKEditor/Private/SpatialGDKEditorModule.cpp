@@ -251,9 +251,9 @@ bool FSpatialGDKEditorModule::ShouldPackageMobileCommandLineArgs() const
 uint32 GetPIEServerWorkers()
 {
 	const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	if (EditorSettings->bGenerateDefaultLaunchConfig && !EditorSettings->LaunchConfigDesc.ServerWorkerConfig.bAutoNumEditorInstances)
+	if (EditorSettings->bGenerateDefaultLaunchConfig && !EditorSettings->LaunchConfigDesc.ServerWorkerConfiguration.bAutoNumEditorInstances)
 	{
-		return EditorSettings->LaunchConfigDesc.ServerWorkerConfig.NumEditorInstances;
+		return EditorSettings->LaunchConfigDesc.ServerWorkerConfiguration.NumEditorInstances;
 	}
 	else
 	{

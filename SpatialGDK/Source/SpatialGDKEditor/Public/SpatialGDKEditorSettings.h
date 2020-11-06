@@ -85,8 +85,8 @@ struct FWorkerTypeLaunchSection
 	{
 	}
 
-	/** Worker type name, deprecated in favor of defining them in the runtime settings.*/
-	UPROPERTY(config)
+	/** Worker type name. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	FName WorkerTypeName;
 
 	/** Flags defined for a worker instance. */
@@ -96,9 +96,6 @@ struct FWorkerTypeLaunchSection
 	/** Defines the worker instance's permissions. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	FWorkerPermissionsSection WorkerPermissions;
-
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
-	FString Attribute;
 
 	/** Automatically or manually specifies the number of worker instances to launch in editor. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config,
@@ -129,6 +126,7 @@ struct FSpatialLaunchConfigDescription
 		, World()
 		, MaxConcurrentWorkers(1000)
 	{
+		ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 	}
 
 	const FString& GetTemplate() const;
@@ -148,8 +146,13 @@ struct FSpatialLaunchConfigDescription
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	TMap<FString, FString> RuntimeFlags;
 
+	/** Main server worker configuration, usually known as the UnrealWorker */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, EditFixedSize, config)
-	FWorkerTypeLaunchSection ServerWorkerConfig;
+	FWorkerTypeLaunchSection ServerWorkerConfiguration;
+
+	/** Additional worker configurations used for testing and cloud deploying */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Additional Workers"))
+	TArray<FWorkerTypeLaunchSection> AdditionalWorkerConfigs;
 
 	/** Configuration for the simulated world. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
