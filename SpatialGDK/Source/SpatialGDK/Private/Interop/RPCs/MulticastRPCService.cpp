@@ -98,7 +98,7 @@ void MulticastRPCService::ComponentRefresh(const Worker_EntityId EntityId, const
 }
 
 void MulticastRPCService::ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-                                          Schema_ComponentUpdate* Update)
+										  Schema_ComponentUpdate* Update)
 {
 	if (ComponentId != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 	{
