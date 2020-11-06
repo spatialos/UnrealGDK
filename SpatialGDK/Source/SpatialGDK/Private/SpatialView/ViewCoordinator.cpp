@@ -240,11 +240,6 @@ const FString& ViewCoordinator::GetWorkerId() const
 	return ConnectionHandler->GetWorkerId();
 }
 
-const TArray<FString>& ViewCoordinator::GetWorkerAttributes() const
-{
-	return ConnectionHandler->GetWorkerAttributes();
-}
-
 Worker_EntityId ViewCoordinator::GetWorkerSystemEntityId() const
 {
 	return ConnectionHandler->GetWorkerSystemEntityId();

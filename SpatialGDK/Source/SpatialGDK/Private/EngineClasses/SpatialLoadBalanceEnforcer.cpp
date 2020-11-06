@@ -14,10 +14,6 @@
 #include "SpatialView/SubView.h"
 #include "SpatialView/ViewDelta.h"
 
-#include "Containers/UnrealString.h"
-
-#pragma optimize("", off)
-
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalanceEnforcer);
 
 namespace SpatialGDK
@@ -220,5 +216,3 @@ bool SpatialLoadBalanceEnforcer::ApplyComponentRefresh(const Worker_EntityId Ent
 }
 
 } // namespace SpatialGDK
-
-#pragma optimize("", on)

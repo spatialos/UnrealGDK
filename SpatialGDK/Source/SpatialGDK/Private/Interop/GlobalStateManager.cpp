@@ -407,7 +407,7 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 	Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 }
 
-worker::c::Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
+Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
 {
 	if (ensure(NetDriver != nullptr))
 	{

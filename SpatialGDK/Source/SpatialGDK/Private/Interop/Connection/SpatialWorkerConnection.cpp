@@ -7,8 +7,6 @@
 #include "SpatialView/ConnectionHandler/InitialOpListConnectionHandler.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
 
-#pragma optimize("", off)
-
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 namespace
@@ -199,12 +197,6 @@ PhysicalWorkerName USpatialWorkerConnection::GetWorkerId() const
 	return Coordinator->GetWorkerId();
 }
 
-const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
-{
-	check(Coordinator.IsValid());
-	return Coordinator->GetWorkerAttributes();
-}
-
 Worker_EntityId USpatialWorkerConnection::GetWorkerSystemEntityId() const
 {
 	check(Coordinator.IsValid());
@@ -343,5 +335,3 @@ void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, Spa
 		}
 	}
 }
-
-#pragma optimize("", on)

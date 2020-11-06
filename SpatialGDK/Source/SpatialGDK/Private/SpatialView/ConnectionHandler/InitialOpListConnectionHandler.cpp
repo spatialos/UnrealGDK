@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ConnectionHandler/InitialOpListConnectionHandler.h"
 
@@ -65,11 +65,6 @@ void InitialOpListConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Mes
 const FString& InitialOpListConnectionHandler::GetWorkerId() const
 {
 	return InnerHandler->GetWorkerId();
-}
-
-const TArray<FString>& InitialOpListConnectionHandler::GetWorkerAttributes() const
-{
-	return InnerHandler->GetWorkerAttributes();
 }
 
 Worker_EntityId InitialOpListConnectionHandler::GetWorkerSystemEntityId() const

@@ -9,8 +9,6 @@
 
 #include "Templates/Tuple.h"
 
-#pragma optimize("", off)
-
 DEFINE_LOG_CATEGORY(LogGridBasedLBStrategy);
 
 UGridBasedLBStrategy::UGridBasedLBStrategy()
@@ -230,5 +228,3 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 	}
 }
 #endif // WITH_EDITOR
-
-#pragma optimize("", on)

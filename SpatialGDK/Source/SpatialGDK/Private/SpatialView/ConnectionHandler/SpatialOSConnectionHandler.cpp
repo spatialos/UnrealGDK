@@ -19,11 +19,6 @@ SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connec
 	, WorkerId(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(Connection)))
 	, WorkerSystemEntityId(Worker_Connection_GetWorkerEntityId(Connection))
 {
-	// 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(Connection);
-	// 	for (uint32 i = 0; i < Attributes->attribute_count; ++i)
-	// 	{
-	// 		WorkerAttributes.Push(FString(UTF8_TO_TCHAR(Attributes->attributes[i])));
-	// 	}
 }
 
 void SpatialOSConnectionHandler::Advance() {}
@@ -188,11 +183,6 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 const FString& SpatialOSConnectionHandler::GetWorkerId() const
 {
 	return WorkerId;
-}
-
-const TArray<FString>& SpatialOSConnectionHandler::GetWorkerAttributes() const
-{
-	return WorkerAttributes;
 }
 
 Worker_EntityId SpatialOSConnectionHandler::GetWorkerSystemEntityId() const

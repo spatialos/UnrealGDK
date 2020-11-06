@@ -4,8 +4,6 @@
 
 #include "Interop/SpatialReceiver.h"
 
-#pragma optimize("", off)
-
 namespace SpatialGDK
 {
 WellKnownEntitySystem::WellKnownEntitySystem(const FSubView& SubView, USpatialReceiver* InReceiver, USpatialWorkerConnection* InConnection,
@@ -171,5 +169,3 @@ void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 }
 
 } // Namespace SpatialGDK
-
-#pragma optimize("", on)
