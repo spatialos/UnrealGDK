@@ -141,35 +141,6 @@ void ASpatialTestCharacterMigration::PrepareTest()
 		FinishStep();
 	});
 
-	// The server checks if the clients received a TestCharacterMovement and moves them to the mentioned locations
-	AddStep(TEXT("ServerSetupStep"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
-		{
-			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-			{
-				continue;
-			}
-
-			AController* PlayerController = Cast<AController>(FlowController->GetOwner());
-			ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
-
-			checkf(PlayerCharacter, TEXT("Client did not receive a TestMovementCharacter"));
-
-			int FlowControllerId = FlowController->WorkerDefinition.Id;
-
-			if (FlowControllerId == 1)
-			{
-				PlayerCharacter->SetActorLocation(FVector(0.0f, -25.0f, 50.0f));
-			}
-			else
-			{
-				PlayerCharacter->SetActorLocation(FVector(0.0f, 50.0f * FlowControllerId, 50.0f));
-			}
-		}
-
-		FinishStep();
-	});
-
 	// Repeatedly move character forwards and backwards over the worker boundary and adding actors every time
 	for (int i = 0; i < 5; i++)
 	{
