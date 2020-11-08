@@ -102,8 +102,6 @@ const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
 const Worker_ComponentId HEARTBEAT_COMPONENT_ID = 9991;
 
-const Worker_ComponentSetId GDK_WELL_KNOWN_COMPONENT_SET_ID = 9999;
-
 // Marking the event-based RPC components as legacy while the ring buffer
 // implementation is under a feature flag.
 const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9990;
