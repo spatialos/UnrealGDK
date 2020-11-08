@@ -4,6 +4,8 @@
 
 #include "Interop/SpatialReceiver.h"
 
+DEFINE_LOG_CATEGORY(LogWellKnownEntitySystem);
+
 namespace SpatialGDK
 {
 WellKnownEntitySystem::WellKnownEntitySystem(const FSubView& SubView, USpatialReceiver* InReceiver, USpatialWorkerConnection* InConnection,
@@ -136,11 +138,14 @@ void WellKnownEntitySystem::InitializeVirtualWorkerTranslationManager()
 
 void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 {
+	// Perform a naive leader election where we wait for the correct number of server workers to be present in the deployment, and then
+	// whichever server has the lowest server worker entity id claims the snapshot partition.
 	Worker_EntityId LocalServerWorkerEntityId = GlobalStateManager->GetLocalServerWorkerEntityId();
 	Worker_EntityId LowestEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	if (LocalServerWorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
+		UE_LOG(LogWellKnownEntitySystem, Warning, TEXT("MaybeClaimSnapshotPartition aborted due to lack of local server worker entity"));
 		return;
 	}
 
@@ -162,9 +167,17 @@ void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 		}
 	}
 
-	if (LocalServerWorkerEntityId == LowestEntityId && ServerCount == NumberOfWorkers)
+	if (LocalServerWorkerEntityId == LowestEntityId && ServerCount >= NumberOfWorkers)
 	{
+		UE_LOG(LogWellKnownEntitySystem, Log, TEXT("MaybeClaimSnapshotPartition claiming snapshot partition"));
 		GlobalStateManager->ClaimSnapshotPartition();
+	}
+
+	if (ServerCount > NumberOfWorkers)
+	{
+		UE_LOG(LogWellKnownEntitySystem, Warning,
+			   TEXT("MaybeClaimSnapshotPartition found too many server worker entities, expected %d got %d."), NumberOfWorkers,
+			   ServerCount);
 	}
 }
 

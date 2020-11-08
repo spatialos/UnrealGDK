@@ -168,7 +168,7 @@ namespace Improbable.WorkerCoordinator
             try
             {
                 // Pass in the dev auth token and the target deployment
-                if (String.IsNullOrEmpty(devAuthToken) && String.IsNullOrEmpty(targetDeployment))
+                if (!String.IsNullOrEmpty(devAuthToken) && !String.IsNullOrEmpty(targetDeployment))
                 {
                     string[] simulatedPlayerArgs = Util.ReplacePlaceholderArgs(SimulatedPlayerArgs, new Dictionary<string, string>() {
                         { SimulatedPlayerWorkerNamePlaceholderArg, simulatedPlayerName },

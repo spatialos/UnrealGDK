@@ -8,6 +8,8 @@
 #include "GlobalStateManager.h"
 #include "SpatialView/SubView.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogWellKnownEntitySystem, Log, All)
+
 namespace SpatialGDK
 {
 class WellKnownEntitySystem
