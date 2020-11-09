@@ -7,7 +7,6 @@
 #include "Schema/ClientEndpoint.h"
 #include "Schema/ServerEndpoint.h"
 #include "SpatialConstants.h"
-#include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogClientServerRPCService);
 
@@ -22,7 +21,43 @@ ClientServerRPCService::ClientServerRPCService(const ExtractRPCDelegate InExtrac
 {
 }
 
-void ClientServerRPCService::Advance()
+void ClientServerRPCService::AdvanceView()
+{
+	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
+	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
+	{
+		switch (Delta.Type)
+		{
+		case EntityDelta::UPDATE:
+		{
+			for (const ComponentChange& Change : Delta.ComponentUpdates)
+			{
+				if (IsClientOrServerEndpoint(Change.ComponentId))
+				{
+					ApplyComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update);
+				}
+			}
+			break;
+		}
+		case EntityDelta::ADD:
+			PopulateDataStore(Delta.EntityId);
+			SetEntityData(Delta.EntityId);
+			break;
+		case EntityDelta::REMOVE:
+			ClientServerDataStore.Remove(Delta.EntityId);
+			break;
+		case EntityDelta::TEMPORARILY_REMOVED:
+			ClientServerDataStore.Remove(Delta.EntityId);
+			PopulateDataStore(Delta.EntityId);
+			SetEntityData(Delta.EntityId);
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+void ClientServerRPCService::ProcessChanges()
 {
 	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
 	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
@@ -38,15 +73,9 @@ void ClientServerRPCService::Advance()
 			break;
 		}
 		case EntityDelta::ADD:
-			PopulateDataStore(Delta.EntityId);
 			EntityAdded(Delta.EntityId);
 			break;
-		case EntityDelta::REMOVE:
-			ClientServerDataStore.Remove(Delta.EntityId);
-			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
-			ClientServerDataStore.Remove(Delta.EntityId);
-			PopulateDataStore(Delta.EntityId);
 			EntityAdded(Delta.EntityId);
 			break;
 		default:
@@ -108,7 +137,7 @@ uint64 ClientServerRPCService::GetAckFromView(const Worker_EntityId EntityId, co
 	}
 }
 
-void ClientServerRPCService::EntityAdded(const Worker_EntityId EntityId)
+void ClientServerRPCService::SetEntityData(Worker_EntityId EntityId)
 {
 	for (const Worker_ComponentId ComponentId : SubView->GetView()[EntityId].Authority)
 	{
@@ -117,6 +146,17 @@ void ClientServerRPCService::EntityAdded(const Worker_EntityId EntityId)
 			continue;
 		}
 		OnEndpointAuthorityGained(EntityId, ComponentId);
+	}
+}
+
+void ClientServerRPCService::EntityAdded(const Worker_EntityId EntityId)
+{
+	for (const Worker_ComponentId ComponentId : SubView->GetView()[EntityId].Authority)
+	{
+		if (!IsClientOrServerEndpoint(ComponentId))
+		{
+			continue;
+		}
 		ExtractRPCsForEntity(EntityId, ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
 										   ? SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
 										   : SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID);
@@ -130,7 +170,6 @@ void ClientServerRPCService::ComponentUpdate(const Worker_EntityId EntityId, con
 	{
 		return;
 	}
-	ApplyComponentUpdate(EntityId, ComponentId, Update);
 	HandleRPC(EntityId, ComponentId);
 }
 
