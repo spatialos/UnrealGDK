@@ -101,6 +101,12 @@ bool FStopDeployment::Update()
 {
 	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
 
+	if (LocalDeploymentManager->IsDeploymentStarting())
+	{
+		// Wait for deployment to finish starting before stopping it
+		return false;
+	}
+
 	if (!LocalDeploymentManager->IsLocalDeploymentRunning() && !LocalDeploymentManager->IsDeploymentStopping())
 	{
 		return true;
