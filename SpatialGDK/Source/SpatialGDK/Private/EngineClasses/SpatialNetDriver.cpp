@@ -105,26 +105,6 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	bMaySendProperties = true;
 
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
-
-	// TODO Decide on where this should be registered
-	GetClientIDDelegate.BindLambda([this]() {
-		if (IsServer())
-		{
-			return (int64)SpatialConstants::INVALID_ENTITY_ID;
-		}
-
-		if (USpatialNetConnection* NetConnection = GetSpatialOSNetConnection())
-		{
-			if (APlayerController* PlayerController = Cast<APlayerController>(NetConnection->OwningActor))
-			{
-				if (PackageMap != nullptr)
-				{
-					return (int64)PackageMap->GetEntityIdFromObject(PlayerController);
-				}
-			}
-		}
-		return (int64)SpatialConstants::INVALID_ENTITY_ID;
-	});
 }
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
@@ -2712,6 +2692,26 @@ bool USpatialNetDriver::IsLogged(Worker_EntityId ActorEntityId, EActorMigrationR
 		MigrationFailureLogStore.AddUnique(ActorEntityId, ActorMigrationFailure);
 	}
 	return bIsLogged;
+}
+
+int64 USpatialNetDriver::GetClientID()
+{
+	if (IsServer())
+	{
+		return (int64)SpatialConstants::INVALID_ENTITY_ID;
+	}
+
+	if (USpatialNetConnection* NetConnection = GetSpatialOSNetConnection())
+	{
+		if (APlayerController* PlayerController = Cast<APlayerController>(NetConnection->OwningActor))
+		{
+			if (PackageMap != nullptr)
+			{
+				return (int64)PackageMap->GetEntityIdFromObject(PlayerController);
+			}
+		}
+	}
+	return (int64)SpatialConstants::INVALID_ENTITY_ID;
 }
 
 bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
