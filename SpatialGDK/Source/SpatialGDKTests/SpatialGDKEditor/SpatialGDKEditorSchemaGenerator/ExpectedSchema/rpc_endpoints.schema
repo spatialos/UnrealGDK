@@ -77,6 +77,13 @@ component UnrealClientEndpoint {
 	uint64 last_acked_server_to_client_unreliable_rpc_id = 68;
 }
 
+component_set UnrealClientEndpointSet {
+	id = 9978;
+	components = [
+		UnrealClientEndpoint
+	];
+}
+
 component UnrealServerEndpoint {
 	id = 9977;
 	option<UnrealRPCPayload> server_to_client_reliable_rpc_0 = 1;
@@ -149,6 +156,13 @@ component UnrealServerEndpoint {
 	uint64 last_acked_client_to_server_unreliable_rpc_id = 68;
 }
 
+component_set UnrealServerEndpointSet {
+	id = 9977;
+	components = [
+		UnrealServerEndpoint
+	];
+}
+
 component UnrealMulticastRPCs {
 	id = 9976;
 	option<UnrealRPCPayload> multicast_rpc_0 = 1;
@@ -185,4 +199,11 @@ component UnrealMulticastRPCs {
 	option<UnrealRPCPayload> multicast_rpc_31 = 32;
 	uint64 last_sent_multicast_rpc_id = 33;
 	uint32 initially_present_multicast_rpc_count = 34;
+}
+
+component_set UnrealMulticastRPCsSet {
+	id = 9976;
+	components = [
+		UnrealMulticastRPCs
+	];
 }

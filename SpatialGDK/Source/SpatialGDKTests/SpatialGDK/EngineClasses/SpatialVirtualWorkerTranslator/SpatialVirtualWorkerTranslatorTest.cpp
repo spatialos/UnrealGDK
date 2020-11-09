@@ -88,8 +88,8 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_receiving_incomplete_mapping_
 	Schema_Object* DataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
 
 	// The mapping only has the following entries:
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, 1, "ValidWorkerOne");
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, 2, "ValidWorkerTwo");
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, 1, "ValidWorkerOne", 101);
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, 2, "ValidWorkerTwo", 102);
 
 	// Now apply the mapping to the translator and test the result. Because the mapping doesn't have an entry for this translator,
 	// it should reject the mapping and continue to report an empty mapping.
@@ -116,8 +116,8 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_a_valid_mapping_is_received_T
 	Schema_Object* DataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
 
 	// The mapping only has the following entries:
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, 1, "ValidWorkerOne");
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, 2, "ValidWorkerTwo");
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, 1, "ValidWorkerOne", 101);
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, 2, "ValidWorkerTwo", 102);
 
 	// Now apply the mapping to the translator and test the result.
 	Translator->ApplyVirtualWorkerManagerData(DataObject);
@@ -148,8 +148,8 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_an_invalid_mapping_
 	Schema_Object* ValidDataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
 
 	// The mapping only has the following entries:
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(ValidDataObject, 1, "ValidWorkerOne");
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(ValidDataObject, 2, "ValidWorkerTwo");
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(ValidDataObject, 1, "ValidWorkerOne", 101);
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(ValidDataObject, 2, "ValidWorkerTwo", 102);
 
 	// Apply valid mapping to the translator.
 	Translator->ApplyVirtualWorkerManagerData(ValidDataObject);
@@ -191,8 +191,8 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_another_valid_mappi
 	Schema_Object* FirstValidDataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
 
 	// The mapping only has the following entries:
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(FirstValidDataObject, 1, "ValidWorkerOne");
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(FirstValidDataObject, 2, "ValidWorkerTwo");
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(FirstValidDataObject, 1, "ValidWorkerOne", 101);
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(FirstValidDataObject, 2, "ValidWorkerTwo", 102);
 
 	// Apply valid mapping to the translator.
 	Translator->ApplyVirtualWorkerManagerData(FirstValidDataObject);
@@ -201,8 +201,8 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_another_valid_mappi
 	Schema_Object* SecondValidDataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
 
 	// The mapping only has the following entries:
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(SecondValidDataObject, 1, "ValidWorkerOne");
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(SecondValidDataObject, 2, "ValidWorkerThree");
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(SecondValidDataObject, 1, "ValidWorkerOne", 101);
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(SecondValidDataObject, 2, "ValidWorkerThree", 103);
 
 	// Apply valid mapping to the translator.
 	Translator->ApplyVirtualWorkerManagerData(SecondValidDataObject);
@@ -233,7 +233,7 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_try_to_change_local
 
 	// The mapping only has the following entries:
 	// 	VirtualToPhysicalWorkerMapping.Add(1, "ValidWorkerOne");
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(FirstValidDataObject, 1, "ValidWorkerOne");
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(FirstValidDataObject, 1, "ValidWorkerOne", 101);
 
 	// Apply valid mapping to the translator.
 	Translator->ApplyVirtualWorkerManagerData(FirstValidDataObject);
@@ -242,7 +242,7 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_try_to_change_local
 	Schema_Object* SecondValidDataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
 
 	// The mapping only has the following entries:
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(SecondValidDataObject, 2, "ValidWorkerOne");
+	TestingSchemaHelpers::AddTranslationComponentDataMapping(SecondValidDataObject, 2, "ValidWorkerOne", 102);
 
 	// Apply valid mapping to the translator.
 	AddExpectedError(TEXT("Received mapping containing a new and updated virtual worker ID, this shouldn't happen."),
