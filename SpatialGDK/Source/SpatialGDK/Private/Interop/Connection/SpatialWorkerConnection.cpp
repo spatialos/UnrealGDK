@@ -82,13 +82,13 @@ Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorke
 	{
 		Data.Emplace(SpatialGDK::OwningComponentDataPtr(Component.schema_type), Component.component_id);
 	}
-	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id, {}, SpanId);
+	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id, TOptional<uint32>(), SpanId);
 }
 
 Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendDeleteEntityRequest(EntityId, {}, SpanId);
+	return Coordinator->SendDeleteEntityRequest(EntityId, TOptional<uint32>(), SpanId);
 }
 
 void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
@@ -119,7 +119,7 @@ Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId En
 	return Coordinator->SendEntityCommandRequest(EntityId,
 												 SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type),
 																			Request->component_id, Request->command_index),
-												 {}, SpanId);
+												 TOptional<uint32>(), SpanId);
 }
 
 void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
@@ -162,10 +162,10 @@ void USpatialWorkerConnection::SendMetrics(SpatialGDK::SpatialMetrics Metrics)
 	Coordinator->SendMetrics(MoveTemp(Metrics));
 }
 
-void USpatialWorkerConnection::Advance()
+void USpatialWorkerConnection::Advance(float DeltaTimeS)
 {
 	check(Coordinator.IsValid());
-	Coordinator->Advance();
+	Coordinator->Advance(DeltaTimeS);
 }
 
 bool USpatialWorkerConnection::HasDisconnected() const

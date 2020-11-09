@@ -244,9 +244,10 @@ void ClientServerRPCService::HandleRPC(const Worker_EntityId EntityId, const Wor
 		const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver->PackageMap->GetObjectFromEntityId(EntityId);
 		if (!ActorReceivingRPC.IsValid())
 		{
-			UE_LOG(LogClientServerRPCService, Error,
-				   TEXT("Entity receiving ring buffer RPC does not exist in PackageMap! Entity: %lld, Component: %d"), EntityId,
-				   ComponentId);
+			UE_LOG(LogClientServerRPCService, Log,
+				   TEXT("Entity receiving ring buffer RPC does not exist in PackageMap, possibly due to corresponding actor getting "
+						"destroyed. Entity: %lld, Component: %d"),
+				   EntityId, ComponentId);
 			return;
 		}
 
