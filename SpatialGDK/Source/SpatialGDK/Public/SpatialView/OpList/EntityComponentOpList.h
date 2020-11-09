@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Containers/Array.h"
+#include "SpatialView/CommandRequest.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ComponentUpdate.h"
 #include "SpatialView/OpList/OpList.h"
@@ -44,6 +45,8 @@ public:
 																 Worker_StatusCode StatusCode, StringStorage Message);
 	EntityComponentOpListBuilder& AddEntityQueryCommandResponse(Worker_RequestId RequestId, TArray<OpListEntity> Results,
 																Worker_StatusCode StatusCode, StringStorage Message);
+	EntityComponentOpListBuilder& AddEntityCommandRequest(Worker_EntityId EntityID, Worker_RequestId RequestId,
+														  CommandRequest CommandRequest);
 	EntityComponentOpListBuilder& AddEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
 														   Worker_StatusCode StatusCode, StringStorage Message);
 	EntityComponentOpListBuilder& AddDeleteEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
@@ -53,6 +56,7 @@ public:
 																	 StringStorage Message);
 
 	OpList CreateOpList() &&;
+	TArray<Worker_Op> CreateOpArray() &&;
 
 private:
 	TUniquePtr<EntityComponentOpListData> OpListData;

@@ -5,6 +5,8 @@
 #include "RPCExecutorInterface.h"
 #include "SpatialView/ViewCoordinator.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogCrossServerRPCHandler, Log, All);
+
 namespace SpatialGDK
 {
 DECLARE_DELEGATE_RetVal_OneParam(bool, FProcessCrossServerRPC, const FCrossServerRPCParams&);
@@ -17,6 +19,7 @@ public:
 
 	void ProcessOps(const float TimeAdvancedS, const TArray<Worker_Op>& WorkerMessages);
 	void ProcessPendingCommandOps();
+	const TMap<Worker_EntityId_Key, TArray<FCrossServerRPCParams>>& GetQueuedCrossServerRPCs() const;
 
 private:
 	ViewCoordinator& Coordinator;

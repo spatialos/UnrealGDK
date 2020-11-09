@@ -54,7 +54,8 @@ struct RPCPayload
 #endif
 	}
 
-	static void WriteToSchemaObject(Schema_Object* RPCObject, uint32 Offset, uint32 Index, const uint32 UniqueId, const uint8* Data, int32 NumElems)
+	static void WriteToSchemaObject(Schema_Object* RPCObject, uint32 Offset, uint32 Index, const uint32 UniqueId, const uint8* Data,
+									int32 NumElems)
 	{
 		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
 		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, Index);
@@ -100,7 +101,8 @@ struct RPCsOnEntityCreation : Component
 		for (const auto& Payload : RPCs)
 		{
 			Schema_Object* Obj = Schema_AddObject(ComponentObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
-			RPCPayload::WriteToSchemaObject(Obj, Payload.Offset, Payload.Index, Payload.UniqueId, Payload.PayloadData.GetData(), Payload.PayloadData.Num());
+			RPCPayload::WriteToSchemaObject(Obj, Payload.Offset, Payload.Index, Payload.UniqueId, Payload.PayloadData.GetData(),
+											Payload.PayloadData.Num());
 		}
 
 		return Data;

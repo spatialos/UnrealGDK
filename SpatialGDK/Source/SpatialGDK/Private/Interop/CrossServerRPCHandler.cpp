@@ -5,6 +5,8 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialGDKSettings.h"
 
+DEFINE_LOG_CATEGORY(LogCrossServerRPCHandler);
+
 using namespace SpatialGDK;
 
 CrossServerRPCHandler::CrossServerRPCHandler(ViewCoordinator& InCoordinator, TUniquePtr<RPCExecutorInterface> InRPCExecutor)
@@ -57,10 +59,16 @@ void CrossServerRPCHandler::ProcessPendingCommandOps()
 			EmptyRPCQueues.Add(CrossServerRPCs.Key);
 		}
 	}
+
 	for (auto EntityId : EmptyRPCQueues)
 	{
 		QueuedCrossServerRPCs.Remove(EntityId);
 	}
+}
+
+const TMap<Worker_EntityId_Key, TArray<FCrossServerRPCParams>>& CrossServerRPCHandler::GetQueuedCrossServerRPCs() const
+{
+	return QueuedCrossServerRPCs;
 }
 
 void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
@@ -76,6 +84,7 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 	if (RPCGuidsInFlight.Contains(Params.Payload.UniqueId))
 	{
 		// This RPC is already in flight. No need to store it again.
+		UE_LOG(LogCrossServerRPCHandler, Warning, TEXT("RPC is already in flight."));
 		return;
 	}
 
@@ -94,6 +103,7 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 		QueuedCrossServerRPCs.Add(CommandOp.entity_id, TArray<FCrossServerRPCParams>());
 	}
 
+	RPCGuidsInFlight.Add(Params.Payload.UniqueId);
 	QueuedCrossServerRPCs[CommandOp.entity_id].Add(MoveTemp(Params));
 }
 

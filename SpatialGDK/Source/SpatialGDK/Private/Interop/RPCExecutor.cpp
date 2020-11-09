@@ -2,12 +2,10 @@
 
 #include "Interop/RPCExecutor.h"
 
-#include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SpatialMetrics.h"
 
 using namespace SpatialGDK;
 
@@ -68,7 +66,7 @@ FCrossServerRPCParams RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_
 {
 	if (NetDriver->Receiver->IsEntityWaitingForAsyncLoad(Op.op.command_request.entity_id))
 	{
-		return { FUnrealObjectRef(), -1, nullptr, {} };
+		return { FUnrealObjectRef(), -1, { 0, 0, 0, {} }, {} };
 	}
 
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.op.command_request.request.schema_type);
@@ -77,7 +75,7 @@ FCrossServerRPCParams RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_
 	const TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
-		return { FUnrealObjectRef(), -1, nullptr, {} };
+		return { FUnrealObjectRef(), -1, { 0, 0, 0, {} }, {} };
 	}
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
@@ -86,19 +84,19 @@ FCrossServerRPCParams RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_
 	if (Payload.Index >= static_cast<uint32>(ClassInfo.RPCs.Num()))
 	{
 		// This should only happen if there's a class layout disagreement between workers, which would indicate incompatible binaries.
-		return { FUnrealObjectRef(), -1, nullptr, {} };
+		return { FUnrealObjectRef(), -1, { 0, 0, 0, {} }, {} };
 	}
 
 	UFunction* Function = ClassInfo.RPCs[Payload.Index];
 	if (Function == nullptr)
 	{
-		return { FUnrealObjectRef(), -1, nullptr, {} };
+		return { FUnrealObjectRef(), -1, { 0, 0, 0, {} }, {} };
 	}
 
 	const auto RPCInfo = NetDriver->ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	if (RPCInfo.Type != ERPCType::CrossServer)
 	{
-		return { FUnrealObjectRef(), -1, nullptr, {} };
+		return { FUnrealObjectRef(), -1, { 0, 0, 0, {} }, {} };
 	}
 	return { ObjectRef, Op.op.command_request.request_id, MoveTemp(Payload), Op.span_id };
 }

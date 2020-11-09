@@ -22,10 +22,10 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef& InTargetObjectRef
 		return;
 	}
 
-	auto SchemaType = Schema_CreateCommandRequest();
+	const auto SchemaType = Schema_CreateCommandRequest();
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(SchemaType);
-	RPCPayload::WriteToSchemaObject(RequestObject, InTargetObjectRef.Offset, Info.Index, Function->GetUniqueID(), InPayload.PayloadData.GetData(),
-									InPayload.PayloadData.Num());
+	RPCPayload::WriteToSchemaObject(RequestObject, InTargetObjectRef.Offset, Info.Index, Function->GetUniqueID(),
+									InPayload.PayloadData.GetData(), InPayload.PayloadData.Num());
 	CommandRequest CommandRequest(OwningCommandRequestPtr(SchemaType), SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID,
 								  SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
