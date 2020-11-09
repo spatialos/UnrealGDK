@@ -89,7 +89,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_resolved_and_no_queue_THEN_execute)
 
 CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_rpc_already_queued_THEN_discard)
 {
-	AddExpectedError(QueueingCommand, EAutomationExpectedErrorFlags::Exact);
+	AddExpectedError(QueueingCommand, EAutomationExpectedErrorFlags::Exact, 3);
 	AddExpectedError(RPCInFlight, EAutomationExpectedErrorFlags::Exact);
 	ViewCoordinator Coordinator{ MakeUnique<ConnectionHandlerStub>(), nullptr };
 	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
@@ -102,13 +102,21 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_rpc_already_queued_THEN_discard)
 	Handler.ProcessOps(ShortTimeAdvanced, MoveTemp(Builder).CreateOpArray());
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
-	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs[TestEntityId].Num(), 1);
+	if (!QueuedRPCs.Contains(TestEntityId))
+	{
+		TestTrue("TestEntityId not in queud up RPCs", false);
+	}
+	else
+	{
+		TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs[TestEntityId].Num(), 1);
+	}
+
 	return true;
 }
 
 CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_resolved_and_queue_THEN_queue)
 {
-	AddExpectedError(QueueingCommand, EAutomationExpectedErrorFlags::Exact, 1);
+	AddExpectedError(QueueingCommand, EAutomationExpectedErrorFlags::Exact, 3);
 	ViewCoordinator Coordinator{ MakeUnique<ConnectionHandlerStub>(), nullptr };
 	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
 	EntityComponentOpListBuilder Builder;
@@ -120,13 +128,20 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_resolved_and_queue_THEN_queue)
 	Handler.ProcessOps(ShortTimeAdvanced, MoveTemp(Builder).CreateOpArray());
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
-	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs[TestEntityId].Num(), 2);
+	if (!QueuedRPCs.Contains(TestEntityId))
+	{
+		TestTrue("TestEntityId not in queud up RPCs", false);
+	}
+	else
+	{
+		TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs[TestEntityId].Num(), 2);
+	}
 	return true;
 }
 
 CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_unresolved_THEN_queue)
 {
-	AddExpectedError(QueueingCommand, EAutomationExpectedErrorFlags::Exact);
+	AddExpectedError(QueueingCommand, EAutomationExpectedErrorFlags::Exact, 2);
 	ViewCoordinator Coordinator{ MakeUnique<ConnectionHandlerStub>(), nullptr };
 	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
 	EntityComponentOpListBuilder Builder;
@@ -134,13 +149,21 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_unresolved_THEN_queue)
 	Handler.ProcessOps(ShortTimeAdvanced, MoveTemp(Builder).CreateOpArray());
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
-	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs[TestEntityId].Num(), 1);
+	if (!QueuedRPCs.Contains(TestEntityId))
+	{
+		TestTrue("TestEntityId not in queud up RPCs", false);
+	}
+	else
+	{
+		TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs[TestEntityId].Num(), 1);
+	}
+
 	return true;
 }
 
 CROSSSERVERRPCHANDLER_TEST(GIVEN_queued_rpc_WHEN_timeout_THEN_try_execute)
 {
-	AddExpectedError(QueueingCommand, EAutomationExpectedErrorFlags::Exact);
+	AddExpectedError(QueueingCommand, EAutomationExpectedErrorFlags::Exact, 2);
 	AddExpectedError(ExecutingCommand, EAutomationExpectedErrorFlags::Exact);
 	ViewCoordinator Coordinator{ MakeUnique<ConnectionHandlerStub>(), nullptr };
 	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
@@ -149,7 +172,14 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_queued_rpc_WHEN_timeout_THEN_try_execute)
 	Handler.ProcessOps(ShortTimeAdvanced, MoveTemp(Builder).CreateOpArray());
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
-	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs[TestEntityId].Num(), 1);
+	if (!QueuedRPCs.Contains(TestEntityId))
+	{
+		TestTrue("TestEntityId not in queud up RPCs", false);
+	}
+	else
+	{
+		TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs[TestEntityId].Num(), 1);
+	}
 
 	FPlatformProcess::Sleep(1.f);
 	Handler.ProcessOps(LongTimeAdvanced, {});

@@ -13,7 +13,6 @@ CrossServerRPCHandler::CrossServerRPCHandler(ViewCoordinator& InCoordinator, TUn
 	: Coordinator(InCoordinator)
 	, RPCExecutor(MoveTemp(InRPCExecutor))
 {
-	CommandRetryTime = GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCRetryTime;
 }
 
 void CrossServerRPCHandler::ProcessOps(const float TimeAdvancedS, const TArray<Worker_Op>& WorkerMessages)
@@ -28,12 +27,7 @@ void CrossServerRPCHandler::ProcessOps(const float TimeAdvancedS, const TArray<W
 		}
 	}
 
-	TimeElapsedS += TimeAdvancedS;
-	if (CommandRetryTime < TimeElapsedS)
-	{
-		ProcessPendingCommandOps();
-		TimeElapsedS = 0.0;
-	}
+	ProcessPendingCommandOps();
 }
 
 void CrossServerRPCHandler::ProcessPendingCommandOps()
