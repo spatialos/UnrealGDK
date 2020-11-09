@@ -7,7 +7,7 @@ AUserSendRPCEventTracingTest::AUserSendRPCEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking user event traces can cause rpcs send events");
 
-	FilterEventNames = { UserSendRPCEventName, SendRPCEventName };
+	FilterEventNames = { SendRPCEventName, UserSendRPCEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 

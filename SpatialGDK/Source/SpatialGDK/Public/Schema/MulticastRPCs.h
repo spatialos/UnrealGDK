@@ -16,8 +16,10 @@ struct MulticastRPCs : Component
 	static const Worker_ComponentId ComponentId = SpatialConstants::MULTICAST_RPCS_COMPONENT_ID;
 
 	MulticastRPCs(const Worker_ComponentData& Data);
+	MulticastRPCs(Schema_ComponentData* Data);
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update);
 
 	RPCRingBuffer MulticastRPCBuffer;
 	uint32 InitiallyPresentMulticastRPCsCount = 0;
