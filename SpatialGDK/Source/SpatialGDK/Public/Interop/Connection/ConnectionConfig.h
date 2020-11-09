@@ -21,7 +21,7 @@ struct FConnectionConfig
 		, EnableWorkerSDKOpLogging(false)
 		, WorkerSDKLogFileSize(10 * 1024 * 1024)
 		, WorkerSDKLogLevel(WORKER_LOG_LEVEL_INFO)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
 		, TcpNoDelay(0)
@@ -99,15 +99,24 @@ private:
 		if (LinkProtocolString.Compare(TEXT("Tcp"), ESearchCase::IgnoreCase) == 0)
 		{
 			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
+			return;
 		}
 		else if (LinkProtocolString.Compare(TEXT("Kcp"), ESearchCase::IgnoreCase) == 0)
 		{
 			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
+			return;
 		}
-		else if (!LinkProtocolString.IsEmpty())
+
+		// None given or not recognised, use default (for server this is TCP, for client this is KCP)
+		if (SpatialConstants::DefaultServerWorkerType.ToString().Equals(WorkerType))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to TCP."),
-				   *LinkProtocolString);
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
+		}
+
+		if (!LinkProtocolString.IsEmpty())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to %s."),
+				   *LinkProtocolString, LinkProtocol);
 		}
 	}
 
