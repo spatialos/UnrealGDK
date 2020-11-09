@@ -76,7 +76,7 @@ private:
 	void SendVirtualWorkerMappingUpdate() const;
 
 	void AssignPartitionToWorker(const PhysicalWorkerName& WorkerName, const Worker_EntityId& ServerWorkerEntityId,
-								 const Worker_EntityId& SystemEntityId, PartitionInfo Partition);
+								 const Worker_EntityId& SystemEntityId, const PartitionInfo& Partition);
 
 	void SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker);
 	void OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker);

@@ -137,7 +137,7 @@ void SpatialVirtualWorkerTranslationManager::AssignPartitionsToEachServerWorkerF
 			{
 				const Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-				PartitionInfo Partition = Partitions[i];
+				PartitionInfo& Partition = Partitions[i];
 
 				// TODO(zoning): Currently, this only works if server workers never die. Once we want to support replacing
 				// workers, this will need to process UnassignWorker before processing AssignWorker.
@@ -208,7 +208,7 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 					"Entity: %lld. Virtual Worker: %d"),
 			   Op.entity_id, VirtualWorkerId);
 
-		this->SpawnPartitionEntity(Op.entity_id, VirtualWorkerId);
+		SpawnPartitionEntity(Op.entity_id, VirtualWorkerId);
 	});
 
 	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
@@ -317,7 +317,7 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 
 void SpatialVirtualWorkerTranslationManager::AssignPartitionToWorker(const PhysicalWorkerName& WorkerName,
 																	 const Worker_EntityId& ServerWorkerEntityId,
-																	 const Worker_EntityId& SystemEntityId, PartitionInfo Partition)
+																	 const Worker_EntityId& SystemEntityId, const PartitionInfo& Partition)
 {
 	VirtualToPhysicalWorkerMapping.Add(Partition.VirtualWorker, SpatialVirtualWorkerTranslator::WorkerInformation{
 																	WorkerName, ServerWorkerEntityId, Partition.PartitionEntityId });

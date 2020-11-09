@@ -2166,7 +2166,7 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 		SpatialConnection->FlushNet(true);
 	}
 
-	// Set the PlayerController entity so the AuthorityDelegation client authoritative components can be set
+	// Preallocate the PlayerController entity so the AuthorityDelegation client authoritative components can be set
 	// correctly at spawn.
 	USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(SpatialConnection->PlayerController);
 	USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Channel->Actor->GetNetConnection());
