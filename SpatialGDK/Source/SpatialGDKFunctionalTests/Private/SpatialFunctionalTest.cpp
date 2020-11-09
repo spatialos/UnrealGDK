@@ -9,6 +9,7 @@
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/FileManagerGeneric.h"
 #include "HttpModule.h"
@@ -682,15 +683,22 @@ void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 
 void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
 {
-	GetWorld()->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateLambda([this](AActor* Spawned) {
-		if (APlayerController* PlayerController = Cast<APlayerController>(Spawned))
+	PostLoginDelegate = FGameModeEvents::GameModePostLoginEvent.AddLambda([this](AGameModeBase* GameMode, APlayerController* NewPlayer) {
+		// NB : the delegate is a global one, have to filter in case we are running from PIE <==> multiple worlds.
+		if (NewPlayer->GetWorld() == GetWorld() && NewPlayer->HasAuthority())
 		{
-			if (PlayerController->HasAuthority())
-			{
-				this->FlowControllerSpawner.SpawnClientFlowController(PlayerController);
-			}
+			this->FlowControllerSpawner.SpawnClientFlowController(NewPlayer);
 		}
-	}));
+	});
+}
+
+void ASpatialFunctionalTest::EndPlay(const EEndPlayReason::Type Reason)
+{
+	if (PostLoginDelegate.IsValid())
+	{
+		FGameModeEvents::GameModePostLoginEvent.Remove(PostLoginDelegate);
+		PostLoginDelegate.Reset();
+	}
 }
 
 void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
