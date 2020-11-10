@@ -133,7 +133,6 @@ struct FSpatialLaunchConfigDescription
 
 	const FString& GetDefaultTemplateForRuntimeVariant() const;
 
-	// TODO: Move templating to cloud runtime startup / printing post squid config to classic config.
 	/** Use default template for deployments. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	bool bUseDefaultTemplateForRuntimeVariant;

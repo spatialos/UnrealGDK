@@ -187,9 +187,8 @@ bool ConvertToClassicConfig(const FString& LaunchConfigPath, const FSpatialLaunc
 	// The new runtime binary handles the config conversion. We just need to pass it the parameters.
 	// All `runtime_flags` are converted to `legacy_flags` in the conversion process.
 	// `max_concurrent_workers` is also converted to a legacy flag.
-	// The output config file will be moved to the same location as the generated standalone config file.
-	// The output config file will have `_classic` appended to it to distinguish it's usage in classic platform (spatial/spatiald/cloud).
-	// The output config file is called `launch_config.json` and we must provide a path to a folder for it to be saved to.
+	// The output config file is called `launch_config.json` when printing and we must provide a path to a folder for it to be saved to.
+	// The output config file will replace the generated standalone config file.
 	// We do not export the worker configurations as we already generate these for the user still.
 
 	FString LaunchConfigDir = FPaths::GetPath(LaunchConfigPath);
@@ -203,15 +202,13 @@ bool ConvertToClassicConfig(const FString& LaunchConfigPath, const FSpatialLaunc
 	FString Output;
 	int32 ExitCode;
 
-	// TODO: We might need to move runtime version to a different settings to make a helper function.
 	const USpatialGDKEditorSettings* SpatialGDKEditor = GetDefault<USpatialGDKEditorSettings>();
 	FString RuntimePath =
-		FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"),
-						SpatialGDKEditor->GetSelectedRuntimeVariantVersion().GetVersionForLocal(), SpatialGDKServicesConstants::RuntimeExe);
+		SpatialGDKServicesConstants::GetRuntimeExecutablePath(SpatialGDKEditor->GetSelectedRuntimeVariantVersion().GetVersionForLocal());
 
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(RuntimePath, ConversionArgs, LaunchConfigDir, Output, ExitCode);
 
-	if (!ExitCode == 0) // TODO: Convert this to SpatialGDKServicesConstants::ExitCodeSuccess
+	if (!ExitCode == SpatialGDKServicesConstants::ExitCodeSuccess)
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error,
 			   TEXT("Failed to convert generated launch config to classic style config for config '%s'. It might "

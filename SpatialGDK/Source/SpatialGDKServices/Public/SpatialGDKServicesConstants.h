@@ -36,8 +36,16 @@ const FString SpatialOSSnapshotFolderPath =
 	FPaths::Combine(SpatialOSDirectory, TEXT("snapshots")); // TODO: Delete the old function in SpatialGDKEditorSettings.
 const FString ChinaEnvironmentArgument = TEXT(" --environment=cn-production");
 const FString PlatformVersion = TEXT("x86_64-win32"); // TODO: Change to use platform macros (to work with macos)
-const FString RuntimeExe = TEXT("runtime.exe");		  // TODO: Change to use CreateExePath
-const FString InspectorExe = TEXT("inspector.exe");	  // TODO: Change to use CreateExePath
+const FString RuntimePackageName = TEXT("runtime");
+const FString InspectorPackageName = TEXT("inspector");
+const FString RuntimeExe = FPaths::SetExtension(RuntimePackageName, Extension);
+const FString InspectorExe = FPaths::SetExtension(InspectorPackageName, Extension);
+
+static inline const FString GetRuntimeExecutablePath(FString RuntimeVersion)
+{
+	return FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVersion,
+						   SpatialGDKServicesConstants::RuntimeExe);
+}
 
 const FString SpatialOSRuntimePinnedStandardVersion = TEXT("0.5.1");
 
@@ -61,4 +69,7 @@ const FString ProxyInfoFilePath = FPaths::Combine(ProxyFileDirectory, TEXT("Serv
 const FString LsofCmdFilePath = TEXT("/usr/sbin/");
 const FString KillCmdFilePath = TEXT("/bin/");
 #endif
+
+const int32 ExitCodeSuccess = 0;
+
 } // namespace SpatialGDKServicesConstants

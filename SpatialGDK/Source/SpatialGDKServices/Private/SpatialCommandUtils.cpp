@@ -499,19 +499,21 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 
 bool SpatialCommandUtils::FetchRuntimeBinary(const FString& RuntimeVersion)
 {
-	const FString& RuntimePackageName = TEXT("runtime");
-	FString RuntimePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, RuntimePackageName, RuntimeVersion);
-	return SpatialCommandUtils::FetchPackageBinary(RuntimeVersion, SpatialGDKServicesConstants::RuntimeExe, RuntimePackageName, RuntimePath, true);
+	FString RuntimePath = SpatialGDKServicesConstants::GetRuntimeExecutablePath(RuntimeVersion);
+	return SpatialCommandUtils::FetchPackageBinary(RuntimeVersion, SpatialGDKServicesConstants::RuntimeExe,
+												   SpatialGDKServicesConstants::RuntimePackageName, RuntimePath, true);
 }
 
 bool SpatialCommandUtils::FetchInspectorBinary(const FString& InspectorVersion)
 {
-	const FString& InspectorPackageName = TEXT("inspector");
-	FString InspectorPath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, InspectorPackageName, InspectorVersion, SpatialGDKServicesConstants::InspectorExe);
-	return SpatialCommandUtils::FetchPackageBinary(InspectorVersion, SpatialGDKServicesConstants::InspectorExe, InspectorPackageName, InspectorPath, false);
+	FString InspectorPath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, SpatialGDKServicesConstants::InspectorPackageName,
+											InspectorVersion, SpatialGDKServicesConstants::InspectorExe);
+	return SpatialCommandUtils::FetchPackageBinary(InspectorVersion, SpatialGDKServicesConstants::InspectorExe,
+												   SpatialGDKServicesConstants::InspectorPackageName, InspectorPath, false);
 }
 
-bool SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, const FString& PackageExe, const FString& PackageName, const FString& SaveLocation, const bool bUnzip)
+bool SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, const FString& PackageExe, const FString& PackageName,
+											 const FString& SaveLocation, const bool bUnzip)
 {
 	FString PackagePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, *PackageName, PackageVersion);
 

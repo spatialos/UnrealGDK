@@ -71,7 +71,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	SpatialOSSnapshotToLoad = GetSpatialOSSnapshotToLoad();
 	SnapshotPath.FilePath = GetSpatialOSSnapshotToSavePath();
 
-	// Force update users settings in-case they have a bad worker name saved.
+	// Force update users settings in-case they have a bad server worker name saved.
 	LaunchConfigDesc.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 }
 
