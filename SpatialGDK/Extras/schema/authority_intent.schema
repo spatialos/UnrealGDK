@@ -9,8 +9,8 @@ component AuthorityIntent {
 }
 
 component_set AuthorityIntentSet {
-	id = 9980;
-	components = [
-		AuthorityIntent
-	];
+  id = 9980;
+  components = [
+    AuthorityIntent
+  ];
 }
