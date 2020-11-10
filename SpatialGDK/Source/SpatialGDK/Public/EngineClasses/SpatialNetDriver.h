@@ -143,7 +143,7 @@ public:
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
-	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerId(const Worker_EntityId WorkerEntityId);
+	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerId(const Worker_EntityId InWorkerEntityId);
 	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
 
 	UPROPERTY()

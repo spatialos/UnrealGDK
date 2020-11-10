@@ -324,7 +324,7 @@ void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_Comm
 {
 	Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
 	Schema_Object* PlayerSpawnData = Schema_GetObject(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_DATA_ID);
-	Worker_EntityId ClientWorkerId = Schema_GetEntityId(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_WORKER_ID);
+	Worker_EntityId ClientWorkerId = Schema_GetEntityId(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID);
 
 	// Accept the player if we have not already accepted a player from this worker.
 	bool bAlreadyHasPlayer;
@@ -427,7 +427,7 @@ void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const Worker_EntityId
 			   TEXT("Target PlayerStart to spawn player was no longer valid after forwarding failed. Finding another PlayerStart."));
 		Schema_Object* SpawnPlayerData = Schema_GetObject(OldRequestPayload, SpatialConstants::FORWARD_SPAWN_PLAYER_DATA_ID);
 		const Worker_EntityId ClientWorkerId =
-			Schema_GetEntityId(OldRequestPayload, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_WORKER_ID);
+			Schema_GetEntityId(OldRequestPayload, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID);
 		FindPlayerStartAndProcessPlayerSpawn(SpawnPlayerData, ClientWorkerId);
 		return;
 	}

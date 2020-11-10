@@ -2089,9 +2089,9 @@ void USpatialNetDriver::CleanUpClientConnection(USpatialNetConnection* Connectio
 	}
 }
 
-TWeakObjectPtr<USpatialNetConnection> USpatialNetDriver::FindClientConnectionFromWorkerId(const Worker_EntityId WorkerEntityId)
+TWeakObjectPtr<USpatialNetConnection> USpatialNetDriver::FindClientConnectionFromWorkerId(const Worker_EntityId InWorkerEntityId)
 {
-	if (TWeakObjectPtr<USpatialNetConnection>* ClientConnectionPtr = WorkerConnections.Find(WorkerEntityId))
+	if (TWeakObjectPtr<USpatialNetConnection>* ClientConnectionPtr = WorkerConnections.Find(InWorkerEntityId))
 	{
 		return *ClientConnectionPtr;
 	}

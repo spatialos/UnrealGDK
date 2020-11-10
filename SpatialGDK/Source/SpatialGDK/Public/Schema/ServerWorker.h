@@ -115,7 +115,7 @@ struct ServerWorker : Component
 		Schema_Object* PlayerSpawnData = Schema_AddObject(RequestFields, SpatialConstants::FORWARD_SPAWN_PLAYER_DATA_ID);
 		PlayerSpawner::CopySpawnDataBetweenObjects(OriginalPlayerSpawnRequest, PlayerSpawnData);
 
-		Schema_AddEntityId(RequestFields, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_WORKER_ID, ClientWorkerID);
+		Schema_AddEntityId(RequestFields, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID, ClientWorkerID);
 	}
 
 	PhysicalWorkerName WorkerName;
