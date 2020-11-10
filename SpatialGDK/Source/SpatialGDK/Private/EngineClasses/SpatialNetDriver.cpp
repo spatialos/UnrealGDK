@@ -2159,9 +2159,9 @@ void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerContr
 {
 	check(PlayerController != nullptr);
 
-	FString URLString = FURL().ToString();
-
 	PlayerController->SetFlags(GetFlags() | RF_Transient);
+
+	FString URLString = FURL().ToString();
 
 	// We create a connection here so that any code that searches for owning connection, etc on the server
 	// resolves ownership correctly
