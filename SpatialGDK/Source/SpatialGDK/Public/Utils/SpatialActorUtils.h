@@ -44,16 +44,6 @@ inline AActor* GetReplicatedHierarchyRoot(const AActor* Actor)
 	return TopmostOwner != nullptr ? TopmostOwner : const_cast<AActor*>(Actor);
 }
 
-inline FString GetConnectionOwningWorkerId(const AActor* Actor)
-{
-	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
-	{
-		return NetConnection->ConnectionOwningWorkerId;
-	}
-
-	return FString();
-}
-
 // Effectively, if this Actor is in a player hierarchy, get the PlayerController entity ID.
 inline Worker_PartitionId GetConnectionOwningPartitionId(const AActor* Actor)
 {
@@ -72,9 +62,10 @@ inline Worker_EntityId GetConnectionOwningClientSystemEntityId(const APlayerCont
 
 	if (NetConnection->ConnectionClientWorkerSystemEntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Client system entity ID was invalid on a PlayerController. "
-			"This is expected after the PlayerController migrates, the client system entioty ID is currently only "
-			"used on the spawning server."));
+		UE_LOG(LogTemp, Error,
+			   TEXT("Client system entity ID was invalid on a PlayerController. "
+					"This is expected after the PlayerController migrates, the client system entioty ID is currently only "
+					"used on the spawning server."));
 	}
 
 	return NetConnection->ConnectionClientWorkerSystemEntityId;

@@ -2012,23 +2012,6 @@ USpatialNetConnection* USpatialNetDriver::GetSpatialOSNetConnection() const
 	}
 }
 
-namespace
-{
-TOptional<FString> ExtractWorkerIDFromAttribute(const FString& WorkerAttribute)
-{
-	const FString WorkerIdAttr = TEXT("workerId:");
-	int32 AttrOffset = WorkerAttribute.Find(WorkerIdAttr);
-
-	if (AttrOffset < 0)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Error : Worker attribute does not contain workerId : %s"), *WorkerAttribute);
-		return {};
-	}
-
-	return WorkerAttribute.RightChop(AttrOffset + WorkerIdAttr.Len());
-}
-} // namespace
-
 bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
 												   const Worker_EntityId& ClientSystemEntityId, USpatialNetConnection** OutConn)
 {
@@ -2056,19 +2039,14 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	// Set the unique net ID for this player. This and the code below is adapted from World.cpp:4499
 	SpatialConnection->PlayerId = UniqueId;
 	SpatialConnection->SetPlayerOnlinePlatformName(OnlinePlatformName);
-
-	// Get the worker attribute.
-	const TCHAR* WorkerAttributeOption = InUrl.GetOption(TEXT("workerAttribute"), nullptr);
-	check(WorkerAttributeOption);
-	SpatialConnection->ConnectionOwningWorkerId = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
 	SpatialConnection->ConnectionClientWorkerSystemEntityId = ClientSystemEntityId;
 
 	// Register workerId and its connection.
-	if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(SpatialConnection->ConnectionOwningWorkerId))
+	if (ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %s 's NetConnection created."), *WorkerId.GetValue());
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %lld 's NetConnection created."), ClientSystemEntityId);
 
-		WorkerConnections.Add(WorkerId.GetValue(), SpatialConnection);
+		WorkerConnections.Add(ClientSystemEntityId, SpatialConnection);
 	}
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
@@ -2105,18 +2083,15 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 
 void USpatialNetDriver::CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp)
 {
-	if (!ConnectionCleanedUp->ConnectionOwningWorkerId.IsEmpty())
+	if (ConnectionCleanedUp->ConnectionClientWorkerSystemEntityId != SpatialConstants::INVALID_ENTITY_ID)
 	{
-		if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(*ConnectionCleanedUp->ConnectionOwningWorkerId))
-		{
-			WorkerConnections.Remove(WorkerId.GetValue());
-		}
+		WorkerConnections.Remove(ConnectionCleanedUp->ConnectionClientWorkerSystemEntityId);
 	}
 }
 
-TWeakObjectPtr<USpatialNetConnection> USpatialNetDriver::FindClientConnectionFromWorkerId(const FString& WorkerId)
+TWeakObjectPtr<USpatialNetConnection> USpatialNetDriver::FindClientConnectionFromWorkerId(const Worker_EntityId WorkerEntityId)
 {
-	if (TWeakObjectPtr<USpatialNetConnection>* ClientConnectionPtr = WorkerConnections.Find(WorkerId))
+	if (TWeakObjectPtr<USpatialNetConnection>* ClientConnectionPtr = WorkerConnections.Find(WorkerEntityId))
 	{
 		return *ClientConnectionPtr;
 	}
@@ -2180,15 +2155,13 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 }
 
 // This function is called for server workers who received the PC over the wire
-void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerController, const FString& ClientWorkerId)
+void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerController)
 {
 	check(PlayerController != nullptr);
-	checkf(!ClientWorkerId.IsEmpty(), TEXT("A player controller entity must have an owning client worker ID."));
-
-	PlayerController->SetFlags(GetFlags() | RF_Transient);
 
 	FString URLString = FURL().ToString();
-	URLString += TEXT("?workerAttribute=") + ClientWorkerId;
+
+	PlayerController->SetFlags(GetFlags() | RF_Transient);
 
 	// We create a connection here so that any code that searches for owning connection, etc on the server
 	// resolves ownership correctly

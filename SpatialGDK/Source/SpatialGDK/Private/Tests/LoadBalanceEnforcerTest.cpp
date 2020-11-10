@@ -107,7 +107,7 @@ void AddLBEntityToView(SpatialGDK::EntityView& View, const Worker_EntityId Entit
 					   MakeComponentDataFromData(SpatialGDK::ComponentPresence::CreateComponentPresenceData(PresentComponents)));
 	AddComponentToView(
 		View, EntityId,
-		MakeComponentDataFromData(SpatialGDK::NetOwningClientWorker::CreateNetOwningClientWorkerData(ClientWorker, ClientAuthPartitionId)));
+		MakeComponentDataFromData(SpatialGDK::NetOwningClientWorker::CreateNetOwningClientWorkerData(ClientAuthPartitionId)));
 	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID));
 	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::HEARTBEAT_COMPONENT_ID));
 	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
@@ -326,8 +326,7 @@ LOADBALANCEENFORCER_TEST(
 	// The net owning component uses the full workerdId:{worker} form for its data format, which is a real gotcha.
 	PopulateViewDeltaWithComponentUpdated(
 		Delta, View, EntityIdOne,
-		MakeComponentUpdateFromUpdate(
-			SpatialGDK::NetOwningClientWorker::CreateNetOwningClientWorkerUpdate(OtherClientWorker, OtherClientWorkerId)));
+		MakeComponentUpdateFromUpdate(SpatialGDK::NetOwningClientWorker::CreateNetOwningClientWorkerUpdate(OtherClientWorkerId)));
 	SubView.Advance(Delta);
 	LoadBalanceEnforcer.Advance();
 

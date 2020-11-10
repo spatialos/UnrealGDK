@@ -343,7 +343,7 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 		// all actors for this connection's controller.
 		if (FString* WorkerName = WorkerConnectionEntities.Find(Op.entity_id))
 		{
-			TWeakObjectPtr<USpatialNetConnection> ClientConnectionPtr = NetDriver->FindClientConnectionFromWorkerId(*WorkerName);
+			TWeakObjectPtr<USpatialNetConnection> ClientConnectionPtr = NetDriver->FindClientConnectionFromWorkerId(Op.entity_id);
 			if (USpatialNetConnection* ClientConnection = ClientConnectionPtr.Get())
 			{
 				if (APlayerController* Controller = ClientConnection->GetPlayerController(/*InWorld*/ nullptr))
@@ -1217,8 +1217,8 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 	if (NetDriver->IsServer() && bCreatingPlayerController)
 	{
 		// If we're spawning a PlayerController, it should definitely have a net-owning client worker ID.
-		check(NetOwningClientWorkerComp->WorkerId.IsSet());
-		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), *NetOwningClientWorkerComp->WorkerId);
+		check(NetOwningClientWorkerComp->ClientPartitionId.IsSet());
+		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor));
 	}
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.

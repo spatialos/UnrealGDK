@@ -120,7 +120,7 @@ public:
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
 						 const Worker_EntityId& ClientSystemEntityId);
-	void PostSpawnPlayerController(APlayerController* PlayerController, const FString& ConnectionOwningWorkerId);
+	void PostSpawnPlayerController(APlayerController* PlayerController);
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId, USpatialActorChannel& Channel);
@@ -143,7 +143,7 @@ public:
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
-	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerId(const FString& WorkerId);
+	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerId(const Worker_EntityId WorkerEntityId);
 	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
 
 	UPROPERTY()
@@ -234,7 +234,7 @@ private:
 	TSet<Worker_EntityId_Key> DormantEntities;
 	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>> PendingDormantChannels;
 
-	TMap<FString, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
+	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 
 	FTimerManager TimerManager;
 

@@ -1339,16 +1339,14 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID));
 	SpatialGDK::NetOwningClientWorker* CurrentNetOwningClientData =
 		NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
-	const FString CurrentClientWorkerId =
-		CurrentNetOwningClientData->WorkerId.IsSet() ? CurrentNetOwningClientData->WorkerId.GetValue() : FString();
-	const FString NewClientConnectionWorkerId = SpatialGDK::GetConnectionOwningWorkerId(Actor);
+	const Worker_EntityId CurrentClientWorkerId = CurrentNetOwningClientData->ClientPartitionId.IsSet()
+													  ? CurrentNetOwningClientData->ClientPartitionId.GetValue()
+													  : SpatialConstants::INVALID_ENTITY_ID;
+	const Worker_EntityId NewClientConnectionWorkerId = SpatialGDK::GetConnectionOwningPartitionId(Actor);
 	if (CurrentClientWorkerId != NewClientConnectionWorkerId)
 	{
 		// Update the NetOwningClientWorker component.
-		CurrentNetOwningClientData->SetWorkerId(NewClientConnectionWorkerId);
-		// Owning client worker ID and the relative client partition are a bijection so we only check the worker ID
-		// as the entry point to this conditional.
-		CurrentNetOwningClientData->SetPartitionId(SpatialGDK::GetConnectionOwningPartitionId(Actor));
+		CurrentNetOwningClientData->SetPartitionId(NewClientConnectionWorkerId);
 		FWorkerComponentUpdate Update = CurrentNetOwningClientData->CreateNetOwningClientWorkerUpdate();
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 
