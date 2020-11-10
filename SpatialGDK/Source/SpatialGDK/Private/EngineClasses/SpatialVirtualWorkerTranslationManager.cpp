@@ -290,12 +290,12 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 		return;
 	}
 
-	if (Op.result_count != Partitions.Num())
+	if (Op.result_count != NumVirtualWorkers)
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
 			   TEXT("Waiting for all virtual workers to be assigned before publishing translation update. "
 					"We currently have %i workers connected out of the %i required"),
-			   Op.result_count, Partitions.Num());
+			   Op.result_count, NumVirtualWorkers);
 		QueryForServerWorkerEntities();
 		return;
 	}

@@ -50,7 +50,9 @@ public:
 
 	// Methods to extract information about calls made.
 	EntityQueryDelegate* GetEntityQueryDelegate(Worker_RequestId RequestId);
+	CreateEntityDelegate* GetCreateEntityDelegate(Worker_RequestId RequestId);
 
 private:
 	TMap<Worker_RequestId_Key, EntityQueryDelegate> EntityQueryDelegates;
+	TMap<Worker_RequestId_Key, CreateEntityDelegate> CreateEntityDelegates;
 };

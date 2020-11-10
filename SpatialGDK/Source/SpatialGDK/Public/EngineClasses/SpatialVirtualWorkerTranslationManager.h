@@ -71,7 +71,7 @@ private:
 	// based on the response.
 	void QueryForServerWorkerEntities();
 	void ServerWorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op);
-	static bool AllServerWorkersAreReady(const Worker_EntityQueryResponseOp& Op, uint32& ServerWorkersNotReady);
+	bool AllServerWorkersAreReady(const Worker_EntityQueryResponseOp& Op, uint32& ServerWorkersNotReady);
 	void AssignPartitionsToEachServerWorkerFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SendVirtualWorkerMappingUpdate() const;
 
