@@ -6,9 +6,9 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
+#include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialOutputDevice.h"
-#include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSnapshotManager.h"
 #include "SpatialView/OpList/OpList.h"
 #include "Utils/InterestFactory.h"
@@ -20,6 +20,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
+#include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
 
@@ -51,6 +52,19 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialConsiderList, STATGROUP_SpatialNet, );
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Relevant Actors"), STAT_SpatialActorsRelevant, STATGROUP_SpatialNet, );
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Changed Relevant Actors"), STAT_SpatialActorsChanged, STATGROUP_SpatialNet, );
+
+enum class EActorMigrationResult : uint8
+{
+	Success,
+	NotAuthoritative,
+	NotReady,
+	PendingKill,
+	NotInitialized,
+	Streaming,
+	NetDormant,
+	NoSpatialClassFlags,
+	DormantOnConnection
+};
 
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
@@ -171,11 +185,12 @@ public:
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
+	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
+
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	// If this worker is authoritative over the translation, the manager will be instantiated.
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
-	void InitializeVirtualWorkerTranslationManager();
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
@@ -204,6 +219,9 @@ public:
 	float GetElapsedTime() { return Time; }
 #endif
 
+	// Check if we have already logged this actor / migration failure, if not update the log record
+	bool IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
+
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
@@ -213,7 +231,7 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
-	TSet<TWeakObjectPtr<USpatialActorChannel>> PendingDormantChannels;
+	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>> PendingDormantChannels;
 
 	TMap<FString, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 
@@ -306,7 +324,13 @@ private:
 
 	void ProcessOwnershipChanges();
 
+	// Has a certain interval (in seconds) been passed since the previous timestamp
+	bool HasTimedOut(const float Interval, uint64& TimeStamp);
+
 	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
 	uint64 StartupTimestamp;
 	FString StartupClientDebugString;
+
+	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
+	uint64 MigrationTimestamp;
 };

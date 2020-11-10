@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Containers/Set.h"
 #include "SpatialView/MessagesToSend.h"
 #include "SpatialView/OpList/OpList.h"
 #include "SpatialView/ViewDelta.h"
@@ -14,23 +13,19 @@ class WorkerView
 public:
 	WorkerView();
 
-	// Process queued op lists to create a new view delta.
-	// The view delta will exist until the next call to advance.
-	void AdvanceViewDelta();
+	// Process op lists to create a new view delta.
+	// The view delta will exist until the next call to AdvanceViewDelta.
+	void AdvanceViewDelta(TArray<OpList> OpLists);
 
 	const ViewDelta& GetViewDelta() const;
 	const EntityView& GetView() const;
-	const EntityView* GetViewPtr() const;
-
-	// Add an OpList to generate the next ViewDelta.
-	void EnqueueOpList(OpList Ops);
 
 	// Ensure all local changes have been applied and return the resulting MessagesToSend.
 	TUniquePtr<MessagesToSend> FlushLocalChanges();
 
-	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data);
-	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId);
+	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId);
+	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
 	void SendReserveEntityIdsRequest(ReserveEntityIdsRequest Request);
 	void SendCreateEntityRequest(CreateEntityRequest Request);
 	void SendDeleteEntityRequest(DeleteEntityRequest Request);
@@ -45,10 +40,6 @@ private:
 	EntityView View;
 	ViewDelta Delta;
 
-	TArray<OpList> QueuedOps;
-	TArray<OpList> OpenCriticalSectionOps;
-
 	TUniquePtr<MessagesToSend> LocalChanges;
 };
-
 } // namespace SpatialGDK

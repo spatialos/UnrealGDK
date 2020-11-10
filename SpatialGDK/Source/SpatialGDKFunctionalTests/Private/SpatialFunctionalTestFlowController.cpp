@@ -40,18 +40,25 @@ void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLi
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, WorkerDefinition);
 }
 
-void ASpatialFunctionalTestFlowController::OnAuthorityGained()
+void ASpatialFunctionalTestFlowController::BeginPlay()
 {
-	// Super hack
-	FTimerHandle Handle;
-	GetWorldTimerManager().SetTimer(
-		Handle,
-		[this]() {
-			bReadyToRegisterWithTest = true;
-			OnReadyToRegisterWithTest();
-		},
-		0.5f, false);
+	Super::BeginPlay();
+
+	if (HasAuthority())
+	{
+		// Super hack
+		FTimerHandle Handle;
+		GetWorldTimerManager().SetTimer(
+			Handle,
+			[this]() {
+				bReadyToRegisterWithTest = true;
+				OnReadyToRegisterWithTest();
+			},
+			0.5f, false);
+	}
 }
+
+void ASpatialFunctionalTestFlowController::OnAuthorityGained() {}
 
 void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 {

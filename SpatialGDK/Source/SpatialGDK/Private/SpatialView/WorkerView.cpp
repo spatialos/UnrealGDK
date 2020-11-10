@@ -13,11 +13,9 @@ WorkerView::WorkerView()
 {
 }
 
-void WorkerView::AdvanceViewDelta()
+void WorkerView::AdvanceViewDelta(TArray<OpList> OpLists)
 {
-	Delta.Clear();
-	Delta.SetFromOpList(MoveTemp(QueuedOps), View);
-	QueuedOps.Empty();
+	Delta.SetFromOpList(MoveTemp(OpLists), View);
 }
 
 const ViewDelta& WorkerView::GetViewDelta() const
@@ -30,57 +28,6 @@ const EntityView& WorkerView::GetView() const
 	return View;
 }
 
-const EntityView* WorkerView::GetViewPtr() const
-{
-	return &View;
-}
-
-void WorkerView::EnqueueOpList(OpList Ops)
-{
-	// Ensure that we only process closed critical sections.
-	// Scan backwards looking for critical sections ops.
-	for (uint32 i = Ops.Count; i > 0; --i)
-	{
-		Worker_Op& Op = Ops.Ops[i - 1];
-		if (Op.op_type != WORKER_OP_TYPE_CRITICAL_SECTION)
-		{
-			continue;
-		}
-
-		// There can only be one critical section open at a time.
-		// So any previous open critical section must now be closed.
-		for (OpList& OpenCriticalSection : OpenCriticalSectionOps)
-		{
-			QueuedOps.Add(MoveTemp(OpenCriticalSection));
-		}
-		OpenCriticalSectionOps.Empty();
-
-		// If critical section op is opening the section then enqueue any ops before this point and store the open critical section.
-		if (Op.op.critical_section.in_critical_section)
-		{
-			SplitOpListPair SplitOpLists(MoveTemp(Ops), i);
-			QueuedOps.Add(MoveTemp(SplitOpLists.Head));
-			OpenCriticalSectionOps.Add(MoveTemp(SplitOpLists.Tail));
-		}
-		// If critical section op is closing the section then enqueue all ops.
-		else
-		{
-			QueuedOps.Add(MoveTemp(Ops));
-		}
-		return;
-	}
-
-	// If no critical section is present then either add this to existing open section ops if there are any or enqueue if not.
-	if (OpenCriticalSectionOps.Num())
-	{
-		OpenCriticalSectionOps.Push(MoveTemp(Ops));
-	}
-	else
-	{
-		QueuedOps.Push(MoveTemp(Ops));
-	}
-}
-
 TUniquePtr<MessagesToSend> WorkerView::FlushLocalChanges()
 {
 	TUniquePtr<MessagesToSend> OutgoingMessages = MoveTemp(LocalChanges);
@@ -88,32 +35,40 @@ TUniquePtr<MessagesToSend> WorkerView::FlushLocalChanges()
 	return OutgoingMessages;
 }
 
-void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data)
+void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId)
 {
-	EntityViewElement& Element = View.FindChecked(EntityId);
-	Element.Components.Emplace(Data.DeepCopy());
-	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Data));
-}
-
-void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
-{
-	EntityViewElement& Element = View.FindChecked(EntityId);
-	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{ Update.GetComponentId() });
-	// check(Component != nullptr);
-	if (Component != nullptr)
+	EntityViewElement* Element = View.Find(EntityId);
+	if (ensure(Element != nullptr))
 	{
-		Component->ApplyUpdate(Update);
+		Element->Components.Emplace(Data.DeepCopy());
+		LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Data), SpanId);
 	}
-	LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Update));
 }
 
-void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId)
 {
-	EntityViewElement& Element = View.FindChecked(EntityId);
-	ComponentData* Component = Element.Components.FindByPredicate(ComponentIdEquality{ ComponentId });
-	check(Component != nullptr);
-	Element.Components.RemoveAtSwap(Component - Element.Components.GetData());
-	LocalChanges->ComponentMessages.Emplace(EntityId, ComponentId);
+	EntityViewElement* Element = View.Find(EntityId);
+	if (ensure(Element != nullptr))
+	{
+		ComponentData* Component = Element->Components.FindByPredicate(ComponentIdEquality{ Update.GetComponentId() });
+		if (Component != nullptr)
+		{
+			Component->ApplyUpdate(Update);
+		}
+		LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Update), SpanId);
+	}
+}
+
+void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId)
+{
+	EntityViewElement* Element = View.Find(EntityId);
+	if (ensure(Element != nullptr))
+	{
+		ComponentData* Component = Element->Components.FindByPredicate(ComponentIdEquality{ ComponentId });
+		check(Component != nullptr);
+		Element->Components.RemoveAtSwap(Component - Element->Components.GetData());
+		LocalChanges->ComponentMessages.Emplace(EntityId, ComponentId, SpanId);
+	}
 }
 
 void WorkerView::SendReserveEntityIdsRequest(ReserveEntityIdsRequest Request)

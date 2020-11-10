@@ -3,34 +3,18 @@ package unreal;
 
 // System query tags for entity completeness
 
-component ServerAuthTag {
+component ActorAuthTag {
     id = 2001;
 }
 
-component ServerNonAuthTag {
+component ActorNonAuthTag {
     id = 2002;
-}
-
-component ClientAuthTag {
-    id = 2003;
-}
-
-component ClientNonAuthTag {
-    id = 2004;
 }
 
 component LBTag {
     id = 2005;
 }
 
-component ServerAuthGDKKnownEntityTag {
-    id = 2006;
-}
-
-component ServerNonAuthGDKKnownEntityTag {
+component GDKKnownEntityTag {
     id = 2007;
-}
-
-component ClientGDKKnownEntityTag {
-    id = 2008;
 }

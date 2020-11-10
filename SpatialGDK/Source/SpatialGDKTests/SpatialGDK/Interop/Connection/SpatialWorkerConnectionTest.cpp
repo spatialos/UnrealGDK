@@ -184,7 +184,7 @@ bool FFindWorkerResponseOfType::Update()
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	if (Connection)
 	{
-		Connection->Advance();
+		Connection->Advance(0);
 		for (const auto& Op : Connection->GetWorkerMessages())
 		{
 			if (Op.op_type == ExpectedOpType)

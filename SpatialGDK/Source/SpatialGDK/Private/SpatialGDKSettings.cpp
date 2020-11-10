@@ -25,6 +25,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
 
 namespace
 {
+constexpr int32 DefaultEventTracingFileSize = 256 * 1024 * 1024; // 256mb
+
 void CheckCmdLineOverrideBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, bool& bOutValue)
 {
 #if ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for non-shipping or with target rule bEnableSpatialCmdlineInShipping enabled
@@ -90,7 +92,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EntityCreationRateLimit(0)
 	, bUseIsActorRelevantForConnection(false)
 	, OpsUpdateRate(1000.0f)
-	, bEnableHandover(false)
 	, MaxNetCullDistanceSquared(0.0f) // Default disabled
 	, QueuedIncomingRPCWaitTime(1.0f)
 	, QueuedIncomingRPCRetryTime(1.0f)
@@ -129,6 +130,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableClientQueriesOnServer(false)
 	, bEnableCrossLayerActorSpawning(true)
 	, StartupLogRate(5.0f)
+	, ActorMigrationLogRate(5.0f)
+	, bEventTracingEnabled(false)
+	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
@@ -139,7 +143,6 @@ void USpatialGDKSettings::PostInitProperties()
 
 	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableCrossLayerActorSpawning"), TEXT("Multiserver cross-layer Actor spawning"),
 							 bEnableCrossLayerActorSpawning);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
