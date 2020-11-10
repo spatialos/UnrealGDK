@@ -849,22 +849,43 @@ void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 {
-	// Get the runtime variant currently being used as this affects which Inspector to use.
-	FString InspectorURL;
-	if (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Standard)
-	{
-		InspectorURL = SpatialGDKServicesConstants::InspectorV2URL;
-	}
-	else
-	{
-		InspectorURL = SpatialGDKServicesConstants::InspectorURL;
-	}
-
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
+
+	// TODO: Make this async and call a delegate upon completion
 	SpatialCommandUtils::FetchInspectorBinary(InspectorVersion);
+
+	// TODO: Boot the inspector at startup of the module, not when pressed.
+	// TODO: Check if the inspector is running or not. If not, start it.
+
+	FString InspectorArgs = FString::Printf(TEXT("--backend_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorIPPort,
+											*SpatialGDKServicesConstants::SchemaBundlePath);
+
+	// TODO: Grab any existing inspector process or stop and start inspector at editor startup.
+	InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,
+						 SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
+						 /*InCreatePipes*/ true };
+
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
+
+	InspectorProcess->OnOutput().BindLambda([this](const FString& Output) {
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Inspector: %s"), *Output)
+	});
+
+	InspectorProcess->Launch();
+
+	while (InspectorProcess->Update())
+	{
+		if (InspectorProcess->GetDuration().GetTotalSeconds() > 5)
+		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Timed out waiting for the Inspector to start."));
+			break;
+		}
+	}
+
 	FString WebError;
-	FPlatformProcess::LaunchURL(*InspectorURL, TEXT(""), &WebError);
+	FPlatformProcess::LaunchURL(*SpatialGDKServicesConstants::InspectorV2URL, TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
 	{
 		FNotificationInfo Info(FText::FromString(WebError));

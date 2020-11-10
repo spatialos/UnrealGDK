@@ -190,4 +190,6 @@ private:
 
 	// Used to show worker boundaries in the editor
 	TWeakObjectPtr<ASpatialDebugger> SpatialDebugger;
+
+	TOptional<FMonitoredProcess> InspectorProcess = {};
 };
