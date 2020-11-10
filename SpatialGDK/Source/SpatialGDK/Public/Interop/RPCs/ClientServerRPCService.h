@@ -35,7 +35,8 @@ public:
 	ClientServerRPCService(const ExtractRPCDelegate InExtractRPCCallback, const FSubView& InSubView, USpatialNetDriver* InNetDriver,
 						   FRPCStore& InRPCStore);
 
-	void Advance();
+	void AdvanceView();
+	void ProcessChanges();
 
 	// Public state functions for the main Spatial RPC service to expose bookkeeping around overflows and acks.
 	// Could be moved into RPCStore. Note: Needs revisiting at some point, this is a strange boundary.
@@ -46,6 +47,7 @@ public:
 	uint64 GetAckFromView(Worker_EntityId EntityId, ERPCType Type);
 
 private:
+	void SetEntityData(Worker_EntityId EntityId);
 	// Process relevant view delta changes.
 	void EntityAdded(const Worker_EntityId EntityId);
 	void ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);

@@ -30,7 +30,8 @@ public:
 							   USpatialLatencyTracer* InSpatialLatencyTracer, SpatialEventTracer* InEventTracer,
 							   USpatialNetDriver* InNetDriver);
 
-	void Advance(const float NetDriverTime);
+	void AdvanceView();
+	void ProcessChanges(const float NetDriverTime);
 
 	void ProcessIncomingRPCs();
 

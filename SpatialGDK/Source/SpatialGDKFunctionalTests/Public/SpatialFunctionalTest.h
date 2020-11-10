@@ -418,6 +418,9 @@ private:
 	void StartServerFlowControllerSpawn();
 
 	void SetupClientPlayerRegistrationFlow();
+	void EndPlay(const EEndPlayReason::Type Reason) override;
+
+	FDelegateHandle PostLoginDelegate;
 
 	// Sets the snapshot for the map loaded by this world. When launching the test maps, the AutomationManager will
 	// check if there's a snapshot for that map and if so use it instead of the default snapshot. If PathToSnapshot
