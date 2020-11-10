@@ -23,7 +23,8 @@ class SPATIALGDK_API MulticastRPCService
 public:
 	MulticastRPCService(const ExtractRPCDelegate InExtractRPCCallback, const FSubView& InSubView, FRPCStore& InRPCStore);
 
-	void Advance();
+	void AdvanceView();
+	void ProcessChanges();
 
 private:
 	// Process relevant view delta changes.
