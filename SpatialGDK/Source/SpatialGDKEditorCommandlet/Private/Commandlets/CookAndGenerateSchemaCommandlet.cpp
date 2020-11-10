@@ -8,6 +8,7 @@
 #include "SpatialGDKServicesConstants.h"
 
 #include "Misc/CommandLine.h"
+#include "Utils/SchemaDatabase.h"
 
 using namespace SpatialGDKEditor::Schema;
 
@@ -161,6 +162,20 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to save schema database."));
 		return 0;
 	}
+
+	// TOOD:ALLY generate server auth component set
+	FSoftObjectPath SchemaDatabasePath =
+        FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
+	USchemaDatabase* SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
+
+	if (SchemaDatabase == nullptr)
+	{
+		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error,
+               TEXT("SchemaDatabase not found during schema generation process. Server authority component set will not be written"));
+		return 0;
+	}
+
+
 
 	return CookResult;
 }

@@ -989,6 +989,8 @@ bool SpatialGDKGenerateSchema()
 		return false;
 	}
 
+	// TOOD:ALLY generate server auth component set
+
 	return true;
 }
 
@@ -1050,6 +1052,26 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath, IdGenerator);
 
 	NextAvailableComponentId = IdGenerator.Peek();
+
+	return true;
+}
+
+bool WriteServerAuthorityComponentSet(FCodeWriter& Writer, USchemaDatabase* SchemaDatabase)
+{
+	TArray<FString*> ServerAuthoritativeComponentNames = TArray<FString*>();
+
+	if ()
+
+	Writer.PrintNewLine();
+	Writer.Printf("component_set {0}} {", SpatialConstants::SERVER_AUTH_COMPONENT_SET_NAME).Indent();
+	Writer.Printf("id = {0};", SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
+	Writer.Printf("components = [").Indent();
+	for (int i = 0; i < ServerAuthoritativeComponentNames.Num(); i++)
+	{
+		Writer.Printf("{0},", *ServerAuthoritativeComponentNames[i]);
+	}
+	Writer.Outdent().Print("];");
+	Writer.Outdent().Print("}");
 
 	return true;
 }
