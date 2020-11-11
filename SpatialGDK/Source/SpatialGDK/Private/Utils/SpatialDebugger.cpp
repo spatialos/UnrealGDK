@@ -321,8 +321,7 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 			if (GetNetMode() == NM_Client)
 			{
 				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
-				LocalPlayerController->InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this,
-															   &ASpatialDebugger::OnMousePress);
+				LocalPlayerController->InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &ASpatialDebugger::OnMousePress);
 			}
 		}
 	}
@@ -677,9 +676,8 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 	if (LocalPlayerController.IsValid())
 	{
 		FVector2D MousePosition;
-	
 
-		//if (LocalPlayerController->IsInputKeyDown(EKeys::RightMouseButton))
+		// if (LocalPlayerController->IsInputKeyDown(EKeys::RightMouseButton))
 		//{
 		//	UE_LOG(LogSpatialDebugger, Warning, TEXT("Mouse button pressed"));
 		//}
@@ -723,9 +721,9 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 						FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation);
 						if (ScreenLocation.IsZero())
 						{
-							//continue;
+							// continue;
 						}
-						//return HitActor;
+						// return HitActor;
 						else
 						{
 							// TODO : draw a ghosted version (transparency 70%) when hovering mouse and full opacity when click ?
@@ -734,7 +732,6 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 					}
 				}
 			}
-			
 		}
 	}
 }
@@ -780,7 +777,7 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& Position)
 							continue;
 						}
 						return HitActor;
-						//DrawTag(Canvas, ScreenLocation, *HitEntityId, HitActor->GetName(), true /*bCentre*/);
+						// DrawTag(Canvas, ScreenLocation, *HitEntityId, HitActor->GetName(), true /*bCentre*/);
 					}
 				}
 			}
