@@ -22,6 +22,7 @@ struct FConnectionConfig
 		, WorkerSDKLogFileSize(10 * 1024 * 1024)
 		, WorkerSDKLogLevel(WORKER_LOG_LEVEL_INFO)
 		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP)
+		, OverrideLinkProtocol(false)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
 		, TcpNoDelay(0)
@@ -63,6 +64,12 @@ struct FConnectionConfig
 			10; // Despite flushing on the worker ops thread, WorkerSDK still needs to send periodic data (like ACK, resends and ping).
 		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS
 													: SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
+
+		if (!OverrideLinkProtocol)
+		{
+			LinkProtocol = bConnectAsClient ? WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP
+											: WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
+		}
 	}
 
 private:
@@ -99,25 +106,22 @@ private:
 		if (LinkProtocolString.Compare(TEXT("Tcp"), ESearchCase::IgnoreCase) == 0)
 		{
 			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
+			OverrideLinkProtocol = true;
 			return;
 		}
 		else if (LinkProtocolString.Compare(TEXT("Kcp"), ESearchCase::IgnoreCase) == 0)
 		{
 			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
+			OverrideLinkProtocol = true;
 			return;
-		}
-
-		// None given or not recognised, default to KCP for clients, otherwise keep existing TCP default
-		if (SpatialConstants::DefaultClientWorkerType.ToString().Equals(WorkerType))
-		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
 		}
 
 		if (!LinkProtocolString.IsEmpty())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to %s."),
-				   *LinkProtocolString, LinkProtocol);
+			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol '%s' specified for connecting to SpatialOS."), *LinkProtocolString);
 		}
+
+		UE_LOG(LogTemp, Display, TEXT("No link protocol set. Defaulting to TCP for server workers, KCP for client workers."));
 	}
 
 public:
@@ -130,6 +134,7 @@ public:
 	uint32 WorkerSDKLogFileSize;
 	Worker_LogLevel WorkerSDKLogLevel;
 	Worker_NetworkConnectionType LinkProtocol;
+	bool OverrideLinkProtocol;
 	Worker_ConnectionParameters ConnectionParams = {};
 	uint8 TcpMultiplexLevel;
 	uint8 TcpNoDelay;
