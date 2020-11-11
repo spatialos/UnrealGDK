@@ -9,7 +9,11 @@ pushd "%~dp0"
 call :MarkStartOfBlock "%~0"
 
 call :MarkStartOfBlock "Setup the git hooks"
-    if not exist .git\hooks goto SkipGitHooks
+    if not exist .git\hooks (
+      rem Not a critical error
+      echo Skipping git hooks: .git\hooks not found
+      goto SkipGitHooks
+    )
 
     rem Remove the old post-checkout hook.
     if exist .git\hooks\post-checkout del .git\hooks\post-checkout
