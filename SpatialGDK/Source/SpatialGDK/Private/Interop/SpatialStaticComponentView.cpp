@@ -6,7 +6,6 @@
 #include "Schema/ClientEndpoint.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Component.h"
-#include "Schema/ComponentPresence.h"
 #include "Schema/DebugComponent.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
@@ -100,9 +99,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::SpatialDebugging>(Op.data);
 		break;
-	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentPresence>(Op.data);
-		break;
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::NetOwningClientWorker>(Op.data);
 		break;
@@ -162,9 +158,6 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::SpatialDebugging>(Op.entity_id);
-		break;
-	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::ComponentPresence>(Op.entity_id);
 		break;
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::NetOwningClientWorker>(Op.entity_id);

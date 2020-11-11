@@ -6,7 +6,6 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Schema/AuthorityIntent.h"
-#include "Schema/ComponentPresence.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
@@ -96,7 +95,6 @@ Worker_ComponentUpdate SpatialLoadBalanceEnforcer::CreateAuthorityDelegationUpda
 	LBComponents& Components = DataStore[EntityId];
 
 	const AuthorityIntent& AuthorityIntentComponent = Components.Intent;
-	const ComponentPresence& ComponentPresenceComponent = Components.Presence;
 	const NetOwningClientWorker& NetOwningClientWorker = Components.OwningClientWorker;
 
 	AuthorityDelegation& AuthorityDelegationComponent = Components.Delegation;
@@ -110,18 +108,6 @@ Worker_ComponentUpdate SpatialLoadBalanceEnforcer::CreateAuthorityDelegationUpda
 
 	TArray<Worker_ComponentId> ComponentIds;
 	AuthorityDelegationComponent.Delegations.GetKeys(ComponentIds);
-
-	// Ensure that every component ID in ComponentPresence will be set in the delegation.
-	for (const Worker_ComponentId RequiredComponentId : ComponentPresenceComponent.ComponentList)
-	{
-		// Skip entity completeness tags, as we do not want them to be delegated.
-		// This would create false completeness for workers which happened to be delegated the tag components.
-		if (SpatialConstants::IsEntityCompletenessComponent(RequiredComponentId))
-		{
-			continue;
-		}
-		ComponentIds.AddUnique(RequiredComponentId);
-	}
 
 	for (const Worker_ComponentId ComponentId : ComponentIds)
 	{
@@ -160,9 +146,6 @@ void SpatialLoadBalanceEnforcer::PopulateDataStore(const Worker_EntityId EntityI
 		case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 			Components.Intent = AuthorityIntent(Data.GetUnderlying());
 			break;
-		case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-			Components.Presence = ComponentPresence(Data.GetUnderlying());
-			break;
 		case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 			Components.OwningClientWorker = NetOwningClientWorker(Data.GetUnderlying());
 			break;
@@ -179,9 +162,6 @@ bool SpatialLoadBalanceEnforcer::ApplyComponentUpdate(const Worker_EntityId Enti
 	{
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		DataStore[EntityId].Intent.ApplyComponentUpdate(Update);
-		return true;
-	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-		DataStore[EntityId].Presence.ApplyComponentUpdate(Update);
 		return true;
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		DataStore[EntityId].OwningClientWorker.ApplyComponentUpdate(Update);
@@ -202,9 +182,6 @@ bool SpatialLoadBalanceEnforcer::ApplyComponentRefresh(const Worker_EntityId Ent
 		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		DataStore[EntityId].Intent = AuthorityIntent(Data);
-		return true;
-	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-		DataStore[EntityId].Presence = ComponentPresence(Data);
 		return true;
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		DataStore[EntityId].OwningClientWorker = NetOwningClientWorker(Data);

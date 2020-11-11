@@ -832,7 +832,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 	FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("/Tests/schema/unreal/gdk"));
 	FString CoreSDKSchemaCopyDir =
 		FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("/Tests/build/dependencies/schema/standard_library"));
-	TArray<FString> GDKSchemaFilePaths = { "authority_intent.schema",  "component_presence.schema",
+	TArray<FString> GDKSchemaFilePaths = { "authority_intent.schema",
 										   "core_types.schema",		   "debug_component.schema",
 										   "debug_metrics.schema",	   "global_state_manager.schema",
 										   "heartbeat.schema",		   "net_owning_client_worker.schema",
