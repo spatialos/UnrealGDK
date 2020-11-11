@@ -6,10 +6,9 @@
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
+#include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialClassInfoManager.h"
-#include "Interop/SpatialRPCService.h"
 #include "Schema/RPCPayload.h"
-#include "TimerManager.h"
 #include "Utils/RPCContainer.h"
 #include "Utils/RepDataUtils.h"
 
@@ -64,9 +63,11 @@ struct FPendingRPC
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, SpatialGDK::RPCsOnEntityCreation>;
+using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, SpatialGDK::RPCsOnEntityCreation, FDefaultSetAllocator,
+									  TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<const UObject>, SpatialGDK::RPCsOnEntityCreation, false>>;
 using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<FWorkerComponentUpdate>>;
-using FChannelsToUpdatePosition = TSet<TWeakObjectPtr<USpatialActorChannel>>;
+using FChannelsToUpdatePosition =
+	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>>;
 
 UCLASS()
 class SPATIALGDK_API USpatialSender : public UObject
@@ -111,9 +112,6 @@ public:
 
 	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
-
-	void SendClientEndpointReadyUpdate(Worker_EntityId EntityId);
-	void SendServerEndpointReadyUpdate(Worker_EntityId EntityId);
 
 	void EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
 	void FlushRetryRPCs();

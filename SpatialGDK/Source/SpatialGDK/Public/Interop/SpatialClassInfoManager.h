@@ -148,7 +148,9 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
+	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>, FDefaultSetAllocator,
+		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>, false>>
+		ClassInfoMap;
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;

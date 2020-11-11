@@ -66,7 +66,7 @@ struct FWorkerDefinition
 };
 
 USTRUCT(BlueprintType, meta = (HasNativeMake = ""))
-struct SPATIALGDKFUNCTIONALTESTS_API FSpatialFunctionalTestStepDefinition
+struct FSpatialFunctionalTestStepDefinition
 {
 	GENERATED_BODY()
 

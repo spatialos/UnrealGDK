@@ -3,6 +3,7 @@
 #pragma once
 
 #include "ReceivedOpEventHandler.h"
+#include "SpatialView/CommandRetryHandler.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/CriticalSectionFilter.h"
 #include "SpatialView/Dispatcher.h"
@@ -27,7 +28,7 @@ public:
 	ViewCoordinator& operator=(const ViewCoordinator&) = delete;
 	ViewCoordinator& operator=(ViewCoordinator&&) = default;
 
-	void Advance();
+	void Advance(float DeltaTimeS);
 	const ViewDelta& GetViewDelta() const;
 	const EntityView& GetView() const;
 	void FlushMessagesToSend();
@@ -64,6 +65,14 @@ public:
 	void SendMetrics(SpatialMetrics Metrics);
 	void SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message);
 
+	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, FRetryData RetryData);
+	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
+											 FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId);
+	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId);
+	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, FRetryData RetryData);
+	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData,
+											  const TOptional<Trace_SpanId>& SpanId);
+
 	CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
 	CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
 	CallbackId RegisterComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
@@ -94,6 +103,12 @@ private:
 	TArray<TUniquePtr<FSubView>> SubViews;
 
 	FReceivedOpEventHandler ReceivedOpEventHandler;
+
+	TCommandRetryHandler<FReserveEntityIdsRetryHandlerImpl> ReserveEntityIdRetryHandler;
+	TCommandRetryHandler<FCreateEntityRetryHandlerImpl> CreateEntityRetryHandler;
+	TCommandRetryHandler<FDeleteEntityRetryHandlerImpl> DeleteEntityRetryHandler;
+	TCommandRetryHandler<FEntityQueryRetryHandlerImpl> EntityQueryRetryHandler;
+	TCommandRetryHandler<FEntityCommandRetryHandlerImpl> EntityCommandRetryHandler;
 };
 
 } // namespace SpatialGDK

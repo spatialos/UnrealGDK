@@ -15,6 +15,7 @@ void AMergeComponentEventTracingTest::FinishEventTraceTest()
 {
 	int EventsTested = 0;
 	int EventsFailed = 0;
+
 	for (const auto& Pair : TraceEvents)
 	{
 		const FString& SpanIdString = Pair.Key;
