@@ -36,14 +36,14 @@ bool WriteFlagSection(TSharedRef<TJsonWriter<>> Writer, const FString& Key, cons
 }
 
 bool WriteLoadbalancingSection(TSharedRef<TJsonWriter<>> Writer, const FName& WorkerType, uint32 NumEditorInstances,
-							   const bool ManualWorkerConnectionOnly)
+							   const bool bManualWorkerConnectionOnly)
 {
 	Writer->WriteObjectStart(TEXT("load_balancing"));
 	Writer->WriteObjectStart("rectangle_grid");
 	Writer->WriteValue(TEXT("cols"), 1);
-	Writer->WriteValue(TEXT("rows"), (int32)NumEditorInstances);
+	Writer->WriteValue(TEXT("rows"), static_cast<int32>(NumEditorInstances));
 	Writer->WriteObjectEnd();
-	Writer->WriteValue(TEXT("manual_worker_connection_only"), ManualWorkerConnectionOnly);
+	Writer->WriteValue(TEXT("manual_worker_connection_only"), bManualWorkerConnectionOnly);
 	Writer->WriteObjectEnd();
 
 	return true;
@@ -112,7 +112,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		// Populate json file for launch config
 		Writer->WriteObjectStart();
 		Writer->WriteArrayStart(TEXT("runtime_flags"));
-		for (auto& Flag : LaunchConfigDescription.RuntimeFlags)
+		for (const auto& Flag : LaunchConfigDescription.RuntimeFlags)
 		{
 			WriteFlagSection(Writer, Flag.Key, Flag.Value);
 		}
@@ -146,7 +146,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		}
 
 		// Write any additional worker configs that may have been added.
-		for (FWorkerTypeLaunchSection AdditionalWorkerConfig : LaunchConfigDescription.AdditionalWorkerConfigs)
+		for (const FWorkerTypeLaunchSection& AdditionalWorkerConfig : LaunchConfigDescription.AdditionalWorkerConfigs)
 		{
 			WriteWorkerSection(Writer, AdditionalWorkerConfig);
 		}
@@ -173,6 +173,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 
 		if (bGenerateCloudConfig)
 		{
+			// TODO: UNR-4471 - Remove classic config conversion when new cloud platform exists.
 			return ConvertToClassicConfig(LaunchConfigPath, InLaunchConfigDescription);
 		}
 
@@ -208,7 +209,7 @@ bool ConvertToClassicConfig(const FString& LaunchConfigPath, const FSpatialLaunc
 
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(RuntimePath, ConversionArgs, LaunchConfigDir, Output, ExitCode);
 
-	if (!ExitCode == SpatialGDKServicesConstants::ExitCodeSuccess)
+	if (ExitCode != SpatialGDKServicesConstants::ExitCodeSuccess)
 	{
 		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error,
 			   TEXT("Failed to convert generated launch config to classic style config for config '%s'. It might "

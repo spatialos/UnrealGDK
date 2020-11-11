@@ -33,7 +33,7 @@ bool GenerateWorkerAssemblies()
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, BuildConfigArgs,
 													SpatialGDKServicesConstants::SpatialOSDirectory, WorkerBuildConfigResult, ExitCode);
 
-	return (ExitCode == SpatialGDKServicesConstants::ExitCodeSuccess);
+	return ExitCode == SpatialGDKServicesConstants::ExitCodeSuccess;
 }
 
 bool GenerateWorkerJson()
