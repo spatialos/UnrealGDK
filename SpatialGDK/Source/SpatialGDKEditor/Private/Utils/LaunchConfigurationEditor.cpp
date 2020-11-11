@@ -43,6 +43,7 @@ void ULaunchConfigurationEditor::PostEditChangeProperty(struct FPropertyChangedE
 
 	if (Name == GET_MEMBER_NAME_CHECKED(ULaunchConfigurationEditor, LaunchConfiguration))
 	{
+		// TODO: UNR-4472 - Remove this WorkerTypeName renaming when refactoring FLaunchConfigDescription.
 		// Force override the server worker name as it MUST be UnrealWorker.
 		LaunchConfiguration.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 	}
