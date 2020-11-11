@@ -147,7 +147,8 @@ SpatialGDK::SpatialRPCService CreateRPCService(const TArray<Worker_EntityId>& En
 	AuthSubView.Advance(Delta);
 	NonAuthSubView.Advance(Delta);
 
-	RPCService.Advance(0);
+	RPCService.AdvanceView();
+	RPCService.ProcessChanges(0);
 
 	return RPCService;
 }

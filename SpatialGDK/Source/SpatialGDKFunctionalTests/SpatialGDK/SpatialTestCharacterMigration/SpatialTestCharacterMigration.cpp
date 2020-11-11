@@ -59,13 +59,17 @@ void ASpatialTestCharacterMigration::PrepareTest()
 	AddActorStepDefinition.StepName = TEXT("Add actor to player controller");
 	AddActorStepDefinition.TimeLimit = 0.0f;
 	AddActorStepDefinition.NativeStartEvent.BindLambda([this]() {
-		AController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
+		{
+			AController* PlayerController = Cast<AController>(FlowController->GetOwner());
 
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = PlayerController;
-		AActor* TestActor = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FTransform(), SpawnParams);
-		TestActor->SetReplicates(true); // NOTE: this currently causes parent not to migrate after a delay and outputs a warning in the test
-		RegisterAutoDestroyActor(TestActor);
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = PlayerController;
+			AActor* TestActor = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FTransform(), SpawnParams);
+			TestActor->SetReplicates(
+				true); // NOTE: this currently causes parent not to migrate after a delay and outputs a warning in the test
+			RegisterAutoDestroyActor(TestActor);
+		}
 		FinishStep();
 	});
 
@@ -133,31 +137,6 @@ void ASpatialTestCharacterMigration::PrepareTest()
 
 		TriggerBoxOrigin->OnActorBeginOverlap.AddDynamic(this, &ASpatialTestCharacterMigration::OnOverlapBeginOrigin);
 		RegisterAutoDestroyActor(TriggerBoxOrigin);
-
-		FinishStep();
-	});
-
-	// The server checks if the clients received a TestCharacterMovement and moves them to the mentioned locations
-	AddStep(TEXT("ServerSetupStep"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
-		{
-			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-			{
-				continue;
-			}
-
-			AController* PlayerController = Cast<AController>(FlowController->GetOwner());
-			ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
-
-			checkf(PlayerCharacter, TEXT("Client did not receive a TestMovementCharacter"));
-
-			int FlowControllerId = FlowController->WorkerDefinition.Id;
-
-			if (FlowControllerId == 1)
-			{
-				PlayerCharacter->SetActorLocation(FVector(0.0f, -25.0f, 50.0f));
-			}
-		}
 
 		FinishStep();
 	});
