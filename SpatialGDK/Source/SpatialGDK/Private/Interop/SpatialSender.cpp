@@ -470,10 +470,17 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 		}
 
 		TOptional<Trace_SpanId> SpanId;
-		if (EventTracer->IsEnabled())
+		if (EventTracer != nullptr && EventTracer->IsEnabled())
 		{
 			SpanId = CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id), SpanId);
+			EventTraceUniqueId LinearTraceId =
+				SpanId.IsSet() ? EventTraceUniqueId::GenerateUnique(SpanId.GetValue()) : EventTraceUniqueId{};
+			EventTracer->TraceEvent(
+				FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id, LinearTraceId), SpanId);
+
+			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+			EventTraceUniqueId::WriteTraceIDToSchemaObject(LinearTraceId, ComponentObject,
+														   SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD);
 		}
 
 		Connection->SendComponentUpdate(EntityId, &Update, SpanId);
@@ -696,22 +703,24 @@ void USpatialSender::SendOnEntityCreationRPC(UObject* TargetObject, UFunction* F
 #endif // !UE_BUILD_SHIPPING
 }
 
-void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
+void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload Payload,
 										USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
 	Worker_ComponentId ComponentId = SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
 
-	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
-	Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
-
 	TOptional<Trace_SpanId> SpanId;
-	if (EventTracer != nullptr)
+	if (EventTracer != nullptr && EventTracer->IsEnabled())
 	{
 		SpanId = EventTracer->CreateSpan();
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(TargetObject, Function), SpanId);
+		EventTraceUniqueId LinearTraceId = SpanId.IsSet() ? EventTraceUniqueId::GenerateUnique(SpanId.GetValue()) : EventTraceUniqueId{};
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(TargetObject, Function, LinearTraceId), SpanId);
+		Payload.LinearTraceId = LinearTraceId;
 	}
+
+	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
+	Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 	Worker_RequestId RequestId =
