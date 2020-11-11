@@ -202,6 +202,12 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 			// FieldId is the same as rep handle
 			if (FieldId == 0 || (int)FieldId - 1 >= BaseHandleToCmdIndex.Num())
 			{
+				if (FieldId == SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD)
+				{
+					// This ID is not written to schema and expected to not be here.
+					continue;
+				}
+
 				UE_LOG(LogSpatialComponentReader, Error,
 					   TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: "
 							"%lld, Component: %d"),
@@ -394,10 +400,16 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 		// FieldId is the same as handover handle
 		if (FieldId == 0 || (int)FieldId - 1 >= ClassInfo.HandoverProperties.Num())
 		{
+			if (FieldId == SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD) 
+			{
+				// This ID is not written to schema and expected to not be here.
+				continue;
+			}
+
 			UE_LOG(LogSpatialComponentReader, Error,
-				   TEXT("ApplyHandoverSchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: "
-						"%lld, Component: %d"),
-				   *Object.GetPathName(), FieldId, Channel.GetEntityId(), ComponentId);
+				TEXT("ApplyHandoverSchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: "
+					"%lld, Component: %d"),
+				*Object.GetPathName(), FieldId, Channel.GetEntityId(), ComponentId);
 			continue;
 		}
 		const FHandoverPropertyInfo& PropertyInfo = ClassInfo.HandoverProperties[FieldId - 1];
