@@ -40,10 +40,9 @@ public:
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId LocalVirtualWorkerId);
 
 	// Deprecated: will be removed ASAP.
-	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const
-		PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
+	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
 
-	virtual bool ShouldHaveAuthority(const AActor& Actor) const
+		virtual bool ShouldHaveAuthority(const AActor& Actor) const
 	{
 		return false;
 	}
@@ -51,21 +50,20 @@ public:
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const
 		PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;)
 
-	/**
-	* Get the query constraints required by this worker based on the load balancing strategy used.
-	*/
-	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const
-	PURE_VIRTUAL(UAbstractLBStrategy::GetWorkerInterestQueryConstraint, return {};)
+		/**
+		 * Get the query constraints required by this worker based on the load balancing strategy used.
+		 */
+		virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const
+		PURE_VIRTUAL(UAbstractLBStrategy::GetWorkerInterestQueryConstraint, return {};)
 
-	/** True if this load balancing strategy requires handover data to be transmitted. */
-	virtual bool RequiresHandoverData() const
-		PURE_VIRTUAL(UAbstractLBStrategy::RequiresHandover, return false;)
+		/** True if this load balancing strategy requires handover data to be transmitted. */
+		virtual bool RequiresHandoverData() const PURE_VIRTUAL(UAbstractLBStrategy::RequiresHandover, return false;)
 
-	/**
-	* Get a logical worker entity position for this strategy. For example, the centre of a grid square in a grid-based strategy.
-	* Optional- otherwise returns the origin.
-	*/
-	virtual FVector GetWorkerEntityPosition() const
+		/**
+		 * Get a logical worker entity position for this strategy. For example, the centre of a grid square in a grid-based strategy.
+		 * Optional- otherwise returns the origin.
+		 */
+		virtual FVector GetWorkerEntityPosition() const
 	{
 		return FVector::ZeroVector;
 	}
@@ -74,17 +72,15 @@ public:
 	 * GetMinimumRequiredWorkers and SetVirtualWorkerIds are used to assign ranges of virtual worker IDs which will be managed by this
 	 * strategy. LastVirtualWorkerId - FirstVirtualWorkerId + 1  is guaranteed to be >= GetMinimumRequiredWorkers.
 	 */
-	virtual uint32 GetMinimumRequiredWorkers() const
-		PURE_VIRTUAL(UAbstractLBStrategy::GetMinimumRequiredWorkers, return 0;)
+	virtual uint32 GetMinimumRequiredWorkers() const PURE_VIRTUAL(UAbstractLBStrategy::GetMinimumRequiredWorkers, return 0;)
 
-	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId)
-		PURE_VIRTUAL(UAbstractLBStrategy::SetVirtualWorkerIds, return;)
+		virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId)
+			PURE_VIRTUAL(UAbstractLBStrategy::SetVirtualWorkerIds, return;)
 
-	// This returns the LBStrategy which should be rendered in the SpatialDebugger.
-	// Currently, this is just the default strategy.
-	virtual UAbstractLBStrategy* GetLBStrategyForVisualRendering() const
+		// This returns the LBStrategy which should be rendered in the SpatialDebugger.
+		// Currently, this is just the default strategy.
+		virtual UAbstractLBStrategy* GetLBStrategyForVisualRendering() const
 		PURE_VIRTUAL(UAbstractLBStrategy::GetLBStrategyForVisualRendering, return nullptr;)
 
-protected:
-	VirtualWorkerId LocalVirtualWorkerId;
+			protected : VirtualWorkerId LocalVirtualWorkerId;
 };
