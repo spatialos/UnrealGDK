@@ -132,7 +132,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, StartupLogRate(5.0f)
 	, ActorMigrationLogRate(5.0f)
 	, bEventTracingEnabled(false)
-	, DefaultSamplingMode(EEventTraceSamplingMode::ShouldSample)
 	, SamplingProbability(1.0f)
 	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
 {

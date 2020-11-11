@@ -33,9 +33,9 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 
 	if (EventTracer != nullptr)
 	{
-		TOptional<Trace_SpanId> CauseSpanId = EventTracer->GetFromStack();
-		TOptional<Trace_SpanId> SpanId =
-			CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
+		TOptional<FSpatialGDKSpanId> CauseSpanId = EventTracer->GetFromStack();
+		TOptional<FSpatialGDKSpanId> SpanId =
+			CauseSpanId.IsSet() ? EventTracer->CreateSpan(CauseSpanId.GetValue().Data, 1) : EventTracer->CreateSpan();
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(Target, Function), SpanId);
 		PendingPayload.SpanId = SpanId;
 	}
@@ -44,8 +44,8 @@ EPushRPCResult SpatialRPCService::PushRPC(Worker_EntityId EntityId, ERPCType Typ
 	{
 		if (EventTracer != nullptr)
 		{
-			Trace_SpanId CauseSpanId = PendingPayload.SpanId.IsSet() ? PendingPayload.SpanId.GetValue() : Trace_SpanId();
-			TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+			FSpatialGDKSpanId CauseSpanId = PendingPayload.SpanId.IsSet() ? PendingPayload.SpanId.GetValue() : FSpatialGDKSpanId();
+			TOptional<FSpatialGDKSpanId> SpanId = EventTracer->CreateSpan(CauseSpanId.Data, 1);
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateQueueRPC(), SpanId);
 			PendingPayload.SpanId = SpanId;
 		}
@@ -92,8 +92,8 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(Worker_EntityId EntityId, ERPC
 			return EPushRPCResult::NoRingBufferAuthority;
 		}
 
-		EndpointObject = Schema_GetComponentUpdateFields(
-			GetOrCreateComponentUpdate(EntityComponent, PendingPayload.SpanId.IsSet() ? &PendingPayload.SpanId.GetValue() : nullptr));
+		TOptional<FSpatialGDKSpanId> SpanId = PendingPayload.SpanId.IsSet() ? PendingPayload.SpanId.GetValue() : FSpatialGDKSpanId();
+		EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponent, SpanId));
 
 		if (Type == ERPCType::NetMulticast)
 		{
@@ -193,8 +193,8 @@ void SpatialRPCService::PushOverflowedRPCs()
 				}
 				if (EventTracer != nullptr)
 				{
-					Trace_SpanId CauseSpanId = PendingPayload.SpanId.IsSet() ? PendingPayload.SpanId.GetValue() : Trace_SpanId();
-					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+					FSpatialGDKSpanId CauseSpanId = PendingPayload.SpanId.IsSet() ? PendingPayload.SpanId.GetValue() : FSpatialGDKSpanId();
+					TOptional<FSpatialGDKSpanId> SpanId = EventTracer->CreateSpan(CauseSpanId.Data, 1);
 					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateQueueRPC(), SpanId);
 					PendingPayload.SpanId = SpanId;
 				}
@@ -261,9 +261,10 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		UpdateToSend.Update.component_id = It.Key.ComponentId;
 		UpdateToSend.Update.schema_type = It.Value.Update;
 
-		if (EventTracer != nullptr)
+		if (EventTracer != nullptr && It.Value.SpanIds.Num() > 0)
 		{
-			TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(It.Value.SpanIds.GetData(), It.Value.SpanIds.Num());
+			FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(It.Value.SpanIds);
+			TOptional<FSpatialGDKSpanId> SpanId = EventTracer->CreateSpan(SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateMergeSendRPCs(UpdateToSend.EntityId, UpdateToSend.Update.component_id),
 									SpanId);
 			UpdateToSend.SpanId = SpanId;
@@ -415,7 +416,7 @@ void SpatialRPCService::OnEndpointAuthorityGained(Worker_EntityId EntityId, Work
 
 			RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::NetMulticast);
 			Schema_Object* SchemaObject =
-				Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }, nullptr));
+				Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }, FSpatialGDKSpanId()));
 			Schema_AddUint64(SchemaObject, Descriptor.LastSentRPCFieldId, Component->InitiallyPresentMulticastRPCsCount);
 		}
 		else
@@ -579,7 +580,7 @@ void SpatialRPCService::IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType T
 	++(*LastAckedRPCId);
 
 	const EntityComponentId EntityComponentPair = { EntityId, RPCRingBufferUtils::GetAckComponentId(Type) };
-	Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair, nullptr));
+	Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(GetOrCreateComponentUpdate(EntityComponentPair, FSpatialGDKSpanId()));
 
 	RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, *LastAckedRPCId);
 }
@@ -632,16 +633,16 @@ const RPCRingBuffer& SpatialRPCService::GetBufferFromView(Worker_EntityId Entity
 	return DummyBuffer;
 }
 
-Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, const Trace_SpanId* SpanId)
+Schema_ComponentUpdate* SpatialRPCService::GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 	PendingUpdate* ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
 	if (ComponentUpdatePtr == nullptr)
 	{
 		ComponentUpdatePtr = &PendingComponentUpdatesToSend.Emplace(EntityComponentIdPair, Schema_CreateComponentUpdate());
 	}
-	if (SpanId != nullptr)
+	if (SpanId.IsSet())
 	{
-		ComponentUpdatePtr->SpanIds.Add(*SpanId);
+		ComponentUpdatePtr->SpanIds.Add(SpanId.GetValue());
 	}
 	return ComponentUpdatePtr->Update;
 }

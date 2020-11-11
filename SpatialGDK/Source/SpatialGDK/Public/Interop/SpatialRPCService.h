@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Interop/EntityRPCType.h"
 #include "Schema/RPCPayload.h"
 #include "SpatialView/EntityComponentId.h"
@@ -49,7 +50,7 @@ public:
 	{
 		Worker_EntityId EntityId;
 		FWorkerComponentUpdate Update;
-		TOptional<Trace_SpanId> SpanId;
+		TOptional<FSpatialGDKSpanId> SpanId;
 	};
 	TArray<UpdateToSend> GetRPCsAndAcksToSend();
 	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
@@ -76,7 +77,7 @@ private:
 		}
 
 		RPCPayload Payload;
-		TOptional<Trace_SpanId> SpanId;
+		TOptional<FSpatialGDKSpanId> SpanId;
 	};
 
 	// For now, we should drop overflowed RPCs when entity crosses the boundary.
@@ -92,7 +93,7 @@ private:
 	uint64 GetAckFromView(Worker_EntityId EntityId, ERPCType Type);
 	const RPCRingBuffer& GetBufferFromView(Worker_EntityId EntityId, ERPCType Type);
 
-	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, const Trace_SpanId* SpanId);
+	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, const TOptional<FSpatialGDKSpanId>& SpanId);
 	Schema_ComponentData* GetOrCreateComponentData(EntityComponentId EntityComponentIdPair);
 
 private:
@@ -119,7 +120,7 @@ private:
 		}
 
 		Schema_ComponentUpdate* Update;
-		TArray<Trace_SpanId> SpanIds;
+		TArray<FSpatialGDKSpanId> SpanIds;
 	};
 
 	TMap<EntityComponentId, PendingUpdate> PendingComponentUpdatesToSend;

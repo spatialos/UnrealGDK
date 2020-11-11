@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ReceivedOpEventHandler.h"
 
@@ -26,14 +26,14 @@ void FReceivedOpEventHandler::ProcessOpLists(const OpList& Ops)
 		{
 		case WORKER_OP_TYPE_ADD_ENTITY:
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntity(Op.op.add_entity.entity_id),
-									EventTracer->CreateSpan(&Op.span_id, 1));
+									EventTracer->CreateSpan(Op.span_id, 1));
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveRemoveEntity(Op.op.remove_entity.entity_id),
-									EventTracer->CreateSpan(&Op.span_id, 1));
+									EventTracer->CreateSpan(Op.span_id, 1));
 			break;
 		case WORKER_OP_TYPE_ADD_COMPONENT:
-			EventTracer->AddComponent(Op.op.add_component.entity_id, Op.op.add_component.data.component_id, Op.span_id);
+			EventTracer->AddComponent(Op.op.add_component.entity_id, Op.op.add_component.data.component_id, FSpatialGDKSpanId(Op.span_id));
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
 			EventTracer->RemoveComponent(Op.op.remove_component.entity_id, Op.op.remove_component.component_id);
@@ -42,10 +42,10 @@ void FReceivedOpEventHandler::ProcessOpLists(const OpList& Ops)
 			EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreateAuthorityChange(Op.op.authority_change.entity_id, Op.op.authority_change.component_id,
 																 static_cast<Worker_Authority>(Op.op.authority_change.authority)),
-				EventTracer->CreateSpan(&Op.span_id, 1));
+				EventTracer->CreateSpan(Op.span_id, 1));
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			EventTracer->UpdateComponent(Op.op.component_update.entity_id, Op.op.component_update.update.component_id, Op.span_id);
+			EventTracer->UpdateComponent(Op.op.component_update.entity_id, Op.op.component_update.update.component_id, FSpatialGDKSpanId(Op.span_id));
 			break;
 		default:
 			break;

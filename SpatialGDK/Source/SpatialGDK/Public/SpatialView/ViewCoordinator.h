@@ -48,19 +48,19 @@ public:
 	const FString& GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
-	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId);
-	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
+	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<FSpatialGDKSpanId>& SpanId);
+	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<FSpatialGDKSpanId>& SpanId);
+	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<FSpatialGDKSpanId>& SpanId);
 	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-											 TOptional<uint32> TimeoutMillis = {}, const TOptional<Trace_SpanId>& SpanId = {});
+											 TOptional<uint32> TimeoutMillis = {}, const TOptional<FSpatialGDKSpanId>& SpanId = {});
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis = {},
-											 const TOptional<Trace_SpanId>& SpanId = {});
+											 const TOptional<FSpatialGDKSpanId>& SpanId = {});
 	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {},
-											  const TOptional<Trace_SpanId>& SpanId = {});
-	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const TOptional<Trace_SpanId>& SpanId);
-	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const TOptional<Trace_SpanId>& SpanId);
+											  const TOptional<FSpatialGDKSpanId>& SpanId = {});
+	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const TOptional<FSpatialGDKSpanId>& SpanId);
+	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const TOptional<FSpatialGDKSpanId>& SpanId);
 	void SendMetrics(SpatialMetrics Metrics);
 	void SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message);
 

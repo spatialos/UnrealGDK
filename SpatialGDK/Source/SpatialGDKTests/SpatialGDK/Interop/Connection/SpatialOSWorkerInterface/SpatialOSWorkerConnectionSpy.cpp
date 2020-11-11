@@ -33,44 +33,44 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendReserveEntityIdsRequest(uint3
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FWorkerComponentData> Components,
 																	   const Worker_EntityId* EntityId,
-																	   const TOptional<Trace_SpanId>& SpanId)
+																	   const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 	return NextRequestId++;
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<Trace_SpanId>& SpanId)
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 	return NextRequestId++;
 }
 
 void SpatialOSWorkerConnectionSpy::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
-													const TOptional<Trace_SpanId>& SpanId)
+													const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 }
 
 void SpatialOSWorkerConnectionSpy::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
-													   const TOptional<Trace_SpanId>& SpanId)
+													   const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 }
 
 void SpatialOSWorkerConnectionSpy::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
-													   const TOptional<Trace_SpanId>& SpanId)
+													   const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 }
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
-																  uint32_t CommandId, const TOptional<Trace_SpanId>& SpanId)
+																  uint32_t CommandId, const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 	return NextRequestId++;
 }
 
 void SpatialOSWorkerConnectionSpy::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
-													   const TOptional<Trace_SpanId>& SpanId)
+													   const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 }
 
 void SpatialOSWorkerConnectionSpy::SendCommandFailure(Worker_RequestId RequestId, const FString& Message,
-													  const TOptional<Trace_SpanId>& SpanId)
+													  const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 }
 

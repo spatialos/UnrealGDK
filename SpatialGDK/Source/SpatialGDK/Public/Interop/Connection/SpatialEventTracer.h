@@ -4,7 +4,9 @@
 
 #include "Interop/Connection/SpatialTraceEvent.h"
 #include "Interop/Connection/UserSpanId.h"
+#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "SpatialView/EntityComponentId.h"
+#include "SpatialCommonTypes.h"
 
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
@@ -25,32 +27,32 @@ public:
 	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
 	Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
-	TOptional<Trace_SpanId> CreateSpan() const;
-	TOptional<Trace_SpanId> CreateSpan(const Trace_SpanId* Causes, int32 NumCauses) const;
-	void TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const TOptional<Trace_SpanId>& OptionalSpanId);
+	TOptional<FSpatialGDKSpanId> CreateSpan() const;
+	TOptional<FSpatialGDKSpanId> CreateSpan(const Trace_SpanIdType* Causes, int32 NumCauses) const;
+	void TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const TOptional<FSpatialGDKSpanId>& SpanId);
 
 	bool IsEnabled() const;
 
-	void AddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId);
+	void AddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
 	void RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const Trace_SpanId& SpanId);
+	void UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
 
-	TOptional<Trace_SpanId> GetSpanId(const EntityComponentId& Id) const;
+	TOptional<FSpatialGDKSpanId> GetSpanId(const EntityComponentId& Id) const;
 
-	static FString SpanIdToString(const Trace_SpanId& SpanId);
+	static FString GDKSpanIdToString(const FSpatialGDKSpanId& SpanId);
 
-	static FUserSpanId SpanIdToUserSpanId(const Trace_SpanId& SpanId);
-	static TOptional<Trace_SpanId> UserSpanIdToSpanId(const FUserSpanId& UserSpanId);
+	static FUserSpanId GDKSpanIdToUserSpanId(const FSpatialGDKSpanId& SpanId);
+	static TOptional<FSpatialGDKSpanId> UserSpanIdToGDKSpanId(const FUserSpanId& UserSpanId);
 
 	const FString& GetFolderPath() const { return FolderPath; }
 
-	void AddToStack(const Trace_SpanId& SpanId);
-	TOptional<Trace_SpanId> PopFromStack();
-	TOptional<Trace_SpanId> GetFromStack() const;
+	void AddToStack(const FSpatialGDKSpanId& SpanId);
+	TOptional<FSpatialGDKSpanId> PopFromStack();
+	TOptional<FSpatialGDKSpanId> GetFromStack() const;
 	bool IsStackEmpty() const;
 
-	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const Trace_SpanId& SpanId);
-	TOptional<Trace_SpanId> PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
+	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const FSpatialGDKSpanId& SpanId);
+	TOptional<FSpatialGDKSpanId> PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
 
 private:
 	struct StreamDeleter
@@ -60,8 +62,6 @@ private:
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
 
-	static const int32 TraceSpanIdLength = 16;
-
 	void Enable(const FString& FileName);
 
 	FString FolderPath;
@@ -69,9 +69,9 @@ private:
 	TUniquePtr<Io_Stream, StreamDeleter> Stream;
 	Trace_EventTracer* EventTracer = nullptr;
 
-	TArray<Trace_SpanId> SpanIdStack;
-	TMap<EntityComponentId, Trace_SpanId> EntityComponentSpanIds;
-	TMap<TWeakObjectPtr<UObject>, Trace_SpanId> ObjectSpanIdStacks;
+	TArray<FSpatialGDKSpanId> SpanIdStack;
+	TMap<EntityComponentId, FSpatialGDKSpanId> EntityComponentSpanIds;
+	TMap<TWeakObjectPtr<UObject>, FSpatialGDKSpanId> ObjectSpanIdStacks;
 
 	bool bEnabled = false;
 	uint64 BytesWrittenToStream = 0;
@@ -82,7 +82,7 @@ private:
 // traces.
 struct SpatialScopedActiveSpanId
 {
-	explicit SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<Trace_SpanId>& InCurrentSpanId);
+	explicit SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<FSpatialGDKSpanId>& InCurrentSpanId);
 	~SpatialScopedActiveSpanId();
 
 	SpatialScopedActiveSpanId(const SpatialScopedActiveSpanId&) = delete;
@@ -91,7 +91,7 @@ struct SpatialScopedActiveSpanId
 	SpatialScopedActiveSpanId& operator=(SpatialScopedActiveSpanId&&) = delete;
 
 private:
-	const TOptional<Trace_SpanId>& CurrentSpanId;
+	const TOptional<FSpatialGDKSpanId>& CurrentSpanId;
 	Trace_EventTracer* EventTracer;
 };
 
