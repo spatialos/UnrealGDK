@@ -19,7 +19,7 @@ FUserSpanId USpatialEventTracerUserInterface::CreateSpanId(UObject* WorldContext
 		return {};
 	}
 
-	return SpatialGDK::SpatialEventTracer::SpanIdToUserSpanId(EventTracer->CreateSpan().GetValue());
+	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(EventTracer->CreateSpan().GetValue());
 }
 
 FUserSpanId USpatialEventTracerUserInterface::CreateSpanIdWithCauses(UObject* WorldContextObject, const TArray<FUserSpanId>& Causes)
@@ -30,7 +30,7 @@ FUserSpanId USpatialEventTracerUserInterface::CreateSpanIdWithCauses(UObject* Wo
 		return {};
 	}
 
-	TArray<Trace_SpanId> SpanIds;
+	TArray<FSpatialGDKSpanId> SpanIds;
 	for (const FUserSpanId& UserSpanIdCause : Causes)
 	{
 		if (!UserSpanIdCause.IsValid())
@@ -40,14 +40,15 @@ FUserSpanId USpatialEventTracerUserInterface::CreateSpanIdWithCauses(UObject* Wo
 			continue;
 		}
 
-		TOptional<Trace_SpanId> CauseSpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToSpanId(UserSpanIdCause);
+		TOptional<FSpatialGDKSpanId> CauseSpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToGDKSpanId(UserSpanIdCause);
 		if (CauseSpanId.IsSet())
 		{
 			SpanIds.Add(CauseSpanId.GetValue());
 		}
 	}
 
-	return SpatialGDK::SpatialEventTracer::SpanIdToUserSpanId(EventTracer->CreateSpan(SpanIds.GetData(), SpanIds.Num()).GetValue());
+	FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(SpanIds);
+	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(EventTracer->CreateSpan(SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds()).GetValue());
 }
 
 void USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const FUserSpanId& UserSpanId,
@@ -64,7 +65,7 @@ void USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, c
 		return;
 	}
 
-	TOptional<Trace_SpanId> SpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToSpanId(UserSpanId);
+	TOptional<FSpatialGDKSpanId> SpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToGDKSpanId(UserSpanId);
 	if (!SpanId.IsSet())
 	{
 		return;
@@ -89,7 +90,7 @@ void USpatialEventTracerUserInterface::TraceRPC(UObject* WorldContextObject, FEv
 		return;
 	}
 
-	TOptional<Trace_SpanId> SpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToSpanId(UserSpanId);
+	TOptional<FSpatialGDKSpanId> SpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToGDKSpanId(UserSpanId);
 	if (!SpanId.IsSet())
 	{
 		Delegate.Execute();
@@ -114,13 +115,13 @@ bool USpatialEventTracerUserInterface::GetActiveSpanId(UObject* WorldContextObje
 		return false;
 	}
 
-	TOptional<Trace_SpanId> SpanId = EventTracer->GetFromStack();
+	TOptional<FSpatialGDKSpanId> SpanId = EventTracer->GetFromStack();
 	if (!SpanId.IsSet())
 	{
 		return false;
 	}
 
-	OutUserSpanId = SpatialGDK::SpatialEventTracer::SpanIdToUserSpanId(SpanId.GetValue());
+	OutUserSpanId = SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId.GetValue());
 	return true;
 }
 
@@ -138,7 +139,7 @@ void USpatialEventTracerUserInterface::TraceProperty(UObject* WorldContextObject
 		return;
 	}
 
-	TOptional<Trace_SpanId> SpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToSpanId(UserSpanId);
+	TOptional<FSpatialGDKSpanId> SpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToGDKSpanId(UserSpanId);
 	if (!SpanId.IsSet())
 	{
 		return;

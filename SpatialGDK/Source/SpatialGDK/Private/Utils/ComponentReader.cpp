@@ -184,14 +184,14 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient);
 
 	TArray<GDK_PROPERTY(Property)*> RepNotifies;
-	TMap<GDK_PROPERTY(Property)*, Trace_SpanId> PropertySpanIds;
+	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
 
 	{
 		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
 		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
 
 		Worker_EntityId EntityId = Channel.GetEntityId();
-		TOptional<Trace_SpanId> CauseSpanId;
+		TOptional<FSpatialGDKSpanId> CauseSpanId;
 		if (bEventTracerEnabled)
 		{
 			CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
@@ -326,10 +326,10 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					}
 				}
 
-				TOptional<Trace_SpanId> SpanId;
+				TOptional<FSpatialGDKSpanId> SpanId;
 				if (bEventTracerEnabled && CauseSpanId.IsSet())
 				{
-					SpanId = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
+					SpanId = EventTracer->CreateSpan(CauseSpanId.GetValue().Data, 1);
 					EventTracer->TraceEvent(
 						FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(&Object, EntityId, ComponentId, Cmd.Property->GetName()),
 						SpanId);
