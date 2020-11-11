@@ -27,8 +27,8 @@ struct EventTraceUniqueId
 		return false;
 	}
 
-	static EventTraceUniqueId ReadFromSchemaObject(Schema_Object* Obj, Schema_FieldId FieldId);
-	static void WriteToSchemaObject(const EventTraceUniqueId& Id, Schema_Object* Obj, Schema_FieldId FieldId);
+	static EventTraceUniqueId ReadTraceIDFromSchemaObject(Schema_Object* Obj, Schema_FieldId FieldId);
+	static void WriteTraceIDToSchemaObject(const EventTraceUniqueId& Id, Schema_Object* Obj, Schema_FieldId FieldId);
 	static EventTraceUniqueId GenerateUnique(const Trace_SpanId& SpanId);
 };
 } // namespace SpatialGDK

@@ -32,12 +32,12 @@ FString EventTraceUniqueId::GetString() const
 	return Str;
 }
 
-void EventTraceUniqueId::WriteToSchemaObject(const EventTraceUniqueId& Id, Schema_Object* Obj, Schema_FieldId FieldId)
+void EventTraceUniqueId::WriteTraceIDToSchemaObject(const EventTraceUniqueId& Id, Schema_Object* Obj, Schema_FieldId FieldId)
 {
-	SpatialGDK::AddBytesToSchema(Obj, FieldId, Id.InternalBytes, sizeof(InternalBytes));
+	AddBytesToSchema(Obj, FieldId, Id.InternalBytes, sizeof(InternalBytes));
 }
 
-EventTraceUniqueId EventTraceUniqueId::ReadFromSchemaObject(Schema_Object* Obj, Schema_FieldId FieldId)
+EventTraceUniqueId EventTraceUniqueId::ReadTraceIDFromSchemaObject(Schema_Object* Obj, Schema_FieldId FieldId)
 {
 	EventTraceUniqueId Id;
 	const uint8* Bytes = Schema_GetBytes(Obj, FieldId);

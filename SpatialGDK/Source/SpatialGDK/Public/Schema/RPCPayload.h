@@ -30,9 +30,9 @@ struct RPCPayload
 		Offset = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
 		Index = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID);
 		PayloadData = SpatialGDK::GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
-		if (Schema_GetObjectCount(RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID) > 0)
+		if (Schema_GetObjectCount(RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID) > 0) 
 		{
-			LinearTraceId = EventTraceUniqueId::ReadFromSchemaObject(RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID);
+			LinearTraceId = EventTraceUniqueId::ReadTraceIDFromSchemaObject(RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID);
 		}
 #if TRACE_LIB_ACTIVE
 		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
@@ -49,7 +49,7 @@ struct RPCPayload
 		WriteToSchemaObject(RPCObject, Offset, Index, PayloadData.GetData(), PayloadData.Num());
 		if (LinearTraceId.IsValid())
 		{
-			EventTraceUniqueId::WriteToSchemaObject(LinearTraceId, RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID);
+			EventTraceUniqueId::WriteTraceIDToSchemaObject(LinearTraceId, RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID);
 		}
 #if TRACE_LIB_ACTIVE
 		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))

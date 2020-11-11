@@ -330,7 +330,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 				if (bEventTracerEnabled && CauseSpanId.IsSet())
 				{
 					EventTraceUniqueId LinearTraceId =
-						EventTraceUniqueId::ReadFromSchemaObject(ComponentObject, SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD);
+						EventTraceUniqueId::ReadTraceIDFromSchemaObject(ComponentObject, SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD);
 
 					SpanId = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
 					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(&Object, EntityId, ComponentId,
