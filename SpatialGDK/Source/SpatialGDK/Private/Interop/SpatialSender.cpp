@@ -479,7 +479,8 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 				FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id, LinearTraceId), SpanId);
 
 			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
-			EventTraceUniqueId::WriteTraceIDToSchemaObject(LinearTraceId, ComponentObject, SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD);
+			EventTraceUniqueId::WriteTraceIDToSchemaObject(LinearTraceId, ComponentObject,
+														   SpatialConstants::UNREAL_COMPONENT_EVENT_DATA_FIELD);
 		}
 
 		Connection->SendComponentUpdate(EntityId, &Update, SpanId);
