@@ -4,7 +4,8 @@
 
 namespace SpatialGDK
 {
-Schema_ComponentUpdate* FRPCStore::GetOrCreateComponentUpdate(const EntityComponentId EntityComponentIdPair, const TOptional<FSpatialGDKSpanId>& SpanId)
+Schema_ComponentUpdate* FRPCStore::GetOrCreateComponentUpdate(const EntityComponentId EntityComponentIdPair,
+															  const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 	PendingUpdate* ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
 	if (ComponentUpdatePtr == nullptr)
