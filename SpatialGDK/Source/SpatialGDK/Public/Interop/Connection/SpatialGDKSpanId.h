@@ -9,17 +9,14 @@
 
 struct FSpatialGDKSpanId
 {
-	explicit FSpatialGDKSpanId() {};
+	explicit FSpatialGDKSpanId(){};
 	explicit FSpatialGDKSpanId(const Trace_SpanIdType* TraceSpanId)
 	{
 		const int32 Size = TRACE_SPAN_ID_SIZE_BYTES * sizeof(Trace_SpanIdType);
 		FMemory::Memcpy(Data, TraceSpanId, Size);
 	}
 
-	bool IsValid() const
-	{
-		return Trace_SpanId_IsNull(Data);
-	}
+	bool IsValid() const { return Trace_SpanId_IsNull(Data); }
 
 	Trace_SpanIdType Data[TRACE_SPAN_ID_SIZE_BYTES];
 };
@@ -36,7 +33,6 @@ public:
 	int32 GetNumSpanIds() const { return NumSpanIds; }
 
 private:
-
 	void Allocate(const int32 SpanIndex, const FSpatialGDKSpanId& TraceSpanId);
 
 	std::allocator<Trace_SpanIdType> Allocator;
@@ -44,5 +40,3 @@ private:
 	const int32 NumBytes;
 	Trace_SpanIdType* Buffer;
 };
-
-

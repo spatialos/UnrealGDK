@@ -85,7 +85,8 @@ void ViewCoordinator::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpd
 	View.SendComponentUpdate(EntityId, MoveTemp(Update), SpanId);
 }
 
-void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<FSpatialGDKSpanId>& SpanId)
+void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+										  const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 	View.SendRemoveComponent(EntityId, ComponentId, SpanId);
 }
@@ -123,7 +124,8 @@ Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId Entit
 	return NextRequestId++;
 }
 
-void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const TOptional<FSpatialGDKSpanId>& SpanId)
+void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response,
+												const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 	View.SendEntityCommandResponse({ RequestId, MoveTemp(Response), SpanId });
 }

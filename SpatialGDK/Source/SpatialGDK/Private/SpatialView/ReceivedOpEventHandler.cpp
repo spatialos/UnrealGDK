@@ -45,7 +45,8 @@ void FReceivedOpEventHandler::ProcessOpLists(const OpList& Ops)
 				EventTracer->CreateSpan(Op.span_id, 1));
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			EventTracer->UpdateComponent(Op.op.component_update.entity_id, Op.op.component_update.update.component_id, FSpatialGDKSpanId(Op.span_id));
+			EventTracer->UpdateComponent(Op.op.component_update.entity_id, Op.op.component_update.update.component_id,
+										 FSpatialGDKSpanId(Op.span_id));
 			break;
 		default:
 			break;

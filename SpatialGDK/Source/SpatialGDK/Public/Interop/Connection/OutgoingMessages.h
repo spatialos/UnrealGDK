@@ -11,7 +11,6 @@
 #include "Templates/UnrealTemplate.h"
 #include "UObject/NameTypes.h"
 #include "Utils/SpatialLatencyTracer.h"
-#include "Utils/SpatialLatencyTracer.h"
 
 #include <string>
 
@@ -119,7 +118,8 @@ struct FRemoveComponent : FOutgoingMessage
 
 struct FComponentUpdate : FOutgoingMessage
 {
-	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate, const TOptional<FSpatialGDKSpanId>& SpanId)
+	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate,
+					 const TOptional<FSpatialGDKSpanId>& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentUpdate)
 		, EntityId(InEntityId)
 		, Update(InComponentUpdate)

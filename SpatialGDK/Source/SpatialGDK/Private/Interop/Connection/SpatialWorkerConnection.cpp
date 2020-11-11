@@ -132,7 +132,8 @@ void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, W
 										   SpanId);
 }
 
-void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const TOptional<FSpatialGDKSpanId>& SpanId)
+void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message,
+												  const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendEntityCommandFailure(RequestId, Message, SpanId);
