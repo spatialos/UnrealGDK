@@ -1,19 +1,19 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/RPCs/RPCStore.h"
 
 namespace SpatialGDK
 {
-Schema_ComponentUpdate* FRPCStore::GetOrCreateComponentUpdate(const EntityComponentId EntityComponentIdPair, const Trace_SpanId* SpanId)
+Schema_ComponentUpdate* FRPCStore::GetOrCreateComponentUpdate(const EntityComponentId EntityComponentIdPair, const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 	PendingUpdate* ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
 	if (ComponentUpdatePtr == nullptr)
 	{
 		ComponentUpdatePtr = &PendingComponentUpdatesToSend.Emplace(EntityComponentIdPair, Schema_CreateComponentUpdate());
 	}
-	if (SpanId != nullptr)
+	if (SpanId.IsSet())
 	{
-		ComponentUpdatePtr->SpanIds.Add(*SpanId);
+		ComponentUpdatePtr->SpanIds.Add(SpanId.GetValue());
 	}
 	return ComponentUpdatePtr->Update;
 }

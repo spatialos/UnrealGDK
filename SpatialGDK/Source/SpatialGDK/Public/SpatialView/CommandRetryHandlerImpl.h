@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -14,7 +14,7 @@ struct FDeleteEntityRetryHandlerImpl
 	struct CommandData
 	{
 		Worker_EntityId EntityId;
-		TOptional<Trace_SpanId> SpanId;
+		TOptional<FSpatialGDKSpanId> SpanId;
 	};
 
 	static bool CanHandleOp(const Worker_Op& Op) { return Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE; }
@@ -55,7 +55,7 @@ struct FCreateEntityRetryHandlerImpl
 	{
 		TArray<ComponentData> Components;
 		TOptional<Worker_EntityId> EntityId;
-		TOptional<Trace_SpanId> SpanId;
+		TOptional<FSpatialGDKSpanId> SpanId;
 	};
 
 	static bool CanHandleOp(const Worker_Op& Op) { return Op.op_type == WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE; }
@@ -170,7 +170,7 @@ struct FEntityCommandRetryHandlerImpl
 	{
 		Worker_EntityId EntityId;
 		CommandRequest Request;
-		TOptional<Trace_SpanId> SpanId;
+		TOptional<FSpatialGDKSpanId> SpanId;
 	};
 
 	static bool CanHandleOp(const Worker_Op& Op) { return Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE; }

@@ -158,14 +158,14 @@ Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEnt
 }
 
 Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-														  FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId)
+														  FRetryData RetryData, const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 	CreateEntityRetryHandler.SendRequest(NextRequestId, { MoveTemp(EntityComponents), EntityId, SpanId }, RetryData, View);
 	return NextRequestId++;
 }
 
 Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData,
-														  const TOptional<Trace_SpanId>& SpanId)
+														  const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 	DeleteEntityRetryHandler.SendRequest(NextRequestId, { EntityId, SpanId }, RetryData, View);
 	return NextRequestId++;
@@ -178,7 +178,7 @@ Worker_RequestId ViewCoordinator::SendEntityQueryRequest(EntityQuery Query, FRet
 }
 
 Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData,
-														   const TOptional<Trace_SpanId>& SpanId)
+														   const TOptional<FSpatialGDKSpanId>& SpanId)
 {
 	EntityCommandRetryHandler.SendRequest(NextRequestId, { EntityId, MoveTemp(Request), SpanId }, RetryData, View);
 	return NextRequestId++;
