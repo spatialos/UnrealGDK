@@ -2,11 +2,11 @@
 
 #pragma once
 
+#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Interop/Connection/SpatialTraceEvent.h"
 #include "Interop/Connection/UserSpanId.h"
-#include "Interop/Connection/SpatialGDKSpanId.h"
-#include "SpatialView/EntityComponentId.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialView/EntityComponentId.h"
 
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>

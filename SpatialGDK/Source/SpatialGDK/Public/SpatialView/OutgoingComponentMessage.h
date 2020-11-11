@@ -39,7 +39,8 @@ public:
 	{
 	}
 
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentUpdate ComponentUpdated, const TOptional<FSpatialGDKSpanId>& SpanId)
+	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentUpdate ComponentUpdated,
+									  const TOptional<FSpatialGDKSpanId>& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(ComponentUpdated.GetComponentId())
 		, SpanId(SpanId)

@@ -48,7 +48,8 @@ FUserSpanId USpatialEventTracerUserInterface::CreateSpanIdWithCauses(UObject* Wo
 	}
 
 	FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(SpanIds);
-	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(EventTracer->CreateSpan(SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds()).GetValue());
+	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(
+		EventTracer->CreateSpan(SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds()).GetValue());
 }
 
 void USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const FUserSpanId& UserSpanId,
@@ -167,8 +168,8 @@ USpatialNetDriver* USpatialEventTracerUserInterface::GetSpatialNetDriver(UObject
 	if (World == nullptr)
 	{
 		UE_LOG(LogSpatialEventTracerUserInterface, Error,
-			   TEXT("USpatialEventTracerUserInterface::GetSpatialNetDriver - World is null, will use GWorld instead"));
-		World = GWorld;
+			   TEXT("USpatialEventTracerUserInterface::GetSpatialNetDriver - World is null."));
+		return nullptr;
 	}
 
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());

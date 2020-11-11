@@ -39,7 +39,8 @@ public:
 												const TOptional<FSpatialGDKSpanId>& SpanId) override;
 	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
 									 const TOptional<FSpatialGDKSpanId>& SpanId) override;
-	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const TOptional<FSpatialGDKSpanId>& SpanId) override;
+	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message,
+									const TOptional<FSpatialGDKSpanId>& SpanId) override;
 	virtual void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) override;
 	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) override;
