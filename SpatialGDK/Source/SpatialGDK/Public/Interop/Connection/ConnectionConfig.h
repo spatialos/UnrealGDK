@@ -112,6 +112,10 @@ private:
 		{
 			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
 		}
+		else if (SpatialConstants::DefaultClientWorkerType.ToString().Equals(WorkerType))
+		{
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
+		}
 
 		if (!LinkProtocolString.IsEmpty())
 		{
