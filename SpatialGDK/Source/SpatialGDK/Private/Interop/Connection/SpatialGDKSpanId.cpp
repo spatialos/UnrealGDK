@@ -29,7 +29,7 @@ FMultiGDKSpanIdAllocator::~FMultiGDKSpanIdAllocator()
 
 void FMultiGDKSpanIdAllocator::Allocate(const int32 SpanIndex, const FSpatialGDKSpanId& SpanId)
 {
-	for (int32 ElementIndex = 0; ElementIndex < TRAC_SPAN_ID_SIZE_BYTES; ++ElementIndex)
+	for (int32 ElementIndex = 0; ElementIndex < TRACE_SPAN_ID_SIZE_BYTES; ++ElementIndex)
 	{
 		const int32 BufferIndex = SpanIndex * TRACE_SPAN_ID_SIZE_BYTES + ElementIndex;
 		Allocator.construct(Buffer + BufferIndex, SpanId.Data[ElementIndex]);

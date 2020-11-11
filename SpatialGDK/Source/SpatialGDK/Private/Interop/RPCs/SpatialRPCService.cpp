@@ -63,9 +63,9 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 
 	if (EventTracer != nullptr)
 	{
-		TOptional<Trace_SpanId> CauseSpanId = EventTracer->GetFromStack();
-		TOptional<Trace_SpanId> SpanId =
-			CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
+		TOptional<FSpatialGDKSpanId> CauseSpanId = EventTracer->GetFromStack();
+		TOptional<FSpatialGDKSpanId> SpanId =
+			CauseSpanId.IsSet() ? EventTracer->CreateSpan(CauseSpanId.GetValue().Data, 1) : EventTracer->CreateSpan();
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(Target, Function), SpanId);
 		PendingPayload.SpanId = SpanId;
 	}
@@ -78,8 +78,8 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 	{
 		if (EventTracer != nullptr)
 		{
-			Trace_SpanId CauseSpanId = PendingPayload.SpanId.IsSet() ? PendingPayload.SpanId.GetValue() : Trace_SpanId();
-			const TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+			const FSpatialGDKSpanId& CauseSpanId = PendingPayload.SpanId.IsSet() ? PendingPayload.SpanId.GetValue() : FSpatialGDKSpanId();
+			const TOptional<FSpatialGDKSpanId> SpanId = EventTracer->CreateSpan(CauseSpanId.Data, 1);
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateQueueRPC(), SpanId);
 			PendingPayload.SpanId = SpanId;
 		}
@@ -130,8 +130,8 @@ void SpatialRPCService::PushOverflowedRPCs()
 					   NumProcessed, OverflowedRPCArray.Num() - NumProcessed, EntityId, *SpatialConstants::RPCTypeToString(Type));
 				if (EventTracer != nullptr)
 				{
-					Trace_SpanId CauseSpanId = Payload.SpanId.IsSet() ? Payload.SpanId.GetValue() : Trace_SpanId();
-					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+					const FSpatialGDKSpanId& CauseSpanId = Payload.SpanId.IsSet() ? Payload.SpanId.GetValue() : FSpatialGDKSpanId();
+					TOptional<FSpatialGDKSpanId> SpanId = EventTracer->CreateSpan(CauseSpanId.Data, 1);
 					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateQueueRPC(), SpanId);
 					Payload.SpanId = SpanId;
 				}
@@ -191,7 +191,8 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 
 		if (EventTracer != nullptr)
 		{
-			TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(It.Value.SpanIds.GetData(), It.Value.SpanIds.Num());
+			FMultiGDKSpanIdAllocator Allocator(It.Value.SpanIds);
+			TOptional<FSpatialGDKSpanId> SpanId = EventTracer->CreateSpan(Allocator.GetBuffer(), Allocator.GetNumSpanIds());
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateMergeSendRPCs(UpdateToSend.EntityId, UpdateToSend.Update.component_id),
 									SpanId);
 			UpdateToSend.SpanId = SpanId;
@@ -317,8 +318,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 			return EPushRPCResult::NoRingBufferAuthority;
 		}
 
-		EndpointObject = Schema_GetComponentUpdateFields(
-			RPCStore.GetOrCreateComponentUpdate(EntityComponent, Payload.SpanId.IsSet() ? &Payload.SpanId.GetValue() : nullptr));
+		EndpointObject = Schema_GetComponentUpdateFields(RPCStore.GetOrCreateComponentUpdate(EntityComponent, Payload.SpanId));
 
 		if (Type == ERPCType::NetMulticast)
 		{
@@ -455,7 +455,7 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 		}
 		else
 		{
-			TOptional<Trace_SpanId> CauseSpanId;
+			TOptional<FSpatialGDKSpanId> CauseSpanId;
 			bool bUseEventTracer = EventTracer->IsEnabled() && RPCType != ERPCType::CrossServer;
 			if (bUseEventTracer)
 			{
@@ -464,7 +464,7 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 				CauseSpanId = EventTracer->GetSpanId(Id);
 				if (CauseSpanId.IsSet())
 				{
-					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
+					TOptional<FSpatialGDKSpanId> SpanId = EventTracer->CreateSpan(CauseSpanId.GetValue().Data, 1);
 					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function), SpanId);
 					EventTracer->AddToStack(SpanId.GetValue());
 				}
