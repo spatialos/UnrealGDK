@@ -321,6 +321,8 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 			if (GetNetMode() == NM_Client)
 			{
 				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
+				LocalPlayerController->InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this,
+															   &ASpatialDebugger::OnMousePress);
 			}
 		}
 	}
@@ -368,6 +370,30 @@ void ASpatialDebugger::OnToggleConfigUI()
 		ConfigUIWidget->RemoveFromParent();
 		ConfigUIWidget = nullptr;
 		OnConfigUIClosed.ExecuteIfBound();
+	}
+}
+
+void ASpatialDebugger::OnMousePress()
+{
+	UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed"));
+
+	if (SelectedActor.IsValid())
+	{
+		// Deselect actor?
+	}
+
+	FVector2D MousePosition;
+
+	if (LocalPlayerController->GetMousePosition(MousePosition.X, MousePosition.Y))
+	{
+		UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed at : %f , %f"), MousePosition.X, MousePosition.Y);
+
+		SelectedActor = GetActorAtPosition(MousePosition);
+
+		if (SelectedActor.IsValid())
+		{
+			UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed selector actor: "), *SelectedActor->GetName());
+		}
 	}
 }
 
@@ -651,6 +677,12 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 	if (LocalPlayerController.IsValid())
 	{
 		FVector2D MousePosition;
+	
+
+		//if (LocalPlayerController->IsInputKeyDown(EKeys::RightMouseButton))
+		//{
+		//	UE_LOG(LogSpatialDebugger, Warning, TEXT("Mouse button pressed"));
+		//}
 
 		if (LocalPlayerController->GetMousePosition(MousePosition.X, MousePosition.Y))
 		{
@@ -678,53 +710,83 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 			}
 
 			// Use the mouse position as the point for sending the raycast into the world
-			if (const APlayerCameraManager* CameraManager = Cast<APlayerCameraManager>(LocalPlayerController->PlayerCameraManager))
+			// SelectedActor = GetActorAtMousePosition(MousePosition);
+			// To do make array of selected actors? -> or allow use to click through to select different actor
+			if (SelectedActor.IsValid())
 			{
-				FVector WorldLocation;
-				FVector WorldRotation;
-				LocalPlayerController->DeprojectScreenPositionToWorld(MousePosition.X, MousePosition.Y, WorldLocation,
-																	  WorldRotation); // Mouse cursor position
-				FVector StartTrace = WorldLocation;
-				FVector EndTrace = StartTrace + WorldRotation * MaxRange;
-
-				FCollisionObjectQueryParams CollisionObjectParams;
-				CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldStatic);
-				CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldDynamic);
-				CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Pawn);
-				CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Destructible);
-				CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Vehicle);
-				CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_PhysicsBody);
-
-				TArray<FHitResult> HitResults;
-				bool bHit = GetWorld()->LineTraceMultiByObjectType(HitResults, StartTrace, EndTrace, CollisionObjectParams);
-				if (bHit)
+				if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(SelectedActor))
 				{
-					// When the raycast hits an actor then the debug information for that actor is displayed above it, whilst the actor
-					// remains under the crosshair.
-					for (const FHitResult& HitResult : HitResults)
+					FVector PlayerLocation = GetLocalPawnLocation();
+
+					if (SelectedActor != nullptr)
 					{
-						const TWeakObjectPtr<AActor> HitActor = HitResult.GetActor();
-
-						if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(HitResult.GetActor()))
+						FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation);
+						if (ScreenLocation.IsZero())
 						{
-							FVector PlayerLocation = GetLocalPawnLocation();
-
-							if (HitActor != nullptr)
-							{
-								FVector2D ScreenLocation = ProjectActorToScreen(HitActor, PlayerLocation);
-								if (ScreenLocation.IsZero())
-								{
-									continue;
-								}
-
-								DrawTag(Canvas, ScreenLocation, *HitEntityId, HitActor->GetName(), true /*bCentre*/);
-							}
+							//continue;
 						}
+						//return HitActor;
+						else
+						{
+							// TODO : draw a ghosted version (transparency 70%) when hovering mouse and full opacity when click ?
+							DrawTag(Canvas, ScreenLocation, *HitEntityId, SelectedActor->GetName(), true /*bCentre*/);
+						}
+					}
+				}
+			}
+			
+		}
+	}
+}
+
+TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& Position)
+{
+	if (const APlayerCameraManager* CameraManager = Cast<APlayerCameraManager>(LocalPlayerController->PlayerCameraManager))
+	{
+		FVector WorldLocation;
+		FVector WorldRotation;
+		LocalPlayerController->DeprojectScreenPositionToWorld(Position.X, Position.Y, WorldLocation,
+															  WorldRotation); // Mouse cursor position
+		FVector StartTrace = WorldLocation;
+		FVector EndTrace = StartTrace + WorldRotation * MaxRange;
+
+		FCollisionObjectQueryParams CollisionObjectParams;
+		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldStatic);
+		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldDynamic);
+		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Pawn);
+		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Destructible);
+		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Vehicle);
+		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_PhysicsBody);
+
+		TArray<FHitResult> HitResults;
+		bool bHit = GetWorld()->LineTraceMultiByObjectType(HitResults, StartTrace, EndTrace, CollisionObjectParams);
+		if (bHit)
+		{
+			// When the raycast hits an actor then the debug information for that actor is displayed above it, whilst the actor
+			// remains under the crosshair.
+			for (const FHitResult& HitResult : HitResults)
+			{
+				const TWeakObjectPtr<AActor> HitActor = HitResult.GetActor();
+
+				if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(HitResult.GetActor()))
+				{
+					FVector PlayerLocation = GetLocalPawnLocation();
+
+					if (HitActor != nullptr)
+					{
+						FVector2D ScreenLocation = ProjectActorToScreen(HitActor, PlayerLocation);
+						if (ScreenLocation.IsZero())
+						{
+							continue;
+						}
+						return HitActor;
+						//DrawTag(Canvas, ScreenLocation, *HitEntityId, HitActor->GetName(), true /*bCentre*/);
 					}
 				}
 			}
 		}
 	}
+	return nullptr;
 }
 
 FVector2D ASpatialDebugger::ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector PlayerLocation)

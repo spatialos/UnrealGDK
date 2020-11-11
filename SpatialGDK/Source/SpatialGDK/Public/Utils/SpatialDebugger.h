@@ -191,6 +191,9 @@ public:
 	UFUNCTION()
 	void OnToggleConfigUI();
 
+	UFUNCTION()
+	void OnMousePress();
+
 private:
 	UFUNCTION()
 	void DefaultOnConfigUIClosed();
@@ -224,6 +227,8 @@ private:
 	// Allow user to select an actor for debugging - the mesh on the actor must have collision presets enabled to block on at least one of
 	// the object channels
 	void SelectActorToTag(UCanvas* Canvas);
+
+	TWeakObjectPtr<AActor> GetActorAtPosition(FVector2D& MousePosition);
 
 	FVector2D ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector PlayerLocation);
 
@@ -274,4 +279,6 @@ private:
 	FCanvasIcon Icons[ICON_MAX];
 
 	USpatialDebuggerConfigUI* ConfigUIWidget;
+
+	TWeakObjectPtr<AActor> SelectedActor;
 };
