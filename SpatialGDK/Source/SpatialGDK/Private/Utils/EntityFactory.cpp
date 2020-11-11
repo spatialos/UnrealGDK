@@ -120,16 +120,6 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
 
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
-		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			return;
-		}
-
-		DelegationMap.Add(ComponentId, AuthoritativeServerPartitionId);
-	});
-
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
 		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
@@ -140,16 +130,6 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		{
 			continue;
 		}
-
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
-			if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
-			{
-				return;
-			}
-
-			DelegationMap.Add(ComponentId, AuthoritativeServerPartitionId);
-		});
 	}
 
 	// We want to have a stably named ref if this is an Actor placed in the world.
@@ -301,13 +281,6 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-			ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-				if (SubobjectInfo.SchemaComponents[Type] != SpatialConstants::INVALID_COMPONENT_ID)
-				{
-					DelegationMap.Add(SubobjectInfo.SchemaComponents[Type], AuthoritativeServerPartitionId);
-				}
-			});
-
 			TArray<FWorkerComponentData> ActorSubobjectDatas =
 				DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
 
@@ -349,10 +322,9 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 			SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges, OutBytesWritten);
 
 		ComponentDatas.Add(SubobjectHandoverData);
-
-		DelegationMap.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeServerPartitionId);
 	}
 
+	DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 
 	// Add Actor completeness tags.

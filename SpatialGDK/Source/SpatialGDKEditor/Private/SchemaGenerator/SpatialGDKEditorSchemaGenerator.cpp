@@ -30,6 +30,7 @@
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
+#include "SpatialGDKSettings.h"
 #include "TypeStructure.h"
 #include "UObject/StrongObjectPtr.h"
 #include "Utils/CodeWriter.h"
@@ -961,6 +962,116 @@ void WriteComponentSetToFile(FCodeWriter& Writer, const FString& ComponentName, 
 	Writer.Outdent().Print("}");
 }
 
+bool WriteServerAuthorityComponentSet(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& SchemaOutputPath)
+{
+	FCodeWriter Writer;
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated;)""");
+	Writer.PrintNewLine();
+
+	// Write all import statements.
+	for (auto& TypeInfo : TypeInfos)
+	{
+		UClass* Class = Cast<UClass>(TypeInfo->Type);
+		const FString ClassName = ClassPathToSchemaName[Class->GetPathName()];
+		const FString IncludePath = "unreal/generated";
+		if (Class->IsChildOf<AActor>())
+		{
+			Writer.Printf("import \"{0}/{1}.schema\";", IncludePath, ClassName);
+
+			// Added Components import if necessary, logic taken from SchemaGenerator::GenerateSubobjectSchemaForActor.
+			for (auto SubObjectOffset = GetAllSubobjects(TypeInfo).CreateConstIterator(); SubObjectOffset; ++SubObjectOffset)
+			{
+				if (SchemaGeneratedClasses.Contains(Class))
+				{
+					Writer.Printf("import \"{0}/{1}Components.schema\";", IncludePath, ClassName);
+					break;
+				}
+			}
+		}
+		else
+		{
+			Writer.Printf("import \"{0}/Subobjects/{1}.schema\";", IncludePath, ClassName);
+		}
+	}
+	Writer.PrintNewLine();
+	Writer.Printf("component_set {0} {", SpatialConstants::SERVER_AUTH_COMPONENT_SET_NAME).Indent();
+	Writer.Printf("id = {0};", SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
+	Writer.Printf("components = [").Indent();
+	for (const auto& TypeInfo : TypeInfos)
+	{
+		UClass* Class = Cast<UClass>(TypeInfo->Type);
+		const FString ClassName = ClassPathToSchemaName[Class->GetPathName()];
+		if (Class->IsChildOf<AActor>())
+		{
+			// First, add the Actor class component to the set.
+			Writer.Printf("unreal.generated.{0}.{1},", ClassName.ToLower(), ClassName);
+
+			// Then, if needed add static components (logic taken from SchemaGenerator::GenerateSubobjectSchemaForActor).
+			const FString StaticComponentPackage = FString::Printf(TEXT("unreal.generated.%s.subobjects"), *ClassName.ToLower());
+			for (auto SubObject = GetAllSubobjects(TypeInfo).CreateConstIterator(); SubObject; ++SubObject)
+			{
+				if (SchemaGeneratedClasses.Contains(Class))
+				{
+					FString PropertyName = UnrealNameToSchemaComponentName(SubObject.Value()->Name.ToString());
+
+					FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+					for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+					{
+						// Since it is possible to replicate subobjects which have no replicated properties.
+						// We need to generate a schema component for every subobject. So if we have no replicated
+						// properties, we only don't generate a schema component if we are REP_SingleClient
+						if (RepData[Group].Num() == 0 && Group == REP_SingleClient)
+						{
+							continue;
+						}
+						Writer.Printf("{0}.{1},", StaticComponentPackage, PropertyName + GetReplicatedPropertyGroupName(Group));
+					}
+
+					if (GetFlatHandoverData(TypeInfo).Num() > 0)
+					{
+						Writer.Printf("{0}.{1}Handover,", StaticComponentPackage, PropertyName);
+					}
+				}
+			}
+		}
+		else
+		{
+			// For each dynamic subobject, we need to account for the max dynamically attached subobjects per class.
+			const uint32 DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
+			for (uint32 i = 1; i <= DynamicComponentsPerClass; i++)
+			{
+				FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+				for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+				{
+					// Since it is possible to replicate subobjects which have no replicated properties.
+					// We need to generate a schema component for every subobject. So if we have no replicated
+					// properties, we only don't generate a schema component if we are REP_SingleClient
+					if (RepData[Group].Num() == 0 && Group == REP_SingleClient)
+					{
+						continue;
+					}
+					const FString ComponentName = SchemaReplicatedDataName(Group, Class) + TEXT("Dynamic") + FString::FromInt(i);
+					Writer.Printf("unreal.generated.{0},", ComponentName);
+				}
+				if (GetFlatHandoverData(TypeInfo).Num() > 0)
+				{
+					FString ComponentName = SchemaHandoverDataName(Class) + TEXT("Dynamic") + FString::FromInt(i);
+					Writer.Printf("unreal.generated.{0},", ComponentName);
+				}
+			}
+		}
+	}
+	Writer.Outdent().Print("];");
+	Writer.Outdent().Print("}");
+
+	Writer.WriteToFile(FString::Printf(TEXT("%sComponentSets/ServerAuthoritativeComponentSet.schema"), *SchemaOutputPath));
+
+	return true;
+}
+
 bool SpatialGDKGenerateSchema()
 {
 	SchemaGeneratedClasses.Empty();
@@ -988,8 +1099,6 @@ bool SpatialGDKGenerateSchema()
 	{
 		return false;
 	}
-
-	// TOOD:ALLY generate server auth component set
 
 	return true;
 }
@@ -1053,25 +1162,8 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 
 	NextAvailableComponentId = IdGenerator.Peek();
 
-	return true;
-}
-
-bool WriteServerAuthorityComponentSet(FCodeWriter& Writer, USchemaDatabase* SchemaDatabase)
-{
-	TArray<FString*> ServerAuthoritativeComponentNames = TArray<FString*>();
-
-	if ()
-
-	Writer.PrintNewLine();
-	Writer.Printf("component_set {0}} {", SpatialConstants::SERVER_AUTH_COMPONENT_SET_NAME).Indent();
-	Writer.Printf("id = {0};", SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
-	Writer.Printf("components = [").Indent();
-	for (int i = 0; i < ServerAuthoritativeComponentNames.Num(); i++)
-	{
-		Writer.Printf("{0},", *ServerAuthoritativeComponentNames[i]);
-	}
-	Writer.Outdent().Print("];");
-	Writer.Outdent().Print("}");
+	// TOOD:ALLY generate server auth component set
+	WriteServerAuthorityComponentSet(TypeInfos, SchemaOutputPath);
 
 	return true;
 }
