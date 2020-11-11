@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Interop/Connection/SpatialTraceUniqueId.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
@@ -30,10 +29,7 @@ struct RPCPayload
 		Offset = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
 		Index = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID);
 		PayloadData = SpatialGDK::GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
-		if (Schema_GetObjectCount(RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID) > 0)
-		{
-			LinearTraceId = EventTraceUniqueId::ReadTraceIDFromSchemaObject(RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID);
-		}
+
 #if TRACE_LIB_ACTIVE
 		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
 		{
@@ -47,10 +43,7 @@ struct RPCPayload
 	void WriteToSchemaObject(Schema_Object* RPCObject) const
 	{
 		WriteToSchemaObject(RPCObject, Offset, Index, PayloadData.GetData(), PayloadData.Num());
-		if (LinearTraceId.IsValid())
-		{
-			EventTraceUniqueId::WriteTraceIDToSchemaObject(LinearTraceId, RPCObject, SpatialConstants::UNREAL_RPC_EVENT_TRACE_UNIQUE_ID);
-		}
+
 #if TRACE_LIB_ACTIVE
 		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
 		{
@@ -70,7 +63,6 @@ struct RPCPayload
 	uint32 Index;
 	TArray<uint8> PayloadData;
 	TraceKey Trace = InvalidTraceKey;
-	EventTraceUniqueId LinearTraceId;
 };
 
 struct RPCsOnEntityCreation : Component
