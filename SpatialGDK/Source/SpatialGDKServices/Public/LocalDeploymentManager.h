@@ -66,9 +66,6 @@ private:
 
 	TFuture<bool> AttemptSpatialAuthResult;
 
-	static const int32 ExitCodeSuccess = 0;
-	static const int32 ExitCodeNotRunning = 4;
-
 	TOptional<FMonitoredProcess> RuntimeProcess = {};
 
 	static const int32 RequiredRuntimePort = 5301;

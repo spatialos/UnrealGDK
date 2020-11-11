@@ -70,6 +70,10 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
 	SpatialOSSnapshotToLoad = GetSpatialOSSnapshotToLoad();
 	SnapshotPath.FilePath = GetSpatialOSSnapshotToSavePath();
+
+	// TODO: UNR-4472 - Remove this WorkerTypeName renaming when refactoring FLaunchConfigDescription.
+	// Force update users settings in-case they have a bad server worker name saved.
+	LaunchConfigDesc.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 }
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
@@ -113,6 +117,12 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 			SetExposedRuntimeIP(TEXT(""));
 			return;
 		}
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
+	{
+		// TODO: UNR-4472 - Remove this WorkerTypeName renaming when refactoring FLaunchConfigDescription.
+		// Force override the server worker name as it MUST be UnrealWorker.
+		LaunchConfigDesc.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 	}
 }
 

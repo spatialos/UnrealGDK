@@ -33,8 +33,7 @@ bool GenerateWorkerAssemblies()
 	FSpatialGDKServicesModule::ExecuteAndReadOutput(SpatialGDKServicesConstants::SpatialExe, BuildConfigArgs,
 													SpatialGDKServicesConstants::SpatialOSDirectory, WorkerBuildConfigResult, ExitCode);
 
-	const int32 ExitCodeSuccess = 0;
-	return (ExitCode == ExitCodeSuccess);
+	return ExitCode == SpatialGDKServicesConstants::ExitCodeSuccess;
 }
 
 bool GenerateWorkerJson()
@@ -78,9 +77,11 @@ bool FStartDeployment::Update()
 
 			FSpatialLaunchConfigDescription LaunchConfigDescription;
 
-			FWorkerTypeLaunchSection Conf;
+			FWorkerTypeLaunchSection AutomationWorkerConfig;
+			AutomationWorkerConfig.WorkerTypeName = TEXT("AutomationWorker");
+			LaunchConfigDescription.AdditionalWorkerConfigs.Add(AutomationWorkerConfig);
 
-			if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, Conf))
+			if (!GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, /*bGenerateCloudConfig*/ false))
 			{
 				return;
 			}

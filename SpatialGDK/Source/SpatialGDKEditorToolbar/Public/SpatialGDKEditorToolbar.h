@@ -186,7 +186,7 @@ private:
 
 	bool bStartingCloudDeployment;
 
-	void GenerateConfigFromCurrentMap();
+	void GenerateCloudConfigFromCurrentMap();
 
 	// Used to show worker boundaries in the editor
 	TWeakObjectPtr<ASpatialDebugger> SpatialDebugger;
