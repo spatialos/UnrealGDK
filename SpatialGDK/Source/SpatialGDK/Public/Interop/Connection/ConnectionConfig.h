@@ -21,7 +21,7 @@ struct FConnectionConfig
 		, EnableWorkerSDKOpLogging(false)
 		, WorkerSDKLogFileSize(10 * 1024 * 1024)
 		, WorkerSDKLogLevel(WORKER_LOG_LEVEL_INFO)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
 		, TcpNoDelay(0)
@@ -107,12 +107,8 @@ private:
 			return;
 		}
 
-		// None given or not recognised, use default (for server this is TCP, for client this is KCP)
-		if (SpatialConstants::DefaultServerWorkerType.ToString().Equals(WorkerType))
-		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
-		}
-		else if (SpatialConstants::DefaultClientWorkerType.ToString().Equals(WorkerType))
+		// None given or not recognised, default to KCP for clients, otherwise keep existing TCP default
+		if (SpatialConstants::DefaultClientWorkerType.ToString().Equals(WorkerType))
 		{
 			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
 		}
