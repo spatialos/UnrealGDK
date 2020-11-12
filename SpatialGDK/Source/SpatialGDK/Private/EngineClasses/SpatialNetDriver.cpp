@@ -29,6 +29,7 @@
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
+#include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialNetDriverLoadBalancingHandler.h"
 #include "Interop/SpatialPlayerSpawner.h"
@@ -43,7 +44,6 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "Interop/RPCs/SpatialRPCService.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
@@ -369,28 +369,30 @@ void USpatialNetDriver::CreateRPCService()
 {
 	const FFilterPredicate RPCClientServerFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
 		return !Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID })
-            && Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID })
-            && Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID });
+			   && Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID })
+			   && Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID });
 	};
 
 	const FFilterPredicate RPCMulticastFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
 		return !Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID })
-			&& Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::MULTICAST_RPCS_COMPONENT_ID });
+			   && Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::MULTICAST_RPCS_COMPONENT_ID });
 	};
 
-	const TArray<FDispatcherRefreshCallback> RPCClientServerRefreshCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-    SpatialConstants::TOMBSTONE_COMPONENT_ID), Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-    SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID), Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-    SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID) };
+	const TArray<FDispatcherRefreshCallback> RPCClientServerRefreshCallbacks = {
+		Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::TOMBSTONE_COMPONENT_ID),
+		Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID),
+		Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID)
+	};
 
-	const TArray<FDispatcherRefreshCallback> RPCMulticastRefreshCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-	SpatialConstants::TOMBSTONE_COMPONENT_ID), Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-    SpatialConstants::MULTICAST_RPCS_COMPONENT_ID) };
+	const TArray<FDispatcherRefreshCallback> RPCMulticastRefreshCallbacks = {
+		Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::TOMBSTONE_COMPONENT_ID),
+		Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+	};
 
-	const SpatialGDK::FSubView& ActorAuthSubview =
-		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, RPCClientServerFilter, RPCClientServerRefreshCallbacks);
-	const SpatialGDK::FSubView& ActorNonAuthSubview =
-		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, RPCMulticastFilter, RPCMulticastRefreshCallbacks);
+	const SpatialGDK::FSubView& ActorAuthSubview = Connection->GetCoordinator().CreateSubView(
+		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, RPCClientServerFilter, RPCClientServerRefreshCallbacks);
+	const SpatialGDK::FSubView& ActorNonAuthSubview = Connection->GetCoordinator().CreateSubView(
+		SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, RPCMulticastFilter, RPCMulticastRefreshCallbacks);
 
 	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
 		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
