@@ -379,22 +379,27 @@ void ASpatialDebugger::OnMousePress()
 {
 	UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed"));
 
-	if (SelectedActor.IsValid())
-	{
-		// Deselect actor?
-	}
-
 	FVector2D MousePosition;
 
 	if (LocalPlayerController->GetMousePosition(MousePosition.X, MousePosition.Y))
 	{
 		UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed at : %f , %f"), MousePosition.X, MousePosition.Y);
 
-		SelectedActor = GetActorAtPosition(MousePosition);
+		TWeakObjectPtr<AActor> SelectedActor = GetActorAtPosition(MousePosition);
 
 		if (SelectedActor.IsValid())
 		{
 			UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed selector actor: "), *SelectedActor->GetName());
+			if (SelectedActors.Contains(SelectedActor))
+			{
+				// Already selected so deselect
+				SelectedActors.Remove(SelectedActor);
+			}
+			else
+			{
+				// Add selected actor to enable drawing tags
+				SelectedActors.Add(SelectedActor);
+			}
 		}
 	}
 }
@@ -742,24 +747,27 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 			}
 
 			// To do make array of selected actors? -> or allow use to click through to select different actor
-			if (SelectedActor.IsValid())
+			for (TWeakObjectPtr<AActor> SelectedActor : SelectedActors)
 			{
-				if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(SelectedActor))
+				if (SelectedActor.IsValid())
 				{
-					FVector PlayerLocation = GetLocalPawnLocation();
-
-					if (SelectedActor != nullptr)
+					if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(SelectedActor))
 					{
-						FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation);
-						if (ScreenLocation.IsZero())
+						FVector PlayerLocation = GetLocalPawnLocation();
+
+						if (SelectedActor != nullptr)
 						{
-							// continue;
-						}
-						// return HitActor;
-						else
-						{
-							// TODO : draw a ghosted version (transparency 70%) when hovering mouse and full opacity when click ?
-							DrawTag(Canvas, ScreenLocation, *HitEntityId, SelectedActor->GetName(), true /*bCentre*/);
+							FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation);
+							if (ScreenLocation.IsZero())
+							{
+								// continue;
+							}
+							// return HitActor;
+							else
+							{
+								// TODO : draw a ghosted version (transparency 70%) when hovering mouse and full opacity when click ?
+								DrawTag(Canvas, ScreenLocation, *HitEntityId, SelectedActor->GetName(), true /*bCentre*/);
+							}
 						}
 					}
 				}
