@@ -6,30 +6,10 @@
 
 using namespace SpatialGDK;
 
-namespace
-{
-void ToHex(uint8 N, TCHAR OutHex[3])
-{
-	const TCHAR* Chars = TEXT("0123456789ABCDEF");
-	OutHex[0] = Chars[(N >> 4) & 0xF];
-	OutHex[1] = Chars[N & 0xF];
-#if !PLATFORM_LITTLE_ENDIAN
-	std::swap(OutHex[0], OutHex[1]);
-#endif
-	OutHex[2] = '\0';
-}
-} // namespace
-
 FString EventTraceUniqueId::GetString() const
 {
-	FString Str;
-	TCHAR Tmp[3];
-	for (int i = 0; i < sizeof(InternalBytes); i++)
-	{
-		ToHex(InternalBytes[i], Tmp);
-		Str += Tmp;
-	}
-	return Str;
+	const uint64* ByteRep = reinterpret_cast<const uint64*>(InternalBytes);
+	return FString::Printf(TEXT("%0X%0X"), ByteRep[0], ByteRep[1]);
 }
 
 void EventTraceUniqueId::WriteTraceIDToSchemaObject(const EventTraceUniqueId& Id, Schema_Object* Obj, Schema_FieldId FieldId)
@@ -44,10 +24,7 @@ EventTraceUniqueId EventTraceUniqueId::ReadTraceIDFromSchemaObject(Schema_Object
 	uint32_t BytesLen = Schema_GetBytesLength(Obj, FieldId);
 	if (BytesLen == sizeof(InternalBytes))
 	{
-		for (int i = 0; i < sizeof(InternalBytes); i++)
-		{
-			Id.InternalBytes[i] = Bytes[i];
-		}
+		memcpy(Id.InternalBytes, Bytes, sizeof(InternalBytes));
 	}
 	return Id;
 }
