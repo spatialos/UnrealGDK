@@ -289,7 +289,7 @@ private:
 	UMaterialInterface* WireFrameMaterial;
 	TWeakObjectPtr<AActor> HoverActor;
 	uint64 HoverIndex;
-	TArray < TWeakObjectPtr<AActor>> HitActors;
+	TArray<TWeakObjectPtr<AActor>> HitActors;
 	TArray<UMaterialInterface*> ActorMeshMaterials;
 	TArray<UActorComponent*> ActorMeshComponents;
 };

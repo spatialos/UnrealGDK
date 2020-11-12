@@ -327,7 +327,8 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 			{
 				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
 				LocalPlayerController->InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &ASpatialDebugger::OnMousePress);
-				LocalPlayerController->InputComponent->BindKey(EKeys::MouseWheelAxis, IE_Pressed, this, &ASpatialDebugger::OnMouseWheelAxis);
+				LocalPlayerController->InputComponent->BindKey(EKeys::MouseWheelAxis, IE_Pressed, this,
+															   &ASpatialDebugger::OnMouseWheelAxis);
 			}
 		}
 	}
@@ -388,7 +389,7 @@ void ASpatialDebugger::OnMousePress()
 	{
 		UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed at : %f , %f"), MousePosition.X, MousePosition.Y);
 
-		//TWeakObjectPtr<AActor> SelectedActor = GetActorAtPosition(MousePosition);
+		// TWeakObjectPtr<AActor> SelectedActor = GetActorAtPosition(MousePosition);
 		GetActorAtPosition(MousePosition);
 
 		ResetHoverIndex();
@@ -746,7 +747,7 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 			}
 
 			// Highlight the new actor under the mouse cursor
-			//TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(MousePosition);
+			// TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(MousePosition);
 
 			GetActorAtPosition(MousePosition);
 
@@ -842,7 +843,8 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& Position)
 		bool bHit = GetWorld()->LineTraceMultiByObjectType(HitResults, StartTrace, EndTrace, CollisionObjectParams);
 		if (bHit)
 		{
-			// When the raycast hits an actor then it is highlighted, whilst the actor remains under the crosshair. If there are multiple hit results, the user can select the next by using the mouse scroll wheel
+			// When the raycast hits an actor then it is highlighted, whilst the actor remains under the crosshair. If there are multiple
+			// hit results, the user can select the next by using the mouse scroll wheel
 			for (const FHitResult& HitResult : HitResults)
 			{
 				const TWeakObjectPtr<AActor> HitActor = HitResult.GetActor();
@@ -859,8 +861,8 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& Position)
 							continue;
 						}
 						HitActors.Add(HitActor);
-						//TODO: return array
-						//return HitActor;
+						// TODO: return array
+						// return HitActor;
 					}
 				}
 			}
