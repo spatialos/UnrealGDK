@@ -13,6 +13,8 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
+DECLARE_LOG_CATEGORY_EXTERN(LogConnectionConfig, Log, All);
+
 struct FConnectionConfig
 {
 	FConnectionConfig()
@@ -50,7 +52,7 @@ struct FConnectionConfig
 		{
 			WorkerType = bConnectAsClient ? SpatialConstants::DefaultClientWorkerType.ToString()
 										  : SpatialConstants::DefaultServerWorkerType.ToString();
-			UE_LOG(LogTemp, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *WorkerType);
+			UE_LOG(LogConnectionConfig, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *WorkerType);
 		}
 
 		if (WorkerId.IsEmpty())
@@ -95,7 +97,7 @@ private:
 		}
 		else if (!LogLevelString.IsEmpty())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
+			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
 		}
 	}
 
@@ -118,10 +120,10 @@ private:
 
 		if (!LinkProtocolString.IsEmpty())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol '%s' specified for connecting to SpatialOS."), *LinkProtocolString);
+			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown network protocol '%s' specified for connecting to SpatialOS."), *LinkProtocolString);
 		}
 
-		UE_LOG(LogTemp, Display, TEXT("No link protocol set. Defaulting to TCP for server workers, KCP for client workers."));
+		UE_LOG(LogConnectionConfig, Verbose, TEXT("No link protocol set. Defaulting to TCP for server workers, KCP for client workers."));
 	}
 
 public:
