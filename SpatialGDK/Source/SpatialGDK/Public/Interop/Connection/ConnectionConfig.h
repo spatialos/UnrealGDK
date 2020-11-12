@@ -13,7 +13,7 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
-DECLARE_LOG_CATEGORY_EXTERN(LogConnectionConfig, Log, All);
+DEFINE_LOG_CATEGORY_STATIC(LogConnectionConfig, Log, All);
 
 struct FConnectionConfig
 {
