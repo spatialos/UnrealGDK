@@ -43,6 +43,7 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Interop/RPCs/SpatialRPCService.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
@@ -364,6 +365,37 @@ void USpatialNetDriver::InitializeSpatialOutputDevice()
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, LoggerName, PIEIndex);
 }
 
+void USpatialNetDriver::CreateRPCService()
+{
+	const FFilterPredicate RPCClientServerFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+		return !Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID })
+            && Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID })
+            && Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID });
+	};
+
+	const FFilterPredicate RPCMulticastFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+		return !Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID })
+			&& Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::MULTICAST_RPCS_COMPONENT_ID });
+	};
+
+	const TArray<FDispatcherRefreshCallback> RPCClientServerRefreshCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+    SpatialConstants::TOMBSTONE_COMPONENT_ID), Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+    SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID), Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+    SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID) };
+
+	const TArray<FDispatcherRefreshCallback> RPCMulticastRefreshCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+	SpatialConstants::TOMBSTONE_COMPONENT_ID), Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+    SpatialConstants::MULTICAST_RPCS_COMPONENT_ID) };
+
+	const SpatialGDK::FSubView& ActorAuthSubview =
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, RPCClientServerFilter, RPCClientServerRefreshCallbacks);
+	const SpatialGDK::FSubView& ActorNonAuthSubview =
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, RPCMulticastFilter, RPCMulticastRefreshCallbacks);
+
+	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
+		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
+}
+
 void USpatialNetDriver::CreateAndInitializeCoreClasses()
 {
 	InitializeSpatialOutputDevice();
@@ -409,19 +441,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	CreateAndInitializeLoadBalancingClasses();
 
-	const FFilterPredicate ActorFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
-		return !Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
-	};
-	const TArray<FDispatcherRefreshCallback> RefreshCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-		SpatialConstants::TOMBSTONE_COMPONENT_ID) };
-
-	const SpatialGDK::FSubView& ActorAuthSubview =
-		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, ActorFilter, RefreshCallbacks);
-	const SpatialGDK::FSubView& ActorNonAuthSubview =
-		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, RefreshCallbacks);
-
-	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
-		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
+	CreateRPCService();
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
