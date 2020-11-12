@@ -11,24 +11,19 @@ namespace SpatialGDK
 {
 struct EventTraceUniqueId
 {
-	uint8 InternalBytes[16] = { 0 }; // This size may need to be adjusted in the future. Usage should not be direct.
+	uint64 Hash{ 0 };
 
-	FString GetString() const;
+	FString ToString() const;
 
 	bool IsValid() const
 	{
-		for (auto& Byte : InternalBytes)
-		{
-			if (Byte != 0)
-			{
-				return true;
-			}
-		}
-		return false;
+		return Hash != 0;
 	}
 
-	static EventTraceUniqueId ReadTraceIDFromSchemaObject(Schema_Object* Obj, Schema_FieldId FieldId);
-	static void WriteTraceIDToSchemaObject(const EventTraceUniqueId& Id, Schema_Object* Obj, Schema_FieldId FieldId);
-	static EventTraceUniqueId GenerateUnique(const Trace_SpanId& SpanId);
+	//static EventTraceUniqueId ReadTraceIDFromSchemaObject(Schema_Object* Obj, Schema_FieldId FieldId);
+	//static void WriteTraceIDToSchemaObject(const EventTraceUniqueId& Id, Schema_Object* Obj, Schema_FieldId FieldId);
+	//static EventTraceUniqueId GenerateUnique(const Trace_SpanId& SpanId);
+
+	static EventTraceUniqueId GenerateUnique(uint64 Entity, uint64 Component, UFunction* Function);
 };
 } // namespace SpatialGDK
