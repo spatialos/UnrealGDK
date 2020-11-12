@@ -8,7 +8,6 @@
 #include "SpatialGDKServicesConstants.h"
 
 #include "Misc/CommandLine.h"
-#include "Utils/SchemaDatabase.h"
 
 using namespace SpatialGDKEditor::Schema;
 
