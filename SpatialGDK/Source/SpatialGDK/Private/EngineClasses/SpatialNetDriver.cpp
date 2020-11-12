@@ -2699,7 +2699,7 @@ bool USpatialNetDriver::IsLogged(Worker_EntityId ActorEntityId, EActorMigrationR
 	return bIsLogged;
 }
 
-int64 USpatialNetDriver::GetClientID()
+int64 USpatialNetDriver::GetClientID() const
 {
 	if (IsServer())
 	{
@@ -2708,7 +2708,7 @@ int64 USpatialNetDriver::GetClientID()
 
 	if (USpatialNetConnection* NetConnection = GetSpatialOSNetConnection())
 	{
-		if (APlayerController* PlayerController = Cast<APlayerController>(NetConnection->OwningActor))
+		if (APlayerController* PlayerController = static_cast<APlayerController*>(NetConnection->OwningActor))
 		{
 			if (PackageMap != nullptr)
 			{

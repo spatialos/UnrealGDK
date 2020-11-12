@@ -222,7 +222,7 @@ public:
 	// Check if we have already logged this actor / migration failure, if not update the log record
 	bool IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
 
-	virtual int64 GetClientID() override;
+	virtual int64 GetClientID() const override;
 
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
