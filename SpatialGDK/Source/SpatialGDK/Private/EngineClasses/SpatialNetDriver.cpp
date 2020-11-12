@@ -2708,13 +2708,7 @@ int64 USpatialNetDriver::GetClientID() const
 
 	if (USpatialNetConnection* NetConnection = GetSpatialOSNetConnection())
 	{
-		if (APlayerController* PlayerController = static_cast<APlayerController*>(NetConnection->OwningActor))
-		{
-			if (PackageMap != nullptr)
-			{
-				return (int64)PackageMap->GetEntityIdFromObject(PlayerController);
-			}
-		}
+		return (int64)NetConnection->PlayerControllerEntity;
 	}
 	return (int64)SpatialConstants::INVALID_ENTITY_ID;
 }
