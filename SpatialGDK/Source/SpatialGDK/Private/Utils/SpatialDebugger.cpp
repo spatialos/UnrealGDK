@@ -69,6 +69,8 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	{
 		NetDriver->SetSpatialDebugger(this);
 	}
+
+	HoverIndex = 0;
 }
 
 void ASpatialDebugger::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -325,6 +327,7 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 			{
 				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
 				LocalPlayerController->InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &ASpatialDebugger::OnMousePress);
+				LocalPlayerController->InputComponent->BindKey(EKeys::MouseWheelAxis, IE_Pressed, this, &ASpatialDebugger::OnMouseWheelAxis);
 			}
 		}
 	}
@@ -385,22 +388,49 @@ void ASpatialDebugger::OnMousePress()
 	{
 		UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed at : %f , %f"), MousePosition.X, MousePosition.Y);
 
-		TWeakObjectPtr<AActor> SelectedActor = GetActorAtPosition(MousePosition);
+		//TWeakObjectPtr<AActor> SelectedActor = GetActorAtPosition(MousePosition);
+		GetActorAtPosition(MousePosition);
 
-		if (SelectedActor.IsValid())
+		ResetHoverIndex();
+
+		if (HitActors.Num() > 0)
 		{
-			UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed selector actor: "), *SelectedActor->GetName());
-			if (SelectedActors.Contains(SelectedActor))
+			TWeakObjectPtr<AActor> SelectedActor = HitActors[HoverIndex];
+
+			if (SelectedActor.IsValid())
 			{
-				// Already selected so deselect
-				SelectedActors.Remove(SelectedActor);
-			}
-			else
-			{
-				// Add selected actor to enable drawing tags
-				SelectedActors.Add(SelectedActor);
+				UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed selector actor: "), *SelectedActor->GetName());
+				if (SelectedActors.Contains(SelectedActor))
+				{
+					// Already selected so deselect
+					SelectedActors.Remove(SelectedActor);
+				}
+				else
+				{
+					// Add selected actor to enable drawing tags
+					SelectedActors.Add(SelectedActor);
+				}
 			}
 		}
+	}
+}
+
+void ASpatialDebugger::OnMouseWheelAxis()
+{
+	HoverIndex++;
+
+	UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse wheel scrolled:  %d"), HoverIndex);
+
+	ResetHoverIndex();
+}
+
+void ASpatialDebugger::ResetHoverIndex()
+{
+	if (HoverIndex >= HitActors.Num())
+	{
+		// Reset hover index
+		HoverIndex = 0;
+		UE_LOG(LogSpatialDebugger, Warning, TEXT("Reset Hover Index:  %d"), HoverIndex);
 	}
 }
 
@@ -716,34 +746,45 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 			}
 
 			// Highlight the new actor under the mouse cursor
-			TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(MousePosition);
-			if (NewHoverActor != nullptr && NewHoverActor != HoverActor)
+			//TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(MousePosition);
+
+			GetActorAtPosition(MousePosition);
+
+			// TODO: remove duplicate code -> GetActorAtPosition function?
+			ResetHoverIndex();
+
+			if (HitActors.Num() > 0)
 			{
-				if (HoverActor != nullptr)
+				TWeakObjectPtr<AActor> NewHoverActor = HitActors[HoverIndex];
+
+				if (NewHoverActor != nullptr && NewHoverActor != HoverActor)
 				{
-					// Revert materials on previous actor
-					for (int i = 0; i < ActorMeshComponents.Num(); i++)
+					if (HoverActor != nullptr)
 					{
-						UActorComponent* ActorMeshComponent = ActorMeshComponents[i];
-						UMeshComponent* ActorStaticMeshComponent = Cast<UMeshComponent>(ActorMeshComponent);
-						ActorStaticMeshComponent->SetMaterial(0, ActorMeshMaterials[i]);
+						// Revert materials on previous actor
+						for (int i = 0; i < ActorMeshComponents.Num(); i++)
+						{
+							UActorComponent* ActorMeshComponent = ActorMeshComponents[i];
+							UMeshComponent* ActorStaticMeshComponent = Cast<UMeshComponent>(ActorMeshComponent);
+							ActorStaticMeshComponent->SetMaterial(0, ActorMeshMaterials[i]);
+						}
 					}
+
+					// Clear previous materials
+					ActorMeshMaterials.Empty();
+
+					ActorMeshComponents = NewHoverActor->GetComponentsByClass(UMeshComponent::StaticClass());
+					for (UActorComponent* NewActorMeshComponent : ActorMeshComponents)
+					{
+						UMeshComponent* NewActorStaticMeshComponent = Cast<UMeshComponent>(NewActorMeshComponent);
+						// Store previous materials
+						ActorMeshMaterials.Add(NewActorStaticMeshComponent->GetMaterial(0));
+						// Set wireframe material on new actor
+						NewActorStaticMeshComponent->SetMaterial(0, WireFrameMaterial);
+					}
+
+					HoverActor = NewHoverActor;
 				}
-
-				// Clear previous materials
-				ActorMeshMaterials.Empty();
-
-				ActorMeshComponents = NewHoverActor->GetComponentsByClass(UMeshComponent::StaticClass());
-				for (UActorComponent* NewActorMeshComponent : ActorMeshComponents)
-				{
-					UMeshComponent* NewActorStaticMeshComponent = Cast<UMeshComponent>(NewActorMeshComponent);
-					// Store previous materials
-					ActorMeshMaterials.Add(NewActorStaticMeshComponent->GetMaterial(0));
-					// Set wireframe material on new actor
-					NewActorStaticMeshComponent->SetMaterial(0, WireFrameMaterial);
-				}
-
-				HoverActor = NewHoverActor;
 			}
 
 			// To do make array of selected actors? -> or allow use to click through to select different actor
@@ -795,12 +836,13 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& Position)
 		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Vehicle);
 		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_PhysicsBody);
 
+		HitActors.Empty();
+
 		TArray<FHitResult> HitResults;
 		bool bHit = GetWorld()->LineTraceMultiByObjectType(HitResults, StartTrace, EndTrace, CollisionObjectParams);
 		if (bHit)
 		{
-			// When the raycast hits an actor then the debug information for that actor is displayed above it, whilst the actor
-			// remains under the crosshair.
+			// When the raycast hits an actor then it is highlighted, whilst the actor remains under the crosshair. If there are multiple hit results, the user can select the next by using the mouse scroll wheel
 			for (const FHitResult& HitResult : HitResults)
 			{
 				const TWeakObjectPtr<AActor> HitActor = HitResult.GetActor();
@@ -816,8 +858,9 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& Position)
 						{
 							continue;
 						}
-						return HitActor;
-						// DrawTag(Canvas, ScreenLocation, *HitEntityId, HitActor->GetName(), true /*bCentre*/);
+						HitActors.Add(HitActor);
+						//TODO: return array
+						//return HitActor;
 					}
 				}
 			}

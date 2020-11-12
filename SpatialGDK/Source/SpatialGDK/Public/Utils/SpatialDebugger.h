@@ -194,6 +194,11 @@ public:
 	UFUNCTION()
 	void OnMousePress();
 
+	UFUNCTION()
+	void OnMouseWheelAxis();
+
+	void ResetHoverIndex();
+
 private:
 	UFUNCTION()
 	void DefaultOnConfigUIClosed();
@@ -283,6 +288,8 @@ private:
 	TArray<TWeakObjectPtr<AActor>> SelectedActors;
 	UMaterialInterface* WireFrameMaterial;
 	TWeakObjectPtr<AActor> HoverActor;
+	uint64 HoverIndex;
+	TArray < TWeakObjectPtr<AActor>> HitActors;
 	TArray<UMaterialInterface*> ActorMeshMaterials;
 	TArray<UActorComponent*> ActorMeshComponents;
 };
