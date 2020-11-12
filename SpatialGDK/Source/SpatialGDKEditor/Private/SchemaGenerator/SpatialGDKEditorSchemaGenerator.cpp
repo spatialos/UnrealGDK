@@ -459,7 +459,7 @@ TMap<Worker_ComponentId, FString> CreateComponentIdToClassPathMap()
 	return ComponentIdToClassPath;
 }
 
-bool WriteServerAuthorityComponentSetFromSchemaDb(const USchemaDatabase* SchemaDatabase)
+bool WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase)
 {
 	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 
@@ -475,7 +475,7 @@ bool WriteServerAuthorityComponentSetFromSchemaDb(const USchemaDatabase* SchemaD
 		const FString IncludePath = TEXT("unreal/generated");
 		for (const auto& GeneratedActorClass : SchemaDatabase->ActorClassPathToSchema)
 		{
-			const FString& ActorClassName = GeneratedActorClass.Value.GeneratedSchemaName;
+			const FString ActorClassName = UnrealNameToSchemaName(GeneratedActorClass.Value.GeneratedSchemaName);
 			Writer.Printf("import \"{0}/{1}.schema\";", IncludePath, ActorClassName);
 			if (GeneratedActorClass.Value.SubobjectData.Num() > 0)
 			{
@@ -484,7 +484,7 @@ bool WriteServerAuthorityComponentSetFromSchemaDb(const USchemaDatabase* SchemaD
 		}
 		for (const auto& GeneratedSubObjectClass : SchemaDatabase->SubobjectClassPathToSchema)
 		{
-			const FString& ActorClassName = GeneratedSubObjectClass.Value.GeneratedSchemaName;
+			const FString ActorClassName = UnrealNameToSchemaName(GeneratedSubObjectClass.Value.GeneratedSchemaName);
 			Writer.Printf("import \"{0}/Subobjects/{1}.schema\";", IncludePath, ActorClassName);
 		}
 	}
@@ -499,7 +499,7 @@ bool WriteServerAuthorityComponentSetFromSchemaDb(const USchemaDatabase* SchemaD
 		for (const auto& GeneratedActorClass : SchemaDatabase->ActorClassPathToSchema)
 		{
 			// Actor components.
-			const FString& ActorClassName = GeneratedActorClass.Value.GeneratedSchemaName;
+			const FString& ActorClassName = UnrealNameToSchemaName(GeneratedActorClass.Value.GeneratedSchemaName);
 			ForAllSchemaComponentTypes([&](ESchemaComponentType SchemaType) {
                 const Worker_ComponentId ComponentId = GeneratedActorClass.Value.SchemaComponents[SchemaType];
                 if (ComponentId != 0)
@@ -523,7 +523,7 @@ bool WriteServerAuthorityComponentSetFromSchemaDb(const USchemaDatabase* SchemaD
 			// Actor static subobjects.
 			for (const auto& ActorSubObjectData : GeneratedActorClass.Value.SubobjectData)
 			{
-				const FString ActorSubObjectName = ActorSubObjectData.Value.Name.ToString();
+				const FString ActorSubObjectName = UnrealNameToSchemaName(ActorSubObjectData.Value.Name.ToString());
 				ForAllSchemaComponentTypes([&](ESchemaComponentType SchemaType) {
 				    const Worker_ComponentId& ComponentId = ActorSubObjectData.Value.SchemaComponents[SchemaType];
 				    if (ComponentId != 0)
@@ -549,7 +549,7 @@ bool WriteServerAuthorityComponentSetFromSchemaDb(const USchemaDatabase* SchemaD
 		// Dynamic subobjects.
 		for (const auto& GeneratedSubObjectClass : SchemaDatabase->SubobjectClassPathToSchema)
 		{
-			const FString& SubObjectClassName = GeneratedSubObjectClass.Value.GeneratedSchemaName;
+			const FString& SubObjectClassName = UnrealNameToSchemaName(GeneratedSubObjectClass.Value.GeneratedSchemaName);
 			for (auto SubObjectNumber = 0; SubObjectNumber < GeneratedSubObjectClass.Value.DynamicSubobjectComponents.Num(); ++SubObjectNumber)
 			{
 				const FDynamicSubobjectSchemaData& SubObjectSchemaData = GeneratedSubObjectClass.Value.DynamicSubobjectComponents[SubObjectNumber];
@@ -678,7 +678,7 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 		return false;
 	}
 
-	WriteServerAuthorityComponentSetFromSchemaDb(SchemaDatabase);
+	WriteServerAuthorityComponentSet(SchemaDatabase);
 
 	return true;
 }
