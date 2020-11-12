@@ -281,4 +281,8 @@ private:
 	USpatialDebuggerConfigUI* ConfigUIWidget;
 
 	TWeakObjectPtr<AActor> SelectedActor;
+	UMaterialInterface* WireFrameMaterial;
+	TWeakObjectPtr<AActor> HoverActor;
+	TArray<UMaterialInterface*> ActorMeshMaterials;
+	TArray<UActorComponent*> ActorMeshComponents;
 };

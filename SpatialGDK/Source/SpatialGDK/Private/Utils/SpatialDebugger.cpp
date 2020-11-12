@@ -37,6 +37,7 @@ namespace
 // Background material for worker region
 const FString DEFAULT_WORKER_REGION_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
+const FString DEFAULT_WIREFRAME_MATERIAL = TEXT("/SpatialGDK/SpatialDebugger/Materials/GlowingWireframeMaterial.GlowingWireframeMaterial");
 // Improbable primary font - Muli regular
 const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/SpatialGDK/SpatialDebugger/Fonts/MuliFont.MuliFont");
 // Material to combine both the background and the worker information in one material
@@ -152,6 +153,8 @@ void ASpatialDebugger::BeginPlay()
 		{
 			SpatialToggleDebugger();
 		}
+
+		WireFrameMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WIREFRAME_MATERIAL);
 	}
 }
 
@@ -707,8 +710,37 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 				FSlateApplication::Get().SetAllUserFocusToGameViewport();
 			}
 
-			// Use the mouse position as the point for sending the raycast into the world
-			// SelectedActor = GetActorAtMousePosition(MousePosition);
+			// Highlight the new actor under the mouse cursor
+			TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(MousePosition);
+			if (NewHoverActor != nullptr && NewHoverActor != HoverActor)
+			{
+				if (HoverActor != nullptr)
+				{
+					// Revert materials on previous actor
+					for (int i = 0; i < ActorMeshComponents.Num(); i++)
+					{
+						UActorComponent* ActorMeshComponent = ActorMeshComponents[i];
+						UMeshComponent* ActorStaticMeshComponent = Cast<UMeshComponent>(ActorMeshComponent);
+						ActorStaticMeshComponent->SetMaterial(0, ActorMeshMaterials[i]);
+					}
+				}
+
+				// Clear previous materials
+				ActorMeshMaterials.Empty();
+
+				ActorMeshComponents = NewHoverActor->GetComponentsByClass(UMeshComponent::StaticClass());
+				for (UActorComponent* NewActorMeshComponent : ActorMeshComponents)
+				{
+					UMeshComponent* NewActorStaticMeshComponent = Cast<UMeshComponent>(NewActorMeshComponent);
+					// Store previous materials
+					ActorMeshMaterials.Add(NewActorStaticMeshComponent->GetMaterial(0));
+					// Set wireframe material on new actor
+					NewActorStaticMeshComponent->SetMaterial(0, WireFrameMaterial);
+				}
+
+				HoverActor = NewHoverActor;
+			}
+
 			// To do make array of selected actors? -> or allow use to click through to select different actor
 			if (SelectedActor.IsValid())
 			{
