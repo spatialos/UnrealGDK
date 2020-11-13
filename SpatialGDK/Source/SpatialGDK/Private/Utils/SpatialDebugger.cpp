@@ -383,17 +383,6 @@ void ASpatialDebugger::OnMousePress()
 {
 	UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed"));
 
-	// FVector2D NewMousePosition;
-
-	// if (LocalPlayerController->GetMousePosition(NewMousePosition.X, NewMousePosition.Y))
-	//{
-	// UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed at : %f , %f"), NewMousePosition.X, NewMousePosition.Y);
-
-	// TWeakObjectPtr<AActor> SelectedActor = GetActorAtPosition(NewMousePosition);
-	/*GetActorsAtPosition(NewMousePosition);
-
-	ResetHoverIndex();*/
-
 	if (HitActors.Num() > 0)
 	{
 		TWeakObjectPtr<AActor> SelectedActor = HitActors[HoverIndex];
@@ -413,7 +402,6 @@ void ASpatialDebugger::OnMousePress()
 			}
 		}
 	}
-	//}
 }
 
 void ASpatialDebugger::OnMouseWheelAxis()
@@ -715,11 +703,6 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 	{
 		FVector2D NewMousePosition;
 
-		// if (LocalPlayerController->IsInputKeyDown(EKeys::RightMouseButton))
-		//{
-		//	UE_LOG(LogSpatialDebugger, Warning, TEXT("Mouse button pressed"));
-		//}
-
 		if (LocalPlayerController->GetMousePosition(NewMousePosition.X, NewMousePosition.Y))
 		{
 			bool bCursorChanged = false;
@@ -745,34 +728,27 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 				FSlateApplication::Get().SetAllUserFocusToGameViewport();
 			}
 
-			// Highlight the new actor under the mouse cursor
-			// TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(NewMousePosition);
+			TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(NewMousePosition);
 
-			GetActorsAtPosition(NewMousePosition);
-
-			// TODO: remove duplicate code -> GetActorAtPosition function?
-			ResetHoverIndex();
-
-			if (HitActors.Num() > 0)
+			if (NewHoverActor == nullptr)
 			{
-				TWeakObjectPtr<AActor> NewHoverActor = HitActors[HoverIndex];
+				RevertHoverMaterials();
+			}
+			else if (NewHoverActor != HoverActor)
+			{
+				RevertHoverMaterials();
 
-				if (NewHoverActor != nullptr && NewHoverActor != HoverActor)
+				ActorMeshComponents = NewHoverActor->GetComponentsByClass(UMeshComponent::StaticClass());
+				for (UActorComponent* NewActorMeshComponent : ActorMeshComponents)
 				{
-					RevertHoverMaterials();
-
-					ActorMeshComponents = NewHoverActor->GetComponentsByClass(UMeshComponent::StaticClass());
-					for (UActorComponent* NewActorMeshComponent : ActorMeshComponents)
-					{
-						UMeshComponent* NewActorStaticMeshComponent = Cast<UMeshComponent>(NewActorMeshComponent);
-						// Store previous materials
-						ActorMeshMaterials.Add(NewActorStaticMeshComponent->GetMaterial(0));
-						// Set wireframe material on new actor
-						NewActorStaticMeshComponent->SetMaterial(0, WireFrameMaterial);
-					}
-
-					HoverActor = NewHoverActor;
+					UMeshComponent* NewActorStaticMeshComponent = Cast<UMeshComponent>(NewActorMeshComponent);
+					// Store previous materials
+					ActorMeshMaterials.Add(NewActorStaticMeshComponent->GetMaterial(0));
+					// Set wireframe material on new actor
+					NewActorStaticMeshComponent->SetMaterial(0, WireFrameMaterial);
 				}
+
+				HoverActor = NewHoverActor;
 			}
 
 			// To do make array of selected actors? -> or allow use to click through to select different actor
@@ -816,10 +792,13 @@ void ASpatialDebugger::RevertHoverMaterials()
 			UMeshComponent* ActorStaticMeshComponent = Cast<UMeshComponent>(ActorMeshComponent);
 			ActorStaticMeshComponent->SetMaterial(0, ActorMeshMaterials[i]);
 		}
-	}
 
-	// Clear previous materials
-	ActorMeshMaterials.Empty();
+		// Clear previous materials
+		ActorMeshMaterials.Empty();
+		ActorMeshComponents.Empty();
+
+		HoverActor = nullptr;
+	}
 }
 
 void ASpatialDebugger::ClearSelectedActors()
@@ -830,19 +809,17 @@ void ASpatialDebugger::ClearSelectedActors()
 	RevertHoverMaterials();
 
 	SelectedActors.Empty();
-	HoverActor = nullptr;
 	HoverIndex = 0;
 	HitActors.Empty();
-	ActorMeshComponents.Empty();
 }
 
-TWeakObjectPtr<AActor> ASpatialDebugger::GetActorsAtPosition(FVector2D& NewMousePosition)
+TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMousePosition)
 {
-	if (NewMousePosition == MousePosition)
+	if (LocalPlayerController == nullptr)
 	{
-		// Mouse has not removed so return previous hit actor
+		return nullptr;
 	}
-	else if (const APlayerCameraManager* CameraManager = Cast<APlayerCameraManager>(LocalPlayerController->PlayerCameraManager))
+	else if (NewMousePosition != MousePosition)
 	{
 		// Mouse has moved so raycast to find actors currently under the mouse cursor
 		MousePosition = NewMousePosition;
@@ -886,14 +863,22 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorsAtPosition(FVector2D& NewMouse
 							continue;
 						}
 						HitActors.Add(HitActor);
-						// TODO: return array
-						// return HitActor;
 					}
 				}
 			}
 		}
+		ResetHoverIndex();
 	}
-	return nullptr;
+
+	// Return actor selected from list dependent on the hover index, which is selected independently with the mouse wheel
+	if (HitActors.Num() > 0)
+	{
+		return HitActors[HoverIndex];
+	}
+	else
+	{
+		return nullptr;
+	}
 }
 
 FVector2D ASpatialDebugger::ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector PlayerLocation)

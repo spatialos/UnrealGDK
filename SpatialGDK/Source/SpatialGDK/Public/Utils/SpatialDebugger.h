@@ -237,7 +237,7 @@ private:
 
 	void RevertHoverMaterials();
 
-	TWeakObjectPtr<AActor> GetActorsAtPosition(FVector2D& MousePosition);
+	TWeakObjectPtr<AActor> GetActorAtPosition(FVector2D& MousePosition);
 
 	FVector2D ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector PlayerLocation);
 
