@@ -13,8 +13,8 @@ namespace SpatialGDK
 {
 struct EventTraceUniqueId
 {
-	uint64 Hash{ 0 };
-	EventTraceUniqueId(uint64 Hash)
+	uint32 Hash{ 0 };
+	EventTraceUniqueId(uint32 Hash)
 		: Hash(Hash)
 	{
 	}
@@ -22,10 +22,6 @@ struct EventTraceUniqueId
 	FString ToString() const;
 
 	bool IsValid() const { return Hash != 0; }
-
-	// static EventTraceUniqueId ReadTraceIDFromSchemaObject(Schema_Object* Obj, Schema_FieldId FieldId);
-	// static void WriteTraceIDToSchemaObject(const EventTraceUniqueId& Id, Schema_Object* Obj, Schema_FieldId FieldId);
-	// static EventTraceUniqueId GenerateUnique(const Trace_SpanId& SpanId);
 
 	static EventTraceUniqueId Generate(uint64 Entity, uint8 Type, uint64 Id);
 };
