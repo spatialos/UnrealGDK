@@ -383,16 +383,16 @@ void ASpatialDebugger::OnMousePress()
 {
 	UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed"));
 
-	FVector2D MousePosition;
+	//FVector2D NewMousePosition;
 
-	if (LocalPlayerController->GetMousePosition(MousePosition.X, MousePosition.Y))
-	{
-		UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed at : %f , %f"), MousePosition.X, MousePosition.Y);
+	//if (LocalPlayerController->GetMousePosition(NewMousePosition.X, NewMousePosition.Y))
+	//{
+		//UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed at : %f , %f"), NewMousePosition.X, NewMousePosition.Y);
 
-		// TWeakObjectPtr<AActor> SelectedActor = GetActorAtPosition(MousePosition);
-		GetActorAtPosition(MousePosition);
+		// TWeakObjectPtr<AActor> SelectedActor = GetActorAtPosition(NewMousePosition);
+		/*GetActorsAtPosition(NewMousePosition);
 
-		ResetHoverIndex();
+		ResetHoverIndex();*/
 
 		if (HitActors.Num() > 0)
 		{
@@ -413,7 +413,7 @@ void ASpatialDebugger::OnMousePress()
 				}
 			}
 		}
-	}
+	//}
 }
 
 void ASpatialDebugger::OnMouseWheelAxis()
@@ -679,7 +679,6 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 	else
 	{
 		ClearSelectedActors();
-
 	}
 
 	if (ActorTagDrawMode >= EActorTagDrawMode::LocalPlayer)
@@ -714,22 +713,22 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 {
 	if (LocalPlayerController.IsValid())
 	{
-		FVector2D MousePosition;
+		FVector2D NewMousePosition;
 
 		// if (LocalPlayerController->IsInputKeyDown(EKeys::RightMouseButton))
 		//{
 		//	UE_LOG(LogSpatialDebugger, Warning, TEXT("Mouse button pressed"));
 		//}
 
-		if (LocalPlayerController->GetMousePosition(MousePosition.X, MousePosition.Y))
+		if (LocalPlayerController->GetMousePosition(NewMousePosition.X, NewMousePosition.Y))
 		{
 			bool bCursorChanged = false;
 			if (CrosshairTexture)
 			{
 				// Display a crosshair icon for the mouse cursor
 				// Offset by half of the texture's dimensions so that the center of the texture aligns with the center of the Canvas.
-				FVector2D CrossHairDrawPosition(MousePosition.X - (CrosshairTexture->GetSurfaceWidth() * 0.5f),
-												MousePosition.Y - (CrosshairTexture->GetSurfaceHeight() * 0.5f));
+				FVector2D CrossHairDrawPosition(NewMousePosition.X - (CrosshairTexture->GetSurfaceWidth() * 0.5f),
+												NewMousePosition.Y - (CrosshairTexture->GetSurfaceHeight() * 0.5f));
 
 				// Draw the crosshair at the mouse position.
 				FCanvasTileItem TileItem(CrossHairDrawPosition, CrosshairTexture->Resource, FLinearColor::White);
@@ -747,9 +746,9 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 			}
 
 			// Highlight the new actor under the mouse cursor
-			// TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(MousePosition);
+			// TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(NewMousePosition);
 
-			GetActorAtPosition(MousePosition);
+			GetActorsAtPosition(NewMousePosition);
 
 			// TODO: remove duplicate code -> GetActorAtPosition function?
 			ResetHoverIndex();
@@ -761,7 +760,7 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 				if (NewHoverActor != nullptr && NewHoverActor != HoverActor)
 				{
 					RevertHoverMaterials();
-					
+
 					ActorMeshComponents = NewHoverActor->GetComponentsByClass(UMeshComponent::StaticClass());
 					for (UActorComponent* NewActorMeshComponent : ActorMeshComponents)
 					{
@@ -837,13 +836,20 @@ void ASpatialDebugger::ClearSelectedActors()
 	ActorMeshComponents.Empty();
 }
 
-TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& Position)
+TWeakObjectPtr<AActor> ASpatialDebugger::GetActorsAtPosition(FVector2D& NewMousePosition)
 {
-	if (const APlayerCameraManager* CameraManager = Cast<APlayerCameraManager>(LocalPlayerController->PlayerCameraManager))
+	if (NewMousePosition == MousePosition)
 	{
+		// Mouse has not removed so return previous hit actor
+	}
+	else if (const APlayerCameraManager* CameraManager = Cast<APlayerCameraManager>(LocalPlayerController->PlayerCameraManager))
+	{
+		// Mouse has moved so raycast to find actors currently under the mouse cursor
+		MousePosition = NewMousePosition;
+
 		FVector WorldLocation;
 		FVector WorldRotation;
-		LocalPlayerController->DeprojectScreenPositionToWorld(Position.X, Position.Y, WorldLocation,
+		LocalPlayerController->DeprojectScreenPositionToWorld(NewMousePosition.X, NewMousePosition.Y, WorldLocation,
 															  WorldRotation); // Mouse cursor position
 		FVector StartTrace = WorldLocation;
 		FVector EndTrace = StartTrace + WorldRotation * MaxRange;
