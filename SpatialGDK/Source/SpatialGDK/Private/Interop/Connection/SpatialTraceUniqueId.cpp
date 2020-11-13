@@ -6,34 +6,16 @@
 
 using namespace SpatialGDK;
 
-FString EventTraceUniqueId::GetString() const
+FString EventTraceUniqueId::ToString() const
 {
-	const uint64* ByteRep = reinterpret_cast<const uint64*>(InternalBytes);
-	return FString::Printf(TEXT("%0X%0X"), ByteRep[0], ByteRep[1]);
+	return FString::Printf(TEXT("%0X"), Hash);
 }
 
-void EventTraceUniqueId::WriteTraceIDToSchemaObject(const EventTraceUniqueId& Id, Schema_Object* Obj, Schema_FieldId FieldId)
+EventTraceUniqueId EventTraceUniqueId::Generate(uint64 Entity, uint8 Type, uint64 Id)
 {
-	AddBytesToSchema(Obj, FieldId, Id.InternalBytes, sizeof(InternalBytes));
-}
-
-EventTraceUniqueId EventTraceUniqueId::ReadTraceIDFromSchemaObject(Schema_Object* Obj, Schema_FieldId FieldId)
-{
-	EventTraceUniqueId Id;
-	const uint8* Bytes = Schema_GetBytes(Obj, FieldId);
-	uint32_t BytesLen = Schema_GetBytesLength(Obj, FieldId);
-	if (BytesLen == sizeof(InternalBytes))
-	{
-		memcpy(Id.InternalBytes, Bytes, sizeof(InternalBytes));
-	}
-	return Id;
-}
-
-EventTraceUniqueId EventTraceUniqueId::GenerateUnique(const Trace_SpanId& SpanId)
-{
-	// This will be replaced with a worker-supplied generation method.
-	static_assert(sizeof(InternalBytes) == sizeof(SpanId.data), "InternalBytes expected to be the same size as Trace_SpanId");
-	EventTraceUniqueId Id;
-	memcpy(Id.InternalBytes, SpanId.data, sizeof(InternalBytes));
-	return Id;
+	uint8 Data[8 + 8 + 1];
+	memcpy(&Data[0], &Entity, 8);
+	memcpy(&Data[8], &Id, 8);
+	memcpy(&Data[16], &Type, 1);
+	return EventTraceUniqueId(CityHash64((const char*)&Data, 17));
 }
