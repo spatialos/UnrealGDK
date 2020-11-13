@@ -24,6 +24,6 @@ struct EventTraceUniqueId
 	bool IsValid() const { return Hash != 0; }
 
 	static EventTraceUniqueId Generate(uint64 Entity, uint8 Type, uint64 Id);
-	static EventTraceUniqueId Generate(uint64 Entity, const TCHAR* PropertyName);
+	static EventTraceUniqueId Generate(uint64 Entity, FName PropertyName);
 };
 } // namespace SpatialGDK

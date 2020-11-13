@@ -469,14 +469,42 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			continue;
 		}
 
-		TOptional<Trace_SpanId> SpanId;
-		if (EventTracer != nullptr && EventTracer->IsEnabled())
+		TOptional<Trace_SpanId> ComponentSpanId;
+		if (EventTracer != nullptr && EventTracer->IsEnabled() && CauseSpanId.IsSet())
 		{
-			SpanId = CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id), SpanId);
+			TArray<Trace_SpanId> Spans;
+			// Populate the replicated data component updates from the replicated property changelist.
+			auto& Changes = *RepChanges;
+			if (Changes.RepChanged.Num() > 0) // TODO: Integrate this into ComponentFactory?
+			{
+				FChangelistIterator ChangelistIterator(Changes.RepChanged, 0);
+				FRepHandleIterator HandleIterator(static_cast<UStruct*>(Changes.RepLayout.GetOwner()), ChangelistIterator, Changes.RepLayout.Cmds,
+					Changes.RepLayout.BaseHandleToCmdIndex, 0, 1, 0, Changes.RepLayout.Cmds.Num() - 1);
+				while (HandleIterator.NextHandle())
+				{
+					const FRepLayoutCmd& Cmd = Changes.RepLayout.Cmds[HandleIterator.CmdIndex];
+					const FRepParentCmd& Parent = Changes.RepLayout.Parents[Cmd.ParentIndex];
+
+					
+					TOptional<Trace_SpanId> LinearTraceSpan = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
+					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePropertyLinearTraceEvent(EventTraceUniqueId::Generate(EntityId, Cmd.Property->GetFName())), LinearTraceSpan.GetValue());
+					Spans.Push(LinearTraceSpan.GetValue());
+
+					if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
+					{
+						if (!HandleIterator.JumpOverArray())
+						{
+							break;
+						}
+					}
+				}
+			}
+
+			ComponentSpanId = EventTracer->CreateSpan(&Spans[0], Spans.Num());
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id), ComponentSpanId);
 		}
 
-		Connection->SendComponentUpdate(EntityId, &Update, SpanId);
+		Connection->SendComponentUpdate(EntityId, &Update, ComponentSpanId);
 	}
 }
 
