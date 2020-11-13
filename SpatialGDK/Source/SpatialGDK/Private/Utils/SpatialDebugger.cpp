@@ -678,8 +678,8 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 	}
 	else
 	{
-		// Change mouse cursor back to normal
-		LocalPlayerController->bShowMouseCursor = true;
+		ClearSelectedActors();
+
 	}
 
 	if (ActorTagDrawMode >= EActorTagDrawMode::LocalPlayer)
@@ -760,20 +760,8 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 
 				if (NewHoverActor != nullptr && NewHoverActor != HoverActor)
 				{
-					if (HoverActor != nullptr)
-					{
-						// Revert materials on previous actor
-						for (int i = 0; i < ActorMeshComponents.Num(); i++)
-						{
-							UActorComponent* ActorMeshComponent = ActorMeshComponents[i];
-							UMeshComponent* ActorStaticMeshComponent = Cast<UMeshComponent>(ActorMeshComponent);
-							ActorStaticMeshComponent->SetMaterial(0, ActorMeshMaterials[i]);
-						}
-					}
-
-					// Clear previous materials
-					ActorMeshMaterials.Empty();
-
+					RevertHoverMaterials();
+					
 					ActorMeshComponents = NewHoverActor->GetComponentsByClass(UMeshComponent::StaticClass());
 					for (UActorComponent* NewActorMeshComponent : ActorMeshComponents)
 					{
@@ -816,6 +804,37 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 			}
 		}
 	}
+}
+
+void ASpatialDebugger::RevertHoverMaterials()
+{
+	if (HoverActor != nullptr)
+	{
+		// Revert materials on previous actor
+		for (int i = 0; i < ActorMeshComponents.Num(); i++)
+		{
+			UActorComponent* ActorMeshComponent = ActorMeshComponents[i];
+			UMeshComponent* ActorStaticMeshComponent = Cast<UMeshComponent>(ActorMeshComponent);
+			ActorStaticMeshComponent->SetMaterial(0, ActorMeshMaterials[i]);
+		}
+	}
+
+	// Clear previous materials
+	ActorMeshMaterials.Empty();
+}
+
+void ASpatialDebugger::ClearSelectedActors()
+{
+	// Change mouse cursor back to normal - TODO check if it was true before
+	LocalPlayerController->bShowMouseCursor = true;
+
+	RevertHoverMaterials();
+
+	SelectedActors.Empty();
+	HoverActor = nullptr;
+	HoverIndex = 0;
+	HitActors.Empty();
+	ActorMeshComponents.Empty();
 }
 
 TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& Position)

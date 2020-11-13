@@ -227,11 +227,15 @@ private:
 	// FDebugDrawDelegate
 	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
 
+	void ClearSelectedActors();
+
 	FVector GetLocalPawnLocation();
 
 	// Allow user to select an actor for debugging - the mesh on the actor must have collision presets enabled to block on at least one of
 	// the object channels
 	void SelectActorToTag(UCanvas* Canvas);
+
+	void RevertHoverMaterials();
 
 	TWeakObjectPtr<AActor> GetActorAtPosition(FVector2D& MousePosition);
 
