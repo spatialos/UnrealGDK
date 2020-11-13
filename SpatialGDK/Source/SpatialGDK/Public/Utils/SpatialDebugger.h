@@ -237,7 +237,7 @@ private:
 
 	FVector2D ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector PlayerLocation);
 
-	void ResetHoverIndex();
+	void ValidateHoverIndex();
 
 	void RevertHoverMaterials();
 

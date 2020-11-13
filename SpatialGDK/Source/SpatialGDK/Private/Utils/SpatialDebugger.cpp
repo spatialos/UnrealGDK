@@ -381,20 +381,12 @@ void ASpatialDebugger::OnToggleConfigUI()
 
 void ASpatialDebugger::OnMousePress()
 {
-	UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed: there are %d actor under the cursor"), HitActors.Num());
-
-	for (TWeakObjectPtr<AActor> HitActor : HitActors)
-	{
-		UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed hit actor: %s"), *HitActor->GetName());
-	}
-
 	if (HitActors.Num() > 0)
 	{
 		TWeakObjectPtr<AActor> SelectedActor = HitActors[HoverIndex];
 
 		if (SelectedActor.IsValid())
 		{
-			UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed selector actor: %s"), *SelectedActor->GetName());
 			if (SelectedActors.Contains(SelectedActor))
 			{
 				// Already selected so deselect
@@ -412,19 +404,15 @@ void ASpatialDebugger::OnMousePress()
 void ASpatialDebugger::OnMouseWheelAxis()
 {
 	HoverIndex++;
-
-	UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse wheel scrolled:  %d"), HoverIndex);
-
-	ResetHoverIndex();
+	ValidateHoverIndex();
 }
 
-void ASpatialDebugger::ResetHoverIndex()
+void ASpatialDebugger::ValidateHoverIndex()
 {
 	if (HoverIndex >= HitActors.Num())
 	{
 		// Reset hover index
 		HoverIndex = 0;
-		UE_LOG(LogSpatialDebugger, Warning, TEXT("Reset Hover Index:  %d"), HoverIndex);
 	}
 }
 
@@ -875,7 +863,7 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMouseP
 				}
 			}
 		}
-		ResetHoverIndex();
+		ValidateHoverIndex();
 	}
 
 	// Return actor selected from list dependent on the hover index, which is selected independently with the mouse wheel
