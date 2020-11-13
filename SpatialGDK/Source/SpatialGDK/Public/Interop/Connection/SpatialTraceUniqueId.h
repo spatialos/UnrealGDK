@@ -14,7 +14,10 @@ namespace SpatialGDK
 struct EventTraceUniqueId
 {
 	uint64 Hash{ 0 };
-	EventTraceUniqueId(uint64 Hash) : Hash(Hash) {}
+	EventTraceUniqueId(uint64 Hash)
+		: Hash(Hash)
+	{
+	}
 
 	FString ToString() const;
 
