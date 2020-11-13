@@ -154,6 +154,13 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(const 
 		.GetEvent();
 }
 
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreatePropertyLinearTraceEvent(const EventTraceUniqueId& LinearTraceId)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "property_linear_trace")
+		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
+		.GetEvent();
+}
+
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateMergeSendRPCs(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_send_rpcs")

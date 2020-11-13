@@ -16,3 +16,8 @@ EventTraceUniqueId EventTraceUniqueId::Generate(uint64 Entity, uint8 Type, uint6
 	uint32 Hash = HashCombine(HashCombine(GetTypeHash(Entity), GetTypeHash(Type)), GetTypeHash(Id));
 	return EventTraceUniqueId(Hash);
 }
+
+EventTraceUniqueId EventTraceUniqueId::Generate(uint64 Entity, FName PropertyName)
+{
+	return EventTraceUniqueId(HashCombine(GetTypeHash(Entity), GetTypeHash(PropertyName)));
+}
