@@ -317,8 +317,8 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 		}
 
 		EndpointObject = Schema_GetComponentUpdateFields(
-			RPCStore.GetOrCreateComponentUpdate(EntityComponent, Payload.SpanId.IsSet() ? &Payload.SpanId.GetValue() : nullptr));
-
+			RPCStore.GetOrCreateComponentUpdate(EntityComponent));
+		
 		if (Type == ERPCType::NetMulticast)
 		{
 			// Assume all multicast RPCs are auto-acked.
@@ -359,7 +359,11 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateRPCLinearTraceEvent(
 										EventTraceUniqueId::Generate(EntityId, static_cast<uint8>(Type), NewRPCId)),
 									SpanId);
-			Payload.SpanId = SpanId;
+
+			if (SpanId.IsSet())
+			{
+				RPCStore.SetSpanIdForComponentUpdate(EntityComponent, &SpanId.GetValue());
+			}
 		}
 
 		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, Payload.Payload);
