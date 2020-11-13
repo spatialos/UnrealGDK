@@ -173,7 +173,7 @@ bool FFindWorkerResponseOfType::Update()
 {
 	bool bFoundOpOfExpectedType = false;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->Advance();
+	Connection->Advance(0);
 	for (const auto& Op : Connection->GetWorkerMessages())
 	{
 		if (Op.op_type == ExpectedOpType)

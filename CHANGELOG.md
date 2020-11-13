@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handover is now optional depending on whether the load balancing strategy implementations require it . See `RequiresHandoverData`
 - Improved the failed hierarchy migration logs. The logs now contain more specific reasons for the failure and the frequency of repeated logs is suppressed.
 - You can now select an actor for spatial debugging in-game. Use F9 (by default) to open the Spatial Debugger in-game config menu and then choose `Select Actor(s)`. Hover over an actor with the mouse to highlight and right-click to select. You can select multiple actors. To deselect and actor right-click on it a second time. If there are multiple actors under the cursor first use the mouse wheel to highlight the desired actor then right-click to confirm your selection.
+- SpatialWorldSettings is now the default world settings in supported engine versions.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
@@ -66,6 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a crash that occurred when an actor subobject became invalid after applying initial component data.
 - Non-replicated Actors net roles are not touched during startup. 
 - Fixed a bug which dropped component updates on authority delegation.
+- The DeploymentLauncher checks the validity of the simulated players deployment name.
+- Worker configuration watcher only rebuilds worker configs when `*.worker.json` files are changed.
 
 ## [`0.11.0`] - 2020-09-03
 

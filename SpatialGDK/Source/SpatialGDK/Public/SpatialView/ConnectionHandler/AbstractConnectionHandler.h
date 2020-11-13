@@ -5,7 +5,6 @@
 #include "SpatialView/MessagesToSend.h"
 #include "SpatialView/OpList/OpList.h"
 #include "Templates/UniquePtr.h"
-#include <improbable/c_worker.h>
 
 namespace SpatialGDK
 {

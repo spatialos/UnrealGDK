@@ -1787,7 +1787,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-		Connection->Advance();
+		Connection->Advance(DeltaTime);
 
 		if (Connection->HasDisconnected())
 		{
@@ -1806,13 +1806,18 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (RPCService.IsValid())
 		{
-			RPCService->Advance(GetElapsedTime());
+			RPCService->AdvanceView();
 		}
 
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 			Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
+		}
+
+		if (RPCService.IsValid())
+		{
+			RPCService->ProcessChanges(GetElapsedTime());
 		}
 
 		if (WellKnownEntitySystem.IsValid())
