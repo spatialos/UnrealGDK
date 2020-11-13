@@ -13,10 +13,6 @@ FString EventTraceUniqueId::ToString() const
 
 EventTraceUniqueId EventTraceUniqueId::Generate(uint64 Entity, uint8 Type, uint64 Id)
 {
-	uint32 Hash = HashCombine(
-		HashCombine(GetTypeHash(Entity),
-			GetTypeHash(Type))
-		, GetTypeHash(Id)
-	);
+	uint32 Hash = HashCombine(HashCombine(GetTypeHash(Entity), GetTypeHash(Type)), GetTypeHash(Id));
 	return EventTraceUniqueId(Hash);
 }
