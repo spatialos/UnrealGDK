@@ -69,7 +69,6 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	{
 		NetDriver->SetSpatialDebugger(this);
 	}
-
 	HoverIndex = 0;
 }
 
@@ -155,7 +154,6 @@ void ASpatialDebugger::BeginPlay()
 		{
 			SpatialToggleDebugger();
 		}
-
 		WireFrameMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WIREFRAME_MATERIAL);
 	}
 }

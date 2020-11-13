@@ -141,9 +141,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
 			  meta = (ToolTip = "Select the object types you want to query when selecting actors"))
 	TArray<TEnumAsByte<ECollisionChannel>> SelectActorTypesToQuery = {
-		ECollisionChannel::ECC_WorldStatic,	 ECollisionChannel::ECC_WorldDynamic,
-													 ECollisionChannel::ECC_Pawn,		 ECollisionChannel::ECC_Destructible,
-													 ECollisionChannel::ECC_Vehicle,	 ECollisionChannel::ECC_PhysicsBody };
+		ECollisionChannel::ECC_WorldStatic,	 ECollisionChannel::ECC_WorldDynamic, ECollisionChannel::ECC_Pawn,
+		ECollisionChannel::ECC_Destructible, ECollisionChannel::ECC_Vehicle,	  ECollisionChannel::ECC_PhysicsBody
+	};
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
 	bool bAutoStart = false;
@@ -234,7 +234,6 @@ private:
 
 	// FDebugDrawDelegate
 	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
-
 
 	FVector GetLocalPawnLocation();
 
