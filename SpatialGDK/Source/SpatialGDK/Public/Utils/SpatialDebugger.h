@@ -204,6 +204,9 @@ public:
 	UFUNCTION()
 	void OnMouseWheelAxis();
 
+	UFUNCTION(BlueprintCallable, Category = Visualization)
+	void ToggleSelectActor(bool bEnable);
+
 private:
 	UFUNCTION()
 	void DefaultOnConfigUIClosed();
@@ -232,13 +235,12 @@ private:
 	// FDebugDrawDelegate
 	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
 
-	void ClearSelectedActors();
 
 	FVector GetLocalPawnLocation();
 
 	// Allow user to select actor(s) for debugging - the mesh on the actor must have collision presets enabled to block on at least one of
 	// the object channels
-	void SelectActorToTag(UCanvas* Canvas);
+	void SelectActorsToTag(UCanvas* Canvas);
 
 	TWeakObjectPtr<AActor> GetActorAtPosition(FVector2D& MousePosition);
 
@@ -315,4 +317,7 @@ private:
 
 	// Mouse position to avoid unnecessary raytracing when mouse has not moved
 	FVector2D MousePosition;
+
+	// Select actor object types to query
+	FCollisionObjectQueryParams CollisionObjectParams;
 };

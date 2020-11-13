@@ -407,6 +407,44 @@ void ASpatialDebugger::OnMouseWheelAxis()
 	ValidateHoverIndex();
 }
 
+void ASpatialDebugger::ToggleSelectActor(bool bEnable)
+{
+	if (bEnable == bSelectActor)
+	{
+		return;
+	}
+
+	bSelectActor = bEnable;
+	if (bSelectActor)
+	{
+		if (CrosshairTexture != nullptr)
+		{
+			// Hide the mouse cursor as we will draw our own custom crosshair
+			LocalPlayerController->bShowMouseCursor = false;
+			// Sets back the focus to the game viewport - need to hide mouse cursor instantly
+			FSlateApplication::Get().SetAllUserFocusToGameViewport();
+		}
+
+		// Set the object types to query in the raycast based
+		for (TEnumAsByte<ECollisionChannel> ActorTypeToQuery : SelectActorTypesToQuery)
+		{
+			CollisionObjectParams.AddObjectTypesToQuery(ActorTypeToQuery);
+		}
+	}
+	else
+	{
+		// Clear selected actors
+		// Change mouse cursor back to normal - TODO check if it was true before
+		LocalPlayerController->bShowMouseCursor = true;
+
+		RevertHoverMaterials();
+
+		SelectedActors.Empty();
+		HoverIndex = 0;
+		HitActors.Empty();
+	}
+}
+
 void ASpatialDebugger::ValidateHoverIndex()
 {
 	if (HoverIndex >= HitActors.Num())
@@ -654,12 +692,8 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 
 	if (bSelectActor)
 	{
-		SelectActorToTag(Canvas);
+		SelectActorsToTag(Canvas);
 		return;
-	}
-	else
-	{
-		ClearSelectedActors();
 	}
 
 	if (ActorTagDrawMode >= EActorTagDrawMode::LocalPlayer)
@@ -690,7 +724,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 	}
 }
 
-void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
+void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 {
 	if (LocalPlayerController.IsValid())
 	{
@@ -698,7 +732,6 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 
 		if (LocalPlayerController->GetMousePosition(NewMousePosition.X, NewMousePosition.Y))
 		{
-			bool bCursorChanged = false;
 			if (CrosshairTexture != nullptr)
 			{
 				// Display a crosshair icon for the mouse cursor
@@ -710,15 +743,6 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 				FCanvasTileItem TileItem(CrossHairDrawPosition, CrosshairTexture->Resource, FLinearColor::White);
 				TileItem.BlendMode = SE_BLEND_Translucent;
 				Canvas->DrawItem(TileItem);
-				bCursorChanged = true;
-			}
-
-			if (bCursorChanged)
-			{
-				// Hide the mouse cursor as we will draw our own custom crosshair
-				LocalPlayerController->bShowMouseCursor = false;
-				// Sets back the focus to the game viewport - need to hide mouse cursor instantly
-				FSlateApplication::Get().SetAllUserFocusToGameViewport();
 			}
 
 			TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(NewMousePosition);
@@ -792,18 +816,6 @@ void ASpatialDebugger::RevertHoverMaterials()
 	}
 }
 
-void ASpatialDebugger::ClearSelectedActors()
-{
-	// Change mouse cursor back to normal - TODO check if it was true before
-	LocalPlayerController->bShowMouseCursor = true;
-
-	RevertHoverMaterials();
-
-	SelectedActors.Empty();
-	HoverIndex = 0;
-	HitActors.Empty();
-}
-
 TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMousePosition)
 {
 	if (LocalPlayerController == nullptr)
@@ -821,12 +833,6 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMouseP
 															  WorldRotation); // Mouse cursor position
 		FVector StartTrace = WorldLocation;
 		FVector EndTrace = StartTrace + WorldRotation * MaxRange;
-
-		FCollisionObjectQueryParams CollisionObjectParams;
-		for (TEnumAsByte<ECollisionChannel> ActorTypeToQuery : SelectActorTypesToQuery)
-		{
-			CollisionObjectParams.AddObjectTypesToQuery(ActorTypeToQuery);
-		}
 
 		HitActors.Empty();
 
