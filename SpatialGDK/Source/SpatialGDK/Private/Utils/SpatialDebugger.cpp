@@ -699,7 +699,7 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 		if (LocalPlayerController->GetMousePosition(NewMousePosition.X, NewMousePosition.Y))
 		{
 			bool bCursorChanged = false;
-			if (CrosshairTexture)
+			if (CrosshairTexture != nullptr)
 			{
 				// Display a crosshair icon for the mouse cursor
 				// Offset by half of the texture's dimensions so that the center of the texture aligns with the center of the Canvas.
@@ -823,12 +823,10 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMouseP
 		FVector EndTrace = StartTrace + WorldRotation * MaxRange;
 
 		FCollisionObjectQueryParams CollisionObjectParams;
-		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldStatic);
-		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldDynamic);
-		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Pawn);
-		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Destructible);
-		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Vehicle);
-		CollisionObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_PhysicsBody);
+		for (TEnumAsByte<ECollisionChannel> ActorTypeToQuery : SelectActorTypesToQuery)
+		{
+			CollisionObjectParams.AddObjectTypesToQuery(ActorTypeToQuery);
+		}
 
 		HitActors.Empty();
 
