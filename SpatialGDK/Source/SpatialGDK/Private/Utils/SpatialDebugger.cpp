@@ -383,36 +383,36 @@ void ASpatialDebugger::OnMousePress()
 {
 	UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed"));
 
-	//FVector2D NewMousePosition;
+	// FVector2D NewMousePosition;
 
-	//if (LocalPlayerController->GetMousePosition(NewMousePosition.X, NewMousePosition.Y))
+	// if (LocalPlayerController->GetMousePosition(NewMousePosition.X, NewMousePosition.Y))
 	//{
-		//UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed at : %f , %f"), NewMousePosition.X, NewMousePosition.Y);
+	// UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed at : %f , %f"), NewMousePosition.X, NewMousePosition.Y);
 
-		// TWeakObjectPtr<AActor> SelectedActor = GetActorAtPosition(NewMousePosition);
-		/*GetActorsAtPosition(NewMousePosition);
+	// TWeakObjectPtr<AActor> SelectedActor = GetActorAtPosition(NewMousePosition);
+	/*GetActorsAtPosition(NewMousePosition);
 
-		ResetHoverIndex();*/
+	ResetHoverIndex();*/
 
-		if (HitActors.Num() > 0)
+	if (HitActors.Num() > 0)
+	{
+		TWeakObjectPtr<AActor> SelectedActor = HitActors[HoverIndex];
+
+		if (SelectedActor.IsValid())
 		{
-			TWeakObjectPtr<AActor> SelectedActor = HitActors[HoverIndex];
-
-			if (SelectedActor.IsValid())
+			UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed selector actor: "), *SelectedActor->GetName());
+			if (SelectedActors.Contains(SelectedActor))
 			{
-				UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed selector actor: "), *SelectedActor->GetName());
-				if (SelectedActors.Contains(SelectedActor))
-				{
-					// Already selected so deselect
-					SelectedActors.Remove(SelectedActor);
-				}
-				else
-				{
-					// Add selected actor to enable drawing tags
-					SelectedActors.Add(SelectedActor);
-				}
+				// Already selected so deselect
+				SelectedActors.Remove(SelectedActor);
+			}
+			else
+			{
+				// Add selected actor to enable drawing tags
+				SelectedActors.Add(SelectedActor);
 			}
 		}
+	}
 	//}
 }
 
