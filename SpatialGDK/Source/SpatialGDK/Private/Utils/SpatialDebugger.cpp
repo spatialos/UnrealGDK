@@ -383,7 +383,8 @@ void ASpatialDebugger::OnMousePress()
 {
 	UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed: there are %d actor under the cursor"), HitActors.Num());
 
-	for (TWeakObjectPtr<AActor> HitActor : HitActors) {
+	for (TWeakObjectPtr<AActor> HitActor : HitActors)
+	{
 		UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed hit actor: %s"), *HitActor->GetName());
 	}
 
@@ -859,8 +860,7 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMouseP
 					continue;
 				}
 
-				if(const Worker_EntityId_Key* HitEntityId =
-						EntityActorMapping.FindKey(HitResult.GetActor()))
+				if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(HitResult.GetActor()))
 				{
 					FVector PlayerLocation = GetLocalPawnLocation();
 
@@ -871,7 +871,6 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMouseP
 						{
 							HitActors.Add(HitActor);
 						}
-
 					}
 				}
 			}

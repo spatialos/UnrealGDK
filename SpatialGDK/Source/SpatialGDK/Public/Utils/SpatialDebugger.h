@@ -197,8 +197,6 @@ public:
 	UFUNCTION()
 	void OnMouseWheelAxis();
 
-
-
 private:
 	UFUNCTION()
 	void DefaultOnConfigUIClosed();
