@@ -197,7 +197,7 @@ public:
 	UFUNCTION()
 	void OnMouseWheelAxis();
 
-	void ResetHoverIndex();
+
 
 private:
 	UFUNCTION()
@@ -231,15 +231,17 @@ private:
 
 	FVector GetLocalPawnLocation();
 
-	// Allow user to select an actor for debugging - the mesh on the actor must have collision presets enabled to block on at least one of
+	// Allow user to select actor(s) for debugging - the mesh on the actor must have collision presets enabled to block on at least one of
 	// the object channels
 	void SelectActorToTag(UCanvas* Canvas);
-
-	void RevertHoverMaterials();
 
 	TWeakObjectPtr<AActor> GetActorAtPosition(FVector2D& MousePosition);
 
 	FVector2D ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector PlayerLocation);
+
+	void ResetHoverIndex();
+
+	void RevertHoverMaterials();
 
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
 				 const bool bCentre);
@@ -289,12 +291,23 @@ private:
 
 	USpatialDebuggerConfigUI* ConfigUIWidget;
 
+	// Actors selected by user for debugging
 	TArray<TWeakObjectPtr<AActor>> SelectedActors;
-	UMaterialInterface* WireFrameMaterial;
+
+	// Highlighted actor under the mouse cursor
 	TWeakObjectPtr<AActor> HoverActor;
-	uint64 HoverIndex;
-	TArray<TWeakObjectPtr<AActor>> HitActors;
+	// Highlighted actor original materials and components
 	TArray<UMaterialInterface*> ActorMeshMaterials;
 	TArray<UActorComponent*> ActorMeshComponents;
+	// Material for highlighting actor
+	UMaterialInterface* WireFrameMaterial;
+
+	// All actors under the mouse cursor
+	TArray<TWeakObjectPtr<AActor>> HitActors;
+
+	// Index for selecting the highlighted actor when multiple are under the mouse cursor
+	uint64 HoverIndex;
+
+	// Mouse position to avoid unnecessary raytracing when mouse has not moved
 	FVector2D MousePosition;
 };

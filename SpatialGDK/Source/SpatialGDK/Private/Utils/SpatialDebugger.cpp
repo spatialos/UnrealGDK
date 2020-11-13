@@ -381,7 +381,11 @@ void ASpatialDebugger::OnToggleConfigUI()
 
 void ASpatialDebugger::OnMousePress()
 {
-	UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed"));
+	UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed: there are %d actor under the cursor"), HitActors.Num());
+
+	for (TWeakObjectPtr<AActor> HitActor : HitActors) {
+		UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed hit actor: %s"), *HitActor->GetName());
+	}
 
 	if (HitActors.Num() > 0)
 	{
@@ -389,7 +393,7 @@ void ASpatialDebugger::OnMousePress()
 
 		if (SelectedActor.IsValid())
 		{
-			UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed selector actor: "), *SelectedActor->GetName());
+			UE_LOG(LogSpatialDebugger, Warning, TEXT("On mouse button pressed selector actor: %s"), *SelectedActor->GetName());
 			if (SelectedActors.Contains(SelectedActor))
 			{
 				// Already selected so deselect
@@ -732,12 +736,17 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 
 			if (NewHoverActor == nullptr)
 			{
+				// No actor under the cursor so revert hover materials on previous actor
 				RevertHoverMaterials();
 			}
 			else if (NewHoverActor != HoverActor)
 			{
+				// New actor under the cursor
+
+				// Revert hover materials on previous actor
 				RevertHoverMaterials();
 
+				// Set hover materials on new actor
 				ActorMeshComponents = NewHoverActor->GetComponentsByClass(UMeshComponent::StaticClass());
 				for (UActorComponent* NewActorMeshComponent : ActorMeshComponents)
 				{
@@ -747,11 +756,10 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 					// Set wireframe material on new actor
 					NewActorStaticMeshComponent->SetMaterial(0, WireFrameMaterial);
 				}
-
 				HoverActor = NewHoverActor;
 			}
 
-			// To do make array of selected actors? -> or allow use to click through to select different actor
+			// Draw tags above selected actors
 			for (TWeakObjectPtr<AActor> SelectedActor : SelectedActors)
 			{
 				if (SelectedActor.IsValid())
@@ -763,14 +771,8 @@ void ASpatialDebugger::SelectActorToTag(UCanvas* Canvas)
 						if (SelectedActor != nullptr)
 						{
 							FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation);
-							if (ScreenLocation.IsZero())
+							if (!ScreenLocation.IsZero())
 							{
-								// continue;
-							}
-							// return HitActor;
-							else
-							{
-								// TODO : draw a ghosted version (transparency 70%) when hovering mouse and full opacity when click ?
 								DrawTag(Canvas, ScreenLocation, *HitEntityId, SelectedActor->GetName(), true /*bCentre*/);
 							}
 						}
@@ -851,18 +853,25 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMouseP
 			{
 				const TWeakObjectPtr<AActor> HitActor = HitResult.GetActor();
 
-				if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(HitResult.GetActor()))
+				if (HitActors.Contains(HitActor))
+				{
+					// The hit results may include the same actor multiple times so just ignore duplicates
+					continue;
+				}
+
+				if(const Worker_EntityId_Key* HitEntityId =
+						EntityActorMapping.FindKey(HitResult.GetActor()))
 				{
 					FVector PlayerLocation = GetLocalPawnLocation();
 
 					if (HitActor != nullptr)
 					{
 						FVector2D ScreenLocation = ProjectActorToScreen(HitActor, PlayerLocation);
-						if (ScreenLocation.IsZero())
+						if (!ScreenLocation.IsZero())
 						{
-							continue;
+							HitActors.Add(HitActor);
 						}
-						HitActors.Add(HitActor);
+
 					}
 				}
 			}
