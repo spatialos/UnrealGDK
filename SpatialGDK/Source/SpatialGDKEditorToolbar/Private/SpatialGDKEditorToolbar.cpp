@@ -126,7 +126,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 		}
 	});
 
-	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
+	LocalDeploymentManager->Init();
 	LocalReceptionistProxyServerManager->Init(GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
 
 	SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
@@ -134,6 +134,24 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	// Get notified of map changed events to update worker boundaries in the editor
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	FDelegateHandle OnMapChangedHandle = LevelEditorModule.OnMapChanged().AddRaw(this, &FSpatialGDKEditorToolbarModule::MapChanged);
+
+	// Grab the runtime and inspector binaries ahead of time so they are ready when the user wants them.
+	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
+	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
+
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeVersion, InspectorVersion] {
+		if (!SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion))
+		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local runtime binary but failed!"));
+			OnShowFailedNotification(TEXT("Failed to fetch local runtime!"));
+		}
+
+		if (!SpatialCommandUtils::FetchInspectorBinary(InspectorVersion))
+		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local inspector binary but failed!"));
+			OnShowFailedNotification(TEXT("Failed to fetch local inspector!"));
+		}
+	});
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -847,43 +865,8 @@ void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 	});
 }
 
-void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
+void FSpatialGDKEditorToolbarModule::OpenInspectorURL()
 {
-	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
-
-	// TODO: Make this async and call a delegate upon completion
-	SpatialCommandUtils::FetchInspectorBinary(InspectorVersion);
-
-	// TODO: Boot the inspector at startup of the module, not when pressed.
-	// TODO: Check if the inspector is running or not. If not, start it.
-
-	FString InspectorArgs = FString::Printf(TEXT("--backend_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorIPPort,
-											*SpatialGDKServicesConstants::SchemaBundlePath);
-
-	// TODO: Grab any existing inspector process or stop and start inspector at editor startup.
-	InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,
-						 SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
-						 /*InCreatePipes*/ true };
-
-	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
-
-	InspectorProcess->OnOutput().BindLambda([this](const FString& Output) {
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Inspector: %s"), *Output)
-	});
-
-	InspectorProcess->Launch();
-
-	while (InspectorProcess->Update())
-	{
-		if (InspectorProcess->GetDuration().GetTotalSeconds() > 5)
-		{
-			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Timed out waiting for the Inspector to start."));
-			break;
-		}
-	}
-
 	FString WebError;
 	FPlatformProcess::LaunchURL(*SpatialGDKServicesConstants::InspectorV2URL, TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
@@ -895,6 +878,66 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 		NotificationItem->ExpireAndFadeout();
 	}
+}
+
+void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
+
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion] {
+		if (InspectorProcess && InspectorProcess->Update())
+		{
+			// We already have an inspector running. Just open the URL.
+			OpenInspectorURL();
+			return;
+		}
+
+		// Check for any old inspector processes that may be leftover from previous runs. Kill any we find.
+		SpatialCommandUtils::TryKillProcessWithName(SpatialGDKServicesConstants::InspectorExe);
+
+		// Grab the inspector binary
+		if (!SpatialCommandUtils::FetchInspectorBinary(InspectorVersion))
+		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to fetch the local inspector binary but failed!"));
+			OnShowFailedNotification(TEXT("Failed to fetch local inspector!"));
+		}
+
+		FString InspectorArgs =
+			FString::Printf(TEXT("--backend_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorIPPort,
+							*SpatialGDKServicesConstants::SchemaBundlePath);
+
+		InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,
+							 SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
+							 /*InCreatePipes*/ true };
+
+		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+		TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
+
+		bool bStartingInspector = true;
+
+		InspectorProcess->OnOutput().BindLambda([this, &bStartingInspector](const FString& Output) {
+			if (Output.Contains(FString::Printf(TEXT("Open %s"), *SpatialGDKServicesConstants::InspectorV2URL)))
+			{
+				bStartingInspector = false;
+			}
+
+			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Inspector: %s"), *Output)
+		});
+
+		InspectorProcess->Launch();
+
+		while (bStartingInspector && InspectorProcess->Update())
+		{
+			if (InspectorProcess->GetDuration().GetTotalSeconds() > 5)
+			{
+				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Timed out waiting for the Inspector to start."));
+				break;
+			}
+		}
+
+		OpenInspectorURL();
+	});
 }
 
 bool FSpatialGDKEditorToolbarModule::StartNativeIsVisible() const

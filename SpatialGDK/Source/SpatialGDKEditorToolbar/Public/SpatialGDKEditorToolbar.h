@@ -110,6 +110,7 @@ private:
 	static bool IsLocalDeploymentIPEditable();
 	static bool AreCloudDeploymentPropertiesEditable();
 
+	void OpenInspectorURL();
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
