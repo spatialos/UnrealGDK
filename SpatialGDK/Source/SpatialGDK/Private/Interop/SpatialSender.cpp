@@ -296,7 +296,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 			{
 				Sender->NetDriver->WorkerEntityId = Op.entity_id;
 
-				// We claim each server worker entity as a partition so server worker interest which is necessary for getting
+				// We claim each server worker entity as a partition and add self interest to it which is necessary for getting
 				// interest in the VirtualWorkerTranslator component.
 				Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerSystemEntityId(), Op.entity_id);
 
@@ -613,7 +613,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 		   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
 		   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
 
-		AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
+	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
 	UE_LOG(LogSpatialSender, Log,
 		   TEXT("(%s) Sending AuthorityIntent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
 		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));

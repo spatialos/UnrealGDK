@@ -417,7 +417,7 @@ Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-void UGlobalStateManager::ClaimSnapshotPartition()
+void UGlobalStateManager::ClaimSnapshotPartition() const
 {
 	if (ensure(Sender != nullptr))
 	{
