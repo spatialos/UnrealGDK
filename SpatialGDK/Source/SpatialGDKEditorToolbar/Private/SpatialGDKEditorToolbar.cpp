@@ -901,6 +901,7 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to fetch the local inspector binary but failed!"));
 			OnShowFailedNotification(TEXT("Failed to fetch local inspector!"));
+			return;
 		}
 
 		FString InspectorArgs =
@@ -914,27 +915,21 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 		TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
 
-		bool bStartingInspector = true;
-
-		InspectorProcess->OnOutput().BindLambda([this, &bStartingInspector](const FString& Output) {
-			if (Output.Contains(FString::Printf(TEXT("Open %s"), *SpatialGDKServicesConstants::InspectorV2URL)))
-			{
-				bStartingInspector = false;
-			}
-
+		InspectorProcess->OnOutput().BindLambda([this](const FString& Output) {
 			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Inspector: %s"), *Output)
 		});
 
-		InspectorProcess->Launch();
-
-		while (bStartingInspector && InspectorProcess->Update())
-		{
-			if (InspectorProcess->GetDuration().GetTotalSeconds() > 5)
+		InspectorProcess->OnCanceled().BindLambda([this] {
+			if (InspectorProcess->GetReturnCode() != SpatialGDKServicesConstants::ExitCodeSuccess)
 			{
-				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Timed out waiting for the Inspector to start."));
-				break;
+				UE_LOG(LogSpatialGDKEditorToolbar, Error,
+					   TEXT("Inspector crashed! Please check logs for more details. Exit code: %s",
+							*FString::FromInt(InspectorProcess->GetReturnCode())));
+				OnShowFailedNotification(TEXT("Inspector crashed!"));
 			}
-		}
+		});
+
+		InspectorProcess->Launch();
 
 		OpenInspectorURL();
 	});

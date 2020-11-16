@@ -41,13 +41,13 @@ const FString InspectorPackageName = TEXT("inspector");
 const FString RuntimeExe = FPaths::SetExtension(RuntimePackageName, Extension);
 const FString InspectorExe = FPaths::SetExtension(InspectorPackageName, Extension);
 
-static inline const FString GetRuntimeExecutablePath(FString RuntimeVersion)
+static inline const FString GetRuntimeExecutablePath(const FString& RuntimeVersion)
 {
-	return FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVersion,
+	return FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, RuntimePackageName, RuntimeVersion,
 						   SpatialGDKServicesConstants::RuntimeExe);
 }
 
-static inline const FString GetInspectorExecutablePath(FString InspectorVersion)
+static inline const FString GetInspectorExecutablePath(const FString& InspectorVersion)
 {
 	return FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, InspectorPackageName, InspectorVersion,
 						   SpatialGDKServicesConstants::InspectorExe);
