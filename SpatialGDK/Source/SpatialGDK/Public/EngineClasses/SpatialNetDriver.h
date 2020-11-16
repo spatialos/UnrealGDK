@@ -146,6 +146,9 @@ public:
 	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerId(const Worker_EntityId InWorkerEntityId);
 	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
 
+	bool HasServerAuthority(Worker_EntityId EntityId) const;
+	bool HasClientAuthority(Worker_EntityId EntityId) const;
+
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
 	UPROPERTY()

@@ -241,7 +241,7 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		return;
 	}
 
-	const bool bHasAuthority = NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID);
+	const bool bHasAuthority = NetDriver->HasServerAuthority(EntityId);
 	if (Actor != nullptr)
 	{
 		if (bHasAuthority)
@@ -1275,8 +1275,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
 {
-	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID
-		&& NetDriver->StaticComponentView->HasAuthority(InEntityId, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID))
+	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(InEntityId))
 	{
 		Sender->SendPositionUpdate(InEntityId, NewPosition);
 	}
