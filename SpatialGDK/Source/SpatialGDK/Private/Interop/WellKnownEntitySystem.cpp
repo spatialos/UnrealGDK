@@ -141,13 +141,14 @@ void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 	// Perform a naive leader election where we wait for the correct number of server workers to be present in the deployment, and then
 	// whichever server has the lowest server worker entity id claims the snapshot partition.
 	const Worker_EntityId LocalServerWorkerEntityId = GlobalStateManager->GetLocalServerWorkerEntityId();
-	Worker_EntityId LowestEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	if (LocalServerWorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		UE_LOG(LogWellKnownEntitySystem, Warning, TEXT("MaybeClaimSnapshotPartition aborted due to lack of local server worker entity"));
 		return;
 	}
+
+	Worker_EntityId LowestEntityId = LocalServerWorkerEntityId;
 
 	int ServerCount = 0;
 	for (const auto& Iter : SubView->GetView())
@@ -160,7 +161,7 @@ void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 		{
 			ServerCount++;
 
-			if (LowestEntityId == SpatialConstants::INVALID_ENTITY_ID || EntityId < LowestEntityId)
+			if (EntityId < LowestEntityId)
 			{
 				LowestEntityId = EntityId;
 			}

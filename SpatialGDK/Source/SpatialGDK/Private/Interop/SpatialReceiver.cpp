@@ -1546,6 +1546,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::POSITION_COMPONENT_ID:
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
 	case SpatialConstants::INTEREST_COMPONENT_ID:
+	case SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID:
 	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:

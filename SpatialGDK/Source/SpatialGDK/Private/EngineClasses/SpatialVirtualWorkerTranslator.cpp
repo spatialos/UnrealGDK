@@ -71,9 +71,9 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 // after a PiE restart.
 bool SpatialVirtualWorkerTranslator::IsValidMapping(Schema_Object* Object) const
 {
-	const int32 TranslationCount = Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
+	const uint32 TranslationCount = Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 
-	for (int32 i = 0; i < TranslationCount; i++)
+	for (uint32 i = 0; i < TranslationCount; i++)
 	{
 		// Get each entry of the list and then unpack the virtual and physical IDs from the entry.
 		Schema_Object* MappingObject = Schema_IndexObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID, i);
@@ -107,12 +107,12 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 
 	// Resize the map to accept the new data.
 	VirtualToPhysicalWorkerMapping.Empty();
-	const int32 TranslationCount = Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
+	const uint32 TranslationCount = Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 	VirtualToPhysicalWorkerMapping.Reserve(TranslationCount);
 
 	UE_LOG(LogSpatialVirtualWorkerTranslator, Verbose, TEXT("(%d) Apply valid mapping from schema"), LocalVirtualWorkerId);
 
-	for (int32 i = 0; i < TranslationCount; i++)
+	for (uint32 i = 0; i < TranslationCount; i++)
 	{
 		// Get each entry of the list and then unpack the virtual and physical IDs from the entry.
 		Schema_Object* MappingObject = Schema_IndexObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID, i);

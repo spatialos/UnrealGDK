@@ -32,8 +32,6 @@ public:
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::DropQueuedRemoveComponentOpsForEntity, return;);
 	virtual void OnAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnAuthorityChange, return;);
-	virtual void OnComponentSetAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op)
-		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnComponentSetAuthorityChange, return;);
 	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnComponentUpdate, return;);
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op)
