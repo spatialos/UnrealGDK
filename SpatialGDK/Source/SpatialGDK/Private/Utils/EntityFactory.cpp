@@ -17,6 +17,7 @@
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
+#include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
