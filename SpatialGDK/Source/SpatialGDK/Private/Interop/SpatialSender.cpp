@@ -296,7 +296,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 			{
 				Sender->NetDriver->WorkerEntityId = Op.entity_id;
 
-				// We claim each server worker entity as a partition and add self interest to it which is necessary for getting
+				// We claim each server worker entity as a partition so server worker interest which is necessary for getting
 				// interest in the VirtualWorkerTranslator component.
 				Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerSystemEntityId(), Op.entity_id);
 
