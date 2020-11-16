@@ -10,7 +10,7 @@ fi
 
 pushd "$(dirname "$0")"
 
-PINNED_CORE_SDK_VERSION=$(cat ./SpatialGDK/Extras/core-sdk.version)
+PINNED_CORE_SDK_VERSION=$(head -n 1 ./SpatialGDK/Extras/core-sdk.version)
 PINNED_SPOT_VERSION=$(cat ./SpatialGDK/Extras/spot.version)
 BUILD_DIR="$(pwd)/SpatialGDK/Build"
 CORE_SDK_DIR="${BUILD_DIR}/core_sdk"

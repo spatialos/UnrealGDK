@@ -6,6 +6,7 @@
 #include "Modules/ModuleManager.h"
 
 #include "Utils/EngineVersionCheck.h"
+#include "Utils/WorkerVersionCheck.h"
 
 #include "SpatialGDKLoader.h"
 
