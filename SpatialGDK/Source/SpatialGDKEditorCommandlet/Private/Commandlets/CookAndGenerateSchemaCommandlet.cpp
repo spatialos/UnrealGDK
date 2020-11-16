@@ -150,13 +150,21 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Schema Generation Finished in %.2f seconds"), Duration.GetTotalSeconds());
 
+	USchemaDatabase* SchemaDatabase = InitialiseSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH);
+
+	// Needs to happen before RunSchemaCompiler
+	WriteServerAuthorityComponentSet(SchemaDatabase);
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Data);
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly);
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover);
+
 	if (!RunSchemaCompiler())
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to run schema compiler."));
 		return 0;
 	}
 
-	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
+	if (!SaveSchemaDatabase(SchemaDatabase))
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to save schema database."));
 		return 0;

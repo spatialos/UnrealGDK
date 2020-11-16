@@ -50,6 +50,7 @@ SchemaResultType InterestFactory::CreateClientNonAuthInterestResultType()
 
 	// Add all data components- clients don't need to see handover or owner only components on other entities.
 	ClientNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
+	//ClientNonAuthResultType.Push(SpatialConstants::DATA_COMPONENT_SET_ID);
 
 	return ClientNonAuthResultType;
 }
@@ -63,8 +64,8 @@ SchemaResultType InterestFactory::CreateClientAuthInterestResultType()
 	ClientAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST);
 
 	// Add all the generated unreal components
-	ClientAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
-	ClientAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
+	ClientAuthResultType.Push(SpatialConstants::DATA_COMPONENT_SET_ID);
+	ClientAuthResultType.Push(SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID);
 
 	return ClientAuthResultType;
 }
@@ -77,9 +78,9 @@ SchemaResultType InterestFactory::CreateServerNonAuthInterestResultType()
 	ServerNonAuthResultType.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST);
 
 	// Add all data, owner only, and handover components
-	ServerNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Data));
-	ServerNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_OwnerOnly));
-	ServerNonAuthResultType.Append(ClassInfoManager->GetComponentIdsForComponentType(ESchemaComponentType::SCHEMA_Handover));
+	ServerNonAuthResultType.Push(SpatialConstants::DATA_COMPONENT_SET_ID);
+	ServerNonAuthResultType.Push(SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID);
+	ServerNonAuthResultType.Push(SpatialConstants::HANDOVER_COMPONENT_SET_ID);
 
 	return ServerNonAuthResultType;
 }

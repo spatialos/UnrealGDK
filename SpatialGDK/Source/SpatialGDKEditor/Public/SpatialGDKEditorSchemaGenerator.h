@@ -5,6 +5,7 @@
 #include "Logging/LogMacros.h"
 
 #include "Utils/CodeWriter.h"
+#include "Utils/SchemaDatabase.h"
 
 #include "WorkerSDK/improbable/c_worker.h"
 
@@ -40,7 +41,9 @@ SPATIALGDKEDITOR_API bool IsAssetReadOnly(const FString& FileName);
 
 SPATIALGDKEDITOR_API bool GeneratedSchemaDatabaseExists();
 
-SPATIALGDKEDITOR_API bool SaveSchemaDatabase(const FString& PackagePath);
+SPATIALGDKEDITOR_API USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath);
+
+SPATIALGDKEDITOR_API bool SaveSchemaDatabase(USchemaDatabase* SchemaDatabase);
 
 SPATIALGDKEDITOR_API bool DeleteSchemaDatabase(const FString& PackagePath);
 
@@ -57,5 +60,9 @@ SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyD
 SPATIALGDKEDITOR_API bool RunSchemaCompiler();
 
 SPATIALGDKEDITOR_API void WriteComponentSetToFile(FCodeWriter& Writer, const FString& ComponentName, Worker_ComponentId ComponentId);
+
+SPATIALGDKEDITOR_API void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase);
+
+SPATIALGDKEDITOR_API void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchemaComponentType SchemaType);
 } // namespace Schema
 } // namespace SpatialGDKEditor

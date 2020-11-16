@@ -103,8 +103,16 @@ const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
 const Worker_ComponentId HEARTBEAT_COMPONENT_ID = 9991;
 
 const Worker_ComponentSetId GDK_WELL_KNOWN_COMPONENT_SET_ID = 9999;
-const FString SERVER_AUTH_COMPONENT_SET_NAME = TEXT("ServerAuthoritativeComponentSet");
+
 const Worker_ComponentId SERVER_AUTH_COMPONENT_SET_ID = 9900;
+const Worker_ComponentId DATA_COMPONENT_SET_ID = 9901;
+const Worker_ComponentId OWNER_ONLY_COMPONENT_SET_ID = 9902;
+const Worker_ComponentId HANDOVER_COMPONENT_SET_ID = 9903;
+
+const FString SERVER_AUTH_COMPONENT_SET_NAME = TEXT("ServerAuthoritativeComponentSet");
+const FString DATA_COMPONENT_SET_NAME = TEXT("DataComponentSet");
+const FString OWNER_ONLY_COMPONENT_SET_NAME = TEXT("OwnerOnlyComponentSet");
+const FString HANDOVER_COMPONENT_SET_NAME = TEXT("HandoverComponentSet");
 
 // Marking the event-based RPC components as legacy while the ring buffer
 // implementation is under a feature flag.
