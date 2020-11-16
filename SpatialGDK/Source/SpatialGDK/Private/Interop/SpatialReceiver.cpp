@@ -2025,15 +2025,15 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseO
 	switch (static_cast<Worker_StatusCode>(Op.status_code))
 	{
 	case WORKER_STATUS_CODE_SUCCESS:
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request succeeded. "
+		UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request succeeded. "
 			"Request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
 	case WORKER_STATUS_CODE_TIMEOUT:
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request timed out. "
+		UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request timed out. "
 			"Request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
 	case WORKER_STATUS_CODE_APPLICATION_ERROR:
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request failed. "
+		UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request failed. "
 			"Either the reservation expired, the entity already existed, or the entity was invalid. "
 			"Request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
