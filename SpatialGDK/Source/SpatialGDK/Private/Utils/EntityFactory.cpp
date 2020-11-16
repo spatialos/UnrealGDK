@@ -63,10 +63,10 @@ EntityComponents EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
 	EntityComponents EntityComps;
-	EntityComps.ModifiableComponents.Add(Position::ComponentId,
+	EntityComps.ModifiableComponents.Add(SpatialConstants::POSITION_COMPONENT_ID,
 										 MakeUnique<Position>(Coordinates::FromFVector(GetActorSpatialPosition(Actor))));
-	EntityComps.ModifiableComponents.Add(Metadata::ComponentId, MakeUnique<Metadata>(Class->GetName()));
-	EntityComps.ModifiableComponents.Add(SpawnData::ComponentId, MakeUnique<SpawnData>(Actor));
+	EntityComps.ModifiableComponents.Add(SpatialConstants::METADATA_COMPONENT_ID, MakeUnique<Metadata>(Class->GetName()));
+	EntityComps.ModifiableComponents.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, MakeUnique<SpawnData>(Actor));
 
 	if (ShouldActorHaveVisibleComponent(Actor))
 	{
@@ -88,7 +88,7 @@ EntityComponents EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
 		EntityComps.ComponentDatas.Add(Heartbeat().CreateComponentData());
 	}
 
-	EntityComps.ModifiableComponents.Add(EntityAcl::ComponentId, MakeUnique<EntityAcl>(ReadAcl, ComponentWriteAcl));
+	EntityComps.ModifiableComponents.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, MakeUnique<EntityAcl>(ReadAcl, ComponentWriteAcl));
 
 	// Add Actor completeness tags.
 	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
@@ -310,7 +310,7 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 		{
 			if (QueuedRPCs->HasRPCPayloadData())
 			{
-				EntityComps.ComponentsToDelegateToAuthoritativeWorker.Add(RPCsOnEntityCreation::ComponentId,
+				EntityComps.ComponentsToDelegateToAuthoritativeWorker.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID,
 																		  QueuedRPCs->CreateComponentData());
 			}
 			OutgoingOnCreateEntityRPCs.Remove(Actor);
