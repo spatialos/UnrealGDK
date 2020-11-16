@@ -101,7 +101,7 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, co
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateServerWorkerInterest(Worker_EntityId EntityId, const UAbstractLBStrategy* LBStrategy, bool bDebug) const
+Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy, bool bDebug) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
@@ -131,7 +131,7 @@ Interest InterestFactory::CreateServerWorkerInterest(Worker_EntityId EntityId, c
 	// Add a self query to ensure we see the well known entity tag.
 	Query AuthoritySelfQuery = {};
 	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
-	AuthoritySelfQuery.Constraint.EntityIdConstraint = EntityId;
+	AuthoritySelfQuery.Constraint.SelfConstraint = true;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_COMPONENT_ID, AuthoritySelfQuery);
 
 	// Query to know about all the actors tagged with a debug component
@@ -178,10 +178,10 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 	}
 
 	// Clients need to see owner only and server RPC components on entities they have authority over
-	AddClientSelfInterest(ResultInterest, InEntityId);
+	AddClientSelfInterest(ResultInterest);
 
 	// Every actor needs a self query for the server to the client RPC endpoint
-	AddServerSelfInterest(ResultInterest, InEntityId);
+	AddServerSelfInterest(ResultInterest);
 
 	AddOwnerInterestOnServer(ResultInterest, InActor, InEntityId);
 
@@ -203,28 +203,28 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, co
 	}
 }
 
-void InterestFactory::AddClientSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const
+void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const
 {
 	Query NewQuery;
 	// Just an entity ID constraint is fine, as clients should not become authoritative over entities outside their loaded levels
-	NewQuery.Constraint.EntityIdConstraint = EntityId;
+	NewQuery.Constraint.SelfConstraint = true;
 	NewQuery.ResultComponentIds = ClientAuthInterestResultType;
 
 	AddComponentQueryPairToInterestComponent(
 		OutInterest, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()), NewQuery);
 }
 
-void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const
+void InterestFactory::AddServerSelfInterest(Interest& OutInterest) const
 {
 	// Add a query for components all servers need to read client data
 	Query ClientQuery;
-	ClientQuery.Constraint.EntityIdConstraint = EntityId;
+	ClientQuery.Constraint.SelfConstraint = true;
 	ClientQuery.ResultComponentIds = ServerAuthInterestResultType;
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ClientQuery);
 
 	// Add a query for the load balancing worker (whoever is delegated the auth delegation component) to read the authority intent
 	Query LoadBalanceQuery;
-	LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
+	LoadBalanceQuery.Constraint.SelfConstraint = true;
 	LoadBalanceQuery.ResultComponentIds =
 		SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
 						  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID };
