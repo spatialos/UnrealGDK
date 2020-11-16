@@ -10,9 +10,9 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
-SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy,
+SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, USpatialNetDriver* InNetDriver,
 															   PhysicalWorkerName InLocalPhysicalWorkerName)
-	: NetDriver(nullptr)
+	: NetDriver(InNetDriver)
 	, LoadBalanceStrategy(InLoadBalanceStrategy)
 	, bIsReady(false)
 	, LocalPhysicalWorkerName(InLocalPhysicalWorkerName)

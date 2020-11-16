@@ -27,9 +27,8 @@ public:
 	};
 
 	SpatialVirtualWorkerTranslator() = delete;
-	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, PhysicalWorkerName InLocalPhysicalWorkerName);
-
-	void SetNetDriver(USpatialNetDriver* InNetDriver) { NetDriver = InNetDriver; };
+	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, USpatialNetDriver* InNetDriver,
+								   PhysicalWorkerName InLocalPhysicalWorkerName);
 
 	// Returns true if the Translator has received the information needed to map virtual workers to physical workers.
 	// Currently that is only the number of virtual workers desired.

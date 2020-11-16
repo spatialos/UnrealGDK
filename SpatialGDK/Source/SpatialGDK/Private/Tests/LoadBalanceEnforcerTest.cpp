@@ -57,7 +57,8 @@ const TArray<Worker_ComponentId> ClientComponentIds = { SpatialConstants::HEARTB
 
 TUniquePtr<SpatialVirtualWorkerTranslator> CreateVirtualWorkerTranslator()
 {
-	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, ThisWorker);
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator =
+		MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, nullptr, ThisWorker);
 
 	Schema_Object* DataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
 
