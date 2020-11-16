@@ -183,7 +183,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
-	ComponentDatas.Add(NetOwningClientWorker(GetConnectionOwningPartitionId(Channel->Actor)).CreateNetOwningClientWorkerData());
+	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId ).CreateNetOwningClientWorkerData());
 	ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
 
 	if (ShouldActorHaveVisibleComponent(Actor))
@@ -438,7 +438,7 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(cons
 
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreatePositionData());
-	Components.Add(Metadata(FString::Format(TEXT("ParitionEntity:{0}"), { VirtualWorker })).CreateMetadataData());
+	Components.Add(Metadata(FString::Format(TEXT("PartitionEntity:{0}"), { VirtualWorker })).CreateMetadataData());
 	Components.Add(InterestFactory->CreatePartitionInterest(LbStrategy, VirtualWorker).CreateInterestData());
 	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 	Components.Add(ComponentPresence(GetComponentPresenceList(Components)).CreateComponentPresenceData());

@@ -356,7 +356,7 @@ bool USpatialSender::ValidateOrExit_IsSupportedClass(const FString& PathName)
 void USpatialSender::SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const
 {
 	UE_LOG(LogSpatialSender, Log,
-		   TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId. %lld. "
+		   TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId: %lld. "
 				"PartitionId: %lld"),
 		   *Connection->GetWorkerId(), SystemWorkerEntityId, PartitionId);
 	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionId);
@@ -611,7 +611,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	check(AuthorityIntentComponent != nullptr);
 	checkf(AuthorityIntentComponent->VirtualWorkerId != NewAuthoritativeVirtualWorkerId,
 		   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
-		   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId)
+		   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
 
 		AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
 	UE_LOG(LogSpatialSender, Log,

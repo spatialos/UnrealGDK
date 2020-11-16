@@ -134,7 +134,7 @@ AuthorityDelegationMap GetAuthDelegationMapFromUpdate(const SpatialGDK::EntityCo
 	return AuthDelegation;
 }
 
-bool AclMapDelegatesComponents(const AuthorityDelegationMap& DelegationMap, const Worker_PartitionId DelegatedPartitionId,
+bool AuthorityMapDelegatesComponents(const AuthorityDelegationMap& DelegationMap, const Worker_PartitionId DelegatedPartitionId,
 							   const TArray<Worker_ComponentId>& DelegatedComponents)
 {
 	for (Worker_ComponentId ComponentId : DelegatedComponents)

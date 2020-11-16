@@ -219,7 +219,7 @@ void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_En
 	Partitions.Emplace(PartitionInfo{ PartitionEntityId, VirtualWorker, SpatialConstants::INVALID_ENTITY_ID });
 
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
-		   TEXT("Adding translation manager mapping. Virtual worker %d -> Parition entity %lld"), VirtualWorker, PartitionEntityId);
+		   TEXT("Adding translation manager mapping. Virtual worker %d -> Partition entity %lld"), VirtualWorker, PartitionEntityId);
 
 	if (Partitions.Num() == VirtualWorkersToAssign.Num())
 	{

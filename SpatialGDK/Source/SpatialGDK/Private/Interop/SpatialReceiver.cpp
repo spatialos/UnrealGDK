@@ -1885,8 +1885,8 @@ void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandRespons
 	}
 
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
-		   TEXT("ClaimPartition command successed. "
-				"Worker sytem entity: %lld. Parititon entity: %lld"),
+		   TEXT("ClaimPartition command succeeded. "
+				"Worker sytem entity: %lld. Partition entity: %lld"),
 		   Op.entity_id, PartitionId);
 }
 
