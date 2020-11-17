@@ -29,7 +29,8 @@ public:
 
 	FSpatialGDKSpanId CreateSpan(const Trace_SpanIdType* Causes = nullptr, int32 NumCauses = 0) const;
 	void TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const FSpatialGDKSpanId& SpanId);
-	FSpatialGDKSpanId TraceFilterableEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes = nullptr, int32 NumCauses = 0);
+	FSpatialGDKSpanId TraceFilterableEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes = nullptr,
+										   int32 NumCauses = 0);
 
 	bool IsEnabled() const;
 

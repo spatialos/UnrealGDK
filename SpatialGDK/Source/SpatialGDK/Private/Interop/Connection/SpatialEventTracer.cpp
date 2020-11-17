@@ -188,7 +188,8 @@ void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent,
 	}
 }
 
-FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes /* = nullptr*/, int32 NumCauses /* = 0*/)
+FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEvent& SpatialTraceEvent,
+														   const Trace_SpanIdType* Causes /* = nullptr*/, int32 NumCauses /* = 0*/)
 {
 	if (!IsEnabled())
 	{

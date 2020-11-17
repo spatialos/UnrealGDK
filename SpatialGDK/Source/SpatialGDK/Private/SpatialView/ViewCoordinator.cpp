@@ -91,8 +91,7 @@ void ViewCoordinator::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpd
 	View.SendComponentUpdate(EntityId, MoveTemp(Update), SpanId);
 }
 
-void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
-										  const FSpatialGDKSpanId& SpanId)
+void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendRemoveComponent(EntityId, ComponentId, SpanId);
 }
@@ -130,8 +129,7 @@ Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId Entit
 	return NextRequestId++;
 }
 
-void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response,
-												const FSpatialGDKSpanId& SpanId)
+void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendEntityCommandResponse({ RequestId, MoveTemp(Response), SpanId });
 }
@@ -164,8 +162,7 @@ Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> 
 	return NextRequestId++;
 }
 
-Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData,
-														  const FSpatialGDKSpanId& SpanId)
+Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	DeleteEntityRetryHandler.SendRequest(NextRequestId, { EntityId, SpanId }, RetryData, View);
 	return NextRequestId++;

@@ -23,7 +23,8 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextOb
 	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 }
 
-FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* WorldContextObject, const FSpatialTraceEvent& SpatialTraceEvent, const TArray<FUserSpanId>& Causes)
+FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* WorldContextObject, const FSpatialTraceEvent& SpatialTraceEvent,
+																   const TArray<FUserSpanId>& Causes)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
 	if (EventTracer == nullptr)
@@ -37,7 +38,7 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* Worl
 		if (!UserSpanIdCause.IsValid())
 		{
 			UE_LOG(LogSpatialEventTracerUserInterface, Warning,
-				TEXT("USpatialEventTracerUserInterface::CreateSpanIdWithCauses - Invalid input cause"));
+				   TEXT("USpatialEventTracerUserInterface::CreateSpanIdWithCauses - Invalid input cause"));
 			continue;
 		}
 
@@ -46,7 +47,8 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* Worl
 	}
 
 	FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(CauseSpanIds);
-	FSpatialGDKSpanId SpanId = EventTracer->TraceFilterableEvent(SpatialTraceEvent, SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
+	FSpatialGDKSpanId SpanId =
+		EventTracer->TraceFilterableEvent(SpatialTraceEvent, SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
 	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 }
 
