@@ -117,7 +117,6 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 #endif
 
 	// We try to stop a local deployment either when the appropriate setting is selected, or when running with automation tests
-	// TODO: Reuse local deployment between test maps: UNR-2488
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor) {
 		if ((GIsAutomationTesting || AutoStopLocalDeployment == EAutoStopLocalDeploymentMode::OnEndPIE)
 			&& LocalDeploymentManager->IsLocalDeploymentRunning())
@@ -198,8 +197,9 @@ void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 {
 	LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
 
-	if (AutoStopLocalDeployment == EAutoStopLocalDeploymentMode::OnExitEditor)
+	if (AutoStopLocalDeployment != EAutoStopLocalDeploymentMode::Never)
 	{
+		InspectorProcess->Cancel();
 		LocalDeploymentManager->TryStopLocalDeployment();
 	}
 }
