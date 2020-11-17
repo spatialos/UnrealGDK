@@ -134,6 +134,7 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_a_valid_mapping_is_received_T
 	TestNull("There is no mapping for virtual worker 3", Translator->GetPhysicalWorkerForVirtualWorker(3));
 
 	TestEqual<VirtualWorkerId>("Local virtual worker ID is known.", Translator->GetLocalVirtualWorkerId(), 1);
+	TestEqual<Worker_PartitionId>("Local claimed partition ID is known.", Translator->GetClaimedPartitionId(), 101);
 	TestTrue("Translator with local virtual worker ID is ready.", Translator->IsReady());
 	TestEqual<VirtualWorkerId>("LBStrategy stub reports the correct virtual worker ID.", LBStrategyStub->GetVirtualWorkerId(), 1);
 
@@ -170,14 +171,17 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_an_invalid_mapping_
 	const PhysicalWorkerName* VirtualWorker1PhysicalName = Translator->GetPhysicalWorkerForVirtualWorker(1);
 	TestNotNull("There is a mapping for virtual worker 1", VirtualWorker1PhysicalName);
 	TestEqual<FString>("Virtual worker 1 is ValidWorkerOne", *VirtualWorker1PhysicalName, "ValidWorkerOne");
+	TestEqual<Worker_PartitionId>("Virtual worker 1 partition is 101", Translator->GetPartitionEntityForVirtualWorker(1), 101);
 
 	const PhysicalWorkerName* VirtualWorker2PhysicalName = Translator->GetPhysicalWorkerForVirtualWorker(2);
 	TestNotNull("There is a mapping for virtual worker 2", VirtualWorker2PhysicalName);
 	TestEqual<FString>("VirtualWorker 2 is ValidWorkerTwo", *VirtualWorker2PhysicalName, "ValidWorkerTwo");
+	TestEqual<Worker_PartitionId>("Virtual worker 2 partition is 102", Translator->GetPartitionEntityForVirtualWorker(2), 102);
 
 	TestNull("There is no mapping for virtual worker 3", Translator->GetPhysicalWorkerForVirtualWorker(3));
 
 	TestEqual<VirtualWorkerId>("Local virtual worker ID is known.", Translator->GetLocalVirtualWorkerId(), 1);
+	TestEqual<Worker_PartitionId>("Local claimed partition ID is known.", Translator->GetClaimedPartitionId(), 101);
 	TestTrue("Translator with local virtual worker ID is ready.", Translator->IsReady());
 	TestEqual<VirtualWorkerId>("LBStrategy stub reports the correct virtual worker ID.", LBStrategyStub->GetVirtualWorkerId(), 1);
 
@@ -214,12 +218,15 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_another_valid_mappi
 	const PhysicalWorkerName* VirtualWorker1PhysicalName = Translator->GetPhysicalWorkerForVirtualWorker(1);
 	TestNotNull("There is a mapping for virtual worker 1", VirtualWorker1PhysicalName);
 	TestEqual<FString>("Virtual worker 1 is ValidWorkerOne", *VirtualWorker1PhysicalName, "ValidWorkerOne");
+	TestEqual<Worker_PartitionId>("Virtual worker 1 partition is 101", Translator->GetPartitionEntityForVirtualWorker(1), 101);
 
 	const PhysicalWorkerName* VirtualWorker2PhysicalName = Translator->GetPhysicalWorkerForVirtualWorker(2);
 	TestNotNull("There is an updated mapping for virtual worker 2", VirtualWorker2PhysicalName);
 	TestEqual<FString>("VirtualWorker 2 is ValidWorkerThree", *VirtualWorker2PhysicalName, "ValidWorkerThree");
+	TestEqual<Worker_PartitionId>("Virtual worker 2 partition is 103", Translator->GetPartitionEntityForVirtualWorker(2), 103);
 
 	TestEqual<VirtualWorkerId>("Local virtual worker ID is still known.", Translator->GetLocalVirtualWorkerId(), 1);
+	TestEqual<Worker_PartitionId>("Local claimed partition ID is known.", Translator->GetClaimedPartitionId(), 101);
 	TestTrue("Translator with local virtual worker ID is still ready.", Translator->IsReady());
 	TestEqual<VirtualWorkerId>("LBStrategy stub reports the correct virtual worker ID.", LBStrategyStub->GetVirtualWorkerId(), 1);
 
@@ -236,7 +243,6 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_try_to_change_local
 	Schema_Object* FirstValidDataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
 
 	// The mapping only has the following entries:
-	// 	VirtualToPhysicalWorkerMapping.Add(1, "ValidWorkerOne");
 	TestingSchemaHelpers::AddTranslationComponentDataMapping(FirstValidDataObject, 1, "ValidWorkerOne", 101);
 
 	// Apply valid mapping to the translator.
@@ -257,10 +263,12 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_try_to_change_local
 	const PhysicalWorkerName* VirtualWorker1PhysicalName = Translator->GetPhysicalWorkerForVirtualWorker(1);
 	TestNotNull("There is a mapping for virtual worker 1", VirtualWorker1PhysicalName);
 	TestEqual<FString>("Virtual worker 1 is ValidWorkerOne", *VirtualWorker1PhysicalName, "ValidWorkerOne");
+	TestEqual<Worker_PartitionId>("Virtual worker 1 partition is 101", Translator->GetPartitionEntityForVirtualWorker(1), 101);
 
 	TestNull("There is no mapping for virtual worker 2", Translator->GetPhysicalWorkerForVirtualWorker(2));
 
 	TestEqual<VirtualWorkerId>("Local virtual worker ID is still known.", Translator->GetLocalVirtualWorkerId(), 1);
+	TestEqual<Worker_PartitionId>("Local claimed partition ID is known.", Translator->GetClaimedPartitionId(), 101);
 	TestTrue("Translator with local virtual worker ID is still ready.", Translator->IsReady());
 	TestEqual<VirtualWorkerId>("LBStrategy stub reports the correct virtual worker ID.", LBStrategyStub->GetVirtualWorkerId(), 1);
 
