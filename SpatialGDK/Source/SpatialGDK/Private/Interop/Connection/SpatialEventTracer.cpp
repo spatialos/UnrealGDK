@@ -122,7 +122,7 @@ FSpatialGDKSpanId SpatialEventTracer::CreateSpan(const Trace_SpanIdType* Causes 
 	Trace_SamplingResult SamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, nullptr);
 	if (SamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
 	{
-		return FSpatialGDKSpanId(false);
+		return TraceSpanId;
 	}
 
 	if (Causes != nullptr && NumCauses > 0)
@@ -137,14 +137,14 @@ FSpatialGDKSpanId SpatialEventTracer::CreateSpan(const Trace_SpanIdType* Causes 
 	return TraceSpanId;
 }
 
-void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const FSpatialGDKSpanId& SpanId)
+void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const FSpatialGDKSpanId& EventSpanId)
 {
 	if (!IsEnabled())
 	{
 		return;
 	}
 
-	if (!SpanId.IsValid())
+	if (!EventSpanId.IsValid())
 	{
 		return;
 	}
@@ -153,7 +153,7 @@ void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent,
 	auto TypeSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Type.ToString());
 
 	Trace_Event Event;
-	Event.span_id = SpanId.GetConstData();
+	Event.span_id = EventSpanId.GetConstData();
 	Event.message = MessageSrc.Get();
 	Event.type = TypeSrc.Get();
 	Event.unix_timestamp_millis = 0;
@@ -211,13 +211,14 @@ FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEv
 	Event.unix_timestamp_millis = 0;
 	Event.data = nullptr;
 
+	FSpatialGDKSpanId TraceSpanId(true);
+
 	Trace_SamplingResult SpanSamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event);
 	if (SpanSamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
 	{
-		return FSpatialGDKSpanId(false);
+		return TraceSpanId;
 	}
 
-	FSpatialGDKSpanId TraceSpanId(true);
 	Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, &Event, TraceSpanId.GetData());
 	Event.span_id = TraceSpanId.GetData();
 
@@ -226,7 +227,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEv
 	{
 	case Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE:
 	{
-		return FSpatialGDKSpanId(false);
+		return TraceSpanId;
 	}
 	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE_WITHOUT_DATA:
 	{
@@ -393,11 +394,11 @@ void SpatialEventTracer::AddToStack(const FSpatialGDKSpanId& SpanId)
 
 FSpatialGDKSpanId SpatialEventTracer::PopFromStack()
 {
-	if (SpanIdStack.Num() != 0)
+	if (SpanIdStack.Num() == 0)
 	{
-		return SpanIdStack.Pop();
+		return FSpatialGDKSpanId(false);
 	}
-	return FSpatialGDKSpanId(false);
+	return SpanIdStack.Pop();
 }
 
 FSpatialGDKSpanId SpatialEventTracer::GetFromStack() const
@@ -407,7 +408,6 @@ FSpatialGDKSpanId SpatialEventTracer::GetFromStack() const
 	{
 		return FSpatialGDKSpanId(false);
 	}
-
 	return SpanIdStack[Size - 1];
 }
 
