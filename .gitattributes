@@ -1,7 +1,7 @@
 * text=auto
 *.go text eol=lf
 
-# Bat files should not be normalized
+# Bat files and version files should not be normalized
 *.bat -text
 *.version -text
 
