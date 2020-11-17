@@ -52,15 +52,15 @@ public:
 
 	virtual uint32 GetMinimumRequiredWorkers() const override;
 	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId) override;
+
+	// This returns the LBStrategy which should be rendered in the SpatialDebugger.
+	// Currently, this is just the default strategy.
+	UAbstractLBStrategy* GetLBStrategyForVisualRendering() const override;
 	/* End UAbstractLBStrategy Interface */
 
 	// This is provided to support the offloading interface in SpatialStatics. It should be removed once users
 	// switch to Load Balancing.
 	bool CouldHaveAuthority(TSubclassOf<AActor> Class) const;
-
-	// This returns the LBStrategy which should be rendered in the SpatialDebugger.
-	// Currently, this is just the default strategy.
-	UAbstractLBStrategy* GetLBStrategyForVisualRendering() const;
 
 	UAbstractLBStrategy* GetLBStrategyForLayer(FName) const;
 

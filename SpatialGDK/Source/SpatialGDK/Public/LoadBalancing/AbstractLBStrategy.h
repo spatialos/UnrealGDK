@@ -66,8 +66,14 @@ public:
 	 * strategy. LastVirtualWorkerId - FirstVirtualWorkerId + 1  is guaranteed to be >= GetMinimumRequiredWorkers.
 	 */
 	virtual uint32 GetMinimumRequiredWorkers() const PURE_VIRTUAL(UAbstractLBStrategy::GetMinimumRequiredWorkers, return 0;);
+
 	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId)
 		PURE_VIRTUAL(UAbstractLBStrategy::SetVirtualWorkerIds, return;);
+
+	// This returns the LBStrategy which should be rendered in the SpatialDebugger.
+	// Currently, this is just the default strategy.
+	virtual UAbstractLBStrategy* GetLBStrategyForVisualRendering() const
+		PURE_VIRTUAL(UAbstractLBStrategy::GetLBStrategyForVisualRendering, return nullptr;);
 
 protected:
 	VirtualWorkerId LocalVirtualWorkerId;

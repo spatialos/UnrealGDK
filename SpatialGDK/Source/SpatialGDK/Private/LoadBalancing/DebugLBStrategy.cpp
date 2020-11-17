@@ -92,3 +92,9 @@ void UDebugLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWo
 	check(WrappedStrategy);
 	WrappedStrategy->SetVirtualWorkerIds(FirstVirtualWorkerId, LastVirtualWorkerId);
 }
+
+UAbstractLBStrategy* UDebugLBStrategy::GetLBStrategyForVisualRendering() const
+{
+	check(WrappedStrategy);
+	return WrappedStrategy->GetLBStrategyForVisualRendering();
+}
