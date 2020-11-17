@@ -53,7 +53,7 @@ these functions and structs can be referenced in both code and blueprints it may
 - Handover is now optional depending on whether the load balancing strategy implementations require it . See `RequiresHandoverData`
 - Improved the failed hierarchy migration logs. The logs now contain more specific reasons for the failure and the frequency of repeated logs is suppressed.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
-- SpatialWorkerFlags has renamed `BindToOnWorkerFlagsUpdated` to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added function for binding to specific individual flags: `RegisterFlagUpdatedCallback`. In addition `RegisterAndInvokeAnyFlagUpdatedCallback` and `RegisterAndInvokeFlagUpdatedCallback` functions are added so you can force the delegate to immidiatley execute if the flag already exists when registering a callback.
+- SpatialWorkerFlags has renamed `BindToOnWorkerFlagsUpdated` to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added function for binding to specific individual flags: `RegisterFlagUpdatedCallback`. In addition `RegisterAndInvokeAnyFlagUpdatedCallback` and `RegisterAndInvokeFlagUpdatedCallback` functions are added so you can force the delegate to immediately execute if the flag already exists when registering a callback.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
