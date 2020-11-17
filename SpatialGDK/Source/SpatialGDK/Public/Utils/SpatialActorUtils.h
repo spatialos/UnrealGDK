@@ -64,7 +64,7 @@ inline Worker_EntityId GetConnectionOwningClientSystemEntityId(const APlayerCont
 	{
 		UE_LOG(LogTemp, Error,
 			   TEXT("Client system entity ID was invalid on a PlayerController. "
-					"This is expected after the PlayerController migrates, the client system entioty ID is currently only "
+					"This is expected after the PlayerController migrates, the client system entity ID is currently only "
 					"used on the spawning server."));
 	}
 
