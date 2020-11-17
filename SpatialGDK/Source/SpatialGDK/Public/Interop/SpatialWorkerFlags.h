@@ -5,8 +5,11 @@
 #include <WorkerSDK/improbable/c_worker.h>
 #include "SpatialWorkerFlags.generated.h"
 
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnWorkerFlagsUpdatedBP, const FString&, FlagName, const FString&, FlagValue);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWorkerFlagsUpdated, const FString&, FlagName, const FString&, FlagValue);
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnAnyWorkerFlagUpdatedBP, const FString&, FlagName, const FString&, FlagValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAnyWorkerFlagUpdated, const FString&, FlagName, const FString&, FlagValue);
+
+DECLARE_DYNAMIC_DELEGATE_OneParam(FOnWorkerFlagUpdatedBP, const FString&, FlagValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWorkerFlagUpdated, const FString&, FlagValue);
 
 UCLASS()
 class SPATIALGDK_API USpatialWorkerFlags : public UObject
@@ -22,15 +25,27 @@ public:
 	bool GetWorkerFlag(const FString& InFlagName, FString& OutFlagValue) const;
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	void BindToOnWorkerFlagsUpdated(const FOnWorkerFlagsUpdatedBP& InDelegate);
+	void RegisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	void UnbindFromOnWorkerFlagsUpdated(const FOnWorkerFlagsUpdatedBP& InDelegate);
+	void RegisterAndInvokeAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate);
+
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
+	void UnregisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate);
+
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
+	void RegisterAndInvokeFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
+
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
+	void RegisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
+
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
+	void UnregisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
 
 	void ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op);
 
 private:
-	FOnWorkerFlagsUpdated OnWorkerFlagsUpdated;
-
+	FOnAnyWorkerFlagUpdated OnAnyWorkerFlagUpdated;
+	TMap<FString, FOnWorkerFlagUpdated> OnWorkerFlagUpdatedMap;
 	TMap<FString, FString> WorkerFlags;
 };

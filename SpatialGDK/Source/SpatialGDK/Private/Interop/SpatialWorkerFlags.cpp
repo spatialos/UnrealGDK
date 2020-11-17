@@ -22,7 +22,11 @@ void USpatialWorkerFlags::ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op)
 		FString NewValue = FString(UTF8_TO_TCHAR(Op.value));
 		FString& ValueFlag = WorkerFlags.FindOrAdd(NewName);
 		ValueFlag = NewValue;
-		OnWorkerFlagsUpdated.Broadcast(NewName, NewValue);
+		OnAnyWorkerFlagUpdated.Broadcast(NewName, NewValue);
+		if (FOnWorkerFlagUpdated* OnWorkerFlagUpdated = OnWorkerFlagUpdatedMap.Find(NewName))
+		{
+			OnWorkerFlagUpdated->Broadcast(NewValue);
+		}
 	}
 	else
 	{
@@ -30,12 +34,44 @@ void USpatialWorkerFlags::ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op)
 	}
 }
 
-void USpatialWorkerFlags::BindToOnWorkerFlagsUpdated(const FOnWorkerFlagsUpdatedBP& InDelegate)
+void USpatialWorkerFlags::RegisterAndInvokeFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate)
 {
-	OnWorkerFlagsUpdated.Add(InDelegate);
+	RegisterFlagUpdatedCallback(InFlagName, InDelegate);
+	if (FString* ValueFlag = WorkerFlags.Find(InFlagName))
+	{
+		InDelegate.Execute(*ValueFlag);
+	}
 }
 
-void USpatialWorkerFlags::UnbindFromOnWorkerFlagsUpdated(const FOnWorkerFlagsUpdatedBP& InDelegate)
+void USpatialWorkerFlags::RegisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate)
 {
-	OnWorkerFlagsUpdated.Remove(InDelegate);
+	FOnWorkerFlagUpdated& OnWorkerFlagUpdated = OnWorkerFlagUpdatedMap.FindOrAdd(InFlagName);
+	OnWorkerFlagUpdated.Add(InDelegate);
+}
+
+void USpatialWorkerFlags::UnregisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate)
+{
+	if (FOnWorkerFlagUpdated* OnWorkerFlagUpdated = OnWorkerFlagUpdatedMap.Find(InFlagName))
+	{
+		OnWorkerFlagUpdated->Remove(InDelegate);
+	}
+}
+
+void USpatialWorkerFlags::RegisterAndInvokeAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate)
+{
+	RegisterAnyFlagUpdatedCallback(InDelegate);
+	for (const auto& flagPair : WorkerFlags)
+	{
+		OnAnyWorkerFlagUpdated.Broadcast(flagPair.Key, flagPair.Value);
+	}
+}
+
+void USpatialWorkerFlags::RegisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate)
+{
+	OnAnyWorkerFlagUpdated.Add(InDelegate);
+}
+
+void USpatialWorkerFlags::UnregisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate)
+{
+	OnAnyWorkerFlagUpdated.Remove(InDelegate);
 }
