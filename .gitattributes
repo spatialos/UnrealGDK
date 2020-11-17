@@ -3,6 +3,7 @@
 
 # Bat files should not be normalized
 *.bat -text
+*.version -text
 
 # Don't count vendored go code as part of language stats.
 go/src/improbable.io/vendor/* linguist-vendored
