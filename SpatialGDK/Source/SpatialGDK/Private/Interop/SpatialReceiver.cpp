@@ -733,6 +733,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 	}
 	else if (Op.component_set_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
 	{
+		if (Channel != nullptr)
+		{
+			Channel->ClientProcessOwnershipChange(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
+		}
+
 		// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
 		if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
 		{
