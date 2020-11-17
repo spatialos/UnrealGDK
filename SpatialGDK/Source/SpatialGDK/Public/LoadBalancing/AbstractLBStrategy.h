@@ -51,7 +51,7 @@ public:
 	 * Get the query constraints required by this worker based on the load balancing strategy used.
 	 */
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const
-		PURE_VIRTUAL(UAbstractLBStrategy::GetWorkerInterestQueryConstraint, return {};)
+		PURE_VIRTUAL(UAbstractLBStrategy::GetWorkerInterestQueryConstraint, return {};);
 
 		/** True if this load balancing strategy requires handover data to be transmitted. */
 		virtual bool RequiresHandoverData() const PURE_VIRTUAL(UAbstractLBStrategy::RequiresHandover, return false;);
