@@ -223,13 +223,6 @@ bool ValidateGeneratedLaunchConfig(FSpatialLaunchConfigDescription& LaunchConfig
 		}
 	}
 
-	const FString EnableUslbFlag = TEXT("enable_user_space_authority_assigner");
-	const FString* UslbSetting = LaunchConfigDesc.World.LegacyFlags.Find(EnableUslbFlag);
-	if (UslbSetting == nullptr || !UslbSetting->Equals(TEXT("true")))
-	{
-		LaunchConfigDesc.World.LegacyFlags.Add(EnableUslbFlag, TEXT("true"));
-	}
-
 	return true;
 }
 
