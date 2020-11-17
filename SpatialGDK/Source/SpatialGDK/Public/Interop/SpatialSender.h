@@ -86,8 +86,8 @@ public:
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	void SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 								 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
-	void SendCrossServerRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload Payload, USpatialActorChannel* Channel,
-							const FUnrealObjectRef& TargetObjectRef);
+	void SendCrossServerRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
+							USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	FRPCErrorInfo SendLegacyRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 								USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,

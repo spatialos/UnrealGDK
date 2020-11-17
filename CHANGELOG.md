@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handover is now optional depending on whether the load balancing strategy implementations require it . See `RequiresHandoverData`
 - Improved the failed hierarchy migration logs. The logs now contain more specific reasons for the failure and the frequency of repeated logs is suppressed.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
+- Worker SDK version compatibility is checked at compile time. 
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
