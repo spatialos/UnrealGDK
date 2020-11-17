@@ -39,19 +39,19 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	}
 }
 
-SpatialScopedActiveSpanId::SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<FSpatialGDKSpanId>& InCurrentSpanId)
+SpatialScopedActiveSpanId::SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const FSpatialGDKSpanId& InCurrentSpanId)
 	: CurrentSpanId(InCurrentSpanId)
 	, EventTracer(InEventTracer->GetWorkerEventTracer())
 {
-	if (InCurrentSpanId.IsSet())
+	if (CurrentSpanId.IsValid())
 	{
-		Trace_EventTracer_SetActiveSpanId(EventTracer, CurrentSpanId.GetValue().Data);
+		Trace_EventTracer_SetActiveSpanId(EventTracer, CurrentSpanId.GetConstData());
 	}
 }
 
 SpatialScopedActiveSpanId::~SpatialScopedActiveSpanId()
 {
-	if (CurrentSpanId.IsSet())
+	if (CurrentSpanId.IsValid())
 	{
 		Trace_EventTracer_ClearActiveSpanId(EventTracer);
 	}
@@ -78,109 +78,179 @@ SpatialEventTracer::~SpatialEventTracer()
 	}
 }
 
-FString SpatialEventTracer::GDKSpanIdToString(const FSpatialGDKSpanId& SpanId)
-{
-	FString HexStr;
-	for (int i = 0; i < TRACE_SPAN_ID_SIZE_BYTES; i++)
-	{
-		HexStr += FString::Printf(TEXT("%02x"), SpanId.Data[i]);
-	}
-	return HexStr;
-}
-
 FUserSpanId SpatialEventTracer::GDKSpanIdToUserSpanId(const FSpatialGDKSpanId& SpanId)
 {
+	if (!SpanId.IsValid())
+	{
+		return {};
+	}
+
 	FUserSpanId UserSpanId;
 	UserSpanId.Data.SetNum(TRACE_SPAN_ID_SIZE_BYTES);
 	const int32 Size = TRACE_SPAN_ID_SIZE_BYTES * sizeof(uint8);
-	FMemory::Memcpy(UserSpanId.Data.GetData(), SpanId.Data, Size);
+	FMemory::Memcpy(UserSpanId.Data.GetData(), SpanId.GetConstData(), Size);
 	return UserSpanId;
 }
 
-TOptional<FSpatialGDKSpanId> SpatialEventTracer::UserSpanIdToGDKSpanId(const FUserSpanId& UserSpanId)
+FSpatialGDKSpanId SpatialEventTracer::UserSpanIdToGDKSpanId(const FUserSpanId& UserSpanId)
 {
 	if (!UserSpanId.IsValid())
 	{
-		return {};
+		return FSpatialGDKSpanId(false);
 	}
 
-	FSpatialGDKSpanId TraceSpanId;
+	FSpatialGDKSpanId TraceSpanId(true);
 	const int32 Size = TRACE_SPAN_ID_SIZE_BYTES * sizeof(uint8);
-	FMemory::Memcpy(TraceSpanId.Data, UserSpanId.Data.GetData(), Size);
+	FMemory::Memcpy(TraceSpanId.GetData(), UserSpanId.Data.GetData(), Size);
 	return TraceSpanId;
 }
 
-TOptional<FSpatialGDKSpanId> SpatialEventTracer::CreateSpan() const
+FSpatialGDKSpanId SpatialEventTracer::CreateSpan(const Trace_SpanIdType* Causes /* = nullptr*/, int32 NumCauses /* = 0*/) const
 {
 	if (!IsEnabled())
 	{
-		return {};
+		return FSpatialGDKSpanId(false);
 	}
 
-	FSpatialGDKSpanId TraceSpanId;
-	Trace_EventTracer_AddSpan(EventTracer, nullptr, 0, nullptr, TraceSpanId.Data);
-	return TraceSpanId;
-}
-
-TOptional<FSpatialGDKSpanId> SpatialEventTracer::CreateSpan(const Trace_SpanIdType* Causes, int32 NumCauses) const
-{
-	if (!IsEnabled())
+	if (Causes == nullptr && NumCauses > 0)
 	{
-		return {};
+		return FSpatialGDKSpanId(false);
 	}
 
-	FSpatialGDKSpanId TraceSpanId;
+	FSpatialGDKSpanId TraceSpanId(true);
+
+	Trace_SamplingResult SamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, nullptr);
+	if (SamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
+	{
+		return FSpatialGDKSpanId(false);
+	}
 
 	if (Causes != nullptr && NumCauses > 0)
 	{
-		Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, nullptr, TraceSpanId.Data);
+		Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, nullptr, TraceSpanId.GetData());
 	}
 	else
 	{
-		Trace_EventTracer_AddSpan(EventTracer, nullptr, 0, nullptr, TraceSpanId.Data);
+		Trace_EventTracer_AddSpan(EventTracer, Trace_SpanId_Null(), 1, nullptr, TraceSpanId.GetData());
 	}
 
 	return TraceSpanId;
 }
 
-void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const TOptional<FSpatialGDKSpanId>& SpanId)
+void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const FSpatialGDKSpanId& SpanId)
 {
 	if (!IsEnabled())
 	{
 		return;
 	}
 
-	if (!SpanId.IsSet())
+	if (!SpanId.IsValid())
 	{
 		return;
 	}
 
 	auto MessageSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Message);
-	const ANSICHAR* Message = MessageSrc.Get();
-
 	auto TypeSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Type.ToString());
-	const ANSICHAR* Type = TypeSrc.Get();
 
-	Trace_Event TraceEvent{ SpanId.GetValue().Data, /* unix_timestamp_millis: ignored */ 0, Message, Type, nullptr };
-	Trace_SamplingResult SamplingResult = Trace_EventTracer_ShouldSampleEvent(EventTracer, &TraceEvent);
-	if (SamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
+	Trace_Event Event;
+	Event.span_id = SpanId.GetConstData();
+	Event.message = MessageSrc.Get();
+	Event.type = TypeSrc.Get();
+	Event.unix_timestamp_millis = 0;
+	Event.data = nullptr;
+
+	Trace_SamplingResult EventSamplingResult = Trace_EventTracer_ShouldSampleEvent(EventTracer, &Event);
+	switch (EventSamplingResult.decision)
 	{
-		return;
+	case Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE:
+	{
+		break;
+	}
+	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE_WITHOUT_DATA:
+	{
+		Trace_EventTracer_AddEvent(EventTracer, &Event);
+		break;
+	}
+	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE:
+	{
+		Trace_EventData* EventData = Trace_EventData_Create();
+		ConstructTraceEventData(EventData, SpatialTraceEvent);
+		Event.data = EventData;
+		Trace_EventTracer_AddEvent(EventTracer, &Event);
+		Trace_EventData_Destroy(EventData);
+		break;
+	}
+	default:
+	{
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision."));
+		break;
+	}
+	}
+}
+
+FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes /* = nullptr*/, int32 NumCauses /* = 0*/)
+{
+	if (!IsEnabled())
+	{
+		return FSpatialGDKSpanId(false);
 	}
 
-	if (SamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_SAMPLE_WITHOUT_DATA)
+	if (Causes == nullptr && NumCauses > 0)
 	{
-		Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
-		return;
+		return FSpatialGDKSpanId(false);
 	}
 
-	if (SamplingResult.decision != Trace_SamplingDecision::TRACE_SHOULD_SAMPLE)
+	auto MessageSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Message);
+	auto TypeSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Type.ToString());
+
+	Trace_Event Event;
+	Event.span_id = nullptr;
+	Event.message = MessageSrc.Get();
+	Event.type = TypeSrc.Get();
+	Event.unix_timestamp_millis = 0;
+	Event.data = nullptr;
+
+	Trace_SamplingResult SpanSamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event);
+	if (SpanSamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
 	{
-		return;
+		return FSpatialGDKSpanId(false);
 	}
 
-	Trace_EventData* EventData = Trace_EventData_Create();
+	FSpatialGDKSpanId TraceSpanId(true);
+	Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, &Event, TraceSpanId.GetData());
+	Event.span_id = TraceSpanId.GetData();
 
+	Trace_SamplingResult EventSamplingResult = Trace_EventTracer_ShouldSampleEvent(EventTracer, &Event);
+	switch (EventSamplingResult.decision)
+	{
+	case Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE:
+	{
+		return FSpatialGDKSpanId(false);
+	}
+	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE_WITHOUT_DATA:
+	{
+		Trace_EventTracer_AddEvent(EventTracer, &Event);
+		return TraceSpanId;
+	}
+	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE:
+	{
+		Trace_EventData* EventData = Trace_EventData_Create();
+		ConstructTraceEventData(EventData, SpatialTraceEvent);
+		Event.data = EventData;
+		Trace_EventTracer_AddEvent(EventTracer, &Event);
+		Trace_EventData_Destroy(EventData);
+		return TraceSpanId;
+	}
+	default:
+	{
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision."));
+		return FSpatialGDKSpanId(false);
+	}
+	}
+}
+
+void SpatialEventTracer::ConstructTraceEventData(Trace_EventData* EventData, const FSpatialTraceEvent& SpatialTraceEvent)
+{
 	for (const auto& Pair : SpatialTraceEvent.Data)
 	{
 		auto KeySrc = StringCast<ANSICHAR>(*Pair.Key);
@@ -198,10 +268,6 @@ void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent,
 		const char* TmpBufferPtr = TmpBuffer;
 		Trace_EventData_AddStringFields(EventData, 1, &FrameCountStr, &TmpBufferPtr);
 	}
-
-	TraceEvent.data = EventData;
-	Trace_EventTracer_AddEvent(EventTracer, &TraceEvent);
-	Trace_EventData_Destroy(EventData);
 }
 
 bool SpatialEventTracer::IsEnabled() const
@@ -269,7 +335,7 @@ void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) c
 
 void SpatialEventTracer::AddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId)
 {
-	if (SpanId.IsValid())
+	if (!SpanId.IsValid())
 	{
 		return;
 	}
@@ -284,7 +350,7 @@ void SpatialEventTracer::RemoveComponent(Worker_EntityId EntityId, Worker_Compon
 
 void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId)
 {
-	if (SpanId.IsValid())
+	if (!SpanId.IsValid())
 	{
 		return;
 	}
@@ -292,13 +358,13 @@ void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_Compon
 	FSpatialGDKSpanId& StoredSpanId = EntityComponentSpanIds.FindChecked({ EntityId, ComponentId });
 
 	FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(SpanId, StoredSpanId);
-	TOptional<FSpatialGDKSpanId> NewSpanId = CreateSpan(SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
+	FSpatialGDKSpanId NewSpanId = CreateSpan(SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
 	TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(EntityId, ComponentId), NewSpanId);
 
-	StoredSpanId = NewSpanId.GetValue();
+	StoredSpanId = NewSpanId;
 }
 
-TOptional<FSpatialGDKSpanId> SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
+FSpatialGDKSpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
 {
 	if (!IsEnabled())
 	{
@@ -306,9 +372,9 @@ TOptional<FSpatialGDKSpanId> SpatialEventTracer::GetSpanId(const EntityComponent
 	}
 
 	const FSpatialGDKSpanId* SpanId = EntityComponentSpanIds.Find(Id);
-	if (!ensure(SpanId != nullptr))
+	if (SpanId == nullptr)
 	{
-		return {};
+		return FSpatialGDKSpanId(false);
 	}
 
 	return *SpanId;
@@ -316,20 +382,29 @@ TOptional<FSpatialGDKSpanId> SpatialEventTracer::GetSpanId(const EntityComponent
 
 void SpatialEventTracer::AddToStack(const FSpatialGDKSpanId& SpanId)
 {
+	if (!SpanId.IsValid())
+	{
+		return;
+	}
+
 	SpanIdStack.Add(SpanId);
 }
 
-TOptional<FSpatialGDKSpanId> SpatialEventTracer::PopFromStack()
+FSpatialGDKSpanId SpatialEventTracer::PopFromStack()
 {
-	return SpanIdStack.Pop();
+	if (SpanIdStack.Num() != 0)
+	{
+		return SpanIdStack.Pop();
+	}
+	return FSpatialGDKSpanId(false);
 }
 
-TOptional<FSpatialGDKSpanId> SpatialEventTracer::GetFromStack() const
+FSpatialGDKSpanId SpatialEventTracer::GetFromStack() const
 {
 	const int32 Size = SpanIdStack.Num();
 	if (Size == 0)
 	{
-		return {};
+		return FSpatialGDKSpanId(false);
 	}
 
 	return SpanIdStack[Size - 1];
@@ -347,6 +422,11 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 		return;
 	}
 
+	if (!SpanId.IsValid())
+	{
+		return;
+	}
+
 	FSpatialGDKSpanId* ExistingSpanId = ObjectSpanIdStacks.Find(Object);
 	if (ExistingSpanId == nullptr)
 	{
@@ -355,21 +435,21 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 	else
 	{
 		FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(SpanId, *ExistingSpanId);
-		*ExistingSpanId = CreateSpan(SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds()).GetValue();
+		*ExistingSpanId = CreateSpan(SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
 	}
 }
 
-TOptional<FSpatialGDKSpanId> SpatialEventTracer::PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object)
+FSpatialGDKSpanId SpatialEventTracer::PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object)
 {
 	if (!IsEnabled())
 	{
-		return {};
+		return FSpatialGDKSpanId(false);
 	}
 
 	FSpatialGDKSpanId* ExistingSpanId = ObjectSpanIdStacks.Find(Object);
 	if (ExistingSpanId == nullptr)
 	{
-		return {};
+		return FSpatialGDKSpanId(false);
 	}
 
 	FSpatialGDKSpanId TempSpanId = *ExistingSpanId;

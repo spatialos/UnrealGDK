@@ -27,9 +27,9 @@ public:
 	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
 	Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
-	TOptional<FSpatialGDKSpanId> CreateSpan() const;
-	TOptional<FSpatialGDKSpanId> CreateSpan(const Trace_SpanIdType* Causes, int32 NumCauses) const;
-	void TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const TOptional<FSpatialGDKSpanId>& SpanId);
+	FSpatialGDKSpanId CreateSpan(const Trace_SpanIdType* Causes = nullptr, int32 NumCauses = 0) const;
+	void TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const FSpatialGDKSpanId& SpanId);
+	FSpatialGDKSpanId TraceFilterableEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes = nullptr, int32 NumCauses = 0);
 
 	bool IsEnabled() const;
 
@@ -37,22 +37,20 @@ public:
 	void RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
 
-	TOptional<FSpatialGDKSpanId> GetSpanId(const EntityComponentId& Id) const;
-
-	static FString GDKSpanIdToString(const FSpatialGDKSpanId& SpanId);
+	FSpatialGDKSpanId GetSpanId(const EntityComponentId& Id) const;
 
 	static FUserSpanId GDKSpanIdToUserSpanId(const FSpatialGDKSpanId& SpanId);
-	static TOptional<FSpatialGDKSpanId> UserSpanIdToGDKSpanId(const FUserSpanId& UserSpanId);
+	static FSpatialGDKSpanId UserSpanIdToGDKSpanId(const FUserSpanId& UserSpanId);
 
 	const FString& GetFolderPath() const { return FolderPath; }
 
 	void AddToStack(const FSpatialGDKSpanId& SpanId);
-	TOptional<FSpatialGDKSpanId> PopFromStack();
-	TOptional<FSpatialGDKSpanId> GetFromStack() const;
+	FSpatialGDKSpanId PopFromStack();
+	FSpatialGDKSpanId GetFromStack() const;
 	bool IsStackEmpty() const;
 
 	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const FSpatialGDKSpanId& SpanId);
-	TOptional<FSpatialGDKSpanId> PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
+	FSpatialGDKSpanId PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
 
 private:
 	struct StreamDeleter
@@ -63,6 +61,7 @@ private:
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
 
 	void Enable(const FString& FileName);
+	static void ConstructTraceEventData(Trace_EventData* EventData, const FSpatialTraceEvent& SpatialTraceEvent);
 
 	FString FolderPath;
 
@@ -82,7 +81,7 @@ private:
 // traces.
 struct SpatialScopedActiveSpanId
 {
-	explicit SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const TOptional<FSpatialGDKSpanId>& InCurrentSpanId);
+	explicit SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const FSpatialGDKSpanId& InCurrentSpanId);
 	~SpatialScopedActiveSpanId();
 
 	SpatialScopedActiveSpanId(const SpatialScopedActiveSpanId&) = delete;
@@ -91,7 +90,7 @@ struct SpatialScopedActiveSpanId
 	SpatialScopedActiveSpanId& operator=(SpatialScopedActiveSpanId&&) = delete;
 
 private:
-	const TOptional<FSpatialGDKSpanId>& CurrentSpanId;
+	const FSpatialGDKSpanId& CurrentSpanId;
 	Trace_EventTracer* EventTracer;
 };
 

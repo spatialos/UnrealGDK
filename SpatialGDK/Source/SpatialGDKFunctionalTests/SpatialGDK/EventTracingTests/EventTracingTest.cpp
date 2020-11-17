@@ -156,7 +156,7 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 
 				if (FilterEventNames.Num() == 0 || FilterEventNames.Contains(EventName))
 				{
-					FString SpanIdString = SpatialEventTracer::GDKSpanIdToString(FSpatialGDKSpanId(Event.span_id));
+					FString SpanIdString = FSpatialGDKSpanId::ToString(Event.span_id);
 					FName& CachedEventName = TraceEvents.FindOrAdd(SpanIdString);
 					CachedEventName = EventName;
 				}
@@ -164,12 +164,13 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 			else
 			{
 				const Trace_Span& Span = Item->item.span;
-				FString SpanIdString = SpatialEventTracer::GDKSpanIdToString(FSpatialGDKSpanId(Span.id));
 
+				FString SpanIdString = FSpatialGDKSpanId::ToString(Span.id);
 				TArray<FString>& Causes = TraceSpans.FindOrAdd(SpanIdString);
 				for (uint64 i = 0; i < Span.cause_count; ++i)
 				{
-					Causes.Add(SpatialEventTracer::GDKSpanIdToString(FSpatialGDKSpanId(Span.causes + i)));
+					const int32 ByteOffset = i * TRACE_SPAN_ID_SIZE_BYTES * sizeof(Trace_SpanIdType);
+					Causes.Add(FSpatialGDKSpanId::ToString(Span.causes + ByteOffset));
 				}
 			}
 		}
