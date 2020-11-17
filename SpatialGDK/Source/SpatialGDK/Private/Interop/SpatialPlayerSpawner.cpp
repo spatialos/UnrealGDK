@@ -71,7 +71,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 			SpawnPlayerRequest SpawnRequest = ObtainPlayerParams();
 			Worker_CommandRequest SpawnPlayerCommandRequest = PlayerSpawner::CreatePlayerSpawnRequest(SpawnRequest);
 			NetDriver->Connection->SendCommandRequest(Op.results[0].entity_id, &SpawnPlayerCommandRequest,
-													  SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID, true);
+													  SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID, RETRY_UNTIL_COMPLETE, {});
 		}
 
 		if (!Reason.IsEmpty())
@@ -299,7 +299,7 @@ void USpatialPlayerSpawner::ForwardSpawnRequestToStrategizedServer(const Schema_
 		ServerWorker::CreateForwardPlayerSpawnRequest(Schema_CopyCommandRequest(ForwardSpawnPlayerSchemaRequest));
 
 	const Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(
-		ServerWorkerEntity, &ForwardSpawnPlayerRequest, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID, false);
+		ServerWorkerEntity, &ForwardSpawnPlayerRequest, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID);
 
 	OutgoingForwardPlayerSpawnRequests.Add(RequestId,
 										   TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>(ForwardSpawnPlayerSchemaRequest));
@@ -410,7 +410,7 @@ void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const Worker_EntityId
 	Worker_CommandRequest ForwardSpawnPlayerRequest =
 		ServerWorker::CreateForwardPlayerSpawnRequest(Schema_CopyCommandRequest(OldRequest.Get()));
 	const Worker_RequestId NewRequestId = NetDriver->Connection->SendCommandRequest(
-		EntityId, &ForwardSpawnPlayerRequest, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID, true);
+		EntityId, &ForwardSpawnPlayerRequest, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID, RETRY_UNTIL_COMPLETE, {});
 
 	// Move the request data from the old request ID map entry across to the new ID entry.
 	OutgoingForwardPlayerSpawnRequests.Add(NewRequestId, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>(OldRequest.Get()));

@@ -158,7 +158,7 @@ void UGlobalStateManager::SendShutdownMultiProcessRequest()
 	CommandRequest.schema_type = Schema_CreateCommandRequest();
 
 	NetDriver->Connection->SendCommandRequest(GlobalStateManagerEntityId, &CommandRequest,
-											  SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID, true);
+											  SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID, RETRY_UNTIL_COMPLETE, {});
 }
 
 void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()

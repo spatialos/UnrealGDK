@@ -10,6 +10,8 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "SpatialView/CommandRetryHandler.h"
+
 SpatialOSWorkerConnectionSpy::SpatialOSWorkerConnectionSpy()
 	: NextRequestId(0)
 	, LastEntityQuery(nullptr)
@@ -31,15 +33,33 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendReserveEntityIdsRequest(uint3
 	return NextRequestId++;
 }
 
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendReserveEntityIdsRequest(uint32_t NumOfEntities, SpatialGDK::FRetryData RetryData)
+{
+	return SendReserveEntityIdsRequest(NumOfEntities);
+}
+
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FWorkerComponentData> Components,
 																	   const Worker_EntityId* EntityId, const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;
 }
 
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FWorkerComponentData> Components,
+                                                                       const Worker_EntityId* EntityId,
+                                                                       SpatialGDK::FRetryData RetryData, const FSpatialGDKSpanId& SpanId)
+{
+	return SendCreateEntityRequest(Components, EntityId, SpanId);
+}
+
+
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId, const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;
+}
+
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId, SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId)
+{
+	return SendDeleteEntityRequest(EntityId, SpanId);
 }
 
 void SpatialOSWorkerConnectionSpy::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
@@ -63,6 +83,12 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityI
 	return NextRequestId++;
 }
 
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
+                                                                  uint32_t CommandId, SpatialGDK::FRetryData RetryData, const FSpatialGDKSpanId& SpanId)
+{
+	return SendCommandRequest(EntityId, Request, CommandId, SpanId);
+}
+
 void SpatialOSWorkerConnectionSpy::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
 													   const FSpatialGDKSpanId& SpanId)
 {
@@ -78,6 +104,11 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendEntityQueryRequest(const Work
 {
 	LastEntityQuery = EntityQuery;
 	return NextRequestId++;
+}
+
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery, SpatialGDK::FRetryData RetryDAta)
+{
+	return SendEntityQueryRequest(EntityQuery);
 }
 
 void SpatialOSWorkerConnectionSpy::SendMetrics(SpatialGDK::SpatialMetrics Metrics) {}

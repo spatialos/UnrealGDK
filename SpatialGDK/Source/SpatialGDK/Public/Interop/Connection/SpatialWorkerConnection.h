@@ -32,9 +32,12 @@ public:
 	virtual const TArray<Worker_Op>& GetWorkerMessages() override;
 
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) override;
+	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities, SpatialGDK::FRetryData RetryData) override;
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
 													 const FSpatialGDKSpanId& SpanId = {}) override;
+	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, SpatialGDK::FRetryData RetryData, const FSpatialGDKSpanId& SpanId = {}) override;
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, const FSpatialGDKSpanId& SpanId = {}) override;
+	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, SpatialGDK::FRetryData RetryData, const FSpatialGDKSpanId& SpanId = {}) override;
 	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
 								  const FSpatialGDKSpanId& SpanId = {}) override;
 	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
@@ -43,11 +46,14 @@ public:
 									 const FSpatialGDKSpanId& SpanId = {}) override;
 	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
 												const FSpatialGDKSpanId& SpanId = {}) override;
+	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
+                                            SpatialGDK::FRetryData RetryData, const FSpatialGDKSpanId& SpanId) override;
 	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
 									 const FSpatialGDKSpanId& SpanId = {}) override;
 	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const FSpatialGDKSpanId& SpanId = {}) override;
 	virtual void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) override;
 	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
+	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery, SpatialGDK::FRetryData RetryData) override;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) override;
 
 	void Advance(float DeltaTimeS);
