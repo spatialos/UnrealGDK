@@ -478,16 +478,18 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			if (Changes.RepChanged.Num() > 0) // TODO: Integrate this into ComponentFactory?
 			{
 				FChangelistIterator ChangelistIterator(Changes.RepChanged, 0);
-				FRepHandleIterator HandleIterator(static_cast<UStruct*>(Changes.RepLayout.GetOwner()), ChangelistIterator, Changes.RepLayout.Cmds,
-					Changes.RepLayout.BaseHandleToCmdIndex, 0, 1, 0, Changes.RepLayout.Cmds.Num() - 1);
+				FRepHandleIterator HandleIterator(static_cast<UStruct*>(Changes.RepLayout.GetOwner()), ChangelistIterator,
+												  Changes.RepLayout.Cmds, Changes.RepLayout.BaseHandleToCmdIndex, 0, 1, 0,
+												  Changes.RepLayout.Cmds.Num() - 1);
 				while (HandleIterator.NextHandle())
 				{
 					const FRepLayoutCmd& Cmd = Changes.RepLayout.Cmds[HandleIterator.CmdIndex];
 					const FRepParentCmd& Parent = Changes.RepLayout.Parents[Cmd.ParentIndex];
 
-					
 					TOptional<Trace_SpanId> LinearTraceSpan = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
-					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePropertyLinearTraceEvent(EventTraceUniqueId::Generate(EntityId, Cmd.Property->GetFName())), LinearTraceSpan.GetValue());
+					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePropertyLinearTraceEvent(
+												EventTraceUniqueId::Generate(EntityId, Cmd.Property->GetFName())),
+											LinearTraceSpan.GetValue());
 					Spans.Push(LinearTraceSpan.GetValue());
 
 					if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
@@ -501,7 +503,8 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			}
 
 			ComponentSpanId = EventTracer->CreateSpan(&Spans[0], Spans.Num());
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id), ComponentSpanId);
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id),
+									ComponentSpanId);
 		}
 
 		Connection->SendComponentUpdate(EntityId, &Update, ComponentSpanId);
