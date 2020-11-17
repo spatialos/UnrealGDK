@@ -199,7 +199,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 	return false;
 }
 
-bool ValidateGeneratedLaunchConfig(FSpatialLaunchConfigDescription& LaunchConfigDesc, const FWorkerTypeLaunchSection& InWorker)
+bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& LaunchConfigDesc, const FWorkerTypeLaunchSection& InWorker)
 {
 	const USpatialGDKSettings* SpatialGDKRuntimeSettings = GetDefault<USpatialGDKSettings>();
 
