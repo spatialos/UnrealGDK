@@ -229,12 +229,12 @@ void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_En
 	}
 	else
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Verbose,
 			   TEXT("Didn't find all %d required partitions, only found %d, currently have:"), VirtualWorkersToAssign.Num(),
 			   Partitions.Num());
 		for (const PartitionInfo& Partition : Partitions)
 		{
-			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT(" - virtual worker %d -> partition entity %lld"),
+			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Verbose, TEXT(" - virtual worker %d -> partition entity %lld"),
 				   Partition.VirtualWorker, Partition.PartitionEntityId);
 		}
 	}
