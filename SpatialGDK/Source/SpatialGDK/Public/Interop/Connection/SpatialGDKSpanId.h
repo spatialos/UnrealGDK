@@ -24,10 +24,8 @@ struct SPATIALGDK_API FSpatialGDKSpanId
 	const Trace_SpanIdType* GetConstData() const;
 
 private:
-
 	bool bIsValid;
 	Trace_SpanIdType Data[TRACE_SPAN_ID_SIZE_BYTES];
-
 };
 
 class FMultiGDKSpanIdAllocator

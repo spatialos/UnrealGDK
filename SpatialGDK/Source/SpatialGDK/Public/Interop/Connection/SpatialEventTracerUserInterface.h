@@ -30,7 +30,6 @@ class SPATIALGDK_API USpatialEventTracerUserInterface : public UBlueprintFunctio
 	GENERATED_BODY()
 
 public:
-
 	/**
 	 * EXPERIMENTAL
 	 * Will trace an event using the input data and associate it with the input SpanId
@@ -45,7 +44,8 @@ public:
 	 * (This API is subject to change)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static FUserSpanId TraceEventWithCauses(UObject* WorldContextObject, const FSpatialTraceEvent& SpatialTraceEvent, const TArray<FUserSpanId>& Causes);
+	static FUserSpanId TraceEventWithCauses(UObject* WorldContextObject, const FSpatialTraceEvent& SpatialTraceEvent,
+											const TArray<FUserSpanId>& Causes);
 
 	/**
 	 * EXPERIMENTAL

@@ -32,8 +32,7 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendReserveEntityIdsRequest(uint3
 }
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FWorkerComponentData> Components,
-																	   const Worker_EntityId* EntityId,
-																	   const FSpatialGDKSpanId& SpanId)
+																	   const Worker_EntityId* EntityId, const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;
 }
@@ -69,8 +68,7 @@ void SpatialOSWorkerConnectionSpy::SendCommandResponse(Worker_RequestId RequestI
 {
 }
 
-void SpatialOSWorkerConnectionSpy::SendCommandFailure(Worker_RequestId RequestId, const FString& Message,
-													  const FSpatialGDKSpanId& SpanId)
+void SpatialOSWorkerConnectionSpy::SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const FSpatialGDKSpanId& SpanId)
 {
 }
 
