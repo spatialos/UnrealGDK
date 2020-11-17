@@ -110,6 +110,7 @@ private:
 	static bool IsLocalDeploymentIPEditable();
 	static bool AreCloudDeploymentPropertiesEditable();
 
+	void OpenInspectorURL();
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
@@ -190,4 +191,6 @@ private:
 
 	// Used to show worker boundaries in the editor
 	TWeakObjectPtr<ASpatialDebugger> SpatialDebugger;
+
+	TOptional<FMonitoredProcess> InspectorProcess = {};
 };

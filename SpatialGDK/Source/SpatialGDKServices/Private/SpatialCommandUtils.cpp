@@ -434,6 +434,21 @@ bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
 	return bSuccess;
 }
 
+void SpatialCommandUtils::TryKillProcessWithName(const FString& ProcessName)
+{
+	FPlatformProcess::FProcEnumerator ProcessIt;
+	do
+	{
+		if (ProcessIt.GetCurrent().GetName().Equals(ProcessName))
+		{
+			UE_LOG(LogSpatialCommandUtils, Log, TEXT("Killing process: %s with process ID : %d"), *ProcessName,
+				   ProcessIt.GetCurrent().GetPID());
+			auto Handle = FPlatformProcess::OpenProcess(ProcessIt.GetCurrent().GetPID());
+			FPlatformProcess::TerminateProc(Handle);
+		}
+	} while (ProcessIt.MoveNext());
+}
+
 bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName)
 {
 #if PLATFORM_WINDOWS
@@ -499,7 +514,8 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 
 bool SpatialCommandUtils::FetchRuntimeBinary(const FString& RuntimeVersion)
 {
-	FString RuntimePath = SpatialGDKServicesConstants::GetRuntimeExecutablePath(RuntimeVersion);
+	FString RuntimePath =
+		FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, SpatialGDKServicesConstants::RuntimePackageName, RuntimeVersion);
 	return SpatialCommandUtils::FetchPackageBinary(RuntimeVersion, SpatialGDKServicesConstants::RuntimeExe,
 												   SpatialGDKServicesConstants::RuntimePackageName, RuntimePath, true);
 }

@@ -48,7 +48,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, ExposedRuntimeIP(TEXT(""))
 	, bAutoStartLocalDeployment(true)
 	, bSpatialDebuggerEditorEnabled(false)
-	, AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::OnExitEditor)
+	, AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::OnEndPIE)
 	, bStopPIEOnTestingCompleted(true)
 	, CookAndGeneratePlatform("")
 	, CookAndGenerateAdditionalArguments("-cookall -unversioned")

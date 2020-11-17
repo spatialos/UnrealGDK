@@ -41,16 +41,22 @@ const FString InspectorPackageName = TEXT("inspector");
 const FString RuntimeExe = FPaths::SetExtension(RuntimePackageName, Extension);
 const FString InspectorExe = FPaths::SetExtension(InspectorPackageName, Extension);
 
-static inline const FString GetRuntimeExecutablePath(FString RuntimeVersion)
+static inline const FString GetRuntimeExecutablePath(const FString& RuntimeVersion)
 {
-	return FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, TEXT("runtime"), RuntimeVersion,
+	return FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, RuntimePackageName, RuntimeVersion,
 						   SpatialGDKServicesConstants::RuntimeExe);
+}
+
+static inline const FString GetInspectorExecutablePath(const FString& InspectorVersion)
+{
+	return FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, InspectorPackageName, InspectorVersion,
+						   SpatialGDKServicesConstants::InspectorExe);
 }
 
 const FString SpatialOSRuntimePinnedStandardVersion = TEXT("0.5.1");
 
-const FString InspectorURL = TEXT("http://localhost:31000/inspector");
-const FString InspectorV2URL = TEXT("http://localhost:31000/inspector-v2");
+const FString InspectorIPPort = TEXT("localhost:33333");
+const FString InspectorV2URL = FString::Printf(TEXT("http://%s/inspector-v2"), *InspectorIPPort);
 const FString InspectorPinnedVersion = TEXT("1.1.2");
 
 const FString PinnedStandardRuntimeTemplate = TEXT("n1standard4_std40_action1g1");

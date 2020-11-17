@@ -48,11 +48,11 @@ void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
 	StartUpWorkerConfigDirectoryWatcher();
 }
 
-void FLocalDeploymentManager::Init(FString RuntimeIPToExpose)
+void FLocalDeploymentManager::Init()
 {
 	// Kill any existing runtime processes.
 	// We cannot attach to old runtime processes as they may be 'zombie' and not killable (even if they are not blocking ports).
-	KillExistingRuntime();
+	SpatialCommandUtils::TryKillProcessWithName(SpatialGDKServicesConstants::RuntimeExe);
 }
 
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
@@ -173,20 +173,6 @@ bool FLocalDeploymentManager::KillProcessBlockingPort(int32 Port)
 	}
 
 	return bSuccess;
-}
-
-void FLocalDeploymentManager::KillExistingRuntime()
-{
-	FPlatformProcess::FProcEnumerator ProcessIt;
-	do
-	{
-		if (ProcessIt.GetCurrent().GetName().Equals(SpatialGDKServicesConstants::RuntimeExe))
-		{
-			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Killing runtime process: %d"), ProcessIt.GetCurrent().GetPID());
-			auto Handle = FPlatformProcess::OpenProcess(ProcessIt.GetCurrent().GetPID());
-			FPlatformProcess::TerminateProc(Handle);
-		}
-	} while (ProcessIt.MoveNext());
 }
 
 bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()

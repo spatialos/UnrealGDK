@@ -22,7 +22,7 @@ public:
 
 	void SPATIALGDKSERVICES_API PreInit(bool bChinaEnabled);
 
-	void SPATIALGDKSERVICES_API Init(FString RuntimeIPToExpose);
+	void SPATIALGDKSERVICES_API Init();
 
 	bool CheckIfPortIsBound(int32 Port);
 	bool KillProcessBlockingPort(int32 Port);
