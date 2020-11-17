@@ -141,14 +141,19 @@ bool UOwnershipLockingPolicy::IsLockedHierarchyRoot(const AActor* Actor) const
 
 bool UOwnershipLockingPolicy::AcquireLockFromDelegate(AActor* ActorToLock, const FString& DelegateLockIdentifier)
 {
-	const ActorLockToken LockToken = AcquireLock(ActorToLock, DelegateLockIdentifier);
-	if (LockToken == SpatialConstants::INVALID_ACTOR_LOCK_TOKEN)
+	if (DelegateLockingIdentifierToActorLockToken.Contains(DelegateLockIdentifier))
 	{
-		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("AcquireLock called from engine delegate returned an invalid token"));
+		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("AcquireLockFromDelegate: A lock with identifier \"%s\" already exists."), *DelegateLockIdentifier);
 		return false;
 	}
 
-	check(!DelegateLockingIdentifierToActorLockToken.Contains(DelegateLockIdentifier));
+	const ActorLockToken LockToken = AcquireLock(ActorToLock, DelegateLockIdentifier);
+	if (LockToken == SpatialConstants::INVALID_ACTOR_LOCK_TOKEN)
+	{
+		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("AcquireLock called from engine delegate returned an invalid token. Lock identifier: %s"), *DelegateLockIdentifier);
+		return false;
+	}
+
 	DelegateLockingIdentifierToActorLockToken.Add(DelegateLockIdentifier, LockToken);
 	return true;
 }
@@ -157,7 +162,7 @@ bool UOwnershipLockingPolicy::ReleaseLockFromDelegate(AActor* ActorToRelease, co
 {
 	if (!DelegateLockingIdentifierToActorLockToken.Contains(DelegateLockIdentifier))
 	{
-		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("Executed ReleaseLockDelegate for unidentified delegate lock identifier. Token: %s."),
+		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("ReleaseLockFromDelegate: Lock identifier \"%s\" has no lock associated with it."),
 			   *DelegateLockIdentifier);
 		return false;
 	}
