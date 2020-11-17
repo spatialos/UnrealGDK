@@ -68,7 +68,7 @@ private:
 
 	// Defined Constraint AND Level Constraint
 	void AddPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
-	// The components clients need to see on entities they are have authority over that they don't already see through authority.
+	// The components clients need to see on entities they have authority over that they don't already see through authority.
 	void AddClientSelfInterest(Interest& OutInterest) const;
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest) const;
