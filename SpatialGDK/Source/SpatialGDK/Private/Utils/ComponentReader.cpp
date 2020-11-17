@@ -191,7 +191,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
 
 		Worker_EntityId EntityId = Channel.GetEntityId();
-		TOptional<FSpatialGDKSpanId> CauseSpanId;
+		FSpatialGDKSpanId CauseSpanId;
 		if (bEventTracerEnabled)
 		{
 			CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
@@ -326,10 +326,10 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					}
 				}
 
-				TOptional<FSpatialGDKSpanId> SpanId;
-				if (bEventTracerEnabled && CauseSpanId.IsSet())
+				FSpatialGDKSpanId SpanId;
+				if (bEventTracerEnabled)
 				{
-					SpanId = EventTracer->CreateSpan(CauseSpanId.GetValue().Data, 1);
+					SpanId = EventTracer->CreateSpan(CauseSpanId.GetConstData(), 1);
 					EventTracer->TraceEvent(
 						FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(&Object, EntityId, ComponentId, Cmd.Property->GetName()),
 						SpanId);
@@ -341,9 +341,9 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					bool bIsIdentical =
 						Cmd.Property->Identical(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
 
-					if (SpanId.IsSet())
+					if (bEventTracerEnabled)
 					{
-						PropertySpanIds.Add(Parent.Property, SpanId.GetValue());
+						PropertySpanIds.Add(Parent.Property, SpanId);
 					}
 
 					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.

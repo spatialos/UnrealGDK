@@ -72,7 +72,7 @@ Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t 
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
-																   const TOptional<FSpatialGDKSpanId>& SpanId)
+																   const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
 	const TOptional<Worker_EntityId> Id = EntityId ? *EntityId : TOptional<Worker_EntityId>();
@@ -85,35 +85,35 @@ Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorke
 	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id, TOptional<uint32>(), SpanId);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<FSpatialGDKSpanId>& SpanId)
+Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
 	return Coordinator->SendDeleteEntityRequest(EntityId, TOptional<uint32>(), SpanId);
 }
 
 void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
-												const TOptional<FSpatialGDKSpanId>& SpanId)
+												const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendAddComponent(EntityId, ToComponentData(ComponentData), SpanId);
 }
 
 void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
-												   const TOptional<FSpatialGDKSpanId>& SpanId)
+												   const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendRemoveComponent(EntityId, ComponentId, SpanId);
 }
 
 void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
-												   const TOptional<FSpatialGDKSpanId>& SpanId)
+												   const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendComponentUpdate(EntityId, ToComponentUpdate(ComponentUpdate), SpanId);
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
-															  const TOptional<FSpatialGDKSpanId>& SpanId)
+															  const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
 	return Coordinator->SendEntityCommandRequest(EntityId,
@@ -123,7 +123,7 @@ Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId En
 }
 
 void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
-												   const TOptional<FSpatialGDKSpanId>& SpanId)
+												   const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendEntityCommandResponse(RequestId,
@@ -133,7 +133,7 @@ void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, W
 }
 
 void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message,
-												  const TOptional<FSpatialGDKSpanId>& SpanId)
+												  const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendEntityCommandFailure(RequestId, Message, SpanId);

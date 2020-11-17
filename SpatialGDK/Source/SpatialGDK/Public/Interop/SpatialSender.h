@@ -37,7 +37,7 @@ class SpatialEventTracer;
 struct FReliableRPCForRetry
 {
 	FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex,
-						 const TArray<uint8>& InPayload, int InRetryIndex, const TOptional<FSpatialGDKSpanId>& InSpanId);
+						 const TArray<uint8>& InPayload, int InRetryIndex, const FSpatialGDKSpanId& InSpanId);
 
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
@@ -47,7 +47,7 @@ struct FReliableRPCForRetry
 	int Attempts; // For reliable RPCs
 
 	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
-	TOptional<FSpatialGDKSpanId> SpanId;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FPendingRPC

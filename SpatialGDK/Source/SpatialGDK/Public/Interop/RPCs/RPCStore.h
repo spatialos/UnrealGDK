@@ -63,13 +63,13 @@ struct PendingRPCPayload
 	}
 
 	RPCPayload Payload;
-	TOptional<FSpatialGDKSpanId> SpanId;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FRPCStore
 {
 	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair,
-													   const TOptional<FSpatialGDKSpanId>& SpanId = {});
+													   const FSpatialGDKSpanId& SpanId = {});
 	Schema_ComponentData* GetOrCreateComponentData(EntityComponentId EntityComponentIdPair);
 
 	TMap<EntityRPCType, uint64> LastSentRPCIds;

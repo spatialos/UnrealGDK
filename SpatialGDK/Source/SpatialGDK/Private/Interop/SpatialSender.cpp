@@ -52,7 +52,7 @@ DECLARE_CYCLE_STAT(TEXT("Sender SendRPC"), STAT_SpatialSenderSendRPC, STATGROUP_
 
 FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId,
 										   Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex,
-										   const TOptional<FSpatialGDKSpanId>& InSpanId)
+										   const FSpatialGDKSpanId& InSpanId)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, ComponentId(InComponentId)
@@ -97,9 +97,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	ComponentDatas.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(ComponentDatas)).CreateComponentPresenceData());
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
-
-	TOptional<FSpatialGDKSpanId> SpanId = EventTracer->CreateSpan();
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCreateEntity(Channel->Actor, Channel->GetEntityId()), SpanId);
+	FSpatialGDKSpanId SpanId = EventTracer->TraceFilterableEvent(FSpatialTraceEventBuilder::CreateSendCreateEntity(Channel->Actor, EntityId));
 
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpanId);
 
@@ -459,7 +457,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	TArray<FWorkerComponentUpdate> ComponentUpdates =
 		UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
 
-	TOptional<FSpatialGDKSpanId> CauseSpanId = EventTracer->PopLatentPropertyUpdateSpanId(Object);
+	FSpatialGDKSpanId CauseSpanId = EventTracer->PopLatentPropertyUpdateSpanId(Object);
 
 	for (int i = 0; i < ComponentUpdates.Num(); i++)
 	{
@@ -480,10 +478,10 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			continue;
 		}
 
-		TOptional<FSpatialGDKSpanId> SpanId;
+		FSpatialGDKSpanId SpanId;
 		if (EventTracer->IsEnabled())
 		{
-			SpanId = CauseSpanId.IsSet() ? EventTracer->CreateSpan(CauseSpanId.GetValue().Data, 1) : EventTracer->CreateSpan();
+			SpanId = EventTracer->CreateSpan(CauseSpanId.GetConstData(), 1);
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id), SpanId);
 		}
 
@@ -620,8 +618,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 
-	TOptional<FSpatialGDKSpanId> SpanId = EventTracer->CreateSpan();
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor), SpanId);
+	FSpatialGDKSpanId SpanId = EventTracer->TraceFilterableEvent(FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
 	Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 
 	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
@@ -712,11 +709,10 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
 	Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 
-	TOptional<FSpatialGDKSpanId> SpanId;
+	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->CreateSpan();
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(TargetObject, Function), SpanId);
+		SpanId = EventTracer->TraceFilterableEvent(FSpatialTraceEventBuilder::CreateSendRPC(TargetObject, Function));
 	}
 
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
@@ -888,11 +884,10 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 		return;
 	}
 
-	TOptional<FSpatialGDKSpanId> NewSpanId;
+	FSpatialGDKSpanId NewSpanId;
 	if (EventTracer != nullptr)
 	{
-		const FSpatialGDKSpanId& CauseSpanId = RetryRPC->SpanId.IsSet() ? RetryRPC->SpanId.GetValue() : FSpatialGDKSpanId();
-		NewSpanId = EventTracer->CreateSpan(CauseSpanId.Data, 1);
+		NewSpanId = EventTracer->CreateSpan(RetryRPC->SpanId.GetConstData(), 1);
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateRetryRPC(), NewSpanId);
 	}
 
@@ -1036,7 +1031,7 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 
 void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId)
 {
-	TOptional<FSpatialGDKSpanId> SpanId = EventTracer->CreateSpan(CauseSpanId.Data, 1);
+	FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(CauseSpanId.GetConstData(), 1);
 	EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCommandResponse(RequestId, true), SpanId);
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
@@ -1050,7 +1045,7 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 	Response.command_index = CommandIndex;
 	Response.schema_type = Schema_CreateCommandResponse();
 
-	TOptional<FSpatialGDKSpanId> SpanId = EventTracer->CreateSpan(CauseSpanId.Data, 1);
+	FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(CauseSpanId.GetConstData(), 1);
 	EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCommandResponse(RequestId, true), SpanId);
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
@@ -1058,7 +1053,7 @@ void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Sc
 
 void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const FSpatialGDKSpanId& CauseSpanId)
 {
-	TOptional<FSpatialGDKSpanId> SpanId = EventTracer->CreateSpan(CauseSpanId.Data, 1);
+	FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(CauseSpanId.GetConstData(), 1);
 	EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCommandResponse(RequestId, false), SpanId);
 
 	Connection->SendCommandFailure(RequestId, Message, SpanId);
@@ -1105,9 +1100,7 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"),
 			   *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
 
-		TOptional<FSpatialGDKSpanId> SpanId = EventTracer->CreateSpan();
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRetireEntity(Actor, EntityId), SpanId);
-
+		FSpatialGDKSpanId SpanId = EventTracer->TraceFilterableEvent(FSpatialTraceEventBuilder::CreateSendRetireEntity(Actor, EntityId));
 		Connection->SendDeleteEntityRequest(EntityId);
 	}
 }

@@ -30,7 +30,7 @@ public:
 	{
 	}
 
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentData ComponentAdded, const TOptional<FSpatialGDKSpanId>& SpanId)
+	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentData ComponentAdded, const FSpatialGDKSpanId& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(ComponentAdded.GetComponentId())
 		, SpanId(SpanId)
@@ -40,7 +40,7 @@ public:
 	}
 
 	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentUpdate ComponentUpdated,
-									  const TOptional<FSpatialGDKSpanId>& SpanId)
+									  const FSpatialGDKSpanId& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(ComponentUpdated.GetComponentId())
 		, SpanId(SpanId)
@@ -50,7 +50,7 @@ public:
 	}
 
 	explicit OutgoingComponentMessage(Worker_EntityId EntityId, Worker_ComponentId RemovedComponentId,
-									  const TOptional<FSpatialGDKSpanId>& SpanId)
+									  const FSpatialGDKSpanId& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(RemovedComponentId)
 		, SpanId(SpanId)
@@ -142,7 +142,7 @@ public:
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
 
-	TOptional<FSpatialGDKSpanId> SpanId;
+	FSpatialGDKSpanId SpanId;
 
 private:
 	void DeleteSchemaObjects()
