@@ -124,11 +124,15 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 	{
 		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FWorldLaunchSection, LegacyFlags))
 		{
-			FWorldLaunchSection::TrimTMapKeys(LaunchConfigDesc.World.LegacyFlags);
+			USpatialGDKEditorSettings::TrimTMapKeys(LaunchConfigDesc.World.LegacyFlags);
 		}
 		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FWorldLaunchSection, LegacyJavaParams))
 		{
-			FWorldLaunchSection::TrimTMapKeys(LaunchConfigDesc.World.LegacyJavaParams);
+			USpatialGDKEditorSettings::TrimTMapKeys(LaunchConfigDesc.World.LegacyJavaParams);
+		}
+		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FWorkerTypeLaunchSection, Flags))
+		{
+			USpatialGDKEditorSettings::TrimTMapKeys(LaunchConfigDesc.ServerWorkerConfig.Flags);
 		}
 	}
 }
@@ -516,6 +520,14 @@ FString USpatialGDKEditorSettings::GetCookAndGenerateSchemaTargetPlatform() cons
 	return FPlatformProcess::GetBinariesSubdirectory();
 }
 
+void USpatialGDKEditorSettings::TrimTMapKeys(TMap<FString, FString>& Map)
+{
+	for (auto& Flag : Map)
+	{
+		Flag.Key.TrimStartAndEndInline();
+	}
+}
+
 const FString& FSpatialLaunchConfigDescription::GetTemplate() const
 {
 	if (bUseDefaultTemplateForRuntimeVariant)
@@ -548,14 +560,6 @@ const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVari
 		{
 			return SpatialGDKServicesConstants::PinnedStandardRuntimeTemplate;
 		}
-	}
-}
-
-void FWorldLaunchSection::TrimTMapKeys(TMap<FString, FString>& Map)
-{
-	for (auto& Flag : Map)
-	{
-		Flag.Key.TrimStartAndEndInline();
 	}
 }
 
