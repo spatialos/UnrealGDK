@@ -629,8 +629,8 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 
 	if (EventTracer != nullptr)
 	{
-		FSpatialGDKSpanId SpanId =
-			EventTracer->TraceFilterableEvent(FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
+		FSpatialGDKSpanId SpanId = EventTracer->TraceFilterableEvent(
+			FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
 		Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 	}
 
@@ -1121,7 +1121,8 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 
 		if (EventTracer != nullptr)
 		{
-			FSpatialGDKSpanId SpanId = EventTracer->TraceFilterableEvent(FSpatialTraceEventBuilder::CreateSendRetireEntity(Actor, EntityId));
+			FSpatialGDKSpanId SpanId =
+				EventTracer->TraceFilterableEvent(FSpatialTraceEventBuilder::CreateSendRetireEntity(Actor, EntityId));
 		}
 
 		Connection->SendDeleteEntityRequest(EntityId);
