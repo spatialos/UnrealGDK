@@ -542,11 +542,11 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 	if (bWaitingToSpawn && ClientCanSendPlayerSpawnRequests())
 	{
 		uint32 ServerHash = GlobalStateManager->GetSchemaHash();
-		if (ClassInfoManager->SchemaDatabase->SchemaDescriptorHash != ServerHash) // Are we running with the same schema hash as the server?
+		if (ClassInfoManager->SchemaDatabase->SchemaBundleHash != ServerHash) // Are we running with the same schema hash as the server?
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error,
 				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
-				   ClassInfoManager->SchemaDatabase->SchemaDescriptorHash, ServerHash);
+				   ClassInfoManager->SchemaDatabase->SchemaBundleHash, ServerHash);
 
 			if (USpatialGameInstance* GameInstance = GetGameInstance())
 			{

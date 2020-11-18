@@ -120,5 +120,5 @@ public:
 	uint32 NextAvailableComponentId;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
-	uint32 SchemaDescriptorHash;
+	uint32 SchemaBundleHash;
 };

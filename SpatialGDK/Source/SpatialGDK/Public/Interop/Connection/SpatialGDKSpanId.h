@@ -5,7 +5,8 @@
 #include "CoreMinimal.h"
 #include "SpatialCommonTypes.h"
 
-#include <WorkerSDK/improbable/c_trace.h>
+#include "WorkerSDK/improbable/c_trace.h"
+#include "WorkerSDK/improbable/c_worker.h"
 
 struct SPATIALGDK_API FSpatialGDKSpanId
 {
@@ -16,7 +17,7 @@ struct SPATIALGDK_API FSpatialGDKSpanId
 	FString ToString() const;
 	static FString ToString(const Trace_SpanIdType* TraceSpanId);
 
-	bool IsNull() const { return Trace_SpanId_IsNull(Data); }
+	bool IsNull() const { return Trace_SpanId_IsNull(Data) == 0; }
 	bool IsValid() const { return bIsValid; }
 
 	void WriteData(const Trace_SpanIdType* TraceSpanId);

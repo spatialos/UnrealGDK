@@ -240,7 +240,7 @@ void UGlobalStateManager::SetDeploymentState()
 	// Send the component update that we can now accept players.
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting deployment URL to '%s'"), *CurrentWorld->URL.Map);
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting schema hash to '%u'"),
-		   NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
+		   NetDriver->ClassInfoManager->SchemaDatabase->SchemaBundleHash);
 
 	FWorkerComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
@@ -252,7 +252,7 @@ void UGlobalStateManager::SetDeploymentState()
 
 	// Set the schema hash for connecting workers to check against
 	Schema_AddUint32(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH,
-					 NetDriver->ClassInfoManager->SchemaDatabase->SchemaDescriptorHash);
+					 NetDriver->ClassInfoManager->SchemaDatabase->SchemaBundleHash);
 
 	// Component updates are short circuited so we set the updated state here and then send the component update.
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
