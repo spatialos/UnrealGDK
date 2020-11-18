@@ -23,10 +23,6 @@
       "attributes": [
         "{{WorkerTypeName}}"
       ]
-    },
-    "component_delivery": {
-      "default": "RELIABLE_ORDERED",
-      "checkout_all_initially": true
     }
   },
   "managed": {
