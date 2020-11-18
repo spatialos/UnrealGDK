@@ -13,7 +13,7 @@ FReceivedOpEventHandler::FReceivedOpEventHandler(TSharedPtr<SpatialEventTracer> 
 
 void FReceivedOpEventHandler::ProcessOpLists(const OpList& Ops)
 {
-	if (EventTracer == nullptr || !EventTracer->IsEnabled())
+	if (EventTracer == nullptr)
 	{
 		return;
 	}

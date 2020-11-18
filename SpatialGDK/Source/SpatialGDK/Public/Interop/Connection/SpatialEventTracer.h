@@ -32,8 +32,6 @@ public:
 	FSpatialGDKSpanId TraceFilterableEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes = nullptr,
 										   int32 NumCauses = 0);
 
-	bool IsEnabled() const;
-
 	void AddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
 	void RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
@@ -61,7 +59,6 @@ private:
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
 
-	void Enable(const FString& FileName);
 	static void ConstructTraceEventData(Trace_EventData* EventData, const FSpatialTraceEvent& SpatialTraceEvent);
 
 	FString FolderPath;
@@ -73,7 +70,6 @@ private:
 	TMap<EntityComponentId, FSpatialGDKSpanId> EntityComponentSpanIds;
 	TMap<TWeakObjectPtr<UObject>, FSpatialGDKSpanId> ObjectSpanIdStacks;
 
-	bool bEnabled = false;
 	uint64 BytesWrittenToStream = 0;
 	uint64 MaxFileSize = 0;
 };

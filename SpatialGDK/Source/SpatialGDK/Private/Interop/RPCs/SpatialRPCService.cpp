@@ -184,16 +184,13 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		UpdateToSend.Update.component_id = It.Key.ComponentId;
 		UpdateToSend.Update.schema_type = It.Value.Update;
 
-		if (EventTracer != nullptr)
+		if (EventTracer != nullptr && It.Value.SpanIds.Num() > 0)
 		{
-			if (It.Value.SpanIds.Num() > 0)
-			{
-				FMultiGDKSpanIdAllocator Allocator(It.Value.SpanIds);
-				FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(Allocator.GetBuffer(), Allocator.GetNumSpanIds());
-				EventTracer->TraceEvent(
-					FSpatialTraceEventBuilder::CreateMergeSendRPCs(UpdateToSend.EntityId, UpdateToSend.Update.component_id), SpanId);
-				UpdateToSend.SpanId = SpanId;
-			}
+			FMultiGDKSpanIdAllocator Allocator(It.Value.SpanIds);
+			FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(Allocator.GetBuffer(), Allocator.GetNumSpanIds());
+			EventTracer->TraceEvent(
+				FSpatialTraceEventBuilder::CreateMergeSendRPCs(UpdateToSend.EntityId, UpdateToSend.Update.component_id), SpanId);
+			UpdateToSend.SpanId = SpanId;
 		}
 
 #if TRACE_LIB_ACTIVE
@@ -454,7 +451,7 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 		else
 		{
 			FSpatialGDKSpanId CauseSpanId;
-			bool bUseEventTracer = EventTracer->IsEnabled() && RPCType != ERPCType::CrossServer;
+			bool bUseEventTracer = EventTracer != nullptr && RPCType != ERPCType::CrossServer;
 			if (bUseEventTracer)
 			{
 				Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);

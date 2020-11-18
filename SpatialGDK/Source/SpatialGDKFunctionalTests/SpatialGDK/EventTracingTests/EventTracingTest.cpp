@@ -91,6 +91,10 @@ void AEventTracingTest::GatherData()
 	USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
 	USpatialConnectionManager* ConnectionManager = GameInstance->GetSpatialConnectionManager();
 	SpatialEventTracer* EventTracer = ConnectionManager->GetWorkerConnection()->GetEventTracer();
+	if (EventTracer == nullptr)
+	{
+		return;
+	}
 
 	FString EventsFolderPath = EventTracer->GetFolderPath();
 

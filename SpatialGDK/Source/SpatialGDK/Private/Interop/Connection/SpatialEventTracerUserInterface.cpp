@@ -56,7 +56,7 @@ void USpatialEventTracerUserInterface::TraceRPC(UObject* WorldContextObject, FEv
 												const FUserSpanId& UserSpanId)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
-	if (EventTracer == nullptr || !EventTracer->IsEnabled())
+	if (EventTracer == nullptr)
 	{
 		Delegate.Execute();
 		return;
@@ -77,7 +77,7 @@ void USpatialEventTracerUserInterface::TraceRPC(UObject* WorldContextObject, FEv
 bool USpatialEventTracerUserInterface::GetActiveSpanId(UObject* WorldContextObject, FUserSpanId& OutUserSpanId)
 {
 	const SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
-	if (EventTracer == nullptr || !EventTracer->IsEnabled())
+	if (EventTracer == nullptr)
 	{
 		return false;
 	}
@@ -95,7 +95,7 @@ bool USpatialEventTracerUserInterface::GetActiveSpanId(UObject* WorldContextObje
 void USpatialEventTracerUserInterface::TraceProperty(UObject* WorldContextObject, UObject* Object, const FUserSpanId& UserSpanId)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
-	if (EventTracer == nullptr || !EventTracer->IsEnabled())
+	if (EventTracer == nullptr)
 	{
 		return;
 	}

@@ -179,7 +179,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	bool bIsAuthServer = Channel.IsAuthoritativeServer();
 	bool bAutonomousProxy = Channel.IsClientAutonomousProxy();
 	bool bIsClient = NetDriver->GetNetMode() == NM_Client;
-	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
+	bool bEventTracerEnabled = EventTracer != nullptr;
 
 	FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient);
 
