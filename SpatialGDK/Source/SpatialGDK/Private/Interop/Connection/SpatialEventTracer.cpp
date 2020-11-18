@@ -41,8 +41,14 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 
 SpatialScopedActiveSpanId::SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const FSpatialGDKSpanId& InCurrentSpanId)
 	: CurrentSpanId(InCurrentSpanId)
-	, EventTracer(InEventTracer->GetWorkerEventTracer())
 {
+	if (InEventTracer == nullptr)
+	{
+		EventTracer = nullptr;
+		return;
+	}
+
+	EventTracer = InEventTracer->GetWorkerEventTracer();
 	if (CurrentSpanId.IsValid())
 	{
 		Trace_EventTracer_SetActiveSpanId(EventTracer, CurrentSpanId.GetConstData());
@@ -51,7 +57,7 @@ SpatialScopedActiveSpanId::SpatialScopedActiveSpanId(SpatialEventTracer* InEvent
 
 SpatialScopedActiveSpanId::~SpatialScopedActiveSpanId()
 {
-	if (CurrentSpanId.IsValid())
+	if (EventTracer != nullptr && CurrentSpanId.IsValid())
 	{
 		Trace_EventTracer_ClearActiveSpanId(EventTracer);
 	}
@@ -59,23 +65,61 @@ SpatialScopedActiveSpanId::~SpatialScopedActiveSpanId()
 
 SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 {
-	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	MaxFileSize = Settings->MaxEventTracingFileSizeBytes;
+
+	Trace_EventTracer_Parameters parameters = {};
+	parameters.user_data = this;
+	parameters.callback = &SpatialEventTracer::TraceCallback;
+	EventTracer = Trace_EventTracer_Create(&parameters);
+
+	Trace_SamplingParameters SamplingParameters = {};
+	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
+
+	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
+	for (const auto& Pair : Settings->EventSamplingModeOverrides)
 	{
-		if (Settings->bEventTracingEnabled)
-		{
-			MaxFileSize = Settings->MaxEventTracingFileSizeBytes;
-			Enable(WorkerId);
-		}
+		Trace_SpanSamplingProbability Element;
+
+		auto TypeSrc = StringCast<ANSICHAR>(*Pair.Key.ToString());
+		Element.event_type = TypeSrc.Get();
+		Element.probability = Pair.Value;
+
+		SpanSamplingProbabilities.Add(Element);
+	}
+
+	SamplingParameters.probabilistic_parameters.default_probability = Settings->SamplingProbability;
+	SamplingParameters.probabilistic_parameters.event_type_count = SpanSamplingProbabilities.Num();
+	SamplingParameters.probabilistic_parameters.event_type_sampling_probabilities = SpanSamplingProbabilities.GetData();
+
+	Trace_EventTracer_SetSampler(EventTracer, &SamplingParameters);
+
+	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
+
+	// Open a local file
+	FString EventTracePath = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing"));
+	FString AbsLogPath;
+	if (FParse::Value(FCommandLine::Get(), TEXT("eventLogPath="), AbsLogPath, false))
+	{
+		EventTracePath = FPaths::GetPath(AbsLogPath);
+	}
+
+	FolderPath = EventTracePath;
+	const FString FullFileName = FString::Printf(TEXT("EventTrace_%s_%s.trace"), *WorkerId, *FDateTime::Now().ToString());
+	const FString FilePath = FPaths::Combine(FolderPath, FullFileName);
+
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	if (PlatformFile.CreateDirectoryTree(*FolderPath))
+	{
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace to %s."), *FilePath);
+		Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
 	}
 }
 
 SpatialEventTracer::~SpatialEventTracer()
 {
-	if (IsEnabled())
-	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
-		Trace_EventTracer_Destroy(EventTracer);
-	}
+	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing disabled."));
+	Trace_EventTracer_Destroy(EventTracer);
 }
 
 FUserSpanId SpatialEventTracer::GDKSpanIdToUserSpanId(const FSpatialGDKSpanId& SpanId)
@@ -87,8 +131,7 @@ FUserSpanId SpatialEventTracer::GDKSpanIdToUserSpanId(const FSpatialGDKSpanId& S
 
 	FUserSpanId UserSpanId;
 	UserSpanId.Data.SetNum(TRACE_SPAN_ID_SIZE_BYTES);
-	const int32 Size = TRACE_SPAN_ID_SIZE_BYTES * sizeof(uint8);
-	FMemory::Memcpy(UserSpanId.Data.GetData(), SpanId.GetConstData(), Size);
+	FMemory::Memcpy(UserSpanId.Data.GetData(), SpanId.GetConstData(), TRACE_SPAN_ID_SIZE_BYTES);
 	return UserSpanId;
 }
 
@@ -100,31 +143,25 @@ FSpatialGDKSpanId SpatialEventTracer::UserSpanIdToGDKSpanId(const FUserSpanId& U
 	}
 
 	FSpatialGDKSpanId TraceSpanId(true);
-	const int32 Size = TRACE_SPAN_ID_SIZE_BYTES * sizeof(uint8);
-	FMemory::Memcpy(TraceSpanId.GetData(), UserSpanId.Data.GetData(), Size);
+	FMemory::Memcpy(TraceSpanId.GetData(), UserSpanId.Data.GetData(), TRACE_SPAN_ID_SIZE_BYTES);
 	return TraceSpanId;
 }
 
 FSpatialGDKSpanId SpatialEventTracer::CreateSpan(const Trace_SpanIdType* Causes /* = nullptr*/, int32 NumCauses /* = 0*/) const
 {
-	if (!IsEnabled())
-	{
-		return FSpatialGDKSpanId(false);
-	}
-
 	if (Causes == nullptr && NumCauses > 0)
 	{
+		check(false);
 		return FSpatialGDKSpanId(false);
 	}
-
-	FSpatialGDKSpanId TraceSpanId(true);
 
 	Trace_SamplingResult SamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, nullptr);
 	if (SamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
 	{
-		return TraceSpanId;
+		return FSpatialGDKSpanId(true);
 	}
 
+	FSpatialGDKSpanId TraceSpanId(true);
 	if (Causes != nullptr && NumCauses > 0)
 	{
 		Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, nullptr, TraceSpanId.GetData());
@@ -133,17 +170,11 @@ FSpatialGDKSpanId SpatialEventTracer::CreateSpan(const Trace_SpanIdType* Causes 
 	{
 		Trace_EventTracer_AddSpan(EventTracer, Trace_SpanId_Null(), 1, nullptr, TraceSpanId.GetData());
 	}
-
 	return TraceSpanId;
 }
 
 void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const FSpatialGDKSpanId& EventSpanId)
 {
-	if (!IsEnabled())
-	{
-		return;
-	}
-
 	if (!EventSpanId.IsValid())
 	{
 		return;
@@ -182,7 +213,7 @@ void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent,
 	}
 	default:
 	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision."));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."), static_cast<int>(EventSamplingResult.decision));
 		break;
 	}
 	}
@@ -191,11 +222,6 @@ void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent,
 FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEvent& SpatialTraceEvent,
 														   const Trace_SpanIdType* Causes /* = nullptr*/, int32 NumCauses /* = 0*/)
 {
-	if (!IsEnabled())
-	{
-		return FSpatialGDKSpanId(false);
-	}
-
 	if (Causes == nullptr && NumCauses > 0)
 	{
 		return FSpatialGDKSpanId(false);
@@ -211,14 +237,13 @@ FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEv
 	Event.unix_timestamp_millis = 0;
 	Event.data = nullptr;
 
-	FSpatialGDKSpanId TraceSpanId(true);
-
 	Trace_SamplingResult SpanSamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event);
 	if (SpanSamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
 	{
-		return TraceSpanId;
+		return FSpatialGDKSpanId(true);
 	}
 
+	FSpatialGDKSpanId TraceSpanId(true);
 	Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, &Event, TraceSpanId.GetData());
 	Event.span_id = TraceSpanId.GetData();
 
@@ -245,7 +270,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEv
 	}
 	default:
 	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision."));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."), static_cast<int>(EventSamplingResult.decision));
 		return FSpatialGDKSpanId(false);
 	}
 	}
@@ -269,64 +294,6 @@ void SpatialEventTracer::ConstructTraceEventData(Trace_EventData* EventData, con
 		FCStringAnsi::Sprintf(TmpBuffer, "%" PRIu64, GFrameCounter);
 		const char* TmpBufferPtr = TmpBuffer;
 		Trace_EventData_AddStringFields(EventData, 1, &FrameCountStr, &TmpBufferPtr);
-	}
-}
-
-bool SpatialEventTracer::IsEnabled() const
-{
-	return bEnabled;
-}
-
-void SpatialEventTracer::Enable(const FString& FileName)
-{
-	Trace_EventTracer_Parameters parameters = {};
-	parameters.user_data = this;
-	parameters.callback = &SpatialEventTracer::TraceCallback;
-	EventTracer = Trace_EventTracer_Create(&parameters);
-	bEnabled = true;
-
-	Trace_SamplingParameters SamplingParameters = {};
-	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
-
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-
-	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
-	for (const auto& Pair : Settings->EventSamplingModeOverrides)
-	{
-		Trace_SpanSamplingProbability Element;
-
-		auto TypeSrc = StringCast<ANSICHAR>(*Pair.Key.ToString());
-		Element.event_type = TypeSrc.Get();
-		Element.probability = Pair.Value;
-
-		SpanSamplingProbabilities.Add(Element);
-	}
-
-	SamplingParameters.probabilistic_parameters.default_probability = Settings->SamplingProbability;
-	SamplingParameters.probabilistic_parameters.event_type_count = SpanSamplingProbabilities.Num();
-	SamplingParameters.probabilistic_parameters.event_type_sampling_probabilities = SpanSamplingProbabilities.GetData();
-
-	Trace_EventTracer_SetSampler(EventTracer, &SamplingParameters);
-
-	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
-
-	// Open a local file
-	FString EventTracePath = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing"));
-	FString AbsLogPath;
-	if (FParse::Value(FCommandLine::Get(), TEXT("eventLogPath="), AbsLogPath, false))
-	{
-		EventTracePath = FPaths::GetPath(AbsLogPath);
-	}
-
-	FolderPath = EventTracePath;
-	const FString FullFileName = FString::Printf(TEXT("EventTrace_%s_%s.trace"), *FileName, *FDateTime::Now().ToString());
-	const FString FilePath = FPaths::Combine(FolderPath, FullFileName);
-
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if (PlatformFile.CreateDirectoryTree(*FolderPath))
-	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace to %s."), *FilePath);
-		Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
 	}
 }
 
@@ -368,15 +335,10 @@ void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_Compon
 
 FSpatialGDKSpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
 {
-	if (!IsEnabled())
-	{
-		return {};
-	}
-
 	const FSpatialGDKSpanId* SpanId = EntityComponentSpanIds.Find(Id);
 	if (SpanId == nullptr)
 	{
-		return FSpatialGDKSpanId(false);
+		return FSpatialGDKSpanId(true);
 	}
 
 	return *SpanId;
@@ -396,7 +358,7 @@ FSpatialGDKSpanId SpatialEventTracer::PopFromStack()
 {
 	if (SpanIdStack.Num() == 0)
 	{
-		return FSpatialGDKSpanId(false);
+		return FSpatialGDKSpanId(true);
 	}
 	return SpanIdStack.Pop();
 }
@@ -406,7 +368,7 @@ FSpatialGDKSpanId SpatialEventTracer::GetFromStack() const
 	const int32 Size = SpanIdStack.Num();
 	if (Size == 0)
 	{
-		return FSpatialGDKSpanId(false);
+		return FSpatialGDKSpanId(true);
 	}
 	return SpanIdStack[Size - 1];
 }
@@ -418,11 +380,6 @@ bool SpatialEventTracer::IsStackEmpty() const
 
 void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const FSpatialGDKSpanId& SpanId)
 {
-	if (!IsEnabled())
-	{
-		return;
-	}
-
 	if (!SpanId.IsValid())
 	{
 		return;
@@ -442,15 +399,10 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 
 FSpatialGDKSpanId SpatialEventTracer::PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object)
 {
-	if (!IsEnabled())
-	{
-		return FSpatialGDKSpanId(false);
-	}
-
 	FSpatialGDKSpanId* ExistingSpanId = ObjectSpanIdStacks.Find(Object);
 	if (ExistingSpanId == nullptr)
 	{
-		return FSpatialGDKSpanId(false);
+		return FSpatialGDKSpanId(true);
 	}
 
 	FSpatialGDKSpanId TempSpanId = *ExistingSpanId;
