@@ -212,7 +212,7 @@ LAYEREDLBSTRATEGY_TEST(GIVEN_strat_is_not_ready_WHEN_local_virtual_worker_id_is_
 {
 	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
 	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
-	Settings->bAutoStartLocalDeployment = true;
+	Settings->bAutoStartLocalDeployment = false;
 
 	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
