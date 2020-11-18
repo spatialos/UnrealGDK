@@ -89,8 +89,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	}
 
 	SamplingParameters.probabilistic_parameters.default_probability = Settings->SamplingProbability;
-	SamplingParameters.probabilistic_parameters.event_type_count = SpanSamplingProbabilities.Num();
-	SamplingParameters.probabilistic_parameters.event_type_sampling_probabilities = SpanSamplingProbabilities.GetData();
+	SamplingParameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
+	SamplingParameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
 
 	Trace_EventTracer_SetSampler(EventTracer, &SamplingParameters);
 
