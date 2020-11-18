@@ -470,7 +470,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 		}
 
 		TOptional<Trace_SpanId> SpanId;
-		if (EventTracer != nullptr && EventTracer->IsEnabled())
+		if (EventTracer != nullptr)
 		{
 			SpanId = CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id), SpanId);
@@ -707,7 +707,7 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 	Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 
 	TOptional<Trace_SpanId> SpanId;
-	if (EventTracer != nullptr && EventTracer->IsEnabled())
+	if (EventTracer != nullptr)
 	{
 		SpanId = EventTracer->CreateSpan();
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(TargetObject, Function), SpanId);

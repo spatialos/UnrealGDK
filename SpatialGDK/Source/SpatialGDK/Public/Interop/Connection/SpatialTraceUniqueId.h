@@ -4,8 +4,7 @@
 
 #include "CoreMinimal.h"
 
-#include <WorkerSDK/improbable/c_schema.h>
-#include <WorkerSDK/improbable/c_trace.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 class UFunction;
 
@@ -13,7 +12,7 @@ namespace SpatialGDK
 {
 struct EventTraceUniqueId
 {
-	uint32 Hash{ 0 };
+	uint32 Hash = 0;
 	EventTraceUniqueId(uint32 Hash)
 		: Hash(Hash)
 	{
@@ -23,6 +22,6 @@ struct EventTraceUniqueId
 
 	bool IsValid() const { return Hash != 0; }
 
-	static EventTraceUniqueId Generate(uint64 Entity, uint8 Type, uint64 Id);
+	static EventTraceUniqueId GenerateForRPC(Worker_EntityId Entity, uint8 Type, uint64 RPCId);
 };
 } // namespace SpatialGDK

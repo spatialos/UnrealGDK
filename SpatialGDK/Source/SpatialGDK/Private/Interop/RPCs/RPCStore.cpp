@@ -14,10 +14,10 @@ Schema_ComponentUpdate* FRPCStore::GetOrCreateComponentUpdate(const EntityCompon
 	return ComponentUpdatePtr->Update;
 }
 
-void FRPCStore::SetSpanIdForComponentUpdate(EntityComponentId EntityComponentIdPair, const Trace_SpanId* SpanId)
+void FRPCStore::AddSpanIdForComponentUpdate(EntityComponentId EntityComponentIdPair, const Trace_SpanId* SpanId)
 {
 	PendingUpdate* ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
-	if (ComponentUpdatePtr && SpanId != nullptr)
+	if (ComponentUpdatePtr != nullptr && SpanId != nullptr)
 	{
 		ComponentUpdatePtr->SpanIds.Add(*SpanId);
 	}

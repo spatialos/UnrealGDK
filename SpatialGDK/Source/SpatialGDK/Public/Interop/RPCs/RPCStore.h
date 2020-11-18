@@ -69,7 +69,7 @@ struct FRPCStore
 {
 	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair);
 	Schema_ComponentData* GetOrCreateComponentData(EntityComponentId EntityComponentIdPair);
-	void SetSpanIdForComponentUpdate(EntityComponentId EntityComponentIdPair, const Trace_SpanId* SpanId);
+	void AddSpanIdForComponentUpdate(EntityComponentId EntityComponentIdPair, const Trace_SpanId* SpanId);
 
 	TMap<EntityRPCType, uint64> LastSentRPCIds;
 	TMap<EntityComponentId, PendingUpdate> PendingComponentUpdatesToSend;
