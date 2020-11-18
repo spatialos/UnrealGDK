@@ -1674,9 +1674,8 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	if (EventTracer != nullptr)
 	{
 		FSpatialGDKSpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(Op.entity_id, Op.update.component_id));
-		FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(CauseSpanId.GetConstData(), 1);
 		EventTracer->TraceEvent(
-			FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, Op.entity_id, Op.update.component_id), SpanId);
+			FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, Op.entity_id, Op.update.component_id), CauseSpanId.GetConstData(), 1);
 	}
 
 	ESchemaComponentType Category = ClassInfoManager->GetCategoryByComponentId(Op.update.component_id);
@@ -1734,9 +1733,8 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 
 		if (EventTracer != nullptr)
 		{
-			FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(Op.span_id, 1);
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), RequestId),
-									SpanId);
+				Op.span_id, 1);
 		}
 
 		return;
@@ -1748,10 +1746,9 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 
 		if (EventTracer != nullptr)
 		{
-			FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(Op.span_id, 1);
 			EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId),
-				SpanId);
+				Op.span_id, 1);
 		}
 
 		return;
@@ -1763,9 +1760,8 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 
 		if (EventTracer != nullptr)
 		{
-			FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(Op.span_id, 1);
 			EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("CLEAR_RPCS_ON_ENTITY_CREATION"), RequestId), SpanId);
+				FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("CLEAR_RPCS_ON_ENTITY_CREATION"), RequestId), Op.span_id, 1);
 		}
 
 		return;
@@ -1778,9 +1774,8 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 
 		if (EventTracer != nullptr)
 		{
-			FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(Op.span_id, 1);
 			EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId), SpanId);
+				FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId), Op.span_id, 1);
 		}
 
 		return;
@@ -1844,10 +1839,9 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 	if (EventTracer != nullptr)
 	{
 		UObject* TraceTargetObject = TargetActor != TargetObject ? TargetObject : nullptr;
-		FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(Op.span_id, 1);
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest("RPC_COMMAND_REQUEST", TargetActor,
 																					   TraceTargetObject, Function, TraceId, RequestId),
-								SpanId);
+								Op.span_id, 1);
 	}
 }
 
@@ -1866,7 +1860,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		if (EventTracer != nullptr)
 		{
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TEXT("SPAWN_PLAYER_COMMAND"), RequestId),
-									FSpatialGDKSpanId(Op.span_id));
+									Op.span_id, 1);
 		}
 
 		return;
@@ -1877,10 +1871,9 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 
 		if (EventTracer != nullptr)
 		{
-			FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(Op.span_id, 1);
 			EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId),
-				SpanId);
+				Op.span_id, 1);
 		}
 
 		return;
@@ -1948,7 +1941,7 @@ void USpatialReceiver::ReceiveCommandResponse(const Worker_Op& Op)
 		{
 			// We received a response for some other command, ignore.
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TargetActor, RequestId, false),
-									FSpatialGDKSpanId(Op.span_id));
+									Op.span_id, 1);
 		}
 
 		return;
@@ -1962,7 +1955,7 @@ void USpatialReceiver::ReceiveCommandResponse(const Worker_Op& Op)
 	{
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TargetActor, TargetObject, ReliableRPC->Function,
 																						RequestId, WORKER_STATUS_CODE_SUCCESS),
-								FSpatialGDKSpanId(Op.span_id));
+								Op.span_id, 1);
 	}
 
 	if (StatusCode != WORKER_STATUS_CODE_SUCCESS)
@@ -2122,8 +2115,7 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 
 		if (EventTracer != nullptr)
 		{
-			FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(Op.span_id, 1);
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntitySuccess(Channel->Actor, EntityId), SpanId);
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntitySuccess(Channel->Actor, EntityId), Op.span_id, 1);
 		}
 	}
 	else if (Channel.IsStale())
@@ -2141,14 +2133,12 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 
 		if (EventTracer != nullptr)
 		{
-			FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(Op.span_id, 1);
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(Message), SpanId);
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(Message), Op.span_id, 1);
 		}
 	}
 	else if (EventTracer != nullptr)
 	{
-		FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(Op.span_id, 1);
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(TEXT("Create entity response unknown error")), SpanId);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(TEXT("Create entity response unknown error")), Op.span_id, 1);
 	}
 }
 
