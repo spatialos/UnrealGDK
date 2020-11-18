@@ -10,11 +10,12 @@ namespace SpatialGDK
 struct FCrossServerRPCParams
 {
 	FCrossServerRPCParams(const FUnrealObjectRef& InObjectRef, const Worker_RequestId_Key InRequestId, RPCPayload&& InPayload,
-						  const TOptional<Trace_SpanId>& InSpanId)
+						  const uint32 InTimeoutMillis, const TOptional<Trace_SpanId>& InSpanId)
 		: ObjectRef(InObjectRef)
 		, Payload(MoveTemp(InPayload))
 		, RequestId(InRequestId)
 		, Timestamp(FDateTime::Now())
+		, TimeoutMillis(InTimeoutMillis)
 		, SpanId(InSpanId)
 	{
 	}
@@ -31,6 +32,7 @@ struct FCrossServerRPCParams
 	RPCPayload Payload;
 	Worker_RequestId_Key RequestId;
 	FDateTime Timestamp;
+	uint32 TimeoutMillis;
 	const TOptional<Trace_SpanId> SpanId;
 };
 } // namespace SpatialGDK

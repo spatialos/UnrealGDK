@@ -13,8 +13,6 @@ namespace SpatialGDK
 const FString ExecutingCommand = TEXT("Executing Command");
 const FString QueueingCommand = TEXT("Queueing Command");
 const FString RPCInFlight = TEXT("RPC is already in flight.");
-const float ShortTimeAdvanced = 0.1f;
-const float LongTimeAdvanced = 1.f;
 const Worker_EntityId TestEntityId = 1;
 const Worker_RequestId SuccessRequestId = 1;
 const Worker_RequestId QueueingRequestId = 2;
@@ -49,6 +47,7 @@ public:
 		return { FUnrealObjectRef(),
 				 Op.op.command_request.request_id,
 				 { 0, 0, static_cast<uint32>(Op.op.command_request.request_id), {} },
+				 Op.op.command_request.timeout_millis,
 				 Op.span_id };
 	}
 
@@ -81,7 +80,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_resolved_and_no_queue_THEN_execute)
 	Builder.AddEntityCommandRequest(TestEntityId, SuccessRequestId, CreateCrossServerCommandRequest());
 	const TArray<Worker_Op> Ops = MoveTemp(Builder).CreateOpArray();
 
-	Handler.ProcessOps(ShortTimeAdvanced, Ops);
+	Handler.ProcessOps(Ops);
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 0);
 	return true;
@@ -95,11 +94,11 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_rpc_already_queued_THEN_discard)
 	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntityCommandRequest(TestEntityId, QueueingRequestId, CreateCrossServerCommandRequest());
-	Handler.ProcessOps(ShortTimeAdvanced, MoveTemp(Builder).CreateOpArray());
+	Handler.ProcessOps(MoveTemp(Builder).CreateOpArray());
 
 	Builder = EntityComponentOpListBuilder();
 	Builder.AddEntityCommandRequest(TestEntityId, QueueingRequestId, CreateCrossServerCommandRequest());
-	Handler.ProcessOps(ShortTimeAdvanced, MoveTemp(Builder).CreateOpArray());
+	Handler.ProcessOps(MoveTemp(Builder).CreateOpArray());
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
 	if (!QueuedRPCs.Contains(TestEntityId))
@@ -121,11 +120,11 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_resolved_and_queue_THEN_queue)
 	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntityCommandRequest(TestEntityId, QueueingRequestId, CreateCrossServerCommandRequest());
-	Handler.ProcessOps(ShortTimeAdvanced, MoveTemp(Builder).CreateOpArray());
+	Handler.ProcessOps(MoveTemp(Builder).CreateOpArray());
 
 	Builder = EntityComponentOpListBuilder();
 	Builder.AddEntityCommandRequest(TestEntityId, SuccessRequestId, CreateCrossServerCommandRequest());
-	Handler.ProcessOps(ShortTimeAdvanced, MoveTemp(Builder).CreateOpArray());
+	Handler.ProcessOps(MoveTemp(Builder).CreateOpArray());
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
 	if (!QueuedRPCs.Contains(TestEntityId))
@@ -146,7 +145,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_unresolved_THEN_queue)
 	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntityCommandRequest(TestEntityId, QueueingRequestId, CreateCrossServerCommandRequest());
-	Handler.ProcessOps(ShortTimeAdvanced, MoveTemp(Builder).CreateOpArray());
+	Handler.ProcessOps(MoveTemp(Builder).CreateOpArray());
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
 	if (!QueuedRPCs.Contains(TestEntityId))
@@ -169,7 +168,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_queued_rpc_WHEN_timeout_THEN_try_execute)
 	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntityCommandRequest(TestEntityId, QueueingRequestId, CreateCrossServerCommandRequest());
-	Handler.ProcessOps(ShortTimeAdvanced, MoveTemp(Builder).CreateOpArray());
+	Handler.ProcessOps(MoveTemp(Builder).CreateOpArray());
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
 	if (!QueuedRPCs.Contains(TestEntityId))
@@ -182,7 +181,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_queued_rpc_WHEN_timeout_THEN_try_execute)
 	}
 
 	FPlatformProcess::Sleep(1.f);
-	Handler.ProcessOps(LongTimeAdvanced, {});
+	Handler.ProcessOps({});
 
 	const auto& EmptyQueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", EmptyQueuedRPCs.Num(), 0);

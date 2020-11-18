@@ -15,7 +15,7 @@ CrossServerRPCHandler::CrossServerRPCHandler(ViewCoordinator& InCoordinator, TUn
 {
 }
 
-void CrossServerRPCHandler::ProcessOps(const float TimeAdvancedS, const TArray<Worker_Op>& WorkerMessages)
+void CrossServerRPCHandler::ProcessOps(const TArray<Worker_Op>& WorkerMessages)
 {
 	for (auto& Op : WorkerMessages)
 	{
@@ -27,36 +27,36 @@ void CrossServerRPCHandler::ProcessOps(const float TimeAdvancedS, const TArray<W
 		}
 	}
 
-	ProcessPendingCommandOps();
+	ProcessPendingCrossServerRPCs();
+
+	while (RPCsToDelete.Num() > 0 && RPCsToDelete.HeapTop().Key < FDateTime::Now())
+	{
+		RPCsToDelete.HeapPopDiscard();
+	}
 }
 
-void CrossServerRPCHandler::ProcessPendingCommandOps()
+void CrossServerRPCHandler::ProcessPendingCrossServerRPCs()
 {
-	TArray<Worker_EntityId> EmptyRPCQueues;
-	for (auto& CrossServerRPCs : QueuedCrossServerRPCs)
+	for (auto CrossServerRPCs = QueuedCrossServerRPCs.CreateIterator(); CrossServerRPCs; ++CrossServerRPCs)
 	{
 		int32 ProcessedRPCs = 0;
-		for (auto& Command : CrossServerRPCs.Value)
+		for (auto& Command : CrossServerRPCs.Value())
 		{
-			if (!TryExecuteCommandRequest(Command))
+			if (!TryExecuteCrossServerRPC(Command))
 			{
 				break;
 			}
 
 			RPCGuidsInFlight.Remove(Command.Payload.UniqueId);
+			RPCsToDelete.HeapPush(TTuple<FDateTime, uint32>(FDateTime::Now() + Command.TimeoutMillis, Command.Payload.UniqueId));
 			++ProcessedRPCs;
 		}
 
-		CrossServerRPCs.Value.RemoveAt(0, ProcessedRPCs);
-		if (CrossServerRPCs.Value.Num() == 0)
+		CrossServerRPCs.Value().RemoveAt(0, ProcessedRPCs);
+		if (CrossServerRPCs.Value().Num() == 0)
 		{
-			EmptyRPCQueues.Add(CrossServerRPCs.Key);
+			CrossServerRPCs.RemoveCurrent();
 		}
-	}
-
-	for (auto EntityId : EmptyRPCQueues)
-	{
-		QueuedCrossServerRPCs.Remove(EntityId);
 	}
 }
 
@@ -75,7 +75,9 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 		return;
 	}
 
-	if (RPCGuidsInFlight.Contains(Params.Payload.UniqueId))
+	if (RPCGuidsInFlight.Contains(Params.Payload.UniqueId) || RPCsToDelete.ContainsByPredicate([&](TTuple<FDateTime, uint32> Result) {
+			return Params.Payload.UniqueId == Result.Value;
+		}))
 	{
 		// This RPC is already in flight. No need to store it again.
 		UE_LOG(LogCrossServerRPCHandler, Warning, TEXT("RPC is already in flight."));
@@ -85,7 +87,7 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 	if (!QueuedCrossServerRPCs.Contains(CommandOp.entity_id))
 	{
 		// No Command Requests of this type queued so far. Let's try to process it:
-		if (TryExecuteCommandRequest(Params))
+		if (TryExecuteCrossServerRPC(Params))
 		{
 			return;
 		}
@@ -101,7 +103,7 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 	QueuedCrossServerRPCs[CommandOp.entity_id].Add(MoveTemp(Params));
 }
 
-bool CrossServerRPCHandler::TryExecuteCommandRequest(const FCrossServerRPCParams& Params)
+bool CrossServerRPCHandler::TryExecuteCrossServerRPC(const FCrossServerRPCParams& Params) const
 {
 	if (RPCExecutor->ExecuteCommand(Params))
 	{
