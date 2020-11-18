@@ -69,7 +69,7 @@ public:
 	void HandleActorBasedOnLoadBalancer(AActor* ActorIterator) const;
 
 	Worker_EntityId GetLocalServerWorkerEntityId() const;
-	void ClaimSnapshotPartition();
+	void ClaimSnapshotPartition() const;
 
 	Worker_EntityId GlobalStateManagerEntityId;
 

@@ -160,8 +160,7 @@ public:
 		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			// If the entity already exists, make sure we have spatial authority before we replicate.
-			if (!bCreatingNewEntity
-				&& !NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID))
+			if (!bCreatingNewEntity && !NetDriver->HasServerAuthority(EntityId))
 			{
 				return false;
 			}
@@ -182,8 +181,7 @@ public:
 			return false;
 		}
 
-		return NetDriver->StaticComponentView->HasAuthority(
-			EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
+		return NetDriver->HasClientAuthority(EntityId);
 	}
 
 	inline void SetClientAuthority(const bool IsAuth) { bIsAuthClient = IsAuth; }
@@ -196,12 +194,11 @@ public:
 	{
 		if (NetDriver->IsServer())
 		{
-			SetServerAuthority(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID));
+			SetServerAuthority(NetDriver->HasServerAuthority(EntityId));
 		}
 		else
 		{
-			SetClientAuthority(NetDriver->StaticComponentView->HasAuthority(
-				EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())));
+			SetClientAuthority(NetDriver->HasClientAuthority(EntityId));
 		}
 	}
 
@@ -257,7 +254,7 @@ public:
 
 	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-								  const TMap<GDK_PROPERTY(Property) *, Trace_SpanId>& PropertySpanIds);
+								  const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
 
 	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 

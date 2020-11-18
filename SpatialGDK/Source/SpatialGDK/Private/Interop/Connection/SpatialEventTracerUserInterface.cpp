@@ -11,26 +11,28 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracerUserInterface);
 
-FUserSpanId USpatialEventTracerUserInterface::CreateSpanId(UObject* WorldContextObject)
+FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const FSpatialTraceEvent& SpatialTraceEvent)
 {
-	const SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
-	if (EventTracer == nullptr || !EventTracer->IsEnabled())
+	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
+	if (EventTracer == nullptr)
 	{
 		return {};
 	}
 
-	return SpatialGDK::SpatialEventTracer::SpanIdToUserSpanId(EventTracer->CreateSpan().GetValue());
+	FSpatialGDKSpanId SpanId = EventTracer->TraceFilterableEvent(SpatialTraceEvent, nullptr, 0);
+	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 }
 
-FUserSpanId USpatialEventTracerUserInterface::CreateSpanIdWithCauses(UObject* WorldContextObject, const TArray<FUserSpanId>& Causes)
+FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* WorldContextObject, const FSpatialTraceEvent& SpatialTraceEvent,
+																   const TArray<FUserSpanId>& Causes)
 {
-	const SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
-	if (EventTracer == nullptr || !EventTracer->IsEnabled())
+	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
+	if (EventTracer == nullptr)
 	{
 		return {};
 	}
 
-	TArray<Trace_SpanId> SpanIds;
+	TArray<FSpatialGDKSpanId> CauseSpanIds;
 	for (const FUserSpanId& UserSpanIdCause : Causes)
 	{
 		if (!UserSpanIdCause.IsValid())
@@ -40,44 +42,21 @@ FUserSpanId USpatialEventTracerUserInterface::CreateSpanIdWithCauses(UObject* Wo
 			continue;
 		}
 
-		TOptional<Trace_SpanId> CauseSpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToSpanId(UserSpanIdCause);
-		if (CauseSpanId.IsSet())
-		{
-			SpanIds.Add(CauseSpanId.GetValue());
-		}
+		FSpatialGDKSpanId CauseSpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToGDKSpanId(UserSpanIdCause);
+		CauseSpanIds.Add(CauseSpanId);
 	}
 
-	return SpatialGDK::SpatialEventTracer::SpanIdToUserSpanId(EventTracer->CreateSpan(SpanIds.GetData(), SpanIds.Num()).GetValue());
-}
-
-void USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const FUserSpanId& UserSpanId,
-												  const FSpatialTraceEvent& SpatialTraceEvent)
-{
-	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
-	if (EventTracer == nullptr)
-	{
-		return;
-	}
-
-	if (!UserSpanId.IsValid())
-	{
-		return;
-	}
-
-	TOptional<Trace_SpanId> SpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToSpanId(UserSpanId);
-	if (!SpanId.IsSet())
-	{
-		return;
-	}
-
-	EventTracer->TraceEvent(SpatialTraceEvent, SpanId.GetValue());
+	FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(CauseSpanIds);
+	FSpatialGDKSpanId SpanId =
+		EventTracer->TraceFilterableEvent(SpatialTraceEvent, SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
+	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 }
 
 void USpatialEventTracerUserInterface::TraceRPC(UObject* WorldContextObject, FEventTracerRPCDelegate Delegate,
 												const FUserSpanId& UserSpanId)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
-	if (EventTracer == nullptr || !EventTracer->IsEnabled())
+	if (EventTracer == nullptr)
 	{
 		Delegate.Execute();
 		return;
@@ -89,14 +68,8 @@ void USpatialEventTracerUserInterface::TraceRPC(UObject* WorldContextObject, FEv
 		return;
 	}
 
-	TOptional<Trace_SpanId> SpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToSpanId(UserSpanId);
-	if (!SpanId.IsSet())
-	{
-		Delegate.Execute();
-		return;
-	}
-
-	EventTracer->AddToStack(SpanId.GetValue());
+	FSpatialGDKSpanId SpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToGDKSpanId(UserSpanId);
+	EventTracer->AddToStack(SpanId);
 	Delegate.Execute();
 	EventTracer->PopFromStack();
 }
@@ -104,7 +77,7 @@ void USpatialEventTracerUserInterface::TraceRPC(UObject* WorldContextObject, FEv
 bool USpatialEventTracerUserInterface::GetActiveSpanId(UObject* WorldContextObject, FUserSpanId& OutUserSpanId)
 {
 	const SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
-	if (EventTracer == nullptr || !EventTracer->IsEnabled())
+	if (EventTracer == nullptr)
 	{
 		return false;
 	}
@@ -114,20 +87,15 @@ bool USpatialEventTracerUserInterface::GetActiveSpanId(UObject* WorldContextObje
 		return false;
 	}
 
-	TOptional<Trace_SpanId> SpanId = EventTracer->GetFromStack();
-	if (!SpanId.IsSet())
-	{
-		return false;
-	}
-
-	OutUserSpanId = SpatialGDK::SpatialEventTracer::SpanIdToUserSpanId(SpanId.GetValue());
+	FSpatialGDKSpanId SpanId = EventTracer->GetFromStack();
+	OutUserSpanId = SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 	return true;
 }
 
 void USpatialEventTracerUserInterface::TraceProperty(UObject* WorldContextObject, UObject* Object, const FUserSpanId& UserSpanId)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
-	if (EventTracer == nullptr || !EventTracer->IsEnabled())
+	if (EventTracer == nullptr)
 	{
 		return;
 	}
@@ -138,13 +106,13 @@ void USpatialEventTracerUserInterface::TraceProperty(UObject* WorldContextObject
 		return;
 	}
 
-	TOptional<Trace_SpanId> SpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToSpanId(UserSpanId);
-	if (!SpanId.IsSet())
+	if (!UserSpanId.IsValid())
 	{
 		return;
 	}
 
-	EventTracer->AddLatentPropertyUpdateSpanId(Object, SpanId.GetValue());
+	FSpatialGDKSpanId SpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToGDKSpanId(UserSpanId);
+	EventTracer->AddLatentPropertyUpdateSpanId(Object, SpanId);
 }
 
 SpatialGDK::SpatialEventTracer* USpatialEventTracerUserInterface::GetEventTracer(UObject* WorldContextObject)
@@ -166,8 +134,8 @@ USpatialNetDriver* USpatialEventTracerUserInterface::GetSpatialNetDriver(UObject
 	if (World == nullptr)
 	{
 		UE_LOG(LogSpatialEventTracerUserInterface, Error,
-			   TEXT("USpatialEventTracerUserInterface::GetSpatialNetDriver - World is null, will use GWorld instead"));
-		World = GWorld;
+			   TEXT("USpatialEventTracerUserInterface::GetSpatialNetDriver - World is null."));
+		return nullptr;
 	}
 
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());

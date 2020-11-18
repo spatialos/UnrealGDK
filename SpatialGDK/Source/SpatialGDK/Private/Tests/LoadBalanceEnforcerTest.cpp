@@ -56,7 +56,8 @@ const TArray<Worker_ComponentId> ClientComponentIds = { SpatialConstants::HEARTB
 
 TUniquePtr<SpatialVirtualWorkerTranslator> CreateVirtualWorkerTranslator()
 {
-	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, ThisWorker);
+	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator =
+		MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, nullptr, ThisWorker);
 
 	Schema_Object* DataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
 
@@ -129,8 +130,8 @@ AuthorityDelegationMap GetAuthDelegationMapFromUpdate(const SpatialGDK::EntityCo
 	return AuthDelegation;
 }
 
-bool AclMapDelegatesComponents(const AuthorityDelegationMap& DelegationMap, const Worker_PartitionId DelegatedPartitionId,
-							   const TArray<Worker_ComponentId>& DelegatedComponents)
+bool AuthorityMapDelegatesComponents(const AuthorityDelegationMap& DelegationMap, const Worker_PartitionId DelegatedPartitionId,
+									 const TArray<Worker_ComponentId>& DelegatedComponents)
 {
 	for (Worker_ComponentId ComponentId : DelegatedComponents)
 	{
@@ -198,7 +199,7 @@ LOADBALANCEENFORCER_TEST(
 		bSuccess &= Updates[0].EntityId == EntityIdOne;
 		bSuccess &= Updates[0].Update.GetComponentId() == SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
 		AuthorityDelegationMap AclMap = GetAuthDelegationMapFromUpdate(Updates[0]);
-		bSuccess &= AclMapDelegatesComponents(AclMap, OtherWorkerId, NonAclLBComponents);
+		bSuccess &= AuthorityMapDelegatesComponents(AclMap, OtherWorkerId, NonAclLBComponents);
 	}
 	else
 	{
@@ -241,7 +242,7 @@ LOADBALANCEENFORCER_TEST(GIVEN_authority_intent_change_op_WHEN_we_inform_load_ba
 		bSuccess &= Updates[0].EntityId == EntityIdOne;
 		bSuccess &= Updates[0].Update.GetComponentId() == SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
 		AuthorityDelegationMap AclMap = GetAuthDelegationMapFromUpdate(Updates[0]);
-		bSuccess &= AclMapDelegatesComponents(AclMap, ThisWorkerId, NonAclLBComponents);
+		bSuccess &= AuthorityMapDelegatesComponents(AclMap, ThisWorkerId, NonAclLBComponents);
 	}
 	else
 	{
@@ -286,7 +287,7 @@ LOADBALANCEENFORCER_TEST(
 		bSuccess &= Updates[0].EntityId == EntityIdOne;
 		bSuccess &= Updates[0].Update.GetComponentId() == SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
 		AuthorityDelegationMap AclMap = GetAuthDelegationMapFromUpdate(Updates[0]);
-		bSuccess &= AclMapDelegatesComponents(AclMap, OtherClientWorkerId, ClientComponentIds);
+		bSuccess &= AuthorityMapDelegatesComponents(AclMap, OtherClientWorkerId, ClientComponentIds);
 	}
 	else
 	{

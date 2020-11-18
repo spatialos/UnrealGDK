@@ -180,7 +180,7 @@ void MulticastRPCService::OnEndpointAuthorityGained(const Worker_EntityId Entity
 
 		const RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::NetMulticast);
 		Schema_Object* SchemaObject =
-			Schema_GetComponentUpdateFields(RPCStore->GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }, nullptr));
+			Schema_GetComponentUpdateFields(RPCStore->GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }));
 		Schema_AddUint64(SchemaObject, Descriptor.LastSentRPCFieldId, Component.InitiallyPresentMulticastRPCsCount);
 	}
 	else

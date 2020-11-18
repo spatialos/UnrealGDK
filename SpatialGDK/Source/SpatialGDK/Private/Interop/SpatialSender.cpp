@@ -51,7 +51,7 @@ DECLARE_CYCLE_STAT(TEXT("Sender SendRPC"), STAT_SpatialSenderSendRPC, STATGROUP_
 
 FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId,
 										   Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex,
-										   const TOptional<Trace_SpanId>& InSpanId)
+										   const FSpatialGDKSpanId& InSpanId)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, ComponentId(InComponentId)
@@ -95,8 +95,11 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
-	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan();
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCreateEntity(Channel->Actor, Channel->GetEntityId()), SpanId);
+	FSpatialGDKSpanId SpanId;
+	if (EventTracer != nullptr)
+	{
+		SpanId = EventTracer->TraceFilterableEvent(FSpatialTraceEventBuilder::CreateSendCreateEntity(Channel->Actor, EntityId));
+	}
 
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpanId);
 
@@ -237,7 +240,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 			{
 				Sender->NetDriver->WorkerEntityId = Op.entity_id;
 
-				// We claim each server worker entity as a partition so server worker interest which is necessary for getting
+				// We claim each server worker entity as a partition for server worker interest. This is necessary for getting
 				// interest in the VirtualWorkerTranslator component.
 				Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerSystemEntityId(), Op.entity_id);
 
@@ -297,7 +300,7 @@ bool USpatialSender::ValidateOrExit_IsSupportedClass(const FString& PathName)
 void USpatialSender::SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const
 {
 	UE_LOG(LogSpatialSender, Log,
-		   TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId. %lld. "
+		   TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId: %lld. "
 				"PartitionId: %lld"),
 		   *Connection->GetWorkerId(), SystemWorkerEntityId, PartitionId);
 	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionId);
@@ -400,7 +403,11 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	TArray<FWorkerComponentUpdate> ComponentUpdates =
 		UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
 
-	TOptional<Trace_SpanId> CauseSpanId = EventTracer->PopLatentPropertyUpdateSpanId(Object);
+	FSpatialGDKSpanId CauseSpanId;
+	if (EventTracer != nullptr)
+	{
+		CauseSpanId = EventTracer->PopLatentPropertyUpdateSpanId(Object);
+	}
 
 	for (int i = 0; i < ComponentUpdates.Num(); i++)
 	{
@@ -421,10 +428,10 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			continue;
 		}
 
-		TOptional<Trace_SpanId> SpanId;
-		if (EventTracer->IsEnabled())
+		FSpatialGDKSpanId SpanId;
+		if (EventTracer != nullptr)
 		{
-			SpanId = CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
+			SpanId = EventTracer->CreateSpan(CauseSpanId.GetConstData(), 1);
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id), SpanId);
 		}
 
@@ -531,7 +538,7 @@ void USpatialSender::SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_Com
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
 {
 #if !UE_BUILD_SHIPPING
-	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID))
+	if (!NetDriver->HasServerAuthority(EntityId))
 	{
 		UE_LOG(LogSpatialSender, Verbose,
 			   TEXT("Trying to send Position component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
@@ -552,18 +559,21 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	check(AuthorityIntentComponent != nullptr);
 	checkf(AuthorityIntentComponent->VirtualWorkerId != NewAuthoritativeVirtualWorkerId,
 		   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
-		   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId)
+		   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
 
-		AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
+	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
 	UE_LOG(LogSpatialSender, Log,
 		   TEXT("(%s) Sending AuthorityIntent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
 		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
 
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 
-	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan();
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor), SpanId);
-	Connection->SendComponentUpdate(EntityId, &Update, SpanId);
+	if (EventTracer != nullptr)
+	{
+		FSpatialGDKSpanId SpanId = EventTracer->TraceFilterableEvent(
+			FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
+		Connection->SendComponentUpdate(EntityId, &Update, SpanId);
+	}
 
 	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
 	// This should always happen with USLB.
@@ -653,11 +663,10 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
 	Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Payload, ComponentId, RPCInfo.Index, EntityId);
 
-	TOptional<Trace_SpanId> SpanId;
+	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->CreateSpan();
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(TargetObject, Function), SpanId);
+		SpanId = EventTracer->TraceFilterableEvent(FSpatialTraceEventBuilder::CreateSendRPC(TargetObject, Function));
 	}
 
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
@@ -829,11 +838,10 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 		return;
 	}
 
-	TOptional<Trace_SpanId> NewSpanId;
+	FSpatialGDKSpanId NewSpanId;
 	if (EventTracer != nullptr)
 	{
-		Trace_SpanId CauseSpanId = RetryRPC->SpanId.IsSet() ? RetryRPC->SpanId.GetValue() : Trace_SpanId();
-		NewSpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
+		NewSpanId = EventTracer->CreateSpan(RetryRPC->SpanId.GetConstData(), 1);
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateRetryRPC(), NewSpanId);
 	}
 
@@ -975,32 +983,44 @@ FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 	return ComponentUpdate;
 }
 
-void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const Trace_SpanId CauseSpanId)
+void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId)
 {
-	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCommandResponse(RequestId, true), SpanId);
+	FSpatialGDKSpanId SpanId;
+	if (EventTracer != nullptr)
+	{
+		SpanId = EventTracer->CreateSpan(CauseSpanId.GetConstData(), 1);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCommandResponse(RequestId, true), SpanId);
+	}
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
 
 void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
-											  const Trace_SpanId CauseSpanId)
+											  const FSpatialGDKSpanId& CauseSpanId)
 {
 	Worker_CommandResponse Response = {};
 	Response.component_id = ComponentId;
 	Response.command_index = CommandIndex;
 	Response.schema_type = Schema_CreateCommandResponse();
 
-	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCommandResponse(RequestId, true), SpanId);
+	FSpatialGDKSpanId SpanId;
+	if (EventTracer != nullptr)
+	{
+		SpanId = EventTracer->CreateSpan(CauseSpanId.GetConstData(), 1);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCommandResponse(RequestId, true), SpanId);
+	}
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
 }
 
-void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const Trace_SpanId CauseSpanId)
+void USpatialSender::SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const FSpatialGDKSpanId& CauseSpanId)
 {
-	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId, 1);
-	EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCommandResponse(RequestId, false), SpanId);
+	FSpatialGDKSpanId SpanId;
+	if (EventTracer != nullptr)
+	{
+		SpanId = EventTracer->CreateSpan(CauseSpanId.GetConstData(), 1);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCommandResponse(RequestId, false), SpanId);
+	}
 
 	Connection->SendCommandFailure(RequestId, Message, SpanId);
 }
@@ -1046,8 +1066,11 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"),
 			   *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
 
-		TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan();
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRetireEntity(Actor, EntityId), SpanId);
+		if (EventTracer != nullptr)
+		{
+			FSpatialGDKSpanId SpanId =
+				EventTracer->TraceFilterableEvent(FSpatialTraceEventBuilder::CreateSendRetireEntity(Actor, EntityId));
+		}
 
 		Connection->SendDeleteEntityRequest(EntityId);
 	}

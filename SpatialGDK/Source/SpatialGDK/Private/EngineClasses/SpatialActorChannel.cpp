@@ -241,7 +241,7 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		return;
 	}
 
-	const bool bHasAuthority = NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID);
+	const bool bHasAuthority = NetDriver->HasServerAuthority(EntityId);
 	if (Actor != nullptr)
 	{
 		if (bHasAuthority)
@@ -1106,7 +1106,7 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 }
 
 void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
-													const TMap<GDK_PROPERTY(Property) *, Trace_SpanId>& PropertySpanIds)
+													const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
@@ -1116,7 +1116,7 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	SpatialGDK::SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
 
 	auto PreCallRepNotify = [EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
-		const Trace_SpanId* SpanId = PropertySpanIds.Find(Property);
+		const FSpatialGDKSpanId* SpanId = PropertySpanIds.Find(Property);
 		if (SpanId != nullptr)
 		{
 			EventTracer->AddToStack(*SpanId);
@@ -1124,14 +1124,14 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	};
 
 	auto PostCallRepNotify = [EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
-		const Trace_SpanId* SpanId = PropertySpanIds.Find(Property);
+		const FSpatialGDKSpanId* SpanId = PropertySpanIds.Find(Property);
 		if (SpanId != nullptr)
 		{
 			EventTracer->PopFromStack();
 		}
 	};
 
-	if (EventTracer != nullptr && EventTracer->IsEnabled() && PropertySpanIds.Num() > 0)
+	if (EventTracer != nullptr && PropertySpanIds.Num() > 0)
 	{
 		Replicator.RepLayout->PreRepNotify.BindLambda(PreCallRepNotify);
 		Replicator.RepLayout->PostRepNotify.BindLambda(PostCallRepNotify);
@@ -1265,8 +1265,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
 {
-	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID
-		&& NetDriver->StaticComponentView->HasAuthority(InEntityId, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID))
+	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(InEntityId))
 	{
 		Sender->SendPositionUpdate(InEntityId, NewPosition);
 	}
@@ -1329,14 +1328,14 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID));
 	SpatialGDK::NetOwningClientWorker* CurrentNetOwningClientData =
 		NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
-	const Worker_EntityId CurrentClientWorkerId = CurrentNetOwningClientData->ClientPartitionId.IsSet()
-													  ? CurrentNetOwningClientData->ClientPartitionId.GetValue()
-													  : SpatialConstants::INVALID_ENTITY_ID;
-	const Worker_EntityId NewClientConnectionWorkerId = SpatialGDK::GetConnectionOwningPartitionId(Actor);
-	if (CurrentClientWorkerId != NewClientConnectionWorkerId)
+	const Worker_PartitionId CurrentClientPartitionId = CurrentNetOwningClientData->ClientPartitionId.IsSet()
+															? CurrentNetOwningClientData->ClientPartitionId.GetValue()
+															: SpatialConstants::INVALID_ENTITY_ID;
+	const Worker_PartitionId NewClientConnectionPartitionId = SpatialGDK::GetConnectionOwningPartitionId(Actor);
+	if (CurrentClientPartitionId != NewClientConnectionPartitionId)
 	{
 		// Update the NetOwningClientWorker component.
-		CurrentNetOwningClientData->SetPartitionId(NewClientConnectionWorkerId);
+		CurrentNetOwningClientData->SetPartitionId(NewClientConnectionPartitionId);
 		FWorkerComponentUpdate Update = CurrentNetOwningClientData->CreateNetOwningClientWorkerUpdate();
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 

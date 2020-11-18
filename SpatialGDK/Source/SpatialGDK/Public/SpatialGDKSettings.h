@@ -388,12 +388,20 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
 	float ActorMigrationLogRate;
+
 	/*
 	 * -- EXPERIMENTAL --
 	 * This will enable event tracing for the Unreal client/worker.
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
 	bool bEventTracingEnabled;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing",
+			  meta = (EditCondition = "bEventTracingEnabled", ClampMin = 0.0f, ClampMax = 1.0f))
+	float SamplingProbability;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing", meta = (EditCondition = "bEventTracingEnabled"))
+	TMap<FName, double> EventSamplingModeOverrides;
 
 	/*
 	 * -- EXPERIMENTAL --

@@ -155,17 +155,10 @@ void ASpatialDebugger::BeginPlay()
 
 void ASpatialDebugger::OnAuthorityGained()
 {
-	if (NetDriver->LoadBalanceStrategy)
+	if (UAbstractLBStrategy* LoadBalanceStrategy = Cast<UAbstractLBStrategy>(NetDriver->LoadBalanceStrategy))
 	{
-		const ULayeredLBStrategy* LayeredLBStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
-		if (LayeredLBStrategy == nullptr)
-		{
-			UE_LOG(LogSpatialDebugger, Warning, TEXT("SpatialDebugger enabled but unable to get LayeredLBStrategy."));
-			return;
-		}
-
 		if (const UGridBasedLBStrategy* GridBasedLBStrategy =
-				Cast<UGridBasedLBStrategy>(LayeredLBStrategy->GetLBStrategyForVisualRendering()))
+				Cast<UGridBasedLBStrategy>(LoadBalanceStrategy->GetLBStrategyForVisualRendering()))
 		{
 			const UGridBasedLBStrategy::LBStrategyRegions LBStrategyRegions = GridBasedLBStrategy->GetLBStrategyRegions();
 			WorkerRegions.SetNum(LBStrategyRegions.Num());

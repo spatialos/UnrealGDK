@@ -199,7 +199,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 	return false;
 }
 
-bool ValidateGeneratedLaunchConfig(FSpatialLaunchConfigDescription& LaunchConfigDesc, const FWorkerTypeLaunchSection& InWorker)
+bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& LaunchConfigDesc, const FWorkerTypeLaunchSection& InWorker)
 {
 	const USpatialGDKSettings* SpatialGDKRuntimeSettings = GetDefault<USpatialGDKSettings>();
 
@@ -221,13 +221,6 @@ bool ValidateGeneratedLaunchConfig(FSpatialLaunchConfigDescription& LaunchConfig
 
 			return false;
 		}
-	}
-
-	const FString EnableUslbFlag = TEXT("enable_user_space_authority_assigner");
-	const FString* UslbSetting = LaunchConfigDesc.World.LegacyFlags.Find(EnableUslbFlag);
-	if (UslbSetting == nullptr || !UslbSetting->Equals(TEXT("true")))
-	{
-		LaunchConfigDesc.World.LegacyFlags.Add(EnableUslbFlag, TEXT("true"));
 	}
 
 	return true;

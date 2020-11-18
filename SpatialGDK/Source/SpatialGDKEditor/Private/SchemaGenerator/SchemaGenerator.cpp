@@ -191,7 +191,7 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.PrintNewLine();
 
 		// Handover (server to server) replicated properties.
-		FString ComponentName = (PropertyName + TEXT("Handover"));
+		FString ComponentName = PropertyName + TEXT("Handover");
 		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
