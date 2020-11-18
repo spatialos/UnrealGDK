@@ -114,7 +114,7 @@ void ClientServerRPCService::IncrementAckedRPCID(const Worker_EntityId EntityId,
 	++(*LastAckedRPCId);
 
 	const EntityComponentId EntityComponentPair = { EntityId, RPCRingBufferUtils::GetAckComponentId(Type) };
-	Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(RPCStore->GetOrCreateComponentUpdate(EntityComponentPair, {}));
+	Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(RPCStore->GetOrCreateComponentUpdate(EntityComponentPair));
 
 	RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, *LastAckedRPCId);
 }

@@ -16,16 +16,16 @@ struct SPATIALGDK_API FSpatialGDKSpanId
 	FString ToString() const;
 	static FString ToString(const Trace_SpanIdType* TraceSpanId);
 
-	bool IsNull() const { return Trace_SpanId_IsNull(Data); }
+	bool IsNull() const { return Trace_SpanId_IsNull(Id); }
 	bool IsValid() const { return bIsValid; }
 
-	void WriteData(const Trace_SpanIdType* TraceSpanId);
-	Trace_SpanIdType* GetData();
-	const Trace_SpanIdType* GetConstData() const;
+	void WriteId(const Trace_SpanIdType* TraceSpanId);
+	Trace_SpanIdType* GetId();
+	const Trace_SpanIdType* GetConstId() const;
 
 private:
 	bool bIsValid;
-	Trace_SpanIdType Data[TRACE_SPAN_ID_SIZE_BYTES];
+	Trace_SpanIdType Id[TRACE_SPAN_ID_SIZE_BYTES];
 };
 
 class FMultiGDKSpanIdAllocator

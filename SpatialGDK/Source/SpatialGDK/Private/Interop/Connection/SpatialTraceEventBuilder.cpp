@@ -166,9 +166,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateMergeComponentUpdate(const W
 
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(const UObject* Object)
 {
-	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_property_update")
-		.AddObject(TEXT("Object"), Object)
-		.GetEvent();
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_property_update").AddObject(TEXT("Object"), Object).GetEvent();
 }
 
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendCommandRequest(const FString& Command, const int64 RequestId)
