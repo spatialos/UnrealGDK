@@ -48,9 +48,9 @@ const TArray<Worker_ComponentId> PresentComponents = {
 	SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,	 SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
 	SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,		 SpatialConstants::HEARTBEAT_COMPONENT_ID
 };
-const TArray<Worker_ComponentId> NonAclLBComponents = { SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
-														SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
-														SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
+const TArray<Worker_ComponentId> NonAuthDelegationLBComponents = { SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
+																   SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
+																   SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
 const TArray<Worker_ComponentId> TestComponentIds = { TestComponentIdOne, TestComponentIdTwo };
 const TArray<Worker_ComponentId> ClientComponentIds = { SpatialConstants::HEARTBEAT_COMPONENT_ID,
 														SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID };
@@ -154,7 +154,7 @@ bool AuthorityMapDelegatesComponents(const AuthorityDelegationMap& DelegationMap
 
 } // anonymous namespace
 
-LOADBALANCEENFORCER_TEST(GIVEN_a_view_with_no_data_WHEN_advance_load_balance_enforcer_THEN_return_no_acl_assignment_requests)
+LOADBALANCEENFORCER_TEST(GIVEN_a_view_with_no_data_WHEN_advance_load_balance_enforcer_THEN_return_no_auth_delegation_assignment_requests)
 {
 	SpatialGDK::FDispatcher Dispatcher;
 	SpatialGDK::EntityView View;
@@ -169,15 +169,15 @@ LOADBALANCEENFORCER_TEST(GIVEN_a_view_with_no_data_WHEN_advance_load_balance_enf
 			bInvoked = true;
 		});
 
-	// The view has no entities in it. We expect the enforcer not to produce any ACL requests.
+	// The view has no entities in it. We expect the enforcer not to produce any authority delegation requests.
 	LoadBalanceEnforcer.Advance();
-	TestFalse("LoadBalanceEnforcer did not try to send an ACL update", bInvoked);
+	TestFalse("LoadBalanceEnforcer did not try to send an authority delegation update", bInvoked);
 
 	return true;
 }
 
 LOADBALANCEENFORCER_TEST(
-	GIVEN_load_balance_enforcer_with_valid_mapping_WHEN_asked_for_acl_assignments_THEN_return_correct_acl_assignment_requests)
+	GIVEN_load_balance_enforcer_with_valid_mapping_WHEN_asked_for_auth_delegation_assignments_THEN_return_correct_auth_delegation_assignment_requests)
 {
 	SpatialGDK::FDispatcher Dispatcher;
 	SpatialGDK::EntityView View;
@@ -202,20 +202,20 @@ LOADBALANCEENFORCER_TEST(
 	{
 		bSuccess &= Updates[0].EntityId == EntityIdOne;
 		bSuccess &= Updates[0].Update.GetComponentId() == SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
-		AuthorityDelegationMap AclMap = GetAuthDelegationMapFromUpdate(Updates[0]);
-		bSuccess &= AuthorityMapDelegatesComponents(AclMap, OtherWorkerId, NonAclLBComponents);
+		AuthorityDelegationMap AuthDelegationMap = GetAuthDelegationMapFromUpdate(Updates[0]);
+		bSuccess &= AuthorityMapDelegatesComponents(AuthDelegationMap, OtherWorkerId, NonAuthDelegationLBComponents);
 	}
 	else
 	{
 		bSuccess = false;
 	}
 
-	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
+	TestTrue("LoadBalanceEnforcer returned expected authority delegation assignment results", bSuccess);
 
 	return true;
 }
 
-LOADBALANCEENFORCER_TEST(GIVEN_authority_intent_change_op_WHEN_we_inform_load_balance_enforcer_THEN_send_acl_update)
+LOADBALANCEENFORCER_TEST(GIVEN_authority_intent_change_op_WHEN_we_inform_load_balance_enforcer_THEN_send_auth_delegation_update)
 {
 	SpatialGDK::FDispatcher Dispatcher;
 	SpatialGDK::EntityView View;
@@ -245,20 +245,21 @@ LOADBALANCEENFORCER_TEST(GIVEN_authority_intent_change_op_WHEN_we_inform_load_ba
 	{
 		bSuccess &= Updates[0].EntityId == EntityIdOne;
 		bSuccess &= Updates[0].Update.GetComponentId() == SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
-		AuthorityDelegationMap AclMap = GetAuthDelegationMapFromUpdate(Updates[0]);
-		bSuccess &= AuthorityMapDelegatesComponents(AclMap, ThisWorkerId, NonAclLBComponents);
+		AuthorityDelegationMap AuthDelegationMap = GetAuthDelegationMapFromUpdate(Updates[0]);
+		bSuccess &= AuthorityMapDelegatesComponents(AuthDelegationMap, ThisWorkerId, NonAuthDelegationLBComponents);
 	}
 	else
 	{
 		bSuccess = false;
 	}
 
-	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
+	TestTrue("LoadBalanceEnforcer returned expected authority delegation assignment results", bSuccess);
 
 	return true;
 }
 
-LOADBALANCEENFORCER_TEST(GIVEN_component_presence_change_op_WHEN_we_advance_load_balance_enforcer_THEN_acl_update_contains_new_components)
+LOADBALANCEENFORCER_TEST(
+	GIVEN_component_presence_change_op_WHEN_we_advance_load_balance_enforcer_THEN_auth_delegation_update_contains_new_components)
 {
 	SpatialGDK::FDispatcher Dispatcher;
 	SpatialGDK::EntityView View;
@@ -296,16 +297,16 @@ LOADBALANCEENFORCER_TEST(GIVEN_component_presence_change_op_WHEN_we_advance_load
 	{
 		bSuccess &= Updates[0].EntityId == EntityIdOne;
 		bSuccess &= Updates[0].Update.GetComponentId() == SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
-		AuthorityDelegationMap AclMap = GetAuthDelegationMapFromUpdate(Updates[0]);
-		bSuccess &= AuthorityMapDelegatesComponents(AclMap, ThisWorkerId, TestComponentIds);
+		AuthorityDelegationMap AuthDelegationMap = GetAuthDelegationMapFromUpdate(Updates[0]);
+		bSuccess &= AuthorityMapDelegatesComponents(AuthDelegationMap, ThisWorkerId, TestComponentIds);
 	}
-	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
+	TestTrue("LoadBalanceEnforcer returned expected authority delegation assignment results", bSuccess);
 
 	return true;
 }
 
 LOADBALANCEENFORCER_TEST(
-	GIVEN_net_owning_client_change_op_WHEN_we_advance_load_balance_enforcer_THEN_acl_update_contains_new_client_delegation)
+	GIVEN_net_owning_client_change_op_WHEN_we_advance_load_balance_enforcer_THEN_auth_delegation_update_contains_new_client_delegation)
 {
 	SpatialGDK::FDispatcher Dispatcher;
 	SpatialGDK::EntityView View;
@@ -336,15 +337,15 @@ LOADBALANCEENFORCER_TEST(
 	{
 		bSuccess &= Updates[0].EntityId == EntityIdOne;
 		bSuccess &= Updates[0].Update.GetComponentId() == SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
-		AuthorityDelegationMap AclMap = GetAuthDelegationMapFromUpdate(Updates[0]);
-		bSuccess &= AuthorityMapDelegatesComponents(AclMap, OtherClientWorkerId, ClientComponentIds);
+		AuthorityDelegationMap AuthDelegationMap = GetAuthDelegationMapFromUpdate(Updates[0]);
+		bSuccess &= AuthorityMapDelegatesComponents(AuthDelegationMap, OtherClientWorkerId, ClientComponentIds);
 	}
 	else
 	{
 		bSuccess = false;
 	}
 
-	TestTrue("LoadBalanceEnforcer returned expected ACL assignment results", bSuccess);
+	TestTrue("LoadBalanceEnforcer returned expected authority delegation assignment results", bSuccess);
 
 	return true;
 }
