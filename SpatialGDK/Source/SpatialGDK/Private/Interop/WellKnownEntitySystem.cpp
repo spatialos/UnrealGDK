@@ -139,7 +139,7 @@ void WellKnownEntitySystem::InitializeVirtualWorkerTranslationManager()
 void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 {
 	// Perform a naive leader election where we wait for the correct number of server workers to be present in the deployment, and then
-	// whichever server has the lowest server worker entity id claims the snapshot partition.
+	// whichever server has the lowest server worker entity ID becomes the leader and claims the snapshot partition.
 	const Worker_EntityId LocalServerWorkerEntityId = GlobalStateManager->GetLocalServerWorkerEntityId();
 
 	if (LocalServerWorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
