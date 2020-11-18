@@ -120,6 +120,17 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 			return;
 		}
 	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
+	{
+		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FWorldLaunchSection, LegacyFlags))
+		{
+			FWorldLaunchSection::TrimTMapKeys(LaunchConfigDesc.World.LegacyFlags);
+		}
+		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FWorldLaunchSection, LegacyJavaParams))
+		{
+			FWorldLaunchSection::TrimTMapKeys(LaunchConfigDesc.World.LegacyJavaParams);
+		}
+	}
 }
 
 void USpatialGDKEditorSettings::PostInitProperties()
@@ -537,6 +548,14 @@ const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVari
 		{
 			return SpatialGDKServicesConstants::PinnedStandardRuntimeTemplate;
 		}
+	}
+}
+
+void FWorldLaunchSection::TrimTMapKeys(TMap<FString, FString>& Map)
+{
+	for (auto& Flag : Map)
+	{
+		Flag.Key.TrimStartAndEndInline();
 	}
 }
 

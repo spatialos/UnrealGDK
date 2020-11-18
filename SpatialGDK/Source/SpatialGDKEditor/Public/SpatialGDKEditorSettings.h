@@ -36,6 +36,8 @@ struct FWorldLaunchSection
 		LegacyFlags.Add(TEXT("bridge_single_port_max_heartbeat_timeout_ms"), TEXT("3600000"));
 	}
 
+	static void TrimTMapKeys(TMap<FString, FString>& Map);
+
 	/** The size of the simulation, in meters, for the auto-generated launch configuration file. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Simulation dimensions in meters"))
 	FIntPoint Dimensions;
