@@ -213,7 +213,8 @@ void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent,
 	}
 	default:
 	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."), static_cast<int>(EventSamplingResult.decision));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."),
+			   static_cast<int>(EventSamplingResult.decision));
 		break;
 	}
 	}
@@ -270,7 +271,8 @@ FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEv
 	}
 	default:
 	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."), static_cast<int>(EventSamplingResult.decision));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."),
+			   static_cast<int>(EventSamplingResult.decision));
 		return FSpatialGDKSpanId(false);
 	}
 	}

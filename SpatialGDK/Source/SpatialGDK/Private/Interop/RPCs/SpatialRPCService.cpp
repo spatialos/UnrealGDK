@@ -191,8 +191,8 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		{
 			FMultiGDKSpanIdAllocator Allocator(It.Value.SpanIds);
 			FSpatialGDKSpanId SpanId = EventTracer->CreateSpan(Allocator.GetBuffer(), Allocator.GetNumSpanIds());
-			EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::CreateMergeSendRPCs(UpdateToSend.EntityId, UpdateToSend.Update.component_id), SpanId);
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateMergeSendRPCs(UpdateToSend.EntityId, UpdateToSend.Update.component_id),
+									SpanId);
 			UpdateToSend.SpanId = SpanId;
 		}
 
