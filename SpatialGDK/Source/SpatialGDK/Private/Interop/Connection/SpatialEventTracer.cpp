@@ -286,8 +286,8 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 	else
 	{
 		FSpatialGDKSpanId CauseSpanIds[2] = { SpanId, *ExistingSpanId };
-		*ExistingSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(Object.Get()),
-			CauseSpanIds->GetConstId(), 2);
+		*ExistingSpanId =
+			TraceEvent(FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(Object.Get()), CauseSpanIds->GetConstId(), 2);
 	}
 }
 
