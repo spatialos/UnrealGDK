@@ -2703,14 +2703,14 @@ int64 USpatialNetDriver::GetClientID() const
 {
 	if (IsServer())
 	{
-		return (int64)SpatialConstants::INVALID_ENTITY_ID;
+		return SpatialConstants::INVALID_ENTITY_ID;
 	}
 
 	if (USpatialNetConnection* NetConnection = GetSpatialOSNetConnection())
 	{
-		return (int64)NetConnection->PlayerControllerEntity;
+		return static_cast<int64>(NetConnection->PlayerControllerEntity);
 	}
-	return (int64)SpatialConstants::INVALID_ENTITY_ID;
+	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
 bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
