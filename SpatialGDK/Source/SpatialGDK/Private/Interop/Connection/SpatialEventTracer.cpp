@@ -65,10 +65,10 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	MaxFileSize = Settings->MaxEventTracingFileSizeBytes;
 
-	Trace_EventTracer_Parameters parameters;
-	parameters.user_data = this;
-	parameters.callback = &SpatialEventTracer::TraceCallback;
-	EventTracer = Trace_EventTracer_Create(&parameters);
+	Trace_EventTracer_Parameters Parameters;
+	Parameters.user_data = this;
+	Parameters.callback = &SpatialEventTracer::TraceCallback;
+	EventTracer = Trace_EventTracer_Create(&Parameters);
 
 	// Setup Event Tracing Sampling
 	Trace_SamplingParameters SamplingParameters;
@@ -77,6 +77,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
 	TArray<TStringConversion<TStringConvert<TCHAR, ANSICHAR>, 128>> AnsiTypes;
 
+	// Adding the event trace sampling possibilities to the sampling settings.
+	// Using AnsiTypes to keep the strings in scope so that we guarantee they exist when calling Trace_EventTracer_SetSampler.
 	for (const auto& Pair : Settings->EventSamplingModeOverrides)
 	{
 		int32 Index = AnsiTypes.Add(StringCast<ANSICHAR>(*Pair.Key.ToString()));
@@ -204,7 +206,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& Spati
 	}
 	default:
 	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."),
+		UE_LOG(LogSpatialEventTracer, Error, TEXT("Could not handle invalid sampling decision %d."),
 			   static_cast<int32>(EventSamplingResult.decision));
 		return {};
 	}
@@ -230,9 +232,8 @@ void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_Compon
 {
 	FSpatialGDKSpanId& StoredSpanId = EntityComponentSpanIds.FindChecked({ EntityId, ComponentId });
 
-	FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(SpanId, StoredSpanId);
-	StoredSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(EntityId, ComponentId), SpanIdAllocator.GetBuffer(),
-							  SpanIdAllocator.GetNumSpanIds());
+	FSpatialGDKSpanId CauseSpanIds[2] = { SpanId, StoredSpanId };
+	StoredSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(EntityId, ComponentId), CauseSpanIds->GetConstId(), 2);
 }
 
 FSpatialGDKSpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
@@ -240,7 +241,6 @@ FSpatialGDKSpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) con
 	const FSpatialGDKSpanId* SpanId = EntityComponentSpanIds.Find(Id);
 	if (SpanId == nullptr)
 	{
-		// Return a null SpanId so that we attempt to trace events caused by this Span.
 		return {};
 	}
 
@@ -256,7 +256,6 @@ FSpatialGDKSpanId SpatialEventTracer::PopFromStack()
 {
 	if (SpanIdStack.Num() == 0)
 	{
-		// Return a null SpanId so that we attempt to trace events caused by this Span.
 		return {};
 	}
 	return SpanIdStack.Pop();
@@ -286,9 +285,9 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 	}
 	else
 	{
-		FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(SpanId, *ExistingSpanId);
+		FSpatialGDKSpanId CauseSpanIds[2] = { SpanId, *ExistingSpanId };
 		*ExistingSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(Object.Get()),
-									 SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
+			CauseSpanIds->GetConstId(), 2);
 	}
 }
 

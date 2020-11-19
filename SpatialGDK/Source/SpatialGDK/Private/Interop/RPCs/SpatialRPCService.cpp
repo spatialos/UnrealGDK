@@ -186,10 +186,9 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 
 		if (EventTracer != nullptr && It.Value.SpanIds.Num() > 0)
 		{
-			FMultiGDKSpanIdAllocator Allocator(It.Value.SpanIds);
 			UpdateToSend.SpanId = EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreateMergeSendRPCs(UpdateToSend.EntityId, UpdateToSend.Update.component_id),
-				Allocator.GetBuffer(), Allocator.GetNumSpanIds());
+				It.Value.SpanIds.GetData()->GetConstId(), It.Value.SpanIds.Num());
 		}
 
 #if TRACE_LIB_ACTIVE

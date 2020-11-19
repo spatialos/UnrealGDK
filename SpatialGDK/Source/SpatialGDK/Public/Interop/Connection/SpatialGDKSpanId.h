@@ -24,23 +24,3 @@ struct SPATIALGDK_API FSpatialGDKSpanId
 private:
 	Trace_SpanIdType Id[TRACE_SPAN_ID_SIZE_BYTES];
 };
-
-class FMultiGDKSpanIdAllocator
-{
-public:
-	FMultiGDKSpanIdAllocator() = delete;
-	FMultiGDKSpanIdAllocator(const FSpatialGDKSpanId& A, const FSpatialGDKSpanId& B);
-	FMultiGDKSpanIdAllocator(const TArray<FSpatialGDKSpanId>& SpanIds);
-	~FMultiGDKSpanIdAllocator();
-
-	Trace_SpanIdType* GetBuffer() const { return Buffer; }
-	int32 GetNumSpanIds() const { return NumSpanIds; }
-
-private:
-	void WriteToBuffer(const int32 SpanIndex, const FSpatialGDKSpanId& TraceSpanId);
-
-	Trace_SpanIdType* Buffer;
-	std::allocator<Trace_SpanIdType> Allocator;
-	const int32 NumSpanIds;
-	const int32 NumBytes;
-};
