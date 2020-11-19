@@ -173,7 +173,7 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 				TArray<FString>& Causes = TraceSpans.FindOrAdd(SpanIdString);
 				for (uint64 i = 0; i < Span.cause_count; ++i)
 				{
-					const int32 ByteOffset = i * TRACE_SPAN_ID_SIZE_BYTES * sizeof(Trace_SpanIdType);
+					const int32 ByteOffset = i * TRACE_SPAN_ID_SIZE_BYTES;
 					Causes.Add(FSpatialGDKSpanId::ToString(Span.causes + ByteOffset));
 				}
 			}

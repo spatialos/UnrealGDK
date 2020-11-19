@@ -43,10 +43,7 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* Worl
 		}
 
 		FSpatialGDKSpanId CauseSpanId = SpatialGDK::SpatialEventTracer::UserSpanIdToGDKSpanId(UserSpanIdCause);
-		if (CauseSpanId.IsValid())
-		{
-			CauseSpanIds.Add(CauseSpanId);
-		}
+		CauseSpanIds.Add(CauseSpanId);
 	}
 
 	FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(CauseSpanIds);
@@ -90,11 +87,6 @@ bool USpatialEventTracerUserInterface::GetActiveSpanId(UObject* WorldContextObje
 	}
 
 	FSpatialGDKSpanId SpanId = EventTracer->GetFromStack();
-	if (!SpanId.IsValid())
-	{
-		return false;
-	}
-
 	OutUserSpanId = SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 	return true;
 }

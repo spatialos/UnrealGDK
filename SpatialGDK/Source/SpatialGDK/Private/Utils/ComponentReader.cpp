@@ -327,7 +327,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 				}
 
 				FSpatialGDKSpanId SpanId;
-				if (bEventTracerEnabled && CauseSpanId.IsValid())
+				if (bEventTracerEnabled)
 				{
 					SpanId = EventTracer->TraceEvent(
 						FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(&Object, EntityId, ComponentId, Cmd.Property->GetName()),
