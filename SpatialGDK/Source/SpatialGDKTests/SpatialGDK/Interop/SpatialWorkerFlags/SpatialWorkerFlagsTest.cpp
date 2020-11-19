@@ -77,7 +77,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_registered_any_flag_update_delegate_WHEN_any_wor
 	return true;
 }
 
-SPATIALWORKERFLAGS_TEST(GIVEN_a_registered_any_flag_update_delegate_WHEN_registering_the_delegate_THEN_delegate_is_not_invoked)
+SPATIALWORKERFLAGS_TEST(GIVEN_a_registered_any_flag_update_delegate_WHEN_unregistering_the_delegate_THEN_delegate_is_not_invoked)
 {
 	UWorkerFlagsTestSpyObject* SpyObj = NewObject<UWorkerFlagsTestSpyObject>();
 	FOnAnyWorkerFlagUpdatedBP WorkerFlagDelegate;

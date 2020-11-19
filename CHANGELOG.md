@@ -16,8 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   NOTE: If your project does not use custom values for the `PositionUpdateFrequency` or `PositionDistanceThreshold`, then, by default, the updates will be sent with the same frequency as before and no action is required.
 - Removed the `OnAuthorityLossImminent` Actor event.
 - 'WorkerLogLevel' in Runtime Settings was split into two new settings - 'LocalWorkerLogLevel' and 'CloudWorkerLogLevel'. Update these values which will be set to 'Warning' by default.
-- In SpatialWorkerFlags.h some renaming took place around using delegates on flag changes, 
-these functions and structs can be referenced in both code and blueprints it may require updating both:
+- In SpatialWorkerFlags.h some renaming took place around using delegates on flag changes.
+These functions and structs can be referenced in both code and blueprints it may require updating both:
   1. Delegate struct `FOnWorkerFlagsUpdatedBP` has been renamed `FOnAnyWorkerFlagUpdatedBP`,
   2. Delegate struct `FOnWorkerFlagsUpdated` has been renamed `FOnAnyWorkerFlagUpdated`,
   3. Function `BindToOnWorkerFlagsUpdated` has been renamed to `RegisterAnyFlagUpdatedCallback`
@@ -54,7 +54,7 @@ these functions and structs can be referenced in both code and blueprints it may
 - Improved the failed hierarchy migration logs. The logs now contain more specific reasons for the failure and the frequency of repeated logs is suppressed.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
 - Worker SDK version compatibility is checked at compile time. 
-- SpatialWorkerFlags has renamed `BindToOnWorkerFlagsUpdated` to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added function for binding to specific individual flags: `RegisterFlagUpdatedCallback`. In addition `RegisterAndInvokeAnyFlagUpdatedCallback` and `RegisterAndInvokeFlagUpdatedCallback` functions are added so you can force the delegate to immediately execute if the flag already exists when registering a callback.
+- SpatialWorkerFlags has renamed `BindToOnWorkerFlagsUpdated` to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added functions for register callbacks to specific individual flag updates: `RegisterFlagUpdatedCallback`. Also added the `RegisterAndInvokeAnyFlagUpdatedCallback` and `RegisterAndInvokeFlagUpdatedCallback` functions so you can force the callback to immediately execute if the flag already exists when registering a callback.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
