@@ -2699,6 +2699,20 @@ bool USpatialNetDriver::IsLogged(Worker_EntityId ActorEntityId, EActorMigrationR
 	return bIsLogged;
 }
 
+int64 USpatialNetDriver::GetClientID() const
+{
+	if (IsServer())
+	{
+		return SpatialConstants::INVALID_ENTITY_ID;
+	}
+
+	if (USpatialNetConnection* NetConnection = GetSpatialOSNetConnection())
+	{
+		return static_cast<int64>(NetConnection->PlayerControllerEntity);
+	}
+	return SpatialConstants::INVALID_ENTITY_ID;
+}
+
 bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
 {
 	const uint64 WatchdogTimer = Interval / FPlatformTime::GetSecondsPerCycle64();
