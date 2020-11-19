@@ -1065,7 +1065,8 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 
 // AcquireLockDelegate and ReleaseLockDelegate
 
-OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLockDelegate_is_executed_WHEN_AcquireLockDelegate_is_executed_again_THEN_it_errors_and_returns_false)
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLockDelegate_is_executed_WHEN_AcquireLockDelegate_is_executed_again_THEN_it_errors_and_returns_false)
 {
 	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
