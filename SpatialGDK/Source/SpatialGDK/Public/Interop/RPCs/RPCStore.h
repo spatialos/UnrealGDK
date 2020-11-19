@@ -6,7 +6,7 @@
 #include "SpatialConstants.h"
 #include "SpatialView/EntityComponentId.h"
 
-DECLARE_DELEGATE_ThreeParams(ExtractRPCDelegate, const FUnrealObjectRef&, SpatialGDK::RPCPayload, uint64);
+DECLARE_DELEGATE_ThreeParams(ExtractRPCDelegate, const FUnrealObjectRef&, SpatialGDK::RPCPayload, TOptional<uint64>);
 
 namespace SpatialGDK
 {

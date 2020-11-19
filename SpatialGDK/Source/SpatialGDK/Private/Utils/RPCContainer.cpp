@@ -87,18 +87,18 @@ void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const 
 }
 } // namespace
 
-FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload, uint64 RPCId)
+FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload, TOptional<uint64> RPCIdForLinearEventTrace)
 	: ObjectRef(InTargetObjectRef)
 	, Payload(MoveTemp(InPayload))
 	, Timestamp(FDateTime::Now())
 	, Type(InType)
-	, RPCId(RPCId)
+	, RPCIdForLinearEventTrace(RPCIdForLinearEventTrace)
 {
 }
 
-void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload, uint64 RPCId)
+void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload, TOptional<uint64> RPCIdForLinearEventTrace)
 {
-	FPendingRPCParams Params{ TargetObjectRef, Type, MoveTemp(Payload), RPCId };
+	FPendingRPCParams Params{ TargetObjectRef, Type, MoveTemp(Payload), RPCIdForLinearEventTrace };
 
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
