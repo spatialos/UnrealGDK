@@ -62,7 +62,7 @@ void USpatialWorkerFlags::RegisterAndInvokeAnyFlagUpdatedCallback(const FOnAnyWo
 	RegisterAnyFlagUpdatedCallback(InDelegate);
 	for (const auto& FlagPair : WorkerFlags)
 	{
-		InDelegate.Execute(flagPair.Key, flagPair.Value);
+		InDelegate.Execute(FlagPair.Key, FlagPair.Value);
 	}
 }
 
