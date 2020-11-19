@@ -11,6 +11,6 @@ FString EventTraceUniqueId::ToString() const
 
 EventTraceUniqueId EventTraceUniqueId::GenerateForRPC(Worker_EntityId Entity, uint8 Type, uint64 Id)
 {
-	uint32 Hash = HashCombine(HashCombine(GetTypeHash(static_cast<int64>(Entity)), GetTypeHash(Type)), GetTypeHash(Id));
-	return EventTraceUniqueId(Hash);
+	uint32 ComputedHash = HashCombine(HashCombine(GetTypeHash(static_cast<int64>(Entity)), GetTypeHash(Type)), GetTypeHash(Id));
+	return EventTraceUniqueId(ComputedHash);
 }
