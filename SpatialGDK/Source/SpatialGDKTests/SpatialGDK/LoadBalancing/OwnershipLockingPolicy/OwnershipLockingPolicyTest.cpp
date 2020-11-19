@@ -259,6 +259,15 @@ bool FAcquireLockViaDelegate::Update()
 	AActor* Actor = Data->TestActors[ActorHandle];
 
 	check(Data->AcquireLockDelegate.IsBound());
+
+	if (!bExpectedSuccess)
+	{
+		Test->AddExpectedError(
+			FString::Printf(TEXT("AcquireLockFromDelegate: A lock with identifier \"%s\" already exists for actor \"%s\"."),
+							*DelegateLockIdentifier, *GetNameSafe(Actor)),
+			EAutomationExpectedErrorFlags::Contains, 1);
+	}
+
 	const bool bAcquireLockSucceeded = Data->AcquireLockDelegate.Execute(Actor, DelegateLockIdentifier);
 
 	Test->TestFalse(TEXT("Expected AcquireLockDelegate to succeed but it failed"), bExpectedSuccess && !bAcquireLockSucceeded);
@@ -277,8 +286,10 @@ bool FReleaseLockViaDelegate::Update()
 
 	if (!bExpectedSuccess)
 	{
-		Test->AddExpectedError(TEXT("Executed ReleaseLockDelegate for unidentified delegate lock identifier."),
-							   EAutomationExpectedErrorFlags::Contains, 1);
+		Test->AddExpectedError(
+			FString::Printf(TEXT("ReleaseLockFromDelegate: Lock identifier \"%s\" has no lock associated with it for actor \"%s\"."),
+							*DelegateLockIdentifier, *GetNameSafe(Actor)),
+			EAutomationExpectedErrorFlags::Contains, 1);
 	}
 
 	const bool bReleaseLockSucceeded = Data->ReleaseLockDelegate.Execute(Actor, DelegateLockIdentifier);

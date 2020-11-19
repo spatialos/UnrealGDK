@@ -143,14 +143,18 @@ bool UOwnershipLockingPolicy::AcquireLockFromDelegate(AActor* ActorToLock, const
 {
 	if (DelegateLockingIdentifierToActorLockToken.Contains(DelegateLockIdentifier))
 	{
-		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("AcquireLockFromDelegate: A lock with identifier \"%s\" already exists."), *DelegateLockIdentifier);
+		UE_LOG(LogOwnershipLockingPolicy, Error,
+			   TEXT("AcquireLockFromDelegate: A lock with identifier \"%s\" already exists for actor \"%s\"."), *DelegateLockIdentifier,
+			   *GetNameSafe(ActorToLock));
 		return false;
 	}
 
 	const ActorLockToken LockToken = AcquireLock(ActorToLock, DelegateLockIdentifier);
 	if (LockToken == SpatialConstants::INVALID_ACTOR_LOCK_TOKEN)
 	{
-		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("AcquireLock called from engine delegate returned an invalid token. Lock identifier: %s"), *DelegateLockIdentifier);
+		UE_LOG(LogOwnershipLockingPolicy, Error,
+			   TEXT("AcquireLock called from engine delegate returned an invalid token. Lock identifier: %s, Actor: %s"),
+			   *DelegateLockIdentifier, *GetNameSafe(ActorToLock));
 		return false;
 	}
 
@@ -162,8 +166,9 @@ bool UOwnershipLockingPolicy::ReleaseLockFromDelegate(AActor* ActorToRelease, co
 {
 	if (!DelegateLockingIdentifierToActorLockToken.Contains(DelegateLockIdentifier))
 	{
-		UE_LOG(LogOwnershipLockingPolicy, Error, TEXT("ReleaseLockFromDelegate: Lock identifier \"%s\" has no lock associated with it."),
-			   *DelegateLockIdentifier);
+		UE_LOG(LogOwnershipLockingPolicy, Error,
+			   TEXT("ReleaseLockFromDelegate: Lock identifier \"%s\" has no lock associated with it for actor \"%s\"."),
+			   *DelegateLockIdentifier, *GetNameSafe(ActorToRelease));
 		return false;
 	}
 	const ActorLockToken LockToken = DelegateLockingIdentifierToActorLockToken.FindAndRemoveChecked(DelegateLockIdentifier);
