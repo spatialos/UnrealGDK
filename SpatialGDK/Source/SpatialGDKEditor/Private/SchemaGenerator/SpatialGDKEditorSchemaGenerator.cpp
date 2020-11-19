@@ -875,9 +875,9 @@ bool RunSchemaCompiler()
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
 	const FString& SchemaCompilerBaseArgs =
-		FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --bundle_out=\"%s\" "
+		FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --bundle_out=\"%s\" "
 							 "--bundle_json_out=\"%s\" --load_all_schema_on_schema_path "),
-						*SchemaDir, *CoreSDKSchemaDir, *SchemaBundleOutput, *SchemaBundleJsonOutput);
+						*SchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput, *SchemaBundleOutput, *SchemaBundleJsonOutput);
 
 	// If there's already a compiled schema dir, blow it away so we don't have lingering artifacts from previous generation runs.
 	if (FPaths::DirectoryExists(CompiledSchemaDir))
