@@ -49,6 +49,7 @@ public:
 
 	virtual uint32 GetMinimumRequiredWorkers() const override;
 	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId) override;
+	virtual UAbstractLBStrategy* GetLBStrategyForVisualRendering() const override;
 	/* End UAbstractLBStrategy Interface */
 
 	UAbstractLBStrategy* GetWrappedStrategy() const { return WrappedStrategy; }
