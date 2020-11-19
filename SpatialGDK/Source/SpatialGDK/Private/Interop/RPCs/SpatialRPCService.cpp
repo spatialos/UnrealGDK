@@ -457,7 +457,7 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 				EntityComponentId Id = EntityComponentId(PendingRPCParams.ObjectRef.Entity, ComponentId);
 				CauseSpanId = EventTracer->GetSpanId(Id);
 				FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function),
-					CauseSpanId.GetConstId(), 1);
+																   CauseSpanId.GetConstId(), 1);
 				EventTracer->AddToStack(SpanId);
 			}
 

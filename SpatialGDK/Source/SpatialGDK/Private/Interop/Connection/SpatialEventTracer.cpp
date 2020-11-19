@@ -205,7 +205,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& Spati
 	default:
 	{
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."),
-			static_cast<int32>(EventSamplingResult.decision));
+			   static_cast<int32>(EventSamplingResult.decision));
 		return {};
 	}
 	}
