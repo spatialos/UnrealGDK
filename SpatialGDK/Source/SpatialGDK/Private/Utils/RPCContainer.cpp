@@ -87,7 +87,8 @@ void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const 
 }
 } // namespace
 
-FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload, TOptional<uint64> RPCIdForLinearEventTrace)
+FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload,
+									 TOptional<uint64> RPCIdForLinearEventTrace)
 	: ObjectRef(InTargetObjectRef)
 	, Payload(MoveTemp(InPayload))
 	, Timestamp(FDateTime::Now())
@@ -96,7 +97,8 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 {
 }
 
-void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload, TOptional<uint64> RPCIdForLinearEventTrace)
+void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload,
+									  TOptional<uint64> RPCIdForLinearEventTrace)
 {
 	FPendingRPCParams Params{ TargetObjectRef, Type, MoveTemp(Payload), RPCIdForLinearEventTrace };
 

@@ -262,7 +262,8 @@ TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation
 	return Components;
 }
 
-void SpatialRPCService::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload InPayload, TOptional<uint64> RPCIdForLinearEventTrace)
+void SpatialRPCService::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload InPayload,
+												  TOptional<uint64> RPCIdForLinearEventTrace)
 {
 	const TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
@@ -479,8 +480,9 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 				if (CauseSpanId.IsSet() && PendingRPCParams.RPCIdForLinearEventTrace.IsSet())
 				{
 					TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
-					EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForRPC(
-						PendingRPCParams.ObjectRef.Entity, static_cast<uint8>(RPCType), PendingRPCParams.RPCIdForLinearEventTrace.GetValue());
+					EventTraceUniqueId LinearTraceId =
+						EventTraceUniqueId::GenerateForRPC(PendingRPCParams.ObjectRef.Entity, static_cast<uint8>(RPCType),
+														   PendingRPCParams.RPCIdForLinearEventTrace.GetValue());
 					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateRPCLinearTraceEvent(LinearTraceId), SpanId);
 
 					SpanId = EventTracer->CreateSpan(&SpanId.GetValue(), 1);
