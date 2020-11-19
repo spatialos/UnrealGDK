@@ -180,7 +180,7 @@ void MulticastRPCService::OnEndpointAuthorityGained(const Worker_EntityId Entity
 
 		const RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::NetMulticast);
 		Schema_Object* SchemaObject =
-			Schema_GetComponentUpdateFields(RPCStore->GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }, nullptr));
+			Schema_GetComponentUpdateFields(RPCStore->GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }));
 		Schema_AddUint64(SchemaObject, Descriptor.LastSentRPCFieldId, Component.InitiallyPresentMulticastRPCsCount);
 	}
 	else
@@ -231,7 +231,7 @@ void MulticastRPCService::ExtractRPCs(const Worker_EntityId EntityId)
 			const TOptional<RPCPayload>& Element = Buffer.GetRingBufferElement(RPCId);
 			if (Element.IsSet())
 			{
-				ExtractRPCCallback.Execute(FUnrealObjectRef(EntityId, Element.GetValue().Offset), Element.GetValue());
+				ExtractRPCCallback.Execute(FUnrealObjectRef(EntityId, Element.GetValue().Offset), Element.GetValue(), RPCId);
 				LastProcessedRPCId = RPCId;
 			}
 			else
