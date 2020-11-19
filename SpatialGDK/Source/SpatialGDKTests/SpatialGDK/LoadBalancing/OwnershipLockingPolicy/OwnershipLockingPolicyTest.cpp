@@ -1065,6 +1065,25 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 
 // AcquireLockDelegate and ReleaseLockDelegate
 
+OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLockDelegate_is_executed_WHEN_AcquireLockDelegate_is_executed_again_THEN_it_errors_and_returns_false)
+{
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+
+	TSharedPtr<TestData> Data = MakeNewTestData();
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLockViaDelegate(this, Data, "Actor", "First lock", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLockViaDelegate(this, Data, "Actor", "First lock", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+
+	return true;
+}
+
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_is_executed_THEN_it_errors_and_returns_false)
 {
 	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
