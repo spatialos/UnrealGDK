@@ -205,6 +205,8 @@ bool FCleanup::Update()
 		Pair.Value->Destroy(/*bNetForce*/ true);
 	}
 
+	GEditor->RequestEndPlayMap();
+
 	return true;
 }
 
@@ -225,6 +227,7 @@ LAYEREDLBSTRATEGY_TEST(GIVEN_strat_is_not_ready_WHEN_local_virtual_worker_id_is_
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckStratIsReady(Data, this, false));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetLocalVirtualWorker(Data, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckStratIsReady(Data, this, true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
 
@@ -249,6 +252,7 @@ LAYEREDLBSTRATEGY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, MultiWorkerSettings, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckMinimumWorkers(Data, this, 10));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
 
@@ -278,6 +282,7 @@ LAYEREDLBSTRATEGY_TEST(
 	// The two single strategies plus the default strategy require 3 virtual workers, but we only explicitly provide 2.
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, MultiWorkerSettings, 2));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
 
@@ -304,6 +309,7 @@ LAYEREDLBSTRATEGY_TEST(
 	// The two single strategies plus the default strategy require 3 virtual workers.
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, MultiWorkerSettings, 3));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
 
@@ -326,6 +332,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_requires_handov
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, MultiWorkerSettings, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetLocalVirtualWorker(Data, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckRequiresHandover(Data, this, false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
 
@@ -350,6 +357,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_single_cell_grid_strat_and_default
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, MultiWorkerSettings, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetLocalVirtualWorker(Data, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckRequiresHandover(Data, this, false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
 
@@ -376,6 +384,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_multiple_single_cell_grid_strategi
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, MultiWorkerSettings, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetLocalVirtualWorker(Data, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckRequiresHandover(Data, this, false));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
 
@@ -422,6 +431,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_WHEN_set_local_worker_called_twice_TH
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, MultiWorkerSettings, {}));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetLocalVirtualWorker(Data, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FSetLocalVirtualWorker(Data, 2));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
 	this->AddExpectedError(
 		"The Local Virtual Worker Id cannot be set twice. Current value:", EAutomationExpectedErrorFlags::MatchType::Contains, 1);
