@@ -116,6 +116,13 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendRPC(const UObject* Objec
 		.GetEvent();
 }
 
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateRPCLinearTraceEvent(const EventTraceUniqueId& LinearTraceId)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "rpc_linear_trace")
+		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
+		.GetEvent();
+}
+
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateQueueRPC()
 {
 	return FSpatialTraceEventBuilder("queue_rpc").GetEvent();

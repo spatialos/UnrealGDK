@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Interop/Connection/SpatialTraceEvent.h"
+#include "Interop/Connection/SpatialTraceUniqueId.h"
 #include "SpatialCommonTypes.h"
 #include "WorkerSDK/improbable/c_worker.h"
 
@@ -30,6 +31,7 @@ public:
 
 	static FSpatialTraceEvent CreateProcessRPC(const UObject* Object, UFunction* Function);
 	static FSpatialTraceEvent CreateSendRPC(const UObject* Object, UFunction* Function);
+	static FSpatialTraceEvent CreateRPCLinearTraceEvent(const EventTraceUniqueId& LinearTraceId);
 	static FSpatialTraceEvent CreateQueueRPC();
 	static FSpatialTraceEvent CreateRetryRPC();
 	static FSpatialTraceEvent CreateSendPropertyUpdates(const UObject* Object, const Worker_EntityId EntityId,
