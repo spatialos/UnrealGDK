@@ -47,6 +47,18 @@ UWorld* GetAnyGameWorld()
 
 } // anonymous namespace
 
+// Disable local deployments from starting and open map
+void SetUp()
+{
+	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
+	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
+	Settings->bAutoStartLocalDeployment = false;
+
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+
+	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
+}
+
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForWorld, TSharedPtr<TestData>, TestData);
 bool FWaitForWorld::Update()
 {
@@ -212,11 +224,7 @@ bool FCleanup::Update()
 
 LAYEREDLBSTRATEGY_TEST(GIVEN_strat_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready)
 {
-	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
-	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
-	Settings->bAutoStartLocalDeployment = false;
-
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	SetUp();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -229,19 +237,13 @@ LAYEREDLBSTRATEGY_TEST(GIVEN_strat_is_not_ready_WHEN_local_virtual_worker_id_is_
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckStratIsReady(Data, this, true));
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
-	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
-
 	return true;
 }
 
 LAYEREDLBSTRATEGY_TEST(
 	GIVEN_layered_strat_of_two_by_four_grid_strat_singleton_strat_and_default_strat_WHEN_get_minimum_required_workers_called_THEN_ten_returned)
 {
-	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
-	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
-	Settings->bAutoStartLocalDeployment = false;
-
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	SetUp();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -254,19 +256,13 @@ LAYEREDLBSTRATEGY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckMinimumWorkers(Data, this, 10));
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
-	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
-
 	return true;
 }
 
 LAYEREDLBSTRATEGY_TEST(
 	Given_layered_strat_of_2_single_cell_strats_and_default_strat_WHEN_set_virtual_worker_ids_called_with_2_ids_THEN_error_is_logged)
 {
-	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
-	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
-	Settings->bAutoStartLocalDeployment = false;
-
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	SetUp();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -284,19 +280,13 @@ LAYEREDLBSTRATEGY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, MultiWorkerSettings, 2));
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
-	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
-
 	return true;
 }
 
 LAYEREDLBSTRATEGY_TEST(
 	Given_layered_strat_of_2_single_cell_grid_strats_and_default_strat_WHEN_set_virtual_worker_ids_called_with_3_ids_THEN_no_error_is_logged)
 {
-	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
-	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
-	Settings->bAutoStartLocalDeployment = false;
-
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	SetUp();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -311,18 +301,12 @@ LAYEREDLBSTRATEGY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(Data, MultiWorkerSettings, 3));
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
-	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
-
 	return true;
 }
 
 LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_requires_handover_called_THEN_returns_false)
 {
-	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
-	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
-	Settings->bAutoStartLocalDeployment = false;
-
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	SetUp();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -334,18 +318,12 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_requires_handov
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckRequiresHandover(Data, this, false));
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
-	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
-
 	return true;
 }
 
 LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_single_cell_grid_strat_and_default_strat_WHEN_requires_handover_called_THEN_returns_false)
 {
-	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
-	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
-	Settings->bAutoStartLocalDeployment = false;
-
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	SetUp();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -359,18 +337,12 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_single_cell_grid_strat_and_default
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckRequiresHandover(Data, this, false));
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
-	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
-
 	return true;
 }
 
 LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_multiple_single_cell_grid_strategies_WHEN_requires_handover_called_THEN_returns_false)
 {
-	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
-	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
-	Settings->bAutoStartLocalDeployment = false;
-
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	SetUp();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -386,18 +358,12 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_multiple_single_cell_grid_strategi
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckRequiresHandover(Data, this, false));
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
-	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
-
 	return true;
 }
 
 LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_who_should_have_auth_called_THEN_return_1)
 {
-	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
-	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
-	Settings->bAutoStartLocalDeployment = false;
-
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	SetUp();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -410,18 +376,12 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_who_should_have
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckWhoShouldHaveAuthority(Data, this, "DefaultLayerActor", 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
-	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
-
 	return true;
 }
 
 LAYEREDLBSTRATEGY_TEST(Given_layered_strat_WHEN_set_local_worker_called_twice_THEN_an_error_is_logged)
 {
-	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
-	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
-	Settings->bAutoStartLocalDeployment = false;
-
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	SetUp();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -436,18 +396,12 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_WHEN_set_local_worker_called_twice_TH
 	this->AddExpectedError(
 		"The Local Virtual Worker Id cannot be set twice. Current value:", EAutomationExpectedErrorFlags::MatchType::Contains, 1);
 
-	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
-
 	return true;
 }
 
 LAYEREDLBSTRATEGY_TEST(Given_two_actors_of_same_type_at_same_position_WHEN_who_should_have_auth_called_THEN_return_same_for_both)
 {
-	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
-	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
-	Settings->bAutoStartLocalDeployment = false;
-
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	SetUp();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -469,19 +423,13 @@ LAYEREDLBSTRATEGY_TEST(Given_two_actors_of_same_type_at_same_position_WHEN_who_s
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckActorsAuth(Data, this, TEXT("Layer2Actor1"), TEXT("Later2Actor2"), true));
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
 
-	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
-
 	return true;
 }
 
 LAYEREDLBSTRATEGY_TEST(
 	GIVEN_two_actors_of_different_types_and_same_positions_managed_by_different_layers_WHEN_who_has_auth_called_THEN_return_different_values)
 {
-	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
-	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
-	Settings->bAutoStartLocalDeployment = false;
-
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	SetUp();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -500,8 +448,6 @@ LAYEREDLBSTRATEGY_TEST(
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckActorsAuth(Data, this, TEXT("Layer1Actor"), TEXT("Layer2Actor"), false));
 	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
-
-	Settings->bAutoStartLocalDeployment = OldBAutoStartLocalDeployment;
 
 	return true;
 }
