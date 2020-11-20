@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Servers now log a warning message when detecting a client has timed out.
 - Handover is now optional depending on whether the load balancing strategy implementations require it . See `RequiresHandoverData`
 - Improved the failed hierarchy migration logs. The logs now contain more specific reasons for the failure and the frequency of repeated logs is suppressed.
-- You can now select an actor for spatial debugging in-game. Use F9 (by default) to open the Spatial Debugger in-game config menu and then choose `Select Actor(s)`. Hover over an actor with the mouse to highlight and right-click to select. You can select multiple actors. To deselect and actor right-click on it a second time. If there are multiple actors under the cursor first use the mouse wheel to highlight the desired actor then right-click to confirm your selection.
+- You can now select individual actors for spatial debugging in-game. Use F9 (by default) to open the Spatial Debugger in-game config menu and then choose `Select Actor(s)`. Hover over an actor with the mouse to highlight and right-click to select. You can select multiple actors. To deselect an actor right-click on it a second time. If there are multiple actors under the cursor first use the mouse wheel to highlight the desired actor then right-click to confirm your selection.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
 
 ### Bug fixes:
