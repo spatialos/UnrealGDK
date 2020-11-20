@@ -1168,7 +1168,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 
 OWNERSHIPLOCKINGPOLICY_TEST(zz_CleanUp_OwnershipLockingPolicyTest)
 {
-	// Test are ran in alphabetical order and we don't want to make the tests slow by stopping the deployment after each
+	// Tests are run in alphabetical order and we don't want to make the tests slow by stopping the deployment after each
 	// test, so use this as a final cleanup method
 
 	GEditor->RequestEndPlayMap();

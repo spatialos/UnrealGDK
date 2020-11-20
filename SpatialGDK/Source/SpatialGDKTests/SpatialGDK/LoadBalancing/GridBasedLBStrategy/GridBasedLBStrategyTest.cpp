@@ -351,7 +351,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_re
 
 GRIDBASEDLBSTRATEGY_TEST(zz_CleanUp_GridBasedLBStrategyTest)
 {
-	// Test are ran in alphabetical order and we don't want to make the tests slow by stopping the deployment after each
+	// Tests are run in alphabetical order and we don't want to make the tests slow by stopping the deployment after each
 	// test, so use this as a final cleanup method
 
 	GEditor->RequestEndPlayMap();
