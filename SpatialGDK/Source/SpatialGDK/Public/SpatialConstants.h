@@ -70,19 +70,25 @@ enum EntityIds
 	INITIAL_SPAWNER_ENTITY_ID = 1,
 	INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
 	INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = 3,
-	FIRST_AVAILABLE_ENTITY_ID = 4,
+	INITIAL_SNAPSHOT_PARTITION_ENTITY_ID = 4,
+	FIRST_AVAILABLE_ENTITY_ID = 5,
 };
+
+const Worker_PartitionId INVALID_PARTITION_ID = INVALID_ENTITY_ID;
 
 const Worker_ComponentId INVALID_COMPONENT_ID = 0;
 
-const Worker_ComponentId ENTITY_ACL_COMPONENT_ID = 50;
 const Worker_ComponentId METADATA_COMPONENT_ID = 53;
 const Worker_ComponentId POSITION_COMPONENT_ID = 54;
 const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
 const Worker_ComponentId INTEREST_COMPONENT_ID = 58;
+
+const Worker_ComponentSetId WELL_KNOWN_COMPONENT_SET_ID = 50;
+
 // This is a component on per-worker system entities.
 const Worker_ComponentId WORKER_COMPONENT_ID = 60;
 const Worker_ComponentId PLAYERIDENTITY_COMPONENT_ID = 61;
+const Worker_ComponentId AUTHORITY_DELEGATION_COMPONENT_ID = 65;
 
 const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID = 100;
 
@@ -94,6 +100,7 @@ const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
 const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
 const Worker_ComponentId HEARTBEAT_COMPONENT_ID = 9991;
+
 // Marking the event-based RPC components as legacy while the ring buffer
 // implementation is under a feature flag.
 const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9990;
@@ -186,13 +193,15 @@ const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID = 1;
 // VirtualWorkerTranslation Field IDs.
 const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID = 1;
 const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID = 1;
-const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME = 2;
+const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME_ID = 2;
 const Schema_FieldId MAPPING_SERVER_WORKER_ENTITY_ID = 3;
+const Schema_FieldId MAPPING_PARTITION_ID = 4;
 const PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME = FString("UnsetWorkerName");
 
 // WorkerEntity Field IDs.
 const Schema_FieldId WORKER_ID_ID = 1;
 const Schema_FieldId WORKER_TYPE_ID = 2;
+const Schema_FieldId WORKER_CLAIM_PARTITION_COMMAND_ID = 2;
 
 // SpatialDebugger Field IDs.
 const Schema_FieldId SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID = 1;
@@ -204,6 +213,7 @@ const Schema_FieldId SPATIAL_DEBUGGING_IS_LOCKED = 5;
 // ServerWorker Field IDs.
 const Schema_FieldId SERVER_WORKER_NAME_ID = 1;
 const Schema_FieldId SERVER_WORKER_READY_TO_BEGIN_PLAY_ID = 2;
+const Schema_FieldId SERVER_WORKER_SYSTEM_ENTITY_ID = 3;
 const Schema_FieldId SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID = 1;
 
 // SpawnPlayerRequest type IDs.
@@ -211,18 +221,19 @@ const Schema_FieldId SPAWN_PLAYER_URL_ID = 1;
 const Schema_FieldId SPAWN_PLAYER_UNIQUE_ID = 2;
 const Schema_FieldId SPAWN_PLAYER_PLATFORM_NAME_ID = 3;
 const Schema_FieldId SPAWN_PLAYER_IS_SIMULATED_ID = 4;
+const Schema_FieldId SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID = 5;
 
 // ForwardSpawnPlayerRequest type IDs.
 const Schema_FieldId FORWARD_SPAWN_PLAYER_DATA_ID = 1;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_START_ACTOR_ID = 2;
-const Schema_FieldId FORWARD_SPAWN_PLAYER_CLIENT_WORKER_ID = 3;
+const Schema_FieldId FORWARD_SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID = 3;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_RESPONSE_SUCCESS_ID = 1;
 
 // ComponentPresence Field IDs.
 const Schema_FieldId COMPONENT_PRESENCE_COMPONENT_LIST_ID = 1;
 
 // NetOwningClientWorker Field IDs.
-const Schema_FieldId NET_OWNING_CLIENT_WORKER_FIELD_ID = 1;
+const Schema_FieldId NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID = 1;
 
 // UnrealMetadata Field IDs.
 const Schema_FieldId UNREAL_METADATA_STABLY_NAMED_REF_ID = 1;
@@ -241,13 +252,6 @@ const ActorLockToken INVALID_ACTOR_LOCK_TOKEN = 0;
 const FString INVALID_WORKER_NAME = TEXT("");
 
 static const FName DefaultLayer = FName(TEXT("DefaultLayer"));
-
-const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{ DefaultServerWorkerType.ToString() };
-const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{ DefaultClientWorkerType.ToString() };
-
-const WorkerRequirementSet UnrealServerPermission{ { UnrealServerAttributeSet } };
-const WorkerRequirementSet UnrealClientPermission{ { UnrealClientAttributeSet } };
-const WorkerRequirementSet ClientOrServerPermission{ { UnrealClientAttributeSet, UnrealServerAttributeSet } };
 
 const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");

@@ -47,7 +47,6 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 
 	Worker_EntityQuery WorldQuery{};
 	WorldQuery.constraint = UnrealMetadataConstraint;
-	WorldQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	Worker_RequestId RequestID;
 	check(Connection.IsValid());

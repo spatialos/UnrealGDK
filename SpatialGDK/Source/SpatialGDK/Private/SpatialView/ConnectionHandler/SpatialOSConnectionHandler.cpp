@@ -6,7 +6,10 @@
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialView/OpList/WorkerConnectionOpList.h"
 
+#include "Async/Async.h"
+
 #include <improbable/c_trace.h>
+#include <improbable/c_worker.h>
 
 namespace SpatialGDK
 {
@@ -14,12 +17,8 @@ SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connec
 	: EventTracer(MoveTemp(EventTracer))
 	, Connection(Connection)
 	, WorkerId(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(Connection)))
+	, WorkerSystemEntityId(Worker_Connection_GetWorkerEntityId(Connection))
 {
-	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(Connection);
-	for (uint32 i = 0; i < Attributes->attribute_count; ++i)
-	{
-		WorkerAttributes.Push(FString(UTF8_TO_TCHAR(Attributes->attributes[i])));
-	}
 }
 
 void SpatialOSConnectionHandler::Advance() {}
@@ -186,9 +185,9 @@ const FString& SpatialOSConnectionHandler::GetWorkerId() const
 	return WorkerId;
 }
 
-const TArray<FString>& SpatialOSConnectionHandler::GetWorkerAttributes() const
+Worker_EntityId SpatialOSConnectionHandler::GetWorkerSystemEntityId() const
 {
-	return WorkerAttributes;
+	return WorkerSystemEntityId;
 }
 
 void SpatialOSConnectionHandler::WorkerConnectionDeleter::operator()(Worker_Connection* ConnectionToDestroy) const noexcept

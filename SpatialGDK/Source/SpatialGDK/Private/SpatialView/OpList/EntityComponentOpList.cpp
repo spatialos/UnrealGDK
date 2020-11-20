@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/OpList/EntityComponentOpList.h"
 
@@ -66,14 +66,14 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveComponent(Work
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId,
 																		 Worker_Authority Authority)
 {
 	Worker_Op Op = {};
-	Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-	Op.op.authority_change.entity_id = EntityId;
-	Op.op.authority_change.component_id = ComponentId;
-	Op.op.authority_change.authority = Authority;
+	Op.op_type = WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE;
+	Op.op.component_set_authority_change.entity_id = EntityId;
+	Op.op.component_set_authority_change.component_set_id = ComponentSetId;
+	Op.op.component_set_authority_change.authority = Authority;
 
 	OpListData->Ops.Add(Op);
 	return *this;

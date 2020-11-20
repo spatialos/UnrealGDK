@@ -27,9 +27,6 @@ void AuthorityRecord::SetAuthority(Worker_EntityId EntityId, Worker_ComponentId 
 			AuthorityGained.Push(Id);
 		}
 		break;
-	case WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT:
-		// Deliberately ignore loss imminent.
-		break;
 	}
 }
 

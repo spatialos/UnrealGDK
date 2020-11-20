@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -104,11 +104,6 @@ inline bool CompareListOfWorkerConstraints(const Worker_Constraint* Lhs, const W
 inline bool CompareEntityQueryRequests(const EntityQueryRequest& Lhs, const EntityQueryRequest& Rhs)
 {
 	if (Lhs.RequestId != Rhs.RequestId)
-	{
-		return false;
-	}
-
-	if (Lhs.Query.GetWorkerQuery().result_type != Rhs.Query.GetWorkerQuery().result_type)
 	{
 		return false;
 	}

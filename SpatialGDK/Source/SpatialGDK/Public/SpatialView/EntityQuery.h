@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -34,7 +34,6 @@ private:
 
 	TArray<Worker_ComponentId> SnapshotComponentIds;
 	TArray<Worker_Constraint> Constraints; // Stable pointer storage.
-	uint8 ResultType;
 };
 
 } // namespace SpatialGDK

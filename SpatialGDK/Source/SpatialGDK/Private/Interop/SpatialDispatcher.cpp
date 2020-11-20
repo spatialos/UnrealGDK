@@ -79,8 +79,8 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			break;
 
 		// Authority Change
-		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			Receiver->OnAuthorityChange(Op.op.authority_change);
+		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
+			Receiver->OnAuthorityChange(Op.op.component_set_authority_change);
 			break;
 
 		// World Command Responses
@@ -98,9 +98,6 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 
 		case WORKER_OP_TYPE_FLAG_UPDATE:
 			SpatialWorkerFlags->ApplyWorkerFlagUpdate(Op.op.flag_update);
-			break;
-		case WORKER_OP_TYPE_LOG_MESSAGE:
-			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op.op.log_message.message));
 			break;
 		case WORKER_OP_TYPE_METRICS:
 #if !UE_BUILD_SHIPPING
@@ -133,8 +130,8 @@ void SpatialDispatcher::ProcessExternalSchemaOp(const Worker_Op& Op)
 
 	switch (Op.op_type)
 	{
-	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		StaticComponentView->OnAuthorityChange(Op.op.authority_change);
+	case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
+		StaticComponentView->OnAuthorityChange(Op.op.component_set_authority_change);
 		// Intentional fall-through
 	case WORKER_OP_TYPE_ADD_COMPONENT:
 	case WORKER_OP_TYPE_REMOVE_COMPONENT:
@@ -167,11 +164,11 @@ SpatialDispatcher::FCallbackId SpatialDispatcher::OnRemoveComponent(Worker_Compo
 	});
 }
 
-SpatialDispatcher::FCallbackId SpatialDispatcher::OnAuthorityChange(Worker_ComponentId ComponentId,
-																	const TFunction<void(const Worker_AuthorityChangeOp&)>& Callback)
+SpatialDispatcher::FCallbackId SpatialDispatcher::OnAuthorityChange(
+	Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentSetAuthorityChangeOp&)>& Callback)
 {
-	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_AUTHORITY_CHANGE, [Callback](const Worker_Op* Op) {
-		Callback(Op->op.authority_change);
+	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE, [Callback](const Worker_Op* Op) {
+		Callback(Op->op.component_set_authority_change);
 	});
 }
 
