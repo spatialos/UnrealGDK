@@ -140,7 +140,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
 			  meta = (ToolTip = "Select the object types you want to query when selecting actors"))
-	TArray<TEnumAsByte<ECollisionChannel>> SelectActorTypesToQuery = {
+	TArray<TEnumAsByte<ECollisionChannel>> SelectCollisionTypesToQuery = {
 		ECollisionChannel::ECC_WorldStatic,	 ECollisionChannel::ECC_WorldDynamic, ECollisionChannel::ECC_Pawn,
 		ECollisionChannel::ECC_Destructible, ECollisionChannel::ECC_Vehicle,	  ECollisionChannel::ECC_PhysicsBody
 	};
