@@ -259,6 +259,15 @@ bool FAcquireLockViaDelegate::Update()
 	AActor* Actor = Data->TestActors[ActorHandle];
 
 	check(Data->AcquireLockDelegate.IsBound());
+
+	if (!bExpectedSuccess)
+	{
+		Test->AddExpectedError(
+			FString::Printf(TEXT("AcquireLockFromDelegate: A lock with identifier \"%s\" already exists for actor \"%s\"."),
+							*DelegateLockIdentifier, *GetNameSafe(Actor)),
+			EAutomationExpectedErrorFlags::Contains, 1);
+	}
+
 	const bool bAcquireLockSucceeded = Data->AcquireLockDelegate.Execute(Actor, DelegateLockIdentifier);
 
 	Test->TestFalse(TEXT("Expected AcquireLockDelegate to succeed but it failed"), bExpectedSuccess && !bAcquireLockSucceeded);
@@ -277,8 +286,10 @@ bool FReleaseLockViaDelegate::Update()
 
 	if (!bExpectedSuccess)
 	{
-		Test->AddExpectedError(TEXT("Executed ReleaseLockDelegate for unidentified delegate lock identifier."),
-							   EAutomationExpectedErrorFlags::Contains, 1);
+		Test->AddExpectedError(
+			FString::Printf(TEXT("ReleaseLockFromDelegate: Lock identifier \"%s\" has no lock associated with it for actor \"%s\"."),
+							*DelegateLockIdentifier, *GetNameSafe(Actor)),
+			EAutomationExpectedErrorFlags::Contains, 1);
 	}
 
 	const bool bReleaseLockSucceeded = Data->ReleaseLockDelegate.Execute(Actor, DelegateLockIdentifier);
@@ -1053,6 +1064,26 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 }
 
 // AcquireLockDelegate and ReleaseLockDelegate
+
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLockDelegate_is_executed_WHEN_AcquireLockDelegate_is_executed_again_THEN_it_errors_and_returns_false)
+{
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+
+	TSharedPtr<TestData> Data = MakeNewTestData();
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLockViaDelegate(this, Data, "Actor", "First lock", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLockViaDelegate(this, Data, "Actor", "First lock", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+
+	return true;
+}
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_is_executed_THEN_it_errors_and_returns_false)
 {
