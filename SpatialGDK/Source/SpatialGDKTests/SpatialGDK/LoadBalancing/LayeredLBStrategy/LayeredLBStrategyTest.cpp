@@ -53,6 +53,7 @@ void SetUp()
 	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
 	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
 	Settings->bAutoStartLocalDeployment = false;
+	Settings->SaveConfig();
 
 	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
