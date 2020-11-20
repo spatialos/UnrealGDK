@@ -51,10 +51,6 @@ gosu $NEW_USER ""${{SCRIPT}}"" ""$@"" >> ""/improbable/logs/${{WORKER_ID}}.log""
         public const string SimulatedPlayerCoordinatorShellScript =
 @"#!/bin/sh
 
-add-apt-repository -y ppa:ubuntu-toolchain-r/test &>>/improbable/logs/apt.log
-apt-get update &>>/improbable/logs/apt.log
-apt-get -y install libatomic1 gcc-7 libstdc++6-8-dbg &>>/improbable/logs/apt.log
-
 # Some clients are quite large so in order to avoid running out of disk space on the node we attempt to delete the zip
 WORKER_ZIP_DIR=""/tmp/runner_source/""
 if [ -d ""$WORKER_ZIP_DIR"" ]; then
