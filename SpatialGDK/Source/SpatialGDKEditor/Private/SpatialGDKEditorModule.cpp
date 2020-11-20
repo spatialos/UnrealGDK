@@ -81,10 +81,8 @@ void FSpatialGDKEditorModule::ShutdownModule()
 
 void FSpatialGDKEditorModule::TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken)
 {
-	bool bUseStandardRuntime =
-		GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Type::Standard;
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-	GDKServices.GetLocalDeploymentManager()->TakeSnapshot(World, bUseStandardRuntime, OnSnapshotTaken);
+	GDKServices.GetLocalDeploymentManager()->TakeSnapshot(World, OnSnapshotTaken);
 }
 
 bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
