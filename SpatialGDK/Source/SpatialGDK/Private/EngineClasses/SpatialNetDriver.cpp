@@ -211,11 +211,6 @@ USpatialGameInstance* USpatialNetDriver::GetGameInstance() const
 void USpatialNetDriver::SetTestEndTime(Worker_RequestId request_id)
 {
 	TotalCount++;
-	TestTime* tt = TestTimeMap.Find(request_id);
-	if (tt != nullptr)
-	{
-		tt->endTime = FDateTime::Now();
-	}
 	if (TotalSend == TotalCount)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("END TIME %s"), *FDateTime::Now().ToString());

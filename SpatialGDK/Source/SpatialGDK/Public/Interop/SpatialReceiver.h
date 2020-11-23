@@ -87,7 +87,6 @@ public:
 
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) override;
 
-
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void FlushRetryRPCs();
 

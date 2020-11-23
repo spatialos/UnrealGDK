@@ -2087,7 +2087,6 @@ void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp&
 	}
 }
 
-
 void USpatialReceiver::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel)
 {
 	PendingActorRequests.Add(RequestId, Channel);
