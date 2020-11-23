@@ -1127,7 +1127,8 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 
 		if (EventTracer != nullptr)
 		{
-			FSpatialGDKSpanId SpanId = EventTracer->TraceFilterableEvent(FSpatialTraceEventBuilder::CreateSendRetireEntity(Actor, EntityId));
+			FSpatialGDKSpanId SpanId =
+				EventTracer->TraceFilterableEvent(FSpatialTraceEventBuilder::CreateSendRetireEntity(Actor, EntityId));
 			FSpatialGDKSpanId SpanId =
 				EventTracer->TraceFilterableEvent(FSpatialTraceEventBuilder::CreateSendRetireEntity(Actor, EntityId));
 		}
