@@ -231,12 +231,8 @@ FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEv
 	auto MessageSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Message);
 	auto TypeSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Type.ToString());
 
-	Trace_Event Event;
-	Event.span_id = nullptr;
-	Event.message = MessageSrc.Get();
-	Event.type = TypeSrc.Get();
-	Event.unix_timestamp_millis = 0;
-	Event.data = nullptr;
+	auto TypeSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Type.ToString());
+	const ANSICHAR* Type = TypeSrc.Get();
 
 	Trace_SamplingResult SpanSamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event);
 	if (SpanSamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
