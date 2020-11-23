@@ -396,10 +396,16 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
 	bool bEventTracingEnabled;
 
+	/*
+	 * Used to set the default sample rate if event tracing is enabled.
+	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing",
 			  meta = (EditCondition = "bEventTracingEnabled", ClampMin = 0.0f, ClampMax = 1.0f))
 	float SamplingProbability;
 
+	/*
+	 * Used to override sample rate for specific trace events.
+	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing", meta = (EditCondition = "bEventTracingEnabled"))
 	TMap<FName, double> EventSamplingModeOverrides;
 

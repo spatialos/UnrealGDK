@@ -14,9 +14,9 @@ using Worker_EntityId_Key = int64;
 using Worker_RequestId_Key = int64;
 
 using Worker_PartitionId = Worker_EntityId_Key;
+using Trace_SpanIdType = uint8_t;
 
 using Trace_SpanIdType = uint8_t;
-using Trace_SpanId = Trace_SpanIdType*;
 
 using VirtualWorkerId = uint32;
 using PhysicalWorkerName = FString;

@@ -79,7 +79,6 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
-
 	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 
 	SetEntityData(SpawnerEntity, Components);

@@ -25,12 +25,10 @@ void FReceivedOpEventHandler::ProcessOpLists(const OpList& Ops)
 		switch (static_cast<Worker_OpType>(Op.op_type))
 		{
 		case WORKER_OP_TYPE_ADD_ENTITY:
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntity(Op.op.add_entity.entity_id),
-									EventTracer->CreateSpan(Op.span_id, 1));
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntity(Op.op.add_entity.entity_id), Op.span_id, 1);
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveRemoveEntity(Op.op.remove_entity.entity_id),
-									EventTracer->CreateSpan(Op.span_id, 1));
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveRemoveEntity(Op.op.remove_entity.entity_id), Op.span_id, 1);
 			break;
 		case WORKER_OP_TYPE_ADD_COMPONENT:
 			EventTracer->AddComponent(Op.op.add_component.entity_id, Op.op.add_component.data.component_id, FSpatialGDKSpanId(Op.span_id));
@@ -42,8 +40,7 @@ void FReceivedOpEventHandler::ProcessOpLists(const OpList& Ops)
 			EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreateAuthorityChange(
 					Op.op.component_set_authority_change.entity_id, Op.op.component_set_authority_change.component_set_id,
-					static_cast<Worker_Authority>(Op.op.component_set_authority_change.authority)),
-				EventTracer->CreateSpan(Op.span_id, 1));
+					static_cast<Worker_Authority>(Op.op.component_set_authority_change.authority)), Op.span_id, 1);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			EventTracer->UpdateComponent(Op.op.component_update.entity_id, Op.op.component_update.update.component_id,

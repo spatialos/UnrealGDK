@@ -87,7 +87,8 @@ struct PlayerSpawner : Component
 
 		const bool bIsSimulated = GetBoolFromSchema(CommandRequestPayload, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID);
 
-		const Worker_EntityId ClientPartitionId = Schema_GetEntityId(CommandRequestPayload, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID);
+		const Worker_EntityId ClientPartitionId =
+			Schema_GetEntityId(CommandRequestPayload, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID);
 
 		return { LoginURL, UniqueId, OnlinePlatformName, bIsSimulated, ClientPartitionId };
 	}
@@ -101,9 +102,9 @@ struct PlayerSpawner : Component
 		AddStringToSchema(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID,
                   GetStringFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID));
 		Schema_AddBool(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID,
-                       GetBoolFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID));
+					   GetBoolFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID));
 		Schema_AddEntityId(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID,
-			Schema_GetEntityId(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID));
+						   Schema_GetEntityId(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID));
 	}
 };
 

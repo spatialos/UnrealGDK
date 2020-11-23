@@ -5,18 +5,23 @@
 namespace SpatialGDK
 {
 Schema_ComponentUpdate* FRPCStore::GetOrCreateComponentUpdate(const EntityComponentId EntityComponentIdPair,
-															  const FSpatialGDKSpanId& SpanId)
+															  const FSpatialGDKSpanId& SpanId /*= {}*/)
 {
 	PendingUpdate* ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
 	if (ComponentUpdatePtr == nullptr)
 	{
 		ComponentUpdatePtr = &PendingComponentUpdatesToSend.Emplace(EntityComponentIdPair, Schema_CreateComponentUpdate());
 	}
-	if (SpanId.IsValid())
+	return ComponentUpdatePtr->Update;
+}
+
+void FRPCStore::AddSpanIdForComponentUpdate(EntityComponentId EntityComponentIdPair, const FSpatialGDKSpanId& SpanId)
+{
+	PendingUpdate* ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
+	if (ComponentUpdatePtr != nullptr)
 	{
 		ComponentUpdatePtr->SpanIds.Add(SpanId);
 	}
-	return ComponentUpdatePtr->Update;
 }
 
 Schema_ComponentData* FRPCStore::GetOrCreateComponentData(const EntityComponentId EntityComponentIdPair)

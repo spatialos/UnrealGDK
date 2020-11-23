@@ -11,7 +11,6 @@
 struct SPATIALGDK_API FSpatialGDKSpanId
 {
 	FSpatialGDKSpanId();
-	explicit FSpatialGDKSpanId(bool bInIsValid);
 	explicit FSpatialGDKSpanId(const Trace_SpanIdType* TraceSpanId);
 
 	FString ToString() const;
@@ -20,31 +19,10 @@ struct SPATIALGDK_API FSpatialGDKSpanId
 	bool IsNull() const { return Trace_SpanId_IsNull(Data) == 0; }
 	bool IsValid() const { return bIsValid; }
 
-	void WriteData(const Trace_SpanIdType* TraceSpanId);
-	Trace_SpanIdType* GetData();
-	const Trace_SpanIdType* GetConstData() const;
+	void WriteId(const Trace_SpanIdType* TraceSpanId);
+	Trace_SpanIdType* GetId();
+	const Trace_SpanIdType* GetConstId() const;
 
 private:
-	bool bIsValid;
-	Trace_SpanIdType Data[TRACE_SPAN_ID_SIZE_BYTES];
-};
-
-class FMultiGDKSpanIdAllocator
-{
-public:
-	FMultiGDKSpanIdAllocator() = delete;
-	FMultiGDKSpanIdAllocator(const FSpatialGDKSpanId& A, const FSpatialGDKSpanId& B);
-	FMultiGDKSpanIdAllocator(const TArray<FSpatialGDKSpanId>& SpanIds);
-	~FMultiGDKSpanIdAllocator();
-
-	Trace_SpanIdType* GetBuffer() const { return Buffer; }
-	int32 GetNumSpanIds() const { return NumSpanIds; }
-
-private:
-	void WriteToBuffer(const int32 SpanIndex, const FSpatialGDKSpanId& TraceSpanId);
-
-	Trace_SpanIdType* Buffer;
-	std::allocator<Trace_SpanIdType> Allocator;
-	const int32 NumSpanIds;
-	const int32 NumBytes;
+	Trace_SpanIdType Id[TRACE_SPAN_ID_SIZE_BYTES];
 };
