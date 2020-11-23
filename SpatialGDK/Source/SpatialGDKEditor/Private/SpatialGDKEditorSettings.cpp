@@ -123,6 +123,20 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		// TODO: UNR-4472 - Remove this WorkerTypeName renaming when refactoring FLaunchConfigDescription.
 		// Force override the server worker name as it MUST be UnrealWorker.
 		LaunchConfigDesc.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
+
+		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FSpatialLaunchConfigDescription, RuntimeFlags))
+		{
+			USpatialGDKEditorSettings::TrimTMap(LaunchConfigDesc.RuntimeFlags);
+		}
+		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FWorkerTypeLaunchSection, Flags))
+		{
+			USpatialGDKEditorSettings::TrimTMap(LaunchConfigDesc.ServerWorkerConfiguration.Flags);
+
+			for (auto& WorkerConfig : LaunchConfigDesc.AdditionalWorkerConfigs)
+			{
+				USpatialGDKEditorSettings::TrimTMap(WorkerConfig.Flags);
+			}
+		}
 	}
 }
 
@@ -507,6 +521,15 @@ FString USpatialGDKEditorSettings::GetCookAndGenerateSchemaTargetPlatform() cons
 
 	// Return current Editor's Build variant as default.
 	return FPlatformProcess::GetBinariesSubdirectory();
+}
+
+void USpatialGDKEditorSettings::TrimTMap(TMap<FString, FString>& Map)
+{
+	for (auto& Flag : Map)
+	{
+		Flag.Key.TrimStartAndEndInline();
+		Flag.Value.TrimStartAndEndInline();
+	}
 }
 
 const FString& FSpatialLaunchConfigDescription::GetTemplate() const

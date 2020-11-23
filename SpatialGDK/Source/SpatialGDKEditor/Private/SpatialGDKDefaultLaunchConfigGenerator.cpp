@@ -275,6 +275,7 @@ bool ValidateGeneratedLaunchConfig(const FSpatialLaunchConfigDescription& Launch
 			return false;
 		}
 	}
+
 	return true;
 }
 

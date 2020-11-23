@@ -29,8 +29,8 @@ public:
 	// Return the unique ID for the worker.
 	virtual const FString& GetWorkerId() const = 0;
 
-	// Returns the attributes for the worker.
-	virtual const TArray<FString>& GetWorkerAttributes() const = 0;
+	// Returns the worker system entity ID.
+	virtual Worker_EntityId GetWorkerSystemEntityId() const = 0;
 };
 
 } // namespace SpatialGDK

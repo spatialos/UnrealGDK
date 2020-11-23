@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/Callbacks.h"
 #include "SpatialView/CommandRetryHandlerImpl.h"
@@ -30,7 +30,6 @@ EntityQuery CreateTestEntityQuery()
 	Worker_EntityQuery WorkerEntityQuery;
 	WorkerEntityQuery.constraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
 	WorkerEntityQuery.constraint.constraint.entity_id_constraint = Worker_EntityIdConstraint{ TestEntityId };
-	WorkerEntityQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 	WorkerEntityQuery.snapshot_result_type_component_id_count = 1;
 	TArray<Worker_ComponentId> WorkerComponentIds = { TestComponentId };
 	WorkerEntityQuery.snapshot_result_type_component_ids = WorkerComponentIds.GetData();
