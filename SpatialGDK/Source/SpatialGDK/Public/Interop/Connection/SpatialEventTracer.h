@@ -28,7 +28,7 @@ public:
 	Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
 	FSpatialGDKSpanId TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes = nullptr,
-										   int32 NumCauses = 0);
+								 int32 NumCauses = 0);
 
 	void AddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
 	void RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);

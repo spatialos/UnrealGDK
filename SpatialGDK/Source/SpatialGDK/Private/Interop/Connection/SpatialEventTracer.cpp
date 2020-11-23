@@ -144,7 +144,8 @@ FSpatialGDKSpanId SpatialEventTracer::UserSpanIdToGDKSpanId(const FUserSpanId& U
 	return TraceSpanId;
 }
 
-FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes /* = nullptr*/, int32 NumCauses /* = 0*/)
+FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes /* = nullptr*/,
+												 int32 NumCauses /* = 0*/)
 {
 	if (Causes == nullptr && NumCauses > 0)
 	{
@@ -201,7 +202,6 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& Spati
 			Trace_EventData_AddStringFields(EventData, 1, &FrameCountStr, &TmpBufferPtr);
 		}
 
-
 		Event.data = EventData;
 		Trace_EventTracer_AddEvent(EventTracer, &Event);
 		Trace_EventData_Destroy(EventData);
@@ -246,7 +246,8 @@ void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_Compon
 	FSpatialGDKSpanId& StoredSpanId = EntityComponentSpanIds.FindChecked({ EntityId, ComponentId });
 
 	FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(SpanId, StoredSpanId);
-	StoredSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(EntityId, ComponentId), SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
+	StoredSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(EntityId, ComponentId), SpanIdAllocator.GetBuffer(),
+							  SpanIdAllocator.GetNumSpanIds());
 }
 
 FSpatialGDKSpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
@@ -309,7 +310,8 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 	else
 	{
 		FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(SpanId, *ExistingSpanId);
-		*ExistingSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(Object.Get()), SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
+		*ExistingSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(Object.Get()),
+									 SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
 	}
 }
 

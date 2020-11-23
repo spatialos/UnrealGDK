@@ -1675,7 +1675,8 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	{
 		FSpatialGDKSpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(Op.entity_id, Op.update.component_id));
 		EventTracer->TraceEvent(
-			FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, Op.entity_id, Op.update.component_id), CauseSpanId.GetConstData(), 1);
+			FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, Op.entity_id, Op.update.component_id),
+			CauseSpanId.GetConstData(), 1);
 	}
 
 	ESchemaComponentType Category = ClassInfoManager->GetCategoryByComponentId(Op.update.component_id);
@@ -1734,7 +1735,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 		if (EventTracer != nullptr)
 		{
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), RequestId),
-				Op.span_id, 1);
+									Op.span_id, 1);
 		}
 
 		return;
@@ -1940,8 +1941,7 @@ void USpatialReceiver::ReceiveCommandResponse(const Worker_Op& Op)
 		if (EventTracer != nullptr)
 		{
 			// We received a response for some other command, ignore.
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TargetActor, RequestId, false),
-									Op.span_id, 1);
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TargetActor, RequestId, false), Op.span_id, 1);
 		}
 
 		return;
@@ -2138,7 +2138,8 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 	}
 	else if (EventTracer != nullptr)
 	{
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(TEXT("Create entity response unknown error")), Op.span_id, 1);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(TEXT("Create entity response unknown error")), Op.span_id,
+								1);
 	}
 }
 

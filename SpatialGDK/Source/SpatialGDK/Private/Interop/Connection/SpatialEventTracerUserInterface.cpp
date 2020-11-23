@@ -47,8 +47,7 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* Worl
 	}
 
 	FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(CauseSpanIds);
-	FSpatialGDKSpanId SpanId =
-		EventTracer->TraceEvent(SpatialTraceEvent, SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
+	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(SpatialTraceEvent, SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
 	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 }
 
