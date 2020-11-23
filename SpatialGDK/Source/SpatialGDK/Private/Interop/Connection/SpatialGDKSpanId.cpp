@@ -26,8 +26,7 @@ FSpatialGDKSpanId::FSpatialGDKSpanId(const Trace_SpanIdType* TraceSpanId)
 
 void FSpatialGDKSpanId::WriteData(const Trace_SpanIdType* TraceSpanId)
 {
-	const int32 Size = TRACE_SPAN_ID_SIZE_BYTES * sizeof(Trace_SpanIdType);
-	FMemory::Memcpy(Data, TraceSpanId, Size);
+	FMemory::Memcpy(Data, TraceSpanId, TRACE_SPAN_ID_SIZE_BYTES);
 }
 
 Trace_SpanIdType* FSpatialGDKSpanId::GetData()
@@ -87,9 +86,10 @@ FMultiGDKSpanIdAllocator::~FMultiGDKSpanIdAllocator()
 void FMultiGDKSpanIdAllocator::WriteToBuffer(const int32 SpanIndex, const FSpatialGDKSpanId& SpanId)
 {
 	const Trace_SpanIdType* Data = SpanId.GetConstData();
-	for (int32 ElementIndex = 0; ElementIndex < TRACE_SPAN_ID_SIZE_BYTES; ++ElementIndex)
+	const int32 NumElements = TRACE_SPAN_ID_SIZE_BYTES / sizeof(Trace_SpanIdType);
+	for (int32 ElementIndex = 0; ElementIndex < NumElements; ++ElementIndex)
 	{
-		const int32 BufferIndex = SpanIndex * TRACE_SPAN_ID_SIZE_BYTES * sizeof(Trace_SpanIdType) + ElementIndex;
+		const int32 BufferIndex = SpanIndex * TRACE_SPAN_ID_SIZE_BYTES + ElementIndex * sizeof(Trace_SpanIdType);
 		Allocator.construct(Buffer + BufferIndex, Data[ElementIndex]);
 	}
 }
