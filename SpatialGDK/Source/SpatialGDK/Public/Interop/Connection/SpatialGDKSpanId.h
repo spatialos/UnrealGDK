@@ -7,18 +7,27 @@
 
 #include <WorkerSDK/improbable/c_trace.h>
 
-struct FSpatialGDKSpanId
+struct SPATIALGDK_API FSpatialGDKSpanId
 {
-	explicit FSpatialGDKSpanId(){};
-	explicit FSpatialGDKSpanId(const Trace_SpanIdType* TraceSpanId)
-	{
-		const int32 Size = TRACE_SPAN_ID_SIZE_BYTES * sizeof(Trace_SpanIdType);
-		FMemory::Memcpy(Data, TraceSpanId, Size);
-	}
+	FSpatialGDKSpanId();
+	explicit FSpatialGDKSpanId(bool bInIsValid);
+	explicit FSpatialGDKSpanId(const Trace_SpanIdType* TraceSpanId);
 
-	bool IsValid() const { return Trace_SpanId_IsNull(Data); }
+	FString ToString() const;
+	static FString ToString(const Trace_SpanIdType* TraceSpanId);
 
+	bool IsNull() const { return Trace_SpanId_IsNull(Data); }
+	bool IsValid() const { return bIsValid; }
+
+	void WriteData(const Trace_SpanIdType* TraceSpanId);
+	Trace_SpanIdType* GetData();
+	const Trace_SpanIdType* GetConstData() const;
+
+private:
+
+	bool bIsValid;
 	Trace_SpanIdType Data[TRACE_SPAN_ID_SIZE_BYTES];
+
 };
 
 class FMultiGDKSpanIdAllocator
@@ -33,10 +42,10 @@ public:
 	int32 GetNumSpanIds() const { return NumSpanIds; }
 
 private:
-	void Allocate(const int32 SpanIndex, const FSpatialGDKSpanId& TraceSpanId);
+	void WriteToBuffer(const int32 SpanIndex, const FSpatialGDKSpanId& TraceSpanId);
 
+	Trace_SpanIdType* Buffer;
 	std::allocator<Trace_SpanIdType> Allocator;
 	const int32 NumSpanIds;
 	const int32 NumBytes;
-	Trace_SpanIdType* Buffer;
 };
