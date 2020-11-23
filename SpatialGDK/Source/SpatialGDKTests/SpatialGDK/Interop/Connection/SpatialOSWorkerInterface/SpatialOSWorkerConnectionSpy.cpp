@@ -51,13 +51,13 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FW
 	return SendCreateEntityRequest(Components, EntityId, SpanId);
 }
 
-
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId, const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId, SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId)
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId, SpatialGDK::FRetryData RetryData,
+																	   const FSpatialGDKSpanId& SpanId)
 {
 	return SendDeleteEntityRequest(EntityId, SpanId);
 }
@@ -106,7 +106,8 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendEntityQueryRequest(const Work
 	return NextRequestId++;
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery, SpatialGDK::FRetryData RetryDAta)
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery,
+																	  SpatialGDK::FRetryData RetryDAta)
 {
 	return SendEntityQueryRequest(EntityQuery);
 }

@@ -4,8 +4,8 @@
 
 #include "Interop/Connection/OutgoingMessages.h"
 #include "SpatialCommonTypes.h"
-#include "SpatialView/ViewDelta.h"
 #include "SpatialView/CommandRetryHandler.h"
+#include "SpatialView/ViewDelta.h"
 
 class SPATIALGDK_API SpatialOSWorkerInterface
 {
@@ -17,15 +17,14 @@ public:
 	virtual const TArray<Worker_Op>& GetWorkerMessages() = 0;
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) = 0;
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities, SpatialGDK::FRetryData Data) = 0;
+	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, const FSpatialGDKSpanId& SpanId = {}) = 0;
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
-													 const FSpatialGDKSpanId& SpanId = {}) = 0;
+													 SpatialGDK::FRetryData RetryData, const FSpatialGDKSpanId& SpanId = {}) = 0;
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, const FSpatialGDKSpanId& SpanId = {}) = 0;
+	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, SpatialGDK::FRetryData RetryData,
+													 const FSpatialGDKSpanId& SpanId = {}) = 0;
 	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData, const FSpatialGDKSpanId& SpanId = {}) = 0;
 	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId = {}) = 0;
-	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, SpatialGDK::FRetryData RetryData, const FSpatialGDKSpanId& SpanId = {}) = 0;
-	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<Trace_SpanId>& SpanId = {}) = 0;
-	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId = {}) = 0;
-
 	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 									 const FSpatialGDKSpanId& SpanId = {}) = 0;
 	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
