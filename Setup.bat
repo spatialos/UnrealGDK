@@ -9,7 +9,10 @@ pushd "%~dp0"
 call :MarkStartOfBlock "%~0"
 
 call :MarkStartOfBlock "Setup the git hooks"
-    if not exist .git\hooks goto SkipGitHooks
+    if not exist .git\hooks (
+      echo ".git\hooks not found: skipping git hook setup"
+      goto SkipGitHooks
+    )
 
     rem Remove the old post-checkout hook.
     if exist .git\hooks\post-checkout del .git\hooks\post-checkout
@@ -127,7 +130,7 @@ if defined DOWNLOAD_MOBILE (
 call :MarkEndOfBlock "Retrieve dependencies"
 
 REM There is a race condition between retrieve and unzip, add version call to stall briefly
-call spatial version 
+call spatial version
 
 call :MarkStartOfBlock "Unpack dependencies"
     powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c_headers.zip\"                                  -DestinationPath \"%BINARIES_DIR%\Headers\" -Force; "^
