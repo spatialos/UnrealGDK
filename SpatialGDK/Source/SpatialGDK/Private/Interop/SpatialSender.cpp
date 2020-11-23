@@ -627,12 +627,13 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 
+	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
-		FSpatialGDKSpanId SpanId =
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
-		Connection->SendComponentUpdate(EntityId, &Update, SpanId);
+		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
 	}
+
+	Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 
 	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
 	// This should always happen with USLB.
