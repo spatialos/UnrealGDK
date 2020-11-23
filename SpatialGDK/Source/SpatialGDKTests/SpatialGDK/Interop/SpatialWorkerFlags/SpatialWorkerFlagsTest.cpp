@@ -367,6 +367,30 @@ SPATIALWORKERFLAGS_TEST(GIVEN_awaiting_a_flag_update_delegate_WHEN_the_worker_fl
 	return true;
 }
 
+SPATIALWORKERFLAGS_TEST(GIVEN_awaiting_a_flag_update_delegate_WHEN_the_worker_flag_updates_twice_THEN_delegate_is_invoked_only_once)
+{
+	// GIVEN
+	// Await flag update
+	const FString TestFlagName = TEXT("test");
+	UWorkerFlagsTestSpyObject* SpyObj = NewObject<UWorkerFlagsTestSpyObject>();
+	FOnWorkerFlagUpdatedBP WorkerFlagDelegate;
+	WorkerFlagDelegate.BindDynamic(SpyObj, &UWorkerFlagsTestSpyObject::SetFlagUpdated);
+	USpatialWorkerFlags* SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
+	SpatialWorkerFlags->AwaitFlagUpdated(TestFlagName, WorkerFlagDelegate);
+
+	// WHEN
+	// Add test flag
+	Worker_FlagUpdateOp OpAddFlag = CreateWorkerFlagUpdateOp(TCHAR_TO_ANSI(*TestFlagName), "10");
+	SpatialWorkerFlags->ApplyWorkerFlagUpdate(OpAddFlag);
+	// Update flag again
+	SpatialWorkerFlags->ApplyWorkerFlagUpdate(OpAddFlag);
+
+	// THEN
+	TestTrue("Delegate Function called once", SpyObj->GetTimesFlagUpdated() == 1);
+
+	return true;
+}
+
 SPATIALWORKERFLAGS_TEST(GIVEN_awaiting_a_flag_update_delegate_WHEN_the_worker_flag_class_is_destroyed_THEN_delegate_is_not_invoked)
 {
 	// GIVEN
