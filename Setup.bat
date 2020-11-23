@@ -142,6 +142,7 @@ call :MarkEndOfBlock "Retrieve dependencies"
 
 REM There is a race condition between retrieve and unzip, add version call to stall briefly
 call spatial version
+if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
 
 call :MarkStartOfBlock "Unpack dependencies"
     powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c_headers.zip\"                           -DestinationPath \"%BINARIES_DIR%\Headers\" -Force; "^
@@ -173,7 +174,8 @@ if exist "%SPATIAL_DIR%" (
 )
 
 call :MarkStartOfBlock "Build C# utilities"
-    %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
+    call :ExecuteAndCheck %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
+    if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
 call :MarkEndOfBlock "Build C# utilities"
 
 call :MarkEndOfBlock "%~0"
