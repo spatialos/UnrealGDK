@@ -35,7 +35,8 @@ public:
 
 	void ProcessIncomingRPCs();
 
-	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload InPayload);
+	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload InPayload,
+								   TOptional<uint64> RPCIdForLinearEventTrace);
 
 	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target = nullptr,
 						   UFunction* Function = nullptr);
@@ -53,7 +54,7 @@ public:
 	void ClearPendingRPCs(Worker_EntityId EntityId);
 
 private:
-	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, const PendingRPCPayload& Payload, bool bCreatedEntity);
+	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, PendingRPCPayload Payload, bool bCreatedEntity);
 
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
 	// Note: It's like applying an RPC, but more secretive

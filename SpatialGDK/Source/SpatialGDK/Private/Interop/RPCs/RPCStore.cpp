@@ -12,11 +12,16 @@ Schema_ComponentUpdate* FRPCStore::GetOrCreateComponentUpdate(const EntityCompon
 	{
 		ComponentUpdatePtr = &PendingComponentUpdatesToSend.Emplace(EntityComponentIdPair, Schema_CreateComponentUpdate());
 	}
-	if (SpanId.IsValid())
+	return ComponentUpdatePtr->Update;
+}
+
+void FRPCStore::AddSpanIdForComponentUpdate(EntityComponentId EntityComponentIdPair, const Trace_SpanId* SpanId)
+{
+	PendingUpdate* ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
+	if (ComponentUpdatePtr != nullptr && SpanId != nullptr)
 	{
 		ComponentUpdatePtr->SpanIds.Add(SpanId);
 	}
-	return ComponentUpdatePtr->Update;
 }
 
 Schema_ComponentData* FRPCStore::GetOrCreateComponentData(const EntityComponentId EntityComponentIdPair)

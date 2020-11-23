@@ -231,7 +231,7 @@ void MulticastRPCService::ExtractRPCs(const Worker_EntityId EntityId)
 			const TOptional<RPCPayload>& Element = Buffer.GetRingBufferElement(RPCId);
 			if (Element.IsSet())
 			{
-				ExtractRPCCallback.Execute(FUnrealObjectRef(EntityId, Element.GetValue().Offset), Element.GetValue());
+				ExtractRPCCallback.Execute(FUnrealObjectRef(EntityId, Element.GetValue().Offset), Element.GetValue(), RPCId);
 				LastProcessedRPCId = RPCId;
 			}
 			else

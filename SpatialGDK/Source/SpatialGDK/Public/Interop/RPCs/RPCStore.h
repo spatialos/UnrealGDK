@@ -7,7 +7,7 @@
 #include "SpatialConstants.h"
 #include "SpatialView/EntityComponentId.h"
 
-DECLARE_DELEGATE_TwoParams(ExtractRPCDelegate, const FUnrealObjectRef&, SpatialGDK::RPCPayload);
+DECLARE_DELEGATE_ThreeParams(ExtractRPCDelegate, const FUnrealObjectRef&, SpatialGDK::RPCPayload, TOptional<uint64>);
 
 namespace SpatialGDK
 {
@@ -70,6 +70,7 @@ struct FRPCStore
 {
 	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, const FSpatialGDKSpanId& SpanId = {});
 	Schema_ComponentData* GetOrCreateComponentData(EntityComponentId EntityComponentIdPair);
+	void AddSpanIdForComponentUpdate(EntityComponentId EntityComponentIdPair, const Trace_SpanId* SpanId);
 
 	TMap<EntityRPCType, uint64> LastSentRPCIds;
 	TMap<EntityComponentId, PendingUpdate> PendingComponentUpdatesToSend;

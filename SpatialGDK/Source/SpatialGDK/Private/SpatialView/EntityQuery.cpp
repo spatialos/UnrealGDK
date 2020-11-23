@@ -1,14 +1,15 @@
-﻿#include "SpatialView/EntityQuery.h"
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+#include "SpatialView/EntityQuery.h"
 
 namespace SpatialGDK
 {
 EntityQuery::EntityQuery(const Worker_EntityQuery& Query)
-	: ResultType(static_cast<Worker_ResultType>(Query.result_type))
 {
 	Constraints.Reserve(GetNestedConstraintCount(Query.constraint));
 	Constraints.Add(Query.constraint);
 	StoreChildConstraints(Query.constraint, 0);
-	if (Query.result_type == WORKER_RESULT_TYPE_SNAPSHOT && Query.snapshot_result_type_component_ids)
+	if (Query.snapshot_result_type_component_ids)
 	{
 		SnapshotComponentIds.Reserve(Query.snapshot_result_type_component_id_count);
 		SnapshotComponentIds.Append(Query.snapshot_result_type_component_ids, Query.snapshot_result_type_component_id_count);
@@ -17,8 +18,7 @@ EntityQuery::EntityQuery(const Worker_EntityQuery& Query)
 
 Worker_EntityQuery EntityQuery::GetWorkerQuery() const
 {
-	return Worker_EntityQuery{ Constraints[0], ResultType, static_cast<uint32>(SnapshotComponentIds.Num()),
-							   ResultType == WORKER_RESULT_TYPE_SNAPSHOT ? SnapshotComponentIds.GetData() : nullptr };
+	return Worker_EntityQuery{ Constraints[0], static_cast<uint32>(SnapshotComponentIds.Num()), SnapshotComponentIds.GetData() };
 }
 
 int32 EntityQuery::GetNestedConstraintCount(const Worker_Constraint& Constraint)

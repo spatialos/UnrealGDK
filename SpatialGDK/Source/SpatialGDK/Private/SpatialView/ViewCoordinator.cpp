@@ -239,9 +239,9 @@ const FString& ViewCoordinator::GetWorkerId() const
 	return ConnectionHandler->GetWorkerId();
 }
 
-const TArray<FString>& ViewCoordinator::GetWorkerAttributes() const
+Worker_EntityId ViewCoordinator::GetWorkerSystemEntityId() const
 {
-	return ConnectionHandler->GetWorkerAttributes();
+	return ConnectionHandler->GetWorkerSystemEntityId();
 }
 
 } // namespace SpatialGDK

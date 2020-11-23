@@ -191,7 +191,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Visualization)
 	void SetShowWorkerRegions(const bool bNewShow);
 
-	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
+	void ActorAuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp) const;
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
 #if WITH_EDITOR

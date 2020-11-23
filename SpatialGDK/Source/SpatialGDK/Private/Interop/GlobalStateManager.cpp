@@ -14,17 +14,16 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineUtils.h"
-#include "GameFramework/GameModeBase.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Kismet/GameplayStatics.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ServerWorker.h"
-#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
-#include "Utils/EntityPool.h"
+#include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
@@ -289,17 +288,17 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
+void UGlobalStateManager::AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp)
 {
 	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."),
-		   AuthOp.component_id, AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
+		   AuthOp.component_set_id, AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
 
 	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		return;
 	}
 
-	switch (AuthOp.component_id)
+	switch (AuthOp.component_set_id)
 	{
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 	{
@@ -408,6 +407,25 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 	Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 }
 
+Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
+{
+	if (ensure(NetDriver != nullptr))
+	{
+		return NetDriver->WorkerEntityId;
+	}
+
+	return SpatialConstants::INVALID_ENTITY_ID;
+}
+
+void UGlobalStateManager::ClaimSnapshotPartition() const
+{
+	if (ensure(Sender != nullptr))
+	{
+		Sender->SendClaimPartitionRequest(NetDriver->Connection->GetWorkerSystemEntityId(),
+										  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	}
+}
+
 void UGlobalStateManager::TriggerBeginPlay()
 {
 	const bool bHasStartupActorAuthority =
@@ -416,6 +434,22 @@ void UGlobalStateManager::TriggerBeginPlay()
 	{
 		SendCanBeginPlayUpdate(true);
 	}
+
+#if !UE_BUILD_SHIPPING
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	if (NetDriver->IsServer())
+	{
+		// If metrics display is enabled, spawn an Actor to replicate the information to each client.
+		if (SpatialSettings->bEnableMetricsDisplay)
+		{
+			NetDriver->SpatialMetricsDisplay = NetDriver->World->SpawnActor<ASpatialMetricsDisplay>();
+		}
+		if (SpatialSettings->SpatialDebugger != nullptr)
+		{
+			NetDriver->SpatialDebugger = NetDriver->World->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger);
+		}
+	}
+#endif
 
 	// This method has early exits internally to ensure the logic is only executed on the correct worker.
 	SetAcceptingPlayers(true);
@@ -473,7 +507,6 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 
 	Worker_EntityQuery GSMQuery{};
 	GSMQuery.constraint = GSMConstraint;
-	GSMQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	Worker_RequestId RequestID;
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
@@ -516,7 +549,6 @@ void UGlobalStateManager::QueryTranslation()
 
 	Worker_EntityQuery TranslationQuery{};
 	TranslationQuery.constraint = TranslationConstraint;
-	TranslationQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery);
 	bTranslationQueryInFlight = true;

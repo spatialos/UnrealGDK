@@ -253,8 +253,9 @@ public:
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
 	/** Enables multi-worker, if false uses single worker strategy in the editor.  */
-	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable multi-worker in editor"))
+	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (DisplayName = "Enable multi-worker in editor"))
 	bool bEnableMultiWorker;
+
 	/** RPC ring buffers is enabled when either the matching setting is set, or load balancing is enabled */
 	bool UseRPCRingBuffer() const;
 

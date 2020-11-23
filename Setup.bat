@@ -114,17 +114,16 @@ call :MarkStartOfBlock "Retrieve dependencies"
     spatial package retrieve tools           schema_compiler-x86_64-win32               %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
     spatial package retrieve schema          standard_library                           %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\schema\standard_library.zip"
     spatial package retrieve worker_sdk      c_headers                                  %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c_headers.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86-vc141_md-win32               %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-vc141_md-win32.zip"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-vc141_md-win32            %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc141_md-win32.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc510-linux              %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc510-linux.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-clang1000-linux           %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang1000-linux.zip"
 if defined DOWNLOAD_MOBILE (
     spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang-ios         %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip"
-    spatial package retrieve worker_sdk      c-dynamic-arm64v8a-clang_ndk21-android    %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_clang_ndk21-android.zip"
-    spatial package retrieve worker_sdk      c-dynamic-armv7a-clang_ndk21-android      %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-armv7a-clang_clang_ndk21-android.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-clang_ndk21-android      %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_clang_ndk21-android.zip"
+    spatial package retrieve worker_sdk      c-dynamic-arm64v8a-clang_ndk21d-android    %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_clang_ndk21-android.zip"
+    spatial package retrieve worker_sdk      c-dynamic-armv7a-clang_ndk21d-android      %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-armv7a-clang_clang_ndk21-android.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-clang_ndk21d-android      %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_clang_ndk21-android.zip"
 )
-    spatial package retrieve worker_sdk      csharp                                     %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\csharp.zip"
     spatial package retrieve spot            spot-win64                                 %PINNED_SPOT_VERSION%       %DOMAIN_ENVIRONMENT_VAR%   "%BINARIES_DIR%\Programs\spot.exe"
+    spatial package retrieve worker_sdk      csharp_cinterop                            %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\csharp_cinterop.zip"
 call :MarkEndOfBlock "Retrieve dependencies"
 
 REM There is a race condition between retrieve and unzip, add version call to stall briefly
@@ -132,10 +131,9 @@ call spatial version
 
 call :MarkStartOfBlock "Unpack dependencies"
     powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c_headers.zip\"                                  -DestinationPath \"%BINARIES_DIR%\Headers\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-vc141_md-win32.zip\"               -DestinationPath \"%BINARIES_DIR%\Win32\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc141_md-win32.zip\"            -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc510-linux.zip\"              -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\csharp.zip\"                                     -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\csharp\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang1000-linux.zip\"           -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\csharp_cinterop.zip\"                            -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\csharp_cinterop\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"                    -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                               -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
 

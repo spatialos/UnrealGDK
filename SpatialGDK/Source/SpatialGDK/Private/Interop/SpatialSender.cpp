@@ -173,6 +173,9 @@ void USpatialSender::SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerC
 	FWorkerComponentUpdate Update = Presence->CreateComponentPresenceUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 
+	// Short circuit an enforcer update if possible.
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+
 	for (FWorkerComponentData& ComponentData : ComponentDatas)
 	{
 		Connection->SendAddComponent(EntityId, &ComponentData);
@@ -204,15 +207,15 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 	});
 
 	// Update the ComponentPresence component with the new component IDs. This component is used to inform the enforcer
-	// of the component IDs to add to the EntityACL.
+	// of the component IDs to add to the AuthorityDelegation.
 	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
 	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
 	ComponentPresenceData->AddComponentIds(NewComponentIds);
 	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 
-	// Notify the load balance enforcer of a potential short circuit if we are the ACL authoritative worker.
-	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
+	// Notify the load balance enforcer of a potential short circuit if we are the AuthorityDelegation authoritative worker.
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
 }
 
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
@@ -254,24 +257,22 @@ void USpatialSender::CreateServerWorkerEntity()
 // Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
 void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounter)
 {
-	const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
-
-	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, WorkerIdPermission);
-	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, WorkerIdPermission);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
-	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
-	ComponentWriteAcl.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, WorkerIdPermission);
-	ComponentWriteAcl.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, WorkerIdPermission);
+	check(NetDriver != nullptr);
 
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
-	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(ServerWorker(Connection->GetWorkerId(), false).CreateServerWorkerData());
+	Components.Add(ServerWorker(Connection->GetWorkerId(), false, Connection->GetWorkerSystemEntityId()).CreateServerWorkerData());
+
+	AuthorityDelegationMap DelegationMap;
+	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, EntityId);
+	DelegationMap.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, EntityId);
+	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, EntityId);
+	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
+
 	check(NetDriver != nullptr);
 
-	// It is unlikely the load balance strategy would be set up at this point, but we call this function again later when it is ready in
+	// The load balance strategy won't be set up at this point, but we call this function again later when it is ready in
 	// order to set the interest of the server worker according to the strategy.
 	Components.Add(NetDriver->InterestFactory
 					   ->CreateServerWorkerInterest(EntityId, NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
@@ -297,7 +298,11 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 			if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 			{
 				Sender->NetDriver->WorkerEntityId = Op.entity_id;
-				Sender->NetDriver->GlobalStateManager->TrySendWorkerReadyToBeginPlay();
+
+				// We claim each server worker entity as a partition for server worker interest. This is necessary for getting
+				// interest in the VirtualWorkerTranslator component.
+				Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerSystemEntityId(), Op.entity_id);
+
 				return;
 			}
 
@@ -349,6 +354,18 @@ bool USpatialSender::ValidateOrExit_IsSupportedClass(const FString& PathName)
 	GEngine->NetworkRemapPath(NetDriver, RemappedPathName, false);
 
 	return ClassInfoManager->ValidateOrExit_IsSupportedClass(RemappedPathName);
+}
+
+void USpatialSender::SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const
+{
+	UE_LOG(LogSpatialSender, Log,
+		   TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId: %lld. "
+				"PartitionId: %lld"),
+		   *Connection->GetWorkerId(), SystemWorkerEntityId, PartitionId);
+	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionId);
+	const Worker_RequestId RequestId =
+		Connection->SendCommandRequest(SystemWorkerEntityId, &CommandRequest, SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID);
+	Receiver->PendingPartitionAssignments.Add(RequestId, PartitionId);
 }
 
 void USpatialSender::DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents)
@@ -415,11 +432,8 @@ void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
 {
 	check(Connection != nullptr);
 	check(NetDriver != nullptr);
-	if (NetDriver->WorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		// No worker entity to update.
-		return;
-	}
+	check(NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID);
+	check(NetDriver->LoadBalanceStrategy != nullptr && NetDriver->LoadBalanceStrategy->IsReady());
 
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
 	FWorkerComponentUpdate InterestUpdate = NetDriver->InterestFactory
@@ -429,11 +443,8 @@ void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
 
 	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
 
-	if (NetDriver->LoadBalanceStrategy != nullptr && NetDriver->LoadBalanceStrategy->IsReady())
-	{
-		// Also update the position of the worker entity to the centre of the load balancing region.
-		SendPositionUpdate(NetDriver->WorkerEntityId, NetDriver->LoadBalanceStrategy->GetWorkerEntityPosition());
-	}
+	// Also update the position of the worker entity to the centre of the load balancing region.
+	SendPositionUpdate(NetDriver->WorkerEntityId, NetDriver->LoadBalanceStrategy->GetWorkerEntityPosition());
 }
 
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel,
@@ -586,7 +597,7 @@ void USpatialSender::SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_Com
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
 {
 #if !UE_BUILD_SHIPPING
-	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
+	if (!NetDriver->HasServerAuthority(EntityId))
 	{
 		UE_LOG(LogSpatialSender, Verbose,
 			   TEXT("Trying to send Position component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
@@ -598,32 +609,21 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId)
+void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const
 {
 	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID));
 
 	AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
 	check(AuthorityIntentComponent != nullptr);
-
-	if (AuthorityIntentComponent->VirtualWorkerId == NewAuthoritativeVirtualWorkerId)
-	{
-		// There may be multiple intent updates triggered by a server worker before the Runtime
-		// notifies this worker that the authority has changed. Ignore the extra calls here.
-		return;
-	}
+	checkf(AuthorityIntentComponent->VirtualWorkerId != NewAuthoritativeVirtualWorkerId,
+		   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
+		   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
 
 	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
 	UE_LOG(LogSpatialSender, Log,
-		   TEXT("(%s) Sending authority intent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
+		   TEXT("(%s) Sending AuthorityIntent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
 		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
-
-	// If the SpatialDebugger is enabled, also update the authority intent virtual worker ID and color.
-	if (NetDriver->SpatialDebugger != nullptr)
-	{
-		NetDriver->SpatialDebugger->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
-	}
 
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 
@@ -634,8 +634,14 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 		Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 	}
 
-	// Notify the load balance enforcer of a potential short circuit if we are the ACL authoritative worker.
-	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAcl(EntityId);
+	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
+	// This should always happen with USLB.
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+
+	if (NetDriver->SpatialDebugger != nullptr)
+	{
+		NetDriver->SpatialDebugger->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
+	}
 }
 
 FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
@@ -964,7 +970,7 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload));
+	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload), 0);
 
 	// Try to send all pending RPCs unconditionally
 	OutgoingRPCs.ProcessRPCs();
