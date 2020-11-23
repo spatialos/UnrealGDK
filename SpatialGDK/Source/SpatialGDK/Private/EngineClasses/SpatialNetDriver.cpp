@@ -207,14 +207,6 @@ USpatialGameInstance* USpatialNetDriver::GetGameInstance() const
 	return GameInstance;
 }
 
-void USpatialNetDriver::SetTestStartTime(Worker_RequestId request_id)
-{
-	TestTime tmpTime;
-	tmpTime.startTime = FDateTime::Now();
-	tmpTime.endTime = 0;
-
-	TestTimeMap.Emplace(request_id, tmpTime);
-}
 
 void USpatialNetDriver::SetTestEndTime(Worker_RequestId request_id)
 {

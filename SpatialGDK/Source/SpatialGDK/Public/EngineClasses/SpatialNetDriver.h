@@ -123,7 +123,6 @@ public:
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerId(const FString& WorkerId);
 	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
-	void SetTestStartTime(Worker_RequestId request_id);
 	void SetTestEndTime(Worker_RequestId request_id);
 
 	UFUNCTION(BlueprintCallable, Category = "Silvia", meta = (WorldContext = "WorldContextObject"))
