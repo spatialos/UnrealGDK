@@ -30,10 +30,10 @@ public:
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
 													 const TOptional<Trace_SpanId>& SpanId) override;
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
-                                                 SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId) override;
+													 SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId) override;
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<Trace_SpanId>& SpanId) override;
-	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId,
-                                             SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId) override;
+	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, SpatialGDK::FRetryData RetryData,
+													 const TOptional<Trace_SpanId>& SpanId) override;
 	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
 								  const TOptional<Trace_SpanId>& SpanId) override;
 	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
@@ -43,7 +43,7 @@ public:
 	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
 												const TOptional<Trace_SpanId>& SpanId) override;
 	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
-                                         SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId) override;
+												SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId) override;
 	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
 									 const TOptional<Trace_SpanId>& SpanId) override;
 	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const TOptional<Trace_SpanId>& SpanId) override;

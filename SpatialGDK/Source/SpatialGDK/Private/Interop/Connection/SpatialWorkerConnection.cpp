@@ -93,7 +93,8 @@ Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorke
 	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id, TOptional<uint32>(), SpanId);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId, SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId)
+Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
+																   SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
 	const TOptional<Worker_EntityId> Id = EntityId ? *EntityId : TOptional<Worker_EntityId>();
@@ -113,7 +114,8 @@ Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_Entity
 	return Coordinator->SendDeleteEntityRequest(EntityId, TOptional<uint32>(), SpanId);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId)
+Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, SpatialGDK::FRetryData RetryData,
+																   const TOptional<Trace_SpanId>& SpanId)
 {
 	check(Coordinator.IsValid());
 	return Coordinator->SendDeleteEntityRequest(EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
@@ -150,12 +152,12 @@ Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId En
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
-                                                              SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId)
+															  SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId)
 {
 	return Coordinator->SendEntityCommandRequest(EntityId,
-                                                 SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type),
-                                                                            Request->component_id, Request->command_index),
-                                                 RetryData, SpanId);
+												 SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type),
+																			Request->component_id, Request->command_index),
+												 RetryData, SpanId);
 }
 
 void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
