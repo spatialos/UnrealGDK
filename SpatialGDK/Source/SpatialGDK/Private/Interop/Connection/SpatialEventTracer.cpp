@@ -128,7 +128,7 @@ FSpatialGDKSpanId SpatialEventTracer::UserSpanIdToGDKSpanId(const FUserSpanId& U
 {
 	if (!UserSpanId.IsValid())
 	{
-		return FSpatialGDKSpanId(false);
+		return {};
 	}
 
 	FSpatialGDKSpanId TraceSpanId;
@@ -141,7 +141,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& Spati
 {
 	if (Causes == nullptr && NumCauses > 0)
 	{
-		return FSpatialGDKSpanId(false);
+		return {};
 	}
 
 	auto MessageSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Message);
@@ -204,7 +204,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& Spati
 	{
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."),
 			   static_cast<int>(EventSamplingResult.decision));
-		return FSpatialGDKSpanId(false);
+		return {};
 	}
 	}
 }

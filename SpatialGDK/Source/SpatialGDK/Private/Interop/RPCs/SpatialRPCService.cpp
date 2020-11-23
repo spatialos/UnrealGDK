@@ -63,7 +63,7 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 
 	if (EventTracer != nullptr)
 	{
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(Target, Function), EventTracer->GetFromStack().GetConstId(), 1);
+		PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(Target, Function), EventTracer->GetFromStack().GetConstId(), 1);
 	}
 
 #if TRACE_LIB_ACTIVE
@@ -76,7 +76,6 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 		{
 			PendingPayload.SpanId =
 				EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateQueueRPC(), PendingPayload.SpanId.GetConstId(), 1);
-			;
 		}
 
 		// Already has queued RPCs of this type, queue until those are pushed.
@@ -184,7 +183,7 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 		UpdateToSend.Update.component_id = It.Key.ComponentId;
 		UpdateToSend.Update.schema_type = It.Value.Update;
 
-		if (EventTracer != nullptr && It.Value.SpanIds.Num() > 0)
+		if (EventTracer != nullptr)
 		{
 			UpdateToSend.SpanId = EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreateMergeSendRPCs(UpdateToSend.EntityId, UpdateToSend.Update.component_id),
