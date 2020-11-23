@@ -77,15 +77,12 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
 
 	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
+	TArray<TStringConversion<TStringConvert<TCHAR, ANSICHAR>, 128>> AnsiTypes;
+
 	for (const auto& Pair : Settings->EventSamplingModeOverrides)
 	{
-		Trace_SpanSamplingProbability Element;
-
-		auto TypeSrc = StringCast<ANSICHAR>(*Pair.Key.ToString());
-		Element.event_type = TypeSrc.Get();
-		Element.probability = Pair.Value;
-
-		SpanSamplingProbabilities.Add(Element);
+		int32 Index = AnsiTypes.Add(StringCast<ANSICHAR>(*Pair.Key.ToString()));
+		SpanSamplingProbabilities.Add({ AnsiTypes[Index].Get(), Pair.Value });
 	}
 
 	SamplingParameters.probabilistic_parameters.default_probability = Settings->SamplingProbability;
@@ -147,81 +144,7 @@ FSpatialGDKSpanId SpatialEventTracer::UserSpanIdToGDKSpanId(const FUserSpanId& U
 	return TraceSpanId;
 }
 
-FSpatialGDKSpanId SpatialEventTracer::CreateSpan(const Trace_SpanIdType* Causes /* = nullptr*/, int32 NumCauses /* = 0*/) const
-{
-	if (Causes == nullptr && NumCauses > 0)
-	{
-		check(false);
-		return FSpatialGDKSpanId(false);
-	}
-
-	Trace_SamplingResult SamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, nullptr);
-	if (SamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
-	{
-		return FSpatialGDKSpanId(true);
-	}
-
-	FSpatialGDKSpanId TraceSpanId(true);
-	if (Causes != nullptr && NumCauses > 0)
-	{
-		Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, nullptr, TraceSpanId.GetData());
-	}
-	else
-	{
-		Trace_EventTracer_AddSpan(EventTracer, Trace_SpanId_Null(), 1, nullptr, TraceSpanId.GetData());
-	}
-	return TraceSpanId;
-}
-
-void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const FSpatialGDKSpanId& EventSpanId)
-{
-	if (!EventSpanId.IsValid())
-	{
-		return;
-	}
-
-	auto MessageSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Message);
-	auto TypeSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Type.ToString());
-
-	Trace_Event Event;
-	Event.span_id = EventSpanId.GetConstData();
-	Event.message = MessageSrc.Get();
-	Event.type = TypeSrc.Get();
-	Event.unix_timestamp_millis = 0;
-	Event.data = nullptr;
-
-	Trace_SamplingResult EventSamplingResult = Trace_EventTracer_ShouldSampleEvent(EventTracer, &Event);
-	switch (EventSamplingResult.decision)
-	{
-	case Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE:
-	{
-		break;
-	}
-	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE_WITHOUT_DATA:
-	{
-		Trace_EventTracer_AddEvent(EventTracer, &Event);
-		break;
-	}
-	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE:
-	{
-		Trace_EventData* EventData = Trace_EventData_Create();
-		ConstructTraceEventData(EventData, SpatialTraceEvent);
-		Event.data = EventData;
-		Trace_EventTracer_AddEvent(EventTracer, &Event);
-		Trace_EventData_Destroy(EventData);
-		break;
-	}
-	default:
-	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."),
-			   static_cast<int>(EventSamplingResult.decision));
-		break;
-	}
-	}
-}
-
-FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEvent& SpatialTraceEvent,
-														   const Trace_SpanIdType* Causes /* = nullptr*/, int32 NumCauses /* = 0*/)
+FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes /* = nullptr*/, int32 NumCauses /* = 0*/)
 {
 	if (Causes == nullptr && NumCauses > 0)
 	{
@@ -259,7 +182,26 @@ FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEv
 	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE:
 	{
 		Trace_EventData* EventData = Trace_EventData_Create();
-		ConstructTraceEventData(EventData, SpatialTraceEvent);
+
+		for (const auto& Pair : SpatialTraceEvent.Data)
+		{
+			auto KeySrc = StringCast<ANSICHAR>(*Pair.Key);
+			const ANSICHAR* Key = KeySrc.Get();
+			auto ValueSrc = StringCast<ANSICHAR>(*Pair.Value);
+			const ANSICHAR* Value = ValueSrc.Get();
+			Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
+		}
+
+		// Frame counter
+		{
+			const char* FrameCountStr = "FrameNum";
+			char TmpBuffer[64];
+			FCStringAnsi::Sprintf(TmpBuffer, "%" PRIu64, GFrameCounter);
+			const char* TmpBufferPtr = TmpBuffer;
+			Trace_EventData_AddStringFields(EventData, 1, &FrameCountStr, &TmpBufferPtr);
+		}
+
+
 		Event.data = EventData;
 		Trace_EventTracer_AddEvent(EventTracer, &Event);
 		Trace_EventData_Destroy(EventData);
@@ -271,27 +213,6 @@ FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEv
 			   static_cast<int>(EventSamplingResult.decision));
 		return FSpatialGDKSpanId(false);
 	}
-	}
-}
-
-void SpatialEventTracer::ConstructTraceEventData(Trace_EventData* EventData, const FSpatialTraceEvent& SpatialTraceEvent)
-{
-	for (const auto& Pair : SpatialTraceEvent.Data)
-	{
-		auto KeySrc = StringCast<ANSICHAR>(*Pair.Key);
-		const ANSICHAR* Key = KeySrc.Get();
-		auto ValueSrc = StringCast<ANSICHAR>(*Pair.Value);
-		const ANSICHAR* Value = ValueSrc.Get();
-		Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
-	}
-
-	// Frame counter
-	{
-		const char* FrameCountStr = "FrameNum";
-		char TmpBuffer[64];
-		FCStringAnsi::Sprintf(TmpBuffer, "%" PRIu64, GFrameCounter);
-		const char* TmpBufferPtr = TmpBuffer;
-		Trace_EventData_AddStringFields(EventData, 1, &FrameCountStr, &TmpBufferPtr);
 	}
 }
 
@@ -325,10 +246,7 @@ void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_Compon
 	FSpatialGDKSpanId& StoredSpanId = EntityComponentSpanIds.FindChecked({ EntityId, ComponentId });
 
 	FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(SpanId, StoredSpanId);
-	FSpatialGDKSpanId NewSpanId = CreateSpan(SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
-	TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(EntityId, ComponentId), NewSpanId);
-
-	StoredSpanId = NewSpanId;
+	StoredSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(EntityId, ComponentId), SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
 }
 
 FSpatialGDKSpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
@@ -391,7 +309,7 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 	else
 	{
 		FMultiGDKSpanIdAllocator SpanIdAllocator = FMultiGDKSpanIdAllocator(SpanId, *ExistingSpanId);
-		*ExistingSpanId = CreateSpan(SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
+		*ExistingSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(Object.Get()), SpanIdAllocator.GetBuffer(), SpanIdAllocator.GetNumSpanIds());
 	}
 }
 
