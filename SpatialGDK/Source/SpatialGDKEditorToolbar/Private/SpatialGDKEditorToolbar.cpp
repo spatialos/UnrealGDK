@@ -1273,10 +1273,11 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 		{
 			// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
 			UEditorEngine::TryStartSpatialDeployment.BindLambda([this](FString ForceSnapshot) {
-				UE_LOG(LogTemp, Warning, TEXT("TryStartDeployment: Settings->bAutoStartLocalDeployment set to %d, GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() set to %d"), GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment, GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+				UE_LOG(LogTemp, Warning, TEXT("In lambda"))
 				if (GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment &&
 					GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 				{
+					UE_LOG(LogTemp, Warning, TEXT("In lambda -> true, %d"), GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment)
 					VerifyAndStartDeployment(ForceSnapshot);
 				}
 			});
