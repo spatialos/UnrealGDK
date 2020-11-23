@@ -30,7 +30,6 @@ public:
 									 const TOptional<Trace_SpanId>& SpanId = {}) = 0;
 	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const TOptional<Trace_SpanId>& SpanId = {}) = 0;
 	virtual void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) = 0;
-	virtual void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) = 0;
 	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) = 0;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) = 0;
 };

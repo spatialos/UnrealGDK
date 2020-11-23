@@ -43,7 +43,7 @@ public:
 	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
 	void OnRemoveEntity(Worker_EntityId EntityId);
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
-	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
+	void OnAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op);
 
 	void GetEntityIds(TArray<Worker_EntityId_Key>& OutEntityIds) const { EntityComponentMap.GetKeys(OutEntityIds); }
 

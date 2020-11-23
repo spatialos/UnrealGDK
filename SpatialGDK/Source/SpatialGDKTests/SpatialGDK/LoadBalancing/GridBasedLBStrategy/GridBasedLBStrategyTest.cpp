@@ -208,7 +208,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_interest_for_virtual_w
 	Strat->SetVirtualWorkerIds(1, Strat->GetMinimumRequiredWorkers());
 	Strat->SetLocalVirtualWorkerId(4);
 
-	SpatialGDK::QueryConstraint StratConstraint = Strat->GetWorkerInterestQueryConstraint();
+	SpatialGDK::QueryConstraint StratConstraint = Strat->GetWorkerInterestQueryConstraint(4);
 
 	SpatialGDK::BoxConstraint Box = StratConstraint.BoxConstraint.GetValue();
 

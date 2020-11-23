@@ -144,12 +144,6 @@ void USpatialWorkerConnection::SendLogMessage(uint8_t Level, const FName& Logger
 	Coordinator->SendLogMessage(static_cast<Worker_LogLevel>(Level), LoggerName, Message);
 }
 
-void USpatialWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
-{
-	// Deprecated.
-	checkNoEntry();
-}
-
 Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
 {
 	check(Coordinator.IsValid());
@@ -203,10 +197,10 @@ PhysicalWorkerName USpatialWorkerConnection::GetWorkerId() const
 	return Coordinator->GetWorkerId();
 }
 
-const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
+Worker_EntityId USpatialWorkerConnection::GetWorkerSystemEntityId() const
 {
 	check(Coordinator.IsValid());
-	return Coordinator->GetWorkerAttributes();
+	return Coordinator->GetWorkerSystemEntityId();
 }
 
 SpatialGDK::CallbackId USpatialWorkerConnection::RegisterComponentAddedCallback(Worker_ComponentId ComponentId,
@@ -310,8 +304,8 @@ void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, Spa
 				ExtractedOpList.AddOp(Op);
 			}
 			break;
-		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			if (IsStartupComponent(Op.op.authority_change.component_id))
+		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
+			if (IsStartupComponent(Op.op.component_set_authority_change.component_set_id))
 			{
 				ExtractedOpList.AddOp(Op);
 			}
@@ -331,8 +325,6 @@ void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, Spa
 			ExtractedOpList.AddOp(Op);
 			break;
 		case WORKER_OP_TYPE_FLAG_UPDATE:
-			break;
-		case WORKER_OP_TYPE_LOG_MESSAGE:
 			break;
 		case WORKER_OP_TYPE_METRICS:
 			break;

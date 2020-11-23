@@ -5,6 +5,7 @@
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 
 #include "SpatialCommonTypes.h"
+#include "SpatialConstants.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ExtractedOpList.h"
 #include "SpatialView/OpList/OpList.h"
@@ -47,7 +48,6 @@ public:
 	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message,
 									const TOptional<Trace_SpanId>& SpanId = {}) override;
 	virtual void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) override;
-	virtual void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) override;
 	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) override;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) override;
 
@@ -60,7 +60,7 @@ public:
 	SpatialGDK::ViewCoordinator& GetCoordinator() const;
 
 	PhysicalWorkerName GetWorkerId() const;
-	const TArray<FString>& GetWorkerAttributes() const;
+	Worker_EntityId GetWorkerSystemEntityId() const;
 
 	SpatialGDK::CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);
 	SpatialGDK::CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, SpatialGDK::FComponentValueCallback Callback);

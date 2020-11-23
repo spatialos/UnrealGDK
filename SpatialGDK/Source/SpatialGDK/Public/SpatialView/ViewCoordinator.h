@@ -47,7 +47,7 @@ public:
 	void RefreshEntityCompleteness(Worker_EntityId EntityId);
 
 	const FString& GetWorkerId() const;
-	const TArray<FString>& GetWorkerAttributes() const;
+	Worker_EntityId GetWorkerSystemEntityId() const;
 
 	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId);
 	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId);
