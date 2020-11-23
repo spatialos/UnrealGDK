@@ -31,6 +31,8 @@
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
+#include <ctime>
+#include <cstdio>
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
@@ -2025,15 +2027,15 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseO
 	switch (static_cast<Worker_StatusCode>(Op.status_code))
 	{
 	case WORKER_STATUS_CODE_SUCCESS:
-		UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request succeeded. "
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request succeeded. "
 			"Request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
 	case WORKER_STATUS_CODE_TIMEOUT:
-		UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request timed out. "
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request timed out. "
 			"Request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
 	case WORKER_STATUS_CODE_APPLICATION_ERROR:
-		UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request failed. "
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request failed. "
 			"Either the reservation expired, the entity already existed, or the entity was invalid. "
 			"Request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
@@ -2062,6 +2064,10 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseO
 			"request id: %d, entity id: %lld. This should only happen in the case where we attempt to delete the entity before we have authority. "
 			"The entity will therefore be deleted once authority is gained."), Op.request_id, Op.entity_id);
 	}
+	if (NetDriver->StartRTTest == true)
+	{
+		NetDriver->SetTestEndTime(Op.request_id);
+	}
 }
 
 void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op)
@@ -2081,6 +2087,12 @@ void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp&
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received EntityQueryResponse but with no delegate set, request id: %d, number of entities: %d, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
 	}
+}
+
+void USpatialReceiver::GetEndTime()
+{
+	UE_LOG(LogSpatialReceiver, Warning, TEXT("Received EntityQueryResponse but with no delegate set, request id: %d, number of entities: %d, message: %s"));
+
 }
 
 void USpatialReceiver::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel)

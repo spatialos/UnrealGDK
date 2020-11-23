@@ -207,6 +207,43 @@ USpatialGameInstance* USpatialNetDriver::GetGameInstance() const
 	return GameInstance;
 }
 
+void USpatialNetDriver::SetTestStartTime(Worker_RequestId request_id)
+{
+	TestTime tmpTime;
+	tmpTime.startTime = FDateTime::Now();
+	tmpTime.endTime = 0;
+
+	TestTimeMap.Emplace(request_id, tmpTime);
+}
+
+void USpatialNetDriver::SetTestEndTime(Worker_RequestId request_id)
+{
+	TotalCount++;
+	TestTime* tt = TestTimeMap.Find(request_id);
+	if (tt != nullptr)
+	{
+		tt->endTime = FDateTime::Now();
+	}
+	if (TotalSend == TotalCount)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("END TIME %s"), *FDateTime::Now().ToString());
+
+	}
+}
+
+void USpatialNetDriver::SetTotalSend(UObject* WorldContextObject, int32 TotalSendFromBP)
+{
+	USpatialNetDriver* Net = Cast<USpatialNetDriver>(WorldContextObject->GetWorld()->GetNetDriver());
+	if (Net)
+	{
+		Net->StartRTTest = true;
+		Net->TotalSend = TotalSendFromBP;
+	}
+
+}
+
+
+
 void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 {
 	USpatialGameInstance* GameInstance = GetGameInstance();

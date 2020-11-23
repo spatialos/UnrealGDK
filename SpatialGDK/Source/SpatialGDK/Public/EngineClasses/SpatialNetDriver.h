@@ -123,6 +123,23 @@ public:
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerId(const FString& WorkerId);
 	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
+	void SetTestStartTime(Worker_RequestId request_id);
+	void SetTestEndTime(Worker_RequestId request_id);
+
+	UFUNCTION(BlueprintCallable, Category = "Silvia", meta = (WorldContext = "WorldContextObject"))
+	static void SetTotalSend(UObject* WorldContextObject, int32 TotalSendFromBP);
+
+	struct TestTime
+	{
+		FDateTime startTime;
+		FDateTime endTime;
+	};
+	TMap<Worker_RequestId, TestTime> TestTimeMap;
+
+	int32 TotalCount = 0;
+	int32 TotalSend = -1;
+	bool StartRTTest = false;
+
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;

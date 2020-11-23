@@ -898,6 +898,8 @@ void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, uint
 
 	Worker_RequestId RequestId = CreateEntity(Channel, OutBytesWritten);
 
+	NetDriver->SetTestStartTime(RequestId);
+
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
