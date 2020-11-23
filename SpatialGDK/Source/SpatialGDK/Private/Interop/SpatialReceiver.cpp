@@ -31,8 +31,6 @@
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
-#include <ctime>
-#include <cstdio>
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
@@ -2089,11 +2087,6 @@ void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp&
 	}
 }
 
-void USpatialReceiver::GetEndTime()
-{
-	UE_LOG(LogSpatialReceiver, Warning, TEXT("Received EntityQueryResponse but with no delegate set, request id: %d, number of entities: %d, message: %s"));
-
-}
 
 void USpatialReceiver::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel)
 {
