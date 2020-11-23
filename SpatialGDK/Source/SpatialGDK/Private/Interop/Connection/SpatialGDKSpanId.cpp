@@ -4,7 +4,6 @@
 
 // ----- FSpatialGDKSpanId -----
 
-
 FSpatialGDKSpanId::FSpatialGDKSpanId()
 {
 	WriteId(Trace_SpanId_Null());
