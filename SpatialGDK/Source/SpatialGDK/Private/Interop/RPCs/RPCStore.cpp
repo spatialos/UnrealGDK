@@ -12,6 +12,7 @@ Schema_ComponentUpdate* FRPCStore::GetOrCreateComponentUpdate(const EntityCompon
 	{
 		ComponentUpdatePtr = &PendingComponentUpdatesToSend.Emplace(EntityComponentIdPair, Schema_CreateComponentUpdate());
 	}
+	ComponentUpdatePtr->SpanIds.Add(SpanId);
 	return ComponentUpdatePtr->Update;
 }
 
@@ -19,9 +20,6 @@ void FRPCStore::AddSpanIdForComponentUpdate(EntityComponentId EntityComponentIdP
 {
 	PendingUpdate* ComponentUpdatePtr = PendingComponentUpdatesToSend.Find(EntityComponentIdPair);
 	if (ComponentUpdatePtr != nullptr && SpanId != nullptr)
-	{
-		ComponentUpdatePtr->SpanIds.Add(SpanId);
-	}
 }
 
 Schema_ComponentData* FRPCStore::GetOrCreateComponentData(const EntityComponentId EntityComponentIdPair)

@@ -4,22 +4,13 @@
 
 // ----- FSpatialGDKSpanId -----
 
-FSpatialGDKSpanId::FSpatialGDKSpanId()
-	: bIsValid(false)
-{
-}
 
-FSpatialGDKSpanId::FSpatialGDKSpanId(bool bInIsValid)
-	: bIsValid(bInIsValid)
+FSpatialGDKSpanId::FSpatialGDKSpanId()
 {
-	if (bIsValid)
-	{
-		WriteId(Trace_SpanId_Null());
-	}
+	WriteId(Trace_SpanId_Null());
 }
 
 FSpatialGDKSpanId::FSpatialGDKSpanId(const Trace_SpanIdType* TraceSpanId)
-	: bIsValid(true)
 {
 	WriteId(TraceSpanId);
 }
@@ -31,17 +22,17 @@ void FSpatialGDKSpanId::WriteId(const Trace_SpanIdType* TraceSpanId)
 
 Trace_SpanIdType* FSpatialGDKSpanId::GetId()
 {
-	return bIsValid ? Id : nullptr;
+	return Id;
 }
 
 const Trace_SpanIdType* FSpatialGDKSpanId::GetConstId() const
 {
-	return bIsValid ? Id : nullptr;
+	return Id;
 }
 
 FString FSpatialGDKSpanId::ToString() const
 {
-	return bIsValid ? ToString(Id) : TEXT("");
+	return ToString(Id);
 }
 
 FString FSpatialGDKSpanId::ToString(const Trace_SpanIdType* TraceSpanId)
