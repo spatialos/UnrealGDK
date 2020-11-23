@@ -108,7 +108,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	// However, it is no longer required in 4.25 and beyond, due to the editor flow refactors.
 #if ENGINE_MINOR_VERSION < 25
 	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor) {
-		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		if (GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment
+			&& GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
 			LocalDeploymentManager->GetLocalDeploymentStatus();
