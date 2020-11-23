@@ -2,7 +2,6 @@
 
 #include "Interop/Connection/SpatialGDKSpanId.h"
 
-
 // ----- FSpatialGDKSpanId -----
 
 FSpatialGDKSpanId::FSpatialGDKSpanId()
@@ -55,7 +54,6 @@ FString FSpatialGDKSpanId::ToString(const Trace_SpanIdType* TraceSpanId)
 	}
 	return HexStr;
 }
-
 
 // ----- FMultiGDKSpanIdAllocator -----
 
