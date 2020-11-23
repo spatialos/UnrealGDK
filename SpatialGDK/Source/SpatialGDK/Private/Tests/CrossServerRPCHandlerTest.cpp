@@ -30,7 +30,7 @@ public:
 
 	virtual const FString& GetWorkerId() const override { return WorkerId; }
 
-	virtual const TArray<FString>& GetWorkerAttributes() const override { return Attributes; }
+	virtual Worker_EntityId GetWorkerSystemEntityId() const override { return 0; };
 
 private:
 	TArray<TArray<OpList>> ListsOfOpLists;
