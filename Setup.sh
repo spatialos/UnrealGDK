@@ -106,7 +106,7 @@ then
     spatial package retrieve worker_sdk  c-dynamic-x86_64-clang_ndk21d-android   "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang_ndk21d-android.zip
 fi
 
-spatial package retrieve worker_sdk  csharp_cinterop                         "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/csharp_cinterop.zip"
+spatial package retrieve worker_sdk  csharp_cinterop                         "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/csharp_cinterop.zip
 spatial package retrieve spot        spot-macos                              "${PINNED_SPOT_VERSION}"       ${DOMAIN_ENVIRONMENT_VAR:-}   "${BINARIES_DIR}"/Programs/spot
 chmod +x "${BINARIES_DIR}"/Programs/spot 
 
