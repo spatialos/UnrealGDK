@@ -273,7 +273,6 @@ bool SpatialEventTracer::IsStackEmpty() const
 
 void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const FSpatialGDKSpanId& SpanId)
 {
-
 	FSpatialGDKSpanId* ExistingSpanId = ObjectSpanIdStacks.Find(Object);
 	if (ExistingSpanId == nullptr)
 	{
@@ -282,8 +281,8 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 	else
 	{
 		FSpatialGDKSpanId CauseSpanIds[2] = { SpanId, *ExistingSpanId };
-		*ExistingSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(Object.Get()),
-			CauseSpanIds->GetConstId(), 2);
+		*ExistingSpanId =
+			TraceEvent(FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(Object.Get()), CauseSpanIds->GetConstId(), 2);
 	}
 }
 
