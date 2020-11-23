@@ -12,12 +12,33 @@ component SpatialTypeActorComponentDynamic1 {
 	data SpatialTypeActorComponent;
 }
 
+component_set SpatialTypeActorComponentDynamic1Set {
+	id = 10000;
+	components = [
+		SpatialTypeActorComponentDynamic1
+	];
+}
+
 component SpatialTypeActorComponentDynamic2 {
 	id = 10001;
 	data SpatialTypeActorComponent;
 }
 
+component_set SpatialTypeActorComponentDynamic2Set {
+	id = 10001;
+	components = [
+		SpatialTypeActorComponentDynamic2
+	];
+}
+
 component SpatialTypeActorComponentDynamic3 {
 	id = 10002;
 	data SpatialTypeActorComponent;
+}
+
+component_set SpatialTypeActorComponentDynamic3Set {
+	id = 10002;
+	components = [
+		SpatialTypeActorComponentDynamic3
+	];
 }

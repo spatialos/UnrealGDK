@@ -86,7 +86,7 @@ private:
 		Worker_EntityId EntityId;
 		bool operator()(const ReceivedEntityChange& E) const;
 		bool operator()(const ReceivedComponentChange& Op) const;
-		bool operator()(const Worker_AuthorityChangeOp& Op) const;
+		bool operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const;
 	};
 
 	// Comparator that will return true when the entity change in question is not for the same entity-component as stored.
@@ -95,7 +95,7 @@ private:
 		Worker_EntityId EntityId;
 		Worker_ComponentId ComponentId;
 		bool operator()(const ReceivedComponentChange& Op) const;
-		bool operator()(const Worker_AuthorityChangeOp& Op) const;
+		bool operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const;
 	};
 
 	// Comparator that will return true when the entity ID of Lhs is less than that of Rhs.
@@ -103,7 +103,7 @@ private:
 	struct EntityComponentComparison
 	{
 		bool operator()(const ReceivedComponentChange& Lhs, const ReceivedComponentChange& Rhs) const;
-		bool operator()(const Worker_AuthorityChangeOp& Lhs, const Worker_AuthorityChangeOp& Rhs) const;
+		bool operator()(const Worker_ComponentSetAuthorityChangeOp& Lhs, const Worker_ComponentSetAuthorityChangeOp& Rhs) const;
 	};
 
 	// Comparator that will return true when the entity ID of Lhs is less than that of Rhs.
@@ -141,8 +141,9 @@ private:
 	// Adds authority changes to `Delta` and updates `EntityAuthority` accordingly.
 	// `It` must point to the first element with a given entity ID.
 	// Returns a pointer to the next entity in the authority changes list.
-	Worker_AuthorityChangeOp* ProcessEntityAuthorityChanges(Worker_AuthorityChangeOp* It, Worker_AuthorityChangeOp* End,
-															TArray<Worker_ComponentId>& EntityAuthority, EntityDelta& Delta);
+	Worker_ComponentSetAuthorityChangeOp* ProcessEntityAuthorityChanges(Worker_ComponentSetAuthorityChangeOp* It,
+																		Worker_ComponentSetAuthorityChangeOp* End,
+																		TArray<Worker_ComponentId>& EntityAuthority, EntityDelta& Delta);
 
 	// Sets `bAdded` and `bRemoved` fields in the `Delta`.
 	// `It` must point to the first element with a given entity ID.
@@ -159,7 +160,7 @@ private:
 
 	TArray<ReceivedEntityChange> EntityChanges;
 	TArray<ReceivedComponentChange> ComponentChanges;
-	TArray<Worker_AuthorityChangeOp> AuthorityChanges;
+	TArray<Worker_ComponentSetAuthorityChangeOp> AuthorityChanges;
 
 	uint8 ConnectionStatusCode = 0;
 	FString ConnectionStatusMessage;

@@ -55,30 +55,30 @@ struct ConfigureConnection
 
 		Params.network.connection_type = Config.LinkProtocol;
 		Params.network.use_external_ip = Config.UseExternalIp;
-		Params.network.modular_tcp.multiplex_level = Config.TcpMultiplexLevel;
+		Params.network.tcp.multiplex_level = Config.TcpMultiplexLevel;
 		if (Config.TcpNoDelay)
 		{
-			Params.network.modular_tcp.downstream_tcp.flush_delay_millis = 0;
-			Params.network.modular_tcp.upstream_tcp.flush_delay_millis = 0;
+			Params.network.tcp.downstream_tcp.flush_delay_millis = 0;
+			Params.network.tcp.upstream_tcp.flush_delay_millis = 0;
 		}
 
 		// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
-		Params.network.modular_kcp.upstream_compression = nullptr;
-		Params.network.modular_kcp.downstream_compression = &EnableCompressionParams;
+		Params.network.kcp.upstream_compression = nullptr;
+		Params.network.kcp.downstream_compression = &EnableCompressionParams;
 
-		Params.network.modular_kcp.upstream_kcp.flush_interval_millis = Config.UdpUpstreamIntervalMS;
-		Params.network.modular_kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
+		Params.network.kcp.upstream_kcp.flush_interval_millis = Config.UdpUpstreamIntervalMS;
+		Params.network.kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
 
 #if WITH_EDITOR
-		Params.network.modular_tcp.downstream_heartbeat = &HeartbeatParams;
-		Params.network.modular_tcp.upstream_heartbeat = &HeartbeatParams;
-		Params.network.modular_kcp.downstream_heartbeat = &HeartbeatParams;
-		Params.network.modular_kcp.upstream_heartbeat = &HeartbeatParams;
+		Params.network.tcp.downstream_heartbeat = &HeartbeatParams;
+		Params.network.tcp.upstream_heartbeat = &HeartbeatParams;
+		Params.network.kcp.downstream_heartbeat = &HeartbeatParams;
+		Params.network.kcp.upstream_heartbeat = &HeartbeatParams;
 #endif
 
 		// Use insecure connections default.
-		Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
-		Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+		Params.network.kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+		Params.network.tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
 
 		// Override the security type to be secure only if the user has requested it and we are not using an editor build.
 		if ((!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection)
@@ -88,12 +88,10 @@ struct ConfigureConnection
 			UE_LOG(LogSpatialWorkerConnection, Warning,
 				   TEXT("Secure connection requested but this is not supported in Editor builds. Connection will be insecure."));
 #else
-			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
-			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+			Params.network.kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+			Params.network.tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
 #endif
 		}
-
-		Params.enable_dynamic_components = true;
 	}
 
 	FString FormatWorkerSDKLogFilePrefix() const
@@ -200,7 +198,7 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 	}
 }
 
-void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens)
+void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_LoginTokensResponse* LoginTokens)
 {
 	if (LoginTokens->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 	{
@@ -221,7 +219,7 @@ void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_Alpha
 	ConnectionManager->ProcessLoginTokensResponse(LoginTokens);
 }
 
-void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens)
+void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_LoginTokensResponse* LoginTokens)
 {
 	// If LoginTokenResCallback is callable and returns true, return early.
 	if (LoginTokenResCallback && LoginTokenResCallback(LoginTokens))
@@ -268,21 +266,21 @@ void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_Alpha_Lo
 
 void USpatialConnectionManager::RequestDeploymentLoginTokens()
 {
-	Worker_Alpha_LoginTokensRequest LTParams{};
+	Worker_LoginTokensRequest LTParams{};
 	FTCHARToUTF8 PlayerIdentityToken(*DevAuthConfig.PlayerIdentityToken);
 	LTParams.player_identity_token = PlayerIdentityToken.Get();
 	FTCHARToUTF8 WorkerType(*DevAuthConfig.WorkerType);
 	LTParams.worker_type = WorkerType.Get();
 	LTParams.use_insecure_connection = false;
 
-	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture =
-			Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &LTParams))
+	if (Worker_LoginTokensResponseFuture* LTFuture =
+			Worker_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &LTParams))
 	{
-		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, this, &USpatialConnectionManager::OnLoginTokens);
+		Worker_LoginTokensResponseFuture_Get(LTFuture, nullptr, this, &USpatialConnectionManager::OnLoginTokens);
 	}
 }
 
-void USpatialConnectionManager::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
+void USpatialConnectionManager::OnPlayerIdentityToken(void* UserData, const Worker_PlayerIdentityTokenResponse* PIToken)
 {
 	if (PIToken->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 	{
@@ -305,17 +303,17 @@ void USpatialConnectionManager::StartDevelopmentAuth(const FString& DevAuthToken
 	FTCHARToUTF8 DisplayName(*DevAuthConfig.DisplayName);
 	FTCHARToUTF8 MetaData(*DevAuthConfig.MetaData);
 
-	Worker_Alpha_PlayerIdentityTokenRequest PITParams{};
+	Worker_PlayerIdentityTokenRequest PITParams{};
 	PITParams.development_authentication_token = DAToken.Get();
 	PITParams.player_id = PlayerId.Get();
 	PITParams.display_name = DisplayName.Get();
 	PITParams.metadata = MetaData.Get();
 	PITParams.use_insecure_connection = false;
 
-	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(
+	if (Worker_PlayerIdentityTokenResponseFuture* PITFuture = Worker_CreateDevelopmentPlayerIdentityTokenAsync(
 			TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &PITParams))
 	{
-		Worker_Alpha_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialConnectionManager::OnPlayerIdentityToken);
+		Worker_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialConnectionManager::OnPlayerIdentityToken);
 	}
 }
 
@@ -354,10 +352,6 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 	FTCHARToUTF8 LoginTokenCStr(*InLocatorConfig->LoginToken);
 
 	Worker_LocatorParameters LocatorParams = {};
-	FString ProjectName;
-	FParse::Value(FCommandLine::Get(), TEXT("projectName"), ProjectName);
-	LocatorParams.project_name = TCHAR_TO_UTF8(*ProjectName);
-	LocatorParams.credentials_type = Worker_LocatorCredentialsTypes::WORKER_LOCATOR_PLAYER_IDENTITY_CREDENTIALS;
 	LocatorParams.player_identity.player_identity_token = PlayerIdentityTokenCStr.Get();
 	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
 
@@ -390,7 +384,9 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 
 			USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
 
-			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
+			const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
+
+			if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 			{
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
@@ -402,10 +398,8 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 			{
 				Worker_Connection_Destroy(NewCAPIWorkerConnection);
 
-				const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
 				const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
 
-				// TODO: Try to reconnect - UNR-576
 				SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
 			}
 		});

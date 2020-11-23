@@ -11,7 +11,8 @@
 #include "Utils/GDKPropertyMacros.h"
 
 #if TRACE_LIB_ACTIVE
-#include "WorkerSDK/improbable/legacy/trace.h"
+#include <WorkerSDK/improbable/c_trace.h>
+#include <WorkerSDK/improbable/legacy/trace.h>
 #endif
 
 #include "SpatialLatencyTracer.generated.h"

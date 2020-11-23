@@ -6,3 +6,10 @@ component DebugComponent {
      option<uint32> worker_id_delegation = 1;
      string actor_tags = 2;
 }
+
+component_set DebugComponentSet {
+  id = 9995;
+  components = [
+    DebugComponent
+  ];
+}

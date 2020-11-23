@@ -73,107 +73,6 @@ inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId
 	return IndexCoordinateFromSchema(Object, Id, 0);
 }
 
-struct EntityAcl : Component
-{
-	static const Worker_ComponentId ComponentId = SpatialConstants::ENTITY_ACL_COMPONENT_ID;
-
-	EntityAcl() = default;
-
-	EntityAcl(const WorkerRequirementSet& InReadAcl, const WriteAclMap& InComponentWriteAcl)
-		: ReadAcl(InReadAcl)
-		, ComponentWriteAcl(InComponentWriteAcl)
-	{
-	}
-
-	EntityAcl(const Worker_ComponentData& Data)
-		: EntityAcl(Data.schema_type)
-	{
-	}
-
-	EntityAcl(Schema_ComponentData* Data)
-	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
-
-		ReadAcl = GetWorkerRequirementSetFromSchema(ComponentObject, 1);
-
-		uint32 KVPairCount = Schema_GetObjectCount(ComponentObject, 2);
-		for (uint32 i = 0; i < KVPairCount; i++)
-		{
-			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 2, i);
-			uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-			WorkerRequirementSet Value = GetWorkerRequirementSetFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
-
-			ComponentWriteAcl.Add(Key, Value);
-		}
-	}
-
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
-	{
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
-
-		if (Schema_GetObjectCount(ComponentObject, 1) > 0)
-		{
-			ReadAcl = GetWorkerRequirementSetFromSchema(ComponentObject, 1);
-		}
-
-		// This is never emptied, so does not need an additional check for cleared fields
-		uint32 KVPairCount = Schema_GetObjectCount(ComponentObject, 2);
-		if (KVPairCount > 0)
-		{
-			ComponentWriteAcl.Empty();
-			for (uint32 i = 0; i < KVPairCount; i++)
-			{
-				Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 2, i);
-				uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-				WorkerRequirementSet Value = GetWorkerRequirementSetFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
-
-				ComponentWriteAcl.Add(Key, Value);
-			}
-		}
-	}
-
-	Worker_ComponentData CreateEntityAclData()
-	{
-		Worker_ComponentData Data = {};
-		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData();
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-		AddWorkerRequirementSetToSchema(ComponentObject, 1, ReadAcl);
-
-		for (const auto& KVPair : ComponentWriteAcl)
-		{
-			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 2);
-			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
-			AddWorkerRequirementSetToSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
-		}
-
-		return Data;
-	}
-
-	Worker_ComponentUpdate CreateEntityAclUpdate()
-	{
-		Worker_ComponentUpdate ComponentUpdate = {};
-		ComponentUpdate.component_id = ComponentId;
-		ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
-
-		AddWorkerRequirementSetToSchema(ComponentObject, 1, ReadAcl);
-
-		for (const auto& KVPair : ComponentWriteAcl)
-		{
-			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 2);
-			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
-			AddWorkerRequirementSetToSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
-		}
-
-		return ComponentUpdate;
-	}
-
-	WorkerRequirementSet ReadAcl;
-	WriteAclMap ComponentWriteAcl;
-};
-
 struct Metadata : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::METADATA_COMPONENT_ID;
@@ -320,6 +219,107 @@ struct Worker : Component
 	FString WorkerId;
 	FString WorkerType;
 	Connection Connection;
+
+	static Worker_CommandRequest CreateClaimPartitionRequest(Worker_PartitionId PartitionId)
+	{
+		Worker_CommandRequest CommandRequest = {};
+		CommandRequest.component_id = SpatialConstants::WORKER_COMPONENT_ID;
+		CommandRequest.command_index = SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID;
+		CommandRequest.schema_type = Schema_CreateCommandRequest();
+		Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
+
+		Schema_AddInt64(RequestObject, 1, PartitionId);
+
+		return CommandRequest;
+	}
+};
+
+struct AuthorityDelegation : Component
+{
+	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
+
+	AuthorityDelegation() = default;
+
+	AuthorityDelegation(AuthorityDelegationMap InDelegation)
+		: Delegations(InDelegation)
+	{
+	}
+
+	AuthorityDelegation(const Worker_ComponentData& Data)
+		: AuthorityDelegation(Data.schema_type)
+	{
+	}
+
+	AuthorityDelegation(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
+
+		const uint32 DelegationCount = Schema_GetObjectCount(ComponentObject, 1);
+		for (uint32 i = 0; i < DelegationCount; i++)
+		{
+			Schema_Object* Delegation = Schema_IndexObject(ComponentObject, 1, i);
+			Worker_ComponentId AssignedComponentId = Schema_GetUint32(Delegation, SCHEMA_MAP_KEY_FIELD_ID);
+			Worker_PartitionId PartitionId = Schema_GetUint64(Delegation, SCHEMA_MAP_VALUE_FIELD_ID);
+
+			Delegations.Add(AssignedComponentId, PartitionId);
+		}
+	}
+
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+		// This is never emptied, so does not need an additional check for cleared fields
+		const uint32 DelegationCount = Schema_GetObjectCount(ComponentObject, 1);
+		if (DelegationCount > 0)
+		{
+			Delegations.Empty();
+			for (uint32 i = 0; i < DelegationCount; i++)
+			{
+				Schema_Object* Delegation = Schema_IndexObject(ComponentObject, 1, i);
+				Worker_ComponentId AssignedComponentId = Schema_GetUint32(Delegation, SCHEMA_MAP_KEY_FIELD_ID);
+				Worker_PartitionId PartitionId = Schema_GetUint64(Delegation, SCHEMA_MAP_VALUE_FIELD_ID);
+
+				Delegations.Add(AssignedComponentId, PartitionId);
+			}
+		}
+	}
+
+	Worker_ComponentData CreateAuthorityDelegationData()
+	{
+		Worker_ComponentData Data = {};
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData();
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		for (const auto& KVPair : Delegations)
+		{
+			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 1);
+			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
+			Schema_AddUint64(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
+		}
+
+		return Data;
+	}
+
+	Worker_ComponentUpdate CreateAuthorityDelegationUpdate()
+	{
+		Worker_ComponentUpdate ComponentUpdate = {};
+		ComponentUpdate.component_id = ComponentId;
+		ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+
+		for (const auto& KVPair : Delegations)
+		{
+			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 1);
+			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
+			Schema_AddUint64(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
+		}
+
+		return ComponentUpdate;
+	}
+
+	AuthorityDelegationMap Delegations;
 };
 
 } // namespace SpatialGDK
