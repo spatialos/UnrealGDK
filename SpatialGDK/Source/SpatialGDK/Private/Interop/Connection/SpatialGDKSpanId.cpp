@@ -14,34 +14,34 @@ FSpatialGDKSpanId::FSpatialGDKSpanId(bool bInIsValid)
 {
 	if (bIsValid)
 	{
-		WriteData(Trace_SpanId_Null());
+		WriteId(Trace_SpanId_Null());
 	}
 }
 
 FSpatialGDKSpanId::FSpatialGDKSpanId(const Trace_SpanIdType* TraceSpanId)
 	: bIsValid(true)
 {
-	WriteData(TraceSpanId);
+	WriteId(TraceSpanId);
 }
 
-void FSpatialGDKSpanId::WriteData(const Trace_SpanIdType* TraceSpanId)
+void FSpatialGDKSpanId::WriteId(const Trace_SpanIdType* TraceSpanId)
 {
-	FMemory::Memcpy(Data, TraceSpanId, TRACE_SPAN_ID_SIZE_BYTES);
+	FMemory::Memcpy(Id, TraceSpanId, TRACE_SPAN_ID_SIZE_BYTES);
 }
 
-Trace_SpanIdType* FSpatialGDKSpanId::GetData()
+Trace_SpanIdType* FSpatialGDKSpanId::GetId()
 {
-	return bIsValid ? Data : nullptr;
+	return bIsValid ? Id : nullptr;
 }
 
-const Trace_SpanIdType* FSpatialGDKSpanId::GetConstData() const
+const Trace_SpanIdType* FSpatialGDKSpanId::GetConstId() const
 {
-	return bIsValid ? Data : nullptr;
+	return bIsValid ? Id : nullptr;
 }
 
 FString FSpatialGDKSpanId::ToString() const
 {
-	return bIsValid ? ToString(Data) : TEXT("");
+	return bIsValid ? ToString(Id) : TEXT("");
 }
 
 FString FSpatialGDKSpanId::ToString(const Trace_SpanIdType* TraceSpanId)
@@ -85,11 +85,13 @@ FMultiGDKSpanIdAllocator::~FMultiGDKSpanIdAllocator()
 
 void FMultiGDKSpanIdAllocator::WriteToBuffer(const int32 SpanIndex, const FSpatialGDKSpanId& SpanId)
 {
-	const Trace_SpanIdType* Data = SpanId.GetConstData();
-	const int32 NumElements = TRACE_SPAN_ID_SIZE_BYTES / sizeof(Trace_SpanIdType);
+	const Trace_SpanIdType* Id = SpanId.GetConstId();
+	const int32 SpanIdTypeSize = sizeof(Trace_SpanIdType);
+	const int32 NumElements = TRACE_SPAN_ID_SIZE_BYTES / SpanIdTypeSize;
+
 	for (int32 ElementIndex = 0; ElementIndex < NumElements; ++ElementIndex)
 	{
-		const int32 BufferIndex = SpanIndex * TRACE_SPAN_ID_SIZE_BYTES + ElementIndex * sizeof(Trace_SpanIdType);
-		Allocator.construct(Buffer + BufferIndex, Data[ElementIndex]);
+		const int32 BufferIndex = SpanIndex * TRACE_SPAN_ID_SIZE_BYTES + ElementIndex * SpanIdTypeSize;
+		Allocator.construct(Buffer + BufferIndex, Id[ElementIndex]);
 	}
 }
