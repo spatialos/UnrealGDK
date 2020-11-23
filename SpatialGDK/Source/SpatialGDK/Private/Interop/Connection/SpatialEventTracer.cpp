@@ -158,7 +158,7 @@ FSpatialGDKSpanId SpatialEventTracer::CreateSpan(const Trace_SpanIdType* Causes 
 	Trace_SamplingResult SamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, nullptr);
 	if (SamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
 	{
-		return TraceSpanId;
+		return FSpatialGDKSpanId(true);
 	}
 
 	FSpatialGDKSpanId TraceSpanId(true);
@@ -213,8 +213,7 @@ void SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent,
 	}
 	default:
 	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."),
-			   static_cast<int>(EventSamplingResult.decision));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."), static_cast<int>(EventSamplingResult.decision));
 		break;
 	}
 	}
@@ -238,14 +237,13 @@ FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEv
 	Event.unix_timestamp_millis = 0;
 	Event.data = nullptr;
 
-	FSpatialGDKSpanId TraceSpanId(true);
-
 	Trace_SamplingResult SpanSamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event);
 	if (SpanSamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
 	{
-		return TraceSpanId;
+		return FSpatialGDKSpanId(true);
 	}
 
+	FSpatialGDKSpanId TraceSpanId(true);
 	Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, &Event, TraceSpanId.GetData());
 	Event.span_id = TraceSpanId.GetData();
 
@@ -272,8 +270,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceFilterableEvent(const FSpatialTraceEv
 	}
 	default:
 	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."),
-			   static_cast<int>(EventSamplingResult.decision));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."), static_cast<int>(EventSamplingResult.decision));
 		return FSpatialGDKSpanId(false);
 	}
 	}
