@@ -63,7 +63,8 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 
 	if (EventTracer != nullptr)
 	{
-		PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(Target, Function), EventTracer->GetFromStack().GetConstId(), 1);
+		PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(Target, Function),
+														EventTracer->GetFromStack().GetConstId(), 1);
 	}
 
 #if TRACE_LIB_ACTIVE
