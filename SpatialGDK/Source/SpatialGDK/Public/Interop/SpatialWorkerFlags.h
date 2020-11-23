@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <WorkerSDK/improbable/c_worker.h>
 #include "Utils/SpatialBasicAwaiter.h"
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialWorkerFlags.generated.h"
 
@@ -52,7 +52,6 @@ class SPATIALGDK_API USpatialWorkerFlags : public UObject
 	GENERATED_BODY()
 
 public:
-
 	/** Gets value of a worker flag. Must be connected to SpatialOS to properly work.
 	 * @param InFlagName - Name of worker flag
 	 * @param OutFlagValue - Value of worker flag
@@ -72,6 +71,7 @@ public:
 	void RegisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate,
 									 ESpatialCallbackStyle CallbackStyle);
 
+	// This will only ever execute the delegate once
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	void AwaitFlagUpdated(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
 
@@ -79,7 +79,6 @@ public:
 	void UnregisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
 
 private:
-
 	FOnAnyWorkerFlagUpdated OnAnyWorkerFlagUpdated;
 	TMap<FString, FSpatialFlaginfo> WorkerFlags;
 };

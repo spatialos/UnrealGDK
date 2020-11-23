@@ -54,7 +54,11 @@ These functions and structs can be referenced in both code and blueprints it may
 - Improved the failed hierarchy migration logs. The logs now contain more specific reasons for the failure and the frequency of repeated logs is suppressed.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
 - Worker SDK version compatibility is checked at compile time. 
-- SpatialWorkerFlags has renamed `BindToOnWorkerFlagsUpdated` to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added functions for register callbacks to specific individual flag updates: `RegisterFlagUpdatedCallback`. Also added the `RegisterAndInvokeAnyFlagUpdatedCallback` and `RegisterAndInvokeFlagUpdatedCallback` functions so you can force the callback to immediately execute if the flag already exists when registering a callback.
+- SpatialWorkerFlags has reworked how to add callbacks for flag updates:
+  1. `BindToOnWorkerFlagsUpdated` is changed to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added functions for register callbacks. 
+  2. `RegisterFlagUpdatedCallback` is added to register callbacks for individual flag updates
+  3. `RegisterFlagUpdatedCallback` & `RegisterAnyFlagUpdatedCallback` take in a enum that adds the ability to invoke the registered callback immidiately if already set.
+  4. `AwaitFlagUpdated` is added which invokes a given callback for a specific immidiatley if already set or awaits and invokes the callback when the flag is set, invokes callback **only** once.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.

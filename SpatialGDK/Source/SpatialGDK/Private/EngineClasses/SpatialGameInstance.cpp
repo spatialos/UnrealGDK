@@ -245,10 +245,11 @@ void USpatialGameInstance::HandleOnConnected(const USpatialNetDriver& NetDriver)
 
 	if (NetDriver.IsServer())
 	{
-		//FOnWorkerFlagUpdatedBP WorkerFlagDelegate;
-		//WorkerFlagDelegate.BindDynamic(this, &USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated);
+		// FOnWorkerFlagUpdatedBP WorkerFlagDelegate;
+		// WorkerFlagDelegate.BindDynamic(this, &USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated);
 
-		//NetDriver.SpatialWorkerFlags->RegisterFlagUpdatedCallback(SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG, WorkerFlagDelegate);
+		// NetDriver.SpatialWorkerFlags->RegisterFlagUpdatedCallback(SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG,
+		// WorkerFlagDelegate);
 	}
 }
 

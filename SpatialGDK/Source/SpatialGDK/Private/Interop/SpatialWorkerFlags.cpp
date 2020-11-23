@@ -75,7 +75,7 @@ void USpatialWorkerFlags::AwaitFlagUpdated(const FString& InFlagName, const FOnW
 	FlagInfo.FlagReady->Await(FOnReady::CreateLambda([&FlagInfo, &InDelegate, &InFlagName](const FString& ErrorMessage) {
 		if (!ErrorMessage.IsEmpty())
 		{
-			// early out if USpatialWorkerFlags is destroyed before a flag is set no need to log an error
+			// Early out if USpatialWorkerFlags is destroyed before a flag is set no need to log an error
 			return;
 		}
 		InDelegate.Execute(FlagInfo.Value);
@@ -107,4 +107,3 @@ void USpatialWorkerFlags::UnregisterAnyFlagUpdatedCallback(const FOnAnyWorkerFla
 {
 	OnAnyWorkerFlagUpdated.Remove(InDelegate);
 }
-
