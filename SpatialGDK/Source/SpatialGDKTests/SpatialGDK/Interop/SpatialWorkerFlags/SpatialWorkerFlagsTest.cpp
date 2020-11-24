@@ -70,7 +70,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_registered_any_flag_update_delegate_WHEN_any_wor
 	WorkerFlagDelegate.BindDynamic(SpyObj, &UWorkerFlagsTestSpyObject::SetAnyFlagUpdated);
 
 	USpatialWorkerFlags* SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
-	SpatialWorkerFlags->RegisterAnyFlagUpdatedCallback(WorkerFlagDelegate, ESpatialCallbackStyle::InvokeOnNewUpdateOnly);
+	SpatialWorkerFlags->RegisterAnyFlagUpdatedCallback(WorkerFlagDelegate);
 
 	// WHEN
 	// Update flag
@@ -96,7 +96,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_registered_any_flag_update_delegate_WHEN_unregis
 	WorkerFlagDelegate.BindDynamic(SpyObj, &UWorkerFlagsTestSpyObject::SetAnyFlagUpdated);
 
 	USpatialWorkerFlags* SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
-	SpatialWorkerFlags->RegisterAnyFlagUpdatedCallback(WorkerFlagDelegate, ESpatialCallbackStyle::InvokeOnNewUpdateOnly);
+	SpatialWorkerFlags->RegisterAnyFlagUpdatedCallback(WorkerFlagDelegate);
 
 	// Add test flag
 	Worker_FlagUpdateOp OpAddFlag = CreateWorkerFlagUpdateOp("test", "10");
@@ -131,7 +131,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_an_updated_flag_WHEN_registering_and_invoking_an_a
 	UWorkerFlagsTestSpyObject* SpyObj = NewObject<UWorkerFlagsTestSpyObject>();
 	FOnAnyWorkerFlagUpdatedBP WorkerFlagDelegate;
 	WorkerFlagDelegate.BindDynamic(SpyObj, &UWorkerFlagsTestSpyObject::SetAnyFlagUpdated);
-	SpatialWorkerFlags->RegisterAnyFlagUpdatedCallback(WorkerFlagDelegate, ESpatialCallbackStyle::InvokeImmidiatelyIfAlreadySet);
+	SpatialWorkerFlags->RegisterAndInvokeAnyFlagUpdatedCallback(WorkerFlagDelegate);
 
 	// THEN
 	TestTrue("Delegate Function was called once", SpyObj->GetTimesFlagUpdated() == 1);
@@ -157,7 +157,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_no_flags_WHEN_registering_and_invoking_an_any_flag
 	WorkerFlagDelegate.BindDynamic(SpyObj, &UWorkerFlagsTestSpyObject::SetAnyFlagUpdated);
 
 	USpatialWorkerFlags* SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
-	SpatialWorkerFlags->RegisterAnyFlagUpdatedCallback(WorkerFlagDelegate, ESpatialCallbackStyle::InvokeImmidiatelyIfAlreadySet);
+	SpatialWorkerFlags->RegisterAndInvokeAnyFlagUpdatedCallback(WorkerFlagDelegate);
 
 	// THEN
 	TestTrue("Delegate Function was not called", SpyObj->GetTimesFlagUpdated() == 0);
@@ -177,7 +177,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_registered_flag_update_delegate_WHEN_the_worker_
 
 	USpatialWorkerFlags* SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
 	const FString TestFlagName = TEXT("test");
-	SpatialWorkerFlags->RegisterFlagUpdatedCallback(TestFlagName, WorkerFlagDelegate, ESpatialCallbackStyle::InvokeOnNewUpdateOnly);
+	SpatialWorkerFlags->RegisterFlagUpdatedCallback(TestFlagName, WorkerFlagDelegate);
 
 	// WHEN
 	// Update test flag
@@ -202,7 +202,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_registered_flag_update_delegate_WHEN_a_different
 	WorkerFlagDelegate.BindDynamic(SpyObj, &UWorkerFlagsTestSpyObject::SetFlagUpdated);
 
 	USpatialWorkerFlags* SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
-	SpatialWorkerFlags->RegisterFlagUpdatedCallback("test", WorkerFlagDelegate, ESpatialCallbackStyle::InvokeOnNewUpdateOnly);
+	SpatialWorkerFlags->RegisterFlagUpdatedCallback("test", WorkerFlagDelegate);
 
 	// WHEN
 	// Add a different test flag
@@ -227,7 +227,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_registered_flag_update_delegate_WHEN_unregistere
 	WorkerFlagDelegate.BindDynamic(SpyObj, &UWorkerFlagsTestSpyObject::SetFlagUpdated);
 	USpatialWorkerFlags* SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
 	const FString TestFlagName = TEXT("test");
-	SpatialWorkerFlags->RegisterFlagUpdatedCallback(TestFlagName, WorkerFlagDelegate, ESpatialCallbackStyle::InvokeOnNewUpdateOnly);
+	SpatialWorkerFlags->RegisterFlagUpdatedCallback(TestFlagName, WorkerFlagDelegate);
 
 	// Add test flag
 	Worker_FlagUpdateOp OpAddFlag = CreateWorkerFlagUpdateOp(TCHAR_TO_ANSI(*TestFlagName), "10");
@@ -262,7 +262,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_an_updated_flag_WHEN_registering_and_invoking_flag
 	UWorkerFlagsTestSpyObject* SpyObj = NewObject<UWorkerFlagsTestSpyObject>();
 	FOnWorkerFlagUpdatedBP WorkerFlagDelegate;
 	WorkerFlagDelegate.BindDynamic(SpyObj, &UWorkerFlagsTestSpyObject::SetFlagUpdated);
-	SpatialWorkerFlags->RegisterFlagUpdatedCallback(TestFlagName, WorkerFlagDelegate, ESpatialCallbackStyle::InvokeImmidiatelyIfAlreadySet);
+	SpatialWorkerFlags->RegisterAndInvokeFlagUpdatedCallback(TestFlagName, WorkerFlagDelegate);
 
 	// THEN
 	TestTrue("Delegate Function was called", SpyObj->GetTimesFlagUpdated() == 1);
@@ -287,7 +287,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_no_flags_WHEN_registering_and_invoking_flag_update
 	WorkerFlagDelegate.BindDynamic(SpyObj, &UWorkerFlagsTestSpyObject::SetFlagUpdated);
 
 	USpatialWorkerFlags* SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
-	SpatialWorkerFlags->RegisterFlagUpdatedCallback("test", WorkerFlagDelegate, ESpatialCallbackStyle::InvokeImmidiatelyIfAlreadySet);
+	SpatialWorkerFlags->RegisterAndInvokeFlagUpdatedCallback("test", WorkerFlagDelegate);
 
 	// THEN
 	TestTrue("Delegate Function was not called", SpyObj->GetTimesFlagUpdated() == 0);
