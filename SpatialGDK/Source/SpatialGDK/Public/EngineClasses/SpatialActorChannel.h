@@ -160,7 +160,7 @@ public:
 		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			// If the entity already exists, make sure we have spatial authority before we replicate.
-			if (!bCreatingNewEntity && !NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
+			if (!bCreatingNewEntity && !NetDriver->HasServerAuthority(EntityId))
 			{
 				return false;
 			}
@@ -181,8 +181,7 @@ public:
 			return false;
 		}
 
-		return NetDriver->StaticComponentView->HasAuthority(
-			EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
+		return NetDriver->HasClientAuthority(EntityId);
 	}
 
 	inline void SetClientAuthority(const bool IsAuth) { bIsAuthClient = IsAuth; }
@@ -195,12 +194,11 @@ public:
 	{
 		if (NetDriver->IsServer())
 		{
-			SetServerAuthority(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID));
+			SetServerAuthority(NetDriver->HasServerAuthority(EntityId));
 		}
 		else
 		{
-			SetClientAuthority(NetDriver->StaticComponentView->HasAuthority(
-				EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())));
+			SetClientAuthority(NetDriver->HasClientAuthority(EntityId));
 		}
 	}
 
@@ -325,11 +323,6 @@ private:
 
 	// Used on the client to track gaining/losing ownership.
 	bool bNetOwned;
-
-	// Used on the server
-	// Tracks the client worker ID corresponding to the owning connection.
-	// If no owning client connection exists, this will be an empty string.
-	FString SavedConnectionOwningWorkerId;
 
 	// Used on the server
 	// Tracks the interest bucket component ID for the relevant Actor.

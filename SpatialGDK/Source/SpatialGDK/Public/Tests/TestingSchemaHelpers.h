@@ -14,5 +14,5 @@ struct SPATIALGDK_API TestingSchemaHelpers
 	static Schema_Object* CreateTranslationComponentDataFields();
 	// Can be used to add a mapping between virtual work id and physical worker name.
 	static void AddTranslationComponentDataMapping(Schema_Object* ComponentDataFields, VirtualWorkerId VWId,
-												   const PhysicalWorkerName& WorkerName);
+												   const PhysicalWorkerName& WorkerName, Worker_PartitionId PartitionId);
 };

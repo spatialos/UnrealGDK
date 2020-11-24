@@ -11,3 +11,11 @@ component ComponentPresence {
     // components in a multi-worker environment.
     list<uint32> component_list = 1;
 }
+
+
+component_set ComponentPresenceSet {
+  id = 9972;
+  components = [
+    ComponentPresence
+  ];
+}

@@ -170,6 +170,8 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.Printf("data unreal.generated.{0};", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
 
+		WriteComponentSetToFile(Writer, ComponentName, ComponentId);
+
 		AddComponentId(ComponentId, SubobjectData.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
 	}
 
@@ -189,11 +191,14 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.PrintNewLine();
 
 		// Handover (server to server) replicated properties.
-		Writer.Printf("component {0} {", *(PropertyName + TEXT("Handover")));
+		FString ComponentName = PropertyName + TEXT("Handover");
+		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
 		Writer.Printf("data unreal.generated.{0};", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
+
+		WriteComponentSetToFile(Writer, ComponentName, ComponentId);
 
 		AddComponentId(ComponentId, SubobjectData.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
 	}
@@ -318,8 +323,9 @@ FString GetRPCFieldPrefix(ERPCType RPCType)
 void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_ComponentId ComponentId, TArray<ERPCType> SentRPCTypes,
 						 TArray<ERPCType> AckedRPCTypes)
 {
+	FString ComponentName = TEXT("Unreal") + EndpointName;
 	Writer.PrintNewLine();
-	Writer.Printf("component Unreal{0} {", *EndpointName).Indent();
+	Writer.Printf("component {0} {", *ComponentName).Indent();
 	Writer.Printf("id = {0};", ComponentId);
 
 	Schema_FieldId FieldId = 1;
@@ -347,6 +353,8 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 	}
 
 	Writer.Outdent().Print("}");
+
+	WriteComponentSetToFile(Writer, ComponentName, ComponentId);
 }
 
 } // anonymous namespace
@@ -512,6 +520,8 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, Class));
 			Writer.Outdent().Print("}");
 
+			WriteComponentSetToFile(Writer, ComponentName, ComponentId);
+
 			AddComponentId(ComponentId, DynamicSubobjectComponents.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
 		}
 
@@ -536,6 +546,8 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Printf("id = {0};", ComponentId);
 			Writer.Printf("data {0};", *SchemaHandoverDataName(Class));
 			Writer.Outdent().Print("}");
+
+			WriteComponentSetToFile(Writer, ComponentName, ComponentId);
 
 			AddComponentId(ComponentId, DynamicSubobjectComponents.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
 		}
@@ -604,7 +616,8 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 
 		Writer.PrintNewLine();
 
-		Writer.Printf("component {0} {", *SchemaReplicatedDataName(Group, Class));
+		FString ComponentName = SchemaReplicatedDataName(Group, Class);
+		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
 
@@ -618,6 +631,8 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		}
 
 		Writer.Outdent().Print("}");
+
+		WriteComponentSetToFile(Writer, ComponentName, ComponentId);
 	}
 
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
@@ -636,7 +651,8 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		Writer.PrintNewLine();
 
 		// Handover (server to server) replicated properties.
-		Writer.Printf("component {0} {", *SchemaHandoverDataName(Class));
+		FString ComponentName = SchemaHandoverDataName(Class);
+		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
 
@@ -649,6 +665,8 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 			WriteSchemaHandoverField(Writer, Prop.Value, FieldCounter);
 		}
 		Writer.Outdent().Print("}");
+
+		WriteComponentSetToFile(Writer, ComponentName, ComponentId);
 	}
 
 	GenerateSubobjectSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath, ActorSchemaData,

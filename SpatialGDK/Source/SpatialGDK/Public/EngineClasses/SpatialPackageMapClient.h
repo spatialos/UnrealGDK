@@ -74,6 +74,8 @@ public:
 	// Pending object references, being asynchronously loaded.
 	TSet<FNetworkGUID> PendingReferences;
 
+	Worker_EntityId AllocateNewEntityId() const;
+
 private:
 	UPROPERTY()
 	UEntityPool* EntityPool;

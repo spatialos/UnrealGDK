@@ -16,13 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   NOTE: If your project does not use custom values for the `PositionUpdateFrequency` or `PositionDistanceThreshold`, then, by default, the updates will be sent with the same frequency as before and no action is required.
 - Removed the `OnAuthorityLossImminent` Actor event.
 - 'WorkerLogLevel' in Runtime Settings was split into two new settings - 'LocalWorkerLogLevel' and 'CloudWorkerLogLevel'. Update these values which will be set to 'Warning' by default.
+- The Unreal GDK has been updated to run against SpatialOS v15. Older version of SpatialOS will no longer work with the Unreal GDK.
 - In SpatialWorkerFlags.h some renaming took place around using delegates on flag changes.
 These functions and structs can be referenced in both code and blueprints it may require updating both:
   1. Delegate struct `FOnWorkerFlagsUpdatedBP` has been renamed `FOnAnyWorkerFlagUpdatedBP`,
   2. Delegate struct `FOnWorkerFlagsUpdated` has been renamed `FOnAnyWorkerFlagUpdated`,
   3. Function `BindToOnWorkerFlagsUpdated` has been renamed to `RegisterAnyFlagUpdatedCallback`
   4. Function `UnbindFromOnWorkerFlagsUpdated` has been renamed to `UnregisterAnyFlagUpdatedCallback`
-
 
 ### Features:
 - The DeploymentLauncher tool can now be used to start multiple simulated player deployments at once.
@@ -54,6 +54,8 @@ These functions and structs can be referenced in both code and blueprints it may
 - Improved the failed hierarchy migration logs. The logs now contain more specific reasons for the failure and the frequency of repeated logs is suppressed.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
 - Worker SDK version compatibility is checked at compile time. 
+- Worker SDK version compatibility is checked at compile time.
+- Unreal GDK now uses SpatialOS 15.0.0-preview-2.
 - SpatialWorkerFlags has reworked how to add callbacks for flag updates:
   1. `BindToOnWorkerFlagsUpdated` is changed to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added functions for register callbacks. 
   2. `RegisterFlagUpdatedCallback` is added to register callbacks for individual flag updates

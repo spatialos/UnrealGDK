@@ -30,7 +30,7 @@ public:
 	virtual void FlushRemoveComponentOps() PURE_VIRTUAL(SpatialOSDispatcherInterface::FlushRemoveComponentOps, return;);
 	virtual void DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::DropQueuedRemoveComponentOpsForEntity, return;);
-	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
+	virtual void OnAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnAuthorityChange, return;);
 	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnComponentUpdate, return;);
