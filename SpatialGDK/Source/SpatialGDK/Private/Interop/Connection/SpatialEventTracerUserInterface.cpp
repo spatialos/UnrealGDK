@@ -131,8 +131,7 @@ USpatialNetDriver* USpatialEventTracerUserInterface::GetSpatialNetDriver(UObject
 	const UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull);
 	if (World == nullptr)
 	{
-		UE_LOG(LogSpatialEventTracerUserInterface, Error,
-			   TEXT("USpatialEventTracerUserInterface::GetSpatialNetDriver - World is null."));
+		UE_LOG(LogSpatialEventTracerUserInterface, Error, TEXT("USpatialEventTracerUserInterface::GetSpatialNetDriver - World is null."));
 		return nullptr;
 	}
 

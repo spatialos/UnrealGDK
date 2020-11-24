@@ -1,7 +1,1 @@
-<<<<<<< HEAD
 15.0.0-preview-4
-// If changing version, update SpatialGDK/Source/SpatialGDK/Public/Utils/WorkerVersionCheck.h too
-=======
-15.0.0-preview-4
-// If changing version, update SpatialGDK/Source/SpatialGDK/Public/Utils/WorkerVersionCheck.h too
->>>>>>> origin/feature/event_tracing_sampling

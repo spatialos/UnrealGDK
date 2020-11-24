@@ -18,3 +18,31 @@ component LBTag {
 component GDKKnownEntityTag {
     id = 2007;
 }
+
+component_set ActorAuthTagSet {
+    id = 2001;
+    components = [
+      ActorAuthTag
+    ];
+}
+
+component_set ActorNonAuthTagSet {
+    id = 2002;
+    components = [
+      ActorNonAuthTag
+    ];
+}
+
+component_set LBTagSet {
+    id = 2005;
+    components = [
+      LBTag
+    ];
+}
+
+component_set GDKKnownEntityTagSet {
+    id = 2007;
+    components = [
+      GDKKnownEntityTag
+    ];
+}

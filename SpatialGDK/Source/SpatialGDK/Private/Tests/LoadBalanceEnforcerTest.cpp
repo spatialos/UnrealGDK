@@ -43,13 +43,13 @@ constexpr Worker_EntityId EntityIdOne = 1;
 constexpr Worker_ComponentId TestComponentIdOne = 123;
 constexpr Worker_ComponentId TestComponentIdTwo = 456;
 
-const TArray<Worker_ComponentId> PresentComponents = {
-	SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
-	SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
-	SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,		 SpatialConstants::HEARTBEAT_COMPONENT_ID
-};
+const TArray<Worker_ComponentId> PresentComponents = { SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID,
+													   SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
+													   SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
+													   SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
+													   SpatialConstants::HEARTBEAT_COMPONENT_ID };
 const TArray<Worker_ComponentId> NonAuthDelegationLBComponents = { SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
-														SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
+																   SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
 const TArray<Worker_ComponentId> TestComponentIds = { TestComponentIdOne, TestComponentIdTwo };
 const TArray<Worker_ComponentId> ClientComponentIds = { SpatialConstants::HEARTBEAT_COMPONENT_ID,
 														SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID };

@@ -60,7 +60,7 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 
 	Interest SelfInterest;
 	Query AuthoritySelfQuery = {};
-	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+	AuthoritySelfQuery.ResultComponentSetIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 	AuthoritySelfQuery.Constraint.EntityIdConstraint = SpawnerEntity.entity_id;
 	SelfInterest.ComponentInterestMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID);
 	SelfInterest.ComponentInterestMap[SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID].Queries.Add(AuthoritySelfQuery);
@@ -129,7 +129,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 
 	Interest SelfInterest;
 	Query AuthoritySelfQuery = {};
-	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+	AuthoritySelfQuery.ResultComponentSetIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 	AuthoritySelfQuery.Constraint.EntityIdConstraint = GSM.entity_id;
 	SelfInterest.ComponentInterestMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID);
 	SelfInterest.ComponentInterestMap[SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID].Queries.Add(AuthoritySelfQuery);
@@ -176,7 +176,7 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 
 	Interest SelfInterest;
 	Query AuthoritySelfQuery = {};
-	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+	AuthoritySelfQuery.ResultComponentSetIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 	AuthoritySelfQuery.Constraint.EntityIdConstraint = VirtualWorkerTranslator.entity_id;
 	SelfInterest.ComponentInterestMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID);
 	SelfInterest.ComponentInterestMap[SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID].Queries.Add(AuthoritySelfQuery);

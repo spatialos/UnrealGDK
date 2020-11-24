@@ -33,10 +33,7 @@ call :MarkStartOfBlock "Unpack dependencies"
 	set LEGACY_FOLDER=%WORKER_SDK_DIR%\improbable\legacy\
 	set TRACE_HEADER="%LEGACY_FOLDER%trace.h"
 	powershell -Command "(Get-Content '%TRACE_HEADER%').replace('#include <improbable/c_trace.h>', '#include <improbable/legacy/c_trace.h>') | Set-Content -Force '%TRACE_HEADER%'"
-<<<<<<< HEAD
-=======
 	REM These modifications are temporary fixes until worker packages post 15.0.0-preview-4 is released
->>>>>>> origin/feature/event_tracing_sampling
 	powershell -Command "(Get-Content '%TRACE_HEADER%').replace('void SetIntervalMillis', 'inline void SetIntervalMillis') | Set-Content -Force '%TRACE_HEADER%'"
 	powershell -Command "(Get-Content '%TRACE_HEADER%').replace('void SetBatchSize', 'inline void SetBatchSize') | Set-Content -Force '%TRACE_HEADER%'"
 	

@@ -2,11 +2,11 @@
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 
+#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Schema/AuthorityIntent.h"
-#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
