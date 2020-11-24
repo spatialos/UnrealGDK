@@ -233,16 +233,15 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	bStartingDeployment = true;
 
-	// TODO: Use this as an additional input arg when we can use 15.0.0 (when we have ComponentSets)
 	FString SchemaBundle = SpatialGDKServicesConstants::SchemaBundlePath;
 	FString SnapshotPath = SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath;
 
-	// runtime.exe --config=squid_config.json --snapshot=snapshots\default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
-	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots.
+	// runtime.exe --config=squid_config.json --snapshot=snapshots/default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
+	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots --schema-bundle=spatial/build/assembly/schema/schema.sb
 	FString RuntimeArgs = FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port %s --grpc-port %s "
-											   "--snapshots-directory=\"%s\" %s"),
+											   "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" %s"),
 										  *LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-										  *FString::FromInt(GRPCPort), *SnapshotPath, *LaunchArgs);
+										  *FString::FromInt(GRPCPort), *SnapshotPath, *SchemaBundle, *LaunchArgs);
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{
