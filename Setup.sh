@@ -101,12 +101,12 @@ spatial package retrieve worker_sdk  c-dynamic-x86_64-clang-macos            "${
 if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then
     spatial package retrieve worker_sdk  c-static-fullylinked-arm-clang-ios      "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip
-    spatial package retrieve worker_sdk  c-dynamic-arm64v8a-clang_ndk21-android "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk21-android.zip
-    spatial package retrieve worker_sdk  c-dynamic-armv7a-clang_ndk21-android   "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-armv7a-clang_ndk21-android.zip
-    spatial package retrieve worker_sdk  c-dynamic-x86_64-clang_ndk21-android   "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang_ndk21-android.zip
+    spatial package retrieve worker_sdk  c-dynamic-arm64v8a-clang_ndk21d-android "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk21d-android.zip
+    spatial package retrieve worker_sdk  c-dynamic-armv7a-clang_ndk21d-android   "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-armv7a-clang_ndk21d-android.zip
+    spatial package retrieve worker_sdk  c-dynamic-x86_64-clang_ndk21d-android   "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang_ndk21d-android.zip
 fi
 
-spatial package retrieve worker_sdk  csharp                                  "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/csharp.zip
+spatial package retrieve worker_sdk  csharp_cinterop                         "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/csharp_cinterop.zip
 spatial package retrieve spot        spot-macos                              "${PINNED_SPOT_VERSION}"       ${DOMAIN_ENVIRONMENT_VAR:-}   "${BINARIES_DIR}"/Programs/spot
 chmod +x "${BINARIES_DIR}"/Programs/spot
 
@@ -119,12 +119,12 @@ unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip         
 if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then
     unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-static-fullylinked-arm-clang-ios.zip      -d "${BINARIES_DIR}"/IOS/
-    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk21-android.zip -d "${BINARIES_DIR}"/Android/arm64-v8a/
-    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-armv7a-clang_ndk21-android.zip   -d "${BINARIES_DIR}"/Android/armeabi-v7a/
-    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang_ndk21-android.zip   -d "${BINARIES_DIR}"/Android/x86_64/
+    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-arm64v8a-clang_ndk21d-android.zip -d "${BINARIES_DIR}"/Android/arm64-v8a/
+    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-armv7a-clang_ndk21d-android.zip   -d "${BINARIES_DIR}"/Android/armeabi-v7a/
+    unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang_ndk21d-android.zip   -d "${BINARIES_DIR}"/Android/x86_64/
 fi
 
-unzip -oq "${CORE_SDK_DIR}"/worker_sdk/csharp.zip                                  -d "${BINARIES_DIR}"/Programs/worker_sdk/csharp/
+unzip -oq "${CORE_SDK_DIR}"/worker_sdk/csharp_cinterop.zip                                  -d "${BINARIES_DIR}"/Programs/worker_sdk/csharp_cinterop/
 cp -R "${BINARIES_DIR}"/Headers/include/ "${WORKER_SDK_DIR}"
 
 if [[ -d "${SPATIAL_DIR}" ]]; then
