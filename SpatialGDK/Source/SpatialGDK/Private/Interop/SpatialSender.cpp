@@ -67,7 +67,7 @@ struct FChangeListPropertyIterator
 	{
 	}
 
-	GDK_PROPERTY(Property)* operator*() const
+	GDK_PROPERTY(Property) * operator*() const
 	{
 		if (Valid)
 		{
@@ -93,7 +93,7 @@ struct FChangeListPropertyIterator
 		return *this;
 	}
 };
-}
+} // namespace
 
 FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId,
 										   Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex,
@@ -506,7 +506,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 
 	TOptional<Trace_SpanId> CauseSpanId = EventTracer->PopLatentPropertyUpdateSpanId(Object);
 
-	if (EventTracer && CauseSpanId.IsSet() && RepChanges->RepChanged.Num() > 0) // Only need to add these if they are actively being traced 
+	if (EventTracer && CauseSpanId.IsSet() && RepChanges->RepChanged.Num() > 0) // Only need to add these if they are actively being traced
 	{
 		TArray<Trace_SpanId> IndividualPropertySpans;
 		for (FChangeListPropertyIterator Itr(RepChanges); Itr; ++Itr)
