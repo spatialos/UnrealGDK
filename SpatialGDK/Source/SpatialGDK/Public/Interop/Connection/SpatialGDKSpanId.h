@@ -15,7 +15,7 @@ struct SPATIALGDK_API FSpatialGDKSpanId
 	FString ToString() const;
 	static FString ToString(const Trace_SpanIdType* TraceSpanId);
 
-	bool IsNull() const { return Trace_SpanId_IsNull(Id); }
+	bool IsNull() const { return Trace_SpanId_IsNull(Id) > 0; }
 
 	void WriteId(const Trace_SpanIdType* TraceSpanId);
 	Trace_SpanIdType* GetId();
