@@ -458,7 +458,8 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 		else
 		{
 			FSpatialGDKSpanId CauseSpanId;
-			bool bUseEventTracer = EventTracer != nullptr && RPCType != ERPCType::CrossServer && PendingRPCParams.RPCIdForLinearEventTrace.IsSet();
+			bool bUseEventTracer =
+				EventTracer != nullptr && RPCType != ERPCType::CrossServer && PendingRPCParams.RPCIdForLinearEventTrace.IsSet();
 			if (bUseEventTracer)
 			{
 				Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
