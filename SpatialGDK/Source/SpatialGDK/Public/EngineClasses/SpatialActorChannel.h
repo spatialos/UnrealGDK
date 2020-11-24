@@ -23,6 +23,11 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialActorChannel, Log, All);
 
+struct FObjectReferencesMapDeleter
+{
+	void operator()(FObjectReferencesMap* Ptr) const;
+};
+
 struct FObjectReferences
 {
 	FObjectReferences() = default;
@@ -94,7 +99,7 @@ struct FObjectReferences
 	TArray<uint8> Buffer;
 	int32 NumBufferBits;
 
-	TUniquePtr<FObjectReferencesMap> Array;
+	TUniquePtr<FObjectReferencesMap, FObjectReferencesMapDeleter> Array;
 	int32 ShadowOffset;
 	int32 ParentIndex;
 	GDK_PROPERTY(Property) * Property;
