@@ -234,7 +234,17 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	bStartingDeployment = true;
 
 	FString SchemaBundle = SpatialGDKServicesConstants::SchemaBundlePath;
-	FString SnapshotPath = SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath;
+
+	// Give the snapshot path a timestamp to ensure we don't overwrite snapshots from older deployments.
+	// The snapshot service saves snapshots with the name `snapshot-n.snapshot` for a given deployment,
+	// where 'n' is the number of snapshots taken since starting the deployment.
+	// TODO: Change the TimeNow to be some arg included with the TryStartLocalDeployment which is also used for the logging folder.
+	FDateTime TimeNow = FDateTime::Now();
+	FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *TimeNow.ToString());
+
+	// Create the folder for storing the snapshots.
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	PlatformFile.CreateDirectoryTree(*SnapshotPath);
 
 	// runtime.exe --config=squid_config.json --snapshot=snapshots/default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
 	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots --schema-bundle=spatial/build/assembly/schema/schema.sb
@@ -364,60 +374,48 @@ void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
 	bAutoDeploy = bInAutoDeploy;
 }
 
-// TODO: UNR-4423 Change this to taking a snapshot without the services
 void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken)
 {
 	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
 	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
 
-	HttpRequest->OnProcessRequestComplete().BindLambda([World, OnSnapshotTaken](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse,
-																				bool bSucceeded) {
-		if (!bSucceeded)
-		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to trigger snapshot at '%s'; received '%s'"), *HttpRequest->GetURL(),
-				   *HttpResponse->GetContentAsString());
-			if (OnSnapshotTaken != nullptr)
+	HttpRequest->OnProcessRequestComplete().BindLambda(
+		[World, OnSnapshotTaken](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+			if (!bSucceeded)
 			{
-				OnSnapshotTaken(false /* bSuccess */, FString() /* PathToSnapshot */);
-			}
-			return;
-		}
-
-		// Unfortunately by the time this callback happens, the files haven't been flushed, so if you copy you may get
-		// the wrong info! So let's wait a bit..
-		FTimerHandle TimerHandle;
-		World->GetTimerManager().SetTimer(
-			TimerHandle,
-			[OnSnapshotTaken, HttpResponse]() {
-				bool bSuccess = false;
-
-				FString SnapshotSearchDirectory = SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath;
-
-				FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-				FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
-
-				IFileManager& FileManager = FFileManagerGeneric::Get();
-
-				FString NewestSnapshotFilePath = HttpResponse->GetContentAsString();
-				FPaths::NormalizeFilename(NewestSnapshotFilePath);
-
-				bSuccess = FPaths::FileExists(NewestSnapshotFilePath);
-
-				if (!bSuccess)
-				{
-					UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed find snapshot file in '%s'"), *SnapshotSearchDirectory);
-				}
-
+				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to trigger snapshot at '%s'; received '%s'"),
+					   *HttpRequest->GetURL(), *HttpResponse->GetContentAsString());
 				if (OnSnapshotTaken != nullptr)
 				{
-					OnSnapshotTaken(bSuccess, NewestSnapshotFilePath);
+					OnSnapshotTaken(false /* bSuccess */, FString() /* PathToSnapshot */);
 				}
-			},
-			0.5f /* InRate */, false /* InbLoop */);
-	});
+				return;
+			}
+
+			bool bSuccess = false;
+
+			FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+			FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+
+			IFileManager& FileManager = FFileManagerGeneric::Get();
+
+			FString NewestSnapshotFilePath = HttpResponse->GetContentAsString();
+			FPaths::NormalizeFilename(NewestSnapshotFilePath);
+
+			bSuccess = FPaths::FileExists(NewestSnapshotFilePath);
+
+			if (!bSuccess)
+			{
+				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed find snapshot file at '%s'"), *NewestSnapshotFilePath);
+			}
+
+			if (OnSnapshotTaken != nullptr)
+			{
+				OnSnapshotTaken(bSuccess, NewestSnapshotFilePath);
+			}
+		});
 
 	HttpRequest->SetURL(TEXT("http://localhost:5006/snapshot"));
-	HttpRequest->SetHeader("Content-Type", TEXT("application/json"));
 	HttpRequest->SetVerb("GET");
 
 	HttpRequest->ProcessRequest();
