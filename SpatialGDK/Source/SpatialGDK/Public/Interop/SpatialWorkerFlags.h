@@ -62,7 +62,7 @@ public:
 	void ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	void RegisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate;
+	void RegisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	void RegisterAndInvokeAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate);
