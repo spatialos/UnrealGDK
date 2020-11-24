@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 
@@ -46,20 +46,20 @@ TArray<Worker_Op> GetOpsFromEntityDeltas(const TArray<EntityDelta>& Deltas)
 		for (const AuthorityChange& Change : Entity.AuthorityLost)
 		{
 			Worker_Op Op = {};
-			Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-			Op.op.authority_change.entity_id = Entity.EntityId;
-			Op.op.authority_change.component_id = Change.ComponentId;
-			Op.op.authority_change.authority = WORKER_AUTHORITY_NOT_AUTHORITATIVE;
+			Op.op_type = WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE;
+			Op.op.component_set_authority_change.entity_id = Entity.EntityId;
+			Op.op.component_set_authority_change.component_set_id = Change.ComponentId;
+			Op.op.component_set_authority_change.authority = WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 			Ops.Push(Op);
 		}
 
 		for (const AuthorityChange& Change : Entity.AuthorityLostTemporarily)
 		{
 			Worker_Op Op = {};
-			Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-			Op.op.authority_change.entity_id = Entity.EntityId;
-			Op.op.authority_change.component_id = Change.ComponentId;
-			Op.op.authority_change.authority = WORKER_AUTHORITY_NOT_AUTHORITATIVE;
+			Op.op_type = WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE;
+			Op.op.component_set_authority_change.entity_id = Entity.EntityId;
+			Op.op.component_set_authority_change.component_set_id = Change.ComponentId;
+			Op.op.component_set_authority_change.authority = WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 			Ops.Push(Op);
 		}
 
@@ -94,20 +94,20 @@ TArray<Worker_Op> GetOpsFromEntityDeltas(const TArray<EntityDelta>& Deltas)
 		for (const AuthorityChange& Change : Entity.AuthorityLostTemporarily)
 		{
 			Worker_Op Op = {};
-			Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-			Op.op.authority_change.entity_id = Entity.EntityId;
-			Op.op.authority_change.component_id = Change.ComponentId;
-			Op.op.authority_change.authority = WORKER_AUTHORITY_AUTHORITATIVE;
+			Op.op_type = WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE;
+			Op.op.component_set_authority_change.entity_id = Entity.EntityId;
+			Op.op.component_set_authority_change.component_set_id = Change.ComponentId;
+			Op.op.component_set_authority_change.authority = WORKER_AUTHORITY_AUTHORITATIVE;
 			Ops.Push(Op);
 		}
 
 		for (const AuthorityChange& Change : Entity.AuthorityGained)
 		{
 			Worker_Op Op = {};
-			Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-			Op.op.authority_change.entity_id = Entity.EntityId;
-			Op.op.authority_change.component_id = Change.ComponentId;
-			Op.op.authority_change.authority = WORKER_AUTHORITY_AUTHORITATIVE;
+			Op.op_type = WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE;
+			Op.op.component_set_authority_change.entity_id = Entity.EntityId;
+			Op.op.component_set_authority_change.component_set_id = Change.ComponentId;
+			Op.op.component_set_authority_change.authority = WORKER_AUTHORITY_AUTHORITATIVE;
 			Ops.Push(Op);
 		}
 

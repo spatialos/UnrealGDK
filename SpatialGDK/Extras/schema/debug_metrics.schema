@@ -14,3 +14,10 @@ component DebugMetrics {
     command Void stop_rpc_metrics(Void);
     command Void modify_spatial_settings(ModifySettingPayload);
 }
+
+component_set DebugMetricsSet {
+  id = 9984;
+  components = [
+    DebugMetrics
+  ];
+}

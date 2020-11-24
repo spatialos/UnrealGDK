@@ -4,6 +4,10 @@
 
 #include "Logging/LogMacros.h"
 
+#include "Utils/CodeWriter.h"
+
+#include "WorkerSDK/improbable/c_worker.h"
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSchemaGenerator, Log, All);
 
 namespace SpatialGDKEditor
@@ -51,5 +55,7 @@ SPATIALGDKEDITOR_API bool RefreshSchemaFiles(const FString& SchemaOutputPath);
 SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& CoreSDKSchemaCopyDir);
 
 SPATIALGDKEDITOR_API bool RunSchemaCompiler();
+
+SPATIALGDKEDITOR_API void WriteComponentSetToFile(FCodeWriter& Writer, const FString& ComponentName, Worker_ComponentId ComponentId);
 } // namespace Schema
 } // namespace SpatialGDKEditor

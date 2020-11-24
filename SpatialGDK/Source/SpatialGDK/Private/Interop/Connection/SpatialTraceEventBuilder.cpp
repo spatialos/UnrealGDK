@@ -322,8 +322,6 @@ FString FSpatialTraceEventBuilder::AuthorityToString(Worker_Authority Authority)
 		return TEXT("NotAuthoritative");
 	case Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE:
 		return TEXT("Authoritative");
-	case Worker_Authority::WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT:
-		return TEXT("AuthorityLossIminent");
 	default:
 		return TEXT("Unknown");
 	}

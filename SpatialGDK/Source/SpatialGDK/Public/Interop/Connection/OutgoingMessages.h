@@ -29,7 +29,6 @@ enum class EOutgoingMessageType : int32
 	CommandResponse,
 	CommandFailure,
 	LogMessage,
-	ComponentInterest,
 	EntityQueryRequest,
 	Metrics
 };
@@ -188,19 +187,6 @@ struct FLogMessage : FOutgoingMessage
 	uint8_t Level;
 	FName LoggerName;
 	FString Message;
-};
-
-struct FComponentInterest : FOutgoingMessage
-{
-	FComponentInterest(Worker_EntityId InEntityId, TArray<Worker_InterestOverride>&& InInterests)
-		: FOutgoingMessage(EOutgoingMessageType::ComponentInterest)
-		, EntityId(InEntityId)
-		, Interests(MoveTemp(InInterests))
-	{
-	}
-
-	Worker_EntityId EntityId;
-	TArray<Worker_InterestOverride> Interests;
 };
 
 struct FEntityQueryRequest : FOutgoingMessage

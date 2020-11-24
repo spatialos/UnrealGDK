@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -7,6 +7,8 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "GlobalStateManager.h"
 #include "SpatialView/SubView.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(LogWellKnownEntitySystem, Log, All)
 
 namespace SpatialGDK
 {
@@ -25,6 +27,7 @@ private:
 	void ProcessEntityAdd(const Worker_EntityId EntityId);
 
 	void InitializeVirtualWorkerTranslationManager();
+	void MaybeClaimSnapshotPartition();
 
 	const FSubView* SubView;
 

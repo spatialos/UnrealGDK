@@ -76,8 +76,6 @@ void SpatialOSWorkerConnectionSpy::SendCommandFailure(Worker_RequestId RequestId
 
 void SpatialOSWorkerConnectionSpy::SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) {}
 
-void SpatialOSWorkerConnectionSpy::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest) {}
-
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
 {
 	LastEntityQuery = EntityQuery;

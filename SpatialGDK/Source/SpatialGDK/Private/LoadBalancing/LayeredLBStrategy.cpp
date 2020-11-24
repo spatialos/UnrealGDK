@@ -123,21 +123,20 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 	return ReturnedWorkerId;
 }
 
-SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint() const
+SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
 {
-	check(IsReady());
-	if (!VirtualWorkerIdToLayerName.Contains(LocalVirtualWorkerId))
+	if (!VirtualWorkerIdToLayerName.Contains(VirtualWorker))
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for worker %d."), LocalVirtualWorkerId);
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for worker %d."), VirtualWorker);
 		SpatialGDK::QueryConstraint Constraint;
 		Constraint.ComponentConstraint = 0;
 		return Constraint;
 	}
 	else
 	{
-		const FName& LayerName = VirtualWorkerIdToLayerName[LocalVirtualWorkerId];
+		const FName& LayerName = VirtualWorkerIdToLayerName[VirtualWorker];
 		check(LayerNameToLBStrategy.Contains(LayerName));
-		return LayerNameToLBStrategy[LayerName]->GetWorkerInterestQueryConstraint();
+		return LayerNameToLBStrategy[LayerName]->GetWorkerInterestQueryConstraint(VirtualWorker);
 	}
 }
 

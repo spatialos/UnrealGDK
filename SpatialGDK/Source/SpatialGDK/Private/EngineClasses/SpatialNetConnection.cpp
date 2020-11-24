@@ -125,9 +125,6 @@ void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_
 	UE_LOG(LogSpatialNetConnection, Log, TEXT("Init Heartbeat component: NetConnection %s, PlayerController entity %lld"), *GetName(),
 		   InPlayerControllerEntity);
 
-	checkf(PlayerControllerEntity == SpatialConstants::INVALID_ENTITY_ID,
-		   TEXT("InitHeartbeat: PlayerControllerEntity already set: %lld. New entity: %lld"), PlayerControllerEntity,
-		   InPlayerControllerEntity);
 	PlayerControllerEntity = InPlayerControllerEntity;
 	TimerManager = InTimerManager;
 
