@@ -60,7 +60,6 @@ These functions and structs can be referenced in both code and blueprints it may
   1. `BindToOnWorkerFlagsUpdated` is changed to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added functions for register callbacks. 
   2. `RegisterFlagUpdatedCallback` is added to register callbacks for individual flag updates
   3. `RegisterAndInvokeAnyFlagUpdatedCallback` & `RegisterAndInvokeFlagUpdatedCallback` variants are added that will invoke the callback if the flag was previously set.
-  4. `AwaitFlagUpdated` is added which invokes a given callback for a specific worker flag immediately if already set or awaits and invokes the callback when the flag is set, invokes callback **only** once.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.

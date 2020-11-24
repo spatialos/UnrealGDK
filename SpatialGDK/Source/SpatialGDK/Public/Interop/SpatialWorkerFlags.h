@@ -13,31 +13,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAnyWorkerFlagUpdated, const FStr
 DECLARE_DYNAMIC_DELEGATE_OneParam(FOnWorkerFlagUpdatedBP, const FString&, FlagValue);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWorkerFlagUpdated, const FString&, FlagValue);
 
-USTRUCT()
-struct FSpatialFlaginfo
-{
-	GENERATED_BODY()
-
-	FSpatialFlaginfo()
-		: Value()
-		, OnWorkerFlagUpdated()
-		, FlagReady(NewObject<USpatialBasicAwaiter>())
-		, Set(false)
-	{
-	}
-
-	UPROPERTY()
-	FString Value;
-
-	UPROPERTY()
-	FOnWorkerFlagUpdated OnWorkerFlagUpdated;
-
-	UPROPERTY()
-	USpatialBasicAwaiter* FlagReady;
-
-	UPROPERTY()
-	bool Set;
-};
 
 UCLASS()
 class SPATIALGDK_API USpatialWorkerFlags : public UObject
@@ -72,11 +47,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	void UnregisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
 
-	// This will only ever execute the delegate once
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	void AwaitFlagUpdated(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
-
 private:
 	FOnAnyWorkerFlagUpdated OnAnyWorkerFlagUpdated;
-	TMap<FString, FSpatialFlaginfo> WorkerFlags;
+	TMap<FString, FString> WorkerFlags;
+	TMap<FString, FOnWorkerFlagUpdated> WorkerFlagsCallbacks;
 };
