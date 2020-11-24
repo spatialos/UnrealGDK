@@ -155,6 +155,10 @@ void ASpatialDebugger::BeginPlay()
 			SpatialToggleDebugger();
 		}
 		WireFrameMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WIREFRAME_MATERIAL);
+		if (WireFrameMaterial == nullptr)
+		{
+			UE_LOG(LogSpatialDebugger, Warning, TEXT("SpatialDebugger enabled but unable to get WireFrame Material."));
+		}
 	}
 }
 
@@ -424,7 +428,7 @@ void ASpatialDebugger::ToggleSelectActor(bool bEnable)
 		}
 
 		// Set the object types to query in the raycast based
-		for (TEnumAsByte<ECollisionChannel> ActorTypeToQuery : SelectActorTypesToQuery)
+		for (TEnumAsByte<ECollisionChannel> ActorTypeToQuery : SelectCollisionTypesToQuery)
 		{
 			CollisionObjectParams.AddObjectTypesToQuery(ActorTypeToQuery);
 		}
@@ -745,7 +749,7 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 
 			TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(NewMousePosition);
 
-			if (NewHoverActor == nullptr)
+			if (!NewHoverActor.IsValid())
 			{
 				// No actor under the cursor so revert hover materials on previous actor
 				RevertHoverMaterials();
@@ -758,14 +762,21 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 				RevertHoverMaterials();
 
 				// Set hover materials on new actor
-				ActorMeshComponents = NewHoverActor->GetComponentsByClass(UMeshComponent::StaticClass());
-				for (UActorComponent* NewActorMeshComponent : ActorMeshComponents)
+				TArray<UActorComponent*> ActorComponents = NewHoverActor->GetComponentsByClass(UMeshComponent::StaticClass());
+				for (UActorComponent* NewActorComponent : ActorComponents)
 				{
-					UMeshComponent* NewActorStaticMeshComponent = Cast<UMeshComponent>(NewActorMeshComponent);
-					// Store previous materials
-					ActorMeshMaterials.Add(NewActorStaticMeshComponent->GetMaterial(0));
-					// Set wireframe material on new actor
-					NewActorStaticMeshComponent->SetMaterial(0, WireFrameMaterial);
+					// Store previous components
+					//UMeshComponent* NewMeshComponent = Cast<UMeshComponent>(NewActorComponent);
+					TWeakObjectPtr<UMeshComponent> MeshComponent(Cast<UMeshComponent>(NewActorComponent));
+					TWeakObjectPtr<UMaterialInterface> MeshMaterial = MeshComponent->GetMaterial(0);
+					if (MeshComponent.IsValid() && MeshMaterial.IsValid() && WireFrameMaterial != nullptr)
+					{
+						ActorMeshComponents.Add(MeshComponent);
+						// Store previous materials
+						ActorMeshMaterials.Add(MeshMaterial);
+						// Set wireframe material on new actor
+						MeshComponent->SetMaterial(0, WireFrameMaterial);
+					}
 				}
 				HoverActor = NewHoverActor;
 			}
@@ -778,14 +789,11 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 					if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(SelectedActor))
 					{
 						FVector PlayerLocation = GetLocalPawnLocation();
-
-						if (SelectedActor != nullptr)
+						
+						FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation);
+						if (!ScreenLocation.IsZero())
 						{
-							FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation);
-							if (!ScreenLocation.IsZero())
-							{
-								DrawTag(Canvas, ScreenLocation, *HitEntityId, SelectedActor->GetName(), true /*bCentre*/);
-							}
+							DrawTag(Canvas, ScreenLocation, *HitEntityId, SelectedActor->GetName(), true /*bCentre*/);
 						}
 					}
 				}
@@ -796,14 +804,17 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 
 void ASpatialDebugger::RevertHoverMaterials()
 {
-	if (HoverActor != nullptr)
+	if (HoverActor.IsValid())
 	{
 		// Revert materials on previous actor
 		for (int i = 0; i < ActorMeshComponents.Num(); i++)
 		{
-			UActorComponent* ActorMeshComponent = ActorMeshComponents[i];
-			UMeshComponent* ActorStaticMeshComponent = Cast<UMeshComponent>(ActorMeshComponent);
-			ActorStaticMeshComponent->SetMaterial(0, ActorMeshMaterials[i]);
+			TWeakObjectPtr<UMeshComponent> ActorMeshComponent = ActorMeshComponents[i];
+			TWeakObjectPtr<UMaterialInterface> ActorMeshMaterial = ActorMeshMaterials[i];
+			if (ActorMeshComponent.IsValid() && ActorMeshMaterial.IsValid())
+			{
+				ActorMeshComponent->SetMaterial(0, ActorMeshMaterial.Get());
+			}
 		}
 
 		// Clear previous materials
@@ -816,7 +827,7 @@ void ASpatialDebugger::RevertHoverMaterials()
 
 TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMousePosition)
 {
-	if (LocalPlayerController == nullptr)
+	if (!LocalPlayerController.IsValid())
 	{
 		return nullptr;
 	}
@@ -844,7 +855,7 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMouseP
 			{
 				const TWeakObjectPtr<AActor> HitActor = HitResult.GetActor();
 
-				if (HitActors.Contains(HitActor))
+				if (!HitActor.IsValid() || HitActors.Contains(HitActor))
 				{
 					// The hit results may include the same actor multiple times so just ignore duplicates
 					continue;
@@ -854,13 +865,10 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMouseP
 				{
 					FVector PlayerLocation = GetLocalPawnLocation();
 
-					if (HitActor != nullptr)
+					FVector2D ScreenLocation = ProjectActorToScreen(HitActor, PlayerLocation);
+					if (!ScreenLocation.IsZero())
 					{
-						FVector2D ScreenLocation = ProjectActorToScreen(HitActor, PlayerLocation);
-						if (!ScreenLocation.IsZero())
-						{
-							HitActors.Add(HitActor);
-						}
+						HitActors.Add(HitActor);
 					}
 				}
 			}

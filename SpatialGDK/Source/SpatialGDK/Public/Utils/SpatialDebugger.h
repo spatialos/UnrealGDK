@@ -303,9 +303,10 @@ private:
 	// Highlighted actor under the mouse cursor
 	TWeakObjectPtr<AActor> HoverActor;
 	// Highlighted actor original materials and components
-	TArray<UMaterialInterface*> ActorMeshMaterials;
-	TArray<UActorComponent*> ActorMeshComponents;
+	TArray<TWeakObjectPtr<UMaterialInterface>> ActorMeshMaterials;
+	TArray<TWeakObjectPtr<UMeshComponent>> ActorMeshComponents;
 	// Material for highlighting actor
+	UPROPERTY()
 	UMaterialInterface* WireFrameMaterial;
 
 	// All actors under the mouse cursor
