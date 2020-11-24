@@ -62,21 +62,26 @@ public:
 	void ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	void RegisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate, ESpatialCallbackStyle CallbackStyle);
+	void RegisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate;
+
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
+	void RegisterAndInvokeAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	void UnregisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	void RegisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate,
-									 ESpatialCallbackStyle CallbackStyle);
+	void RegisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
+
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
+	void RegisterAndInvokeFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
+
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
+	void UnregisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
 
 	// This will only ever execute the delegate once
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	void AwaitFlagUpdated(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
-
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	void UnregisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
 
 private:
 	FOnAnyWorkerFlagUpdated OnAnyWorkerFlagUpdated;

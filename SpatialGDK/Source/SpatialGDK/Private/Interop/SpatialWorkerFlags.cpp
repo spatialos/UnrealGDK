@@ -33,31 +33,19 @@ void USpatialWorkerFlags::ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op)
 	}
 }
 
-void USpatialWorkerFlags::RegisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate, ESpatialCallbackStyle CallbackStyle)
+void USpatialWorkerFlags::RegisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate)
 {
-	switch (CallbackStyle)
+	OnAnyWorkerFlagUpdated.Add(InDelegate);
+}
+
+void USpatialWorkerFlags::RegisterAndInvokeAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate)
+{
+	RegisterAnyFlagUpdatedCallback(InDelegate);
+	for (const auto& FlagPair : WorkerFlags)
 	{
-	case ESpatialCallbackStyle::InvokeImmidiatelyIfAlreadySet:
-	{
-		OnAnyWorkerFlagUpdated.Add(InDelegate);
-		for (const auto& FlagPair : WorkerFlags)
-		{
-			const FString& flagName = FlagPair.Key;
-			const FSpatialFlaginfo& FlagInfo = FlagPair.Value;
-			InDelegate.Execute(flagName, FlagInfo.Value);
-		}
-		break;
-	}
-	case ESpatialCallbackStyle::InvokeOnNewUpdateOnly:
-	{
-		OnAnyWorkerFlagUpdated.Add(InDelegate);
-		break;
-	}
-	default:
-	{
-		checkf(false, TEXT("Unsupported ECallbackStyle passed to RegisterAnyFlagUpdatedCallback!"));
-		break;
-	}
+		const FString& flagName = FlagPair.Key;
+		const FSpatialFlaginfo& FlagInfo = FlagPair.Value;
+		InDelegate.Execute(flagName, FlagInfo.Value);
 	}
 }
 
@@ -71,7 +59,7 @@ void USpatialWorkerFlags::UnregisterFlagUpdatedCallback(const FString& InFlagNam
 
 void USpatialWorkerFlags::AwaitFlagUpdated(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate)
 {
-	FSpatialFlaginfo& FlagInfo = WorkerFlags.FindOrAdd(InFlagName);
+	const FSpatialFlaginfo& FlagInfo = WorkerFlags.FindOrAdd(InFlagName);
 	FlagInfo.FlagReady->Await(FOnReady::CreateLambda([&FlagInfo, &InDelegate, &InFlagName](const FString& ErrorMessage) {
 		if (!ErrorMessage.IsEmpty())
 		{
@@ -82,24 +70,19 @@ void USpatialWorkerFlags::AwaitFlagUpdated(const FString& InFlagName, const FOnW
 	}));
 }
 
-void USpatialWorkerFlags::RegisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate,
-													  ESpatialCallbackStyle CallbackStyle)
+void USpatialWorkerFlags::RegisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate)
 {
 	FSpatialFlaginfo& FlagInfo = WorkerFlags.FindOrAdd(InFlagName);
-	switch (CallbackStyle)
+	FlagInfo.OnWorkerFlagUpdated.Add(InDelegate);
+}
+
+void USpatialWorkerFlags::RegisterAndInvokeFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate)
+{
+	RegisterFlagUpdatedCallback(InFlagName, InDelegate);
+	const FSpatialFlaginfo& FlagInfo = WorkerFlags.FindChecked(InFlagName);
+	if (FlagInfo.Set)
 	{
-	case ESpatialCallbackStyle::InvokeImmidiatelyIfAlreadySet:
-		if (FlagInfo.Set)
-		{
-			InDelegate.Execute(FlagInfo.Value);
-		}
-		// FALLTHROUGH
-	case ESpatialCallbackStyle::InvokeOnNewUpdateOnly:
-		FlagInfo.OnWorkerFlagUpdated.Add(InDelegate);
-		break;
-	default:
-		checkf(false, TEXT("Unsupported ECallbackStyle passed to RegisterFlagUpdatedCallback!"));
-		break;
+		InDelegate.Execute(FlagInfo.Value);
 	}
 }
 
