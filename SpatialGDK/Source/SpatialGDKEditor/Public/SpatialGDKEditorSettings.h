@@ -145,7 +145,7 @@ struct FWorkerTypeLaunchSection
 
 	/** Number of instances to launch when playing in editor. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config,
-			  meta = (DisplayName = "Instances to launch in editor", ClampMin = "0", UIMin = "0",
+			  meta = (DisplayName = "Manual number of instances to launch in Editor", ClampMin = "0", UIMin = "0",
 					  EditCondition = "!bAutoNumEditorInstances"))
 	int32 NumEditorInstances;
 
