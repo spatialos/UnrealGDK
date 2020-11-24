@@ -100,7 +100,7 @@ struct PlayerSpawner : Component
 		TArray<uint8> UniqueId = GetBytesFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_UNIQUE_ID);
 		AddBytesToSchema(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_UNIQUE_ID, UniqueId.GetData(), UniqueId.Num());
 		AddStringToSchema(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID,
-                  GetStringFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID));
+						  GetStringFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID));
 		Schema_AddBool(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID,
 					   GetBoolFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID));
 		Schema_AddEntityId(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID,

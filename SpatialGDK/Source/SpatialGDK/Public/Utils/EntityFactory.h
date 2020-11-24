@@ -34,13 +34,16 @@ public:
 														uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor);
 
-	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const Worker_EntityId EntityId, const InterestFactory* InterestFactory, const UAbstractLBStrategy* LbStrategy, VirtualWorkerId VirtualWorker);
+	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const Worker_EntityId EntityId,
+																		const InterestFactory* InterestFactory,
+																		const UAbstractLBStrategy* LbStrategy,
+																		VirtualWorkerId VirtualWorker);
 
 	static inline bool IsClientAuthoritativeComponent(Worker_ComponentId ComponentId)
 	{
 		return ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
-			|| ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY
-			|| ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID;
+			   || ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+			   || ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID;
 	}
 
 private:

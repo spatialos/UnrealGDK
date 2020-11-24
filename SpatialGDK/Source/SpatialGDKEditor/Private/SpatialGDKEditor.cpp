@@ -228,8 +228,7 @@ bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 
 bool FSpatialGDKEditor::IsSchemaGenerated()
 {
-	FString BundlePath =
-		FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema/schema.json"));
+	FString BundlePath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema/schema.json"));
 	FString GdkFolderPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
 	return FPaths::FileExists(BundlePath) && FPaths::DirectoryExists(GdkFolderPath)
 		   && SpatialGDKEditor::Schema::GeneratedSchemaDatabaseExists();

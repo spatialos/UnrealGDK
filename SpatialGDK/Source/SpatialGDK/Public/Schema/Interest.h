@@ -113,7 +113,7 @@ struct Query
 
 	// Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid.
 	TSchemaOption<bool> FullSnapshotResult; // Whether all components should be included or none.
-	SchemaResultType ResultComponentSetIds;	// Which components should be included.
+	SchemaResultType ResultComponentSetIds; // Which components should be included.
 
 	// Used for frequency-based rate limiting. Represents the maximum frequency of updates for this
 	// particular query. An empty option represents no rate-limiting (ie. updates are received

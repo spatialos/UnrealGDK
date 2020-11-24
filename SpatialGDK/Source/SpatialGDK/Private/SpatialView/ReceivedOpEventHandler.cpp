@@ -40,7 +40,8 @@ void FReceivedOpEventHandler::ProcessOpLists(const OpList& Ops)
 			EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreateAuthorityChange(
 					Op.op.component_set_authority_change.entity_id, Op.op.component_set_authority_change.component_set_id,
-					static_cast<Worker_Authority>(Op.op.component_set_authority_change.authority)), Op.span_id, 1);
+					static_cast<Worker_Authority>(Op.op.component_set_authority_change.authority)),
+				Op.span_id, 1);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			EventTracer->UpdateComponent(Op.op.component_update.entity_id, Op.op.component_update.update.component_id,

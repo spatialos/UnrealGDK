@@ -837,15 +837,24 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 	FString CoreSDKSchemaCopyDir =
 		FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("/Tests/build/dependencies/schema/standard_library"));
 	TArray<FString> GDKSchemaFilePaths = { "authority_intent.schema",
-										   "core_types.schema",		   "debug_component.schema",
-										   "debug_metrics.schema",	   "global_state_manager.schema",
-										   "heartbeat.schema",		   "net_owning_client_worker.schema",
-										   "not_streamed.schema",	   "query_tags.schema",
-										   "relevant.schema",		   "rpc_components.schema",
-										   "rpc_payload.schema",	   "server_worker.schema",
-										   "spawndata.schema",		   "spawner.schema",
-										   "spatial_debugging.schema", "tombstone.schema",
-										   "unreal_metadata.schema",   "virtual_worker_translation.schema" };
+										   "core_types.schema",
+										   "debug_component.schema",
+										   "debug_metrics.schema",
+										   "global_state_manager.schema",
+										   "heartbeat.schema",
+										   "net_owning_client_worker.schema",
+										   "not_streamed.schema",
+										   "query_tags.schema",
+										   "relevant.schema",
+										   "rpc_components.schema",
+										   "rpc_payload.schema",
+										   "server_worker.schema",
+										   "spawndata.schema",
+										   "spawner.schema",
+										   "spatial_debugging.schema",
+										   "tombstone.schema",
+										   "unreal_metadata.schema",
+										   "virtual_worker_translation.schema" };
 	TArray<FString> CoreSDKFilePaths = { "improbable\\restricted\\system_components.schema", "improbable\\standard_library.schema" };
 
 	// WHEN

@@ -226,8 +226,8 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest, const Worker_
 	Query LoadBalanceQuery;
 	LoadBalanceQuery.Constraint.EntityIdConstraint = EntityId;
 	LoadBalanceQuery.ResultComponentSetIds =
-		SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
-						  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID };
+		SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
+						  SpatialConstants::LB_TAG_COMPONENT_ID };
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, LoadBalanceQuery);
 }
 

@@ -114,7 +114,9 @@ FCodeWriter& FCodeWriter::End()
 
 void FCodeWriter::RemoveTrailingComma()
 {
-	const int32 TrailingCommaIndex = OutputSource.FindLastCharByPredicate([](TCHAR c) { return c == TEXT(','); });
+	const int32 TrailingCommaIndex = OutputSource.FindLastCharByPredicate([](TCHAR c) {
+		return c == TEXT(',');
+	});
 	OutputSource.RemoveAt(TrailingCommaIndex);
 }
 
