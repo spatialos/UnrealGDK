@@ -5,6 +5,7 @@
 #include <improbable/c_worker.h>
 
 #include "Rpcs/CommandRpcWriter.h"
+#include "Rpcs/RingBufferWriters.h"
 #include "Schema/RPCPayload.h"
 #include "SpatialCommonTypes.h"
 

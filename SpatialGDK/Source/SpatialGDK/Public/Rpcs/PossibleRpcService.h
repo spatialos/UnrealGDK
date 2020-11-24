@@ -12,10 +12,10 @@
 
 namespace SpatialGDK
 {
-class FBetterRpcService
+class FExperimentRpcService
 {
 public:
-	FBetterRpcService(SpatialInterface* Sender);
+	FExperimentRpcService(SpatialInterface* Sender);
 
 	void InitializeAuthEntity(Worker_EntityId EntityId, const EntityViewElement& EntityState);
 	void InitializeNonAuthEntity(Worker_EntityId EntityId, const EntityViewElement& EntityState);

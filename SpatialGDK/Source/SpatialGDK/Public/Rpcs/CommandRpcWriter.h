@@ -3,7 +3,6 @@
 #pragma once
 #include <improbable/c_worker.h>
 
-#include "Rpcs/RingBufferWriters.h"
 #include "Schema/RPCPayload.h"
 #include "SpatialView/CommandRequest.h"
 #include "SpatialView/CommandResponse.h"

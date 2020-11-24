@@ -4,7 +4,7 @@
 
 namespace SpatialGDK
 {
-FBetterRpcService::FBetterRpcService(SpatialInterface* Sender)
+FExperimentRpcService::FExperimentRpcService(SpatialInterface* Sender)
 	: ReliableClientSender(Sender, FMonotonicRingBufferWriter(SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID, 1, 2, 3),
 						   FOverflowBufferWriter(SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID, 1))
 	, ReliableServerSender(Sender, FMonotonicRingBufferWriter(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, 1, 2, 3))
@@ -14,23 +14,23 @@ FBetterRpcService::FBetterRpcService(SpatialInterface* Sender)
 {
 }
 
-void FBetterRpcService::InitializeAuthEntity(Worker_EntityId EntityId, const EntityViewElement& EntityState)
+void FExperimentRpcService::InitializeAuthEntity(Worker_EntityId EntityId, const EntityViewElement& EntityState)
 {
 	// Setup the count and acks on ring buffer rpcs.
-	// Re-snd the overflowed RPCs for reliable client RPCs.
-	//
+	// Re-send the overflowed RPCs for reliable client RPCs. We could make this something the sender does with some initialisation function.
+	// In fact I think I'm in favour of that although it's slightly less efficient than reading through the view in one go.
 }
 
-void FBetterRpcService::InitializeNonAuthEntity(Worker_EntityId EntityId, const EntityViewElement& EntityState) {}
+void FExperimentRpcService::InitializeNonAuthEntity(Worker_EntityId EntityId, const EntityViewElement& EntityState) {}
 
-void FBetterRpcService::CleanupNonAuthEntity(Worker_EntityId EntityId)
+void FExperimentRpcService::CleanupNonAuthEntity(Worker_EntityId EntityId)
 {
 	ReliableClientSender.ClearEntity(EntityId);
 	ReliableServerSender.ClearEntity(EntityId);
 	UnreliableServerClientSender.ClearEntity(EntityId);
 }
 
-void FBetterRpcService::SendRpc(Worker_EntityId EntityId, RPCPayload Payload, ERPCType RpcType)
+void FExperimentRpcService::SendRpc(Worker_EntityId EntityId, RPCPayload Payload, ERPCType RpcType)
 {
 	switch (RpcType)
 	{
@@ -57,7 +57,7 @@ void FBetterRpcService::SendRpc(Worker_EntityId EntityId, RPCPayload Payload, ER
 	}
 }
 
-void FBetterRpcService::SendAndFlushRpc(Worker_EntityId EntityId, RPCPayload Payload, ERPCType RpcType)
+void FExperimentRpcService::SendAndFlushRpc(Worker_EntityId EntityId, RPCPayload Payload, ERPCType RpcType)
 {
 	switch (RpcType)
 	{
@@ -84,7 +84,7 @@ void FBetterRpcService::SendAndFlushRpc(Worker_EntityId EntityId, RPCPayload Pay
 	}
 }
 
-void FBetterRpcService::FlushRpcs(Worker_EntityId EntityId)
+void FExperimentRpcService::FlushRpcs(Worker_EntityId EntityId)
 {
 	ReliableClientSender.FlushEntity(EntityId);
 	UnreliableServerClientSender.FlushEntity(EntityId);
@@ -93,7 +93,7 @@ void FBetterRpcService::FlushRpcs(Worker_EntityId EntityId)
 	MulticastSender.FlushEntity(EntityId);
 }
 
-void FBetterRpcService::FlushAll()
+void FExperimentRpcService::FlushAll()
 {
 	ReliableClientSender.FlushAll();
 	UnreliableServerClientSender.FlushAll();
