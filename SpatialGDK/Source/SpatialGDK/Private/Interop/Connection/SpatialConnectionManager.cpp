@@ -396,10 +396,8 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 			}
 			else
 			{
-				Worker_Connection_Destroy(NewCAPIWorkerConnection);
-
 				const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
-
+				Worker_Connection_Destroy(NewCAPIWorkerConnection);
 				SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
 			}
 		});
