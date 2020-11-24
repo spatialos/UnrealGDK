@@ -228,7 +228,7 @@ void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_Compon
 {
 	FSpatialGDKSpanId& StoredSpanId = EntityComponentSpanIds.FindChecked({ EntityId, ComponentId });
 	FSpatialGDKSpanId CauseSpanIds[2] = { SpanId, StoredSpanId };
-	StoredSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(EntityId, ComponentId), CauseSpanIds->GetConstId(), 2);
+	StoredSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(EntityId, ComponentId), CauseSpanIds[0].GetConstId(), 2);
 }
 
 FSpatialGDKSpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
@@ -282,7 +282,7 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 	{
 		FSpatialGDKSpanId CauseSpanIds[2] = { SpanId, *ExistingSpanId };
 		*ExistingSpanId =
-			TraceEvent(FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(Object.Get()), CauseSpanIds->GetConstId(), 2);
+			TraceEvent(FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(Object.Get()), CauseSpanIds[0].GetConstId(), 2);
 	}
 }
 

@@ -11,7 +11,7 @@ FSpatialGDKSpanId::FSpatialGDKSpanId()
 
 FSpatialGDKSpanId::FSpatialGDKSpanId(const Trace_SpanIdType* TraceSpanId)
 {
-	WriteId(TraceSpanId);
+	WriteId(TraceSpanId != nullptr ? TraceSpanId : Trace_SpanId_Null());
 }
 
 void FSpatialGDKSpanId::WriteId(const Trace_SpanIdType* TraceSpanId)
