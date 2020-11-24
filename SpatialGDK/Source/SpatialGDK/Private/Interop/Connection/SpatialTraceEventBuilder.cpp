@@ -116,9 +116,16 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendRPC(const UObject* Objec
 		.GetEvent();
 }
 
-FSpatialTraceEvent FSpatialTraceEventBuilder::CreateRPCLinearTraceEvent(const EventTraceUniqueId& LinearTraceId)
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendRPCLinearTraceEvent(const EventTraceUniqueId& LinearTraceId)
 {
-	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "rpc_linear_trace")
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_rpc_linear_trace")
+		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
+		.GetEvent();
+}
+
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceiveRPCLinearTraceEvent(const EventTraceUniqueId& LinearTraceId)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "receive_rpc_linear_trace")
 		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
 		.GetEvent();
 }
@@ -151,6 +158,20 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(const 
 		.AddEntityId(TEXT("EntityId"), EntityId)
 		.AddComponentId(TEXT("ComponentId"), ComponentId)
 		.AddKeyValue("PropertyName", PropertyName)
+		.GetEvent();
+}
+
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendPropertyLinearTraceEvent(const EventTraceUniqueId& LinearTraceId)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_property_linear_trace_event")
+		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
+		.GetEvent();
+}
+
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceivePropertyLinearTraceEvent(const EventTraceUniqueId& LinearTraceId)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "receive_property_linear_trace_event")
+		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
 		.GetEvent();
 }
 

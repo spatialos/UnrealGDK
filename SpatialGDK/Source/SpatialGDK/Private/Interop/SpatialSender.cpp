@@ -50,6 +50,51 @@ DECLARE_CYCLE_STAT(TEXT("Sender UpdateInterestComponent"), STAT_SpatialSenderUpd
 DECLARE_CYCLE_STAT(TEXT("Sender FlushRetryRPCs"), STAT_SpatialSenderFlushRetryRPCs, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Sender SendRPC"), STAT_SpatialSenderSendRPC, STATGROUP_SpatialNet);
 
+namespace
+{
+struct FChangeListPropertyIterator
+{
+	const FRepChangeState* Changes;
+	FChangelistIterator ChangeListIterator;
+	FRepHandleIterator HandleIterator;
+	bool Valid;
+	FChangeListPropertyIterator(const FRepChangeState* Changes)
+		: Changes(Changes)
+		, ChangeListIterator(Changes->RepChanged, 0)
+		, HandleIterator(static_cast<UStruct*>(Changes->RepLayout.GetOwner()), ChangeListIterator, Changes->RepLayout.Cmds,
+						 Changes->RepLayout.BaseHandleToCmdIndex, 0, 1, 0, Changes->RepLayout.Cmds.Num() - 1)
+		, Valid(HandleIterator.NextHandle())
+	{
+	}
+
+	GDK_PROPERTY(Property)* operator*() const
+	{
+		if (Valid)
+		{
+			const FRepLayoutCmd& Cmd = Changes->RepLayout.Cmds[HandleIterator.CmdIndex];
+			return Cmd.Property;
+		}
+		return nullptr;
+	}
+
+	operator bool() const { return Valid; }
+
+	FChangeListPropertyIterator& operator++()
+	{
+		// Move forward
+		if (Valid && Changes->RepLayout.Cmds[HandleIterator.CmdIndex].Type == ERepLayoutCmdType::DynamicArray)
+		{
+			Valid = !HandleIterator.JumpOverArray();
+		}
+		if (Valid)
+		{
+			Valid = HandleIterator.NextHandle();
+		}
+		return *this;
+	}
+};
+}
+
 FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId,
 										   Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex,
 										   const TOptional<Trace_SpanId>& InSpanId)
@@ -460,6 +505,26 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 		UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
 
 	TOptional<Trace_SpanId> CauseSpanId = EventTracer->PopLatentPropertyUpdateSpanId(Object);
+
+	if (EventTracer && CauseSpanId.IsSet() && RepChanges->RepChanged.Num() > 0) // Only need to add these if they are actively being traced 
+	{
+		TArray<Trace_SpanId> IndividualPropertySpans;
+		for (FChangeListPropertyIterator Itr(RepChanges); Itr; ++Itr)
+		{
+			UProperty* Property = *Itr;
+			TOptional<Trace_SpanId> LinearTraceSpan =
+				CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
+			EventTracer->TraceEvent(
+				FSpatialTraceEventBuilder::CreateSendPropertyLinearTraceEvent(EventTraceUniqueId::GenerateForProperty(EntityId, Property)),
+				LinearTraceSpan.GetValue());
+			if (LinearTraceSpan.IsSet())
+			{
+				IndividualPropertySpans.Push(LinearTraceSpan.GetValue());
+			}
+		}
+
+		CauseSpanId = EventTracer->CreateSpan(IndividualPropertySpans.GetData(), IndividualPropertySpans.Num());
+	}
 
 	for (int i = 0; i < ComponentUpdates.Num(); i++)
 	{

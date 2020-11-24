@@ -361,7 +361,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 		{
 			TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan(&Payload.SpanId.GetValue(), 1);
 			EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForRPC(EntityId, static_cast<uint8>(Type), NewRPCId);
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateRPCLinearTraceEvent(LinearTraceId), SpanId);
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPCLinearTraceEvent(LinearTraceId), SpanId);
 
 			if (SpanId.IsSet())
 			{
@@ -483,7 +483,7 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 					EventTraceUniqueId LinearTraceId =
 						EventTraceUniqueId::GenerateForRPC(PendingRPCParams.ObjectRef.Entity, static_cast<uint8>(RPCType),
 														   PendingRPCParams.RPCIdForLinearEventTrace.GetValue());
-					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateRPCLinearTraceEvent(LinearTraceId), SpanId);
+					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveRPCLinearTraceEvent(LinearTraceId), SpanId);
 
 					SpanId = EventTracer->CreateSpan(&SpanId.GetValue(), 1);
 					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function), SpanId);
