@@ -48,7 +48,7 @@ public:
 
 	void SPATIALGDKSERVICES_API SetAutoDeploy(bool bAutoDeploy);
 
-	void SPATIALGDKSERVICES_API TakeSnapshot(UWorld* World, bool bUseStandard, FSpatialSnapshotTakenFunc OnSnapshotTaken);
+	void SPATIALGDKSERVICES_API TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken);
 
 	void WorkerBuildConfigAsync();
 

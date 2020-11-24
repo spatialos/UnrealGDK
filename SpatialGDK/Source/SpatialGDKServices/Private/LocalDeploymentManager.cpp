@@ -233,16 +233,30 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	bStartingDeployment = true;
 
-	// TODO: Use this as an additional input arg when we can use 15.0.0 (when we have ComponentSets)
 	FString SchemaBundle = SpatialGDKServicesConstants::SchemaBundlePath;
-	FString SnapshotPath = SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath;
 
-	// runtime.exe --config=squid_config.json --snapshot=snapshots\default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
-	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots.
+	// Give the snapshot path a timestamp to ensure we don't overwrite snapshots from older deployments.
+	// The snapshot service saves snapshots with the name `snapshot-n.snapshot` for a given deployment,
+	// where 'n' is the number of snapshots taken since starting the deployment.
+	// TODO: Change the TimeNow to be some arg included with the TryStartLocalDeployment which is also used for the logging folder.
+	FDateTime TimeNow = FDateTime::Now();
+	FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *TimeNow.ToString());
+
+	// Create the folder for storing the snapshots.
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	PlatformFile.CreateDirectoryTree(*SnapshotPath);
+
+	// runtime.exe --config=squid_config.json --snapshot=snapshots/default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
+	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots --schema-bundle=spatial/build/assembly/schema/schema.sb
 	FString RuntimeArgs = FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port %s --grpc-port %s "
-											   "--worker-external-host %s --snapshots-directory=\"%s\" %s"),
+											   "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" %s"),
 										  *LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-										  *FString::FromInt(GRPCPort), *RuntimeIPToExpose, *SnapshotPath, *LaunchArgs);
+										  *FString::FromInt(GRPCPort), *SnapshotPath, *SchemaBundle, *LaunchArgs);
+
+	if (!RuntimeIPToExpose.IsEmpty())
+	{
+		RuntimeArgs.Append(FString::Printf(TEXT(" --worker-external-host %s"), *RuntimeIPToExpose));
+	}
 
 	FString RuntimePath = SpatialGDKServicesConstants::GetRuntimeExecutablePath(RuntimeVersion);
 
@@ -360,15 +374,13 @@ void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
 	bAutoDeploy = bInAutoDeploy;
 }
 
-// TODO: UNR-4423 Change this to taking a snapshot without the services
-void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World, bool bUseStandardRuntime,
-																  FSpatialSnapshotTakenFunc OnSnapshotTaken)
+void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken)
 {
 	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
 	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
 
 	HttpRequest->OnProcessRequestComplete().BindLambda(
-		[World, bUseStandardRuntime, OnSnapshotTaken](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+		[World, OnSnapshotTaken](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
 			if (!bSucceeded)
 			{
 				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to trigger snapshot at '%s'; received '%s'"),
@@ -380,94 +392,32 @@ void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World,
 				return;
 			}
 
-			// Unfortunately by the time this callback happens, the files haven't been flushed, so if you copy you may get
-			// the wrong info! So let's wait a bit..
-			FTimerHandle TimerHandle;
-			World->GetTimerManager().SetTimer(
-				TimerHandle,
-				[bUseStandardRuntime, OnSnapshotTaken]() {
-					bool bSuccess = false;
+			bool bSuccess = false;
 
-					FString NewestSnapshotFilePath;
-					FString SnapshotSearchDirectory;
+			FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+			FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 
-					// Standard Runtime places the snapshots in SpatialOS logs, while Compatibility Mode Runtime
-					// places them in AppData.
-					if (bUseStandardRuntime)
-					{
-						FSpatialGDKServicesModule& GDKServices =
-							FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-						FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+			IFileManager& FileManager = FFileManagerGeneric::Get();
 
-						// TODO: This needs a full rework for standalone runtime.
-						FString SpatialPath = SpatialGDKServicesConstants::SpatialOSDirectory;
-						SnapshotSearchDirectory = SpatialPath + TEXT("logs/localdeployment/");
+			FString NewestSnapshotFilePath = HttpResponse->GetContentAsString();
+			FPaths::NormalizeFilename(NewestSnapshotFilePath);
 
-						IFileManager& FileManager = FFileManagerGeneric::Get();
+			bSuccess = FPaths::FileExists(NewestSnapshotFilePath);
 
-						// For Standard you need to check which is the latest .snapshot file that was added
-						// inside that running deployment folder.
-						TArray<FString> SnapshotFiles;
+			if (!bSuccess)
+			{
+				UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed find snapshot file at '%s'"), *NewestSnapshotFilePath);
+			}
 
-						FileManager.FindFiles(SnapshotFiles, *SnapshotSearchDirectory, TEXT("snapshot"));
-
-						FDateTime NewestSnapshotTimestamp = FDateTime::MinValue();
-
-						for (const FString& SnapshotFile : SnapshotFiles)
-						{
-							FString SnapshotFilePath = SnapshotSearchDirectory + TEXT("/") + SnapshotFile;
-							FDateTime SnapshotFileTimestamp = FileManager.GetTimeStamp(*SnapshotFilePath);
-							if (SnapshotFileTimestamp > NewestSnapshotTimestamp)
-							{
-								NewestSnapshotTimestamp = SnapshotFileTimestamp;
-								NewestSnapshotFilePath = SnapshotFilePath;
-							}
-						}
-					}
-					else
-					{
-						// Compatibility Mode will have the latest created snapshot name in 'latest' file.
-						FString AppDataLocalPath = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
-						SnapshotSearchDirectory = FString::Printf(TEXT("%s/.improbable/local_snapshots"), *AppDataLocalPath);
-						FString LatestSnapshotInfoPath = FString::Printf(TEXT("%s/latest"), *SnapshotSearchDirectory);
-						FString LatestSnapshot;
-						if (FPaths::FileExists(LatestSnapshotInfoPath)
-							&& FFileHelper::LoadFileToString(LatestSnapshot, *LatestSnapshotInfoPath))
-						{
-							NewestSnapshotFilePath =
-								FString::Printf(TEXT("%s/.improbable/local_snapshots/%s"), *AppDataLocalPath, *LatestSnapshot);
-						}
-					}
-
-					bSuccess = !NewestSnapshotFilePath.IsEmpty();
-
-					if (!bSuccess)
-					{
-						UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed find snapshot file in '%s'"), *SnapshotSearchDirectory);
-					}
-
-					if (OnSnapshotTaken != nullptr)
-					{
-						OnSnapshotTaken(bSuccess, NewestSnapshotFilePath);
-					}
-				},
-				0.5f /* InRate */, false /* InbLoop */);
+			if (OnSnapshotTaken != nullptr)
+			{
+				OnSnapshotTaken(bSuccess, NewestSnapshotFilePath);
+			}
 		});
 
-	if (bUseStandardRuntime)
-	{
-		HttpRequest->SetURL(TEXT("http://localhost:5006/snapshot"));
-		HttpRequest->SetHeader("Content-Type", TEXT("application/json"));
-		HttpRequest->SetVerb("GET");
-	}
-	else
-	{
-		HttpRequest->SetURL(TEXT("http://localhost:31000/improbable.platform.runtime.SnapshotService/TakeSnapshot"));
-		HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/grpc-web+proto"));
-		HttpRequest->SetVerb(TEXT("POST"));
-		const TArray<uint8> Body = { 0, 0, 0, 0, 0 };
-		HttpRequest->SetContent(Body);
-	}
+	HttpRequest->SetURL(TEXT("http://localhost:5006/snapshot"));
+	HttpRequest->SetVerb("GET");
+
 	HttpRequest->ProcessRequest();
 }
 

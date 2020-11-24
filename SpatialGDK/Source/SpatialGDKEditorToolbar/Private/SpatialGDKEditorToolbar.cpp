@@ -199,7 +199,10 @@ void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 
 	if (AutoStopLocalDeployment != EAutoStopLocalDeploymentMode::Never)
 	{
-		InspectorProcess->Cancel();
+		if (InspectorProcess && InspectorProcess->Update())
+		{
+			InspectorProcess->Cancel();
+		}
 		LocalDeploymentManager->TryStopLocalDeployment();
 	}
 }
