@@ -766,7 +766,6 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 				for (UActorComponent* NewActorComponent : ActorComponents)
 				{
 					// Store previous components
-					//UMeshComponent* NewMeshComponent = Cast<UMeshComponent>(NewActorComponent);
 					TWeakObjectPtr<UMeshComponent> MeshComponent(Cast<UMeshComponent>(NewActorComponent));
 					TWeakObjectPtr<UMaterialInterface> MeshMaterial = MeshComponent->GetMaterial(0);
 					if (MeshComponent.IsValid() && MeshMaterial.IsValid() && WireFrameMaterial != nullptr)
