@@ -329,8 +329,7 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 			{
 				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
 				LocalPlayerController->InputComponent->BindKey(SelectActorKey, IE_Pressed, this, &ASpatialDebugger::OnSelectActor);
-				LocalPlayerController->InputComponent->BindKey(HighlightActorKey, IE_Pressed, this,
-															   &ASpatialDebugger::OnHighlightActor);
+				LocalPlayerController->InputComponent->BindKey(HighlightActorKey, IE_Pressed, this, &ASpatialDebugger::OnHighlightActor);
 			}
 		}
 	}

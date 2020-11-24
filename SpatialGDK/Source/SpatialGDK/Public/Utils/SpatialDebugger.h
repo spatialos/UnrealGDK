@@ -94,8 +94,7 @@ public:
 			  meta = (ToolTip = "Key to open configuration UI for the debugger at runtime"))
 	FKey ConfigUIToggleKey = EKeys::F9;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI,
-			  meta = (ToolTip = "Key to select actor when debugging in game"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI, meta = (ToolTip = "Key to select actor when debugging in game"))
 	FKey SelectActorKey = EKeys::RightMouseButton;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI,
@@ -142,8 +141,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show Actor Name for every entity in range"))
 	bool bShowActorName = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
-			  meta = (ToolTip = "Show glowing mesh when selecting actors."))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show glowing mesh when selecting actors."))
 	bool bShowHighlight = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
