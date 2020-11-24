@@ -22,7 +22,7 @@ void USpatialWorkerFlags::ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op)
 		FString NewValue = FString(UTF8_TO_TCHAR(Op.value));
 		FString& FlagValue = WorkerFlags.FindOrAdd(NewName);
 		FlagValue = NewValue;
-		if (FOnWorkerFlagUpdated* CallbackPtr = WorkerFlagsCallbacks.Find(NewName))
+		if (FOnWorkerFlagUpdated* CallbackPtr = WorkerFlagCallbacks.Find(NewName))
 		{
 			CallbackPtr->Broadcast(NewValue);
 		}
@@ -50,7 +50,7 @@ void USpatialWorkerFlags::RegisterAndInvokeAnyFlagUpdatedCallback(const FOnAnyWo
 
 void USpatialWorkerFlags::UnregisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate)
 {
-	if (FOnWorkerFlagUpdated* CallbackPtr = WorkerFlagsCallbacks.Find(InFlagName))
+	if (FOnWorkerFlagUpdated* CallbackPtr = WorkerFlagCallbacks.Find(InFlagName))
 	{
 		CallbackPtr->Remove(InDelegate);
 	}
@@ -58,7 +58,7 @@ void USpatialWorkerFlags::UnregisterFlagUpdatedCallback(const FString& InFlagNam
 
 void USpatialWorkerFlags::RegisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate)
 {
-	FOnWorkerFlagUpdated& Callback = WorkerFlagsCallbacks.FindOrAdd(InFlagName);
+	FOnWorkerFlagUpdated& Callback = WorkerFlagCallbacks.FindOrAdd(InFlagName);
 	Callback.Add(InDelegate);
 }
 

@@ -49,5 +49,5 @@ public:
 private:
 	FOnAnyWorkerFlagUpdated OnAnyWorkerFlagUpdated;
 	TMap<FString, FString> WorkerFlags;
-	TMap<FString, FOnWorkerFlagUpdated> WorkerFlagsCallbacks;
+	TMap<FString, FOnWorkerFlagUpdated> WorkerFlagCallbacks;
 };
