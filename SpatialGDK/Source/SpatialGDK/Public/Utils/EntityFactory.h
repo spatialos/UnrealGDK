@@ -43,7 +43,6 @@ public:
 			|| ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID;
 	}
 
-
 private:
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;
