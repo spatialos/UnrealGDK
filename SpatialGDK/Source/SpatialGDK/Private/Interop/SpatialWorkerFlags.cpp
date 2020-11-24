@@ -65,9 +65,9 @@ void USpatialWorkerFlags::RegisterFlagUpdatedCallback(const FString& InFlagName,
 void USpatialWorkerFlags::RegisterAndInvokeFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate)
 {
 	RegisterFlagUpdatedCallback(InFlagName, InDelegate);
-	if (const FString* FlagValuePtr = WorkerFlags.Find(InFlagName))
+	if (const FString* ValuePtr = WorkerFlags.Find(InFlagName))
 	{
-		InDelegate.Execute(*FlagValuePtr);
+		InDelegate.Execute(*ValuePtr);
 	}
 }
 
