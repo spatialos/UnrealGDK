@@ -41,10 +41,10 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 
 SpatialScopedActiveSpanId::SpatialScopedActiveSpanId(SpatialEventTracer* InEventTracer, const FSpatialGDKSpanId& InCurrentSpanId)
 	: CurrentSpanId(InCurrentSpanId)
+	, EventTracer(nullptr)
 {
 	if (InEventTracer == nullptr)
 	{
-		EventTracer = nullptr;
 		return;
 	}
 
