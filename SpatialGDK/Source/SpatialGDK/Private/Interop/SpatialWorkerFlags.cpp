@@ -4,9 +4,9 @@
 
 bool USpatialWorkerFlags::GetWorkerFlag(const FString& InFlagName, FString& OutFlagValue) const
 {
-	if (const FString* FlagValuePtr = WorkerFlags.Find(InFlagName))
+	if (const FString* ValuePtr = WorkerFlags.Find(InFlagName))
 	{
-		OutFlagValue = *FlagValuePtr;
+		OutFlagValue = *ValuePtr;
 		return true;
 	}
 
