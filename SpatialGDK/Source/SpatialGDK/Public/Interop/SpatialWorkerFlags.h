@@ -13,13 +13,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAnyWorkerFlagUpdated, const FStr
 DECLARE_DYNAMIC_DELEGATE_OneParam(FOnWorkerFlagUpdatedBP, const FString&, FlagValue);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWorkerFlagUpdated, const FString&, FlagValue);
 
-UENUM()
-enum class ESpatialCallbackStyle : uint8
-{
-	InvokeImmidiatelyIfAlreadySet,
-	InvokeOnNewUpdateOnly
-};
-
 USTRUCT()
 struct FSpatialFlaginfo
 {
