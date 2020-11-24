@@ -115,29 +115,18 @@ call :MarkEndOfBlock "Create folders"
 
 call :MarkStartOfBlock "Retrieve dependencies"
     call :ExecuteAndCheck spatial package retrieve tools         schema_compiler-x86_64-win32               %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
-    if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
     call :ExecuteAndCheck spatial package retrieve schema        standard_library                           %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\schema\standard_library.zip"
-    if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c_headers                                  %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c_headers.zip"
-    if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-x86_64-vc141_md-win32            %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc141_md-win32.zip"
-    if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-x86_64-clang1000-linux           %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang1000-linux.zip"
-    if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
 if defined DOWNLOAD_MOBILE (
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-static-fullylinked-arm-clang-ios         %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip"
-    if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-arm64v8a-clang_ndk21d-android    %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_clang_ndk21-android.zip"
-    if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-armv7a-clang_ndk21d-android      %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-armv7a-clang_clang_ndk21-android.zip"
-    if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-x86_64-clang_ndk21d-android      %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_clang_ndk21-android.zip"
-    if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
 )
     call :ExecuteAndCheck spatial package retrieve spot          spot-win64                                 %PINNED_SPOT_VERSION%       %DOMAIN_ENVIRONMENT_VAR%    "%BINARIES_DIR%\Programs\spot.exe"
-    if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
     call :ExecuteAndCheck spatial package retrieve worker_sdk    csharp_cinterop                            %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\csharp_cinterop.zip"
-    if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
 call :MarkEndOfBlock "Retrieve dependencies"
 
 REM There is a race condition between retrieve and unzip, add version call to stall briefly
@@ -175,7 +164,6 @@ if exist "%SPATIAL_DIR%" (
 
 call :MarkStartOfBlock "Build C# utilities"
     call :ExecuteAndCheck %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
-    if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
 call :MarkEndOfBlock "Build C# utilities"
 
 call :MarkEndOfBlock "%~0"
@@ -200,8 +188,9 @@ exit /b 0
 
 :ExecuteAndCheck
 %*
-if ERRORLEVEL 1 (
-    echo ERROR: '%*' did not complete successfully
-    exit /b %ERRORLEVEL%
+if %ERRORLEVEL% neq 0 (
+    echo ERROR: Command '%*' did not complete successfully. Aborting...
+    pause
+    exit %ERRORLEVEL%
 )
-exit /b ERRORLEVEL
+exit /b 0
