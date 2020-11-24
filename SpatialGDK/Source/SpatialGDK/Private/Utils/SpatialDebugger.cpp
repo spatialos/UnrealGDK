@@ -328,9 +328,9 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 			if (GetNetMode() == NM_Client)
 			{
 				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
-				LocalPlayerController->InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &ASpatialDebugger::OnMousePress);
-				LocalPlayerController->InputComponent->BindKey(EKeys::MouseWheelAxis, IE_Pressed, this,
-															   &ASpatialDebugger::OnMouseWheelAxis);
+				LocalPlayerController->InputComponent->BindKey(SelectActorKey, IE_Pressed, this, &ASpatialDebugger::OnSelectActor);
+				LocalPlayerController->InputComponent->BindKey(HighlightActorKey, IE_Pressed, this,
+															   &ASpatialDebugger::OnHighlightActor);
 			}
 		}
 	}
@@ -381,7 +381,7 @@ void ASpatialDebugger::OnToggleConfigUI()
 	}
 }
 
-void ASpatialDebugger::OnMousePress()
+void ASpatialDebugger::OnSelectActor()
 {
 	if (HitActors.Num() > 0)
 	{
@@ -403,7 +403,7 @@ void ASpatialDebugger::OnMousePress()
 	}
 }
 
-void ASpatialDebugger::OnMouseWheelAxis()
+void ASpatialDebugger::OnHighlightActor()
 {
 	HoverIndex++;
 	ValidateHoverIndex();
@@ -749,36 +749,7 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 
 			TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(NewMousePosition);
 
-			if (!NewHoverActor.IsValid())
-			{
-				// No actor under the cursor so revert hover materials on previous actor
-				RevertHoverMaterials();
-			}
-			else if (NewHoverActor != HoverActor)
-			{
-				// New actor under the cursor
-
-				// Revert hover materials on previous actor
-				RevertHoverMaterials();
-
-				// Set hover materials on new actor
-				TArray<UActorComponent*> ActorComponents = NewHoverActor->GetComponentsByClass(UMeshComponent::StaticClass());
-				for (UActorComponent* NewActorComponent : ActorComponents)
-				{
-					// Store previous components
-					TWeakObjectPtr<UMeshComponent> MeshComponent(Cast<UMeshComponent>(NewActorComponent));
-					TWeakObjectPtr<UMaterialInterface> MeshMaterial = MeshComponent->GetMaterial(0);
-					if (MeshComponent.IsValid() && MeshMaterial.IsValid() && WireFrameMaterial != nullptr)
-					{
-						ActorMeshComponents.Add(MeshComponent);
-						// Store previous materials
-						ActorMeshMaterials.Add(MeshMaterial);
-						// Set wireframe material on new actor
-						MeshComponent->SetMaterial(0, WireFrameMaterial);
-					}
-				}
-				HoverActor = NewHoverActor;
-			}
+			HighlightActorUnderCursor(NewHoverActor);
 
 			// Draw tags above selected actors
 			for (TWeakObjectPtr<AActor> SelectedActor : SelectedActors)
@@ -798,6 +769,45 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 				}
 			}
 		}
+	}
+}
+
+void ASpatialDebugger::HighlightActorUnderCursor(TWeakObjectPtr<AActor>& NewHoverActor)
+{
+	if (!bShowHighlight)
+	{
+		return;
+	}
+
+	if (!NewHoverActor.IsValid())
+	{
+		// No actor under the cursor so revert hover materials on previous actor
+		RevertHoverMaterials();
+	}
+	else if (NewHoverActor != HoverActor)
+	{
+		// New actor under the cursor
+
+		// Revert hover materials on previous actor
+		RevertHoverMaterials();
+
+		// Set hover materials on new actor
+		TArray<UActorComponent*> ActorComponents = NewHoverActor->GetComponentsByClass(UMeshComponent::StaticClass());
+		for (UActorComponent* NewActorComponent : ActorComponents)
+		{
+			// Store previous components
+			TWeakObjectPtr<UMeshComponent> MeshComponent(Cast<UMeshComponent>(NewActorComponent));
+			TWeakObjectPtr<UMaterialInterface> MeshMaterial = MeshComponent->GetMaterial(0);
+			if (MeshComponent.IsValid() && MeshMaterial.IsValid() && WireFrameMaterial != nullptr)
+			{
+				ActorMeshComponents.Add(MeshComponent);
+				// Store previous materials
+				ActorMeshMaterials.Add(MeshMaterial);
+				// Set wireframe material on new actor
+				MeshComponent->SetMaterial(0, WireFrameMaterial);
+			}
+		}
+		HoverActor = NewHoverActor;
 	}
 }
 

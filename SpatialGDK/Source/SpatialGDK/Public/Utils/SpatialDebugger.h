@@ -94,6 +94,14 @@ public:
 			  meta = (ToolTip = "Key to open configuration UI for the debugger at runtime"))
 	FKey ConfigUIToggleKey = EKeys::F9;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI,
+			  meta = (ToolTip = "Key to select actor when debugging in game"))
+	FKey SelectActorKey = EKeys::RightMouseButton;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI,
+			  meta = (ToolTip = "Key to highlight next actor under cursor when debugging in game"))
+	FKey HighlightActorKey = EKeys::MouseWheelAxis;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI, meta = (ToolTip = "In-game configuration UI widget"))
 	TSubclassOf<USpatialDebuggerConfigUI> ConfigUIClass;
 
@@ -133,6 +141,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show Actor Name for every entity in range"))
 	bool bShowActorName = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (ToolTip = "Show glowing mesh when selecting actors."))
+	bool bShowHighlight = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
 			  meta = (ToolTip = "Select the actor(s) you want to debug at runtime"))
@@ -199,10 +211,10 @@ public:
 	void OnToggleConfigUI();
 
 	UFUNCTION()
-	void OnMousePress();
+	void OnSelectActor();
 
 	UFUNCTION()
-	void OnMouseWheelAxis();
+	void OnHighlightActor();
 
 	UFUNCTION(BlueprintCallable, Category = Visualization)
 	void ToggleSelectActor(bool bEnable);
@@ -240,6 +252,8 @@ private:
 	// Allow user to select actor(s) for debugging - the mesh on the actor must have collision presets enabled to block on at least one of
 	// the object channels
 	void SelectActorsToTag(UCanvas* Canvas);
+
+	void HighlightActorUnderCursor(TWeakObjectPtr<AActor>& NewHoverActor);
 
 	TWeakObjectPtr<AActor> GetActorAtPosition(FVector2D& MousePosition);
 
