@@ -59,7 +59,7 @@ DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_S
 using namespace SpatialGDK;
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialRPCService* InRPCService,
-							SpatialGDK::SpatialEventTracer* InEventTracer)
+							SpatialEventTracer* InEventTracer)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -1815,10 +1815,9 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 			SpanId);
 	}
 	else if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID
-		&& Op.op.command_response.response.command_index == SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID)
+			 && Op.op.command_response.response.command_index == SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID)
 	{
 		ReceiveClaimPartitionResponse(Op.op.command_response);
-		return;
 	}
 }
 

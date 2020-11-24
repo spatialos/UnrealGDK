@@ -2,6 +2,7 @@
 
 #include "Interop/RPCExecutor.h"
 
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -98,5 +99,19 @@ FCrossServerRPCParams RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_
 	{
 		return { FUnrealObjectRef(), -1, { 0, 0, 0, {} }, 0, {} };
 	}
+
+	AActor* TargetActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.op.command_request.entity_id));
+#if TRACE_LIB_ACTIVE
+	TraceKey TraceId = Payload.Trace;
+#else
+	TraceKey TraceId = InvalidTraceKey;
+#endif
+
+	UObject* TraceTargetObject = TargetActor != TargetObject ? TargetObject : nullptr;
+	TOptional<Trace_SpanId> SpanId = NetDriver->Connection->GetEventTracer()->CreateSpan(&Op.span_id, 1);
+	NetDriver->Connection->GetEventTracer()->TraceEvent(
+		FSpatialTraceEventBuilder::CreateReceiveCommandRequest("RPC_COMMAND_REQUEST", TargetActor, TraceTargetObject, Function, TraceId,
+															   Op.op.command_request.request_id),
+		SpanId);
 	return { ObjectRef, Op.op.command_request.request_id, MoveTemp(Payload), Op.op.command_request.timeout_millis, Op.span_id };
 }

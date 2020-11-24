@@ -25,7 +25,7 @@ struct FCrossServerRPCParams
 	FCrossServerRPCParams(const FCrossServerRPCParams&) = delete;
 	FCrossServerRPCParams(FCrossServerRPCParams&&) = default;
 	FCrossServerRPCParams& operator=(const FCrossServerRPCParams&) = delete;
-	FCrossServerRPCParams& operator=(FCrossServerRPCParams&&) = default;
+	FCrossServerRPCParams& operator=(FCrossServerRPCParams&&) = delete;
 	~FCrossServerRPCParams() = default;
 
 	FUnrealObjectRef ObjectRef;

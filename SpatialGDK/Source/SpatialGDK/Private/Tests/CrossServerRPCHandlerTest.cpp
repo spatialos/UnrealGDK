@@ -53,7 +53,7 @@ public:
 
 	virtual bool ExecuteCommand(const FCrossServerRPCParams& Params) override
 	{
-		if (Params.RequestId == SuccessRequestId || Params.Timestamp + 0.5 < FDateTime::Now())
+		if (Params.RequestId == SuccessRequestId || Params.Timestamp < FDateTime::Now())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s"), *ExecutingCommand);
 			return true;
