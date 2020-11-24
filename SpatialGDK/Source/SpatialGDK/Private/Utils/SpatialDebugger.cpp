@@ -788,7 +788,7 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 					if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(SelectedActor))
 					{
 						FVector PlayerLocation = GetLocalPawnLocation();
-						
+
 						FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation);
 						if (!ScreenLocation.IsZero())
 						{
