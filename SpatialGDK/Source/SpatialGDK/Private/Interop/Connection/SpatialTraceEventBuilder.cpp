@@ -100,7 +100,8 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::GetEvent() &&
 	return MoveTemp(SpatialTraceEvent);
 }
 
-FSpatialTraceEvent FSpatialTraceEventBuilder::CreateProcessRPC(const UObject* Object, UFunction* Function, const EventTraceUniqueId& LinearTraceId)
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateProcessRPC(const UObject* Object, UFunction* Function,
+															   const EventTraceUniqueId& LinearTraceId)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "process_rpc")
 		.AddObject(TEXT("Object"), Object)
@@ -123,7 +124,6 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendRPC(const EventTraceUniq
 		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
 		.GetEvent();
 }
-
 
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateQueueRPC()
 {
