@@ -53,7 +53,9 @@ public:
 
 	virtual bool ExecuteCommand(const FCrossServerRPCParams& Params) override
 	{
-		if (Params.RequestId == SuccessRequestId || Params.Timestamp < FDateTime::Now())
+		FTimespan PassedTime;
+		PassedTime.FromMilliseconds(500);
+		if (Params.RequestId == SuccessRequestId || Params.Timestamp + PassedTime  < FDateTime::Now())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s"), *ExecutingCommand);
 			return true;
@@ -103,7 +105,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_rpc_already_queued_THEN_discard)
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
 	if (!QueuedRPCs.Contains(TestEntityId))
 	{
-		TestTrue("TestEntityId not in queud up RPCs", false);
+		TestTrue("TestEntityId not in queued up RPCs", false);
 	}
 	else
 	{
@@ -129,7 +131,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_resolved_and_queue_THEN_queue)
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
 	if (!QueuedRPCs.Contains(TestEntityId))
 	{
-		TestTrue("TestEntityId not in queud up RPCs", false);
+		TestTrue("TestEntityId not in queued up RPCs", false);
 	}
 	else
 	{
@@ -150,7 +152,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_unresolved_THEN_queue)
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
 	if (!QueuedRPCs.Contains(TestEntityId))
 	{
-		TestTrue("TestEntityId not in queud up RPCs", false);
+		TestTrue("TestEntityId not in queued up RPCs", false);
 	}
 	else
 	{
@@ -173,7 +175,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_queued_rpc_WHEN_timeout_THEN_try_execute)
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
 	if (!QueuedRPCs.Contains(TestEntityId))
 	{
-		TestTrue("TestEntityId not in queud up RPCs", false);
+		TestTrue("TestEntityId not in queued up RPCs", false);
 	}
 	else
 	{
