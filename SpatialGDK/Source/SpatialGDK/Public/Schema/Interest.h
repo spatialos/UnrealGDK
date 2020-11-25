@@ -54,7 +54,7 @@ struct QueryConstraint
 	TSchemaOption<uint32> ComponentConstraint;
 	TArray<QueryConstraint> AndConstraint;
 	TArray<QueryConstraint> OrConstraint;
-	// TSchemaOption<> SelfConstraint; TODO
+	bool bSelfConstraint = false;
 
 	FORCEINLINE bool IsValid() const
 	{
@@ -99,6 +99,11 @@ struct QueryConstraint
 		}
 
 		if (OrConstraint.Num() > 0)
+		{
+			return true;
+		}
+
+		if (bSelfConstraint)
 		{
 			return true;
 		}
@@ -210,7 +215,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 	}
 
 	// option<uint32> component_constraint = 8;
-	if (Constraint.ComponentConstraint)
+	if (Constraint.ComponentConstraint.IsSet())
 	{
 		Schema_AddUint32(QueryConstraintObject, 8, *Constraint.ComponentConstraint);
 	}
@@ -231,6 +236,12 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 		{
 			AddQueryConstraintToQuerySchema(QueryConstraintObject, 10, OrConstraintEntry);
 		}
+	}
+
+	// option<SelfConstraint> self_constraint = 12;
+	if (Constraint.bSelfConstraint)
+	{
+		Schema_AddObject(QueryConstraintObject, 12);
 	}
 }
 
@@ -271,7 +282,7 @@ inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, 
 
 inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
-	QueryConstraint NewQueryConstraint;
+	QueryConstraint NewQueryConstraint{};
 
 	Schema_Object* QueryConstraintObject = Schema_IndexObject(Object, Id, Index);
 
@@ -360,6 +371,12 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	for (uint32 OrIndex = 0; OrIndex < OrConstraintCount; OrIndex++)
 	{
 		NewQueryConstraint.OrConstraint.Add(IndexQueryConstraintFromSchema(QueryConstraintObject, 10, OrIndex));
+	}
+
+	// option<SelfConstraint> self_constraint = 12;
+	if (Schema_GetObjectCount(QueryConstraintObject, 12) > 0)
+	{
+		NewQueryConstraint.bSelfConstraint = true;
 	}
 
 	return NewQueryConstraint;
