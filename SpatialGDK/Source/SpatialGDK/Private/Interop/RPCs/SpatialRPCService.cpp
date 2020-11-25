@@ -70,11 +70,6 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 		PendingPayload.SpanId = SpanId;
 	}
 
-	if (Function->GetName() == TEXT("ServerAttack"))
-	{
-		int z = 0;
-	}
-
 #if TRACE_LIB_ACTIVE
 	TraceKey Trace = Payload.Trace;
 #endif
