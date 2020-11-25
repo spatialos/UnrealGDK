@@ -310,7 +310,8 @@ void UWorkerFlagsTestSpyObject::SetFlagUpdatedAndUnregisterCallback(const FStrin
 	SpatialWorkerFlags->UnregisterFlagUpdatedCallback(TCHAR_TO_ANSI(*FlagName), WorkerFlagDelegate);
 }
 
-SPATIALWORKERFLAGS_TEST(GIVEN_a_registered_flag_update_delegate_that_unregisters_delegate_WHEN_the_worker_flag_updates_THEN_delegate_is_invoked_and_the_delegate_is_unregistered)
+SPATIALWORKERFLAGS_TEST(
+	GIVEN_a_registered_flag_update_delegate_that_unregisters_delegate_WHEN_the_worker_flag_updates_THEN_delegate_is_invoked_and_the_delegate_is_unregistered)
 {
 	// GIVEN
 	// Register callback

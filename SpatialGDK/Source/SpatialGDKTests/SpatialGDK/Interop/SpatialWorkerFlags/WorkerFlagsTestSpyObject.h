@@ -11,7 +11,6 @@ class UWorkerFlagsTestSpyObject : public UObject
 	GENERATED_BODY()
 
 public:
-
 	UFUNCTION()
 	void SetAnyFlagUpdated(const FString& FlagName, const FString& FlagValue);
 
