@@ -34,6 +34,8 @@ struct FRetryData
 
 // Will retry until it's done or no longer makes sense.
 constexpr FRetryData RETRY_UNTIL_COMPLETE = { TNumericLimits<int32>::Max(), 0, 0.1f, 5.0f, 0 };
+constexpr FRetryData RETRY_MAX_TIMES = { SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, 0, 0.1f, 5.0f, 0 };
+constexpr FRetryData NO_RETRIES = { 0, 0, 0.f, 0.f, 0 };
 
 template <typename T>
 class TCommandRetryHandler

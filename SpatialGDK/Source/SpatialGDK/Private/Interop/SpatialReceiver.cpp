@@ -1869,18 +1869,6 @@ void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandRespons
 {
 	const Worker_PartitionId PartitionId = PendingPartitionAssignments.FindAndRemoveChecked(Op.request_id);
 
-	if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
-	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning,
-			   TEXT("ClaimPartition command timed out. "
-					"Worker sytem entity: %lld. Retrying"),
-			   Op.entity_id);
-
-		// We don't worry about checking if we're resending this request twice, setting to the same value should be idempotent.
-		Sender->SendClaimPartitionRequest(Op.entity_id, PartitionId);
-		return;
-	}
-
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error,

@@ -15,13 +15,9 @@ public:
 	// Worker Connection Interface
 	virtual const TArray<SpatialGDK::EntityDelta>& GetEntityDeltas() = 0;
 	virtual const TArray<Worker_Op>& GetWorkerMessages() = 0;
-	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities) = 0;
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities, SpatialGDK::FRetryData Data) = 0;
 	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
-													 const TOptional<Trace_SpanId>& SpanId = {}) = 0;
-	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
 													 SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId = {}) = 0;
-	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, const TOptional<Trace_SpanId>& SpanId = {}) = 0;
 	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, SpatialGDK::FRetryData RetryData,
 													 const TOptional<Trace_SpanId>& SpanId = {}) = 0;
 
@@ -32,14 +28,11 @@ public:
 	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 									 const TOptional<Trace_SpanId>& SpanId = {}) = 0;
 	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
-												const TOptional<Trace_SpanId>& SpanId) = 0;
-	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
 												SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId) = 0;
 	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
 									 const TOptional<Trace_SpanId>& SpanId = {}) = 0;
 	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const TOptional<Trace_SpanId>& SpanId = {}) = 0;
 	virtual void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) = 0;
-	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery) = 0;
 	virtual Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery, SpatialGDK::FRetryData RetryData) = 0;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) = 0;
 };
