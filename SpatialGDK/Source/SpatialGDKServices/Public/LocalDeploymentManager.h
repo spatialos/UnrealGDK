@@ -62,11 +62,15 @@ private:
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
+	bool SetupRuntimeFileLogger(FString SpatialLogsSubDirectoryName);
+
 	void KillExistingRuntime();
 
 	TFuture<bool> AttemptSpatialAuthResult;
 
 	TOptional<FMonitoredProcess> RuntimeProcess = {};
+	IFileHandle* RuntimeLogFileHandle;
+	FDateTime RuntimeStartTime;
 
 	static const int32 RequiredRuntimePort = 5301;
 	static const int32 WorkerPort = 8018;

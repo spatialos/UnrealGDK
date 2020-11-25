@@ -238,9 +238,8 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	// Give the snapshot path a timestamp to ensure we don't overwrite snapshots from older deployments.
 	// The snapshot service saves snapshots with the name `snapshot-n.snapshot` for a given deployment,
 	// where 'n' is the number of snapshots taken since starting the deployment.
-	// TODO: Change the TimeNow to be some arg included with the TryStartLocalDeployment which is also used for the logging folder.
-	FDateTime TimeNow = FDateTime::Now();
-	FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *TimeNow.ToString());
+	RuntimeStartTime = FDateTime::Now();
+	FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *RuntimeStartTime.ToString());
 
 	// Create the folder for storing the snapshots.
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
@@ -258,6 +257,9 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		RuntimeArgs.Append(FString::Printf(TEXT(" --worker-external-host %s"), *RuntimeIPToExpose));
 	}
 
+	// Setup the runtime file logger, use the runtime start time as the sub-directory.
+	SetupRuntimeFileLogger(RuntimeStartTime.ToString());
+
 	FString RuntimePath = SpatialGDKServicesConstants::GetRuntimeExecutablePath(RuntimeVersion);
 
 	RuntimeProcess = { *RuntimePath, *RuntimeArgs, SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
@@ -266,8 +268,19 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
 
-	RuntimeProcess->OnOutput().BindLambda([&, SpatialOutputLog](const FString& Output) {
+	RuntimeProcess->OnOutput().BindLambda([&, SpatialOutputLog](FString& Output) {
+		// Format and output the log to the editor window `SpatialOutputLog`
 		SpatialOutputLog.Pin()->FormatAndPrintRawLogLine(Output);
+
+		// Save the raw runtime output to disk.
+		if (RuntimeLogFileHandle)
+		{
+			// Always add a newline.
+			Output += LINE_TERMINATOR;
+
+			RuntimeLogFileHandle->Write((const uint8*)TCHAR_TO_ANSI(*Output), Output.Len());
+			RuntimeLogFileHandle->Flush();
+		}
 
 		// Timeout detection.
 		if (bStartingDeployment && Output.Contains(TEXT("startup completed")))
@@ -301,6 +314,40 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	return;
 }
 
+bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString SpatialLogsSubDirectoryName)
+{
+	// Ensure any old log file is cleaned up
+	if (RuntimeLogFileHandle)
+	{
+		delete RuntimeLogFileHandle;
+		RuntimeLogFileHandle = nullptr;
+	}
+
+	FString RuntimeLogDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory,
+											FString::Printf(TEXT("logs/localdeployment/%s"), *SpatialLogsSubDirectoryName));
+
+	FString RuntimeLogFilePath = FPaths::Combine(RuntimeLogDir, TEXT("runtime.log"));
+
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	bool bSuccess = PlatformFile.CreateDirectoryTree(*RuntimeLogDir);
+
+	if (bSuccess)
+	{
+		RuntimeLogFileHandle = PlatformFile.OpenWrite(*RuntimeLogFilePath, /*bAppend*/ true, /*bAllowRead*/ true);
+	}
+
+	if (!bSuccess && RuntimeLogFileHandle)
+	{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Could not create runtime log file at '%s' saving logs to disk will be disabled."),
+			   *RuntimeLogFilePath);
+		return false;
+	}
+
+	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime logs will be saved to %s"), *RuntimeLogFilePath);
+	return true;
+}
+
 bool FLocalDeploymentManager::TryStopLocalDeployment()
 {
 	if (!bLocalDeploymentRunning)
@@ -324,6 +371,13 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 			bStoppingDeployment = false;
 			return false;
 		}
+	}
+
+	// Kill the log file handle.
+	if (RuntimeLogFileHandle)
+	{
+		delete RuntimeLogFileHandle;
+		RuntimeLogFileHandle = nullptr;
 	}
 
 	bLocalDeploymentRunning = false;
