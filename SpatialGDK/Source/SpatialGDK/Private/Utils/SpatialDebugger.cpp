@@ -767,7 +767,6 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 				}
 			}
 		}
-		
 	}
 }
 
