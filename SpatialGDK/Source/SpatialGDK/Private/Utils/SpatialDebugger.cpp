@@ -747,27 +747,27 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 			}
 
 			TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(NewMousePosition);
-
 			HighlightActorUnderCursor(NewHoverActor);
+		}
 
-			// Draw tags above selected actors
-			for (TWeakObjectPtr<AActor> SelectedActor : SelectedActors)
+		// Draw tags above selected actors
+		for (TWeakObjectPtr<AActor> SelectedActor : SelectedActors)
+		{
+			if (SelectedActor.IsValid())
 			{
-				if (SelectedActor.IsValid())
+				if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(SelectedActor))
 				{
-					if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(SelectedActor))
-					{
-						FVector PlayerLocation = GetLocalPawnLocation();
+					FVector PlayerLocation = GetLocalPawnLocation();
 
-						FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation);
-						if (!ScreenLocation.IsZero())
-						{
-							DrawTag(Canvas, ScreenLocation, *HitEntityId, SelectedActor->GetName(), true /*bCentre*/);
-						}
+					FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation);
+					if (!ScreenLocation.IsZero())
+					{
+						DrawTag(Canvas, ScreenLocation, *HitEntityId, SelectedActor->GetName(), true /*bCentre*/);
 					}
 				}
 			}
 		}
+		
 	}
 }
 
