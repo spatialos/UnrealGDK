@@ -783,7 +783,8 @@ void ASpatialDebugger::HighlightActorUnderCursor(TWeakObjectPtr<AActor>& NewHove
 		RevertHoverMaterials();
 
 		// Set hover materials on new actor
-		TArray<UActorComponent*> ActorComponents = NewHoverActor->GetComponentsByClass(UMeshComponent::StaticClass());
+		TArray<UActorComponent*> ActorComponents;
+		NewHoverActor->GetComponents(UMeshComponent::StaticClass(), ActorComponents, true);
 		for (UActorComponent* NewActorComponent : ActorComponents)
 		{
 			// Store previous components
