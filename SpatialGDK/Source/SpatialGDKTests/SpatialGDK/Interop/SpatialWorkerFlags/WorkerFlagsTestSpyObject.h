@@ -9,13 +9,25 @@ UCLASS()
 class UWorkerFlagsTestSpyObject : public UObject
 {
 	GENERATED_BODY()
+
 public:
+
 	UFUNCTION()
 	void SetAnyFlagUpdated(const FString& FlagName, const FString& FlagValue);
+
 	UFUNCTION()
-	void SetFlagUpdated(const FString& FlagValue);
+	void SetFlagUpdated(const FString& FlagName, const FString& FlagValue);
+
+	UFUNCTION() // Defined in SpatialWorkerFlagsTest.cpp
+	void SetFlagUpdatedAndUnregisterCallback(const FString& FlagName, const FString& FlagValue);
 
 	int GetTimesFlagUpdated() const;
+
+	UPROPERTY()
+	USpatialWorkerFlags* SpatialWorkerFlags;
+
+	UPROPERTY()
+	FOnWorkerFlagUpdatedBP WorkerFlagDelegate;
 
 private:
 	int TimesUpdated = 0;

@@ -300,3 +300,36 @@ SPATIALWORKERFLAGS_TEST(GIVEN_no_flags_WHEN_registering_and_invoking_flag_update
 
 	return true;
 }
+
+// callback that unregister itself
+
+void UWorkerFlagsTestSpyObject::SetFlagUpdatedAndUnregisterCallback(const FString& FlagName, const FString& FlagValue)
+{
+	SetFlagUpdated(FlagName, FlagValue);
+	SpatialWorkerFlags->UnregisterFlagUpdatedCallback(TCHAR_TO_ANSI(*FlagName), WorkerFlagDelegate);
+}
+
+SPATIALWORKERFLAGS_TEST(GIVEN_a_registered_flag_update_delegate_that_unregisters_delegate_WHEN_the_worker_flag_updates_THEN_delegate_is_invoked_and_the_delegate_is_unregistered)
+{
+	// GIVEN
+	// Register callback
+	UWorkerFlagsTestSpyObject* SpyObj = NewObject<UWorkerFlagsTestSpyObject>();
+	SpyObj->SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
+	SpyObj->WorkerFlagDelegate.BindDynamic(SpyObj, &UWorkerFlagsTestSpyObject::SetFlagUpdatedAndUnregisterCallback);
+
+	const FString TestFlagName = TEXT("test");
+	SpyObj->SpatialWorkerFlags->RegisterFlagUpdatedCallback(TestFlagName, SpyObj->WorkerFlagDelegate);
+
+	// WHEN
+	// Update test flag
+	Worker_FlagUpdateOp OpAddFlag = CreateWorkerFlagUpdateOp(TCHAR_TO_ANSI(*TestFlagName), "10");
+	SpyObj->SpatialWorkerFlags->ApplyWorkerFlagUpdate(OpAddFlag);
+
+	// Update test flag again
+	SpyObj->SpatialWorkerFlags->ApplyWorkerFlagUpdate(OpAddFlag);
+
+	// THEN
+	TestTrue("Delegate Function was called only once", SpyObj->GetTimesFlagUpdated() == 1);
+
+	return true;
+}

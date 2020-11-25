@@ -60,7 +60,7 @@ public:
 	void HandleOnPlayerSpawnFailed(const FString& Reason);
 
 	UFUNCTION()
-	void HandlePrepareShutdownWorkerFlagUpdated(const FString& FlagValue);
+	void HandlePrepareShutdownWorkerFlagUpdated(const FString& FlagName, const FString& FlagValue);
 
 	bool IsPreparingForShutdown() { return bPreparingForShutdown; }
 

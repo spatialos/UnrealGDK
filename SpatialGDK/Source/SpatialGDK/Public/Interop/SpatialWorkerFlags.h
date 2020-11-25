@@ -10,8 +10,8 @@
 DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnAnyWorkerFlagUpdatedBP, const FString&, FlagName, const FString&, FlagValue);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAnyWorkerFlagUpdated, const FString&, FlagName, const FString&, FlagValue);
 
-DECLARE_DYNAMIC_DELEGATE_OneParam(FOnWorkerFlagUpdatedBP, const FString&, FlagValue);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWorkerFlagUpdated, const FString&, FlagValue);
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnWorkerFlagUpdatedBP, const FString&, FlagName, const FString&, FlagValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWorkerFlagUpdated, const FString&, FlagName, const FString&, FlagValue);
 
 UCLASS()
 class SPATIALGDK_API USpatialWorkerFlags : public UObject

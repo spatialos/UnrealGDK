@@ -252,7 +252,7 @@ void USpatialGameInstance::HandleOnConnected(const USpatialNetDriver& NetDriver)
 	}
 }
 
-void USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated(const FString& FlagValue)
+void USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated(const FString& FlagName, const FString& FlagValue)
 {
 	if (!bPreparingForShutdown)
 	{
