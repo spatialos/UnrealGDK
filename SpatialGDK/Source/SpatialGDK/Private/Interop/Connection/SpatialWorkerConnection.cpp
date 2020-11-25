@@ -66,12 +66,6 @@ void USpatialWorkerConnection::DestroyConnection()
 	Coordinator.Reset();
 }
 
-Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
-{
-	check(Coordinator.IsValid());
-	return Coordinator->SendReserveEntityIdsRequest(NumOfEntities);
-}
-
 Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities, SpatialGDK::FRetryData RetryData)
 {
 	check(Coordinator.IsValid());
@@ -79,22 +73,7 @@ Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t 
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
-																   const FSpatialGDKSpanId& SpanId)
-{
-	check(Coordinator.IsValid());
-	const TOptional<Worker_EntityId> Id = EntityId ? *EntityId : TOptional<Worker_EntityId>();
-	TArray<SpatialGDK::ComponentData> Data;
-	Data.Reserve(Components.Num());
-	for (auto& Component : Components)
-	{
-		Data.Emplace(SpatialGDK::OwningComponentDataPtr(Component.schema_type), Component.component_id);
-	}
-
-	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id, TOptional<uint32>(), SpanId);
-}
-
-Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
-																   SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId)
+																   SpatialGDK::FRetryData RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
 	const TOptional<Worker_EntityId> Id = EntityId ? *EntityId : TOptional<Worker_EntityId>();
@@ -108,17 +87,11 @@ Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorke
 	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id, RetryData, SpanId);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const FSpatialGDKSpanId& SpanId)
-{
-	check(Coordinator.IsValid());
-	return Coordinator->SendDeleteEntityRequest(EntityId, TOptional<uint32>(), SpanId);
-}
-
 Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, SpatialGDK::FRetryData RetryData,
-																   const TOptional<Trace_SpanId>& SpanId)
+																   const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendDeleteEntityRequest(EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
+	return Coordinator->SendDeleteEntityRequest(EntityId, RetryData, SpanId);
 }
 
 void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
@@ -143,17 +116,9 @@ void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWo
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
-															  const FSpatialGDKSpanId& SpanId)
+															  SpatialGDK::FRetryData RetryData, const FSpatialGDKSpanId& SpanId)
 {
-	return Coordinator->SendEntityCommandRequest(EntityId,
-												 SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type),
-																			Request->component_id, Request->command_index),
-												 TOptional<uint32>(), SpanId);
-}
-
-Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
-															  SpatialGDK::FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId)
-{
+	check(Coordinator.IsValid());
 	return Coordinator->SendEntityCommandRequest(EntityId,
 												 SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type),
 																			Request->component_id, Request->command_index),
@@ -180,12 +145,6 @@ void USpatialWorkerConnection::SendLogMessage(uint8_t Level, const FName& Logger
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendLogMessage(static_cast<Worker_LogLevel>(Level), LoggerName, Message);
-}
-
-Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
-{
-	check(Coordinator.IsValid());
-	return Coordinator->SendEntityQueryRequest(SpatialGDK::EntityQuery(*EntityQuery));
 }
 
 Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery, SpatialGDK::FRetryData RetryData)

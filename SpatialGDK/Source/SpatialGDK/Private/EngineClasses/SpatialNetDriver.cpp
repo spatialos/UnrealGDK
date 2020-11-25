@@ -411,7 +411,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Receiver->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
-	PlayerSpawner->Init(this, &TimerManager);
+	PlayerSpawner->Init(this);
 	PlayerSpawner->OnPlayerSpawnFailed.BindUObject(GameInstance, &USpatialGameInstance::HandleOnPlayerSpawnFailed);
 	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
 	SpatialMetrics->ControllerRefProvider.BindUObject(this, &USpatialNetDriver::GetCurrentPlayerControllerRef);
@@ -868,14 +868,14 @@ void USpatialNetDriver::BeginDestroy()
 		{
 			for (const auto& Partition : VirtualWorkerTranslationManager->GetAllPartitions())
 			{
-				Connection->SendDeleteEntityRequest(Partition.PartitionEntityId);
+				Connection->SendDeleteEntityRequest(Partition.PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 			}
 		}
 
 		// Cleanup our corresponding worker entity if it exists.
 		if (WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
-			Connection->SendDeleteEntityRequest(WorkerEntityId);
+			Connection->SendDeleteEntityRequest(WorkerEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 
 			// Flush the connection and wait a moment to allow the message to propagate.
 			// TODO: UNR-3697 - This needs to be handled more correctly
@@ -1020,7 +1020,7 @@ void USpatialNetDriver::Shutdown()
 		{
 			if (HasServerAuthority(EntityId))
 			{
-				Connection->SendDeleteEntityRequest(EntityId);
+				Connection->SendDeleteEntityRequest(EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 			}
 		}
 
@@ -1028,7 +1028,7 @@ void USpatialNetDriver::Shutdown()
 		{
 			if (HasServerAuthority(EntityId))
 			{
-				Connection->SendDeleteEntityRequest(EntityId);
+				Connection->SendDeleteEntityRequest(EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 			}
 		}
 	}
