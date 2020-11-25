@@ -23,6 +23,9 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialActorChannel, Log, All);
 
+// This is necessary to compile TUniquePtr<FObjectReferencesMap> on Linux with 4.26,
+// where the default deleter needs FObjectReferences to be complete, which isn't possible
+// because we're still in the middle of its definition.
 struct FObjectReferencesMapDeleter
 {
 	void operator()(FObjectReferencesMap* Ptr) const;
