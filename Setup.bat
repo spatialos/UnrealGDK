@@ -188,9 +188,9 @@ exit /b 0
 
 :ExecuteAndCheck
 %*
-if %ERRORLEVEL% neq 0 (
+if ERRORLEVEL 1 (
     echo ERROR: Command '%*' did not complete successfully. Aborting...
     pause
-    exit %ERRORLEVEL%
+    exit 1
 )
 exit /b 0
