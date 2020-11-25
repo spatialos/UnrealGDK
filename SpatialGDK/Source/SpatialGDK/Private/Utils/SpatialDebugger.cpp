@@ -408,14 +408,9 @@ void ASpatialDebugger::OnHighlightActor()
 	ValidateHoverIndex();
 }
 
-void ASpatialDebugger::ToggleSelectActor(bool bEnable)
+void ASpatialDebugger::ToggleSelectActor()
 {
-	if (bEnable == bSelectActor)
-	{
-		return;
-	}
-
-	bSelectActor = bEnable;
+	bSelectActor = !bSelectActor;
 	if (bSelectActor)
 	{
 		if (CrosshairTexture != nullptr)
@@ -434,12 +429,12 @@ void ASpatialDebugger::ToggleSelectActor(bool bEnable)
 	}
 	else
 	{
-		// Clear selected actors
-		// Change mouse cursor back to normal - TODO check if it was true before
+		// Change mouse cursor back to normal
 		LocalPlayerController->bShowMouseCursor = true;
 
 		RevertHoverMaterials();
 
+		// Clear selected actors
 		SelectedActors.Empty();
 		HoverIndex = 0;
 		HitActors.Empty();
@@ -483,6 +478,11 @@ void ASpatialDebugger::SetShowWorkerRegions(const bool bNewShow)
 
 		bShowWorkerRegions = bNewShow;
 	}
+}
+
+bool ASpatialDebugger::IsSelectActorEnabled() const
+{
+	return bSelectActor;
 }
 
 void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
@@ -812,6 +812,11 @@ void ASpatialDebugger::HighlightActorUnderCursor(TWeakObjectPtr<AActor>& NewHove
 
 void ASpatialDebugger::RevertHoverMaterials()
 {
+	if (!bShowHighlight)
+	{
+		return;
+	}
+
 	if (HoverActor.IsValid())
 	{
 		// Revert materials on previous actor

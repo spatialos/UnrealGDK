@@ -142,11 +142,7 @@ public:
 	bool bShowActorName = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show glowing mesh when selecting actors."))
-	bool bShowHighlight = true;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
-			  meta = (ToolTip = "Select the actor(s) you want to debug at runtime"))
-	bool bSelectActor = false;
+	bool bShowHighlight = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
 			  meta = (ToolTip = "Select the object types you want to query when selecting actors"))
@@ -215,7 +211,10 @@ public:
 	void OnHighlightActor();
 
 	UFUNCTION(BlueprintCallable, Category = Visualization)
-	void ToggleSelectActor(bool bEnable);
+	void ToggleSelectActor();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Visualization)
+	bool IsSelectActorEnabled() const;
 
 private:
 	UFUNCTION()
@@ -308,6 +307,9 @@ private:
 	FCanvasIcon Icons[ICON_MAX];
 
 	USpatialDebuggerConfigUI* ConfigUIWidget;
+
+	// Mode for selecting actors under the cursor - should only be visible in the runtime config UI
+	bool bSelectActor = false;
 
 	// Actors selected by user for debugging
 	TArray<TWeakObjectPtr<AActor>> SelectedActors;
