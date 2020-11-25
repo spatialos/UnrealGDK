@@ -301,8 +301,9 @@ SPATIALWORKERFLAGS_TEST(GIVEN_no_flags_WHEN_registering_and_invoking_flag_update
 	return true;
 }
 
-// callback that unregister itself
+// Callback that unregister itself
 
+// Defined this function here so the relevant code can be read together with the test
 void UWorkerFlagsTestSpyObject::SetFlagUpdatedAndUnregisterCallback(const FString& FlagName, const FString& FlagValue)
 {
 	SetFlagUpdated(FlagName, FlagValue);

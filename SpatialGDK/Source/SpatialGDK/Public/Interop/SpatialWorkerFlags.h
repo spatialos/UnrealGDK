@@ -32,19 +32,19 @@ public:
 	void RegisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	void RegisterAndInvokeAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate);
+	void UnregisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	void UnregisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate);
+	void RegisterAndInvokeAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	void RegisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	void RegisterAndInvokeFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
+	void UnregisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
-	void UnregisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
+	void RegisterAndInvokeFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate);
 
 private:
 	FOnAnyWorkerFlagUpdated OnAnyWorkerFlagUpdated;

@@ -39,6 +39,11 @@ void USpatialWorkerFlags::RegisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagU
 	OnAnyWorkerFlagUpdated.Add(InDelegate);
 }
 
+void USpatialWorkerFlags::UnregisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate)
+{
+	OnAnyWorkerFlagUpdated.Remove(InDelegate);
+}
+
 void USpatialWorkerFlags::RegisterAndInvokeAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate)
 {
 	RegisterAnyFlagUpdatedCallback(InDelegate);
@@ -46,6 +51,12 @@ void USpatialWorkerFlags::RegisterAndInvokeAnyFlagUpdatedCallback(const FOnAnyWo
 	{
 		InDelegate.Execute(FlagValuePair.Key, FlagValuePair.Value);
 	}
+}
+
+void USpatialWorkerFlags::RegisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate)
+{
+	FOnWorkerFlagUpdated& OnWorkerFlagUpdated = WorkerFlagCallbacks.FindOrAdd(InFlagName);
+	OnWorkerFlagUpdated.Add(InDelegate);
 }
 
 void USpatialWorkerFlags::UnregisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate)
@@ -56,12 +67,6 @@ void USpatialWorkerFlags::UnregisterFlagUpdatedCallback(const FString& InFlagNam
 	}
 }
 
-void USpatialWorkerFlags::RegisterFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate)
-{
-	FOnWorkerFlagUpdated& OnWorkerFlagUpdatedPtr = WorkerFlagCallbacks.FindOrAdd(InFlagName);
-	OnWorkerFlagUpdatedPtr.Add(InDelegate);
-}
-
 void USpatialWorkerFlags::RegisterAndInvokeFlagUpdatedCallback(const FString& InFlagName, const FOnWorkerFlagUpdatedBP& InDelegate)
 {
 	RegisterFlagUpdatedCallback(InFlagName, InDelegate);
@@ -69,9 +74,4 @@ void USpatialWorkerFlags::RegisterAndInvokeFlagUpdatedCallback(const FString& In
 	{
 		InDelegate.Execute(InFlagName, *ValuePtr);
 	}
-}
-
-void USpatialWorkerFlags::UnregisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate)
-{
-	OnAnyWorkerFlagUpdated.Remove(InDelegate);
 }

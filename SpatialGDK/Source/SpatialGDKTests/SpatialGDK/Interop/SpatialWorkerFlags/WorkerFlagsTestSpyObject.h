@@ -18,7 +18,7 @@ public:
 	UFUNCTION()
 	void SetFlagUpdated(const FString& FlagName, const FString& FlagValue);
 
-	UFUNCTION() // Defined in SpatialWorkerFlagsTest.cpp
+	UFUNCTION() // Defined in SpatialWorkerFlagsTest.cpp so the relevant code can be read together with the test
 	void SetFlagUpdatedAndUnregisterCallback(const FString& FlagName, const FString& FlagValue);
 
 	int GetTimesFlagUpdated() const;
