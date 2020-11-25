@@ -23,3 +23,10 @@ component SpatialTypeActorWithActorComponent {
 	UnrealObjectRef instigator = 15;
 	UnrealObjectRef spatialactorcomponent = 16;
 }
+
+component_set SpatialTypeActorWithActorComponentSet {
+	id = {{id}};
+	components = [
+		SpatialTypeActorWithActorComponent
+	];
+}

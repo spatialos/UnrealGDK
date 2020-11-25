@@ -11,7 +11,6 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/WorkerRegion.h"
-#include "Schema/AuthorityIntent.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialCommonTypes.h"
 #include "Utils/InspectionColors.h"
@@ -400,9 +399,9 @@ void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 	EntityActorMapping.Remove(EntityId);
 }
 
-void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const
+void ASpatialDebugger::ActorAuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp) const
 {
-	check(AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE && AuthOp.component_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
+	check(AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE && AuthOp.component_set_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
 
 	if (NetDriver->VirtualWorkerTranslator == nullptr)
 	{
@@ -410,8 +409,9 @@ void ASpatialDebugger::ActorAuthorityChanged(const Worker_AuthorityChangeOp& Aut
 		return;
 	}
 
-	VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
-	FColor LocalVirtualWorkerColor = SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
+	const VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
+	const FColor LocalVirtualWorkerColor =
+		SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
 
 	SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(AuthOp.entity_id);
 	if (DebuggingInfo == nullptr)
