@@ -506,26 +506,6 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 
 	TOptional<Trace_SpanId> CauseSpanId = EventTracer->PopLatentPropertyUpdateSpanId(Object);
 
-	if (EventTracer && CauseSpanId.IsSet() && RepChanges->RepChanged.Num() > 0) // Only need to add these if they are actively being traced
-	{
-		TArray<Trace_SpanId> IndividualPropertySpans;
-		for (FChangeListPropertyIterator Itr(RepChanges); Itr; ++Itr)
-		{
-			UProperty* Property = *Itr;
-			TOptional<Trace_SpanId> LinearTraceSpan =
-				CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
-			EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::CreateSendPropertyLinearTraceEvent(EventTraceUniqueId::GenerateForProperty(EntityId, Property)),
-				LinearTraceSpan.GetValue());
-			if (LinearTraceSpan.IsSet())
-			{
-				IndividualPropertySpans.Push(LinearTraceSpan.GetValue());
-			}
-		}
-
-		CauseSpanId = EventTracer->CreateSpan(IndividualPropertySpans.GetData(), IndividualPropertySpans.Num());
-	}
-
 	for (int i = 0; i < ComponentUpdates.Num(); i++)
 	{
 		FWorkerComponentUpdate& Update = ComponentUpdates[i];
@@ -545,14 +525,30 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			continue;
 		}
 
-		TOptional<Trace_SpanId> SpanId;
-		if (EventTracer != nullptr && EventTracer->IsEnabled())
+		if (EventTracer != nullptr && CauseSpanId.IsSet()
+			&& RepChanges->RepChanged.Num() > 0) // Only need to add these if they are actively being traced
 		{
-			SpanId = CauseSpanId.IsSet() ? EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1) : EventTracer->CreateSpan();
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id), SpanId);
+			TArray<Trace_SpanId> IndividualPropertySpans;
+			for (FChangeListPropertyIterator Itr(RepChanges); Itr; ++Itr)
+			{
+				GDK_PROPERTY(Property)* Property = *Itr;
+
+				TOptional<Trace_SpanId> LinearTraceSpan = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
+				EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForProperty(EntityId, Property);
+				EventTracer->TraceEvent(
+					FSpatialTraceEventBuilder::CreateSendPropertyUpdates(Object, EntityId, Update.component_id, Property->GetName(), LinearTraceId),
+					CauseSpanId);
+
+				if (LinearTraceSpan.IsSet())
+				{
+					IndividualPropertySpans.Push(LinearTraceSpan.GetValue());
+				}
+			}
+
+			CauseSpanId = EventTracer->CreateSpan(IndividualPropertySpans.GetData(), IndividualPropertySpans.Num());
 		}
 
-		Connection->SendComponentUpdate(EntityId, &Update, SpanId);
+		Connection->SendComponentUpdate(EntityId, &Update, CauseSpanId);
 	}
 }
 
