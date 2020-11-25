@@ -135,7 +135,7 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateRetryRPC()
 	return FSpatialTraceEventBuilder("retry_rpc").GetEvent();
 }
 
-FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendPropertyUpdates(const UObject* Object, const Worker_EntityId EntityId,
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendPropertyUpdate(const UObject* Object, const Worker_EntityId EntityId,
 																		const Worker_ComponentId ComponentId, const FString& PropertyName,
 																		EventTraceUniqueId LinearTraceId)
 {

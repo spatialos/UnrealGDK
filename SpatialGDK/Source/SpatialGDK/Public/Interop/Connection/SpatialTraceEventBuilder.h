@@ -35,7 +35,7 @@ public:
 
 	static FSpatialTraceEvent CreateQueueRPC();
 	static FSpatialTraceEvent CreateRetryRPC();
-	static FSpatialTraceEvent CreateSendPropertyUpdates(const UObject* Object, const Worker_EntityId EntityId,
+	static FSpatialTraceEvent CreateSendPropertyUpdate(const UObject* Object, const Worker_EntityId EntityId,
 														const Worker_ComponentId ComponentId, const FString& PropertyName,
 														EventTraceUniqueId LinearTraceId);
 	static FSpatialTraceEvent CreateReceivePropertyUpdate(const UObject* Object, const Worker_EntityId EntityId,
