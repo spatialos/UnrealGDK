@@ -22,3 +22,10 @@ component NonSpatialTypeActor {
 	uint32 role = 14;
 	UnrealObjectRef instigator = 15;
 }
+
+component_set NonSpatialTypeActorSet {
+	id = {{id}};
+	components = [
+		NonSpatialTypeActor
+	];
+}

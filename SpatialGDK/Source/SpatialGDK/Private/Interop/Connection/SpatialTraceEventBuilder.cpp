@@ -116,6 +116,13 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendRPC(const UObject* Objec
 		.GetEvent();
 }
 
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateRPCLinearTraceEvent(const EventTraceUniqueId& LinearTraceId)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "rpc_linear_trace")
+		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
+		.GetEvent();
+}
+
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateQueueRPC()
 {
 	return FSpatialTraceEventBuilder("queue_rpc").GetEvent();
@@ -315,8 +322,6 @@ FString FSpatialTraceEventBuilder::AuthorityToString(Worker_Authority Authority)
 		return TEXT("NotAuthoritative");
 	case Worker_Authority::WORKER_AUTHORITY_AUTHORITATIVE:
 		return TEXT("Authoritative");
-	case Worker_Authority::WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT:
-		return TEXT("AuthorityLossIminent");
 	default:
 		return TEXT("Unknown");
 	}

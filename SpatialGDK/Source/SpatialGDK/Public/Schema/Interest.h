@@ -54,6 +54,7 @@ struct QueryConstraint
 	TSchemaOption<uint32> ComponentConstraint;
 	TArray<QueryConstraint> AndConstraint;
 	TArray<QueryConstraint> OrConstraint;
+	// TSchemaOption<> SelfConstraint; TODO
 
 	FORCEINLINE bool IsValid() const
 	{
@@ -145,7 +146,7 @@ using FrequencyToConstraintsMap = TMap<float, TArray<QueryConstraint>>;
 // A common type for lists of frequency constraints to be converted into queries later
 using FrequencyConstraints = TArray<FrequencyConstraint>;
 
-struct ComponentInterest
+struct ComponentSetInterest
 {
 	TArray<Query> Queries;
 };
@@ -258,7 +259,7 @@ inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestOb
 	}
 }
 
-inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, Schema_FieldId Id, const ComponentInterest& Value)
+inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, Schema_FieldId Id, const ComponentSetInterest& Value)
 {
 	Schema_Object* ComponentInterestObject = Schema_AddObject(InterestObject, Id);
 
@@ -397,9 +398,9 @@ inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint
 	return NewQuery;
 }
 
-inline ComponentInterest GetComponentInterestFromSchema(Schema_Object* Object, Schema_FieldId Id)
+inline ComponentSetInterest GetComponentInterestFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
-	ComponentInterest NewComponentInterest;
+	ComponentSetInterest NewComponentInterest;
 
 	Schema_Object* ComponentInterestObject = Schema_GetObject(Object, Id);
 
@@ -428,7 +429,7 @@ struct Interest : Component
 		{
 			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 1, i);
 			uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-			ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+			ComponentSetInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 			ComponentInterestMap.Add(Key, Value);
 		}
@@ -449,7 +450,7 @@ struct Interest : Component
 			{
 				Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 1, i);
 				uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-				ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+				ComponentSetInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 				ComponentInterestMap.Add(Key, Value);
 			}
@@ -490,7 +491,7 @@ struct Interest : Component
 		}
 	}
 
-	TMap<uint32, ComponentInterest> ComponentInterestMap;
+	TMap<Worker_ComponentSetId, ComponentSetInterest> ComponentInterestMap;
 };
 
 } // namespace SpatialGDK

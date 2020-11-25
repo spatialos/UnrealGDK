@@ -5,8 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Improbable.Collections;
-using Improbable.Worker;
+using Improbable.Worker.CInterop;
 
 namespace Improbable.WorkerCoordinator
 {
@@ -127,8 +126,8 @@ namespace Improbable.WorkerCoordinator
             }
 
             // Read worker flags.
-            Option<string> devAuthTokenOpt = connection.GetWorkerFlag(DevAuthTokenWorkerFlag);
-            Option<string> targetDeploymentOpt = connection.GetWorkerFlag(TargetDeploymentWorkerFlag);
+            string devAuthToken = connection.GetWorkerFlag(DevAuthTokenWorkerFlag);
+            string targetDeployment = connection.GetWorkerFlag(TargetDeploymentWorkerFlag);
             int deploymentTotalNumSimulatedPlayers = int.Parse(GetWorkerFlagOrDefault(connection, DeploymentTotalNumSimulatedPlayersWorkerFlag, "100"));
 
             Logger.WriteLog($"Target deployment is ready. Starting {NumSimulatedPlayersToStart} simulated players.");
@@ -157,24 +156,24 @@ namespace Improbable.WorkerCoordinator
                 }
 
                 Thread.Sleep(timeToSleep);
-                StartSimulatedPlayer(clientName, devAuthTokenOpt, targetDeploymentOpt);
+                StartSimulatedPlayer(clientName, devAuthToken, targetDeployment);
             }
 
             // Wait for all clients to exit.
             WaitForPlayersToExit();
         }
 
-        private void StartSimulatedPlayer(string simulatedPlayerName, Option<string> devAuthTokenOpt, Option<string> targetDeploymentOpt)
+        private void StartSimulatedPlayer(string simulatedPlayerName, string devAuthToken, string targetDeployment)
         {
             try
             {
                 // Pass in the dev auth token and the target deployment
-                if (devAuthTokenOpt.HasValue && targetDeploymentOpt.HasValue)
+                if (!String.IsNullOrEmpty(devAuthToken) && !String.IsNullOrEmpty(targetDeployment))
                 {
                     string[] simulatedPlayerArgs = Util.ReplacePlaceholderArgs(SimulatedPlayerArgs, new Dictionary<string, string>() {
                         { SimulatedPlayerWorkerNamePlaceholderArg, simulatedPlayerName },
-                        { DevAuthTokenPlaceholderArg, devAuthTokenOpt.Value },
-                        { TargetDeploymentPlaceholderArg, targetDeploymentOpt.Value }
+                        { DevAuthTokenPlaceholderArg, devAuthToken },
+                        { TargetDeploymentPlaceholderArg, targetDeployment }
                     });
 
                     // Prepend the simulated player id as an argument to the start client script.
@@ -199,10 +198,10 @@ namespace Improbable.WorkerCoordinator
 
         private static string GetWorkerFlagOrDefault(Connection connection, string flagName, string defaultValue)
         {
-            Option<string> flagValue = connection.GetWorkerFlag(flagName);
-            if (flagValue.HasValue)
+            string flagValue = connection.GetWorkerFlag(flagName);
+            if (flagValue != null)
             {
-                return flagValue.Value;
+                return flagValue;
             }
 
             return defaultValue;
@@ -212,8 +211,8 @@ namespace Improbable.WorkerCoordinator
         {
             while (true)
             {
-                var readyFlagOpt = connection.GetWorkerFlag(TargetDeploymentReadyWorkerFlag);
-                if (readyFlagOpt.HasValue && readyFlagOpt.Value.ToLower() == "true")
+                string readyFlag = connection.GetWorkerFlag(TargetDeploymentReadyWorkerFlag);
+                if (String.Compare(readyFlag, "true", true) == 0)
                 {
                     // Ready.
                     break;

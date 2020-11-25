@@ -65,52 +65,6 @@ inline TArray<uint8> GetBytesFromSchema(const Schema_Object* Object, Schema_Fiel
 	return IndexBytesFromSchema(Object, Id, 0);
 }
 
-inline void AddWorkerRequirementSetToSchema(Schema_Object* Object, Schema_FieldId Id, const WorkerRequirementSet& Value)
-{
-	Schema_Object* RequirementSetObject = Schema_AddObject(Object, Id);
-	for (const WorkerAttributeSet& AttributeSet : Value)
-	{
-		Schema_Object* AttributeSetObject = Schema_AddObject(RequirementSetObject, 1);
-
-		for (const FString& Attribute : AttributeSet)
-		{
-			AddStringToSchema(AttributeSetObject, 1, Attribute);
-		}
-	}
-}
-
-inline WorkerRequirementSet IndexWorkerRequirementSetFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
-{
-	Schema_Object* RequirementSetObject = Schema_IndexObject(Object, Id, Index);
-
-	int32 AttributeSetCount = (int32)Schema_GetObjectCount(RequirementSetObject, 1);
-	WorkerRequirementSet RequirementSet;
-	RequirementSet.Reserve(AttributeSetCount);
-
-	for (int32 i = 0; i < AttributeSetCount; i++)
-	{
-		Schema_Object* AttributeSetObject = Schema_IndexObject(RequirementSetObject, 1, i);
-
-		int32 AttributeCount = (int32)Schema_GetBytesCount(AttributeSetObject, 1);
-		WorkerAttributeSet AttributeSet;
-		AttributeSet.Reserve(AttributeCount);
-
-		for (int32 j = 0; j < AttributeCount; j++)
-		{
-			AttributeSet.Add(IndexStringFromSchema(AttributeSetObject, 1, j));
-		}
-
-		RequirementSet.Add(AttributeSet);
-	}
-
-	return RequirementSet;
-}
-
-inline WorkerRequirementSet GetWorkerRequirementSetFromSchema(Schema_Object* Object, Schema_FieldId Id)
-{
-	return IndexWorkerRequirementSetFromSchema(Object, Id, 0);
-}
-
 inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const FUnrealObjectRef& ObjectRef)
 {
 	using namespace SpatialConstants;
