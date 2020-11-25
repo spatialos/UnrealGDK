@@ -245,23 +245,20 @@ void USpatialGameInstance::HandleOnConnected(const USpatialNetDriver& NetDriver)
 
 	if (NetDriver.IsServer())
 	{
-		FOnWorkerFlagsUpdatedBP WorkerFlagDelegate;
-		WorkerFlagDelegate.BindDynamic(this, &USpatialGameInstance::HandleOnWorkerFlagsUpdated);
+		FOnWorkerFlagUpdatedBP WorkerFlagDelegate;
+		WorkerFlagDelegate.BindDynamic(this, &USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated);
 
-		NetDriver.SpatialWorkerFlags->BindToOnWorkerFlagsUpdated(WorkerFlagDelegate);
+		NetDriver.SpatialWorkerFlags->RegisterFlagUpdatedCallback(SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG, WorkerFlagDelegate);
 	}
 }
 
-void USpatialGameInstance::HandleOnWorkerFlagsUpdated(const FString& FlagName, const FString& FlagValue)
+void USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated(const FString& FlagName, const FString& FlagValue)
 {
-	if (FlagName.Equals(SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG, ESearchCase::IgnoreCase))
+	if (!bPreparingForShutdown)
 	{
-		if (!bPreparingForShutdown)
-		{
-			bPreparingForShutdown = true;
-			UE_LOG(LogSpatialGameInstance, Log, TEXT("Shutdown preparation triggered."));
-			OnPrepareShutdown.Broadcast();
-		}
+		bPreparingForShutdown = true;
+		UE_LOG(LogSpatialGameInstance, Log, TEXT("Shutdown preparation triggered."));
+		OnPrepareShutdown.Broadcast();
 	}
 }
 
