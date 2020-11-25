@@ -524,6 +524,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			continue;
 		}
 
+		TOptional<Trace_SpanId> SpanId;
 		if (EventTracer != nullptr && CauseSpanId.IsSet()
 			&& RepChanges->RepChanged.Num() > 0) // Only need to add these if they are actively being traced
 		{
@@ -544,10 +545,10 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 				}
 			}
 
-			CauseSpanId = EventTracer->CreateSpan(IndividualPropertySpans.GetData(), IndividualPropertySpans.Num());
+			SpanId = EventTracer->CreateSpan(IndividualPropertySpans.GetData(), IndividualPropertySpans.Num());
 		}
 
-		Connection->SendComponentUpdate(EntityId, &Update, CauseSpanId);
+		Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 	}
 }
 
@@ -776,7 +777,7 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 	if (EventTracer != nullptr)
 	{
 		SpanId = EventTracer->CreateSpan();
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(TargetObject, Function), SpanId);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePushRPC(TargetObject, Function), SpanId);
 	}
 
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
