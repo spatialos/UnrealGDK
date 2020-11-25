@@ -131,7 +131,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	// Add a self query to ensure we see the well known entity tag.
 	Query AuthoritySelfQuery = {};
 	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
-	AuthoritySelfQuery.Constraint.SelfConstraint = true;
+	AuthoritySelfQuery.Constraint.bSelfConstraint = true;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_COMPONENT_ID, AuthoritySelfQuery);
 
 	// Query to know about all the actors tagged with a debug component
@@ -207,7 +207,7 @@ void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const
 {
 	Query NewQuery;
 	// Just an entity ID constraint is fine, as clients should not become authoritative over entities outside their loaded levels
-	NewQuery.Constraint.SelfConstraint = true;
+	NewQuery.Constraint.bSelfConstraint = true;
 	NewQuery.ResultComponentIds = ClientAuthInterestResultType;
 
 	AddComponentQueryPairToInterestComponent(
@@ -218,13 +218,13 @@ void InterestFactory::AddServerSelfInterest(Interest& OutInterest) const
 {
 	// Add a query for components all servers need to read client data
 	Query ClientQuery;
-	ClientQuery.Constraint.SelfConstraint = true;
+	ClientQuery.Constraint.bSelfConstraint = true;
 	ClientQuery.ResultComponentIds = ServerAuthInterestResultType;
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ClientQuery);
 
 	// Add a query for the load balancing worker (whoever is delegated the auth delegation component) to read the authority intent
 	Query LoadBalanceQuery;
-	LoadBalanceQuery.Constraint.SelfConstraint = true;
+	LoadBalanceQuery.Constraint.bSelfConstraint = true;
 	LoadBalanceQuery.ResultComponentIds =
 		SchemaResultType{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
 						  SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID };

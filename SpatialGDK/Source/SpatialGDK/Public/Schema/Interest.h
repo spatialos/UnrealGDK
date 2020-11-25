@@ -54,7 +54,7 @@ struct QueryConstraint
 	TSchemaOption<uint32> ComponentConstraint;
 	TArray<QueryConstraint> AndConstraint;
 	TArray<QueryConstraint> OrConstraint;
-	bool SelfConstraint = false;
+	bool bSelfConstraint = false;
 
 	FORCEINLINE bool IsValid() const
 	{
@@ -103,7 +103,7 @@ struct QueryConstraint
 			return true;
 		}
 
-		if (SelfConstraint)
+		if (bSelfConstraint)
 		{
 			return true;
 		}
@@ -239,7 +239,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 	}
 
 	// option<SelfConstraint> self_constraint = 12;
-	if (Constraint.SelfConstraint)
+	if (Constraint.bSelfConstraint)
 	{
 		Schema_AddObject(QueryConstraintObject, 12);
 	}
@@ -376,7 +376,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	// option<SelfConstraint> self_constraint = 12;
 	if (Schema_GetObjectCount(QueryConstraintObject, 12) > 0)
 	{
-		NewQueryConstraint.SelfConstraint = true;
+		NewQueryConstraint.bSelfConstraint = true;
 	}
 
 	return NewQueryConstraint;
