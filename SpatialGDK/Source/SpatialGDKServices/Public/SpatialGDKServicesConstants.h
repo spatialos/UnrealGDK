@@ -40,6 +40,7 @@ const FString RuntimePackageName = TEXT("runtime");
 const FString InspectorPackageName = TEXT("inspector");
 const FString RuntimeExe = FPaths::SetExtension(RuntimePackageName, Extension);
 const FString InspectorExe = FPaths::SetExtension(InspectorPackageName, Extension);
+const FString LocalDeploymentLogsDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("logs/localdeployment"));
 
 static inline const FString GetRuntimeExecutablePath(const FString& RuntimeVersion)
 {

@@ -70,9 +70,6 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunc
 	Writer->WriteValue(TEXT("entity_query"), WorkerConfig.WorkerPermissions.bAllowEntityQuery);
 	Writer->WriteObjectEnd();
 
-	// We always use the workers name as the attribute
-	Writer->WriteValue(TEXT("attribute"), *WorkerConfig.WorkerTypeName.ToString());
-
 	if (WorkerConfig.NumEditorInstances > 0)
 	{
 		WriteLoadbalancingSection(Writer, SpatialConstants::DefaultServerWorkerType, WorkerConfig.NumEditorInstances,

@@ -60,7 +60,7 @@ bool FStartDeployment::Update()
 		const FString LaunchConfig =
 			FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
 		const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
-		const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoad();
+		const FString SnapshotName = SpatialGDKSettings->GetSpatialOSSnapshotToLoadPath();
 		const FString RuntimeVersion = SpatialGDKSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [LocalDeploymentManager, LaunchConfig, LaunchFlags, SnapshotName,
