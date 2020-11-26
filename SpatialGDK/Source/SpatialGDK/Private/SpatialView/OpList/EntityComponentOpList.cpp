@@ -209,9 +209,4 @@ OpList EntityComponentOpListBuilder::CreateOpList() &&
 {
 	return { OpListData->Ops.GetData(), static_cast<uint32>(OpListData->Ops.Num()), MoveTemp(OpListData) };
 }
-
-TArray<Worker_Op> EntityComponentOpListBuilder::CreateOpArray() &&
-{
-	return OpListData->Ops;
-}
 } // namespace SpatialGDK

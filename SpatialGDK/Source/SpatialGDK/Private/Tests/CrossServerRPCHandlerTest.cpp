@@ -5,6 +5,7 @@
 #include "Tests/TestDefinitions.h"
 
 #include "SpatialView/OpList/EntityComponentOpList.h"
+#include "Tests/SpatialView/SpatialViewUtils.h"
 
 #define CROSSSERVERRPCHANDLER_TEST(TestName) GDK_TEST(Core, CrossServerRPCHandler, TestName)
 
@@ -75,13 +76,14 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_resolved_and_no_queue_THEN_execute)
 {
 	AddExpectedError(ExecutingCommand, EAutomationExpectedErrorFlags::Exact);
 
+	ViewDelta Delta;
+	EntityView View;
 	ViewCoordinator Coordinator{ MakeUnique<ConnectionHandlerStub>(), nullptr };
 	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntityCommandRequest(TestEntityId, SuccessRequestId, CreateCrossServerCommandRequest());
-	const TArray<Worker_Op> Ops = MoveTemp(Builder).CreateOpArray();
-
-	Handler.ProcessOps(Ops);
+	SetFromOpList(Delta, View, MoveTemp(Builder));
+	Handler.ProcessOps(Delta.GetWorkerMessages());
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 0);
 	return true;
@@ -91,15 +93,21 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_rpc_already_queued_THEN_discard)
 {
 	AddExpectedError(QueueingCommand, EAutomationExpectedErrorFlags::Exact, 3);
 	AddExpectedError(RPCInFlight, EAutomationExpectedErrorFlags::Exact);
+
+	ViewDelta Delta;
+	EntityView View;
 	ViewCoordinator Coordinator{ MakeUnique<ConnectionHandlerStub>(), nullptr };
 	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntityCommandRequest(TestEntityId, QueueingRequestId, CreateCrossServerCommandRequest());
-	Handler.ProcessOps(MoveTemp(Builder).CreateOpArray());
+	SetFromOpList(Delta, View, MoveTemp(Builder));
+	Handler.ProcessOps(Delta.GetWorkerMessages());
 
 	Builder = EntityComponentOpListBuilder();
 	Builder.AddEntityCommandRequest(TestEntityId, QueueingRequestId, CreateCrossServerCommandRequest());
-	Handler.ProcessOps(MoveTemp(Builder).CreateOpArray());
+
+	SetFromOpList(Delta, View, MoveTemp(Builder));
+	Handler.ProcessOps(Delta.GetWorkerMessages());
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
 	if (!QueuedRPCs.Contains(TestEntityId))
@@ -117,15 +125,21 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_rpc_already_queued_THEN_discard)
 CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_resolved_and_queue_THEN_queue)
 {
 	AddExpectedError(QueueingCommand, EAutomationExpectedErrorFlags::Exact, 3);
+
+	ViewDelta Delta;
+	EntityView View;
 	ViewCoordinator Coordinator{ MakeUnique<ConnectionHandlerStub>(), nullptr };
 	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntityCommandRequest(TestEntityId, QueueingRequestId, CreateCrossServerCommandRequest());
-	Handler.ProcessOps(MoveTemp(Builder).CreateOpArray());
+	SetFromOpList(Delta, View, MoveTemp(Builder));
+	Handler.ProcessOps(Delta.GetWorkerMessages());
 
 	Builder = EntityComponentOpListBuilder();
 	Builder.AddEntityCommandRequest(TestEntityId, SuccessRequestId, CreateCrossServerCommandRequest());
-	Handler.ProcessOps(MoveTemp(Builder).CreateOpArray());
+
+	SetFromOpList(Delta, View, MoveTemp(Builder));
+	Handler.ProcessOps(Delta.GetWorkerMessages());
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
 	if (!QueuedRPCs.Contains(TestEntityId))
@@ -142,11 +156,16 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_resolved_and_queue_THEN_queue)
 CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_unresolved_THEN_queue)
 {
 	AddExpectedError(QueueingCommand, EAutomationExpectedErrorFlags::Exact, 2);
+
+	ViewDelta Delta;
+	EntityView View;
 	ViewCoordinator Coordinator{ MakeUnique<ConnectionHandlerStub>(), nullptr };
 	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntityCommandRequest(TestEntityId, QueueingRequestId, CreateCrossServerCommandRequest());
-	Handler.ProcessOps(MoveTemp(Builder).CreateOpArray());
+
+	SetFromOpList(Delta, View, MoveTemp(Builder));
+	Handler.ProcessOps(Delta.GetWorkerMessages());
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
 	if (!QueuedRPCs.Contains(TestEntityId))
@@ -165,11 +184,16 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_queued_rpc_WHEN_timeout_THEN_try_execute)
 {
 	AddExpectedError(QueueingCommand, EAutomationExpectedErrorFlags::Exact, 2);
 	AddExpectedError(ExecutingCommand, EAutomationExpectedErrorFlags::Exact);
+
+	ViewDelta Delta;
+	EntityView View;
 	ViewCoordinator Coordinator{ MakeUnique<ConnectionHandlerStub>(), nullptr };
 	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntityCommandRequest(TestEntityId, QueueingRequestId, CreateCrossServerCommandRequest());
-	Handler.ProcessOps(MoveTemp(Builder).CreateOpArray());
+
+	SetFromOpList(Delta, View, MoveTemp(Builder));
+	Handler.ProcessOps(Delta.GetWorkerMessages());
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", QueuedRPCs.Num(), 1);
 	if (!QueuedRPCs.Contains(TestEntityId))
@@ -182,7 +206,9 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_queued_rpc_WHEN_timeout_THEN_try_execute)
 	}
 
 	FPlatformProcess::Sleep(1.f);
-	Handler.ProcessOps({});
+	Builder = EntityComponentOpListBuilder();
+	SetFromOpList(Delta, View, MoveTemp(Builder));
+	Handler.ProcessOps(Delta.GetWorkerMessages());
 
 	const auto& EmptyQueuedRPCs = Handler.GetQueuedCrossServerRPCs();
 	TestEqual("Number of queued up Cross Server RPCs", EmptyQueuedRPCs.Num(), 0);

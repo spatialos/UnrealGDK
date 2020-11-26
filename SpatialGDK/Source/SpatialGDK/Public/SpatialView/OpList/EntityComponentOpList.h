@@ -56,7 +56,6 @@ public:
 																	 StringStorage Message);
 
 	OpList CreateOpList() &&;
-	TArray<Worker_Op> CreateOpArray() &&;
 
 private:
 	TUniquePtr<EntityComponentOpListData> OpListData;

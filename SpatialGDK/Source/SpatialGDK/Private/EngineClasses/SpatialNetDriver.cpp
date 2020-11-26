@@ -399,9 +399,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
 		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
-	CrossServerRPCSender = MakeUnique<SpatialGDK::CrossServerRPCSender>(this->Connection->GetCoordinator(), SpatialMetrics);
+	CrossServerRPCSender = MakeUnique<SpatialGDK::CrossServerRPCSender>(Connection->GetCoordinator(), SpatialMetrics);
 	CrossServerRPCHandler =
-		MakeUnique<SpatialGDK::CrossServerRPCHandler>(this->Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this));
+		MakeUnique<SpatialGDK::CrossServerRPCHandler>(Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this));
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());

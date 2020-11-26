@@ -22,13 +22,9 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef& InTargetObjectRef
 		return;
 	}
 
-	Schema_CommandRequest* SchemaType = Schema_CreateCommandRequest();
-	Schema_Object* RequestObject = Schema_GetCommandRequestObject(SchemaType);
-	RPCPayload::WriteToSchemaObject(RequestObject, InTargetObjectRef.Offset, Info.Index, FMath::RandHelper(INT_MAX),
-									InPayload.PayloadData.GetData(), InPayload.PayloadData.Num());
-	CommandRequest CommandRequest(OwningCommandRequestPtr(SchemaType), SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID,
-								  SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
-
+	CommandRequest CommandRequest(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
+	RPCPayload::WriteToSchemaObject(CommandRequest.GetRequestObject(), InTargetObjectRef.Offset, Info.Index, FMath::RandHelper(INT_MAX),
+                                InPayload.PayloadData.GetData(), InPayload.PayloadData.Num());
 	if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
 	{
 		Coordinator.SendEntityCommandRequest(InTargetObjectRef.Entity, MoveTemp(CommandRequest), RETRY_MAX_TIMES, SpanId);
