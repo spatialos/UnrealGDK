@@ -54,6 +54,7 @@ struct QueryConstraint
 	TSchemaOption<uint32> ComponentConstraint;
 	TArray<QueryConstraint> AndConstraint;
 	TArray<QueryConstraint> OrConstraint;
+	bool bSelfConstraint = false;
 
 	FORCEINLINE bool IsValid() const
 	{
@@ -102,6 +103,11 @@ struct QueryConstraint
 			return true;
 		}
 
+		if (bSelfConstraint)
+		{
+			return true;
+		}
+
 		return false;
 	}
 };
@@ -145,7 +151,7 @@ using FrequencyToConstraintsMap = TMap<float, TArray<QueryConstraint>>;
 // A common type for lists of frequency constraints to be converted into queries later
 using FrequencyConstraints = TArray<FrequencyConstraint>;
 
-struct ComponentInterest
+struct ComponentSetInterest
 {
 	TArray<Query> Queries;
 };
@@ -209,7 +215,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 	}
 
 	// option<uint32> component_constraint = 8;
-	if (Constraint.ComponentConstraint)
+	if (Constraint.ComponentConstraint.IsSet())
 	{
 		Schema_AddUint32(QueryConstraintObject, 8, *Constraint.ComponentConstraint);
 	}
@@ -230,6 +236,12 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 		{
 			AddQueryConstraintToQuerySchema(QueryConstraintObject, 10, OrConstraintEntry);
 		}
+	}
+
+	// option<SelfConstraint> self_constraint = 12;
+	if (Constraint.bSelfConstraint)
+	{
+		Schema_AddObject(QueryConstraintObject, 12);
 	}
 }
 
@@ -258,7 +270,7 @@ inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestOb
 	}
 }
 
-inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, Schema_FieldId Id, const ComponentInterest& Value)
+inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, Schema_FieldId Id, const ComponentSetInterest& Value)
 {
 	Schema_Object* ComponentInterestObject = Schema_AddObject(InterestObject, Id);
 
@@ -270,7 +282,7 @@ inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, 
 
 inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
-	QueryConstraint NewQueryConstraint;
+	QueryConstraint NewQueryConstraint{};
 
 	Schema_Object* QueryConstraintObject = Schema_IndexObject(Object, Id, Index);
 
@@ -361,6 +373,12 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 		NewQueryConstraint.OrConstraint.Add(IndexQueryConstraintFromSchema(QueryConstraintObject, 10, OrIndex));
 	}
 
+	// option<SelfConstraint> self_constraint = 12;
+	if (Schema_GetObjectCount(QueryConstraintObject, 12) > 0)
+	{
+		NewQueryConstraint.bSelfConstraint = true;
+	}
+
 	return NewQueryConstraint;
 }
 
@@ -397,9 +415,9 @@ inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint
 	return NewQuery;
 }
 
-inline ComponentInterest GetComponentInterestFromSchema(Schema_Object* Object, Schema_FieldId Id)
+inline ComponentSetInterest GetComponentInterestFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
-	ComponentInterest NewComponentInterest;
+	ComponentSetInterest NewComponentInterest;
 
 	Schema_Object* ComponentInterestObject = Schema_GetObject(Object, Id);
 
@@ -428,7 +446,7 @@ struct Interest : Component
 		{
 			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 1, i);
 			uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-			ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+			ComponentSetInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 			ComponentInterestMap.Add(Key, Value);
 		}
@@ -449,7 +467,7 @@ struct Interest : Component
 			{
 				Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 1, i);
 				uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-				ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+				ComponentSetInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 				ComponentInterestMap.Add(Key, Value);
 			}
@@ -490,7 +508,7 @@ struct Interest : Component
 		}
 	}
 
-	TMap<uint32, ComponentInterest> ComponentInterestMap;
+	TMap<Worker_ComponentSetId, ComponentSetInterest> ComponentInterestMap;
 };
 
 } // namespace SpatialGDK

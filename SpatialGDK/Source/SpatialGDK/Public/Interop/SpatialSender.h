@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/RPCs/SpatialRPCService.h"
@@ -11,6 +9,9 @@
 #include "Schema/RPCPayload.h"
 #include "Utils/RPCContainer.h"
 #include "Utils/RepDataUtils.h"
+
+#include "CoreMinimal.h"
+#include "TimerManager.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -36,7 +37,7 @@ class SpatialEventTracer;
 struct FReliableRPCForRetry
 {
 	FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex,
-						 const TArray<uint8>& InPayload, int InRetryIndex, const TOptional<Trace_SpanId>& InSpanId);
+						 const TArray<uint8>& InPayload, int InRetryIndex, const FSpatialGDKSpanId& InSpanId);
 
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
@@ -46,7 +47,7 @@ struct FReliableRPCForRetry
 	int Attempts; // For reliable RPCs
 
 	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
-	TOptional<Trace_SpanId> SpanId;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FPendingRPC
@@ -82,7 +83,8 @@ public:
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
 							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
-	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
+
+	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const;
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	void SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 								 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
@@ -92,10 +94,10 @@ public:
 								USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 							 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
-	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const Trace_SpanId CauseSpanId);
+	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId);
 	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
-								  const Trace_SpanId CauseSpanId);
-	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const Trace_SpanId CauseSpanI);
+								  const FSpatialGDKSpanId& CauseSpanId);
+	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const FSpatialGDKSpanId& CauseSpanId);
 	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info, uint32& OutBytesWritten);
 	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas);
 	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);
@@ -140,6 +142,8 @@ public:
 	void ClearPendingRPCs(const Worker_EntityId EntityId);
 
 	bool ValidateOrExit_IsSupportedClass(const FString& PathName);
+
+	void SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const;
 
 private:
 	// Create a copy of an array of components. Deep copies all Schema_ComponentData.

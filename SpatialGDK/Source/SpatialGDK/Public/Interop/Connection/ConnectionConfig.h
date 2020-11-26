@@ -23,7 +23,7 @@ struct FConnectionConfig
 		, EnableWorkerSDKOpLogging(false)
 		, WorkerSDKLogFileSize(10 * 1024 * 1024)
 		, WorkerSDKLogLevel(WORKER_LOG_LEVEL_INFO)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_TCP)
 		, OverrideLinkProtocol(false)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
@@ -69,8 +69,8 @@ struct FConnectionConfig
 
 		if (!OverrideLinkProtocol)
 		{
-			LinkProtocol = bConnectAsClient ? WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP
-											: WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
+			LinkProtocol = bConnectAsClient ? WORKER_NETWORK_CONNECTION_TYPE_KCP
+											: WORKER_NETWORK_CONNECTION_TYPE_TCP;
 		}
 	}
 
@@ -107,13 +107,13 @@ private:
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString.Compare(TEXT("Tcp"), ESearchCase::IgnoreCase) == 0)
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_TCP;
 			OverrideLinkProtocol = true;
 			return;
 		}
 		else if (LinkProtocolString.Compare(TEXT("Kcp"), ESearchCase::IgnoreCase) == 0)
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_KCP;
 			OverrideLinkProtocol = true;
 			return;
 		}

@@ -12,10 +12,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking changes:
 - The condition for sending Spatial position updates has been changed, the two variables `PositionUpdateFrequency` and `PositionDistanceThreshold` have now been removed from the GDK settings. To update your project:
   1. Set the value of `PositionUpdateLowerThresholdCentimeters` to the value of `PositionDistanceThreshold` and  the value of `PositionUpdateLowerThresholdSeconds` to 60*(1/`PositionUpdateFrequency`). This will ensure that Actors send Spatial position updates as often as they did before this change.
-  2. Set the value of `PositionUpdateThresholdMaxCentimeters` and `PositionUpdateThresholdMaxSeconds` to larger values than the lower thresholds. 
+  2. Set the value of `PositionUpdateThresholdMaxCentimeters` and `PositionUpdateThresholdMaxSeconds` to larger values than the lower thresholds.
   NOTE: If your project does not use custom values for the `PositionUpdateFrequency` or `PositionDistanceThreshold`, then, by default, the updates will be sent with the same frequency as before and no action is required.
 - Removed the `OnAuthorityLossImminent` Actor event.
 - 'WorkerLogLevel' in Runtime Settings was split into two new settings - 'LocalWorkerLogLevel' and 'CloudWorkerLogLevel'. Update these values which will be set to 'Warning' by default.
+- The Unreal GDK has been updated to run against SpatialOS v15. Older version of SpatialOS will no longer work with the Unreal GDK.
+- In SpatialWorkerFlags.h some renaming took place around using delegates on flag changes.
+These functions and structs can be referenced in both code and blueprints it may require updating both:
+  1. Delegate struct `FOnWorkerFlagsUpdatedBP` has been renamed `FOnAnyWorkerFlagUpdatedBP`,
+  2. Delegate struct `FOnWorkerFlagsUpdated` has been renamed `FOnAnyWorkerFlagUpdated`,
+  3. Function `BindToOnWorkerFlagsUpdated` has been renamed to `RegisterAnyFlagUpdatedCallback`
+  4. Function `UnbindFromOnWorkerFlagsUpdated` has been renamed to `UnregisterAnyFlagUpdatedCallback`
 
 ### Features:
 - The DeploymentLauncher tool can now be used to start multiple simulated player deployments at once.
@@ -46,7 +53,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handover is now optional depending on whether the load balancing strategy implementations require it . See `RequiresHandoverData`
 - Improved the failed hierarchy migration logs. The logs now contain more specific reasons for the failure and the frequency of repeated logs is suppressed.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
-- Worker SDK version compatibility is checked at compile time. 
+- Worker SDK version compatibility is checked at compile time.
+- Worker SDK version compatibility is checked at compile time.
+- Unreal GDK now uses SpatialOS 15.0.0-preview-2.
+- SpatialWorkerFlags has reworked how to add callbacks for flag updates:
+  1. `BindToOnWorkerFlagsUpdated` is changed to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added functions for register callbacks.
+  2. `RegisterFlagUpdatedCallback` is added to register callbacks for individual flag updates
+  3. `RegisterAndInvokeAnyFlagUpdatedCallback` & `RegisterAndInvokeFlagUpdatedCallback` variants are added that will invoke the callback if the flag was previously set.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
@@ -65,10 +78,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - By default, only an Actor's replicated owner hierarchy will be used when determining which worker should have authority over an actor. Non-replicated Actors are now ignored.
 - Fixed a crash that would sometimes occur when connection to SpatialOS fails.
 - Fixed a crash that occurred when an actor subobject became invalid after applying initial component data.
-- Non-replicated Actors net roles are not touched during startup. 
+- Non-replicated Actors net roles are not touched during startup.
 - Fixed a bug which dropped component updates on authority delegation.
 - The DeploymentLauncher checks the validity of the simulated players deployment name.
 - Worker configuration watcher only rebuilds worker configs when `*.worker.json` files are changed.
+- Added support for FPredictionKey's conditional replication logic. GameplayCues now activate on all clients, instead of only the client that initiated them.
+- Fixed a bug where deployment would fail in the presence of trailing spaces in the `Flags` and `LegacyFlags` fields of the `SpatialGDKEditorSettings`.
 - Server workers use TCP (instead of KCP) by default.
 
 ## [`0.11.0`] - 2020-09-03

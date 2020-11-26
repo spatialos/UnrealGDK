@@ -145,7 +145,7 @@ struct FWorkerTypeLaunchSection
 
 	/** Number of instances to launch when playing in editor. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config,
-			  meta = (DisplayName = "Instances to launch in editor", ClampMin = "0", UIMin = "0",
+			  meta = (DisplayName = "Manual number of instances to launch in Editor", ClampMin = "0", UIMin = "0",
 					  EditCondition = "!bAutoNumEditorInstances"))
 	int32 NumEditorInstances;
 
@@ -707,4 +707,5 @@ public:
 	static bool IsProjectNameValid(const FString& Name);
 	static bool IsAssemblyNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
+	static void TrimTMap(TMap<FString, FString>& Map);
 };

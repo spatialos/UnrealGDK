@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ConnectionHandler/InitialOpListConnectionHandler.h"
 
@@ -67,9 +67,9 @@ const FString& InitialOpListConnectionHandler::GetWorkerId() const
 	return InnerHandler->GetWorkerId();
 }
 
-const TArray<FString>& InitialOpListConnectionHandler::GetWorkerAttributes() const
+Worker_EntityId InitialOpListConnectionHandler::GetWorkerSystemEntityId() const
 {
-	return InnerHandler->GetWorkerAttributes();
+	return InnerHandler->GetWorkerSystemEntityId();
 }
 
 OpList InitialOpListConnectionHandler::QueueAndExtractOps()

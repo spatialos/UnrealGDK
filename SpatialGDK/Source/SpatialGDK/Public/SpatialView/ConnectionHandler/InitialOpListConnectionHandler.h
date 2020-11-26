@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -23,7 +23,7 @@ public:
 	virtual OpList GetNextOpList() override;
 	virtual void SendMessages(TUniquePtr<MessagesToSend> Messages) override;
 	virtual const FString& GetWorkerId() const override;
-	virtual const TArray<FString>& GetWorkerAttributes() const override;
+	virtual Worker_EntityId GetWorkerSystemEntityId() const override;
 
 private:
 	enum

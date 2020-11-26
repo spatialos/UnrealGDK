@@ -70,7 +70,12 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FStrin
 
 			if (ParsedId.IsNumeric())
 			{
-				ParsedNamesAndIds.Ids.Push(FCString::Atoi(*ParsedId));
+				const int32 ComponentId = FCString::Atoi(*ParsedId);
+				// Component sets are now picked up by this regex (as they have the same id). Ignore any ids we've already seen.
+				if (ParsedNamesAndIds.Ids.Find(ComponentId) == INDEX_NONE)
+				{
+					ParsedNamesAndIds.Ids.Push(ComponentId);
+				}
 			}
 		}
 		else if (NameRegMatcher.FindNext())

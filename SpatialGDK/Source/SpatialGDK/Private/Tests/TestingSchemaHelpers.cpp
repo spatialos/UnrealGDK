@@ -17,9 +17,10 @@ Schema_Object* TestingSchemaHelpers::CreateTranslationComponentDataFields()
 }
 
 void TestingSchemaHelpers::AddTranslationComponentDataMapping(Schema_Object* ComponentDataFields, VirtualWorkerId VWId,
-															  const PhysicalWorkerName& WorkerName)
+															  const PhysicalWorkerName& WorkerName, Worker_PartitionId PartitionId)
 {
 	Schema_Object* SchemaObject = Schema_AddObject(ComponentDataFields, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
 	Schema_AddUint32(SchemaObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, VWId);
-	SpatialGDK::AddStringToSchema(SchemaObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME, WorkerName);
+	SpatialGDK::AddStringToSchema(SchemaObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID, WorkerName);
+	Schema_AddEntityId(SchemaObject, SpatialConstants::MAPPING_PARTITION_ID, PartitionId);
 }

@@ -41,7 +41,7 @@ public:
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 
-	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const override;
+	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const override;
 
 	virtual bool RequiresHandoverData() const override { return WrappedStrategy->RequiresHandoverData(); }
 
@@ -49,6 +49,7 @@ public:
 
 	virtual uint32 GetMinimumRequiredWorkers() const override;
 	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId) override;
+	virtual UAbstractLBStrategy* GetLBStrategyForVisualRendering() const override;
 	/* End UAbstractLBStrategy Interface */
 
 	UAbstractLBStrategy* GetWrappedStrategy() const { return WrappedStrategy; }

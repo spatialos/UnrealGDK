@@ -390,7 +390,7 @@ bool USpatialNetDriverDebugContext::IsActorReady(AActor* Actor)
 	Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 	if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 	{
-		return NetDriver->StaticComponentView->HasAuthority(Entity, SpatialConstants::POSITION_COMPONENT_ID);
+		return NetDriver->HasServerAuthority(Entity);
 	}
 	return false;
 }
