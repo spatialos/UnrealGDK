@@ -315,7 +315,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString SpatialLogsSubDirectoryName)
 {
-	// Ensure any old log file is cleaned up
+	// Ensure any old log file is cleaned up.
 	if (RuntimeLogFileHandle)
 	{
 		delete RuntimeLogFileHandle;
@@ -323,9 +323,7 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString SpatialLogsSubDirec
 	}
 
 	FString RuntimeLogDir = FPaths::Combine(SpatialGDKServicesConstants::LocalDeploymentLogsDir, SpatialLogsSubDirectoryName);
-
 	FString RuntimeLogFilePath = FPaths::Combine(RuntimeLogDir, TEXT("runtime.log"));
-
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
 	bool bSuccess = PlatformFile.CreateDirectoryTree(*RuntimeLogDir);
@@ -335,7 +333,7 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString SpatialLogsSubDirec
 		RuntimeLogFileHandle = PlatformFile.OpenWrite(*RuntimeLogFilePath, /*bAppend*/ true, /*bAllowRead*/ true);
 	}
 
-	if (!bSuccess && RuntimeLogFileHandle)
+	if (!bSuccess || RuntimeLogFileHandle == nullptr)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Could not create runtime log file at '%s' saving logs to disk will be disabled."),
 			   *RuntimeLogFilePath);
