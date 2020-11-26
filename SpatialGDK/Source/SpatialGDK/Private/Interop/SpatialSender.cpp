@@ -62,7 +62,7 @@ struct FChangeListPropertyIterator
 		: Changes(Changes)
 		, ChangeListIterator(Changes->RepChanged, 0)
 		, HandleIterator(static_cast<UStruct*>(Changes->RepLayout.GetOwner()), ChangeListIterator, Changes->RepLayout.Cmds,
-						 Changes->RepLayout.BaseHandleToCmdIndex, 0, 1, 0, Changes->RepLayout.Cmds.Num() - 1)
+						 Changes->RepLayout.BaseHandleToCmdIndex, /* InMaxArrayIndex */ 0, /* InMinCmdIndex */ 1, 0, /* InMaxCmdIndex */ Changes->RepLayout.Cmds.Num() - 1)
 		, bValid(HandleIterator.NextHandle())
 	{
 	}
