@@ -57,19 +57,19 @@ struct FChangeListPropertyIterator
 	const FRepChangeState* Changes;
 	FChangelistIterator ChangeListIterator;
 	FRepHandleIterator HandleIterator;
-	bool Valid;
+	bool bValid;
 	FChangeListPropertyIterator(const FRepChangeState* Changes)
 		: Changes(Changes)
 		, ChangeListIterator(Changes->RepChanged, 0)
 		, HandleIterator(static_cast<UStruct*>(Changes->RepLayout.GetOwner()), ChangeListIterator, Changes->RepLayout.Cmds,
 						 Changes->RepLayout.BaseHandleToCmdIndex, 0, 1, 0, Changes->RepLayout.Cmds.Num() - 1)
-		, Valid(HandleIterator.NextHandle())
+		, bValid(HandleIterator.NextHandle())
 	{
 	}
 
 	GDK_PROPERTY(Property) * operator*() const
 	{
-		if (Valid)
+		if (bValid)
 		{
 			const FRepLayoutCmd& Cmd = Changes->RepLayout.Cmds[HandleIterator.CmdIndex];
 			return Cmd.Property;
@@ -77,18 +77,18 @@ struct FChangeListPropertyIterator
 		return nullptr;
 	}
 
-	operator bool() const { return Valid; }
+	operator bool() const { return bValid; }
 
 	FChangeListPropertyIterator& operator++()
 	{
 		// Move forward
-		if (Valid && Changes->RepLayout.Cmds[HandleIterator.CmdIndex].Type == ERepLayoutCmdType::DynamicArray)
+		if (bValid && Changes->RepLayout.Cmds[HandleIterator.CmdIndex].Type == ERepLayoutCmdType::DynamicArray)
 		{
-			Valid = !HandleIterator.JumpOverArray();
+			bValid = !HandleIterator.JumpOverArray();
 		}
-		if (Valid)
+		if (bValid)
 		{
-			Valid = HandleIterator.NextHandle();
+			bValid = HandleIterator.NextHandle();
 		}
 		return *this;
 	}
