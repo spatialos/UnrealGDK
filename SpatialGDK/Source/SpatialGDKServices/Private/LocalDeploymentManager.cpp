@@ -248,12 +248,14 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	FString LocalDeploymentLogsDir = FPaths::Combine(SpatialGDKServicesConstants::LocalDeploymentLogsDir, RuntimeStartTime.ToString());
 
 	// runtime.exe --config=squid_config.json --snapshot=snapshots/default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
-	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots/<timestamp> --schema-bundle=spatial/build/assembly/schema/schema.sb
+	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots/<timestamp>
+	// --schema-bundle=spatial/build/assembly/schema/schema.sb
 	// --event-tracing-logs-directory=`<Project>/spatial/localdeployment/<timestamp>/`
-	FString RuntimeArgs = FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
-											   "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
-										  *LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-										  *FString::FromInt(GRPCPort), *SnapshotPath, *SchemaBundle, *LocalDeploymentLogsDir, *LaunchArgs);
+	FString RuntimeArgs =
+		FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
+							 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
+						*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
+						*FString::FromInt(GRPCPort), *SnapshotPath, *SchemaBundle, *LocalDeploymentLogsDir, *LaunchArgs);
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{
@@ -271,26 +273,29 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
 
-	RuntimeProcess->OnOutput().BindLambda([&, SpatialOutputLog](FString& Output) {
-		// Format and output the log to the editor window `SpatialOutputLog`
-		SpatialOutputLog.Pin()->FormatAndPrintRawLogLine(Output);
+	RuntimeProcess->OnOutput().BindLambda(
+		[&RuntimeLogFileHandle = RuntimeLogFileHandle, &bStartingDeployment = bStartingDeployment, SpatialOutputLog](FString& Output) {
+			// Format and output the log to the editor window `SpatialOutputLog`
+			SpatialOutputLog.Pin()->FormatAndPrintRawLogLine(Output);
 
-		// Save the raw runtime output to disk.
-		if (RuntimeLogFileHandle.IsValid())
-		{
-			// Always add a newline.
-			Output += LINE_TERMINATOR;
+			// Save the raw runtime output to disk.
+			if (RuntimeLogFileHandle.IsValid())
+			{
+				// Always add a newline.
+				Output += LINE_TERMINATOR;
 
-			RuntimeLogFileHandle->Write((const uint8*)TCHAR_TO_ANSI(*Output), Output.Len());
-			RuntimeLogFileHandle->Flush();
-		}
+				// In order to get the correct length of the ANSI converted string, we must create the converted string here.
+				auto OutputANSI = StringCast<ANSICHAR>(*Output);
 
-		// Timeout detection.
-		if (bStartingDeployment && Output.Contains(TEXT("startup completed")))
-		{
-			bStartingDeployment = false;
-		}
-	});
+				RuntimeLogFileHandle->Write((const uint8*)OutputANSI.Get(), OutputANSI.Length());
+			}
+
+			// Timeout detection.
+			if (bStartingDeployment && Output.Contains(TEXT("startup completed")))
+			{
+				bStartingDeployment = false;
+			}
+		});
 
 	RuntimeProcess->Launch();
 
