@@ -244,7 +244,7 @@ void ASpatialFunctionalTest::FinishStep()
 	ensureMsgf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
 	if (AuxLocalFlowController != nullptr)
 	{
-		AuxLocalFlowController->NotifyStepFinished();
+		AuxLocalFlowController->NotifyStepFinished(CurrentStepIndex);
 	}
 }
 
@@ -601,9 +601,10 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(
 	return nullptr;
 }
 
-void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpatialFunctionalTestFlowController* FlowController)
+void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpatialFunctionalTestFlowController* FlowController,
+																		  const int StepIndex)
 {
-	if (CurrentStepIndex < 0)
+	if (CurrentStepIndex < 0 || StepIndex != CurrentStepIndex)
 	{
 		return;
 	}
