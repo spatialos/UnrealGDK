@@ -322,8 +322,7 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString SpatialLogsSubDirec
 		RuntimeLogFileHandle = nullptr;
 	}
 
-	FString RuntimeLogDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory,
-											FString::Printf(TEXT("logs/localdeployment/%s"), *SpatialLogsSubDirectoryName));
+	FString RuntimeLogDir = FPaths::Combine(SpatialGDKServicesConstants::LocalDeploymentLogsDir, SpatialLogsSubDirectoryName);
 
 	FString RuntimeLogFilePath = FPaths::Combine(RuntimeLogDir, TEXT("runtime.log"));
 
