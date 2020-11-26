@@ -274,28 +274,28 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
 
 	RuntimeProcess->OnOutput().BindLambda(
-		[&RuntimeLogFileHandle = RuntimeLogFileHandle, &bStartingDeployment = bStartingDeployment, SpatialOutputLog](FString& Output) {
-			// Format and output the log to the editor window `SpatialOutputLog`
-			SpatialOutputLog.Pin()->FormatAndPrintRawLogLine(Output);
+		[&RuntimeLogFileHandle = RuntimeLogFileHandle, &bStartingDeployment = bStartingDeployment, SpatialOutputLog](const FString& Output) {
+		// Format and output the log to the editor window `SpatialOutputLog`
+		SpatialOutputLog.Pin()->FormatAndPrintRawLogLine(Output);
 
-			// Save the raw runtime output to disk.
-			if (RuntimeLogFileHandle.IsValid())
-			{
-				// Always add a newline.
-				Output += LINE_TERMINATOR;
+		// Save the raw runtime output to disk.
+		if (RuntimeLogFileHandle.IsValid())
+		{
+			// In order to get the correct length of the ANSI converted string, we must create the converted string here.
+			auto OutputANSI = StringCast<ANSICHAR>(*Output);
 
-				// In order to get the correct length of the ANSI converted string, we must create the converted string here.
-				auto OutputANSI = StringCast<ANSICHAR>(*Output);
+			RuntimeLogFileHandle->Write((const uint8*)OutputANSI.Get(), OutputANSI.Length());
 
-				RuntimeLogFileHandle->Write((const uint8*)OutputANSI.Get(), OutputANSI.Length());
-			}
+			// Always add a newline
+			RuntimeLogFileHandle->Write((const uint8*)LINE_TERMINATOR_ANSI, 1);
+		}
 
-			// Timeout detection.
-			if (bStartingDeployment && Output.Contains(TEXT("startup completed")))
-			{
-				bStartingDeployment = false;
-			}
-		});
+		// Timeout detection.
+		if (bStartingDeployment && Output.Contains(TEXT("startup completed")))
+		{
+			bStartingDeployment = false;
+		}
+	});
 
 	RuntimeProcess->Launch();
 
