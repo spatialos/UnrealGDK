@@ -14,8 +14,8 @@ namespace SpatialGDK
 class SPATIALGDK_API FSpatialTraceEventBuilder
 {
 public:
-	FSpatialTraceEventBuilder(FString InType);
-	FSpatialTraceEventBuilder(FString InType, FString InMessage);
+	FSpatialTraceEventBuilder(FName InType);
+	FSpatialTraceEventBuilder(FName InType, FString InMessage);
 
 	FSpatialTraceEventBuilder AddObject(FString Key, const UObject* Object);
 	FSpatialTraceEventBuilder AddFunction(FString Key, const UFunction* Function);
@@ -35,14 +35,14 @@ public:
 
 	static FSpatialTraceEvent CreateQueueRPC();
 	static FSpatialTraceEvent CreateRetryRPC();
-	static FSpatialTraceEvent CreateSendPropertyUpdate(const UObject* Object, const Worker_EntityId EntityId,
-													   const Worker_ComponentId ComponentId, const FString& PropertyName,
-													   EventTraceUniqueId LinearTraceId);
+	static FSpatialTraceEvent CreatePropertyChanged(const UObject* Object, const Worker_EntityId EntityId, const FString& PropertyName, EventTraceUniqueId LinearTraceId);
+	static FSpatialTraceEvent CreateSendPropertyUpdate(const UObject* Object, const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
 	static FSpatialTraceEvent CreateReceivePropertyUpdate(const UObject* Object, const Worker_EntityId EntityId,
 														  const Worker_ComponentId ComponentId, const FString& PropertyName,
 														  EventTraceUniqueId LinearTraceId);
 	static FSpatialTraceEvent CreateMergeSendRPCs(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
 	static FSpatialTraceEvent CreateMergeComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	static FSpatialTraceEvent CreateObjectPropertyComponentUpdate(const UObject* Object);
 	static FSpatialTraceEvent CreateSendCommandRequest(const FString& Command, const int64 RequestId);
 	static FSpatialTraceEvent CreateReceiveCommandRequest(const FString& Command, const int64 RequestId);
 	static FSpatialTraceEvent CreateReceiveCommandRequest(const FString& Command, const UObject* Actor, const UObject* TargetObject,

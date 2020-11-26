@@ -8,12 +8,12 @@
 
 namespace SpatialGDK
 {
-FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(FString InType)
+FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(FName InType)
 	: SpatialTraceEvent(MoveTemp(InType), "")
 {
 }
 
-FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(FString InType, FString InMessage)
+FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(FName InType, FString InMessage)
 	: SpatialTraceEvent(MoveTemp(InType), MoveTemp(InMessage))
 {
 }
@@ -176,6 +176,11 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateMergeComponentUpdate(const W
 		.AddEntityId(TEXT("EntityId"), EntityId)
 		.AddComponentId(TEXT("ComponentId"), ComponentId)
 		.GetEvent();
+}
+
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(const UObject* Object)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_property_update").AddObject(TEXT("Object"), Object).GetEvent();
 }
 
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendCommandRequest(const FString& Command, const int64 RequestId)
