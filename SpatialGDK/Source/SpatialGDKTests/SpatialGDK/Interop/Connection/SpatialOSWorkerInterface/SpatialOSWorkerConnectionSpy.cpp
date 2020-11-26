@@ -28,19 +28,19 @@ const TArray<Worker_Op>& SpatialOSWorkerConnectionSpy::GetWorkerMessages()
 	return PlaceholderWorkerMessages;
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendReserveEntityIdsRequest(uint32_t NumOfEntities, SpatialGDK::FRetryData RetryData)
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendReserveEntityIdsRequest(uint32_t NumOfEntities, const SpatialGDK::FRetryData& RetryData)
 {
 	return SendReserveEntityIdsRequest(NumOfEntities);
 }
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FWorkerComponentData> Components,
                                                                        const Worker_EntityId* EntityId,
-                                                                       SpatialGDK::FRetryData RetryData, const FSpatialGDKSpanId& SpanId)
+                                                                       const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId, SpatialGDK::FRetryData RetryData,
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId, const SpatialGDK::FRetryData& RetryData,
 																	   const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;
@@ -62,7 +62,7 @@ void SpatialOSWorkerConnectionSpy::SendComponentUpdate(Worker_EntityId EntityId,
 }
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
-                                                                  uint32_t CommandId, SpatialGDK::FRetryData RetryData, const FSpatialGDKSpanId& SpanId)
+                                                                  const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;
 }
@@ -79,7 +79,7 @@ void SpatialOSWorkerConnectionSpy::SendCommandFailure(Worker_RequestId RequestId
 void SpatialOSWorkerConnectionSpy::SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message) {}
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery,
-																	  SpatialGDK::FRetryData RetryData)
+																	  const SpatialGDK::FRetryData& RetryData)
 {
 	LastEntityQuery = EntityQuery;
 	return NextRequestId++;
