@@ -70,7 +70,6 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	{
 		NetDriver->SetSpatialDebugger(this);
 	}
-
 }
 
 void ASpatialDebugger::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -763,7 +762,7 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 
 void ASpatialDebugger::HighlightActorUnderCursor(TWeakObjectPtr<AActor>& NewHoverActor)
 {
-	// Check if highlighting feature is enabled and the glowing wire frame material is set 
+	// Check if highlighting feature is enabled and the glowing wire frame material is set
 	if (!bShowHighlight || WireFrameMaterial == nullptr)
 	{
 		return;
@@ -866,7 +865,8 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(const FVector2D& New
 					continue;
 				}
 
-				// Only add actors to the list of hit actors if they have a valid entity id or screen position. As later when we scroll through the actors, we only want to highlight ones that we can show a tag for.
+				// Only add actors to the list of hit actors if they have a valid entity id or screen position. As later when we scroll
+				// through the actors, we only want to highlight ones that we can show a tag for.
 				if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(HitResult.GetActor()))
 				{
 					FVector PlayerLocation = GetLocalPawnLocation();
@@ -874,7 +874,6 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(const FVector2D& New
 					FVector2D ScreenLocation = ProjectActorToScreen(HitActor, PlayerLocation);
 					if (!ScreenLocation.IsZero())
 					{
-
 						HitActors.Add(HitActor);
 					}
 				}
