@@ -59,6 +59,9 @@ steps:
     command: "${BUILD_COMMAND}"
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+      - "C:/b/1/GDKTestGyms/spatial/logs/*"
+      - "C:/b/1/GDKTestGyms/spatial/logs/localdeployment/**/**"
+      - "C:/b/1/GDKTestGyms/spatial/logs/localdeployment/**/*"
     env:
       BUILD_ALL_CONFIGURATIONS: "${BUILD_ALL_CONFIGURATIONS}"
       ENGINE_COMMIT_HASH: "${ENGINE_COMMIT_HASH}"
