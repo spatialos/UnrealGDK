@@ -18,6 +18,8 @@ public:
 
 private:
 	USpatialNetDriver* NetDriver;
+
+	FCrossServerRPCParams CreateInvalidParams();
 };
 
 } // namespace SpatialGDK

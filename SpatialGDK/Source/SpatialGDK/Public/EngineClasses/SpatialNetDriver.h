@@ -236,8 +236,8 @@ private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
-	TUniquePtr<SpatialGDK::CrossServerRPCSender> CSRPCSender;
-	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CSRPCHandler;
+	TUniquePtr<SpatialGDK::CrossServerRPCSender> CrossServerRPCSender;
+	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CrossServerRPCHandler;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
@@ -246,7 +246,6 @@ private:
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 
 	FTimerManager TimerManager;
-	SpatialGDK::RPCExecutorInterface* RPCExecutor;
 
 	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;

@@ -8,8 +8,8 @@
 #include "Interop/SpatialSender.h"
 #include "Utils/RepLayoutUtils.h"
 
-using namespace SpatialGDK;
-
+namespace SpatialGDK
+{
 RPCExecutor::RPCExecutor(class USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 {
@@ -63,11 +63,16 @@ bool RPCExecutor::ExecuteCommand(const FCrossServerRPCParams& Params)
 	return CanProcessRPC;
 }
 
+FCrossServerRPCParams RPCExecutor::CreateInvalidParams()
+{
+	return { FUnrealObjectRef(), -1, { 0, 0, 0, {} }, 0, {} };
+}
+
 FCrossServerRPCParams RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_Op& Op)
 {
 	if (NetDriver->Receiver->IsEntityWaitingForAsyncLoad(Op.op.command_request.entity_id))
 	{
-		return { FUnrealObjectRef(), -1, { 0, 0, 0, {} }, 0, {} };
+		return CreateInvalidParams();
 	}
 
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.op.command_request.request.schema_type);
@@ -76,7 +81,7 @@ FCrossServerRPCParams RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_
 	const TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
-		return { FUnrealObjectRef(), -1, { 0, 0, 0, {} }, 0, {} };
+		return CreateInvalidParams();
 	}
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
@@ -85,19 +90,19 @@ FCrossServerRPCParams RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_
 	if (Payload.Index >= static_cast<uint32>(ClassInfo.RPCs.Num()))
 	{
 		// This should only happen if there's a class layout disagreement between workers, which would indicate incompatible binaries.
-		return { FUnrealObjectRef(), -1, { 0, 0, 0, {} }, 0, {} };
+		return CreateInvalidParams();
 	}
 
 	UFunction* Function = ClassInfo.RPCs[Payload.Index];
 	if (Function == nullptr)
 	{
-		return { FUnrealObjectRef(), -1, { 0, 0, 0, {} }, 0, {} };
+		return CreateInvalidParams();
 	}
 
 	const auto RPCInfo = NetDriver->ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	if (RPCInfo.Type != ERPCType::CrossServer)
 	{
-		return { FUnrealObjectRef(), -1, { 0, 0, 0, {} }, 0, {} };
+		return CreateInvalidParams();
 	}
 
 	AActor* TargetActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.op.command_request.entity_id));
@@ -115,3 +120,4 @@ FCrossServerRPCParams RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_
 		SpanId);
 	return { ObjectRef, Op.op.command_request.request_id, MoveTemp(Payload), Op.op.command_request.timeout_millis, Op.span_id };
 }
+} // namespace SpatialGDK

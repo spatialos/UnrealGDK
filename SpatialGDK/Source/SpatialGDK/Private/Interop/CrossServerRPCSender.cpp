@@ -5,8 +5,8 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Utils/SpatialMetrics.h"
 
-using namespace SpatialGDK;
-
+namespace SpatialGDK
+{
 CrossServerRPCSender::CrossServerRPCSender(ViewCoordinator& InCoordinator, USpatialMetrics* InSpatialMetrics)
 	: Coordinator(InCoordinator)
 	, SpatialMetrics(InSpatialMetrics)
@@ -22,7 +22,7 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef& InTargetObjectRef
 		return;
 	}
 
-	const auto SchemaType = Schema_CreateCommandRequest();
+	Schema_CommandRequest* SchemaType = Schema_CreateCommandRequest();
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(SchemaType);
 	RPCPayload::WriteToSchemaObject(RequestObject, InTargetObjectRef.Offset, Info.Index, FMath::RandHelper(INT_MAX),
 									InPayload.PayloadData.GetData(), InPayload.PayloadData.Num());
@@ -42,3 +42,4 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef& InTargetObjectRef
 	SpatialMetrics->TrackSentRPC(Function, ERPCType::CrossServer, InPayload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
 }
+} // namespace SpatialGDK

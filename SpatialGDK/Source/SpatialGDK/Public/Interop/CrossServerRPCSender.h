@@ -5,15 +5,13 @@
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/RPCPayload.h"
 #include "SpatialView/CommandRetryHandler.h"
+#include "SpatialView/ViewCoordinator.h"
 #include "Utils/SpatialMetrics.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogCrossServerRPCSender, Log, All);
 
 namespace SpatialGDK
 {
-class ViewCoordinator;
-constexpr FRetryData RETRY_MAX_TIMES = { SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, 0, 0.1f, 5.0f, 0 };
-
 class CrossServerRPCSender
 {
 public:

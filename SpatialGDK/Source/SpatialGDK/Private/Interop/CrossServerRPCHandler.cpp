@@ -7,8 +7,8 @@
 
 DEFINE_LOG_CATEGORY(LogCrossServerRPCHandler);
 
-using namespace SpatialGDK;
-
+namespace SpatialGDK
+{
 CrossServerRPCHandler::CrossServerRPCHandler(ViewCoordinator& InCoordinator, TUniquePtr<RPCExecutorInterface> InRPCExecutor)
 	: Coordinator(InCoordinator)
 	, RPCExecutor(MoveTemp(InRPCExecutor))
@@ -17,7 +17,7 @@ CrossServerRPCHandler::CrossServerRPCHandler(ViewCoordinator& InCoordinator, TUn
 
 void CrossServerRPCHandler::ProcessOps(const TArray<Worker_Op>& WorkerMessages)
 {
-	for (auto& Op : WorkerMessages)
+	for (const auto& Op : WorkerMessages)
 	{
 		if (Op.op_type == WORKER_OP_TYPE_COMMAND_REQUEST
 			&& Op.op.command_request.request.command_index == SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID
@@ -40,7 +40,7 @@ void CrossServerRPCHandler::ProcessPendingCrossServerRPCs()
 	for (auto CrossServerRPCs = QueuedCrossServerRPCs.CreateIterator(); CrossServerRPCs; ++CrossServerRPCs)
 	{
 		int32 ProcessedRPCs = 0;
-		for (auto& Command : CrossServerRPCs.Value())
+		for (const auto& Command : CrossServerRPCs.Value())
 		{
 			if (!TryExecuteCrossServerRPC(Command))
 			{
@@ -71,7 +71,7 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 	FCrossServerRPCParams Params = RPCExecutor->TryRetrieveCrossServerRPCParams(Op);
 	if (Params.RequestId == -1)
 	{
-		Coordinator.SendEntityCommandFailure(CommandOp.request_id, "Failed to parse cross server RPC", Op.span_id);
+		Coordinator.SendEntityCommandFailure(CommandOp.request_id, TEXT("Failed to parse cross server RPC"), Op.span_id);
 		return;
 	}
 
@@ -119,10 +119,11 @@ bool CrossServerRPCHandler::TryExecuteCrossServerRPC(const FCrossServerRPCParams
 
 void CrossServerRPCHandler::DropQueueForEntity(const Worker_EntityId_Key EntityId)
 {
-	for (auto& Command : QueuedCrossServerRPCs[EntityId])
+	for (const auto& Command : QueuedCrossServerRPCs[EntityId])
 	{
 		RPCGuidsInFlight.Remove(Command.Payload.UniqueId);
 	}
 
 	QueuedCrossServerRPCs.Remove(EntityId);
 }
+} // namespace SpatialGDK

@@ -36,7 +36,6 @@ private:
 	TArray<TArray<OpList>> ListsOfOpLists;
 	TArray<OpList> QueuedOpLists;
 	FString WorkerId = TEXT("test_worker");
-	TArray<FString> Attributes = { TEXT("test") };
 };
 
 class MockRPCExecutor : public RPCExecutorInterface
@@ -55,7 +54,7 @@ public:
 	{
 		FTimespan PassedTime;
 		PassedTime.FromMilliseconds(500);
-		if (Params.RequestId == SuccessRequestId || Params.Timestamp + PassedTime  < FDateTime::Now())
+		if (Params.RequestId == SuccessRequestId || Params.Timestamp + PassedTime < FDateTime::Now())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s"), *ExecutingCommand);
 			return true;

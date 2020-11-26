@@ -399,8 +399,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
 		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
-	CSRPCSender = MakeUnique<SpatialGDK::CrossServerRPCSender>(this->Connection->GetCoordinator(), SpatialMetrics);
-	CSRPCHandler =
+	CrossServerRPCSender = MakeUnique<SpatialGDK::CrossServerRPCSender>(this->Connection->GetCoordinator(), SpatialMetrics);
+	CrossServerRPCHandler =
 		MakeUnique<SpatialGDK::CrossServerRPCHandler>(this->Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this));
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
@@ -1604,7 +1604,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	const FRPCInfo Info = ClassInfoManager->GetRPCInfo(CallingObject, Function);
 	if (Info.Type == ERPCType::CrossServer)
 	{
-		CSRPCSender->SendCommand(CallingObjectRef, CallingObject, Function, MoveTemp(Payload), Info, {});
+		CrossServerRPCSender->SendCommand(CallingObjectRef, CallingObject, Function, MoveTemp(Payload), Info, {});
 	}
 	else
 	{
@@ -1810,7 +1810,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 			Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
-			CSRPCHandler->ProcessOps(Connection->GetWorkerMessages());
+			CrossServerRPCHandler->ProcessOps(Connection->GetWorkerMessages());
 		}
 
 		if (RPCService.IsValid())
