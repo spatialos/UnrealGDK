@@ -208,7 +208,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 													  FString SnapshotName, FString RuntimeIPToExpose,
 													  const LocalDeploymentCallback& CallBack)
 {
-	FDateTime StartTime = FDateTime::Now();
+	RuntimeStartTime = FDateTime::Now();
 
 	if (bLocalDeploymentRunning)
 	{
@@ -238,7 +238,6 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	// Give the snapshot path a timestamp to ensure we don't overwrite snapshots from older deployments.
 	// The snapshot service saves snapshots with the name `snapshot-n.snapshot` for a given deployment,
 	// where 'n' is the number of snapshots taken since starting the deployment.
-	RuntimeStartTime = FDateTime::Now();
 	FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, *RuntimeStartTime.ToString());
 
 	// Create the folder for storing the snapshots.
@@ -304,7 +303,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	bStartingDeployment = false;
 	bLocalDeploymentRunning = true;
 
-	FTimespan Span = FDateTime::Now() - StartTime;
+	FTimespan Span = FDateTime::Now() - RuntimeStartTime;
 	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
 
 	AsyncTask(ENamedThreads::GameThread, [this] {
@@ -339,7 +338,7 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString SpatialLogsSubDirec
 
 	if (!bSuccess && RuntimeLogFileHandle)
 	{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Could not create runtime log file at '%s' saving logs to disk will be disabled."),
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Could not create runtime log file at '%s' saving logs to disk will be disabled."),
 			   *RuntimeLogFilePath);
 		return false;
 	}
