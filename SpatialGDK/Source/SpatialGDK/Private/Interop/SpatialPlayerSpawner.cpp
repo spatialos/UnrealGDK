@@ -10,8 +10,8 @@
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
-#include "Utils/SchemaUtils.h"
 #include "UObject/SoftObjectPath.h"
+#include "Utils/SchemaUtils.h"
 
 #include "Containers/StringConv.h"
 #include "Engine/Engine.h"
@@ -288,8 +288,9 @@ void USpatialPlayerSpawner::ForwardSpawnRequestToStrategizedServer(const Schema_
 	Worker_CommandRequest ForwardSpawnPlayerRequest =
 		ServerWorker::CreateForwardPlayerSpawnRequest(Schema_CopyCommandRequest(ForwardSpawnPlayerSchemaRequest));
 
-	const Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(
-		ServerWorkerEntity, &ForwardSpawnPlayerRequest, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID, RETRY_MAX_TIMES, {});
+	const Worker_RequestId RequestId =
+		NetDriver->Connection->SendCommandRequest(ServerWorkerEntity, &ForwardSpawnPlayerRequest,
+												  SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID, RETRY_MAX_TIMES, {});
 
 	OutgoingForwardPlayerSpawnRequests.Add(RequestId,
 										   TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>(ForwardSpawnPlayerSchemaRequest));

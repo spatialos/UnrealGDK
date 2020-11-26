@@ -101,7 +101,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	TOptional<Trace_SpanId> SpanId = EventTracer->CreateSpan();
 	EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCreateEntity(Channel->Actor, Channel->GetEntityId()), SpanId);
 
-	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, RETRY_UNTIL_COMPLETE, SpanId);
+	Worker_RequestId CreateEntityRequestId =
+		Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, RETRY_UNTIL_COMPLETE, SpanId);
 
 	return CreateEntityRequestId;
 }
@@ -360,8 +361,8 @@ void USpatialSender::SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntit
 				"PartitionId: %lld"),
 		   *Connection->GetWorkerId(), SystemWorkerEntityId, PartitionId);
 	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionId);
-	const Worker_RequestId RequestId =
-		Connection->SendCommandRequest(SystemWorkerEntityId, &CommandRequest, SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID, RETRY_UNTIL_COMPLETE, {});
+	const Worker_RequestId RequestId = Connection->SendCommandRequest(
+		SystemWorkerEntityId, &CommandRequest, SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID, RETRY_UNTIL_COMPLETE, {});
 	Receiver->PendingPartitionAssignments.Add(RequestId, PartitionId);
 }
 
@@ -390,7 +391,8 @@ TArray<FWorkerComponentData> USpatialSender::CopyEntityComponentData(const TArra
 
 void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> EntityComponents)
 {
-	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(CopyEntityComponentData(EntityComponents), &EntityId, RETRY_UNTIL_COMPLETE);
+	const Worker_RequestId RequestId =
+		Connection->SendCreateEntityRequest(CopyEntityComponentData(EntityComponents), &EntityId, RETRY_UNTIL_COMPLETE);
 
 	CreateEntityDelegate Delegate;
 
@@ -897,7 +899,7 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 
 	Worker_CommandRequest CommandRequest = CreateRetryRPCCommandRequest(*RetryRPC, TargetObjectRef.Offset);
 	Worker_RequestId RequestId = Connection->SendCommandRequest(TargetObjectRef.Entity, &CommandRequest,
-																SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID,  NO_RETRIES, NewSpanId);
+																SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID, NO_RETRIES, NewSpanId);
 
 	// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
 	RetryRPC->Attempts++;
@@ -937,7 +939,8 @@ void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, uint
 void USpatialSender::SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId)
 {
 	Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
-	NetDriver->Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION, RETRY_UNTIL_COMPLETE, {});
+	NetDriver->Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION,
+											  RETRY_UNTIL_COMPLETE, {});
 }
 
 void USpatialSender::ClearRPCsOnEntityCreation(Worker_EntityId EntityId)

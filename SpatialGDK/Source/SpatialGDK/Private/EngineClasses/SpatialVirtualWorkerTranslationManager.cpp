@@ -180,7 +180,8 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 	TArray<FWorkerComponentData> Components = SpatialGDK::EntityFactory::CreatePartitionEntityComponents(
 		PartitionEntityId, Translator->NetDriver->InterestFactory.Get(), Translator->LoadBalanceStrategy.Get(), VirtualWorkerId);
 
-	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
+	const Worker_RequestId RequestId =
+		Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
 	OnCreateWorkerEntityResponse.BindLambda([this, VirtualWorkerId](const Worker_CreateEntityResponseOp& Op) {
@@ -195,9 +196,9 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 		}
 
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error,
-			TEXT("Partition entity creation failed: \"%s\". "
-				"Entity: %lld. Virtual Worker: %d"),
-				UTF8_TO_TCHAR(Op.message), Op.entity_id, VirtualWorkerId);
+			   TEXT("Partition entity creation failed: \"%s\". "
+					"Entity: %lld. Virtual Worker: %d"),
+			   UTF8_TO_TCHAR(Op.message), Op.entity_id, VirtualWorkerId);
 	});
 
 	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
