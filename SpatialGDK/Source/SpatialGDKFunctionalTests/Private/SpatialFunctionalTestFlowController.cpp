@@ -115,17 +115,17 @@ void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(i
 	}
 }
 
-void ASpatialFunctionalTestFlowController::NotifyStepFinished(const int StepIndex)
+void ASpatialFunctionalTestFlowController::NotifyStepFinished()
 {
 	if (CurrentStep.bIsRunning)
 	{
 		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 		{
-			CrossServerNotifyStepFinished(StepIndex);
+			CrossServerNotifyStepFinished();
 		}
 		else
 		{
-			ServerNotifyStepFinished(StepIndex);
+			ServerNotifyStepFinished();
 		}
 
 		StopStepInternal();
@@ -245,12 +245,12 @@ void ASpatialFunctionalTestFlowController::ServerAckFinishedTest_Implementation(
 	bHasAckFinishedTest = true;
 }
 
-void ASpatialFunctionalTestFlowController::ServerNotifyStepFinished_Implementation(const int StepIndex)
+void ASpatialFunctionalTestFlowController::ServerNotifyStepFinished_Implementation()
 {
-	OwningTest->CrossServerNotifyStepFinished(this, StepIndex);
+	OwningTest->CrossServerNotifyStepFinished(this);
 }
 
-void ASpatialFunctionalTestFlowController::CrossServerNotifyStepFinished_Implementation(const int StepIndex)
+void ASpatialFunctionalTestFlowController::CrossServerNotifyStepFinished_Implementation()
 {
-	OwningTest->CrossServerNotifyStepFinished(this, StepIndex);
+	OwningTest->CrossServerNotifyStepFinished(this);
 }

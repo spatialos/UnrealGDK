@@ -97,7 +97,7 @@ public:
 	void CrossServerFinishTest(EFunctionalTestResult TestResult, const FString& Message);
 
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerNotifyStepFinished(ASpatialFunctionalTestFlowController* FlowController, const int StepIndex);
+	void CrossServerNotifyStepFinished(ASpatialFunctionalTestFlowController* FlowController);
 
 	// # FlowController related APIs.
 
