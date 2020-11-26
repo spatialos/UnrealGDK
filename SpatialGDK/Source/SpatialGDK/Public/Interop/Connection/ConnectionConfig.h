@@ -69,8 +69,7 @@ struct FConnectionConfig
 
 		if (!OverrideLinkProtocol)
 		{
-			LinkProtocol = bConnectAsClient ? WORKER_NETWORK_CONNECTION_TYPE_KCP
-											: WORKER_NETWORK_CONNECTION_TYPE_TCP;
+			LinkProtocol = bConnectAsClient ? WORKER_NETWORK_CONNECTION_TYPE_KCP : WORKER_NETWORK_CONNECTION_TYPE_TCP;
 		}
 	}
 
