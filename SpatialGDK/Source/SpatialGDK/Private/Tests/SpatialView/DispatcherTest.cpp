@@ -5,8 +5,8 @@
 #include "SpatialView/Dispatcher.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/EntityView.h"
-#include "SpatialView/ViewDelta.h"
 #include "SpatialView/OpList/EntityComponentOpList.h"
+#include "SpatialView/ViewDelta.h"
 #include "Tests/SpatialView/ComponentTestUtils.h"
 #include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"
@@ -297,7 +297,8 @@ DISPATCHER_TEST(GIVEN_Dispatcher_With_Component_Removed_Callback_WHEN_Entity_Rem
 	return true;
 }
 
-DISPATCHER_TEST(GIVEN_Dispatcher_With_Component_Removed_Callback_WHEN_Entity_Removed_And_Added_With_Different_Components_THEN_Callback_Invoked)
+DISPATCHER_TEST(
+	GIVEN_Dispatcher_With_Component_Removed_Callback_WHEN_Entity_Removed_And_Added_With_Different_Components_THEN_Callback_Invoked)
 {
 	bool Invoked = false;
 	SpatialGDK::FDispatcher Dispatcher;
