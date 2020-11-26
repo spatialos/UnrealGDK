@@ -35,8 +35,10 @@ public:
 
 	static FSpatialTraceEvent CreateQueueRPC();
 	static FSpatialTraceEvent CreateRetryRPC();
-	static FSpatialTraceEvent CreatePropertyChanged(const UObject* Object, const Worker_EntityId EntityId, const FString& PropertyName, EventTraceUniqueId LinearTraceId);
-	static FSpatialTraceEvent CreateSendPropertyUpdate(const UObject* Object, const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	static FSpatialTraceEvent CreatePropertyChanged(const UObject* Object, const Worker_EntityId EntityId, const FString& PropertyName,
+													EventTraceUniqueId LinearTraceId);
+	static FSpatialTraceEvent CreateSendPropertyUpdate(const UObject* Object, const Worker_EntityId EntityId,
+													   const Worker_ComponentId ComponentId);
 	static FSpatialTraceEvent CreateReceivePropertyUpdate(const UObject* Object, const Worker_EntityId EntityId,
 														  const Worker_ComponentId ComponentId, const FString& PropertyName,
 														  EventTraceUniqueId LinearTraceId);

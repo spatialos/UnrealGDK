@@ -521,7 +521,9 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			GDK_PROPERTY(Property)* Property = *Itr;
 
 			EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForProperty(EntityId, Property);
-			FSpatialGDKSpanId PropertySpan = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePropertyChanged(Object, EntityId, Property->GetName(), LinearTraceId), CauseSpanId.GetConstId(), 1);
+			FSpatialGDKSpanId PropertySpan = EventTracer->TraceEvent(
+				FSpatialTraceEventBuilder::CreatePropertyChanged(Object, EntityId, Property->GetName(), LinearTraceId),
+				CauseSpanId.GetConstId(), 1);
 
 			PropertySpans.Push(PropertySpan);
 		}
@@ -546,7 +548,9 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			continue;
 		}
 
-		FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdate(Object, EntityId, Update.component_id), (const Trace_SpanIdType*)PropertySpans.GetData(), PropertySpans.Num());
+		FSpatialGDKSpanId SpanId =
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdate(Object, EntityId, Update.component_id),
+									(const Trace_SpanIdType*)PropertySpans.GetData(), PropertySpans.Num());
 		Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 	}
 }

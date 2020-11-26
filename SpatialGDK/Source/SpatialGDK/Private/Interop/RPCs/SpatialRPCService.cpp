@@ -63,7 +63,8 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 
 	if (EventTracer != nullptr)
 	{
-		PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePushRPC(Target, Function), EventTracer->GetFromStack().GetConstId(), 1);
+		PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePushRPC(Target, Function),
+														EventTracer->GetFromStack().GetConstId(), 1);
 	}
 
 #if TRACE_LIB_ACTIVE
@@ -350,8 +351,8 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 		if (EventTracer != nullptr)
 		{
 			EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForRPC(EntityId, static_cast<uint8>(Type), NewRPCId);
-			FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(LinearTraceId),
-															   Payload.SpanId.GetConstId(), 1);
+			FSpatialGDKSpanId SpanId =
+				EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(LinearTraceId), Payload.SpanId.GetConstId(), 1);
 			RPCStore.AddSpanIdForComponentUpdate(EntityComponent, SpanId);
 		}
 
@@ -464,9 +465,10 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 				EntityComponentId Id = EntityComponentId(PendingRPCParams.ObjectRef.Entity, ComponentId);
 				FSpatialGDKSpanId CauseSpanId = EventTracer->GetSpanId(Id);
 
-				EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForRPC(PendingRPCParams.ObjectRef.Entity, static_cast<uint8>(RPCType), PendingRPCParams.RPCIdForLinearEventTrace.GetValue());
-				FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function, LinearTraceId),
-																   CauseSpanId.GetConstId(), 1);
+				EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForRPC(
+					PendingRPCParams.ObjectRef.Entity, static_cast<uint8>(RPCType), PendingRPCParams.RPCIdForLinearEventTrace.GetValue());
+				FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(
+					FSpatialTraceEventBuilder::CreateProcessRPC(TargetObject, Function, LinearTraceId), CauseSpanId.GetConstId(), 1);
 				EventTracer->AddToStack(SpanId);
 			}
 
