@@ -244,20 +244,24 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	PlatformFile.CreateDirectoryTree(*SnapshotPath);
 
+	// Use the runtime start timestamp as the log directory, e.g. `<Project>/spatial/localdeployment/<timestamp>/`
+	FString LocalDeploymentLogsDir = FPaths::Combine(SpatialGDKServicesConstants::LocalDeploymentLogsDir, RuntimeStartTime.ToString());
+
 	// runtime.exe --config=squid_config.json --snapshot=snapshots/default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
-	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots --schema-bundle=spatial/build/assembly/schema/schema.sb
-	FString RuntimeArgs = FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port %s --grpc-port %s "
-											   "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" %s"),
+	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots/<timestamp> --schema-bundle=spatial/build/assembly/schema/schema.sb
+	// --event-tracing-logs-directory=`<Project>/spatial/localdeployment/<timestamp>/`
+	FString RuntimeArgs = FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
+											   "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
 										  *LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-										  *FString::FromInt(GRPCPort), *SnapshotPath, *SchemaBundle, *LaunchArgs);
+										  *FString::FromInt(GRPCPort), *SnapshotPath, *SchemaBundle, *LocalDeploymentLogsDir, *LaunchArgs);
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{
 		RuntimeArgs.Append(FString::Printf(TEXT(" --worker-external-host %s"), *RuntimeIPToExpose));
 	}
 
-	// Setup the runtime file logger, use the runtime start time as the sub-directory.
-	SetupRuntimeFileLogger(RuntimeStartTime.ToString());
+	// Setup the runtime file logger.
+	SetupRuntimeFileLogger(LocalDeploymentLogsDir);
 
 	FString RuntimePath = SpatialGDKServicesConstants::GetRuntimeExecutablePath(RuntimeVersion);
 
@@ -313,12 +317,11 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	return;
 }
 
-bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString SpatialLogsSubDirectoryName)
+bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString RuntimeLogDir)
 {
 	// Ensure any old log file is cleaned up.
 	RuntimeLogFileHandle.Reset();
 
-	FString RuntimeLogDir = FPaths::Combine(SpatialGDKServicesConstants::LocalDeploymentLogsDir, SpatialLogsSubDirectoryName);
 	FString RuntimeLogFilePath = FPaths::Combine(RuntimeLogDir, TEXT("runtime.log"));
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
