@@ -96,8 +96,7 @@ private:
 		}
 		else if (!LogLevelString.IsEmpty())
 		{
-			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."),
-				   *LogLevelString);
+			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
 		}
 	}
 
