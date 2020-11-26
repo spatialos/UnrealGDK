@@ -204,14 +204,14 @@ public:
 	UFUNCTION()
 	void OnToggleConfigUI();
 
+	UFUNCTION(BlueprintCallable, Category = Visualization)
+	void ToggleSelectActor();
+
 	UFUNCTION()
 	void OnSelectActor();
 
 	UFUNCTION()
 	void OnHighlightActor();
-
-	UFUNCTION(BlueprintCallable, Category = Visualization)
-	void ToggleSelectActor();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Visualization)
 	bool IsSelectActorEnabled() const;
@@ -252,11 +252,11 @@ private:
 
 	void HighlightActorUnderCursor(TWeakObjectPtr<AActor>& NewHoverActor);
 
-	TWeakObjectPtr<AActor> GetActorAtPosition(FVector2D& MousePosition);
+	TWeakObjectPtr<AActor> GetActorAtPosition(const FVector2D& MousePosition);
 
-	FVector2D ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector PlayerLocation);
+	TWeakObjectPtr<AActor> GetHitActor();
 
-	void ValidateHoverIndex();
+	FVector2D ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector& PlayerLocation);
 
 	void RevertHoverMaterials();
 
@@ -327,7 +327,7 @@ private:
 	TArray<TWeakObjectPtr<AActor>> HitActors;
 
 	// Index for selecting the highlighted actor when multiple are under the mouse cursor
-	uint64 HoverIndex;
+	int32 HoverIndex;
 
 	// Mouse position to avoid unnecessary raytracing when mouse has not moved
 	FVector2D MousePosition;

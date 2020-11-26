@@ -57,6 +57,8 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 
 	NetUpdateFrequency = 1.f;
 
+	HoverIndex = 0;
+
 	NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 
 	OnConfigUIClosed.BindDynamic(this, &ASpatialDebugger::DefaultOnConfigUIClosed);
@@ -68,7 +70,7 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	{
 		NetDriver->SetSpatialDebugger(this);
 	}
-	HoverIndex = 0;
+
 }
 
 void ASpatialDebugger::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -372,36 +374,14 @@ void ASpatialDebugger::OnToggleConfigUI()
 	}
 }
 
-void ASpatialDebugger::OnSelectActor()
-{
-	if (HitActors.Num() > 0)
-	{
-		TWeakObjectPtr<AActor> SelectedActor = HitActors[HoverIndex];
-
-		if (SelectedActor.IsValid())
-		{
-			if (SelectedActors.Contains(SelectedActor))
-			{
-				// Already selected so deselect
-				SelectedActors.Remove(SelectedActor);
-			}
-			else
-			{
-				// Add selected actor to enable drawing tags
-				SelectedActors.Add(SelectedActor);
-			}
-		}
-	}
-}
-
-void ASpatialDebugger::OnHighlightActor()
-{
-	HoverIndex++;
-	ValidateHoverIndex();
-}
-
 void ASpatialDebugger::ToggleSelectActor()
 {
+	// This should only be toggled when the config UI window is open
+	if (!ConfigUIWidget->IsVisible())
+	{
+		return;
+	}
+
 	bSelectActor = !bSelectActor;
 	if (bSelectActor)
 	{
@@ -433,13 +413,31 @@ void ASpatialDebugger::ToggleSelectActor()
 	}
 }
 
-void ASpatialDebugger::ValidateHoverIndex()
+void ASpatialDebugger::OnSelectActor()
 {
-	if (HoverIndex >= HitActors.Num())
+	if (HitActors.Num() > 0)
 	{
-		// Reset hover index
-		HoverIndex = 0;
+		TWeakObjectPtr<AActor> SelectedActor = GetHitActor();
+
+		if (SelectedActor.IsValid())
+		{
+			if (SelectedActors.Contains(SelectedActor))
+			{
+				// Already selected so deselect
+				SelectedActors.Remove(SelectedActor);
+			}
+			else
+			{
+				// Add selected actor to enable drawing tags
+				SelectedActors.Add(SelectedActor);
+			}
+		}
 	}
+}
+
+void ASpatialDebugger::OnHighlightActor()
+{
+	HoverIndex++;
 }
 
 void ASpatialDebugger::DefaultOnConfigUIClosed()
@@ -765,7 +763,8 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 
 void ASpatialDebugger::HighlightActorUnderCursor(TWeakObjectPtr<AActor>& NewHoverActor)
 {
-	if (!bShowHighlight)
+	// Check if highlighting feature is enabled and the glowing wire frame material is set 
+	if (!bShowHighlight || WireFrameMaterial == nullptr)
 	{
 		return;
 	}
@@ -790,7 +789,7 @@ void ASpatialDebugger::HighlightActorUnderCursor(TWeakObjectPtr<AActor>& NewHove
 			// Store previous components
 			TWeakObjectPtr<UMeshComponent> MeshComponent(Cast<UMeshComponent>(NewActorComponent));
 			TWeakObjectPtr<UMaterialInterface> MeshMaterial = MeshComponent->GetMaterial(0);
-			if (MeshComponent.IsValid() && MeshMaterial.IsValid() && WireFrameMaterial != nullptr)
+			if (MeshComponent.IsValid() && MeshMaterial.IsValid())
 			{
 				ActorMeshComponents.Add(MeshComponent);
 				// Store previous materials
@@ -831,7 +830,7 @@ void ASpatialDebugger::RevertHoverMaterials()
 	}
 }
 
-TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMousePosition)
+TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(const FVector2D& NewMousePosition)
 {
 	if (!LocalPlayerController.IsValid())
 	{
@@ -867,6 +866,7 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMouseP
 					continue;
 				}
 
+				// Only add actors to the list of hit actors if they have a valid entity id or screen position. As later when we scroll through the actors, we only want to highlight ones that we can show a tag for.
 				if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(HitResult.GetActor()))
 				{
 					FVector PlayerLocation = GetLocalPawnLocation();
@@ -874,26 +874,36 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(FVector2D& NewMouseP
 					FVector2D ScreenLocation = ProjectActorToScreen(HitActor, PlayerLocation);
 					if (!ScreenLocation.IsZero())
 					{
+
 						HitActors.Add(HitActor);
 					}
 				}
 			}
 		}
-		ValidateHoverIndex();
 	}
 
-	// Return actor selected from list dependent on the hover index, which is selected independently with the mouse wheel
-	if (HitActors.Num() > 0)
-	{
-		return HitActors[HoverIndex];
-	}
-	else
+	return GetHitActor();
+}
+
+// Return actor selected from list dependent on the hover index, which is selected independently with the mouse wheel (by default)
+TWeakObjectPtr<AActor> ASpatialDebugger::GetHitActor()
+{
+	if (HitActors.Num() == 0)
 	{
 		return nullptr;
 	}
+
+	// Validate hover index
+	if (HoverIndex >= HitActors.Num())
+	{
+		// Reset hover index
+		HoverIndex = 0;
+	}
+
+	return HitActors[HoverIndex];
 }
 
-FVector2D ASpatialDebugger::ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector PlayerLocation)
+FVector2D ASpatialDebugger::ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector& PlayerLocation)
 {
 	FVector2D ScreenLocation = FVector2D::ZeroVector;
 
