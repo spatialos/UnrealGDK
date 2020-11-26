@@ -69,7 +69,7 @@ private:
 	TFuture<bool> AttemptSpatialAuthResult;
 
 	TOptional<FMonitoredProcess> RuntimeProcess = {};
-	IFileHandle* RuntimeLogFileHandle;
+	TUniquePtr<IFileHandle> RuntimeLogFileHandle;
 	FDateTime RuntimeStartTime;
 
 	static const int32 RequiredRuntimePort = 5301;

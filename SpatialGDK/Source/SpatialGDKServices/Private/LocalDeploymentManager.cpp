@@ -272,7 +272,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		SpatialOutputLog.Pin()->FormatAndPrintRawLogLine(Output);
 
 		// Save the raw runtime output to disk.
-		if (RuntimeLogFileHandle)
+		if (RuntimeLogFileHandle.IsValid())
 		{
 			// Always add a newline.
 			Output += LINE_TERMINATOR;
@@ -316,11 +316,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString SpatialLogsSubDirectoryName)
 {
 	// Ensure any old log file is cleaned up.
-	if (RuntimeLogFileHandle)
-	{
-		delete RuntimeLogFileHandle;
-		RuntimeLogFileHandle = nullptr;
-	}
+	RuntimeLogFileHandle.Reset();
 
 	FString RuntimeLogDir = FPaths::Combine(SpatialGDKServicesConstants::LocalDeploymentLogsDir, SpatialLogsSubDirectoryName);
 	FString RuntimeLogFilePath = FPaths::Combine(RuntimeLogDir, TEXT("runtime.log"));
@@ -330,7 +326,7 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString SpatialLogsSubDirec
 
 	if (bSuccess)
 	{
-		RuntimeLogFileHandle = PlatformFile.OpenWrite(*RuntimeLogFilePath, /*bAppend*/ true, /*bAllowRead*/ true);
+		RuntimeLogFileHandle.Reset(PlatformFile.OpenWrite(*RuntimeLogFilePath, /*bAppend*/ true, /*bAllowRead*/ true));
 	}
 
 	if (!bSuccess || RuntimeLogFileHandle == nullptr)
@@ -370,11 +366,7 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	}
 
 	// Kill the log file handle.
-	if (RuntimeLogFileHandle)
-	{
-		delete RuntimeLogFileHandle;
-		RuntimeLogFileHandle = nullptr;
-	}
+	RuntimeLogFileHandle.Reset();
 
 	bLocalDeploymentRunning = false;
 	bStoppingDeployment = false;
