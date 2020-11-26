@@ -46,7 +46,7 @@ public:
 	{
 		Worker_EntityId EntityId;
 		FWorkerComponentUpdate Update;
-		TOptional<Trace_SpanId> SpanId;
+		FSpatialGDKSpanId SpanId;
 	};
 	TArray<UpdateToSend> GetRPCsAndAcksToSend();
 	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
