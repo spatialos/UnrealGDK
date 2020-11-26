@@ -96,7 +96,8 @@ private:
 		}
 		else if (!LogLevelString.IsEmpty())
 		{
-			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
+			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."),
+				   *LogLevelString);
 		}
 	}
 
@@ -119,7 +120,8 @@ private:
 
 		if (!LinkProtocolString.IsEmpty())
 		{
-			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown network protocol '%s' specified for connecting to SpatialOS."), *LinkProtocolString);
+			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown network protocol '%s' specified for connecting to SpatialOS."),
+				   *LinkProtocolString);
 		}
 
 		UE_LOG(LogConnectionConfig, Verbose, TEXT("No link protocol set. Defaulting to TCP for server workers, KCP for client workers."));
