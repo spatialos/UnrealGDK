@@ -273,8 +273,8 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
 
-	RuntimeProcess->OnOutput().BindLambda(
-		[&RuntimeLogFileHandle = RuntimeLogFileHandle, &bStartingDeployment = bStartingDeployment, SpatialOutputLog](const FString& Output) {
+	RuntimeProcess->OnOutput().BindLambda([&RuntimeLogFileHandle = RuntimeLogFileHandle, &bStartingDeployment = bStartingDeployment,
+										   SpatialOutputLog](const FString& Output) {
 		// Format and output the log to the editor window `SpatialOutputLog`
 		SpatialOutputLog.Pin()->FormatAndPrintRawLogLine(Output);
 
@@ -322,7 +322,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	return;
 }
 
-bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString RuntimeLogDir)
+bool FLocalDeploymentManager::SetupRuntimeFileLogger(const FString& RuntimeLogDir)
 {
 	// Ensure any old log file is cleaned up.
 	RuntimeLogFileHandle.Reset();
@@ -334,7 +334,7 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString RuntimeLogDir)
 
 	if (bSuccess)
 	{
-		RuntimeLogFileHandle.Reset(PlatformFile.OpenWrite(*RuntimeLogFilePath, /*bAppend*/ true, /*bAllowRead*/ true));
+		RuntimeLogFileHandle.Reset(PlatformFile.OpenWrite(*RuntimeLogFilePath, /*bAppend*/ false, /*bAllowRead*/ true));
 	}
 
 	if (!bSuccess || RuntimeLogFileHandle == nullptr)

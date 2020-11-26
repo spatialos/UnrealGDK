@@ -62,9 +62,7 @@ private:
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
-	bool SetupRuntimeFileLogger(FString SpatialLogsSubDirectoryName);
-
-	void KillExistingRuntime();
+	bool SetupRuntimeFileLogger(const FString& SpatialLogsSubDirectoryName);
 
 	TFuture<bool> AttemptSpatialAuthResult;
 
