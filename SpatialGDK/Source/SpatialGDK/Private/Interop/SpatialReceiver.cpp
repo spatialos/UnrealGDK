@@ -676,6 +676,13 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 
 					// We still want to call OnAuthorityGained if the Actor migrated to this worker or was loaded from a snapshot.
 					Actor->OnAuthorityGained();
+
+					// If we are AController attempting possession of a Pawn via the IntendedPawnToPossess field, then invoke the possession case
+					// this action is performed after notification of gaining authority
+					if (AController* Controller = Cast<AController>(Actor))
+					{
+						Controller->PossessAfterMigration();
+					}
 				}
 				else
 				{
