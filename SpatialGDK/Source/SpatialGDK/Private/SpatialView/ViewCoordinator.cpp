@@ -81,17 +81,17 @@ void ViewCoordinator::RefreshEntityCompleteness(Worker_EntityId EntityId)
 	}
 }
 
-void ViewCoordinator::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId)
+void ViewCoordinator::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendAddComponent(EntityId, MoveTemp(Data), SpanId);
 }
 
-void ViewCoordinator::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId)
+void ViewCoordinator::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendComponentUpdate(EntityId, MoveTemp(Update), SpanId);
 }
 
-void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId)
+void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendRemoveComponent(EntityId, ComponentId, SpanId);
 }
@@ -103,14 +103,14 @@ Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEnt
 }
 
 Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-														  TOptional<uint32> TimeoutMillis, const TOptional<Trace_SpanId>& SpanId)
+														  TOptional<uint32> TimeoutMillis, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendCreateEntityRequest({ NextRequestId, MoveTemp(EntityComponents), EntityId, TimeoutMillis, SpanId });
 	return NextRequestId++;
 }
 
 Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis,
-														  const TOptional<Trace_SpanId>& SpanId)
+														  const FSpatialGDKSpanId& SpanId)
 {
 	View.SendDeleteEntityRequest({ NextRequestId, EntityId, TimeoutMillis, SpanId });
 	return NextRequestId++;
@@ -123,18 +123,18 @@ Worker_RequestId ViewCoordinator::SendEntityQueryRequest(EntityQuery Query, TOpt
 }
 
 Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request,
-														   TOptional<uint32> TimeoutMillis, const TOptional<Trace_SpanId>& SpanId)
+														   TOptional<uint32> TimeoutMillis, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendEntityCommandRequest({ EntityId, NextRequestId, MoveTemp(Request), TimeoutMillis, SpanId });
 	return NextRequestId++;
 }
 
-void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const TOptional<Trace_SpanId>& SpanId)
+void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendEntityCommandResponse({ RequestId, MoveTemp(Response), SpanId });
 }
 
-void ViewCoordinator::SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const TOptional<Trace_SpanId>& SpanId)
+void ViewCoordinator::SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendEntityCommandFailure({ RequestId, MoveTemp(Message), SpanId });
 }
@@ -156,14 +156,13 @@ Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEnt
 }
 
 Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-														  FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId)
+														  FRetryData RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	CreateEntityRetryHandler.SendRequest(NextRequestId, { MoveTemp(EntityComponents), EntityId, SpanId }, RetryData, View);
 	return NextRequestId++;
 }
 
-Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData,
-														  const TOptional<Trace_SpanId>& SpanId)
+Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	DeleteEntityRetryHandler.SendRequest(NextRequestId, { EntityId, SpanId }, RetryData, View);
 	return NextRequestId++;
@@ -176,7 +175,7 @@ Worker_RequestId ViewCoordinator::SendEntityQueryRequest(EntityQuery Query, FRet
 }
 
 Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData,
-														   const TOptional<Trace_SpanId>& SpanId)
+														   const FSpatialGDKSpanId& SpanId)
 {
 	EntityCommandRetryHandler.SendRequest(NextRequestId, { EntityId, MoveTemp(Request), SpanId }, RetryData, View);
 	return NextRequestId++;
