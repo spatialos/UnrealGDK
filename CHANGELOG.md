@@ -53,11 +53,11 @@ These functions and structs can be referenced in both code and blueprints it may
 - Handover is now optional depending on whether the load balancing strategy implementations require it . See `RequiresHandoverData`
 - Improved the failed hierarchy migration logs. The logs now contain more specific reasons for the failure and the frequency of repeated logs is suppressed.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
-- Worker SDK version compatibility is checked at compile time.
+- Worker SDK version compatibility is checked at compile time. 
 - Worker SDK version compatibility is checked at compile time.
 - Unreal GDK now uses SpatialOS 15.0.0-preview-2.
 - SpatialWorkerFlags has reworked how to add callbacks for flag updates:
-  1. `BindToOnWorkerFlagsUpdated` is changed to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added functions for register callbacks.
+  1. `BindToOnWorkerFlagsUpdated` is changed to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added functions for register callbacks. 
   2. `RegisterFlagUpdatedCallback` is added to register callbacks for individual flag updates
   3. `RegisterAndInvokeAnyFlagUpdatedCallback` & `RegisterAndInvokeFlagUpdatedCallback` variants are added that will invoke the callback if the flag was previously set.
 
