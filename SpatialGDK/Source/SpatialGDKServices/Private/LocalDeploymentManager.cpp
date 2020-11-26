@@ -322,7 +322,7 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString SpatialLogsSubDirec
 	FString RuntimeLogFilePath = FPaths::Combine(RuntimeLogDir, TEXT("runtime.log"));
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-	bool bSuccess = PlatformFile.CreateDirectoryTree(*RuntimeLogDir);
+	const bool bSuccess = PlatformFile.CreateDirectoryTree(*RuntimeLogDir);
 
 	if (bSuccess)
 	{
@@ -331,7 +331,7 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(FString SpatialLogsSubDirec
 
 	if (!bSuccess || RuntimeLogFileHandle == nullptr)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Could not create runtime log file at '%s' saving logs to disk will be disabled."),
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Could not create runtime log file at '%s'. Saving logs to disk will be disabled."),
 			   *RuntimeLogFilePath);
 		return false;
 	}
