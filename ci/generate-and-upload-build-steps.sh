@@ -23,10 +23,11 @@ generate_build_configuration_steps () {
     # See https://docs.unrealengine.com/en-US/Programming/Development/BuildConfigurations/index.html for possible configurations 
     ENGINE_COMMIT_HASH="${1}"
 
+    # This matches SpatialOS node sizes (https://github.com/improbable/platform/blob/master/go/src/improbable.io/lib/nodesizes/nodesizes.go)
     if [[ -z "${NIGHTLY_BUILD+x}" ]]; then
         export BK_MACHINE_TYPE="quad-high-cpu"
     else
-        export BK_MACHINE_TYPE="single-high-cpu" # nightly builds run on smaller nodes
+        export BK_MACHINE_TYPE="single" # nightly builds run on smaller nodes
     fi
 
     if [[ -z "${MAC_BUILD:-}" ]]; then
@@ -56,7 +57,7 @@ generate_build_configuration_steps () {
         else
             echo "Building for all supported configurations. Generating the appropriate steps..."
 
-            export BK_MACHINE_TYPE="single-high-cpu" # run the weekly with smaller nodes, since this is not time-critical
+            export BK_MACHINE_TYPE="single" # run the weekly with smaller nodes, since this is not time-critical
 
             # Editor builds (Test and Shipping build states do not exist for the Editor build target)
             for BUILD_STATE in "DebugGame" "Development"; do

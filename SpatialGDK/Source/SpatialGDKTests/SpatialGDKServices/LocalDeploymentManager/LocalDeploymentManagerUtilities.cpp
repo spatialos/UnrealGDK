@@ -46,7 +46,7 @@ bool GenerateWorkerJson()
 	if (!FPaths::FileExists(JsonPath))
 	{
 		bool bRedeployRequired = false;
-		return GenerateDefaultWorkerJson(JsonPath, AutomationWorkerType.ToString(), bRedeployRequired);
+		return GenerateDefaultWorkerJson(JsonPath, bRedeployRequired);
 	}
 
 	return true;
