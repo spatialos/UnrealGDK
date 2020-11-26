@@ -6,7 +6,6 @@
 
 AHandoverCube::AHandoverCube()
 {
-	SetReplicateMovement(true);
 	LockingServerID = 0;
 	AuthorityChanges = 0;
 }

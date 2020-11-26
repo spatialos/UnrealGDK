@@ -108,7 +108,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	// However, it is no longer required in 4.25 and beyond, due to the editor flow refactors.
 #if ENGINE_MINOR_VERSION < 25
 	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor) {
-		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		if (GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment && GIsAutomationTesting
+			&& GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			// TODO: This can most likely be removed now we do not support 4.24
 			VerifyAndStartDeployment(GetDefault<ULevelEditorPlaySettings>()->GetSnapshotOverride());
@@ -1252,7 +1253,8 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 		{
 			// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
 			UEditorEngine::TryStartSpatialDeployment.BindLambda([this](FString ForceSnapshot) {
-				if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+				if (GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment
+					&& GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 				{
 					VerifyAndStartDeployment(ForceSnapshot);
 				}
