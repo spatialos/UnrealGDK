@@ -53,7 +53,7 @@ static inline const FString GetInspectorExecutablePath(const FString& InspectorV
 						   SpatialGDKServicesConstants::InspectorExe);
 }
 
-const FString SpatialOSRuntimePinnedStandardVersion = TEXT("15.0.0-preview-2");
+const FString SpatialOSRuntimePinnedStandardVersion = TEXT("15.0.0-preview-4");
 
 const FString InspectorIPPort = TEXT("localhost:33333");
 const FString InspectorV2URL = FString::Printf(TEXT("http://%s/inspector-v2"), *InspectorIPPort);
