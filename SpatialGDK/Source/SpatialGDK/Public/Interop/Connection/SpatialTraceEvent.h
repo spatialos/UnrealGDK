@@ -31,7 +31,7 @@ struct FSpatialTraceEvent
 	GENERATED_BODY()
 
 	FSpatialTraceEvent(){};
-	explicit FSpatialTraceEvent(FString InType, FString InMessage)
+	explicit FSpatialTraceEvent(FName InType, FString InMessage)
 		: Type(MoveTemp(InType))
 		, Message(MoveTemp(InMessage))
 	{
@@ -40,7 +40,7 @@ struct FSpatialTraceEvent
 	void AddData(FString Key, FString Value) { Data.Add(FTraceData(MoveTemp(Key), MoveTemp(Value))); }
 
 	UPROPERTY(BlueprintReadWrite, Category = "SpatialTraceEvent")
-	FString Type;
+	FName Type;
 
 	UPROPERTY(BlueprintReadWrite, Category = "SpatialTraceEvent")
 	FString Message;

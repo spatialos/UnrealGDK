@@ -33,7 +33,7 @@ const FString SpatialOSDirectory = FPaths::ConvertRelativePathToFull(FPaths::Com
 const FString SpatialOSConfigFileName = TEXT("spatialos.json");
 const FString ChinaEnvironmentArgument = TEXT(" --environment=cn-production");
 
-const FString SpatialOSRuntimePinnedStandardVersion = TEXT("15.0.0-preview-2");
+const FString SpatialOSRuntimePinnedStandardVersion = TEXT("15.0.0-preview-4");
 const FString SpatialOSRuntimePinnedCompatbilityModeVersion = TEXT("14.5.4");
 
 const FString InspectorURL = TEXT("http://localhost:31000/inspector");

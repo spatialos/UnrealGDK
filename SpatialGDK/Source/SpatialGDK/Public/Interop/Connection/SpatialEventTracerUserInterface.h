@@ -32,19 +32,11 @@ class SPATIALGDK_API USpatialEventTracerUserInterface : public UBlueprintFunctio
 public:
 	/**
 	 * EXPERIMENTAL
-	 * Creates a SpanId to be used to trace a root event.
+	 * Will trace an event using the input data and associate it with the input SpanId
 	 * (This API is subject to change)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static FUserSpanId CreateSpanId(UObject* WorldContextObject);
-
-	/**
-	 * EXPERIMENTAL
-	 * Creates a SpanId to be used to trace an event with a set of causes.
-	 * (This API is subject to change)
-	 */
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static FUserSpanId CreateSpanIdWithCauses(UObject* WorldContextObject, const TArray<FUserSpanId>& Causes);
+	static FUserSpanId TraceEvent(UObject* WorldContextObject, const FSpatialTraceEvent& SpatialTraceEvent);
 
 	/**
 	 * EXPERIMENTAL
@@ -52,7 +44,8 @@ public:
 	 * (This API is subject to change)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static void TraceEvent(UObject* WorldContextObject, const FUserSpanId& UserSpanId, const FSpatialTraceEvent& SpatialTraceEvent);
+	static FUserSpanId TraceEventWithCauses(UObject* WorldContextObject, const FSpatialTraceEvent& SpatialTraceEvent,
+											const TArray<FUserSpanId>& Causes);
 
 	/**
 	 * EXPERIMENTAL

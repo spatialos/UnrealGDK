@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Schema/RPCPayload.h"
 #include "SpatialConstants.h"
 #include "SpatialView/EntityComponentId.h"
@@ -51,7 +52,7 @@ struct PendingUpdate
 	}
 
 	Schema_ComponentUpdate* Update;
-	TArray<Trace_SpanId> SpanIds;
+	TArray<FSpatialGDKSpanId> SpanIds;
 };
 
 struct PendingRPCPayload
@@ -62,14 +63,14 @@ struct PendingRPCPayload
 	}
 
 	RPCPayload Payload;
-	TOptional<Trace_SpanId> SpanId;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FRPCStore
 {
-	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair);
+	Schema_ComponentUpdate* GetOrCreateComponentUpdate(EntityComponentId EntityComponentIdPair, const FSpatialGDKSpanId& SpanId = {});
 	Schema_ComponentData* GetOrCreateComponentData(EntityComponentId EntityComponentIdPair);
-	void AddSpanIdForComponentUpdate(EntityComponentId EntityComponentIdPair, const Trace_SpanId* SpanId);
+	void AddSpanIdForComponentUpdate(EntityComponentId EntityComponentIdPair, const FSpatialGDKSpanId& SpanId);
 
 	TMap<EntityRPCType, uint64> LastSentRPCIds;
 	TMap<EntityComponentId, PendingUpdate> PendingComponentUpdatesToSend;
