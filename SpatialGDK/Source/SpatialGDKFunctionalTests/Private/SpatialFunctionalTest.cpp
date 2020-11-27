@@ -609,13 +609,13 @@ void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpati
 		return;
 	}
 
-	const FString FLowControllerDisplayName = FlowController->GetDisplayName();
+	const FString FlowControllerDisplayName = FlowController->GetDisplayName();
 
-	UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s finished Step"), *FLowControllerDisplayName);
+	UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s finished Step"), *FlowControllerDisplayName);
 
 	if (FlowControllersExecutingStep.RemoveSwap(FlowController) == 0)
 	{
-		FString ErrorMsg = FString::Printf(TEXT("%s was not in list of workers executing"), *FLowControllerDisplayName);
+		FString ErrorMsg = FString::Printf(TEXT("%s was not in list of workers executing"), *FlowControllerDisplayName);
 		ensureMsgf(false, TEXT("%s"), *ErrorMsg);
 		FinishTest(EFunctionalTestResult::Error, ErrorMsg);
 	}

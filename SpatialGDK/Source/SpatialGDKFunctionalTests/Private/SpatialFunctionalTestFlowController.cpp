@@ -105,6 +105,7 @@ void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(i
 	// Since we're starting a step, we mark as not Ack that we've finished the test. This is needed
 	// for the cases when we run multiple times the same test without a map reload.
 	bHasAckFinishedTest = false;
+	OwningTest->SetCurrentStepIndex(StepIndex); // Just in case we do not get the replication fast enough
 	if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 	{
 		StartStepInternal(StepIndex);
@@ -214,6 +215,7 @@ void ASpatialFunctionalTestFlowController::SetReadyToRunTest(bool bIsReady)
 
 void ASpatialFunctionalTestFlowController::ClientStartStep_Implementation(int StepIndex)
 {
+	OwningTest->SetCurrentStepIndex(StepIndex); // Just in case we do not get the replication fast enough
 	StartStepInternal(StepIndex);
 }
 

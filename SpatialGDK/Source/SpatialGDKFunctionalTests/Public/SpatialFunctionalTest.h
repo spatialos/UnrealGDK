@@ -172,6 +172,7 @@ public:
 	const FSpatialFunctionalTestStepDefinition GetStepDefinition(int StepIndex) const;
 
 	int GetCurrentStepIndex() { return CurrentStepIndex; }
+	void SetCurrentStepIndex(const int StepIndex) { CurrentStepIndex = StepIndex; }
 
 	// Convenience function that goes over all FlowControllers and counts how many are Servers.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
