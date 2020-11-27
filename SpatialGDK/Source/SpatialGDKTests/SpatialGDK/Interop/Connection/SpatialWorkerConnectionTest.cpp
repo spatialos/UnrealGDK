@@ -243,14 +243,10 @@ WORKERCONNECTION_TEST(GIVEN_no_local_deployment_WHEN_connecting_client_and_serve
 {
 	USpatialConnectionManager* ClientConnectionManager = NewObject<USpatialConnectionManager>();
 	USpatialConnectionManager* ServerConnectionManager = NewObject<USpatialConnectionManager>();
-	if (ClientConnectionManager->ReceptionistConfig.LinkProtocol == WORKER_NETWORK_CONNECTION_TYPE_TCP)
+	if (ClientConnectionManager->ReceptionistConfig.LinkProtocol == WORKER_NETWORK_CONNECTION_TYPE_TCP
+		|| ServerConnectionManager->ReceptionistConfig.LinkProtocol == WORKER_NETWORK_CONNECTION_TYPE_TCP)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Expecting TCP error ->  Client"))
-		AddExpectedError(TEXT("An existing connection was forcibly closed by the remote host"), EAutomationExpectedErrorFlags::Contains);
-	}
-	if (ServerConnectionManager->ReceptionistConfig.LinkProtocol == WORKER_NETWORK_CONNECTION_TYPE_TCP)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Expecting TCP error ->  Server"))
 		AddExpectedError(TEXT("An existing connection was forcibly closed by the remote host"), EAutomationExpectedErrorFlags::Contains);
 	}
 
