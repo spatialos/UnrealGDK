@@ -42,6 +42,8 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	bAlwaysRelevant = true;
 
 	PrimaryActorTick.TickInterval = 0.0f;
+
+	PreparationTimeLimit = 30.0f;
 }
 
 void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
