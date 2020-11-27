@@ -258,6 +258,16 @@ WORKERCONNECTION_TEST(GIVEN_no_local_deployment_WHEN_connecting_client_and_serve
 	bool bIsConnected = false;
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ClientConnectionManager, bIsConnected));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckConnectionStatus(this, ServerConnectionManager, bIsConnected));
+	if (ClientConnectionManager->ReceptionistConfig.LinkProtocol == WORKER_NETWORK_CONNECTION_TYPE_TCP)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Expecting TCP error ->  Client"))
+		AddExpectedError(TEXT("An existing connection was forcibly closed by the remote host"), EAutomationExpectedErrorFlags::Contains, 1);
+	}
+	if (ServerConnectionManager->ReceptionistConfig.LinkProtocol == WORKER_NETWORK_CONNECTION_TYPE_TCP)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Expecting TCP error ->  Server"))
+		AddExpectedError(TEXT("An existing connection was forcibly closed by the remote host"), EAutomationExpectedErrorFlags::Contains, 1);
+	}
 
 	// CLEANUP
 	ADD_LATENT_AUTOMATION_COMMAND(FResetConnectionProcessed());
