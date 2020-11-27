@@ -115,7 +115,7 @@ void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWo
 	Coordinator->SendComponentUpdate(EntityId, ToComponentUpdate(ComponentUpdate), SpanId);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId,
+Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
 															  const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
@@ -147,7 +147,8 @@ void USpatialWorkerConnection::SendLogMessage(uint8_t Level, const FName& Logger
 	Coordinator->SendLogMessage(static_cast<Worker_LogLevel>(Level), LoggerName, Message);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery, const SpatialGDK::FRetryData& RetryData)
+Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery,
+																  const SpatialGDK::FRetryData& RetryData)
 {
 	check(Coordinator.IsValid());
 	return Coordinator->SendEntityQueryRequest(SpatialGDK::EntityQuery(*EntityQuery), RetryData);

@@ -30,12 +30,13 @@ const TArray<Worker_Op>& SpatialOSWorkerConnectionSpy::GetWorkerMessages()
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendReserveEntityIdsRequest(uint32_t NumOfEntities, const SpatialGDK::FRetryData& RetryData)
 {
-	return SendReserveEntityIdsRequest(NumOfEntities);
+	return NextRequestId++;
 }
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FWorkerComponentData> Components,
-                                                                       const Worker_EntityId* EntityId,
-                                                                       const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId)
+																	   const Worker_EntityId* EntityId,
+																	   const SpatialGDK::FRetryData& RetryData,
+																	   const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;
 }
@@ -62,7 +63,7 @@ void SpatialOSWorkerConnectionSpy::SendComponentUpdate(Worker_EntityId EntityId,
 }
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
-                                                                  const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId)
+																  const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;
 }

@@ -364,8 +364,7 @@ void USpatialSender::SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntit
 				"PartitionId: %lld"),
 		   *Connection->GetWorkerId(), SystemWorkerEntityId, PartitionId);
 	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionId);
-	const Worker_RequestId RequestId = Connection->SendCommandRequest(
-		SystemWorkerEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
+	const Worker_RequestId RequestId = Connection->SendCommandRequest(SystemWorkerEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
 	Receiver->PendingPartitionAssignments.Add(RequestId, PartitionId);
 }
 
@@ -731,8 +730,7 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 	}
 
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-	Worker_RequestId RequestId =
-		Connection->SendCommandRequest(EntityId, &CommandRequest, NO_RETRIES, SpanId);
+	Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, NO_RETRIES, SpanId);
 
 	if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
 	{

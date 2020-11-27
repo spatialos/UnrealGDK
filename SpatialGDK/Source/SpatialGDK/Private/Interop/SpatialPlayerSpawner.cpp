@@ -398,8 +398,8 @@ void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const Worker_EntityId
 	// Resend the ForwardSpawnPlayer request.
 	Worker_CommandRequest ForwardSpawnPlayerRequest =
 		ServerWorker::CreateForwardPlayerSpawnRequest(Schema_CopyCommandRequest(OldRequest.Get()));
-	const Worker_RequestId NewRequestId = NetDriver->Connection->SendCommandRequest(
-		EntityId, &ForwardSpawnPlayerRequest, RETRY_UNTIL_COMPLETE, {});
+	const Worker_RequestId NewRequestId =
+		NetDriver->Connection->SendCommandRequest(EntityId, &ForwardSpawnPlayerRequest, RETRY_UNTIL_COMPLETE, {});
 
 	// Move the request data from the old request ID map entry across to the new ID entry.
 	OutgoingForwardPlayerSpawnRequests.Add(NewRequestId, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>(OldRequest.Get()));
