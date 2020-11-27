@@ -246,7 +246,7 @@ WORKERCONNECTION_TEST(GIVEN_no_local_deployment_WHEN_connecting_client_and_serve
 	if (ClientConnectionManager->ReceptionistConfig.LinkProtocol == WORKER_NETWORK_CONNECTION_TYPE_TCP
 		|| ServerConnectionManager->ReceptionistConfig.LinkProtocol == WORKER_NETWORK_CONNECTION_TYPE_TCP)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Expecting TCP error ->  Client"))
+		UE_LOG(LogTemp, Warning, TEXT("Expecting TCP error"))
 		AddExpectedError(TEXT("An existing connection was forcibly closed by the remote host"), EAutomationExpectedErrorFlags::Contains);
 	}
 
