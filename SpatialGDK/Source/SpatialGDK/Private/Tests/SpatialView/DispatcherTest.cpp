@@ -287,6 +287,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_With_Component_Removed_Callback_WHEN_Entity_Rem
 	AddComponentToView(View, ENTITY_ID, SpatialGDK::ComponentData{ COMPONENT_ID });
 
 	SpatialGDK::EntityComponentOpListBuilder OpListBuilder;
+	OpListBuilder.RemoveComponent(ENTITY_ID, COMPONENT_ID);
 	OpListBuilder.RemoveEntity(ENTITY_ID);
 
 	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
