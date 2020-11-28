@@ -191,6 +191,7 @@ private:
 	void HandleQueuedOpForAsyncLoad(const Worker_Op& Op);
 	// END TODO
 
+	void ReceiveWorkerDisconnectResponse(const Worker_CommandResponseOp& Op);
 	void ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op);
 
 public:

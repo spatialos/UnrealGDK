@@ -122,7 +122,7 @@ public:
 						 const Worker_EntityId& ClientSystemEntityId);
 	void PostSpawnPlayerController(APlayerController* PlayerController);
 
-	void DisconnectPlayer(const FString& WorkerId);
+	void DisconnectPlayer(Worker_EntityId ClientEntityId);
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId, USpatialActorChannel& Channel);
@@ -269,8 +269,6 @@ private:
 	void CreateServerSpatialOSNetConnection();
 	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor);
 	
-	DECLARE_DELEGATE_OneParam(FWorkerEntityByWorkerIdComplete, const Worker_EntityId);
-	void QueryWorkerEntityByWorkerId(const FString& WorkerId, const FWorkerEntityByWorkerIdComplete& Callback);
 
 	void QueryGSMToLoadMap();
 

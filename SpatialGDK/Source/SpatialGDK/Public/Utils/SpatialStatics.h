@@ -174,22 +174,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Spatial Debugger", meta = (WorldContext = "WorldContextObject"))
 	static void SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* WorldContextObject, FOnConfigUIClosedDelegate Delegate);
 
-	template<typename T>
-	static TOptional<T> GetComponentFromEntity(const Worker_Entity& Entity)
-	{
-		for (const Worker_ComponentData& ComponentData : TArray<Worker_ComponentData>(Entity.components, Entity.component_count))
-		{
-			if (ComponentData.component_id == T::ComponentId)
-			{
-				return T(ComponentData);
-			}
-		}
-
-		return {};
-	}
-	
-	static Worker_EntityId FindEntityIdForWorkerId(const TArray<Worker_Entity>& Entities, const FString& WorkerId);
-
 private:
 	static FName GetCurrentWorkerType(const UObject* WorldContext);
 };

@@ -2069,10 +2069,7 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("PreLogin failure: %s"), *ErrorMsg);
 		
-		if (TOptional<FString> WorkerId = ExtractWorkerIDFromAttribute(SpatialConnection->ConnectionOwningWorkerId))
-		{
-			DisconnectPlayer(WorkerId.GetValue());
-		}
+		DisconnectPlayer(ClientSystemEntityId);
 		
 		// TODO: Destroy connection. UNR-584
 		return false;
@@ -2084,43 +2081,6 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	GameMode->GameWelcomePlayer(SpatialConnection, RedirectURL);
 
 	return true;
-}
-
-void USpatialNetDriver::QueryWorkerEntityByWorkerId(const FString& WorkerId, const FWorkerEntityByWorkerIdComplete& Callback)
-{
-	Worker_ComponentConstraint WorkerComponentConstraint{};
-	WorkerComponentConstraint.component_id = SpatialConstants::WORKER_COMPONENT_ID;
-
-	Worker_Constraint WorkerConstraint{};
-	WorkerConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
-	WorkerConstraint.constraint.component_constraint = WorkerComponentConstraint;
-
-	Worker_EntityQuery WorkerQuery{};
-	WorkerQuery.constraint = WorkerConstraint;
-	WorkerQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
-
-	Worker_RequestId RequestId;
-	RequestId = Connection->SendEntityQueryRequest(&WorkerQuery);
-
-	EntityQueryDelegate WorkerQueryDelegate;
-	WorkerQueryDelegate.BindLambda([this, WorkerIdCopy = WorkerId, CallbackCopy = Callback](const Worker_EntityQueryResponseOp& Op) {
-		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not locate worker entities via entity query: %s"), UTF8_TO_TCHAR(Op.message));
-		}
-		else
-		{
-			const Worker_EntityId RequestedWorkerEntityId = USpatialStatics::FindEntityIdForWorkerId(TArray<Worker_Entity>(Op.results, Op.result_count), WorkerIdCopy);
-			if (RequestedWorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
-			{
-				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Could not locate the worker entity with worker id %s"), *WorkerIdCopy);
-				return;
-			}
-			CallbackCopy.ExecuteIfBound(RequestedWorkerEntityId);
-		}
-	});
-
-	Receiver->AddEntityQueryDelegate(RequestId, WorkerQueryDelegate);	
 }
 
 void USpatialNetDriver::CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp)
@@ -2239,29 +2199,24 @@ void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerContr
 	PlayerController->SetPlayer(OwnershipConnection);
 }
 
-void USpatialNetDriver::DisconnectPlayer(const FString& WorkerId)
+void USpatialNetDriver::DisconnectPlayer(Worker_EntityId ClientEntityId)
 {
-	FWorkerEntityByWorkerIdComplete WorkerEntityQueryDelegate;
-	WorkerEntityQueryDelegate.BindWeakLambda(this, [this, WorkerIdCopy = WorkerId](const Worker_EntityId EntityId) {
-		Worker_CommandRequest Request = {};
-		Request.component_id = SpatialConstants::WORKER_COMPONENT_ID;
-		Request.command_index = SpatialConstants::WORKER_DISCONNECT_COMMAND_ID;
-		Request.schema_type = Schema_CreateCommandRequest();
-		Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &Request, SpatialConstants::WORKER_DISCONNECT_COMMAND_ID);
+	Worker_CommandRequest Request = {};
+	Request.component_id = SpatialConstants::WORKER_COMPONENT_ID;
+	Request.command_index = SpatialConstants::WORKER_DISCONNECT_COMMAND_ID;
+	Request.schema_type = Schema_CreateCommandRequest();
+	Worker_RequestId RequestId = Connection->SendCommandRequest(ClientEntityId, &Request, SpatialConstants::WORKER_DISCONNECT_COMMAND_ID);
 
-		SystemEntityCommandDelegate CommandResponseDelegate;
-		CommandResponseDelegate.BindWeakLambda(this, [this, WorkerIdCopy](const Worker_CommandResponseOp& Op) {
-			TWeakObjectPtr<USpatialNetConnection> ClientConnection = FindClientConnectionFromWorkerId(WorkerIdCopy);
-			if (ClientConnection.IsValid())
-			{
-				ClientConnection->CleanUp();
-			}
-		});
-
-		Receiver->AddSystemEntityCommandDelegate(RequestId, CommandResponseDelegate);
+	SystemEntityCommandDelegate CommandResponseDelegate;
+	CommandResponseDelegate.BindWeakLambda(this, [this, ClientEntityId](const Worker_CommandResponseOp& Op) {
+		TWeakObjectPtr<USpatialNetConnection> ClientConnection = FindClientConnectionFromWorkerEntityId(ClientEntityId);
+		if (ClientConnection.IsValid())
+		{
+			ClientConnection->CleanUp();
+		}
 	});
 
-	QueryWorkerEntityByWorkerId(WorkerId, WorkerEntityQueryDelegate);
+	Receiver->AddSystemEntityCommandDelegate(RequestId, CommandResponseDelegate);
 }
 
 bool USpatialNetDriver::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)

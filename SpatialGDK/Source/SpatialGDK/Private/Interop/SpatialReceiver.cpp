@@ -1880,20 +1880,31 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 
 		return;
 	}
-	else if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID
-		&& Op.op.command_response.response.command_index == SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID)
+	else if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID)
 	{
-		ReceiveClaimPartitionResponse(Op.op.command_response);
-		return;
-	}
-	else if (Op.response.component_id == SpatialConstants::WORKER_COMPONENT_ID)
-	{
-		OnSystemEntityCommandResponse(Op);
+		OnSystemEntityCommandResponse(Op.op.command_response);
 		return;
 	}
 	
 
 	ReceiveCommandResponse(Op);
+}
+
+void USpatialReceiver::ReceiveWorkerDisconnectResponse(const Worker_CommandResponseOp& Op)
+{
+	if (SystemEntityCommandDelegate* RequestDelegate = SystemEntityCommandDelegates.Find(Op.request_id))
+	{
+		UE_LOG(LogSpatialReceiver, Verbose,
+			   TEXT("Executing ReceiveWorkerDisconnectResponse with delegate, request id: %d, message: %s"),
+			   Op.request_id, UTF8_TO_TCHAR(Op.message));
+		RequestDelegate->ExecuteIfBound(Op);
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Warning,
+			   TEXT("Received ReceiveWorkerDisconnectResponse but with no delegate set, request id: %d, message: %s"),
+			   Op.request_id, UTF8_TO_TCHAR(Op.message));
+	}
 }
 
 void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op)
@@ -2183,18 +2194,21 @@ void USpatialReceiver::OnSystemEntityCommandResponse(const Worker_CommandRespons
 			   UTF8_TO_TCHAR(Op.message));
 	}
 
-	if (SystemEntityCommandDelegate* RequestDelegate = SystemEntityCommandDelegates.Find(Op.request_id))
+	switch (Op.response.command_index)
 	{
-		UE_LOG(LogSpatialReceiver, Verbose,
-			   TEXT("Executing EntityQueryResponse with delegate, request id: %d, message: %s"),
-			   Op.request_id, UTF8_TO_TCHAR(Op.message));
-		RequestDelegate->ExecuteIfBound(Op);
+	case SpatialConstants::WORKER_DISCONNECT_COMMAND_ID:
+	{
+		ReceiveWorkerDisconnectResponse(Op);
+		return;
 	}
-	else
+	case SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID:
 	{
-		UE_LOG(LogSpatialReceiver, Warning,
-			   TEXT("Received EntityQueryResponse but with no delegate set, request id: %d, message: %s"),
-			   Op.request_id, UTF8_TO_TCHAR(Op.message));
+		ReceiveClaimPartitionResponse(Op);
+		return;
+	}
+	default:
+		checkNoEntry();
+		return;
 	}
 }
 

@@ -383,19 +383,3 @@ void USpatialStatics::SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* 
 		SpatialNetDriver->SpatialDebugger->OnConfigUIClosed = Delegate;
 	}));
 }
-
-Worker_EntityId USpatialStatics::FindEntityIdForWorkerId(const TArray<Worker_Entity>& Entities, const FString& WorkerId)
-{
-	for (const Worker_Entity& Entity : Entities)
-	{
-		if (TOptional<SpatialGDK::Worker> WorkerComponent = USpatialStatics::GetComponentFromEntity<SpatialGDK::Worker>(Entity))
-		{
-			if (WorkerComponent->WorkerId == WorkerId)
-			{
-				return Entity.entity_id;
-			}
-		}
-	}
-
-	return SpatialConstants::INVALID_ENTITY_ID;
-}
