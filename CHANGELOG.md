@@ -60,7 +60,7 @@ These functions and structs can be referenced in both code and blueprints it may
   1. `BindToOnWorkerFlagsUpdated` is changed to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added functions for register callbacks. 
   2. `RegisterFlagUpdatedCallback` is added to register callbacks for individual flag updates
   3. `RegisterAndInvokeAnyFlagUpdatedCallback` & `RegisterAndInvokeFlagUpdatedCallback` variants are added that will invoke the callback if the flag was previously set.
-- The SpatialNetDriver can now disconnect a client worker when given a worker id and will do so when `GameMode::PreLogin` returns with a non-empty error message. 
+- The SpatialNetDriver can now disconnect a client worker when given the system entity id for that client and will do so when `GameMode::PreLogin` returns with a non-empty error message. 
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
