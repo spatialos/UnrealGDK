@@ -1885,7 +1885,6 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		OnSystemEntityCommandResponse(Op.op.command_response);
 		return;
 	}
-	
 
 	ReceiveCommandResponse(Op);
 }
@@ -1894,16 +1893,15 @@ void USpatialReceiver::ReceiveWorkerDisconnectResponse(const Worker_CommandRespo
 {
 	if (SystemEntityCommandDelegate* RequestDelegate = SystemEntityCommandDelegates.Find(Op.request_id))
 	{
-		UE_LOG(LogSpatialReceiver, Verbose,
-			   TEXT("Executing ReceiveWorkerDisconnectResponse with delegate, request id: %d, message: %s"),
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Executing ReceiveWorkerDisconnectResponse with delegate, request id: %d, message: %s"),
 			   Op.request_id, UTF8_TO_TCHAR(Op.message));
 		RequestDelegate->ExecuteIfBound(Op);
 	}
 	else
 	{
 		UE_LOG(LogSpatialReceiver, Warning,
-			   TEXT("Received ReceiveWorkerDisconnectResponse but with no delegate set, request id: %d, message: %s"),
-			   Op.request_id, UTF8_TO_TCHAR(Op.message));
+			   TEXT("Received ReceiveWorkerDisconnectResponse but with no delegate set, request id: %d, message: %s"), Op.request_id,
+			   UTF8_TO_TCHAR(Op.message));
 	}
 }
 

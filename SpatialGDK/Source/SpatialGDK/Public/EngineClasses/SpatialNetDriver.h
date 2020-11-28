@@ -268,7 +268,6 @@ private:
 
 	void CreateServerSpatialOSNetConnection();
 	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor);
-	
 
 	void QueryGSMToLoadMap();
 

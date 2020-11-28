@@ -2068,9 +2068,9 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	if (!ErrorMsg.IsEmpty())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("PreLogin failure: %s"), *ErrorMsg);
-		
+
 		DisconnectPlayer(ClientSystemEntityId);
-		
+
 		// TODO: Destroy connection. UNR-584
 		return false;
 	}

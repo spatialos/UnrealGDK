@@ -95,7 +95,7 @@ public:
 	virtual void AddSystemEntityCommandDelegate(Worker_RequestId RequestId, SystemEntityCommandDelegate Delegate) override;
 
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) override;
-	
+
 	virtual void OnSystemEntityCommandResponse(const Worker_CommandResponseOp& Op) override;
 
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
