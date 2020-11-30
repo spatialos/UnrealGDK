@@ -243,6 +243,8 @@ WORKERCONNECTION_TEST(GIVEN_no_local_deployment_WHEN_connecting_client_and_serve
 {
 	USpatialConnectionManager* ClientConnectionManager = NewObject<USpatialConnectionManager>();
 	USpatialConnectionManager* ServerConnectionManager = NewObject<USpatialConnectionManager>();
+
+	// Catch expected TCP error in CI
 	if (ClientConnectionManager->ReceptionistConfig.LinkProtocol == WORKER_NETWORK_CONNECTION_TYPE_TCP
 		|| ServerConnectionManager->ReceptionistConfig.LinkProtocol == WORKER_NETWORK_CONNECTION_TYPE_TCP)
 	{
