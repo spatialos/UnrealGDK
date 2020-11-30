@@ -1875,29 +1875,11 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID)
 	{
 		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponseOp.response.schema_type);
-		PhysicalWorkerName WorkerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_WORKER_ID);
-		Worker_EntityId EntityId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
-		bool bIsReplicated = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID);
-		bool bHasAuthority = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_ID);
-		FString OwnerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
-
-		FString Replicates = bIsReplicated ? "true" : "false";
-		FString HasAuthority = bHasAuthority ? "true" : "false";
-
-		// TODO: check actual vs expected for all fields -> get actor here from entity id and compare responses
-
-		UE_LOG(LogSpatialReceiver, Warning,
-			   TEXT("USpatialReceiver::OnCommandResponse: Migration Diagnostic Response. Worker name %s, is replicated %s, has authority "
-					"%s, owner name %s"),
-			   *WorkerName, *Replicates, *HasAuthority, *OwnerName);
-
+		Worker_EntityId EntityId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID); 
 		AActor* LocalActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
-		FString LocalReplicates = LocalActor->GetIsReplicated() ? "true" : "false";
-		FString LocalHasAuthority = LocalActor->HasAuthority() ? "true" : "false";
-		UE_LOG(LogSpatialReceiver, Warning,
-			   TEXT("USpatialReceiver::OnCommandResponse: Local Actor is replicated %s, has authority "
-					"%s, owner name %s"),
-			   *LocalReplicates, *LocalHasAuthority, *LocalActor->GetOwner()->GetName());
+		FString MigrationDiagnosticLog = MigrationDiagnostic::CreateMigrationDiagnosticLog(ResponseObject, LocalActor);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("%s"),*MigrationDiagnosticLog);
+
 	}
 	ReceiveCommandResponse(Op);
 }
