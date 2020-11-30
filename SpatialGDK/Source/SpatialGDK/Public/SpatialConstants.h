@@ -119,6 +119,7 @@ const Worker_ComponentId SERVER_WORKER_COMPONENT_ID = 9974;
 const Worker_ComponentId SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID = 9973;
 const Worker_ComponentId COMPONENT_PRESENCE_COMPONENT_ID = 9972;
 const Worker_ComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID = 9971;
+const Worker_ComponentId MIGRATION_DIAGNOSTIC_COMPONENT_ID = 9969;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
@@ -229,6 +230,16 @@ const Schema_FieldId NET_OWNING_CLIENT_WORKER_FIELD_ID = 1;
 const Schema_FieldId UNREAL_METADATA_STABLY_NAMED_REF_ID = 1;
 const Schema_FieldId UNREAL_METADATA_CLASS_PATH_ID = 2;
 const Schema_FieldId UNREAL_METADATA_NET_STARTUP_ID = 3;
+
+// Migration diagnostic Field IDs
+const Schema_FieldId MIGRATION_DIAGNOSTIC_COMMAND_ID = 1;
+
+// MigrationDiagnosticRequest type IDs.
+const Schema_FieldId MIGRATION_DIAGNOSTIC_WORKER_ID = 1;
+const Schema_FieldId MIGRATION_DIAGNOSTIC_ENTITY_ID = 2;
+const Schema_FieldId MIGRATION_DIAGNOSTIC_REPLICATES_ID = 3;
+const Schema_FieldId MIGRATION_DIAGNOSTIC_AUTHORITY_ID = 4;
+const Schema_FieldId MIGRATION_DIAGNOSTIC_OWNER_ID = 5;
 
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;

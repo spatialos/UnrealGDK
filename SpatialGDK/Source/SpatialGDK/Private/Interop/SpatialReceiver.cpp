@@ -26,6 +26,7 @@
 #include "Schema/RPCPayload.h"
 #include "Schema/SpawnData.h"
 #include "Schema/Tombstone.h"
+#include "Schema/MigrationDiagnostic.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
@@ -236,6 +237,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
+	case SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID:
 		// We either don't care about processing these components or we only need to store
 		// the data (which is handled by the SpatialStaticComponentView).
 		return;
@@ -1577,6 +1579,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+	case SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"),
 			   Op.entity_id, Op.update.component_id);
 		return;
@@ -1759,6 +1762,16 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 								SpanId);
 		return;
 	}
+	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID && CommandIndex == SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID)
+	{
+		AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
+		Worker_CommandResponse Response =
+			MigrationDiagnostic::CreateMigrationDiagnosticResponse(NetDriver->Connection->GetWorkerId(), EntityId, EntityActor);
+		
+		Sender->SendCommandResponse(RequestId, Response, Op.span_id);
+
+		return;
+	}
 #if WITH_EDITOR
 	else if (ComponentId == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID
 			 && CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
@@ -1858,7 +1871,31 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 			SpanId);
 		return;
 	}
+	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID)
+	{
+		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponseOp.response.schema_type);
+		PhysicalWorkerName WorkerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_WORKER_ID);
+		Worker_EntityId EntityId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
+		bool bIsReplicated = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID);
+		bool bHasAuthority = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_ID);
+		FString OwnerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
 
+		FString Replicates = bIsReplicated ? "true" : "false";
+		FString HasAuthority = bHasAuthority ? "true" : "false";
+
+		// TODO: check actual vs expected for all fields -> get actor here from entity id and compare responses
+
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("USpatialReceiver::OnCommandResponse: Migration Diagnostic Response. Worker name %s, is replicated %s, has authority %s, owner name %s"), *WorkerName,
+			   *Replicates, *HasAuthority, *OwnerName);
+
+		AActor* LocalActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
+		FString LocalReplicates = LocalActor->GetIsReplicated() ? "true" : "false";
+		FString LocalHasAuthority = LocalActor->HasAuthority() ? "true" : "false";
+		UE_LOG(LogSpatialReceiver, Warning,
+			   TEXT("USpatialReceiver::OnCommandResponse: Local Actor is replicated %s, has authority "
+					"%s, owner name %s"),
+			   *LocalReplicates, *LocalHasAuthority, *LocalActor->GetOwner()->GetName());
+	}
 	ReceiveCommandResponse(Op);
 }
 

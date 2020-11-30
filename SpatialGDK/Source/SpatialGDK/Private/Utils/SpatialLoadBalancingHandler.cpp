@@ -9,8 +9,11 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/SpatialDebugging.h"
+#include "Schema/MigrationDiagnostic.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalancingHandler);
+
+using namespace SpatialGDK;
 
 FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
@@ -199,16 +202,21 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 		// Check if we have recently logged this actor / reason and if so suppress the log
 		if (!NetDriver->IsLogged(ActorEntityId, ActorMigrationResult))
 		{
-			AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
-			UE_LOG(LogSpatialLoadBalancingHandler, Warning,
-				   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *HierarchyRoot->GetName(),
-				   *Actor->GetName(), ActorEntityId, *FailureReason);
-
 			if (ActorMigrationResult == EActorMigrationResult::NotAuthoritative)
 			{
 				// Request further diagnostics to be logged on authoritative server
-				Actor->MigrationDiagnostic();
+				Worker_CommandRequest MigrationDiagnosticCommandRequest = MigrationDiagnostic::CreateMigrationDiagnosticRequest();
+				NetDriver->Connection->SendCommandRequest(ActorEntityId, &MigrationDiagnosticCommandRequest,
+														  SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID);
+			}
+			else
+			{
+				AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
+				UE_LOG(LogSpatialLoadBalancingHandler, Warning,
+					   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *HierarchyRoot->GetName(),
+					   *Actor->GetName(), ActorEntityId, *FailureReason);
 			}
 		}
 	}
 }
+
