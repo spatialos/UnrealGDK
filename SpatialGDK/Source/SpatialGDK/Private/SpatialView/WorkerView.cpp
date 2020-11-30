@@ -8,14 +8,15 @@
 
 namespace SpatialGDK
 {
-WorkerView::WorkerView()
-	: LocalChanges(MakeUnique<MessagesToSend>())
+WorkerView::WorkerView(FComponentSetData ComponentSetData)
+	: ComponentSetData(MoveTemp(ComponentSetData))
+	, LocalChanges(MakeUnique<MessagesToSend>())
 {
 }
 
 void WorkerView::AdvanceViewDelta(TArray<OpList> OpLists)
 {
-	Delta.SetFromOpList(MoveTemp(OpLists), View);
+	Delta.SetFromOpList(MoveTemp(OpLists), View, ComponentSetData);
 }
 
 const ViewDelta& WorkerView::GetViewDelta() const
