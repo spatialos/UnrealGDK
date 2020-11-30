@@ -310,6 +310,7 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 	// the NetDriver from the Engine, resulting in a crash. Here, if the NetDriver is outdated, we leave the callback.
 	if (bConnectAsClient && GEngine->GetWorldContextFromPendingNetGameNetDriver(this) == nullptr)
 	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Outdated NetDriver connection skipped. May be due to an outdated ClientTravel"));
 		ConnectionManager->OnConnectedCallback.Unbind();
 		return;
 	}
