@@ -865,7 +865,7 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(const FVector2D& New
 					continue;
 				}
 
-				// Only add actors to the list of hit actors if they have a valid entity id or screen position. As later when we scroll
+				// Only add actors to the list of hit actors if they have a valid entity id and screen position. As later when we scroll
 				// through the actors, we only want to highlight ones that we can show a tag for.
 				if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(HitResult.GetActor()))
 				{
