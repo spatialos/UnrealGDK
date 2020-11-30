@@ -693,7 +693,10 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 					// case this action is performed after notification of gaining authority
 					if (AController* Controller = Cast<AController>(Actor))
 					{
-						Controller->PossessAfterMigration();
+						if (Controller->IntendedPawnToPossess)
+						{
+							Controller->PossessAfterMigration();
+						}
 					}
 				}
 				else

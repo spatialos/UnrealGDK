@@ -97,6 +97,14 @@ bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 		return false;
 	}
 
+	if (const AController* Controller = Cast<AController>(&Actor))
+	{
+		if (Controller->IntendedPawnToPossess)
+		{
+			return ShouldHaveAuthority(*Controller->IntendedPawnToPossess);
+		}
+	}
+
 	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 	return IsInside(WorkerCells[LocalCellId], Actor2DLocation);
 }
