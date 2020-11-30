@@ -308,7 +308,7 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 
 	// If the current Connection comes from an outdated ClientTravel, the associated NetDriver (this) won't match
 	// the NetDriver from the Engine, resulting in a crash. Here, if the NetDriver is outdated, we leave the callback.
-	if (GEngine->GetWorldContextFromPendingNetGameNetDriver(this) == nullptr)
+	if (bConnectAsClient && GEngine->GetWorldContextFromPendingNetGameNetDriver(this) == nullptr)
 	{
 		return;
 	}
