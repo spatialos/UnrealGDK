@@ -54,7 +54,7 @@ void ASpatialFunctionalTestFlowController::BeginPlay()
 				bReadyToRegisterWithTest = true;
 				OnReadyToRegisterWithTest();
 			},
-			0.5f, false);
+			1.0f, false);
 	}
 }
 
