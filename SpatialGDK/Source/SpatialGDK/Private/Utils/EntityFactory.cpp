@@ -478,4 +478,3 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 }
 
 } // namespace SpatialGDK
-

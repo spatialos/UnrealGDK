@@ -23,10 +23,10 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/DynamicComponent.h"
+#include "Schema/MigrationDiagnostic.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/SpawnData.h"
 #include "Schema/Tombstone.h"
-#include "Schema/MigrationDiagnostic.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
@@ -1762,12 +1762,13 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 								SpanId);
 		return;
 	}
-	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID && CommandIndex == SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID)
+	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID
+			 && CommandIndex == SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID)
 	{
 		AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 		Worker_CommandResponse Response =
 			MigrationDiagnostic::CreateMigrationDiagnosticResponse(NetDriver->Connection->GetWorkerId(), EntityId, EntityActor);
-		
+
 		Sender->SendCommandResponse(RequestId, Response, Op.span_id);
 
 		return;
@@ -1885,8 +1886,10 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 
 		// TODO: check actual vs expected for all fields -> get actor here from entity id and compare responses
 
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("USpatialReceiver::OnCommandResponse: Migration Diagnostic Response. Worker name %s, is replicated %s, has authority %s, owner name %s"), *WorkerName,
-			   *Replicates, *HasAuthority, *OwnerName);
+		UE_LOG(LogSpatialReceiver, Warning,
+			   TEXT("USpatialReceiver::OnCommandResponse: Migration Diagnostic Response. Worker name %s, is replicated %s, has authority "
+					"%s, owner name %s"),
+			   *WorkerName, *Replicates, *HasAuthority, *OwnerName);
 
 		AActor* LocalActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 		FString LocalReplicates = LocalActor->GetIsReplicated() ? "true" : "false";

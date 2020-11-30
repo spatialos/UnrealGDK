@@ -8,8 +8,8 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "Schema/AuthorityIntent.h"
-#include "Schema/SpatialDebugging.h"
 #include "Schema/MigrationDiagnostic.h"
+#include "Schema/SpatialDebugging.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalancingHandler);
 
@@ -219,4 +219,3 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 		}
 	}
 }
-

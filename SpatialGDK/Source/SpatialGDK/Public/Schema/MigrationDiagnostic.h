@@ -2,23 +2,21 @@
 
 #pragma once
 
-#include "Schema/Component.h"
-#include "SpatialConstants.h"
-#include "Utils/SchemaUtils.h"
 #include "Containers/UnrealString.h"
 #include "Engine/EngineBaseTypes.h"
 #include "Engine/GameInstance.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "Kismet/GameplayStatics.h"
+#include "Schema/Component.h"
+#include "SpatialConstants.h"
 #include "UObject/CoreNet.h"
+#include "Utils/SchemaUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-
 namespace SpatialGDK
 {
-
 struct MigrationDiagnostic : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID;
@@ -35,8 +33,9 @@ struct MigrationDiagnostic : Component
 		return CommandRequest;
 	}
 
-	static Worker_CommandResponse CreateMigrationDiagnosticResponse(PhysicalWorkerName InWorkerName, Worker_EntityId EntityId, AActor* RemoteActor)
-	{ 
+	static Worker_CommandResponse CreateMigrationDiagnosticResponse(PhysicalWorkerName InWorkerName, Worker_EntityId EntityId,
+																	AActor* RemoteActor)
+	{
 		Worker_CommandResponse CommandResponse = {};
 		CommandResponse.component_id = SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID;
 		CommandResponse.command_index = SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID;
