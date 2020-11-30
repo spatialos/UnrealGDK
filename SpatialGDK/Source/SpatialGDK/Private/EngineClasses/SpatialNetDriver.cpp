@@ -306,6 +306,13 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 	Connection = ConnectionManager->GetWorkerConnection();
 	check(Connection);
 
+	// If the current Connection comes from an outdated ClientTravel, the associated NetDriver (this) won't match
+	// the NetDriver from the Engine, resulting in a crash. Here, if the NetDriver is outdated, we leave the callback.
+	if (GEngine->GetWorldContextFromPendingNetGameNetDriver(this) == nullptr)
+	{
+		return;
+	}
+
 	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
 	// There may be more than one of these connections in the future for different replication conditions.
 	if (!bConnectAsClient)
