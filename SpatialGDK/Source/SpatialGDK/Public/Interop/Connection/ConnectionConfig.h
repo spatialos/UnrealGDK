@@ -73,10 +73,6 @@ struct FConnectionConfig
 													: SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 
 		LinkProtocol = ConnectionTypeMap[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
-		// if (!OverrideLinkProtocol)
-		// {
-		// 	LinkProtocol = bConnectAsClient ? WORKER_NETWORK_CONNECTION_TYPE_KCP : WORKER_NETWORK_CONNECTION_TYPE_TCP;
-		// }
 	}
 
 private:
