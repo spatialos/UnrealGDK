@@ -1875,11 +1875,10 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID)
 	{
 		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponseOp.response.schema_type);
-		Worker_EntityId EntityId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID); 
+		Worker_EntityId EntityId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
 		AActor* LocalActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 		FString MigrationDiagnosticLog = MigrationDiagnostic::CreateMigrationDiagnosticLog(ResponseObject, LocalActor);
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("%s"),*MigrationDiagnosticLog);
-
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("%s"), *MigrationDiagnosticLog);
 	}
 	ReceiveCommandResponse(Op);
 }

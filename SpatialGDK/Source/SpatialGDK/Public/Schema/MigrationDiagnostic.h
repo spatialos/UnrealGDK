@@ -53,7 +53,8 @@ struct MigrationDiagnostic : Component
 
 	static FString CreateMigrationDiagnosticLog(Schema_Object* ResponseObject, AActor* LocalActor)
 	{
-		// This log is requested when the authoritative server for the owner of a migration hierarchy does not have authority over one of the child actors
+		// This log is requested when the authoritative server for the owner of a migration hierarchy does not have authority over one of
+		// the child actors
 		PhysicalWorkerName RemoteWorkerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_WORKER_ID);
 		Worker_EntityId EntityId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
 		bool bIsReplicatedRemotely = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID);
@@ -79,8 +80,8 @@ struct MigrationDiagnostic : Component
 			Reason.Append(FString::Printf(TEXT("Actor has different owner remotely %s. "), *RemoteOwnerName));
 		}
 
-		return FString::Printf(TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"),
-														 *LocalOwnerName, *LocalActor->GetName(), EntityId, *Reason);
+		return FString::Printf(TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *LocalOwnerName,
+							   *LocalActor->GetName(), EntityId, *Reason);
 	}
 };
 
