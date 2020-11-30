@@ -2,18 +2,14 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 
-#include "Containers/StringConv.h"
 #include "Engine/ActorChannel.h"
-#include "Engine/ChildConnection.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/NetworkObjectList.h"
 #include "EngineGlobals.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
-#include "Misc/MessageDialog.h"
 #include "Net/DataReplication.h"
-#include "Net/RepLayout.h"
 #include "SocketSubsystem.h"
 #include "UObject/UObjectIterator.h"
 #include "UObject/WeakObjectPtrTemplates.h"
@@ -29,6 +25,7 @@
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
+#include "Interop/RPCExecutor.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialNetDriverLoadBalancingHandler.h"
 #include "Interop/SpatialPlayerSpawner.h"
@@ -38,22 +35,19 @@
 #include "Interop/WellKnownEntitySystem.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
-#include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialView/EntityComponentTypes.h"
-#include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 #include "SpatialView/SubView.h"
-#include "SpatialView/ViewDelta.h"
+#include "Templates/SharedPointer.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityPool.h"
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
-#include "Utils/OpUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialLoadBalancingHandler.h"
@@ -422,6 +416,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
 		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
+	CrossServerRPCSender = MakeUnique<SpatialGDK::CrossServerRPCSender>(Connection->GetCoordinator(), SpatialMetrics);
+	CrossServerRPCHandler =
+		MakeUnique<SpatialGDK::CrossServerRPCHandler>(Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this));
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
@@ -1612,16 +1609,24 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		return;
 	}
 
-	FUnrealObjectRef CallingObjectRef = PackageMap->GetUnrealObjectRefFromObject(CallingObject);
+	const FUnrealObjectRef CallingObjectRef = PackageMap->GetUnrealObjectRefFromObject(CallingObject);
 	if (!CallingObjectRef.IsValid())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("The target object %s is unresolved; RPC %s will be dropped."),
 			   *CallingObject->GetFullName(), *Function->GetName());
 		return;
 	}
-	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, Parameters);
 
-	Sender->ProcessOrQueueOutgoingRPC(CallingObjectRef, MoveTemp(Payload));
+	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, Parameters);
+	const FRPCInfo Info = ClassInfoManager->GetRPCInfo(CallingObject, Function);
+	if (Info.Type == ERPCType::CrossServer)
+	{
+		CrossServerRPCSender->SendCommand(CallingObjectRef, CallingObject, Function, MoveTemp(Payload), Info, {});
+	}
+	else
+	{
+		Sender->ProcessOrQueueOutgoingRPC(CallingObjectRef, Info.Type, MoveTemp(Payload));
+	}
 }
 
 // SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
@@ -1822,6 +1827,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 			Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
+			CrossServerRPCHandler->ProcessOps(Connection->GetWorkerMessages());
 		}
 
 		if (RPCService.IsValid())
