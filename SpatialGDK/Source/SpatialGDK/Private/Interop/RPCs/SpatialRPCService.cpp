@@ -418,13 +418,15 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 	FMemory::Memzero(Parms, Function->ParmsSize);
 
 	TSet<FUnrealObjectRef> UnresolvedRefs;
-	TSet<FUnrealObjectRef> MappedRefs;
-	RPCPayload PayloadCopy = PendingRPCParams.Payload;
-	FSpatialNetBitReader PayloadReader(NetDriver->PackageMap, PayloadCopy.PayloadData.GetData(), PayloadCopy.CountDataBits(), MappedRefs,
-									   UnresolvedRefs);
+	{
+		TSet<FUnrealObjectRef> MappedRefs;
+		RPCPayload PayloadCopy = PendingRPCParams.Payload;
+		FSpatialNetBitReader PayloadReader(NetDriver->PackageMap, PayloadCopy.PayloadData.GetData(), PayloadCopy.CountDataBits(),
+										   MappedRefs, UnresolvedRefs);
 
-	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
-	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
+		TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
+		RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
+	}
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
