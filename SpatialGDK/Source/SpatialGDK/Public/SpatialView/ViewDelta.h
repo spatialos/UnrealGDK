@@ -1,9 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
 #include "Containers/Array.h"
+
+#include "SpatialView/ComponentSetData.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/OpList.h"
+
 namespace SpatialGDK
 {
 struct FSubViewDelta
@@ -11,6 +14,7 @@ struct FSubViewDelta
 	TArray<EntityDelta> EntityDeltas;
 	const TArray<Worker_Op>* WorkerMessages;
 };
+
 /**
  * Lists of changes made to a view as a list of EntityDeltas and miscellaneous other messages.
  * EntityDeltas are sorted by entity ID.
@@ -31,7 +35,7 @@ struct FSubViewDelta
 class ViewDelta
 {
 public:
-	void SetFromOpList(TArray<OpList> OpLists, EntityView& View);
+	void SetFromOpList(TArray<OpList> OpLists, EntityView& View, const FComponentSetData& ComponentSetData);
 	// Produces a projection of a given main view delta to a sub view delta. The passed SubViewDelta is populated with
 	// the projection. The given arrays represent the state of the sub view and dictates the projection.
 	// Entity ID arrays are assumed to be sorted for view delta projection.
@@ -112,8 +116,12 @@ private:
 	// Also apply the update to `Component`.
 	// The accumulated component change in this range must be an update or a complete-update.
 	static ComponentChange CalculateUpdate(ReceivedComponentChange* Start, ReceivedComponentChange* End, ComponentData& Component);
-	void ProcessOpList(const OpList& Ops);
+
+	void ProcessOpList(const OpList& Ops, const EntityView& View, const FComponentSetData& ComponentSetData);
+	void GenerateComponentChangesFromSetData(const Worker_ComponentSetAuthorityChangeOp& Op, const EntityView& View,
+											 const FComponentSetData& ComponentSetData);
 	void PopulateEntityDeltas(EntityView& View);
+
 	// Adds component changes to `Delta` and updates `Components` accordingly.
 	// `It` must point to the first element with a given entity ID.
 	// Returns a pointer to the next entity in the component changes list.
@@ -132,10 +140,12 @@ private:
 	// After returning `*ViewElement` will point to that entity in the view or nullptr if it doesn't exist.
 	ReceivedEntityChange* ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End, EntityDelta& Delta,
 													   bool bAlreadyInView, EntityView& View);
+
 	// The sentinel entity ID has the property that when converted to a uint64 it will be greater than INT64_MAX.
 	// If we convert all entity IDs to uint64s before comparing them we can then be assured that the sentinel values
 	// will be greater than all valid IDs.
 	static const Worker_EntityId SENTINEL_ENTITY_ID = -1;
+
 	TArray<ReceivedEntityChange> EntityChanges;
 	TArray<ReceivedComponentChange> ComponentChanges;
 	TArray<Worker_ComponentSetAuthorityChangeOp> AuthorityChanges;
