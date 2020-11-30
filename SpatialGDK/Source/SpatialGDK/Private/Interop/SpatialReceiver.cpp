@@ -673,6 +673,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 						Actor->SetActorReady(true);
 					}
 
+					UE_LOG(LogSpatialReceiver, Log, TEXT("OnAuthorityGained actor: %s"), Actor->GetName());
 					// We still want to call OnAuthorityGained if the Actor migrated to this worker or was loaded from a snapshot.
 					Actor->OnAuthorityGained();
 				}
