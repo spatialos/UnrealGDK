@@ -55,7 +55,7 @@ struct EntityPayload
 constexpr Worker_EntityId RPCTestEntityId_1 = 201;
 constexpr Worker_EntityId RPCTestEntityId_2 = 42;
 
-const SpatialGDK::RPCPayload SimplePayload = SpatialGDK::RPCPayload(1, 0, TArray<uint8>({ 1 }, 1));
+const SpatialGDK::RPCPayload SimplePayload = SpatialGDK::RPCPayload(1, 0, 0, TArray<uint8>({ 1 }, 1));
 
 // Initialise view and subviews. These will be overwritten before using.
 SpatialGDK::EntityView TestView;
