@@ -110,6 +110,14 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
+	if (const AController* Controller = Cast<AController>(&Actor))
+	{
+		if (Controller->IntendedPawnToPossess)
+		{
+			return WhoShouldHaveAuthority(*Controller->IntendedPawnToPossess);
+		}
+	}
+
 	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 
 	check(VirtualWorkerIds.Num() == WorkerCells.Num());
