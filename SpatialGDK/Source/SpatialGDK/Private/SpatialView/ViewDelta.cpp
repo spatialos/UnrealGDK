@@ -8,6 +8,8 @@
 #include "Algo/StableSort.h"
 #include <algorithm>
 
+#include "AI/NavigationSystemBase.h"
+
 namespace SpatialGDK
 {
 void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View, const FComponentSetData& ComponentSetData)
