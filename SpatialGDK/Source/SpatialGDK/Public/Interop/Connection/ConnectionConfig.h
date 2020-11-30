@@ -20,8 +20,8 @@ struct FConnectionConfig
 	enum class EWorkerType
 	{
 		Client,
-        Server
-    };
+		Server
+	};
 
 	FConnectionConfig()
 		: UseExternalIp(false)
