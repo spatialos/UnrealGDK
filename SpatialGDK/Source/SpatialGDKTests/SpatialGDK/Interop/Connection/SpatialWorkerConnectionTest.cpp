@@ -9,6 +9,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/Engine.h"
+#include "Tests/AutomationCommon.h"
 
 #define WORKERCONNECTION_TEST(TestName) GDK_TEST(Core, SpatialWorkerConnection, TestName)
 
@@ -244,12 +245,8 @@ WORKERCONNECTION_TEST(GIVEN_no_local_deployment_WHEN_connecting_client_and_serve
 	USpatialConnectionManager* ClientConnectionManager = NewObject<USpatialConnectionManager>();
 	USpatialConnectionManager* ServerConnectionManager = NewObject<USpatialConnectionManager>();
 
-	// Catch expected TCP error in CI
-	if (ClientConnectionManager->ReceptionistConfig.LinkProtocol == WORKER_NETWORK_CONNECTION_TYPE_TCP
-		|| ServerConnectionManager->ReceptionistConfig.LinkProtocol == WORKER_NETWORK_CONNECTION_TYPE_TCP)
-	{
-		AddExpectedError(TEXT("An existing connection was forcibly closed by the remote host"), EAutomationExpectedErrorFlags::Contains, 0);
-	}
+	GEditor->RequestEndPlayMap();
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(2.f))
 
 	// GIVEN
 	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
