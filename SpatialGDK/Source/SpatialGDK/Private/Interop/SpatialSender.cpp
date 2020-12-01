@@ -475,21 +475,25 @@ void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString E
 	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(Delegate));
 }
 
-void USpatialSender::UpdateServerWorkerEntityInterestAndPosition()
+void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 {
 	check(Connection != nullptr);
 	check(NetDriver != nullptr);
 	check(NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID);
+	check(NetDriver->VirtualWorkerTranslator != nullptr && NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId() != SpatialConstants::INVALID_ENTITY_ID);
 	check(NetDriver->LoadBalanceStrategy != nullptr && NetDriver->LoadBalanceStrategy->IsReady());
+
+	Worker_PartitionId PartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
+	VirtualWorkerId VirtualId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
 
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
 	FWorkerComponentUpdate InterestUpdate =
-		NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
+		NetDriver->InterestFactory->CreatePartitionInterest(NetDriver->LoadBalanceStrategy, VirtualId, NetDriver->DebugCtx != nullptr /*bDebug*/)
 			.CreateInterestUpdate();
 
-	Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &InterestUpdate);
+	Connection->SendComponentUpdate(PartitionId, &InterestUpdate);
 
-	// Also update the position of the worker entity to the centre of the load balancing region.
+	// Also update the position of the worker entity to the center of the load balancing region.
 	SendPositionUpdate(NetDriver->WorkerEntityId, NetDriver->LoadBalanceStrategy->GetWorkerEntityPosition());
 }
 

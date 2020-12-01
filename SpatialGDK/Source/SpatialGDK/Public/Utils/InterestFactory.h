@@ -47,7 +47,7 @@ public:
 	Worker_ComponentUpdate CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
 	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy, bool bDebug) const;
-	Interest CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker) const;
+	Interest CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, bool bDebug) const;
 	void AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, Interest& OutInterest) const;
 
 	// Returns false if we could not get an owner's entityId in the Actor's owner chain.
@@ -92,6 +92,7 @@ private:
 	// System Defined Constraints
 	bool ShouldAddNetCullDistanceInterest(const AActor* InActor) const;
 	QueryConstraint CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const;
+	QueryConstraint CreateGDKKnownEntitiesConstraint() const;
 	QueryConstraint CreateAlwaysRelevantConstraint() const;
 	QueryConstraint CreateActorVisibilityConstraint() const;
 
