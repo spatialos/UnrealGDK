@@ -480,7 +480,8 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 	check(Connection != nullptr);
 	check(NetDriver != nullptr);
 	check(NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID);
-	check(NetDriver->VirtualWorkerTranslator != nullptr && NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId() != SpatialConstants::INVALID_ENTITY_ID);
+	check(NetDriver->VirtualWorkerTranslator != nullptr
+		  && NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId() != SpatialConstants::INVALID_ENTITY_ID);
 	check(NetDriver->LoadBalanceStrategy != nullptr && NetDriver->LoadBalanceStrategy->IsReady());
 
 	Worker_PartitionId PartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
@@ -488,7 +489,8 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
 	FWorkerComponentUpdate InterestUpdate =
-		NetDriver->InterestFactory->CreatePartitionInterest(NetDriver->LoadBalanceStrategy, VirtualId, NetDriver->DebugCtx != nullptr /*bDebug*/)
+		NetDriver->InterestFactory
+			->CreatePartitionInterest(NetDriver->LoadBalanceStrategy, VirtualId, NetDriver->DebugCtx != nullptr /*bDebug*/)
 			.CreateInterestUpdate();
 
 	Connection->SendComponentUpdate(PartitionId, &InterestUpdate);
