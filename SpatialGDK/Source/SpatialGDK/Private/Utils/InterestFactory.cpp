@@ -110,47 +110,57 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 
 	Query ServerQuery{};
 
-	// Ensure server worker receives AlwaysRelevant entities.
-	ServerQuery.ResultComponentIds = ServerNonAuthInterestResultType;
-	ServerQuery.Constraint = CreateAlwaysRelevantConstraint();
-	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ServerQuery);
-
 	// Workers have interest in all system worker entities.
 	ServerQuery = Query();
 	ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::WORKER_COMPONENT_ID };
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ServerQuery);
 
-	// and server worker entities
+	// And an interest in all server worker entities.
 	ServerQuery = Query();
 	ServerQuery.ResultComponentIds =
 		SchemaResultType{ SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ServerQuery);
 
-	// Add a self query to ensure we see the well known entity tag.
+	// Ensure server worker receives AlwaysRelevant entities.
+	ServerQuery = Query();
+	ServerQuery.ResultComponentIds = ServerNonAuthInterestResultType;
+	ServerQuery.Constraint = CreateGDKKnownEntitiesConstraint();
+	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ServerQuery);
+
+	// Add a self query to ensure we see all well known entities.
 	Query AuthoritySelfQuery = {};
 	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 	AuthoritySelfQuery.Constraint.bSelfConstraint = true;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_COMPONENT_ID, AuthoritySelfQuery);
 
-	// Query to know about all the actors tagged with a debug component
-	if (bDebug)
-	{
-		ServerQuery = Query();
-		ServerQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::GDK_DEBUG_COMPONENT_ID };
-		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
-		AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ServerQuery);
-	}
-
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker) const
+Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, bool bDebug) const
 {
 	// Add load balancing query
 	Interest PartitionInterest{};
+	Query PartitionQuery{};
+
 	AddLoadBalancingInterestQuery(LBStrategy, VirtualWorker, PartitionInterest);
+
+	// Ensure server worker receives AlwaysRelevant entities.
+	PartitionQuery = Query();
+	PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType;
+	PartitionQuery.Constraint = CreateAlwaysRelevantConstraint();
+	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, PartitionQuery);
+
+	// Query to know about all the actors tagged with a debug component
+	if (bDebug)
+	{
+		PartitionQuery = Query();
+		PartitionQuery.ResultComponentIds = SchemaResultType{ SpatialConstants::GDK_DEBUG_COMPONENT_ID };
+		PartitionQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
+		AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, PartitionQuery);
+	}
+
 	return PartitionInterest;
 }
 
@@ -545,13 +555,30 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const AActor* 
 	return AlwaysInterestedConstraint;
 }
 
+SpatialGDK::QueryConstraint InterestFactory::CreateGDKKnownEntitiesConstraint() const
+{
+	QueryConstraint AlwaysRelevantConstraint;
+
+	//Worker_ComponentId ComponentIds[] = { SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID,
+	//									  SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID };
+
+	Worker_ComponentId ComponentIds[] = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+
+	for (Worker_ComponentId ComponentId : ComponentIds)
+	{
+		QueryConstraint Constraint;
+		Constraint.ComponentConstraint = ComponentId;
+		AlwaysRelevantConstraint.OrConstraint.Add(Constraint);
+	}
+
+	return AlwaysRelevantConstraint;
+}
+
 QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint() const
 {
 	QueryConstraint AlwaysRelevantConstraint;
 
-	Worker_ComponentId ComponentIds[] = { SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID,
-										  SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
-										  SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID };
+	Worker_ComponentId ComponentIds[] = { SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID };
 
 	for (Worker_ComponentId ComponentId : ComponentIds)
 	{

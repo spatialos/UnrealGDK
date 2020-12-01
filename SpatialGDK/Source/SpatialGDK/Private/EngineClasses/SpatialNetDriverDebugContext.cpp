@@ -59,7 +59,7 @@ void USpatialNetDriverDebugContext::Init(USpatialNetDriver* InNetDriver)
 	DebugStrategy->InitDebugStrategy(this, NetDriver->LoadBalanceStrategy);
 	NetDriver->LoadBalanceStrategy = DebugStrategy;
 
-	NetDriver->Sender->UpdateServerWorkerEntityInterestAndPosition();
+	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
 }
 
 void USpatialNetDriverDebugContext::Cleanup()
@@ -67,7 +67,7 @@ void USpatialNetDriverDebugContext::Cleanup()
 	Reset();
 	NetDriver->LoadBalanceStrategy = Cast<UDebugLBStrategy>(DebugStrategy)->GetWrappedStrategy();
 	NetDriver->DebugCtx = nullptr;
-	NetDriver->Sender->UpdateServerWorkerEntityInterestAndPosition();
+	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
 }
 
 void USpatialNetDriverDebugContext::Reset()
@@ -89,7 +89,7 @@ void USpatialNetDriverDebugContext::Reset()
 	CachedInterestSet.Empty();
 	ActorDebugInfo.Empty();
 
-	NetDriver->Sender->UpdateServerWorkerEntityInterestAndPosition();
+	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
 }
 
 USpatialNetDriverDebugContext::DebugComponentView& USpatialNetDriverDebugContext::GetDebugComponentView(AActor* Actor)
@@ -381,7 +381,7 @@ void USpatialNetDriverDebugContext::TickServer()
 
 	if (NeedEntityInterestUpdate())
 	{
-		NetDriver->Sender->UpdateServerWorkerEntityInterestAndPosition();
+		NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
 	}
 }
 
