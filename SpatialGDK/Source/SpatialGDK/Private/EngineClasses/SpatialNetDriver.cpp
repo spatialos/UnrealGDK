@@ -2604,6 +2604,10 @@ void USpatialNetDriver::TryFinishStartup()
 			GlobalStateManager->QueryTranslation();
 			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the load balancing system to be ready."));
 		}
+		else if (!StaticComponentView->HasEntity(VirtualWorkerTranslator->GetClaimedPartitionId()))
+		{
+			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the partition entity to be ready."));
+		}
 		else
 		{
 			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Ready to begin processing."));

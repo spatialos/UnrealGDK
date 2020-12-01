@@ -479,7 +479,6 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 {
 	check(Connection != nullptr);
 	check(NetDriver != nullptr);
-	check(NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID);
 	check(NetDriver->VirtualWorkerTranslator != nullptr
 		  && NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId() != SpatialConstants::INVALID_ENTITY_ID);
 	check(NetDriver->LoadBalanceStrategy != nullptr && NetDriver->LoadBalanceStrategy->IsReady());
@@ -495,8 +494,8 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 
 	Connection->SendComponentUpdate(PartitionId, &InterestUpdate);
 
-	// Also update the position of the worker entity to the center of the load balancing region.
-	SendPositionUpdate(NetDriver->WorkerEntityId, NetDriver->LoadBalanceStrategy->GetWorkerEntityPosition());
+	// Also update the position of the partition entity to the center of the load balancing region.
+	SendPositionUpdate(PartitionId, NetDriver->LoadBalanceStrategy->GetWorkerEntityPosition());
 }
 
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel,
