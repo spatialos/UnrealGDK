@@ -94,6 +94,13 @@ public:
 			  meta = (ToolTip = "Key to open configuration UI for the debugger at runtime"))
 	FKey ConfigUIToggleKey = EKeys::F9;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI, meta = (ToolTip = "Key to select actor when debugging in game"))
+	FKey SelectActorKey = EKeys::RightMouseButton;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI,
+			  meta = (ToolTip = "Key to highlight next actor under cursor when debugging in game"))
+	FKey HighlightActorKey = EKeys::MouseWheelAxis;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI, meta = (ToolTip = "In-game configuration UI widget"))
 	TSubclassOf<USpatialDebuggerConfigUI> ConfigUIClass;
 
@@ -134,6 +141,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show Actor Name for every entity in range"))
 	bool bShowActorName = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show glowing mesh when selecting actors."))
+	bool bShowHighlight = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (ToolTip = "Select the object types you want to query when selecting actors"))
+	TArray<TEnumAsByte<ECollisionChannel>> SelectCollisionTypesToQuery = {
+		ECollisionChannel::ECC_WorldStatic,	 ECollisionChannel::ECC_WorldDynamic, ECollisionChannel::ECC_Pawn,
+		ECollisionChannel::ECC_Destructible, ECollisionChannel::ECC_Vehicle,	  ECollisionChannel::ECC_PhysicsBody
+	};
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
 	bool bAutoStart = false;
 
@@ -167,6 +184,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Box Icon"))
 	UTexture2D* BoxTexture;
 
+	// This will be drawn instead of the mouse cursor when selecting an actor
+	UPROPERTY(EditDefaultsOnly, Category = Visualization, meta = (ToolTip = "Texture to use when selecting an actor"))
+	UTexture2D* CrosshairTexture;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
 	FVector WorldSpaceActorTagOffset = FVector(0.0f, 0.0f, 200.0f);
 
@@ -182,6 +203,18 @@ public:
 
 	UFUNCTION()
 	void OnToggleConfigUI();
+
+	UFUNCTION(BlueprintCallable, Category = Visualization)
+	void ToggleSelectActor();
+
+	UFUNCTION()
+	void OnSelectActor();
+
+	UFUNCTION()
+	void OnHighlightActor();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Visualization)
+	bool IsSelectActorEnabled() const;
 
 private:
 	UFUNCTION()
@@ -210,6 +243,22 @@ private:
 
 	// FDebugDrawDelegate
 	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
+
+	FVector GetLocalPawnLocation();
+
+	// Allow user to select actor(s) for debugging - the mesh on the actor must have collision presets enabled to block on at least one of
+	// the object channels
+	void SelectActorsToTag(UCanvas* Canvas);
+
+	void HighlightActorUnderCursor(TWeakObjectPtr<AActor>& NewHoverActor);
+
+	TWeakObjectPtr<AActor> GetActorAtPosition(const FVector2D& MousePosition);
+
+	TWeakObjectPtr<AActor> GetHitActor();
+
+	FVector2D ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector& PlayerLocation);
+
+	void RevertHoverMaterials();
 
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
 				 const bool bCentre);
@@ -258,4 +307,31 @@ private:
 	FCanvasIcon Icons[ICON_MAX];
 
 	USpatialDebuggerConfigUI* ConfigUIWidget;
+
+	// Mode for selecting actors under the cursor - should only be visible in the runtime config UI
+	bool bSelectActor = false;
+
+	// Actors selected by user for debugging
+	TArray<TWeakObjectPtr<AActor>> SelectedActors;
+
+	// Highlighted actor under the mouse cursor
+	TWeakObjectPtr<AActor> HoverActor;
+	// Highlighted actor original materials and components
+	TArray<TWeakObjectPtr<UMaterialInterface>> ActorMeshMaterials;
+	TArray<TWeakObjectPtr<UMeshComponent>> ActorMeshComponents;
+	// Material for highlighting actor
+	UPROPERTY()
+	UMaterialInterface* WireFrameMaterial;
+
+	// All actors under the mouse cursor
+	TArray<TWeakObjectPtr<AActor>> HitActors;
+
+	// Index for selecting the highlighted actor when multiple are under the mouse cursor
+	int32 HoverIndex;
+
+	// Mouse position to avoid unnecessary raytracing when mouse has not moved
+	FVector2D MousePosition;
+
+	// Select actor object types to query
+	FCollisionObjectQueryParams CollisionObjectParams;
 };

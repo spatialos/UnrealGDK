@@ -29,15 +29,19 @@ public:
 	FSpatialTraceEventBuilder AddKeyValue(FString Key, FString Value);
 	FSpatialTraceEvent GetEvent() &&;
 
-	static FSpatialTraceEvent CreateProcessRPC(const UObject* Object, UFunction* Function);
-	static FSpatialTraceEvent CreateSendRPC(const UObject* Object, UFunction* Function);
-	static FSpatialTraceEvent CreateRPCLinearTraceEvent(const EventTraceUniqueId& LinearTraceId);
+	static FSpatialTraceEvent CreateProcessRPC(const UObject* Object, UFunction* Function, const EventTraceUniqueId& LinearTraceId);
+	static FSpatialTraceEvent CreatePushRPC(const UObject* Object, UFunction* Function);
+	static FSpatialTraceEvent CreateSendRPC(const EventTraceUniqueId& LinearTraceId);
+
 	static FSpatialTraceEvent CreateQueueRPC();
 	static FSpatialTraceEvent CreateRetryRPC();
-	static FSpatialTraceEvent CreateSendPropertyUpdates(const UObject* Object, const Worker_EntityId EntityId,
-														const Worker_ComponentId ComponentId);
+	static FSpatialTraceEvent CreatePropertyChanged(const UObject* Object, const Worker_EntityId EntityId, const FString& PropertyName,
+													EventTraceUniqueId LinearTraceId);
+	static FSpatialTraceEvent CreateSendPropertyUpdate(const UObject* Object, const Worker_EntityId EntityId,
+													   const Worker_ComponentId ComponentId);
 	static FSpatialTraceEvent CreateReceivePropertyUpdate(const UObject* Object, const Worker_EntityId EntityId,
-														  const Worker_ComponentId ComponentId, const FString& PropertyName);
+														  const Worker_ComponentId ComponentId, const FString& PropertyName,
+														  EventTraceUniqueId LinearTraceId);
 	static FSpatialTraceEvent CreateMergeSendRPCs(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
 	static FSpatialTraceEvent CreateMergeComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
 	static FSpatialTraceEvent CreateObjectPropertyComponentUpdate(const UObject* Object);
