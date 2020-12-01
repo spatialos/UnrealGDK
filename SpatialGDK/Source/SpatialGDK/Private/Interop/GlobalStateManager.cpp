@@ -157,8 +157,7 @@ void UGlobalStateManager::SendShutdownMultiProcessRequest()
 	CommandRequest.command_index = SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID;
 	CommandRequest.schema_type = Schema_CreateCommandRequest();
 
-	NetDriver->Connection->SendCommandRequest(GlobalStateManagerEntityId, &CommandRequest,
-											  SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID);
+	NetDriver->Connection->SendCommandRequest(GlobalStateManagerEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
 }
 
 void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
@@ -509,7 +508,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 	GSMQuery.constraint = GSMConstraint;
 
 	Worker_RequestId RequestID;
-	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
+	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery, RETRY_UNTIL_COMPLETE);
 
 	EntityQueryDelegate GSMQueryDelegate;
 	GSMQueryDelegate.BindLambda([this, Callback](const Worker_EntityQueryResponseOp& Op) {
@@ -550,7 +549,7 @@ void UGlobalStateManager::QueryTranslation()
 	Worker_EntityQuery TranslationQuery{};
 	TranslationQuery.constraint = TranslationConstraint;
 
-	Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery);
+	Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery, RETRY_UNTIL_COMPLETE);
 	bTranslationQueryInFlight = true;
 
 	TWeakObjectPtr<UGlobalStateManager> WeakGlobalStateManager(this);

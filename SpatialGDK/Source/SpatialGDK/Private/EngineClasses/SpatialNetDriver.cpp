@@ -306,6 +306,16 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 	Connection = ConnectionManager->GetWorkerConnection();
 	check(Connection);
 
+	// If the current Connection comes from an outdated ClientTravel, the associated NetDriver (this) won't match
+	// the NetDriver from the Engine, resulting in a crash. Here, if the NetDriver is outdated, we leave the callback.
+	if (bConnectAsClient && GEngine->GetWorldContextFromPendingNetGameNetDriver(this) == nullptr)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Outdated NetDriver connection skipped. May be due to an outdated ClientTravel"));
+		ConnectionManager->OnConnectedCallback.Unbind();
+		ConnectionManager->OnFailedToConnectCallback.Unbind();
+		return;
+	}
+
 	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
 	// There may be more than one of these connections in the future for different replication conditions.
 	if (!bConnectAsClient)
@@ -411,7 +421,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	Receiver->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
-	PlayerSpawner->Init(this, &TimerManager);
+	PlayerSpawner->Init(this);
 	PlayerSpawner->OnPlayerSpawnFailed.BindUObject(GameInstance, &USpatialGameInstance::HandleOnPlayerSpawnFailed);
 	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
 	SpatialMetrics->ControllerRefProvider.BindUObject(this, &USpatialNetDriver::GetCurrentPlayerControllerRef);
@@ -868,14 +878,14 @@ void USpatialNetDriver::BeginDestroy()
 		{
 			for (const auto& Partition : VirtualWorkerTranslationManager->GetAllPartitions())
 			{
-				Connection->SendDeleteEntityRequest(Partition.PartitionEntityId);
+				Connection->SendDeleteEntityRequest(Partition.PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 			}
 		}
 
 		// Cleanup our corresponding worker entity if it exists.
 		if (WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
-			Connection->SendDeleteEntityRequest(WorkerEntityId);
+			Connection->SendDeleteEntityRequest(WorkerEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 
 			// Flush the connection and wait a moment to allow the message to propagate.
 			// TODO: UNR-3697 - This needs to be handled more correctly
@@ -1020,7 +1030,7 @@ void USpatialNetDriver::Shutdown()
 		{
 			if (HasServerAuthority(EntityId))
 			{
-				Connection->SendDeleteEntityRequest(EntityId);
+				Connection->SendDeleteEntityRequest(EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 			}
 		}
 
@@ -1028,7 +1038,7 @@ void USpatialNetDriver::Shutdown()
 		{
 			if (HasServerAuthority(EntityId))
 			{
-				Connection->SendDeleteEntityRequest(EntityId);
+				Connection->SendDeleteEntityRequest(EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 			}
 		}
 	}

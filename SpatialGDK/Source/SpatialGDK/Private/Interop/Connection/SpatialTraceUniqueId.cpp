@@ -14,3 +14,9 @@ EventTraceUniqueId EventTraceUniqueId::GenerateForRPC(Worker_EntityId Entity, ui
 	uint32 ComputedHash = HashCombine(HashCombine(GetTypeHash(static_cast<int64>(Entity)), GetTypeHash(Type)), GetTypeHash(Id));
 	return EventTraceUniqueId(ComputedHash);
 }
+
+EventTraceUniqueId EventTraceUniqueId::GenerateForProperty(Worker_EntityId Entity, const GDK_PROPERTY(Property) * Property)
+{
+	uint32 ComputedHash = HashCombine(GetTypeHash(static_cast<int64>(Entity)), GetTypeHash(Property->GetName()));
+	return EventTraceUniqueId(ComputedHash);
+}
