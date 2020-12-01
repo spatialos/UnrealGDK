@@ -138,7 +138,7 @@ bool FSendReserveEntityIdsRequest::Update()
 {
 	uint32_t NumOfEntities = 1;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendReserveEntityIdsRequest(NumOfEntities);
+	Connection->SendReserveEntityIdsRequest(NumOfEntities, RETRY_UNTIL_COMPLETE);
 	Connection->Flush();
 
 	return true;
@@ -150,7 +150,7 @@ bool FSendCreateEntityRequest::Update()
 	TArray<FWorkerComponentData> Components;
 	const Worker_EntityId* EntityId = nullptr;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId);
+	Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId, RETRY_UNTIL_COMPLETE);
 	Connection->Flush();
 
 	return true;
@@ -161,7 +161,7 @@ bool FSendDeleteEntityRequest::Update()
 {
 	const Worker_EntityId EntityId = 0;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendDeleteEntityRequest(EntityId);
+	Connection->SendDeleteEntityRequest(EntityId, RETRY_UNTIL_COMPLETE);
 	Connection->Flush();
 
 	return true;

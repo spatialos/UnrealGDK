@@ -86,7 +86,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 	});
 
 	// Reserve the Entity IDs
-	Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToReserve);
+	Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToReserve, RETRY_UNTIL_COMPLETE);
 	bIsAwaitingResponse = true;
 
 	// Add the spawn delegate
