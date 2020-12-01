@@ -3,11 +3,14 @@
 #pragma once
 
 #include "Containers/UnrealString.h"
+#include "Engine/EngineBaseTypes.h"
 #include "Internationalization/Regex.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
+
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+
 #include <WorkerSDK/improbable/c_worker.h>
 
 struct FConnectionConfig
@@ -18,7 +21,7 @@ struct FConnectionConfig
 		, EnableWorkerSDKOpLogging(false)
 		, WorkerSDKLogFileSize(10 * 1024 * 1024)
 		, WorkerSDKLogLevel(WORKER_LOG_LEVEL_INFO)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_KCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
 		, TcpNoDelay(0)
@@ -95,11 +98,11 @@ private:
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString.Compare(TEXT("Tcp"), ESearchCase::IgnoreCase) == 0)
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_TCP;
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_TCP;
 		}
 		else if (LinkProtocolString.Compare(TEXT("Kcp"), ESearchCase::IgnoreCase) == 0)
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_MODULAR_KCP;
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_KCP;
 		}
 		else if (!LinkProtocolString.IsEmpty())
 		{
@@ -234,9 +237,13 @@ public:
 			FString URLAddress;
 			FParse::Token(CommandLine, URLAddress, false /* UseEscape */);
 			const FURL URL(nullptr /* Base */, *URLAddress, TRAVEL_Absolute);
-			if (URL.Valid)
+			if (URL.Valid && !URLAddress.IsEmpty())
 			{
 				SetupFromURL(URL);
+			}
+			else if (!bReceptionistPortParsed)
+			{
+				return false;
 			}
 		}
 		else

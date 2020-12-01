@@ -2,53 +2,76 @@
 
 #pragma once
 
-#include "Interop/SpatialStaticComponentView.h"
+#include "Schema/AuthorityIntent.h"
+#include "Schema/ComponentPresence.h"
+#include "Schema/NetOwningClientWorker.h"
+#include "Schema/StandardLibrary.h"
 #include "SpatialCommonTypes.h"
 
-#include <WorkerSDK/improbable/c_worker.h>
-
-#include "CoreMinimal.h"
+#include "SpatialView/EntityComponentTypes.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalanceEnforcer, Log, All)
 
 class SpatialVirtualWorkerTranslator;
 
-class SPATIALGDK_API SpatialLoadBalanceEnforcer
+namespace SpatialGDK
+{
+class FSubView;
+
+struct LBComponents
+{
+	AuthorityDelegation Delegation;
+	AuthorityIntent Intent;
+	ComponentPresence Presence;
+	NetOwningClientWorker OwningClientWorker;
+};
+
+struct AuthorityStateChange
+{
+	Worker_EntityId EntityId = 0;
+	TArray<Worker_ComponentId> ComponentIds;
+	VirtualWorkerId TargetVirtualWorker;
+};
+
+// The load balance enforcer system running on a worker is responsible for updating the authority delegation component
+// to the workers indicated in the Authority Intent and Net Owning Client Worker components.
+//
+// The LB components are:
+//  - Authority Intent (for authority changes)
+//  - Component Presence (to enforce all components exist in the authority delegation component)
+//  - Net Owning Client Worker (for client authority changes)
+//
+// The load balance enforcer's view of the world consists of all entities where the authority delegation component
+// is delegated to the worker. The passed subview enforces that any entity seen by the enforcer will have all relevant
+// LB components present. Each tick, the enforcer reads the deltas for these entities, and if there any changes for any
+// of the LB components calculates whether or not an delegation update needs to be sent, and if so, constructs one and
+// sends it on to Spatial. If the same worker is authoritative over the authority intent component, a request to construct
+// an delegation update will be short circuited locally.
+class SpatialLoadBalanceEnforcer
 {
 public:
-	struct AclWriteAuthorityRequest
-	{
-		Worker_EntityId EntityId = 0;
-		PhysicalWorkerName OwningWorkerId;
-		WorkerRequirementSet ReadAcl;
-		WorkerRequirementSet ClientRequirementSet;
-		TArray<Worker_ComponentId> ComponentIds;
-	};
+	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const FSubView& InSubView,
+							   const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator,
+							   TUniqueFunction<void(EntityComponentUpdate)> InUpdateSender);
 
-	SpatialLoadBalanceEnforcer(const PhysicalWorkerName& InWorkerId, const USpatialStaticComponentView* InStaticComponentView,
-							   const SpatialVirtualWorkerTranslator* InVirtualWorkerTranslator);
-
-	bool HandlesComponent(Worker_ComponentId ComponentId) const;
-
-	void OnLoadBalancingComponentAdded(const Worker_AddComponentOp& Op);
-	void OnLoadBalancingComponentUpdated(const Worker_ComponentUpdateOp& Op);
-	void OnLoadBalancingComponentRemoved(const Worker_RemoveComponentOp& Op);
-	void OnEntityRemoved(const Worker_RemoveEntityOp& Op);
-	void OnAclAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp);
-
-	void MaybeQueueAclAssignmentRequest(const Worker_EntityId EntityId);
-	// Visible for testing
-	bool AclAssignmentRequestIsQueued(const Worker_EntityId EntityId) const;
-
-	TArray<AclWriteAuthorityRequest> ProcessQueuedAclAssignmentRequests();
+	void Advance();
+	void ShortCircuitMaybeRefreshAuthorityDelegation(const Worker_EntityId EntityId);
 
 private:
-	void QueueAclAssignmentRequest(const Worker_EntityId EntityId);
-	bool CanEnforce(Worker_EntityId EntityId) const;
+	void PopulateDataStore(const Worker_EntityId EntityId);
+	bool ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
+	bool ApplyComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
+
+	void RefreshAuthority(const Worker_EntityId EntityId);
+	Worker_ComponentUpdate CreateAuthorityDelegationUpdate(const Worker_EntityId EntityId);
 
 	const PhysicalWorkerName WorkerId;
-	TWeakObjectPtr<const USpatialStaticComponentView> StaticComponentView;
+	const FSubView* SubView;
 	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
-	TArray<Worker_EntityId> AclWriteAuthAssignmentRequests;
+	TArray<Worker_EntityId> PendingEntityAuthorityChanges;
+	TMap<Worker_EntityId_Key, LBComponents> DataStore;
+	TUniqueFunction<void(EntityComponentUpdate)> UpdateSender;
 };
+
+} // namespace SpatialGDK

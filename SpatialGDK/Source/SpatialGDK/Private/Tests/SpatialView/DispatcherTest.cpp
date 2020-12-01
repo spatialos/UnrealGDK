@@ -1,13 +1,14 @@
 ﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "ComponentTestUtils.h"
 #include "SpatialView/Callbacks.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/Dispatcher.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/EntityView.h"
+#include "SpatialView/OpList/EntityComponentOpList.h"
 #include "SpatialView/ViewDelta.h"
-#include "SpatialViewUtils.h"
+#include "Tests/SpatialView/ComponentTestUtils.h"
+#include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"
 
 #define DISPATCHER_TEST(TestName) GDK_TEST(Core, Dispatcher, TestName)
@@ -266,6 +267,63 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Many_Callbacks_Added_Then_Invoked_THEN_All
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
 
 	TestEqual("Callback was invoked the expected number of times", InvokeCount, NumberOfCallbacks);
+
+	return true;
+}
+
+DISPATCHER_TEST(GIVEN_Dispatcher_With_Component_Removed_Callback_WHEN_Entity_Removed_THEN_Callback_Invoked)
+{
+	bool Invoked = false;
+	SpatialGDK::FDispatcher Dispatcher;
+	SpatialGDK::EntityView View;
+	SpatialGDK::ViewDelta Delta;
+
+	const SpatialGDK::FComponentValueCallback Callback = [&Invoked](const SpatialGDK::FEntityComponentChange&) {
+		Invoked = true;
+	};
+	Dispatcher.RegisterComponentRemovedCallback(COMPONENT_ID, Callback);
+
+	AddEntityToView(View, ENTITY_ID);
+	AddComponentToView(View, ENTITY_ID, SpatialGDK::ComponentData{ COMPONENT_ID });
+
+	SpatialGDK::EntityComponentOpListBuilder OpListBuilder;
+	OpListBuilder.RemoveComponent(ENTITY_ID, COMPONENT_ID);
+	OpListBuilder.RemoveEntity(ENTITY_ID);
+
+	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
+
+	TestTrue("Callback was invoked", Invoked);
+
+	return true;
+}
+
+DISPATCHER_TEST(
+	GIVEN_Dispatcher_With_Component_Removed_Callback_WHEN_Entity_Removed_And_Added_With_Different_Components_THEN_Callback_Invoked)
+{
+	bool Invoked = false;
+	SpatialGDK::FDispatcher Dispatcher;
+	SpatialGDK::EntityView View;
+	SpatialGDK::ViewDelta Delta;
+
+	const SpatialGDK::FComponentValueCallback Callback = [&Invoked](const SpatialGDK::FEntityComponentChange&) {
+		Invoked = true;
+	};
+	Dispatcher.RegisterComponentRemovedCallback(COMPONENT_ID, Callback);
+
+	AddEntityToView(View, ENTITY_ID);
+	AddComponentToView(View, ENTITY_ID, SpatialGDK::ComponentData{ COMPONENT_ID });
+
+	SpatialGDK::EntityComponentOpListBuilder OpListBuilder;
+	OpListBuilder.RemoveComponent(ENTITY_ID, COMPONENT_ID);
+	OpListBuilder.RemoveEntity(ENTITY_ID);
+	OpListBuilder.AddEntity(ENTITY_ID);
+	OpListBuilder.AddComponent(ENTITY_ID, SpatialGDK::ComponentData{ OTHER_COMPONENT_ID });
+
+	SetFromOpList(Delta, View, MoveTemp(OpListBuilder));
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
+
+	TestTrue("Callback was invoked", Invoked);
 
 	return true;
 }

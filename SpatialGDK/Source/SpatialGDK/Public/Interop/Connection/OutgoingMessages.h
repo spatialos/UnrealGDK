@@ -5,6 +5,7 @@
 #include "Containers/Array.h"
 #include "Containers/UnrealString.h"
 #include "HAL/Platform.h"
+#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Misc/Optional.h"
 #include "Templates/UniquePtr.h"
 #include "Templates/UnrealTemplate.h"
@@ -29,7 +30,6 @@ enum class EOutgoingMessageType : int32
 	CommandResponse,
 	CommandFailure,
 	LogMessage,
-	ComponentInterest,
 	EntityQueryRequest,
 	Metrics
 };
@@ -58,65 +58,75 @@ struct FReserveEntityIdsRequest : FOutgoingMessage
 
 struct FCreateEntityRequest : FOutgoingMessage
 {
-	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const Worker_EntityId* InEntityId)
+	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const Worker_EntityId* InEntityId, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::CreateEntityRequest)
 		, Components(MoveTemp(InComponents))
 		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<Worker_EntityId>())
+		, SpanId(SpanId)
 	{
 	}
 
 	TArray<FWorkerComponentData> Components;
 	TOptional<Worker_EntityId> EntityId;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FDeleteEntityRequest : FOutgoingMessage
 {
-	FDeleteEntityRequest(Worker_EntityId InEntityId)
+	FDeleteEntityRequest(Worker_EntityId InEntityId, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::DeleteEntityRequest)
 		, EntityId(InEntityId)
+		, SpanId(SpanId)
 	{
 	}
 
 	Worker_EntityId EntityId;
+	const FSpatialGDKSpanId SpanId;
 };
 
 struct FAddComponent : FOutgoingMessage
 {
-	FAddComponent(Worker_EntityId InEntityId, const FWorkerComponentData& InData)
+	FAddComponent(Worker_EntityId InEntityId, const FWorkerComponentData& InData, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::AddComponent)
 		, EntityId(InEntityId)
 		, Data(InData)
+		, SpanId(SpanId)
 	{
 	}
 
 	Worker_EntityId EntityId;
 	FWorkerComponentData Data;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FRemoveComponent : FOutgoingMessage
 {
-	FRemoveComponent(Worker_EntityId InEntityId, Worker_ComponentId InComponentId)
+	FRemoveComponent(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::RemoveComponent)
 		, EntityId(InEntityId)
 		, ComponentId(InComponentId)
+		, SpanId(SpanId)
 	{
 	}
 
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FComponentUpdate : FOutgoingMessage
 {
-	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate)
+	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentUpdate)
 		, EntityId(InEntityId)
 		, Update(InComponentUpdate)
+		, SpanId(SpanId)
 	{
 	}
 
 	Worker_EntityId EntityId;
 	FWorkerComponentUpdate Update;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FCommandRequest : FOutgoingMessage
@@ -136,28 +146,32 @@ struct FCommandRequest : FOutgoingMessage
 
 struct FCommandResponse : FOutgoingMessage
 {
-	FCommandResponse(Worker_RequestId InRequestId, const Worker_CommandResponse& InResponse)
+	FCommandResponse(Worker_RequestId InRequestId, const Worker_CommandResponse& InResponse, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::CommandResponse)
 		, RequestId(InRequestId)
 		, Response(InResponse)
+		, SpanId(SpanId)
 	{
 	}
 
 	Worker_RequestId RequestId;
 	Worker_CommandResponse Response;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FCommandFailure : FOutgoingMessage
 {
-	FCommandFailure(Worker_RequestId InRequestId, const FString& InMessage)
+	FCommandFailure(Worker_RequestId InRequestId, const FString& InMessage, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::CommandFailure)
 		, RequestId(InRequestId)
 		, Message(InMessage)
+		, SpanId(SpanId)
 	{
 	}
 
 	Worker_RequestId RequestId;
 	FString Message;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FLogMessage : FOutgoingMessage
@@ -173,19 +187,6 @@ struct FLogMessage : FOutgoingMessage
 	uint8_t Level;
 	FName LoggerName;
 	FString Message;
-};
-
-struct FComponentInterest : FOutgoingMessage
-{
-	FComponentInterest(Worker_EntityId InEntityId, TArray<Worker_InterestOverride>&& InInterests)
-		: FOutgoingMessage(EOutgoingMessageType::ComponentInterest)
-		, EntityId(InEntityId)
-		, Interests(MoveTemp(InInterests))
-	{
-	}
-
-	Worker_EntityId EntityId;
-	TArray<Worker_InterestOverride> Interests;
 };
 
 struct FEntityQueryRequest : FOutgoingMessage

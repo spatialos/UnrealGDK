@@ -7,3 +7,10 @@ component AuthorityIntent {
      // 0 is reserved as an invalid/unset value.
      uint32 virtual_worker_id = 1;
 }
+
+component_set AuthorityIntentSet {
+  id = 9980;
+  components = [
+    AuthorityIntent
+  ];
+}

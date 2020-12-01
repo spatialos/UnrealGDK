@@ -14,5 +14,5 @@ class SPATIALGDKFUNCTIONALTESTS_API ADormancyAndTombstoneTest : public ASpatialF
 public:
 	ADormancyAndTombstoneTest();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 };

@@ -2,6 +2,7 @@
 
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "Schema/StandardLibrary.h"
+#include "SpatialConstants.h"
 #include "TestGridBasedLBStrategy.h"
 
 #include "CoreMinimal.h"
@@ -9,6 +10,7 @@
 #include "Engine/World.h"
 #include "GameFramework/DefaultPawn.h"
 #include "GameFramework/GameStateBase.h"
+#include "SpatialGDKTests/SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "Tests/TestDefinitions.h"
@@ -57,6 +59,8 @@ bool FCleanup::Update()
 	}
 	TestActors.Empty();
 	Strat = nullptr;
+
+	GEditor->RequestEndPlayMap();
 
 	return true;
 }
@@ -173,6 +177,12 @@ bool FCheckVirtualWorkersMatch::Update()
 	return true;
 }
 
+void TearDown(FAutomationTestBase* Test)
+{
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup());
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(Test, EDeploymentState::IsNotRunning));
+}
+
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_minimum_required_workers_is_called_THEN_it_returns_6)
 {
 	CreateStrategy(2, 3, 10000.f, 10000.f, 1);
@@ -207,7 +217,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_interest_for_virtual_w
 	Strat->SetVirtualWorkerIds(1, Strat->GetMinimumRequiredWorkers());
 	Strat->SetLocalVirtualWorkerId(4);
 
-	SpatialGDK::QueryConstraint StratConstraint = Strat->GetWorkerInterestQueryConstraint();
+	SpatialGDK::QueryConstraint StratConstraint = Strat->GetWorkerInterestQueryConstraint(4);
 
 	SpatialGDK::BoxConstraint Box = StratConstraint.BoxConstraint.GetValue();
 
@@ -266,21 +276,22 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_more_than_one_column_WHEN_requires_handover_data_
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 1, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor", FVector::ZeroVector));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup());
+
+	TearDown(this);
 
 	return true;
 }
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_return_different_virtual_workers)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(2, 2, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
@@ -293,14 +304,15 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_r
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor3"));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor4"));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckVirtualWorkersDiffer(this, { "Actor1", "Actor2", "Actor3", "Actor4" }));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup());
+
+	TearDown(this);
 
 	return true;
 }
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_authority)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(2, 1, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
@@ -311,14 +323,15 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_sho
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FMoveActor("Actor1", FVector(2.f, 0.f, 0.f)));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup());
+
+	TearDown(this);
 
 	return true;
 }
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_should_belong_to_same_worker_id)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 2, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
@@ -327,14 +340,15 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_shou
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor1"));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor2"));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckVirtualWorkersMatch(this, { "Actor1", "Actor2" }));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup());
+
+	TearDown(this);
 
 	return true;
 }
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_relinquishes_based_on_local_id)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(0.f, -2500.f, 0.f)));
@@ -343,7 +357,8 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_re
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 2, 10000.f, 10000.f, 2));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup());
+
+	TearDown(this);
 
 	return true;
 }

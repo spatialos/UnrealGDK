@@ -24,6 +24,8 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	virtual void BeginPlay() override;
+
 	virtual void OnAuthorityGained() override;
 
 	virtual void Tick(float DeltaSeconds) override;
@@ -38,7 +40,7 @@ public:
 	void CrossServerStartStep(int StepIndex);
 
 	// Tells Test owner that the current Step is finished locally
-	void NotifyStepFinished();
+	void NotifyStepFinished(const int StepIndex);
 
 	// Tell the Test owner that we want to end the Test
 	void NotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);
@@ -57,7 +59,12 @@ public:
 	// When Test is finished, this gets triggered. It's mostly important for when a Test was failed during runtime
 	void OnTestFinished();
 
-	// Returns if the data regarding the FlowControllers has been replicated to their owners
+	// Marks the Flow Controller to be ready or not for the test to start, which means that PrepareTest()
+	// has been called locally on the OwningTest.
+	UFUNCTION()
+	void SetReadyToRunTest(bool bIsReady);
+
+	// Returns if the data regarding the FlowControllers has been replicated PrepareTest() has run on locally on the OwningTest.
 	bool IsReadyToRunTest() { return WorkerDefinition.Id != INVALID_FLOW_CONTROLLER_ID && bIsReadyToRunTest; }
 
 	// Each server worker will assign local client ids, this function will be used by
@@ -88,7 +95,7 @@ private:
 	void OnReadyToRegisterWithTest();
 
 	UFUNCTION(Server, Reliable)
-	void ServerSetReadyToRunTest();
+	void ServerSetReadyToRunTest(bool bIsReady);
 
 	UFUNCTION(Client, Reliable)
 	void ClientStartStep(int StepIndex);
@@ -98,10 +105,10 @@ private:
 	void StopStepInternal();
 
 	UFUNCTION(Server, Reliable)
-	void ServerNotifyStepFinished();
+	void ServerNotifyStepFinished(const int StepIndex);
 
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerNotifyStepFinished();
+	void CrossServerNotifyStepFinished(const int StepIndex);
 
 	UFUNCTION(Server, Reliable)
 	void ServerNotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);

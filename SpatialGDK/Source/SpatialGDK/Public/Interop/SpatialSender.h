@@ -2,16 +2,16 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
+#include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialClassInfoManager.h"
-#include "Interop/SpatialRPCService.h"
 #include "Schema/RPCPayload.h"
-#include "TimerManager.h"
 #include "Utils/RPCContainer.h"
 #include "Utils/RepDataUtils.h"
+
+#include "CoreMinimal.h"
+#include "TimerManager.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -29,10 +29,15 @@ class USpatialStaticComponentView;
 class USpatialClassInfoManager;
 class USpatialWorkerConnection;
 
+namespace SpatialGDK
+{
+class SpatialEventTracer;
+}
+
 struct FReliableRPCForRetry
 {
 	FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex,
-						 const TArray<uint8>& InPayload, int InRetryIndex);
+						 const TArray<uint8>& InPayload, int InRetryIndex, const FSpatialGDKSpanId& InSpanId);
 
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
@@ -42,6 +47,7 @@ struct FReliableRPCForRetry
 	int Attempts; // For reliable RPCs
 
 	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FPendingRPC
@@ -58,9 +64,11 @@ struct FPendingRPC
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, SpatialGDK::RPCsOnEntityCreation>;
+using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, SpatialGDK::RPCsOnEntityCreation, FDefaultSetAllocator,
+									  TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<const UObject>, SpatialGDK::RPCsOnEntityCreation, false>>;
 using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<FWorkerComponentUpdate>>;
-using FChannelsToUpdatePosition = TSet<TWeakObjectPtr<USpatialActorChannel>>;
+using FChannelsToUpdatePosition =
+	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>>;
 
 UCLASS()
 class SPATIALGDK_API USpatialSender : public UObject
@@ -68,14 +76,15 @@ class SPATIALGDK_API USpatialSender : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService,
+			  SpatialGDK::SpatialEventTracer* InEventTracer);
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
 							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
-	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
-	void SetAclWriteAuthority(const SpatialLoadBalanceEnforcer::AclWriteAuthorityRequest& Request);
+
+	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const;
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	void SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 								 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
@@ -85,9 +94,10 @@ public:
 								USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 							 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
-	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response);
-	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId);
-	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
+	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId);
+	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
+								  const FSpatialGDKSpanId& CauseSpanId);
+	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const FSpatialGDKSpanId& CauseSpanId);
 	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info, uint32& OutBytesWritten);
 	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas);
 	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);
@@ -105,9 +115,6 @@ public:
 	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 
-	void SendClientEndpointReadyUpdate(Worker_EntityId EntityId);
-	void SendServerEndpointReadyUpdate(Worker_EntityId EntityId);
-
 	void EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
 	void FlushRetryRPCs();
 	void RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
@@ -115,7 +122,6 @@ public:
 	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
 	void ProcessPositionUpdates();
 
-	void UpdateClientAuthoritativeComponentAclEntries(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute);
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
@@ -136,6 +142,8 @@ public:
 	void ClearPendingRPCs(const Worker_EntityId EntityId);
 
 	bool ValidateOrExit_IsSupportedClass(const FString& PathName);
+
+	void SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const;
 
 private:
 	// Create a copy of an array of components. Deep copies all Schema_ComponentData.
@@ -200,4 +208,6 @@ private:
 	FUpdatesQueuedUntilAuthority UpdatesQueuedUntilAuthorityMap;
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
+
+	SpatialGDK::SpatialEventTracer* EventTracer;
 };

@@ -20,7 +20,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ARegisterAutoDestroyActorsTestPart1 : public
 
 	ARegisterAutoDestroyActorsTestPart1();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 };
 
 UCLASS()
@@ -30,5 +30,5 @@ class SPATIALGDKFUNCTIONALTESTS_API ARegisterAutoDestroyActorsTestPart2 : public
 
 	ARegisterAutoDestroyActorsTestPart2();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 };

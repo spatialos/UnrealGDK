@@ -67,23 +67,28 @@ inline FString RPCTypeToString(ERPCType RPCType)
 
 enum EntityIds
 {
-	INVALID_ENTITY_ID = 0,
 	INITIAL_SPAWNER_ENTITY_ID = 1,
 	INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
 	INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = 3,
-	FIRST_AVAILABLE_ENTITY_ID = 4,
+	INITIAL_SNAPSHOT_PARTITION_ENTITY_ID = 4,
+	FIRST_AVAILABLE_ENTITY_ID = 5,
 };
+
+const Worker_PartitionId INVALID_PARTITION_ID = INVALID_ENTITY_ID;
 
 const Worker_ComponentId INVALID_COMPONENT_ID = 0;
 
-const Worker_ComponentId ENTITY_ACL_COMPONENT_ID = 50;
 const Worker_ComponentId METADATA_COMPONENT_ID = 53;
 const Worker_ComponentId POSITION_COMPONENT_ID = 54;
 const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
 const Worker_ComponentId INTEREST_COMPONENT_ID = 58;
+
+const Worker_ComponentSetId WELL_KNOWN_COMPONENT_SET_ID = 50;
+
 // This is a component on per-worker system entities.
 const Worker_ComponentId WORKER_COMPONENT_ID = 60;
 const Worker_ComponentId PLAYERIDENTITY_COMPONENT_ID = 61;
+const Worker_ComponentId AUTHORITY_DELEGATION_COMPONENT_ID = 65;
 
 const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID = 100;
 
@@ -95,6 +100,7 @@ const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
 const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
 const Worker_ComponentId HEARTBEAT_COMPONENT_ID = 9991;
+
 // Marking the event-based RPC components as legacy while the ring buffer
 // implementation is under a feature flag.
 const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9990;
@@ -123,14 +129,12 @@ const Worker_ComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID = 9971;
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
 // System query tags for entity completeness
-const Worker_ComponentId SERVER_AUTH_TAG_COMPONENT_ID = 2001;
-const Worker_ComponentId SERVER_NON_AUTH_TAG_COMPONENT_ID = 2002;
-const Worker_ComponentId CLIENT_AUTH_TAG_COMPONENT_ID = 2003;
-const Worker_ComponentId CLIENT_NON_AUTH_TAG_COMPONENT_ID = 2004;
+const Worker_ComponentId FIRST_EC_COMPONENT_ID = 2001;
+const Worker_ComponentId ACTOR_AUTH_TAG_COMPONENT_ID = 2001;
+const Worker_ComponentId ACTOR_NON_AUTH_TAG_COMPONENT_ID = 2002;
 const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
-const Worker_ComponentId SERVER_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2006;
-const Worker_ComponentId SERVER_NON_AUTH_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
-const Worker_ComponentId CLIENT_GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2008;
+const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
+const Worker_ComponentId LAST_EC_COMPONENT_ID = 2008;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
@@ -189,13 +193,15 @@ const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID = 1;
 // VirtualWorkerTranslation Field IDs.
 const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID = 1;
 const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID = 1;
-const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME = 2;
+const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME_ID = 2;
 const Schema_FieldId MAPPING_SERVER_WORKER_ENTITY_ID = 3;
+const Schema_FieldId MAPPING_PARTITION_ID = 4;
 const PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME = FString("UnsetWorkerName");
 
 // WorkerEntity Field IDs.
 const Schema_FieldId WORKER_ID_ID = 1;
 const Schema_FieldId WORKER_TYPE_ID = 2;
+const Schema_FieldId WORKER_CLAIM_PARTITION_COMMAND_ID = 2;
 
 // SpatialDebugger Field IDs.
 const Schema_FieldId SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID = 1;
@@ -207,6 +213,7 @@ const Schema_FieldId SPATIAL_DEBUGGING_IS_LOCKED = 5;
 // ServerWorker Field IDs.
 const Schema_FieldId SERVER_WORKER_NAME_ID = 1;
 const Schema_FieldId SERVER_WORKER_READY_TO_BEGIN_PLAY_ID = 2;
+const Schema_FieldId SERVER_WORKER_SYSTEM_ENTITY_ID = 3;
 const Schema_FieldId SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID = 1;
 
 // SpawnPlayerRequest type IDs.
@@ -214,18 +221,19 @@ const Schema_FieldId SPAWN_PLAYER_URL_ID = 1;
 const Schema_FieldId SPAWN_PLAYER_UNIQUE_ID = 2;
 const Schema_FieldId SPAWN_PLAYER_PLATFORM_NAME_ID = 3;
 const Schema_FieldId SPAWN_PLAYER_IS_SIMULATED_ID = 4;
+const Schema_FieldId SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID = 5;
 
 // ForwardSpawnPlayerRequest type IDs.
 const Schema_FieldId FORWARD_SPAWN_PLAYER_DATA_ID = 1;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_START_ACTOR_ID = 2;
-const Schema_FieldId FORWARD_SPAWN_PLAYER_CLIENT_WORKER_ID = 3;
+const Schema_FieldId FORWARD_SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID = 3;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_RESPONSE_SUCCESS_ID = 1;
 
 // ComponentPresence Field IDs.
 const Schema_FieldId COMPONENT_PRESENCE_COMPONENT_LIST_ID = 1;
 
 // NetOwningClientWorker Field IDs.
-const Schema_FieldId NET_OWNING_CLIENT_WORKER_FIELD_ID = 1;
+const Schema_FieldId NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID = 1;
 
 // UnrealMetadata Field IDs.
 const Schema_FieldId UNREAL_METADATA_STABLY_NAMED_REF_ID = 1;
@@ -244,13 +252,6 @@ const ActorLockToken INVALID_ACTOR_LOCK_TOKEN = 0;
 const FString INVALID_WORKER_NAME = TEXT("");
 
 static const FName DefaultLayer = FName(TEXT("DefaultLayer"));
-
-const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{ DefaultServerWorkerType.ToString() };
-const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{ DefaultClientWorkerType.ToString() };
-
-const WorkerRequirementSet UnrealServerPermission{ { UnrealServerAttributeSet } };
-const WorkerRequirementSet UnrealClientPermission{ { UnrealClientAttributeSet } };
-const WorkerRequirementSet ClientOrServerPermission{ { UnrealClientAttributeSet, UnrealServerAttributeSet } };
 
 const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
@@ -313,6 +314,9 @@ const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 const FString SCHEMA_DATABASE_FILE_PATH = TEXT("Spatial/SchemaDatabase");
 const FString SCHEMA_DATABASE_ASSET_PATH = TEXT("/Game/Spatial/SchemaDatabase");
 
+// An empty map with the game mode override set to GameModeBase.
+const FString EMPTY_TEST_MAP_PATH = TEXT("/SpatialGDK/Maps/Empty");
+
 const FString DEV_LOGIN_TAG = TEXT("dev_login");
 
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
@@ -327,14 +331,20 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 	DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID,
 
 	// Debugging information
-	DEBUG_METRICS_COMPONENT_ID, SPATIAL_DEBUGGING_COMPONENT_ID
+	DEBUG_METRICS_COMPONENT_ID, SPATIAL_DEBUGGING_COMPONENT_ID,
+
+	// Non auth actor tag
+	ACTOR_NON_AUTH_TAG_COMPONENT_ID
 };
 
 // A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
 	TArray<Worker_ComponentId>{ // RPCs from the server
-								SERVER_ENDPOINT_COMPONENT_ID, SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY
+								SERVER_ENDPOINT_COMPONENT_ID, SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
+
+								// Actor auth tag
+								ACTOR_AUTH_TAG_COMPONENT_ID
 	};
 
 // A list of components servers require on top of any generated data and handover components in order to handle non-authoritative actors
@@ -354,7 +364,10 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 								VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
 
 								// Authority intent component to handle scattered hierarchies
-								AUTHORITY_INTENT_COMPONENT_ID
+								AUTHORITY_INTENT_COMPONENT_ID,
+
+								// Tags: Well known entities, and non-auth actors
+								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_NON_AUTH_TAG_COMPONENT_ID
 	};
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
@@ -364,8 +377,16 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 								CLIENT_ENDPOINT_COMPONENT_ID, CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
 
 								// Heartbeat
-								HEARTBEAT_COMPONENT_ID
+								HEARTBEAT_COMPONENT_ID,
+
+								// Auth actor tag
+								ACTOR_AUTH_TAG_COMPONENT_ID
 	};
+
+inline bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId)
+{
+	return ComponentId >= SpatialConstants::FIRST_EC_COMPONENT_ID && ComponentId <= SpatialConstants::LAST_EC_COMPONENT_ID;
+}
 
 inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {

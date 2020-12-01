@@ -10,9 +10,17 @@ type VirtualWorkerMapping {
      uint32 virtual_worker_id = 1;
      string physical_worker_name = 2;
      EntityId server_worker_entity = 3;
+     EntityId partition_id = 4;
 }
 
 component VirtualWorkerTranslation {
      id = 9979;
-     transient list<VirtualWorkerMapping> virtual_worker_mapping = 1;
+     list<VirtualWorkerMapping> virtual_worker_mapping = 1;
+}
+
+component_set VirtualWorkerTranslationSet {
+  id = 9979;
+  components = [
+    VirtualWorkerTranslation
+  ];
 }

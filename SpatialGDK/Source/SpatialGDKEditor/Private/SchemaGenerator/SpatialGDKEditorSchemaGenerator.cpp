@@ -272,12 +272,15 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 
 void WriteLevelComponent(FCodeWriter& Writer, const FString& LevelName, Worker_ComponentId ComponentId, const FString& ClassPath)
 {
+	FString ComponentName = UnrealNameToSchemaComponentName(LevelName);
 	Writer.PrintNewLine();
 	Writer.Printf("// {0}", *ClassPath);
-	Writer.Printf("component {0} {", *UnrealNameToSchemaComponentName(LevelName));
+	Writer.Printf("component {0} {", *ComponentName);
 	Writer.Indent();
 	Writer.Printf("id = {0};", ComponentId);
 	Writer.Outdent().Print("}");
+
+	WriteComponentSetToFile(Writer, ComponentName, ComponentId);
 }
 
 TMultiMap<FName, FName> GetLevelNamesToPathsMap()
@@ -394,12 +397,17 @@ void GenerateSchemaForNCDs(const FString& SchemaOutputPath)
 			NCDComponent.Value = IdGenerator.Next();
 		}
 
+		FString SchemaComponentName = UnrealNameToSchemaComponentName(ComponentName);
+		Worker_ComponentId ComponentId = NCDComponent.Value;
+
 		Writer.PrintNewLine();
 		Writer.Printf("// distance {0}", NCDComponent.Key);
-		Writer.Printf("component {0} {", *UnrealNameToSchemaComponentName(ComponentName));
+		Writer.Printf("component {0} {", *SchemaComponentName);
 		Writer.Indent();
-		Writer.Printf("id = {0};", NCDComponent.Value);
+		Writer.Printf("id = {0};", ComponentId);
 		Writer.Outdent().Print("}");
+
+		WriteComponentSetToFile(Writer, SchemaComponentName, ComponentId);
 	}
 
 	NextAvailableComponentId = IdGenerator.Peek();
@@ -866,10 +874,9 @@ bool RunSchemaCompiler()
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-	const FString& SchemaCompilerBaseArgs =
-		FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --bundle_out=\"%s\" "
-							 "--bundle_json_out=\"%s\" --load_all_schema_on_schema_path "),
-						*SchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput, *SchemaBundleOutput, *SchemaBundleJsonOutput);
+	const FString& SchemaCompilerBaseArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --bundle_out=\"%s\" "
+																 "--bundle_json_out=\"%s\" --load_all_schema_on_schema_path "),
+															*SchemaDir, *CoreSDKSchemaDir, *SchemaBundleOutput, *SchemaBundleJsonOutput);
 
 	// If there's already a compiled schema dir, blow it away so we don't have lingering artifacts from previous generation runs.
 	if (FPaths::DirectoryExists(CompiledSchemaDir))
@@ -940,6 +947,17 @@ bool RunSchemaCompiler()
 			   *SchemaCompilerArgs, *SchemaCompilerErr);
 		return false;
 	}
+}
+
+void WriteComponentSetToFile(FCodeWriter& Writer, const FString& ComponentName, Worker_ComponentId ComponentId)
+{
+	Writer.PrintNewLine();
+	Writer.Printf("component_set {0}Set {", *ComponentName).Indent();
+	Writer.Printf("id = {0};", ComponentId);
+	Writer.Printf("components = [").Indent();
+	Writer.Printf("{0}", *ComponentName);
+	Writer.Outdent().Print("];");
+	Writer.Outdent().Print("}");
 }
 
 bool SpatialGDKGenerateSchema()

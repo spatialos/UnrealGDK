@@ -108,7 +108,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	// However, it is no longer required in 4.25 and beyond, due to the editor flow refactors.
 #if ENGINE_MINOR_VERSION < 25
 	FEditorDelegates::PreBeginPIE.AddLambda([this](bool bIsSimulatingInEditor) {
-		if (GIsAutomationTesting && GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+		if (GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment && GIsAutomationTesting
+			&& GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
 			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
 			LocalDeploymentManager->GetLocalDeploymentStatus();
@@ -729,9 +730,13 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 	if (SpatialDebugger.IsValid())
 	{
 		USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-		SpatialGDKEditorSettings->SetSpatialDebuggerEditorEnabled(!SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled);
+		SpatialGDKEditorSettings->SetSpatialDebuggerEditorEnabled(!SpatialGDKEditorSettings->IsSpatialDebuggerEditorEnabled());
+		GDK_PROPERTY(Property)* SpatialDebuggerEditorEnabledProperty =
+			USpatialGDKEditorSettings::StaticClass()->FindPropertyByName(FName("bSpatialDebuggerEditorEnabled"));
+		SpatialGDKEditorSettings->UpdateSinglePropertyInConfigFile(SpatialDebuggerEditorEnabledProperty,
+																   SpatialGDKEditorSettings->GetDefaultConfigFilename());
 
-		SpatialDebugger->EditorSpatialToggleDebugger(SpatialGDKEditorSettings->bSpatialDebuggerEditorEnabled);
+		SpatialDebugger->EditorSpatialToggleDebugger(SpatialGDKEditorSettings->IsSpatialDebuggerEditorEnabled());
 	}
 	else
 	{
@@ -742,7 +747,9 @@ void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 void FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor()
 {
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	SpatialGDKSettings->SetMultiWorkerEnabled(!SpatialGDKSettings->bEnableMultiWorker);
+	SpatialGDKSettings->SetMultiWorkerEditorEnabled(!SpatialGDKSettings->IsMultiWorkerEditorEnabled());
+	GDK_PROPERTY(Property)* EnableMultiWorkerProperty = USpatialGDKSettings::StaticClass()->FindPropertyByName(FName("bEnableMultiWorker"));
+	SpatialGDKSettings->UpdateSinglePropertyInConfigFile(EnableMultiWorkerProperty, SpatialGDKSettings->GetDefaultConfigFilename());
 
 	if (SpatialDebugger.IsValid())
 	{
@@ -1267,7 +1274,8 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 		{
 			// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
 			UEditorEngine::TryStartSpatialDeployment.BindLambda([this](FString ForceSnapshot) {
-				if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+				if (GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment
+					&& GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 				{
 					VerifyAndStartDeployment(ForceSnapshot);
 				}

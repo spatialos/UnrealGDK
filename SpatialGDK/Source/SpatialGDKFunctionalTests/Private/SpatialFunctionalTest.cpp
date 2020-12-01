@@ -2,12 +2,14 @@
 
 #include "SpatialFunctionalTest.h"
 
+#include "AutomationBlueprintFunctionLibrary.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/FileManagerGeneric.h"
 #include "HttpModule.h"
@@ -40,6 +42,8 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	bAlwaysRelevant = true;
 
 	PrimaryActorTick.TickInterval = 0.0f;
+
+	PreparationTimeLimit = 30.0f;
 }
 
 void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -48,6 +52,7 @@ void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ASpatialFunctionalTest, bReadyToSpawnServerControllers);
 	DOREPLIFETIME(ASpatialFunctionalTest, FlowControllers);
 	DOREPLIFETIME(ASpatialFunctionalTest, CurrentStepIndex);
+	DOREPLIFETIME(ASpatialFunctionalTest, bPreparedTest);
 }
 
 void ASpatialFunctionalTest::BeginPlay()
@@ -182,6 +187,19 @@ void ASpatialFunctionalTest::LogStep(ELogVerbosity::Type Verbosity, const FStrin
 	}
 }
 
+void ASpatialFunctionalTest::PrepareTest()
+{
+	StepDefinitions.Empty();
+
+	Super::PrepareTest();
+
+	if (HasAuthority())
+	{
+		bPreparedTest = true;
+		OnReplicated_bPreparedTest();
+	}
+}
+
 bool ASpatialFunctionalTest::IsReady_Implementation()
 {
 	int NumRegisteredClients = 0;
@@ -228,7 +246,7 @@ void ASpatialFunctionalTest::FinishStep()
 	ensureMsgf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
 	if (AuxLocalFlowController != nullptr)
 	{
-		AuxLocalFlowController->NotifyStepFinished();
+		AuxLocalFlowController->NotifyStepFinished(CurrentStepIndex);
 	}
 }
 
@@ -277,6 +295,9 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 		// Make sure we don't FinishTest multiple times.
 		if (CurrentStepIndex != SPATIAL_FUNCTIONAL_TEST_FINISHED)
 		{
+			bPreparedTest = false; // Clear for PrepareTest to run on all again if the test re-runs.
+			OnReplicated_bPreparedTest();
+
 			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(),
 				   *UEnum::GetValueAsString(TestResult), *Message);
 
@@ -367,6 +388,12 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 	}
 }
 
+void ASpatialFunctionalTest::AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences /*= 1*/,
+												 bool bExactMatch /*= false*/)
+{
+	UAutomationBlueprintFunctionLibrary::AddExpectedLogError(ExpectedPatternString, Occurrences, bExactMatch);
+}
+
 void ASpatialFunctionalTest::CrossServerFinishTest_Implementation(EFunctionalTestResult TestResult, const FString& Message)
 {
 	FinishTest(TestResult, Message);
@@ -419,6 +446,11 @@ void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, const FWo
 											  const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent,
 											  const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
 {
+	if (StepName.IsEmpty())
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("Adding a Step without a name"));
+	}
+
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = false;
 	StepDefinition.StepName = StepName;
@@ -435,6 +467,10 @@ void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, const FWo
 void ASpatialFunctionalTest::AddStepFromDefinition(const FSpatialFunctionalTestStepDefinition& StepDefinition,
 												   const FWorkerDefinition& Worker)
 {
+	if (StepDefinition.StepName.IsEmpty())
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("Adding a Step without a name"));
+	}
 	FSpatialFunctionalTestStepDefinition StepDefinitionCopy = StepDefinition;
 
 	StepDefinitionCopy.Workers.Add(Worker);
@@ -445,6 +481,10 @@ void ASpatialFunctionalTest::AddStepFromDefinition(const FSpatialFunctionalTestS
 void ASpatialFunctionalTest::AddStepFromDefinitionMulti(const FSpatialFunctionalTestStepDefinition& StepDefinition,
 														const TArray<FWorkerDefinition>& Workers)
 {
+	if (StepDefinition.StepName.IsEmpty())
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("Adding a Step without a name"));
+	}
 	FSpatialFunctionalTestStepDefinition StepDefinitionCopy = StepDefinition;
 
 	StepDefinitionCopy.Workers.Append(Workers);
@@ -521,6 +561,11 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FStr
 																	  FTickEventFunc TickEvent /*= nullptr*/,
 																	  float StepTimeLimit /*= 0.0f*/)
 {
+	if (StepName.IsEmpty())
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("Adding a Step without a name"));
+	}
+
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.bIsNativeDefinition = true;
 	StepDefinition.StepName = StepName;
@@ -558,20 +603,21 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(
 	return nullptr;
 }
 
-void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpatialFunctionalTestFlowController* FlowController)
+void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpatialFunctionalTestFlowController* FlowController,
+																		  const int StepIndex)
 {
-	if (CurrentStepIndex < 0)
+	if (CurrentStepIndex < 0 || StepIndex != CurrentStepIndex)
 	{
 		return;
 	}
 
-	const FString FLowControllerDisplayName = FlowController->GetDisplayName();
+	const FString FlowControllerDisplayName = FlowController->GetDisplayName();
 
-	UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s finished Step"), *FLowControllerDisplayName);
+	UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s finished Step"), *FlowControllerDisplayName);
 
 	if (FlowControllersExecutingStep.RemoveSwap(FlowController) == 0)
 	{
-		FString ErrorMsg = FString::Printf(TEXT("%s was not in list of workers executing"), *FLowControllerDisplayName);
+		FString ErrorMsg = FString::Printf(TEXT("%s was not in list of workers executing"), *FlowControllerDisplayName);
 		ensureMsgf(false, TEXT("%s"), *ErrorMsg);
 		FinishTest(EFunctionalTestResult::Error, ErrorMsg);
 	}
@@ -601,6 +647,28 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 	}
 }
 
+void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
+{
+	if (bPreparedTest)
+	{
+		// We need to delay until next Tick since on non-Authority
+		// OnReplicated_bPreparedTest() will be called before BeginPlay().
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
+			if (!HasAuthority())
+			{
+				PrepareTest();
+			}
+
+			// Currently PrepareTest() happens before FlowControllers are registered,
+			// but that is most likely because of the bug that forces us to delay their registration.
+			if (LocalFlowController != nullptr)
+			{
+				LocalFlowController->SetReadyToRunTest(true);
+			}
+		});
+	}
+}
+
 void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 {
 	if (!bReadyToSpawnServerControllers)
@@ -618,15 +686,22 @@ void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 
 void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
 {
-	GetWorld()->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateLambda([this](AActor* Spawned) {
-		if (APlayerController* PlayerController = Cast<APlayerController>(Spawned))
+	PostLoginDelegate = FGameModeEvents::GameModePostLoginEvent.AddLambda([this](AGameModeBase* GameMode, APlayerController* NewPlayer) {
+		// NB : the delegate is a global one, have to filter in case we are running from PIE <==> multiple worlds.
+		if (NewPlayer->GetWorld() == GetWorld() && NewPlayer->HasAuthority())
 		{
-			if (PlayerController->HasAuthority())
-			{
-				this->FlowControllerSpawner.SpawnClientFlowController(PlayerController);
-			}
+			this->FlowControllerSpawner.SpawnClientFlowController(NewPlayer);
 		}
-	}));
+	});
+}
+
+void ASpatialFunctionalTest::EndPlay(const EEndPlayReason::Type Reason)
+{
+	if (PostLoginDelegate.IsValid())
+	{
+		FGameModeEvents::GameModePostLoginEvent.Remove(PostLoginDelegate);
+		PostLoginDelegate.Reset();
+	}
 }
 
 void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
@@ -688,6 +763,11 @@ ULayeredLBStrategy* ASpatialFunctionalTest::GetLoadBalancingStrategy()
 
 void ASpatialFunctionalTest::AddDebugTag(AActor* Actor, FName Tag)
 {
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
 	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
 	{
 		NetDriver->DebugCtx->AddActorTag(Actor, Tag);
@@ -736,15 +816,48 @@ void ASpatialFunctionalTest::KeepActorOnCurrentWorker(AActor* Actor)
 	}
 }
 
-void ASpatialFunctionalTest::DelegateTagToWorker(FName Tag, int32 WorkerId)
+void ASpatialFunctionalTest::AddStepSetTagDelegation(FName Tag, int32 ServerWorkerId /*= 1*/)
+{
+	if (!ensureMsgf(ServerWorkerId > 0, TEXT("Invalid Server Worker Id")))
+	{
+		return;
+	}
+	if (ServerWorkerId >= GetNumExpectedServers())
+	{
+		ServerWorkerId = 1; // Support for single worker environments.
+	}
+	AddStep(FString::Printf(TEXT("Set Delegation of Tag '%s' to Server Worker %d"), *Tag.ToString(), ServerWorkerId),
+			FWorkerDefinition::AllServers, nullptr, [this, Tag, ServerWorkerId] {
+				SetTagDelegation(Tag, ServerWorkerId);
+				FinishStep();
+			});
+}
+
+void ASpatialFunctionalTest::AddStepClearTagDelegation(FName Tag)
+{
+	AddStep(FString::Printf(TEXT("Clear Delegation of Tag '%s'"), *Tag.ToString()), FWorkerDefinition::AllServers, nullptr, [this, Tag] {
+		ClearTagDelegation(Tag);
+		FinishStep();
+	});
+}
+
+void ASpatialFunctionalTest::AddStepClearTagDelegationAndInterest()
+{
+	AddStep(TEXT("Clear Delegation of all Tags and extra Interest"), FWorkerDefinition::AllServers, nullptr, [this] {
+		ClearTagDelegationAndInterest();
+		FinishStep();
+	});
+}
+
+void ASpatialFunctionalTest::SetTagDelegation(FName Tag, int32 ServerWorkerId)
 {
 	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
 	{
-		NetDriver->DebugCtx->DelegateTagToWorker(Tag, WorkerId);
+		NetDriver->DebugCtx->DelegateTagToWorker(Tag, ServerWorkerId);
 	}
 }
 
-void ASpatialFunctionalTest::RemoveTagDelegation(FName Tag)
+void ASpatialFunctionalTest::ClearTagDelegation(FName Tag)
 {
 	if (USpatialNetDriver* NetDriver = GetNetDriverAndCheckDebuggingEnabled(this))
 	{

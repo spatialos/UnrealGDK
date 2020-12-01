@@ -232,7 +232,33 @@ TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromUnrealObjectRef(c
 	return nullptr;
 }
 
-TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const Worker_EntityId& EntityId)
+FNetworkGUID* USpatialPackageMapClient::GetRemovedDynamicSubobjectNetGUID(const FUnrealObjectRef& ObjectRef)
+{
+	if (FNetworkGUID* NetGUID = RemovedDynamicSubobjectObjectRefs.Find(ObjectRef))
+	{
+		return NetGUID;
+	}
+	return nullptr;
+}
+
+void USpatialPackageMapClient::AddRemovedDynamicSubobjectObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID)
+{
+	RemovedDynamicSubobjectObjectRefs.Emplace(ObjectRef, NetGUID);
+}
+
+void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Worker_EntityId& InEntityId)
+{
+	for (auto DynamicSubobjectIterator = RemovedDynamicSubobjectObjectRefs.CreateIterator(); DynamicSubobjectIterator;
+		 ++DynamicSubobjectIterator)
+	{
+		if (DynamicSubobjectIterator->Key.Entity == InEntityId)
+		{
+			DynamicSubobjectIterator.RemoveCurrent();
+		}
+	}
+}
+
+TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const Worker_EntityId EntityId)
 {
 	return GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, 0));
 }
@@ -366,6 +392,11 @@ const FClassInfo* USpatialPackageMapClient::TryResolveNewDynamicSubobjectAndGetC
 		   *GetNameSafe(Object), *GetNameSafe(Actor));
 
 	return nullptr;
+}
+
+Worker_EntityId USpatialPackageMapClient::AllocateNewEntityId() const
+{
+	return EntityPool->GetNextEntityId();
 }
 
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)

@@ -9,6 +9,7 @@
 #include "UObject/TextProperty.h"
 
 #include "SpatialGDKSettings.h"
+#include "Utils/SpatialDebugger.h"
 
 #include "SpatialStatics.generated.h"
 
@@ -37,6 +38,12 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS")
 	static bool IsSpatialNetworkingEnabled();
+
+	/**
+	 * Returns whether handover is disabled in offloading scenarios.
+	 */
+	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool IsHandoverEnabled(const UObject* WorldContextObject);
 
 	/**
 	 * Returns true if spatial networking and multi worker are enabled.
@@ -163,6 +170,9 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static FName GetLayerName(const UObject* WorldContextObject);
+
+	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Spatial Debugger", meta = (WorldContext = "WorldContextObject"))
+	static void SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* WorldContextObject, FOnConfigUIClosedDelegate Delegate);
 
 private:
 	static FName GetCurrentWorkerType(const UObject* WorldContext);

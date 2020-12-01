@@ -6,12 +6,13 @@
 #include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
+#include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialOutputDevice.h"
-#include "Interop/SpatialRPCService.h"
 #include "Interop/SpatialSnapshotManager.h"
 #include "SpatialView/OpList/OpList.h"
 #include "Utils/InterestFactory.h"
+#include "Utils/SpatialBasicAwaiter.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
@@ -19,6 +20,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
+#include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
 
@@ -50,6 +52,19 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialConsiderList, STATGROUP_SpatialNet, );
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Relevant Actors"), STAT_SpatialActorsRelevant, STATGROUP_SpatialNet, );
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Changed Relevant Actors"), STAT_SpatialActorsChanged, STATGROUP_SpatialNet, );
+
+enum class EActorMigrationResult : uint8
+{
+	Success,
+	NotAuthoritative,
+	NotReady,
+	PendingKill,
+	NotInitialized,
+	Streaming,
+	NetDormant,
+	NoSpatialClassFlags,
+	DormantOnConnection
+};
 
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
@@ -103,8 +118,9 @@ public:
 	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
-	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName);
-	void PostSpawnPlayerController(APlayerController* PlayerController, const FString& ConnectionOwningWorkerId);
+	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
+						 const Worker_EntityId& ClientSystemEntityId);
+	void PostSpawnPlayerController(APlayerController* PlayerController);
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId, USpatialActorChannel& Channel);
@@ -127,8 +143,11 @@ public:
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
-	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerId(const FString& WorkerId);
+	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerEntityId(const Worker_EntityId InWorkerEntityId);
 	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
+
+	bool HasServerAuthority(Worker_EntityId EntityId) const;
+	bool HasClientAuthority(Worker_EntityId EntityId) const;
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
@@ -154,6 +173,9 @@ public:
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 	UPROPERTY()
 	ASpatialDebugger* SpatialDebugger;
+	// Fires on a client once is has received the spatial debugger through replication. Does not fire on servers.
+	UPROPERTY()
+	USpatialBasicAwaiter* SpatialDebuggerReady;
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
 	UPROPERTY()
@@ -163,15 +185,16 @@ public:
 	UPROPERTY()
 	USpatialNetDriverDebugContext* DebugCtx;
 
+	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
-	TUniquePtr<SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
+
+	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	// If this worker is authoritative over the translation, the manager will be instantiated.
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
-	void InitializeVirtualWorkerTranslationManager();
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
@@ -200,6 +223,11 @@ public:
 	float GetElapsedTime() { return Time; }
 #endif
 
+	// Check if we have already logged this actor / migration failure, if not update the log record
+	bool IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
+
+	virtual int64 GetClientID() const override;
+
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
@@ -209,9 +237,9 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
-	TSet<TWeakObjectPtr<USpatialActorChannel>> PendingDormantChannels;
+	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>> PendingDormantChannels;
 
-	TMap<FString, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
+	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 
 	FTimerManager TimerManager;
 
@@ -266,7 +294,7 @@ private:
 
 	void ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters);
 	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
-									USpatialNetConnection** OutConn);
+									const Worker_EntityId& ClientSystemEntityId, USpatialNetConnection** OutConn);
 
 	void ProcessPendingDormancy();
 	void PollPendingLoads();
@@ -302,5 +330,13 @@ private:
 
 	void ProcessOwnershipChanges();
 
+	// Has a certain interval (in seconds) been passed since the previous timestamp
+	bool HasTimedOut(const float Interval, uint64& TimeStamp);
+
 	TSet<Worker_EntityId_Key> OwnershipChangedEntities;
+	uint64 StartupTimestamp;
+	FString StartupClientDebugString;
+
+	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
+	uint64 MigrationTimestamp;
 };

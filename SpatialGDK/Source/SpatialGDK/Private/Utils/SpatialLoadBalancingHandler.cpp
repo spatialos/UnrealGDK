@@ -42,7 +42,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 
 	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
-		AActor* NetOwner = SpatialGDK::GetHierarchyRoot(Actor);
+		AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 		const bool bNetOwnerHasAuth = NetOwner->HasAuthority();
 
 		// Load balance if we are not supposed to be on this worker, or if we are separated from our owner.
@@ -151,4 +151,58 @@ uint64 FSpatialLoadBalancingHandler::GetLatestAuthorityChangeFromHierarchy(const
 	}
 
 	return LatestTimestamp;
+}
+
+void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult ActorMigrationResult, AActor* Actor)
+{
+	FString FailureReason;
+
+	// Waiting before creating logs to suppress the logs for newly created actors
+	if (Actor->GetGameTimeSinceCreation() > 1)
+	{
+		switch (ActorMigrationResult)
+		{
+		case EActorMigrationResult::NotAuthoritative:
+			FailureReason = TEXT("does not have authority");
+			break;
+		case EActorMigrationResult::NotReady:
+			FailureReason = TEXT("is not ready");
+			break;
+		case EActorMigrationResult::PendingKill:
+			FailureReason = TEXT("is pending kill");
+			break;
+		case EActorMigrationResult::NotInitialized:
+			FailureReason = TEXT("is not initialized");
+			break;
+		case EActorMigrationResult::Streaming:
+			FailureReason = TEXT("is streaming in or out");
+			break;
+		case EActorMigrationResult::NetDormant:
+			FailureReason = TEXT("is startup actor and initially net dormant");
+			break;
+		case EActorMigrationResult::NoSpatialClassFlags:
+			FailureReason = TEXT("does not have spatial class flags");
+			break;
+		case EActorMigrationResult::DormantOnConnection:
+			FailureReason = TEXT("is dormant on connection");
+			break;
+		default:
+			break;
+		}
+	}
+
+	// If a failure reason is returned log warning
+	if (!FailureReason.IsEmpty())
+	{
+		Worker_EntityId ActorEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+
+		// Check if we have recently logged this actor / reason and if so suppress the log
+		if (!NetDriver->IsLogged(ActorEntityId, ActorMigrationResult))
+		{
+			AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
+			UE_LOG(LogSpatialLoadBalancingHandler, Warning,
+				   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *HierarchyRoot->GetName(),
+				   *Actor->GetName(), ActorEntityId, *FailureReason);
+		}
+	}
 }

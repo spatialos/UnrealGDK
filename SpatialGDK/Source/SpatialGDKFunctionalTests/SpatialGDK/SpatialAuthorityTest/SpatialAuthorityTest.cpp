@@ -32,9 +32,9 @@ ASpatialAuthorityTest::ASpatialAuthorityTest()
 	Server2Position = FVector(-250.0f, 250.0f, 0.0f);
 }
 
-void ASpatialAuthorityTest::BeginPlay()
+void ASpatialAuthorityTest::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 
 	ResetTimer();
 

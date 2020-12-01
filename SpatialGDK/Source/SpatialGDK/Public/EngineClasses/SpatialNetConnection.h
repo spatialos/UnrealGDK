@@ -60,11 +60,15 @@ public:
 
 	void ClientNotifyClientHasQuit();
 
+	void OnControllerDestroyed(AActor* DestroyedActor);
+
 	UPROPERTY()
 	bool bReliableSpatialConnection;
 
-	// Only used on the server for client connections.
-	FString ConnectionOwningWorkerId;
+	// Store the client system worker entity ID corresponding to this net connection.
+	// When the corresponding PlayerController is successfully spawned, we will claim
+	// the PlayerController as a partition entity for the client worker.
+	Worker_EntityId ConnectionClientWorkerSystemEntityId;
 
 	class FTimerManager* TimerManager;
 

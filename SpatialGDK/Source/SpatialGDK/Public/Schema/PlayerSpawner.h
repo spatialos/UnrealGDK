@@ -24,6 +24,7 @@ struct SpawnPlayerRequest
 	FUniqueNetIdRepl UniqueId;
 	FName OnlinePlatformName;
 	bool bIsSimulatedPlayer;
+	Worker_EntityId ClientSystemEntityId;
 };
 
 struct PlayerSpawner : Component
@@ -64,6 +65,7 @@ struct PlayerSpawner : Component
 		AddBytesToSchema(RequestObject, SpatialConstants::SPAWN_PLAYER_UNIQUE_ID, UniqueIdWriter);
 		AddStringToSchema(RequestObject, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID, SpawnRequest.OnlinePlatformName.ToString());
 		Schema_AddBool(RequestObject, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID, SpawnRequest.bIsSimulatedPlayer);
+		Schema_AddEntityId(RequestObject, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID, SpawnRequest.ClientSystemEntityId);
 	}
 
 	static FURL ExtractUrlFromPlayerSpawnParams(const Schema_Object* Payload)
@@ -85,7 +87,10 @@ struct PlayerSpawner : Component
 
 		const bool bIsSimulated = GetBoolFromSchema(CommandRequestPayload, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID);
 
-		return { LoginURL, UniqueId, OnlinePlatformName, bIsSimulated };
+		const Worker_EntityId ClientPartitionId =
+			Schema_GetEntityId(CommandRequestPayload, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID);
+
+		return { LoginURL, UniqueId, OnlinePlatformName, bIsSimulated, ClientPartitionId };
 	}
 
 	static void CopySpawnDataBetweenObjects(const Schema_Object* SpawnPlayerDataSource, Schema_Object* SpawnPlayerDataDestination)
@@ -98,6 +103,8 @@ struct PlayerSpawner : Component
 						  GetStringFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_PLATFORM_NAME_ID));
 		Schema_AddBool(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID,
 					   GetBoolFromSchema(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_IS_SIMULATED_ID));
+		Schema_AddEntityId(SpawnPlayerDataDestination, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID,
+						   Schema_GetEntityId(SpawnPlayerDataSource, SpatialConstants::SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID));
 	}
 };
 

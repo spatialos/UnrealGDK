@@ -18,6 +18,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineStats.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -29,6 +30,7 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SchemaOption.h"
 #include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
@@ -38,8 +40,6 @@ DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdate
 DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ServerProcessOwnershipChange"), STAT_ServerProcessOwnershipChange, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ClientProcessOwnershipChange"), STAT_ClientProcessOwnershipChange, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("CallUpdateEntityACLs"), STAT_CallUpdateEntityACLs, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("OnUpdateEntityACLSuccess"), STAT_OnUpdateEntityACLSuccess, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("IsAuthoritativeServer"), STAT_IsAuthoritativeServer, STATGROUP_SpatialNet);
 
 namespace
@@ -216,7 +216,6 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	bNeedOwnerInterestUpdate = false;
 
 	PendingDynamicSubobjects.Empty();
-	SavedConnectionOwningWorkerId.Empty();
 	SavedInterestBucketComponentID = SpatialConstants::INVALID_COMPONENT_ID;
 
 	FramesTillDormancyAllowed = 0;
@@ -242,7 +241,7 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		return;
 	}
 
-	const bool bHasAuthority = NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialGDK::Position::ComponentId);
+	const bool bHasAuthority = NetDriver->HasServerAuthority(EntityId);
 	if (Actor != nullptr)
 	{
 		if (bHasAuthority)
@@ -304,7 +303,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 
 		if (CloseReason == EChannelCloseReason::Destroyed || CloseReason == EChannelCloseReason::LevelUnloaded)
 		{
-			Receiver->ClearPendingRPCs(EntityId);
+			NetDriver->GetRPCService()->ClearPendingRPCs(EntityId);
 			Sender->ClearPendingRPCs(EntityId);
 		}
 		NetDriver->RemoveActorChannel(EntityId, *this);
@@ -734,7 +733,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 				if (ObjectRef.IsValid())
 				{
-					OnSubobjectDeleted(ObjectRef, RepComp.Key());
+					OnSubobjectDeleted(ObjectRef, RepComp.Key(), RepComp.Value()->GetWeakObjectPtr());
 
 					Sender->SendRemoveComponentForClassInfo(EntityId,
 															NetDriver->ClassInfoManager->GetClassInfoByComponentId(ObjectRef.Offset));
@@ -800,7 +799,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	}
 	else
 	{
-		// If we don't, modify the entity ACL to gain authority.
+		// If we don't, modify the auth delegation to gain authority.
 		PendingDynamicSubobjects.Add(TWeakObjectPtr<UObject>(Object));
 		Sender->GainAuthorityThenAddComponent(this, Object, Info);
 	}
@@ -1080,8 +1079,6 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 		check(!HandoverShadowDataMap.Contains(Subobject));
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
-
-	SavedConnectionOwningWorkerId = SpatialGDK::GetConnectionOwningWorkerId(InActor);
 }
 
 bool USpatialActorChannel::TryResolveActor()
@@ -1118,12 +1115,37 @@ FObjectReplicator* USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	return &Replicator;
 }
 
-void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies)
+void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+													const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
 
 	Replicator.RepState->GetReceivingRepState()->RepNotifies = RepNotifies;
+
+	SpatialGDK::SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+
+	auto PreCallRepNotify = [EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
+		const FSpatialGDKSpanId* SpanId = PropertySpanIds.Find(Property);
+		if (SpanId != nullptr)
+		{
+			EventTracer->AddToStack(*SpanId);
+		}
+	};
+
+	auto PostCallRepNotify = [EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
+		const FSpatialGDKSpanId* SpanId = PropertySpanIds.Find(Property);
+		if (SpanId != nullptr)
+		{
+			EventTracer->PopFromStack();
+		}
+	};
+
+	if (EventTracer != nullptr && PropertySpanIds.Num() > 0)
+	{
+		Replicator.RepLayout->PreRepNotify.BindLambda(PreCallRepNotify);
+		Replicator.RepLayout->PostRepNotify.BindLambda(PostCallRepNotify);
+	}
 
 	Replicator.CallRepNotifies(false);
 }
@@ -1194,6 +1216,16 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 			   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		break;
 	}
+
+	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS && Actor->IsA<APlayerController>())
+	{
+		// With USLB, we want the client worker that results in the spawning of a PlayerController to claim the
+		// PlayerController entity as a partition entity so the client can become authoritative over necessary
+		// components (such as client RPC endpoints, heartbeat component, etc).
+		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Cast<APlayerController>(Actor));
+		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
+		Sender->SendClaimPartitionRequest(ClientSystemEntityId, Op.entity_id);
+	}
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()
@@ -1243,8 +1275,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
 {
-	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID
-		&& NetDriver->StaticComponentView->HasAuthority(InEntityId, SpatialConstants::POSITION_COMPONENT_ID))
+	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(InEntityId))
 	{
 		Sender->SendPositionUpdate(InEntityId, NewPosition);
 	}
@@ -1304,24 +1335,22 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	bool bUpdatedThisActor = false;
 
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
-	FString NewClientConnectionWorkerId = SpatialGDK::GetConnectionOwningWorkerId(Actor);
-	if (SavedConnectionOwningWorkerId != NewClientConnectionWorkerId)
+	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID));
+	SpatialGDK::NetOwningClientWorker* CurrentNetOwningClientData =
+		NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
+	const Worker_PartitionId CurrentClientPartitionId = CurrentNetOwningClientData->ClientPartitionId.IsSet()
+															? CurrentNetOwningClientData->ClientPartitionId.GetValue()
+															: SpatialConstants::INVALID_ENTITY_ID;
+	const Worker_PartitionId NewClientConnectionPartitionId = SpatialGDK::GetConnectionOwningPartitionId(Actor);
+	if (CurrentClientPartitionId != NewClientConnectionPartitionId)
 	{
 		// Update the NetOwningClientWorker component.
-		check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID));
-		SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerData =
-			NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
-		NetOwningClientWorkerData->WorkerId = NewClientConnectionWorkerId;
-		FWorkerComponentUpdate Update = NetOwningClientWorkerData->CreateNetOwningClientWorkerUpdate();
+		CurrentNetOwningClientData->SetPartitionId(NewClientConnectionPartitionId);
+		FWorkerComponentUpdate Update = CurrentNetOwningClientData->CreateNetOwningClientWorkerUpdate();
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 
-		// Update the EntityACL component (if authoritative).
-		if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
-		{
-			Sender->UpdateClientAuthoritativeComponentAclEntries(EntityId, NewClientConnectionWorkerId);
-		}
-
-		SavedConnectionOwningWorkerId = NewClientConnectionWorkerId;
+		// Notify the load balance enforcer of a potential short circuit if we are the delegation authoritative worker.
+		NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
 
 		bUpdatedThisActor = true;
 	}
@@ -1331,13 +1360,11 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));
 
 	// Changing owner can affect which interest bucket the Actor should be in so we need to update it.
-	Worker_ComponentId NewInterestBucketComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
+	const Worker_ComponentId NewInterestBucketComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
 	if (SavedInterestBucketComponentID != NewInterestBucketComponentId)
 	{
 		Sender->SendInterestBucketComponentChange(EntityId, SavedInterestBucketComponentID, NewInterestBucketComponentId);
-
 		SavedInterestBucketComponentID = NewInterestBucketComponentId;
-
 		bUpdatedThisActor = true;
 	}
 
@@ -1380,15 +1407,16 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	}
 }
 
-void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object)
+void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object,
+											  const TWeakObjectPtr<UObject>& ObjectWeakPtr)
 {
 	CreateSubObjects.Remove(Object);
 
 	Receiver->MoveMappedObjectToUnmapped(ObjectRef);
-	if (FSpatialObjectRepState* SubObjectRefMap = ObjectReferenceMap.Find(Object))
+	if (FSpatialObjectRepState* SubObjectRefMap = ObjectReferenceMap.Find(ObjectWeakPtr))
 	{
 		Receiver->CleanupRepStateMap(*SubObjectRefMap);
-		ObjectReferenceMap.Remove(Object);
+		ObjectReferenceMap.Remove(ObjectWeakPtr);
 	}
 }
 

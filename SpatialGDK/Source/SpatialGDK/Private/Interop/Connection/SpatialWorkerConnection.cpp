@@ -1,7 +1,9 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialView/CommandRequest.h"
+#include "SpatialView/CommandRetryHandler.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ConnectionHandler/InitialOpListConnectionHandler.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
@@ -22,10 +24,13 @@ SpatialGDK::ComponentUpdate ToComponentUpdate(FWorkerComponentUpdate* Update)
 
 } // anonymous namespace
 
-void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn)
+void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn,
+											 TSharedPtr<SpatialGDK::SpatialEventTracer> SharedEventTracer)
 {
+	EventTracer = SharedEventTracer.Get();
 	StartupComplete = false;
-	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> Handler = MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn);
+	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> Handler =
+		MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn, SharedEventTracer);
 	TUniquePtr<SpatialGDK::InitialOpListConnectionHandler> InitialOpListHandler = MakeUnique<SpatialGDK::InitialOpListConnectionHandler>(
 		MoveTemp(Handler), [this](SpatialGDK::OpList& Ops, SpatialGDK::ExtractedOpListData& ExtractedOps) {
 			if (StartupComplete)
@@ -35,7 +40,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 			ExtractStartupOps(Ops, ExtractedOps);
 			return false;
 		});
-	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(InitialOpListHandler));
+	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(InitialOpListHandler), SharedEventTracer);
 }
 
 void USpatialWorkerConnection::FinishDestroy()
@@ -61,69 +66,79 @@ void USpatialWorkerConnection::DestroyConnection()
 	Coordinator.Reset();
 }
 
-Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
+Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities, const SpatialGDK::FRetryData& RetryData)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendReserveEntityIdsRequest(NumOfEntities);
+	return Coordinator->SendReserveEntityIdsRequest(NumOfEntities, RetryData);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId)
+Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
+																   const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
-	const TOptional<Worker_EntityId> Id = EntityId ? *EntityId : TOptional<Worker_EntityId>();
+	const TOptional<Worker_EntityId> Id = EntityId != nullptr ? *EntityId : TOptional<Worker_EntityId>();
 	TArray<SpatialGDK::ComponentData> Data;
 	Data.Reserve(Components.Num());
 	for (auto& Component : Components)
 	{
 		Data.Emplace(SpatialGDK::OwningComponentDataPtr(Component.schema_type), Component.component_id);
 	}
-	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id);
+
+	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id, RetryData, SpanId);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
+Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const SpatialGDK::FRetryData& RetryData,
+																   const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendDeleteEntityRequest(EntityId);
+	return Coordinator->SendDeleteEntityRequest(EntityId, RetryData, SpanId);
 }
 
-void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData)
+void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
+												const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
-	Coordinator->SendAddComponent(EntityId, ToComponentData(ComponentData));
+	Coordinator->SendAddComponent(EntityId, ToComponentData(ComponentData), SpanId);
 }
 
-void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+												   const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
-	Coordinator->SendRemoveComponent(EntityId, ComponentId);
+	Coordinator->SendRemoveComponent(EntityId, ComponentId, SpanId);
 }
 
-void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate)
+void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
+												   const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
-	Coordinator->SendComponentUpdate(EntityId, ToComponentUpdate(ComponentUpdate));
+	Coordinator->SendComponentUpdate(EntityId, ToComponentUpdate(ComponentUpdate), SpanId);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request, uint32_t CommandId)
+Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
+															  const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendEntityCommandRequest(
-		EntityId, SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type), Request->component_id,
-											 Request->command_index));
+	return Coordinator->SendEntityCommandRequest(EntityId,
+												 SpatialGDK::CommandRequest(SpatialGDK::OwningCommandRequestPtr(Request->schema_type),
+																			Request->component_id, Request->command_index),
+												 RetryData, SpanId);
 }
 
-void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response)
+void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
+												   const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
-	Coordinator->SendEntityCommandResponse(
-		RequestId, SpatialGDK::CommandResponse(SpatialGDK::OwningCommandResponsePtr(Response->schema_type), Response->component_id,
-											   Response->command_index));
+	Coordinator->SendEntityCommandResponse(RequestId,
+										   SpatialGDK::CommandResponse(SpatialGDK::OwningCommandResponsePtr(Response->schema_type),
+																	   Response->component_id, Response->command_index),
+										   SpanId);
 }
 
-void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
+void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
-	Coordinator->SendEntityCommandFailure(RequestId, Message);
+	Coordinator->SendEntityCommandFailure(RequestId, Message, SpanId);
 }
 
 void USpatialWorkerConnection::SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message)
@@ -132,16 +147,11 @@ void USpatialWorkerConnection::SendLogMessage(uint8_t Level, const FName& Logger
 	Coordinator->SendLogMessage(static_cast<Worker_LogLevel>(Level), LoggerName, Message);
 }
 
-void USpatialWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
-{
-	// Deprecated.
-	checkNoEntry();
-}
-
-Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
+Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery,
+																  const SpatialGDK::FRetryData& RetryData)
 {
 	check(Coordinator.IsValid());
-	return Coordinator->SendEntityQueryRequest(SpatialGDK::EntityQuery(*EntityQuery));
+	return Coordinator->SendEntityQueryRequest(SpatialGDK::EntityQuery(*EntityQuery), RetryData);
 }
 
 void USpatialWorkerConnection::SendMetrics(SpatialGDK::SpatialMetrics Metrics)
@@ -150,28 +160,28 @@ void USpatialWorkerConnection::SendMetrics(SpatialGDK::SpatialMetrics Metrics)
 	Coordinator->SendMetrics(MoveTemp(Metrics));
 }
 
-void USpatialWorkerConnection::Advance()
+void USpatialWorkerConnection::Advance(float DeltaTimeS)
 {
 	check(Coordinator.IsValid());
-	Coordinator->Advance();
+	Coordinator->Advance(DeltaTimeS);
 }
 
 bool USpatialWorkerConnection::HasDisconnected() const
 {
 	check(Coordinator.IsValid());
-	return Coordinator->GetViewDelta().HasDisconnected();
+	return Coordinator->GetViewDelta().HasConnectionStatusChanged();
 }
 
 Worker_ConnectionStatusCode USpatialWorkerConnection::GetConnectionStatus() const
 {
 	check(Coordinator.IsValid());
-	return Coordinator->GetViewDelta().GetConnectionStatus();
+	return Coordinator->GetViewDelta().GetConnectionStatusChange();
 }
 
 FString USpatialWorkerConnection::GetDisconnectReason() const
 {
 	check(Coordinator.IsValid());
-	return Coordinator->GetViewDelta().GetDisconnectReason();
+	return Coordinator->GetViewDelta().GetConnectionStatusChangeMessage();
 }
 
 const SpatialGDK::EntityView& USpatialWorkerConnection::GetView() const
@@ -180,16 +190,21 @@ const SpatialGDK::EntityView& USpatialWorkerConnection::GetView() const
 	return Coordinator->GetView();
 }
 
+SpatialGDK::ViewCoordinator& USpatialWorkerConnection::GetCoordinator() const
+{
+	return *Coordinator;
+}
+
 PhysicalWorkerName USpatialWorkerConnection::GetWorkerId() const
 {
 	check(Coordinator.IsValid());
 	return Coordinator->GetWorkerId();
 }
 
-const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
+Worker_EntityId USpatialWorkerConnection::GetWorkerSystemEntityId() const
 {
 	check(Coordinator.IsValid());
-	return Coordinator->GetWorkerAttributes();
+	return Coordinator->GetWorkerSystemEntityId();
 }
 
 SpatialGDK::CallbackId USpatialWorkerConnection::RegisterComponentAddedCallback(Worker_ComponentId ComponentId,
@@ -253,7 +268,7 @@ void USpatialWorkerConnection::SetStartupComplete()
 bool USpatialWorkerConnection::IsStartupComponent(Worker_ComponentId Id)
 {
 	return Id == SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID || Id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID
-		   || Id == SpatialConstants::SERVER_WORKER_COMPONENT_ID;
+		   || Id == SpatialConstants::SERVER_WORKER_COMPONENT_ID || Id == SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID;
 }
 
 void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, SpatialGDK::ExtractedOpListData& ExtractedOpList)
@@ -293,8 +308,8 @@ void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, Spa
 				ExtractedOpList.AddOp(Op);
 			}
 			break;
-		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			if (IsStartupComponent(Op.op.authority_change.component_id))
+		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
+			if (IsStartupComponent(Op.op.component_set_authority_change.component_set_id))
 			{
 				ExtractedOpList.AddOp(Op);
 			}
@@ -314,8 +329,6 @@ void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, Spa
 			ExtractedOpList.AddOp(Op);
 			break;
 		case WORKER_OP_TYPE_FLAG_UPDATE:
-			break;
-		case WORKER_OP_TYPE_LOG_MESSAGE:
 			break;
 		case WORKER_OP_TYPE_METRICS:
 			break;

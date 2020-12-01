@@ -19,8 +19,10 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
@@ -275,17 +277,14 @@ bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 {
 	// There's currently a bug that lets handover data get sent to clients in the initial
 	// burst of data for an entity, which leads to log spam in the SpatialReceiver. By tracking handover
-	// properties on clients, we can prevent that spam.
+	// properties on clients, we can prevent that spam. Cannot be removed yet because of Kraken,
+	// UNR-4358 will remove this in a squid-only world.
 	if (!NetDriver->IsServer())
 	{
 		return true;
 	}
 
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-
-	const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
-	check(Strategy != nullptr);
-	return Strategy->RequiresHandoverData() || Settings->bEnableHandover;
+	return USpatialStatics::IsHandoverEnabled(NetDriver);
 }
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
@@ -352,7 +351,7 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 	}
 	else
 	{
-		UE_LOG(LogSpatialClassInfoManager, Warning,
+		UE_LOG(LogSpatialClassInfoManager, Log,
 			   TEXT("Class corresponding to component %d has been unloaded! Will try to reload based on the component id."), ComponentId);
 
 		// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use
@@ -378,7 +377,6 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 
 uint32 USpatialClassInfoManager::GetComponentIdForClass(const UClass& Class) const
 {
-	const FString ClassPath = Class.GetPathName();
 	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(Class.GetPathName()))
 	{
 		return ActorSchemaData->SchemaComponents[SCHEMA_Data];
@@ -562,7 +560,8 @@ bool USpatialClassInfoManager::IsNetCullDistanceComponent(Worker_ComponentId Com
 
 bool USpatialClassInfoManager::IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const
 {
-	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId);
+	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId)
+		   || SpatialConstants::IsEntityCompletenessComponent(ComponentId);
 }
 
 void USpatialClassInfoManager::QuitGame()
@@ -592,7 +591,9 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 		return SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceInterest)
+	// Don't add NCD component to player controller and server only actors as we don't want client's to gain interest in them
+	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceInterest && !Actor->IsA<APlayerController>()
+		&& !Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
 		Worker_ComponentId NCDComponentId = GetComponentIdForNetCullDistance(ActorForRelevancy->NetCullDistanceSquared);
 		if (NCDComponentId != SpatialConstants::INVALID_COMPONENT_ID)

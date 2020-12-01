@@ -4,6 +4,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialSender.h"
+#include "Interop/SpatialStaticComponentView.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "Utils/SpatialActorUtils.h"
 
@@ -277,7 +278,7 @@ void USpatialNetDriverDebugContext::RemoveTagDelegation(FName Tag)
 
 TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorHierarchyExplicitDelegation(const AActor* Actor)
 {
-	const AActor* NetOwner = SpatialGDK::GetHierarchyRoot(Actor);
+	const AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 	return GetActorHierarchyExplicitDelegation_Traverse(NetOwner);
 }
 
@@ -287,10 +288,15 @@ TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorHierarchyExpli
 	for (const AActor* Child : Actor->Children)
 	{
 		TOptional<VirtualWorkerId> ChildDelegation = GetActorHierarchyExplicitDelegation_Traverse(Child);
-		ensureMsgf(!CandidateDelegation.IsSet() || !ChildDelegation.IsSet() || CandidateDelegation.GetValue() == ChildDelegation.GetValue(),
-				   TEXT("Inconsistent delegation. Actor %s is delegated to %i but a child is delegated to %i"), *Actor->GetName(),
-				   CandidateDelegation.GetValue(), ChildDelegation.GetValue());
-		CandidateDelegation = ChildDelegation;
+		if (ChildDelegation)
+		{
+			ensureMsgf(
+				!CandidateDelegation.IsSet() || !ChildDelegation.IsSet() || CandidateDelegation.GetValue() == ChildDelegation.GetValue(),
+				TEXT("Inconsistent delegation. Actor %s is delegated to %i but a child is delegated to %i"), *Actor->GetName(),
+				CandidateDelegation.GetValue(), ChildDelegation.GetValue());
+
+			CandidateDelegation = ChildDelegation;
+		}
 	}
 
 	return CandidateDelegation;
@@ -327,10 +333,12 @@ TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorExplicitDelega
 	{
 		if (VirtualWorkerId* Worker = SemanticDelegations.Find(Tag))
 		{
-			ensureMsgf(!CandidateDelegation.IsSet() || CandidateDelegation.GetValue() == *Worker,
-					   TEXT("Inconsistent delegation. Actor %s delegated to both %i and %i"), *Actor->GetName(),
-					   CandidateDelegation.GetValue(), *Worker);
-			CandidateDelegation = *Worker;
+			if (ensureMsgf(!CandidateDelegation.IsSet() || CandidateDelegation.GetValue() == *Worker,
+						   TEXT("Inconsistent delegation. Actor %s delegated to both %i and %i"), *Actor->GetName(),
+						   CandidateDelegation.GetValue(), *Worker))
+			{
+				CandidateDelegation = *Worker;
+			}
 		}
 	}
 
@@ -382,7 +390,7 @@ bool USpatialNetDriverDebugContext::IsActorReady(AActor* Actor)
 	Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 	if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 	{
-		return NetDriver->StaticComponentView->HasAuthority(Entity, SpatialConstants::POSITION_COMPONENT_ID);
+		return NetDriver->HasServerAuthority(Entity);
 	}
 	return false;
 }

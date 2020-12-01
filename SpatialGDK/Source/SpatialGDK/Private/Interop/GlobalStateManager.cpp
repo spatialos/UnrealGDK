@@ -14,17 +14,16 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineUtils.h"
-#include "GameFramework/GameModeBase.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Kismet/GameplayStatics.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ServerWorker.h"
-#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
-#include "Utils/EntityPool.h"
+#include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
@@ -62,9 +61,9 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 	bTranslationQueryInFlight = false;
 }
 
-void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Data)
+void UGlobalStateManager::ApplyDeploymentMapData(Schema_ComponentData* Data)
 {
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
 
@@ -75,9 +74,9 @@ void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Dat
 	SchemaHash = Schema_GetUint32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH);
 }
 
-void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentData& Data)
+void UGlobalStateManager::ApplyStartupActorManagerData(Schema_ComponentData* Data)
 {
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 
@@ -113,9 +112,9 @@ void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
 	NetDriver->Connection->SendComponentUpdate(NetDriver->WorkerEntityId, &Update);
 }
 
-void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update)
+void UGlobalStateManager::ApplyDeploymentMapUpdate(Schema_ComponentUpdate* Update)
 {
-	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
 
 	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID) == 1)
 	{
@@ -158,8 +157,7 @@ void UGlobalStateManager::SendShutdownMultiProcessRequest()
 	CommandRequest.command_index = SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID;
 	CommandRequest.schema_type = Schema_CreateCommandRequest();
 
-	NetDriver->Connection->SendCommandRequest(GlobalStateManagerEntityId, &CommandRequest,
-											  SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID);
+	NetDriver->Connection->SendCommandRequest(GlobalStateManagerEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
 }
 
 void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
@@ -182,14 +180,17 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 	}
 }
 
-void UGlobalStateManager::OnShutdownComponentUpdate(const Worker_ComponentUpdate& Update)
+#if WITH_EDITOR
+void UGlobalStateManager::OnShutdownComponentUpdate(Schema_ComponentUpdate* Update)
 {
-	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update.schema_type);
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update);
+	// TODO(UNR-4395): Probably should be a bool in state - probably a non-persistent entity
 	if (Schema_GetObjectCount(EventsObject, SpatialConstants::SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID) > 0)
 	{
 		ReceiveShutdownAdditionalServersEvent();
 	}
 }
+#endif // WITH_EDITOR
 
 void UGlobalStateManager::ReceiveShutdownAdditionalServersEvent()
 {
@@ -221,9 +222,9 @@ void UGlobalStateManager::SendShutdownAdditionalServersEvent()
 }
 #endif // WITH_EDITOR
 
-void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentUpdate& Update)
+void UGlobalStateManager::ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update)
 {
-	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
 
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 	bCanSpawnWithAuthority = true;
@@ -286,17 +287,17 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
+void UGlobalStateManager::AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp)
 {
 	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."),
-		   AuthOp.component_id, AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
+		   AuthOp.component_set_id, AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT("does not have"));
 
 	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		return;
 	}
 
-	switch (AuthOp.component_id)
+	switch (AuthOp.component_set_id)
 	{
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 	{
@@ -389,17 +390,39 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 		return;
 	}
 
-	// Non-replicated Actors should always be authoritative.
-	bool bAuthoritative = !Actor->GetIsReplicated();
+	if (!Actor->GetIsReplicated())
+	{
+		return;
+	}
+
 	// Replicated level Actors should only be initially authority if:
 	//  - these are workers starting as part of a fresh deployment (tracked by the bCanSpawnWithAuthority bool),
 	//  - these actors are marked as NotPersistent and we're loading from a saved snapshot (which means bCanSpawnWithAuthority is false)
 	//  - the load balancing strategy says this server should be authoritative (as opposed to some other server).
-	bAuthoritative |= (bCanSpawnWithAuthority || Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
-					  && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+	const bool bAuthoritative = (bCanSpawnWithAuthority || Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
+								&& NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
 
 	Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
 	Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
+}
+
+Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
+{
+	if (ensure(NetDriver != nullptr))
+	{
+		return NetDriver->WorkerEntityId;
+	}
+
+	return SpatialConstants::INVALID_ENTITY_ID;
+}
+
+void UGlobalStateManager::ClaimSnapshotPartition() const
+{
+	if (ensure(Sender != nullptr))
+	{
+		Sender->SendClaimPartitionRequest(NetDriver->Connection->GetWorkerSystemEntityId(),
+										  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	}
 }
 
 void UGlobalStateManager::TriggerBeginPlay()
@@ -410,6 +433,22 @@ void UGlobalStateManager::TriggerBeginPlay()
 	{
 		SendCanBeginPlayUpdate(true);
 	}
+
+#if !UE_BUILD_SHIPPING
+	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
+	if (NetDriver->IsServer())
+	{
+		// If metrics display is enabled, spawn an Actor to replicate the information to each client.
+		if (SpatialSettings->bEnableMetricsDisplay)
+		{
+			NetDriver->SpatialMetricsDisplay = NetDriver->World->SpawnActor<ASpatialMetricsDisplay>();
+		}
+		if (SpatialSettings->SpatialDebugger != nullptr)
+		{
+			NetDriver->SpatialDebugger = NetDriver->World->SpawnActor<ASpatialDebugger>(SpatialSettings->SpatialDebugger);
+		}
+	}
+#endif
 
 	// This method has early exits internally to ensure the logic is only executed on the correct worker.
 	SetAcceptingPlayers(true);
@@ -467,10 +506,9 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 
 	Worker_EntityQuery GSMQuery{};
 	GSMQuery.constraint = GSMConstraint;
-	GSMQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	Worker_RequestId RequestID;
-	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
+	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery, RETRY_UNTIL_COMPLETE);
 
 	EntityQueryDelegate GSMQueryDelegate;
 	GSMQueryDelegate.BindLambda([this, Callback](const Worker_EntityQueryResponseOp& Op) {
@@ -501,18 +539,17 @@ void UGlobalStateManager::QueryTranslation()
 	}
 
 	// Build a constraint for the Virtual Worker Translation.
-	Worker_ComponentConstraint TranslationComponentConstraint{};
+	Worker_ComponentConstraint TranslationComponentConstraint;
 	TranslationComponentConstraint.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
 
-	Worker_Constraint TranslationConstraint{};
+	Worker_Constraint TranslationConstraint;
 	TranslationConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
 	TranslationConstraint.constraint.component_constraint = TranslationComponentConstraint;
 
 	Worker_EntityQuery TranslationQuery{};
 	TranslationQuery.constraint = TranslationConstraint;
-	TranslationQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
-	Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery);
+	Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery, RETRY_UNTIL_COMPLETE);
 	bTranslationQueryInFlight = true;
 
 	TWeakObjectPtr<UGlobalStateManager> WeakGlobalStateManager(this);
@@ -558,7 +595,7 @@ void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_E
 		Worker_ComponentData Data = Op.results[0].components[i];
 		if (Data.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
 		{
-			ApplyDeploymentMapData(Data);
+			ApplyDeploymentMapData(Data.schema_type);
 		}
 	}
 }
@@ -606,7 +643,7 @@ bool UGlobalStateManager::GetAcceptingPlayersAndSessionIdFromQueryResponse(const
 
 void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 {
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
+	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
 	DeploymentMapURL = MapURL;
 }
 

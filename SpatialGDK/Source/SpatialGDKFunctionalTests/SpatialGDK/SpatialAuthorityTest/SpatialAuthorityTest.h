@@ -18,7 +18,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialAuthorityTest : public ASpatialFunct
 public:
 	ASpatialAuthorityTest();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

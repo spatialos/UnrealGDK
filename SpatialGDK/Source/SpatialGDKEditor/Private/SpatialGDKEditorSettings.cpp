@@ -120,6 +120,21 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 			return;
 		}
 	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
+	{
+		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FWorldLaunchSection, LegacyFlags))
+		{
+			USpatialGDKEditorSettings::TrimTMap(LaunchConfigDesc.World.LegacyFlags);
+		}
+		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FWorldLaunchSection, LegacyJavaParams))
+		{
+			USpatialGDKEditorSettings::TrimTMap(LaunchConfigDesc.World.LegacyJavaParams);
+		}
+		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FWorkerTypeLaunchSection, Flags))
+		{
+			USpatialGDKEditorSettings::TrimTMap(LaunchConfigDesc.ServerWorkerConfig.Flags);
+		}
+	}
 }
 
 void USpatialGDKEditorSettings::PostInitProperties()
@@ -250,7 +265,6 @@ void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 void USpatialGDKEditorSettings::SetSpatialDebuggerEditorEnabled(bool IsEnabled)
 {
 	bSpatialDebuggerEditorEnabled = IsEnabled;
-	SaveConfig();
 }
 
 void USpatialGDKEditorSettings::SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled)
@@ -504,6 +518,15 @@ FString USpatialGDKEditorSettings::GetCookAndGenerateSchemaTargetPlatform() cons
 
 	// Return current Editor's Build variant as default.
 	return FPlatformProcess::GetBinariesSubdirectory();
+}
+
+void USpatialGDKEditorSettings::TrimTMap(TMap<FString, FString>& Map)
+{
+	for (auto& Flag : Map)
+	{
+		Flag.Key.TrimStartAndEndInline();
+		Flag.Value.TrimStartAndEndInline();
+	}
 }
 
 const FString& FSpatialLaunchConfigDescription::GetTemplate() const

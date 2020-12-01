@@ -29,7 +29,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestWorldComposition : public ASpati
 public:
 	ASpatialTestWorldComposition();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	bool IsCorrectAtLocation(int TestLocation);
 

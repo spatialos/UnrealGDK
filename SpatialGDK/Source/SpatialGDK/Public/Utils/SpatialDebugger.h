@@ -4,6 +4,7 @@
 
 #include "LoadBalancing/WorkerRegion.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialDebuggerConfigUI.h"
 
 #include "Containers/Map.h"
 #include "CoreMinimal.h"
@@ -46,7 +47,26 @@ struct FWorkerRegionInfo
 
 	UPROPERTY()
 	FBox2D Extents;
+
+	UPROPERTY()
+	FString WorkerName;
+
+	UPROPERTY()
+	uint32 VirtualWorkerID;
 };
+
+UENUM()
+namespace EActorTagDrawMode
+{
+enum Type
+{
+	None,
+	LocalPlayer,
+	All
+};
+} // namespace EActorTagDrawMode
+
+DECLARE_DYNAMIC_DELEGATE(FOnConfigUIClosedDelegate);
 
 /**
  * Visualise spatial information at runtime and in the editor
@@ -67,16 +87,42 @@ public:
 	UFUNCTION(Exec, Category = "SpatialGDK", BlueprintCallable)
 	void SpatialToggleDebugger();
 
+	UFUNCTION(Category = "SpatialGDK", BlueprintCallable, BlueprintPure)
+	bool IsEnabled();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI,
+			  meta = (ToolTip = "Key to open configuration UI for the debugger at runtime"))
+	FKey ConfigUIToggleKey = EKeys::F9;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI, meta = (ToolTip = "Key to select actor when debugging in game"))
+	FKey SelectActorKey = EKeys::RightMouseButton;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI,
+			  meta = (ToolTip = "Key to highlight next actor under cursor when debugging in game"))
+	FKey HighlightActorKey = EKeys::MouseWheelAxis;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UI, meta = (ToolTip = "In-game configuration UI widget"))
+	TSubclassOf<USpatialDebuggerConfigUI> ConfigUIClass;
+
+	FOnConfigUIClosedDelegate OnConfigUIClosed;
+
 	// TODO: Expose these through a runtime UI: https://improbableio.atlassian.net/browse/UNR-2359.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "X location of player data panel"))
 	int PlayerPanelStartX = 64;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = LocalPlayer, meta = (ToolTip = "Y location of player data panel"))
-	int PlayerPanelStartY = 128;
+	int PlayerPanelStartY = 64;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = General,
 			  meta = (ToolTip = "Maximum range from local player that tags will be drawn out to"))
 	float MaxRange = 100.0f * 100.0f; // 100m
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (Tooltip = "Which Actor tags to show"))
+	TEnumAsByte<EActorTagDrawMode::Type> ActorTagDrawMode = EActorTagDrawMode::All;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (Tooltip = "Show all replicated Actors in the player controller's hierarchy, or just state/controller/pawn"))
+	bool bShowPlayerHierarchy = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
 			  meta = (ToolTip = "Show server authority for every entity in range"))
@@ -95,12 +141,33 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show Actor Name for every entity in range"))
 	bool bShowActorName = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "Show glowing mesh when selecting actors."))
+	bool bShowHighlight = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (ToolTip = "Select the object types you want to query when selecting actors"))
+	TArray<TEnumAsByte<ECollisionChannel>> SelectCollisionTypesToQuery = {
+		ECollisionChannel::ECC_WorldStatic,	 ECollisionChannel::ECC_WorldDynamic, ECollisionChannel::ECC_Pawn,
+		ECollisionChannel::ECC_Destructible, ECollisionChannel::ECC_Vehicle,	  ECollisionChannel::ECC_PhysicsBody
+	};
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StartUp, meta = (ToolTip = "Show the Spatial Debugger automatically at startup"))
 	bool bAutoStart = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization,
 			  meta = (ToolTip = "Show a transparent Worker Region cuboid representing the area of authority for each server worker"))
 	bool bShowWorkerRegions = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization,
+			  meta = (ToolTip = "Height at which the origin of each worker region cuboid is placed"))
+	float WorkerRegionHeight = 30.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
+			  meta = (ToolTip = "Vertical scale to apply to each worker region cuboid"))
+	float WorkerRegionVerticalScale = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Opacity of the worker region cuboids"))
+	float WorkerRegionOpacity = 0.7f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Auth Icon"))
 	UTexture2D* AuthTexture;
@@ -117,6 +184,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Visualization, meta = (ToolTip = "Texture to use for the Box Icon"))
 	UTexture2D* BoxTexture;
 
+	// This will be drawn instead of the mouse cursor when selecting an actor
+	UPROPERTY(EditDefaultsOnly, Category = Visualization, meta = (ToolTip = "Texture to use when selecting an actor"))
+	UTexture2D* CrosshairTexture;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
 	FVector WorldSpaceActorTagOffset = FVector(0.0f, 0.0f, 200.0f);
 
@@ -124,17 +195,36 @@ public:
 			  meta = (ToolTip = "Color used for any server with an unresolved name"))
 	FColor InvalidServerTintColor = FColor::Magenta;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
-			  meta = (ToolTip = "Vertical scale to apply to each worker region cuboid"))
-	float WorkerRegionVerticalScale = 1.0f;
-
 	UPROPERTY(ReplicatedUsing = OnRep_SetWorkerRegions)
 	TArray<FWorkerRegionInfo> WorkerRegions;
 
 	UFUNCTION()
 	virtual void OnRep_SetWorkerRegions();
 
-	void ActorAuthorityChanged(const Worker_AuthorityChangeOp& AuthOp) const;
+	UFUNCTION()
+	void OnToggleConfigUI();
+
+	UFUNCTION(BlueprintCallable, Category = Visualization)
+	void ToggleSelectActor();
+
+	UFUNCTION()
+	void OnSelectActor();
+
+	UFUNCTION()
+	void OnHighlightActor();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Visualization)
+	bool IsSelectActorEnabled() const;
+
+private:
+	UFUNCTION()
+	void DefaultOnConfigUIClosed();
+
+public:
+	UFUNCTION(BlueprintCallable, Category = Visualization)
+	void SetShowWorkerRegions(const bool bNewShow);
+
+	void ActorAuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp) const;
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
 #if WITH_EDITOR
@@ -154,7 +244,24 @@ private:
 	// FDebugDrawDelegate
 	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
 
-	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName);
+	FVector GetLocalPawnLocation();
+
+	// Allow user to select actor(s) for debugging - the mesh on the actor must have collision presets enabled to block on at least one of
+	// the object channels
+	void SelectActorsToTag(UCanvas* Canvas);
+
+	void HighlightActorUnderCursor(TWeakObjectPtr<AActor>& NewHoverActor);
+
+	TWeakObjectPtr<AActor> GetActorAtPosition(const FVector2D& MousePosition);
+
+	TWeakObjectPtr<AActor> GetHitActor();
+
+	FVector2D ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector& PlayerLocation);
+
+	void RevertHoverMaterials();
+
+	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
+				 const bool bCentre);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
 	void CreateWorkerRegions();
@@ -165,6 +272,7 @@ private:
 
 #if WITH_EDITOR
 	void EditorInitialiseWorkerRegions();
+	void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);
 #endif
 
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
@@ -197,4 +305,33 @@ private:
 
 	FFontRenderInfo FontRenderInfo;
 	FCanvasIcon Icons[ICON_MAX];
+
+	USpatialDebuggerConfigUI* ConfigUIWidget;
+
+	// Mode for selecting actors under the cursor - should only be visible in the runtime config UI
+	bool bSelectActor = false;
+
+	// Actors selected by user for debugging
+	TArray<TWeakObjectPtr<AActor>> SelectedActors;
+
+	// Highlighted actor under the mouse cursor
+	TWeakObjectPtr<AActor> HoverActor;
+	// Highlighted actor original materials and components
+	TArray<TWeakObjectPtr<UMaterialInterface>> ActorMeshMaterials;
+	TArray<TWeakObjectPtr<UMeshComponent>> ActorMeshComponents;
+	// Material for highlighting actor
+	UPROPERTY()
+	UMaterialInterface* WireFrameMaterial;
+
+	// All actors under the mouse cursor
+	TArray<TWeakObjectPtr<AActor>> HitActors;
+
+	// Index for selecting the highlighted actor when multiple are under the mouse cursor
+	int32 HoverIndex;
+
+	// Mouse position to avoid unnecessary raytracing when mouse has not moved
+	FVector2D MousePosition;
+
+	// Select actor object types to query
+	FCollisionObjectQueryParams CollisionObjectParams;
 };
