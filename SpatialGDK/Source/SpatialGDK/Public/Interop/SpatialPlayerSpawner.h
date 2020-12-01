@@ -27,7 +27,7 @@ class SPATIALGDK_API USpatialPlayerSpawner : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager);
+	void Init(USpatialNetDriver* NetDriver);
 
 	// Client
 	void SendPlayerSpawnRequest();
@@ -71,8 +71,6 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	FTimerManager* TimerManager;
-	int NumberOfAttempts;
 	TMap<Worker_RequestId_Key, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>> OutgoingForwardPlayerSpawnRequests;
 
 	TSet<Worker_EntityId_Key> WorkersWithPlayersSpawned;

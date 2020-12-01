@@ -17,6 +17,7 @@
 
 #include "Debug/DebugDrawService.h"
 #include "Engine/Engine.h"
+#include "Framework/Application/SlateApplication.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
@@ -35,6 +36,7 @@ namespace
 // Background material for worker region
 const FString DEFAULT_WORKER_REGION_MATERIAL =
 	TEXT("/SpatialGDK/SpatialDebugger/Materials/TranslucentWorkerRegion.TranslucentWorkerRegion");
+const FString DEFAULT_WIREFRAME_MATERIAL = TEXT("/SpatialGDK/SpatialDebugger/Materials/GlowingWireframeMaterial.GlowingWireframeMaterial");
 // Improbable primary font - Muli regular
 const FString DEFAULT_WORKER_TEXT_FONT = TEXT("/SpatialGDK/SpatialDebugger/Fonts/MuliFont.MuliFont");
 // Material to combine both the background and the worker information in one material
@@ -54,6 +56,8 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	bReplicates = true;
 
 	NetUpdateFrequency = 1.f;
+
+	HoverIndex = 0;
 
 	NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 
@@ -149,6 +153,11 @@ void ASpatialDebugger::BeginPlay()
 		if (bAutoStart)
 		{
 			SpatialToggleDebugger();
+		}
+		WireFrameMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WIREFRAME_MATERIAL);
+		if (WireFrameMaterial == nullptr)
+		{
+			UE_LOG(LogSpatialDebugger, Warning, TEXT("SpatialDebugger enabled but unable to get WireFrame Material."));
 		}
 	}
 }
@@ -312,6 +321,8 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 			if (GetNetMode() == NM_Client)
 			{
 				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
+				LocalPlayerController->InputComponent->BindKey(SelectActorKey, IE_Pressed, this, &ASpatialDebugger::OnSelectActor);
+				LocalPlayerController->InputComponent->BindKey(HighlightActorKey, IE_Pressed, this, &ASpatialDebugger::OnHighlightActor);
 			}
 		}
 	}
@@ -362,6 +373,72 @@ void ASpatialDebugger::OnToggleConfigUI()
 	}
 }
 
+void ASpatialDebugger::ToggleSelectActor()
+{
+	// This should only be toggled when the config UI window is open
+	if (!ConfigUIWidget->IsVisible())
+	{
+		return;
+	}
+
+	bSelectActor = !bSelectActor;
+	if (bSelectActor)
+	{
+		if (CrosshairTexture != nullptr)
+		{
+			// Hide the mouse cursor as we will draw our own custom crosshair
+			LocalPlayerController->bShowMouseCursor = false;
+			// Sets back the focus to the game viewport - need to hide mouse cursor instantly
+			FSlateApplication::Get().SetAllUserFocusToGameViewport();
+		}
+
+		// Set the object types to query in the raycast based
+		for (TEnumAsByte<ECollisionChannel> ActorTypeToQuery : SelectCollisionTypesToQuery)
+		{
+			CollisionObjectParams.AddObjectTypesToQuery(ActorTypeToQuery);
+		}
+	}
+	else
+	{
+		// Change mouse cursor back to normal
+		LocalPlayerController->bShowMouseCursor = true;
+
+		RevertHoverMaterials();
+
+		// Clear selected actors
+		SelectedActors.Empty();
+		HoverIndex = 0;
+		HitActors.Empty();
+	}
+}
+
+void ASpatialDebugger::OnSelectActor()
+{
+	if (HitActors.Num() > 0)
+	{
+		TWeakObjectPtr<AActor> SelectedActor = GetHitActor();
+
+		if (SelectedActor.IsValid())
+		{
+			if (SelectedActors.Contains(SelectedActor))
+			{
+				// Already selected so deselect
+				SelectedActors.Remove(SelectedActor);
+			}
+			else
+			{
+				// Add selected actor to enable drawing tags
+				SelectedActors.Add(SelectedActor);
+			}
+		}
+	}
+}
+
+void ASpatialDebugger::OnHighlightActor()
+{
+	HoverIndex++;
+}
+
 void ASpatialDebugger::DefaultOnConfigUIClosed()
 {
 	if (LocalPlayerController.IsValid())
@@ -390,6 +467,11 @@ void ASpatialDebugger::SetShowWorkerRegions(const bool bNewShow)
 
 		bShowWorkerRegions = bNewShow;
 	}
+}
+
+bool ASpatialDebugger::IsSelectActorEnabled() const
+{
+	return bSelectActor;
 }
 
 void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
@@ -599,19 +681,20 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 	}
 #endif
 
+	if (bSelectActor)
+	{
+		SelectActorsToTag(Canvas);
+		return;
+	}
+
 	if (ActorTagDrawMode >= EActorTagDrawMode::LocalPlayer)
 	{
 		DrawDebugLocalPlayer(Canvas);
 	}
 
-	FVector PlayerLocation = FVector::ZeroVector;
-
 	if (ActorTagDrawMode == EActorTagDrawMode::All)
 	{
-		if (LocalPawn.IsValid())
-		{
-			PlayerLocation = LocalPawn->GetActorLocation();
-		}
+		FVector PlayerLocation = GetLocalPawnLocation();
 
 		for (TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
 		{
@@ -620,26 +703,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 
 			if (Actor != nullptr)
 			{
-				FVector ActorLocation = Actor->GetActorLocation();
-
-				if (ActorLocation.IsZero())
-				{
-					continue;
-				}
-
-				if (FVector::Dist(PlayerLocation, ActorLocation) > MaxRange)
-				{
-					continue;
-				}
-
-				FVector2D ScreenLocation = FVector2D::ZeroVector;
-				if (LocalPlayerController.IsValid())
-				{
-					SCOPE_CYCLE_COUNTER(STAT_Projection);
-					UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + WorldSpaceActorTagOffset,
-														   ScreenLocation, false);
-				}
-
+				FVector2D ScreenLocation = ProjectActorToScreen(Actor, PlayerLocation);
 				if (ScreenLocation.IsZero())
 				{
 					continue;
@@ -649,6 +713,229 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 			}
 		}
 	}
+}
+
+void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
+{
+	if (LocalPlayerController.IsValid())
+	{
+		FVector2D NewMousePosition;
+
+		if (LocalPlayerController->GetMousePosition(NewMousePosition.X, NewMousePosition.Y))
+		{
+			if (CrosshairTexture != nullptr)
+			{
+				// Display a crosshair icon for the mouse cursor
+				// Offset by half of the texture's dimensions so that the center of the texture aligns with the center of the Canvas.
+				FVector2D CrossHairDrawPosition(NewMousePosition.X - (CrosshairTexture->GetSurfaceWidth() * 0.5f),
+												NewMousePosition.Y - (CrosshairTexture->GetSurfaceHeight() * 0.5f));
+
+				// Draw the crosshair at the mouse position.
+				FCanvasTileItem TileItem(CrossHairDrawPosition, CrosshairTexture->Resource, FLinearColor::White);
+				TileItem.BlendMode = SE_BLEND_Translucent;
+				Canvas->DrawItem(TileItem);
+			}
+
+			TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(NewMousePosition);
+			HighlightActorUnderCursor(NewHoverActor);
+		}
+
+		// Draw tags above selected actors
+		for (TWeakObjectPtr<AActor> SelectedActor : SelectedActors)
+		{
+			if (SelectedActor.IsValid())
+			{
+				if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(SelectedActor))
+				{
+					FVector PlayerLocation = GetLocalPawnLocation();
+
+					FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation);
+					if (!ScreenLocation.IsZero())
+					{
+						DrawTag(Canvas, ScreenLocation, *HitEntityId, SelectedActor->GetName(), true /*bCentre*/);
+					}
+				}
+			}
+		}
+	}
+}
+
+void ASpatialDebugger::HighlightActorUnderCursor(TWeakObjectPtr<AActor>& NewHoverActor)
+{
+	// Check if highlighting feature is enabled and the glowing wire frame material is set
+	if (!bShowHighlight || WireFrameMaterial == nullptr)
+	{
+		return;
+	}
+
+	if (!NewHoverActor.IsValid())
+	{
+		// No actor under the cursor so revert hover materials on previous actor
+		RevertHoverMaterials();
+	}
+	else if (NewHoverActor != HoverActor)
+	{
+		// New actor under the cursor
+
+		// Revert hover materials on previous actor
+		RevertHoverMaterials();
+
+		// Set hover materials on new actor
+		TArray<UActorComponent*> ActorComponents;
+		NewHoverActor->GetComponents(UMeshComponent::StaticClass(), ActorComponents, true);
+		for (UActorComponent* NewActorComponent : ActorComponents)
+		{
+			// Store previous components
+			TWeakObjectPtr<UMeshComponent> MeshComponent(Cast<UMeshComponent>(NewActorComponent));
+			TWeakObjectPtr<UMaterialInterface> MeshMaterial = MeshComponent->GetMaterial(0);
+			if (MeshComponent.IsValid() && MeshMaterial.IsValid())
+			{
+				ActorMeshComponents.Add(MeshComponent);
+				// Store previous materials
+				ActorMeshMaterials.Add(MeshMaterial);
+				// Set wireframe material on new actor
+				MeshComponent->SetMaterial(0, WireFrameMaterial);
+			}
+		}
+		HoverActor = NewHoverActor;
+	}
+}
+
+void ASpatialDebugger::RevertHoverMaterials()
+{
+	if (!bShowHighlight)
+	{
+		return;
+	}
+
+	if (HoverActor.IsValid())
+	{
+		// Revert materials on previous actor
+		for (int i = 0; i < ActorMeshComponents.Num(); i++)
+		{
+			TWeakObjectPtr<UMeshComponent> ActorMeshComponent = ActorMeshComponents[i];
+			TWeakObjectPtr<UMaterialInterface> ActorMeshMaterial = ActorMeshMaterials[i];
+			if (ActorMeshComponent.IsValid() && ActorMeshMaterial.IsValid())
+			{
+				ActorMeshComponent->SetMaterial(0, ActorMeshMaterial.Get());
+			}
+		}
+
+		// Clear previous materials
+		ActorMeshMaterials.Empty();
+		ActorMeshComponents.Empty();
+
+		HoverActor = nullptr;
+	}
+}
+
+TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(const FVector2D& NewMousePosition)
+{
+	if (!LocalPlayerController.IsValid())
+	{
+		return nullptr;
+	}
+	else if (NewMousePosition != MousePosition)
+	{
+		// Mouse has moved so raycast to find actors currently under the mouse cursor
+		MousePosition = NewMousePosition;
+
+		FVector WorldLocation;
+		FVector WorldRotation;
+		LocalPlayerController->DeprojectScreenPositionToWorld(NewMousePosition.X, NewMousePosition.Y, WorldLocation,
+															  WorldRotation); // Mouse cursor position
+		FVector StartTrace = WorldLocation;
+		FVector EndTrace = StartTrace + WorldRotation * MaxRange;
+
+		HitActors.Empty();
+
+		TArray<FHitResult> HitResults;
+		bool bHit = GetWorld()->LineTraceMultiByObjectType(HitResults, StartTrace, EndTrace, CollisionObjectParams);
+		if (bHit)
+		{
+			// When the raycast hits an actor then it is highlighted, whilst the actor remains under the crosshair. If there are multiple
+			// hit results, the user can select the next by using the mouse scroll wheel
+			for (const FHitResult& HitResult : HitResults)
+			{
+				const TWeakObjectPtr<AActor> HitActor = HitResult.GetActor();
+
+				if (!HitActor.IsValid() || HitActors.Contains(HitActor))
+				{
+					// The hit results may include the same actor multiple times so just ignore duplicates
+					continue;
+				}
+
+				// Only add actors to the list of hit actors if they have a valid entity id and screen position. As later when we scroll
+				// through the actors, we only want to highlight ones that we can show a tag for.
+				if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(HitResult.GetActor()))
+				{
+					FVector PlayerLocation = GetLocalPawnLocation();
+
+					FVector2D ScreenLocation = ProjectActorToScreen(HitActor, PlayerLocation);
+					if (!ScreenLocation.IsZero())
+					{
+						HitActors.Add(HitActor);
+					}
+				}
+			}
+		}
+	}
+
+	return GetHitActor();
+}
+
+// Return actor selected from list dependent on the hover index, which is selected independently with the mouse wheel (by default)
+TWeakObjectPtr<AActor> ASpatialDebugger::GetHitActor()
+{
+	if (HitActors.Num() == 0)
+	{
+		return nullptr;
+	}
+
+	// Validate hover index
+	if (HoverIndex >= HitActors.Num())
+	{
+		// Reset hover index
+		HoverIndex = 0;
+	}
+
+	return HitActors[HoverIndex];
+}
+
+FVector2D ASpatialDebugger::ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector& PlayerLocation)
+{
+	FVector2D ScreenLocation = FVector2D::ZeroVector;
+
+	FVector ActorLocation = Actor->GetActorLocation();
+
+	if (ActorLocation.IsZero())
+	{
+		return ScreenLocation;
+	}
+
+	if (FVector::Dist(PlayerLocation, ActorLocation) > MaxRange)
+	{
+		return ScreenLocation;
+	}
+
+	if (LocalPlayerController.IsValid())
+	{
+		SCOPE_CYCLE_COUNTER(STAT_Projection);
+		UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + WorldSpaceActorTagOffset, ScreenLocation,
+											   false);
+		return ScreenLocation;
+	}
+	return ScreenLocation;
+}
+
+FVector ASpatialDebugger::GetLocalPawnLocation()
+{
+	FVector PlayerLocation = FVector::ZeroVector;
+	if (LocalPawn.IsValid())
+	{
+		PlayerLocation = LocalPawn->GetActorLocation();
+	}
+	return PlayerLocation;
 }
 
 void GetReplicatedActorsInHierarchy(const AActor* Actor, TArray<const AActor*>& HierarchyActors)
