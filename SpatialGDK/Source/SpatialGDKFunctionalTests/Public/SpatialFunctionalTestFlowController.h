@@ -40,7 +40,7 @@ public:
 	void CrossServerStartStep(int StepIndex);
 
 	// Tells Test owner that the current Step is finished locally
-	void NotifyStepFinished();
+	void NotifyStepFinished(const int StepIndex);
 
 	// Tell the Test owner that we want to end the Test
 	void NotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);
@@ -105,10 +105,10 @@ private:
 	void StopStepInternal();
 
 	UFUNCTION(Server, Reliable)
-	void ServerNotifyStepFinished();
+	void ServerNotifyStepFinished(const int StepIndex);
 
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerNotifyStepFinished();
+	void CrossServerNotifyStepFinished(const int StepIndex);
 
 	UFUNCTION(Server, Reliable)
 	void ServerNotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);

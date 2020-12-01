@@ -140,7 +140,7 @@ bool FSendReserveEntityIdsRequest::Update()
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	if (Connection)
 	{
-		Connection->SendReserveEntityIdsRequest(NumOfEntities);
+		Connection->SendReserveEntityIdsRequest(NumOfEntities, RETRY_UNTIL_COMPLETE);
 		Connection->Flush();
 	}
 
@@ -155,7 +155,7 @@ bool FSendCreateEntityRequest::Update()
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	if (Connection)
 	{
-		Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId);
+		Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId, RETRY_UNTIL_COMPLETE);
 		Connection->Flush();
 	}
 
@@ -169,7 +169,7 @@ bool FSendDeleteEntityRequest::Update()
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
 	if (Connection)
 	{
-		Connection->SendDeleteEntityRequest(EntityId);
+		Connection->SendDeleteEntityRequest(EntityId, RETRY_UNTIL_COMPLETE);
 		Connection->Flush();
 	}
 
