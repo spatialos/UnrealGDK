@@ -129,11 +129,11 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	ServerQuery.Constraint = CreateGDKSnapshotEntitiesConstraint();
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, ServerQuery);
 
-// 	// Add a self query to ensure we see all well known entities.
-// 	Query AuthoritySelfQuery = {};
-// 	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
-// 	AuthoritySelfQuery.Constraint.bSelfConstraint = true;
-// 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_COMPONENT_ID, AuthoritySelfQuery);
+	// 	// Add a self query to ensure we see all well known entities.
+	// 	Query AuthoritySelfQuery = {};
+	// 	AuthoritySelfQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+	// 	AuthoritySelfQuery.Constraint.bSelfConstraint = true;
+	// 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_COMPONENT_ID, AuthoritySelfQuery);
 
 	return ServerInterest;
 }
