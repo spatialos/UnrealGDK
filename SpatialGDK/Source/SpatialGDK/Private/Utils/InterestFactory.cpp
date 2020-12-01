@@ -559,7 +559,7 @@ SpatialGDK::QueryConstraint InterestFactory::CreateGDKKnownEntitiesConstraint() 
 {
 	QueryConstraint AlwaysRelevantConstraint;
 
-	//Worker_ComponentId ComponentIds[] = { SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID,
+	// Worker_ComponentId ComponentIds[] = { SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID,
 	//									  SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID };
 
 	Worker_ComponentId ComponentIds[] = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
