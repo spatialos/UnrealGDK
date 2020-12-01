@@ -2,6 +2,8 @@
 
 #include "Interop/Connection/SpatialGDKSpanId.h"
 
+static_assert(sizeof(FSpatialGDKSpanId) == TRACE_SPAN_ID_SIZE_BYTES, "Size must match TRACE_SPAN_ID_SIZE_BYTES");
+
 // ----- FSpatialGDKSpanId -----
 
 FSpatialGDKSpanId::FSpatialGDKSpanId()
