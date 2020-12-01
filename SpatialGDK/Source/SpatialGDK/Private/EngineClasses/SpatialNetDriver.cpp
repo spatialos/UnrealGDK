@@ -2215,7 +2215,7 @@ void USpatialNetDriver::DisconnectPlayer(Worker_EntityId ClientEntityId)
 	Request.component_id = SpatialConstants::WORKER_COMPONENT_ID;
 	Request.command_index = SpatialConstants::WORKER_DISCONNECT_COMMAND_ID;
 	Request.schema_type = Schema_CreateCommandRequest();
-	Worker_RequestId RequestId = Connection->SendCommandRequest(ClientEntityId, &Request, SpatialConstants::WORKER_DISCONNECT_COMMAND_ID);
+	Worker_RequestId RequestId = Connection->SendCommandRequest(ClientEntityId, &Request, SpatialGDK::RETRY_UNTIL_COMPLETE, {});
 
 	SystemEntityCommandDelegate CommandResponseDelegate;
 	CommandResponseDelegate.BindWeakLambda(this, [this, ClientEntityId](const Worker_CommandResponseOp& Op) {
