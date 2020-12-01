@@ -430,8 +430,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const Worker_EntityId EntityId,
 																			const InterestFactory* InterestFactory,
 																			const UAbstractLBStrategy* LbStrategy,
-																			VirtualWorkerId VirtualWorker,
-																			bool bDebugContexValid)
+																			VirtualWorkerId VirtualWorker, bool bDebugContexValid)
 {
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, EntityId);
