@@ -312,6 +312,7 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Outdated NetDriver connection skipped. May be due to an outdated ClientTravel"));
 		ConnectionManager->OnConnectedCallback.Unbind();
+		ConnectionManager->OnFailedToConnectCallback.Unbind();
 		return;
 	}
 
