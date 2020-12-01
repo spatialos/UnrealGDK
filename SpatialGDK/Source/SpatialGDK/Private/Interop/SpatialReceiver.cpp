@@ -1774,10 +1774,17 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 			 && CommandIndex == SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID)
 	{
 		AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
-		Worker_CommandResponse Response =
-			MigrationDiagnostic::CreateMigrationDiagnosticResponse(NetDriver->Connection->GetWorkerId(), EntityId, EntityActor);
+		if (IsValid(EntityActor))
+		{
+			Worker_CommandResponse Response =
+				MigrationDiagnostic::CreateMigrationDiagnosticResponse(NetDriver->Connection->GetWorkerId(), EntityId, EntityActor);
 
-		Sender->SendCommandResponse(RequestId, Response, FSpatialGDKSpanId(Op.span_id));
+			Sender->SendCommandResponse(RequestId, Response, FSpatialGDKSpanId(Op.span_id));
+		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Prevented Actor %s 's hierarchy from migrating because Entity (%llu) is invalid on authoritative Worker %s"), EntityId, *NetDriver->Connection->GetWorkerId());
+		}
 
 		return;
 	}
