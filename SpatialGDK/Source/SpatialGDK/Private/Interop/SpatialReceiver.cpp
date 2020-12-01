@@ -2879,5 +2879,3 @@ bool USpatialReceiver::IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset)
 	const FClassInfo& ActorClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 	return !ActorClassInfo.SubobjectInfo.Contains(SubObjectOffset);
 }
-
-
