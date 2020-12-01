@@ -1,0 +1,29 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+type MigrationDiagnosticRequest {}
+
+type MigrationDiagnosticResponse
+{
+	// Name of the Unreal server worker which is authoritative for the actor.
+	string remote_worker_name = 1;
+
+	// The name of the actor that cannot migrate.
+	uint64 entity_id = 2;
+
+	// Whether or not the actor is replicated.
+	bool actor_replicated = 3;
+
+	// Whether or not the actor has authority.
+	bool actor_authority = 4;
+
+	// The name of the owner of the actor that cannot migrate
+	string owner_name = 5;
+}
+
+component MigrationDiagnostic
+{
+	id = 9969;
+
+	command MigrationDiagnosticResponse diagnostic(MigrationDiagnosticRequest);
+}

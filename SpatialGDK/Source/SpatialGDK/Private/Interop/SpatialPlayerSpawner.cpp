@@ -10,34 +10,26 @@
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
-#include "SpatialGDKSettings.h"
+#include "UObject/SoftObjectPath.h"
 #include "Utils/SchemaUtils.h"
 
 #include "Containers/StringConv.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/GameModeBase.h"
-#include "GameFramework/PlayerStart.h"
 #include "HAL/Platform.h"
 #include "Kismet/GameplayStatics.h"
-#include "TimerManager.h"
-#include "UObject/SoftObjectPath.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
-
-#include <string>
 
 DEFINE_LOG_CATEGORY(LogSpatialPlayerSpawner);
 
 using namespace SpatialGDK;
 
-void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
+void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-	TimerManager = InTimerManager;
-
-	NumberOfAttempts = 0;
 }
 
 void USpatialPlayerSpawner::SendPlayerSpawnRequest()
@@ -49,9 +41,8 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 
 	Worker_EntityQuery SpatialSpawnerQuery{};
 	SpatialSpawnerQuery.constraint = SpatialSpawnerConstraint;
-	SpatialSpawnerQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
-	const Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&SpatialSpawnerQuery);
+	const Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&SpatialSpawnerQuery, RETRY_UNTIL_COMPLETE);
 
 	EntityQueryDelegate SpatialSpawnerQueryDelegate;
 	SpatialSpawnerQueryDelegate.BindLambda([this, RequestID](const Worker_EntityQueryResponseOp& Op) {
@@ -69,10 +60,9 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 		{
 			checkf(Op.result_count == 1, TEXT("There should never be more than one SpatialSpawner entity."));
 
-			SpatialGDK::SpawnPlayerRequest SpawnRequest = ObtainPlayerParams();
+			SpawnPlayerRequest SpawnRequest = ObtainPlayerParams();
 			Worker_CommandRequest SpawnPlayerCommandRequest = PlayerSpawner::CreatePlayerSpawnRequest(SpawnRequest);
-			NetDriver->Connection->SendCommandRequest(Op.results[0].entity_id, &SpawnPlayerCommandRequest,
-													  SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID);
+			NetDriver->Connection->SendCommandRequest(Op.results[0].entity_id, &SpawnPlayerCommandRequest, RETRY_MAX_TIMES, {});
 		}
 
 		if (!Reason.IsEmpty())
@@ -84,8 +74,6 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 
 	UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Sending player spawn request"));
 	NetDriver->Receiver->AddEntityQueryDelegate(RequestID, SpatialSpawnerQueryDelegate);
-
-	++NumberOfAttempts;
 }
 
 SpatialGDK::SpawnPlayerRequest USpatialPlayerSpawner::ObtainPlayerParams() const
@@ -141,7 +129,9 @@ SpatialGDK::SpawnPlayerRequest USpatialPlayerSpawner::ObtainPlayerParams() const
 
 	const FName OnlinePlatformName = WorldContext->OwningGameInstance->GetOnlinePlatformName();
 
-	return { LoginURL, UniqueId, OnlinePlatformName, bIsSimulatedPlayer };
+	const Worker_EntityId ClientSystemEntityId = NetDriver->Connection->GetWorkerSystemEntityId();
+
+	return { LoginURL, UniqueId, OnlinePlatformName, bIsSimulatedPlayer, ClientSystemEntityId };
 }
 
 void USpatialPlayerSpawner::ReceivePlayerSpawnResponseOnClient(const Worker_CommandResponseOp& Op)
@@ -149,21 +139,6 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponseOnClient(const Worker_Comm
 	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Display, TEXT("PlayerSpawn returned from server sucessfully"));
-	}
-	else if (NumberOfAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-	{
-		UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""), UTF8_TO_TCHAR(Op.message));
-
-		FTimerHandle RetryTimer;
-		TimerManager->SetTimer(
-			RetryTimer,
-			[WeakThis = TWeakObjectPtr<USpatialPlayerSpawner>(this)]() {
-				if (USpatialPlayerSpawner* Spawner = WeakThis.Get())
-				{
-					Spawner->SendPlayerSpawnRequest();
-				}
-			},
-			SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts), false);
 	}
 	else
 	{
@@ -178,27 +153,24 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequestOnServer(const Worker_Comma
 {
 	UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Received PlayerSpawn request on server"));
 
-	const FUTF8ToTCHAR FStringConversion(reinterpret_cast<const ANSICHAR*>(Op.caller_worker_id), strlen(Op.caller_worker_id));
-	FString ClientWorkerId(FStringConversion.Length(), FStringConversion.Get());
-
 	// Accept the player if we have not already accepted a player from this worker.
 	bool bAlreadyHasPlayer;
-	WorkersWithPlayersSpawned.Emplace(ClientWorkerId, &bAlreadyHasPlayer);
+	WorkersWithPlayersSpawned.Emplace(Op.caller_worker_entity_id, &bAlreadyHasPlayer);
 	if (bAlreadyHasPlayer)
 	{
-		UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Ignoring duplicate PlayerSpawn request. Client worker ID: %s"), *ClientWorkerId);
+		UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Ignoring duplicate PlayerSpawn request. Client worker ID: %lld"),
+			   Op.caller_worker_entity_id);
 		return;
 	}
 
 	Schema_Object* RequestPayload = Schema_GetCommandRequestObject(Op.request.schema_type);
-	FindPlayerStartAndProcessPlayerSpawn(RequestPayload, ClientWorkerId);
+	FindPlayerStartAndProcessPlayerSpawn(RequestPayload, Op.caller_worker_entity_id);
 
 	Worker_CommandResponse Response = PlayerSpawner::CreatePlayerSpawnResponse();
 	NetDriver->Connection->SendCommandResponse(Op.request_id, &Response);
 }
 
-void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* SpawnPlayerRequest,
-																 const PhysicalWorkerName& ClientWorkerId)
+void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* SpawnPlayerRequest, const Worker_EntityId& ClientWorkerId)
 {
 	// If the load balancing strategy dictates that this worker should have authority over the chosen PlayerStart THEN the spawn is handled
 	// locally, Else if the the PlayerStart is handled by another worker THEN forward the request to that worker to prevent an initial
@@ -219,8 +191,8 @@ void USpatialPlayerSpawner::FindPlayerStartAndProcessPlayerSpawn(Schema_Object* 
 	// If the PlayerStart is authoritative locally, spawn the player locally.
 	if (PlayerStartActor != nullptr && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*PlayerStartActor))
 	{
-		UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Handling SpawnPlayerRequest request locally. Client worker ID: %s."),
-			   *ClientWorkerId);
+		UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Handling SpawnPlayerRequest request locally. Client worker ID: %lld."),
+			   ClientWorkerId);
 		PassSpawnRequestToNetDriver(SpawnPlayerRequest, PlayerStartActor);
 		return;
 	}
@@ -271,17 +243,18 @@ void USpatialPlayerSpawner::PassSpawnRequestToNetDriver(const Schema_Object* Pla
 
 	// Set a prioritized PlayerStart for the new player to spawn at. Passing nullptr is a no-op.
 	GameMode->SetPrioritizedPlayerStart(PlayerStart);
-	NetDriver->AcceptNewPlayer(SpawnRequest.LoginURL, SpawnRequest.UniqueId, SpawnRequest.OnlinePlatformName);
+	NetDriver->AcceptNewPlayer(SpawnRequest.LoginURL, SpawnRequest.UniqueId, SpawnRequest.OnlinePlatformName,
+							   SpawnRequest.ClientSystemEntityId);
 	GameMode->SetPrioritizedPlayerStart(nullptr);
 }
 
 void USpatialPlayerSpawner::ForwardSpawnRequestToStrategizedServer(const Schema_Object* OriginalPlayerSpawnRequest, AActor* PlayerStart,
-																   const PhysicalWorkerName& ClientWorkerId,
+																   const Worker_EntityId& ClientWorkerId,
 																   const VirtualWorkerId SpawningVirtualWorker)
 {
 	UE_LOG(LogSpatialPlayerSpawner, Log,
-		   TEXT("Forwarding player spawn request to strategized worker. Client ID: %s. PlayerStart: %s. Strategeized virtual worker %d"),
-		   *ClientWorkerId, *GetNameSafe(PlayerStart), SpawningVirtualWorker);
+		   TEXT("Forwarding player spawn request to strategized worker. Client ID: %lld. PlayerStart: %s. Strategeized virtual worker %d"),
+		   ClientWorkerId, *GetNameSafe(PlayerStart), SpawningVirtualWorker);
 
 	// Find the server worker entity corresponding to the PlayerStart strategized virtual worker.
 	const Worker_EntityId ServerWorkerEntity =
@@ -314,8 +287,8 @@ void USpatialPlayerSpawner::ForwardSpawnRequestToStrategizedServer(const Schema_
 	Worker_CommandRequest ForwardSpawnPlayerRequest =
 		ServerWorker::CreateForwardPlayerSpawnRequest(Schema_CopyCommandRequest(ForwardSpawnPlayerSchemaRequest));
 
-	const Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(
-		ServerWorkerEntity, &ForwardSpawnPlayerRequest, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID);
+	const Worker_RequestId RequestId =
+		NetDriver->Connection->SendCommandRequest(ServerWorkerEntity, &ForwardSpawnPlayerRequest, RETRY_MAX_TIMES, {});
 
 	OutgoingForwardPlayerSpawnRequests.Add(RequestId,
 										   TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>(ForwardSpawnPlayerSchemaRequest));
@@ -325,15 +298,15 @@ void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_Comm
 {
 	Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
 	Schema_Object* PlayerSpawnData = Schema_GetObject(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_DATA_ID);
-	FString ClientWorkerId = GetStringFromSchema(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_WORKER_ID);
+	Worker_EntityId ClientWorkerId = Schema_GetEntityId(Payload, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID);
 
 	// Accept the player if we have not already accepted a player from this worker.
 	bool bAlreadyHasPlayer;
 	WorkersWithPlayersSpawned.Emplace(ClientWorkerId, &bAlreadyHasPlayer);
 	if (bAlreadyHasPlayer)
 	{
-		UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Ignoring duplicate forward player spawn request. Client worker ID: %s"),
-			   *ClientWorkerId);
+		UE_LOG(LogSpatialPlayerSpawner, Verbose, TEXT("Ignoring duplicate forward player spawn request. Client worker ID: %lld"),
+			   ClientWorkerId);
 		return;
 	}
 
@@ -348,14 +321,14 @@ void USpatialPlayerSpawner::ReceiveForwardedPlayerSpawnRequest(const Worker_Comm
 
 		if (bRequestHandledSuccessfully)
 		{
-			UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Received ForwardPlayerSpawn request. Client worker ID: %s. PlayerStart: %s"),
-				   *ClientWorkerId, *PlayerStart->GetName());
+			UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Received ForwardPlayerSpawn request. Client worker ID: %lld. PlayerStart: %s"),
+				   ClientWorkerId, *PlayerStart->GetName());
 			PassSpawnRequestToNetDriver(PlayerSpawnData, PlayerStart);
 		}
 		else
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Error,
-				   TEXT("PlayerStart Actor UnrealObjectRef was invalid on forwarded player spawn request worker: %s"), *ClientWorkerId);
+				   TEXT("PlayerStart Actor UnrealObjectRef was invalid on forwarded player spawn request worker: %lld"), ClientWorkerId);
 		}
 	}
 	else
@@ -393,17 +366,6 @@ void USpatialPlayerSpawner::ReceiveForwardPlayerSpawnResponse(const Worker_Comma
 	}
 
 	UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("ForwardPlayerSpawn request failed: \"%s\". Retrying"), UTF8_TO_TCHAR(Op.message));
-
-	FTimerHandle RetryTimer;
-	TimerManager->SetTimer(
-		RetryTimer,
-		[EntityId = Op.entity_id, RequestId = Op.request_id, WeakThis = TWeakObjectPtr<USpatialPlayerSpawner>(this)]() {
-			if (USpatialPlayerSpawner* Spawner = WeakThis.Get())
-			{
-				Spawner->RetryForwardSpawnPlayerRequest(EntityId, RequestId);
-			}
-		},
-		SpatialConstants::GetCommandRetryWaitTimeSeconds(SpatialConstants::FORWARD_PLAYER_SPAWN_COMMAND_WAIT_SECONDS), false);
 }
 
 void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const Worker_EntityId EntityId, const Worker_RequestId RequestId,
@@ -427,8 +389,8 @@ void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const Worker_EntityId
 		UE_LOG(LogSpatialPlayerSpawner, Warning,
 			   TEXT("Target PlayerStart to spawn player was no longer valid after forwarding failed. Finding another PlayerStart."));
 		Schema_Object* SpawnPlayerData = Schema_GetObject(OldRequestPayload, SpatialConstants::FORWARD_SPAWN_PLAYER_DATA_ID);
-		const PhysicalWorkerName& ClientWorkerId =
-			GetStringFromSchema(OldRequestPayload, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_WORKER_ID);
+		const Worker_EntityId ClientWorkerId =
+			Schema_GetEntityId(OldRequestPayload, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID);
 		FindPlayerStartAndProcessPlayerSpawn(SpawnPlayerData, ClientWorkerId);
 		return;
 	}
@@ -436,8 +398,8 @@ void USpatialPlayerSpawner::RetryForwardSpawnPlayerRequest(const Worker_EntityId
 	// Resend the ForwardSpawnPlayer request.
 	Worker_CommandRequest ForwardSpawnPlayerRequest =
 		ServerWorker::CreateForwardPlayerSpawnRequest(Schema_CopyCommandRequest(OldRequest.Get()));
-	const Worker_RequestId NewRequestId = NetDriver->Connection->SendCommandRequest(
-		EntityId, &ForwardSpawnPlayerRequest, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID);
+	const Worker_RequestId NewRequestId =
+		NetDriver->Connection->SendCommandRequest(EntityId, &ForwardSpawnPlayerRequest, RETRY_UNTIL_COMPLETE, {});
 
 	// Move the request data from the old request ID map entry across to the new ID entry.
 	OutgoingForwardPlayerSpawnRequests.Add(NewRequestId, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>(OldRequest.Get()));

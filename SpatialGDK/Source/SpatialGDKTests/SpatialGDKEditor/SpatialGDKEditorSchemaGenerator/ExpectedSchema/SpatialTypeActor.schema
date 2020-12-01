@@ -22,3 +22,10 @@ component SpatialTypeActor {
 	uint32 role = 14;
 	UnrealObjectRef instigator = 15;
 }
+
+component_set SpatialTypeActorSet {
+	id = {{id}};
+	components = [
+		SpatialTypeActor
+	];
+}

@@ -19,7 +19,7 @@ MulticastRPCService::MulticastRPCService(const ExtractRPCDelegate InExtractRPCCa
 {
 }
 
-void MulticastRPCService::Advance()
+void MulticastRPCService::AdvanceView()
 {
 	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
 	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
@@ -40,7 +40,14 @@ void MulticastRPCService::Advance()
 			}
 			for (const ComponentChange& Change : Delta.ComponentUpdates)
 			{
-				ComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update);
+				if (Change.ComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+				{
+					ApplyComponentUpdate(Delta.EntityId, Change.Update);
+				}
+				else if (Change.ComponentId > SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+				{
+					break;
+				}
 			}
 			for (const AuthorityChange& Change : Delta.AuthorityGained)
 			{
@@ -52,11 +59,9 @@ void MulticastRPCService::Advance()
 				// Regain authority.
 				AuthorityGained(Delta.EntityId, Change.ComponentId);
 			}
-			break;
 		}
 		case EntityDelta::ADD:
 			PopulateDataStore(Delta.EntityId);
-			EntityAdded(Delta.EntityId);
 			break;
 		case EntityDelta::REMOVE:
 			OnRemoveMulticastRPCComponentForEntity(Delta.EntityId);
@@ -66,6 +71,32 @@ void MulticastRPCService::Advance()
 			OnRemoveMulticastRPCComponentForEntity(Delta.EntityId);
 			MulticastDataStore.Remove(Delta.EntityId);
 			PopulateDataStore(Delta.EntityId);
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+void MulticastRPCService::ProcessChanges()
+{
+	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
+	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
+	{
+		switch (Delta.Type)
+		{
+		case EntityDelta::UPDATE:
+		{
+			for (const ComponentChange& Change : Delta.ComponentUpdates)
+			{
+				ComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update);
+			}
+			break;
+		}
+		case EntityDelta::ADD:
+			EntityAdded(Delta.EntityId);
+			break;
+		case EntityDelta::TEMPORARILY_REMOVED:
 			EntityAdded(Delta.EntityId);
 			break;
 		default:
@@ -90,7 +121,6 @@ void MulticastRPCService::ComponentUpdate(const Worker_EntityId EntityId, const 
 	{
 		return;
 	}
-	ApplyComponentUpdate(EntityId, Update);
 	ExtractRPCs(EntityId);
 }
 
@@ -150,7 +180,7 @@ void MulticastRPCService::OnEndpointAuthorityGained(const Worker_EntityId Entity
 
 		const RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::NetMulticast);
 		Schema_Object* SchemaObject =
-			Schema_GetComponentUpdateFields(RPCStore->GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }, nullptr));
+			Schema_GetComponentUpdateFields(RPCStore->GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }));
 		Schema_AddUint64(SchemaObject, Descriptor.LastSentRPCFieldId, Component.InitiallyPresentMulticastRPCsCount);
 	}
 	else
@@ -201,7 +231,7 @@ void MulticastRPCService::ExtractRPCs(const Worker_EntityId EntityId)
 			const TOptional<RPCPayload>& Element = Buffer.GetRingBufferElement(RPCId);
 			if (Element.IsSet())
 			{
-				ExtractRPCCallback.Execute(FUnrealObjectRef(EntityId, Element.GetValue().Offset), Element.GetValue());
+				ExtractRPCCallback.Execute(FUnrealObjectRef(EntityId, Element.GetValue().Offset), Element.GetValue(), RPCId);
 				LastProcessedRPCId = RPCId;
 			}
 			else

@@ -52,9 +52,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	TUniquePtr<SpatialGDK::Component> Data;
 	switch (Op.data.component_id)
 	{
-	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::EntityAcl>(Op.data);
-		break;
 	case SpatialConstants::METADATA_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::Metadata>(Op.data);
 		break;
@@ -109,6 +106,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::NetOwningClientWorker>(Op.data);
 		break;
+	case SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::AuthorityDelegation>(Op.data);
+		break;
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::DebugComponent>(Op.data);
 		break;
@@ -139,9 +139,6 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 
 	switch (Op.update.component_id)
 	{
-	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::EntityAcl>(Op.entity_id);
-		break;
 	case SpatialConstants::POSITION_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::Position>(Op.entity_id);
 		break;
@@ -172,6 +169,9 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::NetOwningClientWorker>(Op.entity_id);
 		break;
+	case SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::AuthorityDelegation>(Op.entity_id);
+		break;
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::DebugComponent>(Op.entity_id);
 		break;
@@ -185,7 +185,7 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 	}
 }
 
-void USpatialStaticComponentView::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
+void USpatialStaticComponentView::OnAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op)
 {
-	EntityComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_id) = (Worker_Authority)Op.authority;
+	EntityComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_set_id) = (Worker_Authority)Op.authority;
 }

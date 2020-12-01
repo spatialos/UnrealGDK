@@ -206,8 +206,7 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 			{
 				// Request further diagnostics to be logged on authoritative server
 				Worker_CommandRequest MigrationDiagnosticCommandRequest = MigrationDiagnostic::CreateMigrationDiagnosticRequest();
-				NetDriver->Connection->SendCommandRequest(ActorEntityId, &MigrationDiagnosticCommandRequest,
-														  SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID);
+				NetDriver->Connection->SendCommandRequest(ActorEntityId, &MigrationDiagnosticCommandRequest, RETRY_MAX_TIMES, {});
 			}
 			else
 			{

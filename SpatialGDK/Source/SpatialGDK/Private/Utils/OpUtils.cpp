@@ -15,8 +15,8 @@ Worker_ComponentId GetComponentId(const Worker_Op& Op)
 		return Op.op.remove_component.component_id;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
 		return Op.op.component_update.update.component_id;
-	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		return Op.op.authority_change.component_id;
+	case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
+		return Op.op.component_set_authority_change.component_set_id;
 	case WORKER_OP_TYPE_COMMAND_REQUEST:
 		return Op.op.command_request.request.component_id;
 	case WORKER_OP_TYPE_COMMAND_RESPONSE:

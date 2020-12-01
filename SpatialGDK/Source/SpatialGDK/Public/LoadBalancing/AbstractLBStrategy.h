@@ -16,13 +16,12 @@
  * At runtime, all unreal workers will:
  * 1. Instantiate an instance of the strategy class specified in TODO: where are we adding this?
  * 2. Call the Init method, passing the current USpatialNetDriver.
- * 3. (Translator / Enforcer only): Initialize Worker to VirtualWorkerId mapping with
- *      VirtualWorkerIds from GetVirtualWorkerIds() and begin assinging workers.
+ * 3. (Translator authoritative worker only): Initialize Worker to VirtualWorkerId mapping with
+ *      VirtualWorkerIds from GetVirtualWorkerIds() and begin assigning workers.
  *    (Other Workers): SetLocalVirtualWorkerId when assigned a VirtualWorkerId.
  * 4. For each Actor being replicated:
  *   a) Check if authority should be relinquished by calling ShouldHaveAuthority
- *   b) If true: Send authority change request to Translator/Enforcer passing in new
- *        VirtualWorkerId returned by WhoShouldHaveAuthority
+ *   b) If true: Update AuthorityDelegation mapping.
  */
 UCLASS(abstract)
 class SPATIALGDK_API UAbstractLBStrategy : public UObject
@@ -40,44 +39,42 @@ public:
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId LocalVirtualWorkerId);
 
 	// Deprecated: will be removed ASAP.
-	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};)
+	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};);
 
-		virtual bool ShouldHaveAuthority(const AActor& Actor) const
-	{
-		return false;
-	}
+	virtual bool ShouldHaveAuthority(const AActor& Actor) const { return false; }
+
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const
-		PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;)
+		PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;);
 
-		/**
-		 * Get the query constraints required by this worker based on the load balancing strategy used.
-		 */
-		virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const
-		PURE_VIRTUAL(UAbstractLBStrategy::GetWorkerInterestQueryConstraint, return {};)
+	/**
+	 * Get a logical worker entity position for this strategy. For example, the centre of a grid square in a grid-based strategy.
+	 * Optional- otherwise returns the origin.
+	 */
+	virtual FVector GetWorkerEntityPosition() const { return FVector::ZeroVector; }
 
-		/** True if this load balancing strategy requires handover data to be transmitted. */
-		virtual bool RequiresHandoverData() const PURE_VIRTUAL(UAbstractLBStrategy::RequiresHandover, return false;)
+	/**
+	 * Get the query constraints required by this worker based on the load balancing strategy used.
+	 */
+	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
+		PURE_VIRTUAL(UAbstractLBStrategy::GetWorkerInterestQueryConstraint, return {};);
 
-		/**
-		 * Get a logical worker entity position for this strategy. For example, the centre of a grid square in a grid-based strategy.
-		 * Optional- otherwise returns the origin.
-		 */
-		virtual FVector GetWorkerEntityPosition() const
-	{
-		return FVector::ZeroVector;
-	}
+	/** True if this load balancing strategy requires handover data to be transmitted. */
+	virtual bool RequiresHandoverData() const PURE_VIRTUAL(UAbstractLBStrategy::RequiresHandover, return false;);
 
 	/**
 	 * GetMinimumRequiredWorkers and SetVirtualWorkerIds are used to assign ranges of virtual worker IDs which will be managed by this
 	 * strategy. LastVirtualWorkerId - FirstVirtualWorkerId + 1  is guaranteed to be >= GetMinimumRequiredWorkers.
 	 */
-	virtual uint32 GetMinimumRequiredWorkers() const
-		PURE_VIRTUAL(UAbstractLBStrategy::GetMinimumRequiredWorkers,
-					 return 0;) virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId,
-																 const VirtualWorkerId& LastVirtualWorkerId)
-			PURE_VIRTUAL(UAbstractLBStrategy::SetVirtualWorkerIds, return;)
+	virtual uint32 GetMinimumRequiredWorkers() const PURE_VIRTUAL(UAbstractLBStrategy::GetMinimumRequiredWorkers, return 0;);
 
-				protected :
+	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId)
+		PURE_VIRTUAL(UAbstractLBStrategy::SetVirtualWorkerIds, return;);
 
-		VirtualWorkerId LocalVirtualWorkerId;
+	// This returns the LBStrategy which should be rendered in the SpatialDebugger.
+	// Currently, this is just the default strategy.
+	virtual UAbstractLBStrategy* GetLBStrategyForVisualRendering() const
+		PURE_VIRTUAL(UAbstractLBStrategy::GetLBStrategyForVisualRendering, return nullptr;);
+
+protected:
+	VirtualWorkerId LocalVirtualWorkerId;
 };

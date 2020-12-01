@@ -253,8 +253,9 @@ public:
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
 	/** Enables multi-worker, if false uses single worker strategy in the editor.  */
-	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable multi-worker in editor"))
+	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (DisplayName = "Enable multi-worker in editor"))
 	bool bEnableMultiWorker;
+
 	/** RPC ring buffers is enabled when either the matching setting is set, or load balancing is enabled */
 	bool UseRPCRingBuffer() const;
 
@@ -387,12 +388,26 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
 	float ActorMigrationLogRate;
+
 	/*
 	 * -- EXPERIMENTAL --
 	 * This will enable event tracing for the Unreal client/worker.
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
 	bool bEventTracingEnabled;
+
+	/*
+	 * Used to set the default sample rate if event tracing is enabled.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing",
+			  meta = (EditCondition = "bEventTracingEnabled", ClampMin = 0.0f, ClampMax = 1.0f))
+	float SamplingProbability;
+
+	/*
+	 * Used to override sample rate for specific trace events.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing", meta = (EditCondition = "bEventTracingEnabled"))
+	TMap<FName, double> EventSamplingModeOverrides;
 
 	/*
 	 * -- EXPERIMENTAL --
