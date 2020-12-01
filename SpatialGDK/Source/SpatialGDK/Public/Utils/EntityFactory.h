@@ -36,10 +36,7 @@ public:
 
 	static TArray<Worker_ComponentId> GetComponentPresenceList(const TArray<FWorkerComponentData>& ComponentDatas);
 
-	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const Worker_EntityId EntityId,
-																		const InterestFactory* InterestFactory,
-																		const UAbstractLBStrategy* LbStrategy,
-																		VirtualWorkerId VirtualWorker);
+	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const Worker_EntityId EntityId, const InterestFactory* InterestFactory, const UAbstractLBStrategy* LbStrategy, VirtualWorkerId VirtualWorker, bool bDebugContexValid);
 
 	static inline bool IsClientAuthoritativeComponent(Worker_ComponentId ComponentId)
 	{
