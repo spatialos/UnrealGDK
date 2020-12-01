@@ -111,7 +111,6 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 		if (GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment && GIsAutomationTesting
 			&& GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
-			// TODO: This can most likely be removed now we do not support 4.24
 			VerifyAndStartDeployment(GetDefault<ULevelEditorPlaySettings>()->GetSnapshotOverride());
 		}
 	});
@@ -200,7 +199,7 @@ void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 
 	if (AutoStopLocalDeployment != EAutoStopLocalDeploymentMode::Never)
 	{
-		if (InspectorProcess && InspectorProcess->Update())
+		if (InspectorProcess.IsSet() && InspectorProcess->Update())
 		{
 			InspectorProcess->Cancel();
 		}
@@ -812,7 +811,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 
 	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
 	const FString SnapshotName = ForceSnapshot.IsEmpty() ? SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad() : ForceSnapshot;
-	const FString SnapshotPath = FPaths::Combine(SpatialGDKEditorSettings->GetSpatialOSSnapshotFolderPath(), SnapshotName);
+	const FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, SnapshotName);
 
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
@@ -909,7 +908,7 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		}
 
 		FString InspectorArgs =
-			FString::Printf(TEXT("--backend_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorIPPort,
+			FString::Printf(TEXT("--backend_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorBackendAddress,
 							*SpatialGDKServicesConstants::SchemaBundlePath);
 
 		InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,

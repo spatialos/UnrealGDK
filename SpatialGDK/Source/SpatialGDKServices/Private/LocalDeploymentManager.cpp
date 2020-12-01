@@ -180,7 +180,7 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 	bool bSuccess = true;
 
 	// Check for the known runtime ports which could be blocked by other processes.
-	TArray<int32> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, GRPCPort };
+	TArray<int32> RequiredRuntimePorts = { RequiredRuntimePort, WorkerPort, HTTPPort, SpatialGDKServicesConstants::RuntimeGRPCPort };
 
 	for (int32 RuntimePort : RequiredRuntimePorts)
 	{
@@ -192,7 +192,7 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 																 "deployment). Would you like to kill this process?"))
 				== EAppReturnType::Yes)
 			{
-				bSuccess = bSuccess && KillProcessBlockingPort(RequiredRuntimePort);
+				bSuccess &= KillProcessBlockingPort(RequiredRuntimePort);
 			}
 			else
 			{
@@ -255,7 +255,8 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
 							 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
 						*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-						*FString::FromInt(GRPCPort), *SnapshotPath, *SchemaBundle, *LocalDeploymentLogsDir, *LaunchArgs);
+						*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *SnapshotPath, *SchemaBundle,
+						*LocalDeploymentLogsDir, *LaunchArgs);
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{
@@ -442,8 +443,6 @@ void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World,
 				return;
 			}
 
-			bool bSuccess = false;
-
 			FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 			FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 
@@ -452,7 +451,7 @@ void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World,
 			FString NewestSnapshotFilePath = HttpResponse->GetContentAsString();
 			FPaths::NormalizeFilename(NewestSnapshotFilePath);
 
-			bSuccess = FPaths::FileExists(NewestSnapshotFilePath);
+			bool bSuccess = FPaths::FileExists(NewestSnapshotFilePath);
 
 			if (!bSuccess)
 			{

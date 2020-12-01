@@ -205,7 +205,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 																		.BrowseButtonToolTip(LOCTEXT("SnapshotFilePicker_Tooltip",
 																									 "Path to the snapshot file."))
 																		.BrowseDirectory(
-																			SpatialGDKSettings->GetSpatialOSSnapshotFolderPath())
+																			SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath)
 																		.BrowseTitle(LOCTEXT("SnapshotFilePicker_Title", "File picker..."))
 																		.FilePath_UObject(SpatialGDKSettings,
 																						  &USpatialGDKEditorSettings::GetSnapshotPath)

@@ -208,8 +208,7 @@ bool ConvertToClassicConfig(const FString& LaunchConfigPath, const FSpatialLaunc
 
 	if (ExitCode != SpatialGDKServicesConstants::ExitCodeSuccess)
 	{
-		// TODO: Change back to Error when v15 is released so we aren't getting unnecessary error spam.
-		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Log,
+		UE_LOG(LogSpatialGDKDefaultLaunchConfigGenerator, Error,
 			   TEXT("Failed to convert generated launch config to classic style config for config '%s'. It might "
 					"be that the file is read-only. Conversion output: %s"),
 			   *LaunchConfigPath, *Output);

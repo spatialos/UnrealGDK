@@ -58,11 +58,11 @@ struct FWorkerPermissionsSection
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow entity deletion"))
 	bool bAllowEntityDeletion;
 
-	/** Enables a worker instance to delete entities. */
+	/** Enables a worker instance to disconnect other workers. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow worker disconnecting"))
 	bool bDisconnectWorker;
 
-	/** Enables a worker instance to delete entities. */
+	/** Enables a worker instance to reserve entity IDs. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow entity ID reservations"))
 	bool bReserveEntityID;
 
@@ -527,7 +527,7 @@ public:
 
 	FORCEINLINE FString GetSpatialOSSnapshotToSavePath() const
 	{
-		return FPaths::Combine(GetSpatialOSSnapshotFolderPath(), GetSpatialOSSnapshotToSave());
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, GetSpatialOSSnapshotToSave());
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotToLoad() const
@@ -541,12 +541,7 @@ public:
 
 	FORCEINLINE FString GetSpatialOSSnapshotToLoadPath() const
 	{
-		return FPaths::Combine(GetSpatialOSSnapshotFolderPath(), GetSpatialOSSnapshotToLoad());
-	}
-
-	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
-	{
-		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("snapshots"));
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, GetSpatialOSSnapshotToLoad());
 	}
 
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const

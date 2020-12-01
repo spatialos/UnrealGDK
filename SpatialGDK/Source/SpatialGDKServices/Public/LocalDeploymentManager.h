@@ -73,9 +73,8 @@ private:
 	static const int32 RequiredRuntimePort = 5301;
 	static const int32 WorkerPort = 8018;
 	static const int32 HTTPPort = 5006;
-	static const int32 GRPCPort = 7777;
 
-	const float RuntimeTimeout = 5.0;
+	const float RuntimeTimeout = 5.0f;
 
 	bool bLocalDeploymentManagerEnabled = true;
 
