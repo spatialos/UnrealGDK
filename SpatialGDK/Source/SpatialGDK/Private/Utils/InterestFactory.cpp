@@ -555,9 +555,9 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const AActor* 
 	return AlwaysInterestedConstraint;
 }
 
-SpatialGDK::QueryConstraint InterestFactory::CreateGDKSnapshotEntitiesConstraint() const
+QueryConstraint InterestFactory::CreateGDKSnapshotEntitiesConstraint() const
 {
-	QueryConstraint AlwaysRelevantConstraint;
+	QueryConstraint SnapshotEntitiesConstraint;
 
 	Worker_ComponentId ComponentIds[] = { SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID,
 										  SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID };
@@ -566,10 +566,10 @@ SpatialGDK::QueryConstraint InterestFactory::CreateGDKSnapshotEntitiesConstraint
 	{
 		QueryConstraint Constraint;
 		Constraint.ComponentConstraint = ComponentId;
-		AlwaysRelevantConstraint.OrConstraint.Add(Constraint);
+		SnapshotEntitiesConstraint.OrConstraint.Add(Constraint);
 	}
 
-	return AlwaysRelevantConstraint;
+	return SnapshotEntitiesConstraint;
 }
 
 QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint() const
