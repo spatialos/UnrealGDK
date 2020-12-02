@@ -28,34 +28,12 @@ struct FWorldLaunchSection
 
 	FWorldLaunchSection()
 		: Dimensions(2000, 2000)
-		, ChunkEdgeLengthMeters(50)
-		, SnapshotWritePeriodSeconds(0)
 	{
-		LegacyFlags.Add(TEXT("bridge_qos_max_timeout"), TEXT("0"));
-		LegacyFlags.Add(TEXT("bridge_soft_handover_enabled"), TEXT("false"));
-		LegacyFlags.Add(TEXT("bridge_single_port_max_heartbeat_timeout_ms"), TEXT("3600000"));
 	}
 
 	/** The size of the simulation, in meters, for the auto-generated launch configuration file. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Simulation dimensions in meters"))
 	FIntPoint Dimensions;
-
-	/** The size of the grid squares that the world is divided into, in “world units” (an arbitrary unit that worker instances can interpret
-	 * as they choose). */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Chunk edge length in meters"))
-	int32 ChunkEdgeLengthMeters;
-
-	/** The frequency in seconds to write snapshots of the simulated world. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Snapshot write period in seconds"))
-	int32 SnapshotWritePeriodSeconds;
-
-	/** Legacy non-worker flag configurations. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
-	TMap<FString, FString> LegacyFlags;
-
-	/** Legacy JVM configurations. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Legacy Java parameters"))
-	TMap<FString, FString> LegacyJavaParams;
 };
 
 USTRUCT()
@@ -64,57 +42,34 @@ struct FWorkerPermissionsSection
 	GENERATED_BODY()
 
 	FWorkerPermissionsSection()
-		: bAllPermissions(true)
-		, bAllowEntityCreation(true)
+		: bAllowEntityCreation(true)
 		, bAllowEntityDeletion(true)
+		, bDisconnectWorker(true)
+		, bReserveEntityID(true)
 		, bAllowEntityQuery(true)
-		, Components()
 	{
 	}
 
-	/** Gives all permissions to a worker instance. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "All"))
-	bool bAllPermissions;
-
 	/** Enables a worker instance to create new entities. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config,
-			  meta = (EditCondition = "!bAllPermissions", DisplayName = "Allow entity creation"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow entity creation"))
 	bool bAllowEntityCreation;
 
 	/** Enables a worker instance to delete entities. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config,
-			  meta = (EditCondition = "!bAllPermissions", DisplayName = "Allow entity deletion"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow entity deletion"))
 	bool bAllowEntityDeletion;
+
+	/** Enables a worker instance to disconnect other workers. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow worker disconnections"))
+	bool bDisconnectWorker;
+
+	/** Enables a worker instance to reserve entity IDs. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow entity ID reservations"))
+	bool bReserveEntityID;
 
 	/** Controls which components can be returned from entity queries that the worker instance performs. If an entity query specifies other
 	 * components to be returned, the query will fail. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config,
-			  meta = (EditCondition = "!bAllPermissions", DisplayName = "Allow entity query"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow entity queries"))
 	bool bAllowEntityQuery;
-
-	/** Specifies which components can be returned in the query result. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", DisplayName = "Component queries"))
-	TArray<FString> Components;
-};
-
-USTRUCT()
-struct FLoginRateLimitSection
-{
-	GENERATED_BODY()
-
-	FLoginRateLimitSection()
-		: Duration()
-		, RequestsPerDuration(0)
-	{
-	}
-
-	/** The duration for which worker connection requests will be limited. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
-	FString Duration;
-
-	/** The connection request limit for the duration. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ClampMin = "1", UIMin = "1"))
-	int32 RequestsPerDuration;
 };
 
 USTRUCT()
@@ -130,9 +85,13 @@ struct FWorkerTypeLaunchSection
 	{
 	}
 
-	/** Worker type name, deprecated in favor of defining them in the runtime settings.*/
-	UPROPERTY(config)
-	FName WorkerTypeName_DEPRECATED;
+	/** Worker type name. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
+	FName WorkerTypeName;
+
+	/** Flags defined for a worker instance. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Flags"))
+	TMap<FString, FString> Flags;
 
 	/** Defines the worker instance's permissions. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
@@ -148,10 +107,6 @@ struct FWorkerTypeLaunchSection
 			  meta = (DisplayName = "Manual number of instances to launch in Editor", ClampMin = "0", UIMin = "0",
 					  EditCondition = "!bAutoNumEditorInstances"))
 	int32 NumEditorInstances;
-
-	/** Flags defined for a worker instance. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Flags"))
-	TMap<FString, FString> Flags;
 
 	/** Determines if the worker instance is launched manually or by SpatialOS. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Manual worker connection only"))
@@ -169,7 +124,9 @@ struct FSpatialLaunchConfigDescription
 		: bUseDefaultTemplateForRuntimeVariant(true)
 		, Template()
 		, World()
+		, MaxConcurrentWorkers(1000)
 	{
+		ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 	}
 
 	const FString& GetTemplate() const;
@@ -184,16 +141,25 @@ struct FSpatialLaunchConfigDescription
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (EditCondition = "!bUseDefaultTemplateForRuntimeVariant"))
 	FString Template;
 
+	/** Runtime flag configurations. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
+	TMap<FString, FString> RuntimeFlags;
+
+	/** Main server worker configuration, usually known as the UnrealWorker */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, EditFixedSize, config)
+	FWorkerTypeLaunchSection ServerWorkerConfiguration;
+
+	/** Additional worker configurations used for testing and cloud deploying */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Additional Workers"))
+	TArray<FWorkerTypeLaunchSection> AdditionalWorkerConfigs;
+
 	/** Configuration for the simulated world. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config)
 	FWorldLaunchSection World;
 
-	/** Worker-specific configuration parameters. */
-	UPROPERTY(config)
-	TArray<FWorkerTypeLaunchSection> ServerWorkers_DEPRECATED;
-
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, EditFixedSize, config)
-	FWorkerTypeLaunchSection ServerWorkerConfig;
+	/** The connection request limit for the deployment. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ClampMin = "1", UIMin = "1"))
+	int32 MaxConcurrentWorkers;
 };
 
 /**
@@ -226,8 +192,7 @@ namespace ESpatialOSRuntimeVariant
 {
 enum Type
 {
-	Standard,
-	CompatibilityMode
+	Standard
 };
 }
 
@@ -326,22 +291,31 @@ public:
 	bool bGenerateDefaultLaunchConfig;
 
 	/** Returns which runtime variant we should use. */
-	TEnumAsByte<ESpatialOSRuntimeVariant::Type> GetSpatialOSRuntimeVariant() const { return RuntimeVariant; }
+	TEnumAsByte<ESpatialOSRuntimeVariant::Type> GetSpatialOSRuntimeVariant() const { return ESpatialOSRuntimeVariant::Standard; }
 
-	/** Returns the version information for the currently set variant*/
+	/** Returns the version information for the currently set runtime variant*/
 	const FRuntimeVariantVersion& GetSelectedRuntimeVariantVersion() const
 	{
-		return const_cast<USpatialGDKEditorSettings*>(this)->GetRuntimeVariantVersion(RuntimeVariant);
+		return const_cast<USpatialGDKEditorSettings*>(this)->GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Standard);
 	}
 
-	UPROPERTY(EditAnywhere, config, Category = "Runtime")
-	TEnumAsByte<ESpatialOSRuntimeVariant::Type> RuntimeVariant;
-
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Runtime versions"))
 	FRuntimeVariantVersion StandardRuntimeVersion;
 
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", AdvancedDisplay)
-	FRuntimeVariantVersion CompatibilityModeRuntimeVersion;
+	/** Whether to use the GDK-associated SpatialOS Inspector version for local deployments, or to use the one specified in the
+	 * InspectorVersion field. */
+	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (DisplayName = "Use GDK pinned Inspector version"))
+	bool bUseGDKPinnedInspectorVersion;
+
+	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
+	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (EditCondition = "!bUseGDKPinnedInspectorVersion"))
+	FString InspectorVersionOverride;
+
+	/** Returns the version information for the currently set inspector*/
+	const FString& GetInspectorVersion() const
+	{
+		return bUseGDKPinnedInspectorVersion ? SpatialGDKServicesConstants::InspectorPinnedVersion : InspectorVersionOverride;
+	}
 
 	mutable FOnDefaultTemplateNameRequireUpdate OnDefaultTemplateNameRequireUpdate;
 
@@ -553,7 +527,7 @@ public:
 
 	FORCEINLINE FString GetSpatialOSSnapshotToSavePath() const
 	{
-		return FPaths::Combine(GetSpatialOSSnapshotFolderPath(), GetSpatialOSSnapshotToSave());
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, GetSpatialOSSnapshotToSave());
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotToLoad() const
@@ -567,12 +541,7 @@ public:
 
 	FORCEINLINE FString GetSpatialOSSnapshotToLoadPath() const
 	{
-		return FPaths::Combine(GetSpatialOSSnapshotFolderPath(), GetSpatialOSSnapshotToLoad());
-	}
-
-	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
-	{
-		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("snapshots"));
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, GetSpatialOSSnapshotToLoad());
 	}
 
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const

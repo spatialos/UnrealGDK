@@ -53,7 +53,6 @@ call :MarkEndOfBlock "Check dependencies"
 
 call :MarkStartOfBlock "Setup variables"
     set /p PINNED_CORE_SDK_VERSION=<.\SpatialGDK\Extras\core-sdk.version
-    set /p PINNED_SPOT_VERSION=<.\SpatialGDK\Extras\spot.version
     set BUILD_DIR=%~dp0SpatialGDK\Build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
     set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\SpatialGDK\Public\WorkerSDK
@@ -125,7 +124,6 @@ if defined DOWNLOAD_MOBILE (
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-armv7a-clang_ndk21d-android      %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-armv7a-clang_clang_ndk21-android.zip"
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-x86_64-clang_ndk21d-android      %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_clang_ndk21-android.zip"
 )
-    call :ExecuteAndCheck spatial package retrieve spot          spot-win64                                 %PINNED_SPOT_VERSION%       %DOMAIN_ENVIRONMENT_VAR%    "%BINARIES_DIR%\Programs\spot.exe"
     call :ExecuteAndCheck spatial package retrieve worker_sdk    csharp_cinterop                            %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\csharp_cinterop.zip"
 call :MarkEndOfBlock "Retrieve dependencies"
 
