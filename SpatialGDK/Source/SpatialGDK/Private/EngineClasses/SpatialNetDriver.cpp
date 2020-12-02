@@ -2078,6 +2078,9 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	if (!ErrorMsg.IsEmpty())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("PreLogin failure: %s"), *ErrorMsg);
+
+		DisconnectPlayer(ClientSystemEntityId);
+
 		// TODO: Destroy connection. UNR-584
 		return false;
 	}
@@ -2204,6 +2207,26 @@ void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerContr
 	PlayerController->SetReplicates(true);
 	PlayerController->Role = OriginalRole;
 	PlayerController->SetPlayer(OwnershipConnection);
+}
+
+void USpatialNetDriver::DisconnectPlayer(Worker_EntityId ClientEntityId)
+{
+	Worker_CommandRequest Request = {};
+	Request.component_id = SpatialConstants::WORKER_COMPONENT_ID;
+	Request.command_index = SpatialConstants::WORKER_DISCONNECT_COMMAND_ID;
+	Request.schema_type = Schema_CreateCommandRequest();
+	Worker_RequestId RequestId = Connection->SendCommandRequest(ClientEntityId, &Request, SpatialGDK::RETRY_UNTIL_COMPLETE, {});
+
+	SystemEntityCommandDelegate CommandResponseDelegate;
+	CommandResponseDelegate.BindWeakLambda(this, [this, ClientEntityId](const Worker_CommandResponseOp& Op) {
+		TWeakObjectPtr<USpatialNetConnection> ClientConnection = FindClientConnectionFromWorkerEntityId(ClientEntityId);
+		if (ClientConnection.IsValid())
+		{
+			ClientConnection->CleanUp();
+		}
+	});
+
+	Receiver->AddSystemEntityCommandDelegate(RequestId, CommandResponseDelegate);
 }
 
 bool USpatialNetDriver::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
