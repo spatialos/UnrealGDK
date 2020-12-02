@@ -509,7 +509,8 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 		UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
 
 	TArray<FSpatialGDKSpanId> PropertySpans;
-	if (EventTracer != nullptr && RepChanges != nullptr && RepChanges->RepChanged.Num() > 0) // Only need to add these if they are actively being traced
+	if (EventTracer != nullptr && RepChanges != nullptr
+		&& RepChanges->RepChanged.Num() > 0) // Only need to add these if they are actively being traced
 	{
 		FSpatialGDKSpanId CauseSpanId;
 		if (EventTracer != nullptr)
