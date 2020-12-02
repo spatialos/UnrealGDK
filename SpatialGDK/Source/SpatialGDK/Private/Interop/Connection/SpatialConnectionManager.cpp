@@ -26,6 +26,12 @@ struct ConfigureConnection
 	{
 		Params = Worker_DefaultConnectionParameters();
 
+		FlowControl.downstream_window_size_bytes = 262144 * 5;
+		FlowControl.upstream_window_size_bytes = 262144 * 5;
+
+		Params.network.kcp.flow_control = &FlowControl;
+		Params.network.tcp.flow_control = &FlowControl;
+
 		Params.worker_type = WorkerType.Get();
 
 		Logsink.logsink_type = WORKER_LOGSINK_TYPE_ROTATING_FILE;
@@ -112,6 +118,7 @@ struct ConfigureConnection
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_CompressionParameters EnableCompressionParams{};
 	Worker_LogsinkParameters Logsink{};
+	Worker_FlowControlParameters FlowControl{};
 
 #if WITH_EDITOR
 	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, MAX_int64 };
