@@ -956,9 +956,8 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		InspectorProcess->OnCanceled().BindLambda([this] {
 			if (InspectorProcess->GetReturnCode() != SpatialGDKServicesConstants::ExitCodeSuccess)
 			{
-				UE_LOG(LogSpatialGDKEditorToolbar, Error,
-					   TEXT("Inspector crashed! Please check logs for more details. Exit code: %s",
-							*FString::FromInt(InspectorProcess->GetReturnCode())));
+				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Inspector crashed! Please check logs for more details. Exit code: %s"),
+					   *FString::FromInt(InspectorProcess->GetReturnCode()));
 				OnShowFailedNotification(TEXT("Inspector crashed!"));
 			}
 		});
