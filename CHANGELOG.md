@@ -86,6 +86,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Worker configuration watcher only rebuilds worker configs when `*.worker.json` files are changed.
 - Added support for FPredictionKey's conditional replication logic. GameplayCues now activate on all clients, instead of only the client that initiated them.
 - Fixed a bug where deployment would fail in the presence of trailing spaces in the `Flags` and `LegacyFlags` fields of the `SpatialGDKEditorSettings`.
+- Fixed a crash that would occur when performing multiple Client Travels at once.
 
 ## [`0.11.0`] - 2020-09-03
 
