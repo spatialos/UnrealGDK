@@ -1783,7 +1783,9 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Prevented Actor %s 's hierarchy from migrating because Entity (%llu) is invalid on authoritative Worker %s"), EntityId, *NetDriver->Connection->GetWorkerId());
+			UE_LOG(LogSpatialReceiver, Warning,
+				   TEXT("Prevented Actor %s 's hierarchy from migrating because Entity (%llu) is invalid on authoritative Worker %s"),
+				   EntityId, *NetDriver->Connection->GetWorkerId());
 		}
 
 		return;

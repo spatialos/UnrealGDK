@@ -27,3 +27,10 @@ component MigrationDiagnostic
 
 	command MigrationDiagnosticResponse diagnostic(MigrationDiagnosticRequest);
 }
+
+component_set MigrationDiagnosticSet {
+  id = 9969;
+  components = [
+    MigrationDiagnostic
+  ];
+}
