@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "SpatialView/ComponentSetData.h"
 #include "SpatialView/MessagesToSend.h"
 #include "SpatialView/OpList/OpList.h"
 #include "SpatialView/ViewDelta.h"
@@ -11,7 +12,7 @@ namespace SpatialGDK
 class WorkerView
 {
 public:
-	WorkerView();
+	explicit WorkerView(FComponentSetData ComponentSetData);
 
 	// Process op lists to create a new view delta.
 	// The view delta will exist until the next call to AdvanceViewDelta.
@@ -37,6 +38,7 @@ public:
 	void SendLogMessage(LogMessage Log);
 
 private:
+	FComponentSetData ComponentSetData;
 	EntityView View;
 	ViewDelta Delta;
 

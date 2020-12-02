@@ -2,13 +2,15 @@
 
 #pragma once
 
-#include "ReceivedOpEventHandler.h"
 #include "SpatialView/CommandRetryHandler.h"
+#include "SpatialView/ComponentSetData.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/CriticalSectionFilter.h"
 #include "SpatialView/Dispatcher.h"
+#include "SpatialView/ReceivedOpEventHandler.h"
+#include "SpatialView/SubView.h"
 #include "SpatialView/WorkerView.h"
-#include "SubView.h"
+
 #include "Templates/UniquePtr.h"
 
 namespace SpatialGDK
@@ -18,7 +20,8 @@ class SpatialEventTracer;
 class ViewCoordinator
 {
 public:
-	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer);
+	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer,
+							 FComponentSetData ComponentSetData);
 
 	~ViewCoordinator();
 
