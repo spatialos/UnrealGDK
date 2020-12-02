@@ -67,6 +67,9 @@ private:
 	void AddToolbarExtension(FToolBarBuilder& Builder);
 	void AddMenuExtension(FMenuBuilder& Builder);
 
+	bool FetchRuntimeBinaryWrapper(FString RuntimeVersion);
+	bool FetchInspectorBinaryWrapper(FString InspectorVersion);
+
 	void VerifyAndStartDeployment(FString ForceSnapshot = "");
 
 	void StartLocalSpatialDeploymentButtonClicked();
@@ -89,6 +92,8 @@ private:
 
 	bool StartCloudSpatialDeploymentIsVisible() const;
 	bool StartCloudSpatialDeploymentCanExecute() const;
+
+	bool LaunchInspectorWebpageCanExecute() const;
 
 	bool StopSpatialDeploymentIsVisible() const;
 	bool StopSpatialDeploymentCanExecute() const;
@@ -186,6 +191,8 @@ private:
 	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
 
 	bool bStartingCloudDeployment;
+	bool bFetchingRuntimeBinary;
+	bool bFetchingInspectorBinary;
 
 	void GenerateCloudConfigFromCurrentMap();
 

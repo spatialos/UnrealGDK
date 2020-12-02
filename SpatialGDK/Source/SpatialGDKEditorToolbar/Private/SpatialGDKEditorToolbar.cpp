@@ -139,16 +139,14 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeVersion, InspectorVersion] {
-		if (!SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion))
+		if (!FetchRuntimeBinaryWrapper(RuntimeVersion))
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local runtime binary but failed!"));
-			OnShowFailedNotification(TEXT("Failed to fetch local runtime!"));
 		}
 
-		if (!SpatialCommandUtils::FetchInspectorBinary(InspectorVersion))
+		if (!FetchInspectorBinaryWrapper(InspectorVersion))
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local inspector binary but failed!"));
-			OnShowFailedNotification(TEXT("Failed to fetch local inspector!"));
 		}
 	});
 }
@@ -261,7 +259,7 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction,
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked),
-								FCanExecuteAction());
+								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageCanExecute));
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker,
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker),
@@ -734,6 +732,40 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 	}
 }
 
+bool FSpatialGDKEditorToolbarModule::FetchRuntimeBinaryWrapper(FString RuntimeVersion)
+{
+	bFetchingRuntimeBinary = true;
+
+	bool bSuccess = SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion);
+
+	if (!bSuccess)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not fetch the local runtime for version %s"), *RuntimeVersion);
+		OnShowFailedNotification(TEXT("Failed to fetch local runtime!"));
+	}
+
+	bFetchingRuntimeBinary = false;
+
+	return bSuccess;
+}
+
+bool FSpatialGDKEditorToolbarModule::FetchInspectorBinaryWrapper(FString InspectorVersion)
+{
+	bFetchingInspectorBinary = true;
+
+	bool bSuccess = SpatialCommandUtils::FetchInspectorBinary(InspectorVersion);
+
+	if (!bSuccess)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not fetch the Inspector for version %s"), *InspectorVersion);
+		OnShowFailedNotification(TEXT("Failed to fetch local inspector!"));
+	}
+
+	bFetchingInspectorBinary = false;
+
+	return bSuccess;
+}
+
 void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnapshot /* = ""*/)
 {
 	// Don't try and start a local deployment if spatial networking is disabled.
@@ -816,10 +848,9 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotPath, RuntimeVersion] {
-		if (!SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion))
+		if (!FetchRuntimeBinaryWrapper(RuntimeVersion))
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but could not fetch the local runtime."));
-			OnShowFailedNotification(TEXT("Failed to fetch local runtime!"));
 			return;
 		}
 
@@ -956,7 +987,7 @@ bool FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentIsVisible() cons
 
 bool FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentCanExecute() const
 {
-	return !LocalDeploymentManager->IsDeploymentStarting();
+	return !LocalDeploymentManager->IsDeploymentStarting() && !bFetchingRuntimeBinary;
 }
 
 bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentIsVisible() const
@@ -974,6 +1005,11 @@ bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentCanExecute() con
 #else
 	return CanBuildAndUpload() && !bStartingCloudDeployment;
 #endif
+}
+
+bool FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageCanExecute() const
+{
+	return !bFetchingInspectorBinary;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible() const
