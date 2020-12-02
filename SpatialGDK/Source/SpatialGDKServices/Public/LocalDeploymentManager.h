@@ -74,7 +74,7 @@ private:
 	static const int32 WorkerPort = 8018;
 	static const int32 HTTPPort = 5006;
 
-	const float RuntimeTimeout = 5.0f;
+	static constexpr double RuntimeTimeout = 10.0;
 
 	bool bLocalDeploymentManagerEnabled = true;
 

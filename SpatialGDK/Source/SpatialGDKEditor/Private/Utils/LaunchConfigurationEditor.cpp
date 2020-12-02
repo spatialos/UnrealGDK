@@ -34,7 +34,7 @@ void ULaunchConfigurationEditor::PostInitProperties()
 	LaunchConfiguration.ServerWorkerConfiguration.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
 }
 
-void ULaunchConfigurationEditor::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void ULaunchConfigurationEditor::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 

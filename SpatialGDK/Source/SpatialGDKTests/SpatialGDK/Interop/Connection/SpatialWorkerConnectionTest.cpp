@@ -138,11 +138,13 @@ bool FSendReserveEntityIdsRequest::Update()
 {
 	uint32_t NumOfEntities = 1;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	if (Connection)
+	if (Connection == nullptr)
 	{
-		Connection->SendReserveEntityIdsRequest(NumOfEntities, RETRY_UNTIL_COMPLETE);
-		Connection->Flush();
+		return false;
 	}
+
+	Connection->SendReserveEntityIdsRequest(NumOfEntities, RETRY_UNTIL_COMPLETE);
+	Connection->Flush();
 
 	return true;
 }
@@ -153,11 +155,13 @@ bool FSendCreateEntityRequest::Update()
 	TArray<FWorkerComponentData> Components;
 	const Worker_EntityId* EntityId = nullptr;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	if (Connection)
+	if (Connection == nullptr)
 	{
-		Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId, RETRY_UNTIL_COMPLETE);
-		Connection->Flush();
+		return false;
 	}
+
+	Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId, RETRY_UNTIL_COMPLETE);
+	Connection->Flush();
 
 	return true;
 }
@@ -167,11 +171,13 @@ bool FSendDeleteEntityRequest::Update()
 {
 	const Worker_EntityId EntityId = 0;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	if (Connection)
+	if (Connection == nullptr)
 	{
-		Connection->SendDeleteEntityRequest(EntityId, RETRY_UNTIL_COMPLETE);
-		Connection->Flush();
+		return false;
 	}
+
+	Connection->SendDeleteEntityRequest(EntityId, RETRY_UNTIL_COMPLETE);
+	Connection->Flush();
 
 	return true;
 }
@@ -182,16 +188,18 @@ bool FFindWorkerResponseOfType::Update()
 {
 	bool bFoundOpOfExpectedType = false;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	if (Connection)
+	if (Connection == nullptr)
 	{
-		Connection->Advance(0);
-		for (const auto& Op : Connection->GetWorkerMessages())
+		return false;
+	}
+
+	Connection->Advance(0);
+	for (const auto& Op : Connection->GetWorkerMessages())
+	{
+		if (Op.op_type == ExpectedOpType)
 		{
-			if (Op.op_type == ExpectedOpType)
-			{
-				bFoundOpOfExpectedType = true;
-				break;
-			}
+			bFoundOpOfExpectedType = true;
+			break;
 		}
 	}
 

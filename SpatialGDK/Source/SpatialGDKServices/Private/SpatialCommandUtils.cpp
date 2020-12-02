@@ -437,7 +437,7 @@ bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
 void SpatialCommandUtils::TryKillProcessWithName(const FString& ProcessName)
 {
 	FPlatformProcess::FProcEnumerator ProcessIt;
-	do
+	while (ProcessIt.MoveNext())
 	{
 		if (ProcessIt.GetCurrent().GetName().Equals(ProcessName))
 		{
@@ -446,7 +446,7 @@ void SpatialCommandUtils::TryKillProcessWithName(const FString& ProcessName)
 			auto Handle = FPlatformProcess::OpenProcess(ProcessIt.GetCurrent().GetPID());
 			FPlatformProcess::TerminateProc(Handle);
 		}
-	} while (ProcessIt.MoveNext());
+	}
 }
 
 bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName)

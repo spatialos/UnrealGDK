@@ -52,6 +52,7 @@ void FLocalDeploymentManager::Init()
 {
 	// Kill any existing runtime processes.
 	// We cannot attach to old runtime processes as they may be 'zombie' and not killable (even if they are not blocking ports).
+	// Usually caused by a driver bug, see: https://stackoverflow.com/questions/49988/really-killing-a-process-in-windows
 	SpatialCommandUtils::TryKillProcessWithName(SpatialGDKServicesConstants::RuntimeExe);
 }
 
@@ -187,10 +188,10 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 		if (CheckIfPortIsBound(RequiredRuntimePort))
 		{
 			// If it exists offer the user the ability to kill it.
-			if (FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("KillPortBlockingProcess",
-																 "A required port is blocked by another process (potentially by an old "
-																 "deployment). Would you like to kill this process?"))
-				== EAppReturnType::Yes)
+			FText DialogMessage = LOCTEXT("KillPortBlockingProcess",
+										  "A required port is blocked by another process (potentially by an old "
+										  "deployment). Would you like to kill this process?");
+			if (FMessageDialog::Open(EAppMsgType::YesNo, DialogMessage) == EAppReturnType::Yes)
 			{
 				bSuccess &= KillProcessBlockingPort(RequiredRuntimePort);
 			}

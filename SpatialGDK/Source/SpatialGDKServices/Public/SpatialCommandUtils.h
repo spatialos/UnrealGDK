@@ -39,5 +39,5 @@ public:
 
 private:
 	// Timeout given in seconds.
-	static const int32 ProcessTimeoutTime = 60;
+	static constexpr double ProcessTimeoutTime = 60.0;
 };

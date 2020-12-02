@@ -59,7 +59,7 @@ struct FWorkerPermissionsSection
 	bool bAllowEntityDeletion;
 
 	/** Enables a worker instance to disconnect other workers. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow worker disconnecting"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow worker disconnections"))
 	bool bDisconnectWorker;
 
 	/** Enables a worker instance to reserve entity IDs. */
@@ -68,7 +68,7 @@ struct FWorkerPermissionsSection
 
 	/** Controls which components can be returned from entity queries that the worker instance performs. If an entity query specifies other
 	 * components to be returned, the query will fail. */
-	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow entity query"))
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (DisplayName = "Allow entity queries"))
 	bool bAllowEntityQuery;
 };
 
@@ -299,12 +299,12 @@ public:
 		return const_cast<USpatialGDKEditorSettings*>(this)->GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Standard);
 	}
 
-	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Runtime Versions"))
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Runtime versions"))
 	FRuntimeVariantVersion StandardRuntimeVersion;
 
-	/** Whether to use the GDK-associated SpatialOS inspector version for local deployments, or to use the one specified in the
+	/** Whether to use the GDK-associated SpatialOS Inspector version for local deployments, or to use the one specified in the
 	 * InspectorVersion field. */
-	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (DisplayName = "Use GDK Pinned Inspector Version"))
+	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (DisplayName = "Use GDK pinned Inspector version"))
 	bool bUseGDKPinnedInspectorVersion;
 
 	/** Runtime version to use for local deployments, if not using the GDK pinned version. */
