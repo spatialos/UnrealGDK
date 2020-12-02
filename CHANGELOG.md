@@ -53,6 +53,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Handover is now optional depending on whether the load balancing strategy implementations require it . See `RequiresHandoverData`
 - Improved the failed hierarchy migration logs. The logs are now more specific, the frequency of repeated logs is suppressed and cross-server migration diagnostic logs have been added.
 - Improved the failed hierarchy migration logs. The logs now contain more specific reasons for the failure and the frequency of repeated logs is suppressed.
+- You can now select an actor for spatial debugging in-game. Use F9 (by default) to open the Spatial Debugger in-game config menu and then press the `Start Select Actor(s)` button. Hover over an actor with the mouse to highlight and right-click  (by default) to select. You can select multiple actors. To deselect an actor right-click on it a second time. If there are multiple actors under the cursor use the mouse wheel (by default) to highlight the desired actor then right-click to confirm your selection.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
 - Worker SDK version compatibility is checked at compile time. 
 - Worker SDK version compatibility is checked at compile time.
@@ -85,6 +86,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Worker configuration watcher only rebuilds worker configs when `*.worker.json` files are changed.
 - Added support for FPredictionKey's conditional replication logic. GameplayCues now activate on all clients, instead of only the client that initiated them.
 - Fixed a bug where deployment would fail in the presence of trailing spaces in the `Flags` and `LegacyFlags` fields of the `SpatialGDKEditorSettings`.
+- Fixed a crash that would occur when performing multiple Client Travels at once.
 
 ## [`0.11.0`] - 2020-09-03
 
