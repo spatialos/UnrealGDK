@@ -24,13 +24,13 @@ FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddObject(FString Key, cons
 	{
 		if (const AActor* Actor = Cast<AActor>(Object))
 		{
-			AddKeyValue(Key + TEXT(".ActorPosition"), Actor->GetTransform().GetTranslation().ToString());
+			AddKeyValue(Key + TEXT("ActorPosition"), Actor->GetTransform().GetTranslation().ToString());
 		}
 		if (UWorld* World = Object->GetWorld())
 		{
 			if (USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 			{
-				AddKeyValue(Key + TEXT(".NetGuid"), NetDriver->PackageMap->GetNetGUIDFromObject(Object).ToString());
+				AddKeyValue(Key + TEXT("NetGuid"), NetDriver->PackageMap->GetNetGUIDFromObject(Object).ToString());
 			}
 		}
 		AddKeyValue(MoveTemp(Key), Object->GetName());
