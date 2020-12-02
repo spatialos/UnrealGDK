@@ -1908,7 +1908,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		ReceiveClaimPartitionResponse(Op.op.command_response);
 		return;
 	}
-	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID)
+	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID && CommandResponseOp.response.schema_type != nullptr)
 	{
 		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponseOp.response.schema_type);
 		Worker_EntityId EntityId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
@@ -1916,7 +1916,8 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		FString MigrationDiagnosticLog =
 			MigrationDiagnostic::CreateMigrationDiagnosticLog(NetDriver->Connection->GetWorkerId(), ResponseObject, LocalActor);
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("%s"), *MigrationDiagnosticLog);
-	}
+
+}
 	ReceiveCommandResponse(Op);
 }
 

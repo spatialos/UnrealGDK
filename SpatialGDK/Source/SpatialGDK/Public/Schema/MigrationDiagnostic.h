@@ -51,42 +51,42 @@ struct MigrationDiagnostic : Component
 		return CommandResponse;
 	}
 
-	static FString CreateMigrationDiagnosticLog(PhysicalWorkerName LocalWorkerName, Schema_Object* ResponseObject, AActor* LocalActor)
+	static FString CreateMigrationDiagnosticLog(PhysicalWorkerName OriginatingWorkerName, Schema_Object* ResponseObject, AActor* OrigintatingActor)
 	{
 		// This log is requested when the authoritative server for the owner of a migration hierarchy does not have authority over one of
 		// the child actors
-		PhysicalWorkerName RemoteWorkerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_WORKER_ID);
+		PhysicalWorkerName AuthoritativeWorkerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_WORKER_ID);
 		Worker_EntityId EntityId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
-		bool bIsReplicatedRemotely = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID);
-		bool bHasAuthorityRemotely = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_ID);
-		FString RemoteOwnerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
+		bool bIsReplicated = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID);
+		bool bHasAuthority = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_ID);
+		FString AuthoritativeOwnerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
 
-		FString Reason = FString::Printf(TEXT("Local worker %s does not have authority. "), *LocalWorkerName);
+		FString Reason = FString::Printf(TEXT("Originating worker %s does not have authority of Actor. "), *OriginatingWorkerName);
 
-		if (bHasAuthorityRemotely)
+		if (bHasAuthority)
 		{
-			Reason.Append(FString::Printf(TEXT("Remote worker %s has authority of actor. "), *RemoteWorkerName));
+			Reason.Append(FString::Printf(TEXT("Worker %s has authority of Actor. "), *AuthoritativeWorkerName));
 		}
 
-		if (!IsValid(LocalActor))
+		if (!IsValid(OrigintatingActor))
 		{
 			Reason.Append(FString::Printf(TEXT("Actor not valid.")));
 		}
 		else
 		{
-			if (LocalActor->GetIsReplicated() && !bIsReplicatedRemotely)
+			if (OrigintatingActor->GetIsReplicated() && !bIsReplicated)
 			{
-				Reason.Append(FString::Printf(TEXT("Actor replicates locally but not remotely. ")));
+				Reason.Append(FString::Printf(TEXT("Actor replicates on originating worker but not on authoritative worker. ")));
 			}
 
-			if (IsValid(LocalActor->GetOwner()) && LocalActor->GetOwner()->GetName() != RemoteOwnerName)
+			if (IsValid(OrigintatingActor->GetOwner()) && OrigintatingActor->GetOwner()->GetName() != AuthoritativeOwnerName)
 			{
-				Reason.Append(FString::Printf(TEXT("Actor has different owner remotely %s. "), *RemoteOwnerName));
+				Reason.Append(FString::Printf(TEXT("Actor has different owner on authoritative worker %s. "), *AuthoritativeOwnerName));
 			}
 		}
 
-		return FString::Printf(TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *RemoteOwnerName,
-							   *LocalActor->GetName(), EntityId, *Reason);
+		return FString::Printf(TEXT("Prevented Actor %s 's hierarchy from migrating because of Actor %s (%llu) %s"), *AuthoritativeOwnerName,
+							   *OrigintatingActor->GetName(), EntityId, *Reason);
 	}
 };
 
