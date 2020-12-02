@@ -51,7 +51,8 @@ struct MigrationDiagnostic : Component
 		return CommandResponse;
 	}
 
-	static FString CreateMigrationDiagnosticLog(PhysicalWorkerName OriginatingWorkerName, Schema_Object* ResponseObject, AActor* OrigintatingActor)
+	static FString CreateMigrationDiagnosticLog(PhysicalWorkerName OriginatingWorkerName, Schema_Object* ResponseObject,
+												AActor* OrigintatingActor)
 	{
 		// This log is requested when the authoritative server for the owner of a migration hierarchy does not have authority over one of
 		// the child actors
@@ -85,8 +86,8 @@ struct MigrationDiagnostic : Component
 			}
 		}
 
-		return FString::Printf(TEXT("Prevented Actor %s 's hierarchy from migrating because of Actor %s (%llu) %s"), *AuthoritativeOwnerName,
-							   *OrigintatingActor->GetName(), EntityId, *Reason);
+		return FString::Printf(TEXT("Prevented Actor %s 's hierarchy from migrating because of Actor %s (%llu) %s"),
+							   *AuthoritativeOwnerName, *OrigintatingActor->GetName(), EntityId, *Reason);
 	}
 };
 

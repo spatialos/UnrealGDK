@@ -1916,8 +1916,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		FString MigrationDiagnosticLog =
 			MigrationDiagnostic::CreateMigrationDiagnosticLog(NetDriver->Connection->GetWorkerId(), ResponseObject, LocalActor);
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("%s"), *MigrationDiagnosticLog);
-
-}
+	}
 	ReceiveCommandResponse(Op);
 }
 
