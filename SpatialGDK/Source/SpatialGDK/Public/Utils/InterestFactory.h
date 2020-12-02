@@ -46,7 +46,7 @@ public:
 	Worker_ComponentData CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 	Worker_ComponentUpdate CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
-	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy, bool bDebug) const;
+	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy) const;
 	Interest CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, bool bDebug) const;
 	void AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, Interest& OutInterest) const;
 

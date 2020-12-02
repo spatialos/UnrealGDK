@@ -101,7 +101,7 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, co
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy, bool bDebug) const
+Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy) const
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
@@ -560,7 +560,8 @@ QueryConstraint InterestFactory::CreateGDKSnapshotEntitiesConstraint() const
 	QueryConstraint SnapshotEntitiesConstraint;
 
 	Worker_ComponentId ComponentIds[] = { SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID,
-										  SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID };
+										  SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
+										  SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID };
 
 	for (Worker_ComponentId ComponentId : ComponentIds)
 	{
