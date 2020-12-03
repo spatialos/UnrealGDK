@@ -26,7 +26,9 @@ public:
 	 */
 	bool GetWorkerFlag(const FString& InFlagName, FString& OutFlagValue) const;
 
-	void ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op);
+	void SetWorkerFlag(const FString& InFlagName, const FString& OutFlagValue);
+
+	void RemoveWorkerFlag(const FString& InFlagName);
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	void RegisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate);
