@@ -2723,7 +2723,23 @@ void USpatialReceiver::QueueAddComponentOpForAsyncLoad(const Worker_AddComponent
 {
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
 
-	AsyncLoadEntity.PendingOps.AddComponent(Op.entity_id, ComponentData::CreateCopy(Op.data.schema_type, Op.data.component_id));
+	PendingAddComponentWrapper DummyWrapper;
+	DummyWrapper.EntityId = Op.entity_id;
+	DummyWrapper.ComponentId = Op.data.component_id;
+	int32 AddedComponentIndex = AsyncLoadEntity.InitialPendingAddComponents.Find(DummyWrapper);
+	if (AddedComponentIndex >= 0)
+	{
+		// If it is a component we initially queued, replace it and drop pending updates.
+		AsyncLoadEntity.InitialPendingAddComponents[AddedComponentIndex].Data = MakeUnique<DynamicComponent>(Op.data);
+		AsyncLoadEntity.PendingOps.GetOpListData().UpdateStorage.RemoveAll([&Op](const SpatialGDK::ComponentUpdate& Update)
+		{
+			return Update.GetComponentId() == Op.data.component_id;
+		});
+	}
+	else
+	{
+		AsyncLoadEntity.PendingOps.AddComponent(Op.entity_id, ComponentData::CreateCopy(Op.data.schema_type, Op.data.component_id));
+	}
 }
 
 void USpatialReceiver::QueueRemoveComponentOpForAsyncLoad(const Worker_RemoveComponentOp& Op)

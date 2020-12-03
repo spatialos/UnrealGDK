@@ -54,6 +54,8 @@ public:
 
 	OpList CreateOpList() &&;
 
+	EntityComponentOpListData& GetOpListData() { return *OpListData; }
+
 private:
 	TUniquePtr<EntityComponentOpListData> OpListData;
 	const char* StoreString(StringStorage Message) const;
