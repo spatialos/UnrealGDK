@@ -1,12 +1,15 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ViewCoordinator.h"
+
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 
 namespace SpatialGDK
 {
-ViewCoordinator::ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer)
-	: ConnectionHandler(MoveTemp(ConnectionHandler))
+ViewCoordinator::ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer,
+								 FComponentSetData ComponentSetData)
+	: View(MoveTemp(ComponentSetData))
+	, ConnectionHandler(MoveTemp(ConnectionHandler))
 	, NextRequestId(1)
 	, ReceivedOpEventHandler(MoveTemp(EventTracer))
 {

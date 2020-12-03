@@ -21,7 +21,8 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public SpatialOS
 	GENERATED_BODY()
 
 public:
-	void SetConnection(Worker_Connection* WorkerConnectionIn, TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer);
+	void SetConnection(Worker_Connection* WorkerConnectionIn, TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer,
+					   SpatialGDK::FComponentSetData ComponentSetData);
 	void DestroyConnection();
 
 	// UObject interface.

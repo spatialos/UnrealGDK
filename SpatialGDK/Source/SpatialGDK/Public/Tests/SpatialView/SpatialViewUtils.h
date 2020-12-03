@@ -14,7 +14,9 @@ inline void SetFromOpList(ViewDelta& Delta, EntityView& View, EntityComponentOpL
 	OpList Ops = MoveTemp(OpListBuilder).CreateOpList();
 	TArray<OpList> OpLists;
 	OpLists.Push(MoveTemp(Ops));
-	Delta.SetFromOpList(MoveTemp(OpLists), View);
+	// todo do not merge
+	FComponentSetData data;
+	Delta.SetFromOpList(MoveTemp(OpLists), View, data);
 }
 
 inline void AddEntityToView(EntityView& View, const Worker_EntityId EntityId)
