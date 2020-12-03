@@ -2731,8 +2731,7 @@ void USpatialReceiver::QueueAddComponentOpForAsyncLoad(const Worker_AddComponent
 	{
 		// If it is a component we initially queued, replace it and drop pending updates.
 		AsyncLoadEntity.InitialPendingAddComponents[AddedComponentIndex].Data = MakeUnique<DynamicComponent>(Op.data);
-		AsyncLoadEntity.PendingOps.GetOpListData().UpdateStorage.RemoveAll([&Op](const SpatialGDK::ComponentUpdate& Update)
-		{
+		AsyncLoadEntity.PendingOps.GetOpListData().UpdateStorage.RemoveAll([&Op](const SpatialGDK::ComponentUpdate& Update) {
 			return Update.GetComponentId() == Op.data.component_id;
 		});
 	}
