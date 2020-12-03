@@ -90,20 +90,22 @@ struct MigrationDiagnostic : Component
 
 		if (!IsValid(BlockingActor))
 		{
-			Reason.Append(FString::Printf(TEXT("Blocking actor not valid.")));
+			Reason.Append(FString::Printf(TEXT("Blocking actor is not valid.")));
 		}
-		else
+		else if (!IsValid(BlockingActor->GetOwner()))
 		{
-			if (BlockingActor->GetIsReplicated() && !bIsReplicated)
-			{
-				Reason.Append(FString::Printf(TEXT("Blocking actor replicates on originating worker but not on authoritative worker. ")));
-			}
+			Reason.Append(FString::Printf(TEXT("Blocking actor owner is not valid.")));
+		}
 
-			if (IsValid(BlockingActor->GetOwner()) && BlockingActor->GetOwner()->GetName() != AuthoritativeOwnerName)
-			{
-				Reason.Append(
-					FString::Printf(TEXT("Blocking actor has different owner %s on authoritative worker. "), *AuthoritativeOwnerName));
-			}
+		if (IsValid(BlockingActor) && BlockingActor->GetIsReplicated() && !bIsReplicated)
+		{
+			Reason.Append(FString::Printf(TEXT("Blocking actor replicates on originating worker but not on authoritative worker. ")));
+		}
+
+		if (IsValid(BlockingActor) && IsValid(BlockingActor->GetOwner()) && BlockingActor->GetOwner()->GetName() != AuthoritativeOwnerName)
+		{
+			Reason.Append(
+				FString::Printf(TEXT("Blocking actor has different owner %s on authoritative worker. "), *AuthoritativeOwnerName));
 		}
 
 		if (bIsLocked)
