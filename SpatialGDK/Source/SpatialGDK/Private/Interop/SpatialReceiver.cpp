@@ -1773,6 +1773,16 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID
 			 && CommandIndex == SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID)
 	{
+		check(NetDriver != nullptr);
+		check(NetDriver->Connection != nullptr);
+
+		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+		{
+			UE_LOG(
+				LogSpatialReceiver, Warning,
+				TEXT("Migration diaganostic log failed because entity id is invalid on authoritative worker %s"), *NetDriver->Connection->GetWorkerId());
+		}
+
 		AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 		if (IsValid(EntityActor))
 		{
@@ -1783,7 +1793,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 		else
 		{
 			UE_LOG(LogSpatialReceiver, Warning,
-				   TEXT("Prevented Actor %s 's hierarchy from migrating because Entity (%llu) is invalid on authoritative Worker %s"),
+				   TEXT("Migration diaganostic log failed because cannot retreive actor for entity (%llu) on authoritative worker %s"),
 				   EntityId, *NetDriver->Connection->GetWorkerId());
 		}
 
@@ -1907,16 +1917,38 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		ReceiveClaimPartitionResponse(Op.op.command_response);
 		return;
 	}
-	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID && CommandResponseOp.response.schema_type != nullptr)
+	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID)
 	{
+		check(NetDriver != nullptr);
+		check(NetDriver->Connection != nullptr);
+
+		if (CommandResponseOp.response.schema_type == nullptr)
+		{
+			UE_LOG(LogSpatialReceiver, Warning,
+				   TEXT("Migration diaganostic log failed because schema type is missing."));
+			return;
+		}
+		
 		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponseOp.response.schema_type);
 		Worker_EntityId EntityId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
 		AActor* BlockingActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
-		FString MigrationDiagnosticLog = MigrationDiagnostic::CreateMigrationDiagnosticLog(NetDriver, ResponseObject, BlockingActor);
-		if (!MigrationDiagnosticLog.IsEmpty())
+		if (IsValid(BlockingActor))
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("%s"), *MigrationDiagnosticLog);
+			FString MigrationDiagnosticLog =
+				MigrationDiagnostic::CreateMigrationDiagnosticLog(NetDriver, ResponseObject, BlockingActor);
+			if (!MigrationDiagnosticLog.IsEmpty())
+			{
+				UE_LOG(LogSpatialReceiver, Warning, TEXT("%s"), *MigrationDiagnosticLog);
+			}
 		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed because blocking actor (%llu) is not valid."),
+					EntityId);
+		}
+
+		return;
+		
 	}
 	ReceiveCommandResponse(Op);
 }
