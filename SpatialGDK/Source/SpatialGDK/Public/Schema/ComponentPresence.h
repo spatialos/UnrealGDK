@@ -16,7 +16,7 @@
 
 namespace SpatialGDK
 {
-struct ComponentPresence : DataComponent
+struct ComponentPresence : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
 

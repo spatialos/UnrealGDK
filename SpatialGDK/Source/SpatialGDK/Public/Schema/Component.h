@@ -13,7 +13,7 @@ struct Component
 	virtual void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) {}
 };
 
-struct DataComponent : Component
+struct AbstractMutableComponent : Component
 {
 	virtual struct Worker_ComponentData CreateComponentData() const = 0;
 };

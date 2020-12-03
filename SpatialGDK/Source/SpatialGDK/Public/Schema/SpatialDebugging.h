@@ -12,7 +12,7 @@ namespace SpatialGDK
 {
 // The SpatialDebugging component exists to hold information which needs to be displayed by the
 // SpatialDebugger on clients but which would not normally be available to clients.
-struct SpatialDebugging : DataComponent
+struct SpatialDebugging : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID;
 

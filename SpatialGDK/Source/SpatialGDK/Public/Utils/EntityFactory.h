@@ -26,14 +26,14 @@ using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntit
 
 struct EntityComponents
 {
-	TMap<Worker_ComponentId, TUniquePtr<DataComponent>> ModifiableComponents;
+	TMap<Worker_ComponentId, TUniquePtr<AbstractMutableComponent>> MutableComponents;
 	TMap<Worker_ComponentId, FWorkerComponentData> ComponentsToDelegateToAuthoritativeWorker;
 	TArray<FWorkerComponentData> ComponentDatas;
 
 	// PRCOMMENT: Hmm, will this incur overhead? Probably...
 	void ShiftToComponentDatas()
 	{
-		for (auto& Pair : ModifiableComponents)
+		for (auto& Pair : MutableComponents)
 		{
 			ComponentDatas.Add(Pair.Value->CreateComponentData());
 		}
@@ -43,7 +43,7 @@ struct EntityComponents
 			ComponentDatas.Add(Pair.Value);
 		}
 
-		ModifiableComponents.Empty();
+		MutableComponents.Empty();
 	}
 };
 

@@ -65,7 +65,7 @@ struct RPCPayload
 	TraceKey Trace = InvalidTraceKey;
 };
 
-struct RPCsOnEntityCreation : DataComponent
+struct RPCsOnEntityCreation : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::RPCS_ON_ENTITY_CREATION_ID;
 

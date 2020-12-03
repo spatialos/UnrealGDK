@@ -10,7 +10,7 @@
 
 namespace SpatialGDK
 {
-struct Tombstone : DataComponent
+struct Tombstone : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::TOMBSTONE_COMPONENT_ID;
 

@@ -11,7 +11,7 @@
 
 namespace SpatialGDK
 {
-struct Heartbeat : DataComponent
+struct Heartbeat : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::HEARTBEAT_COMPONENT_ID;
 

@@ -73,7 +73,7 @@ inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId
 	return IndexCoordinateFromSchema(Object, Id, 0);
 }
 
-struct Metadata : DataComponent
+struct Metadata : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::METADATA_COMPONENT_ID;
 
@@ -106,7 +106,7 @@ struct Metadata : DataComponent
 	FString EntityType;
 };
 
-struct Position : DataComponent
+struct Position : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::POSITION_COMPONENT_ID;
 
@@ -160,7 +160,7 @@ struct Position : DataComponent
 	Coordinates Coords;
 };
 
-struct Persistence : DataComponent
+struct Persistence : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::PERSISTENCE_COMPONENT_ID;
 
@@ -234,7 +234,7 @@ struct Worker : Component
 	}
 };
 
-struct AuthorityDelegation : DataComponent
+struct AuthorityDelegation : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
 

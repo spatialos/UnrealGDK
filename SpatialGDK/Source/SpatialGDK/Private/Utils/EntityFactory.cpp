@@ -50,10 +50,10 @@ EntityComponents EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
 	UClass* Class = Actor->GetClass();
 
 	EntityComponents EntityComps;
-	EntityComps.ModifiableComponents.Add(SpatialConstants::POSITION_COMPONENT_ID,
-										 MakeUnique<Position>(Coordinates::FromFVector(GetActorSpatialPosition(Actor))));
-	EntityComps.ModifiableComponents.Add(SpatialConstants::METADATA_COMPONENT_ID, MakeUnique<Metadata>(Class->GetName()));
-	EntityComps.ModifiableComponents.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, MakeUnique<SpawnData>(Actor));
+	EntityComps.MutableComponents.Add(SpatialConstants::POSITION_COMPONENT_ID,
+									  MakeUnique<Position>(Coordinates::FromFVector(GetActorSpatialPosition(Actor))));
+	EntityComps.MutableComponents.Add(SpatialConstants::METADATA_COMPONENT_ID, MakeUnique<Metadata>(Class->GetName()));
+	EntityComps.MutableComponents.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, MakeUnique<SpawnData>(Actor));
 
 	if (ShouldActorHaveVisibleComponent(Actor))
 	{
@@ -75,7 +75,7 @@ EntityComponents EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
 		EntityComps.ComponentDatas.Add(Heartbeat().CreateComponentData());
 	}
 
-	EntityComps.ModifiableComponents.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, MakeUnique<AuthorityDelegation>());
+	EntityComps.MutableComponents.Add(SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, MakeUnique<AuthorityDelegation>());
 
 	// Add Actor completeness tags.
 	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
@@ -100,7 +100,7 @@ void EntityFactory::WriteLBComponents(EntityComponents& EntityComps, AActor* Act
 		   *Actor->GetName(), *NetDriver->LoadBalanceStrategy->GetName());
 
 	AuthorityDelegationMap& DelegationMap =
-		(static_cast<AuthorityDelegation*>(EntityComps.ModifiableComponents[AuthorityDelegation::ComponentId].Get()))
+		(static_cast<AuthorityDelegation*>(EntityComps.MutableComponents[AuthorityDelegation::ComponentId].Get()))
 			->Delegations; // no idea which cast
 	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
 	DelegationMap.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeServerPartitionId);

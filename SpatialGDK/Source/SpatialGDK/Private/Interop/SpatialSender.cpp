@@ -309,7 +309,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreateComponentData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateComponentData());
-	Components.Add(ServerWorker(Connection->GetWorkerId(), false).CreateServerWorkerData());
+	Components.Add(ServerWorker(Connection->GetWorkerId(), false, Connection->GetWorkerSystemEntityId()).CreateServerWorkerData());
 
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, EntityId);
