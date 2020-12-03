@@ -249,7 +249,8 @@ const Schema_FieldId MIGRATION_DIAGNOSTIC_WORKER_ID = 1;
 const Schema_FieldId MIGRATION_DIAGNOSTIC_ENTITY_ID = 2;
 const Schema_FieldId MIGRATION_DIAGNOSTIC_REPLICATES_ID = 3;
 const Schema_FieldId MIGRATION_DIAGNOSTIC_AUTHORITY_ID = 4;
-const Schema_FieldId MIGRATION_DIAGNOSTIC_OWNER_ID = 5;
+const Schema_FieldId MIGRATION_DIAGNOSTIC_LOCKED_ID = 5;
+const Schema_FieldId MIGRATION_DIAGNOSTIC_OWNER_ID = 6;
 
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;

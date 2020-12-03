@@ -17,8 +17,11 @@ type MigrationDiagnosticResponse
 	// Whether or not the actor has authority.
 	bool actor_authority = 4;
 
+	// Whether or not the actor is locked.
+	bool actor_locked = 5;
+
 	// The name of the owner of the actor that cannot migrate
-	string owner_name = 5;
+	string owner_name = 6;
 }
 
 component MigrationDiagnostic

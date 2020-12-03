@@ -25,6 +25,7 @@ struct MigrationDiagnostic : Component
 
 	static Worker_CommandRequest CreateMigrationDiagnosticRequest()
 	{
+		// Request information from the worker that has authority over the actor that is blocking the hierarchy from migrating
 		Worker_CommandRequest CommandRequest = {};
 		CommandRequest.component_id = SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID;
 		CommandRequest.command_index = SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID;
@@ -33,61 +34,87 @@ struct MigrationDiagnostic : Component
 		return CommandRequest;
 	}
 
-	static Worker_CommandResponse CreateMigrationDiagnosticResponse(PhysicalWorkerName RemoteWorkerName, Worker_EntityId EntityId,
-																	AActor* RemoteActor)
+	static Worker_CommandResponse CreateMigrationDiagnosticResponse(USpatialNetDriver* NetDriver,
+																	Worker_EntityId EntityId,
+																	AActor* BlockingActor)
 	{
+		// Respond with information on the worker that has authority over the actor that is blocking the hierarchy from migrating
 		Worker_CommandResponse CommandResponse = {};
+
+		if (IsValid(NetDriver) && IsValid(NetDriver->Connection) && IsValid(NetDriver->LockingPolicy))
+		{
 		CommandResponse.component_id = SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID;
 		CommandResponse.command_index = SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID;
 		CommandResponse.schema_type = Schema_CreateCommandResponse();
 
 		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
-		AddStringToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_WORKER_ID, RemoteWorkerName);
 		Schema_AddInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID, EntityId);
-		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID, RemoteActor->GetIsReplicated());
-		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_ID, RemoteActor->HasAuthority());
-		AddStringToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID, RemoteActor->GetOwner()->GetName());
+		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID, BlockingActor->GetIsReplicated());
+		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_ID, BlockingActor->HasAuthority());
+		AddStringToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID, BlockingActor->GetOwner()->GetName());
+
+
+			AddStringToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_WORKER_ID, NetDriver->Connection->GetWorkerId());	
+			Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_LOCKED_ID,
+						   NetDriver->LockingPolicy->IsLocked(BlockingActor));
+		}
 
 		return CommandResponse;
 	}
 
-	static FString CreateMigrationDiagnosticLog(PhysicalWorkerName OriginatingWorkerName, Schema_Object* ResponseObject,
-												AActor* OrigintatingActor)
+	static FString CreateMigrationDiagnosticLog(USpatialNetDriver* NetDriver, Schema_Object* ResponseObject, AActor* BlockingActor)
 	{
-		// This log is requested when the authoritative server for the owner of a migration hierarchy does not have authority over one of
-		// the child actors
+		if (ResponseObject == nullptr || !IsValid(NetDriver) || !IsValid(NetDriver->Connection) || !IsValid(NetDriver->LockingPolicy))
+		{
+			return FString::Printf(TEXT(""));
+		}
+
+		// Compare information from the worker that is blocked from migrating a hierarchy with the information from the authoritative
+		// worker over the actor that is blocking the migration and log the results.
 		PhysicalWorkerName AuthoritativeWorkerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_WORKER_ID);
 		Worker_EntityId EntityId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
 		bool bIsReplicated = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID);
 		bool bHasAuthority = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_ID);
+		bool bIsLocked = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_LOCKED_ID);
 		FString AuthoritativeOwnerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
 
-		FString Reason = FString::Printf(TEXT("Originating worker %s does not have authority of Actor. "), *OriginatingWorkerName);
+		FString Reason =
+			FString::Printf(TEXT("Originating worker %s does not have authority of Actor. "), *NetDriver->Connection->GetWorkerId());
 
 		if (bHasAuthority)
 		{
 			Reason.Append(FString::Printf(TEXT("Worker %s has authority of Actor. "), *AuthoritativeWorkerName));
 		}
 
-		if (!IsValid(OrigintatingActor))
+		if (!IsValid(BlockingActor))
 		{
 			Reason.Append(FString::Printf(TEXT("Actor not valid.")));
 		}
 		else
 		{
-			if (OrigintatingActor->GetIsReplicated() && !bIsReplicated)
+			if (BlockingActor->GetIsReplicated() && !bIsReplicated)
 			{
 				Reason.Append(FString::Printf(TEXT("Actor replicates on originating worker but not on authoritative worker. ")));
 			}
 
-			if (IsValid(OrigintatingActor->GetOwner()) && OrigintatingActor->GetOwner()->GetName() != AuthoritativeOwnerName)
+			if (IsValid(BlockingActor->GetOwner()) && BlockingActor->GetOwner()->GetName() != AuthoritativeOwnerName)
 			{
-				Reason.Append(FString::Printf(TEXT("Actor has different owner on authoritative worker %s. "), *AuthoritativeOwnerName));
+				Reason.Append(FString::Printf(TEXT("Actor has different owner %s on authoritative worker. "), *AuthoritativeOwnerName));
 			}
 		}
 
+		if (bIsLocked)
+		{
+			Reason.Append(FString::Printf(TEXT("Actor is locked on authoritative worker.")));
+		}
+
+		if (NetDriver->LockingPolicy->IsLocked(BlockingActor))
+		{
+			Reason.Append(FString::Printf(TEXT("Actor is locked on originating worker.")));
+		}
+
 		return FString::Printf(TEXT("Prevented Actor %s 's hierarchy from migrating because of Actor %s (%llu) %s"),
-							   *AuthoritativeOwnerName, *OrigintatingActor->GetName(), EntityId, *Reason);
+							   *AuthoritativeOwnerName, *BlockingActor->GetName(), EntityId, *Reason);
 	}
 };
 
