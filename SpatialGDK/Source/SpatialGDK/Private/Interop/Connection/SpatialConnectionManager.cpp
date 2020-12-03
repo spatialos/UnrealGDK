@@ -3,6 +3,7 @@
 #include "Interop/Connection/SpatialConnectionManager.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
 
@@ -324,7 +325,7 @@ void USpatialConnectionManager::ConnectToReceptionist(uint32 PlayInEditorID)
 	ConfigureConnection ConnectionConfig(ReceptionistConfig, bConnectAsClient);
 
 	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer = CreateEventTracer(ReceptionistConfig.WorkerId);
-	ConnectionConfig.Params.event_tracer = EventTracer->GetWorkerEventTracer();
+	ConnectionConfig.Params.event_tracer = EventTracer != nullptr ? EventTracer->GetWorkerEventTracer() : nullptr;
 
 	Worker_ConnectionFuture* ConnectionFuture =
 		Worker_ConnectAsync(TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.GetReceptionistPort(),
@@ -346,7 +347,7 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 	ConfigureConnection ConnectionConfig(*InLocatorConfig, bConnectAsClient);
 
 	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer = CreateEventTracer(InLocatorConfig->WorkerId);
-	ConnectionConfig.Params.event_tracer = EventTracer->GetWorkerEventTracer();
+	ConnectionConfig.Params.event_tracer = EventTracer != nullptr ? EventTracer->GetWorkerEventTracer() : nullptr;
 
 	FTCHARToUTF8 PlayerIdentityTokenCStr(*InLocatorConfig->PlayerIdentityToken);
 	FTCHARToUTF8 LoginTokenCStr(*InLocatorConfig->LoginToken);
@@ -391,15 +392,25 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
 
-				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing));
+				FComponentSetData SetData;
+
+				for (Worker_ComponentId i = 0; i < 100; ++i)
+				{
+					SetData.ComponentSets.FindOrAdd(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID).Add(i);
+				}
+				for (Worker_ComponentId i = 100; i < 100000; ++i)
+				{
+					SetData.ComponentSets.Add(static_cast<Worker_ComponentSetId>(i)).Add(i);
+				}
+
+				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
+																		  MoveTemp(SetData));
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
 			else
 			{
-				Worker_Connection_Destroy(NewCAPIWorkerConnection);
-
 				const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
-
+				Worker_Connection_Destroy(NewCAPIWorkerConnection);
 				SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
 			}
 		});
@@ -526,3 +537,14 @@ void USpatialConnectionManager::OnConnectionFailure(uint8_t ConnectionStatusCode
 
 	OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 }
+
+TSharedPtr<SpatialGDK::SpatialEventTracer> USpatialConnectionManager::CreateEventTracer(const FString& WorkerId)
+{
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (Settings == nullptr || !Settings->bEventTracingEnabled)
+	{
+		return nullptr;
+	}
+
+	return MakeShared<SpatialGDK::SpatialEventTracer>(WorkerId);
+};

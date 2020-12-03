@@ -82,10 +82,7 @@ private:
 	static void OnLoginTokens(void* UserData, const Worker_LoginTokensResponse* LoginTokens);
 	void ProcessLoginTokensResponse(const Worker_LoginTokensResponse* LoginTokens);
 
-	TSharedPtr<SpatialGDK::SpatialEventTracer> CreateEventTracer(const FString& WorkerId)
-	{
-		return MakeShared<SpatialGDK::SpatialEventTracer>(WorkerId);
-	};
+	TSharedPtr<SpatialGDK::SpatialEventTracer> CreateEventTracer(const FString& WorkerId);
 
 private:
 	UPROPERTY()

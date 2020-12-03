@@ -92,8 +92,11 @@ public:
 	virtual void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate) override;
 	virtual void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate) override;
 	virtual void AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate) override;
+	virtual void AddSystemEntityCommandDelegate(Worker_RequestId RequestId, SystemEntityCommandDelegate Delegate) override;
 
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) override;
+
+	virtual void OnSystemEntityCommandResponse(const Worker_CommandResponseOp& Op) override;
 
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void FlushRetryRPCs();
@@ -188,6 +191,7 @@ private:
 	void HandleQueuedOpForAsyncLoad(const Worker_Op& Op);
 	// END TODO
 
+	void ReceiveWorkerDisconnectResponse(const Worker_CommandResponseOp& Op);
 	void ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op);
 
 public:
@@ -240,6 +244,7 @@ private:
 	TMap<Worker_RequestId_Key, EntityQueryDelegate> EntityQueryDelegates;
 	TMap<Worker_RequestId_Key, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
 	TMap<Worker_RequestId_Key, CreateEntityDelegate> CreateEntityDelegates;
+	TMap<Worker_RequestId_Key, SystemEntityCommandDelegate> SystemEntityCommandDelegates;
 
 	// This will map PlayerController entities to the corresponding SpatialNetConnection
 	// for PlayerControllers that this server has authority over. This is used for player

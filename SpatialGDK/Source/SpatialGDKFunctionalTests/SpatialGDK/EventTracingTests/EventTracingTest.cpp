@@ -6,8 +6,7 @@
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-
-#include "SpatialFunctionalTestFlowController.h"
+#include "SpatialCommonTypes.h"
 
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
@@ -92,6 +91,10 @@ void AEventTracingTest::GatherData()
 	USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
 	USpatialConnectionManager* ConnectionManager = GameInstance->GetSpatialConnectionManager();
 	SpatialEventTracer* EventTracer = ConnectionManager->GetWorkerConnection()->GetEventTracer();
+	if (EventTracer == nullptr)
+	{
+		return;
+	}
 
 	FString EventsFolderPath = EventTracer->GetFolderPath();
 
@@ -155,9 +158,9 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 				const Trace_Event& Event = Item->item.event;
 				FName EventName = FName(*FString(Event.type));
 
-				FString SpanIdString = SpatialEventTracer::SpanIdToString(Event.span_id);
 				if (FilterEventNames.Num() == 0 || FilterEventNames.Contains(EventName))
 				{
+					FString SpanIdString = FSpatialGDKSpanId::ToString(Event.span_id);
 					FName& CachedEventName = TraceEvents.FindOrAdd(SpanIdString);
 					CachedEventName = EventName;
 				}
@@ -165,12 +168,13 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 			else
 			{
 				const Trace_Span& Span = Item->item.span;
-				FString SpanIdString = SpatialEventTracer::SpanIdToString(Span.id);
 
+				FString SpanIdString = FSpatialGDKSpanId::ToString(Span.id);
 				TArray<FString>& Causes = TraceSpans.FindOrAdd(SpanIdString);
 				for (uint64 i = 0; i < Span.cause_count; ++i)
 				{
-					Causes.Add(SpatialEventTracer::SpanIdToString(Span.causes[i]));
+					const int32 ByteOffset = i * TRACE_SPAN_ID_SIZE_BYTES;
+					Causes.Add(FSpatialGDKSpanId::ToString(Span.causes + ByteOffset));
 				}
 			}
 		}

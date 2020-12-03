@@ -8,14 +8,15 @@
 
 namespace SpatialGDK
 {
-WorkerView::WorkerView()
-	: LocalChanges(MakeUnique<MessagesToSend>())
+WorkerView::WorkerView(FComponentSetData ComponentSetData)
+	: ComponentSetData(MoveTemp(ComponentSetData))
+	, LocalChanges(MakeUnique<MessagesToSend>())
 {
 }
 
 void WorkerView::AdvanceViewDelta(TArray<OpList> OpLists)
 {
-	Delta.SetFromOpList(MoveTemp(OpLists), View);
+	Delta.SetFromOpList(MoveTemp(OpLists), View, ComponentSetData);
 }
 
 const ViewDelta& WorkerView::GetViewDelta() const
@@ -35,7 +36,7 @@ TUniquePtr<MessagesToSend> WorkerView::FlushLocalChanges()
 	return OutgoingMessages;
 }
 
-void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId)
+void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId)
 {
 	EntityViewElement* Element = View.Find(EntityId);
 	if (ensure(Element != nullptr))
@@ -45,7 +46,7 @@ void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, 
 	}
 }
 
-void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId)
+void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId)
 {
 	EntityViewElement* Element = View.Find(EntityId);
 	if (ensure(Element != nullptr))
@@ -59,7 +60,7 @@ void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate U
 	}
 }
 
-void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId)
+void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId)
 {
 	EntityViewElement* Element = View.Find(EntityId);
 	if (ensure(Element != nullptr))

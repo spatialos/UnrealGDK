@@ -10,12 +10,12 @@
 
 namespace SpatialGDK
 {
-void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
+void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View, const FComponentSetData& ComponentSetData)
 {
 	Clear();
 	for (OpList& Ops : OpLists)
 	{
-		ProcessOpList(Ops);
+		ProcessOpList(Ops, View, ComponentSetData);
 	}
 	OpListStorage = MoveTemp(OpLists);
 
@@ -330,7 +330,7 @@ ComponentChange ViewDelta::CalculateUpdate(ReceivedComponentChange* Start, Recei
 	return ComponentChange(Start->ComponentId, Update);
 }
 
-void ViewDelta::ProcessOpList(const OpList& Ops)
+void ViewDelta::ProcessOpList(const OpList& Ops, const EntityView& View, const FComponentSetData& ComponentSetData)
 {
 	for (uint32 i = 0; i < Ops.Count; ++i)
 	{
@@ -367,6 +367,7 @@ void ViewDelta::ProcessOpList(const OpList& Ops)
 			ComponentChanges.Emplace(Op.op.remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
+			GenerateComponentChangesFromSetData(Op.op.component_set_authority_change, View, ComponentSetData);
 			AuthorityChanges.Emplace(Op.op.component_set_authority_change);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
@@ -375,6 +376,39 @@ void ViewDelta::ProcessOpList(const OpList& Ops)
 		default:
 			break;
 		}
+	}
+}
+
+void ViewDelta::GenerateComponentChangesFromSetData(const Worker_ComponentSetAuthorityChangeOp& Op, const EntityView& View,
+													const FComponentSetData& ComponentSetData)
+{
+	// Generate component changes to:
+	// * Remove all components on the entity, that are in the component set.
+	// * Add all components the with data in the op.
+	// If one component is both removed and added then this is interpreted as component refresh in the view delta.
+	// Otherwise the component will be added or removed as appropriate.
+
+	const TSet<Worker_ComponentId>& Set = ComponentSetData.ComponentSets[Op.component_set_id];
+
+	// If a component on the entity is in the set then generate a remove operation.
+	if (const EntityViewElement* Entity = View.Find(Op.entity_id))
+	{
+		for (const ComponentData& Component : Entity->Components)
+		{
+			const Worker_ComponentId ComponentId = Component.GetComponentId();
+			if (Set.Contains(ComponentId))
+			{
+				Worker_RemoveComponentOp RemoveOp = { Op.entity_id, ComponentId };
+				ComponentChanges.Emplace(RemoveOp);
+			}
+		}
+	}
+
+	// If the component has data in the authority op then generate an add operation.
+	for (uint32 i = 0; i < Op.canonical_component_set_data_count; ++i)
+	{
+		Worker_AddComponentOp AddOp = { Op.entity_id, Op.canonical_component_set_data[i] };
+		ComponentChanges.Emplace(AddOp);
 	}
 }
 
@@ -431,23 +465,11 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 		Delta.EntityId = CurrentEntityId;
 
 		EntityViewElement* ViewElement = View.Find(CurrentEntityId);
+		const bool bAlreadyExisted = ViewElement != nullptr;
 
-		if (EntityIt->EntityId == CurrentEntityId)
+		if (ViewElement == nullptr)
 		{
-			EntityIt = ProcessEntityExistenceChange(EntityIt, EntityChangesEnd, Delta, &ViewElement, View);
-			// If the entity isn't present we don't need to process component and authority changes.
-			if (ViewElement == nullptr)
-			{
-				ComponentIt = std::find_if(ComponentIt, ComponentChangesEnd, DifferentEntity{ CurrentEntityId });
-				AuthorityIt = std::find_if(AuthorityIt, AuthorityChangesEnd, DifferentEntity{ CurrentEntityId });
-
-				// Only add the entity delta if the entity previously existed in the view.
-				if (Delta.Type == EntityDelta::REMOVE)
-				{
-					EntityDeltas.Push(Delta);
-				}
-				continue;
-			}
+			ViewElement = &View.Add(CurrentEntityId);
 		}
 
 		if (ComponentIt->EntityId == CurrentEntityId)
@@ -458,6 +480,17 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 		if (AuthorityIt->entity_id == CurrentEntityId)
 		{
 			AuthorityIt = ProcessEntityAuthorityChanges(AuthorityIt, AuthorityChangesEnd, ViewElement->Authority, Delta);
+		}
+
+		if (EntityIt->EntityId == CurrentEntityId)
+		{
+			EntityIt = ProcessEntityExistenceChange(EntityIt, EntityChangesEnd, Delta, bAlreadyExisted, View);
+			// Did the entity flicker into view for less than a tick.
+			if (Delta.Type == EntityDelta::UPDATE && !bAlreadyExisted)
+			{
+				View.Remove(CurrentEntityId);
+				continue;
+			}
 		}
 
 		EntityDeltas.Push(Delta);
@@ -600,14 +633,12 @@ Worker_ComponentSetAuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(W
 }
 
 ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End,
-																		 EntityDelta& Delta, EntityViewElement** ViewElement,
-																		 EntityView& View)
+																		 EntityDelta& Delta, bool bAlreadyInView, EntityView& View)
 {
 	// Find the last element relating to the same entity.
 	const Worker_EntityId EntityId = It->EntityId;
 	It = std::find_if(It, End, DifferentEntity{ EntityId }) - 1;
 
-	const bool bAlreadyInView = *ViewElement != nullptr;
 	const bool bEntityAdded = It->bAdded;
 
 	// If the entity's presence has not changed then it's an update.
@@ -620,32 +651,11 @@ ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(Receive
 	if (bEntityAdded)
 	{
 		Delta.Type = EntityDelta::ADD;
-		*ViewElement = &View.Emplace(EntityId, EntityViewElement{});
 	}
 	else
 	{
 		Delta.Type = EntityDelta::REMOVE;
-
-		// Remove components.
-		const auto& Components = (*ViewElement)->Components;
-		for (const auto& Component : Components)
-		{
-			ComponentsRemovedForDelta.Emplace(Component.GetComponentId());
-		}
-		Delta.ComponentsRemoved = { ComponentsRemovedForDelta.GetData() + ComponentsRemovedForDelta.Num() - Components.Num(),
-									Components.Num() };
-
-		// Remove authority.
-		const auto& Authority = (*ViewElement)->Authority;
-		for (const auto& Id : Authority)
-		{
-			AuthorityLostForDelta.Emplace(Id, AuthorityChange::AUTHORITY_LOST);
-		}
-		Delta.AuthorityLost = { AuthorityLostForDelta.GetData() + AuthorityLostForDelta.Num() - Authority.Num(), Authority.Num() };
-
-		// Remove from view.
 		View.Remove(EntityId);
-		*ViewElement = nullptr;
 	}
 
 	return It + 1;

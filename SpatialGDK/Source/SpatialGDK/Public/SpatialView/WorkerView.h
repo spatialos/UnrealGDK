@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "SpatialView/ComponentSetData.h"
 #include "SpatialView/MessagesToSend.h"
 #include "SpatialView/OpList/OpList.h"
 #include "SpatialView/ViewDelta.h"
@@ -11,7 +12,7 @@ namespace SpatialGDK
 class WorkerView
 {
 public:
-	WorkerView();
+	explicit WorkerView(FComponentSetData ComponentSetData);
 
 	// Process op lists to create a new view delta.
 	// The view delta will exist until the next call to AdvanceViewDelta.
@@ -23,9 +24,9 @@ public:
 	// Ensure all local changes have been applied and return the resulting MessagesToSend.
 	TUniquePtr<MessagesToSend> FlushLocalChanges();
 
-	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId);
-	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
+	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId);
+	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId);
+	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
 	void SendReserveEntityIdsRequest(ReserveEntityIdsRequest Request);
 	void SendCreateEntityRequest(CreateEntityRequest Request);
 	void SendDeleteEntityRequest(DeleteEntityRequest Request);
@@ -37,6 +38,7 @@ public:
 	void SendLogMessage(LogMessage Log);
 
 private:
+	FComponentSetData ComponentSetData;
 	EntityView View;
 	ViewDelta Delta;
 

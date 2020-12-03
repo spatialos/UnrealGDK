@@ -42,6 +42,8 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	bAlwaysRelevant = true;
 
 	PrimaryActorTick.TickInterval = 0.0f;
+
+	PreparationTimeLimit = 30.0f;
 }
 
 void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -244,7 +246,7 @@ void ASpatialFunctionalTest::FinishStep()
 	ensureMsgf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
 	if (AuxLocalFlowController != nullptr)
 	{
-		AuxLocalFlowController->NotifyStepFinished();
+		AuxLocalFlowController->NotifyStepFinished(CurrentStepIndex);
 	}
 }
 
@@ -601,20 +603,21 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(
 	return nullptr;
 }
 
-void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpatialFunctionalTestFlowController* FlowController)
+void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpatialFunctionalTestFlowController* FlowController,
+																		  const int StepIndex)
 {
-	if (CurrentStepIndex < 0)
+	if (CurrentStepIndex < 0 || StepIndex != CurrentStepIndex)
 	{
 		return;
 	}
 
-	const FString FLowControllerDisplayName = FlowController->GetDisplayName();
+	const FString FlowControllerDisplayName = FlowController->GetDisplayName();
 
-	UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s finished Step"), *FLowControllerDisplayName);
+	UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s finished Step"), *FlowControllerDisplayName);
 
 	if (FlowControllersExecutingStep.RemoveSwap(FlowController) == 0)
 	{
-		FString ErrorMsg = FString::Printf(TEXT("%s was not in list of workers executing"), *FLowControllerDisplayName);
+		FString ErrorMsg = FString::Printf(TEXT("%s was not in list of workers executing"), *FlowControllerDisplayName);
 		ensureMsgf(false, TEXT("%s"), *ErrorMsg);
 		FinishTest(EFunctionalTestResult::Error, ErrorMsg);
 	}

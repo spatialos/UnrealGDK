@@ -179,19 +179,19 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	bool bIsAuthServer = Channel.IsAuthoritativeServer();
 	bool bAutonomousProxy = Channel.IsClientAutonomousProxy();
 	bool bIsClient = NetDriver->GetNetMode() == NM_Client;
-	bool bEventTracerEnabled = EventTracer != nullptr && EventTracer->IsEnabled();
+	bool bEventTracerEnabled = EventTracer != nullptr;
 
 	FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient);
 
 	TArray<GDK_PROPERTY(Property)*> RepNotifies;
-	TMap<GDK_PROPERTY(Property)*, Trace_SpanId> PropertySpanIds;
+	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
 
 	{
 		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
 		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
 
 		Worker_EntityId EntityId = Channel.GetEntityId();
-		TOptional<Trace_SpanId> CauseSpanId;
+		FSpatialGDKSpanId CauseSpanId;
 		if (bEventTracerEnabled)
 		{
 			CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
@@ -326,13 +326,13 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					}
 				}
 
-				TOptional<Trace_SpanId> SpanId;
-				if (bEventTracerEnabled && CauseSpanId.IsSet())
+				FSpatialGDKSpanId SpanId;
+				if (bEventTracerEnabled)
 				{
-					SpanId = EventTracer->CreateSpan(&CauseSpanId.GetValue(), 1);
-					EventTracer->TraceEvent(
-						FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(&Object, EntityId, ComponentId, Cmd.Property->GetName()),
-						SpanId);
+					EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property);
+					SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(
+														 &Object, EntityId, ComponentId, Cmd.Property->GetName(), LinearTraceId),
+													 CauseSpanId.GetConstId(), 1);
 				}
 
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
@@ -341,9 +341,9 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					bool bIsIdentical =
 						Cmd.Property->Identical(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
 
-					if (SpanId.IsSet())
+					if (bEventTracerEnabled)
 					{
-						PropertySpanIds.Add(Parent.Property, SpanId.GetValue());
+						PropertySpanIds.Add(Parent.Property, SpanId);
 					}
 
 					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.

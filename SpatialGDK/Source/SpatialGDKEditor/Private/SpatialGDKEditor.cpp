@@ -231,8 +231,7 @@ bool FSpatialGDKEditor::IsSchemaGenerated()
 	FString DescriptorPath =
 		FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema/schema.descriptor"));
 	FString GdkFolderPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
-	return FPaths::FileExists(DescriptorPath) && FPaths::DirectoryExists(GdkFolderPath)
-		   && SpatialGDKEditor::Schema::GeneratedSchemaDatabaseExists();
+	return FPaths::DirectoryExists(GdkFolderPath) && SpatialGDKEditor::Schema::GeneratedSchemaDatabaseExists();
 }
 
 bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets)
@@ -305,7 +304,7 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 										 FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
 {
 	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
-	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotFolderPath(), SnapshotFilename);
+	FString SavePath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, SnapshotFilename);
 	const bool bSuccess = SpatialGDKGenerateSnapshot(World, SavePath);
 
 	if (bSuccess)

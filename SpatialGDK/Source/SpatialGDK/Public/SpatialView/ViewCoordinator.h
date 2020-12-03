@@ -2,13 +2,15 @@
 
 #pragma once
 
-#include "ReceivedOpEventHandler.h"
 #include "SpatialView/CommandRetryHandler.h"
+#include "SpatialView/ComponentSetData.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/CriticalSectionFilter.h"
 #include "SpatialView/Dispatcher.h"
+#include "SpatialView/ReceivedOpEventHandler.h"
+#include "SpatialView/SubView.h"
 #include "SpatialView/WorkerView.h"
-#include "SubView.h"
+
 #include "Templates/UniquePtr.h"
 
 namespace SpatialGDK
@@ -18,7 +20,8 @@ class SpatialEventTracer;
 class ViewCoordinator
 {
 public:
-	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer);
+	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer,
+							 FComponentSetData ComponentSetData);
 
 	~ViewCoordinator();
 
@@ -49,29 +52,29 @@ public:
 	const FString& GetWorkerId() const;
 	Worker_EntityId GetWorkerSystemEntityId() const;
 
-	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const TOptional<Trace_SpanId>& SpanId);
-	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const TOptional<Trace_SpanId>& SpanId);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const TOptional<Trace_SpanId>& SpanId);
+	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId);
+	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId);
+	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
 	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-											 TOptional<uint32> TimeoutMillis = {}, const TOptional<Trace_SpanId>& SpanId = {});
+											 TOptional<uint32> TimeoutMillis = {}, const FSpatialGDKSpanId& SpanId = {});
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis = {},
-											 const TOptional<Trace_SpanId>& SpanId = {});
+											 const FSpatialGDKSpanId& SpanId = {});
 	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {},
-											  const TOptional<Trace_SpanId>& SpanId = {});
-	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const TOptional<Trace_SpanId>& SpanId);
-	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const TOptional<Trace_SpanId>& SpanId);
+											  const FSpatialGDKSpanId& SpanId = {});
+	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const FSpatialGDKSpanId& SpanId);
+	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const FSpatialGDKSpanId& SpanId);
 	void SendMetrics(SpatialMetrics Metrics);
 	void SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message);
 
 	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, FRetryData RetryData);
 	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-											 FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId);
-	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData, const TOptional<Trace_SpanId>& SpanId);
+											 FRetryData RetryData, const FSpatialGDKSpanId& SpanId);
+	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData, const FSpatialGDKSpanId& SpanId);
 	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, FRetryData RetryData);
 	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData,
-											  const TOptional<Trace_SpanId>& SpanId);
+											  const FSpatialGDKSpanId& SpanId);
 
 	CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
 	CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);

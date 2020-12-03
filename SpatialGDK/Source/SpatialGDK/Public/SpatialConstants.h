@@ -201,6 +201,9 @@ const PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME = FString("UnsetWorkerNa
 // WorkerEntity Field IDs.
 const Schema_FieldId WORKER_ID_ID = 1;
 const Schema_FieldId WORKER_TYPE_ID = 2;
+
+// WorkerEntity command IDs
+const Schema_FieldId WORKER_DISCONNECT_COMMAND_ID = 1;
 const Schema_FieldId WORKER_CLAIM_PARTITION_COMMAND_ID = 2;
 
 // SpatialDebugger Field IDs.

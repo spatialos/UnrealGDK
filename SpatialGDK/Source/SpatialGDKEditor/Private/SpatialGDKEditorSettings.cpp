@@ -42,13 +42,13 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bShowSpatialServiceButton(false)
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
-	, RuntimeVariant(ESpatialOSRuntimeVariant::Standard)
 	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
-	, CompatibilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
+	, bUseGDKPinnedInspectorVersion(true)
+	, InspectorVersionOverride(TEXT(""))
 	, ExposedRuntimeIP(TEXT(""))
 	, bAutoStartLocalDeployment(true)
 	, bSpatialDebuggerEditorEnabled(false)
-	, AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::OnExitEditor)
+	, AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::OnEndPIE)
 	, bStopPIEOnTestingCompleted(true)
 	, CookAndGeneratePlatform("")
 	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
@@ -70,17 +70,15 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
 	SpatialOSSnapshotToLoad = GetSpatialOSSnapshotToLoad();
 	SnapshotPath.FilePath = GetSpatialOSSnapshotToSavePath();
+
+	// TODO: UNR-4472 - Remove this WorkerTypeName renaming when refactoring FLaunchConfigDescription.
+	// Force update users settings in-case they have a bad server worker name saved.
+	LaunchConfigDesc.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 }
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
 {
-	switch (Variant)
-	{
-	case ESpatialOSRuntimeVariant::CompatibilityMode:
-		return CompatibilityModeRuntimeVersion;
-	default:
-		return StandardRuntimeVersion;
-	}
+	return StandardRuntimeVersion;
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
@@ -98,7 +96,7 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, RuntimeVariant))
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, StandardRuntimeVersion))
 	{
 		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 		GDKServices.GetLocalDeploymentManager()->SetRedeployRequired();
@@ -122,17 +120,22 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
 	{
-		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FWorldLaunchSection, LegacyFlags))
+		// TODO: UNR-4472 - Remove this WorkerTypeName renaming when refactoring FLaunchConfigDescription.
+		// Force override the server worker name as it MUST be UnrealWorker.
+		LaunchConfigDesc.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
+
+		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FSpatialLaunchConfigDescription, RuntimeFlags))
 		{
-			USpatialGDKEditorSettings::TrimTMap(LaunchConfigDesc.World.LegacyFlags);
-		}
-		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FWorldLaunchSection, LegacyJavaParams))
-		{
-			USpatialGDKEditorSettings::TrimTMap(LaunchConfigDesc.World.LegacyJavaParams);
+			USpatialGDKEditorSettings::TrimTMap(LaunchConfigDesc.RuntimeFlags);
 		}
 		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FWorkerTypeLaunchSection, Flags))
 		{
-			USpatialGDKEditorSettings::TrimTMap(LaunchConfigDesc.ServerWorkerConfig.Flags);
+			USpatialGDKEditorSettings::TrimTMap(LaunchConfigDesc.ServerWorkerConfiguration.Flags);
+
+			for (auto& WorkerConfig : LaunchConfigDesc.AdditionalWorkerConfigs)
+			{
+				USpatialGDKEditorSettings::TrimTMap(WorkerConfig.Flags);
+			}
 		}
 	}
 }
@@ -541,26 +544,13 @@ const FString& FSpatialLaunchConfigDescription::GetTemplate() const
 
 const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVariant() const
 {
-	switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
+	if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
 	{
-	case ESpatialOSRuntimeVariant::CompatibilityMode:
-		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
-		{
-			return SpatialGDKServicesConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
-		}
-		else
-		{
-			return SpatialGDKServicesConstants::PinnedCompatibilityModeRuntimeTemplate;
-		}
-	default:
-		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
-		{
-			return SpatialGDKServicesConstants::PinnedChinaStandardRuntimeTemplate;
-		}
-		else
-		{
-			return SpatialGDKServicesConstants::PinnedStandardRuntimeTemplate;
-		}
+		return SpatialGDKServicesConstants::PinnedChinaStandardRuntimeTemplate;
+	}
+	else
+	{
+		return SpatialGDKServicesConstants::PinnedStandardRuntimeTemplate;
 	}
 }
 

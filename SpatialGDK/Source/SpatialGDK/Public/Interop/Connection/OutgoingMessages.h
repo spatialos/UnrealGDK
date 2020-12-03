@@ -5,6 +5,7 @@
 #include "Containers/Array.h"
 #include "Containers/UnrealString.h"
 #include "HAL/Platform.h"
+#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Misc/Optional.h"
 #include "Templates/UniquePtr.h"
 #include "Templates/UnrealTemplate.h"
@@ -57,8 +58,7 @@ struct FReserveEntityIdsRequest : FOutgoingMessage
 
 struct FCreateEntityRequest : FOutgoingMessage
 {
-	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const Worker_EntityId* InEntityId,
-						 const TOptional<Trace_SpanId>& SpanId)
+	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const Worker_EntityId* InEntityId, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::CreateEntityRequest)
 		, Components(MoveTemp(InComponents))
 		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<Worker_EntityId>())
@@ -68,12 +68,12 @@ struct FCreateEntityRequest : FOutgoingMessage
 
 	TArray<FWorkerComponentData> Components;
 	TOptional<Worker_EntityId> EntityId;
-	TOptional<Trace_SpanId> SpanId;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FDeleteEntityRequest : FOutgoingMessage
 {
-	FDeleteEntityRequest(Worker_EntityId InEntityId, const TOptional<Trace_SpanId>& SpanId)
+	FDeleteEntityRequest(Worker_EntityId InEntityId, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::DeleteEntityRequest)
 		, EntityId(InEntityId)
 		, SpanId(SpanId)
@@ -81,12 +81,12 @@ struct FDeleteEntityRequest : FOutgoingMessage
 	}
 
 	Worker_EntityId EntityId;
-	const TOptional<Trace_SpanId> SpanId;
+	const FSpatialGDKSpanId SpanId;
 };
 
 struct FAddComponent : FOutgoingMessage
 {
-	FAddComponent(Worker_EntityId InEntityId, const FWorkerComponentData& InData, const TOptional<Trace_SpanId>& SpanId)
+	FAddComponent(Worker_EntityId InEntityId, const FWorkerComponentData& InData, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::AddComponent)
 		, EntityId(InEntityId)
 		, Data(InData)
@@ -96,12 +96,12 @@ struct FAddComponent : FOutgoingMessage
 
 	Worker_EntityId EntityId;
 	FWorkerComponentData Data;
-	TOptional<Trace_SpanId> SpanId;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FRemoveComponent : FOutgoingMessage
 {
-	FRemoveComponent(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, const TOptional<Trace_SpanId>& SpanId)
+	FRemoveComponent(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::RemoveComponent)
 		, EntityId(InEntityId)
 		, ComponentId(InComponentId)
@@ -111,12 +111,12 @@ struct FRemoveComponent : FOutgoingMessage
 
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
-	TOptional<Trace_SpanId> SpanId;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FComponentUpdate : FOutgoingMessage
 {
-	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate, const TOptional<Trace_SpanId>& SpanId)
+	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentUpdate)
 		, EntityId(InEntityId)
 		, Update(InComponentUpdate)
@@ -126,7 +126,7 @@ struct FComponentUpdate : FOutgoingMessage
 
 	Worker_EntityId EntityId;
 	FWorkerComponentUpdate Update;
-	TOptional<Trace_SpanId> SpanId;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FCommandRequest : FOutgoingMessage
@@ -146,7 +146,7 @@ struct FCommandRequest : FOutgoingMessage
 
 struct FCommandResponse : FOutgoingMessage
 {
-	FCommandResponse(Worker_RequestId InRequestId, const Worker_CommandResponse& InResponse, const TOptional<Trace_SpanId>& SpanId)
+	FCommandResponse(Worker_RequestId InRequestId, const Worker_CommandResponse& InResponse, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::CommandResponse)
 		, RequestId(InRequestId)
 		, Response(InResponse)
@@ -156,12 +156,12 @@ struct FCommandResponse : FOutgoingMessage
 
 	Worker_RequestId RequestId;
 	Worker_CommandResponse Response;
-	TOptional<Trace_SpanId> SpanId;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FCommandFailure : FOutgoingMessage
 {
-	FCommandFailure(Worker_RequestId InRequestId, const FString& InMessage, const TOptional<Trace_SpanId>& SpanId)
+	FCommandFailure(Worker_RequestId InRequestId, const FString& InMessage, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::CommandFailure)
 		, RequestId(InRequestId)
 		, Message(InMessage)
@@ -171,7 +171,7 @@ struct FCommandFailure : FOutgoingMessage
 
 	Worker_RequestId RequestId;
 	FString Message;
-	TOptional<Trace_SpanId> SpanId;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct FLogMessage : FOutgoingMessage

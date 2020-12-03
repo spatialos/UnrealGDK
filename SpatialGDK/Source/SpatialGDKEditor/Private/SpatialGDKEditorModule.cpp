@@ -81,10 +81,8 @@ void FSpatialGDKEditorModule::ShutdownModule()
 
 void FSpatialGDKEditorModule::TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken)
 {
-	bool bUseStandardRuntime =
-		GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Type::Standard;
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-	GDKServices.GetLocalDeploymentManager()->TakeSnapshot(World, bUseStandardRuntime, OnSnapshotTaken);
+	GDKServices.GetLocalDeploymentManager()->TakeSnapshot(World, OnSnapshotTaken);
 }
 
 bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
@@ -251,9 +249,9 @@ bool FSpatialGDKEditorModule::ShouldPackageMobileCommandLineArgs() const
 uint32 GetPIEServerWorkers()
 {
 	const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	if (EditorSettings->bGenerateDefaultLaunchConfig && !EditorSettings->LaunchConfigDesc.ServerWorkerConfig.bAutoNumEditorInstances)
+	if (EditorSettings->bGenerateDefaultLaunchConfig && !EditorSettings->LaunchConfigDesc.ServerWorkerConfiguration.bAutoNumEditorInstances)
 	{
-		return EditorSettings->LaunchConfigDesc.ServerWorkerConfig.NumEditorInstances;
+		return EditorSettings->LaunchConfigDesc.ServerWorkerConfiguration.NumEditorInstances;
 	}
 	else
 	{

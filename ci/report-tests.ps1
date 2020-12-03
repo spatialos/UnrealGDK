@@ -45,6 +45,7 @@ if (Test-Path "$test_result_dir\index.html" -PathType Leaf) {
 else {
     $error_msg = "The Unreal Editor crashed while running tests, see the test-gdk annotation for logs (or the tests.log buildkite artifact)."
     Write-Error $error_msg
+    buildkite-agent artifact upload "$test_result_dir\*"
     Throw $error_msg
 }
 

@@ -10,7 +10,7 @@
 DEFINE_LOG_CATEGORY(LogSpatialGDKDefaultWorkerJsonGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKDefaultWorkerJsonGenerator"
 
-bool GenerateDefaultWorkerJson(const FString& JsonPath, const FString& WorkerTypeName, bool& bOutRedeployRequired)
+bool GenerateDefaultWorkerJson(const FString& JsonPath, bool& bOutRedeployRequired)
 {
 	const FString TemplateWorkerJsonPath =
 		FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Extras/templates/WorkerJsonTemplate.json"));
@@ -18,7 +18,6 @@ bool GenerateDefaultWorkerJson(const FString& JsonPath, const FString& WorkerTyp
 	FString Contents;
 	if (FFileHelper::LoadFileToString(Contents, *TemplateWorkerJsonPath))
 	{
-		Contents.ReplaceInline(TEXT("{{WorkerTypeName}}"), *WorkerTypeName);
 		if (FFileHelper::SaveStringToFile(Contents, *JsonPath))
 		{
 			bOutRedeployRequired = true;
@@ -53,7 +52,7 @@ bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired)
 		{
 			UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
 
-			if (!GenerateDefaultWorkerJson(JsonPath, Worker.ToString(), bOutRedeployRequired))
+			if (!GenerateDefaultWorkerJson(JsonPath, bOutRedeployRequired))
 			{
 				bAllJsonsGeneratedSuccessfully = false;
 			}
