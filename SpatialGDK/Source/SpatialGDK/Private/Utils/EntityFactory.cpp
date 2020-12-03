@@ -99,9 +99,8 @@ void EntityFactory::WriteLBComponents(EntityComponents& EntityComps, AActor* Act
 				"Actor: %s. Strategy: %s"),
 		   *Actor->GetName(), *NetDriver->LoadBalanceStrategy->GetName());
 
-	AuthorityDelegationMap& DelegationMap =
-		(static_cast<AuthorityDelegation*>(EntityComps.MutableComponents[AuthorityDelegation::ComponentId].Get()))
-			->Delegations; // no idea which cast
+	AbstractMutableComponent* AuthorityDelegationComponent = EntityComps.MutableComponents[AuthorityDelegation::ComponentId].Get();
+	AuthorityDelegationMap& DelegationMap = (static_cast<AuthorityDelegation*>(AuthorityDelegationComponent))->Delegations;
 	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
 	DelegationMap.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeServerPartitionId);
 	DelegationMap.Add(SpatialConstants::DORMANT_COMPONENT_ID, AuthoritativeServerPartitionId);
@@ -228,11 +227,12 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 		bNetStartup = Actor->bNetStartup;
 	}
 
-	EntityComps.ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateComponentData());
+	TArray<FWorkerComponentData>& ComponentDatas = EntityComps.ComponentDatas;
+	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateComponentData());
 
 	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
 	}
 
 #if !UE_BUILD_SHIPPING
@@ -252,24 +252,23 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 	TArray<FWorkerComponentData> DynamicComponentDatas =
 		DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges, OutBytesWritten);
 
-	EntityComps.ComponentDatas.Append(DynamicComponentDatas);
+	ComponentDatas.Append(DynamicComponentDatas);
 
-	EntityComps.ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
+	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
 
 	Channel->SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));
 
-	EntityComps.ComponentDatas.Add(
-		ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
 
 	if (SpatialSettings->UseRPCRingBuffer() && RPCService != nullptr)
 	{
-		EntityComps.ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
+		ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
 	}
 	else
 	{
-		EntityComps.ComponentDatas.Add(ClientRPCEndpointLegacy().CreateComponentData());
-		EntityComps.ComponentDatas.Add(ServerRPCEndpointLegacy().CreateComponentData());
-		EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY));
+		ComponentDatas.Add(ClientRPCEndpointLegacy().CreateComponentData());
+		ComponentDatas.Add(ServerRPCEndpointLegacy().CreateComponentData());
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY));
 
 		if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
 		{
