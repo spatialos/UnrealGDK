@@ -34,8 +34,7 @@ struct MigrationDiagnostic : Component
 		return CommandRequest;
 	}
 
-	static Worker_CommandResponse CreateMigrationDiagnosticResponse(USpatialNetDriver* NetDriver,
-																	Worker_EntityId EntityId,
+	static Worker_CommandResponse CreateMigrationDiagnosticResponse(USpatialNetDriver* NetDriver, Worker_EntityId EntityId,
 																	AActor* BlockingActor)
 	{
 		// Respond with information on the worker that has authority over the actor that is blocking the hierarchy from migrating
@@ -43,18 +42,17 @@ struct MigrationDiagnostic : Component
 
 		if (IsValid(NetDriver) && IsValid(NetDriver->Connection) && IsValid(NetDriver->LockingPolicy))
 		{
-		CommandResponse.component_id = SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID;
-		CommandResponse.command_index = SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID;
-		CommandResponse.schema_type = Schema_CreateCommandResponse();
+			CommandResponse.component_id = SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID;
+			CommandResponse.command_index = SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID;
+			CommandResponse.schema_type = Schema_CreateCommandResponse();
 
-		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
-		Schema_AddInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID, EntityId);
-		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID, BlockingActor->GetIsReplicated());
-		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_ID, BlockingActor->HasAuthority());
-		AddStringToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID, BlockingActor->GetOwner()->GetName());
+			Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
+			Schema_AddInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID, EntityId);
+			Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID, BlockingActor->GetIsReplicated());
+			Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_ID, BlockingActor->HasAuthority());
+			AddStringToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID, BlockingActor->GetOwner()->GetName());
 
-
-			AddStringToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_WORKER_ID, NetDriver->Connection->GetWorkerId());	
+			AddStringToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_WORKER_ID, NetDriver->Connection->GetWorkerId());
 			Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_LOCKED_ID,
 						   NetDriver->LockingPolicy->IsLocked(BlockingActor));
 		}
@@ -78,8 +76,8 @@ struct MigrationDiagnostic : Component
 		bool bIsLocked = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_LOCKED_ID);
 		FString AuthoritativeOwnerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
 
-		FString Reason =
-			FString::Printf(TEXT("Originating worker %s does not have authority of blocking actor. "), *NetDriver->Connection->GetWorkerId());
+		FString Reason = FString::Printf(TEXT("Originating worker %s does not have authority of blocking actor. "),
+										 *NetDriver->Connection->GetWorkerId());
 
 		if (bHasAuthority)
 		{
@@ -99,7 +97,8 @@ struct MigrationDiagnostic : Component
 
 			if (IsValid(BlockingActor->GetOwner()) && BlockingActor->GetOwner()->GetName() != AuthoritativeOwnerName)
 			{
-				Reason.Append(FString::Printf(TEXT("Blocking actor has different owner %s on authoritative worker. "), *AuthoritativeOwnerName));
+				Reason.Append(
+					FString::Printf(TEXT("Blocking actor has different owner %s on authoritative worker. "), *AuthoritativeOwnerName));
 			}
 		}
 
