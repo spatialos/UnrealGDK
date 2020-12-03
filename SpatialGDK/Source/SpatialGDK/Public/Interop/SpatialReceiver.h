@@ -173,7 +173,7 @@ private:
 	void QueueComponentUpdateOpForAsyncLoad(const Worker_ComponentUpdateOp& Op);
 
 	TArray<PendingAddComponentWrapper> ExtractAddComponents(Worker_EntityId Entity);
-	SpatialGDK::EntityComponentOpListBuilder ExtractAuthorityOps(Worker_EntityId Entity);
+	SpatialGDK::EntityComponentOpListData ExtractAuthorityOps(Worker_EntityId Entity);
 
 	struct CriticalSectionSaveState
 	{
@@ -259,7 +259,7 @@ private:
 	{
 		FString ClassPath;
 		TArray<PendingAddComponentWrapper> InitialPendingAddComponents;
-		SpatialGDK::EntityComponentOpListBuilder PendingOps;
+		SpatialGDK::EntityComponentOpListData PendingOps;
 	};
 	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
 	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
