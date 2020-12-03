@@ -53,6 +53,7 @@ DECLARE_CYCLE_STAT(TEXT("Receiver AuthorityChange"), STAT_ReceiverAuthChange, ST
 DECLARE_CYCLE_STAT(TEXT("Receiver ReserveEntityIds"), STAT_ReceiverReserveEntityIds, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver CreateEntityResponse"), STAT_ReceiverCreateEntityResponse, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver EntityQueryResponse"), STAT_ReceiverEntityQueryResponse, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Receiver SystemEntityCommandResponse"), STAT_ReceiverSystemEntityCommandResponse, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver FlushRemoveComponents"), STAT_ReceiverFlushRemoveComponents, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver ReceiveActor"), STAT_ReceiverReceiveActor, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver RemoveActor"), STAT_ReceiverRemoveActor, STATGROUP_SpatialNet);
@@ -1911,10 +1912,9 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 
 		return;
 	}
-	if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID
-		&& Op.op.command_response.response.command_index == SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID)
+	else if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID)
 	{
-		ReceiveClaimPartitionResponse(Op.op.command_response);
+		OnSystemEntityCommandResponse(Op.op.command_response);
 		return;
 	}
 	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID)
@@ -1948,6 +1948,22 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		return;
 	}
 	ReceiveCommandResponse(Op);
+}
+
+void USpatialReceiver::ReceiveWorkerDisconnectResponse(const Worker_CommandResponseOp& Op)
+{
+	if (SystemEntityCommandDelegate* RequestDelegate = SystemEntityCommandDelegates.Find(Op.request_id))
+	{
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Executing ReceiveWorkerDisconnectResponse with delegate, request id: %d, message: %s"),
+			   Op.request_id, UTF8_TO_TCHAR(Op.message));
+		RequestDelegate->ExecuteIfBound(Op);
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Warning,
+			   TEXT("Received ReceiveWorkerDisconnectResponse but with no delegate set, request id: %d, message: %s"), Op.request_id,
+			   UTF8_TO_TCHAR(Op.message));
+	}
 }
 
 void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op)
@@ -2216,6 +2232,33 @@ void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp&
 	}
 }
 
+void USpatialReceiver::OnSystemEntityCommandResponse(const Worker_CommandResponseOp& Op)
+{
+	SCOPE_CYCLE_COUNTER(STAT_ReceiverSystemEntityCommandResponse);
+	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("SystemEntityCommand failed: request id: %d, message: %s"), Op.request_id,
+			   UTF8_TO_TCHAR(Op.message));
+	}
+
+	switch (Op.response.command_index)
+	{
+	case SpatialConstants::WORKER_DISCONNECT_COMMAND_ID:
+	{
+		ReceiveWorkerDisconnectResponse(Op);
+		return;
+	}
+	case SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID:
+	{
+		ReceiveClaimPartitionResponse(Op);
+		return;
+	}
+	default:
+		checkNoEntry();
+		return;
+	}
+}
+
 void USpatialReceiver::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel)
 {
 	PendingActorRequests.Add(RequestId, Channel);
@@ -2239,6 +2282,11 @@ void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, R
 void USpatialReceiver::AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
 {
 	CreateEntityDelegates.Add(RequestId, MoveTemp(Delegate));
+}
+
+void USpatialReceiver::AddSystemEntityCommandDelegate(Worker_RequestId RequestId, SystemEntityCommandDelegate Delegate)
+{
+	SystemEntityCommandDelegates.Add(RequestId, MoveTemp(Delegate));
 }
 
 TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
