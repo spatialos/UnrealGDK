@@ -1776,8 +1776,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 		AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 		if (IsValid(EntityActor))
 		{
-			Worker_CommandResponse Response =
-				MigrationDiagnostic::CreateMigrationDiagnosticResponse(NetDriver, EntityId, EntityActor);
+			Worker_CommandResponse Response = MigrationDiagnostic::CreateMigrationDiagnosticResponse(NetDriver, EntityId, EntityActor);
 
 			Sender->SendCommandResponse(RequestId, Response, FSpatialGDKSpanId(Op.span_id));
 		}
@@ -1913,8 +1912,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponseOp.response.schema_type);
 		Worker_EntityId EntityId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
 		AActor* BlockingActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
-		FString MigrationDiagnosticLog =
-			MigrationDiagnostic::CreateMigrationDiagnosticLog(NetDriver, ResponseObject, BlockingActor);
+		FString MigrationDiagnosticLog = MigrationDiagnostic::CreateMigrationDiagnosticLog(NetDriver, ResponseObject, BlockingActor);
 		if (!MigrationDiagnosticLog.IsEmpty())
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("%s"), *MigrationDiagnosticLog);

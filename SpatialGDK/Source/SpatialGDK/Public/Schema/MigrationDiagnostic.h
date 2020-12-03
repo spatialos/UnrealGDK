@@ -79,41 +79,41 @@ struct MigrationDiagnostic : Component
 		FString AuthoritativeOwnerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
 
 		FString Reason =
-			FString::Printf(TEXT("Originating worker %s does not have authority of Actor. "), *NetDriver->Connection->GetWorkerId());
+			FString::Printf(TEXT("Originating worker %s does not have authority of blocking actor. "), *NetDriver->Connection->GetWorkerId());
 
 		if (bHasAuthority)
 		{
-			Reason.Append(FString::Printf(TEXT("Worker %s has authority of Actor. "), *AuthoritativeWorkerName));
+			Reason.Append(FString::Printf(TEXT("Worker %s has authority of blocking actor. "), *AuthoritativeWorkerName));
 		}
 
 		if (!IsValid(BlockingActor))
 		{
-			Reason.Append(FString::Printf(TEXT("Actor not valid.")));
+			Reason.Append(FString::Printf(TEXT("Blocking actor not valid.")));
 		}
 		else
 		{
 			if (BlockingActor->GetIsReplicated() && !bIsReplicated)
 			{
-				Reason.Append(FString::Printf(TEXT("Actor replicates on originating worker but not on authoritative worker. ")));
+				Reason.Append(FString::Printf(TEXT("Blocking actor replicates on originating worker but not on authoritative worker. ")));
 			}
 
 			if (IsValid(BlockingActor->GetOwner()) && BlockingActor->GetOwner()->GetName() != AuthoritativeOwnerName)
 			{
-				Reason.Append(FString::Printf(TEXT("Actor has different owner %s on authoritative worker. "), *AuthoritativeOwnerName));
+				Reason.Append(FString::Printf(TEXT("Blocking actor has different owner %s on authoritative worker. "), *AuthoritativeOwnerName));
 			}
 		}
 
 		if (bIsLocked)
 		{
-			Reason.Append(FString::Printf(TEXT("Actor is locked on authoritative worker.")));
+			Reason.Append(FString::Printf(TEXT("Blocking actor is locked on authoritative worker.")));
 		}
 
 		if (NetDriver->LockingPolicy->IsLocked(BlockingActor))
 		{
-			Reason.Append(FString::Printf(TEXT("Actor is locked on originating worker.")));
+			Reason.Append(FString::Printf(TEXT("Blocking actor is locked on originating worker.")));
 		}
 
-		return FString::Printf(TEXT("Prevented Actor %s 's hierarchy from migrating because of Actor %s (%llu) %s"),
+		return FString::Printf(TEXT("Prevented owning actor %s 's hierarchy from migrating because of blocking actor %s (%llu) %s"),
 							   *AuthoritativeOwnerName, *BlockingActor->GetName(), EntityId, *Reason);
 	}
 };
