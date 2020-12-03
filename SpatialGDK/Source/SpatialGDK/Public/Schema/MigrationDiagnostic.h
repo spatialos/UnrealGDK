@@ -66,7 +66,7 @@ struct MigrationDiagnostic : Component
 		check(NetDriver->Connection != nullptr);
 		check(NetDriver->LockingPolicy != nullptr);
 
-		if (ResponseObject == nullptr )
+		if (ResponseObject == nullptr)
 		{
 			return FString::Printf(TEXT("Migration diaganostic log failed as response was empty."));
 		}

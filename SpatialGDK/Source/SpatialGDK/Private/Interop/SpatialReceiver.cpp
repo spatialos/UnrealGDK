@@ -1778,9 +1778,9 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 
 		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 		{
-			UE_LOG(
-				LogSpatialReceiver, Warning,
-				TEXT("Migration diaganostic log failed because entity id is invalid on authoritative worker %s"), *NetDriver->Connection->GetWorkerId());
+			UE_LOG(LogSpatialReceiver, Warning,
+				   TEXT("Migration diaganostic log failed because entity id is invalid on authoritative worker %s"),
+				   *NetDriver->Connection->GetWorkerId());
 		}
 
 		AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
@@ -1924,18 +1924,16 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 
 		if (CommandResponseOp.response.schema_type == nullptr)
 		{
-			UE_LOG(LogSpatialReceiver, Warning,
-				   TEXT("Migration diaganostic log failed because schema type is missing."));
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed because schema type is missing."));
 			return;
 		}
-		
+
 		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponseOp.response.schema_type);
 		Worker_EntityId EntityId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
 		AActor* BlockingActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 		if (IsValid(BlockingActor))
 		{
-			FString MigrationDiagnosticLog =
-				MigrationDiagnostic::CreateMigrationDiagnosticLog(NetDriver, ResponseObject, BlockingActor);
+			FString MigrationDiagnosticLog = MigrationDiagnostic::CreateMigrationDiagnosticLog(NetDriver, ResponseObject, BlockingActor);
 			if (!MigrationDiagnosticLog.IsEmpty())
 			{
 				UE_LOG(LogSpatialReceiver, Warning, TEXT("%s"), *MigrationDiagnosticLog);
@@ -1944,11 +1942,10 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		else
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed because blocking actor (%llu) is not valid."),
-					EntityId);
+				   EntityId);
 		}
 
 		return;
-		
 	}
 	ReceiveCommandResponse(Op);
 }
