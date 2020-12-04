@@ -204,7 +204,7 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 		{
 			if (ActorMigrationResult == EActorMigrationResult::NotAuthoritative)
 			{
-				// Request further diagnostics to be logged on authoritative server
+				// Request further diagnostics from authoritative server of blocking actor
 				Worker_CommandRequest MigrationDiagnosticCommandRequest = MigrationDiagnostic::CreateMigrationDiagnosticRequest();
 				NetDriver->Connection->SendCommandRequest(ActorEntityId, &MigrationDiagnosticCommandRequest, RETRY_MAX_TIMES, {});
 			}
