@@ -1917,8 +1917,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 
 		if (CommandResponseOp.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed, status code %i."),
-				   CommandResponseOp.status_code);
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed, status code %i."), CommandResponseOp.status_code);
 			return;
 		}
 
