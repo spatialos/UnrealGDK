@@ -1784,10 +1784,10 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 				   *NetDriver->Connection->GetWorkerId());
 		}
 
-		AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
-		if (IsValid(EntityActor))
+		AActor* BlockingActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
+		if (IsValid(BlockingActor))
 		{
-			Worker_CommandResponse Response = MigrationDiagnostic::CreateMigrationDiagnosticResponse(NetDriver, EntityId, EntityActor);
+			Worker_CommandResponse Response = MigrationDiagnostic::CreateMigrationDiagnosticResponse(NetDriver, EntityId, BlockingActor);
 
 			Sender->SendCommandResponse(RequestId, Response, FSpatialGDKSpanId(Op.span_id));
 		}

@@ -5,23 +5,30 @@ type MigrationDiagnosticRequest {}
 
 type MigrationDiagnosticResponse
 {
-	// Name of the Unreal server worker which is authoritative for the actor.
-	string remote_worker_name = 1;
+	// Name of the worker which is authoritative for the blocked actor.
+	string authoritative_worker = 1;
 
-	// The name of the actor that cannot migrate.
+	// The entity id of the blocked actor
 	uint64 entity_id = 2;
 
-	// Whether or not the actor is replicated.
+	// Whether or not the blocked actor is replicated.
 	bool actor_replicated = 3;
 
-	// Whether or not the actor has authority.
+	// Whether or not the blocked actor has authority.
 	bool actor_authority = 4;
 
-	// Whether or not the actor is locked.
+	// Whether or not the blocked actor is locked.
 	bool actor_locked = 5;
 
+	// Whether or not the authoritative worker thinks the blocked actor should migrate.
+	bool actor_migrate = 6;
+
+	// The id of the worker the blocked actor should migrate to
+	uint32 destination_worker = 7;
+
 	// The name of the owner of the actor that cannot migrate
-	string owner_name = 6;
+	string owner_name = 8;
+
 }
 
 component MigrationDiagnostic

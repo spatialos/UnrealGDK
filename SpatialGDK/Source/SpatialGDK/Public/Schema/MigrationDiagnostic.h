@@ -11,6 +11,7 @@
 #include "SpatialConstants.h"
 #include "UObject/CoreNet.h"
 #include "Utils/SchemaUtils.h"
+#include "Utils/SpatialLoadBalancingHandler.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -51,11 +52,27 @@ struct MigrationDiagnostic : Component
 		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
 		Schema_AddInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID, EntityId);
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID, BlockingActor->GetIsReplicated());
-		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_ID, BlockingActor->HasAuthority());
-		AddStringToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID, BlockingActor->GetOwner()->GetName());
+		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_HAS_AUTHORITY_ID, BlockingActor->HasAuthority());
 
-		AddStringToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_WORKER_ID, NetDriver->Connection->GetWorkerId());
+		if (IsValid(BlockingActor->GetOwner()))
+		{
+			AddStringToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID, BlockingActor->GetOwner()->GetName());
+		}
+
+		AddStringToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_WORKER_ID, NetDriver->Connection->GetWorkerId());
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_LOCKED_ID, NetDriver->LockingPolicy->IsLocked(BlockingActor));
+
+		AActor* NetOwner;
+		VirtualWorkerId NewAuthWorkerId;
+
+		FSpatialLoadBalancingHandler MigrationHandler(NetDriver);
+		FSpatialLoadBalancingHandler::EvaluateActorResult Result =
+			MigrationHandler.EvaluateSingleActor(BlockingActor, NetOwner, NewAuthWorkerId);
+		bool bCanMigrate = Result == FSpatialLoadBalancingHandler::EvaluateActorResult::Migrate;
+
+		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_EVALUATION_ID,
+						   Result == FSpatialLoadBalancingHandler::EvaluateActorResult::Migrate);
+		Schema_AddInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_DESTINATION_WORKER_ID, NewAuthWorkerId);
 
 		return CommandResponse;
 	}
@@ -73,11 +90,13 @@ struct MigrationDiagnostic : Component
 
 		// Compare information from the worker that is blocked from migrating a hierarchy with the information from the authoritative
 		// worker over the actor that is blocking the migration and log the results.
-		PhysicalWorkerName AuthoritativeWorkerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_WORKER_ID);
-		Worker_EntityId EntityId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
+		PhysicalWorkerName AuthoritativeWorkerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_WORKER_ID);
+		Worker_EntityId EntityId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
 		bool bIsReplicated = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID);
-		bool bHasAuthority = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_ID);
+		bool bHasAuthority = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_HAS_AUTHORITY_ID);
 		bool bIsLocked = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_LOCKED_ID);
+		bool bCanMigrate = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_EVALUATION_ID);
+		int32 DestinationWorkerId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_DESTINATION_WORKER_ID);
 		FString AuthoritativeOwnerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
 
 		FString Reason = FString::Printf(TEXT("Originating worker %s does not have authority of blocking actor. "),
@@ -116,6 +135,12 @@ struct MigrationDiagnostic : Component
 		if (NetDriver->LockingPolicy->IsLocked(BlockingActor))
 		{
 			Reason.Append(FString::Printf(TEXT("Blocking actor is locked on originating worker.")));
+		}
+
+		if (bCanMigrate)
+		{
+			Reason.Append(
+				FString::Printf(TEXT("Authoritative worker believes blocked actor should migrate to worker %i."), DestinationWorkerId));
 		}
 
 		return FString::Printf(TEXT("Prevented owning actor %s 's hierarchy from migrating because of blocking actor %s (%llu) %s"),
