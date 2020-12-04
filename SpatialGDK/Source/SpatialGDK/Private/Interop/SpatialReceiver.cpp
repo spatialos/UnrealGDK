@@ -58,6 +58,16 @@ DECLARE_CYCLE_STAT(TEXT("Receiver RemoveActor"), STAT_ReceiverRemoveActor, STATG
 DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_SpatialNet);
 using namespace SpatialGDK;
 
+namespace // Anonymous namespace 
+{
+struct RepNotifyCall
+{
+	USpatialActorChannel* Channel;
+	UObject* Object;
+	TArray<GDK_PROPERTY(Property)*> Notifies;
+};
+} // namespace
+
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialRPCService* InRPCService,
 							SpatialGDK::SpatialEventTracer* InEventTracer)
 {
@@ -2261,6 +2271,11 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving incoming operations depending on object ref %s, resolved object: %s"),
 		   *ObjectRef.ToString(), *Object->GetName());
 
+	/* Rep-notify can modify ObjectRefToRepStateMap in some situations which can cause the TSet to access
+	invalid memory if a) the set it removed or b) the TMap containing the TSet is reallocated. So to fix this
+	we just defer the rep-notify calls to the end of this function. */
+	TArray<RepNotifyCall> RepNotifyCalls;
+
 	for (auto ChannelObjectIter = TargetObjectSet->CreateIterator(); ChannelObjectIter; ++ChannelObjectIter)
 	{
 		USpatialActorChannel* DependentChannel = ChannelObjectIter->Key.Get();
@@ -2330,12 +2345,16 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 		if (bSomeObjectsWereMapped)
 		{
 			DependentChannel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, RepLayout, RepState->ReferenceMap, ReplicatingObject);
-
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
-			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies, {});
+			RepNotifyCalls.Push({ DependentChannel, ReplicatingObject, MoveTemp(RepNotifies) });
 		}
 
 		RepState->UnresolvedRefs.Remove(ObjectRef);
+	}
+
+	for (auto& RepNotify : RepNotifyCalls)
+	{
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolved for target object %s"), *RepNotify.Object->GetName());
+		RepNotify.Channel->PostReceiveSpatialUpdate(RepNotify.Object, RepNotify.Notifies, {});
 	}
 }
 
