@@ -43,7 +43,7 @@ struct MigrationDiagnostic : Component
 		check(NetDriver->Connection != nullptr);
 		check(NetDriver->LockingPolicy != nullptr);
 		check(NetDriver->VirtualWorkerTranslator != nullptr);
-		
+
 		Worker_CommandResponse CommandResponse = {};
 
 		CommandResponse.component_id = SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID;
@@ -58,7 +58,7 @@ struct MigrationDiagnostic : Component
 		const VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
 
 		Schema_AddInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_WORKER_ID,
-						  NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId());
+						NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId());
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_LOCKED_ID, NetDriver->LockingPolicy->IsLocked(BlockingActor));
 
 		AActor* NetOwner;
@@ -89,9 +89,8 @@ struct MigrationDiagnostic : Component
 		{
 			return FString::Printf(TEXT("Migration diaganostic log failed as response was empty."));
 		}
-		
-		VirtualWorkerId AuthoritativeWorkerId =
-			Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_WORKER_ID);
+
+		VirtualWorkerId AuthoritativeWorkerId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_WORKER_ID);
 		Worker_EntityId BlockedEntityId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
 		bool bIsReplicated = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID);
 		bool bHasAuthority = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_HAS_AUTHORITY_ID);
@@ -124,8 +123,7 @@ struct MigrationDiagnostic : Component
 
 		if (IsValid(BlockingActor) && IsValid(BlockingActor->GetOwner()) && BlockingActor->GetOwner()->GetName() != NetOwnerName)
 		{
-			Reason.Append(
-				FString::Printf(TEXT("Blocking actor has different owner %s on authoritative worker. "), *NetOwnerName));
+			Reason.Append(FString::Printf(TEXT("Blocking actor has different owner %s on authoritative worker. "), *NetOwnerName));
 		}
 
 		if (bIsLocked)
