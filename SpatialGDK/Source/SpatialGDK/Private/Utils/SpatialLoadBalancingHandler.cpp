@@ -45,7 +45,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 
 	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
 	{
-		AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
+		AActor* NetOwner = GetReplicatedHierarchyRoot(Actor);
 		const bool bNetOwnerHasAuth = NetOwner->HasAuthority();
 
 		// Load balance if we are not supposed to be on this worker, or if we are separated from our owner.
@@ -75,8 +75,8 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 					// so the load balancing strategy could give us a worker different from where it should be.
 					// Instead, we read its currently assigned worker, which will eventually make us land where our owner is.
 					Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
-					if (SpatialGDK::AuthorityIntent* OwnerAuthIntent =
-							NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(OwnerId))
+					if (AuthorityIntent* OwnerAuthIntent =
+							NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(OwnerId))
 					{
 						NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
 					}
@@ -124,8 +124,8 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 
 void FSpatialLoadBalancingHandler::UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const
 {
-	if (SpatialGDK::SpatialDebugging* DebuggingInfo =
-			NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
+	if (SpatialDebugging* DebuggingInfo =
+			NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId))
 	{
 		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
 		if (DebuggingInfo->IsLocked != bIsLocked)
@@ -210,7 +210,7 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 			}
 			else
 			{
-				AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
+				AActor* HierarchyRoot = GetReplicatedHierarchyRoot(Actor);
 				UE_LOG(LogSpatialLoadBalancingHandler, Warning,
 					   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *HierarchyRoot->GetName(),
 					   *Actor->GetName(), ActorEntityId, *FailureReason);
