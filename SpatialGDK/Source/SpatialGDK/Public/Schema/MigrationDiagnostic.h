@@ -69,7 +69,7 @@ struct MigrationDiagnostic : Component
 		FSpatialLoadBalancingHandler::EvaluateActorResult Result =
 			MigrationHandler.EvaluateSingleActor(BlockingActor, NetOwner, NewAuthWorkerId);
 		Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
-		
+
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_EVALUATION_ID,
 					   Result == FSpatialLoadBalancingHandler::EvaluateActorResult::Migrate);
 		Schema_AddInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_DESTINATION_WORKER_ID, NewAuthWorkerId);
@@ -113,7 +113,8 @@ struct MigrationDiagnostic : Component
 		}
 		else if (!bHasAuthority)
 		{
-			Reason.Append(FString::Printf(TEXT("Authoritative worker (%i) does not have authority of blocking actor. "), AuthoritativeWorkerId));
+			Reason.Append(
+				FString::Printf(TEXT("Authoritative worker (%i) does not have authority of blocking actor. "), AuthoritativeWorkerId));
 		}
 		else if (!IsValid(NetOwner))
 		{
