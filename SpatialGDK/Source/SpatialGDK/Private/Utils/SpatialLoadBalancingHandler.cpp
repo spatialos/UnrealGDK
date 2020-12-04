@@ -75,8 +75,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 					// so the load balancing strategy could give us a worker different from where it should be.
 					// Instead, we read its currently assigned worker, which will eventually make us land where our owner is.
 					Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
-					if (AuthorityIntent* OwnerAuthIntent =
-							NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(OwnerId))
+					if (AuthorityIntent* OwnerAuthIntent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(OwnerId))
 					{
 						NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
 					}
@@ -124,8 +123,7 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 
 void FSpatialLoadBalancingHandler::UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const
 {
-	if (SpatialDebugging* DebuggingInfo =
-			NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId))
+	if (SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId))
 	{
 		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
 		if (DebuggingInfo->IsLocked != bIsLocked)
