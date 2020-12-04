@@ -94,6 +94,7 @@ private:
 	QueryConstraint CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const;
 	QueryConstraint CreateGDKSnapshotEntitiesConstraint() const;
 	QueryConstraint CreateAlwaysRelevantConstraint() const;
+	QueryConstraint CreateServerOnlyAlwaysRelevantConstraint() const;
 	QueryConstraint CreateActorVisibilityConstraint() const;
 
 	// Only checkout entities that are in loaded sub-levels
