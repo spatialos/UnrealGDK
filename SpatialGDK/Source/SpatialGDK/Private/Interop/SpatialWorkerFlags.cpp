@@ -13,20 +13,20 @@ bool USpatialWorkerFlags::GetWorkerFlag(const FString& InFlagName, FString& OutF
 	return false;
 }
 
-void USpatialWorkerFlags::SetWorkerFlag(const FString& InFlagName, const FString& OutFlagValue)
+void USpatialWorkerFlags::SetWorkerFlag(const FString FlagName, FString FlagValue)
 {
-	FString& FlagValue = WorkerFlags.FindOrAdd(InFlagName);
-	FlagValue = OutFlagValue;
-	if (FOnWorkerFlagUpdated* OnWorkerFlagUpdatedPtr = WorkerFlagCallbacks.Find(InFlagName))
+	FString& StoredFlagValue = WorkerFlags.FindOrAdd(FlagName);
+	StoredFlagValue = MoveTemp(FlagValue);
+	if (FOnWorkerFlagUpdated* OnWorkerFlagUpdatedPtr = WorkerFlagCallbacks.Find(FlagName))
 	{
-		OnWorkerFlagUpdatedPtr->Broadcast(InFlagName, OutFlagValue);
+		OnWorkerFlagUpdatedPtr->Broadcast(FlagName, StoredFlagValue);
 	}
-	OnAnyWorkerFlagUpdated.Broadcast(InFlagName, OutFlagValue);
+	OnAnyWorkerFlagUpdated.Broadcast(FlagName, StoredFlagValue);
 }
 
-void USpatialWorkerFlags::RemoveWorkerFlag(const FString& InFlagName)
+void USpatialWorkerFlags::RemoveWorkerFlag(const FString FlagName)
 {
-	WorkerFlags.Remove(InFlagName);
+	WorkerFlags.Remove(FlagName);
 }
 
 void USpatialWorkerFlags::RegisterAnyFlagUpdatedCallback(const FOnAnyWorkerFlagUpdatedBP& InDelegate)

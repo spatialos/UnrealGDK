@@ -9,10 +9,10 @@
 
 namespace
 {
-FString TestWorkerFlagKey = TEXT("test");
-FString TestWorkerFlagKey2 = TEXT("test2");
-FString TestWorkerFlagValue = TEXT("10");
-FString TestWorkerFlagValue2 = TEXT("20");
+const FString TestWorkerFlagKey = TEXT("test");
+const FString TestWorkerFlagKey2 = TEXT("test2");
+const FString TestWorkerFlagValue = TEXT("10");
+const FString TestWorkerFlagValue2 = TEXT("20");
 } // anonymous namespace
 
 SPATIALWORKERFLAGS_TEST(GIVEN_a_flagUpdate_op_WHEN_adding_a_worker_flag_THEN_flag_added)
@@ -158,10 +158,10 @@ SPATIALWORKERFLAGS_TEST(GIVEN_a_registered_flag_update_delegate_WHEN_a_different
 
 	// WHEN
 	// Add a different test flag
-	SpatialWorkerFlags->SetWorkerFlag(TestWorkerFlagKey2, TestWorkerFlagValue);
+	SpatialWorkerFlags->SetWorkerFlag(TestWorkerFlagKey2, TestWorkerFlagValue2);
 
 	// Update different test flag again
-	SpatialWorkerFlags->SetWorkerFlag(TestWorkerFlagKey2, TestWorkerFlagValue);
+	SpatialWorkerFlags->SetWorkerFlag(TestWorkerFlagKey2, TestWorkerFlagValue2);
 
 	// THEN
 	TestEqual("Delegate Function was not called", SpyObj->GetTimesFlagUpdated(), 0);
@@ -202,7 +202,6 @@ SPATIALWORKERFLAGS_TEST(GIVEN_an_updated_flag_WHEN_registering_and_invoking_flag
 	// GIVEN
 	// Add test flag
 	USpatialWorkerFlags* SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
-	TArray<SpatialGDK::StringStorage> Storage;
 	SpatialWorkerFlags->SetWorkerFlag(TestWorkerFlagKey, TestWorkerFlagValue);
 
 	// WHEN
@@ -237,7 +236,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_no_flags_WHEN_registering_and_invoking_flag_update
 	TestEqual("Delegate Function was not called", SpyObj->GetTimesFlagUpdated(), 0);
 
 	// Add a different test flag
-	SpatialWorkerFlags->SetWorkerFlag(TestWorkerFlagKey2, TestWorkerFlagValue);
+	SpatialWorkerFlags->SetWorkerFlag(TestWorkerFlagKey2, TestWorkerFlagValue2);
 
 	TestEqual("Delegate Function was not called", SpyObj->GetTimesFlagUpdated(), 0);
 
@@ -249,7 +248,7 @@ SPATIALWORKERFLAGS_TEST(GIVEN_no_flags_WHEN_registering_and_invoking_flag_update
 void UWorkerFlagsTestSpyObject::SetFlagUpdatedAndUnregisterCallback(const FString& FlagName, const FString& FlagValue)
 {
 	SetFlagUpdated(FlagName, FlagValue);
-	SpatialWorkerFlags->UnregisterFlagUpdatedCallback(TCHAR_TO_ANSI(*FlagName), WorkerFlagDelegate);
+	SpatialWorkerFlags->UnregisterFlagUpdatedCallback(FlagName, WorkerFlagDelegate);
 }
 
 SPATIALWORKERFLAGS_TEST(
@@ -260,13 +259,18 @@ SPATIALWORKERFLAGS_TEST(
 	UWorkerFlagsTestSpyObject* SpyObj = NewObject<UWorkerFlagsTestSpyObject>();
 	SpyObj->SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
 	SpyObj->WorkerFlagDelegate.BindDynamic(SpyObj, &UWorkerFlagsTestSpyObject::SetFlagUpdatedAndUnregisterCallback);
+
 	SpyObj->SpatialWorkerFlags->RegisterFlagUpdatedCallback(TestWorkerFlagKey, SpyObj->WorkerFlagDelegate);
+
 	// WHEN
 	// Update test flag
 	SpyObj->SpatialWorkerFlags->SetWorkerFlag(TestWorkerFlagKey, TestWorkerFlagValue);
+
 	// Update test flag again
 	SpyObj->SpatialWorkerFlags->SetWorkerFlag(TestWorkerFlagKey, TestWorkerFlagValue);
+
 	// THEN
 	TestEqual("Delegate Function was called only once", SpyObj->GetTimesFlagUpdated(), 1);
+
 	return true;
 }
