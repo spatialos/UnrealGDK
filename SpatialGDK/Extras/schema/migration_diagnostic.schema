@@ -6,7 +6,7 @@ type MigrationDiagnosticRequest {}
 type MigrationDiagnosticResponse
 {
 	// Name of the worker which is authoritative for the blocked actor.
-	string authoritative_worker = 1;
+	uint32 authoritative_worker_id = 1;
 
 	// The entity id of the blocked actor
 	uint64 entity_id = 2;
@@ -24,7 +24,7 @@ type MigrationDiagnosticResponse
 	bool actor_migrate = 6;
 
 	// The id of the worker the blocked actor should migrate to
-	uint32 destination_worker = 7;
+	uint32 destination_worker_id = 7;
 
 	// The name of the owner of the actor that cannot migrate
 	string owner_name = 8;
