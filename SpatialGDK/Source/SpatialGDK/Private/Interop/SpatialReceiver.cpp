@@ -1777,13 +1777,6 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 		check(NetDriver != nullptr);
 		check(NetDriver->Connection != nullptr);
 
-		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-		{
-			UE_LOG(LogSpatialReceiver, Warning,
-				   TEXT("Migration diaganostic log failed because entity id is invalid on authoritative worker %s"),
-				   *NetDriver->Connection->GetWorkerId());
-		}
-
 		AActor* BlockingActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 		if (IsValid(BlockingActor))
 		{
@@ -1922,9 +1915,9 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		check(NetDriver != nullptr);
 		check(NetDriver->Connection != nullptr);
 
-		if (CommandResponseOp.response.schema_type == nullptr)
+		if (CommandResponseOp.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed because schema type is missing."));
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed."));
 			return;
 		}
 

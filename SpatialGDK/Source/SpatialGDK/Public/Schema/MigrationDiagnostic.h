@@ -43,6 +43,7 @@ struct MigrationDiagnostic : Component
 		check(NetDriver->Connection != nullptr);
 		check(NetDriver->LockingPolicy != nullptr);
 		check(NetDriver->VirtualWorkerTranslator != nullptr);
+		check(NetDriver->PackageMap != nullptr);
 
 		Worker_CommandResponse CommandResponse = {};
 
@@ -67,12 +68,12 @@ struct MigrationDiagnostic : Component
 		FSpatialLoadBalancingHandler MigrationHandler(NetDriver);
 		FSpatialLoadBalancingHandler::EvaluateActorResult Result =
 			MigrationHandler.EvaluateSingleActor(BlockingActor, NetOwner, NewAuthWorkerId);
-		bool bCanMigrate = Result == FSpatialLoadBalancingHandler::EvaluateActorResult::Migrate;
-
+		Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+		
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_EVALUATION_ID,
 					   Result == FSpatialLoadBalancingHandler::EvaluateActorResult::Migrate);
 		Schema_AddInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_DESTINATION_WORKER_ID, NewAuthWorkerId);
-		AddStringToSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID, GetNameSafe(NetOwner));
+		Schema_AddInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID, OwnerId);
 
 		return CommandResponse;
 	}
@@ -97,53 +98,48 @@ struct MigrationDiagnostic : Component
 		bool bIsLocked = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_LOCKED_ID);
 		bool bCanMigrate = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_EVALUATION_ID);
 		VirtualWorkerId DestinationWorkerId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_DESTINATION_WORKER_ID);
-		FString NetOwnerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
+		Worker_EntityId AuthoritativeNetOwnerId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
 
-		FString Reason = FString::Printf(TEXT("Originating worker %i does not have authority of blocking actor. "),
+		AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(BlockingActor);
+		Worker_EntityId OriginalNetOwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+
+		FString Reason = FString::Printf(TEXT("Originating worker (%i) does not have authority of blocking actor. "),
 										 NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId());
 
-		if (bHasAuthority)
+		if (BlockingActor->GetIsReplicated() && !bIsReplicated)
 		{
-			Reason.Append(FString::Printf(TEXT("Worker %i has authority of blocking actor. "), AuthoritativeWorkerId));
+			Reason.Append(FString::Printf(TEXT("Blocking actor replicates on originating worker but not on authoritative worker (%i). "),
+										  AuthoritativeWorkerId));
 		}
-
-		if (!IsValid(BlockingActor))
+		else if (!bHasAuthority)
 		{
-			Reason.Append(FString::Printf(TEXT("Blocking actor is not valid. ")));
+			Reason.Append(FString::Printf(TEXT("Authoritative worker (%i) does not have authority of blocking actor. "), AuthoritativeWorkerId));
 		}
-		else if (!IsValid(BlockingActor->GetOwner()))
+		else if (!IsValid(NetOwner))
 		{
 			Reason.Append(FString::Printf(TEXT("Blocking actor owner is not valid. ")));
 		}
-
-		if (IsValid(BlockingActor) && BlockingActor->GetIsReplicated() && !bIsReplicated)
+		else if (IsValid(NetOwner) && OriginalNetOwnerId != AuthoritativeNetOwnerId)
 		{
-			Reason.Append(FString::Printf(TEXT("Blocking actor replicates on originating worker but not on authoritative worker. ")));
+			Reason.Append(FString::Printf(TEXT("Blocking actor has different owner (%llu) on authoritative worker (%i). "),
+										  AuthoritativeNetOwnerId, AuthoritativeWorkerId));
 		}
-
-		if (IsValid(BlockingActor) && IsValid(BlockingActor->GetOwner()) && BlockingActor->GetOwner()->GetName() != NetOwnerName)
+		else if (bIsLocked)
 		{
-			Reason.Append(FString::Printf(TEXT("Blocking actor has different owner %s on authoritative worker. "), *NetOwnerName));
+			Reason.Append(FString::Printf(TEXT("Blocking actor is locked on authoritative worker (%i). "), AuthoritativeWorkerId));
 		}
-
-		if (bIsLocked)
-		{
-			Reason.Append(FString::Printf(TEXT("Blocking actor is locked on authoritative worker. ")));
-		}
-
-		if (NetDriver->LockingPolicy->IsLocked(BlockingActor))
+		else if (NetDriver->LockingPolicy->IsLocked(BlockingActor))
 		{
 			Reason.Append(FString::Printf(TEXT("Blocking actor is locked on originating worker. ")));
 		}
-
-		if (bCanMigrate)
+		else if (bCanMigrate)
 		{
-			Reason.Append(
-				FString::Printf(TEXT("Authoritative worker believes blocked actor should migrate to worker %i. "), DestinationWorkerId));
+			Reason.Append(FString::Printf(TEXT("Authoritative worker (%i) believes blocked actor should migrate to worker (%i). "),
+										  AuthoritativeWorkerId, DestinationWorkerId));
 		}
 
-		return FString::Printf(TEXT("Prevented owning actor %s 's hierarchy from migrating because of blocking actor %s (%llu). %s"),
-							   *NetOwnerName, *BlockingActor->GetName(), BlockedEntityId, *Reason);
+		return FString::Printf(TEXT("Prevented owning actor %s (%llu)'s hierarchy from migrating because of blocking actor %s (%llu). %s"),
+							   *GetNameSafe(NetOwner), OriginalNetOwnerId, *BlockingActor->GetName(), BlockedEntityId, *Reason);
 	}
 };
 
