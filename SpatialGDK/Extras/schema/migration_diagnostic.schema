@@ -21,7 +21,7 @@ type MigrationDiagnosticResponse
 	bool actor_locked = 5;
 
 	// Whether or not the authoritative worker thinks the blocked actor should migrate.
-	bool actor_migrate = 6;
+	bool actor_evaluation = 6;
 
 	// The id of the worker the blocked actor should migrate to
 	uint32 destination_worker_id = 7;
