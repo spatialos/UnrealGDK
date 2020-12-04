@@ -71,7 +71,7 @@ struct MigrationDiagnostic : Component
 		bool bCanMigrate = Result == FSpatialLoadBalancingHandler::EvaluateActorResult::Migrate;
 
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_EVALUATION_ID,
-						   Result == FSpatialLoadBalancingHandler::EvaluateActorResult::Migrate);
+					   Result == FSpatialLoadBalancingHandler::EvaluateActorResult::Migrate);
 		Schema_AddInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_DESTINATION_WORKER_ID, NewAuthWorkerId);
 
 		return CommandResponse;
@@ -90,7 +90,8 @@ struct MigrationDiagnostic : Component
 
 		// Compare information from the worker that is blocked from migrating a hierarchy with the information from the authoritative
 		// worker over the actor that is blocking the migration and log the results.
-		PhysicalWorkerName AuthoritativeWorkerName = GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_WORKER_ID);
+		PhysicalWorkerName AuthoritativeWorkerName =
+			GetStringFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_WORKER_ID);
 		Worker_EntityId EntityId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
 		bool bIsReplicated = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID);
 		bool bHasAuthority = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_HAS_AUTHORITY_ID);
