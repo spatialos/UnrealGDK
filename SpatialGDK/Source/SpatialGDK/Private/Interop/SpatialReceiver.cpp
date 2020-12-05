@@ -15,6 +15,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialPossession.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
@@ -693,7 +694,10 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 					// case this action is performed after notification of gaining authority
 					if (AController* Controller = Cast<AController>(Actor))
 					{
-						Controller->PossessAfterMigration();
+						if (Controller->IntendedPawnToPossess != nullptr)
+						{
+							USpatialPossession::PossessAfterMigration(*Controller);
+						}
 					}
 				}
 				else
