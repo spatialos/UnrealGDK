@@ -33,7 +33,6 @@ void USpatialPossession::RemotePossess(AController* Controller, APawn* Pawn)
 
 		Controller->ForceNetUpdate();
 	}
-
 }
 
 void USpatialPossession::PossessAfterMigration(AController& Controller)
