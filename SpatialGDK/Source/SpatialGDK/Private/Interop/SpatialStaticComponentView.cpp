@@ -13,10 +13,12 @@
 #include "Schema/MulticastRPCs.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/RPCPayload.h"
+#include "Schema/Restricted.h"
 #include "Schema/ServerEndpoint.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
+#include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 
 Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
@@ -117,6 +119,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::DebugComponent>(Op.data);
 		break;
+	case SpatialConstants::PARTITION_COMPONENT_ID:
+		Data = MakeUnique<SpatialGDK::Partition>(Op.data);
+		break;
 	default:
 		// Component is not hand written, but we still want to know the existence of it on this entity.
 		Data = nullptr;
@@ -179,6 +184,9 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::DebugComponent>(Op.entity_id);
+		break;
+	case SpatialConstants::PARTITION_COMPONENT_ID:
+		Component = GetComponentData<SpatialGDK::Partition>(Op.entity_id);
 		break;
 	default:
 		return;

@@ -34,7 +34,7 @@ class SpatialLoadBalanceEnforcer;
 namespace SpatialGDK
 {
 class SpatialEventTracer;
-}
+} // namespace SpatialGDK
 
 struct PendingAddComponentWrapper
 {
