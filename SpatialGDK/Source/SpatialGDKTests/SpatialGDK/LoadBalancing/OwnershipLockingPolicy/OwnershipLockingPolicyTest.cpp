@@ -17,7 +17,7 @@
 #include "Tests/AutomationCommon.h"
 #include "UObject/UObjectGlobals.h"
 
-#define OWNERSHIPLOCKINGPOLICY_TEST(TestName) GDK_TEST(Core, UOwnershipLockingPolicy, TestName)
+#define OWNERSHIPLOCKINGPOLICY_TEST(TestName) GDK_AUTOMATION_TEST(Core, UOwnershipLockingPolicy, TestName)
 
 namespace
 {

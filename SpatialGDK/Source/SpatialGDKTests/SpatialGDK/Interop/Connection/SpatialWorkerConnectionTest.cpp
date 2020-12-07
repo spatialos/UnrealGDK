@@ -9,7 +9,7 @@
 #include "CoreMinimal.h"
 #include "Engine/Engine.h"
 
-#define WORKERCONNECTION_TEST(TestName) GDK_TEST(Core, SpatialWorkerConnection, TestName)
+#define WORKERCONNECTION_TEST(TestName) GDK_AUTOMATION_TEST(Core, SpatialWorkerConnection, TestName)
 
 using namespace SpatialGDK;
 

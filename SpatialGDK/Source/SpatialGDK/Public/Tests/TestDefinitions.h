@@ -3,9 +3,14 @@
 #pragma once
 
 #include "Misc/AutomationTest.h"
-#include "Tests/GDKTestBase.h"
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 
 #define GDK_TEST(ModuleName, ComponentName, TestName)                                                                                      \
+	IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestName, "SpatialGDK." #ModuleName "." #ComponentName "." #TestName,                                 \
+									 EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::EngineFilter)                    \
+	bool TestName::RunTest(const FString& Parameters)
+
+#define GDK_AUTOMATION_TEST(ModuleName, ComponentName, TestName)                                                                           \
 	IMPLEMENT_GDK_AUTOMATION_TEST(TestName, "SpatialGDK." #ModuleName "." #ComponentName "." #TestName)
 
 #define GDK_COMPLEX_TEST(ModuleName, ComponentName, TestName)                                                                              \

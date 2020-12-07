@@ -17,7 +17,7 @@
 #include "Tests/AutomationEditorCommon.h"
 #include "Tests/TestDefinitions.h"
 
-#define LAYEREDLBSTRATEGY_TEST(TestName) GDK_TEST(Core, ULayeredLBStrategy, TestName)
+#define LAYEREDLBSTRATEGY_TEST(TestName) GDK_AUTOMATION_TEST(Core, ULayeredLBStrategy, TestName)
 
 namespace
 {

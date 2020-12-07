@@ -12,7 +12,7 @@
 
 #include "CoreMinimal.h"
 
-#define RPCCONTAINER_TEST(TestName) GDK_TEST(Core, FRPCContainer, TestName)
+#define RPCCONTAINER_TEST(TestName) GDK_AUTOMATION_TEST(Core, FRPCContainer, TestName)
 
 using namespace SpatialGDK;
 

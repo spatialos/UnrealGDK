@@ -5,7 +5,7 @@
 #include "Tests/TestDefinitions.h"
 #include "WorkerFlagsTestSpyObject.h"
 
-#define SPATIALWORKERFLAGS_TEST(TestName) GDK_TEST(Core, SpatialWorkerFlags, TestName)
+#define SPATIALWORKERFLAGS_TEST(TestName) GDK_AUTOMATION_TEST(Core, SpatialWorkerFlags, TestName)
 
 namespace
 {

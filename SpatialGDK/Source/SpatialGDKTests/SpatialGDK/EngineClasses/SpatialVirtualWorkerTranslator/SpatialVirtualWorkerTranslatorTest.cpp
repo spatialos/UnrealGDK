@@ -27,7 +27,7 @@ const Worker_PartitionId WorkerTwoId = 102;
 const Worker_PartitionId WorkerThreeId = 103;
 } // namespace
 
-#define VIRTUALWORKERTRANSLATOR_TEST(TestName) GDK_TEST(Core, SpatialVirtualWorkerTranslator, TestName)
+#define VIRTUALWORKERTRANSLATOR_TEST(TestName) GDK_AUTOMATION_TEST(Core, SpatialVirtualWorkerTranslator, TestName)
 
 VIRTUALWORKERTRANSLATOR_TEST(GIVEN_init_is_not_called_THEN_return_not_ready)
 {

@@ -15,7 +15,7 @@
 #include "Tests/AutomationEditorCommon.h"
 #include "Tests/TestDefinitions.h"
 
-#define GRIDBASEDLBSTRATEGY_TEST(TestName) GDK_TEST(Core, UGridBasedLBStrategy, TestName)
+#define GRIDBASEDLBSTRATEGY_TEST(TestName) GDK_AUTOMATION_TEST(Core, UGridBasedLBStrategy, TestName)
 
 // Test Globals
 namespace

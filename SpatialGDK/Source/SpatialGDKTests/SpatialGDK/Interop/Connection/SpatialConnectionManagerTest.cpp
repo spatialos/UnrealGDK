@@ -4,7 +4,7 @@
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Tests/TestDefinitions.h"
 
-#define CONNECTIONMANAGER_TEST(TestName) GDK_TEST(Core, SpatialConnectionManager, TestName)
+#define CONNECTIONMANAGER_TEST(TestName) GDK_AUTOMATION_TEST(Core, SpatialConnectionManager, TestName)
 
 class FTemporaryCommandLine
 {

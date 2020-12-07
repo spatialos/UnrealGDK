@@ -2,25 +2,25 @@
 
 #pragma once
 #include "Misc/AutomationTest.h"
-// #include "SpatialGDKTests/SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
+#include "SpatialGDKTests/SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGDKTestBase, Log, All);
 
-class FGDKTestBase : public FAutomationTestBase
+class FGDKAutomationTestBase : public FAutomationTestBase
 {
 public:
-	FGDKTestBase(const FString& InName, bool bInComplexTask)
+	FGDKAutomationTestBase(const FString& InName, bool bInComplexTask)
 		: FAutomationTestBase(InName, bInComplexTask)
 	{
 	}
 };
 
 #define IMPLEMENT_GDK_AUTOMATION_TEST(TestName, PrettyName)                                                                                \
-	class TestName : public FGDKTestBase                                                                                                   \
+	class TestName : public FGDKAutomationTestBase                                                                                         \
 	{                                                                                                                                      \
 	public:                                                                                                                                \
 		TestName(const FString& InName)                                                                                                    \
-			: FGDKTestBase(InName, false)                                                                                                  \
+			: FGDKAutomationTestBase(InName, false)                                                                                        \
 		{                                                                                                                                  \
 		}                                                                                                                                  \
 		virtual uint32 GetTestFlags() const override                                                                                       \
