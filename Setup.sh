@@ -42,7 +42,7 @@ if [[ -e .git/hooks ]]; then
     cp -R "$(pwd)/SpatialGDK/Extras/git/." "$(pwd)/.git/hooks"
 
     # We pass Setup.sh args, such as --mobile, to the post-merge hook to run Setup.sh with the same args in future.
-    sed -i "" -e "s/SETUP_ARGS/${*}/g" .git/hooks/post-merge
+    sed -i "" -e "s/SETUP_ARGS/$*/g" .git/hooks/post-merge
 
     # This needs to be runnable.
     chmod +x .git/hooks/pre-commit
