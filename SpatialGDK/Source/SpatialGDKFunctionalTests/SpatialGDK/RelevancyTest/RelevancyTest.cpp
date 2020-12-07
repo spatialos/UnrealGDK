@@ -3,10 +3,7 @@
 #include "RelevancyTest.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/RelevancyTestActors.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 
-#include "GameFramework/PlayerController.h"
-#include "Kismet/GameplayStatics.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 
 /**

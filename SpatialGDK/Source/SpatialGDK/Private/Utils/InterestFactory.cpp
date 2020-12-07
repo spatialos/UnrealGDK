@@ -143,7 +143,7 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 	// Ensure server worker receives AlwaysRelevant entities.
 	PartitionQuery = Query();
 	PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType;
-	PartitionQuery.Constraint = CreateServerOnlyAlwaysRelevantConstraint();
+	PartitionQuery.Constraint = CreateServerAlwaysRelevantConstraint();
 	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, PartitionQuery);
 
 	// Add a self query for completeness
@@ -291,7 +291,7 @@ void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest,
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
 	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint(InActor, InInfo);
-	QueryConstraint AlwaysRelevantConstraint = CreateAlwaysRelevantConstraint();
+	QueryConstraint AlwaysRelevantConstraint = CreateClientAlwaysRelevantConstraint();
 
 	QueryConstraint SystemDefinedConstraints;
 
@@ -555,18 +555,18 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const AActor* 
 	return AlwaysInterestedConstraint;
 }
 
-QueryConstraint CreateOrConstraint(const TArray<Worker_ComponentId> ComponentIds)
+QueryConstraint CreateOrConstraint(const TArray<Worker_ComponentId>& ComponentIds)
 {
-	QueryConstraint OrConstraint;
+	QueryConstraint ComponentOrConstraint;
 
 	for (Worker_ComponentId ComponentId : ComponentIds)
 	{
 		QueryConstraint Constraint;
 		Constraint.ComponentConstraint = ComponentId;
-		OrConstraint.OrConstraint.Add(Constraint);
+		ComponentOrConstraint.OrConstraint.Add(Constraint);
 	}
 
-	return OrConstraint;
+	return ComponentOrConstraint;
 }
 
 QueryConstraint InterestFactory::CreateGDKSnapshotEntitiesConstraint() const
@@ -575,12 +575,12 @@ QueryConstraint InterestFactory::CreateGDKSnapshotEntitiesConstraint() const
 								SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID });
 }
 
-QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint() const
+QueryConstraint InterestFactory::CreateClientAlwaysRelevantConstraint() const
 {
 	return CreateOrConstraint({ SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID });
 }
 
-QueryConstraint InterestFactory::CreateServerOnlyAlwaysRelevantConstraint() const
+QueryConstraint InterestFactory::CreateServerAlwaysRelevantConstraint() const
 {
 	return CreateOrConstraint(
 		{ SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID });
