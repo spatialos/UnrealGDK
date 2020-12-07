@@ -8,4 +8,8 @@ AAlwaysRelevantTestActor::AAlwaysRelevantTestActor()
 	NetCullDistanceSquared = 1;
 }
 
-AAlwaysRelevantServerOnlyTestActor::AAlwaysRelevantServerOnlyTestActor() {}
+AAlwaysRelevantServerOnlyTestActor::AAlwaysRelevantServerOnlyTestActor()
+{
+	bAlwaysRelevant = true;
+	NetCullDistanceSquared = 1;
+}

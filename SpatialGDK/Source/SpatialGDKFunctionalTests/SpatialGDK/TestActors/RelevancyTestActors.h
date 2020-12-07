@@ -22,7 +22,7 @@ public:
  * An always relevant, server only, replicated Actor.
  */
 UCLASS(SpatialType = ServerOnly)
-class AAlwaysRelevantServerOnlyTestActor : public AAlwaysRelevantTestActor
+class AAlwaysRelevantServerOnlyTestActor : public AReplicatedTestActorBase
 {
 	GENERATED_BODY()
 
