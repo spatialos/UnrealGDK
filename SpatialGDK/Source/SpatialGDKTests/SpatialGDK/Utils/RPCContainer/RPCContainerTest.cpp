@@ -8,6 +8,7 @@
 
 #include "Schema/RPCPayload.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 #include "Utils/RPCContainer.h"
 
 #include "CoreMinimal.h"

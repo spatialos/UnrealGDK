@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
-#include "Tests/TestDefinitions.h"
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 
 #define CONNECTIONMANAGER_TEST(TestName) GDK_AUTOMATION_TEST(Core, SpatialConnectionManager, TestName)
 

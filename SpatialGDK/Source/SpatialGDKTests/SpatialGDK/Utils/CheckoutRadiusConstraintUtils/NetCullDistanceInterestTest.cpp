@@ -7,6 +7,7 @@
 #include "Misc/Paths.h"
 #include "Misc/ScopeTryLock.h"
 
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 #include "Utils/Interest/NetCullDistanceInterest.h"
 
 #define CHECKOUT_RADIUS_CONSTRAINT_TEST(TestName) GDK_AUTOMATION_TEST(Core, NetCullDistanceInterest, TestName)

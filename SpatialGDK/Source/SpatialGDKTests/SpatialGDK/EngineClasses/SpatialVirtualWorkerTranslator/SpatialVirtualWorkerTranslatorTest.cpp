@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKTests/SpatialGDK/LoadBalancing/AbstractLBStrategy/LBStrategyStub.h"
+
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 #include "Tests/TestingSchemaHelpers.h"
 
 #include "Tests/TestDefinitions.h"

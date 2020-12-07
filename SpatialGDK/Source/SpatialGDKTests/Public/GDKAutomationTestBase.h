@@ -15,6 +15,9 @@ public:
 	}
 };
 
+#define GDK_AUTOMATION_TEST(ModuleName, ComponentName, TestName)                                                                           \
+	IMPLEMENT_GDK_AUTOMATION_TEST(TestName, "SpatialGDK." #ModuleName "." #ComponentName "." #TestName)
+
 #define IMPLEMENT_GDK_AUTOMATION_TEST(TestName, PrettyName)                                                                                \
 	class TestName : public FGDKAutomationTestBase                                                                                         \
 	{                                                                                                                                      \

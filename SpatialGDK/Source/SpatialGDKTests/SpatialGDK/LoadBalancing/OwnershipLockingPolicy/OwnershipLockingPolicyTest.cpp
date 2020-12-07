@@ -12,7 +12,7 @@
 #include "GameFramework/DefaultPawn.h"
 #include "GameFramework/GameStateBase.h"
 #include "Improbable/SpatialEngineDelegates.h"
-#include "SpatialGDKTests/SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 #include "Templates/SharedPointer.h"
 #include "Tests/AutomationCommon.h"
 #include "UObject/UObjectGlobals.h"

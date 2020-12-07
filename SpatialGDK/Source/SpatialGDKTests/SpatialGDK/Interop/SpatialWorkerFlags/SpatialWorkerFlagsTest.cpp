@@ -2,6 +2,7 @@
 
 #include "Interop/SpatialWorkerFlags.h"
 
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 #include "Tests/TestDefinitions.h"
 #include "WorkerFlagsTestSpyObject.h"
 

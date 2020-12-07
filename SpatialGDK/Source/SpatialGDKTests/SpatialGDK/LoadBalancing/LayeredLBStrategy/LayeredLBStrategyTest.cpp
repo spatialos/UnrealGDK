@@ -13,6 +13,7 @@
 #include "GameFramework/DefaultPawn.h"
 #include "GameFramework/GameStateBase.h"
 #include "Misc/Optional.h"
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "Tests/TestDefinitions.h"

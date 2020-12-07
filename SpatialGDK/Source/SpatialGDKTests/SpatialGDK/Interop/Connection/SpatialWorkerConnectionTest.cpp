@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Tests/TestDefinitions.h"
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"

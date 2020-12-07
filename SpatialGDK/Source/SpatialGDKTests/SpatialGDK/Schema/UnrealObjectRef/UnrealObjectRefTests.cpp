@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 
 #include "Schema/UnrealObjectRef.h"
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/TestDefinitions.h"
 #include "UObject/SoftObjectPtr.h"
