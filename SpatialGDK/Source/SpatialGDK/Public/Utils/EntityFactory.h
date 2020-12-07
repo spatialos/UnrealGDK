@@ -39,7 +39,7 @@ public:
 	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const Worker_EntityId EntityId,
 																		const InterestFactory* InterestFactory,
 																		const UAbstractLBStrategy* LbStrategy,
-																		VirtualWorkerId VirtualWorker);
+																		VirtualWorkerId VirtualWorker, bool bDebugContexValid);
 
 	static inline bool IsClientAuthoritativeComponent(Worker_ComponentId ComponentId)
 	{

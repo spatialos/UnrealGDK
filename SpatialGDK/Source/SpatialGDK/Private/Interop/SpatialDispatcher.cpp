@@ -97,7 +97,14 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			break;
 
 		case WORKER_OP_TYPE_FLAG_UPDATE:
-			SpatialWorkerFlags->ApplyWorkerFlagUpdate(Op.op.flag_update);
+			if (Op.op.flag_update.value == nullptr)
+			{
+				SpatialWorkerFlags->RemoveWorkerFlag(UTF8_TO_TCHAR(Op.op.flag_update.name));
+			}
+			else
+			{
+				SpatialWorkerFlags->SetWorkerFlag(UTF8_TO_TCHAR(Op.op.flag_update.name), UTF8_TO_TCHAR(Op.op.flag_update.value));
+			}
 			break;
 		case WORKER_OP_TYPE_METRICS:
 #if !UE_BUILD_SHIPPING

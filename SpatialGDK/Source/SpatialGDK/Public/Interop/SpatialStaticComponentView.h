@@ -22,6 +22,7 @@ class SPATIALGDK_API USpatialStaticComponentView : public UObject
 
 public:
 	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	bool HasEntity(Worker_EntityId EntityId) const;
 
 	template <typename T>
 	T* GetComponentData(Worker_EntityId EntityId) const
