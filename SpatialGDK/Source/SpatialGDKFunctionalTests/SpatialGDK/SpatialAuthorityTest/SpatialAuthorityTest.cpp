@@ -333,7 +333,7 @@ void ASpatialAuthorityTest::PrepareTest()
 	// Non-replicated Dynamic Actor. Server 1 should have Authority.
 	{
 		AddStep(TEXT("Non-replicated Dynamic Actor - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			// Spawning directly on Server 1, but since it's non-replicated it shouldn't migrate to Server 2.
+			// Spawning directly on Server 2, but since it's non-replicated it shouldn't migrate to Server 2.
 			DynamicNonReplicatedActor = GetWorld()->SpawnActor<ASpatialAuthorityTestActor>(Server2Position, FRotator::ZeroRotator);
 			FinishStep();
 		});
@@ -348,7 +348,7 @@ void ASpatialAuthorityTest::PrepareTest()
 	// Non-replicated Dynamic Actor On Border. Server 1 should have Authority.
 	{
 		AddStep(TEXT("Non-replicated Dynamic Actor On Border - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			// Spawning directly on Server 1, but since it's non-replicated it shouldn't migrate to Server 2.
+			// Spawning directly on Server 2 border, but since it's non-replicated it shouldn't migrate to Server 2.
 			DynamicNonReplicatedActor = GetWorld()->SpawnActor<ASpatialAuthorityTestActor>(BorderPosition, FRotator::ZeroRotator);
 			FinishStep();
 		});

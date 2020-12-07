@@ -28,7 +28,7 @@ public:
 		Super::FinishStep();
 	};
 
-	void ResetTimer() { Timer = 0.5f; };
+	void ResetTimer() { Timer = 0.5; };
 
 	bool VerifyTestActor(ASpatialAuthorityTestActor* Actor, int AuthorityOnBeginPlay, int AuthorityOnTick, int NumAuthorityGains,
 						 int NumAuthorityLosses);
