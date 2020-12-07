@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Tests/TestDefinitions.h"
+#include "Tests/GDKTestBase.h"
 
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
@@ -10,7 +11,7 @@
 #include "CoreMinimal.h"
 #include "Engine/Engine.h"
 
-#define WORKERCONNECTION_TEST(TestName) GDK_TEST(Core, SpatialWorkerConnection, TestName)
+#define WORKERCONNECTION_TEST(TestName) GDK_TEST_NEW(Core, SpatialWorkerConnection, TestName)
 
 using namespace SpatialGDK;
 

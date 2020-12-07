@@ -10,6 +10,13 @@
 
 #include "CoreMinimal.h"
 
+FLocalDeploymentManager* GetLocalDeploymentManager()
+{
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+	return LocalDeploymentManager;
+}
+
 namespace
 {
 // TODO: UNR-1969 - Prepare LocalDeployment in CI pipeline
@@ -17,13 +24,6 @@ const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 30.0;
 
 const FName AutomationWorkerType = TEXT("AutomationWorker");
 const FString AutomationLaunchConfig = FString(TEXT("Improbable/")) + *AutomationWorkerType.ToString() + FString(TEXT(".json"));
-
-FLocalDeploymentManager* GetLocalDeploymentManager()
-{
-	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-	FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
-	return LocalDeploymentManager;
-}
 
 bool GenerateWorkerAssemblies()
 {
@@ -120,6 +120,12 @@ bool FStopDeployment::Update()
 bool FWaitForDeployment::Update()
 {
 	FLocalDeploymentManager* const LocalDeploymentManager = GetLocalDeploymentManager();
+
+	if (LocalDeploymentManager->IsDeploymentStarting())
+	{
+		// Wait for deployment to finish starting before stopping it
+		return false;
+	}
 
 	const double NewTime = FPlatformTime::Seconds();
 
