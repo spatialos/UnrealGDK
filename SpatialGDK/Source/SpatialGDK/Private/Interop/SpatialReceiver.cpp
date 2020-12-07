@@ -2739,7 +2739,10 @@ void USpatialReceiver::QueueAuthorityOpForAsyncLoad(const Worker_ComponentSetAut
 {
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
 
-	AsyncLoadEntity.PendingOps.SetAuthority(Op.entity_id, Op.component_set_id, static_cast<Worker_Authority>(Op.authority));
+	// todo UNR-4198 - This needs to be changed as it abuses the authority ops in a way that happens to work here.
+	// It's fine in this case to not give a valid set of component data in the authority op as we don't try to parse the component
+	// data when reading it. You couldn't create a view delta from this op list but it works here.
+	AsyncLoadEntity.PendingOps.SetAuthority(Op.entity_id, Op.component_set_id, static_cast<Worker_Authority>(Op.authority), {});
 }
 
 void USpatialReceiver::QueueComponentUpdateOpForAsyncLoad(const Worker_ComponentUpdateOp& Op)
@@ -2778,8 +2781,11 @@ EntityComponentOpListBuilder USpatialReceiver::ExtractAuthorityOps(Worker_Entity
 	{
 		if (PendingAuthorityChange.entity_id == Entity)
 		{
+			// todo UNR-4198 - This needs to be changed as it abuses the authority ops in a way that happens to work here.
+			// It's fine in this case to not give a valid set of component data in the authority op as we don't try to parse the component
+			// data when reading it. You couldn't create a view delta from this op list but it works here.
 			ExtractedOps.SetAuthority(Entity, PendingAuthorityChange.component_set_id,
-									  static_cast<Worker_Authority>(PendingAuthorityChange.authority));
+									  static_cast<Worker_Authority>(PendingAuthorityChange.authority), {});
 		}
 		else
 		{
