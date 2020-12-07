@@ -226,8 +226,8 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(Schema_ComponentUpdate*
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
 
+	bCanSpawnWithAuthority = !bCanBeginPlay;
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
-	bCanSpawnWithAuthority = true;
 }
 
 void UGlobalStateManager::SetDeploymentState()
