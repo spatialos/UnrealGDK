@@ -219,6 +219,108 @@ VIEWDELTA_TEST(GIVEN_entity_and_auth_component_in_view_WHEN_authority_lost_THEN_
 	return true;
 }
 
+VIEWDELTA_TEST(GIVEN_entity_and_components_in_view_WHEN_authority_gained_with_no_component_data_THEN_components_removed_from_view)
+{
+	ViewDelta InputDelta;
+	EntityView InputView;
+	ComponentData TestComponentData = CreateTestComponentData(TestComponentId, TestComponentValue);
+	ComponentData OtherTestComponentData = CreateTestComponentData(OtherTestComponentId, TestComponentValue);
+
+	AddEntityToView(InputView, TestEntityId);
+	AddComponentToView(InputView, TestEntityId, TestComponentData.DeepCopy());
+	AddComponentToView(InputView, TestEntityId, OtherTestComponentData.DeepCopy());
+
+	EntityComponentOpListBuilder OpListBuilder;
+	// Set authority with no component data - implying the components should be removed.
+	OpListBuilder.SetAuthority(TestEntityId, TestComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE, {});
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder), ComponentSetData);
+
+	EntityView ExpectedView;
+	AddEntityToView(ExpectedView, TestEntityId);
+	AddAuthorityToView(ExpectedView, TestEntityId, TestComponentSetId);
+
+	ExpectedViewDelta ExpectedDelta;
+	ExpectedDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE);
+	ExpectedDelta.AddComponentRemoved(TestEntityId, TestComponentId);
+	ExpectedDelta.AddComponentRemoved(TestEntityId, OtherTestComponentId);
+	ExpectedDelta.AddAuthorityGained(TestEntityId, TestComponentSetId);
+
+	TestTrue("View Deltas are equal", ExpectedDelta.Compare(InputDelta));
+	TestTrue("Views are equal", CompareViews(InputView, ExpectedView));
+
+	return true;
+}
+
+VIEWDELTA_TEST(GIVEN_entity_with_no_components_WHEN_authority_gained_with_non_empty_component_data_THEN_component_added_to_view)
+{
+	ViewDelta InputDelta;
+	EntityView InputView;
+	ComponentData TestComponentData = CreateTestComponentData(TestComponentId, TestComponentValue);
+	ComponentData OtherTestComponentData = CreateTestComponentData(OtherTestComponentId, TestComponentValue);
+
+	AddEntityToView(InputView, TestEntityId);
+
+	EntityComponentOpListBuilder OpListBuilder;
+	TArray<ComponentData> CanonicalSetData;
+	CanonicalSetData.Add(TestComponentData.DeepCopy());
+	CanonicalSetData.Add(OtherTestComponentData.DeepCopy());
+	OpListBuilder.SetAuthority(TestEntityId, TestComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE, MoveTemp(CanonicalSetData));
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder), ComponentSetData);
+
+	EntityView ExpectedView;
+	AddEntityToView(ExpectedView, TestEntityId);
+	AddAuthorityToView(ExpectedView, TestEntityId, TestComponentSetId);
+	AddComponentToView(ExpectedView, TestEntityId, TestComponentData.DeepCopy());
+	AddComponentToView(ExpectedView, TestEntityId, OtherTestComponentData.DeepCopy());
+
+	ExpectedViewDelta ExpectedDelta;
+	ExpectedDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE);
+	ExpectedDelta.AddComponentAdded(TestEntityId, TestComponentData.DeepCopy());
+	ExpectedDelta.AddComponentAdded(TestEntityId, OtherTestComponentData.DeepCopy());
+	ExpectedDelta.AddAuthorityGained(TestEntityId, TestComponentSetId);
+
+	TestTrue("View Deltas are equal", ExpectedDelta.Compare(InputDelta));
+	TestTrue("Views are equal", CompareViews(InputView, ExpectedView));
+
+	return true;
+}
+
+// There are two components in the component set, call them X and Y. We start with X on the entity but not Y.
+// We add an authority delegation that has only Y in the canonical data.
+// We expect to see Y added and X removed.
+VIEWDELTA_TEST(GIVEN_one_component_from_set_WHEN_set_delegation_with_only_other_component_THEN_removes_old_and_adds_new)
+{
+	ViewDelta InputDelta;
+	EntityView InputView;
+	ComponentData TestComponentData = CreateTestComponentData(TestComponentId, TestComponentValue);
+	ComponentData OtherTestComponentData = CreateTestComponentData(OtherTestComponentId, TestComponentValue);
+
+	AddEntityToView(InputView, TestEntityId);
+	AddComponentToView(InputView, TestEntityId, TestComponentData.DeepCopy());
+
+	EntityComponentOpListBuilder OpListBuilder;
+	TArray<ComponentData> CanonicalSetData;
+	CanonicalSetData.Add(OtherTestComponentData.DeepCopy());
+	OpListBuilder.SetAuthority(TestEntityId, TestComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE, MoveTemp(CanonicalSetData));
+	SetFromOpList(InputDelta, InputView, MoveTemp(OpListBuilder), ComponentSetData);
+
+	EntityView ExpectedView;
+	AddEntityToView(ExpectedView, TestEntityId);
+	AddAuthorityToView(ExpectedView, TestEntityId, TestComponentSetId);
+	AddComponentToView(ExpectedView, TestEntityId, OtherTestComponentData.DeepCopy());
+
+	ExpectedViewDelta ExpectedDelta;
+	ExpectedDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE);
+	ExpectedDelta.AddComponentRemoved(TestEntityId, TestComponentId);
+	ExpectedDelta.AddComponentAdded(TestEntityId, OtherTestComponentData.DeepCopy());
+	ExpectedDelta.AddAuthorityGained(TestEntityId, TestComponentSetId);
+
+	TestTrue("View Deltas are equal", ExpectedDelta.Compare(InputDelta));
+	TestTrue("Views are equal", CompareViews(InputView, ExpectedView));
+
+	return true;
+}
+
 VIEWDELTA_TEST(GIVEN_connected_view_WHEN_disconnect_op_THEN_disconnected_view)
 {
 	ViewDelta InputDelta;
