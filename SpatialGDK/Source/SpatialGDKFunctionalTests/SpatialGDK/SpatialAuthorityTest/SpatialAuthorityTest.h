@@ -28,7 +28,7 @@ public:
 		Super::FinishStep();
 	};
 
-	void ResetTimer() { Timer = 0.5; };
+	void ResetTimer() { Timer = 4; };
 
 	bool VerifyTestActor(ASpatialAuthorityTestActor* Actor, int AuthorityOnBeginPlay, int AuthorityOnTick, int NumAuthorityGains,
 						 int NumAuthorityLosses);
@@ -55,6 +55,10 @@ public:
 	// This needs to be a position that belongs to Server 2.
 	UPROPERTY(EditAnywhere, Category = "Default")
 	FVector Server2Position;
+
+	// This needs to be a position on the border between Server 1 and Server 2.
+	UPROPERTY(EditAnywhere, Category = "Default")
+	FVector BorderPosition;
 
 	UPROPERTY(Replicated)
 	ASpatialAuthorityTestReplicatedActor* DynamicReplicatedActor;
