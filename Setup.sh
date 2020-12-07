@@ -21,19 +21,6 @@ SPATIAL_DIR="$(pwd)/../../../spatial"
 DOWNLOAD_MOBILE=
 USE_CHINA_SERVICES_REGION=
 
-while test $# -gt 0
-do
-    case "$1" in
-        --china)
-            DOMAIN_ENVIRONMENT_VAR="--environment cn-production"
-            USE_CHINA_SERVICES_REGION=true
-            ;;
-        --mobile) DOWNLOAD_MOBILE=true
-            ;;
-    esac
-    shift
-done
-
 echo "Setup the git hooks"
 if [[ -e .git/hooks ]]; then
     # Remove the old post-checkout hook.
@@ -60,6 +47,19 @@ if [[ -e .git/hooks ]]; then
     # This needs to be runnable.
     chmod +x .git/hooks/pre-commit
 fi
+
+while test $# -gt 0
+do
+    case "$1" in
+        --china)
+            DOMAIN_ENVIRONMENT_VAR="--environment cn-production"
+            USE_CHINA_SERVICES_REGION=true
+            ;;
+        --mobile) DOWNLOAD_MOBILE=true
+            ;;
+    esac
+    shift
+done
 
 # Create or remove an empty file in the plugin directory indicating whether to use China services region.
 if [[ -n "${USE_CHINA_SERVICES_REGION}" ]]; then
