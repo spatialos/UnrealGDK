@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Tests/TestDefinitions.h"
+#include "Misc/AutomationTest.h"
 
 #include "CoreMinimal.h"
 
