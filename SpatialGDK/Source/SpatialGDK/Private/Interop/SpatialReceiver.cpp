@@ -304,7 +304,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::PARTITION_COMPONENT_ID:
 		if (APlayerController* Controller = Cast<APlayerController>(PackageMap->GetObjectFromEntityId(Op.entity_id).Get()))
 		{
-			Partition* PartitionComp = StaticComponentView->GetComponentData<Partition>(Op.entity_id);
+			const Partition* PartitionComp = StaticComponentView->GetComponentData<Partition>(Op.entity_id);
 			NetDriver->RegisterClientConnection(PartitionComp->WorkerConnectionId,
 												Cast<USpatialNetConnection>(Controller->GetNetConnection()));
 		}
@@ -880,6 +880,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			// If entity is a PlayerController, create channel on the PlayerController's connection.
 			Connection = PlayerController->NetConnection;
+
+			// If this already has a partition component, assign the client mapping
+			if (const Partition* PartitionComp = StaticComponentView->GetComponentData<Partition>(EntityId))
+			{
+				NetDriver->RegisterClientConnection(PartitionComp->WorkerConnectionId,
+													Cast<USpatialNetConnection>(PlayerController->GetNetConnection()));
+			}
 		}
 	}
 
