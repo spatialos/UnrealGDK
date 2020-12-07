@@ -83,7 +83,7 @@ void ASpatialAuthorityTest::PrepareTest()
 				}
 			}
 		}
-				});
+	});
 
 	FSpatialFunctionalTestStepDefinition NonReplicatedDestroyStepDefinition(/*bIsNativeDefinition*/ true);
 	NonReplicatedDestroyStepDefinition.StepName = TEXT("Non-replicated Dynamic Actor - Destroy");
@@ -95,68 +95,67 @@ void ASpatialAuthorityTest::PrepareTest()
 		FinishStep();
 	});
 
-
 	FSpatialFunctionalTestStepDefinition ReplicatedVerifyAuthorityStepDefinition(/*bIsNativeDefinition*/ true);
 	ReplicatedVerifyAuthorityStepDefinition.StepName =
 		TEXT("Replicated Dynamic Actor Spawned On Different Server - Verify Server 1 Has Authority on BeginPlay and Server 2 on Tick");
 	ReplicatedVerifyAuthorityStepDefinition.TimeLimit = 5.0f;
 	ReplicatedVerifyAuthorityStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
-			Timer -= DeltaTime;
-			if (Timer <= 0)
+		Timer -= DeltaTime;
+		if (Timer <= 0)
+		{
+			const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
+			if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 			{
-				const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
-				if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+				// Allow it to continue working in Native / Single worker setups.
+				if (GetNumberOfServerWorkers() > 1)
 				{
-					// Allow it to continue working in Native / Single worker setups.
-					if (GetNumberOfServerWorkers() > 1)
+					if (LocalWorkerDefinition.Id == 1)
 					{
-						if (LocalWorkerDefinition.Id == 1)
+						// Note: An Actor always ticks on the spawning Worker before migrating.
+						if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 1))
 						{
-							// Note: An Actor always ticks on the spawning Worker before migrating.
-							if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 1))
-							{
-								FinishStep();
-							}
-						}
-						else if (LocalWorkerDefinition.Id == 2)
-						{
-							if (VerifyTestActor(DynamicReplicatedActor, 0, 2, 1, 0)
-								&& DynamicReplicatedActor->AuthorityComponent->ReplicatedAuthWorkerIdOnBeginPlay == 1)
-							{
-								FinishStep();
-							}
-						}
-						else
-						{
-							if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
-							{
-								FinishStep();
-							}
+							FinishStep();
 						}
 					}
-					else // Support for Native / Single Worker.
+					else if (LocalWorkerDefinition.Id == 2)
 					{
-						if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 0))
+						if (VerifyTestActor(DynamicReplicatedActor, 0, 2, 1, 0)
+							&& DynamicReplicatedActor->AuthorityComponent->ReplicatedAuthWorkerIdOnBeginPlay == 1)
+						{
+							FinishStep();
+						}
+					}
+					else
+					{
+						if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
 						{
 							FinishStep();
 						}
 					}
 				}
-				else // Clients.
+				else // Support for Native / Single Worker.
 				{
-					if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
+					if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 0))
 					{
 						FinishStep();
 					}
 				}
 			}
-		});
+			else // Clients.
+			{
+				if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
+				{
+					FinishStep();
+				}
+			}
+		}
+	});
 
 	FSpatialFunctionalTestStepDefinition ReplicatedDestroyStepDefinition(/*bIsNativeDefinition*/ true);
 	ReplicatedDestroyStepDefinition.StepName = TEXT("Replicated Dynamic Actor Spawned On Different Server - Destroy");
 	ReplicatedDestroyStepDefinition.TimeLimit = 5.0f;
 	ReplicatedDestroyStepDefinition.NativeStartEvent.BindLambda([this]() {
-			// Now it's Server 2 destroying, since it has Authority over it.
+		// Now it's Server 2 destroying, since it has Authority over it.
 		DynamicReplicatedActor->Destroy();
 		CrossServerSetDynamicReplicatedActor(nullptr);
 		FinishStep();
@@ -331,7 +330,6 @@ void ASpatialAuthorityTest::PrepareTest()
 		AddStepFromDefinition(ReplicatedDestroyStepDefinition, FWorkerDefinition::Server(2));
 	}
 
-	
 	// Non-replicated Dynamic Actor. Server 1 should have Authority.
 	{
 		AddStep(TEXT("Non-replicated Dynamic Actor - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
