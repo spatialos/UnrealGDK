@@ -50,7 +50,7 @@ void ARelevancyTest::PrepareTest()
 			ULayeredLBStrategy* RootStrategy = GetLoadBalancingStrategy();
 			UAbstractLBStrategy* DefaultStrategy = RootStrategy->GetLBStrategyForLayer(SpatialConstants::DefaultLayer);
 			UGridBasedLBStrategy* GridStrategy = Cast<UGridBasedLBStrategy>(DefaultStrategy);
-			AssertTrue(GridStrategy != nullptr, TEXT("Invalid LBS"));
+			AssertIsValid(GridStrategy, TEXT("Invalid LBS"));
 			const FVector WorkerPos = GridStrategy->GetWorkerEntityPosition();
 
 			AlwaysRelevantActor =
@@ -84,10 +84,10 @@ void ARelevancyTest::PrepareTest()
 				int NumAlwaysServerOnlyRelevantActors = GetNumberOfActorsOfType<AAlwaysRelevantServerOnlyTestActor>(GetWorld());
 				int NumServers = GetNumberOfServerWorkers();
 
-				if (NumAlwaysRelevantActors == NumServers && NumAlwaysServerOnlyRelevantActors == NumServers)
-				{
-					FinishStep();
-				}
+				RequireEqual_Int(NumAlwaysRelevantActors, NumServers, TEXT("Servers see expected number of always relevant actors"));
+				RequireEqual_Int(NumAlwaysServerOnlyRelevantActors, NumServers,
+								 TEXT("Servers see expected number of server-only always relevant actors"));
+				FinishStep(); // This will only actually finish if requires are satisfied
 			},
 			StepTimeLimit);
 	}
@@ -100,10 +100,9 @@ void ARelevancyTest::PrepareTest()
 				int NumAlwaysServerOnlyRelevantActors = GetNumberOfActorsOfType<AAlwaysRelevantServerOnlyTestActor>(GetWorld());
 				int NumServers = GetNumberOfServerWorkers();
 
-				if (NumAlwaysRelevantActors == NumServers && NumAlwaysServerOnlyRelevantActors == 0)
-				{
-					FinishStep();
-				}
+				RequireEqual_Int(NumAlwaysRelevantActors, NumServers, TEXT("Client see expected number of always relevant actors"));
+				RequireEqual_Int(NumAlwaysServerOnlyRelevantActors, 0, TEXT("Client see no always relevant server-only actors"));
+				FinishStep(); // This will only actually finish if requires are satisfied
 			},
 			StepTimeLimit);
 	}
