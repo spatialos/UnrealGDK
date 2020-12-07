@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Tests/TestDefinitions.h"
 #include "Tests/GDKTestBase.h"
+#include "Tests/TestDefinitions.h"
 
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"

@@ -7,7 +7,6 @@ DEFINE_LOG_CATEGORY_STATIC(LogGDKTestBase, Log, All);
 class GDKTestBase : public FAutomationTestBase
 {
 public:
-
 	GDKTestBase(const FString& InName, bool bInComplexTask)
 		: FAutomationTestBase(InName, bInComplexTask)
 	{
@@ -44,6 +43,4 @@ protected:
 		SetUp();
 		return RunGDKTest(Params);
 	}
-
 };
-

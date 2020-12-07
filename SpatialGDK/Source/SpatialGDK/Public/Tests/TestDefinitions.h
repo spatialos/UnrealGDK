@@ -11,7 +11,7 @@
 
 #define GDK_TEST_NEW(ModuleName, ComponentName, TestName)                                                                                  \
 	IMPLEMENT_CUSTOM_SIMPLE_AUTOMATION_TEST(TestName, GDKTestBase, "SpatialGDK." #ModuleName "." #ComponentName "." #TestName,             \
-									 EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::EngineFilter)                    \
+											EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::EngineFilter)             \
 	bool TestName::RunGDKTest(const FString& Parameters)
 
 #define GDK_COMPLEX_TEST(ModuleName, ComponentName, TestName)                                                                              \
