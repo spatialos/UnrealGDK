@@ -113,6 +113,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	// Add all Interest component IDs to allow us to change it if needed.
 	DelegationMap.Add(SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeServerPartitionId);
+	DelegationMap.Add(SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeServerPartitionId);
 	for (const auto ComponentId : ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
 	{
 		DelegationMap.Add(ComponentId, AuthoritativeServerPartitionId);
