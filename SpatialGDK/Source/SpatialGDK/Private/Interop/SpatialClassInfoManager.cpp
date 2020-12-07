@@ -588,7 +588,14 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 
 	if (ActorForRelevancy->bAlwaysRelevant)
 	{
-		return SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
+		if (ActorForRelevancy->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+		{
+			return SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID;
+		}
+		else
+		{
+			return SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
+		}
 	}
 
 	// Don't add NCD component to player controller and server only actors as we don't want client's to gain interest in them
