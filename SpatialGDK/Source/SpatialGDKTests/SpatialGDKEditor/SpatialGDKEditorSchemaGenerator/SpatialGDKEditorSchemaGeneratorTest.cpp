@@ -840,7 +840,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "rpc_payload.schema",	   "server_worker.schema",
 										   "spawndata.schema",		   "spawner.schema",
 										   "spatial_debugging.schema", "tombstone.schema",
-										   "unreal_metadata.schema",   "virtual_worker_translation.schema" };
+										   "unreal_metadata.schema",   "virtual_worker_translation.schema",
+										   "migration_diagnostic.schema"};
 	TArray<FString> CoreSDKFilePaths = { "improbable\\restricted\\system_components.schema", "improbable\\standard_library.schema" };
 
 	// WHEN
