@@ -1,0 +1,46 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+type MigrationDiagnosticRequest {}
+
+type MigrationDiagnosticResponse
+{
+	// Id of the worker which is authoritative for the blocked actor.
+	uint32 authoritative_worker_id = 1;
+
+	// The entity id of the blocked actor
+	EntityId actor_entity_id = 2;
+
+	// Whether or not the blocked actor is replicated.
+	bool actor_replicated = 3;
+
+	// Whether or not the blocked actor has authority.
+	bool actor_authority = 4;
+
+	// Whether or not the blocked actor is locked.
+	bool actor_locked = 5;
+
+	// Whether or not the authoritative worker thinks the blocked actor should migrate.
+	bool actor_evaluation = 6;
+
+	// The id of the worker the blocked actor should migrate to
+	uint32 destination_worker_id = 7;
+
+	// The entity id of the owner of the actor that cannot migrate
+	EntityId owner_entity_id = 8;
+
+}
+
+component MigrationDiagnostic
+{
+	id = 9969;
+
+	command MigrationDiagnosticResponse diagnostic(MigrationDiagnosticRequest);
+}
+
+component_set MigrationDiagnosticSet {
+  id = 9969;
+  components = [
+    MigrationDiagnostic
+  ];
+}
