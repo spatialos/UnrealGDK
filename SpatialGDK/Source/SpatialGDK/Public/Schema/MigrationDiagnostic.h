@@ -52,7 +52,7 @@ struct MigrationDiagnostic : Component
 		CommandResponse.schema_type = Schema_CreateCommandResponse();
 
 		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
-		Schema_AddInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID, EntityId);
+		Schema_AddEntityId(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID, EntityId);
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID, BlockingActor->GetIsReplicated());
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_HAS_AUTHORITY_ID, BlockingActor->HasAuthority());
 
@@ -73,7 +73,7 @@ struct MigrationDiagnostic : Component
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_EVALUATION_ID,
 					   Result == FSpatialLoadBalancingHandler::EvaluateActorResult::Migrate);
 		Schema_AddInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_DESTINATION_WORKER_ID, NewAuthWorkerId);
-		Schema_AddInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID, OwnerId);
+		Schema_AddEntityId(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID, OwnerId);
 
 		return CommandResponse;
 	}
@@ -92,13 +92,13 @@ struct MigrationDiagnostic : Component
 		}
 
 		VirtualWorkerId AuthoritativeWorkerId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_WORKER_ID);
-		Worker_EntityId BlockedEntityId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
+		Worker_EntityId BlockedEntityId = Schema_GetEntityId(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
 		bool bIsReplicated = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID);
 		bool bHasAuthority = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_HAS_AUTHORITY_ID);
 		bool bIsLocked = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_LOCKED_ID);
 		bool bCanMigrate = GetBoolFromSchema(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_EVALUATION_ID);
 		VirtualWorkerId DestinationWorkerId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_DESTINATION_WORKER_ID);
-		Worker_EntityId AuthoritativeNetOwnerId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
+		Worker_EntityId AuthoritativeNetOwnerId = Schema_GetEntityId(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_OWNER_ID);
 
 		AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(BlockingActor);
 		Worker_EntityId OriginalNetOwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);

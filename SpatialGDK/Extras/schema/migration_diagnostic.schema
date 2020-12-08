@@ -9,7 +9,7 @@ type MigrationDiagnosticResponse
 	uint32 authoritative_worker_id = 1;
 
 	// The entity id of the blocked actor
-	uint64 actor_entity_id = 2;
+	EntityId actor_entity_id = 2;
 
 	// Whether or not the blocked actor is replicated.
 	bool actor_replicated = 3;
@@ -27,7 +27,7 @@ type MigrationDiagnosticResponse
 	uint32 destination_worker_id = 7;
 
 	// The entity id of the owner of the actor that cannot migrate
-	uint64 owner_entity_id = 8;
+	EntityId owner_entity_id = 8;
 
 }
 
