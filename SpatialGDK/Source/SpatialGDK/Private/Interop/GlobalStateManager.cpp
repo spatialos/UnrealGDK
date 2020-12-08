@@ -226,6 +226,11 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(Schema_ComponentUpdate*
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
 
+	// The update can only happen after having read the initial GSM state.
+	// It is gated on the leader getting its VirtualWorkerId, gated in the Translation manager getting all the workers it need
+	// gated on all workers sending ReadyToBeginPlay, which happens in ApplyStartupActorManagerData.
+	// We are in the same situation as the leader when it is running AuthorityChanged on STARTUP_ACTOR_MANAGER_COMPONENT_ID.
+	// So we apply the same logic on setting bCanSpawnWithAuthority before reading the new value of bCanBeginPlay.
 	bCanSpawnWithAuthority = !bCanBeginPlay;
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 }
