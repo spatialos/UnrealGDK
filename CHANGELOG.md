@@ -54,7 +54,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - You can now disable logging to spatial for local and/or cloud deployments from the GUI (Project Settings -> Runtime Settings -> Logging). The command line argument -NoLogToSpatial can still be used for that as well.
 - Servers now log a warning message when detecting a client has timed out.
 - Handover is now optional depending on whether the load balancing strategy implementations require it . See `RequiresHandoverData`
-- Improved the failed hierarchy migration logs. The logs now contain more specific reasons for the failure and the frequency of repeated logs is suppressed.
+- Improved the failed hierarchy migration logs. The logs are now more specific, the frequency of repeated logs is suppressed and cross-server migration diagnostic logs have been added.
 - You can now select an actor for spatial debugging in-game. Use F9 (by default) to open the Spatial Debugger in-game config menu and then press the `Start Select Actor(s)` button. Hover over an actor with the mouse to highlight and right-click  (by default) to select. You can select multiple actors. To deselect an actor right-click on it a second time. If there are multiple actors under the cursor use the mouse wheel (by default) to highlight the desired actor then right-click to confirm your selection.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
 - Worker SDK version compatibility is checked at compile time. 
