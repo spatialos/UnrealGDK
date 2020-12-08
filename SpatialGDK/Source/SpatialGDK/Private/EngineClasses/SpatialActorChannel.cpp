@@ -472,7 +472,11 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Group actors by exact class, one level below parent native class.
 	SCOPE_CYCLE_UOBJECT(ReplicateActor, Actor);
 
+#if ENGINE_MINOR_VERSION >= 25
 	const bool bReplay = ActorWorld && ActorWorld->GetDemoNetDriver() == Connection->GetDriver();
+#else
+	const bool bReplay = ActorWorld && ActorWorld->DemoNetDriver == Connection->GetDriver();
+#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	// Begin - error and stat duplication from DataChannel::ReplicateActor()
