@@ -82,6 +82,7 @@ These functions and structs can be referenced in both code and blueprints it may
   - Inspector URL is now http://localhost:33333/inspector-v2
   - Inspector version can now be overridden in the SpatialGDKEditorSettings under `Inspector Version Override`
 - The SpatialNetDriver can now disconnect a client worker when given the system entity id for that client and will do so when `GameMode::PreLogin` returns with a non-empty error message. 
+  - The 'Snapshot' button is now hidden by default and can be toggled to be shown from the UnrealGDK Editor settings.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
