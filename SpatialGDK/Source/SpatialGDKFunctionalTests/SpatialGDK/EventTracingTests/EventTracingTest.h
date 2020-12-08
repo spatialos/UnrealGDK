@@ -29,9 +29,9 @@ public:
 
 protected:
 	const static FName ReceiveOpEventName;
-	const static FName SendPropertyUpdatesEventName;
+	const static FName PropertyChangedEventName;
 	const static FName ReceivePropertyUpdateEventName;
-	const static FName SendRPCEventName;
+	const static FName PushRPCEventName;
 	const static FName ProcessRPCEventName;
 	const static FName ComponentUpdateEventName;
 	const static FName MergeComponentUpdateEventName;
