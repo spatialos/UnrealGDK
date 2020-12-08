@@ -49,7 +49,7 @@ UWorld* GetAnyGameWorld()
 } // anonymous namespace
 
 // Disable local deployments from starting and open map
-void SetUp()
+void DisableLocalDeploymentsAndOpenMap()
 {
 	const auto Settings = GetMutableDefault<USpatialGDKEditorSettings>();
 	const auto OldBAutoStartLocalDeployment = Settings->bAutoStartLocalDeployment;
@@ -225,7 +225,7 @@ bool FCleanup::Update()
 
 LAYEREDLBSTRATEGY_TEST(GIVEN_strat_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready)
 {
-	SetUp();
+	DisableLocalDeploymentsAndOpenMap();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -244,7 +244,7 @@ LAYEREDLBSTRATEGY_TEST(GIVEN_strat_is_not_ready_WHEN_local_virtual_worker_id_is_
 LAYEREDLBSTRATEGY_TEST(
 	GIVEN_layered_strat_of_two_by_four_grid_strat_singleton_strat_and_default_strat_WHEN_get_minimum_required_workers_called_THEN_ten_returned)
 {
-	SetUp();
+	DisableLocalDeploymentsAndOpenMap();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -263,7 +263,7 @@ LAYEREDLBSTRATEGY_TEST(
 LAYEREDLBSTRATEGY_TEST(
 	Given_layered_strat_of_2_single_cell_strats_and_default_strat_WHEN_set_virtual_worker_ids_called_with_2_ids_THEN_error_is_logged)
 {
-	SetUp();
+	DisableLocalDeploymentsAndOpenMap();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -287,7 +287,7 @@ LAYEREDLBSTRATEGY_TEST(
 LAYEREDLBSTRATEGY_TEST(
 	Given_layered_strat_of_2_single_cell_grid_strats_and_default_strat_WHEN_set_virtual_worker_ids_called_with_3_ids_THEN_no_error_is_logged)
 {
-	SetUp();
+	DisableLocalDeploymentsAndOpenMap();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -307,7 +307,7 @@ LAYEREDLBSTRATEGY_TEST(
 
 LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_requires_handover_called_THEN_returns_false)
 {
-	SetUp();
+	DisableLocalDeploymentsAndOpenMap();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -324,7 +324,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_requires_handov
 
 LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_single_cell_grid_strat_and_default_strat_WHEN_requires_handover_called_THEN_returns_false)
 {
-	SetUp();
+	DisableLocalDeploymentsAndOpenMap();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -343,7 +343,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_single_cell_grid_strat_and_default
 
 LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_multiple_single_cell_grid_strategies_WHEN_requires_handover_called_THEN_returns_false)
 {
-	SetUp();
+	DisableLocalDeploymentsAndOpenMap();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -364,7 +364,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_multiple_single_cell_grid_strategi
 
 LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_who_should_have_auth_called_THEN_return_1)
 {
-	SetUp();
+	DisableLocalDeploymentsAndOpenMap();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -382,7 +382,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_of_default_strat_WHEN_who_should_have
 
 LAYEREDLBSTRATEGY_TEST(Given_layered_strat_WHEN_set_local_worker_called_twice_THEN_an_error_is_logged)
 {
-	SetUp();
+	DisableLocalDeploymentsAndOpenMap();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -402,7 +402,7 @@ LAYEREDLBSTRATEGY_TEST(Given_layered_strat_WHEN_set_local_worker_called_twice_TH
 
 LAYEREDLBSTRATEGY_TEST(Given_two_actors_of_same_type_at_same_position_WHEN_who_should_have_auth_called_THEN_return_same_for_both)
 {
-	SetUp();
+	DisableLocalDeploymentsAndOpenMap();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
@@ -430,7 +430,7 @@ LAYEREDLBSTRATEGY_TEST(Given_two_actors_of_same_type_at_same_position_WHEN_who_s
 LAYEREDLBSTRATEGY_TEST(
 	GIVEN_two_actors_of_different_types_and_same_positions_managed_by_different_layers_WHEN_who_has_auth_called_THEN_return_different_values)
 {
-	SetUp();
+	DisableLocalDeploymentsAndOpenMap();
 
 	TSharedPtr<TestData> Data = TSharedPtr<TestData>(new TestData);
 
