@@ -155,6 +155,8 @@ private:
 
 	void ShowFailedNotification(const FString& NotificationText);
 
+	bool SnapshotButtonIsVisible();
+
 	void GenerateSchema(bool bFullScan);
 
 	bool IsSnapshotGenerated() const;

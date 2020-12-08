@@ -39,6 +39,7 @@ const FString& FRuntimeVariantVersion::GetVersionForCloud() const
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
+	, bShowSnapshotButton(false)
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
 	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)

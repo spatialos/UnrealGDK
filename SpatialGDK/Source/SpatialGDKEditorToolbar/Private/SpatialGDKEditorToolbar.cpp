@@ -232,7 +232,9 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot,
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked),
-								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator));
+								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator),
+								FIsActionChecked(),
+								FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::SnapshotButtonIsVisible));
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().StartNative, FExecuteAction(),
 								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartNativeCanExecute),
@@ -681,6 +683,11 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 			GEditor->PlayEditorSound(ExecutionFailSound);
 		}
 	}
+}
+
+bool FSpatialGDKEditorToolbarModule::SnapshotButtonIsVisible()
+{
+	return GetDefault<USpatialGDKEditorSettings>()->bShowSnapshotButton;
 }
 
 void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
