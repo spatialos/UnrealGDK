@@ -59,7 +59,7 @@ bool FStartDeployment::Update()
 {
 	if (const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
-		FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
+		FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
 		const FString LaunchConfig =
 			FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
 		const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
@@ -103,7 +103,7 @@ bool FStartDeployment::Update()
 
 bool FStopDeployment::Update()
 {
-	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
+	FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
 
 	if (!LocalDeploymentManager->IsLocalDeploymentRunning() && !LocalDeploymentManager->IsDeploymentStopping())
 	{
@@ -122,7 +122,7 @@ bool FStopDeployment::Update()
 
 bool FWaitForDeployment::Update()
 {
-	FLocalDeploymentManager* const LocalDeploymentManager = GetLocalDeploymentManager();
+	FLocalDeploymentManager* const LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
 
 	if (LocalDeploymentManager->IsDeploymentStarting())
 	{
@@ -161,7 +161,7 @@ bool FWaitForDeployment::Update()
 
 bool FCheckDeploymentState::Update()
 {
-	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
+	FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
 
 	if (ExpectedDeploymentState == EDeploymentState::IsRunning)
 	{
