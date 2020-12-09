@@ -55,7 +55,7 @@ public:
 	protected:                                                                                                                             \
 		void SetUp()                                                                                                                       \
 		{                                                                                                                                  \
-			FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();                                                 \
+			FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();                                     \
 			if (LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStarting())                      \
 			{                                                                                                                              \
 				UE_LOG(LogGDKTestBase, Warning, TEXT("Deployment found! (Was this left over from another test?)"))                         \
