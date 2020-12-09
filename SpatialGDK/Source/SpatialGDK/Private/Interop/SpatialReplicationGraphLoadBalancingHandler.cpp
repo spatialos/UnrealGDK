@@ -32,13 +32,9 @@ void FSpatialReplicationGraphLoadBalancingContext::AddActorToReplicate(AActor* A
 }
 
 #if ENGINE_MINOR_VERSION > 25
-FGlobalActorReplicationInfo::FDependantListType FSpatialReplicationGraphLoadBalancingContext::GetDependentActors(AActor* Actor)
+const FGlobalActorReplicationInfo::FDependantListType& FSpatialReplicationGraphLoadBalancingContext::GetDependentActors(AActor* Actor)
 {
-	static FGlobalActorReplicationInfo::FDependantListType EmptyList = [] {
-		FGlobalActorReplicationInfo::FDependantListType List;
-		List.Reset(0);
-		return List;
-	}();
+	static FGlobalActorReplicationInfo::FDependantListType EmptyList;
 
 	if (FGlobalActorReplicationInfo* GlobalActorInfo = ReplicationGraph->GetGlobalActorReplicationInfoMap().Find(Actor))
 	{
