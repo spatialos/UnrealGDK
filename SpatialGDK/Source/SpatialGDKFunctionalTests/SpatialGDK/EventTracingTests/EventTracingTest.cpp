@@ -26,6 +26,7 @@ const FName AEventTracingTest::UserReceiveComponentPropertyEventName = "user.rec
 const FName AEventTracingTest::UserSendPropertyEventName = "user.send_property";
 const FName AEventTracingTest::UserSendComponentPropertyEventName = "user.send_component_property";
 const FName AEventTracingTest::UserSendRPCEventName = "user.send_rpc";
+const FString NullSpanIdString = "00000000000000000000000000000000";
 
 AEventTracingTest::AEventTracingTest()
 {
@@ -191,8 +192,14 @@ bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const 
 		return false;
 	}
 
+	int32 ValidCauses = 0;
 	for (const FString& CauseSpanIdString : *Causes)
 	{
+		if (CauseSpanIdString == NullSpanIdString)
+		{
+			continue;
+		}
+
 		const FName* CauseEventName = TraceEvents.Find(CauseSpanIdString);
 		if (CauseEventName == nullptr)
 		{
@@ -202,7 +209,9 @@ bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const 
 		{
 			return false;
 		}
+
+		ValidCauses++;
 	}
 
-	return true;
+	return ValidCauses >= MinimumCauses;
 }

@@ -28,7 +28,7 @@ void AMergeComponentEventTracingTest::FinishEventTraceTest()
 
 		EventsTested++;
 
-		if (!CheckEventTraceCause(SpanIdString, { MergeComponentUpdateEventName, ReceiveOpEventName }, 2))
+		if (!CheckEventTraceCause(SpanIdString, { MergeComponentUpdateEventName, ReceiveOpEventName }, 1))
 		{
 			EventsFailed++;
 		}
