@@ -5,6 +5,10 @@ component AlwaysRelevant {
     id = 9983;
 }
 
+component ServerOnlyAlwaysRelevant {
+    id = 9968;
+}
+
 component Dormant {
     id = 9981;
 }
@@ -17,6 +21,13 @@ component_set AlwaysRelevantSet {
 	id = 9983;
 	components = [
 		AlwaysRelevant
+	];
+}
+
+component_set ServerOnlyAlwaysRelevantSet {
+	id = 9968;
+	components = [
+		ServerOnlyAlwaysRelevant
 	];
 }
 
