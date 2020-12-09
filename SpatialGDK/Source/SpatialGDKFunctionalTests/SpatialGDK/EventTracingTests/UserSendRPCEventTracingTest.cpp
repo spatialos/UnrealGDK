@@ -7,7 +7,7 @@ AUserSendRPCEventTracingTest::AUserSendRPCEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking user event traces can cause rpcs send events");
 
-	FilterEventNames = { SendRPCEventName, UserSendRPCEventName };
+	FilterEventNames = { PushRPCEventName, UserSendRPCEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
@@ -25,7 +25,7 @@ void AUserSendRPCEventTracingTest::FinishEventTraceTest()
 		{
 			UserEventSpanIds.Add(SpanIdString);
 		}
-		else if (EventName == SendRPCEventName)
+		else if (EventName == PushRPCEventName)
 		{
 			TArray<FString>* Causes = TraceSpans.Find(SpanIdString);
 			if (Causes != nullptr)

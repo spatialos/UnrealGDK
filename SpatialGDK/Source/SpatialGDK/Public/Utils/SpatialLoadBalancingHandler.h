@@ -54,11 +54,6 @@ public:
 	// Sends the migration instructions and update actor authority.
 	void ProcessMigrations();
 
-protected:
-	void UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const;
-
-	uint64 GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const;
-
 	enum class EvaluateActorResult
 	{
 		None,			 // Actor not concerned by load balancing
@@ -67,6 +62,11 @@ protected:
 	};
 
 	EvaluateActorResult EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId);
+
+protected:
+	void UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const;
+
+	uint64 GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const;
 
 	template <typename ReplicationContext>
 	bool CollectActorsToMigrate(ReplicationContext& iCtx, AActor* Actor, bool bNetOwnerHasAuth)
