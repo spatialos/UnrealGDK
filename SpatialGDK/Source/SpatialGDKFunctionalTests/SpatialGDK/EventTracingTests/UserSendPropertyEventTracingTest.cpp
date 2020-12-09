@@ -7,7 +7,7 @@ AUserSendPropertyEventTracingTest::AUserSendPropertyEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking user event traces can cause send property update events");
 
-	FilterEventNames = { UserSendPropertyEventName, UserSendComponentPropertyEventName, SendPropertyUpdatesEventName };
+	FilterEventNames = { UserSendPropertyEventName, UserSendComponentPropertyEventName, PropertyChangedEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
@@ -25,7 +25,7 @@ void AUserSendPropertyEventTracingTest::FinishEventTraceTest()
 		{
 			UserEventSpanIds.Add(SpanIdString);
 		}
-		else if (EventName == SendPropertyUpdatesEventName)
+		else if (EventName == PropertyChangedEventName)
 		{
 			TArray<FString>* Causes = TraceSpans.Find(SpanIdString);
 			if (Causes != nullptr)

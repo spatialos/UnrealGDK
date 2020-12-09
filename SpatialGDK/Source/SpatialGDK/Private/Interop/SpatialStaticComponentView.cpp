@@ -37,6 +37,11 @@ bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_
 	return GetAuthority(EntityId, ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 }
 
+bool USpatialStaticComponentView::HasEntity(Worker_EntityId EntityId) const
+{
+	return EntityComponentMap.Find(EntityId) != nullptr;
+}
+
 bool USpatialStaticComponentView::HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
 {
 	if (auto* EntityComponentStorage = EntityComponentMap.Find(EntityId))

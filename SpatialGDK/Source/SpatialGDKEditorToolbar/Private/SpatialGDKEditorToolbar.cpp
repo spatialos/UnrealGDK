@@ -736,7 +736,7 @@ bool FSpatialGDKEditorToolbarModule::FetchRuntimeBinaryWrapper(FString RuntimeVe
 {
 	bFetchingRuntimeBinary = true;
 
-	bool bSuccess = SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion);
+	const bool bSuccess = SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion, GetDefault<USpatialGDKSettings>()->IsRunningInChina());
 
 	if (!bSuccess)
 	{
@@ -753,7 +753,8 @@ bool FSpatialGDKEditorToolbarModule::FetchInspectorBinaryWrapper(FString Inspect
 {
 	bFetchingInspectorBinary = true;
 
-	bool bSuccess = SpatialCommandUtils::FetchInspectorBinary(InspectorVersion);
+	const bool bSuccess =
+		SpatialCommandUtils::FetchInspectorBinary(InspectorVersion, GetDefault<USpatialGDKSettings>()->IsRunningInChina());
 
 	if (!bSuccess)
 	{
@@ -931,7 +932,7 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		SpatialCommandUtils::TryKillProcessWithName(SpatialGDKServicesConstants::InspectorExe);
 
 		// Grab the inspector binary
-		if (!SpatialCommandUtils::FetchInspectorBinary(InspectorVersion))
+		if (!SpatialCommandUtils::FetchInspectorBinary(InspectorVersion, GetDefault<USpatialGDKSettings>()->IsRunningInChina()))
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to fetch the local inspector binary but failed!"));
 			OnShowFailedNotification(TEXT("Failed to fetch local inspector!"));
