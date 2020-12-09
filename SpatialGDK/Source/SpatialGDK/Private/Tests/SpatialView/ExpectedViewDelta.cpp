@@ -7,8 +7,8 @@
 #include "Tests/SpatialView/ComponentTestUtils.h"
 #include "Tests/SpatialView/ExpectedEntityDelta.h"
 
-using namespace SpatialGDK;
-
+namespace SpatialGDK
+{
 ExpectedViewDelta& ExpectedViewDelta::AddEntityDelta(const Worker_EntityId EntityId, const EntityChangeType ChangeType)
 {
 	EntityDeltas.Add(
@@ -200,3 +200,4 @@ bool ExpectedViewDelta::CompareDeltas(const TArray<EntityDelta>& Other)
 
 	return true;
 }
+} // namespace SpatialGDK
