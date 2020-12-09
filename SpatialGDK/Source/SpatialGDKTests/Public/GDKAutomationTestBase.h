@@ -6,6 +6,23 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogGDKTestBase, Log, All);
 
+/**
+ * This class extends the Unreal AutomationTestBase to allow unit tests to be augmented with a set-up step, called
+ * before each test.
+ * This class is then offered through a macro, in a similar way to `IMPLEMENT_SIMPLE_AUTOMATION_TEST`.
+ *
+ * To use this test base, the GDK_AUTOMATION_TEST macro should be used, followed by the test body:
+ * ```
+ *	   GDK_AUTOMATION_TEST(MyModule, MyComponent, MyTestName)
+ *	   {
+ *			// do some testing here...
+ *
+ *			return true;
+ *	   }
+ * ```
+ *
+ * Returning `true` indicates a test pass and returning `false` indicates test failure.
+ */
 class FGDKAutomationTestBase : public FAutomationTestBase
 {
 public:
