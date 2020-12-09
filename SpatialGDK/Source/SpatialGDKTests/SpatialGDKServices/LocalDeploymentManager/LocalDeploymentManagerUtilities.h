@@ -15,7 +15,10 @@ enum class EDeploymentState
 	IsNotRunning
 };
 
+namespace SpatialGDK
+{
 FLocalDeploymentManager* GetLocalDeploymentManager();
+} // namespace SpatialGDK
 
 DEFINE_LATENT_AUTOMATION_COMMAND(FStartDeployment);
 DEFINE_LATENT_AUTOMATION_COMMAND(FStopDeployment);

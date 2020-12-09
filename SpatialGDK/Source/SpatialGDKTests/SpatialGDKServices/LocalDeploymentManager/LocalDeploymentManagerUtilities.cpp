@@ -10,12 +10,15 @@
 
 #include "CoreMinimal.h"
 
+namespace SpatialGDK
+{
 FLocalDeploymentManager* GetLocalDeploymentManager()
 {
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 	return LocalDeploymentManager;
 }
+} // namespace SpatialGDK
 
 namespace
 {
