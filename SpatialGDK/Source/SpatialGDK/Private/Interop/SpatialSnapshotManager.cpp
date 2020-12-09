@@ -47,6 +47,8 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 
 	Worker_EntityQuery WorldQuery{};
 	WorldQuery.constraint = UnrealMetadataConstraint;
+	WorldQuery.snapshot_result_type_component_id_count = 1;
+	WorldQuery.snapshot_result_type_component_ids = &SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 
 	check(Connection.IsValid());
 	const Worker_RequestId RequestID = Connection->SendEntityQueryRequest(&WorldQuery, RETRY_UNTIL_COMPLETE);
