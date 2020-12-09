@@ -21,7 +21,7 @@ void USpatialPossession::RemotePossess(AController* Controller, APawn* Pawn)
 	else
 	{
 		USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Controller->GetNetDriver());
-		if (NetDriver->LockingPolicy->IsLocked(Controller))
+		if (NetDriver->LockingPolicy && NetDriver->LockingPolicy->IsLocked(Controller))
 		{
 			Controller->OnPossessFailed(ERemotePossessFailure::ControllerLocked);
 			return;
