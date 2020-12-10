@@ -109,8 +109,6 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed a bug where deployment would fail in the presence of trailing spaces in the `Flags` and `LegacyFlags` fields of the `SpatialGDKEditorSettings`.
 - Fixed a crash that would occur when performing multiple Client Travels at once.
 - Add ServerOnlyAlwaysRelevant component and component set schema definitions
-
-=======
 - Fixed a snapshot reloading issue where worker would create extra actors, as if they were loading on a fresh deployment.
 - Server workers use TCP (instead of KCP) by default.
 
