@@ -8,7 +8,7 @@
 #include "DynamicReplicationHandoverCube.generated.h"
 
 /**
- * A replicated Actor with a Cube Mesh, used as a base for Actors used in spatial tests.
+ * A replicated Actor with a Cube Mesh, used as a base for Actors in spatial tests.
  */
 UCLASS()
 class ADynamicReplicationHandoverCube : public AHandoverCube
