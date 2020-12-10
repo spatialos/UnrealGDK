@@ -280,8 +280,6 @@ void WriteLevelComponent(FCodeWriter& Writer, const FString& LevelName, Worker_C
 	Writer.Indent();
 	Writer.Printf("id = {0};", ComponentId);
 	Writer.Outdent().Print("}");
-
-	WriteComponentSetToFile(Writer, ComponentName, ComponentId);
 }
 
 TMultiMap<FName, FName> GetLevelNamesToPathsMap()
@@ -407,8 +405,6 @@ void GenerateSchemaForNCDs(const FString& SchemaOutputPath)
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
 		Writer.Outdent().Print("}");
-
-		WriteComponentSetToFile(Writer, SchemaComponentName, ComponentId);
 	}
 
 	NextAvailableComponentId = IdGenerator.Peek();
