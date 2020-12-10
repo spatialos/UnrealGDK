@@ -18,6 +18,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "Templates/SharedPointer.h"
 #include "UObject/UObjectIterator.h"
 
@@ -460,7 +461,11 @@ TMap<Worker_ComponentId, FString> CreateComponentIdToClassPathMap()
 
 bool SaveSchemaDatabase(const FString& PackagePath)
 {
+#if ENGINE_MINOR_VERSION >= 26
+	UPackage* Package = CreatePackage(*PackagePath);
+#else
 	UPackage* Package = CreatePackage(nullptr, *PackagePath);
+#endif
 
 	ActorClassPathToSchema.KeySort([](const FString& LHS, const FString& RHS) {
 		return LHS < RHS;

@@ -47,7 +47,11 @@ struct FSpatialReplicationGraphLoadBalancingContext
 
 	void AddActorToReplicate(AActor* Actor);
 
+#if ENGINE_MINOR_VERSION >= 26
+	const FGlobalActorReplicationInfo::FDependantListType& GetDependentActors(AActor* Actor);
+#else
 	FActorRepListRefView GetDependentActors(AActor* Actor);
+#endif
 
 	EActorMigrationResult IsActorReadyForMigration(AActor* Actor);
 
