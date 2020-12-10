@@ -99,7 +99,7 @@ private:
 			: FGDKAutomationTestBase(InName, bInComplexTask, TestSourceFileName, TestSourceFileLine)                                       \
 		{                                                                                                                                  \
 		}                                                                                                                                  \
-		bool RunGDKTest(const FString& Parameters) override;                                                                               \
+		virtual bool RunGDKTest(const FString& Parameters) override;                                                                       \
 	};                                                                                                                                     \
 	namespace                                                                                                                              \
 	{                                                                                                                                      \
