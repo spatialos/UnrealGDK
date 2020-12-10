@@ -2272,7 +2272,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 		   *ObjectRef.ToString(), *Object->GetName());
 
 	/* Rep-notify can modify ObjectRefToRepStateMap in some situations which can cause the TSet to access
-	invalid memory if a) the set it removed or b) the TMap containing the TSet is reallocated. So to fix this
+	invalid memory if a) the set is removed or b) the TMap containing the TSet is reallocated. So to fix this
 	we just defer the rep-notify calls to the end of this function. */
 	TArray<RepNotifyCall> RepNotifyCalls;
 
