@@ -67,13 +67,13 @@ private:
 	void AddToolbarExtension(FToolBarBuilder& Builder);
 	void AddMenuExtension(FMenuBuilder& Builder);
 
+	bool FetchRuntimeBinaryWrapper(FString RuntimeVersion);
+	bool FetchInspectorBinaryWrapper(FString InspectorVersion);
+
 	void VerifyAndStartDeployment(FString ForceSnapshot = "");
 
 	void StartLocalSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
-
-	void StartSpatialServiceButtonClicked();
-	void StopSpatialServiceButtonClicked();
 
 	void MapChanged(UWorld* World, EMapChangeType MapChangeType);
 	void DestroySpatialDebuggerEditor();
@@ -93,14 +93,10 @@ private:
 	bool StartCloudSpatialDeploymentIsVisible() const;
 	bool StartCloudSpatialDeploymentCanExecute() const;
 
+	bool LaunchInspectorWebpageCanExecute() const;
+
 	bool StopSpatialDeploymentIsVisible() const;
 	bool StopSpatialDeploymentCanExecute() const;
-
-	bool StartSpatialServiceIsVisible() const;
-	bool StartSpatialServiceCanExecute() const;
-
-	bool StopSpatialServiceIsVisible() const;
-	bool StopSpatialServiceCanExecute() const;
 
 	void OnToggleSpatialNetworking();
 	bool OnIsSpatialNetworkingEnabled() const;
@@ -119,6 +115,7 @@ private:
 	static bool IsLocalDeploymentIPEditable();
 	static bool AreCloudDeploymentPropertiesEditable();
 
+	void OpenInspectorURL();
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
@@ -194,9 +191,13 @@ private:
 	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
 
 	bool bStartingCloudDeployment;
+	bool bFetchingRuntimeBinary;
+	bool bFetchingInspectorBinary;
 
-	void GenerateConfigFromCurrentMap();
+	void GenerateCloudConfigFromCurrentMap();
 
 	// Used to show worker boundaries in the editor
 	TWeakObjectPtr<ASpatialDebugger> SpatialDebugger;
+
+	TOptional<FMonitoredProcess> InspectorProcess = {};
 };

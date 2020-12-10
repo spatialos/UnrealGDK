@@ -25,7 +25,7 @@ public:
 	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 									 const FSpatialGDKSpanId& SpanId = {}) = 0;
 	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
-	                                            const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId) = 0;
+												const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId) = 0;
 	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
 									 const FSpatialGDKSpanId& SpanId = {}) = 0;
 	virtual void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const FSpatialGDKSpanId& SpanId = {}) = 0;

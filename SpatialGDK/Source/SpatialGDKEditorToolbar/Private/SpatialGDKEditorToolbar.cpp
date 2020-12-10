@@ -111,16 +111,12 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 		if (GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment && GIsAutomationTesting
 			&& GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 		{
-			LocalDeploymentManager->IsServiceRunningAndInCorrectDirectory();
-			LocalDeploymentManager->GetLocalDeploymentStatus();
-
 			VerifyAndStartDeployment(GetDefault<ULevelEditorPlaySettings>()->GetSnapshotOverride());
 		}
 	});
 #endif
 
 	// We try to stop a local deployment either when the appropriate setting is selected, or when running with automation tests
-	// TODO: Reuse local deployment between test maps: UNR-2488
 	FEditorDelegates::EndPIE.AddLambda([this](bool bIsSimulatingInEditor) {
 		if ((GIsAutomationTesting || AutoStopLocalDeployment == EAutoStopLocalDeploymentMode::OnEndPIE)
 			&& LocalDeploymentManager->IsLocalDeploymentRunning())
@@ -129,7 +125,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 		}
 	});
 
-	LocalDeploymentManager->Init(GetOptionalExposedRuntimeIP());
+	LocalDeploymentManager->Init();
 	LocalReceptionistProxyServerManager->Init(GetDefault<USpatialGDKEditorSettings>()->LocalReceptionistPort);
 
 	SpatialGDKEditorInstance = FModuleManager::GetModuleChecked<FSpatialGDKEditorModule>("SpatialGDKEditor").GetSpatialGDKEditorInstance();
@@ -137,6 +133,22 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	// Get notified of map changed events to update worker boundaries in the editor
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	FDelegateHandle OnMapChangedHandle = LevelEditorModule.OnMapChanged().AddRaw(this, &FSpatialGDKEditorToolbarModule::MapChanged);
+
+	// Grab the runtime and inspector binaries ahead of time so they are ready when the user wants them.
+	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
+	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
+
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeVersion, InspectorVersion] {
+		if (!FetchRuntimeBinaryWrapper(RuntimeVersion))
+		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local runtime binary but failed!"));
+		}
+
+		if (!FetchInspectorBinaryWrapper(InspectorVersion))
+		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local inspector binary but failed!"));
+		}
+	});
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -183,8 +195,12 @@ void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 {
 	LocalReceptionistProxyServerManager->TryStopReceptionistProxyServer();
 
-	if (AutoStopLocalDeployment == EAutoStopLocalDeploymentMode::OnExitEditor)
+	if (AutoStopLocalDeployment != EAutoStopLocalDeploymentMode::Never)
 	{
+		if (InspectorProcess.IsSet() && InspectorProcess->Update())
+		{
+			InspectorProcess->Cancel();
+		}
 		LocalDeploymentManager->TryStopLocalDeployment();
 	}
 }
@@ -243,7 +259,7 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction,
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked),
-								FCanExecuteAction());
+								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageCanExecute));
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().EnableBuildClientWorker,
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnCheckedBuildClientWorker),
@@ -262,18 +278,6 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().OpenLaunchConfigurationEditorAction,
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OpenLaunchConfigurationEditor),
 								FCanExecuteAction());
-
-	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService,
-								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked),
-								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute),
-								FIsActionChecked(),
-								FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialServiceIsVisible));
-
-	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService,
-								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked),
-								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute),
-								FIsActionChecked(),
-								FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible));
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().EnableSpatialNetworking,
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnToggleSpatialNetworking),
@@ -342,8 +346,6 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 #endif
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchema);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
-		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
-		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
 	}
 	Builder.EndSection();
 }
@@ -370,8 +372,6 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 						   LOCTEXT("GDKSchemaCombo_Label", "Schema Generation Options"), TAttribute<FText>(),
 						   FSlateIcon(FEditorStyle::GetStyleSetName(), "GDK.Schema"), true);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
-	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
-	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
 }
 
 TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuContent()
@@ -683,48 +683,6 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
-{
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
-		FDateTime StartTime = FDateTime::Now();
-		OnShowTaskStartNotification(TEXT("Starting spatial service..."));
-
-		// If the runtime IP is to be exposed, pass it to the spatial service on startup
-		const bool bSpatialServiceStarted = LocalDeploymentManager->TryStartSpatialService(GetOptionalExposedRuntimeIP());
-		if (!bSpatialServiceStarted)
-		{
-			OnShowFailedNotification(TEXT("Spatial service failed to start"));
-			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not start spatial service."));
-			return;
-		}
-
-		FTimespan Span = FDateTime::Now() - StartTime;
-
-		OnShowSuccessNotification(TEXT("Spatial service started!"));
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service started in %f seconds."), Span.GetTotalSeconds());
-	});
-}
-
-void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
-{
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
-		FDateTime StartTime = FDateTime::Now();
-		OnShowTaskStartNotification(TEXT("Stopping spatial service..."));
-
-		if (!LocalDeploymentManager->TryStopSpatialService())
-		{
-			OnShowFailedNotification(TEXT("Spatial service failed to stop"));
-			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not stop spatial service."));
-			return;
-		}
-
-		FTimespan Span = FDateTime::Now() - StartTime;
-
-		OnShowSuccessNotification(TEXT("Spatial service stopped!"));
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service stopped in %f seconds."), Span.GetTotalSeconds());
-	});
-}
-
 void FSpatialGDKEditorToolbarModule::ToggleSpatialDebuggerEditor()
 {
 	if (SpatialDebugger.IsValid())
@@ -774,6 +732,41 @@ void FSpatialGDKEditorToolbarModule::MapChanged(UWorld* World, EMapChangeType Ma
 	}
 }
 
+bool FSpatialGDKEditorToolbarModule::FetchRuntimeBinaryWrapper(FString RuntimeVersion)
+{
+	bFetchingRuntimeBinary = true;
+
+	const bool bSuccess = SpatialCommandUtils::FetchRuntimeBinary(RuntimeVersion, GetDefault<USpatialGDKSettings>()->IsRunningInChina());
+
+	if (!bSuccess)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not fetch the local runtime for version %s"), *RuntimeVersion);
+		OnShowFailedNotification(TEXT("Failed to fetch local runtime!"));
+	}
+
+	bFetchingRuntimeBinary = false;
+
+	return bSuccess;
+}
+
+bool FSpatialGDKEditorToolbarModule::FetchInspectorBinaryWrapper(FString InspectorVersion)
+{
+	bFetchingInspectorBinary = true;
+
+	const bool bSuccess =
+		SpatialCommandUtils::FetchInspectorBinary(InspectorVersion, GetDefault<USpatialGDKSettings>()->IsRunningInChina());
+
+	if (!bSuccess)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not fetch the Inspector for version %s"), *InspectorVersion);
+		OnShowFailedNotification(TEXT("Failed to fetch local inspector!"));
+	}
+
+	bFetchingInspectorBinary = false;
+
+	return bSuccess;
+}
+
 void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnapshot /* = ""*/)
 {
 	// Don't try and start a local deployment if spatial networking is disabled.
@@ -817,31 +810,31 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 
 		FSpatialLaunchConfigDescription LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 
-		FWorkerTypeLaunchSection Conf = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig;
 		// Force manual connection to true as this is the config for PIE.
-		Conf.bManualWorkerConnectionOnly = true;
-		if (Conf.bAutoNumEditorInstances)
+		LaunchConfigDescription.ServerWorkerConfiguration.bManualWorkerConnectionOnly = true;
+		if (LaunchConfigDescription.ServerWorkerConfiguration.bAutoNumEditorInstances)
 		{
-			Conf.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+			LaunchConfigDescription.ServerWorkerConfiguration.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
 		}
 
-		if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription, Conf))
+		if (!ValidateGeneratedLaunchConfig(LaunchConfigDescription))
 		{
 			return;
 		}
 
-		GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, Conf);
+		GenerateLaunchConfig(LaunchConfig, &LaunchConfigDescription, /*bGenerateCloudConfig*/ false);
 
 		// Also create default launch config for cloud deployments.
 		{
 			// Revert to the setting's flag value for manual connection.
-			Conf.bManualWorkerConnectionOnly = SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfig.bManualWorkerConnectionOnly;
+			LaunchConfigDescription.ServerWorkerConfiguration.bManualWorkerConnectionOnly =
+				SpatialGDKEditorSettings->LaunchConfigDesc.ServerWorkerConfiguration.bManualWorkerConnectionOnly;
 			FString CloudLaunchConfig =
 				FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()),
 								FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
-			Conf.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
+			LaunchConfigDescription.ServerWorkerConfiguration.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
 
-			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, Conf);
+			GenerateLaunchConfig(CloudLaunchConfig, &LaunchConfigDescription, /*bGenerateCloudConfig*/ true);
 		}
 	}
 	else
@@ -851,9 +844,17 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 
 	const FString LaunchFlags = SpatialGDKEditorSettings->GetSpatialOSCommandLineLaunchFlags();
 	const FString SnapshotName = ForceSnapshot.IsEmpty() ? SpatialGDKEditorSettings->GetSpatialOSSnapshotToLoad() : ForceSnapshot;
+	const FString SnapshotPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, SnapshotName);
+
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotName, RuntimeVersion] {
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags, SnapshotPath, RuntimeVersion] {
+		if (!FetchRuntimeBinaryWrapper(RuntimeVersion))
+		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but could not fetch the local runtime."));
+			return;
+		}
+
 		// If the last local deployment is still stopping then wait until it's finished.
 		while (LocalDeploymentManager->IsDeploymentStopping())
 		{
@@ -864,7 +865,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 		if (LocalDeploymentManager->IsRedeployRequired() && LocalDeploymentManager->IsLocalDeploymentRunning())
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Local deployment must restart."));
-			OnShowTaskStartNotification(TEXT("Local deployment restarting."));
 			LocalDeploymentManager->TryStopLocalDeployment();
 		}
 		else if (LocalDeploymentManager->IsLocalDeploymentRunning())
@@ -874,18 +874,13 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 		}
 
 		FLocalDeploymentManager::LocalDeploymentCallback CallBack = [this](bool bSuccess) {
-			if (bSuccess)
-			{
-				OnShowSuccessNotification(TEXT("Local deployment started!"));
-			}
-			else
+			if (!bSuccess)
 			{
 				OnShowFailedNotification(TEXT("Local deployment failed to start"));
 			}
 		};
 
-		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
-		LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotName,
+		LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchFlags, SnapshotPath,
 														GetOptionalExposedRuntimeIP(), CallBack);
 	});
 }
@@ -898,33 +893,17 @@ void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
-		OnShowTaskStartNotification(TEXT("Stopping local deployment..."));
-		if (LocalDeploymentManager->TryStopLocalDeployment())
-		{
-			OnShowSuccessNotification(TEXT("Successfully stopped local deployment"));
-		}
-		else
+		if (!LocalDeploymentManager->TryStopLocalDeployment())
 		{
 			OnShowFailedNotification(TEXT("Failed to stop local deployment!"));
 		}
 	});
 }
 
-void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
+void FSpatialGDKEditorToolbarModule::OpenInspectorURL()
 {
-	// Get the runtime variant currently being used as this affects which Inspector to use.
-	FString InspectorURL;
-	if (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Standard)
-	{
-		InspectorURL = SpatialGDKServicesConstants::InspectorV2URL;
-	}
-	else
-	{
-		InspectorURL = SpatialGDKServicesConstants::InspectorURL;
-	}
-
 	FString WebError;
-	FPlatformProcess::LaunchURL(*InspectorURL, TEXT(""), &WebError);
+	FPlatformProcess::LaunchURL(*SpatialGDKServicesConstants::InspectorV2URL, TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
 	{
 		FNotificationInfo Info(FText::FromString(WebError));
@@ -934,6 +913,60 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 		NotificationItem->ExpireAndFadeout();
 	}
+}
+
+void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
+{
+	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
+
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion] {
+		if (InspectorProcess && InspectorProcess->Update())
+		{
+			// We already have an inspector running. Just open the URL.
+			OpenInspectorURL();
+			return;
+		}
+
+		// Check for any old inspector processes that may be leftover from previous runs. Kill any we find.
+		SpatialCommandUtils::TryKillProcessWithName(SpatialGDKServicesConstants::InspectorExe);
+
+		// Grab the inspector binary
+		if (!SpatialCommandUtils::FetchInspectorBinary(InspectorVersion, GetDefault<USpatialGDKSettings>()->IsRunningInChina()))
+		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to fetch the local inspector binary but failed!"));
+			OnShowFailedNotification(TEXT("Failed to fetch local inspector!"));
+			return;
+		}
+
+		FString InspectorArgs =
+			FString::Printf(TEXT("--backend_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorBackendAddress,
+							*SpatialGDKServicesConstants::SchemaBundlePath);
+
+		InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,
+							 SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
+							 /*InCreatePipes*/ true };
+
+		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+		TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
+
+		InspectorProcess->OnOutput().BindLambda([this](const FString& Output) {
+			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Inspector: %s"), *Output)
+		});
+
+		InspectorProcess->OnCanceled().BindLambda([this] {
+			if (InspectorProcess->GetReturnCode() != SpatialGDKServicesConstants::ExitCodeSuccess)
+			{
+				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Inspector crashed! Please check logs for more details. Exit code: %s"),
+					   *FString::FromInt(InspectorProcess->GetReturnCode()));
+				OnShowFailedNotification(TEXT("Inspector crashed!"));
+			}
+		});
+
+		InspectorProcess->Launch();
+
+		OpenInspectorURL();
+	});
 }
 
 bool FSpatialGDKEditorToolbarModule::StartNativeIsVisible() const
@@ -954,7 +987,7 @@ bool FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentIsVisible() cons
 
 bool FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentCanExecute() const
 {
-	return !LocalDeploymentManager->IsServiceStarting() && !LocalDeploymentManager->IsDeploymentStarting();
+	return !LocalDeploymentManager->IsDeploymentStarting() && !bFetchingRuntimeBinary;
 }
 
 bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentIsVisible() const
@@ -974,33 +1007,19 @@ bool FSpatialGDKEditorToolbarModule::StartCloudSpatialDeploymentCanExecute() con
 #endif
 }
 
+bool FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageCanExecute() const
+{
+	return !bFetchingInspectorBinary;
+}
+
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible() const
 {
-	return LocalDeploymentManager->IsSpatialServiceRunning() && LocalDeploymentManager->IsLocalDeploymentRunning();
+	return LocalDeploymentManager->IsLocalDeploymentRunning();
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentCanExecute() const
 {
 	return !LocalDeploymentManager->IsDeploymentStopping();
-}
-
-bool FSpatialGDKEditorToolbarModule::StartSpatialServiceIsVisible() const
-{
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-
-	return SpatialGDKSettings->bShowSpatialServiceButton && !LocalDeploymentManager->IsSpatialServiceRunning();
-}
-
-bool FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute() const
-{
-	return !LocalDeploymentManager->IsServiceStarting();
-}
-
-bool FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible() const
-{
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-
-	return SpatialGDKSettings->bShowSpatialServiceButton && LocalDeploymentManager->IsSpatialServiceRunning();
 }
 
 void FSpatialGDKEditorToolbarModule::OnToggleSpatialNetworking()
@@ -1090,11 +1109,6 @@ bool FSpatialGDKEditorToolbarModule::AreCloudDeploymentPropertiesEditable()
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
 		   && (SpatialGDKEditorSettings->SpatialOSNetFlowType == ESpatialOSNetFlow::CloudDeployment);
-}
-
-bool FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute() const
-{
-	return !LocalDeploymentManager->IsServiceStopping();
 }
 
 void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent)
@@ -1292,7 +1306,7 @@ void FSpatialGDKEditorToolbarModule::OnAutoStartLocalDeploymentChanged()
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
+void FSpatialGDKEditorToolbarModule::GenerateCloudConfigFromCurrentMap()
 {
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 
@@ -1303,10 +1317,10 @@ void FSpatialGDKEditorToolbarModule::GenerateConfigFromCurrentMap()
 												 FString::Printf(TEXT("Improbable/%s_CloudLaunchConfig.json"), *EditorWorld->GetMapName()));
 
 	FSpatialLaunchConfigDescription LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
-	FWorkerTypeLaunchSection& ServerWorkerConfig = LaunchConfiguration.ServerWorkerConfig;
-	ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
 
-	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, ServerWorkerConfig);
+	LaunchConfiguration.ServerWorkerConfiguration.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld, true);
+
+	GenerateLaunchConfig(LaunchConfig, &LaunchConfiguration, /*bGenerateCloudConfig*/ true);
 
 	SpatialGDKEditorSettings->SetPrimaryLaunchConfigPath(LaunchConfig);
 }
@@ -1324,7 +1338,7 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 
 	if (SpatialGDKSettings->ShouldAutoGenerateCloudLaunchConfig())
 	{
-		GenerateConfigFromCurrentMap();
+		GenerateCloudConfigFromCurrentMap();
 	}
 
 	AddDeploymentTagIfMissing(SpatialConstants::DEV_LOGIN_TAG);
