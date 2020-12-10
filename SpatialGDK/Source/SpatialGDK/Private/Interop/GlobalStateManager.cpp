@@ -95,7 +95,7 @@ void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
 		StaticComponentView->HasComponent(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 	const bool bWorkerEntityReady =
 		NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID
-		&& StaticComponentView->HasAuthority(NetDriver->WorkerEntityId, SpatialConstants::SERVER_WORKER_COMPONENT_ID);
+		&& StaticComponentView->HasAuthority(NetDriver->WorkerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
 
 	if (bHasSentReadyForVirtualWorkerAssignment || !bHasReceivedStartupActorData || !bWorkerEntityReady)
 	{
@@ -204,7 +204,7 @@ void UGlobalStateManager::ReceiveShutdownAdditionalServersEvent()
 
 void UGlobalStateManager::SendShutdownAdditionalServersEvent()
 {
-	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID))
+	if (!StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
 	{
 		UE_LOG(LogGlobalStateManager, Warning,
 			   TEXT("Tried to send shutdown_additional_servers event on the GSM but this worker does not have authority."));
@@ -237,7 +237,7 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(Schema_ComponentUpdate*
 
 void UGlobalStateManager::SetDeploymentState()
 {
-	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID));
+	check(StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID));
 
 	UWorld* CurrentWorld = NetDriver->GetWorld();
 
@@ -268,7 +268,7 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	// - we've called BeginPlay (so startup Actors can do initialization before any spawn requests are received),
 	// - we aren't duplicating the current state.
 	const bool bHasDeploymentMapAuthority =
-		NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
+		StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
 	const bool bHasBegunPlay = NetDriver->GetWorld()->HasBegunPlay();
 	const bool bIsDuplicatingCurrentState = bAcceptingPlayers == bInAcceptingPlayers;
 	if (!bHasDeploymentMapAuthority || !bHasBegunPlay || bIsDuplicatingCurrentState)
@@ -301,16 +301,13 @@ void UGlobalStateManager::AuthorityChanged(const Worker_ComponentSetAuthorityCha
 		return;
 	}
 
-	switch (AuthOp.component_set_id)
-	{
-	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+	if (StaticComponentView->HasComponent(AuthOp.entity_id, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
 	{
 		GlobalStateManagerEntityId = AuthOp.entity_id;
 		SetDeploymentState();
-		SetAcceptingPlayers(true);
-		break;
 	}
-	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+
+	if (StaticComponentView->HasComponent(AuthOp.entity_id, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
 	{
 		// The bCanSpawnWithAuthority member determines whether a server-side worker
 		// should consider calling BeginPlay on startup Actors if the load-balancing
@@ -324,12 +321,6 @@ void UGlobalStateManager::AuthorityChanged(const Worker_ComponentSetAuthorityCha
 		// crashed worker or in a deployment loaded from snapshot, so bCanSpawnWithAuthority
 		// should be false.
 		bCanSpawnWithAuthority = !bCanBeginPlay;
-		break;
-	}
-	default:
-	{
-		break;
-	}
 	}
 }
 
@@ -363,7 +354,8 @@ void UGlobalStateManager::BeginDestroy()
 
 #if WITH_EDITOR
 	if (NetDriver != nullptr
-		&& NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
+		&& NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId,
+														SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
 	{
 		// If we are deleting dynamically spawned entities, we need to
 		if (GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities())
@@ -432,7 +424,7 @@ void UGlobalStateManager::ClaimSnapshotPartition() const
 void UGlobalStateManager::TriggerBeginPlay()
 {
 	const bool bHasStartupActorAuthority =
-		NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+		StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
 	if (bHasStartupActorAuthority)
 	{
 		SendCanBeginPlayUpdate(true);
@@ -475,13 +467,12 @@ bool UGlobalStateManager::GetCanBeginPlay() const
 bool UGlobalStateManager::IsReady() const
 {
 	return GetCanBeginPlay()
-		   || NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId,
-														   SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+		   || StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
 }
 
 void UGlobalStateManager::SendCanBeginPlayUpdate(const bool bInCanBeginPlay)
 {
-	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID));
+	check(StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID));
 
 	bCanBeginPlay = bInCanBeginPlay;
 

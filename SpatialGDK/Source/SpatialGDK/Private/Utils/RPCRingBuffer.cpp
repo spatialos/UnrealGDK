@@ -32,6 +32,23 @@ Worker_ComponentId GetRingBufferComponentId(ERPCType Type)
 	}
 }
 
+Worker_ComponentId GetRingBufferAuthComponentSetId(ERPCType Type)
+{
+	switch (Type)
+	{
+	case ERPCType::ClientReliable:
+	case ERPCType::ClientUnreliable:
+		return SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID;
+	case ERPCType::ServerReliable:
+	case ERPCType::ServerUnreliable:
+	case ERPCType::NetMulticast:
+		return SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
+	default:
+		checkNoEntry();
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
+}
+
 RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 {
 	RPCRingBufferDescriptor Descriptor;
@@ -83,6 +100,22 @@ Worker_ComponentId GetAckComponentId(ERPCType Type)
 	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
 		return SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
+	default:
+		checkNoEntry();
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
+}
+
+Worker_ComponentId GetAckAuthComponentSetId(ERPCType Type)
+{
+	switch (Type)
+	{
+	case ERPCType::ClientReliable:
+	case ERPCType::ClientUnreliable:
+		return SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
+	case ERPCType::ServerReliable:
+	case ERPCType::ServerUnreliable:
+		return SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID;
 	default:
 		checkNoEntry();
 		return SpatialConstants::INVALID_COMPONENT_ID;

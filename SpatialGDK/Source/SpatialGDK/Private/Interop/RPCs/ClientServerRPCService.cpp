@@ -141,10 +141,6 @@ void ClientServerRPCService::SetEntityData(Worker_EntityId EntityId)
 {
 	for (const Worker_ComponentId ComponentId : SubView->GetView()[EntityId].Authority)
 	{
-		if (!IsClientOrServerEndpoint(ComponentId))
-		{
-			continue;
-		}
 		OnEndpointAuthorityGained(EntityId, ComponentId);
 	}
 }
@@ -203,7 +199,7 @@ void ClientServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId Ent
 {
 	switch (ComponentId)
 	{
-	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID:
 	{
 		const ClientEndpoint& Endpoint = ClientServerDataStore[EntityId].Client;
 		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint.ReliableRPCAck);
@@ -214,7 +210,7 @@ void ClientServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId Ent
 		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerUnreliable), Endpoint.UnreliableRPCBuffer.LastSentRPCId);
 		break;
 	}
-	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID:
 	{
 		const ServerEndpoint& Endpoint = ClientServerDataStore[EntityId].Server;
 		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint.ReliableRPCAck);
@@ -278,7 +274,7 @@ void ClientServerRPCService::HandleRPC(const Worker_EntityId EntityId, const Wor
 	// to print errors if the role isn't Authority. Instead, we exit here, and the RPC will be processed by the server that receives
 	// authority.
 	const bool bIsServerRpc = ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
-	if (bIsServerRpc && SubView->HasAuthority(EntityId, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID))
+	if (bIsServerRpc && SubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
 	{
 		const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver->PackageMap->GetObjectFromEntityId(EntityId);
 		if (!ActorReceivingRPC.IsValid())

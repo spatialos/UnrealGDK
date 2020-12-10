@@ -1329,7 +1329,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	bool bUpdatedThisActor = false;
 
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
-	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID));
+	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID));
 	SpatialGDK::NetOwningClientWorker* CurrentNetOwningClientData =
 		NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
 	const Worker_PartitionId CurrentClientPartitionId = CurrentNetOwningClientData->ClientPartitionId.IsSet()

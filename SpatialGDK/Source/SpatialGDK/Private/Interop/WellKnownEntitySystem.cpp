@@ -96,22 +96,28 @@ void WellKnownEntitySystem::ProcessComponentAdd(const Worker_ComponentId Compone
 	}
 }
 
-void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
-	if (GlobalStateManager->HandlesComponent(ComponentId))
+	// if (GlobalStateManager->HandlesComponent(ComponentSetId))
 	{
-		GlobalStateManager->AuthorityChanged({ EntityId, ComponentId, WORKER_AUTHORITY_AUTHORITATIVE });
+		GlobalStateManager->AuthorityChanged({ EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
 	}
 
-	if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
+	// if (ComponentSetId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
+	if (SubView->GetView()[EntityId].Components.ContainsByPredicate([](const SpatialGDK::ComponentData& CompData) {
+			return CompData.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID;
+		}))
 	{
 		GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 	}
 
-	if (ComponentId == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
+	// if (ComponentSetId == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
+	if (SubView->GetView()[EntityId].Components.ContainsByPredicate([](const SpatialGDK::ComponentData& CompData) {
+			return CompData.GetComponentId() == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
+		}))
 	{
 		InitializeVirtualWorkerTranslationManager();
-		VirtualWorkerTranslationManager->AuthorityChanged({ EntityId, ComponentId, WORKER_AUTHORITY_AUTHORITATIVE });
+		VirtualWorkerTranslationManager->AuthorityChanged({ EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
 	}
 }
 
@@ -122,7 +128,7 @@ void WellKnownEntitySystem::ProcessEntityAdd(const Worker_EntityId EntityId)
 	{
 		ProcessComponentAdd(ComponentData.GetComponentId(), ComponentData.GetUnderlying());
 	}
-	for (const Worker_ComponentId ComponentId : Element.Authority)
+	for (const Worker_ComponentSetId ComponentId : Element.Authority)
 	{
 		ProcessAuthorityGain(EntityId, ComponentId);
 	}

@@ -482,7 +482,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	for (int i = 0; i < ComponentUpdates.Num(); i++)
 	{
 		FWorkerComponentUpdate& Update = ComponentUpdates[i];
-		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, Update.component_id))
+		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
 		{
 			UE_LOG(LogSpatialSender, Verbose,
 				   TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. "
@@ -1168,7 +1168,7 @@ void USpatialSender::CreateTombstoneEntity(AActor* Actor)
 
 void USpatialSender::AddTombstoneToEntity(const Worker_EntityId EntityId)
 {
-	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID));
+	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID));
 
 	Worker_AddComponentOp AddComponentOp{};
 	AddComponentOp.entity_id = EntityId;

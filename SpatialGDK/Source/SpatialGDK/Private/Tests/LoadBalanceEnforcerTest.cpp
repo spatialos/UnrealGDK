@@ -106,7 +106,7 @@ void AddLBEntityToView(SpatialGDK::EntityView& View, const Worker_EntityId Entit
 	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::HEARTBEAT_COMPONENT_ID));
 	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 
-	AddAuthorityToView(View, EntityId, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID);
+	AddAuthorityToView(View, EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
 }
 
 AuthorityDelegationMap GetAuthDelegationMapFromUpdate(const SpatialGDK::EntityComponentUpdate& Update)

@@ -742,7 +742,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	{
 		if (GlobalStateManager != nullptr && !GlobalStateManager->GetCanBeginPlay()
 			&& StaticComponentView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId,
-												 SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
+												 SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
 		{
 			// ServerTravel - Increment the session id, so users don't rejoin the old game.
 			GlobalStateManager->TriggerBeginPlay();
@@ -789,7 +789,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
 
 	if (!NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
-													  SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
+													  SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
 	{
 		// TODO: UNR-678 Send a command to the GSM to initiate server travel on the correct server.
 		UE_LOG(LogGameMode, Warning, TEXT("Trying to server travel on a server which is not authoritative over the GSM."));
@@ -2124,13 +2124,12 @@ void USpatialNetDriver::CleanUpClientConnection(USpatialNetConnection* Connectio
 
 bool USpatialNetDriver::HasServerAuthority(Worker_EntityId EntityId) const
 {
-	return StaticComponentView->HasAuthority(EntityId, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID);
+	return StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
 }
 
 bool USpatialNetDriver::HasClientAuthority(Worker_EntityId EntityId) const
 {
-	return StaticComponentView->HasAuthority(
-		EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
+	return StaticComponentView->HasAuthority(EntityId, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
 }
 
 void USpatialNetDriver::ProcessPendingDormancy()
@@ -2477,7 +2476,7 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 		return;
 	}
 
-	const bool bHasAuthority = StaticComponentView->HasAuthority(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
+	const bool bHasAuthority = HasServerAuthority(EntityId);
 	if (bHasAuthority == false)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Unable to flush dormancy on actor (%s) without authority"), *Actor->GetName());
@@ -2524,7 +2523,7 @@ void USpatialNetDriver::RefreshActorVisibility(AActor* Actor, bool bMakeVisible)
 		return;
 	}
 
-	const bool bHasAuthority = StaticComponentView->HasAuthority(EntityId, SpatialConstants::VISIBLE_COMPONENT_ID);
+	const bool bHasAuthority = HasServerAuthority(EntityId);
 	if (!bHasAuthority)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Unable to change visibility on an actor without authority. Actor's name: %s "),
