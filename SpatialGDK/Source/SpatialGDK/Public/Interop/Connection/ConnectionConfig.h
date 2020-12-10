@@ -45,8 +45,6 @@ struct FConnectionConfig
 		// TODO: When upgrading to Worker SDK 14.6.2, remove this parameter and set it to 0 for infinite file size
 		FParse::Value(CommandLine, TEXT("workerSDKLogFileSize"), WorkerSDKLogFileSize);
 
-		ConnectionTypeMap.Init(WORKER_NETWORK_CONNECTION_TYPE_TCP, 2);
-
 		GetWorkerSDKLogLevel(CommandLine);
 		GetLinkProtocol(CommandLine);
 	}
@@ -143,7 +141,7 @@ public:
 	uint32 WorkerSDKLogFileSize;
 	Worker_LogLevel WorkerSDKLogLevel;
 	Worker_NetworkConnectionType LinkProtocol;
-	TArray<Worker_NetworkConnectionType> ConnectionTypeMap;
+	Worker_NetworkConnectionType ConnectionTypeMap[2];
 	Worker_ConnectionParameters ConnectionParams = {};
 	uint8 TcpMultiplexLevel;
 	uint8 TcpNoDelay;
