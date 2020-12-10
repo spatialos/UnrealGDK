@@ -22,7 +22,6 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientRPCEndpointLegacy.h"
-#include "Schema/ComponentPresence.h"
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerRPCEndpointLegacy.h"
@@ -141,8 +140,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
 
-	ComponentDatas.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(ComponentDatas)).CreateComponentPresenceData());
-
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	FSpatialGDKSpanId SpanId;
@@ -214,56 +211,10 @@ void USpatialSender::SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerC
 		return;
 	}
 
-	// Update ComponentPresence.
-	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
-	ComponentPresence* Presence = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
-	Presence->AddComponentDataIds(ComponentDatas);
-	FWorkerComponentUpdate Update = Presence->CreateComponentPresenceUpdate();
-	Connection->SendComponentUpdate(EntityId, &Update);
-
-	// Short circuit an enforcer update if possible.
-	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
-
 	for (FWorkerComponentData& ComponentData : ComponentDatas)
 	{
 		Connection->SendAddComponent(EntityId, &ComponentData);
 	}
-}
-
-void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info)
-{
-	Worker_EntityId EntityId = Channel->GetEntityId();
-
-	TSharedRef<FPendingSubobjectAttachment> PendingSubobjectAttachment = MakeShared<FPendingSubobjectAttachment>();
-	PendingSubobjectAttachment->Subobject = Object;
-	PendingSubobjectAttachment->Info = Info;
-
-	// We collect component IDs related to the dynamic subobject being added to gain authority over.
-	TArray<Worker_ComponentId> NewComponentIds;
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
-		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			// For each valid ComponentId, we need to wait for its authority delegation before
-			// adding the subobject.
-			PendingSubobjectAttachment->PendingAuthorityDelegations.Add(ComponentId);
-			Receiver->PendingEntitySubobjectDelegations.Add(MakeTuple(static_cast<Worker_EntityId_Key>(EntityId), ComponentId),
-															PendingSubobjectAttachment);
-
-			NewComponentIds.Add(ComponentId);
-		}
-	});
-
-	// Update the ComponentPresence component with the new component IDs. This component is used to inform the enforcer
-	// of the component IDs to add to the AuthorityDelegation.
-	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
-	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
-	ComponentPresenceData->AddComponentIds(NewComponentIds);
-	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
-	Connection->SendComponentUpdate(EntityId, &Update);
-
-	// Notify the load balance enforcer of a potential short circuit if we are the AuthorityDelegation authoritative worker.
-	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
 }
 
 void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
@@ -285,12 +236,6 @@ void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, c
 
 void USpatialSender::SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds)
 {
-	check(StaticComponentView->HasAuthority(EntityId, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID));
-	ComponentPresence* ComponentPresenceData = StaticComponentView->GetComponentData<ComponentPresence>(EntityId);
-	ComponentPresenceData->RemoveComponentIds(ComponentIds);
-	FWorkerComponentUpdate Update = ComponentPresenceData->CreateComponentPresenceUpdate();
-	Connection->SendComponentUpdate(EntityId, &Update);
-
 	for (auto ComponentId : ComponentIds)
 	{
 		Connection->SendRemoveComponent(EntityId, ComponentId);
@@ -315,7 +260,6 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, EntityId);
 	DelegationMap.Add(SpatialConstants::SERVER_WORKER_COMPONENT_ID, EntityId);
-	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, EntityId);
 	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 
 	check(NetDriver != nullptr);
@@ -326,9 +270,6 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
-
-	// Presence component. Must be calculated after all other components have been added.
-	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	const Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), &EntityId, RETRY_UNTIL_COMPLETE);
 
@@ -1213,8 +1154,6 @@ void USpatialSender::CreateTombstoneEntity(AActor* Actor)
 	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
 
 	Components.Add(CreateLevelComponentData(Actor));
-
-	Components.Add(ComponentPresence(EntityFactory::GetComponentPresenceList(Components)).CreateComponentPresenceData());
 
 	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
 

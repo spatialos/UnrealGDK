@@ -832,7 +832,6 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 	FString CoreSDKSchemaCopyDir =
 		FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("/Tests/build/dependencies/schema/standard_library"));
 	TArray<FString> GDKSchemaFilePaths = { "authority_intent.schema",
-										   "component_presence.schema",
 										   "core_types.schema",
 										   "debug_component.schema",
 										   "debug_metrics.schema",
