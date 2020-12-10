@@ -83,8 +83,6 @@ const Worker_ComponentId POSITION_COMPONENT_ID = 54;
 const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
 const Worker_ComponentId INTEREST_COMPONENT_ID = 58;
 
-const Worker_ComponentSetId WELL_KNOWN_COMPONENT_SET_ID = 50;
-
 // This is a component on per-worker system entities.
 const Worker_ComponentId WORKER_COMPONENT_ID = 60;
 const Worker_ComponentId PLAYERIDENTITY_COMPONENT_ID = 61;
@@ -101,6 +99,19 @@ const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
 const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
 const Worker_ComponentId HEARTBEAT_COMPONENT_ID = 9991;
+
+const Worker_ComponentId SERVER_AUTH_COMPONENT_SET_ID = 9900;
+const Worker_ComponentId CLIENT_AUTH_COMPONENT_SET_ID = 9901;
+const Worker_ComponentId DATA_COMPONENT_SET_ID = 9902;
+const Worker_ComponentId OWNER_ONLY_COMPONENT_SET_ID = 9903;
+const Worker_ComponentId HANDOVER_COMPONENT_SET_ID = 9904;
+const Worker_ComponentId GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID = 9905;
+
+const FString SERVER_AUTH_COMPONENT_SET_NAME = TEXT("ServerAuthoritativeComponentSet");
+const FString CLIENT_AUTH_COMPONENT_SET_NAME = TEXT("ClientAuthoritativeComponentSet");
+const FString DATA_COMPONENT_SET_NAME = TEXT("DataComponentSet");
+const FString OWNER_ONLY_COMPONENT_SET_NAME = TEXT("OwnerOnlyComponentSet");
+const FString HANDOVER_COMPONENT_SET_NAME = TEXT("HandoverComponentSet");
 
 // Marking the event-based RPC components as legacy while the ring buffer
 // implementation is under a feature flag.
@@ -435,10 +446,62 @@ inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 	}
 }
 
-inline Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
-{
-	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
-}
+const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
+	"improbable/standard_library.schema",
+	"unreal/gdk/authority_intent.schema",
+	"unreal/gdk/debug_component.schema",
+	"unreal/gdk/debug_metrics.schema",
+	"unreal/gdk/net_owning_client_worker.schema",
+	"unreal/gdk/not_streamed.schema",
+	"unreal/gdk/query_tags.schema",
+	"unreal/gdk/relevant.schema",
+	"unreal/gdk/rpc_components.schema",
+	"unreal/gdk/spatial_debugging.schema",
+	"unreal/gdk/spawndata.schema",
+	"unreal/gdk/tombstone.schema",
+	"unreal/gdk/unreal_metadata.schema",
+	"unreal/generated/rpc_endpoints.schema",
+	"unreal/generated/NetCullDistance/ncdcomponents.schema",
+};
+
+const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
+	{ POSITION_COMPONENT_ID, "improbable.Position" },
+	{ INTEREST_COMPONENT_ID, "improbable.Interest" },
+	{ AUTHORITY_DELEGATION_COMPONENT_ID, "improbable.AuthorityDelegation" },
+	{ AUTHORITY_INTENT_COMPONENT_ID, "unreal.AuthorityIntent" },
+	{ GDK_DEBUG_COMPONENT_ID, "unreal.DebugComponent" },
+	{ DEBUG_METRICS_COMPONENT_ID, "unreal.DebugMetrics" },
+	{ NET_OWNING_CLIENT_WORKER_COMPONENT_ID, "unreal.NetOwningClientWorker" },
+	{ NOT_STREAMED_COMPONENT_ID, "unreal.NotStreamed" },
+	{ ALWAYS_RELEVANT_COMPONENT_ID, "unreal.AlwaysRelevant" },
+	{ DORMANT_COMPONENT_ID, "unreal.Dormant" },
+	{ VISIBLE_COMPONENT_ID, "unreal.Visible" },
+	{ SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, "unreal.UnrealServerRPCEndpointLegacy" },
+	{ SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, "unreal.UnrealServerToServerCommandEndpoint" },
+	{ MULTICAST_RPCS_COMPONENT_ID, "unreal.UnrealMulticastRPCEndpointLegacy" },
+	{ RPCS_ON_ENTITY_CREATION_ID, "unreal.RPCsOnEntityCreation" },
+	{ SPATIAL_DEBUGGING_COMPONENT_ID, "unreal.SpatialDebugging" },
+	{ SPAWN_DATA_COMPONENT_ID, "unreal.SpawnData" },
+	{ TOMBSTONE_COMPONENT_ID, "unreal.Tombstone" },
+	{ UNREAL_METADATA_COMPONENT_ID, "unreal.UnrealMetadata" },
+	{ SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },
+	{ MULTICAST_RPCS_COMPONENT_ID, "unreal.generated.UnrealMulticastRPCs" },
+};
+
+const TArray<FString> ClientAuthorityWellKnownSchemaImports = { "unreal/gdk/heartbeat.schema", "unreal/gdk/rpc_components.schema",
+																"unreal/generated/rpc_endpoints.schema" };
+
+const TMap<Worker_ComponentId, FString> ClientAuthorityWellKnownComponents = {
+	{ HEARTBEAT_COMPONENT_ID, "unreal.Heartbeat" },
+	{ CLIENT_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealClientEndpoint" },
+	{ CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, "unreal.UnrealClientRPCEndpointLegacy" },
+};
+
+const TArray<Worker_ComponentId> KnownEntityAuthorityComponents = { POSITION_COMPONENT_ID,		 METADATA_COMPONENT_ID,
+																	INTEREST_COMPONENT_ID,		 PLAYER_SPAWNER_COMPONENT_ID,
+																	DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID,
+																	GSM_SHUTDOWN_COMPONENT_ID,	 VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
+																	SERVER_WORKER_COMPONENT_ID };
 
 } // namespace SpatialConstants
 

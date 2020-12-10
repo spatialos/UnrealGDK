@@ -89,15 +89,11 @@ void AddLBEntityToView(SpatialGDK::EntityView& View, const Worker_EntityId Entit
 	AddEntityToView(View, EntityId);
 
 	AuthorityDelegationMap DelegationMap;
-	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, AuthPartitionId);
-	DelegationMap.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthPartitionId);
-	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, AuthPartitionId);
-	DelegationMap.Add(SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, AuthPartitionId);
+	DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthPartitionId);
 
 	if (ClientAuthPartitionId != SpatialConstants::INVALID_ENTITY_ID)
 	{
-		DelegationMap.Add(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, ClientAuthPartitionId);
-		DelegationMap.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, ClientAuthPartitionId);
+		DelegationMap.Add(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, ClientAuthPartitionId);
 	}
 
 	AddComponentToView(View, EntityId,
