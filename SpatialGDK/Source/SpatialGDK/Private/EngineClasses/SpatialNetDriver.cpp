@@ -104,6 +104,12 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	// TODO: UNR-2375
 	bMaySendProperties = true;
 
+#if ENGINE_MINOR_VERSION >= 26
+	// Due to changes in 4.26, which remove almost all usages of InternalAck, we now need this
+	// flag to tell NetDriver to not replicate actors when we call our super UNetDriver::TickFlush.
+	bSkipServerReplicateActors = true;
+#endif
+
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
 }
 
@@ -2055,7 +2061,7 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %lld 's NetConnection created."), ClientSystemEntityId);
 
-		WorkerConnections.Add(ClientSystemEntityId, SpatialConnection);
+		RegisterClientConnection(ClientSystemEntityId, SpatialConnection);
 	}
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
@@ -2078,6 +2084,9 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	if (!ErrorMsg.IsEmpty())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("PreLogin failure: %s"), *ErrorMsg);
+
+		DisconnectPlayer(ClientSystemEntityId);
+
 		// TODO: Destroy connection. UNR-584
 		return false;
 	}
@@ -2088,6 +2097,21 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	GameMode->GameWelcomePlayer(SpatialConnection, RedirectURL);
 
 	return true;
+}
+
+void USpatialNetDriver::RegisterClientConnection(const Worker_EntityId InWorkerEntityId, USpatialNetConnection* ClientConnection)
+{
+	WorkerConnections.Add(InWorkerEntityId, ClientConnection);
+}
+
+TWeakObjectPtr<USpatialNetConnection> USpatialNetDriver::FindClientConnectionFromWorkerEntityId(const Worker_EntityId InWorkerEntityId)
+{
+	if (TWeakObjectPtr<USpatialNetConnection>* ClientConnectionPtr = WorkerConnections.Find(InWorkerEntityId))
+	{
+		return *ClientConnectionPtr;
+	}
+
+	return {};
 }
 
 void USpatialNetDriver::CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp)
@@ -2107,16 +2131,6 @@ bool USpatialNetDriver::HasClientAuthority(Worker_EntityId EntityId) const
 {
 	return StaticComponentView->HasAuthority(
 		EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
-}
-
-TWeakObjectPtr<USpatialNetConnection> USpatialNetDriver::FindClientConnectionFromWorkerEntityId(const Worker_EntityId InWorkerEntityId)
-{
-	if (TWeakObjectPtr<USpatialNetConnection>* ClientConnectionPtr = WorkerConnections.Find(InWorkerEntityId))
-	{
-		return *ClientConnectionPtr;
-	}
-
-	return {};
 }
 
 void USpatialNetDriver::ProcessPendingDormancy()
@@ -2204,6 +2218,26 @@ void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerContr
 	PlayerController->SetReplicates(true);
 	PlayerController->Role = OriginalRole;
 	PlayerController->SetPlayer(OwnershipConnection);
+}
+
+void USpatialNetDriver::DisconnectPlayer(Worker_EntityId ClientEntityId)
+{
+	Worker_CommandRequest Request = {};
+	Request.component_id = SpatialConstants::WORKER_COMPONENT_ID;
+	Request.command_index = SpatialConstants::WORKER_DISCONNECT_COMMAND_ID;
+	Request.schema_type = Schema_CreateCommandRequest();
+	Worker_RequestId RequestId = Connection->SendCommandRequest(ClientEntityId, &Request, SpatialGDK::RETRY_UNTIL_COMPLETE, {});
+
+	SystemEntityCommandDelegate CommandResponseDelegate;
+	CommandResponseDelegate.BindWeakLambda(this, [this, ClientEntityId](const Worker_CommandResponseOp& Op) {
+		TWeakObjectPtr<USpatialNetConnection> ClientConnection = FindClientConnectionFromWorkerEntityId(ClientEntityId);
+		if (ClientConnection.IsValid())
+		{
+			ClientConnection->CleanUp();
+		}
+	});
+
+	Receiver->AddSystemEntityCommandDelegate(RequestId, CommandResponseDelegate);
 }
 
 bool USpatialNetDriver::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
@@ -2613,6 +2647,10 @@ void USpatialNetDriver::TryFinishStartup()
 		{
 			GlobalStateManager->QueryTranslation();
 			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the load balancing system to be ready."));
+		}
+		else if (!StaticComponentView->HasEntity(VirtualWorkerTranslator->GetClaimedPartitionId()))
+		{
+			UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the partition entity to be ready."));
 		}
 		else
 		{

@@ -91,7 +91,7 @@ bool FSpatialObjectRepState::MoveMappedObjectToUnmapped_r(const FUnrealObjectRef
 	{
 		FObjectReferences& ObjReferences = ObjReferencePair.Value;
 
-		if (ObjReferences.Array != NULL)
+		if (ObjReferences.Array.IsValid())
 		{
 			if (MoveMappedObjectToUnmapped_r(ObjRef, *ObjReferences.Array))
 			{
@@ -124,7 +124,7 @@ bool FSpatialObjectRepState::MoveMappedObjectToUnmapped(const FUnrealObjectRef& 
 void FSpatialObjectRepState::GatherObjectRef(TSet<FUnrealObjectRef>& OutReferenced, TSet<FUnrealObjectRef>& OutUnresolved,
 											 const FObjectReferences& CurReferences) const
 {
-	if (CurReferences.Array)
+	if (CurReferences.Array.IsValid())
 	{
 		for (auto const& Entry : *CurReferences.Array)
 		{
@@ -472,7 +472,11 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Group actors by exact class, one level below parent native class.
 	SCOPE_CYCLE_UOBJECT(ReplicateActor, Actor);
 
+#if ENGINE_MINOR_VERSION >= 26
+	const bool bReplay = ActorWorld && ActorWorld->GetDemoNetDriver() == Connection->GetDriver();
+#else
 	const bool bReplay = ActorWorld && ActorWorld->DemoNetDriver == Connection->GetDriver();
+#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	// Begin - error and stat duplication from DataChannel::ReplicateActor()
@@ -1466,4 +1470,9 @@ bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
 	}
 
 	return false;
+}
+
+void FObjectReferencesMapDeleter::operator()(FObjectReferencesMap* Ptr) const
+{
+	delete Ptr;
 }

@@ -3,6 +3,7 @@
 #include "Interop/Connection/SpatialConnectionManager.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
 
@@ -391,7 +392,19 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
 
-				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing));
+				FComponentSetData SetData;
+
+				for (Worker_ComponentId i = 0; i < 100; ++i)
+				{
+					SetData.ComponentSets.FindOrAdd(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID).Add(i);
+				}
+				for (Worker_ComponentId i = 100; i < 100000; ++i)
+				{
+					SetData.ComponentSets.Add(static_cast<Worker_ComponentSetId>(i)).Add(i);
+				}
+
+				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
+																		  MoveTemp(SetData));
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
 			else

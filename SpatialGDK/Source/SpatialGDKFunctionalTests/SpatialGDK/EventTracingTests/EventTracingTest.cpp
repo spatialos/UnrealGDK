@@ -14,9 +14,9 @@
 using namespace SpatialGDK;
 
 const FName AEventTracingTest::ReceiveOpEventName = "worker.receive_op";
-const FName AEventTracingTest::SendPropertyUpdatesEventName = "unreal_gdk.send_property_updates";
+const FName AEventTracingTest::PropertyChangedEventName = "unreal_gdk.property_changed";
 const FName AEventTracingTest::ReceivePropertyUpdateEventName = "unreal_gdk.receive_property_update";
-const FName AEventTracingTest::SendRPCEventName = "unreal_gdk.send_rpc";
+const FName AEventTracingTest::PushRPCEventName = "unreal_gdk.push_rpc";
 const FName AEventTracingTest::ProcessRPCEventName = "unreal_gdk.process_rpc";
 const FName AEventTracingTest::ComponentUpdateEventName = "unreal_gdk.component_update";
 const FName AEventTracingTest::MergeComponentUpdateEventName = "unreal_gdk.merge_component_update";
@@ -165,7 +165,7 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 					CachedEventName = EventName;
 				}
 			}
-			else
+			else if (Item->item_type == TRACE_ITEM_TYPE_SPAN)
 			{
 				const Trace_Span& Span = Item->item.span;
 
