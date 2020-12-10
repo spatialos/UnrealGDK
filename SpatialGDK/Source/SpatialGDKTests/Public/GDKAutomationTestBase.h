@@ -26,18 +26,27 @@ DEFINE_LOG_CATEGORY_STATIC(LogGDKTestBase, Log, All);
 class FGDKAutomationTestBase : public FAutomationTestBase
 {
 public:
-	FGDKAutomationTestBase(const FString& InName, bool bInComplexTask)
-		: FAutomationTestBase(InName, bInComplexTask)
+	FGDKAutomationTestBase(const FString& Name, bool bInComplexTask, FString TestSrcFileName, uint32 TestSrcFileLine)
+		: FAutomationTestBase(Name, bInComplexTask)
+		, TestName(Name)
+		, TestSourceFileName(TestSrcFileName)
+		, TestSourceFileLine(TestSrcFileLine)
 	{
 	}
+
 	virtual uint32 GetTestFlags() const override
 	{
 		return EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::EngineFilter;
 	}
+
 	virtual bool IsStressTest() { return false; }
 	virtual uint32 GetRequiredDeviceNum() const override { return 1; }
 
 protected:
+	/**
+	 * Checks for an existing deployment and stops it if one exists (also killing the associated workers).
+	 * Ran before each test.
+	 */
 	virtual void SetUp()
 	{
 		FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
@@ -50,6 +59,9 @@ protected:
 		}
 	}
 
+	/**
+	 * Implement this method with the test body
+	 */
 	virtual bool RunGDKTest(const FString& Parameters) = 0;
 
 	virtual bool RunTest(const FString& Parameters) override
@@ -57,6 +69,23 @@ protected:
 		SetUp();
 		return RunGDKTest(Parameters);
 	}
+
+	virtual FString GetTestSourceFileName() const override { return TestSourceFileName; }
+
+	virtual int32 GetTestSourceFileLine() const override { return TestSourceFileLine; }
+
+	virtual FString GetBeautifiedTestName() const override { return TestName; }
+
+	virtual void GetTests(TArray<FString>& OutBeautifiedNames, TArray<FString>& OutTestCommands) const override
+	{
+		OutBeautifiedNames.Add(TestName);
+		OutTestCommands.Add(FString());
+	}
+
+private:
+	FString TestName;
+	FString TestSourceFileName;
+	uint32 TestSourceFileLine;
 };
 
 #define GDK_AUTOMATION_TEST(ModuleName, ComponentName, TestName)                                                                           \
@@ -66,24 +95,14 @@ protected:
 	class TestName : public FGDKAutomationTestBase                                                                                         \
 	{                                                                                                                                      \
 	public:                                                                                                                                \
-		TestName(const FString& InName)                                                                                                    \
-			: FGDKAutomationTestBase(InName, false)                                                                                        \
+		TestName(const FString& InName, bool bInComplexTask, FString TestSourceFileName, uint32 TestSourceFileLine)                        \
+			: FGDKAutomationTestBase(InName, bInComplexTask, TestSourceFileName, TestSourceFileLine)                                       \
 		{                                                                                                                                  \
 		}                                                                                                                                  \
-		virtual FString GetTestSourceFileName() const override { return __FILE__; }                                                        \
-		virtual int32 GetTestSourceFileLine() const override { return __LINE__; }                                                          \
-                                                                                                                                           \
-	protected:                                                                                                                             \
-		virtual bool RunGDKTest(const FString& Parameters) override;                                                                       \
-		virtual FString GetBeautifiedTestName() const override { return TEXT(PrettyName); }                                                \
-		virtual void GetTests(TArray<FString>& OutBeautifiedNames, TArray<FString>& OutTestCommands) const override                        \
-		{                                                                                                                                  \
-			OutBeautifiedNames.Add(PrettyName);                                                                                            \
-			OutTestCommands.Add(FString());                                                                                                \
-		}                                                                                                                                  \
+		bool RunGDKTest(const FString& Parameters) override;                                                                               \
 	};                                                                                                                                     \
 	namespace                                                                                                                              \
 	{                                                                                                                                      \
-	TestName TestName##AutomationTestInstance(TEXT(PrettyName));                                                                           \
+	TestName TestName##__AutomationTestInstance(TEXT(PrettyName), false, __FILE__, __LINE__);                                              \
 	}                                                                                                                                      \
 	bool TestName::RunGDKTest(const FString& Parameters)
