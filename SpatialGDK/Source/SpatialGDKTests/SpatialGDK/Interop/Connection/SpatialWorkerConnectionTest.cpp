@@ -9,7 +9,6 @@
 
 #include "CoreMinimal.h"
 #include "Engine/Engine.h"
-#include "Tests/AutomationCommon.h"
 
 #define WORKERCONNECTION_TEST(TestName) GDK_AUTOMATION_TEST(Core, SpatialWorkerConnection, TestName)
 
@@ -262,17 +261,13 @@ WORKERCONNECTION_TEST(GIVEN_running_local_deployment_WHEN_connecting_client_and_
 
 WORKERCONNECTION_TEST(GIVEN_no_local_deployment_WHEN_connecting_client_and_server_worker_THEN_connection_failed)
 {
-	USpatialConnectionManager* ClientConnectionManager = NewObject<USpatialConnectionManager>();
-	USpatialConnectionManager* ServerConnectionManager = NewObject<USpatialConnectionManager>();
-
-	GEditor->RequestEndPlayMap();
-	ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(2.f))
-
 	// GIVEN
 	ADD_LATENT_AUTOMATION_COMMAND(FStopDeployment());
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(this, EDeploymentState::IsNotRunning));
 
 	// WHEN
+	USpatialConnectionManager* ClientConnectionManager = NewObject<USpatialConnectionManager>();
+	USpatialConnectionManager* ServerConnectionManager = NewObject<USpatialConnectionManager>();
 	ClientConnectionManager->AddToRoot();
 	ServerConnectionManager->AddToRoot();
 	ADD_LATENT_AUTOMATION_COMMAND(FSetupWorkerConnection(ClientConnectionManager, true));
