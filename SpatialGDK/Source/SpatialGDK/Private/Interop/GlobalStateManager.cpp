@@ -400,6 +400,9 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 
 	Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
 	Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
+
+	UE_LOG(LogGlobalStateManager, Verbose, TEXT("GSM updated actor authority: %s %s."), *Actor->GetPathName(),
+		   bAuthoritative ? TEXT("authoritative") : TEXT("not authoritative"));
 }
 
 Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
@@ -446,9 +449,6 @@ void UGlobalStateManager::TriggerBeginPlay()
 	}
 #endif
 
-	// This method has early exits internally to ensure the logic is only executed on the correct worker.
-	SetAcceptingPlayers(true);
-
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
 	for (TActorIterator<AActor> ActorIterator(NetDriver->World); ActorIterator; ++ActorIterator)
 	{
@@ -457,6 +457,16 @@ void UGlobalStateManager::TriggerBeginPlay()
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
+
+	// Hmm - this seems necessary because unless we call this after NotifyBeginPlay has been triggered, it won't actually
+	// do anything, because internally it checks that BeginPlay has actually been called. I'm not sure why we called
+	// SetAcceptingPlayers above though unless it was only to catch the non-auth server instances. In which case the auth
+	// server is failing to call SetAcceptingPlayers again at some later point.
+	//
+	// I've now removed it from the other places it used to be called, because I believe they were both neither no longer
+	// valid. Above because the world tick won't have begun, and during the deployment man auth gained, for the same reason.
+	// Leaving this comment block in for review reasons but will remove before merging.
+	SetAcceptingPlayers(true);
 }
 
 bool UGlobalStateManager::GetCanBeginPlay() const
