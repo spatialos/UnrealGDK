@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Schema/Component.h"
-#include "Schema/StandardLibrary.h"
 #include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
