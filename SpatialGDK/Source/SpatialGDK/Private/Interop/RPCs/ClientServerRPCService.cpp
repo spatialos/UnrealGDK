@@ -231,7 +231,7 @@ void ClientServerRPCService::OnEndpointAuthorityLost(const Worker_EntityId Entit
 {
 	switch (ComponentId)
 	{
-	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID:
 	{
 		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
 		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
@@ -242,7 +242,7 @@ void ClientServerRPCService::OnEndpointAuthorityLost(const Worker_EntityId Entit
 		ClearOverflowedRPCs(EntityId);
 		break;
 	}
-	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID:
 	{
 		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerReliable));
 		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));

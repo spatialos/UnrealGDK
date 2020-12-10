@@ -38,10 +38,10 @@ Worker_ComponentId GetRingBufferAuthComponentSetId(ERPCType Type)
 	{
 	case ERPCType::ClientReliable:
 	case ERPCType::ClientUnreliable:
+	case ERPCType::NetMulticast:
 		return SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID;
 	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
-	case ERPCType::NetMulticast:
 		return SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
 	default:
 		checkNoEntry();
