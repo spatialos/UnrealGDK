@@ -17,7 +17,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogConnectionConfig, Log, All);
 
 struct FConnectionConfig
 {
-	enum class EWorkerType
+	enum EWorkerType
 	{
 		Client,
 		Server
@@ -44,6 +44,8 @@ struct FConnectionConfig
 		FParse::Value(CommandLine, TEXT("workerSDKLogPrefix"), WorkerSDKLogPrefix);
 		// TODO: When upgrading to Worker SDK 14.6.2, remove this parameter and set it to 0 for infinite file size
 		FParse::Value(CommandLine, TEXT("workerSDKLogFileSize"), WorkerSDKLogFileSize);
+
+		ConnectionTypeMap.Init(WORKER_NETWORK_CONNECTION_TYPE_TCP, 2);
 
 		GetWorkerSDKLogLevel(CommandLine);
 		GetLinkProtocol(CommandLine);
@@ -108,14 +110,14 @@ private:
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString.Compare(TEXT("Tcp"), ESearchCase::IgnoreCase) == 0)
 		{
-			ConnectionTypeMap.Add(EWorkerType::Client, WORKER_NETWORK_CONNECTION_TYPE_TCP);
-			ConnectionTypeMap.Add(EWorkerType::Server, WORKER_NETWORK_CONNECTION_TYPE_TCP);
+			ConnectionTypeMap[EWorkerType::Client] = WORKER_NETWORK_CONNECTION_TYPE_TCP;
+			ConnectionTypeMap[EWorkerType::Server] = WORKER_NETWORK_CONNECTION_TYPE_TCP;
 			return;
 		}
 		else if (LinkProtocolString.Compare(TEXT("Kcp"), ESearchCase::IgnoreCase) == 0)
 		{
-			ConnectionTypeMap.Add(EWorkerType::Client, WORKER_NETWORK_CONNECTION_TYPE_KCP);
-			ConnectionTypeMap.Add(EWorkerType::Server, WORKER_NETWORK_CONNECTION_TYPE_KCP);
+			ConnectionTypeMap[EWorkerType::Client] = WORKER_NETWORK_CONNECTION_TYPE_KCP;
+			ConnectionTypeMap[EWorkerType::Server] = WORKER_NETWORK_CONNECTION_TYPE_KCP;
 			return;
 		}
 
@@ -125,8 +127,8 @@ private:
 				   *LinkProtocolString);
 		}
 
-		ConnectionTypeMap.Add(EWorkerType::Client, WORKER_NETWORK_CONNECTION_TYPE_KCP);
-		ConnectionTypeMap.Add(EWorkerType::Server, WORKER_NETWORK_CONNECTION_TYPE_TCP);
+		ConnectionTypeMap[EWorkerType::Client] = WORKER_NETWORK_CONNECTION_TYPE_KCP;
+		ConnectionTypeMap[EWorkerType::Server] = WORKER_NETWORK_CONNECTION_TYPE_TCP;
 
 		UE_LOG(LogConnectionConfig, Verbose, TEXT("No link protocol set. Defaulting to TCP for server workers, KCP for client workers."));
 	}
@@ -141,7 +143,7 @@ public:
 	uint32 WorkerSDKLogFileSize;
 	Worker_LogLevel WorkerSDKLogLevel;
 	Worker_NetworkConnectionType LinkProtocol;
-	TMap<EWorkerType, Worker_NetworkConnectionType> ConnectionTypeMap;
+	TArray<Worker_NetworkConnectionType> ConnectionTypeMap;
 	Worker_ConnectionParameters ConnectionParams = {};
 	uint8 TcpMultiplexLevel;
 	uint8 TcpNoDelay;
