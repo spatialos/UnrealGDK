@@ -745,9 +745,9 @@ FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPathForStaticObject(const 
 	// Put the PIE prefix back (if applicable) so that the correct object can be found.
 	FString TempPath = PathName;
 #if ENGINE_MINOR_VERSION >= 26
-	GEngine->NetworkRemapPath(Cast<USpatialNetDriver>(Driver)->GetSpatialOSNetConnection(), TempPath, true);
+	GEngine->NetworkRemapPath(Cast<USpatialNetDriver>(Driver)->GetSpatialOSNetConnection(), TempPath, true /*bIsReading*/);
 #else
-	GEngine->NetworkRemapPath(Driver, TempPath, true);
+	GEngine->NetworkRemapPath(Driver, TempPath, true /*bIsReading*/);
 #endif
 
 	// This function should only be called for stably named object references, not dynamic ones.

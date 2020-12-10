@@ -429,7 +429,7 @@ void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
 void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken)
 {
 	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
-#if ENGINE_MINOR_VERSION > 25
+#if ENGINE_MINOR_VERSION >= 26
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = HttpModule.Get().CreateRequest();
 #else
 	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();

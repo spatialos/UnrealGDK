@@ -118,9 +118,9 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	// Remove PIE prefix on class if it exists to properly look up the class.
 	FString ClassPath = Class->GetPathName();
 #if ENGINE_MINOR_VERSION >= 26
-	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), ClassPath, false);
+	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), ClassPath, false /*bIsReading*/);
 #else
-	GEngine->NetworkRemapPath(NetDriver, ClassPath, false);
+	GEngine->NetworkRemapPath(NetDriver, ClassPath, false /*bIsReading*/);
 #endif
 
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
