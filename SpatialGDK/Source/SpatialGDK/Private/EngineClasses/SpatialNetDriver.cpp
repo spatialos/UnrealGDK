@@ -264,6 +264,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	ConnectionManager = GameInstance->GetSpatialConnectionManager();
 	ConnectionManager->OnConnectedCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSSucceeded);
 	ConnectionManager->OnFailedToConnectCallback.BindUObject(this, &USpatialNetDriver::OnConnectionToSpatialOSFailed);
+	ConnectionManager->SetComponentSets(ClassInfoManager->SchemaDatabase->ComponentSetIdToComponentIds);
 
 	// If this is the first connection try using the command line arguments to setup the config objects.
 	// If arguments can not be found we will use the regular flow of loading from the input URL.
