@@ -12,7 +12,7 @@ class ATestActor : public AActor
 {
 	GENERATED_BODY()
 
-	ATestActor() { SetReplicates(true); }
+	ATestActor() { bReplicates = true; }
 
 public:
 	UFUNCTION(Server, Reliable)
