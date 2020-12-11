@@ -635,7 +635,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 					Actor->Role = ROLE_Authority;
 					Actor->RemoteRole = ROLE_SimulatedProxy;
 
-					// bReplicates is not replicated, but this actor is replicated
+					// bReplicates is not replicated, but this actor is replicated.
 					if (!Actor->GetIsReplicated())
 					{
 						Actor->SetReplicates(true);

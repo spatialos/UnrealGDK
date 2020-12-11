@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 
-#include "DynamicReplicationHandoverCube.h"
 #include "SpatialFunctionalTest.h"
 #include "SpatialTestHandoverReplication.generated.h"
 
@@ -25,9 +24,9 @@ private:
 	// The Load Balancing used by the test, needed to decide what Server should have authority over the TestActor.
 	ULayeredLBStrategy* LoadBalancingStrategy;
 
-	void RequireHandoverCubeAuthorityAndPosition(int WorkerShouldHaveAuthority, FVector ExpectedPosition);
+	void RequireHandoverCubeAuthorityAndPosition(int WorkerShouldHaveAuthority, const FVector& ExpectedPosition);
 
-	bool MoveHandoverCube(FVector Position);
+	bool MoveHandoverCube(const FVector& Position);
 
 	// Positions that belong to specific server according to 2x2 Grid LBS.
 	FVector Server1Position;
