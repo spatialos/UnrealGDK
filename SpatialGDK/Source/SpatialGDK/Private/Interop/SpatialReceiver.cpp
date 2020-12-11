@@ -2593,6 +2593,8 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp
 	{
 		// Heartbeat component update on a PlayerController that this server does not have authority over.
 		// TODO: Disable component interest for Heartbeat components this server doesn't care about - UNR-986
+		UE_LOG(LogSpatialReceiver, Warning,
+			   TEXT("Received heartbeat component update for controller we aren't auth over. PlayerController entity: %lld"), Op.entity_id);
 		return;
 	}
 
