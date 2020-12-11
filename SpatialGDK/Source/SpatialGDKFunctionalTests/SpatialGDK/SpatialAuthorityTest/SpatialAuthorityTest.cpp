@@ -367,15 +367,15 @@ void ASpatialAuthorityTest::PrepareTest()
 		AddStepFromDefinition(ReplicatedDestroyStepDefinition, FWorkerDefinition::Server(2));
 	}
 
-	// Replicated Dynamic Actor Spawned On Border. Server 1 should have Authority and on Tick and should not jump back and forwards between servers
+	// Replicated Dynamic Actor Spawned On Border. Server 1 should have Authority and on Tick and should not jump back and forwards between
+	// servers
 	{
-		AddStep(TEXT("Replicated Dynamic Actor Spawned On Border - Spawn"), FWorkerDefinition::Server(1), nullptr,
-				[this]() {
-					ASpatialAuthorityTestReplicatedActor* Actor =
-						GetWorld()->SpawnActor<ASpatialAuthorityTestReplicatedActor>(BorderPosition, FRotator::ZeroRotator);
-					CrossServerSetDynamicReplicatedActor(Actor);
-					FinishStep();
-				});
+		AddStep(TEXT("Replicated Dynamic Actor Spawned On Border - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
+			ASpatialAuthorityTestReplicatedActor* Actor =
+				GetWorld()->SpawnActor<ASpatialAuthorityTestReplicatedActor>(BorderPosition, FRotator::ZeroRotator);
+			CrossServerSetDynamicReplicatedActor(Actor);
+			FinishStep();
+		});
 
 		AddStepFromDefinition(ReplicatedVerifyAuthority1StepDefinition, FWorkerDefinition::AllWorkers);
 
