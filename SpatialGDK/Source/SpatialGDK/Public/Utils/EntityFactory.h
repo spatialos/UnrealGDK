@@ -41,8 +41,7 @@ public:
 
 	static inline bool IsClientAuthoritativeComponent(Worker_ComponentId ComponentId)
 	{
-		return ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
-			   || ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID;
+		return ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID || ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID;
 	}
 
 private:
