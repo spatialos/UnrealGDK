@@ -15,6 +15,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #endif
 
+#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
@@ -116,7 +117,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
 	// Remove PIE prefix on class if it exists to properly look up the class.
 	FString ClassPath = Class->GetPathName();
-	GEngine->NetworkRemapPath(NetDriver, ClassPath, false);
+#if ENGINE_MINOR_VERSION >= 26
+	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), ClassPath, false /*bIsReading*/);
+#else
+	GEngine->NetworkRemapPath(NetDriver, ClassPath, false /*bIsReading*/);
+#endif
 
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
@@ -588,7 +593,14 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 
 	if (ActorForRelevancy->bAlwaysRelevant)
 	{
-		return SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
+		if (ActorForRelevancy->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+		{
+			return SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID;
+		}
+		else
+		{
+			return SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
+		}
 	}
 
 	// Don't add NCD component to player controller and server only actors as we don't want client's to gain interest in them

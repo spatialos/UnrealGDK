@@ -21,19 +21,6 @@ SPATIAL_DIR="$(pwd)/../../../spatial"
 DOWNLOAD_MOBILE=
 USE_CHINA_SERVICES_REGION=
 
-while test $# -gt 0
-do
-    case "$1" in
-        --china)
-            DOMAIN_ENVIRONMENT_VAR="--environment cn-production"
-            USE_CHINA_SERVICES_REGION=true
-            ;;
-        --mobile) DOWNLOAD_MOBILE=true
-            ;;
-    esac
-    shift
-done
-
 echo "Setup the git hooks"
 if [[ -e .git/hooks ]]; then
     # Remove the old post-checkout hook.
@@ -55,11 +42,24 @@ if [[ -e .git/hooks ]]; then
     cp -R "$(pwd)/SpatialGDK/Extras/git/." "$(pwd)/.git/hooks"
 
     # We pass Setup.sh args, such as --mobile, to the post-merge hook to run Setup.sh with the same args in future.
-    sed -i "" -e "s/SETUP_ARGS/${*}/g" .git/hooks/post-merge
+    sed -i "" -e "s/SETUP_ARGS/$*/g" .git/hooks/post-merge
 
     # This needs to be runnable.
     chmod +x .git/hooks/pre-commit
 fi
+
+while test $# -gt 0
+do
+    case "$1" in
+        --china)
+            DOMAIN_ENVIRONMENT_VAR="--environment cn-production"
+            USE_CHINA_SERVICES_REGION=true
+            ;;
+        --mobile) DOWNLOAD_MOBILE=true
+            ;;
+    esac
+    shift
+done
 
 # Create or remove an empty file in the plugin directory indicating whether to use China services region.
 if [[ -n "${USE_CHINA_SERVICES_REGION}" ]]; then

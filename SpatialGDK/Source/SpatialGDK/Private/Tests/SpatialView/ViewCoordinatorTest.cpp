@@ -57,15 +57,15 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 	TArray<OpList> OpLists;
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntity(TaggedEntityId);
-	Builder.AddComponent(TaggedEntityId, ComponentData{ TagComponentId });
+	Builder.AddComponent(TaggedEntityId, ComponentData(TagComponentId));
 	Builder.AddEntity(EntityId);
-	Builder.AddComponent(EntityId, ComponentData{ ComponentId });
+	Builder.AddComponent(EntityId, ComponentData(ComponentId));
 	OpLists.Add(MoveTemp(Builder).CreateOpList());
 	ListsOfOpLists.Add(MoveTemp(OpLists));
 
 	auto Handler = MakeUnique<ConnectionHandlerStub>();
 	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
-	ViewCoordinator Coordinator{ MoveTemp(Handler), nullptr };
+	ViewCoordinator Coordinator(MoveTemp(Handler), nullptr, FComponentSetData());
 	auto& SubView = Coordinator.CreateSubView(TagComponentId, FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
 
 	Coordinator.Advance(0.0f);
@@ -91,28 +91,31 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 	const Worker_ComponentId ValueComponentId = 3;
 	const double CorrectValue = 1;
 	const double IncorrectValue = 2;
+	FComponentSetData ComponentSetData;
+	ComponentSetData.ComponentSets.Add(TagComponentId, { TagComponentId });
+	ComponentSetData.ComponentSets.Add(ValueComponentId, { ValueComponentId });
 
 	TArray<TArray<OpList>> ListsOfOpLists;
 	TArray<OpList> OpLists;
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntity(TaggedEntityId);
-	Builder.AddComponent(TaggedEntityId, ComponentData{ TagComponentId });
+	Builder.AddComponent(TaggedEntityId, ComponentData(TagComponentId));
 	Builder.AddComponent(TaggedEntityId, CreateTestComponentData(ValueComponentId, CorrectValue));
 	Builder.AddEntity(OtherTaggedEntityId);
-	Builder.AddComponent(OtherTaggedEntityId, ComponentData{ TagComponentId });
+	Builder.AddComponent(OtherTaggedEntityId, ComponentData(TagComponentId));
 	Builder.AddComponent(OtherTaggedEntityId, CreateTestComponentData(ValueComponentId, IncorrectValue));
 	OpLists.Add(MoveTemp(Builder).CreateOpList());
 	ListsOfOpLists.Add(MoveTemp(OpLists));
 
-	Builder = EntityComponentOpListBuilder{};
-	OpLists = TArray<OpList>{};
+	Builder = EntityComponentOpListBuilder();
+	OpLists.Empty();
 	Builder.UpdateComponent(OtherTaggedEntityId, CreateTestComponentUpdate(ValueComponentId, CorrectValue));
 	OpLists.Add(MoveTemp(Builder).CreateOpList());
 	ListsOfOpLists.Add(MoveTemp(OpLists));
 
 	auto Handler = MakeUnique<ConnectionHandlerStub>();
 	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
-	ViewCoordinator Coordinator{ MoveTemp(Handler), nullptr };
+	ViewCoordinator Coordinator(MoveTemp(Handler), nullptr, ComponentSetData);
 
 	auto& SubView = Coordinator.CreateSubView(
 		TagComponentId,
@@ -155,6 +158,8 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 {
 	const Worker_EntityId TaggedEntityId = 2;
 	const Worker_ComponentId TagComponentId = 2;
+	FComponentSetData ComponentSetData;
+	ComponentSetData.ComponentSets.Add(TagComponentId, { TagComponentId });
 
 	bool EntityComplete = false;
 	const int NumberOfSubViews = 100;
@@ -164,7 +169,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 	TArray<OpList> OpLists;
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntity(TaggedEntityId);
-	Builder.AddComponent(TaggedEntityId, ComponentData{ TagComponentId });
+	Builder.AddComponent(TaggedEntityId, ComponentData(TagComponentId));
 	OpLists.Add(MoveTemp(Builder).CreateOpList());
 	ListsOfOpLists.Add(MoveTemp(OpLists));
 
@@ -173,7 +178,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 
 	auto Handler = MakeUnique<ConnectionHandlerStub>();
 	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
-	ViewCoordinator Coordinator{ MoveTemp(Handler), nullptr };
+	ViewCoordinator Coordinator(MoveTemp(Handler), nullptr, ComponentSetData);
 
 	TArray<FSubView*> SubViews;
 

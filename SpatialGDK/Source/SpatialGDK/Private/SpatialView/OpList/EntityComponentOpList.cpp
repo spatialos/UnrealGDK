@@ -2,6 +2,7 @@
 
 #include "SpatialView/OpList/EntityComponentOpList.h"
 
+#include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/StringStorage.h"
 
 namespace SpatialGDK
@@ -67,13 +68,15 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveComponent(Work
 }
 
 EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId,
-																		 Worker_Authority Authority)
+																		 Worker_Authority Authority, TArray<ComponentData> Components)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE;
 	Op.op.component_set_authority_change.entity_id = EntityId;
 	Op.op.component_set_authority_change.component_set_id = ComponentSetId;
 	Op.op.component_set_authority_change.authority = Authority;
+	Op.op.component_set_authority_change.canonical_component_set_data_count = Components.Num();
+	Op.op.component_set_authority_change.canonical_component_set_data = StoreComponentDataArray(MoveTemp(Components));
 
 	OpListData->Ops.Add(Op);
 	return *this;
@@ -163,6 +166,11 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityCommandResp
 	return *this;
 }
 
+OpList EntityComponentOpListBuilder::CreateOpList() &&
+{
+	return { OpListData->Ops.GetData(), static_cast<uint32>(OpListData->Ops.Num()), MoveTemp(OpListData) };
+}
+
 const char* EntityComponentOpListBuilder::StoreString(StringStorage Message) const
 {
 	OpListData->MessageStorage.Add(MoveTemp(Message));
@@ -176,23 +184,22 @@ const Worker_Entity* EntityComponentOpListBuilder::StoreQueriedEntities(TArray<O
 	{
 		Worker_Entity CurrentEntity;
 		CurrentEntity.entity_id = Entity.EntityId;
-		TArray<Worker_ComponentData> Components = OpListData->QueriedComponents.Add_GetRef(TArray<Worker_ComponentData>());
-		for (auto& Component : Entity.Components)
-		{
-			OpListData->QueriedComponents.Last().Push(Component.GetWorkerComponentData());
-			OpListData->DataStorage.Add(MoveTemp(Component));
-		}
-
-		CurrentEntity.components = Components.GetData();
-		CurrentEntity.component_count = Components.Num();
-		WorkerEntities.Push(MoveTemp(CurrentEntity));
+		CurrentEntity.component_count = Entity.Components.Num();
+		CurrentEntity.components = StoreComponentDataArray(MoveTemp(Entity.Components));
+		WorkerEntities.Add(MoveTemp(CurrentEntity));
 	}
 
 	return WorkerEntities.GetData();
 }
 
-OpList EntityComponentOpListBuilder::CreateOpList() &&
+const Worker_ComponentData* EntityComponentOpListBuilder::StoreComponentDataArray(TArray<ComponentData> Components) const
 {
-	return { OpListData->Ops.GetData(), static_cast<uint32>(OpListData->Ops.Num()), MoveTemp(OpListData) };
+	TArray<Worker_ComponentData>& ComponentArray = OpListData->ComponentArrayStorage.Add_GetRef(TArray<Worker_ComponentData>());
+	for (ComponentData& Component : Components)
+	{
+		ComponentArray.Add(Component.GetWorkerComponentData());
+		OpListData->DataStorage.Add(MoveTemp(Component));
+	}
+	return ComponentArray.GetData();
 }
 } // namespace SpatialGDK

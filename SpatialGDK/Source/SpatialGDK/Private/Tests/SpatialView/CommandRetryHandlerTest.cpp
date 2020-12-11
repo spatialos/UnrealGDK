@@ -7,11 +7,11 @@
 #include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"
 
-using namespace SpatialGDK;
-
 #define COMMANDRETRYHANDLER_TEST(TestName) GDK_TEST(Core, CommandRetryHandler, TestName)
 
 namespace SpatialGDK
+{
+namespace
 {
 const Worker_EntityId TestEntityId = 1;
 const Worker_RequestId TestRequestId = 2;
@@ -23,7 +23,9 @@ const uint32 TestNumOfEntities = 10;
 const float TimeAdvanced = 5.f;
 OpList EmptyOpList = {};
 constexpr FRetryData TWO_RETRIES = { 2, 0, 0.1f, 5.0f, 0 };
-} // namespace SpatialGDK
+const Worker_ComponentSetId TestComponentSetId = 5;
+const FComponentSetData ComponentSetData = { { { TestComponentSetId, { TestComponentId } } } };
+} // anonymous namespace
 
 EntityQuery CreateTestEntityQuery()
 {
@@ -38,7 +40,7 @@ EntityQuery CreateTestEntityQuery()
 
 COMMANDRETRYHANDLER_TEST(GIVEN_success_WHEN_process_ops_THEN_no_retry)
 {
-	WorkerView View;
+	WorkerView View(ComponentSetData);
 	TCommandRetryHandler<FCreateEntityRetryHandlerImpl> Handler;
 
 	EntityComponentOpListBuilder Builder;
@@ -61,7 +63,7 @@ COMMANDRETRYHANDLER_TEST(GIVEN_success_WHEN_process_ops_THEN_no_retry)
 
 COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_create_entity_THEN_retry)
 {
-	WorkerView View;
+	WorkerView View(ComponentSetData);
 	TCommandRetryHandler<FCreateEntityRetryHandlerImpl> Handler;
 	TArray<ComponentData> EntityComponents;
 	EntityComponents.Add(CreateTestComponentData(TestComponentId, TestComponentValue));
@@ -89,7 +91,7 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_create_entity_THEN_retry)
 
 COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_reserve_entity_ids_THEN_retry)
 {
-	WorkerView View;
+	WorkerView View(ComponentSetData);
 	TCommandRetryHandler<FReserveEntityIdsRetryHandlerImpl> Handler;
 
 	EntityComponentOpListBuilder Builder;
@@ -113,7 +115,7 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_reserve_entity_ids_THEN_retry)
 
 COMMANDRETRYHANDLER_TEST(GIVEN_application_error_WHEN_reserve_entity_ids_THEN_no_retry)
 {
-	WorkerView View;
+	WorkerView View(ComponentSetData);
 	TCommandRetryHandler<FReserveEntityIdsRetryHandlerImpl> Handler;
 
 	EntityComponentOpListBuilder Builder;
@@ -135,7 +137,7 @@ COMMANDRETRYHANDLER_TEST(GIVEN_application_error_WHEN_reserve_entity_ids_THEN_no
 
 COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_delete_entity_THEN_retry)
 {
-	WorkerView View;
+	WorkerView View(ComponentSetData);
 	TCommandRetryHandler<FDeleteEntityRetryHandlerImpl> Handler;
 
 	EntityComponentOpListBuilder Builder;
@@ -158,7 +160,7 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_delete_entity_THEN_retry)
 
 COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_query_entity_THEN_retry)
 {
-	WorkerView View;
+	WorkerView View(ComponentSetData);
 	TCommandRetryHandler<FEntityQueryRetryHandlerImpl> Handler;
 
 	EntityComponentOpListBuilder Builder;
@@ -186,7 +188,7 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_query_entity_THEN_retry)
 
 COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_entity_command_request_THEN_retry)
 {
-	WorkerView View;
+	WorkerView View(ComponentSetData);
 	TCommandRetryHandler<FEntityCommandRetryHandlerImpl> Handler;
 
 	EntityComponentOpListBuilder Builder;
@@ -209,7 +211,7 @@ COMMANDRETRYHANDLER_TEST(GIVEN_time_out_WHEN_entity_command_request_THEN_retry)
 
 COMMANDRETRYHANDLER_TEST(GIVEN_multiple_time_outs_WHEN_entity_command_request_THEN_no_retry)
 {
-	WorkerView View;
+	WorkerView View(ComponentSetData);
 	TCommandRetryHandler<FEntityCommandRetryHandlerImpl> Handler;
 
 	// send request and receive first failure
@@ -259,7 +261,7 @@ COMMANDRETRYHANDLER_TEST(GIVEN_multiple_time_outs_WHEN_entity_command_request_TH
 
 COMMANDRETRYHANDLER_TEST(GIVEN_authority_lost_WHEN_entity_command_request_THEN_retry)
 {
-	WorkerView View;
+	WorkerView View(ComponentSetData);
 	TCommandRetryHandler<FEntityCommandRetryHandlerImpl> Handler;
 
 	EntityComponentOpListBuilder Builder;
@@ -276,3 +278,4 @@ COMMANDRETRYHANDLER_TEST(GIVEN_authority_lost_WHEN_entity_command_request_THEN_r
 	TestTrue("MessagesToSend are equal", TestMessages.Compare(*ActualMessagesPtr.Get()));
 	return true;
 }
+} // namespace SpatialGDK

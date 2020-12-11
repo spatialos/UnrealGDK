@@ -13,6 +13,7 @@
 DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseOp&);
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, const Worker_ReserveEntityIdsResponseOp&);
 DECLARE_DELEGATE_OneParam(CreateEntityDelegate, const Worker_CreateEntityResponseOp&);
+DECLARE_DELEGATE_OneParam(SystemEntityCommandDelegate, const Worker_CommandResponseOp&);
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityAddedDelegate, const Worker_EntityId);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnEntityRemovedDelegate, const Worker_EntityId);
@@ -36,6 +37,8 @@ public:
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnComponentUpdate, return;);
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnEntityQueryResponse, return;);
+	virtual void OnSystemEntityCommandResponse(const Worker_CommandResponseOp& Op)
+		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnSystemEntityCommandResponse, return;);
 	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::OnExtractIncomingRPC, return false;);
 	virtual void OnCommandRequest(const Worker_Op& Op) PURE_VIRTUAL(SpatialOSDispatcherInterface::OnCommandRequest, return;);
@@ -54,4 +57,6 @@ public:
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::AddReserveEntityIdsDelegate, return;);
 	virtual void AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::AddCreateEntityDelegate, return;);
+	virtual void AddSystemEntityCommandDelegate(Worker_RequestId RequestId, SystemEntityCommandDelegate Delegate)
+		PURE_VIRTUAL(SpatialOSDispatcherInterface::AddSystemEntityCommandDelegate, return;);
 };
