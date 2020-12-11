@@ -304,8 +304,8 @@ void ASpatialAuthorityTest::PrepareTest()
 		});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Border From Server 2 - Verify Server 2 Has Authority"),
-			FWorkerDefinition::AllWorkers, nullptr, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Border From Server 2 - Verify Server 2 Has Authority"), FWorkerDefinition::AllWorkers,
+			nullptr, nullptr,
 			[this](float DeltaTime) {
 				Timer -= DeltaTime;
 				if (Timer <= 0)
@@ -343,8 +343,8 @@ void ASpatialAuthorityTest::PrepareTest()
 		});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Border From Server 1 - Verify Server 1 Has Authority"),
-			FWorkerDefinition::AllWorkers, nullptr, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Border From Server 1 - Verify Server 1 Has Authority"), FWorkerDefinition::AllWorkers,
+			nullptr, nullptr,
 			[this](float DeltaTime) {
 				Timer -= DeltaTime;
 				if (Timer <= 0)
@@ -385,7 +385,6 @@ void ASpatialAuthorityTest::PrepareTest()
 
 		AddStepFromDefinition(NonReplicatedDestroyStepDefinition, FWorkerDefinition::Server(1));
 	}
-
 
 	// GameMode.
 	{
