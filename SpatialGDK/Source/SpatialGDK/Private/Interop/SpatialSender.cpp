@@ -682,7 +682,6 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	}
 
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	bool bUseRPCRingBuffer = GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer();
 
 	if (RPCInfo.Type == ERPCType::CrossServer)
 	{
@@ -690,25 +689,15 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 	}
 
-	if (bUseRPCRingBuffer && RPCService != nullptr)
+	checkf(RPCService != nullptr, TEXT("Attempting to send an RPC with a null RPCService"));
+	if (SendRingBufferedRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef))
 	{
-		if (SendRingBufferedRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef))
-		{
-			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
-		}
-		else
-		{
-			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::RPCServiceFailure };
-		}
-	}
-
-	if (Channel->bCreatingNewEntity && Function->HasAnyFunctionFlags(FUNC_NetClient))
-	{
-		SendOnEntityCreationRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef);
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 	}
-
-	return SendLegacyRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef);
+	else
+	{
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::RPCServiceFailure };
+	}
 }
 
 void USpatialSender::SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
