@@ -10,20 +10,22 @@
 
 #include "CoreMinimal.h"
 
-namespace
+namespace SpatialGDK
 {
-// TODO: UNR-1969 - Prepare LocalDeployment in CI pipeline
-const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 30.0;
-
-const FName AutomationWorkerType = TEXT("AutomationWorker");
-const FString AutomationLaunchConfig = FString(TEXT("Improbable/")) + *AutomationWorkerType.ToString() + FString(TEXT(".json"));
-
 FLocalDeploymentManager* GetLocalDeploymentManager()
 {
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 	return LocalDeploymentManager;
 }
+} // namespace SpatialGDK
+
+namespace
+{
+const double MAX_WAIT_TIME_FOR_LOCAL_DEPLOYMENT_OPERATION = 30.0;
+
+const FName AutomationWorkerType = TEXT("AutomationWorker");
+const FString AutomationLaunchConfig = FString(TEXT("Improbable/")) + *AutomationWorkerType.ToString() + FString(TEXT(".json"));
 
 bool GenerateWorkerAssemblies()
 {
@@ -56,7 +58,7 @@ bool FStartDeployment::Update()
 {
 	if (const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
-		FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
+		FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
 		const FString LaunchConfig =
 			FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), AutomationLaunchConfig);
 		const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
@@ -100,7 +102,13 @@ bool FStartDeployment::Update()
 
 bool FStopDeployment::Update()
 {
-	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
+	FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
+
+	if (LocalDeploymentManager->IsDeploymentStarting())
+	{
+		// Wait for deployment to finish starting before stopping it
+		return false;
+	}
 
 	if (!LocalDeploymentManager->IsLocalDeploymentRunning() && !LocalDeploymentManager->IsDeploymentStopping())
 	{
@@ -119,7 +127,13 @@ bool FStopDeployment::Update()
 
 bool FWaitForDeployment::Update()
 {
-	FLocalDeploymentManager* const LocalDeploymentManager = GetLocalDeploymentManager();
+	FLocalDeploymentManager* const LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
+
+	if (LocalDeploymentManager->IsDeploymentStarting())
+	{
+		// Wait for deployment to finish starting before stopping it
+		return false;
+	}
 
 	const double NewTime = FPlatformTime::Seconds();
 
@@ -152,7 +166,7 @@ bool FWaitForDeployment::Update()
 
 bool FCheckDeploymentState::Update()
 {
-	FLocalDeploymentManager* LocalDeploymentManager = GetLocalDeploymentManager();
+	FLocalDeploymentManager* LocalDeploymentManager = SpatialGDK::GetLocalDeploymentManager();
 
 	if (ExpectedDeploymentState == EDeploymentState::IsRunning)
 	{

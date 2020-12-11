@@ -276,10 +276,6 @@ public:
 	virtual void PostInitProperties() override;
 
 public:
-	/** If checked, show the Spatial service button on the GDK toolbar which can be used to turn the Spatial service on and off. */
-	UPROPERTY(EditAnywhere, config, Category = "General", meta = (DisplayName = "Show Spatial service button"))
-	bool bShowSpatialServiceButton;
-
 	/** Select to delete all a server-worker instance’s dynamically-spawned entities when the server-worker instance shuts down. If NOT
 	 * selected, a new server-worker instance has all of these entities from the former server-worker instance’s session. */
 	UPROPERTY(EditAnywhere, config, Category = "Play in editor settings", meta = (DisplayName = "Delete dynamically spawned entities"))
