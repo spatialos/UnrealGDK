@@ -31,6 +31,9 @@ private:
 	UFUNCTION()
 	void OnUnPossess(APlayerController* Controller);
 
+	UFUNCTION()
+	void OnPossessFailure(ERemotePossessFailure FailureReason, APlayerController* Controller);
+
 	float WaitTime;
 	const static float MaxWaitTime;
 };

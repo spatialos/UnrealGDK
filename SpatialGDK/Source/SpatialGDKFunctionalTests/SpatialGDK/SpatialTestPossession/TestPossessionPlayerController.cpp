@@ -16,3 +16,9 @@ void ATestPossessionPlayerController::OnUnPossess()
 	Super::OnUnPossess();
 	OnUnPossessEvent.Broadcast(this);
 }
+
+void ATestPossessionPlayerController::OnPossessFailed(ERemotePossessFailure FailureReason)
+{
+	Super::OnPossessFailed(FailureReason);
+	OnPossessFailureEvent.Broadcast(FailureReason, this);
+}

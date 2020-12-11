@@ -107,7 +107,7 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 		{
 			if (AController* Controller = Pawn->GetController())
 			{
-				LogStep(ELogVerbosity::Log, FString::Printf(TEXT("%s possessed the Pawn"), *Controller->GetFullName()));
+				AssertTrue(Pawn->GetController() != nullptr, TEXT("Succeed possessed"), Pawn);
 			}
 			else
 			{
@@ -126,7 +126,7 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 		{
 			if (AController* Controller = Pawn->GetController())
 			{
-				LogStep(ELogVerbosity::Log, FString::Printf(TEXT("%s possessed the Pawn"), *Controller->GetFullName()));
+				AssertTrue(Pawn->GetController() != nullptr, TEXT("Succeed possessed"), Pawn);
 			}
 			else
 			{
@@ -191,6 +191,7 @@ void ACrossServerMultiPossessionTest::RemotePossess(int Index)
 						FString::Printf(TEXT("%s try to remote possess %s"), *Controller->GetFullName(), *Pawn->GetFullName()));
 				Controller->OnPossessEvent.AddDynamic(this, &ACrossServerMultiPossessionTest::OnPossess);
 				Controller->OnUnPossessEvent.AddDynamic(this, &ACrossServerMultiPossessionTest::OnUnPossess);
+				Controller->OnPossessFailureEvent.AddDynamic(this, &ACrossServerMultiPossessionTest::OnPossessFailure);
 				USpatialPossession::RemotePossess(Controller, Pawn);
 			}
 		}
@@ -208,10 +209,16 @@ void ACrossServerMultiPossessionTest::RemotePossess(int Index)
 void ACrossServerMultiPossessionTest::OnPossess(APawn* Pawn, APlayerController* Controller)
 {
 	LogStep(ELogVerbosity::Log,
-			FString::Printf(TEXT("Controller:%s OnPossess Pawn:%s "), *Controller->GetFullName(), *Pawn->GetFullName()));
+			FString::Printf(TEXT("Controller:%s OnPossess Pawn:%s"), *Controller->GetFullName(), *Pawn->GetFullName()));
 }
 
 void ACrossServerMultiPossessionTest::OnUnPossess(APlayerController* Controller)
 {
 	LogStep(ELogVerbosity::Log, FString::Printf(TEXT("Controller:%s OnUnPossess"), *Controller->GetFullName()));
+}
+
+void ACrossServerMultiPossessionTest::OnPossessFailure(ERemotePossessFailure* FailureReason, APlayerController* Controller)
+{
+	LogStep(ELogVerbosity::Log,
+			FString::Printf(TEXT("Controller:%s OnPossessFailure:%d"), *Controller->GetFullName(), *FailureReason));
 }
