@@ -8,11 +8,12 @@
 
 #include "Schema/RPCPayload.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 #include "Utils/RPCContainer.h"
 
 #include "CoreMinimal.h"
 
-#define RPCCONTAINER_TEST(TestName) GDK_TEST(Core, FRPCContainer, TestName)
+#define RPCCONTAINER_TEST(TestName) GDK_AUTOMATION_TEST(Core, FRPCContainer, TestName)
 
 using namespace SpatialGDK;
 

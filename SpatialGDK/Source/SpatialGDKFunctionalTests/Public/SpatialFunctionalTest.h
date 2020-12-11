@@ -409,6 +409,12 @@ private:
 	UFUNCTION()
 	void OnReplicated_bPreparedTest();
 
+	UPROPERTY(ReplicatedUsing = OnReplicated_bFinishedTest, Transient)
+	bool bFinishedTest = false;
+
+	UFUNCTION()
+	void OnReplicated_bFinishedTest();
+
 	UPROPERTY(Replicated, Transient)
 	TArray<ASpatialFunctionalTestFlowController*> FlowControllers;
 

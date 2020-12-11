@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include "Tests/TestDefinitions.h"
+#include "Misc/AutomationTest.h"
 
 #include "CoreMinimal.h"
+
+#include "LocalDeploymentManager.h"
 
 // TODO: UNR-1964 - Move EDeploymentState enum to LocalDeploymentManager
 enum class EDeploymentState
@@ -12,6 +14,11 @@ enum class EDeploymentState
 	IsRunning,
 	IsNotRunning
 };
+
+namespace SpatialGDK
+{
+FLocalDeploymentManager* GetLocalDeploymentManager();
+} // namespace SpatialGDK
 
 DEFINE_LATENT_AUTOMATION_COMMAND(FStartDeployment);
 DEFINE_LATENT_AUTOMATION_COMMAND(FStopDeployment);

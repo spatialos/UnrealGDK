@@ -23,7 +23,9 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/DynamicComponent.h"
+#include "Schema/MigrationDiagnostic.h"
 #include "Schema/RPCPayload.h"
+#include "Schema/Restricted.h"
 #include "Schema/SpawnData.h"
 #include "Schema/Tombstone.h"
 #include "Schema/UnrealMetadata.h"
@@ -60,7 +62,7 @@ DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_S
 using namespace SpatialGDK;
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialRPCService* InRPCService,
-							SpatialGDK::SpatialEventTracer* InEventTracer)
+							SpatialEventTracer* InEventTracer)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -221,6 +223,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
+	case SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID:
 	case SpatialConstants::VISIBLE_COMPONENT_ID:
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
@@ -237,6 +240,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
+	case SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID:
 		// We either don't care about processing these components or we only need to store
 		// the data (which is handled by the SpatialStaticComponentView).
 		return;
@@ -299,6 +303,14 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			}
 		}
 		return;
+	case SpatialConstants::PARTITION_COMPONENT_ID:
+		if (APlayerController* Controller = Cast<APlayerController>(PackageMap->GetObjectFromEntityId(Op.entity_id).Get()))
+		{
+			const Partition* PartitionComp = StaticComponentView->GetComponentData<Partition>(Op.entity_id);
+			NetDriver->RegisterClientConnection(PartitionComp->WorkerConnectionId,
+												Cast<USpatialNetConnection>(Controller->GetNetConnection()));
+		}
+		return;
 	}
 
 	if (Op.data.component_id < SpatialConstants::MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID)
@@ -318,7 +330,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	}
 	else
 	{
-		HandleIndividualAddComponent(Op.entity_id, Op.data.component_id, MakeUnique<SpatialGDK::DynamicComponent>(Op.data));
+		HandleIndividualAddComponent(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data));
 	}
 }
 
@@ -876,6 +888,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			// If entity is a PlayerController, create channel on the PlayerController's connection.
 			Connection = PlayerController->NetConnection;
+
+			// If this already has a partition component, assign the client mapping
+			if (const Partition* PartitionComp = StaticComponentView->GetComponentData<Partition>(EntityId))
+			{
+				NetDriver->RegisterClientConnection(PartitionComp->WorkerConnectionId,
+													Cast<USpatialNetConnection>(PlayerController->GetNetConnection()));
+			}
 		}
 	}
 
@@ -1558,6 +1577,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
 	case SpatialConstants::INTEREST_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID:
+	case SpatialConstants::PARTITION_COMPONENT_ID:
 	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
@@ -1565,6 +1585,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
+	case SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID:
 	case SpatialConstants::VISIBLE_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
@@ -1580,6 +1601,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+	case SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"),
 			   Op.entity_id, Op.update.component_id);
 		return;
@@ -1773,6 +1795,28 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 
 		return;
 	}
+	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID
+			 && CommandIndex == SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID)
+	{
+		check(NetDriver != nullptr);
+		check(NetDriver->Connection != nullptr);
+
+		AActor* BlockingActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
+		if (IsValid(BlockingActor))
+		{
+			Worker_CommandResponse Response = MigrationDiagnostic::CreateMigrationDiagnosticResponse(NetDriver, EntityId, BlockingActor);
+
+			Sender->SendCommandResponse(RequestId, Response, FSpatialGDKSpanId(Op.span_id));
+		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Warning,
+				   TEXT("Migration diaganostic log failed because cannot retreive actor for entity (%llu) on authoritative worker %s"),
+				   EntityId, *NetDriver->Connection->GetWorkerId());
+		}
+
+		return;
+	}
 #if WITH_EDITOR
 	else if (ComponentId == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID
 			 && CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
@@ -1890,7 +1934,36 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		OnSystemEntityCommandResponse(Op.op.command_response);
 		return;
 	}
+	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID)
+	{
+		check(NetDriver != nullptr);
+		check(NetDriver->Connection != nullptr);
 
+		if (CommandResponseOp.status_code != WORKER_STATUS_CODE_SUCCESS)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed, status code %i."), CommandResponseOp.status_code);
+			return;
+		}
+
+		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponseOp.response.schema_type);
+		Worker_EntityId EntityId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
+		AActor* BlockingActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
+		if (IsValid(BlockingActor))
+		{
+			FString MigrationDiagnosticLog = MigrationDiagnostic::CreateMigrationDiagnosticLog(NetDriver, ResponseObject, BlockingActor);
+			if (!MigrationDiagnosticLog.IsEmpty())
+			{
+				UE_LOG(LogSpatialReceiver, Warning, TEXT("%s"), *MigrationDiagnosticLog);
+			}
+		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed because blocking actor (%llu) is not valid."),
+				   EntityId);
+		}
+
+		return;
+	}
 	ReceiveCommandResponse(Op);
 }
 
@@ -2742,7 +2815,10 @@ void USpatialReceiver::QueueAuthorityOpForAsyncLoad(const Worker_ComponentSetAut
 {
 	EntityWaitingForAsyncLoad& AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindChecked(Op.entity_id);
 
-	AsyncLoadEntity.PendingOps.SetAuthority(Op.entity_id, Op.component_set_id, static_cast<Worker_Authority>(Op.authority));
+	// todo UNR-4198 - This needs to be changed as it abuses the authority ops in a way that happens to work here.
+	// It's fine in this case to not give a valid set of component data in the authority op as we don't try to parse the component
+	// data when reading it. You couldn't create a view delta from this op list but it works here.
+	AsyncLoadEntity.PendingOps.SetAuthority(Op.entity_id, Op.component_set_id, static_cast<Worker_Authority>(Op.authority), {});
 }
 
 void USpatialReceiver::QueueComponentUpdateOpForAsyncLoad(const Worker_ComponentUpdateOp& Op)
@@ -2781,8 +2857,11 @@ EntityComponentOpListBuilder USpatialReceiver::ExtractAuthorityOps(Worker_Entity
 	{
 		if (PendingAuthorityChange.entity_id == Entity)
 		{
+			// todo UNR-4198 - This needs to be changed as it abuses the authority ops in a way that happens to work here.
+			// It's fine in this case to not give a valid set of component data in the authority op as we don't try to parse the component
+			// data when reading it. You couldn't create a view delta from this op list but it works here.
 			ExtractedOps.SetAuthority(Entity, PendingAuthorityChange.component_set_id,
-									  static_cast<Worker_Authority>(PendingAuthorityChange.authority));
+									  static_cast<Worker_Authority>(PendingAuthorityChange.authority), {});
 		}
 		else
 		{
