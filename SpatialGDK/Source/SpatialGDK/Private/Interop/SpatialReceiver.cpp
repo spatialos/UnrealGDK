@@ -647,6 +647,12 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 					Actor->Role = ROLE_Authority;
 					Actor->RemoteRole = ROLE_SimulatedProxy;
 
+					// bReplicates is not replicated, but this actor is replicated.
+					if (!Actor->GetIsReplicated())
+					{
+						Actor->SetReplicates(true);
+					}
+
 					if (Actor->IsA<APlayerController>())
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
@@ -1519,7 +1525,6 @@ void USpatialReceiver::ApplyComponentData(USpatialActorChannel& Channel, UObject
 	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."), Data.component_id);
 
 	ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Data.component_id);
-
 	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly)
 	{
 		if (ComponentType == SCHEMA_Data && TargetObject.IsA<UActorComponent>())
