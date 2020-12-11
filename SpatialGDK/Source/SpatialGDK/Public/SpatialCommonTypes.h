@@ -74,11 +74,21 @@ struct FUsageLock
 	struct Scope
 	{
 		bool& bIsSet;
-		Scope(bool& bIsSet) : bIsSet(bIsSet) { ensureMsgf(!bIsSet, TEXT("Unexpected re-entrancy occured in the Spatial GDK.")); bIsSet = true; }
+		Scope(bool& bIsSet)
+			: bIsSet(bIsSet)
+		{
+			ensureMsgf(!bIsSet, TEXT("Unexpected re-entrancy occured in the Spatial GDK."));
+			bIsSet = true;
+		}
 		~Scope() { bIsSet = false; }
 	};
 };
+
 // A macro to prevent re-entrant calls
+#if DO_CHECK
 #define __GDK_ENSURE_NO_MODIFICATIONS(x, y) x##y
 #define _GDK_ENSURE_NO_MODIFICATIONS(x, y) __GDK_ENSURE_NO_MODIFICATIONS(x, y)
 #define GDK_ENSURE_NO_MODIFICATIONS(FLAG) FUsageLock::Scope _GDK_ENSURE_NO_MODIFICATIONS(ScopedUsageCheck, __LINE__)(FLAG.bIsSet);
+#else
+#define GDK_ENSURE_NO_MODIFICATIONS(FLAG)
+#endif

@@ -69,7 +69,9 @@ struct RepNotifyCall
 	UObject* Object;
 	TArray<GDK_PROPERTY(Property)*> Notifies;
 };
+#if DO_CHECK
 FUsageLock ObjectRefToRepStateUsageLock; // A debug helper to trigger an ensure if something weird happens (re-entrancy)
+#endif
 } // namespace
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialRPCService* InRPCService,
