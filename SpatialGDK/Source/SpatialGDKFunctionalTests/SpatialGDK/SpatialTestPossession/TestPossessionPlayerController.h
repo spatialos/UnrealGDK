@@ -6,7 +6,7 @@
 #include "TestPossessionPlayerController.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPossess, APawn*, Pawn, APlayerController*, Controller);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPossessFailure, ERemotePossessFailure, FailureReason, APlayerController*, Controller);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPossessFailed, ERemotePossessFailure, FailureReason, APlayerController*, Controller);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUnPossess, APlayerController*, Controller);
 
 UCLASS()
@@ -27,5 +27,5 @@ public:
 
 	FOnUnPossess OnUnPossessEvent;
 
-	FOnPossessFailure OnPossessFailureEvent;
+	FOnPossessFailed OnPossessFailedEvent;
 };

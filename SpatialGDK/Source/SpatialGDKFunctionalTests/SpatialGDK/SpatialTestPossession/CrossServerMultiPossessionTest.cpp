@@ -16,7 +16,7 @@
 #include "TestPossessionPlayerController.h"
 #include "Utils/SpatialStatics.h"
 
-const float ACrossServerMultiPossessionTest::MaxWaitTime = 1.0f;
+const float ACrossServerMultiPossessionTest::MaxWaitTime = 5.0f;
 
 ACrossServerMultiPossessionTest::ACrossServerMultiPossessionTest()
 	: Super()
@@ -102,17 +102,10 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 		WaitTime += DeltaTime;
 	});
 
-	AddStep(TEXT("Cross-Server Possession: Check results"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
+	AddStep(TEXT("Cross-Server Possession: Check results on all servers"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
 		if (ATestPossessionPawn* Pawn = GetPawn())
 		{
-			if (AController* Controller = Pawn->GetController())
-			{
-				AssertTrue(Pawn->GetController() != nullptr, TEXT("Succeed possessed"), Pawn);
-			}
-			else
-			{
-				LogStep(ELogVerbosity::Log, TEXT("Possess failed!"));
-			}
+			AssertTrue(Pawn->GetController() != nullptr, TEXT("GetController of Pawn to check if possessed on server"), Pawn);
 		}
 		else
 		{
@@ -121,17 +114,10 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Cross-Server Possession: Check results"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
+	AddStep(TEXT("Cross-Server Possession: Check results on all clients"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
 		if (ATestPossessionPawn* Pawn = GetPawn())
 		{
-			if (AController* Controller = Pawn->GetController())
-			{
-				AssertTrue(Pawn->GetController() != nullptr, TEXT("Succeed possessed"), Pawn);
-			}
-			else
-			{
-				LogStep(ELogVerbosity::Log, TEXT("Possess failed!"));
-			}
+			AssertTrue(Pawn->GetController() != nullptr, TEXT("GetController of Pawn to check if possessed on client"), Pawn);
 		}
 		else
 		{
@@ -185,14 +171,27 @@ void ACrossServerMultiPossessionTest::RemotePossess(int Index)
 		ATestPossessionPlayerController* Controller = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
 		if (IsValid(Controller))
 		{
-			if (Controller->HasAuthority())
+			ULayeredLBStrategy* LoadBalanceStrategy = GetLoadBalancingStrategy();
+			if (LoadBalanceStrategy != nullptr)
 			{
-				LogStep(ELogVerbosity::Log,
-						FString::Printf(TEXT("%s try to remote possess %s"), *Controller->GetFullName(), *Pawn->GetFullName()));
-				Controller->OnPossessEvent.AddDynamic(this, &ACrossServerMultiPossessionTest::OnPossess);
-				Controller->OnUnPossessEvent.AddDynamic(this, &ACrossServerMultiPossessionTest::OnUnPossess);
-				Controller->OnPossessFailureEvent.AddDynamic(this, &ACrossServerMultiPossessionTest::OnPossessFailure);
-				USpatialPossession::RemotePossess(Controller, Pawn);
+				uint32 WorkerId = LoadBalanceStrategy->WhoShouldHaveAuthority(*Controller);
+				LogStep(ELogVerbosity::Log, FString::Printf(TEXT("Controller:%s authoritatived in worker: %d"), *Controller->GetFullName(), WorkerId));
+
+				WorkerId = LoadBalanceStrategy->WhoShouldHaveAuthority(*Pawn);
+				LogStep(ELogVerbosity::Log, FString::Printf(TEXT("Pawn:%s authoritatived in worker: %d"), *Pawn->GetFullName(), WorkerId));
+				if (Controller->HasAuthority())
+				{
+					LogStep(ELogVerbosity::Log,
+							FString::Printf(TEXT("%s try to remote possess %s"), *Controller->GetFullName(), *Pawn->GetFullName()));
+					Controller->OnPossessEvent.AddDynamic(this, &ACrossServerMultiPossessionTest::OnPossess);
+					Controller->OnUnPossessEvent.AddDynamic(this, &ACrossServerMultiPossessionTest::OnUnPossess);
+					Controller->OnPossessFailedEvent.AddDynamic(this, &ACrossServerMultiPossessionTest::OnPossessFailed);
+					USpatialPossession::RemotePossess(Controller, Pawn);
+				}
+			}
+			else
+			{
+				FinishTest(EFunctionalTestResult::Error, TEXT("Failed to get LoadBalanceStrategy"));
 			}
 		}
 		else
@@ -217,8 +216,7 @@ void ACrossServerMultiPossessionTest::OnUnPossess(APlayerController* Controller)
 	LogStep(ELogVerbosity::Log, FString::Printf(TEXT("Controller:%s OnUnPossess"), *Controller->GetFullName()));
 }
 
-void ACrossServerMultiPossessionTest::OnPossessFailure(ERemotePossessFailure* FailureReason, APlayerController* Controller)
+void ACrossServerMultiPossessionTest::OnPossessFailed(ERemotePossessFailure FailureReason, APlayerController* Controller)
 {
-	LogStep(ELogVerbosity::Log,
-			FString::Printf(TEXT("Controller:%s OnPossessFailure:%d"), *Controller->GetFullName(), *FailureReason));
+	LogStep(ELogVerbosity::Log, FString::Printf(TEXT("Controller:%s OnPossessFailure:%d"), *Controller->GetFullName(), FailureReason));
 }
