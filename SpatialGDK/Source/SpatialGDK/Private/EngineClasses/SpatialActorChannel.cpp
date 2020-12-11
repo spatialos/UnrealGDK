@@ -23,9 +23,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/NetOwningClientWorker.h"
-#include "Schema/ServerRPCEndpointLegacy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
@@ -797,28 +795,6 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	check(Info != nullptr);
 
 	Sender->SendAddComponentForSubobject(this, Object, *Info, ReplicationBytesWritten);
-}
-
-bool USpatialActorChannel::IsListening() const
-{
-	if (NetDriver->IsServer())
-	{
-		if (SpatialGDK::ClientRPCEndpointLegacy* Endpoint =
-				NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ClientRPCEndpointLegacy>(EntityId))
-		{
-			return Endpoint->bReady;
-		}
-	}
-	else
-	{
-		if (SpatialGDK::ServerRPCEndpointLegacy* Endpoint =
-				NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ServerRPCEndpointLegacy>(EntityId))
-		{
-			return Endpoint->bReady;
-		}
-	}
-
-	return false;
 }
 
 bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicationFlags& RepFlags)

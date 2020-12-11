@@ -113,12 +113,6 @@ const FString DATA_COMPONENT_SET_NAME = TEXT("DataComponentSet");
 const FString OWNER_ONLY_COMPONENT_SET_NAME = TEXT("OwnerOnlyComponentSet");
 const FString HANDOVER_COMPONENT_SET_NAME = TEXT("HandoverComponentSet");
 
-// Marking the event-based RPC components as legacy while the ring buffer
-// implementation is under a feature flag.
-const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9990;
-const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY = 9989;
-const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID_LEGACY = 9987;
-
 const Worker_ComponentId NOT_STREAMED_COMPONENT_ID = 9986;
 const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID = 9985;
 const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID = 9984;
@@ -351,7 +345,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 	UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, RPCS_ON_ENTITY_CREATION_ID, TOMBSTONE_COMPONENT_ID, DORMANT_COMPONENT_ID,
 
 	// Multicast RPCs
-	MULTICAST_RPCS_COMPONENT_ID, NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
+	MULTICAST_RPCS_COMPONENT_ID,
 
 	// Global state components
 	DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID,
@@ -367,7 +361,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 // query.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
 	TArray<Worker_ComponentId>{ // RPCs from the server
-								SERVER_ENDPOINT_COMPONENT_ID, SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
+								SERVER_ENDPOINT_COMPONENT_ID,
 
 								// Actor auth tag
 								ACTOR_AUTH_TAG_COMPONENT_ID
@@ -381,7 +375,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 								DORMANT_COMPONENT_ID, NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
 
 								// Multicast RPCs
-								MULTICAST_RPCS_COMPONENT_ID, NETMULTICAST_RPCS_COMPONENT_ID_LEGACY,
+								MULTICAST_RPCS_COMPONENT_ID,
 
 								// Global state components
 								DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID,
@@ -402,7 +396,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 // query.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 	TArray<Worker_ComponentId>{ // RPCs from clients
-								CLIENT_ENDPOINT_COMPONENT_ID, CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY,
+								CLIENT_ENDPOINT_COMPONENT_ID,
 
 								// Heartbeat
 								HEARTBEAT_COMPONENT_ID,
@@ -418,27 +412,13 @@ inline bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId)
 	return ComponentId >= SpatialConstants::FIRST_EC_COMPONENT_ID && ComponentId <= SpatialConstants::LAST_EC_COMPONENT_ID;
 }
 
-inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
+inline Worker_ComponentId _RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 {
 	switch (RPCType)
 	{
 	case ERPCType::CrossServer:
 	{
 		return SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
-	}
-	case ERPCType::NetMulticast:
-	{
-		return SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY;
-	}
-	case ERPCType::ClientReliable:
-	case ERPCType::ClientUnreliable:
-	{
-		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
-	}
-	case ERPCType::ServerReliable:
-	case ERPCType::ServerUnreliable:
-	{
-		return SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
 	}
 	default:
 		checkNoEntry();
@@ -476,7 +456,6 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
 	{ ALWAYS_RELEVANT_COMPONENT_ID, "unreal.AlwaysRelevant" },
 	{ DORMANT_COMPONENT_ID, "unreal.Dormant" },
 	{ VISIBLE_COMPONENT_ID, "unreal.Visible" },
-	{ SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, "unreal.UnrealServerRPCEndpointLegacy" },
 	{ SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, "unreal.UnrealServerToServerCommandEndpoint" },
 	{ MULTICAST_RPCS_COMPONENT_ID, "unreal.UnrealMulticastRPCEndpointLegacy" },
 	{ RPCS_ON_ENTITY_CREATION_ID, "unreal.RPCsOnEntityCreation" },
@@ -494,7 +473,6 @@ const TArray<FString> ClientAuthorityWellKnownSchemaImports = { "unreal/gdk/hear
 const TMap<Worker_ComponentId, FString> ClientAuthorityWellKnownComponents = {
 	{ HEARTBEAT_COMPONENT_ID, "unreal.Heartbeat" },
 	{ CLIENT_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealClientEndpoint" },
-	{ CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, "unreal.UnrealClientRPCEndpointLegacy" },
 };
 
 const TArray<Worker_ComponentId> KnownEntityAuthorityComponents = { POSITION_COMPONENT_ID,		 METADATA_COMPONENT_ID,

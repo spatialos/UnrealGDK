@@ -42,7 +42,6 @@ public:
 	static inline bool IsClientAuthoritativeComponent(Worker_ComponentId ComponentId)
 	{
 		return ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
-			   || ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY
 			   || ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID;
 	}
 

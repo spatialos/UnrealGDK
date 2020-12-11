@@ -21,10 +21,8 @@
 #include "Interop/SpatialReceiver.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AuthorityIntent.h"
-#include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
-#include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/ServerWorker.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
@@ -747,52 +745,6 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 #if !UE_BUILD_SHIPPING
 	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
 #endif // !UE_BUILD_SHIPPING
-}
-
-FRPCErrorInfo USpatialSender::SendLegacyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload,
-											USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
-{
-	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-
-	// Check if the Channel is listening
-	if ((RPCInfo.Type != ERPCType::NetMulticast) && !Channel->IsListening())
-	{
-		// If the Entity endpoint is not yet ready to receive RPCs -
-		// treat the corresponding object as unresolved and queue RPC
-		// However, it doesn't matter in case of Multicast
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::SpatialActorChannelNotListening };
-	}
-
-	// Check for Authority
-	Worker_EntityId EntityId = TargetObjectRef.Entity;
-	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-
-	Worker_ComponentId ComponentId = SpatialConstants::RPCTypeToWorkerComponentIdLegacy(RPCInfo.Type);
-	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
-	{
-		ERPCQueueProcessResult QueueProcessResult = ERPCQueueProcessResult::DropEntireQueue;
-		if (AActor* TargetActor = Cast<AActor>(TargetObject))
-		{
-			if (TargetActor->HasAuthority())
-			{
-				QueueProcessResult = ERPCQueueProcessResult::StopProcessing;
-			}
-		}
-		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoAuthority, QueueProcessResult };
-	}
-
-	FWorkerComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Payload, ComponentId, RPCInfo.Index);
-
-	Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
-	if (GetDefault<USpatialGDKSettings>()->bWorkerFlushAfterOutgoingNetworkOp)
-	{
-		Connection->Flush();
-	}
-#if !UE_BUILD_SHIPPING
-	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
-#endif // !UE_BUILD_SHIPPING
-
-	return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 }
 
 bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
