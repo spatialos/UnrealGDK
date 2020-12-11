@@ -66,6 +66,7 @@ struct RepNotifyCall
 	UObject* Object;
 	TArray<GDK_PROPERTY(Property)*> Notifies;
 };
+FUsageLock ObjectRefToRepStateUsageLock; // A debug helper to trigger an ensure if something weird happens (re-entrancy)
 } // namespace
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialRPCService* InRPCService,
@@ -1480,6 +1481,7 @@ struct USpatialReceiver::RepStateUpdateHelper
 
 			if (ObjectRepState)
 			{
+				GDK_ENSURE_NO_MODIFICATIONS(ObjectRefToRepStateUsageLock);
 				ObjectRepState->UpdateRefToRepStateMap(Receiver.ObjectRefToRepStateMap);
 
 				if (ObjectRepState->ReferencedObj.Num() == 0)
@@ -2278,6 +2280,8 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 
 	for (auto ChannelObjectIter = TargetObjectSet->CreateIterator(); ChannelObjectIter; ++ChannelObjectIter)
 	{
+		GDK_ENSURE_NO_MODIFICATIONS(ObjectRefToRepStateUsageLock);
+
 		USpatialActorChannel* DependentChannel = ChannelObjectIter->Key.Get();
 		if (!DependentChannel)
 		{
@@ -2834,6 +2838,7 @@ void USpatialReceiver::CleanupRepStateMap(FSpatialObjectRepState& RepState)
 			RepStatesWithMappedRef->Remove(RepState.GetChannelObjectPair());
 			if (RepStatesWithMappedRef->Num() == 0)
 			{
+				GDK_ENSURE_NO_MODIFICATIONS(ObjectRefToRepStateUsageLock);
 				ObjectRefToRepStateMap.Remove(Ref);
 			}
 		}
