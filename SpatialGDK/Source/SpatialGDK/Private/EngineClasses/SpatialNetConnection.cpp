@@ -145,6 +145,9 @@ void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 	Timeout = GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutWithEditorSeconds;
 #endif
 
+	UE_LOG(LogSpatialNetConnection, Log, TEXT("Server received heartbeat: NetConnection %s, PlayerController entity %lld"), *GetName(),
+		   PlayerControllerEntity);
+
 	TimerManager->SetTimer(
 		HeartbeatTimer,
 		[WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]() {
@@ -177,6 +180,7 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 				USpatialWorkerConnection* WorkerConnection = Cast<USpatialNetDriver>(Connection->Driver)->Connection;
 				if (WorkerConnection != nullptr)
 				{
+					UE_LOG(LogSpatialNetConnection, Log, TEXT("Client sending heartbeat event"));
 					WorkerConnection->SendComponentUpdate(Connection->PlayerControllerEntity, &ComponentUpdate);
 				}
 			}
