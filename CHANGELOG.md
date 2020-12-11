@@ -110,6 +110,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed a crash that would occur when performing multiple Client Travels at once.
 - Add ServerOnlyAlwaysRelevant component and component set schema definitions
 - Fixed a snapshot reloading issue where worker would create extra actors, as if they were loading on a fresh deployment.
+- Server workers use TCP (instead of KCP) by default.
 - Fixed a rare crash where a RepNotify callback can modify a GDK data structure being iterated upon.
 
 ## [`0.11.0`] - 2020-09-03
