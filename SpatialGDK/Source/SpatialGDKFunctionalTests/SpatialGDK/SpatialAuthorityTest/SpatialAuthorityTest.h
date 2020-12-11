@@ -56,8 +56,15 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Default")
 	FVector Server2Position;
 
-	// This needs to be a position on the border between Server 1 and Server 2.
+	// This needs to be a position that belongs to Server 3.
 	UPROPERTY(EditAnywhere, Category = "Default")
+	FVector Server3Position;
+
+	// This needs to be a position that belongs to Server 4.
+	UPROPERTY(EditAnywhere, Category = "Default")
+	FVector Server4Position;
+
+	// This needs to be a position on the border between all servers.
 	FVector BorderPosition;
 
 	UPROPERTY(Replicated)
