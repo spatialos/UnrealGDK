@@ -180,8 +180,16 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 				USpatialWorkerConnection* WorkerConnection = Cast<USpatialNetDriver>(Connection->Driver)->Connection;
 				if (WorkerConnection != nullptr)
 				{
-					UE_LOG(LogSpatialNetConnection, Log, TEXT("Client sending heartbeat event"));
+					UE_LOG(LogSpatialNetConnection, Log,
+						   TEXT("Client sending heartbeat event: NetConnection %s, PlayerController entity %lld"), *Connection->GetName(),
+						   Connection->PlayerControllerEntity);
 					WorkerConnection->SendComponentUpdate(Connection->PlayerControllerEntity, &ComponentUpdate);
+				}
+				else
+				{
+					UE_LOG(LogSpatialNetConnection, Log,
+						   TEXT("Client sending heartbeat event FAILED: NetConnection %s, PlayerController entity %lld"),
+						   *Connection->GetName(), Connection->PlayerControllerEntity);
 				}
 			}
 		},
