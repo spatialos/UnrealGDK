@@ -842,6 +842,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "debug_metrics.schema",
 										   "global_state_manager.schema",
 										   "heartbeat.schema",
+										   "known_entity_auth_component_set.schema",
+										   "migration_diagnostic.schema",
 										   "net_owning_client_worker.schema",
 										   "not_streamed.schema",
 										   "query_tags.schema",
@@ -849,13 +851,12 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "rpc_components.schema",
 										   "rpc_payload.schema",
 										   "server_worker.schema",
+										   "spatial_debugging.schema",
 										   "spawndata.schema",
 										   "spawner.schema",
-										   "spatial_debugging.schema",
 										   "tombstone.schema",
 										   "unreal_metadata.schema",
-										   "virtual_worker_translation.schema",
-										   "migration_diagnostic.schema" };
+										   "virtual_worker_translation.schema" };
 	TArray<FString> CoreSDKFilePaths = { "improbable\\restricted\\system_components.schema", "improbable\\standard_library.schema" };
 
 	// WHEN
