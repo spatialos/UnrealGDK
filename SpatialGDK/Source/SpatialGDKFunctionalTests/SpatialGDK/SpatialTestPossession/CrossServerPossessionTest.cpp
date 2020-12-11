@@ -25,7 +25,6 @@ ACrossServerPossessionTest::ACrossServerPossessionTest()
 	Description = TEXT("Test Cross-Server Possession");
 }
 
-
 void ACrossServerPossessionTest::PrepareTest()
 {
 	Super::PrepareTest();
@@ -48,17 +47,11 @@ void ACrossServerPossessionTest::PrepareTest()
 
 	AddStep(TEXT("Cross-Server Possession check client 03 authority"), FWorkerDefinition::Server(3), nullptr, nullptr, [this](float) {
 		ULayeredLBStrategy* LoadBalanceStrategy = GetLoadBalancingStrategy();
-		ATestPossessionPawn* Pawn03 =
+		ATestPossessionPawn* Pawn =
 			GetWorld()->SpawnActor<ATestPossessionPawn>(FVector(-100.0f, 100.0f, 50.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-		uint32 WorkerId03 = LoadBalanceStrategy->WhoShouldHaveAuthority(*Pawn03);
-		LogStep(ELogVerbosity::Log, FString::Printf(TEXT("QQQQ %d"), WorkerId03));
+		uint32 WorkerId03 = LoadBalanceStrategy->WhoShouldHaveAuthority(*Pawn);
+		LogStep(ELogVerbosity::Log, FString::Printf(TEXT("Worker %d has the authority of the Pawn"), WorkerId03));
 
-		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-		if (PlayerController) {
-			uint32 WorkerId = LoadBalanceStrategy->WhoShouldHaveAuthority(*PlayerController);
-			LogStep(ELogVerbosity::Log, FString::Printf(TEXT("PlayerController %d"), WorkerId));
-		}
 		FinishStep();
 	});
 
@@ -78,7 +71,7 @@ void ACrossServerPossessionTest::PrepareTest()
 					USpatialPossession::RemotePossess(PlayerController, Pawn);
 				}
 			}
-		}		
+		}
 		FinishStep();
 	});
 
@@ -90,13 +83,13 @@ void ACrossServerPossessionTest::PrepareTest()
 		WaitTime += DeltaTime;
 	});
 
-	AddStep(TEXT("check"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float) {
+	AddStep(TEXT("Cross-Server Possession: Check test result"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float) {
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-		ATestPossessionPawn* Pawn111 =
+		ATestPossessionPawn* Pawn =
 			Cast<ATestPossessionPawn>(UGameplayStatics::GetActorOfClass(GetWorld(), ATestPossessionPawn::StaticClass()));
 
-		AssertTrue(Pawn111->Controller == PlayerController, TEXT("PlayerController HasAuthority02"), PlayerController);
+		AssertTrue(Pawn->Controller == PlayerController, TEXT("PlayerController has possessed the pawn"), PlayerController);
 
 		FinishStep();
 	});
