@@ -98,111 +98,6 @@ void ASpatialAuthorityTest::PrepareTest()
 		FinishStep();
 	});
 
-	FSpatialFunctionalTestStepDefinition ReplicatedVerifyAuthority1StepDefinition(/*bIsNativeDefinition*/ true);
-	ReplicatedVerifyAuthority1StepDefinition.StepName =
-		TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Server 1 Has Authority on BeginPlay and on Tick");
-	ReplicatedVerifyAuthority1StepDefinition.TimeLimit = 5.0f;
-	ReplicatedVerifyAuthority1StepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
-		Timer -= DeltaTime;
-		if (Timer <= 0)
-		{
-			const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
-			if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-			{
-				// Allow it to continue working in Native / Single worker setups.
-				if (GetNumberOfServerWorkers() > 1)
-				{
-					if (LocalWorkerDefinition.Id == 1)
-					{
-						// Server 1
-						if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 1))
-						{
-							FinishStep();
-						}
-					}
-					else
-					{
-						// Other servers
-						if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
-						{
-							FinishStep();
-						}
-					}
-				}
-				else // Support for Native / Single Worker.
-				{
-					if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 0))
-					{
-						FinishStep();
-					}
-				}
-			}
-			else // Clients.
-			{
-				if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
-				{
-					FinishStep();
-				}
-			}
-		}
-	});
-
-	FSpatialFunctionalTestStepDefinition ReplicatedVerifyAuthority2StepDefinition(/*bIsNativeDefinition*/ true);
-	ReplicatedVerifyAuthority2StepDefinition.StepName =
-		TEXT("Replicated Dynamic Actor Spawned On Different Server - Verify Server 1 Has Authority on BeginPlay and Server 2 on Tick");
-	ReplicatedVerifyAuthority2StepDefinition.TimeLimit = 5.0f;
-	ReplicatedVerifyAuthority2StepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
-		Timer -= DeltaTime;
-		if (Timer <= 0)
-		{
-			const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
-			if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-			{
-				// Allow it to continue working in Native / Single worker setups.
-				if (GetNumberOfServerWorkers() > 1)
-				{
-					if (LocalWorkerDefinition.Id == 1)
-					{
-						// Note: An Actor always ticks on the spawning Worker before migrating.
-						if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 1))
-						{
-							FinishStep();
-						}
-					}
-					else if (LocalWorkerDefinition.Id == 2)
-					{
-						if (VerifyTestActor(DynamicReplicatedActor, 0, 2, 1, 0)
-							&& DynamicReplicatedActor->AuthorityComponent->ReplicatedAuthWorkerIdOnBeginPlay == 1)
-						{
-							FinishStep();
-						}
-					}
-					else
-					{
-						if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
-						{
-							FinishStep();
-						}
-					}
-				}
-				else // Support for Native / Single Worker.
-				{
-					if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 0))
-					{
-						FinishStep();
-					}
-				}
-			}
-			else // Clients.
-			{
-				if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
-				{
-					FinishStep();
-				}
-			}
-		}
-	});
-
 	FSpatialFunctionalTestStepDefinition ReplicatedDestroyStepDefinition(/*bIsNativeDefinition*/ true);
 	ReplicatedDestroyStepDefinition.StepName = TEXT("Replicated Dynamic Actor Spawned On Different Server - Destroy");
 	ReplicatedDestroyStepDefinition.TimeLimit = 5.0f;
@@ -315,9 +210,93 @@ void ASpatialAuthorityTest::PrepareTest()
 		AddStepFromDefinition(ReplicatedDestroyStepDefinition, FWorkerDefinition::Server(1));
 	}
 
-	// Replicated Dynamic Actor Spawned On Border On Same Server. Server 2 should have Authority.
+	// Replicated Dynamic Actor Spawned On Different Server. Server 1 should have Authority on BeginPlay, Server 2 on Tick
 	{
-		AddStep(TEXT("Replicated Dynamic Actor Spawned On Border Same Server - Spawn"), FWorkerDefinition::Server(2), nullptr, [this]() {
+		AddStep(TEXT("Replicated Dynamic Actor Spawned On Different Server - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
+			ASpatialAuthorityTestReplicatedActor* Actor =
+				GetWorld()->SpawnActor<ASpatialAuthorityTestReplicatedActor>(Server2Position, FRotator::ZeroRotator);
+			CrossServerSetDynamicReplicatedActor(Actor);
+			FinishStep();
+		});
+
+		AddStep(
+			TEXT("Replicated Dynamic Actor Spawned On Different Server - Verify Server 1 Has Authority on BeginPlay and Server 2 "
+				 "on Tick"),
+			FWorkerDefinition::AllWorkers, nullptr, nullptr,
+			[this](float DeltaTime) {
+				Timer -= DeltaTime;
+				if (Timer <= 0)
+				{
+					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
+					if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+					{
+						// Allow it to continue working in Native / Single worker setups.
+						if (GetNumberOfServerWorkers() > 1)
+						{
+							if (LocalWorkerDefinition.Id == 1)
+							{
+								// Note: An Actor always ticks on the spawning Worker before migrating.
+								if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 1))
+								{
+									FinishStep();
+								}
+							}
+							else if (LocalWorkerDefinition.Id == 2)
+							{
+								if (VerifyTestActor(DynamicReplicatedActor, 0, 2, 1, 0)
+									&& DynamicReplicatedActor->AuthorityComponent->ReplicatedAuthWorkerIdOnBeginPlay == 1)
+								{
+									FinishStep();
+								}
+							}
+							else
+							{
+								if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
+								{
+									FinishStep();
+								}
+							}
+						}
+						else // Support for Native / Single Worker.
+						{
+							if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 0))
+							{
+								FinishStep();
+							}
+						}
+					}
+					else // Clients.
+					{
+						if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
+						{
+							FinishStep();
+						}
+					}
+				}
+			},
+			5.0f);
+
+		AddStepFromDefinition(ReplicatedDestroyStepDefinition, FWorkerDefinition::Server(2));
+	}
+
+	// Non-replicated Dynamic Actor. Server 1 should have Authority.
+	{
+		AddStep(TEXT("Non-replicated Dynamic Actor - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
+			// Spawning directly on Server 2, but since it's non-replicated it shouldn't migrate to Server 2.
+			DynamicNonReplicatedActor = GetWorld()->SpawnActor<ASpatialAuthorityTestActor>(Server2Position, FRotator::ZeroRotator);
+			FinishStep();
+		});
+
+		AddStepFromDefinition(NonReplicatedVerifyAuthorityStepDefinition, FWorkerDefinition::Server(1));
+
+		AddStepFromDefinition(NonReplicatedVerifyOthersStepDefinition, FWorkerDefinition::AllWorkers);
+
+		AddStepFromDefinition(NonReplicatedDestroyStepDefinition, FWorkerDefinition::Server(1));
+	}
+
+	// Replicated Dynamic Actor Spawned On Border from Server 2. Server 2 should keep Authority.
+	{
+		AddStep(TEXT("Replicated Dynamic Actor Spawned On Border From Server 2 - Spawn"), FWorkerDefinition::Server(2), nullptr, [this]() {
 			ASpatialAuthorityTestReplicatedActor* Actor =
 				GetWorld()->SpawnActor<ASpatialAuthorityTestReplicatedActor>(BorderPosition, FRotator::ZeroRotator);
 			CrossServerSetDynamicReplicatedActor(Actor);
@@ -325,7 +304,7 @@ void ASpatialAuthorityTest::PrepareTest()
 		});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Border On Same Server - Verify Server 2 Has Authority"),
+			TEXT("Replicated Dynamic Actor Spawned On Border From Server 2 - Verify Server 2 Has Authority"),
 			FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
 				Timer -= DeltaTime;
@@ -353,53 +332,48 @@ void ASpatialAuthorityTest::PrepareTest()
 		AddStepFromDefinition(ReplicatedDestroyStepDefinition, FWorkerDefinition::Server(2));
 	}
 
-	// Replicated Dynamic Actor Spawned On Different Server. Server 1 should have Authority on BeginPlay, Server 2 on Tick
-	{
-		AddStep(TEXT("Replicated Dynamic Actor Spawned On Different Server - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			ASpatialAuthorityTestReplicatedActor* Actor =
-				GetWorld()->SpawnActor<ASpatialAuthorityTestReplicatedActor>(Server2Position, FRotator::ZeroRotator);
-			CrossServerSetDynamicReplicatedActor(Actor);
-			FinishStep();
-		});
-
-		AddStepFromDefinition(ReplicatedVerifyAuthority2StepDefinition, FWorkerDefinition::AllWorkers);
-
-		AddStepFromDefinition(ReplicatedDestroyStepDefinition, FWorkerDefinition::Server(2));
-	}
-
-	// Replicated Dynamic Actor Spawned On Border. Server 1 should have Authority and on Tick and should not jump back and forwards between
+	// Replicated Dynamic Actor Spawned On Border from Server 1. Server 1 should keep Authority.
 	// servers
 	{
-		AddStep(TEXT("Replicated Dynamic Actor Spawned On Border - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		AddStep(TEXT("Replicated Dynamic Actor Spawned On Border From Server 1 - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			ASpatialAuthorityTestReplicatedActor* Actor =
 				GetWorld()->SpawnActor<ASpatialAuthorityTestReplicatedActor>(BorderPosition, FRotator::ZeroRotator);
 			CrossServerSetDynamicReplicatedActor(Actor);
 			FinishStep();
 		});
 
-		AddStepFromDefinition(ReplicatedVerifyAuthority1StepDefinition, FWorkerDefinition::AllWorkers);
+		AddStep(
+			TEXT("Replicated Dynamic Actor Spawned On Border From Server 1 - Verify Server 1 Has Authority"),
+			FWorkerDefinition::AllWorkers, nullptr, nullptr,
+			[this](float DeltaTime) {
+				Timer -= DeltaTime;
+				if (Timer <= 0)
+				{
+					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
+					if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && LocalWorkerDefinition.Id == 1)
+					{
+						if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 0))
+						{
+							FinishStep();
+						}
+					}
+					else
+					{
+						if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
+						{
+							FinishStep();
+						}
+					}
+				}
+			},
+			5.0f);
 
 		AddStepFromDefinition(ReplicatedDestroyStepDefinition, FWorkerDefinition::Server(1));
 	}
 
-	// Non-replicated Dynamic Actor. Server 1 should have Authority.
+	// Non-replicated Dynamic Actor On Border From Server 1. Server 1 should have Authority.
 	{
-		AddStep(TEXT("Non-replicated Dynamic Actor - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			// Spawning directly on Server 2, but since it's non-replicated it shouldn't migrate to Server 2.
-			DynamicNonReplicatedActor = GetWorld()->SpawnActor<ASpatialAuthorityTestActor>(Server2Position, FRotator::ZeroRotator);
-			FinishStep();
-		});
-
-		AddStepFromDefinition(NonReplicatedVerifyAuthorityStepDefinition, FWorkerDefinition::Server(1));
-
-		AddStepFromDefinition(NonReplicatedVerifyOthersStepDefinition, FWorkerDefinition::AllWorkers);
-
-		AddStepFromDefinition(NonReplicatedDestroyStepDefinition, FWorkerDefinition::Server(1));
-	}
-
-	// Non-replicated Dynamic Actor On Border. Server 1 should have Authority.
-	{
-		AddStep(TEXT("Non-replicated Dynamic Actor On Border - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		AddStep(TEXT("Non-replicated Dynamic Actor On Border From Server 1 - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			// Spawning directly on border, but since it's non-replicated it shouldn't migrate.
 			DynamicNonReplicatedActor = GetWorld()->SpawnActor<ASpatialAuthorityTestActor>(BorderPosition, FRotator::ZeroRotator);
 			FinishStep();
@@ -411,6 +385,7 @@ void ASpatialAuthorityTest::PrepareTest()
 
 		AddStepFromDefinition(NonReplicatedDestroyStepDefinition, FWorkerDefinition::Server(1));
 	}
+
 
 	// GameMode.
 	{
