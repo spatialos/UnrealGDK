@@ -2,7 +2,6 @@
 
 #include "Tests/TestDefinitions.h"
 
-#include "HAL/IPlatformFileProfilerWrapper.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/Paths.h"
 #include "Misc/ScopeTryLock.h"

@@ -20,7 +20,7 @@ const FString Extension = TEXT("");
 const FString PlatformVersion = TEXT("x86_64-macos");
 #endif
 
-static inline const FString CreateExePath(FString Path, FString ExecutableName)
+static const FString CreateExePath(FString Path, FString ExecutableName)
 {
 	FString ExecutableFile = FPaths::SetExtension(ExecutableName, Extension);
 	return FPaths::Combine(Path, ExecutableFile);
@@ -40,21 +40,19 @@ const FString RuntimePackageName = TEXT("runtime");
 const FString InspectorPackageName = TEXT("inspector");
 const FString RuntimeExe = FPaths::SetExtension(RuntimePackageName, Extension);
 const FString InspectorExe = FPaths::SetExtension(InspectorPackageName, Extension);
-const FString LocalDeploymentLogsDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("logs/localdeployment"));
+const FString LocalDeploymentLogsDir = FPaths::Combine(SpatialOSDirectory, TEXT("logs/localdeployment"));
 
-static inline const FString GetRuntimeExecutablePath(const FString& RuntimeVersion)
+static const FString GetRuntimeExecutablePath(const FString& RuntimeVersion)
 {
-	return FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, RuntimePackageName, RuntimeVersion,
-						   SpatialGDKServicesConstants::RuntimeExe);
+	return FPaths::Combine(GDKProgramPath, RuntimePackageName, RuntimeVersion, RuntimeExe);
 }
 
-static inline const FString GetInspectorExecutablePath(const FString& InspectorVersion)
+static const FString GetInspectorExecutablePath(const FString& InspectorVersion)
 {
-	return FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, InspectorPackageName, InspectorVersion,
-						   SpatialGDKServicesConstants::InspectorExe);
+	return FPaths::Combine(GDKProgramPath, InspectorPackageName, InspectorVersion, InspectorExe);
 }
 
-const FString SpatialOSRuntimePinnedStandardVersion = TEXT("15.0.0-preview-4");
+const FString SpatialOSRuntimePinnedStandardVersion = TEXT("15.0.0-preview-5");
 
 const int32 RuntimeGRPCPort = 7777;
 
