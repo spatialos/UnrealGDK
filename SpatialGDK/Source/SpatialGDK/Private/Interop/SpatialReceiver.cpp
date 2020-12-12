@@ -715,32 +715,6 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 				}
 			}
 		}
-
-		// Subobject Delegation
-		TPair<Worker_EntityId_Key, Worker_ComponentSetId> EntityComponentPair =
-			MakeTuple(static_cast<Worker_EntityId_Key>(Op.entity_id), Op.component_set_id);
-		if (TSharedRef<FPendingSubobjectAttachment>* PendingSubobjectAttachmentPtr =
-				PendingEntitySubobjectDelegations.Find(EntityComponentPair))
-		{
-			FPendingSubobjectAttachment& PendingSubobjectAttachment = PendingSubobjectAttachmentPtr->Get();
-
-			PendingSubobjectAttachment.PendingAuthorityDelegations.Remove(Op.component_set_id);
-
-			if (PendingSubobjectAttachment.PendingAuthorityDelegations.Num() == 0)
-			{
-				if (UObject* Object = PendingSubobjectAttachment.Subobject.Get())
-				{
-					if (IsValid(Channel))
-					{
-						// TODO: UNR-664 - We should track the bytes sent here and factor them into channel saturation.
-						uint32 BytesWritten = 0;
-						Sender->SendAddComponentForSubobject(Channel, Object, *PendingSubobjectAttachment.Info, BytesWritten);
-					}
-				}
-			}
-
-			PendingEntitySubobjectDelegations.Remove(EntityComponentPair);
-		}
 	}
 	else if (Op.component_set_id == SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
 	{

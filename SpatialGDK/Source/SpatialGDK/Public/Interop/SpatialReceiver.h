@@ -195,7 +195,6 @@ private:
 	void ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op);
 
 public:
-	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
 	FOnEntityAddedDelegate OnEntityAddedDelegate;
 	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
