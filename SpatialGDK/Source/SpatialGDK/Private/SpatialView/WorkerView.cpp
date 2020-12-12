@@ -56,7 +56,16 @@ void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate U
 		{
 			Component->ApplyUpdate(Update);
 		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("SendComponentUpdate failed, component not in view: entity %lld component %d"), EntityId,
+				   Update.GetComponentId());
+		}
 		LocalChanges->ComponentMessages.Emplace(EntityId, MoveTemp(Update), SpanId);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SendComponentUpdate failed, entity not in view: entity %lld"), EntityId);
 	}
 }
 
