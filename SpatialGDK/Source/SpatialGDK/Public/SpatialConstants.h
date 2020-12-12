@@ -89,6 +89,7 @@ const Worker_ComponentSetId WELL_KNOWN_COMPONENT_SET_ID = 50;
 const Worker_ComponentId WORKER_COMPONENT_ID = 60;
 const Worker_ComponentId PLAYERIDENTITY_COMPONENT_ID = 61;
 const Worker_ComponentId AUTHORITY_DELEGATION_COMPONENT_ID = 65;
+const Worker_ComponentId PARTITION_COMPONENT_ID = 66;
 
 const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID = 100;
 
@@ -385,7 +386,9 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 								AUTHORITY_INTENT_COMPONENT_ID,
 
 								// Tags: Well known entities, and non-auth actors
-								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_NON_AUTH_TAG_COMPONENT_ID
+								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_NON_AUTH_TAG_COMPONENT_ID,
+
+								PARTITION_COMPONENT_ID
 	};
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
@@ -398,7 +401,9 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 								HEARTBEAT_COMPONENT_ID,
 
 								// Auth actor tag
-								ACTOR_AUTH_TAG_COMPONENT_ID
+								ACTOR_AUTH_TAG_COMPONENT_ID,
+
+								PARTITION_COMPONENT_ID
 	};
 
 inline bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId)

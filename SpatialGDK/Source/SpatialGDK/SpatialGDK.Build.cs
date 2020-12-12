@@ -63,7 +63,7 @@ public class SpatialGDK : ModuleRules
             PublicDependencyModuleNames.Add("PerfCounters");
         }
 
-        var WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
+        var WorkerLibraryDir = Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString());
 
         var WorkerLibraryPaths = new List<string>
             {
@@ -143,9 +143,7 @@ public class SpatialGDK : ModuleRules
         }
 
         PublicAdditionalLibraries.Add(WorkerImportLib);
-#pragma warning disable 0618
-        PublicLibraryPaths.AddRange(WorkerLibraryPaths); // Deprecated in 4.24, replace with PublicRuntimeLibraryPaths or move the full path into PublicAdditionalLibraries once we drop support for 4.23
-#pragma warning restore 0618
+        PublicRuntimeLibraryPaths.Add(WorkerLibraryDir);
 
         // Detect existence of trace library, if present add preprocessor
         string TraceStaticLibPath = "";
