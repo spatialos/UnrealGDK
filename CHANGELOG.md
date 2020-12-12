@@ -112,6 +112,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Add ServerOnlyAlwaysRelevant component and component set schema definitions
 - Fixed a snapshot reloading issue where worker would create extra actors, as if they were loading on a fresh deployment.
 - Server workers use TCP (instead of KCP) by default.
+- Fixed race condition in Spatial Test framework that would cause tests to time out with one or more workers not ready to begin the test.
 
 ## [`0.11.0`] - 2020-09-03
 
