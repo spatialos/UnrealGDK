@@ -13,15 +13,23 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
+DECLARE_LOG_CATEGORY_EXTERN(LogConnectionConfig, Log, All);
+
 struct FConnectionConfig
 {
+	enum EWorkerType
+	{
+		Client,
+		Server
+	};
+
 	FConnectionConfig()
 		: UseExternalIp(false)
 		, EnableWorkerSDKProtocolLogging(false)
 		, EnableWorkerSDKOpLogging(false)
 		, WorkerSDKLogFileSize(10 * 1024 * 1024)
 		, WorkerSDKLogLevel(WORKER_LOG_LEVEL_INFO)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_KCP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_TCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
 		, TcpNoDelay(0)
@@ -49,7 +57,7 @@ struct FConnectionConfig
 		{
 			WorkerType = bConnectAsClient ? SpatialConstants::DefaultClientWorkerType.ToString()
 										  : SpatialConstants::DefaultServerWorkerType.ToString();
-			UE_LOG(LogTemp, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *WorkerType);
+			UE_LOG(LogConnectionConfig, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *WorkerType);
 		}
 
 		if (WorkerId.IsEmpty())
@@ -63,6 +71,8 @@ struct FConnectionConfig
 			10; // Despite flushing on the worker ops thread, WorkerSDK still needs to send periodic data (like ACK, resends and ping).
 		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS
 													: SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
+
+		LinkProtocol = ConnectionTypeMap[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
 	}
 
 private:
@@ -88,7 +98,7 @@ private:
 		}
 		else if (!LogLevelString.IsEmpty())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
+			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
 		}
 	}
 
@@ -98,17 +108,27 @@ private:
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString.Compare(TEXT("Tcp"), ESearchCase::IgnoreCase) == 0)
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_TCP;
+			ConnectionTypeMap[EWorkerType::Client] = WORKER_NETWORK_CONNECTION_TYPE_TCP;
+			ConnectionTypeMap[EWorkerType::Server] = WORKER_NETWORK_CONNECTION_TYPE_TCP;
+			return;
 		}
 		else if (LinkProtocolString.Compare(TEXT("Kcp"), ESearchCase::IgnoreCase) == 0)
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_KCP;
+			ConnectionTypeMap[EWorkerType::Client] = WORKER_NETWORK_CONNECTION_TYPE_KCP;
+			ConnectionTypeMap[EWorkerType::Server] = WORKER_NETWORK_CONNECTION_TYPE_KCP;
+			return;
 		}
-		else if (!LinkProtocolString.IsEmpty())
+
+		if (!LinkProtocolString.IsEmpty())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."),
+			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown network protocol '%s' specified for connecting to SpatialOS."),
 				   *LinkProtocolString);
 		}
+
+		ConnectionTypeMap[EWorkerType::Client] = WORKER_NETWORK_CONNECTION_TYPE_KCP;
+		ConnectionTypeMap[EWorkerType::Server] = WORKER_NETWORK_CONNECTION_TYPE_TCP;
+
+		UE_LOG(LogConnectionConfig, Verbose, TEXT("No link protocol set. Defaulting to TCP for server workers, KCP for client workers."));
 	}
 
 public:
@@ -121,6 +141,7 @@ public:
 	uint32 WorkerSDKLogFileSize;
 	Worker_LogLevel WorkerSDKLogLevel;
 	Worker_NetworkConnectionType LinkProtocol;
+	Worker_NetworkConnectionType ConnectionTypeMap[2];
 	Worker_ConnectionParameters ConnectionParams = {};
 	uint8 TcpMultiplexLevel;
 	uint8 TcpNoDelay;
