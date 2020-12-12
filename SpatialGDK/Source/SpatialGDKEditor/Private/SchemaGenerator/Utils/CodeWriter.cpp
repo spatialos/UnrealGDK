@@ -117,7 +117,10 @@ void FCodeWriter::RemoveTrailingComma()
 	const int32 TrailingCommaIndex = OutputSource.FindLastCharByPredicate([](TCHAR c) {
 		return c == TEXT(',');
 	});
-	OutputSource.RemoveAt(TrailingCommaIndex);
+	if (TrailingCommaIndex != INDEX_NONE)
+	{
+		OutputSource.RemoveAt(TrailingCommaIndex);
+	}
 }
 
 void FCodeWriter::WriteToFile(const FString& Filename)

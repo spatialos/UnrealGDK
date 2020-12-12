@@ -195,7 +195,6 @@ private:
 	void ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op);
 
 public:
-
 	FOnEntityAddedDelegate OnEntityAddedDelegate;
 	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
 
