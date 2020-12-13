@@ -174,7 +174,7 @@ void InterestFactory::AddLoadBalancingInterestQuery(const UAbstractLBStrategy* L
 	PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
 	PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
 	PartitionQuery.Constraint = LBStrategy->GetWorkerInterestQueryConstraint(VirtualWorker);
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, PartitionQuery);
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, PartitionQuery);
 }
 
 Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
