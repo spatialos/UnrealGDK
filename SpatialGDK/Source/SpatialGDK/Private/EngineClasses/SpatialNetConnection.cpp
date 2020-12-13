@@ -140,7 +140,8 @@ void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_
 
 void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 {
-	float Timeout = GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds;
+	// float Timeout = GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds;
+	float Timeout = 30.f;
 #if WITH_EDITOR
 	Timeout = GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutWithEditorSeconds;
 #endif

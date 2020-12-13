@@ -70,12 +70,12 @@ struct ConfigureConnection
 		Params.network.kcp.upstream_kcp.flush_interval_millis = Config.UdpUpstreamIntervalMS;
 		Params.network.kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
 
-		//#if WITH_EDITOR
+#if WITH_EDITOR
 		Params.network.tcp.downstream_heartbeat = &HeartbeatParams;
 		Params.network.tcp.upstream_heartbeat = &HeartbeatParams;
 		Params.network.kcp.downstream_heartbeat = &HeartbeatParams;
 		Params.network.kcp.upstream_heartbeat = &HeartbeatParams;
-		//#endif
+#endif
 
 		// Use insecure connections default.
 		Params.network.kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
@@ -117,7 +117,7 @@ struct ConfigureConnection
 #if WITH_EDITOR
 	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, MAX_int64 };
 #else
-	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, 8000 };
+	// Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, 8000 };
 #endif
 };
 
