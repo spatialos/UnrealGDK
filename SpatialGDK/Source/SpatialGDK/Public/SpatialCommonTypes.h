@@ -74,8 +74,8 @@ struct FUsageLock
 	struct Scope
 	{
 		bool& bIsSetRef;
-		Scope(bool& bIsSetRef)
-			: bIsSetRef(bIsSetRef)
+		Scope(bool& bInIsSetRef)
+			: bIsSetRef(bInIsSetRef)
 		{
 			ensureMsgf(!bIsSetRef, TEXT("Unexpected re-entrancy occured in the Spatial GDK."));
 			bIsSetRef = true;
