@@ -17,11 +17,14 @@
  *		- non-replicated level actor
  *		- dynamic replicated actor (one time with spatial authority and another without)
  *		- dynamic non-replicated actor
+ *		- dynamic replicated actor spawned on border from server 1
+ *		- dynamic replicated actor spawned on border from server 2
+  *		- dynamic non-replicated actor spawned on border
  *		- GameMode (which only exists on Servers)
  *		- GameState
- * Keep in mind that we're assuming a 1x2 Grid Load-Balancing Strategy, otherwise the ownership of
+ * Keep in mind that we're assuming a 2x2 Grid Load-Balancing Strategy, otherwise the ownership of
  * these actors may be something completely different (specially important for actors placed in the Level).
- * You have some flexibility to change the Server1/2Position properties to test in different Load-Balancing Strategies.
+ * You have some flexibility to change the Server Position properties to test in different Load-Balancing Strategies.
  */
 ASpatialAuthorityTest::ASpatialAuthorityTest()
 {
@@ -50,10 +53,10 @@ void ASpatialAuthorityTest::PrepareTest()
 		}
 	});
 
-	FSpatialFunctionalTestStepDefinition NonReplicatedVerifyOthersStepDefinition(/*bIsNativeDefinition*/ true);
-	NonReplicatedVerifyOthersStepDefinition.StepName = TEXT("Non-replicated Dynamic Actor - Verify Dynamic Actor doesn't exist on others");
-	NonReplicatedVerifyOthersStepDefinition.TimeLimit = 5.0f;
-	NonReplicatedVerifyOthersStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
+	FSpatialFunctionalTestStepDefinition NonReplicatedVerifyNonAuthorityStepDefinition(/*bIsNativeDefinition*/ true);
+	NonReplicatedVerifyNonAuthorityStepDefinition.StepName = TEXT("Non-replicated Dynamic Actor - Verify Dynamic Actor doesn't exist on others");
+	NonReplicatedVerifyNonAuthorityStepDefinition.TimeLimit = 5.0f;
+	NonReplicatedVerifyNonAuthorityStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 		if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && LocalWorkerDefinition.Id == 1)
 		{
@@ -70,7 +73,7 @@ void ASpatialAuthorityTest::PrepareTest()
 				{
 					if (!It->GetIsReplicated())
 					{
-						NumNonReplicatedActorsInLevel += 1;
+						NumNonReplicatedActorsInLevel++;
 					}
 				}
 
@@ -289,7 +292,7 @@ void ASpatialAuthorityTest::PrepareTest()
 
 		AddStepFromDefinition(NonReplicatedVerifyAuthorityStepDefinition, FWorkerDefinition::Server(1));
 
-		AddStepFromDefinition(NonReplicatedVerifyOthersStepDefinition, FWorkerDefinition::AllWorkers);
+		AddStepFromDefinition(NonReplicatedVerifyNonAuthorityStepDefinition, FWorkerDefinition::AllWorkers);
 
 		AddStepFromDefinition(NonReplicatedDestroyStepDefinition, FWorkerDefinition::Server(1));
 	}
@@ -308,6 +311,8 @@ void ASpatialAuthorityTest::PrepareTest()
 			nullptr, nullptr,
 			[this](float DeltaTime) {
 				Timer -= DeltaTime;
+
+				// Spawning directly on border, so it shouldn't migrate.
 				if (Timer <= 0)
 				{
 					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
@@ -346,8 +351,9 @@ void ASpatialAuthorityTest::PrepareTest()
 			nullptr, nullptr,
 			[this](float DeltaTime) {
 				Timer -= DeltaTime;
+				// Spawning directly on border, so it shouldn't migrate.
 				if (Timer <= 0)
-				{
+				{	
 					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 					if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && LocalWorkerDefinition.Id == 1)
 					{
@@ -380,7 +386,7 @@ void ASpatialAuthorityTest::PrepareTest()
 
 		AddStepFromDefinition(NonReplicatedVerifyAuthorityStepDefinition, FWorkerDefinition::Server(1));
 
-		AddStepFromDefinition(NonReplicatedVerifyOthersStepDefinition, FWorkerDefinition::AllWorkers);
+		AddStepFromDefinition(NonReplicatedVerifyNonAuthorityStepDefinition, FWorkerDefinition::AllWorkers);
 
 		AddStepFromDefinition(NonReplicatedDestroyStepDefinition, FWorkerDefinition::Server(1));
 	}
