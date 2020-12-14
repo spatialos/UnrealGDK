@@ -183,7 +183,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
 
-	checkf(RPCService != nullptr, TEXT("Attempting to send an RPC with a null RPCService."));
+	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
 	ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
 
 	// Only add subobjects which are replicating
