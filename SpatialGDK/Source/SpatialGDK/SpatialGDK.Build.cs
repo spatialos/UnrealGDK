@@ -112,7 +112,7 @@ public class SpatialGDK : ModuleRules
         }
         else if (Target.Platform == UnrealTargetPlatform.Android)
         {
-            LibPrefix = "improbable_";
+            LibPrefix = "libimprobable_";
             WorkerLibraryPaths.AddRange(new string[]
             {
                 Path.Combine(WorkerLibraryDir, "arm64-v8a"),
