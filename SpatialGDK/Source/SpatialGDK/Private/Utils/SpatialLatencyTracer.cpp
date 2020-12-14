@@ -343,6 +343,7 @@ void USpatialLatencyTracer::ResetWorkerId()
 	WorkerId = TEXT("DeviceId_") + FPlatformMisc::GetDeviceId();
 }
 
+#if 0
 void USpatialLatencyTracer::OnEnqueueMessage(const SpatialGDK::FOutgoingMessage* Message)
 {
 	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
@@ -386,6 +387,8 @@ void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage*
 		}
 	}
 }
+
+#endif
 
 bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
 {

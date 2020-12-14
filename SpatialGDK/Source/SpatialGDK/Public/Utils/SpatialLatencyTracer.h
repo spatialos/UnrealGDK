@@ -23,11 +23,6 @@ class AActor;
 class UFunction;
 class USpatialGameInstance;
 
-namespace SpatialGDK
-{
-struct FOutgoingMessage;
-} // namespace SpatialGDK
-
 /**
  * Enum that maps Unreal's log verbosity to allow use in settings.
  **/
@@ -150,8 +145,10 @@ public:
 	void SetWorkerId(const FString& NewWorkerId) { WorkerId = NewWorkerId; }
 	void ResetWorkerId();
 
+#if 0
 	void OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*);
 	void OnDequeueMessage(const SpatialGDK::FOutgoingMessage*);
+#endif
 
 private:
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
