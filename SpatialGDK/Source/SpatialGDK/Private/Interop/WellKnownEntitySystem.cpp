@@ -98,23 +98,16 @@ void WellKnownEntitySystem::ProcessComponentAdd(const Worker_ComponentId Compone
 
 void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
-	// if (GlobalStateManager->HandlesComponent(ComponentSetId))
-	{
-		GlobalStateManager->AuthorityChanged({ EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
-	}
+	GlobalStateManager->AuthorityChanged({ EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
 
-	// if (ComponentSetId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
-	if (SubView->GetView()[EntityId].Components.ContainsByPredicate([](const SpatialGDK::ComponentData& CompData) {
-			return CompData.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID;
-		}))
+	if (SubView->GetView()[EntityId].Components.ContainsByPredicate(
+			SpatialGDK::ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID }))
 	{
 		GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 	}
 
-	// if (ComponentSetId == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
-	if (SubView->GetView()[EntityId].Components.ContainsByPredicate([](const SpatialGDK::ComponentData& CompData) {
-			return CompData.GetComponentId() == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
-		}))
+	if (SubView->GetView()[EntityId].Components.ContainsByPredicate(
+			SpatialGDK::ComponentIdEquality{ SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID }))
 	{
 		InitializeVirtualWorkerTranslationManager();
 		VirtualWorkerTranslationManager->AuthorityChanged({ EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });

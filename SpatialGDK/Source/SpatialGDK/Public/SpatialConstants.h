@@ -426,6 +426,7 @@ inline Worker_ComponentId _RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 	}
 }
 
+// TODO: These containers should be cleaned up when we move to reading component set data directly from schema bundle - UNR-4666
 const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
 	"improbable/standard_library.schema",
 	"unreal/gdk/authority_intent.schema",

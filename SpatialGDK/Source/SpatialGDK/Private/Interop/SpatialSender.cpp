@@ -477,24 +477,28 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 		}
 	}
 
+	// It's not clear if this is ever valid for authority to not be true anymore (since component sets), but still possible if we attempt
+	// to process updates whilst an entity creation is in progress, or after the entity has been deleted or removed from view. So in the
+	// meantime we've kept the checking and queuing of updates, along with an error message.
+	const bool bHasAuthority = NetDriver->HasServerAuthority(EntityId);
+	if (!bHasAuthority)
+	{
+		UE_LOG(LogSpatialSender, Warning,
+			   TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. "
+					"entity: %lld"),
+			   EntityId);
+
+		// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the
+		// update, to send upon receiving authority. Note: This will break in a multi-worker context, if we try to create an entity that
+		// we don't intend to have authority over. For this reason, this fix is only temporary.
+		TArray<FWorkerComponentUpdate>& UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.FindOrAdd(EntityId);
+		UpdatesQueuedUntilAuthority.Append(ComponentUpdates);
+		return;
+	}
+
 	for (int i = 0; i < ComponentUpdates.Num(); i++)
 	{
 		FWorkerComponentUpdate& Update = ComponentUpdates[i];
-		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
-		{
-			UE_LOG(LogSpatialSender, Verbose,
-				   TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. "
-						"Component Id: %d, entity: %lld"),
-				   Update.component_id, EntityId);
-
-			// This is a temporary fix. A task to improve this has been created: UNR-955
-			// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the
-			// update, to send upon receiving authority. Note: This will break in a multi-worker context, if we try to create an entity that
-			// we don't intend to have authority over. For this reason, this fix is only temporary.
-			TArray<FWorkerComponentUpdate>& UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.FindOrAdd(EntityId);
-			UpdatesQueuedUntilAuthority.Add(Update);
-			continue;
-		}
 
 		FSpatialGDKSpanId SpanId;
 		if (EventTracer)
