@@ -35,38 +35,3 @@ component RPCsOnEntityCreation {
     list<UnrealRPCPayload> rpcs = 1;
     command Void clear_rpcs(Void);
 }
-
-component_set UnrealClientRPCEndpointLegacySet {
-	id = 9990;
-	components = [
-		UnrealClientRPCEndpointLegacy
-	];
-}
-
-component_set UnrealServerRPCEndpointLegacySet {
-	id = 9989;
-	components = [
-		UnrealServerRPCEndpointLegacy
-	];
-}
-
-component_set UnrealServerToServerCommandEndpointSet {
-	id = 9973;
-	components = [
-		UnrealServerToServerCommandEndpoint
-	];
-}
-
-component_set UnrealMulticastRPCEndpointLegacySet {
-	id = 9987;
-	components = [
-		UnrealMulticastRPCEndpointLegacy
-	];
-}
-
-component_set RPCsOnEntityCreationSet {
-	id = 9985;
-	components = [
-		RPCsOnEntityCreation
-	];
-}

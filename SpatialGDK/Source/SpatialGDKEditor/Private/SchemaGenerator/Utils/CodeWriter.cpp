@@ -112,6 +112,17 @@ FCodeWriter& FCodeWriter::End()
 	return *this;
 }
 
+void FCodeWriter::RemoveTrailingComma()
+{
+	const int32 TrailingCommaIndex = OutputSource.FindLastCharByPredicate([](TCHAR c) {
+		return c == TEXT(',');
+	});
+	if (TrailingCommaIndex != INDEX_NONE)
+	{
+		OutputSource.RemoveAt(TrailingCommaIndex);
+	}
+}
+
 void FCodeWriter::WriteToFile(const FString& Filename)
 {
 	check(Scope == 0);

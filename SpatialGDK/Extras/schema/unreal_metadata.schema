@@ -9,10 +9,3 @@ component UnrealMetadata {
     string class_path = 2;
     option<bool> net_startup = 3; // Exists only when entity has a stably_named_ref
 }
-
-component_set UnrealMetadataSet {
-  id = 9996;
-  components = [
-    UnrealMetadata
-  ];
-}

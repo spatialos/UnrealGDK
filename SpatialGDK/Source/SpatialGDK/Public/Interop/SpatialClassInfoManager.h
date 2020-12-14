@@ -121,8 +121,6 @@ public:
 
 	bool IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const;
 
-	const TArray<Worker_ComponentId>& GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const;
-
 	// Used to check if component is used for qbi tracking only
 	bool IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const;
 
