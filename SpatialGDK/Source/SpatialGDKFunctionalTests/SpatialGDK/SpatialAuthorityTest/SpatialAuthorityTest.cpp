@@ -313,8 +313,8 @@ void ASpatialAuthorityTest::PrepareTest()
 			},
 			5.0f);
 
-		AddStep(TEXT("Non-replicated Dynamic Actor Client - Verify Dynamic Actor doesn't exist on others"), FWorkerDefinition::AllWorkers, nullptr,
-				nullptr, [this](float DeltaTime) {
+		AddStep(TEXT("Non-replicated Dynamic Actor Client - Verify Dynamic Actor doesn't exist on others"), FWorkerDefinition::AllWorkers,
+				nullptr, nullptr, [this](float DeltaTime) {
 					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 					if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client && LocalWorkerDefinition.Id == 1)
 					{
@@ -492,9 +492,8 @@ void ASpatialAuthorityTest::CrossServerNotifyHadAuthorityOverGameState_Implement
 	NumHadAuthorityOverGameState += 1;
 }
 
-bool ASpatialAuthorityTest::VerifyTestActor(ASpatialAuthorityTestActor* Actor, ESpatialHasAuthority ExpectedAuthority, int AuthorityOnBeginPlay,
-											int AuthorityOnTick,
-											int NumAuthorityGains, int NumAuthorityLosses)
+bool ASpatialAuthorityTest::VerifyTestActor(ASpatialAuthorityTestActor* Actor, ESpatialHasAuthority ExpectedAuthority,
+											int AuthorityOnBeginPlay, int AuthorityOnTick, int NumAuthorityGains, int NumAuthorityLosses)
 {
 	if (!IsValid(Actor) || !Actor->HasActorBegunPlay())
 	{
@@ -514,4 +513,3 @@ bool ASpatialAuthorityTest::VerifyTestActor(ASpatialAuthorityTestActor* Actor, E
 		   && Actor->AuthorityComponent->NumAuthorityGains == NumAuthorityGains
 		   && Actor->AuthorityComponent->NumAuthorityLosses == NumAuthorityLosses;
 }
-
