@@ -3,6 +3,7 @@
 #include "Utils/EntityFactory.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
@@ -31,6 +32,7 @@
 #include "Engine/LevelScriptActor.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 DEFINE_LOG_CATEGORY(LogEntityFactory);
 
@@ -74,6 +76,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	DelegationMap.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID, AuthoritativeServerPartitionId);
 	DelegationMap.Add(SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, AuthoritativeServerPartitionId);
 	DelegationMap.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthoritativeServerPartitionId);
+	DelegationMap.Add(SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID, AuthoritativeServerPartitionId);
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialSettings->UseRPCRingBuffer() && RPCService != nullptr)
@@ -113,6 +116,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	// Add all Interest component IDs to allow us to change it if needed.
 	DelegationMap.Add(SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeServerPartitionId);
+	DelegationMap.Add(SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeServerPartitionId);
 	for (const auto ComponentId : ClassInfoManager->SchemaDatabase->NetCullDistanceComponentIds)
 	{
 		DelegationMap.Add(ComponentId, AuthoritativeServerPartitionId);
@@ -172,7 +176,11 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 		// No path in SpatialOS should contain a PIE prefix.
 		FString TempPath = Actor->GetFName().ToString();
+#if ENGINE_MINOR_VERSION >= 26
+		GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), TempPath, false /*bIsReading*/);
+#else
 		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
+#endif
 
 		StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
 		bNetStartup = Actor->bNetStartup;
@@ -185,6 +193,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
 	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateNetOwningClientWorkerData());
 	ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID));
 
 	if (ShouldActorHaveVisibleComponent(Actor))
 	{
@@ -393,7 +402,11 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 
 	// No path in SpatialOS should contain a PIE prefix.
 	FString TempPath = Actor->GetFName().ToString();
+#if ENGINE_MINOR_VERSION >= 26
+	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), TempPath, false /*bIsReading*/);
+#else
 	GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
+#endif
 	const TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
 
 	TArray<FWorkerComponentData> Components;
