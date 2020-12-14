@@ -23,6 +23,14 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialActorChannel, Log, All);
 
+// This is necessary to compile TUniquePtr<FObjectReferencesMap> on Linux with 4.26,
+// where the default deleter needs FObjectReferences to be complete, which isn't possible
+// because we're still in the middle of its definition.
+struct FObjectReferencesMapDeleter
+{
+	void operator()(FObjectReferencesMap* Ptr) const;
+};
+
 struct FObjectReferences
 {
 	FObjectReferences() = default;
@@ -94,18 +102,10 @@ struct FObjectReferences
 	TArray<uint8> Buffer;
 	int32 NumBufferBits;
 
-	TUniquePtr<FObjectReferencesMap> Array;
+	TUniquePtr<FObjectReferencesMap, FObjectReferencesMapDeleter> Array;
 	int32 ShadowOffset;
 	int32 ParentIndex;
 	GDK_PROPERTY(Property) * Property;
-};
-
-struct FPendingSubobjectAttachment
-{
-	const FClassInfo* Info;
-	TWeakObjectPtr<UObject> Subobject;
-
-	TSet<Worker_ComponentId> PendingAuthorityDelegations;
 };
 
 // Utility class to manage mapped and unresolved references.

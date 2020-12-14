@@ -53,6 +53,7 @@ void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ASpatialFunctionalTest, FlowControllers);
 	DOREPLIFETIME(ASpatialFunctionalTest, CurrentStepIndex);
 	DOREPLIFETIME(ASpatialFunctionalTest, bPreparedTest);
+	DOREPLIFETIME(ASpatialFunctionalTest, bFinishedTest);
 }
 
 void ASpatialFunctionalTest::BeginPlay()
@@ -146,6 +147,10 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 		{
 			GetWorld()->GetTimerManager().ClearTimer(FinishTestTimerHandle);
 			Super::FinishTest(CachedTestResult, CachedTestMessage);
+
+			// This will call NotifyTestFinishedObserver on other workers.
+			bFinishedTest = true;
+
 			// Clear cached variables
 			CachedTestResult = EFunctionalTestResult::Default;
 			CachedTestMessage.Empty();
@@ -638,10 +643,6 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 				ClearTagDelegationAndInterest();
 			}
 		}
-		if (!HasAuthority()) // Authority already does this on Super::FinishTest
-		{
-			NotifyTestFinishedObserver();
-		}
 
 		DeleteActorsRegisteredForAutoDestroy();
 	}
@@ -666,6 +667,15 @@ void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
 				LocalFlowController->SetReadyToRunTest(true);
 			}
 		});
+	}
+}
+
+void ASpatialFunctionalTest::OnReplicated_bFinishedTest()
+{
+	if (!HasAuthority())
+	{
+		// The server that started this test has to call this in order for the test to properly finish.
+		NotifyTestFinishedObserver();
 	}
 }
 

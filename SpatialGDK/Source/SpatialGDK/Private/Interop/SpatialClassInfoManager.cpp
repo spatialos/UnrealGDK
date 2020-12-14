@@ -15,6 +15,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #endif
 
+#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
@@ -116,7 +117,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
 	// Remove PIE prefix on class if it exists to properly look up the class.
 	FString ClassPath = Class->GetPathName();
-	GEngine->NetworkRemapPath(NetDriver, ClassPath, false);
+#if ENGINE_MINOR_VERSION >= 26
+	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), ClassPath, false /*bIsReading*/);
+#else
+	GEngine->NetworkRemapPath(NetDriver, ClassPath, false /*bIsReading*/);
+#endif
 
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
@@ -492,24 +497,6 @@ bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentI
 const TMap<float, Worker_ComponentId>& USpatialClassInfoManager::GetNetCullDistanceToComponentIds() const
 {
 	return SchemaDatabase->NetCullDistanceToComponentId;
-}
-
-const TArray<Worker_ComponentId>& USpatialClassInfoManager::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const
-{
-	switch (ComponentType)
-	{
-	case ESchemaComponentType::SCHEMA_Data:
-		return SchemaDatabase->DataComponentIds;
-	case ESchemaComponentType::SCHEMA_OwnerOnly:
-		return SchemaDatabase->OwnerOnlyComponentIds;
-	case ESchemaComponentType::SCHEMA_Handover:
-		return SchemaDatabase->HandoverComponentIds;
-	default:
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Component type %d not recognised."), ComponentType);
-		checkNoEntry();
-		static const TArray<Worker_ComponentId> EmptyArray;
-		return EmptyArray;
-	}
 }
 
 const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId,

@@ -83,12 +83,11 @@ const Worker_ComponentId POSITION_COMPONENT_ID = 54;
 const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
 const Worker_ComponentId INTEREST_COMPONENT_ID = 58;
 
-const Worker_ComponentSetId WELL_KNOWN_COMPONENT_SET_ID = 50;
-
 // This is a component on per-worker system entities.
 const Worker_ComponentId WORKER_COMPONENT_ID = 60;
 const Worker_ComponentId PLAYERIDENTITY_COMPONENT_ID = 61;
 const Worker_ComponentId AUTHORITY_DELEGATION_COMPONENT_ID = 65;
+const Worker_ComponentId PARTITION_COMPONENT_ID = 66;
 
 const Worker_ComponentId MAX_RESERVED_SPATIAL_SYSTEM_COMPONENT_ID = 100;
 
@@ -100,6 +99,19 @@ const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
 const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
 const Worker_ComponentId HEARTBEAT_COMPONENT_ID = 9991;
+
+const Worker_ComponentId SERVER_AUTH_COMPONENT_SET_ID = 9900;
+const Worker_ComponentId CLIENT_AUTH_COMPONENT_SET_ID = 9901;
+const Worker_ComponentId DATA_COMPONENT_SET_ID = 9902;
+const Worker_ComponentId OWNER_ONLY_COMPONENT_SET_ID = 9903;
+const Worker_ComponentId HANDOVER_COMPONENT_SET_ID = 9904;
+const Worker_ComponentId GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID = 9905;
+
+const FString SERVER_AUTH_COMPONENT_SET_NAME = TEXT("ServerAuthoritativeComponentSet");
+const FString CLIENT_AUTH_COMPONENT_SET_NAME = TEXT("ClientAuthoritativeComponentSet");
+const FString DATA_COMPONENT_SET_NAME = TEXT("DataComponentSet");
+const FString OWNER_ONLY_COMPONENT_SET_NAME = TEXT("OwnerOnlyComponentSet");
+const FString HANDOVER_COMPONENT_SET_NAME = TEXT("HandoverComponentSet");
 
 // Marking the event-based RPC components as legacy while the ring buffer
 // implementation is under a feature flag.
@@ -124,8 +136,8 @@ const Worker_ComponentId MULTICAST_RPCS_COMPONENT_ID = 9976;
 const Worker_ComponentId SPATIAL_DEBUGGING_COMPONENT_ID = 9975;
 const Worker_ComponentId SERVER_WORKER_COMPONENT_ID = 9974;
 const Worker_ComponentId SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID = 9973;
-const Worker_ComponentId COMPONENT_PRESENCE_COMPONENT_ID = 9972;
 const Worker_ComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID = 9971;
+const Worker_ComponentId MIGRATION_DIAGNOSTIC_COMPONENT_ID = 9969;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
@@ -233,9 +245,6 @@ const Schema_FieldId FORWARD_SPAWN_PLAYER_START_ACTOR_ID = 2;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID = 3;
 const Schema_FieldId FORWARD_SPAWN_PLAYER_RESPONSE_SUCCESS_ID = 1;
 
-// ComponentPresence Field IDs.
-const Schema_FieldId COMPONENT_PRESENCE_COMPONENT_LIST_ID = 1;
-
 // NetOwningClientWorker Field IDs.
 const Schema_FieldId NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID = 1;
 
@@ -243,6 +252,19 @@ const Schema_FieldId NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID = 1;
 const Schema_FieldId UNREAL_METADATA_STABLY_NAMED_REF_ID = 1;
 const Schema_FieldId UNREAL_METADATA_CLASS_PATH_ID = 2;
 const Schema_FieldId UNREAL_METADATA_NET_STARTUP_ID = 3;
+
+// Migration diagnostic Field IDs
+const Schema_FieldId MIGRATION_DIAGNOSTIC_COMMAND_ID = 1;
+
+// MigrationDiagnosticRequest type IDs.
+const Schema_FieldId MIGRATION_DIAGNOSTIC_AUTHORITY_WORKER_ID = 1;
+const Schema_FieldId MIGRATION_DIAGNOSTIC_ENTITY_ID = 2;
+const Schema_FieldId MIGRATION_DIAGNOSTIC_REPLICATES_ID = 3;
+const Schema_FieldId MIGRATION_DIAGNOSTIC_HAS_AUTHORITY_ID = 4;
+const Schema_FieldId MIGRATION_DIAGNOSTIC_LOCKED_ID = 5;
+const Schema_FieldId MIGRATION_DIAGNOSTIC_EVALUATION_ID = 6;
+const Schema_FieldId MIGRATION_DIAGNOSTIC_DESTINATION_WORKER_ID = 7;
+const Schema_FieldId MIGRATION_DIAGNOSTIC_OWNER_ID = 8;
 
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
@@ -371,7 +393,9 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 								AUTHORITY_INTENT_COMPONENT_ID,
 
 								// Tags: Well known entities, and non-auth actors
-								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_NON_AUTH_TAG_COMPONENT_ID
+								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_NON_AUTH_TAG_COMPONENT_ID,
+
+								PARTITION_COMPONENT_ID
 	};
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
@@ -384,7 +408,9 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 								HEARTBEAT_COMPONENT_ID,
 
 								// Auth actor tag
-								ACTOR_AUTH_TAG_COMPONENT_ID
+								ACTOR_AUTH_TAG_COMPONENT_ID,
+
+								PARTITION_COMPONENT_ID
 	};
 
 inline bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId)
@@ -420,10 +446,63 @@ inline Worker_ComponentId RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
 	}
 }
 
-inline Worker_ComponentId GetClientAuthorityComponent(bool bUsingRingBuffers)
-{
-	return bUsingRingBuffers ? CLIENT_ENDPOINT_COMPONENT_ID : CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY;
-}
+// TODO: These containers should be cleaned up when we move to reading component set data directly from schema bundle - UNR-4666
+const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
+	"improbable/standard_library.schema",
+	"unreal/gdk/authority_intent.schema",
+	"unreal/gdk/debug_component.schema",
+	"unreal/gdk/debug_metrics.schema",
+	"unreal/gdk/net_owning_client_worker.schema",
+	"unreal/gdk/not_streamed.schema",
+	"unreal/gdk/query_tags.schema",
+	"unreal/gdk/relevant.schema",
+	"unreal/gdk/rpc_components.schema",
+	"unreal/gdk/spatial_debugging.schema",
+	"unreal/gdk/spawndata.schema",
+	"unreal/gdk/tombstone.schema",
+	"unreal/gdk/unreal_metadata.schema",
+	"unreal/generated/rpc_endpoints.schema",
+	"unreal/generated/NetCullDistance/ncdcomponents.schema",
+};
+
+const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
+	{ POSITION_COMPONENT_ID, "improbable.Position" },
+	{ INTEREST_COMPONENT_ID, "improbable.Interest" },
+	{ AUTHORITY_DELEGATION_COMPONENT_ID, "improbable.AuthorityDelegation" },
+	{ AUTHORITY_INTENT_COMPONENT_ID, "unreal.AuthorityIntent" },
+	{ GDK_DEBUG_COMPONENT_ID, "unreal.DebugComponent" },
+	{ DEBUG_METRICS_COMPONENT_ID, "unreal.DebugMetrics" },
+	{ NET_OWNING_CLIENT_WORKER_COMPONENT_ID, "unreal.NetOwningClientWorker" },
+	{ NOT_STREAMED_COMPONENT_ID, "unreal.NotStreamed" },
+	{ ALWAYS_RELEVANT_COMPONENT_ID, "unreal.AlwaysRelevant" },
+	{ DORMANT_COMPONENT_ID, "unreal.Dormant" },
+	{ VISIBLE_COMPONENT_ID, "unreal.Visible" },
+	{ SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY, "unreal.UnrealServerRPCEndpointLegacy" },
+	{ SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, "unreal.UnrealServerToServerCommandEndpoint" },
+	{ MULTICAST_RPCS_COMPONENT_ID, "unreal.UnrealMulticastRPCEndpointLegacy" },
+	{ RPCS_ON_ENTITY_CREATION_ID, "unreal.RPCsOnEntityCreation" },
+	{ SPATIAL_DEBUGGING_COMPONENT_ID, "unreal.SpatialDebugging" },
+	{ SPAWN_DATA_COMPONENT_ID, "unreal.SpawnData" },
+	{ TOMBSTONE_COMPONENT_ID, "unreal.Tombstone" },
+	{ UNREAL_METADATA_COMPONENT_ID, "unreal.UnrealMetadata" },
+	{ SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },
+	{ MULTICAST_RPCS_COMPONENT_ID, "unreal.generated.UnrealMulticastRPCs" },
+};
+
+const TArray<FString> ClientAuthorityWellKnownSchemaImports = { "unreal/gdk/heartbeat.schema", "unreal/gdk/rpc_components.schema",
+																"unreal/generated/rpc_endpoints.schema" };
+
+const TMap<Worker_ComponentId, FString> ClientAuthorityWellKnownComponents = {
+	{ HEARTBEAT_COMPONENT_ID, "unreal.Heartbeat" },
+	{ CLIENT_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealClientEndpoint" },
+	{ CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY, "unreal.UnrealClientRPCEndpointLegacy" },
+};
+
+const TArray<Worker_ComponentId> KnownEntityAuthorityComponents = { POSITION_COMPONENT_ID,		 METADATA_COMPONENT_ID,
+																	INTEREST_COMPONENT_ID,		 PLAYER_SPAWNER_COMPONENT_ID,
+																	DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID,
+																	GSM_SHUTDOWN_COMPONENT_ID,	 VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
+																	SERVER_WORKER_COMPONENT_ID };
 
 } // namespace SpatialConstants
 

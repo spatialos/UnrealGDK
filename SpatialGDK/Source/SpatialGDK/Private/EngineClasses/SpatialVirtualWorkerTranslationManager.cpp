@@ -41,7 +41,7 @@ void SpatialVirtualWorkerTranslationManager::SetNumberOfVirtualWorkers(const uin
 
 void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp)
 {
-	check(AuthOp.component_set_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID);
+	check(AuthOp.component_set_id == SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
 
 	const bool bAuthoritative = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;
 

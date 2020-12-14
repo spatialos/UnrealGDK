@@ -7,7 +7,12 @@
 namespace SpatialGDK
 {
 using EdgeLength = Coordinates;
-using SchemaResultType = TArray<Worker_ComponentId>;
+
+struct SchemaResultType
+{
+	TArray<Worker_ComponentId> ComponentIds;
+	TArray<Worker_ComponentId> ComponentSetsIds;
+};
 
 struct SphereConstraint
 {
@@ -116,9 +121,16 @@ struct Query
 {
 	QueryConstraint Constraint;
 
-	// Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid.
-	TSchemaOption<bool> FullSnapshotResult; // Whether all components should be included or none.
-	SchemaResultType ResultComponentIds;	// Which components should be included.
+	// These three fields determine the set of components that are sent back to the worker interested in the
+	// query.
+	// - If FullSnapshotResult is set to false, the query in invalid;
+	// - If FullSnapshotResult is true and ResultComponentIds and ResultComponentSetIds are empty, all the
+	//   components are sent.
+	// - If FullSnapshotResult is not set, the set of components sent is the union of ResultComponentIds and
+	//   all the sets in ResultComponentSetIds (these sets are defined in the schema).
+	TSchemaOption<bool> FullSnapshotResult;			  // Whether all components should be included or none.
+	TArray<Worker_ComponentId> ResultComponentIds;	  // Which components should be included.
+	TArray<Worker_ComponentId> ResultComponentSetIds; // Which component sets should be included.
 
 	// Used for frequency-based rate limiting. Represents the maximum frequency of updates for this
 	// particular query. An empty option represents no rate-limiting (ie. updates are received
@@ -247,8 +259,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 
 inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestObject, Schema_FieldId Id, const Query& Query)
 {
-	checkf(!(Query.FullSnapshotResult.IsSet() && Query.ResultComponentIds.Num() > 0),
-		   TEXT("Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid."));
+	checkf(!(Query.FullSnapshotResult.IsSet() && !Query.FullSnapshotResult), TEXT("Invalid to set FullSnapshotResult to false"));
 
 	Schema_Object* QueryObject = Schema_AddObject(ComponentInterestObject, Id);
 
@@ -262,6 +273,11 @@ inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestOb
 	for (uint32 ComponentId : Query.ResultComponentIds)
 	{
 		Schema_AddUint32(QueryObject, 3, ComponentId);
+	}
+
+	for (uint32 ComponentSetId : Query.ResultComponentSetIds)
+	{
+		Schema_AddUint32(QueryObject, 5, ComponentSetId);
 	}
 
 	if (Query.Frequency.IsSet())
@@ -400,7 +416,7 @@ inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint
 		NewQuery.FullSnapshotResult = GetBoolFromSchema(QueryObject, 2);
 	}
 
-	uint32 ResultComponentIdCount = Schema_GetUint32Count(QueryObject, 3);
+	const uint32 ResultComponentIdCount = Schema_GetUint32Count(QueryObject, 3);
 	NewQuery.ResultComponentIds.Reserve(ResultComponentIdCount);
 	for (uint32 ComponentIdIndex = 0; ComponentIdIndex < ResultComponentIdCount; ComponentIdIndex++)
 	{
@@ -410,6 +426,13 @@ inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint
 	if (Schema_GetFloatCount(QueryObject, 4) > 0)
 	{
 		NewQuery.Frequency = Schema_GetFloat(QueryObject, 4);
+	}
+
+	const uint32 ResultComponentSetIdCount = Schema_GetUint32Count(QueryObject, 5);
+	NewQuery.ResultComponentSetIds.Reserve(ResultComponentSetIdCount);
+	for (uint32 ComponentSetIdIndex = 0; ComponentSetIdIndex < ResultComponentSetIdCount; ComponentSetIdIndex++)
+	{
+		NewQuery.ResultComponentSetIds.Add(Schema_IndexUint32(QueryObject, 5, ComponentSetIdIndex));
 	}
 
 	return NewQuery;
