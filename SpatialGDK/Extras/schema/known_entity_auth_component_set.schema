@@ -1,0 +1,23 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+import "improbable/standard_library.schema";
+import "unreal/gdk/spawner.schema";
+import "unreal/gdk/global_state_manager.schema";
+import "unreal/gdk/virtual_worker_translation.schema";
+import "unreal/gdk/server_worker.schema";
+
+component_set KnownEntityAuthComponentSet {
+  id = 9905;
+  components = [
+	improbable.Position,
+	improbable.Metadata,
+	improbable.Interest,
+	unreal.PlayerSpawner,
+	unreal.DeploymentMap,
+	unreal.StartupActorManager,
+	unreal.GSMShutdown,	 
+	unreal.VirtualWorkerTranslation,
+	unreal.ServerWorker
+  ];
+}

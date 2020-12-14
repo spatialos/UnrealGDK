@@ -813,17 +813,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 
 	check(Info != nullptr);
 
-	// Check to see if we already have authority over the subobject to be added
-	if (NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[SCHEMA_Data]))
-	{
-		Sender->SendAddComponentForSubobject(this, Object, *Info, ReplicationBytesWritten);
-	}
-	else
-	{
-		// If we don't, modify the auth delegation to gain authority.
-		PendingDynamicSubobjects.Add(TWeakObjectPtr<UObject>(Object));
-		Sender->GainAuthorityThenAddComponent(this, Object, Info);
-	}
+	Sender->SendAddComponentForSubobject(this, Object, *Info, ReplicationBytesWritten);
 }
 
 bool USpatialActorChannel::IsListening() const
@@ -1374,7 +1364,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	bool bUpdatedThisActor = false;
 
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
-	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID));
+	check(NetDriver->HasServerAuthority(EntityId));
 	SpatialGDK::NetOwningClientWorker* CurrentNetOwningClientData =
 		NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
 	const Worker_PartitionId CurrentClientPartitionId = CurrentNetOwningClientData->ClientPartitionId.IsSet()

@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Schema/AuthorityIntent.h"
-#include "Schema/ComponentPresence.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialCommonTypes.h"
@@ -22,7 +21,6 @@ struct LBComponents
 {
 	AuthorityDelegation Delegation;
 	AuthorityIntent Intent;
-	ComponentPresence Presence;
 	NetOwningClientWorker OwningClientWorker;
 };
 
@@ -38,7 +36,6 @@ struct AuthorityStateChange
 //
 // The LB components are:
 //  - Authority Intent (for authority changes)
-//  - Component Presence (to enforce all components exist in the authority delegation component)
 //  - Net Owning Client Worker (for client authority changes)
 //
 // The load balance enforcer's view of the world consists of all entities where the authority delegation component

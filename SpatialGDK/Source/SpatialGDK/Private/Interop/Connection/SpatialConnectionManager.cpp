@@ -265,6 +265,17 @@ void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_LoginTok
 	ConnectToLocator(&DevAuthConfig);
 }
 
+void USpatialConnectionManager::SetComponentSets(const TMap<uint32, FComponentIDs>& InComponentSetMap)
+{
+	for (const auto& ComponentSet : InComponentSetMap)
+	{
+		for (const auto& Component : ComponentSet.Value.ComponentIDs)
+		{
+			ComponentSetData.ComponentSets.FindOrAdd(ComponentSet.Key).Add(Component);
+		}
+	}
+}
+
 void USpatialConnectionManager::RequestDeploymentLoginTokens()
 {
 	Worker_LoginTokensRequest LTParams{};
@@ -392,19 +403,8 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
 
-				FComponentSetData SetData;
-
-				for (Worker_ComponentId i = 0; i < 100; ++i)
-				{
-					SetData.ComponentSets.FindOrAdd(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID).Add(i);
-				}
-				for (Worker_ComponentId i = 100; i < 100000; ++i)
-				{
-					SetData.ComponentSets.Add(static_cast<Worker_ComponentSetId>(i)).Add(i);
-				}
-
 				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
-																		  MoveTemp(SetData));
+																		  SpatialConnectionManager->ComponentSetData);
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
 			else
