@@ -45,7 +45,6 @@ EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapC
 }
 
 TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel,
-																   FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs,
 																   uint32& OutBytesWritten)
 {
 	AActor* Actor = Channel->Actor;

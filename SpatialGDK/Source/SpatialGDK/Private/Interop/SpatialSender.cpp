@@ -133,7 +133,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
 	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
-	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutgoingOnCreateEntityRPCs, OutBytesWritten);
+	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutBytesWritten);
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
@@ -691,39 +691,15 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 	}
 
-	if (RPCService != nullptr)
+	checkf(RPCService != nullptr, TEXT("RPCService is assumed to be valid."));
+	if (SendRingBufferedRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef))
 	{
-		if (SendRingBufferedRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef))
-		{
-			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
-		}
-		else
-		{
-			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::RPCServiceFailure };
-		}
-	}
-
-	if (Channel->bCreatingNewEntity && Function->HasAnyFunctionFlags(FUNC_NetClient))
-	{
-		
-		SendOnEntityCreationRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef);
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 	}
-
-	return FRPCErrorInfo{ TargetObject, Function, ERPCResult::RPCServiceFailure };
-}
-
-void USpatialSender::SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
-											 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
-{
-	check(NetDriver->IsServer());
-
-	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-
-	OutgoingOnCreateEntityRPCs.FindOrAdd(Channel->Actor).RPCs.Add(Payload);
-#if !UE_BUILD_SHIPPING
-	TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
-#endif // !UE_BUILD_SHIPPING
+	else
+	{
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::RPCServiceFailure };
+	}
 }
 
 void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,

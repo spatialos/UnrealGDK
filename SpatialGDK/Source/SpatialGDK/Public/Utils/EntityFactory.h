@@ -30,8 +30,7 @@ public:
 	EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager,
 				  SpatialRPCService* InRPCService);
 
-	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs,
-														uint32& OutBytesWritten);
+	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor);
 
 	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const Worker_EntityId EntityId,

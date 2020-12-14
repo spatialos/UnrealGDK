@@ -86,8 +86,6 @@ public:
 
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const;
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
-	void SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
-								 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	void SendCrossServerRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 							USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
@@ -199,7 +197,6 @@ private:
 	SpatialGDK::SpatialRPCService* RPCService;
 
 	FRPCContainer OutgoingRPCs{ ERPCQueueType::Send };
-	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
 
 	TArray<TSharedRef<FReliableRPCForRetry>> RetryRPCs;
 
