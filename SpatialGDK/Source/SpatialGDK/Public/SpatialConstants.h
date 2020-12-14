@@ -412,20 +412,6 @@ inline bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId)
 	return ComponentId >= SpatialConstants::FIRST_EC_COMPONENT_ID && ComponentId <= SpatialConstants::LAST_EC_COMPONENT_ID;
 }
 
-inline Worker_ComponentId _RPCTypeToWorkerComponentIdLegacy(ERPCType RPCType)
-{
-	switch (RPCType)
-	{
-	case ERPCType::CrossServer:
-	{
-		return SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID;
-	}
-	default:
-		checkNoEntry();
-		return SpatialConstants::INVALID_COMPONENT_ID;
-	}
-}
-
 // TODO: These containers should be cleaned up when we move to reading component set data directly from schema bundle - UNR-4666
 const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
 	"improbable/standard_library.schema",
