@@ -89,11 +89,11 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 
 	AddStep(TEXT("Cross-Server Possession: controller remote possess"), FWorkerDefinition::AllServers, nullptr, nullptr,
 			[this](float DeltaTime) {
-		RemotePossess(1);
-		RemotePossess(2);
-		RemotePossess(3);
-		FinishStep();
-	});
+				RemotePossess(1);
+				RemotePossess(2);
+				RemotePossess(3);
+				FinishStep();
+			});
 
 	AddStep(TEXT("Cross-Server Possession: Wait"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
 		if (WaitTime > MaxWaitTime)
@@ -103,7 +103,7 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 		WaitTime += DeltaTime;
 	});
 
-	//AddStep(TEXT("Cross-Server Possession: Check results on all servers"), FWorkerDefinition::AllServers, nullptr, nullptr,
+	// AddStep(TEXT("Cross-Server Possession: Check results on all servers"), FWorkerDefinition::AllServers, nullptr, nullptr,
 	//		[this](float DeltaTime) {
 	//			if (ATestPossessionPawn* Pawn = GetPawn())
 	//			{
@@ -140,7 +140,6 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 										LogStep(ELogVerbosity::Log,
 												FString::Printf(TEXT("Controller:%s authoritatived in worker: %d"),
 																*Controller->IntendedPawnToPossess->GetName(), WorkerId));
-
 									}
 								}
 							}

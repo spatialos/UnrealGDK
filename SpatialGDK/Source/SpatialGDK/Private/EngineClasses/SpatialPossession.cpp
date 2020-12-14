@@ -2,10 +2,9 @@
 
 #include "EngineClasses/SpatialPossession.h"
 
+#include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
-#include "Engine/World.h"
-
 
 DEFINE_LOG_CATEGORY(LogSpatialPossession);
 
@@ -52,7 +51,7 @@ void USpatialPossession::PossessAfterMigration(AController& Controller)
 		UGridBasedLBStrategy* GridStrategy = Cast<UGridBasedLBStrategy>(sublbs);
 		UE_LOG(LogSpatialPossession, Log, TEXT("PossessAfterMigration Current WorkerId: %d"), GridStrategy->GetLocalVirtualWorkerId());
 	}
-	
+
 	auto WorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(Controller);
 	UE_LOG(LogSpatialPossession, Log, TEXT("PossessAfterMigration: %s, WorkerId: %d"), *Controller.GetName(), WorkerId);
 
