@@ -19,7 +19,7 @@
  *		- dynamic non-replicated actor
  *		- dynamic replicated actor spawned on border from server 1
  *		- dynamic replicated actor spawned on border from server 2
-  *		- dynamic non-replicated actor spawned on border
+ *		- dynamic non-replicated actor spawned on border
  *		- GameMode (which only exists on Servers)
  *		- GameState
  * Keep in mind that we're assuming a 2x2 Grid Load-Balancing Strategy, otherwise the ownership of
@@ -54,7 +54,8 @@ void ASpatialAuthorityTest::PrepareTest()
 	});
 
 	FSpatialFunctionalTestStepDefinition NonReplicatedVerifyNonAuthorityStepDefinition(/*bIsNativeDefinition*/ true);
-	NonReplicatedVerifyNonAuthorityStepDefinition.StepName = TEXT("Non-replicated Dynamic Actor - Verify Dynamic Actor doesn't exist on others");
+	NonReplicatedVerifyNonAuthorityStepDefinition.StepName =
+		TEXT("Non-replicated Dynamic Actor - Verify Dynamic Actor doesn't exist on others");
 	NonReplicatedVerifyNonAuthorityStepDefinition.TimeLimit = 5.0f;
 	NonReplicatedVerifyNonAuthorityStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
@@ -353,7 +354,7 @@ void ASpatialAuthorityTest::PrepareTest()
 				Timer -= DeltaTime;
 				// Spawning directly on border, so it shouldn't migrate.
 				if (Timer <= 0)
-				{	
+				{
 					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 					if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && LocalWorkerDefinition.Id == 1)
 					{
