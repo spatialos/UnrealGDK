@@ -961,28 +961,6 @@ Worker_CommandRequest USpatialSender::CreateRetryRPCCommandRequest(const FReliab
 	return CommandRequest;
 }
 
-FWorkerComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload,
-															Worker_ComponentId ComponentId, Schema_FieldId EventIndex)
-{
-	FWorkerComponentUpdate ComponentUpdate = {};
-
-	ComponentUpdate.component_id = ComponentId;
-	ComponentUpdate.schema_type = Schema_CreateComponentUpdate();
-	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
-	Schema_Object* EventData = Schema_AddObject(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID);
-
-	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
-	ensure(TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
-
-	Payload.WriteToSchemaObject(EventData);
-
-#if TRACE_LIB_ACTIVE
-	ComponentUpdate.Trace = Payload.Trace;
-#endif
-
-	return ComponentUpdate;
-}
-
 void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId)
 {
 	FSpatialGDKSpanId SpanId;

@@ -165,8 +165,6 @@ private:
 												  Worker_ComponentId ComponentId, Schema_FieldId CommandIndex,
 												  Worker_EntityId& OutEntityId);
 	Worker_CommandRequest CreateRetryRPCCommandRequest(const FReliableRPCForRetry& RPC, uint32 TargetObjectOffset);
-	FWorkerComponentUpdate CreateRPCEventUpdate(UObject* TargetObject, const SpatialGDK::RPCPayload& Payload,
-												Worker_ComponentId ComponentId, Schema_FieldId EventIndext);
 
 	// RPC Tracking
 #if !UE_BUILD_SHIPPING
