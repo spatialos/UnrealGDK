@@ -145,11 +145,10 @@ public:
 	void SetWorkerId(const FString& NewWorkerId) { WorkerId = NewWorkerId; }
 	void ResetWorkerId();
 
-#if 0
-	void OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*);
-	void OnDequeueMessage(const SpatialGDK::FOutgoingMessage*);
-#endif
-
+	void TraceSubmittedToSpatialView(TraceKey Trace)
+	{
+		WriteAndEndTrace(Trace, TEXT("Submitted to GDK::SpatialView"), true);
+	}
 private:
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
 	using ActorPropertyKey = TPair<const AActor*, const GDK_PROPERTY(Property)*>;

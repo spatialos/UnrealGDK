@@ -4,7 +4,6 @@
 
 namespace SpatialGDK
 {
-
 void SpatialMetrics::SendToConnection(Worker_Connection* Connection)
 {
 	// Do the conversion here so we can store everything on the stack.

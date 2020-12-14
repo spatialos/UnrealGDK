@@ -343,53 +343,6 @@ void USpatialLatencyTracer::ResetWorkerId()
 	WorkerId = TEXT("DeviceId_") + FPlatformMisc::GetDeviceId();
 }
 
-#if 0
-void USpatialLatencyTracer::OnEnqueueMessage(const SpatialGDK::FOutgoingMessage* Message)
-{
-	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
-	{
-		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
-		WriteToLatencyTrace(ComponentUpdate->Update.Trace, TEXT("Moved componentUpdate to Worker queue"));
-	}
-	else if (Message->Type == SpatialGDK::EOutgoingMessageType::AddComponent)
-	{
-		const SpatialGDK::FAddComponent* ComponentAdd = static_cast<const SpatialGDK::FAddComponent*>(Message);
-		WriteToLatencyTrace(ComponentAdd->Data.Trace, TEXT("Moved componentAdd to Worker queue"));
-	}
-	else if (Message->Type == SpatialGDK::EOutgoingMessageType::CreateEntityRequest)
-	{
-		const SpatialGDK::FCreateEntityRequest* CreateEntityRequest = static_cast<const SpatialGDK::FCreateEntityRequest*>(Message);
-		for (auto& Component : CreateEntityRequest->Components)
-		{
-			WriteToLatencyTrace(Component.Trace, TEXT("Moved createEntityRequest to Worker queue"));
-		}
-	}
-}
-
-void USpatialLatencyTracer::OnDequeueMessage(const SpatialGDK::FOutgoingMessage* Message)
-{
-	if (Message->Type == SpatialGDK::EOutgoingMessageType::ComponentUpdate)
-	{
-		const SpatialGDK::FComponentUpdate* ComponentUpdate = static_cast<const SpatialGDK::FComponentUpdate*>(Message);
-		WriteAndEndTrace(ComponentUpdate->Update.Trace, TEXT("Sent componentUpdate to Worker SDK"), true);
-	}
-	else if (Message->Type == SpatialGDK::EOutgoingMessageType::AddComponent)
-	{
-		const SpatialGDK::FAddComponent* ComponentAdd = static_cast<const SpatialGDK::FAddComponent*>(Message);
-		WriteAndEndTrace(ComponentAdd->Data.Trace, TEXT("Sent componentAdd to Worker SDK"), true);
-	}
-	else if (Message->Type == SpatialGDK::EOutgoingMessageType::CreateEntityRequest)
-	{
-		const SpatialGDK::FCreateEntityRequest* CreateEntityRequest = static_cast<const SpatialGDK::FCreateEntityRequest*>(Message);
-		for (auto& Component : CreateEntityRequest->Components)
-		{
-			WriteAndEndTrace(Component.Trace, TEXT("Sent createEntityRequest to Worker SDK"), true);
-		}
-	}
-}
-
-#endif
-
 bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload)
 {
 	// TODO: UNR-2787 - Improve mutex-related latency

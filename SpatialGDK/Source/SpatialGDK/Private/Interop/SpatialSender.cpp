@@ -565,6 +565,11 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 											 (const Trace_SpanIdType*)PropertySpans.GetData(), PropertySpans.Num());
 		}
 
+		if (Tracer)
+		{
+			Tracer->TraceSubmittedToSpatialView(Update.Trace);
+		}
+
 		Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 	}
 }

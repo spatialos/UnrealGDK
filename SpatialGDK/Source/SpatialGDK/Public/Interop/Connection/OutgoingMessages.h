@@ -18,8 +18,7 @@
 
 namespace SpatialGDK
 {
-
-	/** Parameters for a gauge metric. */
+/** Parameters for a gauge metric. */
 struct GaugeMetric
 {
 	/* The name of the metric. */
@@ -60,6 +59,5 @@ struct SpatialMetrics
 
 	void SendToConnection(Worker_Connection* Connection);
 };
-
 
 } // namespace SpatialGDK
