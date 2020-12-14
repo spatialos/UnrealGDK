@@ -8,6 +8,8 @@
 
 class ASpatialAuthorityTestActor;
 class ASpatialAuthorityTestReplicatedActor;
+enum class ESpatialHasAuthority : uint8;
+
 
 /** Check SpatialAuthorityTest.cpp for Test explanation. */
 UCLASS()
@@ -30,7 +32,8 @@ public:
 
 	void ResetTimer() { Timer = 0.5; };
 
-	bool VerifyTestActor(ASpatialAuthorityTestActor* Actor, int AuthorityOnBeginPlay, int AuthorityOnTick, int NumAuthorityGains,
+	bool VerifyTestActor(ASpatialAuthorityTestActor* Actor, ESpatialHasAuthority ExpectedAuthority, int AuthorityOnBeginPlay,
+						 int AuthorityOnTick, int NumAuthorityGains,
 						 int NumAuthorityLosses);
 
 	UFUNCTION(CrossServer, Reliable)
