@@ -428,7 +428,7 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 	}
 
 	// We do minimal internal tracking for native rpcs/properties
-	const bool bInternalTracking = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() || Type == ETraceType::Tagged;
+	const bool bInternalTracking = Type == ETraceType::Tagged;
 
 	FScopeLock Lock(&Mutex);
 
