@@ -114,7 +114,6 @@ const FString OWNER_ONLY_COMPONENT_SET_NAME = TEXT("OwnerOnlyComponentSet");
 const FString HANDOVER_COMPONENT_SET_NAME = TEXT("HandoverComponentSet");
 
 const Worker_ComponentId NOT_STREAMED_COMPONENT_ID = 9986;
-const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID = 9985;
 const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID = 9984;
 const Worker_ComponentId ALWAYS_RELEVANT_COMPONENT_ID = 9983;
 const Worker_ComponentId TOMBSTONE_COMPONENT_ID = 9982;
@@ -158,8 +157,6 @@ const Schema_FieldId HEARTBEAT_CLIENT_HAS_QUIT_ID = 1;
 
 const Schema_FieldId SHUTDOWN_MULTI_PROCESS_REQUEST_ID = 1;
 const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID = 1;
-
-const Schema_FieldId CLEAR_RPCS_ON_ENTITY_CREATION = 1;
 
 // DebugMetrics command IDs
 const Schema_FieldId DEBUG_METRICS_START_RPC_METRICS_ID = 1;
@@ -342,7 +339,7 @@ const FString DEV_LOGIN_TAG = TEXT("dev_login");
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>{
 	// Actor components
-	UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, RPCS_ON_ENTITY_CREATION_ID, TOMBSTONE_COMPONENT_ID, DORMANT_COMPONENT_ID,
+	UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, TOMBSTONE_COMPONENT_ID, DORMANT_COMPONENT_ID,
 
 	// Multicast RPCs
 	MULTICAST_RPCS_COMPONENT_ID,
@@ -371,7 +368,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
 // correctly.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST =
 	TArray<Worker_ComponentId>{ // Actor components
-								UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, RPCS_ON_ENTITY_CREATION_ID, TOMBSTONE_COMPONENT_ID,
+								UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, TOMBSTONE_COMPONENT_ID,
 								DORMANT_COMPONENT_ID, NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
 
 								// Multicast RPCs
@@ -444,8 +441,6 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
 	{ DORMANT_COMPONENT_ID, "unreal.Dormant" },
 	{ VISIBLE_COMPONENT_ID, "unreal.Visible" },
 	{ SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, "unreal.UnrealServerToServerCommandEndpoint" },
-	{ MULTICAST_RPCS_COMPONENT_ID, "unreal.UnrealMulticastRPCEndpointLegacy" },
-	{ RPCS_ON_ENTITY_CREATION_ID, "unreal.RPCsOnEntityCreation" },
 	{ SPATIAL_DEBUGGING_COMPONENT_ID, "unreal.SpatialDebugging" },
 	{ SPAWN_DATA_COMPONENT_ID, "unreal.SpawnData" },
 	{ TOMBSTONE_COMPONENT_ID, "unreal.Tombstone" },
