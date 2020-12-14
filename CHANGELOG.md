@@ -81,7 +81,8 @@ These functions and structs can be referenced in both code and blueprints it may
   - Snapshots taken of running local deployments are now saved in `<GameProject>\spatial\snapshots\<yyyy.mm.dd-hh.mm.ss>\snapshot_<n>.snapshot`
   - Inspector URL is now http://localhost:33333/inspector-v2
   - Inspector version can now be overridden in the SpatialGDKEditorSettings under `Inspector Version Override`
-- The SpatialNetDriver can now disconnect a client worker when given the system entity id for that client and will do so when `GameMode::PreLogin` returns with a non-empty error message. 
+- The SpatialNetDriver can now disconnect a client worker when given the system entity id for that client and will do so when `GameMode::PreLogin` returns with a non-empty error message.
+- Unreal Engine version 4.26.0 is now supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
@@ -107,7 +108,11 @@ These functions and structs can be referenced in both code and blueprints it may
 - Added support for FPredictionKey's conditional replication logic. GameplayCues now activate on all clients, instead of only the client that initiated them.
 - Fixed a bug where deployment would fail in the presence of trailing spaces in the `Flags` and `LegacyFlags` fields of the `SpatialGDKEditorSettings`.
 - Fixed a crash that would occur when performing multiple Client Travels at once.
+- Fixed an issue where bReplicates would not be handed over correctly when dynamically set.
 - Add ServerOnlyAlwaysRelevant component and component set schema definitions
+- Fixed a snapshot reloading issue where worker would create extra actors, as if they were loading on a fresh deployment.
+- Server workers use TCP (instead of KCP) by default.
+- Fixed a rare crash where a RepNotify callback can modify a GDK data structure being iterated upon.
 
 ## [`0.11.0`] - 2020-09-03
 

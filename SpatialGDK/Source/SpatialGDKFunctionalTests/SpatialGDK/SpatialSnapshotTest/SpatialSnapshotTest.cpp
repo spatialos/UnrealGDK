@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialSnapshotTest.h"
+#include "GameFramework/GameStateBase.h"
 #include "SpatialSnapshotTestActor.h"
 #include "SpatialSnapshotTestGameMode.h"
 
@@ -98,29 +99,50 @@ void ASpatialSnapshotTest::PrepareTest()
 	FSpatialFunctionalTestStepDefinition VerifyGameModeDataStepDef = FSpatialFunctionalTestStepDefinition(true);
 	VerifyGameModeDataStepDef.TimeLimit = 5.0f;
 	VerifyGameModeDataStepDef.NativeTickEvent.BindLambda([this](float DeltaTime) {
-		ASpatialSnapshotTestGameMode* GameMode = nullptr;
-		int NumGameModes = 0;
-		for (TActorIterator<ASpatialSnapshotTestGameMode> It(GetWorld()); It; ++It)
+		if (GetNetDriver()->IsServer())
 		{
-			if (NumGameModes == 1)
+			ASpatialSnapshotTestGameMode* GameMode = nullptr;
+			int NumGameModes = 0;
+			for (TActorIterator<ASpatialSnapshotTestGameMode> It(GetWorld()); It; ++It)
 			{
-				FinishTest(EFunctionalTestResult::Failed, TEXT("There's more than one ASpatialSnapshotTestGameMode"));
-				return;
+				if (NumGameModes == 1)
+				{
+					FinishTest(EFunctionalTestResult::Failed, TEXT("There's more than one ASpatialSnapshotTestGameMode"));
+					return;
+				}
+				GameMode = *It;
+				++NumGameModes;
 			}
-			GameMode = *It;
-			++NumGameModes;
-		}
 
-		if (IsValid(GameMode))
+			if (IsValid(GameMode))
+			{
+				RequireTrue(GameMode->VerifyBool(), TEXT("Bool Replication"));
+				RequireTrue(GameMode->VerifyInt32(), TEXT("Int32 Replication"));
+				RequireTrue(GameMode->VerifyInt64(), TEXT("Int64 Replication"));
+				RequireTrue(GameMode->VerifyFloat(), TEXT("Float Replication"));
+				RequireTrue(GameMode->VerifyString(), TEXT("String Replication"));
+				RequireTrue(GameMode->VerifyName(), TEXT("Name Replication"));
+				RequireTrue(GameMode->VerifyIntArray(), TEXT("Int Array Replication"));
+				FinishStep();
+			}
+		}
+		else
 		{
-			RequireTrue(GameMode->VerifyBool(), TEXT("Bool Replication"));
-			RequireTrue(GameMode->VerifyInt32(), TEXT("Int32 Replication"));
-			RequireTrue(GameMode->VerifyInt64(), TEXT("Int64 Replication"));
-			RequireTrue(GameMode->VerifyFloat(), TEXT("Float Replication"));
-			RequireTrue(GameMode->VerifyString(), TEXT("String Replication"));
-			RequireTrue(GameMode->VerifyName(), TEXT("Name Replication"));
-			RequireTrue(GameMode->VerifyIntArray(), TEXT("Int Array Replication"));
-			FinishStep();
+			int NumGameStates = 0;
+			for (TActorIterator<AGameStateBase> It(GetWorld()); It; ++It)
+			{
+				if (NumGameStates == 1)
+				{
+					FinishTest(EFunctionalTestResult::Failed, TEXT("There's more than one GameState"));
+					return;
+				}
+				++NumGameStates;
+			}
+
+			if (NumGameStates > 0)
+			{
+				FinishStep();
+			}
 		}
 	});
 
@@ -151,7 +173,7 @@ void ASpatialSnapshotTest::PrepareTest()
 		});
 
 		VerifyGameModeDataStepDef.StepName = FString::Printf(TEXT("%s - %s"), TEXT("First Run"), *VerifyGameModeDataStepName);
-		AddStepFromDefinition(VerifyGameModeDataStepDef, FWorkerDefinition::AllServers);
+		AddStepFromDefinition(VerifyGameModeDataStepDef, FWorkerDefinition::AllWorkers);
 
 		// Take snapshot.
 		AddStepFromDefinition(TakeSnapshotStepDefinition, FWorkerDefinition::Server(1));
@@ -164,7 +186,7 @@ void ASpatialSnapshotTest::PrepareTest()
 		AddStepFromDefinition(VerifyActorDataStepDef, FWorkerDefinition::AllWorkers);
 
 		VerifyGameModeDataStepDef.StepName = FString::Printf(TEXT("%s - %s"), TEXT("Second Run"), *VerifyGameModeDataStepName);
-		AddStepFromDefinition(VerifyGameModeDataStepDef, FWorkerDefinition::AllServers);
+		AddStepFromDefinition(VerifyGameModeDataStepDef, FWorkerDefinition::AllWorkers);
 
 		// Clear snapshot.
 		AddStepFromDefinition(ClearSnapshotStepDefinition, FWorkerDefinition::Server(1));
