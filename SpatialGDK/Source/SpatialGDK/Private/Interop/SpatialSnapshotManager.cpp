@@ -47,7 +47,8 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 
 	Worker_EntityQuery WorldQuery{};
 	WorldQuery.constraint = UnrealMetadataConstraint;
-	WorldQuery.snapshot_result_type_component_id_count = 1;
+	WorldQuery.snapshot_result_type_component_id_count = 0;
+	// This memory address will not be read, but needs to be non-null, so that the WorkerSDK correctly doesn't send us ANY components. Setting it to a valid component id address, just in case.
 	WorldQuery.snapshot_result_type_component_ids = &SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 
 	check(Connection.IsValid());
