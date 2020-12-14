@@ -108,14 +108,6 @@ struct FObjectReferences
 	GDK_PROPERTY(Property) * Property;
 };
 
-struct FPendingSubobjectAttachment
-{
-	const FClassInfo* Info;
-	TWeakObjectPtr<UObject> Subobject;
-
-	TSet<Worker_ComponentId> PendingAuthorityDelegations;
-};
-
 // Utility class to manage mapped and unresolved references.
 // Reproduces what is happening with FRepState::GuidReferencesMap, but with FUnrealObjectRef instead of FNetworkGUID
 class FSpatialObjectRepState

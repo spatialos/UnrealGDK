@@ -170,8 +170,6 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.Printf("data unreal.generated.{0};", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
 
-		WriteComponentSetToFile(Writer, ComponentName, ComponentId);
-
 		AddComponentId(ComponentId, SubobjectData.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
 	}
 
@@ -197,8 +195,6 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.Printf("id = {0};", ComponentId);
 		Writer.Printf("data unreal.generated.{0};", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
-
-		WriteComponentSetToFile(Writer, ComponentName, ComponentId);
 
 		AddComponentId(ComponentId, SubobjectData.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
 	}
@@ -353,8 +349,6 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 	}
 
 	Writer.Outdent().Print("}");
-
-	WriteComponentSetToFile(Writer, ComponentName, ComponentId);
 }
 
 } // anonymous namespace
@@ -520,8 +514,6 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, Class));
 			Writer.Outdent().Print("}");
 
-			WriteComponentSetToFile(Writer, ComponentName, ComponentId);
-
 			AddComponentId(ComponentId, DynamicSubobjectComponents.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
 		}
 
@@ -546,8 +538,6 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Printf("id = {0};", ComponentId);
 			Writer.Printf("data {0};", *SchemaHandoverDataName(Class));
 			Writer.Outdent().Print("}");
-
-			WriteComponentSetToFile(Writer, ComponentName, ComponentId);
 
 			AddComponentId(ComponentId, DynamicSubobjectComponents.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
 		}
@@ -631,8 +621,6 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		}
 
 		Writer.Outdent().Print("}");
-
-		WriteComponentSetToFile(Writer, ComponentName, ComponentId);
 	}
 
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
@@ -665,8 +653,6 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 			WriteSchemaHandoverField(Writer, Prop.Value, FieldCounter);
 		}
 		Writer.Outdent().Print("}");
-
-		WriteComponentSetToFile(Writer, ComponentName, ComponentId);
 	}
 
 	GenerateSubobjectSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath, ActorSchemaData,

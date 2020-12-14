@@ -37,6 +37,8 @@ public:
 	FCodeWriter& BeginFunction(const FFunctionSignature& Signature, const FString& TypeName);
 	FCodeWriter& End();
 
+	void RemoveTrailingComma();
+
 	void WriteToFile(const FString& Filename);
 	void Dump();
 

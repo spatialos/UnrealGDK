@@ -17,10 +17,3 @@ component VirtualWorkerTranslation {
      id = 9979;
      list<VirtualWorkerMapping> virtual_worker_mapping = 1;
 }
-
-component_set VirtualWorkerTranslationSet {
-  id = 9979;
-  components = [
-    VirtualWorkerTranslation
-  ];
-}

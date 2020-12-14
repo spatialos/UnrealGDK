@@ -77,7 +77,7 @@ void AddClientAuthorityFromRPCEndpointType(SpatialGDK::EntityView& View, const W
 {
 	if (RPCEndpointType == CLIENT_AUTH || RPCEndpointType == SERVER_AND_CLIENT_AUTH)
 	{
-		AddAuthorityToView(View, EntityId, SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID);
+		AddAuthorityToView(View, EntityId, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
 	}
 }
 
@@ -86,7 +86,7 @@ void AddServerAuthorityFromRPCEndpointType(SpatialGDK::EntityView& View, const W
 {
 	if (RPCEndpointType == SERVER_AUTH || RPCEndpointType == SERVER_AND_CLIENT_AUTH)
 	{
-		AddAuthorityToView(View, EntityId, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID);
+		AddAuthorityToView(View, EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
 	}
 }
 
@@ -95,7 +95,7 @@ void AddMulticastAuthorityFromRPCEndpointType(SpatialGDK::EntityView& View, cons
 {
 	if (RPCEndpointType == SERVER_AUTH || RPCEndpointType == SERVER_AND_CLIENT_AUTH)
 	{
-		AddAuthorityToView(View, EntityId, SpatialConstants::MULTICAST_RPCS_COMPONENT_ID);
+		AddAuthorityToView(View, EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
 	}
 }
 

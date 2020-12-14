@@ -674,7 +674,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// WHEN
-	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
+	USchemaDatabase* SchemaDatabase = SpatialGDKEditor::Schema::InitialiseSchemaDatabase(DatabaseOutputFile);
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(SchemaDatabase);
 
 	// THEN
 	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName);
@@ -697,12 +698,13 @@ SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_s
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// WHEN
-	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
+	USchemaDatabase* SchemaDatabase = SpatialGDKEditor::Schema::InitialiseSchemaDatabase(DatabaseOutputFile);
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(SchemaDatabase);
 
 	// THEN
 	bool bDatabaseMatchesExpected = true;
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(DatabaseOutputFile, TEXT(".SchemaDatabase")));
-	USchemaDatabase* SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
+	USchemaDatabase* LoadedSchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
 	if (SchemaDatabase == nullptr)
 	{
 		bDatabaseMatchesExpected = false;
@@ -730,12 +732,13 @@ SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_d
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
 
 	// WHEN
-	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
+	USchemaDatabase* SchemaDatabase = SpatialGDKEditor::Schema::InitialiseSchemaDatabase(DatabaseOutputFile);
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(SchemaDatabase);
 
 	// THEN
 	bool bDatabaseMatchesExpected = true;
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(FPaths::SetExtension(DatabaseOutputFile, TEXT(".SchemaDatabase")));
-	USchemaDatabase* SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
+	USchemaDatabase* LoadedSchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
 	if (SchemaDatabase == nullptr)
 	{
 		bDatabaseMatchesExpected = false;
@@ -766,7 +769,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_schema_database_deleted_
 	TSet<UClass*> Classes = { CurrentClass };
 
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
-	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
+	USchemaDatabase* SchemaDatabase = SpatialGDKEditor::Schema::InitialiseSchemaDatabase(DatabaseOutputFile);
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(SchemaDatabase);
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	const FString SchemaDatabasePackagePath = FPaths::Combine(FPaths::ProjectContentDir(), SchemaDatabaseFileName);
@@ -793,7 +797,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_schema_database_exists_WHEN_tried_to_load_THEN_loade
 	TSet<UClass*> Classes = { CurrentClass };
 
 	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaOutputFolder);
-	SpatialGDKEditor::Schema::SaveSchemaDatabase(DatabaseOutputFile);
+	USchemaDatabase* SchemaDatabase = SpatialGDKEditor::Schema::InitialiseSchemaDatabase(DatabaseOutputFile);
+	SpatialGDKEditor::Schema::SaveSchemaDatabase(SchemaDatabase);
 
 	// WHEN
 	bool bSuccess = SpatialGDKEditor::Schema::LoadGeneratorStateFromSchemaDatabase(SchemaDatabaseFileName);
@@ -832,12 +837,13 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 	FString CoreSDKSchemaCopyDir =
 		FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("/Tests/build/dependencies/schema/standard_library"));
 	TArray<FString> GDKSchemaFilePaths = { "authority_intent.schema",
-										   "component_presence.schema",
 										   "core_types.schema",
 										   "debug_component.schema",
 										   "debug_metrics.schema",
 										   "global_state_manager.schema",
 										   "heartbeat.schema",
+										   "known_entity_auth_component_set.schema",
+										   "migration_diagnostic.schema",
 										   "net_owning_client_worker.schema",
 										   "not_streamed.schema",
 										   "query_tags.schema",
@@ -845,13 +851,12 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "rpc_components.schema",
 										   "rpc_payload.schema",
 										   "server_worker.schema",
+										   "spatial_debugging.schema",
 										   "spawndata.schema",
 										   "spawner.schema",
-										   "spatial_debugging.schema",
 										   "tombstone.schema",
 										   "unreal_metadata.schema",
-										   "virtual_worker_translation.schema",
-										   "migration_diagnostic.schema" };
+										   "virtual_worker_translation.schema" };
 	TArray<FString> CoreSDKFilePaths = { "improbable\\restricted\\system_components.schema", "improbable\\standard_library.schema" };
 
 	// WHEN
