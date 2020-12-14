@@ -40,7 +40,7 @@ void ASpatialAuthorityTest::PrepareTest()
 	Super::PrepareTest();
 
 	FSpatialFunctionalTestStepDefinition NonReplicatedVerifyAuthorityStepDefinition(/*bIsNativeDefinition*/ true);
-	NonReplicatedVerifyAuthorityStepDefinition.StepName = TEXT("Non-replicated Dynamic Actor - Verify Authority  on Server 1");
+	NonReplicatedVerifyAuthorityStepDefinition.StepName = TEXT("Non-replicated Dynamic Actor - Verify Authority on Server 1");
 	NonReplicatedVerifyAuthorityStepDefinition.TimeLimit = 5.0f;
 	NonReplicatedVerifyAuthorityStepDefinition.NativeStartEvent.BindLambda([this]() {
 		// Not replicated so OnAuthorityGained() is not called.
