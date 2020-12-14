@@ -25,7 +25,7 @@ generate_build_configuration_steps () {
 
     # This matches SpatialOS node sizes (https://github.com/improbable/platform/blob/master/go/src/improbable.io/lib/nodesizes/nodesizes.go)
     if [[ -z "${NIGHTLY_BUILD+x}" ]]; then
-        export BK_MACHINE_TYPE="quad-high-cpu"
+        export BK_MACHINE_TYPE="quad-high-perf"
     else
         export BK_MACHINE_TYPE="single" # nightly builds run on smaller nodes
     fi

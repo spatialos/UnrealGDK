@@ -1378,6 +1378,7 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 			}
 		}
 
+		FGlobalTabmanager::Get()->InvokeTab(FName(TEXT("OutputLog")));
 		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
 		PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
 		PackageAssembly->BuildAndUploadAssembly(CloudDeploymentConfiguration);

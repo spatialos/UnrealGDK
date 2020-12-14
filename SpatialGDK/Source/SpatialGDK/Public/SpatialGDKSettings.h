@@ -256,9 +256,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (DisplayName = "Enable multi-worker in editor"))
 	bool bEnableMultiWorker;
 
-	/** RPC ring buffers is enabled when either the matching setting is set, or load balancing is enabled */
-	bool UseRPCRingBuffer() const;
-
 #if WITH_EDITOR
 	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);
 	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
@@ -270,9 +267,6 @@ private:
 
 	void UpdateServicesRegionFile();
 #endif
-
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
-	bool bUseRPCRingBuffers;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Default RPC Ring Buffer Size"))
 	uint32 DefaultRPCRingBufferSize;
