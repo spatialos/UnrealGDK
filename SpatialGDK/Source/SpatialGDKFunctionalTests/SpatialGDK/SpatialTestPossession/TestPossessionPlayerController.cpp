@@ -2,6 +2,7 @@
 
 #include "TestPossessionPlayerController.h"
 #include "Engine/World.h"
+#include "EngineClasses/SpatialPossession.h"
 
 ATestPossessionPlayerController::ATestPossessionPlayerController() {}
 
@@ -21,4 +22,9 @@ void ATestPossessionPlayerController::OnPossessFailed(ERemotePossessFailure Fail
 {
 	Super::OnPossessFailed(FailureReason);
 	OnPossessFailedEvent.Broadcast(FailureReason, this);
+}
+
+void ATestPossessionPlayerController::RemotePossess_Implementation(APawn* InPawn)
+{
+	USpatialPossession::RemotePossess(this, InPawn);
 }

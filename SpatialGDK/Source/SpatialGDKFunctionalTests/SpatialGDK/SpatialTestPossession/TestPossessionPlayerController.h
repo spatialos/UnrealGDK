@@ -19,9 +19,11 @@ private:
 	virtual void OnUnPossess() override;
 
 	virtual void OnPossessFailed(ERemotePossessFailure FailureReason) override;
-
 public:
 	ATestPossessionPlayerController();
+		
+	UFUNCTION(Client, Reliable)
+	void RemotePossess(APawn* InPawn);
 
 	FOnPossess OnPossessEvent;
 

@@ -2,6 +2,8 @@
 
 #pragma once
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPossession, Log, All);
+
 #include "SpatialPossession.generated.h"
 
 UCLASS()

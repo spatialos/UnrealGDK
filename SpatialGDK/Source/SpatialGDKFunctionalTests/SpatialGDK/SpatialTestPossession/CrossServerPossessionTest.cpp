@@ -83,7 +83,7 @@ void ACrossServerPossessionTest::PrepareTest()
 		WaitTime += DeltaTime;
 	});
 
-	AddStep(TEXT("Cross-Server Possession: Check test result"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float) {
+	AddStep(TEXT("Cross-Server Possession: Check test result"), FWorkerDefinition::Server(2), nullptr, nullptr, [this](float) {
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 		ATestPossessionPawn* Pawn =

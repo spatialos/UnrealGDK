@@ -3,6 +3,11 @@
 #include "EngineClasses/SpatialPossession.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "LoadBalancing/LayeredLBStrategy.h"
+#include "Engine/World.h"
+
+
+DEFINE_LOG_CATEGORY(LogSpatialPossession);
 
 void USpatialPossession::RemotePossess(AController* Controller, APawn* Pawn)
 {
@@ -37,6 +42,24 @@ void USpatialPossession::RemotePossess(AController* Controller, APawn* Pawn)
 
 void USpatialPossession::PossessAfterMigration(AController& Controller)
 {
+	UWorld* World = Controller.GetWorld();
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+
+	if (auto lbs = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy))
+	{
+		FName LocalLayer = lbs->GetLocalLayerName();
+		auto sublbs = lbs->GetLBStrategyForLayer(LocalLayer);
+		UGridBasedLBStrategy* GridStrategy = Cast<UGridBasedLBStrategy>(sublbs);
+		UE_LOG(LogSpatialPossession, Log, TEXT("PossessAfterMigration Current WorkerId: %d"), GridStrategy->GetLocalVirtualWorkerId());
+	}
+	
+	auto WorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(Controller);
+	UE_LOG(LogSpatialPossession, Log, TEXT("PossessAfterMigration: %s, WorkerId: %d"), *Controller.GetName(), WorkerId);
+
+	WorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*Controller.IntendedPawnToPossess);
+	UE_LOG(LogSpatialPossession, Log, TEXT("PossessAfterMigration: %s, WorkerId: %d"), *Controller.IntendedPawnToPossess->GetName(),
+		   WorkerId);
+
 	if (Controller.IntendedPawnToPossess->HasAuthority())
 	{
 		if (Controller.IntendedPossessionCount == Controller.IntendedPawnToPossess->PossessionCount)
