@@ -333,7 +333,6 @@ void ASpatialAuthorityTest::PrepareTest()
 	}
 
 	// Replicated Dynamic Actor Spawned On Border from Server 1. Server 1 should keep Authority.
-	// servers
 	{
 		AddStep(TEXT("Replicated Dynamic Actor Spawned On Border From Server 1 - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			ASpatialAuthorityTestReplicatedActor* Actor =
