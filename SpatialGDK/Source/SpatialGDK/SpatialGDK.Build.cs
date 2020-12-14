@@ -113,6 +113,7 @@ public class SpatialGDK : ModuleRules
         else if (Target.Platform == UnrealTargetPlatform.Android)
         {
             LibPrefix = "libimprobable_";
+            ImportLibSuffix = SharedLibSuffix = ".so";
             WorkerLibraryPaths.AddRange(new string[]
             {
                 Path.Combine(WorkerLibraryDir, "arm64-v8a"),
@@ -144,6 +145,7 @@ public class SpatialGDK : ModuleRules
 
         PublicAdditionalLibraries.Add(WorkerImportLib);
         PublicRuntimeLibraryPaths.Add(WorkerLibraryDir);
+        PublicLibraryPaths.AddRange(WorkerLibraryPaths);
 
         // Detect existence of trace library, if present add preprocessor
         string TraceStaticLibPath = "";
