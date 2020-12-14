@@ -10,11 +10,9 @@
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AuthorityIntent.h"
-#include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/RPCPayload.h"
-#include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
@@ -46,9 +44,7 @@ EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapC
 {
 }
 
-TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel,
-																   FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs,
-																   uint32& OutBytesWritten)
+TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
@@ -187,25 +183,8 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
 
-	if (GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer() && RPCService != nullptr)
-	{
-		ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
-	}
-	else
-	{
-		ComponentDatas.Add(ClientRPCEndpointLegacy().CreateRPCEndpointData());
-		ComponentDatas.Add(ServerRPCEndpointLegacy().CreateRPCEndpointData());
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY));
-
-		if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
-		{
-			if (QueuedRPCs->HasRPCPayloadData())
-			{
-				ComponentDatas.Add(QueuedRPCs->CreateRPCPayloadData());
-			}
-			OutgoingOnCreateEntityRPCs.Remove(Actor);
-		}
-	}
+	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
+	ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
 
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
