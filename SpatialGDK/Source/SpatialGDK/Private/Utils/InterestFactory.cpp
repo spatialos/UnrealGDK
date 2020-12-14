@@ -145,13 +145,13 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 	PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
 	PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
 	PartitionQuery.Constraint = CreateServerAlwaysRelevantConstraint();
-	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, PartitionQuery);
+	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, PartitionQuery);
 
 	// Add a self query for completeness
 	PartitionQuery = Query();
 	PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 	PartitionQuery.Constraint.bSelfConstraint = true;
-	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, PartitionQuery);
+	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, PartitionQuery);
 
 	// Query to know about all the actors tagged with a debug component
 	if (bDebug)
@@ -159,7 +159,8 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 		PartitionQuery = Query();
 		PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_DEBUG_COMPONENT_ID };
 		PartitionQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
-		AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, PartitionQuery);
+		AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID,
+												 PartitionQuery);
 	}
 
 	return PartitionInterest;
@@ -173,7 +174,7 @@ void InterestFactory::AddLoadBalancingInterestQuery(const UAbstractLBStrategy* L
 	PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
 	PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
 	PartitionQuery.Constraint = LBStrategy->GetWorkerInterestQueryConstraint(VirtualWorker);
-	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, PartitionQuery);
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, PartitionQuery);
 }
 
 Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
