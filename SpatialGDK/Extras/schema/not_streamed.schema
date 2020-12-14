@@ -5,10 +5,3 @@ package unreal;
 component NotStreamed {
     id = 9986;
 }
-
-component_set NotStreamedSet {
-  id = 9986;
-  components = [
-    NotStreamed
-  ];
-}

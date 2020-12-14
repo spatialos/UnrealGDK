@@ -9,10 +9,3 @@ component Heartbeat {
     event HeartbeatEvent heartbeat;
     bool client_has_quit = 1;
 }
-
-component_set HeartbeatSet {
-  id = 9991;
-  components = [
-    Heartbeat
-  ];
-}

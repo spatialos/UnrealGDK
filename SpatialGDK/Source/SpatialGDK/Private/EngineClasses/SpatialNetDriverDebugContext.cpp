@@ -75,7 +75,7 @@ void USpatialNetDriverDebugContext::Reset()
 	for (const auto& Entry : NetDriver->Connection->GetView())
 	{
 		const SpatialGDK::EntityViewElement& ViewElement = Entry.Value;
-		if (ViewElement.Authority.Contains(SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+		if (ViewElement.Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 			&& ViewElement.Components.ContainsByPredicate([](const SpatialGDK::ComponentData& Data) {
 				   return Data.GetComponentId() == SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 			   }))
@@ -146,7 +146,7 @@ void USpatialNetDriverDebugContext::OnDebugComponentUpdateReceived(Worker_Entity
 {
 	SpatialGDK::DebugComponent* DbgComp = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::DebugComponent>(Entity);
 	check(DbgComp);
-	if (!NetDriver->StaticComponentView->HasAuthority(Entity, SpatialConstants::GDK_DEBUG_COMPONENT_ID))
+	if (!NetDriver->StaticComponentView->HasAuthority(Entity, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
 	{
 		if (IsSetIntersectionEmpty(SemanticInterest, DbgComp->ActorTags))
 		{
