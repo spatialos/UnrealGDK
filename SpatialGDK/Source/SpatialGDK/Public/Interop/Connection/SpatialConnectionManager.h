@@ -7,6 +7,8 @@
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialView/ComponentSetData.h"
+#include "Utils/SchemaDatabase.h"
 
 #include "Engine/EngineBaseTypes.h"
 
@@ -62,6 +64,7 @@ public:
 	void SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType);
 
 	USpatialWorkerConnection* GetWorkerConnection() { return WorkerConnection; }
+	void SetComponentSets(const TMap<uint32, FComponentIDs>& InComponentSetMap);
 
 	void RequestDeploymentLoginTokens();
 
@@ -96,4 +99,5 @@ private:
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 	LoginTokenResponseCallback LoginTokenResCallback;
 	LogCallback SpatialLogCallback;
+	SpatialGDK::FComponentSetData ComponentSetData;
 };

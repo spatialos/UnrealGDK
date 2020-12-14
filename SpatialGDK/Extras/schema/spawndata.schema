@@ -23,10 +23,3 @@ component SpawnData {
     Vector3f scale = 3;
     Vector3f velocity = 4;
 }
-
-component_set SpawnDataSet {
-	id = 9999;
-	components = [
-		SpawnData
-	];
-}

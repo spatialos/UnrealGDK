@@ -499,24 +499,6 @@ const TMap<float, Worker_ComponentId>& USpatialClassInfoManager::GetNetCullDista
 	return SchemaDatabase->NetCullDistanceToComponentId;
 }
 
-const TArray<Worker_ComponentId>& USpatialClassInfoManager::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const
-{
-	switch (ComponentType)
-	{
-	case ESchemaComponentType::SCHEMA_Data:
-		return SchemaDatabase->DataComponentIds;
-	case ESchemaComponentType::SCHEMA_OwnerOnly:
-		return SchemaDatabase->OwnerOnlyComponentIds;
-	case ESchemaComponentType::SCHEMA_Handover:
-		return SchemaDatabase->HandoverComponentIds;
-	default:
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Component type %d not recognised."), ComponentType);
-		checkNoEntry();
-		static const TArray<Worker_ComponentId> EmptyArray;
-		return EmptyArray;
-	}
-}
-
 const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId,
 																		USpatialPackageMapClient* PackageMapClient)
 {

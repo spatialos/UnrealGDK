@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -14,7 +14,7 @@ namespace SpatialGDK
 struct EntityViewElement
 {
 	TArray<ComponentData> Components;
-	TArray<Worker_ComponentId> Authority;
+	TArray<Worker_ComponentSetId> Authority;
 };
 
 using EntityView = TMap<Worker_EntityId_Key, EntityViewElement>;
