@@ -61,6 +61,19 @@ DECLARE_CYCLE_STAT(TEXT("Receiver RemoveActor"), STAT_ReceiverRemoveActor, STATG
 DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_SpatialNet);
 using namespace SpatialGDK;
 
+namespace // Anonymous namespace
+{
+struct RepNotifyCall
+{
+	USpatialActorChannel* Channel;
+	UObject* Object;
+	TArray<GDK_PROPERTY(Property)*> Notifies;
+};
+#if DO_CHECK
+FUsageLock ObjectRefToRepStateUsageLock; // A debug helper to trigger an ensure if something weird happens (re-entrancy)
+#endif
+} // namespace
+
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialRPCService* InRPCService,
 							SpatialEventTracer* InEventTracer)
 {
@@ -219,21 +232,16 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY:
-	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID:
 	case SpatialConstants::VISIBLE_COMPONENT_ID:
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
 	case SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID:
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
@@ -520,7 +528,7 @@ void USpatialReceiver::OnAuthorityChange(const Worker_ComponentSetAuthorityChang
 {
 	if (HasEntityBeenRequestedForDelete(Op.entity_id))
 	{
-		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Op.component_set_id == SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID)
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Op.component_set_id == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 		{
 			HandleEntityDeletedAuthority(Op.entity_id);
 		}
@@ -556,8 +564,8 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_ComponentSetA
 
 	// Server initializes heartbeat logic based on its authority over the position component,
 	// client does the same for heartbeat component
-	if ((NetDriver->IsServer() && Op.component_set_id == SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID)
-		|| (!NetDriver->IsServer() && Op.component_set_id == SpatialConstants::HEARTBEAT_COMPONENT_ID))
+	if ((NetDriver->IsServer() && Op.component_set_id == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+		|| (!NetDriver->IsServer() && Op.component_set_id == SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID))
 	{
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
@@ -587,7 +595,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_ComponentSetA
 void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityChangeOp& Op)
 {
 	if (NetDriver->SpatialDebugger != nullptr && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE
-		&& Op.component_set_id == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
+		&& Op.component_set_id == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 	{
 		NetDriver->SpatialDebugger->ActorAuthorityChanged(Op);
 	}
@@ -605,12 +613,11 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 
 	if (Channel != nullptr)
 	{
-		if (Op.component_set_id == SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID)
+		if (Op.component_set_id == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 		{
 			Channel->SetServerAuthority(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
 		}
-		else if (Op.component_set_id
-				 == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+		else if (Op.component_set_id == SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
 		{
 			Channel->SetClientAuthority(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
 		}
@@ -636,7 +643,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 		// is player controlled when gaining authority over the pawn and need to wait for the player
 		// state. Likewise, it's possible that the player state doesn't have a pointer to its pawn
 		// yet, so we need to wait for the pawn to arrive.
-		if (Op.component_set_id == SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID)
+		if (Op.component_set_id == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
@@ -723,34 +730,8 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 				}
 			}
 		}
-
-		// Subobject Delegation
-		TPair<Worker_EntityId_Key, Worker_ComponentSetId> EntityComponentPair =
-			MakeTuple(static_cast<Worker_EntityId_Key>(Op.entity_id), Op.component_set_id);
-		if (TSharedRef<FPendingSubobjectAttachment>* PendingSubobjectAttachmentPtr =
-				PendingEntitySubobjectDelegations.Find(EntityComponentPair))
-		{
-			FPendingSubobjectAttachment& PendingSubobjectAttachment = PendingSubobjectAttachmentPtr->Get();
-
-			PendingSubobjectAttachment.PendingAuthorityDelegations.Remove(Op.component_set_id);
-
-			if (PendingSubobjectAttachment.PendingAuthorityDelegations.Num() == 0)
-			{
-				if (UObject* Object = PendingSubobjectAttachment.Subobject.Get())
-				{
-					if (IsValid(Channel))
-					{
-						// TODO: UNR-664 - We should track the bytes sent here and factor them into channel saturation.
-						uint32 BytesWritten = 0;
-						Sender->SendAddComponentForSubobject(Channel, Object, *PendingSubobjectAttachment.Info, BytesWritten);
-					}
-				}
-			}
-
-			PendingEntitySubobjectDelegations.Remove(EntityComponentPair);
-		}
 	}
-	else if (Op.component_set_id == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+	else if (Op.component_set_id == SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
 	{
 		if (Channel != nullptr)
 		{
@@ -765,7 +746,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 	}
 
 	if (NetDriver->DebugCtx && Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE
-		&& Op.component_set_id == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+		&& Op.component_set_id == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 	{
 		NetDriver->DebugCtx->OnDebugComponentAuthLost(Op.entity_id);
 	}
@@ -1496,6 +1477,7 @@ struct USpatialReceiver::RepStateUpdateHelper
 
 			if (ObjectRepState)
 			{
+				GDK_ENSURE_NO_MODIFICATIONS(ObjectRefToRepStateUsageLock);
 				ObjectRepState->UpdateRefToRepStateMap(Receiver.ObjectRefToRepStateMap);
 
 				if (ObjectRepState->ReferencedObj.Num() == 0)
@@ -1582,21 +1564,16 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
-	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID:
 	case SpatialConstants::VISIBLE_COMPONENT_ID:
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
-	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID_LEGACY:
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
-	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
@@ -1778,19 +1755,6 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 			EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId),
 				Op.span_id, 1);
-		}
-
-		return;
-	}
-	else if (ComponentId == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
-	{
-		Sender->ClearRPCsOnEntityCreation(EntityId);
-		Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId, FSpatialGDKSpanId(Op.span_id));
-
-		if (EventTracer != nullptr)
-		{
-			EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("CLEAR_RPCS_ON_ENTITY_CREATION"), RequestId), Op.span_id, 1);
 		}
 
 		return;
@@ -2387,8 +2351,15 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving incoming operations depending on object ref %s, resolved object: %s"),
 		   *ObjectRef.ToString(), *Object->GetName());
 
+	/* Rep-notify can modify ObjectRefToRepStateMap in some situations which can cause the TSet to access
+	invalid memory if a) the set is removed or b) the TMap containing the TSet is reallocated. So to fix this
+	we just defer the rep-notify calls to the end of this function. */
+	TArray<RepNotifyCall> RepNotifyCalls;
+
 	for (auto ChannelObjectIter = TargetObjectSet->CreateIterator(); ChannelObjectIter; ++ChannelObjectIter)
 	{
+		GDK_ENSURE_NO_MODIFICATIONS(ObjectRefToRepStateUsageLock);
+
 		USpatialActorChannel* DependentChannel = ChannelObjectIter->Key.Get();
 		if (!DependentChannel)
 		{
@@ -2456,12 +2427,16 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 		if (bSomeObjectsWereMapped)
 		{
 			DependentChannel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, RepLayout, RepState->ReferenceMap, ReplicatingObject);
-
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
-			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies, {});
+			RepNotifyCalls.Push({ DependentChannel, ReplicatingObject, MoveTemp(RepNotifies) });
 		}
 
 		RepState->UnresolvedRefs.Remove(ObjectRef);
+	}
+
+	for (auto& RepNotify : RepNotifyCalls)
+	{
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolved for target object %s"), *RepNotify.Object->GetName());
+		RepNotify.Channel->PostReceiveSpatialUpdate(RepNotify.Object, RepNotify.Notifies, {});
 	}
 }
 
@@ -2947,6 +2922,7 @@ void USpatialReceiver::CleanupRepStateMap(FSpatialObjectRepState& RepState)
 			RepStatesWithMappedRef->Remove(RepState.GetChannelObjectPair());
 			if (RepStatesWithMappedRef->Num() == 0)
 			{
+				GDK_ENSURE_NO_MODIFICATIONS(ObjectRefToRepStateUsageLock);
 				ObjectRefToRepStateMap.Remove(Ref);
 			}
 		}

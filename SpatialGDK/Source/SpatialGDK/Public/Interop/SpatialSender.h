@@ -64,8 +64,6 @@ struct FPendingRPC
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, SpatialGDK::RPCsOnEntityCreation, FDefaultSetAllocator,
-									  TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<const UObject>, SpatialGDK::RPCsOnEntityCreation, false>>;
 using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<FWorkerComponentUpdate>>;
 using FChannelsToUpdatePosition =
 	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>>;
@@ -86,12 +84,8 @@ public:
 
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const;
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
-	void SendOnEntityCreationRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
-								 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	void SendCrossServerRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 							USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
-	FRPCErrorInfo SendLegacyRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
-								USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
 							 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId);
@@ -112,9 +106,6 @@ public:
 	// Creates an entity containing just a tombstone component and the minimal data to resolve an actor.
 	void CreateTombstoneEntity(AActor* Actor);
 
-	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
-	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
-
 	void EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
 	void FlushRetryRPCs();
 	void RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
@@ -131,7 +122,6 @@ public:
 
 	SpatialGDK::RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
 													  void* Params);
-	void GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info);
 
 	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
 	UFUNCTION()
@@ -170,8 +160,6 @@ private:
 												  Worker_ComponentId ComponentId, Schema_FieldId CommandIndex,
 												  Worker_EntityId& OutEntityId);
 	Worker_CommandRequest CreateRetryRPCCommandRequest(const FReliableRPCForRetry& RPC, uint32 TargetObjectOffset);
-	FWorkerComponentUpdate CreateRPCEventUpdate(UObject* TargetObject, const SpatialGDK::RPCPayload& Payload,
-												Worker_ComponentId ComponentId, Schema_FieldId EventIndext);
 
 	// RPC Tracking
 #if !UE_BUILD_SHIPPING
@@ -202,7 +190,6 @@ private:
 	SpatialGDK::SpatialRPCService* RPCService;
 
 	FRPCContainer OutgoingRPCs{ ERPCQueueType::Send };
-	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
 
 	TArray<TSharedRef<FReliableRPCForRetry>> RetryRPCs;
 

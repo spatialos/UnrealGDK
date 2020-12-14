@@ -16,31 +16,3 @@ component Dormant {
 component Visible {
     id = 9970;
 }
-
-component_set AlwaysRelevantSet {
-	id = 9983;
-	components = [
-		AlwaysRelevant
-	];
-}
-
-component_set ServerOnlyAlwaysRelevantSet {
-	id = 9968;
-	components = [
-		ServerOnlyAlwaysRelevant
-	];
-}
-
-component_set DormantSet {
-	id = 9981;
-	components = [
-		Dormant
-	];
-}
-
-component_set VisibleSet {
-	id = 9970;
-	components = [
-		Visible
-	];
-}

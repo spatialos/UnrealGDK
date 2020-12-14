@@ -24,10 +24,3 @@ component SpatialTypeActorWithMultipleActorComponents {
 	UnrealObjectRef firstspatialactorcomponent = 16;
 	UnrealObjectRef secondspatialactorcomponent = 17;
 }
-
-component_set SpatialTypeActorWithMultipleActorComponentsSet {
-	id = {{id}};
-	components = [
-		SpatialTypeActorWithMultipleActorComponents
-	];
-}
