@@ -1382,7 +1382,7 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 #if ENGINE_MINOR_VERSION >= 26
 		FGlobalTabmanager::Get()->TryInvokeTab(FName(TEXT("OutputLog")));
 #else
-		FGlobalTabmanager::Get()->InvokeTab(FName(TEXT("OutputLog")));			FGlobalTabmanager::Get()->InvokeTab(FName(TEXT("OutputLog")));
+		FGlobalTabmanager::Get()->InvokeTab(FName(TEXT("OutputLog")));
 #endif
 		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
 		PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
