@@ -13,7 +13,7 @@ public class SpatialGDK : ModuleRules
 {
     public SpatialGDK(ReadOnlyTargetRules Target) : base(Target)
     {
-		bLegacyPublicIncludePaths = false;
+        bLegacyPublicIncludePaths = false;
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 #pragma warning disable 0618
         bFasterWithoutUnity = true;             // Deprecated in 4.24, replace with bUseUnity = false; once we drop support for 4.23
@@ -63,7 +63,15 @@ public class SpatialGDK : ModuleRules
             PublicDependencyModuleNames.Add("PerfCounters");
         }
 
-        var WorkerLibraryDir = Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString());
+        string WorkerLibraryDir = "";
+        if (Target.Platform == UnrealTargetPlatform.Android)
+        {
+            WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
+        }
+        else
+        {
+            WorkerLibraryDir = Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString());
+        }
 
         var WorkerLibraryPaths = new List<string>
             {
@@ -112,8 +120,7 @@ public class SpatialGDK : ModuleRules
         }
         else if (Target.Platform == UnrealTargetPlatform.Android)
         {
-            LibPrefix = "libimprobable_";
-            ImportLibSuffix = SharedLibSuffix = ".so";
+            LibPrefix = "improbable_";
             WorkerLibraryPaths.AddRange(new string[]
             {
                 Path.Combine(WorkerLibraryDir, "arm64-v8a"),
@@ -144,7 +151,16 @@ public class SpatialGDK : ModuleRules
         }
 
         PublicAdditionalLibraries.Add(WorkerImportLib);
-        PublicRuntimeLibraryPaths.Add(WorkerLibraryDir);
+
+        if (Target.Platform == UnrealTargetPlatform.Android)
+        {
+            PublicLibraryPaths.AddRange(WorkerLibraryPaths);
+        }
+        else
+        {
+            PublicRuntimeLibraryPaths.Add(WorkerLibraryDir);
+        }
+
         PublicLibraryPaths.AddRange(WorkerLibraryPaths);
 
         // Detect existence of trace library, if present add preprocessor
