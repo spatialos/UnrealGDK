@@ -63,15 +63,7 @@ public class SpatialGDK : ModuleRules
             PublicDependencyModuleNames.Add("PerfCounters");
         }
 
-        string WorkerLibraryDir = "";
-        if (Target.Platform == UnrealTargetPlatform.Android)
-        {
-            WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
-        }
-        else
-        {
-            WorkerLibraryDir = Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString());
-        }
+        var WorkerLibraryDir = Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString());
 
         var WorkerLibraryPaths = new List<string>
             {
