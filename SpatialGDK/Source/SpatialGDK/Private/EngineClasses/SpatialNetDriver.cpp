@@ -1988,7 +1988,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
-	if (SpatialGDKSettings->UseRPCRingBuffer() && Sender != nullptr)
+	if (Sender != nullptr)
 	{
 		Sender->FlushRPCService();
 	}
