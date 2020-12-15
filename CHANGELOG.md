@@ -83,6 +83,7 @@ These functions and structs can be referenced in both code and blueprints it may
   - Inspector version can now be overridden in the SpatialGDKEditorSettings under `Inspector Version Override`
 - Unreal Engine version 4.26.0 is now supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
 - Added cross-server variants of ability activation functions on the Ability System Component.
+- Added a "Spatial Switch Has Authority" Blueprint function for actors that can differentiate between authoritative server, non-authoritative server, and clients.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.

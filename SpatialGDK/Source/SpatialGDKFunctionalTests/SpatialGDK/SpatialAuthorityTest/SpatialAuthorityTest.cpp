@@ -10,7 +10,7 @@
 #include "SpatialAuthorityTestReplicatedActor.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDK/Public/EngineClasses/SpatialNetDriver.h"
-#include <SpatialGDK\Public\Utils\SpatialStatics.h>
+#include "SpatialGDK/Public/Utils/SpatialStatics.h"
 
 /** This Test is meant to check that HasAuthority() rules are respected on different occasions. We check
  * in BeginPlay and Tick, and in the following use cases:
