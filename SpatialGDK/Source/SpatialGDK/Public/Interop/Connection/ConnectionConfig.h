@@ -73,6 +73,7 @@ struct FConnectionConfig
 													: SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 
 		LinkProtocol = ConnectionTypeMap[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
+		LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_TCP;
 	}
 
 private:
@@ -98,7 +99,8 @@ private:
 		}
 		else if (!LogLevelString.IsEmpty())
 		{
-			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
+			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."),
+				   *LogLevelString);
 		}
 	}
 
