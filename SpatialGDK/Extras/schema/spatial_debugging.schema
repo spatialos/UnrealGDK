@@ -21,10 +21,3 @@ component SpatialDebugging {
      // Whether or not the entity is locked.
      bool is_locked = 5;
 }
-
-component_set SpatialDebuggingSet {
-  id = 9975;
-  components = [
-    SpatialDebugging
-  ];
-}

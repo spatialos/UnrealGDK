@@ -82,6 +82,16 @@ void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation
 
 void ASpatialFunctionalTestFlowController::OnReadyToRegisterWithTest()
 {
+	TryRegisterFlowControllerWithOwningTest();
+}
+
+void ASpatialFunctionalTestFlowController::OnRep_OwningTest()
+{
+	TryRegisterFlowControllerWithOwningTest();
+}
+
+void ASpatialFunctionalTestFlowController::TryRegisterFlowControllerWithOwningTest()
+{
 	if (!bReadyToRegisterWithTest || OwningTest == nullptr)
 	{
 		return;

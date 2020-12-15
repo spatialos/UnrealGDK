@@ -81,8 +81,8 @@ These functions and structs can be referenced in both code and blueprints it may
   - Snapshots taken of running local deployments are now saved in `<GameProject>\spatial\snapshots\<yyyy.mm.dd-hh.mm.ss>\snapshot_<n>.snapshot`
   - Inspector URL is now http://localhost:33333/inspector-v2
   - Inspector version can now be overridden in the SpatialGDKEditorSettings under `Inspector Version Override`
-- The SpatialNetDriver can now disconnect a client worker when given the system entity id for that client and will do so when `GameMode::PreLogin` returns with a non-empty error message.
 - Unreal Engine version 4.26.0 is now supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
+- Added cross-server variants of ability activation functions on the Ability System Component.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
@@ -112,6 +112,8 @@ These functions and structs can be referenced in both code and blueprints it may
 - Add ServerOnlyAlwaysRelevant component and component set schema definitions
 - Fixed a snapshot reloading issue where worker would create extra actors, as if they were loading on a fresh deployment.
 - Server workers use TCP (instead of KCP) by default.
+- Fixed a rare crash where a RepNotify callback can modify a GDK data structure being iterated upon.
+- Fixed race condition in Spatial Test framework that would cause tests to time out with one or more workers not ready to begin the test.
 
 ## [`0.11.0`] - 2020-09-03
 

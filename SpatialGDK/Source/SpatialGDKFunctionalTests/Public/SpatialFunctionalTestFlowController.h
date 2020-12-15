@@ -45,7 +45,7 @@ public:
 	// Tell the Test owner that we want to end the Test
 	void NotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_OwningTest)
 	ASpatialFunctionalTest* OwningTest;
 
 	// Holds WorkerType and WorkerId. Type should be only Server or Client, and Id >= 1 (after registered)
@@ -93,6 +93,11 @@ private:
 
 	UFUNCTION()
 	void OnReadyToRegisterWithTest();
+
+	UFUNCTION()
+	void OnRep_OwningTest();
+
+	void TryRegisterFlowControllerWithOwningTest();
 
 	UFUNCTION(Server, Reliable)
 	void ServerSetReadyToRunTest(bool bIsReady);
