@@ -1609,7 +1609,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		return;
 	}
 
-	const FUnrealObjectRef CallingObjectRef = PackageMap->GetUnrealObjectRefFromObject(CallingObject);
+	FUnrealObjectRef CallingObjectRef = PackageMap->GetUnrealObjectRefFromObject(CallingObject);
 	if (!CallingObjectRef.IsValid())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("The target object %s is unresolved; RPC %s will be dropped."),
@@ -1617,15 +1617,15 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		return;
 	}
 
-	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, Parameters);
-	const FRPCInfo Info = ClassInfoManager->GetRPCInfo(CallingObject, Function);
+	const FRPCInfo& Info = ClassInfoManager->GetRPCInfo(CallingObject, Function);
+	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, Info.Type, Parameters);
 	if (Info.Type == ERPCType::CrossServer)
 	{
-		CrossServerRPCSender->SendCommand(CallingObjectRef, CallingObject, Function, MoveTemp(Payload), Info, {});
+		CrossServerRPCSender->SendCommand(MoveTemp(CallingObjectRef), CallingObject, Function, MoveTemp(Payload), Info, {});
 	}
 	else
 	{
-		Sender->ProcessOrQueueOutgoingRPC(CallingObjectRef, Info.Type, MoveTemp(Payload));
+		Sender->ProcessOrQueueOutgoingRPC(CallingObjectRef, MoveTemp(Payload));
 	}
 }
 
@@ -1827,7 +1827,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 			Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
-			CrossServerRPCHandler->ProcessOps(Connection->GetWorkerMessages());
+			CrossServerRPCHandler->ProcessMessages(Connection->GetWorkerMessages(), DeltaTime);
 		}
 
 		if (RPCService.IsValid())

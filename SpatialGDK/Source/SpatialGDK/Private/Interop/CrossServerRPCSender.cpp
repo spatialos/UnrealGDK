@@ -8,12 +8,12 @@
 namespace SpatialGDK
 {
 CrossServerRPCSender::CrossServerRPCSender(ViewCoordinator& InCoordinator, USpatialMetrics* InSpatialMetrics)
-	: Coordinator(InCoordinator)
+	: Coordinator(&InCoordinator)
 	, SpatialMetrics(InSpatialMetrics)
 {
 }
 
-void CrossServerRPCSender::SendCommand(const FUnrealObjectRef& InTargetObjectRef, UObject* TargetObject, UFunction* Function,
+void CrossServerRPCSender::SendCommand(const FUnrealObjectRef InTargetObjectRef, UObject* TargetObject, UFunction* Function,
 									   RPCPayload&& InPayload, FRPCInfo Info, const FSpatialGDKSpanId& SpanId) const
 {
 	if (Function == nullptr || TargetObject == nullptr || InTargetObjectRef.Entity == SpatialConstants::INVALID_ENTITY_ID
@@ -28,11 +28,11 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef& InTargetObjectRef
 									InPayload.PayloadData.GetData(), InPayload.PayloadData.Num());
 	if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
 	{
-		Coordinator.SendEntityCommandRequest(InTargetObjectRef.Entity, MoveTemp(CommandRequest), RETRY_MAX_TIMES, SpanId);
+		Coordinator->SendEntityCommandRequest(InTargetObjectRef.Entity, MoveTemp(CommandRequest), RETRY_MAX_TIMES, SpanId);
 	}
 	else
 	{
-		Coordinator.SendEntityCommandRequest(InTargetObjectRef.Entity, MoveTemp(CommandRequest), TOptional<uint32>(), SpanId);
+		Coordinator->SendEntityCommandRequest(InTargetObjectRef.Entity, MoveTemp(CommandRequest), TOptional<uint32>(), SpanId);
 	}
 
 #if !UE_BUILD_SHIPPING

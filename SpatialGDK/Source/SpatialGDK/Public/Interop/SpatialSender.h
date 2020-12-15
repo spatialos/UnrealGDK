@@ -87,13 +87,13 @@ public:
 
 	void UpdateInterestComponent(AActor* Actor);
 
-	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, ERPCType Type, SpatialGDK::RPCPayload&& InPayload);
+	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	void FlushRPCService();
 
 	SpatialGDK::RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
-													  void* Params);
+													  ERPCType Type, void* Params);
 
 	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
 	UFUNCTION()

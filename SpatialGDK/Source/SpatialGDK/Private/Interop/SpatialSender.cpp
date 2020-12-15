@@ -537,18 +537,23 @@ void USpatialSender::FlushRPCService()
 }
 
 RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
-													  void* Params)
+													  ERPCType Type, void* Params)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
 	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params);
 
+	TOptional<uint64> Id;
+	if (Type == ERPCType::CrossServer)
+	{
+		Id = FMath::RandRange(static_cast<int64>(0), static_cast<int64>(INT64_MAX));
+	}
+
 #if TRACE_LIB_ACTIVE
-	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()),
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, Id, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()),
 					  USpatialLatencyTracer::GetTracer(TargetObject)->RetrievePendingTrace(TargetObject, Function));
 #else
-	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, Function->GetUniqueID(),
-					  TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, Id, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 #endif
 }
 
@@ -775,7 +780,7 @@ void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, uint
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
-void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload)
+void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload&& InPayload)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())

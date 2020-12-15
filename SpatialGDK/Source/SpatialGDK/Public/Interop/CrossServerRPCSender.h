@@ -15,11 +15,11 @@ class CrossServerRPCSender
 {
 public:
 	CrossServerRPCSender(ViewCoordinator& Coordinator, USpatialMetrics* SpatialMetrics);
-	void SendCommand(const FUnrealObjectRef& InTargetObjectRef, UObject* TargetObject, UFunction* Function, RPCPayload&& InPayload,
+	void SendCommand(const FUnrealObjectRef InTargetObjectRef, UObject* TargetObject, UFunction* Function, RPCPayload&& InPayload,
 					 FRPCInfo Info, const FSpatialGDKSpanId& SpanId) const;
 
 private:
-	ViewCoordinator& Coordinator;
+	ViewCoordinator* Coordinator;
 	USpatialMetrics* SpatialMetrics;
 };
 } // namespace SpatialGDK

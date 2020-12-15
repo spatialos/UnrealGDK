@@ -63,16 +63,11 @@ bool RPCExecutor::ExecuteCommand(const FCrossServerRPCParams& Params)
 	return CanProcessRPC;
 }
 
-FCrossServerRPCParams RPCExecutor::CreateInvalidParams()
-{
-	return { FUnrealObjectRef(), -1, { 0, 0, 0, {} }, 0, {} };
-}
-
-FCrossServerRPCParams RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_Op& Op)
+TOptional<FCrossServerRPCParams> RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_Op& Op)
 {
 	if (NetDriver->Receiver->IsEntityWaitingForAsyncLoad(Op.op.command_request.entity_id))
 	{
-		return CreateInvalidParams();
+		return {};
 	}
 
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.op.command_request.request.schema_type);
@@ -81,7 +76,7 @@ FCrossServerRPCParams RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_
 	const TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
-		return CreateInvalidParams();
+		return {};
 	}
 
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
@@ -90,19 +85,19 @@ FCrossServerRPCParams RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_
 	if (Payload.Index >= static_cast<uint32>(ClassInfo.RPCs.Num()))
 	{
 		// This should only happen if there's a class layout disagreement between workers, which would indicate incompatible binaries.
-		return CreateInvalidParams();
+		return {};
 	}
 
 	UFunction* Function = ClassInfo.RPCs[Payload.Index];
 	if (Function == nullptr)
 	{
-		return CreateInvalidParams();
+		return {};
 	}
 
-	const auto RPCInfo = NetDriver->ClassInfoManager->GetRPCInfo(TargetObject, Function);
+	const FRPCInfo& RPCInfo = NetDriver->ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	if (RPCInfo.Type != ERPCType::CrossServer)
 	{
-		return CreateInvalidParams();
+		return {};
 	}
 
 	AActor* TargetActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.op.command_request.entity_id));
@@ -112,9 +107,16 @@ FCrossServerRPCParams RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_
 	TraceKey TraceId = InvalidTraceKey;
 #endif
 
-	UObject* TraceTargetObject = TargetActor != TargetObject ? TargetObject : nullptr;
-	FSpatialGDKSpanId SpanId = NetDriver->Connection->GetEventTracer()->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest(
-		"RPC_COMMAND_REQUEST", TargetActor, TraceTargetObject, Function, TraceId, Op.op.command_request.request_id));
-	return { ObjectRef, Op.op.command_request.request_id, MoveTemp(Payload), Op.op.command_request.timeout_millis, SpanId };
+	SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+	FSpatialGDKSpanId SpanId;
+	if (EventTracer != nullptr)
+	{
+		UObject* TraceTargetObject = TargetActor != TargetObject ? TargetObject : nullptr;
+		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest(
+			"RPC_COMMAND_REQUEST", TargetActor, TraceTargetObject, Function, TraceId, Op.op.command_request.request_id));
+	}
+
+	FCrossServerRPCParams Params(ObjectRef, Op.op.command_request.request_id, MoveTemp(Payload), SpanId);
+	return TOptional<FCrossServerRPCParams>(MoveTemp(Params));
 }
 } // namespace SpatialGDK

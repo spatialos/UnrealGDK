@@ -10,13 +10,15 @@ DEFINE_LOG_CATEGORY(LogCrossServerRPCHandler);
 namespace SpatialGDK
 {
 CrossServerRPCHandler::CrossServerRPCHandler(ViewCoordinator& InCoordinator, TUniquePtr<RPCExecutorInterface> InRPCExecutor)
-	: Coordinator(InCoordinator)
+	: Coordinator(&InCoordinator)
 	, RPCExecutor(MoveTemp(InRPCExecutor))
 {
 }
 
-void CrossServerRPCHandler::ProcessOps(const TArray<Worker_Op>& WorkerMessages)
+void CrossServerRPCHandler::ProcessMessages(const TArray<Worker_Op>& WorkerMessages, float DeltaTime)
 {
+	CurrentTime += DeltaTime;
+
 	for (const auto& Op : WorkerMessages)
 	{
 		if (Op.op_type == WORKER_OP_TYPE_COMMAND_REQUEST
@@ -29,7 +31,7 @@ void CrossServerRPCHandler::ProcessOps(const TArray<Worker_Op>& WorkerMessages)
 
 	ProcessPendingCrossServerRPCs();
 
-	while (RPCsToDelete.Num() > 0 && RPCsToDelete.HeapTop().Key < FDateTime::Now())
+	while (RPCsToDelete.Num() > 0 && RPCsToDelete.HeapTop().Key < CurrentTime)
 	{
 		RPCsToDelete.HeapPopDiscard();
 	}
@@ -47,8 +49,8 @@ void CrossServerRPCHandler::ProcessPendingCrossServerRPCs()
 				break;
 			}
 
-			RPCGuidsInFlight.Remove(Command.Payload.UniqueId);
-			RPCsToDelete.HeapPush(TTuple<FDateTime, uint32>(FDateTime::Now() + Command.TimeoutMillis, Command.Payload.UniqueId));
+			RPCGuidsInFlight.Remove(Command.Payload.Id.GetValue());
+			RPCsToDelete.HeapPush(TTuple<double, uint32>(CurrentTime + GuidTimeout, Command.Payload.Id.GetValue()));
 			++ProcessedRPCs;
 		}
 
@@ -68,27 +70,29 @@ const TMap<Worker_EntityId_Key, TArray<FCrossServerRPCParams>>& CrossServerRPCHa
 void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 {
 	const Worker_CommandRequestOp& CommandOp = Op.op.command_request;
-	FCrossServerRPCParams Params = RPCExecutor->TryRetrieveCrossServerRPCParams(Op);
+	TOptional<FCrossServerRPCParams> Params = RPCExecutor->TryRetrieveCrossServerRPCParams(Op);
 
-	if (Params.RequestId == -1)
+	if (!Params.IsSet())
 	{
-		Coordinator.SendEntityCommandFailure(CommandOp.request_id, TEXT("Failed to parse cross server RPC"), FSpatialGDKSpanId(Op.span_id));
+		Coordinator->SendEntityCommandFailure(CommandOp.request_id, TEXT("Failed to parse cross server RPC"),
+											  FSpatialGDKSpanId(Op.span_id));
 		return;
 	}
 
-	if (RPCGuidsInFlight.Contains(Params.Payload.UniqueId) || RPCsToDelete.ContainsByPredicate([&](TTuple<FDateTime, uint32> Result) {
-			return Params.Payload.UniqueId == Result.Value;
-		}))
+	if (RPCGuidsInFlight.Contains(Params.GetValue().Payload.Id.GetValue())
+		|| RPCsToDelete.ContainsByPredicate([&](TTuple<double, uint32> Result) {
+			   return Params.GetValue().Payload.Id == Result.Value;
+		   }))
 	{
 		// This RPC is already in flight. No need to store it again.
-		UE_LOG(LogCrossServerRPCHandler, Warning, TEXT("RPC is already in flight."));
+		UE_LOG(LogCrossServerRPCHandler, Log, TEXT("RPC is already in flight."));
 		return;
 	}
 
 	if (!QueuedCrossServerRPCs.Contains(CommandOp.entity_id))
 	{
 		// No Command Requests of this type queued so far. Let's try to process it:
-		if (TryExecuteCrossServerRPC(Params))
+		if (TryExecuteCrossServerRPC(Params.GetValue()))
 		{
 			return;
 		}
@@ -100,18 +104,18 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 		QueuedCrossServerRPCs.Add(CommandOp.entity_id, TArray<FCrossServerRPCParams>());
 	}
 
-	RPCGuidsInFlight.Add(Params.Payload.UniqueId);
-	QueuedCrossServerRPCs[CommandOp.entity_id].Add(MoveTemp(Params));
+	RPCGuidsInFlight.Add(Params.GetValue().Payload.Id.GetValue());
+	QueuedCrossServerRPCs[CommandOp.entity_id].Add(MoveTemp(Params.GetValue()));
 }
 
 bool CrossServerRPCHandler::TryExecuteCrossServerRPC(const FCrossServerRPCParams& Params) const
 {
 	if (RPCExecutor->ExecuteCommand(Params))
 	{
-		Coordinator.SendEntityCommandResponse(Params.RequestId,
-											  CommandResponse(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID,
-															  SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID),
-											  Params.SpanId);
+		Coordinator->SendEntityCommandResponse(Params.RequestId,
+											   CommandResponse(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID,
+															   SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID),
+											   Params.SpanId);
 		return true;
 	}
 
@@ -120,11 +124,27 @@ bool CrossServerRPCHandler::TryExecuteCrossServerRPC(const FCrossServerRPCParams
 
 void CrossServerRPCHandler::DropQueueForEntity(const Worker_EntityId_Key EntityId)
 {
-	for (const auto& Command : QueuedCrossServerRPCs[EntityId])
+	TArray<FCrossServerRPCParams>* Params = QueuedCrossServerRPCs.Find(EntityId);
+	if (Params == nullptr)
 	{
-		RPCGuidsInFlight.Remove(Command.Payload.UniqueId);
+		return;
+	}
+
+	for (const auto& Command : *Params)
+	{
+		RPCGuidsInFlight.Remove(Command.Payload.Id.GetValue());
 	}
 
 	QueuedCrossServerRPCs.Remove(EntityId);
+}
+
+int32 CrossServerRPCHandler::GetRPCGuidsInFlightCount() const
+{
+	return RPCGuidsInFlight.Num();
+}
+
+int32 CrossServerRPCHandler::GetRPCsToDeleteCount() const
+{
+	return RPCsToDelete.Num();
 }
 } // namespace SpatialGDK

@@ -13,13 +13,11 @@ class RPCExecutor : public RPCExecutorInterface
 public:
 	RPCExecutor(USpatialNetDriver* NetDriver);
 
-	virtual FCrossServerRPCParams TryRetrieveCrossServerRPCParams(const Worker_Op& Op) override;
+	virtual TOptional<FCrossServerRPCParams> TryRetrieveCrossServerRPCParams(const Worker_Op& Op) override;
 	virtual bool ExecuteCommand(const FCrossServerRPCParams& Params) override;
 
 private:
 	USpatialNetDriver* NetDriver;
-
-	FCrossServerRPCParams CreateInvalidParams();
 };
 
 } // namespace SpatialGDK
