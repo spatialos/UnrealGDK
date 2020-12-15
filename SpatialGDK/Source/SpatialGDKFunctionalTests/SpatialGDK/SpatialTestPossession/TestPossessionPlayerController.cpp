@@ -2,23 +2,45 @@
 
 #include "TestPossessionPlayerController.h"
 #include "Engine/World.h"
+#include "EngineClasses/SpatialPossession.h"
+#include "Utils/SpatialStatics.h"
 
-ATestPossessionPlayerController::ATestPossessionPlayerController() {}
+DEFINE_LOG_CATEGORY(LogTestPossessionPlayerController);
+
+int32 ATestPossessionPlayerController::OnPossessCalled = 0;
+int32 ATestPossessionPlayerController::OnPossessFailedCalled = 0;
+
+ATestPossessionPlayerController::ATestPossessionPlayerController()
+{
+}
 
 void ATestPossessionPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	OnPossessEvent.Broadcast(InPawn, this);
+	++OnPossessCalled;
+	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s OnPossess(%s) OnPossessCalled:%d"), *GetName(), *InPawn->GetName(), OnPossessCalled);
 }
 
 void ATestPossessionPlayerController::OnUnPossess()
 {
 	Super::OnUnPossess();
-	OnUnPossessEvent.Broadcast(this);
+	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s OnUnPossess()"), *GetName());
 }
 
 void ATestPossessionPlayerController::OnPossessFailed(ERemotePossessFailure FailureReason)
 {
 	Super::OnPossessFailed(FailureReason);
-	OnPossessFailedEvent.Broadcast(FailureReason, this);
+	++OnPossessFailedCalled;
+	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s OnPossessFailed(%d) OnPossessFailedCalled:%d"), *GetName(), FailureReason, OnPossessFailedCalled);
+}
+
+void ATestPossessionPlayerController::RemotePossess_Implementation(APawn* InPawn)
+{
+	USpatialPossession::RemotePossess(this, InPawn);
+}
+
+void ATestPossessionPlayerController::ResetCalledCounter()
+{
+	OnPossessCalled = 0;
+	OnPossessFailedCalled = 0;
 }

@@ -21,18 +21,12 @@ public:
 
 private:
 	ATestPossessionPawn* GetPawn();
+
 	void CreateController(int Index, FVector Position);
+
 	void CheckControllerHasAuthority(int Index);
-	void RemotePossess(int Index);
 
-	UFUNCTION()
-	void OnPossess(APawn* Pawn, APlayerController* Controller);
-
-	UFUNCTION()
-	void OnUnPossess(APlayerController* Controller);
-
-	UFUNCTION()
-	void OnPossessFailed(ERemotePossessFailure FailureReason, APlayerController* Controller);
+	void AddWaitStep(const FWorkerDefinition& Worker);
 
 	float WaitTime;
 	const static float MaxWaitTime;

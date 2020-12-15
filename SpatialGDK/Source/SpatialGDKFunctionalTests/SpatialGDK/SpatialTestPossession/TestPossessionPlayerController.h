@@ -5,9 +5,7 @@
 #include "CoreMinimal.h"
 #include "TestPossessionPlayerController.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPossess, APawn*, Pawn, APlayerController*, Controller);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPossessFailed, ERemotePossessFailure, FailureReason, APlayerController*, Controller);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUnPossess, APlayerController*, Controller);
+DECLARE_LOG_CATEGORY_EXTERN(LogTestPossessionPlayerController, Log, All);
 
 UCLASS()
 class ATestPossessionPlayerController : public APlayerController
@@ -19,13 +17,15 @@ private:
 	virtual void OnUnPossess() override;
 
 	virtual void OnPossessFailed(ERemotePossessFailure FailureReason) override;
-
 public:
 	ATestPossessionPlayerController();
 
-	FOnPossess OnPossessEvent;
+	UFUNCTION(Server, Reliable)
+	void RemotePossess(APawn* InPawn);
 
-	FOnUnPossess OnUnPossessEvent;
+	static void ResetCalledCounter();
 
-	FOnPossessFailed OnPossessFailedEvent;
+	static int32 OnPossessCalled;
+
+	static int32 OnPossessFailedCalled;
 };
