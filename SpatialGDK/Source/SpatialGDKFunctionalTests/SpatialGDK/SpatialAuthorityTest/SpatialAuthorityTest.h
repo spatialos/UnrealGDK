@@ -48,6 +48,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Default")
 	ASpatialAuthorityTestReplicatedActor* LevelReplicatedActor;
 
+	UPROPERTY(EditAnywhere, Category = "Default")
+	ASpatialAuthorityTestReplicatedActor* LevelReplicatedActorOnBorder;
+
 	// This needs to be a position that belongs to Server 1.
 	UPROPERTY(EditAnywhere, Category = "Default")
 	FVector Server1Position;
