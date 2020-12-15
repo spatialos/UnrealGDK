@@ -140,18 +140,15 @@ public class SpatialGDK : ModuleRules
             }
 
             WorkerImportLib = Path.Combine(WorkerLibraryDir, WorkerImportLib);
-        }
+            PublicRuntimeLibraryPaths.Add(WorkerLibraryDir);
 
-        PublicAdditionalLibraries.Add(WorkerImportLib);
-
-        if (Target.Platform == UnrealTargetPlatform.Android)
-        {
-            PublicLibraryPaths.AddRange(WorkerLibraryPaths);
         }
         else
         {
-            PublicRuntimeLibraryPaths.Add(WorkerLibraryDir);
+            PublicLibraryPaths.AddRange(WorkerLibraryPaths);
         }
+
+        PublicAdditionalLibraries.Add(WorkerImportLib);
 
         // Detect existence of trace library, if present add preprocessor
         string TraceStaticLibPath = "";
