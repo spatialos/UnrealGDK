@@ -24,6 +24,7 @@
 #include "LevelEditor.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "Sound/SoundBase.h"
 #include "Widgets/DeclarativeSyntaxSupport.h"
 #include "Widgets/Input/SEditableTextBox.h"
@@ -1378,7 +1379,11 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 			}
 		}
 
-		FGlobalTabmanager::Get()->InvokeTab(FName(TEXT("OutputLog")));
+#if ENGINE_MINOR_VERSION >= 26
+		FGlobalTabmanager::Get()->TryInvokeTab(FName(TEXT("OutputLog")));
+#else
+		FGlobalTabmanager::Get()->InvokeTab(FName(TEXT("OutputLog")));			FGlobalTabmanager::Get()->InvokeTab(FName(TEXT("OutputLog")));
+#endif
 		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
 		PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
 		PackageAssembly->BuildAndUploadAssembly(CloudDeploymentConfiguration);
