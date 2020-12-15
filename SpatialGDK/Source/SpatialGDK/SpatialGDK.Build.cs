@@ -13,7 +13,7 @@ public class SpatialGDK : ModuleRules
 {
     public SpatialGDK(ReadOnlyTargetRules Target) : base(Target)
     {
-		bLegacyPublicIncludePaths = false;
+        bLegacyPublicIncludePaths = false;
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 #pragma warning disable 0618
         bFasterWithoutUnity = true;             // Deprecated in 4.24, replace with bUseUnity = false; once we drop support for 4.23
@@ -140,10 +140,15 @@ public class SpatialGDK : ModuleRules
             }
 
             WorkerImportLib = Path.Combine(WorkerLibraryDir, WorkerImportLib);
+            PublicRuntimeLibraryPaths.Add(WorkerLibraryDir);
+
+        }
+        else
+        {
+            PublicLibraryPaths.AddRange(WorkerLibraryPaths);
         }
 
         PublicAdditionalLibraries.Add(WorkerImportLib);
-        PublicRuntimeLibraryPaths.Add(WorkerLibraryDir);
 
         // Detect existence of trace library, if present add preprocessor
         string TraceStaticLibPath = "";
