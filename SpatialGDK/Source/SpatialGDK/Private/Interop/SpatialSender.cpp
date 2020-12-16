@@ -95,13 +95,13 @@ struct FChangeListPropertyIterator
 } // namespace
 
 FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId,
-										   Schema_FieldId InRPCIndex, TOptional<uint64> InId, const TArray<uint8>& InPayload, int InRetryIndex,
-										   const FSpatialGDKSpanId& InSpanId)
+										   Schema_FieldId InRPCIndex, TOptional<uint64> InId, const TArray<uint8>& InPayload,
+										   int InRetryIndex, const FSpatialGDKSpanId& InSpanId)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, ComponentId(InComponentId)
 	, RPCIndex(InRPCIndex)
-, Id(InId)
+	, Id(InId)
 	, Payload(InPayload)
 	, Attempts(1)
 	, RetryIndex(InRetryIndex)
@@ -726,8 +726,8 @@ void USpatialSender::SendCrossServerRPC(UObject* TargetObject, UFunction* Functi
 	{
 		UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
 			   EntityId, CommandRequest.component_id, *Function->GetName());
-		Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index, Payload.Id,
-																					Payload.PayloadData, 0, SpanId));
+		Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index,
+																					Payload.Id, Payload.PayloadData, 0, SpanId));
 	}
 	else
 	{

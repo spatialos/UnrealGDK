@@ -186,13 +186,17 @@ struct FEntityCommandRetryHandlerImpl
 		check(CanHandleOp(Op));
 		switch (static_cast<Worker_StatusCode>(Op.op.command_response.status_code))
 		{
+
 		case WORKER_STATUS_CODE_TIMEOUT:
+			UE_LOG(LogTemp, Warning, TEXT("timeout"))
 			RetryData.RetryAndBackOff();
 			break;
 		case WORKER_STATUS_CODE_AUTHORITY_LOST:
+			UE_LOG(LogTemp, Warning, TEXT("authority lost"))
 			RetryData.RetryWithoutBackOff();
 			break;
 		default:
+			UE_LOG(LogTemp, Warning, TEXT("default %d"), Op.op.command_response.status_code)
 			RetryData.StopRetries();
 		}
 	}

@@ -31,10 +31,10 @@ void CrossServerRPCHandler::ProcessMessages(const TArray<Worker_Op>& WorkerMessa
 
 	ProcessPendingCrossServerRPCs();
 
-	while (RPCsToDelete.Num() > 0 && RPCsToDelete.HeapTop().Key < CurrentTime)
-	{
-		RPCsToDelete.HeapPopDiscard();
-	}
+	 while (RPCsToDelete.Num() > 0 && RPCsToDelete.HeapTop().Key < CurrentTime)
+	 {
+	 	RPCsToDelete.HeapPopDiscard();
+	 }
 }
 
 void CrossServerRPCHandler::ProcessPendingCrossServerRPCs()
