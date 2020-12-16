@@ -204,11 +204,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverAddComponent);
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddComponent component ID: %u entity ID: %lld"), Op.data.component_id, Op.entity_id);
 
-	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
-	{
-		QueueAddComponentOpForAsyncLoad(Op);
-		return;
-	}
+	const bool bWaitingForAsyncLoad = IsEntityWaitingForAsyncLoad(Op.entity_id);
 
 	if (HasEntityBeenRequestedForDelete(Op.entity_id))
 	{
@@ -221,6 +217,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return RemoveComponentOp.entity_id == Op.entity_id && RemoveComponentOp.component_id == Op.data.component_id;
 	});
 
+	// Handle the first batch of components which do not need queuing when doing async loading.
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::METADATA_COMPONENT_ID:
@@ -266,6 +263,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		// that the received component data will get dropped (likely outdated data), and is
 		// something we do not wish to happen for ready actor (likely new data received through
 		// a component refresh on authority delegation).
+		if (!bWaitingForAsyncLoad)
 		{
 			AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id));
 			if (EntityActor == nullptr || !EntityActor->IsActorReady())
@@ -274,6 +272,16 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			}
 		}
 		return;
+	}
+
+	if (bWaitingForAsyncLoad)
+	{
+		QueueAddComponentOpForAsyncLoad(Op);
+		return;
+	}
+
+	switch (Op.data.component_id)
+	{
 	case SpatialConstants::WORKER_COMPONENT_ID:
 		if (NetDriver->IsServer() && !WorkerConnectionEntities.Contains(Op.entity_id))
 		{
