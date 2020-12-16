@@ -16,6 +16,19 @@
 #include "TestPossessionPlayerController.h"
 #include "Utils/SpatialStatics.h"
 
+/**
+ * This test tests multi clients possession over 1 pawns.
+ *
+ * The test includes a 2x2 gridbase servers and at least two client workers. The client workers begin with a player controller and their default pawns,
+ * which they initially possess. The flow is as follows:
+ *  - Setup:
+ *    - Specify `GameMode Override` as ACrossServerPossessionGameMode
+ *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
+ *	  - Set `Num Required Clients` as 3
+ *  - Test:
+ *    - One of Controller possessed the Pawn and others failed
+ */
+
 const float ACrossServerMultiPossessionTest::MaxWaitTime = 2.0f;
 
 ACrossServerMultiPossessionTest::ACrossServerMultiPossessionTest()
@@ -118,7 +131,9 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 			AssertTrue(Pawn->GetController() != nullptr, TEXT("GetController of Pawn to check if possessed on server"), Pawn);
 
 			AssertTrue(ATestPossessionPlayerController::OnPossessCalled == 1, TEXT("OnPossess should be called 1 time"));
-			AssertTrue(ATestPossessionPlayerController::OnPossessFailedCalled == 2, TEXT("OnPossessFailed should be called 2 times"));
+			int OnPossessFailedCalled = GetNumRequiredClients() - 1;
+			AssertTrue(ATestPossessionPlayerController::OnPossessFailedCalled == OnPossessFailedCalled,
+					   FString::Printf(TEXT("OnPossessFailed should be called %d times"), OnPossessFailedCalled));
 		}
 		else
 		{

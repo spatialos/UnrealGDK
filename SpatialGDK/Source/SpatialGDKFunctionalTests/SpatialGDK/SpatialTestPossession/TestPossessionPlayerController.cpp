@@ -10,15 +10,14 @@ DEFINE_LOG_CATEGORY(LogTestPossessionPlayerController);
 int32 ATestPossessionPlayerController::OnPossessCalled = 0;
 int32 ATestPossessionPlayerController::OnPossessFailedCalled = 0;
 
-ATestPossessionPlayerController::ATestPossessionPlayerController()
-{
-}
+ATestPossessionPlayerController::ATestPossessionPlayerController() {}
 
 void ATestPossessionPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	++OnPossessCalled;
-	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s OnPossess(%s) OnPossessCalled:%d"), *GetName(), *InPawn->GetName(), OnPossessCalled);
+	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s OnPossess(%s) OnPossessCalled:%d"), *GetName(), *InPawn->GetName(),
+		   OnPossessCalled);
 }
 
 void ATestPossessionPlayerController::OnUnPossess()
@@ -31,7 +30,8 @@ void ATestPossessionPlayerController::OnPossessFailed(ERemotePossessFailure Fail
 {
 	Super::OnPossessFailed(FailureReason);
 	++OnPossessFailedCalled;
-	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s OnPossessFailed(%d) OnPossessFailedCalled:%d"), *GetName(), FailureReason, OnPossessFailedCalled);
+	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s OnPossessFailed(%d) OnPossessFailedCalled:%d"), *GetName(), FailureReason,
+		   OnPossessFailedCalled);
 }
 
 void ATestPossessionPlayerController::RemotePossess_Implementation(APawn* InPawn)
