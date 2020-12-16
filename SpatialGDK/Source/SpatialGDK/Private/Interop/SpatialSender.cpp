@@ -543,14 +543,8 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, con
 
 	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params);
 
-	TOptional<uint64> Id;
-	if (Type == ERPCType::CrossServer)
-	{
-		Id = rand();
+	TOptional<uint64> Id = rand();
 		UE_LOG(LogSpatialSender, Warning, TEXT("RANDOM NUMBER: %llu %llu"), Id.GetValue(), rand());
-	}
-
-
 
 #if TRACE_LIB_ACTIVE
 	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, Id, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()),
