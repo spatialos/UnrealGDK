@@ -546,8 +546,11 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, con
 	TOptional<uint64> Id;
 	if (Type == ERPCType::CrossServer)
 	{
-		Id = FMath::RandRange(static_cast<int64>(0), static_cast<int64>(INT64_MAX));
+		Id = rand();
+		UE_LOG(LogSpatialSender, Warning, TEXT("RANDOM NUMBER: %llu %llu"), Id.GetValue(), rand());
 	}
+
+
 
 #if TRACE_LIB_ACTIVE
 	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, Id, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()),
