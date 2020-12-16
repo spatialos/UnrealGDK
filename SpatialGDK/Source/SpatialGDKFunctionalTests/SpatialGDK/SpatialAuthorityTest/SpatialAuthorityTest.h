@@ -20,6 +20,10 @@ public:
 
 	virtual void PrepareTest() override;
 
+	void CheckDoesNotMigrate(const int ServerId);
+
+	void CheckMigration(const int StartServerId, const int EndServerId);
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void FinishStep() override
