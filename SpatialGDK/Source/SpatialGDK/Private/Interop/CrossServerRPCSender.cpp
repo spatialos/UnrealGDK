@@ -24,7 +24,7 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef InTargetObjectRef,
 
 	CommandRequest CommandRequest(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID,
 								  SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
-	RPCPayload::WriteToSchemaObject(CommandRequest.GetRequestObject(), InTargetObjectRef.Offset, Info.Index, FMath::RandHelper(INT_MAX),
+	RPCPayload::WriteToSchemaObject(CommandRequest.GetRequestObject(), InTargetObjectRef.Offset, Info.Index, InPayload.Id,
 									InPayload.PayloadData.GetData(), InPayload.PayloadData.Num());
 	if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
 	{
