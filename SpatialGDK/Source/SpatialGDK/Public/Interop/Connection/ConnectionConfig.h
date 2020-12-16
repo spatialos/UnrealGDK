@@ -39,8 +39,7 @@ struct FConnectionConfig
 		const TCHAR* CommandLine = FCommandLine::Get();
 
 		FParse::Value(CommandLine, TEXT("workerId"), WorkerId);
-		//FParse::Bool(CommandLine, TEXT("enableWorkerSDKProtocolLogging"), EnableWorkerSDKProtocolLogging);
-		EnableWorkerSDKProtocolLogging = true;
+		FParse::Bool(CommandLine, TEXT("enableWorkerSDKProtocolLogging"), EnableWorkerSDKProtocolLogging);
 		FParse::Bool(CommandLine, TEXT("enableWorkerSDKOpLogging"), EnableWorkerSDKOpLogging);
 		FParse::Value(CommandLine, TEXT("workerSDKLogPrefix"), WorkerSDKLogPrefix);
 		// TODO: When upgrading to Worker SDK 14.6.2, remove this parameter and set it to 0 for infinite file size
@@ -99,7 +98,8 @@ private:
 		}
 		else if (!LogLevelString.IsEmpty())
 		{
-			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
+			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."),
+				   *LogLevelString);
 		}
 	}
 
