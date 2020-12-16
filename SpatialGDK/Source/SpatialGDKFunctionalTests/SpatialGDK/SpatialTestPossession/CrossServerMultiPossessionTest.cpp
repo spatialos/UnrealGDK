@@ -19,8 +19,9 @@
 /**
  * This test tests multi clients possession over 1 pawns.
  *
- * The test includes a 2x2 gridbase servers and at least two client workers. The client workers begin with a player controller and their default pawns,
- * which they initially possess. The flow is as follows:
+ * The test includes 2x2 gridbase servers and at least two client workers.
+ * The client workers begin with a player controller and their default pawns, which they initially possess.
+ * The flow is as follows:
  *  - Setup:
  *    - Specify `GameMode Override` as ACrossServerPossessionGameMode
  *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
