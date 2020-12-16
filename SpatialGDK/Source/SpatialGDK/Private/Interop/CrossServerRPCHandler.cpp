@@ -74,6 +74,8 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 
 	if (!Params.IsSet())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("something went wrong"));
+
 		Coordinator->SendEntityCommandFailure(CommandOp.request_id, TEXT("Failed to parse cross server RPC"),
 											  FSpatialGDKSpanId(Op.span_id));
 		return;
@@ -105,6 +107,8 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 		QueuedCrossServerRPCs.Add(CommandOp.entity_id, TArray<FCrossServerRPCParams>());
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("queued %lld"), Params.GetValue().Payload.Id.GetValue());
+
 	RPCGuidsInFlight.Add(Params.GetValue().Payload.Id.GetValue());
 	QueuedCrossServerRPCs[CommandOp.entity_id].Add(MoveTemp(Params.GetValue()));
 }
@@ -113,6 +117,8 @@ bool CrossServerRPCHandler::TryExecuteCrossServerRPC(const FCrossServerRPCParams
 {
 	if (RPCExecutor->ExecuteCommand(Params))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("processed %lld"), Params.Payload.Id.GetValue());
+
 		Coordinator->SendEntityCommandResponse(Params.RequestId,
 											   CommandResponse(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID,
 															   SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID),

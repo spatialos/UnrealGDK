@@ -19,6 +19,8 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef InTargetObjectRef,
 	if (Function == nullptr || TargetObject == nullptr || InTargetObjectRef.Entity == SpatialConstants::INVALID_ENTITY_ID
 		|| Info.Type != ERPCType::CrossServer)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("something went wrong 2"));
+
 		return;
 	}
 
@@ -32,7 +34,7 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef InTargetObjectRef,
 	}
 	else
 	{
-		Coordinator->SendEntityCommandRequest(InTargetObjectRef.Entity, MoveTemp(CommandRequest), TOptional<uint32>(), SpanId);
+		Coordinator->SendEntityCommandRequest(InTargetObjectRef.Entity, MoveTemp(CommandRequest), RETRY_MAX_TIMES, SpanId);
 	}
 
 #if !UE_BUILD_SHIPPING
