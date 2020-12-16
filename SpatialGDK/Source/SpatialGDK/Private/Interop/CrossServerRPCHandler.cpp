@@ -50,7 +50,7 @@ void CrossServerRPCHandler::ProcessPendingCrossServerRPCs()
 			}
 
 			RPCGuidsInFlight.Remove(Command.Payload.Id.GetValue());
-			RPCsToDelete.HeapPush(TTuple<double, uint32>(CurrentTime + GuidTimeout, Command.Payload.Id.GetValue()));
+			RPCsToDelete.HeapPush(TTuple<double, uint32>(CurrentTime + CrossServerRPCGuidTimeout, Command.Payload.Id.GetValue()));
 			++ProcessedRPCs;
 		}
 
@@ -94,6 +94,7 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 		// No Command Requests of this type queued so far. Let's try to process it:
 		if (TryExecuteCrossServerRPC(Params.GetValue()))
 		{
+			RPCsToDelete.HeapPush(TTuple<double, uint32>(CurrentTime + CrossServerRPCGuidTimeout, Params.GetValue().Payload.Id.GetValue()));
 			return;
 		}
 	}

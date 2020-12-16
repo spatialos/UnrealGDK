@@ -12,6 +12,8 @@ namespace SpatialGDK
 DECLARE_DELEGATE_RetVal_OneParam(bool, FProcessCrossServerRPC, const FCrossServerRPCParams&);
 DECLARE_DELEGATE_RetVal_OneParam(FCrossServerRPCParams, FTryRetrieveCrossServerRPCParams, const Worker_CommandRequestOp&);
 
+static double CrossServerRPCGuidTimeout = 5.f;
+
 class CrossServerRPCHandler
 {
 public:
@@ -28,8 +30,6 @@ private:
 	TUniquePtr<RPCExecutorInterface> RPCExecutor;
 	TSet<uint32> RPCGuidsInFlight;
 	TArray<TTuple<double, uint32>> RPCsToDelete;
-
-	const double GuidTimeout = 5.f;
 
 	double CurrentTime = 0.f;
 	TMap<Worker_EntityId_Key, TArray<FCrossServerRPCParams>> QueuedCrossServerRPCs;
