@@ -2,9 +2,9 @@
 
 #include "SpatialTestRemotePossession.h"
 #include "Containers/Array.h"
-#include "GameFramework/PlayerController.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPossession.h"
+#include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "TestPossessionPawn.h"
@@ -30,7 +30,6 @@ ASpatialTestRemotePossession::ASpatialTestRemotePossession()
 {
 	Author = "Jay";
 	Description = TEXT("Test Actor Remote Possession");
-
 }
 
 void ASpatialTestRemotePossession::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -44,7 +43,7 @@ void ASpatialTestRemotePossession::PrepareTest()
 {
 	Super::PrepareTest();
 
-	static FVector start[3] = { FVector{30.0f, 30.0f, 20.0f}, FVector{-30.0f, 30.0f, 20.0f}, FVector{-30.0f, -30.0f, 20.0f} };
+	static FVector start[3] = { FVector{ 30.0f, 30.0f, 20.0f }, FVector{ -30.0f, 30.0f, 20.0f }, FVector{ -30.0f, -30.0f, 20.0f } };
 	AddStep(TEXT("First step"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float) {
 		int i = 0;
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
@@ -53,7 +52,8 @@ void ASpatialTestRemotePossession::PrepareTest()
 			{
 				continue;
 			}
-			ATestPossessionPawn* TestPawn = GetWorld()->SpawnActor<ATestPossessionPawn>(start[i % 3], FRotator::ZeroRotator, FActorSpawnParameters());
+			ATestPossessionPawn* TestPawn =
+				GetWorld()->SpawnActor<ATestPossessionPawn>(start[i % 3], FRotator::ZeroRotator, FActorSpawnParameters());
 			OriginalPawns.Add(TestPawn);
 			++i;
 			RegisterAutoDestroyActor(TestPawn);
@@ -74,7 +74,6 @@ void ASpatialTestRemotePossession::PrepareTest()
 	});
 
 	AddStep(TEXT("Check"), FWorkerDefinition::Server(2), nullptr, nullptr, [this](float) {
-
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 		{
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
@@ -93,7 +92,6 @@ void ASpatialTestRemotePossession::PrepareTest()
 	});
 
 	AddStep(TEXT("Check"), FWorkerDefinition::Server(3), nullptr, nullptr, [this](float) {
-
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 		{
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
@@ -113,6 +111,5 @@ void ASpatialTestRemotePossession::PrepareTest()
 		}
 
 		FinishStep();
-		});
-
+	});
 }
