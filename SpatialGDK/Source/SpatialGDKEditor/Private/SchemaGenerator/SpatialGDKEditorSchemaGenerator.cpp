@@ -1450,8 +1450,6 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 template <class T>
 void SanitizeClassMap(TMap<FString, T>& Map, const TSet<FName>& ValidClassNames)
 {
-	TSet<FString> ItemsToRemove;
-
 	for (auto Item = Map.CreateIterator(); Item; ++Item)
 	{
 		FString SanitizeName = Item->Key;
@@ -1474,14 +1472,14 @@ void SpatialGDKSanitizeGeneratedSchema()
 	TSet<FName> ValidClassNames;
 	for (const auto& Asset : Assets)
 	{
-		ValidClassNames.Add(FName(Asset.ObjectPath.ToString()));
+		ValidClassNames.Add(FName(*Asset.ObjectPath.ToString()));
 	}
 
 	TArray<UObject*> AllClasses;
 	GetObjectsOfClass(UClass::StaticClass(), AllClasses);
 	for (const auto& SupportedClass : GetAllSupportedClasses(AllClasses))
 	{
-		ValidClassNames.Add(FName(SupportedClass->GetPathName()));
+		ValidClassNames.Add(FName(*SupportedClass->GetPathName()));
 	}
 
 	SanitizeClassMap(ActorClassPathToSchema, ValidClassNames);
