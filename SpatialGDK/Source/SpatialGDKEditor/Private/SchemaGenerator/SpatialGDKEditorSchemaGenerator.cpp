@@ -1452,20 +1452,15 @@ void SanitizeClassMap(TMap<FString, T>& Map, const TSet<FName>& ValidClassNames)
 {
 	TSet<FString> ItemsToRemove;
 
-	for (const auto& Item : Map)
+	for (auto Item = Map.CreateIterator(); Item; ++Item)
 	{
-		FString SanitizeName = Item.Key;
+		FString SanitizeName = Item->Key;
 		SanitizeName.RemoveFromEnd(TEXT("_C"));
 		if (!ValidClassNames.Contains(FName(SanitizeName)))
 		{
-			ItemsToRemove.Add(Item.Key);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Found stale class (%s), removing from schema database."), *Item->Key);
+			Item.RemoveCurrent();
 		}
-	}
-
-	for (const auto& Item : ItemsToRemove)
-	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Found stale class (%s), removing from schema database."), *Item);
-		Map.Remove(Item);
 	}
 }
 
