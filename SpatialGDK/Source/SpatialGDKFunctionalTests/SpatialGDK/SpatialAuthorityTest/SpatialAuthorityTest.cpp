@@ -125,9 +125,9 @@ void ASpatialAuthorityTest::PrepareTest()
 		AddStep(
 			TEXT("Replicated Level Actor On Border - Server 4 Has Authority"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
-					// Since this actor already was in level and we wait for timer in the previous step, we don't need to wait
-					// in this one again.
-					CheckDoesNotMigrate(LevelReplicatedActorOnBorder, 4);
+				// Since this actor already was in level and we wait for timer in the previous step, we don't need to wait
+				// in this one again.
+				CheckDoesNotMigrate(LevelReplicatedActorOnBorder, 4);
 			},
 			5.0f);
 	}
@@ -145,7 +145,7 @@ void ASpatialAuthorityTest::PrepareTest()
 				{
 					// Note: Non-replicated actors never get OnAuthorityGained() called.
 					if (VerifyTestActor(LevelActor, ESpatialHasAuthority::ServerAuth, LocalWorkerDefinition.Id, LocalWorkerDefinition.Id, 0,
-										0,0))
+										0, 0))
 					{
 						FinishStep();
 					}
@@ -356,7 +356,7 @@ void ASpatialAuthorityTest::PrepareTest()
 			TEXT("Non-replicated Dynamic Actor Client - Verify Authority on Client 1"), FWorkerDefinition::Client(1), nullptr, nullptr,
 			[this](float DeltaTime) {
 				// Not replicated so OnAuthorityGained() is not called.
-				if (VerifyTestActor(DynamicNonReplicatedActor, ESpatialHasAuthority::ClientAuth, 1, 1, 0, 0,0))
+				if (VerifyTestActor(DynamicNonReplicatedActor, ESpatialHasAuthority::ClientAuth, 1, 1, 0, 0, 0))
 				{
 					FinishStep();
 				}
@@ -507,12 +507,12 @@ void ASpatialAuthorityTest::CheckDoesNotMigrate(ASpatialAuthorityTestActor* Acto
 		{
 			if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && LocalWorkerDefinition.Id == ServerId)
 			{
-				if (VerifyTestActor(Actor, ESpatialHasAuthority::ServerAuth, ServerId, ServerId, 1, 0,1))
+				if (VerifyTestActor(Actor, ESpatialHasAuthority::ServerAuth, ServerId, ServerId, 1, 0, 1))
 				{
 					FinishStep();
 				}
 			}
-			else if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && Actor->bNetStartup)  
+			else if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && Actor->bNetStartup)
 			{
 				// Startup actors receive OnActorReady on non-auth servers
 				if (VerifyTestActor(Actor, ESpatialHasAuthority::ServerNonAuth, 0, 0, 0, 0, 1))
@@ -520,7 +520,7 @@ void ASpatialAuthorityTest::CheckDoesNotMigrate(ASpatialAuthorityTestActor* Acto
 					FinishStep();
 				}
 			}
-			else if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server) 
+			else if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 			{
 				// Dynamic actors do not receive OnActorReady on non-auth servers
 				if (VerifyTestActor(Actor, ESpatialHasAuthority::ServerNonAuth, 0, 0, 0, 0, 0))
@@ -539,7 +539,7 @@ void ASpatialAuthorityTest::CheckDoesNotMigrate(ASpatialAuthorityTestActor* Acto
 	}
 	else // Clients
 	{
-		if (VerifyTestActor(Actor, ESpatialHasAuthority::ClientNonAuth, 0, 0, 0, 0,0))
+		if (VerifyTestActor(Actor, ESpatialHasAuthority::ClientNonAuth, 0, 0, 0, 0, 0))
 		{
 			FinishStep();
 		}
@@ -557,7 +557,7 @@ void ASpatialAuthorityTest::CheckMigration(int StartServerId, int EndServerId)
 			if (LocalWorkerDefinition.Id == StartServerId)
 			{
 				// Note: An Actor always ticks on the spawning Worker before migrating.
-				if (VerifyTestActor(DynamicReplicatedActor, ESpatialHasAuthority::ServerNonAuth, StartServerId, StartServerId, 1, 1,1))
+				if (VerifyTestActor(DynamicReplicatedActor, ESpatialHasAuthority::ServerNonAuth, StartServerId, StartServerId, 1, 1, 1))
 				{
 					FinishStep();
 				}
@@ -572,7 +572,7 @@ void ASpatialAuthorityTest::CheckMigration(int StartServerId, int EndServerId)
 			}
 			else
 			{
-				if (VerifyTestActor(DynamicReplicatedActor, ESpatialHasAuthority::ServerNonAuth, 0, 0, 0, 0,0))
+				if (VerifyTestActor(DynamicReplicatedActor, ESpatialHasAuthority::ServerNonAuth, 0, 0, 0, 0, 0))
 				{
 					FinishStep();
 				}
@@ -580,7 +580,7 @@ void ASpatialAuthorityTest::CheckMigration(int StartServerId, int EndServerId)
 		}
 		else // Support for Native / Single Worker.
 		{
-			if (VerifyTestActor(DynamicReplicatedActor, ESpatialHasAuthority::ServerAuth, 1, 1, 1, 0,1))
+			if (VerifyTestActor(DynamicReplicatedActor, ESpatialHasAuthority::ServerAuth, 1, 1, 1, 0, 1))
 			{
 				FinishStep();
 			}
@@ -588,7 +588,7 @@ void ASpatialAuthorityTest::CheckMigration(int StartServerId, int EndServerId)
 	}
 	else // Clients.
 	{
-		if (VerifyTestActor(DynamicReplicatedActor, ESpatialHasAuthority::ClientNonAuth, 0, 0, 0, 0,0))
+		if (VerifyTestActor(DynamicReplicatedActor, ESpatialHasAuthority::ClientNonAuth, 0, 0, 0, 0, 0))
 		{
 			FinishStep();
 		}
@@ -642,7 +642,8 @@ void ASpatialAuthorityTest::CrossServerNotifyHadAuthorityOverGameState_Implement
 }
 
 bool ASpatialAuthorityTest::VerifyTestActor(ASpatialAuthorityTestActor* Actor, ESpatialHasAuthority ExpectedAuthority,
-											int AuthorityOnBeginPlay, int AuthorityOnTick, int NumAuthorityGains, int NumAuthorityLosses, int NumActorReady)
+											int AuthorityOnBeginPlay, int AuthorityOnTick, int NumAuthorityGains, int NumAuthorityLosses,
+											int NumActorReady)
 {
 	if (!IsValid(Actor) || !Actor->HasActorBegunPlay())
 	{
