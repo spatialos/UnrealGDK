@@ -2,15 +2,16 @@
 
 #pragma once
 
+#include "Interop/CrossServerRPCHandler.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
+#include "Interop/CrossServerRPCSender.h"
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialOutputDevice.h"
 #include "Interop/SpatialSnapshotManager.h"
-#include "SpatialView/OpList/OpList.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialBasicAwaiter.h"
 
@@ -20,6 +21,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
+#include "Interop/RPCExecutorInterface.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
@@ -237,6 +239,8 @@ private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
+	TUniquePtr<SpatialGDK::CrossServerRPCSender> CrossServerRPCSender;
+	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CrossServerRPCHandler;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;

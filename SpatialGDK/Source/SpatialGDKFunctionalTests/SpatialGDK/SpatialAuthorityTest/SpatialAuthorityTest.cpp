@@ -8,8 +8,9 @@
 #include "SpatialAuthorityTestGameMode.h"
 #include "SpatialAuthorityTestGameState.h"
 #include "SpatialAuthorityTestReplicatedActor.h"
-#include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDK/Public/EngineClasses/SpatialNetDriver.h"
+#include "SpatialGDK/Public/Utils/SpatialStatics.h"
+#include "SpatialFunctionalTestFlowController.h"
 
 /** This Test is meant to check that HasAuthority() rules are respected on different occasions. We check
  * in BeginPlay and Tick, and in the following use cases:
@@ -23,6 +24,7 @@
  *		- dynamic replicated actor spawned on border from server 3
  *		- dynamic replicated actor spawned on border from server 4
  *		- dynamic non-replicated actor spawned on border
+ *		- non-replicated actor spawned on client
  *		- GameMode (which only exists on Servers)
  *		- GameState
  * Keep in mind that we're assuming a 2x2 Grid Load-Balancing Strategy, otherwise the ownership of
@@ -50,7 +52,7 @@ void ASpatialAuthorityTest::PrepareTest()
 	NonReplicatedVerifyAuthorityStepDefinition.TimeLimit = 5.0f;
 	NonReplicatedVerifyAuthorityStepDefinition.NativeStartEvent.BindLambda([this]() {
 		// Not replicated so OnAuthorityGained() is not called.
-		if (VerifyTestActor(DynamicNonReplicatedActor, 1, 1, 0, 0))
+		if (VerifyTestActor(DynamicNonReplicatedActor, ESpatialHasAuthority::ServerAuth, 1, 1, 0, 0))
 		{
 			FinishStep();
 		}
@@ -58,7 +60,7 @@ void ASpatialAuthorityTest::PrepareTest()
 
 	FSpatialFunctionalTestStepDefinition NonReplicatedVerifyNonAuthorityStepDefinition(/*bIsNativeDefinition*/ true);
 	NonReplicatedVerifyNonAuthorityStepDefinition.StepName =
-		TEXT("Non-replicated Dynamic Actor - Verify Dynamic Actor doesn't exist on others");
+		TEXT("Non-replicated Dynamic Actor - Verify Dynamic Actor doesn't exist on non authoritative workers");
 	NonReplicatedVerifyNonAuthorityStepDefinition.TimeLimit = 5.0f;
 	NonReplicatedVerifyNonAuthorityStepDefinition.NativeTickEvent.BindLambda([this](float DeltaTime) {
 		const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
@@ -71,27 +73,9 @@ void ASpatialAuthorityTest::PrepareTest()
 			Timer -= DeltaTime;
 			if (Timer <= 0)
 			{
-				int NumNonReplicatedActorsExpected = 1; // The one that is in the Map itself
-				int NumNonReplicatedActorsInLevel = 0;
-				for (TActorIterator<ASpatialAuthorityTestActor> It(GetWorld()); It; ++It)
-				{
-					if (!It->GetIsReplicated())
-					{
-						NumNonReplicatedActorsInLevel++;
-					}
-				}
-
-				if (NumNonReplicatedActorsInLevel == NumNonReplicatedActorsExpected)
-				{
-					FinishStep();
-				}
-				else
-				{
-					FinishTest(EFunctionalTestResult::Failed,
-							   FString::Printf(TEXT("Was expecting only %d non replicated Actors, but found %d"),
-											   NumNonReplicatedActorsExpected, NumNonReplicatedActorsInLevel));
-				}
+				CheckNumActorsInLevel();
 			}
+			
 		}
 	});
 
@@ -109,7 +93,7 @@ void ASpatialAuthorityTest::PrepareTest()
 	ReplicatedDestroyStepDefinition.StepName = TEXT("Replicated Dynamic Actor Spawned On Different Server - Destroy");
 	ReplicatedDestroyStepDefinition.TimeLimit = 5.0f;
 	ReplicatedDestroyStepDefinition.NativeStartEvent.BindLambda([this]() {
-		// Now it's Server 2 destroying, since it has Authority over it.
+		// Destroy to be able to re-run.
 		DynamicReplicatedActor->Destroy();
 		CrossServerSetDynamicReplicatedActor(nullptr);
 		FinishStep();
@@ -131,21 +115,7 @@ void ASpatialAuthorityTest::PrepareTest()
 				Timer -= DeltaTime;
 				if (Timer <= 0)
 				{
-					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
-					if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && LocalWorkerDefinition.Id == 1)
-					{
-						if (VerifyTestActor(LevelReplicatedActor, 1, 1, 1, 0))
-						{
-							FinishStep();
-						}
-					}
-					else
-					{
-						if (VerifyTestActor(LevelReplicatedActor, 0, 0, 0, 0))
-						{
-							FinishStep();
-						}
-					}
+					CheckDoesNotMigrate(LevelReplicatedActor, 1);
 				}
 			},
 			5.0f);
@@ -159,21 +129,7 @@ void ASpatialAuthorityTest::PrepareTest()
 				Timer -= DeltaTime;
 				if (Timer <= 0)
 				{
-					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
-					if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && LocalWorkerDefinition.Id == 4)
-					{
-						if (VerifyTestActor(LevelReplicatedActorOnBorder, 4, 4, 1, 0))
-						{
-							FinishStep();
-						}
-					}
-					else
-					{
-						if (VerifyTestActor(LevelReplicatedActorOnBorder, 0, 0, 0, 0))
-						{
-							FinishStep();
-						}
-					}
+					CheckDoesNotMigrate(LevelReplicatedActorOnBorder, 4);
 				}
 			},
 			5.0f);
@@ -191,14 +147,14 @@ void ASpatialAuthorityTest::PrepareTest()
 				if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 				{
 					// Note: Non-replicated actors never get OnAuthorityGained() called.
-					if (VerifyTestActor(LevelActor, LocalWorkerDefinition.Id, LocalWorkerDefinition.Id, 0, 0))
+					if (VerifyTestActor(LevelActor, ESpatialHasAuthority::ServerAuth, LocalWorkerDefinition.Id, LocalWorkerDefinition.Id, 0, 0))
 					{
 						FinishStep();
 					}
 				}
 				else
 				{
-					if (VerifyTestActor(LevelActor, 0, 0, 0, 0))
+					if (VerifyTestActor(LevelActor,ESpatialHasAuthority::ClientNonAuth, 0, 0, 0, 0))
 					{
 						FinishStep(); // Clients don't have authority over non-replicated Level Actors.
 					}
@@ -223,7 +179,7 @@ void ASpatialAuthorityTest::PrepareTest()
 				Timer -= DeltaTime;
 				if (Timer <= 0)
 				{
-					CheckDoesNotMigrate(1);
+					CheckDoesNotMigrate(DynamicReplicatedActor, 1);
 				}
 			},
 			5.0f);
@@ -248,51 +204,7 @@ void ASpatialAuthorityTest::PrepareTest()
 				Timer -= DeltaTime;
 				if (Timer <= 0)
 				{
-					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
-					if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-					{
-						// Allow it to continue working in Native / Single worker setups.
-						if (GetNumberOfServerWorkers() > 1)
-						{
-							if (LocalWorkerDefinition.Id == 1)
-							{
-								// Note: An Actor always ticks on the spawning Worker before migrating.
-								if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 1))
-								{
-									FinishStep();
-								}
-							}
-							else if (LocalWorkerDefinition.Id == 2)
-							{
-								if (VerifyTestActor(DynamicReplicatedActor, 0, 2, 1, 0)
-									&& DynamicReplicatedActor->AuthorityComponent->ReplicatedAuthWorkerIdOnBeginPlay == 1)
-								{
-									FinishStep();
-								}
-							}
-							else
-							{
-								if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
-								{
-									FinishStep();
-								}
-							}
-						}
-						else // Support for Native / Single Worker.
-						{
-							if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 0))
-							{
-								FinishStep();
-							}
-						}
-					}
-					else // Clients.
-					{
-						if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
-						{
-							FinishStep();
-						}
-					}
+					CheckMigration(1, 2);
 				}
 			},
 			5.0f);
@@ -411,7 +323,7 @@ void ASpatialAuthorityTest::PrepareTest()
 				// Spawning directly on border, so it shouldn't migrate.
 				if (Timer <= 0)
 				{
-					CheckDoesNotMigrate(4);
+					CheckDoesNotMigrate(DynamicReplicatedActor, 4);
 				}
 			},
 			5.0f);
@@ -432,6 +344,46 @@ void ASpatialAuthorityTest::PrepareTest()
 		AddStepFromDefinition(NonReplicatedVerifyNonAuthorityStepDefinition, FWorkerDefinition::AllWorkers);
 
 		AddStepFromDefinition(NonReplicatedDestroyStepDefinition, FWorkerDefinition::Server(1));
+	}
+
+	// Non-replicated Client Actor. Client 1 should have Authority.
+	{
+		AddStep(TEXT("Non-replicated Dynamic Actor Client - Spawn"), FWorkerDefinition::Client(1), nullptr, [this]() {
+			// Spawning directly on Server 2, but since it's non-replicated it shouldn't migrate 
+			DynamicNonReplicatedActor = GetWorld()->SpawnActor<ASpatialAuthorityTestActor>(Server2Position, FRotator::ZeroRotator);
+			FinishStep();
+		});
+
+		AddStep(
+			TEXT("Non-replicated Dynamic Actor Client - Verify Authority on Client 1"), FWorkerDefinition::Client(1), nullptr, nullptr,
+			[this](float DeltaTime) {
+				// Not replicated so OnAuthorityGained() is not called.
+				if (VerifyTestActor(DynamicNonReplicatedActor, ESpatialHasAuthority::ClientAuth, 1, 1, 0, 0))
+				{
+					FinishStep();
+				}
+			},
+			5.0f);
+
+		AddStep(TEXT("Non-replicated Dynamic Actor Client - Verify Dynamic Actor doesn't exist on others"), FWorkerDefinition::AllWorkers,
+				nullptr, nullptr, [this](float DeltaTime) {
+					const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
+					if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client && LocalWorkerDefinition.Id == 1)
+					{
+						FinishStep();
+					}
+					else
+					{
+						Timer -= DeltaTime;
+						if (Timer <= 0)
+						{
+							CheckNumActorsInLevel();
+						}
+					}
+				},
+				5.0f);
+
+		AddStepFromDefinition(NonReplicatedDestroyStepDefinition, FWorkerDefinition::Client(1));
 	}
 
 	// GameMode.
@@ -545,26 +497,33 @@ void ASpatialAuthorityTest::PrepareTest()
 	}
 }
 
-void ASpatialAuthorityTest::CheckDoesNotMigrate(const int ServerId)
+void ASpatialAuthorityTest::CheckDoesNotMigrate(ASpatialAuthorityTestActor* Actor, int ServerId)
 {
 	const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 	if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && LocalWorkerDefinition.Id == ServerId)
 	{
-		if (VerifyTestActor(DynamicReplicatedActor, ServerId, ServerId, 1, 0))
+		if (VerifyTestActor(Actor, ESpatialHasAuthority::ServerAuth, ServerId, ServerId, 1, 0))
+		{
+			FinishStep();
+		}
+	}
+	else if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+	{
+		if (VerifyTestActor(Actor, ESpatialHasAuthority::ServerNonAuth, 0, 0, 0, 0))
 		{
 			FinishStep();
 		}
 	}
 	else
 	{
-		if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
+		if (VerifyTestActor(Actor, ESpatialHasAuthority::ClientNonAuth, 0, 0, 0, 0))
 		{
 			FinishStep();
 		}
 	}
 }
 
-void ASpatialAuthorityTest::CheckMigration(const int StartServerId, const int EndServerId)
+void ASpatialAuthorityTest::CheckMigration(int StartServerId, int EndServerId)
 {
 	const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 	if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
@@ -575,14 +534,14 @@ void ASpatialAuthorityTest::CheckMigration(const int StartServerId, const int En
 			if (LocalWorkerDefinition.Id == StartServerId)
 			{
 				// Note: An Actor always ticks on the spawning Worker before migrating.
-				if (VerifyTestActor(DynamicReplicatedActor, StartServerId, StartServerId, 1, 1))
+				if (VerifyTestActor(DynamicReplicatedActor, ESpatialHasAuthority::ServerNonAuth, StartServerId, StartServerId, 1, 1))
 				{
 					FinishStep();
 				}
 			}
 			else if (LocalWorkerDefinition.Id == EndServerId)
 			{
-				if (VerifyTestActor(DynamicReplicatedActor, 0, EndServerId, 1, 0)
+				if (VerifyTestActor(DynamicReplicatedActor, ESpatialHasAuthority::ServerAuth, 0, EndServerId, 1, 0)
 					&& DynamicReplicatedActor->AuthorityComponent->ReplicatedAuthWorkerIdOnBeginPlay == StartServerId)
 				{
 					FinishStep();
@@ -590,7 +549,7 @@ void ASpatialAuthorityTest::CheckMigration(const int StartServerId, const int En
 			}
 			else
 			{
-				if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
+				if (VerifyTestActor(DynamicReplicatedActor, ESpatialHasAuthority::ServerNonAuth, 0, 0, 0, 0))
 				{
 					FinishStep();
 				}
@@ -598,7 +557,7 @@ void ASpatialAuthorityTest::CheckMigration(const int StartServerId, const int En
 		}
 		else // Support for Native / Single Worker.
 		{
-			if (VerifyTestActor(DynamicReplicatedActor, 1, 1, 1, 0))
+			if (VerifyTestActor(DynamicReplicatedActor, ESpatialHasAuthority::ServerAuth, 1, 1, 1, 0))
 			{
 				FinishStep();
 			}
@@ -606,10 +565,32 @@ void ASpatialAuthorityTest::CheckMigration(const int StartServerId, const int En
 	}
 	else // Clients.
 	{
-		if (VerifyTestActor(DynamicReplicatedActor, 0, 0, 0, 0))
+		if (VerifyTestActor(DynamicReplicatedActor, ESpatialHasAuthority::ClientNonAuth, 0, 0, 0, 0))
 		{
 			FinishStep();
 		}
+	}
+}
+void ASpatialAuthorityTest::CheckNumActorsInLevel()
+{
+	int NumNonReplicatedActorsExpected = 1; // The one that is in the Map itself
+	int NumNonReplicatedActorsInLevel = 0;
+	for (TActorIterator<ASpatialAuthorityTestActor> It(GetWorld()); It; ++It)
+	{
+		if (!It->GetIsReplicated())
+		{
+			NumNonReplicatedActorsInLevel++;
+		}
+	}
+
+	if (NumNonReplicatedActorsInLevel == NumNonReplicatedActorsExpected)
+	{
+		FinishStep();
+	}
+	else
+	{
+		FinishTest(EFunctionalTestResult::Failed, FString::Printf(TEXT("Was expecting only %d non replicated Actors, but found %d"),
+																  NumNonReplicatedActorsExpected, NumNonReplicatedActorsInLevel));
 	}
 }
 
@@ -637,10 +618,18 @@ void ASpatialAuthorityTest::CrossServerNotifyHadAuthorityOverGameState_Implement
 	NumHadAuthorityOverGameState += 1;
 }
 
-bool ASpatialAuthorityTest::VerifyTestActor(ASpatialAuthorityTestActor* Actor, int AuthorityOnBeginPlay, int AuthorityOnTick,
-											int NumAuthorityGains, int NumAuthorityLosses)
+bool ASpatialAuthorityTest::VerifyTestActor(ASpatialAuthorityTestActor* Actor, ESpatialHasAuthority ExpectedAuthority,
+											int AuthorityOnBeginPlay, int AuthorityOnTick, int NumAuthorityGains, int NumAuthorityLosses)
 {
 	if (!IsValid(Actor) || !Actor->HasActorBegunPlay())
+	{
+		return false;
+	}
+
+	ESpatialHasAuthority ActualAuthority;
+	USpatialStatics::SpatialSwitchHasAuthority(Actor, ActualAuthority);
+
+	if (ActualAuthority != ExpectedAuthority)
 	{
 		return false;
 	}

@@ -8,6 +8,7 @@
 
 class ASpatialAuthorityTestActor;
 class ASpatialAuthorityTestReplicatedActor;
+enum class ESpatialHasAuthority : uint8;
 
 /** Check SpatialAuthorityTest.cpp for Test explanation. */
 UCLASS()
@@ -20,9 +21,11 @@ public:
 
 	virtual void PrepareTest() override;
 
-	void CheckDoesNotMigrate(const int ServerId);
+	void CheckNumActorsInLevel();
 
-	void CheckMigration(const int StartServerId, const int EndServerId);
+	void CheckDoesNotMigrate(ASpatialAuthorityTestActor* Actor, int ServerId);
+
+	void CheckMigration(int StartServerId, int EndServerId);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -34,8 +37,8 @@ public:
 
 	void ResetTimer() { Timer = 0.5; };
 
-	bool VerifyTestActor(ASpatialAuthorityTestActor* Actor, int AuthorityOnBeginPlay, int AuthorityOnTick, int NumAuthorityGains,
-						 int NumAuthorityLosses);
+	bool VerifyTestActor(ASpatialAuthorityTestActor* Actor, ESpatialHasAuthority ExpectedAuthority, int AuthorityOnBeginPlay,
+						int AuthorityOnTick, int NumAuthorityGains, int NumAuthorityLosses);
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerSetDynamicReplicatedActor(ASpatialAuthorityTestReplicatedActor* Actor);
