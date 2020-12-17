@@ -1348,7 +1348,7 @@ bool SpatialGDKGenerateSchema()
 	{
 		return false;
 	}
-	SpatialGDKSanatizeGeneratedSchema();
+	SpatialGDKSanitizeGeneratedSchema();
 
 	GenerateSchemaForSublevels();
 	GenerateSchemaForRPCEndpoints();
@@ -1448,15 +1448,15 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 }
 
 template <class T>
-void SanatizeClassMap(TMap<FString, T>& Map, const TSet<FName>& ValidClassNames)
+void SanitizeClassMap(TMap<FString, T>& Map, const TSet<FName>& ValidClassNames)
 {
 	TSet<FString> ItemsToRemove;
 
 	for (const auto& Item : Map)
 	{
-		FString SanatizeName = Item.Key;
-		SanatizeName.RemoveFromEnd(TEXT("_C"));
-		if (ValidClassNames.Find(FName(SanatizeName)) == nullptr)
+		FString SanitizeName = Item.Key;
+		SanitizeName.RemoveFromEnd(TEXT("_C"));
+		if (!ValidClassNames.Contains(FName(SanitizeName)))
 		{
 			ItemsToRemove.Add(Item.Key);
 		}
@@ -1469,7 +1469,7 @@ void SanatizeClassMap(TMap<FString, T>& Map, const TSet<FName>& ValidClassNames)
 	}
 }
 
-void SpatialGDKSanatizeGeneratedSchema()
+void SpatialGDKSanitizeGeneratedSchema()
 {
 	// Sanitize schema database, removing assets that no longer exist
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
@@ -1489,8 +1489,8 @@ void SpatialGDKSanatizeGeneratedSchema()
 		ValidClassNames.Add(FName(SupportedClass->GetPathName()));
 	}
 
-	SanatizeClassMap(ActorClassPathToSchema, ValidClassNames);
-	SanatizeClassMap(SubobjectClassPathToSchema, ValidClassNames);
+	SanitizeClassMap(ActorClassPathToSchema, ValidClassNames);
+	SanitizeClassMap(SubobjectClassPathToSchema, ValidClassNames);
 }
 
 } // namespace Schema

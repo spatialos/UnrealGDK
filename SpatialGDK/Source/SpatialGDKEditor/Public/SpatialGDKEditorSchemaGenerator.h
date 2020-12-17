@@ -23,7 +23,7 @@ SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchema();
 
 SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
 
-SPATIALGDKEDITOR_API void SpatialGDKSanatizeGeneratedSchema();
+SPATIALGDKEDITOR_API void SpatialGDKSanitizeGeneratedSchema();
 
 SPATIALGDKEDITOR_API void GenerateSchemaForSublevels();
 
