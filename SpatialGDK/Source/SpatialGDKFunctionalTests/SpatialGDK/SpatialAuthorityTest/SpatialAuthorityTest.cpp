@@ -502,21 +502,35 @@ void ASpatialAuthorityTest::PrepareTest()
 void ASpatialAuthorityTest::CheckDoesNotMigrate(ASpatialAuthorityTestActor* Actor, int ServerId)
 {
 	const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
-	if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && LocalWorkerDefinition.Id == ServerId)
+	if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 	{
-		if (VerifyTestActor(Actor, ESpatialHasAuthority::ServerAuth, ServerId, ServerId, 1, 0))
+		// Allow it to continue working in Native / Single worker setups.
+		if (GetNumberOfServerWorkers() > 1)
 		{
-			FinishStep();
+			if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server && LocalWorkerDefinition.Id == ServerId)
+			{
+				if (VerifyTestActor(Actor, ESpatialHasAuthority::ServerAuth, ServerId, ServerId, 1, 0))
+				{
+					FinishStep();
+				}
+			}
+			else if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+			{
+				if (VerifyTestActor(Actor, ESpatialHasAuthority::ServerNonAuth, 0, 0, 0, 0))
+				{
+					FinishStep();
+				}
+			}
+		}
+		else // Support for Native / Single Worker.
+		{
+			if (VerifyTestActor(Actor, ESpatialHasAuthority::ServerAuth, 1, 1, 1, 0))
+			{
+				FinishStep();
+			}
 		}
 	}
-	else if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-	{
-		if (VerifyTestActor(Actor, ESpatialHasAuthority::ServerNonAuth, 0, 0, 0, 0))
-		{
-			FinishStep();
-		}
-	}
-	else
+	else // Clients
 	{
 		if (VerifyTestActor(Actor, ESpatialHasAuthority::ClientNonAuth, 0, 0, 0, 0))
 		{
