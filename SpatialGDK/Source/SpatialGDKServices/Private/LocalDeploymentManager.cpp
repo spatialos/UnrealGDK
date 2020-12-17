@@ -277,8 +277,11 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	RuntimeProcess->OnOutput().BindLambda([&RuntimeLogFileHandle = RuntimeLogFileHandle, &bStartingDeployment = bStartingDeployment,
 										   SpatialOutputLog](const FString& Output) {
-		// Format and output the log to the editor window `SpatialOutputLog`
-		SpatialOutputLog.Pin()->FormatAndPrintRawLogLine(Output);
+		if (SpatialOutputLog.IsValid())
+		{
+			// Format and output the log to the editor window `SpatialOutputLog`
+			SpatialOutputLog.Pin()->FormatAndPrintRawLogLine(Output);
+		}
 
 		// Save the raw runtime output to disk.
 		if (RuntimeLogFileHandle.IsValid())

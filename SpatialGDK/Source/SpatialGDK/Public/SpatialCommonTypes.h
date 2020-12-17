@@ -5,6 +5,7 @@
 #include "Containers/Array.h"
 #include "Containers/Map.h"
 #include "HAL/Platform.h"
+#include "Misc/AssertionMacros.h"
 #include <WorkerSDK/improbable/c_worker.h>
 
 // IMPORTANT: This is required for Linux builds to succeed - don't remove!
@@ -64,3 +65,30 @@ struct TWeakObjectPtrKeyFuncs : DefaultKeyFuncs<ElementType, bInAllowDuplicateKe
 // TODO: These can be removed once event tracing is enabled UNR-3981
 using FWorkerComponentUpdate = FTrackableWorkerType<Worker_ComponentUpdate>;
 using FWorkerComponentData = FTrackableWorkerType<Worker_ComponentData>;
+
+/* A little helper to ensure no re-entrancy of modifications of data structures. */
+struct FUsageLock
+{
+	bool bIsSet = false;
+
+	struct Scope
+	{
+		bool& bIsSetRef;
+		Scope(bool& bInIsSetRef)
+			: bIsSetRef(bInIsSetRef)
+		{
+			ensureMsgf(!bIsSetRef, TEXT("Unexpected re-entrancy occured in the Spatial GDK."));
+			bIsSetRef = true;
+		}
+		~Scope() { bIsSetRef = false; }
+	};
+};
+
+// A macro to prevent re-entrant calls
+#if DO_CHECK
+#define __GDK_ENSURE_NO_MODIFICATIONS(x, y) x##y
+#define _GDK_ENSURE_NO_MODIFICATIONS(x, y) __GDK_ENSURE_NO_MODIFICATIONS(x, y)
+#define GDK_ENSURE_NO_MODIFICATIONS(FLAG) FUsageLock::Scope _GDK_ENSURE_NO_MODIFICATIONS(ScopedUsageCheck, __LINE__)(FLAG.bIsSet);
+#else
+#define GDK_ENSURE_NO_MODIFICATIONS(FLAG)
+#endif

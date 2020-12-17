@@ -4,10 +4,3 @@ package unreal;
 component Tombstone {
     id = 9982;
 }
-
-component_set TombstoneSet {
-  id = 9982;
-  components = [
-    Tombstone
-  ];
-}

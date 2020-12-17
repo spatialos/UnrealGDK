@@ -209,7 +209,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 	if (PlayerControllerEntity != SpatialConstants::INVALID_ENTITY_ID)
 	{
 		if (!Cast<USpatialNetDriver>(Driver)->StaticComponentView->HasAuthority(PlayerControllerEntity,
-																				SpatialConstants::HEARTBEAT_COMPONENT_ID))
+																				SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID))
 		{
 			UE_LOG(LogSpatialNetConnection, Warning,
 				   TEXT("Quit the game but no authority over Heartbeat component: NetConnection %s, PlayerController entity %lld"),

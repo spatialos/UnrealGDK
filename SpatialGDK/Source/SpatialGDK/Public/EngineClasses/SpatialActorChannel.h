@@ -108,14 +108,6 @@ struct FObjectReferences
 	GDK_PROPERTY(Property) * Property;
 };
 
-struct FPendingSubobjectAttachment
-{
-	const FClassInfo* Info;
-	TWeakObjectPtr<UObject> Subobject;
-
-	TSet<Worker_ComponentId> PendingAuthorityDelegations;
-};
-
 // Utility class to manage mapped and unresolved references.
 // Reproduces what is happening with FRepState::GuidReferencesMap, but with FUnrealObjectRef instead of FNetworkGUID
 class FSpatialObjectRepState
@@ -277,8 +269,6 @@ public:
 
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
-
-	bool IsListening() const;
 
 	// Call when a subobject is deleted to unmap its references and cleanup its cached informations.
 	// NB : ObjectPtr might be a dangling pointer.

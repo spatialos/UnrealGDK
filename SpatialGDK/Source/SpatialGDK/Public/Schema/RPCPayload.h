@@ -16,9 +16,10 @@ struct RPCPayload
 {
 	RPCPayload() = delete;
 
-	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data, TraceKey InTraceKey = InvalidTraceKey)
+	RPCPayload(uint32 InOffset, uint32 InIndex, TOptional<uint64> InId, TArray<uint8>&& Data, TraceKey InTraceKey = InvalidTraceKey)
 		: Offset(InOffset)
 		, Index(InIndex)
+		, Id(InId)
 		, PayloadData(MoveTemp(Data))
 		, Trace(InTraceKey)
 	{
@@ -28,7 +29,12 @@ struct RPCPayload
 	{
 		Offset = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
 		Index = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID);
-		PayloadData = SpatialGDK::GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
+		if (Schema_GetUint64Count(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_ID) > 0)
+		{
+			Id = Schema_GetUint64(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_ID);
+		}
+
+		PayloadData = GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
 
 #if TRACE_LIB_ACTIVE
 		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
@@ -42,7 +48,7 @@ struct RPCPayload
 
 	void WriteToSchemaObject(Schema_Object* RPCObject) const
 	{
-		WriteToSchemaObject(RPCObject, Offset, Index, PayloadData.GetData(), PayloadData.Num());
+		WriteToSchemaObject(RPCObject, Offset, Index, Id, PayloadData.GetData(), PayloadData.Num());
 
 #if TRACE_LIB_ACTIVE
 		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
@@ -52,77 +58,24 @@ struct RPCPayload
 #endif
 	}
 
-	static void WriteToSchemaObject(Schema_Object* RPCObject, uint32 Offset, uint32 Index, const uint8* Data, int32 NumElems)
+	static void WriteToSchemaObject(Schema_Object* RPCObject, uint32 Offset, uint32 Index, TOptional<uint64> UniqueId, const uint8* Data,
+									int32 NumElems)
 	{
 		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
 		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, Index);
+		if (UniqueId.IsSet())
+		{
+			Schema_AddUint64(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_ID, UniqueId.GetValue());
+		}
+
 		AddBytesToSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, Data, sizeof(uint8) * NumElems);
 	}
 
 	uint32 Offset;
 	uint32 Index;
+	TOptional<uint64> Id;
 	TArray<uint8> PayloadData;
 	TraceKey Trace = InvalidTraceKey;
-};
-
-struct RPCsOnEntityCreation : Component
-{
-	static const Worker_ComponentId ComponentId = SpatialConstants::RPCS_ON_ENTITY_CREATION_ID;
-
-	RPCsOnEntityCreation() = default;
-
-	bool HasRPCPayloadData() const { return RPCs.Num() > 0; }
-
-	RPCsOnEntityCreation(const Worker_ComponentData& Data)
-	{
-		Schema_Object* ComponentsObject = Schema_GetComponentDataFields(Data.schema_type);
-
-		uint32 RPCCount = Schema_GetObjectCount(ComponentsObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
-
-		for (uint32 i = 0; i < RPCCount; i++)
-		{
-			Schema_Object* ComponentObject = Schema_IndexObject(ComponentsObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, i);
-			RPCs.Add(RPCPayload(ComponentObject));
-		}
-	}
-
-	Worker_ComponentData CreateRPCPayloadData() const
-	{
-		Worker_ComponentData Data = {};
-		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData();
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-		for (const auto& Payload : RPCs)
-		{
-			Schema_Object* Obj = Schema_AddObject(ComponentObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
-			RPCPayload::WriteToSchemaObject(Obj, Payload.Offset, Payload.Index, Payload.PayloadData.GetData(), Payload.PayloadData.Num());
-		}
-
-		return Data;
-	}
-
-	static Worker_ComponentUpdate CreateClearFieldsUpdate()
-	{
-		Worker_ComponentUpdate Update = {};
-		Update.component_id = ComponentId;
-		Update.schema_type = Schema_CreateComponentUpdate();
-		Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
-		Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
-
-		return Update;
-	}
-
-	static Worker_CommandRequest CreateClearFieldsCommandRequest()
-	{
-		Worker_CommandRequest CommandRequest = {};
-		CommandRequest.component_id = ComponentId;
-		CommandRequest.command_index = SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION;
-		CommandRequest.schema_type = Schema_CreateCommandRequest();
-		return CommandRequest;
-	}
-
-	TArray<RPCPayload> RPCs;
 };
 
 } // namespace SpatialGDK
