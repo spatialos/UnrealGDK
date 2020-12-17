@@ -27,6 +27,15 @@ struct FLockingToken
 	int64 Token;
 };
 
+UENUM(BlueprintType)
+enum class ESpatialHasAuthority : uint8
+{
+	ServerAuth,
+	ServerNonAuth,
+	ClientAuth,
+	ClientNonAuth
+};
+
 UCLASS()
 class SPATIALGDK_API USpatialStatics : public UBlueprintFunctionLibrary
 {
@@ -173,6 +182,14 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Spatial Debugger", meta = (WorldContext = "WorldContextObject"))
 	static void SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* WorldContextObject, FOnConfigUIClosedDelegate Delegate);
+
+	/**
+	 * Returns if an actor has authority in combination with whether it is on the client or server.
+	 * Can only be used on Blueprints that derive from Actor.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS", Meta = (ExpandEnumAsExecs = "AuthorityPins"), Meta = (DefaultToSelf = "Target"),
+			  Meta = (HidePin = "Target"))
+	static void SpatialSwitchHasAuthority(const AActor* Target, ESpatialHasAuthority& AuthorityPins);
 
 private:
 	static FName GetCurrentWorkerType(const UObject* WorldContext);

@@ -20,14 +20,9 @@ namespace SpatialGDK
 class InterestFactory;
 class SpatialRPCService;
 
-struct RPCsOnEntityCreation;
-using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation, FDefaultSetAllocator,
-									  TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<const UObject>, SpatialGDK::RPCsOnEntityCreation, false>>;
-
 struct EntityComponents
 {
 	TMap<Worker_ComponentId, TUniquePtr<AbstractMutableComponent>> MutableComponents;
-	TMap<Worker_ComponentId, FWorkerComponentData> ComponentsToDelegateToAuthoritativeWorker;
 	TArray<FWorkerComponentData> ComponentDatas;
 
 	// PRCOMMENT: Hmm, will this incur overhead? Probably...
@@ -36,11 +31,6 @@ struct EntityComponents
 		for (auto& Pair : MutableComponents)
 		{
 			ComponentDatas.Add(Pair.Value->CreateComponentData());
-		}
-
-		for (auto& Pair : ComponentsToDelegateToAuthoritativeWorker)
-		{
-			ComponentDatas.Add(Pair.Value);
 		}
 
 		MutableComponents.Empty();
@@ -54,14 +44,10 @@ public:
 				  SpatialRPCService* InRPCService);
 
 	static EntityComponents CreateSkeletonEntityComponents(AActor* Actor);
-	void WriteUnrealComponents(EntityComponents& EntityComps, USpatialActorChannel* Channel,
-							   FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs, uint32& OutBytesWritten);
+	void WriteUnrealComponents(EntityComponents& EntityComps, USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	void WriteLBComponents(EntityComponents& EntityComps, AActor* Actor);
-	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, FRPCsOnEntityCreationMap& OutgoingOnCreateEntityRPCs,
-														uint32& OutBytesWritten);
+	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor);
-
-	static TArray<Worker_ComponentId> GetComponentPresenceList(const TArray<FWorkerComponentData>& ComponentDatas);
 
 	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const Worker_EntityId EntityId,
 																		const InterestFactory* InterestFactory,
@@ -70,9 +56,7 @@ public:
 
 	static inline bool IsClientAuthoritativeComponent(Worker_ComponentId ComponentId)
 	{
-		return ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
-			   || ComponentId == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY
-			   || ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID;
+		return ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID || ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID;
 	}
 
 private:

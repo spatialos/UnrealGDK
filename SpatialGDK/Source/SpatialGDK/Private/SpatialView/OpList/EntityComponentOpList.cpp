@@ -153,6 +153,20 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityQueryComman
 	return *this;
 }
 
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityCommandRequest(Worker_EntityId EntityID, Worker_RequestId RequestId,
+																					CommandRequest CommandRequest)
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_COMMAND_REQUEST;
+	Op.op.command_request.entity_id = EntityID;
+	Op.op.command_response.request_id = RequestId;
+	Op.op.command_request.request.command_index = CommandRequest.GetCommandIndex();
+	Op.op.command_request.request.component_id = CommandRequest.GetComponentId();
+	Op.op.command_request.request.schema_type = CommandRequest.GetUnderlying();
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
 EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
 																					 Worker_StatusCode StatusCode, StringStorage Message)
 {
