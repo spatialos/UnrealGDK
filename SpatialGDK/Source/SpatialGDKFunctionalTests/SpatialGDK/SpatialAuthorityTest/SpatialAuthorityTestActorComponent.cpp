@@ -32,9 +32,16 @@ void USpatialAuthorityTestActorComponent::OnAuthorityLost()
 	NumAuthorityLosses++;
 }
 
-void USpatialAuthorityTestActorComponent::OnActorReady()
+void USpatialAuthorityTestActorComponent::OnActorReady(bool bHasAuthority)
 {
-	NumActorReady++;
+	if (bHasAuthority)
+	{
+		NumActorReadyAuth++;
+	}
+	else
+	{
+		NumActorReadyNonAuth++;
+	}
 }
 
 void USpatialAuthorityTestActorComponent::BeginPlay()
