@@ -23,7 +23,7 @@ public:
 
 	void CheckNumActorsInLevel();
 
-	void CheckDoesNotMigrate(ASpatialAuthorityTestActor* Actor, int ServerId);
+	void CheckDoesNotMigrate(ASpatialAuthorityTestActor* Actor, int ExpectedServerId);
 
 	void CheckMigration(int StartServerId, int EndServerId);
 
