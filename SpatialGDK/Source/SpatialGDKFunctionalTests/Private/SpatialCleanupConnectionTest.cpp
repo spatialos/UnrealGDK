@@ -20,6 +20,8 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 {
 	Super::PrepareTest();
 
+	// Note that we always have at least one client connection which is not a client connection at all but the connection to SpatialOS, 
+	// so all ClientConnections counts are effectively + 1
 	AddStep(TEXT("Spawn player on server 1"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
 		AssertIsValid(Driver, TEXT("Test is exclusive to using SpatialNetDriver"));
@@ -32,7 +34,7 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 		RegisterAutoDestroyActor(SpawnedPawn);
 		PlayerController->Possess(SpawnedPawn);
 
-		AssertEqual_Int(Driver->ClientConnections.Num(), 2, TEXT("Spawn expected 2 connections (base + PC)"));
+		AssertEqual_Int(Driver->ClientConnections.Num(), 2, TEXT("Spawn expected 2 connections (spatial connection + PC)"));
 		FinishStep();
 	});
 
@@ -40,19 +42,17 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 		TEXT("Post spawn check connections on server 2"), FWorkerDefinition::Server(2), nullptr, nullptr,
 		[this](float delta) {
 			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
-			AssertIsValid(Driver, TEXT("Test is exclusive to using SpatialNetDriver"));
-			RequireEqual_Int(Driver->ClientConnections.Num(), 1, TEXT("Spawn expected 1 connection (base only)"));
+			RequireEqual_Int(Driver->ClientConnections.Num(), 1, TEXT("Spawn expected 1 connection (spatial connection only)"));
 			FinishStep();
 		},
 		5.0f);
 
 	AddStep(TEXT("Move player to location on server 1 that overlaps with interest border server 2"), FWorkerDefinition::Server(1), nullptr,
 			[this]() {
-				USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
-				AssertIsValid(Driver, TEXT("Test is exclusive to using SpatialNetDriver"));
 				SpawnedPawn->SetActorLocation(Server1PositionAndInInterestBorderServer2);
+				USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
 				AssertEqual_Int(Driver->ClientConnections.Num(), 2,
-								TEXT("Move into server 2 interest: expected 2 connections (base + PC)"));
+								TEXT("Move into server 2 interest: expected 2 connections (spatial connection + PC)"));
 				FinishStep();
 			});
 
@@ -60,18 +60,16 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 		TEXT("Post move player connections on server 2"), FWorkerDefinition::Server(2), nullptr, nullptr,
 		[this](float delta) {
 			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
-			AssertIsValid(Driver, TEXT("Test is exclusive to using SpatialNetDriver"));
-			RequireEqual_Int(Driver->ClientConnections.Num(), 2, TEXT("Move into server 2 interest: expected 2 connections (base + PC)"));
+			RequireEqual_Int(Driver->ClientConnections.Num(), 2, TEXT("Move into server 2 interest: expected 2 connections (spatial connection + PC)"));
 			FinishStep();
 		},
 		5.0f);
 
 	AddStep(
 		TEXT("Move player to location on server 1 outside of interest border server 2"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
-			AssertIsValid(Driver, TEXT("Test is exclusive to using SpatialNetDriver"));
 			SpawnedPawn->SetActorLocation(Server1Position);
-			AssertEqual_Int(Driver->ClientConnections.Num(), 2, TEXT("Move out of server 2 interest: expected 2 connections (base + PC)"));
+			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
+			AssertEqual_Int(Driver->ClientConnections.Num(), 2, TEXT("Move out of server 2 interest: expected 2 connections (spatial connection + PC)"));
 			FinishStep();
 		});
 
@@ -79,8 +77,7 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 		TEXT("Post move 2 player connections on server 2"), FWorkerDefinition::Server(2), nullptr, nullptr,
 		[this](float delta) {
 			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
-			AssertIsValid(Driver, TEXT("Test is exclusive to using SpatialNetDriver"));
-			RequireEqual_Int(Driver->ClientConnections.Num(), 1, TEXT("Move out of server 2 interest: expected 1 connection (base only)"));
+			RequireEqual_Int(Driver->ClientConnections.Num(), 1, TEXT("Move out of server 2 interest: expected 1 connection (spatial connection only)"));
 			FinishStep();
 		},
 		5.0f);
