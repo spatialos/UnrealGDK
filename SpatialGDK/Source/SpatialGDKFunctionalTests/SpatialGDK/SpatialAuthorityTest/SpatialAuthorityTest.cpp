@@ -514,7 +514,7 @@ void ASpatialAuthorityTest::CheckDoesNotMigrate(ASpatialAuthorityTestActor* Acto
 					FinishStep();
 				}
 			}
-			else 
+			else
 			{
 				if (VerifyTestActor(Actor, ESpatialHasAuthority::ServerNonAuth, 0, 0, 0, 0))
 				{
