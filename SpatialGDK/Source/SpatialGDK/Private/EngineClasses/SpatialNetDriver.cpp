@@ -559,7 +559,7 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 			return;
 		}
 	}
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not find client connection for this PlayerController"));
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
 }
 
 bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()
