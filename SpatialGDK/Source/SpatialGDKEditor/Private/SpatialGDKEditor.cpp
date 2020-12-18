@@ -226,11 +226,15 @@ bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 	}
 }
 
-bool FSpatialGDKEditor::IsSchemaGenerated()
+FSpatialGDKEditor::ESchemaDatabaseValidationResult FSpatialGDKEditor::ValidateSchemaDatabase()
 {
-	FString BundlePath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema/schema.json"));
 	FString GdkFolderPath = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
-	return FPaths::DirectoryExists(GdkFolderPath) && SpatialGDKEditor::Schema::GeneratedSchemaDatabaseExists();
+	if (!FPaths::DirectoryExists(GdkFolderPath))
+	{
+		return ESchemaDatabaseValidationResult::NotFound;
+	}
+
+	return SpatialGDKEditor::Schema::ValidateSchemaDatabase();
 }
 
 bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets)

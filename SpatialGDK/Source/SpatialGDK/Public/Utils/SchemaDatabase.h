@@ -133,4 +133,9 @@ public:
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FComponentIDs> ComponentSetIdToComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	uint8 SchemaDatabaseVersion;
+
+	static const uint8 LatestSchemaDatabaseVersion = 1;
 };
