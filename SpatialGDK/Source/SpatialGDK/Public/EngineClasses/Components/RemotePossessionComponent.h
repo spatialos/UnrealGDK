@@ -36,6 +36,7 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	void MarkToDestroy();
+
 public:
 	UPROPERTY(Category = Sprite, handover, EditAnywhere, BlueprintReadOnly)
 	APawn* Target;
