@@ -520,7 +520,7 @@ void ASpatialAuthorityTest::CheckDoesNotMigrate(ASpatialAuthorityTestActor* Acto
 					FinishStep();
 				}
 			}
-			else 
+			else
 			{
 				// Dynamic actors do not receive OnActorReady on non-auth servers
 				if (VerifyTestActor(Actor, ESpatialHasAuthority::ServerNonAuth, 0, 0, 0, 0, 0, 0))
