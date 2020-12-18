@@ -14,6 +14,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
+#include "GameFramework/GameModeBase.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
@@ -227,6 +228,19 @@ void USpatialGameInstance::Init()
 	{
 		FWorldDelegates::LevelInitializedNetworkActors.AddUObject(this, &USpatialGameInstance::OnLevelInitializedNetworkActors);
 	}
+}
+
+AGameModeBase* USpatialGameInstance::CreateGameModeForURL(FURL InURL, UWorld* InWorld)
+{
+	AGameModeBase* GameMode = Super::CreateGameModeForURL(InURL, InWorld);
+
+	if (IsValid(GameMode) && USpatialStatics::IsSpatialNetworkingEnabled())
+	{
+		// UNR-4462: Make sure GameModes are always relevant when using Spatial networking
+		GameMode->bAlwaysRelevant = true;
+	}
+
+	return GameMode;
 }
 
 void USpatialGameInstance::HandleOnConnected(const USpatialNetDriver& NetDriver)
