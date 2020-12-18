@@ -50,7 +50,7 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 				if (Controller != nullptr)
 				{
 					Controller->RemotePossessOnClient(Pawn);
-				}				
+				}
 			}
 		}
 		FinishStep();

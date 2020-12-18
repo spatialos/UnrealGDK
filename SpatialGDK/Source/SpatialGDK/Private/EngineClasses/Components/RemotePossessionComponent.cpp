@@ -105,9 +105,16 @@ void URemotePossessionComponent::TickComponent(float DeltaTime, enum ELevelTick 
 
 bool URemotePossessionComponent::EvaluatePossess()
 {
-	if (Target->GetController() == nullptr)
-		return true;
-	return false;
+	if (GetClass()->HasAnyClassFlags(CLASS_CompiledFromBlueprint) || !GetClass()->HasAnyClassFlags(CLASS_Native))
+	{
+		return ReceiveEvaluatePossess();
+	}
+	else
+	{
+		if (Target->GetController() == nullptr)
+			return true;
+		return false;
+	}
 }
 
 void URemotePossessionComponent::MarkToDestroy()

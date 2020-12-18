@@ -15,7 +15,7 @@ class UAbstractLBStrategy;
  A generic feature for Cross-Server Possession
  This component should be attached to a player controller.
  */
-UCLASS(ClassGroup = (SpatialGDK), Meta = (BlueprintSpawnableComponent))
+UCLASS(Blueprintable, ClassGroup = (SpatialGDK), meta = (DisplayName = "Remote Possession"), Meta = (BlueprintSpawnableComponent))
 class SPATIALGDK_API URemotePossessionComponent : public UActorComponent
 {
 	GENERATED_UCLASS_BODY()
@@ -24,16 +24,20 @@ public:
 
 	virtual bool EvaluatePossess();
 
-	virtual bool EvaluateMigration(UAbstractLBStrategy* LBStrategy, VirtualWorkerId& WorkerId);
+	bool EvaluateMigration(UAbstractLBStrategy* LBStrategy, VirtualWorkerId& WorkerId);
 
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 protected:
+	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "Evaluate Possess"))
+	bool ReceiveEvaluatePossess();
+
 	void Possess();
 
+	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	void MarkToDestroy();
 public:
-	UPROPERTY(handover)
+	UPROPERTY(Category = Sprite, handover, EditAnywhere, BlueprintReadOnly)
 	APawn* Target;
 
 private:
