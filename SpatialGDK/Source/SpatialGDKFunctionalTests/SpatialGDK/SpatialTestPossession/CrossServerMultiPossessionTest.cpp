@@ -47,8 +47,10 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 			{
 				ATestPossessionPlayerController* Controller = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-				AssertIsValid(Controller, TEXT("Test requires an ATestPossessionPlayerController"));
-				Controller->RemotePossessOnClient(Pawn);
+				if (Controller != nullptr)
+				{
+					Controller->RemotePossessOnClient(Pawn);
+				}				
 			}
 		}
 		FinishStep();
@@ -61,7 +63,7 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 
-		AssertTrue(Pawn->GetController() != nullptr, TEXT("GetController of Pawn to check if possessed on server"), Pawn);
+		AssertIsValid(Pawn->GetController(), TEXT("Pawn should have a controller"), Pawn);
 
 		AssertValue_Int(ATestPossessionPlayerController::OnPossessCalled, EComparisonMethod::Equal_To, 1,
 						TEXT("OnPossess should be called 1 time"));

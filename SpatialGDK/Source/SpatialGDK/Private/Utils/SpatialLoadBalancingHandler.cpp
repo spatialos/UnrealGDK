@@ -2,6 +2,7 @@
 
 #include "Utils/SpatialLoadBalancingHandler.h"
 
+#include "EngineClasses/Components/RemotePossessionComponent.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialSender.h"
@@ -46,6 +47,27 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
 	{
 		AActor* NetOwner = GetReplicatedHierarchyRoot(Actor);
+
+		if (AController* Controller = Cast<AController>(Actor))
+		{
+			TArray<UActorComponent*> Components;
+			Controller->GetComponents(URemotePossessionComponent::StaticClass(), Components);
+			if (Components.Num() == 1)
+			{
+				// Only deal with the first one
+				if (URemotePossessionComponent* Component = Cast<URemotePossessionComponent>(Components[0]))
+				{
+					VirtualWorkerId TargetVirtualWorkerId;
+					if (Component->EvaluateMigration(NetDriver->LoadBalanceStrategy, TargetVirtualWorkerId))
+					{
+						OutNetOwner = NetOwner;
+						OutWorkerId = TargetVirtualWorkerId;
+						return EvaluateActorResult::Migrate;
+					}
+				}
+			}
+		}
+
 		const bool bNetOwnerHasAuth = NetOwner->HasAuthority();
 
 		// Load balance if we are not supposed to be on this worker, or if we are separated from our owner.

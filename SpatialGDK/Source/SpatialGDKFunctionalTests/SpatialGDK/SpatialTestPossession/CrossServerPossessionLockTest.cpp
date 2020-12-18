@@ -41,9 +41,11 @@ void ACrossServerPossessionLockTest::PrepareTest()
 		{
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 			{
-				ATestPossessionPlayerController* Controller = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-				AssertIsValid(Controller, TEXT("PlayerController not possessed the pawn"));
-				Controller->RemotePossessOnClient(Pawn);
+				ATestPossessionPlayerController* Controller = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());				
+				if (Controller != nullptr)
+				{
+					Controller->RemotePossessOnClient(Pawn);
+				}
 			}
 		}
 		FinishStep();
@@ -51,16 +53,10 @@ void ACrossServerPossessionLockTest::PrepareTest()
 
 	AddWaitStep(FWorkerDefinition::AllServers);
 
-	AddStep(TEXT("Check test result"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float) {
+	AddStep(TEXT("Check test result"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
-		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
-		{
-			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-			{
-				AssertTrue(Pawn->Controller == nullptr, TEXT("PlayerController not possessed the pawn"), Pawn);
-			}
-		}
+		AssertIsValid(Pawn->GetController(), TEXT("Pawn should have a controller"), Pawn);
 		FinishStep();
 	});
 }
