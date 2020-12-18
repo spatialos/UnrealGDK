@@ -1344,11 +1344,11 @@ bool SpatialGDKGenerateSchema()
 
 	TArray<UObject*> AllClasses;
 	GetObjectsOfClass(UClass::StaticClass(), AllClasses);
-	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses(AllClasses),
-											GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder()))
+	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses(AllClasses)))
 	{
 		return false;
 	}
+	SpatialGDKSanitizeGeneratedSchema();
 
 	GenerateSchemaForSublevels();
 	GenerateSchemaForRPCEndpoints();
@@ -1445,6 +1445,45 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 	NextAvailableComponentId = IdGenerator.Peek();
 
 	return true;
+}
+
+template <class T>
+void SanitizeClassMap(TMap<FString, T>& Map, const TSet<FName>& ValidClassNames)
+{
+	for (auto Item = Map.CreateIterator(); Item; ++Item)
+	{
+		FString SanitizeName = Item->Key;
+		SanitizeName.RemoveFromEnd(TEXT("_C"));
+		if (!ValidClassNames.Contains(FName(*SanitizeName)))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Found stale class (%s), removing from schema database."), *Item->Key);
+			Item.RemoveCurrent();
+		}
+	}
+}
+
+void SpatialGDKSanitizeGeneratedSchema()
+{
+	// Sanitize schema database, removing assets that no longer exist
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
+	TArray<FAssetData> Assets;
+	AssetRegistryModule.Get().GetAllAssets(Assets, false);
+	TSet<FName> ValidClassNames;
+	for (const auto& Asset : Assets)
+	{
+		ValidClassNames.Add(FName(*Asset.ObjectPath.ToString()));
+	}
+
+	TArray<UObject*> AllClasses;
+	GetObjectsOfClass(UClass::StaticClass(), AllClasses);
+	for (const auto& SupportedClass : GetAllSupportedClasses(AllClasses))
+	{
+		ValidClassNames.Add(FName(*SupportedClass->GetPathName()));
+	}
+
+	SanitizeClassMap(ActorClassPathToSchema, ValidClassNames);
+	SanitizeClassMap(SubobjectClassPathToSchema, ValidClassNames);
 }
 
 } // namespace Schema

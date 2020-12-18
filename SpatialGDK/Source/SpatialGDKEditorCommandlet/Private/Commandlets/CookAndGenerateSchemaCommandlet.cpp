@@ -141,6 +141,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		}
 	}
 	SpatialGDKGenerateSchemaForClasses(Classes);
+	SpatialGDKSanitizeGeneratedSchema();
 
 	GenerateSchemaForSublevels();
 	GenerateSchemaForRPCEndpoints();
