@@ -837,7 +837,7 @@ void ASpatialFunctionalTest::AddStepSetTagDelegation(FName Tag, int32 ServerWork
 	{
 		return;
 	}
-	if (ServerWorkerId >= GetNumExpectedServers())
+	if (ServerWorkerId > GetNumExpectedServers())
 	{
 		ServerWorkerId = 1; // Support for single worker environments.
 	}
