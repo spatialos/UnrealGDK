@@ -834,6 +834,7 @@ void ASpatialFunctionalTest::KeepActorOnCurrentWorker(AActor* Actor)
 
 void ASpatialFunctionalTest::AddStepSetTagDelegation(FName Tag, int32 ServerWorkerId /*= 1*/)
 {
+	// Valid ServerWorkerIDs range from 1 to NumExpectedServers, inclusive
 	if (!ensureMsgf(ServerWorkerId > 0, TEXT("Invalid Server Worker Id")))
 	{
 		return;
