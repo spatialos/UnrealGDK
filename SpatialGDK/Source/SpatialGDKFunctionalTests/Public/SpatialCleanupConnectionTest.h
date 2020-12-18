@@ -3,13 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialFunctionalTest.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "SpatialFunctionalTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "SpatialCleanupConnectionTest.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialCleanupConnectionTest : public ASpatialFunctionalTest
@@ -34,7 +34,8 @@ public:
 	FVector Server1PositionAndInInterestBorderServer2;
 
 	UPROPERTY()
-	APawn* DefaultPawn; // Keep track of the original pawn, so  we can possess it when we cleanup and that other tests start from the expected, default set-up
+	APawn* DefaultPawn; // Keep track of the original pawn, so  we can possess it when we cleanup and that other tests start from the
+						// expected, default set-up
 
 	UPROPERTY()
 	ATestMovementCharacter* SpawnedPawn;
