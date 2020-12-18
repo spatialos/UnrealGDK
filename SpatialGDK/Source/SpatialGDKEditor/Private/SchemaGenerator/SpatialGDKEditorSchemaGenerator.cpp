@@ -1454,7 +1454,7 @@ void SanitizeClassMap(TMap<FString, T>& Map, const TSet<FName>& ValidClassNames)
 	{
 		FString SanitizeName = Item->Key;
 		SanitizeName.RemoveFromEnd(TEXT("_C"));
-		if (!ValidClassNames.Contains(FName(SanitizeName)))
+		if (!ValidClassNames.Contains(FName(*SanitizeName)))
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Found stale class (%s), removing from schema database."), *Item->Key);
 			Item.RemoveCurrent();
