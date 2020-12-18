@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialFunctionalTest.h"
+#include "SpatialTestRemotePossession.h"
 
 #include "CrossServerPossessionTest.generated.h"
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API ACrossServerPossessionTest : public ASpatialFunctionalTest
+class SPATIALGDKFUNCTIONALTESTS_API ACrossServerPossessionTest : public ASpatialTestRemotePossession
 {
 	GENERATED_BODY()
 
@@ -16,8 +16,4 @@ public:
 	ACrossServerPossessionTest();
 
 	virtual void PrepareTest() override;
-
-private:
-	float WaitTime;
-	const static float MaxWaitTime;
 };

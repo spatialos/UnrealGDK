@@ -44,7 +44,7 @@ void URemotePossessionComponent::Possess()
 		}
 		else
 		{
-			if (EvaluatePossess(Controller, Target->GetController()))
+			if (EvaluatePossess())
 			{
 				UE_LOG(LogRemotePossessionComponent, Log, TEXT("Possess(%s)"), *Target->GetName());
 				Controller->Possess(Target);
@@ -53,7 +53,7 @@ void URemotePossessionComponent::Possess()
 			{
 				UE_LOG(LogRemotePossessionComponent, Log, TEXT("EvaluatePossess(%s) failed"), *Target->GetName());
 			}
-			PendingDestroy = true;
+			MarkToDestroy();
 		}
 	}
 }
@@ -103,9 +103,14 @@ void URemotePossessionComponent::TickComponent(float DeltaTime, enum ELevelTick 
 	}
 }
 
-bool URemotePossessionComponent::EvaluatePossess(AController* CurrentController, AController* WantController)
+bool URemotePossessionComponent::EvaluatePossess()
 {
-	if (WantController == nullptr)
+	if (Target->GetController() == nullptr)
 		return true;
 	return false;
+}
+
+void URemotePossessionComponent::MarkToDestroy()
+{
+	PendingDestroy = true;
 }

@@ -6,6 +6,8 @@
 #include "SpatialFunctionalTest.h"
 #include "SpatialTestRemotePossession.generated.h"
 
+class ATestPossessionPawn;
+
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestRemotePossession : public ASpatialFunctionalTest
 {
@@ -15,7 +17,10 @@ public:
 
 	virtual void PrepareTest() override;
 
-	// To save original Pawns and possess them back at the end
-	UPROPERTY(replicated)
-	TArray<APawn*> OriginalPawns;
+	ATestPossessionPawn* GetPawn();
+
+	void AddWaitStep(const FWorkerDefinition& Worker);
+private:
+	float WaitTime;
+	const static float MaxWaitTime;
 };

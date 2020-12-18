@@ -25,16 +25,16 @@ void ATestPossessionPlayerController::OnUnPossess()
 	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s OnUnPossess()"), *GetName());
 }
 
-void ATestPossessionPlayerController::RemotePossess_Implementation(APawn* InPawn)
+void ATestPossessionPlayerController::RemotePossessOnClient_Implementation(APawn* InPawn)
 {
-	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s RemotePossess_Implementation:%s"), *GetName(), *InPawn->GetName());
+	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s RemotePossessOnClient_Implementation:%s"), *GetName(), *InPawn->GetName());
 	RemotePossessOnServer(InPawn);
 }
 
 void ATestPossessionPlayerController::RemotePossessOnServer(APawn* InPawn)
 {
 	URemotePossessionComponent* Component =
-		NewObject<URemotePossessionComponent>(this, URemotePossessionComponent::StaticClass(), NAME_None);
+		NewObject<URemotePossessionComponent>(this, URemotePossessionComponent::StaticClass(), TEXT("CrossServer Possession"));
 	Component->Target = InPawn;
 	Component->RegisterComponent();
 }

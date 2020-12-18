@@ -3,19 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SpatialFunctionalTest.h"
 #include "SpatialTestRemotePossession.h"
-
-#include "CrossServerMultiPossessionTest.generated.h"
+#include "CrossServerPossessionLockTest.generated.h"
 
 class ATestPossessionPawn;
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API ACrossServerMultiPossessionTest : public ASpatialTestRemotePossession
+class SPATIALGDKFUNCTIONALTESTS_API ACrossServerPossessionLockTest : public ASpatialTestRemotePossession
 {
 	GENERATED_BODY()
-
 public:
-	ACrossServerMultiPossessionTest();
+	ACrossServerPossessionLockTest();
 
 	virtual void PrepareTest() override;
 };

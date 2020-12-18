@@ -1,112 +1,57 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestRemotePossession.h"
-#include "Containers/Array.h"
-#include "EngineClasses/Components/RemotePossessionComponent.h"
-#include "EngineClasses/SpatialNetDriver.h"
-#include "GameFramework/PlayerController.h"
-#include "Net/UnrealNetwork.h"
-#include "SpatialFunctionalTestFlowController.h"
+
+#include "Kismet/GameplayStatics.h"
 #include "TestPossessionPawn.h"
 #include "TestPossessionPlayerController.h"
 
-/**
- * This test tests client possession over pawns in other zones.
- *
- * The test includes two servers and two client workers. The client workers begin with a player controller and their default pawns,
- * which they initially possess. The flow is as follows:
- *  - Setup:
- *    - Two test pawn actors are spawned, one for each client, with an offset in the y direction for easy visualisation
- *    - The controllers for each client  possess the spawned test pawn actors
- *  - Test:
- *    - The clients  assert that the pawn they currently possess are test pawns
- *  - Cleanup:
- *    - The clients repossess their default pawns
- *    - The test pawns are destroyed
- */
+const float ASpatialTestRemotePossession::MaxWaitTime = 2.0f;
 
 ASpatialTestRemotePossession::ASpatialTestRemotePossession()
 	: Super()
+	, WaitTime(0.0f)
 {
 	Author = "Jay";
 	Description = TEXT("Test Actor Remote Possession");
 }
 
-void ASpatialTestRemotePossession::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+ATestPossessionPawn* ASpatialTestRemotePossession::GetPawn()
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	return Cast<ATestPossessionPawn>(UGameplayStatics::GetActorOfClass(GetWorld(), ATestPossessionPawn::StaticClass()));
+}
 
-	DOREPLIFETIME(ASpatialTestRemotePossession, OriginalPawns);
+void ASpatialTestRemotePossession::AddWaitStep(const FWorkerDefinition& Worker)
+{
+	AddStep(TEXT("Wait"), Worker, nullptr, nullptr, [this](float DeltaTime) {
+		if (WaitTime > MaxWaitTime)
+		{
+			WaitTime = 0;
+			FinishStep();
+		}
+		WaitTime += DeltaTime;
+	});
 }
 
 void ASpatialTestRemotePossession::PrepareTest()
 {
 	Super::PrepareTest();
 
-	static FVector start[3] = { FVector{ 30.0f, 30.0f, 20.0f }, FVector{ -30.0f, 30.0f, 20.0f }, FVector{ -30.0f, -30.0f, 20.0f } };
-	AddStep(TEXT("First step"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float) {
-		int i = 0;
-		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
-		{
-			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-			{
-				continue;
-			}
-			ATestPossessionPawn* TestPawn =
-				GetWorld()->SpawnActor<ATestPossessionPawn>(start[i % 3], FRotator::ZeroRotator, FActorSpawnParameters());
-			OriginalPawns.Add(TestPawn);
-			++i;
-			RegisterAutoDestroyActor(TestPawn);
+	ATestPossessionPlayerController::ResetCalledCounter();
 
-			ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-			PlayerController->RemotePossessOnServer(TestPawn);
-		}
+	AddStep(TEXT("EnsureSpatialOS"), FWorkerDefinition::AllServers, nullptr, [this]() {
+		ULayeredLBStrategy* LoadBalanceStrategy = GetLoadBalancingStrategy();
+		AssertTrue(LoadBalanceStrategy != nullptr, TEXT("Test requires SpatialOS enabled with Load-Balancing Strategy"));
 		FinishStep();
 	});
 
-	AddStep(TEXT("Tick Step"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
-		static float deltaTotal{ 0.f };
-		deltaTotal += DeltaTime;
-		if (deltaTotal > 3.f)
-		{
-			FinishStep();
-		}
-	});
-
-	AddStep(TEXT("Check"), FWorkerDefinition::Server(2), nullptr, nullptr, [this](float) {
-		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
-		{
-			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-			{
-				continue;
-			}
-			ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-			if (PlayerController->HasAuthority())
-			{
-				PlayerController->RemotePossessOnServer(OriginalPawns[0]);
-			}
-		}
-
+	AddStep(TEXT("Create Pawn"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
+		ATestPossessionPawn* Pawn =
+			GetWorld()->SpawnActor<ATestPossessionPawn>(FVector(500.0f, 500.0f, 50.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+		RegisterAutoDestroyActor(Pawn);
 		FinishStep();
 	});
 
-	AddStep(TEXT("Check"), FWorkerDefinition::Server(3), nullptr, nullptr, [this](float) {
-		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
-		{
-			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
-			{
-				continue;
-			}
-			ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-			ensure(PlayerController);
-			if (PlayerController->HasAuthority())
-			{
-				USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-				NetDriver->LockingPolicy->AcquireLock(PlayerController, TEXT("TestLock"));
-				PlayerController->RemotePossessOnServer(OriginalPawns[0]);
-			}
-		}
-
-		FinishStep();
-	});
+	// Make sure all the Controller and Pawn authoritative in right workers
+	AddWaitStep(FWorkerDefinition::AllServers);
 }

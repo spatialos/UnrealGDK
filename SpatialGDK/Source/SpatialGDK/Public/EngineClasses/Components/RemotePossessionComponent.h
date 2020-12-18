@@ -22,14 +22,16 @@ class SPATIALGDK_API URemotePossessionComponent : public UActorComponent
 public:
 	virtual void OnAuthorityGained() override;
 
-	virtual void Possess();
-
-	virtual bool EvaluatePossess(AController* CurrentController, AController* WantController);
+	virtual bool EvaluatePossess();
 
 	virtual bool EvaluateMigration(UAbstractLBStrategy* LBStrategy, VirtualWorkerId& WorkerId);
 
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+protected:
+	void Possess();
+
+	void MarkToDestroy();
 public:
 	UPROPERTY(handover)
 	APawn* Target;
