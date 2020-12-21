@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #include "SpatialGameInstance.generated.h"
 

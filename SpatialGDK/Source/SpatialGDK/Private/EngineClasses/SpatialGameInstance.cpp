@@ -232,13 +232,11 @@ void USpatialGameInstance::Init()
 
 #if ENGINE_MINOR_VERSION >= 25
 AGameModeBase* USpatialGameInstance::CreateGameModeForURL(FURL InURL, UWorld* InWorld)
-#else
-AGameModeBase* USpatialGameInstance::CreateGameModeForURL(FURL InURL)
-#endif
 {
-#if ENGINE_MINOR_VERSION >= 25
 	AGameModeBase* GameMode = Super::CreateGameModeForURL(InURL, InWorld);
 #else
+AGameModeBase* USpatialGameInstance::CreateGameModeForURL(FURL InURL)
+{
 	AGameModeBase* GameMode = Super::CreateGameModeForURL(InURL);
 #endif
 
