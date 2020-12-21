@@ -31,15 +31,20 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 	AddStepSetTagDelegation(TargetActorTag, 2);
 
 	{ // Step 2 - Trigger an ability by class, cross-server
-		AddStep(TEXT("SERVER_1_ActivateAbility"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
-			AssertTrue(ASC != nullptr, TEXT("TargetActor has an ability system component."));
+		AddStep(
+			TEXT("SERVER_1_ActivateAbility"), FWorkerDefinition::Server(1),
+			[this]() {
+				return TargetActor->GetLocalRole() == ENetRole::ROLE_SimulatedProxy;
+			},
+			[this]() {
+				UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
+				AssertTrue(ASC != nullptr, TEXT("TargetActor has an ability system component."));
 
-			UE_LOG(LogTemp, Log, TEXT("Activating ability"));
-			ASC->CrossServerTryActivateAbilityByClass(UGA_IncrementSpyValue::StaticClass());
-			// bool bDidActivate = ASC->TryActivateAbilityByClass(UGA_IncrementSpyValue::StaticClass());
-			// UE_LOG(LogTemp, Log, TEXT("Did activate: %s"), bDidActivate ? TEXT("True") : TEXT("False"));
-			FinishStep();
-		});
+				UE_LOG(LogTemp, Log, TEXT("Activating ability"));
+				ASC->CrossServerTryActivateAbilityByClass(UGA_IncrementSpyValue::StaticClass());
+				// bool bDidActivate = ASC->TryActivateAbilityByClass(UGA_IncrementSpyValue::StaticClass());
+				// UE_LOG(LogTemp, Log, TEXT("Did activate: %s"), bDidActivate ? TEXT("True") : TEXT("False"));
+				FinishStep();
+			});
 	}
 }
