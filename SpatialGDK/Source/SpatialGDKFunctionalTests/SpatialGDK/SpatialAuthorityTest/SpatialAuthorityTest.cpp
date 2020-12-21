@@ -14,7 +14,7 @@
 
 /** This Test is meant to check that HasAuthority() rules are respected on different occasions. We check
  * in BeginPlay and Tick, and in the following use cases:
- *		- replicated level actor 
+ *		- replicated level actor
  *		- replicated level actor on border
  *		- non-replicated level actor
  *		- dynamic replicated actor (one time with spatial authority and another without)
