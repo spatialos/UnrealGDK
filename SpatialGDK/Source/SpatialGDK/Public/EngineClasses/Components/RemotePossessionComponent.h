@@ -24,21 +24,17 @@ public:
 
 	virtual bool EvaluatePossess();
 
-	bool EvaluateMigration(UAbstractLBStrategy* LBStrategy, VirtualWorkerId& WorkerId);
-
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 protected:
 	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "Evaluate Possess"))
 	bool ReceiveEvaluatePossess();
 
-	void Possess();
-
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	void MarkToDestroy();
 
 public:
-	UPROPERTY(Category = Sprite, handover, EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = Sprite, handover, EditAnywhere, BlueprintReadWrite)
 	APawn* Target;
 
 private:

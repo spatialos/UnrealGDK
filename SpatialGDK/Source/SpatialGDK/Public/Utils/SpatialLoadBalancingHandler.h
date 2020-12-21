@@ -105,6 +105,9 @@ protected:
 
 	void LogMigrationFailure(EActorMigrationResult ActorMigrationResult, AActor* Actor);
 
+	bool EvaluateRemoteMigrationComponent(const AActor* Owner, const AActor* Target, UAbstractLBStrategy* LBStrategy,
+										  VirtualWorkerId& WorkerId);
+
 	USpatialNetDriver* NetDriver;
 
 	TMap<AActor*, VirtualWorkerId> ActorsToMigrate;

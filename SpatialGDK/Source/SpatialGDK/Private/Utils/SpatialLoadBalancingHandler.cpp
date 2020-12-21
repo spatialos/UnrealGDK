@@ -58,7 +58,8 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 				if (URemotePossessionComponent* Component = Cast<URemotePossessionComponent>(Components[0]))
 				{
 					VirtualWorkerId TargetVirtualWorkerId;
-					if (Component->EvaluateMigration(NetDriver->LoadBalanceStrategy, TargetVirtualWorkerId))
+					if (EvaluateRemoteMigrationComponent(Component->GetOwner(), Component->Target,
+														 NetDriver->LoadBalanceStrategy, TargetVirtualWorkerId))
 					{
 						OutNetOwner = NetOwner;
 						OutWorkerId = TargetVirtualWorkerId;
@@ -237,4 +238,42 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 			}
 		}
 	}
+}
+
+bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor* Owner, const AActor* Target,
+																	UAbstractLBStrategy* LBStrategy,
+																	VirtualWorkerId& WorkerId)
+{
+	if (Target != nullptr)
+	{
+		UE_LOG(LogRemotePossessionComponent, Log, TEXT("Component->Target is:%s"), *Target->GetName());
+		VirtualWorkerId ActorAuthVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*Owner);
+		VirtualWorkerId TargetVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*Target);
+
+		if (TargetVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+		{
+			UE_LOG(LogRemotePossessionComponent, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"),
+				   *Owner->GetName());
+		}
+		else if (ActorAuthVirtualWorkerId != TargetVirtualWorkerId)
+		{
+			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Migrate actor:%s to worker:%d"), *Owner->GetName(), TargetVirtualWorkerId);
+			WorkerId = TargetVirtualWorkerId;
+			return true;
+		}
+		else if (LBStrategy->GetLocalVirtualWorkerId() == TargetVirtualWorkerId)
+		{
+			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Should call AController::Possess"));
+		}
+		else
+		{
+			UE_LOG(LogRemotePossessionComponent, Log,
+				   TEXT("Waiting Controller and Pawn both are OnAuthorityGained and then possessing"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogRemotePossessionComponent, Log, TEXT("Target is:null"));
+	}
+	return false;
 }

@@ -23,74 +23,31 @@ URemotePossessionComponent::URemotePossessionComponent(const FObjectInitializer&
 
 void URemotePossessionComponent::OnAuthorityGained()
 {
-	Possess();
-}
-
-void URemotePossessionComponent::Possess()
-{
-	UE_LOG(LogRemotePossessionComponent, Log, TEXT("OnAuthorityGained"));
 	AController* Controller = Cast<AController>(GetOwner());
-	if (ensure(Controller != nullptr))
+	ensure(Controller);
+	if (Target == nullptr)
 	{
-		if (Target == nullptr)
-		{
-			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Target is null"));
-			return;
-		}
-		if (!Target->HasAuthority())
-		{
-			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Target is hasn't authority"));
-			return;
-		}
-		else
-		{
-			if (EvaluatePossess())
-			{
-				UE_LOG(LogRemotePossessionComponent, Log, TEXT("Possess(%s)"), *Target->GetName());
-				Controller->Possess(Target);
-			}
-			else
-			{
-				UE_LOG(LogRemotePossessionComponent, Log, TEXT("EvaluatePossess(%s) failed"), *Target->GetName());
-			}
-			MarkToDestroy();
-		}
+		UE_LOG(LogRemotePossessionComponent, Error, TEXT("Target is null"));
+		return;
 	}
-}
-
-bool URemotePossessionComponent::EvaluateMigration(UAbstractLBStrategy* LBStrategy, VirtualWorkerId& WorkerId)
-{
-	if (true == PendingDestroy)
-		return false;
-	if (Target != nullptr)
+	if (!Target->HasAuthority())
 	{
-		UE_LOG(LogRemotePossessionComponent, Log, TEXT("Component->Target is:%s"), *Target->GetName());
-		VirtualWorkerId ActorAuthVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*GetOwner());
-		VirtualWorkerId TargetVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*Target);
-
-		if (TargetVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-		{
-			UE_LOG(LogRemotePossessionComponent, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"),
-				   **GetOwner()->GetName());
-		}
-		else if (ActorAuthVirtualWorkerId != TargetVirtualWorkerId)
-		{
-			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Migrate actor:%s to worker:%d"), *GetOwner()->GetName(), TargetVirtualWorkerId);
-			WorkerId = TargetVirtualWorkerId;
-			return true;
-		}
-		else
-		{
-			Possess();
-			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Actor:%s and Target:%s are in same worker:%d"), *GetOwner()->GetName(),
-				   *Target->GetName(), TargetVirtualWorkerId);
-		}
+		UE_LOG(LogRemotePossessionComponent, Verbose, TEXT("Worker is not authoritative over target: %s"), *Target->GetName());
+		return;
 	}
 	else
 	{
-		UE_LOG(LogRemotePossessionComponent, Log, TEXT("Target is:null"));
+		if (EvaluatePossess())
+		{
+			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Possess(%s)"), *Target->GetName());
+			Controller->Possess(Target);
+		}
+		else
+		{
+			UE_LOG(LogRemotePossessionComponent, Log, TEXT("EvaluatePossess(%s) failed"), *Target->GetName());
+		}
+		MarkToDestroy();
 	}
-	return false;
 }
 
 void URemotePossessionComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
