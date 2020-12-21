@@ -82,11 +82,6 @@ void AGameModeReplicationTest::PrepareTest()
 			// actually change the replicated value from the authority server
 			GameMode->ReplicatedValue = AGameModeReplicationTestGameMode::UpdatedValue;
 		}
-		else
-		{
-			AuthorityServersCount++;
-			AssertEqual_Int(AuthorityServersCount, 1, TEXT("Amount of servers having authority over the GameMode"));
-		}
 
 		FinishStep();
 	});
