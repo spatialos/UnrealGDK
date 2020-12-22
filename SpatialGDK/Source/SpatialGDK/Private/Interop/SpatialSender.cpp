@@ -716,7 +716,8 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 		return true;
 	case EPushRPCResult::DropOverflowed:
 		UE_LOG(LogSpatialSender, Log,
-			   TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping older RPC. Kept RPC: Actor: %s, entity: "
+			   TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, overwriting older RPC with a new one: Actor: %s, "
+					"entity: "
 					"%lld, function: %s"),
 			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return true;

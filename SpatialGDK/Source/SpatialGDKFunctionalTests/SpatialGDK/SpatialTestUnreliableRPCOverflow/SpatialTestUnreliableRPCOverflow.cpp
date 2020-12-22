@@ -34,8 +34,7 @@ void ASpatialTestUnreliableRPCOverflow::PrepareTest()
 
 	AddStep(TEXT("The Server spawns one AUnreliableRPCTestActor and gives ownership to the Client"), FWorkerDefinition::Server(1), nullptr,
 			[this]() {
-				TestActor = GetWorld()->SpawnActor<AUnreliableRPCTestActor>(FVector(0.0f, 0.0f, 50.0f), FRotator::ZeroRotator,
-																			FActorSpawnParameters());
+				TestActor = GetWorld()->SpawnActor<AUnreliableRPCTestActor>(FVector(0.0f, 0.0f, 50.0f), FRotator::ZeroRotator);
 				RegisterAutoDestroyActor(TestActor);
 
 				ASpatialFunctionalTestFlowController* Client1FlowController =
@@ -51,12 +50,15 @@ void ASpatialTestUnreliableRPCOverflow::PrepareTest()
 				FinishStep();
 			});
 
-	AddStep(TEXT("Make sure client has ownership of Actor"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](float DeltaTime) {
-		if (IsValid(TestActor) && TestActor->GetOwner() == GetLocalFlowController()->GetOwner())
-		{
-			FinishStep();
-		}
-	});
+	AddStep(
+		TEXT("Make sure client has ownership of Actor"), FWorkerDefinition::Client(1), nullptr, nullptr,
+		[this](float DeltaTime) {
+			if (IsValid(TestActor) && TestActor->GetOwner() == GetLocalFlowController()->GetOwner())
+			{
+				FinishStep();
+			}
+		},
+		5.0f);
 
 	AddStep(
 		TEXT("Sent GetRPCRingBufferSize() + 2 unreliable RPCs from the server to the client"), FWorkerDefinition::Server(1),
@@ -78,8 +80,8 @@ void ASpatialTestUnreliableRPCOverflow::PrepareTest()
 			AssertTrue(
 				Array.Num() == RPCLimitCount,
 				FString::Printf(TEXT("Only RPCLimitCount = %i RPCs should be received. The first two will be dropped"), RPCLimitCount));
-			AssertFalse(Array.Contains(0), TEXT("The first RPC should be dropped because a more recent RPC overflown"));
-			AssertFalse(Array.Contains(1), TEXT("The second RPC should be dropped because a more recent RPC overflown"));
+			AssertFalse(Array.Contains(0) || Array.Contains(1),
+						TEXT("The first 2 RPCs should be dropped because more recent RPCs overflowed"));
 			AssertTrue(Array.Contains(RPCLimitCount) && Array.Contains(RPCLimitCount + 1),
 					   TEXT("The last 2 RPCs should be sent even if overflowing as they are the most recent"));
 			FinishStep();
