@@ -9,7 +9,12 @@ UGA_IncrementSpyValue::UGA_IncrementSpyValue()
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::NonInstanced;
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerOnly;
 
-	AbilityTags.AddTag(FGameplayTag::RequestGameplayTag(FName(TEXT("GameplayAbility.Trigger"))));
+	AbilityTags.AddTag(UGA_IncrementSpyValue::GetTriggerTag());
+
+	FAbilityTriggerData Trigger;
+	Trigger.TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
+	Trigger.TriggerTag = UGA_IncrementSpyValue::GetTriggerTag();
+	AbilityTriggers.Add(Trigger);
 }
 
 void UGA_IncrementSpyValue::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,

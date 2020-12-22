@@ -7,7 +7,7 @@
 #include "SpyValueGASTestActor.generated.h"
 
 /**
- * A replicated Actor with a Cube Mesh, used as a base for Actors used in spatial tests.
+ * An actor with a replicated counter. This allows an auth server to increment the counter when an action was taken, and a non-auth server to verify that the action took place
  */
 UCLASS()
 class ASpyValueGASTestActor : public AGASTestActorBase

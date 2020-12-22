@@ -38,7 +38,35 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 
 	AddStepSetTagDelegation(TargetActorTag, 2);
 
-	// Step 2 - Trigger an ability by class, cross-server, and confirm that it got activated
+	// Step 2 - Trigger an ability by spec handle, cross-server, and confirm that it got activated
+	AddStep(
+		TEXT("SERVER_1_ActivateAbilityBySpecHandle"), FWorkerDefinition::Server(1),
+		[this]() {
+			return TargetActorReadyForActivation(TargetActor);
+		},
+		[this]() {
+			UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
+			AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
+
+			TArray<FGameplayAbilitySpec*> FoundAbilitySpecs;
+			ASC->GetActivatableGameplayAbilitySpecsByAllMatchingTags(FGameplayTagContainer(UGA_IncrementSpyValue::GetTriggerTag()),
+																	 FoundAbilitySpecs);
+			AssertEqual_Int(FoundAbilitySpecs.Num(), 1, TEXT("Target actor has one granted instance of the ability"));
+			FGameplayAbilitySpecHandle AbilityHandle = FoundAbilitySpecs[0]->Handle;
+			AssertTrue(AbilityHandle.IsValid(), TEXT("Activatable ability has a valid handle"));
+
+			UE_LOG(LogTemp, Log, TEXT("Activating ability"));
+			ASC->CrossServerTryActivateAbility(AbilityHandle);
+		},
+		[this](float DeltaTime) {
+			bool bShouldFinishStep = WaitForActivationConfirmation(DeltaTime);
+			if (bShouldFinishStep)
+			{
+				FinishStep();
+			}
+		});
+
+	// Step 3 - Same as 2, but activate by class
 	AddStep(
 		TEXT("SERVER_1_ActivateAbilityByClass"), FWorkerDefinition::Server(1),
 		[this]() {
@@ -46,7 +74,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 		},
 		[this]() {
 			UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
-			AssertTrue(ASC != nullptr, TEXT("TargetActor has an ability system component."));
+			AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
 
 			UE_LOG(LogTemp, Log, TEXT("Activating ability"));
 			ASC->CrossServerTryActivateAbilityByClass(UGA_IncrementSpyValue::StaticClass());
@@ -59,7 +87,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 			}
 		});
 
-	// Step 3 - Same as 2, but trigger by tag
+	// Step 4 - Same as 2, but activate by tag
 	AddStep(
 		TEXT("SERVER_1_ActivateAbilityByTag"), FWorkerDefinition::Server(1),
 		[this]() {
@@ -67,11 +95,33 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 		},
 		[this]() {
 			UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
-			AssertTrue(ASC != nullptr, TEXT("TargetActor has an ability system component."));
+			AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
 
 			UE_LOG(LogTemp, Log, TEXT("Activating ability"));
-			ASC->CrossServerTryActivateAbilitiesByTag(
-				FGameplayTagContainer(FGameplayTag::RequestGameplayTag(FName(TEXT("GameplayAbility.Trigger")))));
+			ASC->CrossServerTryActivateAbilitiesByTag(FGameplayTagContainer(UGA_IncrementSpyValue::GetTriggerTag()));
+		},
+		[this](float DeltaTime) {
+			bool bShouldFinishStep = WaitForActivationConfirmation(DeltaTime);
+			if (bShouldFinishStep)
+			{
+				FinishStep();
+			}
+		});
+
+	// Step 5 - Activate by event.
+	AddStep(
+		TEXT("SERVER_1_ActivateAbilityByEvent"), FWorkerDefinition::Server(1),
+		[this]() {
+			return TargetActorReadyForActivation(TargetActor);
+		},
+		[this]() {
+			UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
+			AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
+
+			UE_LOG(LogTemp, Log, TEXT("Activating ability"));
+
+			FGameplayEventData EventData;
+			ASC->CrossServerHandleGameplayEvent(UGA_IncrementSpyValue::GetTriggerTag(), EventData);
 		},
 		[this](float DeltaTime) {
 			bool bShouldFinishStep = WaitForActivationConfirmation(DeltaTime);
@@ -84,7 +134,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 
 bool ACrossServerAbilityActivationTest::WaitForActivationConfirmation(float DeltaTime)
 {
-	// StepTimer == -1.0f signals that we have not yet see Counter be 1
+	// StepTimer == -1.0f signals that we have not yet seen Counter be 1
 	if (StepTimer != -1.0f)
 	{
 		StepTimer += DeltaTime;

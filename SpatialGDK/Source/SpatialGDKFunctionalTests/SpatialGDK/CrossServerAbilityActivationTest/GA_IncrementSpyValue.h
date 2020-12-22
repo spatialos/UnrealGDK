@@ -4,6 +4,7 @@
 
 #include "Abilities/GameplayAbility.h"
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "GA_IncrementSpyValue.generated.h"
 
 /**
@@ -19,4 +20,6 @@ public:
 
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 								 const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+
+	static FGameplayTag GetTriggerTag() { return FGameplayTag::RequestGameplayTag(FName(TEXT("GameplayAbility.Trigger"))); }
 };
