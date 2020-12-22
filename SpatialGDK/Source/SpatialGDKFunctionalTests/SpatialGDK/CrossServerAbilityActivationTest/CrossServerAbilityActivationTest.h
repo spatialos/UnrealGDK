@@ -19,6 +19,13 @@ class SPATIALGDKFUNCTIONALTESTS_API ACrossServerAbilityActivationTest : public A
 
 	virtual void PrepareTest() override;
 
+	UPROPERTY(EditInstanceOnly, Category = "Test Settings")
+	float DuplicateActivationCheckWaitTime;
+
 private:
 	ASpyValueGASTestActor* TargetActor;
+	float StepTimer;
+
+	// Returns whether the caller should finish the step
+	bool WaitForActivationConfirmation(float DeltaTime);
 };

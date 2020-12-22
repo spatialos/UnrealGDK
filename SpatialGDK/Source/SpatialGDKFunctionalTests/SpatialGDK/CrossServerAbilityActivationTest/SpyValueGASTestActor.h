@@ -17,8 +17,17 @@ class ASpyValueGASTestActor : public AGASTestActorBase
 public:
 	ASpyValueGASTestActor();
 
-	void OnAuthorityGained() override;
+	void OnAuthorityGained() override; // TODO temp
+
+	void IncrementCounter();
+	int GetCounter();
+
+	UFUNCTION(CrossServer, Reliable)
+	void ResetCounter();
 
 private:
 	TArray<TSubclassOf<UGameplayAbility>> GetInitialGrantedAbilities() override;
+
+	UPROPERTY(Replicated)
+	int Counter;
 };

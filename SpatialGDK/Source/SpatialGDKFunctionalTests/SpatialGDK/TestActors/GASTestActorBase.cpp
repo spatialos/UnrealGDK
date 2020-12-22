@@ -29,5 +29,7 @@ void AGASTestActorBase::GrantInitialAbilitiesIfNeeded()
 			FGameplayAbilitySpecHandle Handle = AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(Ability));
 			UE_LOG(LogTemp, Log, TEXT("Handle valid: %s"), Handle.IsValid() ? TEXT("true") : TEXT("false"));
 		}
+
+		bHasGrantedAbilities = true;
 	}
 }
