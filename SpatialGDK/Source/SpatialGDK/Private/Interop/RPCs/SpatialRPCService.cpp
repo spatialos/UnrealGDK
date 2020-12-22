@@ -345,9 +345,12 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 	}
 
 	const uint64 NewRPCId = RPCStore.LastSentRPCIds.FindRef(EntityType) + 1;
+	const bool NotOverflowing = LastAckedRPCId + RPCRingBufferUtils::GetRingBufferSize(Type) >= NewRPCId;
 
 	// Check capacity.
-	if (LastAckedRPCId + RPCRingBufferUtils::GetRingBufferSize(Type) >= NewRPCId)
+	// If there is enough capacity or the overflow comes from an Unreliable RPC, we send it.
+	// Unreliable RPC overflowing will overwrite the oldest Unreliable RPC from the ring buffer.
+	if (NotOverflowing || !RPCRingBufferUtils::ShouldQueueOverflowed(Type))
 	{
 		if (EventTracer != nullptr)
 		{
@@ -376,20 +379,13 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 
 		RPCStore.LastSentRPCIds.Add(EntityType, NewRPCId);
 	}
+	// Reliable RPC Overflowed
 	else
 	{
-		// Overflowed
-		if (RPCRingBufferUtils::ShouldQueueOverflowed(Type))
-		{
-			return EPushRPCResult::QueueOverflowed;
-		}
-		else
-		{
-			return EPushRPCResult::DropOverflowed;
-		}
+		return EPushRPCResult::QueueOverflowed;
 	}
 
-	return EPushRPCResult::Success;
+	return NotOverflowing ? EPushRPCResult::Success : EPushRPCResult::DropOverflowed;
 }
 
 FRPCErrorInfo SpatialRPCService::ApplyRPC(const FPendingRPCParams& Params)
