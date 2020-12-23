@@ -74,7 +74,7 @@ const FString ProxyInfoFilePath = FPaths::Combine(ProxyFileDirectory, TEXT("Serv
 
 #if PLATFORM_MAC
 const FString LsofCmdFilePath = TEXT("/usr/sbin/");
-const FString KillCmdFilePath = TEXT("/bin/");
+const FString BinPath = TEXT("/bin/");
 #endif
 
 const int32 ExitCodeSuccess = 0;
