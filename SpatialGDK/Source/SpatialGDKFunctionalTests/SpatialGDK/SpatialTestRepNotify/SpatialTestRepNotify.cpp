@@ -165,7 +165,7 @@ void ASpatialTestRepNotify::PrepareTest()
 				if (OldTestArray.Num() != 3)
 				{
 					FinishTest(EFunctionalTestResult::Failed,
-							   TEXT("OnRepTestArray should have been called with 3 entries in the old Array on Native"));
+							   FString::Printf(TEXT("OnRepTestArray should have been called with 3 entries in the old Array on Native %d"), OldTestArray.Num()));
 					return;
 				}
 
