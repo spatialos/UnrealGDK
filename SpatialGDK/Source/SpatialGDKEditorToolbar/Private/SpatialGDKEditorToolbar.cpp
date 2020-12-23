@@ -769,7 +769,7 @@ bool FSpatialGDKEditorToolbarModule::FetchInspectorBinaryWrapper(FString Inspect
 	FString OutString;
 	FString OutErr;
 	FString ChmodCommand = FPaths::Combine(SpatialGDKServicesConstants::BinPath, TEXT("chmod"));
-	FString ChmodArguments = FString::Printf(TEXT("+x %s"), *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion));
+	FString ChmodArguments = FString::Printf(TEXT("+x \"%s\""), *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion));
 	bSuccess = FPlatformProcess::ExecProcess(*ChmodCommand, *ChmodArguments, &OutCode, &OutString, &OutErr);
 	if (!bSuccess)
 	{
