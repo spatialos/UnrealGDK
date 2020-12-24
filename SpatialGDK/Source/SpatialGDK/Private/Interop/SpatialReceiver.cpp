@@ -963,7 +963,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 
 	// Any Actor created here will have been received over the wire as an entity so we can mark it ready.
-	EntityActor->SetActorReady(false);
+	// Startup actors should trigger events on non-auth servers
+	EntityActor->SetActorReady(NetDriver->IsServer() && EntityActor->bNetStartup);
 
 	// Taken from PostNetInit
 	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
