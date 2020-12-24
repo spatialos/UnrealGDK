@@ -8,7 +8,7 @@
 
 AGameModeReplicationTestGameMode::AGameModeReplicationTestGameMode()
 {
-	NetCullDistanceSquared = 0;
+	NetCullDistanceSquared = 0.0f;
 }
 
 void AGameModeReplicationTestGameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -33,12 +33,9 @@ AGameModeReplicationTest::AGameModeReplicationTest()
 {
 	Author = TEXT("Dmitrii");
 	Description = TEXT("Test GameMode replication");
-
-	bReplicates = true;
-	bAlwaysRelevant = true;
 }
 
-void AGameModeReplicationTest::MarkWorkerGameModeAuthority_Implementation(int WorkerId, bool bHasGameModeAuthority)
+void AGameModeReplicationTest::MarkWorkerGameModeAuthority_Implementation(bool bHasGameModeAuthority)
 {
 	ServerResponsesCount++;
 
@@ -66,7 +63,7 @@ void AGameModeReplicationTest::PrepareTest()
 
 		const bool bHasAuthorityOverGameMode = GameMode->HasAuthority();
 
-		MarkWorkerGameModeAuthority(GetLocalWorkerId(), bHasAuthorityOverGameMode);
+		MarkWorkerGameModeAuthority(bHasAuthorityOverGameMode);
 
 		if (bHasAuthorityOverGameMode)
 		{
@@ -86,7 +83,7 @@ void AGameModeReplicationTest::PrepareTest()
 		FinishStep();
 	});
 
-	constexpr int CrossServerRpcExecutionTime = 1;
+	constexpr float CrossServerRpcExecutionTime = 1;
 
 	AddStep(
 		TEXT("Waiting for GameMode authority information"), FWorkerDefinition::AllServers, nullptr,
@@ -106,7 +103,7 @@ void AGameModeReplicationTest::PrepareTest()
 		},
 		CrossServerRpcExecutionTime);
 
-	constexpr int ValueReplicationTime = 1;
+	constexpr float ValueReplicationTime = 1;
 
 	AddStep(
 		TEXT("Waiting for the GameMode value to be received on all servers"), FWorkerDefinition::AllServers, nullptr, nullptr,

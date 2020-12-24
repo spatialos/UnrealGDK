@@ -31,7 +31,7 @@ public:
 	int ReplicatedValue = StartingValue;
 };
 
-UCLASS(BlueprintType, SpatialType)
+UCLASS(BlueprintType)
 class SPATIALGDKFUNCTIONALTESTS_API AGameModeReplicationTest : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
@@ -40,7 +40,7 @@ public:
 	AGameModeReplicationTest();
 
 	UFUNCTION(CrossServer, Reliable)
-	void MarkWorkerGameModeAuthority(int WorkerId, bool bHasGameModeAuthority);
+	void MarkWorkerGameModeAuthority(bool bHasGameModeAuthority);
 
 	virtual void PrepareTest() override;
 
