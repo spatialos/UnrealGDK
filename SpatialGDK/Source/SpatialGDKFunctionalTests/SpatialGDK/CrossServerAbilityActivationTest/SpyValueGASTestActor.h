@@ -7,7 +7,8 @@
 #include "SpyValueGASTestActor.generated.h"
 
 /**
- * An actor with a replicated counter. This allows an auth server to increment the counter when an action was taken, and a non-auth server to verify that the action took place
+ * An actor with a replicated counter. This allows an auth server to increment the counter when an action was taken, and a non-auth server
+ * to verify that the action took place
  */
 UCLASS()
 class ASpyValueGASTestActor : public AGASTestActorBase

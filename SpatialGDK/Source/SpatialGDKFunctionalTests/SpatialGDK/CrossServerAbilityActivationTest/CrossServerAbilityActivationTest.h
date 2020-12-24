@@ -8,7 +8,8 @@
 #include "CrossServerAbilityActivationTest.generated.h"
 
 /**
- * TODO
+ * Tests that a gameplay ability can be activated on an actor across a server boundary.
+ * Activation by ability spec, class, tag, and gameplay event are tested.
  */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ACrossServerAbilityActivationTest : public ASpatialFunctionalTest

@@ -26,7 +26,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 	FName TargetActorTag = FName(TEXT("Target"));
 
 	// Step 1 - Spawn Actor On Auth
-	AddStep(TEXT("SERVER_1_Spawn"), FWorkerDefinition::Server(1), nullptr, [this, TargetActorTag]() {
+	AddStep(TEXT("Spawn actor"), FWorkerDefinition::Server(1), nullptr, [this, TargetActorTag]() {
 		UWorld* World = GetWorld();
 		TargetActor = World->SpawnActor<ASpyValueGASTestActor>({ 0.0f, 0.0f, 0.0f }, FRotator::ZeroRotator);
 		AssertTrue(IsValid(TargetActor), TEXT("Target actor is valid."));
@@ -40,7 +40,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 
 	// Step 2 - Trigger an ability by spec handle, cross-server, and confirm that it got activated
 	AddStep(
-		TEXT("SERVER_1_ActivateAbilityBySpecHandle"), FWorkerDefinition::Server(1),
+		TEXT("Activate Ability by Spec Handle"), FWorkerDefinition::Server(1),
 		[this]() {
 			return TargetActorReadyForActivation(TargetActor);
 		},
@@ -68,7 +68,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 
 	// Step 3 - Same as 2, but activate by class
 	AddStep(
-		TEXT("SERVER_1_ActivateAbilityByClass"), FWorkerDefinition::Server(1),
+		TEXT("Activate Ability by Class"), FWorkerDefinition::Server(1),
 		[this]() {
 			return TargetActorReadyForActivation(TargetActor);
 		},
@@ -89,7 +89,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 
 	// Step 4 - Same as 2, but activate by tag
 	AddStep(
-		TEXT("SERVER_1_ActivateAbilityByTag"), FWorkerDefinition::Server(1),
+		TEXT("Activate Ability by Tag"), FWorkerDefinition::Server(1),
 		[this]() {
 			return TargetActorReadyForActivation(TargetActor);
 		},
@@ -110,7 +110,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 
 	// Step 5 - Activate by event.
 	AddStep(
-		TEXT("SERVER_1_ActivateAbilityByEvent"), FWorkerDefinition::Server(1),
+		TEXT("Activate Ability by Event"), FWorkerDefinition::Server(1),
 		[this]() {
 			return TargetActorReadyForActivation(TargetActor);
 		},

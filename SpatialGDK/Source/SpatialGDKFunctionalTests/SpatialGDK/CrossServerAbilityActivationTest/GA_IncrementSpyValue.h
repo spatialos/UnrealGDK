@@ -8,7 +8,7 @@
 #include "GA_IncrementSpyValue.generated.h"
 
 /**
- * TODO
+ * Calls `IncrementCounter()` on its owner to signal that this ability ran. The owner must be an ASpyValueGASTestActor
  */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API UGA_IncrementSpyValue : public UGameplayAbility
