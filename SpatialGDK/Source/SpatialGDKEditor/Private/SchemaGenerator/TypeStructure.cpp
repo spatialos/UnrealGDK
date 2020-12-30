@@ -12,13 +12,24 @@ using namespace SpatialGDKEditor::Schema;
 
 TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
 {
-	static TArray<EReplicatedPropertyGroup> Groups = { REP_MultiClient, REP_SingleClient };
+	static TArray<EReplicatedPropertyGroup> Groups = { REP_MultiClient, REP_SingleClient, REP_MultiClient_InitialOnly };
 	return Groups;
 }
 
 FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 {
-	return Group == REP_SingleClient ? TEXT("OwnerOnly") : TEXT("");
+	if (Group == REP_SingleClient)
+	{
+		return TEXT("OwnerOnly");
+	}
+	else if (Group == REP_MultiClient_InitialOnly)
+	{
+		return TEXT("InitialOnly");
+	}
+	else
+	{
+		return TEXT("");
+	}
 }
 
 void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor)
@@ -415,6 +426,7 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 	FUnrealFlatRepData RepData;
 	RepData.Add(REP_MultiClient);
 	RepData.Add(REP_SingleClient);
+	RepData.Add(REP_MultiClient_InitialOnly);
 
 	VisitAllProperties(TypeInfo, [&RepData](TSharedPtr<FUnrealProperty> PropertyInfo) {
 		if (PropertyInfo->ReplicationData.IsValid())
@@ -426,6 +438,9 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 			case COND_ReplayOrOwner:
 			case COND_OwnerOnly:
 				Group = REP_SingleClient;
+				break;
+			case COND_InitialOnly:
+				Group = REP_MultiClient_InitialOnly;
 				break;
 			}
 			RepData[Group].Add(PropertyInfo->ReplicationData->Handle, PropertyInfo);
