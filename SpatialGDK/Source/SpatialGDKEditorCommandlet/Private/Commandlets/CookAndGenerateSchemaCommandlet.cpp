@@ -160,6 +160,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Data);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover);
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_InitialOnly);
 
 	// Finish initializing the schema database through updating the server authoritative component set.
 	for (const auto& ComponentId : GeneratedServerAuthoritativeComponentIds)

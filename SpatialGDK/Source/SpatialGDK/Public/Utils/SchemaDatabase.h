@@ -123,6 +123,9 @@ public:
 	TArray<uint32> HandoverComponentIds;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<uint32> InitialOnlyComponentsIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TArray<uint32> LevelComponentIds;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
