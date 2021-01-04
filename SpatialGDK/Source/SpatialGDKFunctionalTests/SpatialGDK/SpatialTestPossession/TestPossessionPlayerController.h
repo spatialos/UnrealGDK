@@ -22,7 +22,7 @@ public:
 	void RemotePossessOnServer(APawn* InPawn);
 
 	UFUNCTION(Server, Reliable)
-	void RemotePossessOnClient(APawn* InPawn);
+	void RemotePossessOnClient(APawn* InPawn, bool LockBefore);
 
 	static void ResetCalledCounter();
 

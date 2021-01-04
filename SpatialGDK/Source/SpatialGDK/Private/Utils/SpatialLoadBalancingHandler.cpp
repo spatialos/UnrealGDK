@@ -244,6 +244,11 @@ bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor
 																	UAbstractLBStrategy* LBStrategy,
 																	VirtualWorkerId& WorkerId)
 {
+	if (NetDriver->LockingPolicy->IsLocked(Owner))
+	{
+		return false;
+	}
+
 	if (Target != nullptr)
 	{
 		UE_LOG(LogRemotePossessionComponent, Log, TEXT("Component->Target is:%s"), *Target->GetName());

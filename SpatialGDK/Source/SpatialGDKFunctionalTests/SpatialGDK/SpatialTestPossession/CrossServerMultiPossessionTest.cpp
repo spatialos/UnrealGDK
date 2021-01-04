@@ -49,7 +49,7 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 				ATestPossessionPlayerController* Controller = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
 				if (Controller != nullptr)
 				{
-					Controller->RemotePossessOnClient(Pawn);
+					Controller->RemotePossessOnClient(Pawn, false);
 				}
 			}
 		}

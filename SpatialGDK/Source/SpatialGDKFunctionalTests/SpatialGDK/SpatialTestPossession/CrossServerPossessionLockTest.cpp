@@ -44,7 +44,7 @@ void ACrossServerPossessionLockTest::PrepareTest()
 				ATestPossessionPlayerController* Controller = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
 				if (Controller != nullptr)
 				{
-					Controller->RemotePossessOnClient(Pawn);
+					Controller->RemotePossessOnClient(Pawn, true);
 				}
 			}
 		}
@@ -56,7 +56,7 @@ void ACrossServerPossessionLockTest::PrepareTest()
 	AddStep(TEXT("Check test result"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
-		AssertIsValid(Pawn->GetController(), TEXT("Pawn should have a controller"), Pawn);
+		AssertTrue(Pawn->GetController() == nullptr, TEXT("Pawn shouldn't have a controller"), Pawn);
 		FinishStep();
 	});
 }

@@ -3,6 +3,7 @@
 #include "TestPossessionPlayerController.h"
 #include "Engine/World.h"
 #include "EngineClasses/Components/RemotePossessionComponent.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogTestPossessionPlayerController);
@@ -25,9 +26,17 @@ void ATestPossessionPlayerController::OnUnPossess()
 	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s OnUnPossess()"), *GetName());
 }
 
-void ATestPossessionPlayerController::RemotePossessOnClient_Implementation(APawn* InPawn)
+void ATestPossessionPlayerController::RemotePossessOnClient_Implementation(APawn* InPawn, bool LockBefore)
 {
 	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s RemotePossessOnClient_Implementation:%s"), *GetName(), *InPawn->GetName());
+	if (LockBefore)
+	{
+		USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+		if (NetDriver && NetDriver->LockingPolicy)
+		{
+			NetDriver->LockingPolicy->AcquireLock(this, TEXT("TestLock"));
+		}
+	}
 	RemotePossessOnServer(InPawn);
 }
 
