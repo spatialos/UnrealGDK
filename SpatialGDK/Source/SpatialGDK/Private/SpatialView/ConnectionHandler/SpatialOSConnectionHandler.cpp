@@ -11,6 +11,11 @@
 #include <improbable/c_trace.h>
 #include <improbable/c_worker.h>
 
+#include <string>
+#include <sstream>
+
+DEFINE_LOG_CATEGORY(LogSpatialNetConnectionMetrics);
+
 namespace SpatialGDK
 {
 SpatialOSConnectionHandler::SpatialOSConnectionHandler(Worker_Connection* Connection, TSharedPtr<SpatialEventTracer> EventTracer)
@@ -53,6 +58,32 @@ OpList SpatialOSConnectionHandler::GetNextOpList()
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
 			Id = &Op.op.command_response.request_id;
 			break;
+        case WORKER_OP_TYPE_METRICS:
+		{
+			std::stringstream ss;
+			ss << "  Gauge Metrics:\n";
+			for (uint32_t k = 0; k < Op.op.metrics.metrics.gauge_metric_count; ++k)
+			{
+				const Worker_GaugeMetric& gauge_metric = Op.op.metrics.metrics.gauge_metrics[k];
+				ss << "    " << gauge_metric.key << ":" << gauge_metric.value << "\n";
+			}
+
+			ss << "  Histogram Metrics:\n";
+			for (uint32_t k = 0; k < Op.op.metrics.metrics.histogram_metric_count; ++k)
+			{
+				const Worker_HistogramMetric& histogram_metric = Op.op.metrics.metrics.histogram_metrics[k];
+				ss << "    " << histogram_metric.key << " - Sum: " << histogram_metric.sum << "\n";
+				for (uint32_t j = 0; j < histogram_metric.bucket_count; ++j)
+				{
+					const Worker_HistogramMetricBucket& bucket = histogram_metric.buckets[j];
+					ss << "      Upper Bound: " << bucket.upper_bound << " Samples: " << bucket.samples << "\n";
+				}
+			}
+			std::string metric_string = ss.str();
+			UE_LOG(LogSpatialNetConnectionMetrics, Log, TEXT("Received Metrics Op: \n%s"), UTF8_TO_TCHAR(metric_string.c_str()));
+			Id = nullptr;
+			break;
+		}
 		default:
 			Id = nullptr;
 			break;

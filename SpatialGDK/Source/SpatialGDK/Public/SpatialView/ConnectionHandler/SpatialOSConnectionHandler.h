@@ -5,6 +5,8 @@
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/OpList/OpList.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetConnectionMetrics, Log, All);
+
 namespace SpatialGDK
 {
 class SpatialEventTracer;
