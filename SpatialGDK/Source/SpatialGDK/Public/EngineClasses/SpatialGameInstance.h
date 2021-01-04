@@ -42,11 +42,6 @@ public:
 
 	//~ Begin UGameInstance Interface
 	virtual void Init() override;
-#if ENGINE_MINOR_VERSION >= 25
-	virtual AGameModeBase* CreateGameModeForURL(FURL InURL, UWorld* InWorld) override;
-#else
-	virtual AGameModeBase* CreateGameModeForURL(FURL InURL) override;
-#endif
 	//~ End UGameInstance Interface
 
 	// The SpatiaConnectionManager must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from
