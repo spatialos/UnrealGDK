@@ -26,6 +26,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Worker configurations must now be stored in the launch config for local deployments. These can be added in the SpatialGDKEditorSettings as before.
 - Spot and SpatialD (Spatial Service) dependencies have been removed.
 - Compatibility Mode runtime is no longer supported.
+- Legacy RPCs have been removed in favour of ring-buffer RPCs
 
 ### Features:
 - The DeploymentLauncher tool can now be used to start multiple simulated player deployments at once.
