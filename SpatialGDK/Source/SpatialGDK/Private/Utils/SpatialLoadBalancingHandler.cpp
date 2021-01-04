@@ -151,7 +151,6 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 	}
 }
 
-
 EvaluateActorResult FSpatialLoadBalancingHandler::EvaluateSingleActor_Impl(AActor* Actor, AActor*& OutNetOwner,
 																		   VirtualWorkerId& OutWorkerId)
 {
