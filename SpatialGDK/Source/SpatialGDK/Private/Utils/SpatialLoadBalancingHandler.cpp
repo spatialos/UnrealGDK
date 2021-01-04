@@ -58,8 +58,8 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 				if (URemotePossessionComponent* Component = Cast<URemotePossessionComponent>(Components[0]))
 				{
 					VirtualWorkerId TargetVirtualWorkerId;
-					if (EvaluateRemoteMigrationComponent(Component->GetOwner(), Component->Target,
-														 NetDriver->LoadBalanceStrategy, TargetVirtualWorkerId))
+					if (EvaluateRemoteMigrationComponent(Component->GetOwner(), Component->Target, NetDriver->LoadBalanceStrategy,
+														 TargetVirtualWorkerId))
 					{
 						OutNetOwner = NetOwner;
 						OutWorkerId = TargetVirtualWorkerId;
@@ -241,8 +241,7 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 }
 
 bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor* Owner, const AActor* Target,
-																	UAbstractLBStrategy* LBStrategy,
-																	VirtualWorkerId& WorkerId)
+																	UAbstractLBStrategy* LBStrategy, VirtualWorkerId& WorkerId)
 {
 	if (NetDriver->LockingPolicy->IsLocked(Owner))
 	{
@@ -272,8 +271,7 @@ bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor
 		}
 		else
 		{
-			UE_LOG(LogRemotePossessionComponent, Log,
-				   TEXT("Waiting Controller and Pawn both are OnAuthorityGained and then possessing"));
+			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Waiting Controller and Pawn both are OnAuthorityGained and then possessing"));
 		}
 	}
 	else
