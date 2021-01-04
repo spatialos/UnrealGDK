@@ -408,7 +408,13 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 {
 	if (FlowController->IsLocalController())
 	{
-		checkf(LocalFlowController == nullptr, TEXT("Already had LocalFlowController, this shouldn't happen"));
+		if (LocalFlowController != nullptr)
+		{
+			checkf(LocalFlowController == FlowController,
+				   TEXT("OwningTest already had different LocalFlowController, this shouldn't happen"));
+			return;
+		}
+
 		LocalFlowController = FlowController;
 	}
 
@@ -828,11 +834,12 @@ void ASpatialFunctionalTest::KeepActorOnCurrentWorker(AActor* Actor)
 
 void ASpatialFunctionalTest::AddStepSetTagDelegation(FName Tag, int32 ServerWorkerId /*= 1*/)
 {
+	// Valid ServerWorkerIDs range from 1 to NumExpectedServers, inclusive
 	if (!ensureMsgf(ServerWorkerId > 0, TEXT("Invalid Server Worker Id")))
 	{
 		return;
 	}
-	if (ServerWorkerId >= GetNumExpectedServers())
+	if (ServerWorkerId > GetNumExpectedServers())
 	{
 		ServerWorkerId = 1; // Support for single worker environments.
 	}
