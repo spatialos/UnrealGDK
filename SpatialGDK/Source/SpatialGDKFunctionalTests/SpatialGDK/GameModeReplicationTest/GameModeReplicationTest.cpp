@@ -13,13 +13,9 @@ AGameModeReplicationTestGameMode::AGameModeReplicationTestGameMode()
 
 void AGameModeReplicationTestGameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	DOREPLIFETIME(AGameModeReplicationTestGameMode, ReplicatedValue);
-}
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-bool AGameModeReplicationTestGameMode::IsNetRelevantFor(const AActor* RealViewer, const AActor* ViewTarget,
-														const FVector& SrcLocation) const
-{
-	return false;
+	DOREPLIFETIME(AGameModeReplicationTestGameMode, ReplicatedValue);
 }
 
 /**
@@ -67,15 +63,6 @@ void AGameModeReplicationTest::PrepareTest()
 
 		if (bHasAuthorityOverGameMode)
 		{
-			const FVector GameModeFarawayLocation(1000 * 1000 * 1000, 1000 * 1000 * 1000, 1000 * 1000 * 1000);
-
-			// GameModeBase hides this function so we upcast to AActor;
-			// this probably doesn't do anything as GameModes generally don't have RootComponents
-			// and no location as consequence
-			AActor* GameModeActor = GameMode;
-
-			GameModeActor->SetActorLocation(GameModeFarawayLocation);
-
 			// actually change the replicated value from the authority server
 			GameMode->ReplicatedValue = AGameModeReplicationTestGameMode::UpdatedValue;
 		}
