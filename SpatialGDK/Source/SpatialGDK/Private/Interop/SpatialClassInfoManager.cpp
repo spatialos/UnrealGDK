@@ -47,7 +47,8 @@ bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver)
 	if (SchemaDatabase->SchemaDatabaseVersion < ESchemaDatabaseVersion::LatestVersion)
 	{
 		UE_LOG(LogSpatialClassInfoManager, Error,
-			   TEXT("SchemaDatabase version old! Please regenerate schema or turn off SpatialOS networking."));
+			   TEXT("SchemaDatabase version old! Loaded: %d Expected: %d Please regenerate schema or turn off SpatialOS networking."),
+			   SchemaDatabase->SchemaDatabaseVersion, ESchemaDatabaseVersion::LatestVersion);
 		QuitGame();
 		return false;
 	}

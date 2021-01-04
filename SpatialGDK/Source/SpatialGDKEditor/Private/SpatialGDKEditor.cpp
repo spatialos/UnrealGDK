@@ -356,7 +356,7 @@ void FSpatialGDKEditor::StopCloudDeployment(FSimpleDelegate SuccessCallback, FSi
 
 bool FSpatialGDKEditor::FullScanRequired()
 {
-	return !Schema::GeneratedSchemaFolderExists() || !Schema::GeneratedSchemaDatabaseExists();
+	return !Schema::GeneratedSchemaFolderExists() || (Schema::ValidateSchemaDatabase() != FSpatialGDKEditor::Ok);
 }
 
 void FSpatialGDKEditor::SetProjectName(const FString& InProjectName)
