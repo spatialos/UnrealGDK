@@ -83,6 +83,18 @@ struct FComponentIDs
 	TArray<uint32> ComponentIDs;
 };
 
+UENUM()
+enum class ESchemaDatabaseVersion : uint8
+{
+	BeforeVersionSupportAdded = 0,
+	VersionSupportAdded,
+
+	// Add new versions here
+
+	LatestVersionPlusOne,
+	LatestVersion = LatestVersionPlusOne - 1
+};
+
 UCLASS()
 class SPATIALGDK_API USchemaDatabase : public UDataAsset
 {
@@ -135,7 +147,5 @@ public:
 	TMap<uint32, FComponentIDs> ComponentSetIdToComponentIds;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
-	uint8 SchemaDatabaseVersion;
-
-	static const uint8 LatestSchemaDatabaseVersion = 1;
+	ESchemaDatabaseVersion SchemaDatabaseVersion;
 };

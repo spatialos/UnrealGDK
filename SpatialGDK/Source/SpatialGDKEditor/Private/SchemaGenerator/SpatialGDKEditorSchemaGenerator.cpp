@@ -873,7 +873,7 @@ USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->ComponentSetIdToComponentIds.FindOrAdd(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 		.ComponentIDs.Append(NetCullDistanceComponentIds);
 
-	SchemaDatabase->SchemaDatabaseVersion = USchemaDatabase::LatestSchemaDatabaseVersion;
+	SchemaDatabase->SchemaDatabaseVersion = ESchemaDatabaseVersion::LatestVersion;
 
 	return SchemaDatabase;
 }
@@ -1226,7 +1226,7 @@ FSpatialGDKEditor::ESchemaDatabaseValidationResult ValidateSchemaDatabase()
 		return FSpatialGDKEditor::NotFound;
 	}
 
-	if (SchemaDatabase->SchemaDatabaseVersion < USchemaDatabase::LatestSchemaDatabaseVersion)
+	if (SchemaDatabase->SchemaDatabaseVersion < ESchemaDatabaseVersion::LatestVersion)
 	{
 		return FSpatialGDKEditor::OldVersion;
 	}
