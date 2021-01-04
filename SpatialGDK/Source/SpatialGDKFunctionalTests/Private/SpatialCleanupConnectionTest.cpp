@@ -33,7 +33,7 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 		PlayerController->Possess(SpawnedPawn);
 
 		AssertEqual_Int(Driver->ClientConnections.Num(), GetNumberOfClientWorkers() + 1,
-						TEXT("Spawn: expected 1 spatial connection + number of clients"));
+						TEXT("Spawn: expected all client connections and one spatial connection"));
 		FinishStep();
 	});
 
@@ -41,8 +41,7 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 		TEXT("Post spawn check connections on server 2"), FWorkerDefinition::Server(2), nullptr, nullptr,
 		[this](float delta) {
 			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
-			RequireEqual_Int(Driver->ClientConnections.Num(), GetNumberOfClientWorkers(),
-							 TEXT("Spawn: expected client connections only"));
+			RequireEqual_Int(Driver->ClientConnections.Num(), (GetNumberOfClientWorkers() - 1) + 1, TEXT("Spawn: expected one less client connection and one spatial connection"));
 			FinishStep();
 		},
 		5.0f);
@@ -52,7 +51,7 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 				SpawnedPawn->SetActorLocation(Server1PositionAndInInterestBorderServer2);
 				USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
 				AssertEqual_Int(Driver->ClientConnections.Num(), GetNumberOfClientWorkers() + 1,
-								TEXT("Move into server 2 interest: expected 1 spatial connection + number of clients"));
+								TEXT("Move into server 2 interest: expected all client connections and one spatial connection"));
 				FinishStep();
 			});
 
@@ -61,7 +60,7 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 		[this](float delta) {
 			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
 			RequireEqual_Int(Driver->ClientConnections.Num(), GetNumberOfClientWorkers() + 1,
-							 TEXT("Move into server 2 interest: expected 1 spatial connection + number of clients"));
+							 TEXT("Move into server 2 interest: expected all client connections and one spatial connection"));
 			FinishStep();
 		},
 		5.0f);
@@ -71,7 +70,7 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 				SpawnedPawn->SetActorLocation(Server1Position);
 				USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
 				AssertEqual_Int(Driver->ClientConnections.Num(), GetNumberOfClientWorkers() + 1,
-								TEXT("Move out of server 2 interest: expected 1 spatial connection + number of clients"));
+								TEXT("Move out of server 2 interest: expected all client connections and one spatial connection"));
 				FinishStep();
 			});
 
@@ -79,8 +78,8 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 		TEXT("Post move 2 player connections on server 2"), FWorkerDefinition::Server(2), nullptr, nullptr,
 		[this](float delta) {
 			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
-			RequireEqual_Int(Driver->ClientConnections.Num(), GetNumberOfClientWorkers(),
-							 TEXT("Move out of server 2 interest: expected client connections only"));
+			RequireEqual_Int(Driver->ClientConnections.Num(), (GetNumberOfClientWorkers() - 1) + 1,
+							 TEXT("Move out of server 2 interest: expected one less client connection and one spatial connection"));
 			FinishStep();
 		},
 		5.0f);
