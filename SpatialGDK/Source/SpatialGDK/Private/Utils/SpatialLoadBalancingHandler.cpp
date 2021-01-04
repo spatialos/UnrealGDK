@@ -24,12 +24,18 @@ FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* In
 FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner,
 																									VirtualWorkerId& OutWorkerId)
 {
+	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return EvaluateActorResult::None;
+	}
+
 	if (!Actor->HasAuthority())
 	{
 		return EvaluateActorResult::None;
 	}
 
-	return EvaluateActor(Actor, OutNetOwner, OutWorkerId);
+	return EvaluateSingleActor_Impl(Actor, OutNetOwner, OutWorkerId);
 }
 
 void FSpatialLoadBalancingHandler::ProcessMigrations()
@@ -145,15 +151,9 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 	}
 }
 
-FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::EvaluateActor(AActor* Actor, AActor*& OutNetOwner,
-																							  VirtualWorkerId& OutWorkerId)
+EvaluateActorResult FSpatialLoadBalancingHandler::EvaluateSingleActor_Impl(AActor* Actor, AActor*& OutNetOwner,
+																		   VirtualWorkerId& OutWorkerId)
 {
-	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
-	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		return EvaluateActorResult::None;
-	}
-
 	UpdateSpatialDebugInfo(Actor, EntityId);
 
 	// If this object is in the list of actors to migrate, we have already processed its hierarchy.
@@ -175,7 +175,8 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 			{
 				if (URemotePossessionComponent* Component = Cast<URemotePossessionComponent>(Components[0]))
 				{
-					return EvaluateActor(Component->Target, NetOwner, OutWorkerId);
+					VirtualWorkerId TargetVirtualWorkerId;
+					return EvaluateSingleActor_Impl(Component->Target, NetOwner, OutWorkerId);
 				}
 			}
 		}

@@ -105,7 +105,7 @@ protected:
 
 	void LogMigrationFailure(EActorMigrationResult ActorMigrationResult, AActor* Actor);
 
-	EvaluateActorResult EvaluateActor(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId);
+	EvaluateActorResult EvaluateSingleActor_Impl(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId);
 
 	USpatialNetDriver* NetDriver;
 
