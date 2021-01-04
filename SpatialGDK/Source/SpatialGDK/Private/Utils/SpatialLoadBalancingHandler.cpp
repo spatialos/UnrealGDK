@@ -35,7 +35,96 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 		return EvaluateActorResult::None;
 	}
 
-	return EvaluateSingleActor_Impl(Actor, OutNetOwner, OutWorkerId);
+	UpdateSpatialDebugInfo(Actor, EntityId);
+
+	// If this object is in the list of actors to migrate, we have already processed its hierarchy.
+	// Remove it from the additional actors to process, and continue.
+	if (ActorsToMigrate.Contains(Actor))
+	{
+		return EvaluateActorResult::RemoveAdditional;
+	}
+
+	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
+	{
+		AActor* NetOwner = GetReplicatedHierarchyRoot(Actor);
+
+		if (AController* Controller = Cast<AController>(Actor))
+		{
+			TArray<UActorComponent*> Components;
+			Controller->GetComponents(URemotePossessionComponent::StaticClass(), Components);
+			if (Components.Num() == 1)
+			{
+				// Only deal with the first one
+				if (URemotePossessionComponent* Component = Cast<URemotePossessionComponent>(Components[0]))
+				{
+					VirtualWorkerId TargetVirtualWorkerId;
+					if (EvaluateRemoteMigrationComponent(Component->GetOwner(), Component->Target,
+														 NetDriver->LoadBalanceStrategy, TargetVirtualWorkerId))
+					{
+						OutNetOwner = NetOwner;
+						OutWorkerId = TargetVirtualWorkerId;
+						return EvaluateActorResult::Migrate;
+					}
+				}
+			}
+		}
+
+		const bool bNetOwnerHasAuth = NetOwner->HasAuthority();
+
+		// Load balance if we are not supposed to be on this worker, or if we are separated from our owner.
+		if ((!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*NetOwner) || !bNetOwnerHasAuth)
+			&& !NetDriver->LockingPolicy->IsLocked(Actor))
+		{
+			uint64 HierarchyAuthorityReceivedTimestamp = GetLatestAuthorityChangeFromHierarchy(NetOwner);
+
+			const float TimeSinceReceivingAuthInSeconds =
+				double(FPlatformTime::Cycles64() - HierarchyAuthorityReceivedTimestamp) * FPlatformTime::GetSecondsPerCycle64();
+			const float MigrationBackoffTimeInSeconds = 1.0f;
+
+			if (TimeSinceReceivingAuthInSeconds < MigrationBackoffTimeInSeconds)
+			{
+				UE_LOG(LogSpatialLoadBalancingHandler, Verbose, TEXT("Tried to change auth too early for actor %s"), *Actor->GetName());
+			}
+			else
+			{
+				VirtualWorkerId NewAuthVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+				if (bNetOwnerHasAuth)
+				{
+					NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*NetOwner);
+				}
+				else
+				{
+					// If we are separated from our owner, it could be prevented from migrating (if it has interest over the current actor),
+					// so the load balancing strategy could give us a worker different from where it should be.
+					// Instead, we read its currently assigned worker, which will eventually make us land where our owner is.
+					Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+					if (AuthorityIntent* OwnerAuthIntent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(OwnerId))
+					{
+						NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
+					}
+					else
+					{
+						UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Actor %s (%llu) cannot join its owner %s (%llu)"),
+							   *Actor->GetName(), EntityId, *NetOwner->GetName(), OwnerId);
+					}
+				}
+
+				if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+				{
+					UE_LOG(LogSpatialLoadBalancingHandler, Error,
+						   TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
+				}
+				else
+				{
+					OutNetOwner = NetOwner;
+					OutWorkerId = NewAuthVirtualWorkerId;
+					return EvaluateActorResult::Migrate;
+				}
+			}
+		}
+	}
+
+	return EvaluateActorResult::None;
 }
 
 void FSpatialLoadBalancingHandler::ProcessMigrations()
@@ -151,91 +240,40 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 	}
 }
 
-
-EvaluateActorResult FSpatialLoadBalancingHandler::EvaluateSingleActor_Impl(AActor* Actor, AActor*& OutNetOwner,
-																		   VirtualWorkerId& OutWorkerId)
+bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor* Owner, const AActor* Target,
+																	UAbstractLBStrategy* LBStrategy,
+																	VirtualWorkerId& WorkerId)
 {
-	UpdateSpatialDebugInfo(Actor, EntityId);
-
-	// If this object is in the list of actors to migrate, we have already processed its hierarchy.
-	// Remove it from the additional actors to process, and continue.
-	if (ActorsToMigrate.Contains(Actor))
+	if (Target != nullptr)
 	{
-		return EvaluateActorResult::RemoveAdditional;
-	}
+		UE_LOG(LogRemotePossessionComponent, Log, TEXT("Component->Target is:%s"), *Target->GetName());
+		VirtualWorkerId ActorAuthVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*Owner);
+		VirtualWorkerId TargetVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*Target);
 
-	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
-	{
-		AActor* NetOwner = GetReplicatedHierarchyRoot(Actor);
-
-		if (AController* Controller = Cast<AController>(Actor))
+		if (TargetVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
-			TArray<UActorComponent*> Components;
-			Controller->GetComponents(URemotePossessionComponent::StaticClass(), Components);
-			if (Components.Num() == 1)
-			{
-				if (URemotePossessionComponent* Component = Cast<URemotePossessionComponent>(Components[0]))
-				{
-					VirtualWorkerId TargetVirtualWorkerId;
-					return EvaluateSingleActor_Impl(Component->Target, NetOwner, OutWorkerId);
-				}
-			}
+			UE_LOG(LogRemotePossessionComponent, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"),
+				   *Owner->GetName());
 		}
-
-		const bool bNetOwnerHasAuth = NetOwner->HasAuthority();
-
-		// Load balance if we are not supposed to be on this worker, or if we are separated from our owner.
-		if ((!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*NetOwner) || !bNetOwnerHasAuth)
-			&& !NetDriver->LockingPolicy->IsLocked(Actor))
+		else if (ActorAuthVirtualWorkerId != TargetVirtualWorkerId)
 		{
-			uint64 HierarchyAuthorityReceivedTimestamp = GetLatestAuthorityChangeFromHierarchy(NetOwner);
-
-			const float TimeSinceReceivingAuthInSeconds =
-				double(FPlatformTime::Cycles64() - HierarchyAuthorityReceivedTimestamp) * FPlatformTime::GetSecondsPerCycle64();
-			const float MigrationBackoffTimeInSeconds = 1.0f;
-
-			if (TimeSinceReceivingAuthInSeconds < MigrationBackoffTimeInSeconds)
-			{
-				UE_LOG(LogSpatialLoadBalancingHandler, Verbose, TEXT("Tried to change auth too early for actor %s"), *Actor->GetName());
-			}
-			else
-			{
-				VirtualWorkerId NewAuthVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
-				if (bNetOwnerHasAuth)
-				{
-					NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*NetOwner);
-				}
-				else
-				{
-					// If we are separated from our owner, it could be prevented from migrating (if it has interest over the current actor),
-					// so the load balancing strategy could give us a worker different from where it should be.
-					// Instead, we read its currently assigned worker, which will eventually make us land where our owner is.
-					Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
-					if (AuthorityIntent* OwnerAuthIntent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(OwnerId))
-					{
-						NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
-					}
-					else
-					{
-						UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Actor %s (%llu) cannot join its owner %s (%llu)"),
-							   *Actor->GetName(), EntityId, *NetOwner->GetName(), OwnerId);
-					}
-				}
-
-				if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-				{
-					UE_LOG(LogSpatialLoadBalancingHandler, Error,
-						   TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
-				}
-				else
-				{
-					OutNetOwner = NetOwner;
-					OutWorkerId = NewAuthVirtualWorkerId;
-					return EvaluateActorResult::Migrate;
-				}
-			}
+			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Migrate actor:%s to worker:%d"), *Owner->GetName(), TargetVirtualWorkerId);
+			WorkerId = TargetVirtualWorkerId;
+			return true;
+		}
+		else if (LBStrategy->GetLocalVirtualWorkerId() == TargetVirtualWorkerId)
+		{
+			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Should call AController::Possess"));
+		}
+		else
+		{
+			UE_LOG(LogRemotePossessionComponent, Log,
+				   TEXT("Waiting Controller and Pawn both are OnAuthorityGained and then possessing"));
 		}
 	}
-
-	return EvaluateActorResult::None;
+	else
+	{
+		UE_LOG(LogRemotePossessionComponent, Log, TEXT("Target is:null"));
+	}
+	return false;
 }
