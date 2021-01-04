@@ -44,46 +44,29 @@ EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapC
 {
 }
 
-EntityComponents EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
+TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
 {
 	UClass* Class = Actor->GetClass();
 
-	EntityComponents EntityComps;
-	EntityComps.MutableComponents.Add(SpatialConstants::POSITION_COMPONENT_ID,
-									  MakeUnique<Position>(Coordinates::FromFVector(GetActorSpatialPosition(Actor))));
-	EntityComps.MutableComponents.Add(SpatialConstants::METADATA_COMPONENT_ID, MakeUnique<Metadata>(Class->GetName()));
-	EntityComps.MutableComponents.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, MakeUnique<SpawnData>(Actor));
-
-	if (ShouldActorHaveVisibleComponent(Actor))
-	{
-		EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID));
-	}
+	TArray<FWorkerComponentData> ComponentDatas;
+	ComponentDatas.Add(Position(Coordinates::FromFVector(GetActorSpatialPosition(Actor))).CreateComponentData());
+	ComponentDatas.Add(Metadata(Class->GetName()).CreateComponentData());
+	ComponentDatas.Add(SpawnData(Actor).CreateComponentData());
 
 	if (!Class->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
 	{
-		EntityComps.ComponentDatas.Add(Persistence().CreateComponentData());
+		ComponentDatas.Add(Persistence().CreateComponentData());
 	}
-
-	if (Actor->NetDormancy >= DORM_DormantAll)
-	{
-		EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID));
-	}
-
-	if (Actor->IsA<APlayerController>())
-	{
-		EntityComps.ComponentDatas.Add(Heartbeat().CreateComponentData());
-	}
-	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID));
 
 	// Add Actor completeness tags.
-	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
-	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID));
-	EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 
-	return EntityComps;
+	return ComponentDatas;
 }
 
-void EntityFactory::WriteLBComponents(EntityComponents& EntityComps, AActor* Actor)
+void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDatas, AActor* Actor)
 {
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
@@ -117,17 +100,18 @@ void EntityFactory::WriteLBComponents(EntityComponents& EntityComps, AActor* Act
 
 		SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId,
 									   IntentColor, bIsLocked);
-		EntityComps.ComponentDatas.Add(DebuggingInfo.CreateComponentData());
+		ComponentDatas.Add(DebuggingInfo.CreateComponentData());
 	}
 #endif // !UE_BUILD_SHIPPING
 
 	// Add actual load balancing components
-	EntityComps.ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateComponentData());
-	EntityComps.ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
-	EntityComps.ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
+	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateComponentData());
+	ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
+	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 }
 
-void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatialActorChannel* Channel, uint32& OutBytesWritten)
+void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,
+										  uint32& OutBytesWritten)
 {
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
@@ -168,20 +152,33 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 		bNetStartup = Actor->bNetStartup;
 	}
 
-	TArray<FWorkerComponentData>& ComponentDatas = EntityComps.ComponentDatas;
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateComponentData());
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID));
+
+	if (ShouldActorHaveVisibleComponent(Actor))
+	{
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID));
+	}
 
 	if (ActorInterestComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(ActorInterestComponentId));
 	}
 
-#if !UE_BUILD_SHIPPING
+	if (Actor->NetDormancy >= DORM_DormantAll)
+	{
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID));
+	}
+
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID));
+
 	if (Actor->IsA<APlayerController>())
 	{
-		EntityComps.ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DEBUG_METRICS_COMPONENT_ID));
-	}
+#if !UE_BUILD_SHIPPING
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DEBUG_METRICS_COMPONENT_ID));
 #endif // !UE_BUILD_SHIPPING
+		ComponentDatas.Add(Heartbeat().CreateComponentData());
+	}
 
 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Actor);
 
@@ -234,7 +231,7 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 
 			TArray<FWorkerComponentData> ActorSubobjectDatas =
 				DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
-			EntityComps.ComponentDatas.Append(ActorSubobjectDatas);
+			ComponentDatas.Append(ActorSubobjectDatas);
 		}
 	}
 
@@ -277,11 +274,10 @@ void EntityFactory::WriteUnrealComponents(EntityComponents& EntityComps, USpatia
 
 TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
-	EntityComponents EntityComps = CreateSkeletonEntityComponents(Channel->Actor);
-	WriteUnrealComponents(EntityComps, Channel, OutBytesWritten);
-	WriteLBComponents(EntityComps, Channel->Actor);
-	EntityComps.ShiftToComponentDatas();
-	return EntityComps.ComponentDatas;
+	TArray<FWorkerComponentData> ComponentDatas = CreateSkeletonEntityComponents(Channel->Actor);
+	WriteUnrealComponents(ComponentDatas, Channel, OutBytesWritten);
+	WriteLBComponents(ComponentDatas, Channel->Actor);
+	return ComponentDatas;
 }
 
 TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AActor* Actor)

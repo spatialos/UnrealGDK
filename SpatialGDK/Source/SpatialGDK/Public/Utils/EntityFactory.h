@@ -20,32 +20,17 @@ namespace SpatialGDK
 class InterestFactory;
 class SpatialRPCService;
 
-struct EntityComponents
-{
-	TMap<Worker_ComponentId, TUniquePtr<AbstractMutableComponent>> MutableComponents;
-	TArray<FWorkerComponentData> ComponentDatas;
-
-	// PRCOMMENT: Hmm, will this incur overhead? Probably...
-	void ShiftToComponentDatas()
-	{
-		for (auto& Pair : MutableComponents)
-		{
-			ComponentDatas.Add(Pair.Value->CreateComponentData());
-		}
-
-		MutableComponents.Empty();
-	}
-};
-
 class SPATIALGDK_API EntityFactory
 {
 public:
 	EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager,
 				  SpatialRPCService* InRPCService);
 
-	static EntityComponents CreateSkeletonEntityComponents(AActor* Actor);
-	void WriteUnrealComponents(EntityComponents& EntityComps, USpatialActorChannel* Channel, uint32& OutBytesWritten);
-	void WriteLBComponents(EntityComponents& EntityComps, AActor* Actor);
+	// The philosophy behind having this function is to have a minimal set of SpatialOS components associated with an Unreal actor.
+	// This should primarily be enough to reason about the actor's identity and possibly inform some level of load-balancing.
+	static TArray<FWorkerComponentData> CreateSkeletonEntityComponents(AActor* Actor);
+	void WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel, uint32& OutBytesWritten);
+	void WriteLBComponents(TArray<FWorkerComponentData>& ComponentDatas, AActor* Actor);
 	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor);
 
