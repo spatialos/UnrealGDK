@@ -38,7 +38,7 @@ void ASpatialTestCondInitialOnly::PrepareTest()
 	});
 
 	Wait();
-		
+
 	AddStep(TEXT("Log TestValue"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
 		if (ATestCondInitialOnlyPawn* Pawn = GetPawn())
 		{
