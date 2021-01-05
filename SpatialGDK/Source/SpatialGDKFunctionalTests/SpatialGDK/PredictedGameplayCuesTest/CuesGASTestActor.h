@@ -23,7 +23,7 @@ public:
 	void ExecutedCue() { ExecuteCounter++; }
 	int GetExecuteCounter() { return ExecuteCounter; }
 
-	virtual void OnActorReady()
+	virtual void OnActorReady(bool bHasAuthority)
 		override; // TODO remove this and make this actor a character to possess. Avoids any autonomous proxy role setting dance
 
 protected:

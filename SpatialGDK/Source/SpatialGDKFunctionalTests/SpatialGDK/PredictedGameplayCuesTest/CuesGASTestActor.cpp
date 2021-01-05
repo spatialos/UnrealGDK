@@ -15,9 +15,9 @@ void ACuesGASTestActor::OnRep_Owner()
 	GetAbilitySystemComponent()->RefreshAbilityActorInfo();
 }
 
-void ACuesGASTestActor::OnActorReady()
+void ACuesGASTestActor::OnActorReady(bool bHasAuthority)
 {
-	if (Role == ROLE_Authority)
+	if (bHasAuthority)
 	{
 		SetAutonomousProxy(true);
 	}

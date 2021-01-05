@@ -56,12 +56,9 @@ void APredictedGameplayCuesTest::PrepareTest()
 			// AddDebugTag(TargetActor, TargetActorTag);
 			RegisterAutoDestroyActor(TargetActor);
 
-			FSoftObjectPath GCPath(TEXT("/Script/SpatialGDKFunctionalTests.GC_SignalCueActivation"));
-
-			FGameplayCueReferencePair ExecuteCueRef(UGC_SignalCueActivation::GetExecuteTag(),
-													FSoftObjectPath(TEXT("/Script/SpatialGDKFunctionalTests.GC_SignalCueActivation")));
-			FGameplayCueReferencePair AddCueRef(UGC_SignalCueActivation::GetAddTag(),
-												FSoftObjectPath(TEXT("/Script/SpatialGDKFunctionalTests.GC_SignalCueActivation")));
+			FSoftObjectPath CuePath(TEXT("/Script/SpatialGDKFunctionalTests.GC_SignalCueActivation"));
+			FGameplayCueReferencePair ExecuteCueRef(UGC_SignalCueActivation::GetExecuteTag(), CuePath);
+			FGameplayCueReferencePair AddCueRef(UGC_SignalCueActivation::GetAddTag(), CuePath);
 			UAbilitySystemGlobals::Get().GetGameplayCueManager()->GetRuntimeCueSet()->AddCues({ ExecuteCueRef, AddCueRef });
 		},
 		[this](float DeltaTime) {
@@ -83,54 +80,67 @@ void APredictedGameplayCuesTest::PrepareTest()
 		}
 	});
 
-	AddStep(TEXT("Activate ability to execute GC"), FWorkerDefinition::Client(1), nullptr, [this]() {
+	AddStep(TEXT("Activate ability to execute cue"), FWorkerDefinition::Client(1), nullptr, [this]() {
 		UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
 		AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
 		FGameplayEventData EventData;
 		ASC->HandleGameplayEvent(UGC_SignalCueActivation::GetExecuteTag(), &EventData);
 
+		FinishStep();
+	});
+
+	AddStep(TEXT("Check that cue executed on all clients"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
+		if (WaitForActivationConfirmation(TargetActor->GetExecuteCounter(), DeltaTime))
+		{
+			FinishStep();
+		}
+	});
+
+	AddStep(TEXT("Activate ability to execute cue"), FWorkerDefinition::Client(1), nullptr, [this]() {
+		UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
+		AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
+		FGameplayEventData EventData;
+		ASC->HandleGameplayEvent(UGC_SignalCueActivation::GetAddTag(), &EventData);
+
 		// FinishStep();
 	});
 }
 
-// bool APredictedGameplayCuesTest::WaitForActivationConfirmation(float DeltaTime)
-//{
-//	// StepTimer == -1.0f signals that we have not yet seen Counter be 1
-//	if (StepTimer != -1.0f)
-//	{
-//		StepTimer += DeltaTime;
-//	}
-//
-//	int Counter = TargetActor->GetCounter();
-//	if (Counter == 0)
-//	{
-//		// The counter is allowed to be 0 while we are still waiting for the changed counter to replicated to us.
-//		// However, if we've seen Counter at 1 before (and as a result started the timer), if we see it back at 0,
-//		// it somehow got reset. This likely indicates a bug in the test implementation.
-//		if (StepTimer != -1.0f)
-//		{
-//			FinishTest(EFunctionalTestResult::Invalid,
-//					   TEXT("The spy actor counter was reset after being set to 1. This is probably a bug in this test implementation."));
-//		}
-//	}
-//	else if (Counter == 1)
-//	{
-//		if (StepTimer == -1.0f)
-//		{
-//			StepTimer = 0.0f;
-//		}
-//		else if (StepTimer >= DuplicateActivationCheckWaitTime)
-//		{
-//			StepTimer = -1.0f;
-//			TargetActor->ResetCounter();
-//			return true;
-//		}
-//	}
-//	else
-//	{
-//		FinishTest(EFunctionalTestResult::Failed,
-//				   FString::Printf(TEXT("The ability was activated %d times. It should only be activated once."), Counter));
-//	}
-//
-//	return false;
-//}
+bool APredictedGameplayCuesTest::WaitForActivationConfirmation(int Counter, float DeltaTime)
+{
+	// StepTimer == -1.0f signals that we have not yet seen Counter be 1
+	if (StepTimer != -1.0f)
+	{
+		StepTimer += DeltaTime;
+	}
+
+	if (Counter == 0)
+	{
+		// The counter is allowed to be 0 while we are still waiting for the changed counter to replicated to us.
+		// However, if we've seen Counter at 1 before (and as a result started the timer), if we see it back at 0,
+		// it somehow got reset. This likely indicates a bug in the test implementation.
+		if (StepTimer != -1.0f)
+		{
+			FinishTest(EFunctionalTestResult::Invalid, TEXT("The counter was reset after being set to 1."));
+		}
+	}
+	else if (Counter == 1)
+	{
+		if (StepTimer == -1.0f)
+		{
+			StepTimer = 0.0f;
+		}
+		else if (StepTimer >= DuplicateActivationCheckWaitTime)
+		{
+			StepTimer = -1.0f;
+			return true;
+		}
+	}
+	else
+	{
+		FinishTest(EFunctionalTestResult::Failed,
+				   FString::Printf(TEXT("The cue was activated %d times. It should only be activated once."), Counter));
+	}
+
+	return false;
+}

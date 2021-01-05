@@ -27,5 +27,5 @@ private:
 	float StepTimer;
 
 	// Returns whether the caller should finish the step
-	// bool WaitForActivationConfirmation(float DeltaTime);
+	bool WaitForActivationConfirmation(int Counter, float DeltaTime);
 };
