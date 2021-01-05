@@ -32,4 +32,6 @@ public:
 	void SetTestValue(int32 Value);
 
 	int32 GetTestValue();
+
+	const static int32 InitialValue;
 };

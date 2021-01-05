@@ -39,11 +39,10 @@ void ASpatialTestCondInitialOnly::PrepareTest()
 
 	Wait();
 
-	AddStep(TEXT("Log TestValue"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
+	AddStep(TEXT("Check TestValue"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
 		if (ATestCondInitialOnlyPawn* Pawn = GetPawn())
 		{
-			int32 Value = Pawn->GetTestValue();
-			LogStep(ELogVerbosity::Log, FString::Printf(TEXT("TestValue:%d"), Value));
+			AssertEqual_Int(Pawn->GetTestValue(), ATestCondInitialOnlyPawn::InitialValue, TEXT("TestValue"), Pawn);
 		}
 		FinishStep();
 	});

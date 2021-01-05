@@ -10,6 +10,8 @@
 
 DEFINE_LOG_CATEGORY(LogTestCondInitialOnlyPawn);
 
+const int32 ATestCondInitialOnlyPawn::InitialValue = 1;
+
 ATestCondInitialOnlyPawn::ATestCondInitialOnlyPawn()
 {
 	SphereComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SphereComponent"));
@@ -38,7 +40,7 @@ ATestCondInitialOnlyPawn::ATestCondInitialOnlyPawn()
 	CameraComponent->SetRelativeRotation(CameraRotation);
 #endif
 
-	TestValue = 1;
+	TestValue = InitialValue;
 }
 
 void ATestCondInitialOnlyPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
