@@ -25,8 +25,8 @@ struct FConnectionConfig
 
 	FConnectionConfig()
 		: UseExternalIp(false)
-		, EnableWorkerSDKProtocolLogging(true)
-		, EnableWorkerSDKOpLogging(true)
+		, EnableWorkerSDKProtocolLogging(false)
+		, EnableWorkerSDKOpLogging(false)
 		, WorkerSDKLogFileSize(10 * 1024 * 1024)
 		, WorkerSDKLogLevel(WORKER_LOG_LEVEL_INFO)
 		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_TCP)
