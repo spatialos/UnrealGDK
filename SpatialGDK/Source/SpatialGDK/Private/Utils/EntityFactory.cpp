@@ -44,6 +44,20 @@ EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapC
 {
 }
 
+FUnrealObjectRef GetStablyNamedObjectRef(UObject* Object)
+{
+	if (Object == nullptr)
+	{
+		return FUnrealObjectRef::NULL_OBJECT_REF;
+	}
+
+	// No path in SpatialOS should contain a PIE prefix.
+	FString TempPath = Object->GetFName().ToString();
+	TempPath = UWorld::RemovePIEPrefix(TempPath);
+
+	return FUnrealObjectRef(0, 0, TempPath, GetStablyNamedObjectRef(Object->GetOuter()), true);
+}
+
 TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
 {
 	UClass* Class = Actor->GetClass();
@@ -57,6 +71,20 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 	{
 		ComponentDatas.Add(Persistence().CreateComponentData());
 	}
+
+	// We want to have a stably named ref if this is an Actor placed in the world.
+	// We use this to indicate if a new Actor should be created, or to link a pre-existing Actor when receiving an AddEntityOp.
+	// Previously, IsFullNameStableForNetworking was used but this was only true if bNetLoadOnClient=true.
+	// Actors with bNetLoadOnClient=false also need a StablyNamedObjectRef for linking in the case of loading from a snapshot or the server
+	// crashes and restarts.
+	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
+	TSchemaOption<bool> bNetStartup;
+	if (Actor->HasAnyFlags(RF_WasLoaded) || Actor->bNetStartup)
+	{
+		StablyNamedObjectRef = GetStablyNamedObjectRef(Actor);
+		bNetStartup = Actor->bNetStartup;
+	}
+	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateComponentData());
 
 	// Add Actor completeness tags.
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
@@ -122,13 +150,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 	Worker_ComponentId ActorInterestComponentId = ClassInfoManager->ComputeActorInterestComponentId(Actor);
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
-	// We want to have a stably named ref if this is an Actor placed in the world.
-	// We use this to indicate if a new Actor should be created, or to link a pre-existing Actor when receiving an AddEntityOp.
-	// Previously, IsFullNameStableForNetworking was used but this was only true if bNetLoadOnClient=true.
-	// Actors with bNetLoadOnClient=false also need a StablyNamedObjectRef for linking in the case of loading from a snapshot or the server
-	// crashes and restarts.
-	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
-	TSchemaOption<bool> bNetStartup;
+	// Leaving this code block here to guarantee the resolution of outers of stably named actors
 	if (Actor->HasAnyFlags(RF_WasLoaded) || Actor->bNetStartup)
 	{
 		// Since we've already received the EntityId for this Actor. It is guaranteed to be resolved
@@ -140,19 +162,19 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 			OuterObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 		}
 
-		// No path in SpatialOS should contain a PIE prefix.
+#if DO_GUARD_SLOW
+		FUnrealObjectRef Constructed = GetStablyNamedObjectRef(Actor);
 		FString TempPath = Actor->GetFName().ToString();
 #if ENGINE_MINOR_VERSION >= 26
 		GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), TempPath, false /*bIsReading*/);
 #else
 		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
 #endif
-
-		StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
-		bNetStartup = Actor->bNetStartup;
+		FUnrealObjectRef Remapped = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
+		checkSlow(Constructed == Remapped);
+#endif
 	}
 
-	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateComponentData());
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID));
 
 	if (ShouldActorHaveVisibleComponent(Actor))
