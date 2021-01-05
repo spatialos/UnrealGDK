@@ -873,6 +873,8 @@ USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->ComponentSetIdToComponentIds.FindOrAdd(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 		.ComponentIDs.Append(NetCullDistanceComponentIds);
 
+	SchemaDatabase->SchemaDatabaseVersion = ESchemaDatabaseVersion::LatestVersion;
+
 	return SchemaDatabase;
 }
 
@@ -1206,6 +1208,30 @@ bool GeneratedSchemaDatabaseExists()
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
 	return PlatformFile.FileExists(*RelativeSchemaDatabaseFilePath);
+}
+
+FSpatialGDKEditor::ESchemaDatabaseValidationResult ValidateSchemaDatabase()
+{
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*RelativeSchemaDatabaseFilePath);
+	if (!StatData.bIsValid)
+	{
+		return FSpatialGDKEditor::NotFound;
+	}
+
+	const FString DatabaseAssetPath = FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase"));
+	const USchemaDatabase* const SchemaDatabase = Cast<USchemaDatabase>(FSoftObjectPath(DatabaseAssetPath).TryLoad());
+
+	if (SchemaDatabase == nullptr)
+	{
+		return FSpatialGDKEditor::NotFound;
+	}
+
+	if (SchemaDatabase->SchemaDatabaseVersion < ESchemaDatabaseVersion::LatestVersion)
+	{
+		return FSpatialGDKEditor::OldVersion;
+	}
+
+	return FSpatialGDKEditor::Ok;
 }
 
 void ResolveClassPathToSchemaName(const FString& ClassPath, const FString& SchemaName)

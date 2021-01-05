@@ -4,6 +4,7 @@
 
 #include "Logging/LogMacros.h"
 
+#include "SpatialGDKEditor.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/SchemaDatabase.h"
 
@@ -42,6 +43,8 @@ SPATIALGDKEDITOR_API bool LoadGeneratorStateFromSchemaDatabase(const FString& Fi
 SPATIALGDKEDITOR_API bool IsAssetReadOnly(const FString& FileName);
 
 SPATIALGDKEDITOR_API bool GeneratedSchemaDatabaseExists();
+
+SPATIALGDKEDITOR_API FSpatialGDKEditor::ESchemaDatabaseValidationResult ValidateSchemaDatabase();
 
 SPATIALGDKEDITOR_API USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath);
 
