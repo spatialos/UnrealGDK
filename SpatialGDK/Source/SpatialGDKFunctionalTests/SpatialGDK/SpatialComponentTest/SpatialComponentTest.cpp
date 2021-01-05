@@ -10,7 +10,7 @@
 #include "SpatialGDK/Public/EngineClasses/SpatialNetDriver.h"
 #include "SpatialGDK/Public/Utils/SpatialStatics.h"
 
-/** This Test is meant to check that you can add / remove actor components in the following component callbacks: 
+/** This Test is meant to check that you can add / remove actor components in the following component callbacks:
  *		- OnAuthorityGained
  *		- OnAuthorityLost
  *		- OnActorReady
@@ -64,5 +64,3 @@ void ASpatialComponentTest::CrossServerSetDynamicReplicatedActor_Implementation(
 {
 	DynamicReplicatedActor = Actor;
 }
-
-

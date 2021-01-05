@@ -21,7 +21,6 @@ public:
 
 	virtual void PrepareTest() override;
 
-
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void FinishStep() override

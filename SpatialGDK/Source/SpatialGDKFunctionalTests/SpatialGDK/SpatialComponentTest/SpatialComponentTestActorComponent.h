@@ -26,5 +26,4 @@ public:
 	virtual void OnActorReady(bool bHasAuthority) override;
 
 	// TODO : Add OnClientOwnershipGained and OnClientOwnershipLost
-
 };
