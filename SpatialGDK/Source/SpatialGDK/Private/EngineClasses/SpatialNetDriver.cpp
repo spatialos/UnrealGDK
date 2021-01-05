@@ -1822,6 +1822,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 			Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
+			Receiver->ProcessActorsFromAsyncLoading();
 		}
 
 		if (RPCService.IsValid())

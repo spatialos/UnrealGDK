@@ -2712,40 +2712,53 @@ void USpatialReceiver::StartAsyncLoadingClass(const FString& ClassPath, Worker_E
 
 void USpatialReceiver::OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result)
 {
-	TArray<Worker_EntityId> Entities;
-	if (!AsyncLoadingPackages.RemoveAndCopyValue(PackageName, Entities))
-	{
-		UE_LOG(LogSpatialReceiver, Error,
-			   TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package loaded but no entry in AsyncLoadingPackages. Package: %s"),
-			   *PackageName.ToString());
-		return;
-	}
-
 	if (Result != EAsyncLoadingResult::Succeeded)
 	{
 		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package was not loaded successfully. Package: %s"),
 			   *PackageName.ToString());
+		AsyncLoadingPackages.Remove(PackageName);
 		return;
 	}
 
-	for (Worker_EntityId Entity : Entities)
+	LoadedPackages.Add(PackageName);
+}
+
+void USpatialReceiver::ProcessActorsFromAsyncLoading()
+{
+	static_assert(TContainerTraits<decltype(LoadedPackages)>::MoveWillEmptyContainer, "Moving the set won't empty it");
+	TSet<FName> PackagesToProcess = MoveTemp(LoadedPackages);
+
+	for (const auto& PackageName : PackagesToProcess)
 	{
-		if (IsEntityWaitingForAsyncLoad(Entity))
+		TArray<Worker_EntityId> Entities;
+		if (!AsyncLoadingPackages.RemoveAndCopyValue(PackageName, Entities))
 		{
-			UE_LOG(LogSpatialReceiver, Log, TEXT("Finished async loading package %s for entity %lld."), *PackageName.ToString(), Entity);
+			UE_LOG(LogSpatialReceiver, Error,
+				   TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package loaded but no entry in AsyncLoadingPackages. Package: %s"),
+				   *PackageName.ToString());
+			return;
+		}
 
-			// Save critical section if we're in one and restore upon leaving this scope.
-			CriticalSectionSaveState CriticalSectionState(*this);
-
-			EntityWaitingForAsyncLoad AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindAndRemoveChecked(Entity);
-			PendingAddActors.Add(Entity);
-			PendingAddComponents = MoveTemp(AsyncLoadEntity.InitialPendingAddComponents);
-			LeaveCriticalSection();
-
-			OpList Ops = MoveTemp(AsyncLoadEntity.PendingOps).CreateOpList();
-			for (uint32 i = 0; i < Ops.Count; ++i)
+		for (Worker_EntityId Entity : Entities)
+		{
+			if (IsEntityWaitingForAsyncLoad(Entity))
 			{
-				HandleQueuedOpForAsyncLoad(Ops.Ops[i]);
+				UE_LOG(LogSpatialReceiver, Log, TEXT("Finished async loading package %s for entity %lld."), *PackageName.ToString(),
+					   Entity);
+
+				// Save critical section if we're in one and restore upon leaving this scope.
+				CriticalSectionSaveState CriticalSectionState(*this);
+
+				EntityWaitingForAsyncLoad AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindAndRemoveChecked(Entity);
+				PendingAddActors.Add(Entity);
+				PendingAddComponents = MoveTemp(AsyncLoadEntity.InitialPendingAddComponents);
+				LeaveCriticalSection();
+
+				OpList Ops = MoveTemp(AsyncLoadEntity.PendingOps).CreateOpList();
+				for (uint32 i = 0; i < Ops.Count; ++i)
+				{
+					HandleQueuedOpForAsyncLoad(Ops.Ops[i]);
+				}
 			}
 		}
 	}
