@@ -84,7 +84,17 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	FString CoreSDKSchemaCopyDir =
 		FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
 	SpatialGDKEditor::Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
-	SpatialGDKEditor::Schema::RefreshSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
+
+	{
+		TArray<FString> CmdLineTokens;
+		TArray<FString> CmdLineSwitches;
+		ParseCommandLine(*CmdLineParams, CmdLineTokens, CmdLineSwitches);
+
+		const bool bDeleteExistingSchema = CmdLineSwitches.Contains(TEXT("DeleteExistingGeneratedSchema"));
+		const bool bCreateDirectoryTree = true;
+
+		SpatialGDKEditor::Schema::RefreshSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder(), bDeleteExistingSchema, bCreateDirectoryTree);
+	}
 
 	if (!LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
