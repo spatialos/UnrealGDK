@@ -18,8 +18,6 @@ class ASpyValueGASTestActor : public AGASTestActorBase
 public:
 	ASpyValueGASTestActor();
 
-	void OnAuthorityGained() override; // TODO temp
-
 	void IncrementCounter();
 	int GetCounter();
 

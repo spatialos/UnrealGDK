@@ -31,12 +31,10 @@ void UGA_IncrementSpyValue::ActivateAbility(const FGameplayAbilitySpecHandle Han
 		ASpyValueGASTestActor* TestActor = static_cast<ASpyValueGASTestActor*>(ActorInfo->OwnerActor.Get());
 		if (TestActor == nullptr)
 		{
-			UE_LOG(LogTemp, Error, TEXT("Ability was activated with null OwnerActor"));
 			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 			return;
 		}
 
-		UE_LOG(LogTemp, Log, TEXT("Activated ability"));
 		TestActor->IncrementCounter();
 
 		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);

@@ -55,7 +55,6 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 			FGameplayAbilitySpecHandle AbilityHandle = FoundAbilitySpecs[0]->Handle;
 			AssertTrue(AbilityHandle.IsValid(), TEXT("Activatable ability has a valid handle"));
 
-			UE_LOG(LogTemp, Log, TEXT("Activating ability"));
 			ASC->CrossServerTryActivateAbility(AbilityHandle);
 		},
 		[this](float DeltaTime) {
@@ -76,7 +75,6 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 			UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
 			AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
 
-			UE_LOG(LogTemp, Log, TEXT("Activating ability"));
 			ASC->CrossServerTryActivateAbilityByClass(UGA_IncrementSpyValue::StaticClass());
 		},
 		[this](float DeltaTime) {
@@ -97,7 +95,6 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 			UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
 			AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
 
-			UE_LOG(LogTemp, Log, TEXT("Activating ability"));
 			ASC->CrossServerTryActivateAbilitiesByTag(FGameplayTagContainer(UGA_IncrementSpyValue::GetTriggerTag()));
 		},
 		[this](float DeltaTime) {
@@ -117,8 +114,6 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 		[this]() {
 			UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
 			AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
-
-			UE_LOG(LogTemp, Log, TEXT("Activating ability"));
 
 			FGameplayEventData EventData;
 			ASC->CrossServerHandleGameplayEvent(UGA_IncrementSpyValue::GetTriggerTag(), EventData);

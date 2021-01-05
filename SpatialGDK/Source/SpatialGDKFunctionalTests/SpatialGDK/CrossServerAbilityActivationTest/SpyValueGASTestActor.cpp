@@ -9,12 +9,6 @@ ASpyValueGASTestActor::ASpyValueGASTestActor()
 {
 }
 
-void ASpyValueGASTestActor::OnAuthorityGained()
-{
-	Super::OnAuthorityGained();
-	UE_LOG(LogTemp, Log, TEXT("Auth gained on target actor."));
-}
-
 void ASpyValueGASTestActor::IncrementCounter()
 {
 	Counter++;
