@@ -4,6 +4,22 @@
 #include "GA_IncrementSpyValue.h"
 #include "GameplayTagContainer.h"
 
+/**
+ * Tests that a gameplay ability can be activated on an actor from a non-auth server via the cross-server API.
+ * Activation by ability spec, class, tag, and gameplay event are tested.
+ * - Setup:
+ *	- Two servers, number of clients doesn't matter.
+ *	- One test actor is spawned, which has an Ability System Component (ASC) and the ability to be activated already granted to it.
+ *	- The test actor is force-delegated to server 2.
+ * - Test:
+ *	- Server one activates the ability on the actor via it's ability spec handle.
+ *	  Then it waits for confirmation that the ability got activated via a replicated property on the test actor which gets changed by the
+ *	  ability's code. If confirmation does not arrive within the step timeout, or if a double activation is detected, the test is failed.
+ *	- The above step is repeated for activation by class, gameplay tag and gameplay event.
+ * - Cleanup:
+ *	- The test actor is registered to be auto-destroyed by the test framework at test end.
+ */
+
 ACrossServerAbilityActivationTest::ACrossServerAbilityActivationTest()
 {
 	Author = "Tilman Schmidt";
