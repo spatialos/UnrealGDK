@@ -21,6 +21,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AuthorityIntent.h"
+#include "Schema/CrossServerEndpoint.h"
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/ServerWorker.h"
@@ -234,6 +235,9 @@ void USpatialSender::CreateServerWorkerEntity()
 void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounter)
 {
 	check(NetDriver != nullptr);
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
+	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker) {}
 
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreateComponentData());
@@ -244,6 +248,11 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, EntityId);
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
+	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+	{
+		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID));
+		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID));
+	}
 	check(NetDriver != nullptr);
 
 	// The load balance strategy won't be set up at this point, but we call this function again later when it is ready in
@@ -521,15 +530,18 @@ void USpatialSender::FlushRPCService()
 {
 	if (RPCService != nullptr)
 	{
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
 		RPCService->PushOverflowedRPCs();
 
 		TArray<SpatialRPCService::UpdateToSend> RPCs = RPCService->GetRPCsAndAcksToSend();
+
 		for (SpatialRPCService::UpdateToSend& Update : RPCs)
 		{
 			Connection->SendComponentUpdate(Update.EntityId, &Update.Update, Update.SpanId);
 		}
 
-		if (RPCs.Num() && GetDefault<USpatialGDKSettings>()->bWorkerFlushAfterOutgoingNetworkOp)
+		if (RPCs.Num() && Settings->bWorkerFlushAfterOutgoingNetworkOp)
 		{
 			Connection->Flush();
 		}
@@ -675,9 +687,20 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	}
 
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-
 	checkf(RPCService != nullptr, TEXT("RPCService is assumed to be valid."));
-	if (SendRingBufferedRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef, Params.SpanId))
+	if (RPCInfo.Type == ERPCType::CrossServer)
+	{
+		if (SendCrossServerRPC(TargetObject, Params.SenderRPCInfo, Function, Params.Payload, Channel, Params.ObjectRef))
+		{
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
+		}
+		else
+		{
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::RPCServiceFailure };
+		}
+	}
+
+	if (SendRingBufferedRPC(TargetObject, RPCSender(), Function, Params.Payload, Channel, Params.ObjectRef, Params.SpanId))
 	{
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 	}
@@ -687,18 +710,35 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	}
 }
 
-bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
-										 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef,
-										 const FSpatialGDKSpanId& SpanId)
+bool USpatialSender::SendCrossServerRPC(UObject* TargetObject, const SpatialGDK::RPCSender& Sender, UFunction* Function,
+										const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel,
+										const FUnrealObjectRef& TargetObjectRef)
+{
+	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	const bool bHasValidSender = Sender.Entity != SpatialConstants::INVALID_ENTITY_ID;
+
+	check(Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker);
+	if (bHasValidSender)
+	{
+		return SendRingBufferedRPC(TargetObject, Sender, Function, Payload, Channel, TargetObjectRef);
+	}
+
+	return false;
+}
+
+bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, const SpatialGDK::RPCSender& Sender, UFunction* Function,
+										 const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel,
+										 const FUnrealObjectRef& TargetObjectRef, const FSpatialGDKSpanId& SpanId)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	const EPushRPCResult Result =
-		RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload, Channel->bCreatedEntity, TargetObject, Function, SpanId);
+		RPCService->PushRPC(TargetObjectRef.Entity, Sender, RPCInfo.Type, Payload, Channel->bCreatedEntity, TargetObject, Function);
 
-	if (Result == EPushRPCResult::Success)
-	{
-		FlushRPCService();
-	}
+	// if (Result == EPushRPCResult::Success)
+	//{
+	//	FlushRPCService();
+	//}
 
 #if !UE_BUILD_SHIPPING
 	if (Result == EPushRPCResult::Success || Result == EPushRPCResult::QueueOverflowed)
@@ -781,7 +821,8 @@ void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, uint
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
-void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload&& InPayload)
+void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, const SpatialGDK::RPCSender& InSenderInfo,
+											   RPCPayload&& InPayload)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
@@ -802,7 +843,7 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 										 /* Causes */ EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1);
 	}
 
-	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload), SpanId);
+	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, InSenderInfo, RPCInfo.Type, MoveTemp(InPayload), SpanId);
 
 	// Try to send all pending RPCs unconditionally
 	OutgoingRPCs.ProcessRPCs();

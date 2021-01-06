@@ -284,6 +284,13 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 			AdditionalServerIndex++;
 		}
 
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+		{
+			Function(SpatialConstants::RoutingWorkerType, AdditionalServerIndex);
+			++AdditionalServerIndex;
+		}
+
 		return true;
 	}
 
@@ -451,6 +458,11 @@ bool FSpatialGDKEditorModule::HandleRuntimeSettingsSaved()
 	GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
 
 	return true;
+}
+
+bool FSpatialGDKEditorModule::UsesActorInteractionSemantics() const
+{
+	return GetDefault<USpatialGDKSettings>()->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker;
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -514,10 +514,10 @@ void SpatialRoutingSystem::CreateRoutingPartition(SpatialOSWorkerInterface* Conn
 	Map.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, RoutingPartition);
 
 	TArray<FWorkerComponentData> Components;
-	Components.Add(Position().CreatePositionData());
-	Components.Add(Metadata(FString(TEXT("RoutingPartition"))).CreateMetadataData());
-	Components.Add(AuthorityDelegation(Map).CreateAuthorityDelegationData());
-	Components.Add(InterestFactory::CreateRoutingWorkerInterest().CreateInterestData());
+	Components.Add(Position().CreateComponentData());
+	Components.Add(Metadata(FString(TEXT("RoutingPartition"))).CreateComponentData());
+	Components.Add(AuthorityDelegation(Map).CreateComponentData());
+	Components.Add(InterestFactory::CreateRoutingWorkerInterest().CreateComponentData());
 
 	RoutingWorkerRequest = Connection->SendCreateEntityRequest(Components, &RoutingPartition, SpatialGDK::RETRY_UNTIL_COMPLETE);
 }
