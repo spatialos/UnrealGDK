@@ -1225,23 +1225,11 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 
 	bSchemaBuildError = false;
 
-	if (SpatialGDKEditorInstance->FullScanRequired())
+	const bool bFullScanRequired = SpatialGDKEditorInstance->FullScanRequired();
+	if (bFullScanRequired || bFullScan)
 	{
-		OnShowTaskStartNotification("Initial Schema Generation");
-
-		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::FullAssetScan))
-		{
-			OnShowSuccessNotification("Initial Schema Generation completed!");
-		}
-		else
-		{
-			OnShowFailedNotification("Initial Schema Generation failed");
-			bSchemaBuildError = true;
-		}
-	}
-	else if (bFullScan)
-	{
-		OnShowTaskStartNotification("Generating Schema (Full)");
+		const TCHAR* RequiredStr = bFullScanRequired ? TEXT(" required") : TEXT("");
+		OnShowTaskStartNotification(FString::Printf(TEXT("Generating Schema (Full scan%s)"), RequiredStr));
 
 		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::FullAssetScan))
 		{
