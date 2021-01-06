@@ -351,7 +351,6 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 
 		if (!ConfigFile)
 		{
-			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Could not open configuration file %s"), *LaunchConfigPath);
 			return false;
 		}
 
@@ -464,11 +463,8 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		}
 	}
 
-	FString LaunchConfigPath = GetPrimaryLaunchConfigPath();
-	TUniquePtr<FArchive> ConfigFile(IFileManager::Get().CreateFileReader(*LaunchConfigPath));
-
 	TArray<FString> WorkersManuallyLaunched;
-	if (ConfigFile != nullptr && IsManualWorkerConnectionSet(LaunchConfigPath, WorkersManuallyLaunched))
+	if (IsManualWorkerConnectionSet(GetPrimaryLaunchConfigPath(), WorkersManuallyLaunched))
 	{
 		FString WorkersReportString(
 			LOCTEXT("AllowManualWorkerConnection",
