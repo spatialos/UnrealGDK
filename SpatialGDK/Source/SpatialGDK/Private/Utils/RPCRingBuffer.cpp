@@ -10,6 +10,10 @@ RPCRingBuffer::RPCRingBuffer(ERPCType InType)
 	: Type(InType)
 {
 	RingBuffer.SetNum(RPCRingBufferUtils::GetRingBufferSize(Type));
+	if (InType == ERPCType::CrossServer)
+	{
+		Counterpart.SetNum(RPCRingBufferUtils::GetRingBufferSize(Type));
+	}
 }
 
 namespace RPCRingBufferUtils
@@ -93,6 +97,10 @@ RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 		Descriptor.SchemaFieldStart = SchemaStart + ServerReliableBufferSize + ServerUnreliableBufferSize;
 		break;
 	}
+	case ERPCType::CrossServer:
+		Descriptor.SchemaFieldStart = 1;
+		Descriptor.LastSentRPCFieldId = 1 + 2 * MaxRingBufferSize;
+		break;
 	default:
 		checkNoEntry();
 		break;
@@ -237,10 +245,17 @@ void ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer)
 
 	for (uint32 RingBufferIndex = 0; RingBufferIndex < Descriptor.RingBufferSize; RingBufferIndex++)
 	{
-		Schema_FieldId FieldId = Descriptor.SchemaFieldStart + RingBufferIndex;
+		Schema_FieldId FieldId = Descriptor.GetRingBufferElementFieldId(OutBuffer.Type, RingBufferIndex + 1);
 		if (Schema_GetObjectCount(SchemaObject, FieldId) > 0)
 		{
 			OutBuffer.RingBuffer[RingBufferIndex].Emplace(Schema_GetObject(SchemaObject, FieldId));
+		}
+		if (OutBuffer.Type == ERPCType::CrossServer)
+		{
+			if (Schema_GetObjectCount(SchemaObject, FieldId + 1) > 0)
+			{
+				OutBuffer.Counterpart[RingBufferIndex].Emplace(CrossServerRPCInfo::ReadFromSchema(SchemaObject, FieldId + 1));
+			}
 		}
 	}
 
@@ -264,7 +279,7 @@ void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, 
 {
 	RPCRingBufferDescriptor Descriptor = GetRingBufferDescriptor(Type);
 
-	Schema_Object* RPCObject = Schema_AddObject(SchemaObject, Descriptor.GetRingBufferElementFieldId(RPCId));
+	Schema_Object* RPCObject = Schema_AddObject(SchemaObject, Descriptor.GetRingBufferElementFieldId(Type, RPCId));
 	Payload.WriteToSchemaObject(RPCObject);
 
 	Schema_ClearField(SchemaObject, Descriptor.LastSentRPCFieldId);
