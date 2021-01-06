@@ -28,6 +28,8 @@ These functions and structs can be referenced in both code and blueprints it may
 - Worker configurations must now be stored in the launch config for local deployments. These can be added in the SpatialGDKEditorSettings as before.
 - Spot and SpatialD (Spatial Service) dependencies have been removed.
 - Compatibility Mode runtime is no longer supported.
+- Running without Ring Buffered RPCs is no longer supported, and the option has been removed from SpatialGDKSettings.
+- The schema database format has been updated and versioning introduced. Please regenerate your schema after updating.
 
 ### Features:
 - The DeploymentLauncher tool can now be used to start multiple simulated player deployments at once.
@@ -60,8 +62,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - You can now select an actor for spatial debugging in-game. Use F9 (by default) to open the Spatial Debugger in-game config menu and then press the `Start Select Actor(s)` button. Hover over an actor with the mouse to highlight and right-click  (by default) to select. You can select multiple actors. To deselect an actor right-click on it a second time. If there are multiple actors under the cursor use the mouse wheel (by default) to highlight the desired actor then right-click to confirm your selection.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
 - Worker SDK version compatibility is checked at compile time. 
-- Worker SDK version compatibility is checked at compile time.
-- Unreal GDK now uses SpatialOS 15.0.0-preview-2.
+- Unreal GDK now uses SpatialOS 15.0.0-preview-6.
 - SpatialWorkerFlags has reworked how to add callbacks for flag updates:
   1. `BindToOnWorkerFlagsUpdated` is changed to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added functions for register callbacks. 
   2. `RegisterFlagUpdatedCallback` is added to register callbacks for individual flag updates
@@ -85,6 +86,7 @@ These functions and structs can be referenced in both code and blueprints it may
   - Inspector version can now be overridden in the SpatialGDKEditorSettings under `Inspector Version Override`
 - The SpatialNetDriver can now disconnect a client worker when given the system entity id for that client and will do so when `GameMode::PreLogin` returns with a non-empty error message.
 - Unreal Engine version 4.26.0 is now supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
+- Running with an out-of-date schema database will now report a version warning when attempting to launch in editor.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
@@ -116,6 +118,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Server workers use TCP (instead of KCP) by default.
 - Fixed a rare crash where a RepNotify callback can modify a GDK data structure being iterated upon.
 - Fixed race condition in Spatial Test framework that would cause tests to time out with one or more workers not ready to begin the test.
+- Fixed a assertion being triggered on async loaded entities due to queuing some component addition
 
 ## [`0.11.0`] - 2020-09-03
 
