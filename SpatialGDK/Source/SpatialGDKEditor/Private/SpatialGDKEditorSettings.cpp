@@ -464,8 +464,11 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		}
 	}
 
+	FString LaunchConfigPath = GetPrimaryLaunchConfigPath();
+	TUniquePtr<FArchive> ConfigFile(IFileManager::Get().CreateFileReader(*LaunchConfigPath));
+
 	TArray<FString> WorkersManuallyLaunched;
-	if (IsManualWorkerConnectionSet(GetPrimaryLaunchConfigPath(), WorkersManuallyLaunched))
+	if (ConfigFile != nullptr && IsManualWorkerConnectionSet(LaunchConfigPath, WorkersManuallyLaunched))
 	{
 		FString WorkersReportString(
 			LOCTEXT("AllowManualWorkerConnection",
