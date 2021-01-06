@@ -12,11 +12,12 @@ DEFINE_LOG_CATEGORY(LogClientServerRPCService);
 
 namespace SpatialGDK
 {
-ClientServerRPCService::ClientServerRPCService(const ExtractRPCDelegate InExtractRPCCallback, const FSubView& InSubView,
-											   USpatialNetDriver* InNetDriver, FRPCStore& InRPCStore)
-	: ExtractRPCCallback(InExtractRPCCallback)
+ClientServerRPCService::ClientServerRPCService(const ActorCanExtractRPCDelegate InCanExtractRPCDelegate,
+											   const ExtractRPCDelegate InExtractRPCCallback, const FSubView& InSubView,
+											   FRPCStore& InRPCStore)
+	: CanExtractRPCDelegate(InCanExtractRPCDelegate)
+	, ExtractRPCCallback(InExtractRPCCallback)
 	, SubView(&InSubView)
-	, NetDriver(InNetDriver)
 	, RPCStore(&InRPCStore)
 {
 }
@@ -280,22 +281,8 @@ void ClientServerRPCService::HandleRPC(const Worker_EntityId EntityId, const Wor
 	const bool bIsServerRpc = ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 	if (bIsServerRpc && SubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
 	{
-		const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver->PackageMap->GetObjectFromEntityId(EntityId);
-		if (!ActorReceivingRPC.IsValid())
+		if (!CanExtractRPCDelegate.Execute(EntityId))
 		{
-			UE_LOG(LogClientServerRPCService, Log,
-				   TEXT("Entity receiving ring buffer RPC does not exist in PackageMap, possibly due to corresponding actor getting "
-						"destroyed. Entity: %lld, Component: %d"),
-				   EntityId, ComponentId);
-			return;
-		}
-
-		const bool bActorRoleIsSimulatedProxy = Cast<AActor>(ActorReceivingRPC.Get())->Role == ROLE_SimulatedProxy;
-		if (bActorRoleIsSimulatedProxy)
-		{
-			UE_LOG(LogClientServerRPCService, Verbose,
-				   TEXT("Will not process server RPC, Actor role changed to SimulatedProxy. This happens on migration. Entity: %lld"),
-				   EntityId);
 			return;
 		}
 	}
@@ -360,7 +347,7 @@ void ClientServerRPCService::ExtractRPCsForType(const Worker_EntityId EntityId, 
 			const TOptional<RPCPayload>& Element = Buffer.GetRingBufferElement(RPCId);
 			if (Element.IsSet())
 			{
-				ExtractRPCCallback.Execute(FUnrealObjectRef(EntityId, Element.GetValue().Offset), Element.GetValue(), RPCId);
+				ExtractRPCCallback.Execute(FUnrealObjectRef(EntityId, Element.GetValue().Offset), RPCSender(), Element.GetValue(), RPCId);
 				LastProcessedRPCId = RPCId;
 			}
 			else

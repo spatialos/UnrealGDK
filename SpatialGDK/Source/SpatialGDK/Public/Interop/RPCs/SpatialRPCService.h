@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 #include "ClientServerRPCService.h"
+#include "CrossServerRPCService.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Interop/SpatialClassInfoManager.h"
@@ -36,11 +37,12 @@ public:
 
 	void ProcessIncomingRPCs();
 
-	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload InPayload,
+	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, const RPCSender& InSender, RPCPayload InPayload,
 								   TOptional<uint64> RPCIdForLinearEventTrace);
 
-	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target = nullptr,
+	EPushRPCResult PushRPC(Worker_EntityId EntityId, const RPCSender& Sender, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target = nullptr,
 						   UFunction* Function = nullptr, const FSpatialGDKSpanId& SpanId = {});
+
 	void PushOverflowedRPCs();
 
 	struct UpdateToSend
@@ -61,6 +63,8 @@ private:
 	// Note: It's like applying an RPC, but more secretive
 	FRPCErrorInfo ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams);
 
+	bool ActorCanExtractRPC(Worker_EntityId) const;
+
 	USpatialNetDriver* NetDriver;
 	USpatialLatencyTracer* SpatialLatencyTracer;
 	SpatialEventTracer* EventTracer;
@@ -69,6 +73,7 @@ private:
 	FRPCStore RPCStore;
 	ClientServerRPCService ClientServerRPCs;
 	MulticastRPCService MulticastRPCs;
+	TOptional<CrossServerRPCService> CrossServerRPCs;
 
 	// Keep around one of the passed subviews here in order to read the main view.
 	const FSubView* AuthSubView;
