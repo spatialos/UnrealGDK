@@ -15,15 +15,15 @@
 #include "Utils/SpatialStatics.h"
 
 /**
- * This test tests multi clients possession over 1 pawns.
+ * This test tests multi Controllers possess over 1 Pawn.
  *
- * The test includes 2x2 gridbase servers and at least two client workers.
+ * This test expects a 2x2 load balancing grid and ACrossServerPossessionGameMode
  * The client workers begin with a player controller and their default pawns, which they initially possess.
  * The flow is as follows:
  *  - Setup:
  *    - Specify `GameMode Override` as ACrossServerPossessionGameMode
  *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
- *	  - Set `Num Required Clients` as 3
+ *	  - Set `Num Required Clients` as 2 or more
  *  - Test:
  *    - One of Controller possessed the Pawn and others failed
  */

@@ -10,6 +10,21 @@
 #include "TestPossessionPawn.h"
 #include "TestPossessionPlayerController.h"
 
+/**
+ * This test tests 1 Controller possess over 1 Pawn.
+ *
+ * This test expects a load balancing grid and ACrossServerPossessionGameMode
+ * Recommand to use 2*2 load balancing grid because the position is written in the code
+ * The client workers begin with a player controller and their default pawns, which they initially possess.
+ * The flow is as follows:
+ *  - Setup:
+ *    - Specify `GameMode Override` as ACrossServerPossessionGameMode
+ *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
+ *	  - Set `Num Required Clients` as 1
+ *  - Test:
+ *    - Controller possessed the Pawn
+ */
+
 ACrossServerPossessionTest::ACrossServerPossessionTest()
 {
 	Author = "Ken.Yu";

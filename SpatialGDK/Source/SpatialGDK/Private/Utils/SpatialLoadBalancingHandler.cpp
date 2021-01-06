@@ -54,12 +54,18 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 			Controller->GetComponents(URemotePossessionComponent::StaticClass(), Components);
 			if (Components.Num() == 1)
 			{
-				// Only deal with the first one
 				if (URemotePossessionComponent* Component = Cast<URemotePossessionComponent>(Components[0]))
 				{
+					if (NetDriver->LockingPolicy->IsLocked(Actor))
+					{
+						UE_LOG(LogRemotePossessionComponent, Warning, TEXT("Actor %s (%llu) cannot migration because of locked"),
+							   *Actor->GetName(), EntityId);
+						Component->DestroyComponent();
+						return EvaluateActorResult::None;
+					}
+
 					VirtualWorkerId TargetVirtualWorkerId;
-					if (EvaluateRemoteMigrationComponent(Component->GetOwner(), Component->Target, NetDriver->LoadBalanceStrategy,
-														 TargetVirtualWorkerId))
+					if (EvaluateRemoteMigrationComponent(NetOwner, Component->Target, TargetVirtualWorkerId))
 					{
 						OutNetOwner = NetOwner;
 						OutWorkerId = TargetVirtualWorkerId;
@@ -240,43 +246,57 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 	}
 }
 
-bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor* Owner, const AActor* Target,
-																	UAbstractLBStrategy* LBStrategy, VirtualWorkerId& WorkerId)
+bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor* NetOwner, const AActor* TargetActor, VirtualWorkerId& WorkerId)
 {
-	if (NetDriver->LockingPolicy->IsLocked(Owner))
+	if (TargetActor != nullptr)
 	{
-		return false;
-	}
-
-	if (Target != nullptr)
-	{
-		UE_LOG(LogRemotePossessionComponent, Log, TEXT("Component->Target is:%s"), *Target->GetName());
-		VirtualWorkerId ActorAuthVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*Owner);
-		VirtualWorkerId TargetVirtualWorkerId = LBStrategy->WhoShouldHaveAuthority(*Target);
+		if (TargetActor->HasAuthority())
+		{
+			UE_LOG(LogSpatialLoadBalancingHandler, Warning, TEXT("Should call AController::Possess"));
+			return false;
+		}
+		VirtualWorkerId ActorAuthVirtualWorkerId = GetWorkerId(NetOwner);
+		AActor* TargetNetOwner = GetReplicatedHierarchyRoot(TargetActor);
+		VirtualWorkerId TargetVirtualWorkerId = GetWorkerId(TargetNetOwner);
 
 		if (TargetVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
-			UE_LOG(LogRemotePossessionComponent, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"),
-				   *Owner->GetName());
+			UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"),
+				   *TargetActor->GetName());
 		}
 		else if (ActorAuthVirtualWorkerId != TargetVirtualWorkerId)
 		{
-			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Migrate actor:%s to worker:%d"), *Owner->GetName(), TargetVirtualWorkerId);
+			UE_LOG(LogSpatialLoadBalancingHandler, Log, TEXT("Migrate actor:%s to worker:%d"), *NetOwner->GetName(), TargetVirtualWorkerId);
 			WorkerId = TargetVirtualWorkerId;
 			return true;
 		}
-		else if (LBStrategy->GetLocalVirtualWorkerId() == TargetVirtualWorkerId)
-		{
-			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Should call AController::Possess"));
-		}
 		else
 		{
-			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Waiting Controller and Pawn both are OnAuthorityGained and then possessing"));
+			UE_LOG(LogSpatialLoadBalancingHandler, Warning, TEXT("Actor:%s and Target:%s are in same worker %d"), *NetOwner->GetName(),
+				   *TargetActor->GetName(), TargetVirtualWorkerId);
 		}
 	}
 	else
 	{
-		UE_LOG(LogRemotePossessionComponent, Log, TEXT("Target is:null"));
+		UE_LOG(LogSpatialLoadBalancingHandler, Log, TEXT("Target is:null"));
 	}
 	return false;
+}
+
+VirtualWorkerId FSpatialLoadBalancingHandler::GetWorkerId(const AActor* NetOwner)
+{
+	VirtualWorkerId NewAuthVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	if (NetOwner->HasAuthority())
+	{
+		NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*NetOwner);
+	}
+	else
+	{
+		Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+		if (AuthorityIntent* OwnerAuthIntent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(OwnerId))
+		{
+			NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
+		}
+	}
+	return NewAuthVirtualWorkerId;
 }
