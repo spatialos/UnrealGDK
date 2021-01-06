@@ -58,7 +58,8 @@ SPATIALGDKEDITOR_API void ResetSchemaGeneratorStateAndCleanupFolders();
 
 SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists();
 
-SPATIALGDKEDITOR_API bool RefreshSchemaFiles(const FString& SchemaOutputPath);
+SPATIALGDKEDITOR_API bool RefreshSchemaFiles(const FString& SchemaOutputPath, const bool bDeleteExistingSchema = true,
+											 const bool bCreateDirectoryTree = true);
 
 SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& CoreSDKSchemaCopyDir);
 

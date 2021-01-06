@@ -1053,10 +1053,11 @@ void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& Co
 	}
 }
 
-bool RefreshSchemaFiles(const FString& SchemaOutputPath)
+bool RefreshSchemaFiles(const FString& SchemaOutputPath, const bool bDeleteExistingSchema /*= true*/,
+						const bool bCreateDirectoryTree /*= true*/)
 {
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if (PlatformFile.DirectoryExists(*SchemaOutputPath))
+	if (bDeleteExistingSchema && PlatformFile.DirectoryExists(*SchemaOutputPath))
 	{
 		if (!PlatformFile.DeleteDirectoryRecursively(*SchemaOutputPath))
 		{
@@ -1067,7 +1068,7 @@ bool RefreshSchemaFiles(const FString& SchemaOutputPath)
 		}
 	}
 
-	if (!PlatformFile.CreateDirectoryTree(*SchemaOutputPath))
+	if (bCreateDirectoryTree && !PlatformFile.CreateDirectoryTree(*SchemaOutputPath))
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error,
 			   TEXT("Could not create schema directory '%s'! Please make sure the parent directory is writeable."), *SchemaOutputPath);
