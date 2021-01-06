@@ -80,5 +80,5 @@ public:
 
 	int ServerResponsesCount = 0;
 
-	float TimeWaited = 0;
+	float TimeWaited = 0.0f;
 };

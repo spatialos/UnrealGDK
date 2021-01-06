@@ -70,7 +70,7 @@ void AGameModeReplicationTest::PrepareTest()
 		FinishStep();
 	});
 
-	constexpr float CrossServerRpcExecutionTime = 1;
+	constexpr float CrossServerRpcExecutionTime = 1.0f;
 
 	AddStep(
 		TEXT("Waiting for GameMode authority information"), FWorkerDefinition::AllServers, nullptr,
@@ -90,7 +90,7 @@ void AGameModeReplicationTest::PrepareTest()
 		},
 		CrossServerRpcExecutionTime);
 
-	constexpr float ValueReplicationTime = 1;
+	constexpr float ValueReplicationTime = 1.0f;
 
 	AddStep(
 		TEXT("Waiting for the GameMode value to be received on all servers"), FWorkerDefinition::AllServers, nullptr, nullptr,
