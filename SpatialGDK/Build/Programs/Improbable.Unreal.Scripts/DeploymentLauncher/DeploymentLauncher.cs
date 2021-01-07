@@ -254,7 +254,7 @@ namespace Improbable
                 }
                 else if (e.Status.StatusCode == Grpc.Core.StatusCode.ResourceExhausted)
                 {
-                    Console.WriteLine($"Unable to launch the deployment(s). Cloud cluster resources exhausted, Detail: '{e.Status.Detail}'");
+                    Console.WriteLine($"Unable to launch the deployment(s). Cloud cluster resources exhausted, Detail: '{e.Status.Detail}'" );
                 }
                 else
                 {
