@@ -264,7 +264,7 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 							   FComponentIdGenerator& IdGenerator)
 {
 	// Generate the actual schema.
-	FScopedSlowTask Progress((float)TypeInfos.Num(), LOCTEXT("GenerateSchemaFromClasses", "Generating Schema..."));
+	FScopedSlowTask Progress((float)TypeInfos.Num(), LOCTEXT("GenerateSchemaFromClasses", "Generating schema..."));
 	for (const auto& TypeInfo : TypeInfos)
 	{
 		Progress.EnterProgressFrame(1.f);
@@ -1105,7 +1105,7 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 	{
 		FString AbsoluteFilePath = FPaths::ConvertRelativePathToFull(RelativeFileName);
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error,
-			   TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"),
+			   TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"), // UNR-XXXX Localise 
 			   *AbsoluteFilePath);
 		return false;
 	}

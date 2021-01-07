@@ -156,6 +156,7 @@ private:
 	void ShowFailedNotification(const FString& NotificationText);
 
 	void GenerateSchema(bool bFullScan);
+	void GenerateSchemaResult(TSharedFuture<bool> SchemaResult, const FString& OnTaskCompleteMessage, const FString& OnTaskFaliMessage);
 
 	bool IsSnapshotGenerated() const;
 
@@ -167,8 +168,6 @@ private:
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 	EAutoStopLocalDeploymentMode AutoStopLocalDeployment;
-
-	bool bSchemaBuildError;
 
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 
