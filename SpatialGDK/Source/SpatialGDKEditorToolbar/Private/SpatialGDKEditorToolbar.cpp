@@ -1227,26 +1227,26 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	FSpatialGDKEditor::ESchemaGenerationMethod GenerationMethod;
 	FString OnTaskStartMessage;
 	FString OnTaskCompleteMessage;
-	FString OnTaskFaliMessage;
+	FString OnTaskFailMessage;
 	if (bFullScanRequired || bFullScan)
 	{
 		GenerationMethod = FSpatialGDKEditor::FullAssetScan;
 		const TCHAR* RequiredStr = bFullScanRequired ? TEXT(" required") : TEXT("");
 		OnTaskStartMessage = FString::Printf(TEXT("Generating schema (full scan%s)"), RequiredStr);
 		OnTaskCompleteMessage = TEXT("Full schema generation complete");
-		OnTaskFaliMessage = TEXT("Full schema generation failed");
+		OnTaskFailMessage = TEXT("Full schema generation failed");
 	}
 	else
 	{
 		GenerationMethod = FSpatialGDKEditor::InMemoryAsset;
 		OnTaskStartMessage = TEXT("Generating schema (incremental)");
 		OnTaskCompleteMessage = TEXT("Incremental schema generation completed!");
-		OnTaskFaliMessage = TEXT("Incremental schema generation failed");
+		OnTaskFailMessage = TEXT("Incremental schema generation failed");
 	}
 
 	OnShowTaskStartNotification(OnTaskStartMessage);
 	TSharedFuture<bool> SchemaResult = SpatialGDKEditorInstance->GenerateSchema(GenerationMethod).Share();
-	GenerateSchemaResult(SchemaResult, OnTaskCompleteMessage, OnTaskFaliMessage);
+	GenerateSchemaResult(SchemaResult, OnTaskCompleteMessage, OnTaskFailMessage);
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> SchemaResult, const FString& OnTaskCompleteMessage,
