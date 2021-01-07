@@ -74,7 +74,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Try Load Schema Database."));
 	if (IsAssetReadOnly(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
-		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to load Schema Database."));
+		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to load schema database."));
 		return 0;
 	}
 
@@ -119,7 +119,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		return FNameLexicalLess()(A.GetAssetPathName(), B.GetAssetPathName());
 	});
 
-	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Start Schema Generation for discovered assets."));
+	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Start schema generation for discovered assets."));
 	FDateTime StartTime = FDateTime::Now();
 	TSet<UClass*> Classes;
 	const int BatchSize = 100;

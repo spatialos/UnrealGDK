@@ -935,7 +935,7 @@ bool SaveSchemaDatabase(USchemaDatabase* SchemaDatabase)
 		FString FullPath = FPaths::ConvertRelativePathToFull(FilePath);
 		FPaths::MakePlatformFilename(FullPath);
 		FMessageDialog::Debugf(FText::Format(
-			LOCTEXT("SchemaDatabaseLocked_Error", "Unable to save Schema Database to '{0}'! The file may be locked by another process."),
+			LOCTEXT("SchemaDatabaseLocked_Error", "Unable to save schema database to '{0}'! The file may be locked by another process."),
 			FText::FromString(FullPath)));
 		return false;
 	}

@@ -228,11 +228,11 @@ TFuture<bool> FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 
 		if (bResult)
 		{
-			UE_LOG(LogSpatialGDKEditor, Display, TEXT("Schema Generation succeeded!"));
+			UE_LOG(LogSpatialGDKEditor, Display, TEXT("Schema generation succeeded!"));
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema Generation failed. View earlier log messages for errors."));
+			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema generation failed. View earlier log messages for errors."));
 		}
 
 		Result->SetValue(bResult);
