@@ -1270,7 +1270,11 @@ void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> Sc
 		Async(EAsyncExecution::Thread, [this, SchemaResult, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage),
 										OnTaskFaliMessage = MoveTemp(OnTaskFaliMessage)]() mutable {
 			SchemaResult.Wait();
-			GenerateSchemaResult(SchemaResult, MoveTemp(OnTaskCompleteMessage), MoveTemp(OnTaskFaliMessage));
+			AsyncTask(ENamedThreads::GameThread, [this, SchemaResult, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage),
+												  OnTaskFaliMessage = MoveTemp(OnTaskFaliMessage)]()
+				{
+					GenerateSchemaResult(SchemaResult, MoveTemp(OnTaskCompleteMessage), MoveTemp(OnTaskFaliMessage));
+				});
 		});
 	}
 }
