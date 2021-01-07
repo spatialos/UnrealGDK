@@ -8,7 +8,9 @@
 #include "GA_ApplyCueEffect.generated.h"
 
 /**
- * TODO
+ * Local-predicted, non-instanced ability, set up to be triggered by UGC_SignalCueActivation's tags through gameplay events.
+ * Depending on which tag the ability is triggered with, it applies either the UGE_AddCue or the UGE_ExecuteCue gameplay effect to its
+ * owner, which then trigger events on UGC_SignalCueActivation.
  */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API UGA_ApplyCueEffect : public UGameplayAbility

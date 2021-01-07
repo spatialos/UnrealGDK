@@ -8,8 +8,6 @@ UGC_SignalCueActivation::UGC_SignalCueActivation() {}
 void UGC_SignalCueActivation::HandleGameplayCue(AActor* MyTarget, EGameplayCueEvent::Type EventType,
 												const FGameplayCueParameters& Parameters)
 {
-	UE_LOG(LogTemp, Log, TEXT("Cue event happened, type %d"), EventType);
-
 	ACuesGASTestActor* TestActor = static_cast<ACuesGASTestActor*>(MyTarget);
 	if (TestActor == nullptr)
 	{
@@ -17,8 +15,12 @@ void UGC_SignalCueActivation::HandleGameplayCue(AActor* MyTarget, EGameplayCueEv
 		return;
 	}
 
-	if (EventType == EGameplayCueEvent::Executed)
+	if (EventType == EGameplayCueEvent::OnActive)
 	{
-		TestActor->ExecutedCue();
+		TestActor->SignalOnActive();
+	}
+	else if (EventType == EGameplayCueEvent::Executed)
+	{
+		TestActor->SignalExecute();
 	}
 }

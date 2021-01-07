@@ -6,6 +6,5 @@
 UGE_ExecuteCue::UGE_ExecuteCue()
 {
 	DurationPolicy = EGameplayEffectDurationType::Instant;
-
 	GameplayCues.Add(FGameplayEffectCue(UGC_SignalCueActivation::GetExecuteTag(), 0.0f, 0.0f));
 }

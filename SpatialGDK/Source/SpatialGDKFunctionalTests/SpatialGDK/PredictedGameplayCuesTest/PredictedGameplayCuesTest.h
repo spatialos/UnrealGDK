@@ -7,9 +7,6 @@
 #include "SpatialFunctionalTest.h"
 #include "PredictedGameplayCuesTest.generated.h"
 
-/**
- * TODO
- */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API APredictedGameplayCuesTest : public ASpatialFunctionalTest
 {
@@ -26,6 +23,5 @@ private:
 	ACuesGASTestActor* TargetActor;
 	float StepTimer;
 
-	// Returns whether the caller should finish the step
-	bool WaitForActivationConfirmation(int Counter, float DeltaTime);
+	void WaitForEventConfirmation(int Counter, float DeltaTime);
 };

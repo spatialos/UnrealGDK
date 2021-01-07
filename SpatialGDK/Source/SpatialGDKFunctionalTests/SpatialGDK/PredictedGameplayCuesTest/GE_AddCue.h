@@ -6,7 +6,8 @@
 #include "GE_AddCue.generated.h"
 
 /**
- * TODO
+ * Two-second long gameplay effect that triggers UGC_SignalCueActivation.
+ * By having a duration, this effect will trigger OnActive/WhileActive/Removed events on the gameplay cue.
  */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API UGE_AddCue : public UGameplayEffect

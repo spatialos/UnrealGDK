@@ -7,7 +7,10 @@
 #include "CuesGASTestActor.generated.h"
 
 /**
- * A replicated Actor with a Cube Mesh, used as a base for Actors used in spatial tests.
+ * Test actor with an ASC, set up to be able to run predictive abilities,
+ * and non-replicated counters to record gameplay cue events triggerd on UGC_SignalCueActivation, which the test asserts against.
+ * To be able to run predictive abilities, this actor sets its own remote role to AutonomousProxy in OnActorReady,
+ * and updates the ASC's actor info in OnRep_Owner. See their respective comments for more info.
  */
 UCLASS()
 class ACuesGASTestActor : public AGASTestActorBase
@@ -17,14 +20,13 @@ class ACuesGASTestActor : public AGASTestActorBase
 public:
 	ACuesGASTestActor();
 
-	void IncrementedCue() { AddCounter++; }
-	int GetAddCounter() { return AddCounter; }
+	void SignalOnActive() { OnActiveCounter++; }
+	void SignalExecute() { ExecuteCounter++; }
 
-	void ExecutedCue() { ExecuteCounter++; }
+	int GetOnActiveCounter() { return OnActiveCounter; }
 	int GetExecuteCounter() { return ExecuteCounter; }
 
-	virtual void OnActorReady(bool bHasAuthority)
-		override; // TODO remove this and make this actor a character to possess. Avoids any autonomous proxy role setting dance
+	virtual void OnActorReady(bool bHasAuthority) override;
 
 protected:
 	virtual void OnRep_Owner() override;
@@ -32,6 +34,6 @@ protected:
 private:
 	TArray<TSubclassOf<UGameplayAbility>> GetInitialGrantedAbilities() override;
 
+	int OnActiveCounter;
 	int ExecuteCounter;
-	int AddCounter;
 };
