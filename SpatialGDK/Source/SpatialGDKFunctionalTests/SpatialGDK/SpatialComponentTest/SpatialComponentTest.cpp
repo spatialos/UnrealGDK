@@ -86,7 +86,6 @@ void ASpatialComponentTest::PrepareTest()
 		AddStepFromDefinition(ReplicatedDestroyStepDefinition, FWorkerDefinition::Server(1));
 	}
 
-
 	// Replicated Dynamic Actor Spawned On Different Server. Server 1 should have Authority on BeginPlay, Server 2 on Tick
 	{
 		AddStep(TEXT("Replicated Dynamic Actor Spawned On Different Server - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -120,7 +119,6 @@ void ASpatialComponentTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(ASpatialComponentTest, DynamicReplicatedActor);
 }
 
-
 // Checks the number of components when an actor does not migrate
 void ASpatialComponentTest::CheckComponentsNonMigration(ASpatialComponentTestActor* Actor, int ExpectedServerId)
 {
@@ -133,7 +131,7 @@ void ASpatialComponentTest::CheckComponentsNonMigration(ASpatialComponentTestAct
 			if (LocalWorkerDefinition.Id == ExpectedServerId)
 			{
 				// Server auth
-				if (VerifyTestActorComponents(Actor, 2)) 
+				if (VerifyTestActorComponents(Actor, 2))
 				{
 					FinishStep();
 				}
@@ -166,14 +164,14 @@ void ASpatialComponentTest::CheckComponentsNonMigration(ASpatialComponentTestAct
 	else // Clients
 	{
 		// Client non-auth
-		if (VerifyTestActorComponents(Actor, 0)) 
+		if (VerifyTestActorComponents(Actor, 0))
 		{
 			FinishStep();
 		}
 	}
 }
 
-// Checks the number of components when an actor migrates 
+// Checks the number of components when an actor migrates
 void ASpatialComponentTest::CheckComponentsMigration(ASpatialComponentTestActor* Actor, int StartServerId, int EndServerId)
 {
 	const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
