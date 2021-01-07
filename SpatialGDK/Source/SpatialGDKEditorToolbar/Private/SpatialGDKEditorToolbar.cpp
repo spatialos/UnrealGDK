@@ -1271,7 +1271,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> Sc
 										OnTaskFaliMessage = MoveTemp(OnTaskFaliMessage)]() mutable {
 			SchemaResult.Wait(); // Block and wait for task to complete.
 			AsyncTask(ENamedThreads::GameThread, [this, SchemaResult, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage),
-												  OnTaskFaliMessage = MoveTemp(OnTaskFaliMessage)]() {
+												  OnTaskFaliMessage = MoveTemp(OnTaskFaliMessage)]() mutable {
 				GenerateSchemaResult(SchemaResult, MoveTemp(OnTaskCompleteMessage), MoveTemp(OnTaskFaliMessage));
 			});
 		});
