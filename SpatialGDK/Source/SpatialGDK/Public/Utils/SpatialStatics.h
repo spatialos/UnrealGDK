@@ -181,7 +181,7 @@ public:
 	static FName GetLayerName(const UObject* WorldContextObject);
 
 	/**
-	 * Returns the Max Dynamically Attached Subobjects Per Class as per spatial OS settings
+	 * Returns the Max Dynamically Attached Subobjects Per Class as per Spatial GDK settings
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS")
 	static int64 GetMaxDynamicallyAttachedSubobjectsPerClass();
