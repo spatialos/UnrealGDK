@@ -70,4 +70,9 @@ public:
 
 	// Local timer used for some active waits.
 	float Timer;
+
+private:
+	void CheckComponentsNonMigration(ASpatialComponentTestActor* Actor, int ExpectedServerId);
+	void CheckComponentsMigration(ASpatialComponentTestActor* Actor, int StartServerId, int EndServerId);
+	bool VerifyTestActorComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount);
 };

@@ -26,4 +26,7 @@ public:
 	virtual void OnActorReady(bool bHasAuthority) override;
 
 	// TODO : Add OnClientOwnershipGained and OnClientOwnershipLost
+
+	// Adds two components and then removes one so the net effect is one added component
+	void AddAndRemoveComponents();
 };

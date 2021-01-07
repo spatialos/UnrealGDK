@@ -22,28 +22,32 @@ void USpatialComponentTestActorComponent::GetLifetimeReplicatedProps(TArray<FLif
 
 void USpatialComponentTestActorComponent::OnAuthorityGained()
 {
-	// TODO: Add 2 components
-
-	// TODO: Remove 1 component
+	AddAndRemoveComponents();
 }
 
 void USpatialComponentTestActorComponent::OnAuthorityLost()
 {
-	// TODO: Add 2 components
-
-	// TODO: Remove 1 component
+	AddAndRemoveComponents();
 }
 
 void USpatialComponentTestActorComponent::OnActorReady(bool bHasAuthority)
 {
-	if (bHasAuthority)
-	{
-		// TODO: Add 2 components
+	AddAndRemoveComponents();
+}
 
-		// TODO: Remove 1 component
-	}
-	else
-	{
-		// Do nothing?
-	}
+void USpatialComponentTestActorComponent::AddAndRemoveComponents()
+{
+	// Add 2 components
+	UStaticMeshComponent* TestSceneComponent1 = NewObject<UStaticMeshComponent>(this);
+	TestSceneComponent1->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+	TestSceneComponent1->RegisterComponent();
+
+	UStaticMeshComponent* TestSceneComponent2 = NewObject<UStaticMeshComponent>(this);
+	TestSceneComponent2->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+	TestSceneComponent2->RegisterComponent();
+
+	// Remove 1 component
+	TestSceneComponent2->UnregisterComponent();
+	TestSceneComponent2->DestroyComponent();
+	TestSceneComponent2 = nullptr;
 }
