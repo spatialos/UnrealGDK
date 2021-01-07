@@ -1250,7 +1250,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 }
 
 void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> SchemaResult, FString OnTaskCompleteMessage,
-														  FString OnTaskFaliMessage)
+														  FString OnTaskFailMessage)
 {
 	if (SchemaResult.IsReady())
 	{
@@ -1261,18 +1261,18 @@ void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> Sc
 		}
 		else
 		{
-			OnShowFailedNotification(OnTaskFaliMessage);
+			OnShowFailedNotification(OnTaskFailMessage);
 		}
 	}
 	else
 	{
 		/* Wait for the schema result to become available. */
 		Async(EAsyncExecution::Thread, [this, SchemaResult, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage),
-										OnTaskFaliMessage = MoveTemp(OnTaskFaliMessage)]() mutable {
+										OnTaskFailMessage = MoveTemp(OnTaskFailMessage)]() mutable {
 			SchemaResult.Wait(); // Block and wait for task to complete.
 			AsyncTask(ENamedThreads::GameThread, [this, SchemaResult, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage),
-												  OnTaskFaliMessage = MoveTemp(OnTaskFaliMessage)]() mutable {
-				GenerateSchemaResult(SchemaResult, MoveTemp(OnTaskCompleteMessage), MoveTemp(OnTaskFaliMessage));
+												  OnTaskFailMessage = MoveTemp(OnTaskFailMessage)]() mutable {
+				GenerateSchemaResult(SchemaResult, MoveTemp(OnTaskCompleteMessage), MoveTemp(OnTaskFailMessage));
 			});
 		});
 	}

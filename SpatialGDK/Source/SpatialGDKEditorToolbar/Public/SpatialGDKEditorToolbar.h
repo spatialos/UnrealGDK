@@ -156,7 +156,7 @@ private:
 	void ShowFailedNotification(const FString& NotificationText);
 
 	void GenerateSchema(bool bFullScan);
-	void GenerateSchemaResult(TSharedFuture<bool> SchemaResult, FString OnTaskCompleteMessage, FString OnTaskFaliMessage);
+	void GenerateSchemaResult(TSharedFuture<bool> SchemaResult, FString OnTaskCompleteMessage, FString OnTaskFailMessage);
 
 	bool IsSnapshotGenerated() const;
 
