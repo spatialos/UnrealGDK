@@ -119,6 +119,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Server workers use TCP (instead of KCP) by default.
 - Fixed a rare crash where a RepNotify callback can modify a GDK data structure being iterated upon.
 - Fixed race condition in Spatial Test framework that would cause tests to time out with one or more workers not ready to begin the test.
+- Fixed client connection not being cleaned up when moving out of interest of a server.
 - Fixed a assertion being triggered on async loaded entities due to queuing some component addition.
 - Fixed a bug where consecutive invocations of CookAndGenerateSchemaCommandlet for different levels could fail when running the schema compiler.
 

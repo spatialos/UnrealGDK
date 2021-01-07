@@ -1168,6 +1168,11 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 		}
 	}
 
+	if (APlayerController* PC = Cast<APlayerController>(Actor))
+	{
+		NetDriver->CleanUpServerConnectionForPC(PC);
+	}
+
 	// It is safe to call AActor::Destroy even if the destruction has already started.
 	if (Actor != nullptr && !Actor->Destroy(true))
 	{

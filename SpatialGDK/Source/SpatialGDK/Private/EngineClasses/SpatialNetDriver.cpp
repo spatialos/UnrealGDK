@@ -547,6 +547,25 @@ void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 	GetWorld()->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
 }
 
+void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
+{
+	// Can't do Cast<USpatialNetConnection>(PC->Player) as Player is null for some reason.
+	// Perhaps a slight defect in how SpatialNetDriver handles setting up a player?
+	// Instead we simply iterate through all connections and find the one with the matching (correctly set) OwningActor
+	for (UNetConnection* ClientConnection : ClientConnections)
+	{
+		if (ClientConnection->OwningActor == PC)
+		{
+			USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(ClientConnection);
+			check(SpatialConnection != nullptr);
+			SpatialConnection->CleanUp();
+			return;
+		}
+	}
+	UE_LOG(LogSpatialOSNetDriver, Error,
+		TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
+}
+
 bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()
 {
 	return GlobalStateManager->GetAcceptingPlayers() && SessionId == GlobalStateManager->GetSessionId();
