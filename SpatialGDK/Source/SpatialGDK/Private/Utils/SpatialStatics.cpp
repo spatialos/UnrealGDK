@@ -350,6 +350,11 @@ FName USpatialStatics::GetLayerName(const UObject* WorldContextObject)
 	return LBStrategy->GetLocalLayerName();
 }
 
+int64 USpatialStatics::GetMaxDynamicallyAttachedSubobjectsPerClass()
+{
+	return GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
+}
+
 void USpatialStatics::SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* WorldContextObject, FOnConfigUIClosedDelegate Delegate)
 {
 	const UWorld* World = WorldContextObject->GetWorld();
