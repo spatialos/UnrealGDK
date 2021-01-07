@@ -19,7 +19,10 @@ public:
 
 	ATestPossessionPawn* GetPawn();
 
+	bool IsReadyForPossess();
+
 	void AddWaitStep(const FWorkerDefinition& Worker);
+
 private:
 	float WaitTime;
 	const static float MaxWaitTime;

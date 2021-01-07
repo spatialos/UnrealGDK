@@ -246,7 +246,8 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 	}
 }
 
-bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor* NetOwner, const AActor* TargetActor, VirtualWorkerId& WorkerId)
+bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor* NetOwner, const AActor* TargetActor,
+																	VirtualWorkerId& WorkerId)
 {
 	if (TargetActor != nullptr)
 	{

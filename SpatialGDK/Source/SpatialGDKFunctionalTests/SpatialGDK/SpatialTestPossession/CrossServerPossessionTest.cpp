@@ -17,6 +17,7 @@
  * Recommand to use 2*2 load balancing grid because the position is written in the code
  * The client workers begin with a player controller and their default pawns, which they initially possess.
  * The flow is as follows:
+ *	Recommend to use PossessionGym.umap in UnrealGDKTestGyms project which ready for tests.
  *  - Setup:
  *    - Specify `GameMode Override` as ACrossServerPossessionGameMode
  *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
@@ -54,17 +55,12 @@ void ACrossServerPossessionTest::PrepareTest()
 		FinishStep();
 	});
 
-	// Make sure all the workers can check the results
-	AddWaitStep(FWorkerDefinition::AllServers);
-
-	AddStep(TEXT("Check test result"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float) {
-		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-		AssertIsValid(FlowController, TEXT("Test requires Client FlowController"));
-		ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-		AssertIsValid(PlayerController, TEXT("Test requires an ATestPossessionPlayerController"));
-		ATestPossessionPawn* Pawn = GetPawn();
-		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
-		AssertTrue(Pawn->Controller == PlayerController, TEXT("PlayerController has possessed the pawn"), PlayerController);
-		FinishStep();
-	});
+	AddStep(
+		TEXT("Check test result"), FWorkerDefinition::Server(1),
+		[this]() -> bool {
+			return ATestPossessionPlayerController::OnPossessCalled >= 1;
+		},
+		nullptr,
+		[this](float) {	FinishStep(); }
+	);
 }

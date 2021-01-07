@@ -22,14 +22,12 @@ class SPATIALGDK_API URemotePossessionComponent : public UActorComponent
 public:
 	virtual void OnAuthorityGained() override;
 
-	virtual bool EvaluatePossess();
+	UFUNCTION(BlueprintNativeEvent, Category = "RemotePossessionComponent", meta = (DisplayName = "Evaluate Possess"))
+	bool EvaluatePossess();
 
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 protected:
-	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "Evaluate Possess"))
-	bool ReceiveEvaluatePossess();
-
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	void MarkToDestroy();
 

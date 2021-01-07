@@ -10,7 +10,6 @@ const float ASpatialTestRemotePossession::MaxWaitTime = 2.0f;
 
 ASpatialTestRemotePossession::ASpatialTestRemotePossession()
 	: Super()
-	, WaitTime(0.0f)
 {
 	Author = "Jay";
 	Description = TEXT("Test Actor Remote Possession");
@@ -19,18 +18,6 @@ ASpatialTestRemotePossession::ASpatialTestRemotePossession()
 ATestPossessionPawn* ASpatialTestRemotePossession::GetPawn()
 {
 	return Cast<ATestPossessionPawn>(UGameplayStatics::GetActorOfClass(GetWorld(), ATestPossessionPawn::StaticClass()));
-}
-
-void ASpatialTestRemotePossession::AddWaitStep(const FWorkerDefinition& Worker)
-{
-	AddStep(TEXT("Wait"), Worker, nullptr, nullptr, [this](float DeltaTime) {
-		if (WaitTime > MaxWaitTime)
-		{
-			WaitTime = 0;
-			FinishStep();
-		}
-		WaitTime += DeltaTime;
-	});
 }
 
 void ASpatialTestRemotePossession::PrepareTest()
@@ -52,6 +39,24 @@ void ASpatialTestRemotePossession::PrepareTest()
 		FinishStep();
 	});
 
-	// Make sure all the Controller and Pawn authoritative in right workers
+	// Ensure that all Controllers are located on the right Worker
 	AddWaitStep(FWorkerDefinition::AllServers);
+}
+
+bool ASpatialTestRemotePossession::IsReadyForPossess()
+{
+	ATestPossessionPawn* Pawn = GetPawn();
+	return Pawn->Controller != nullptr;
+}
+
+void ASpatialTestRemotePossession::AddWaitStep(const FWorkerDefinition& Worker)
+{
+	AddStep(TEXT("Wait"), Worker, nullptr, nullptr, [this](float DeltaTime) {
+		if (WaitTime > MaxWaitTime)
+		{
+			WaitTime = 0;
+			FinishStep();
+		}
+		WaitTime += DeltaTime;
+	});
 }
