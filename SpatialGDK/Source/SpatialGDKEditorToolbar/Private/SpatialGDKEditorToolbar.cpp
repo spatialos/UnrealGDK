@@ -1231,17 +1231,17 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	if (bFullScanRequired || bFullScan)
 	{
 		GenerationMethod = FSpatialGDKEditor::FullAssetScan;
-		const TCHAR* RequiredStr = bFullScanRequired ? TEXT(" required") : TEXT(""); // UNR-XXXX Localise 
-		OnTaskStartMessage = FString::Printf(TEXT("Generating schema (full scan%s)"), RequiredStr); // UNR-XXXX Localise 
-		OnTaskCompleteMessage = TEXT("Full schema generation complete"); // UNR-XXXX Localise
-		OnTaskFaliMessage = TEXT("Full schema generation failed"); // UNR-XXXX Localise
+		const TCHAR* RequiredStr = bFullScanRequired ? TEXT(" required") : TEXT("");				// UNR-XXXX Localise
+		OnTaskStartMessage = FString::Printf(TEXT("Generating schema (full scan%s)"), RequiredStr); // UNR-XXXX Localise
+		OnTaskCompleteMessage = TEXT("Full schema generation complete");							// UNR-XXXX Localise
+		OnTaskFaliMessage = TEXT("Full schema generation failed");									// UNR-XXXX Localise
 	}
 	else
 	{
 		GenerationMethod = FSpatialGDKEditor::InMemoryAsset;
-		OnTaskStartMessage = TEXT("Generating schema (incremental)"); // UNR-XXXX Localise 
+		OnTaskStartMessage = TEXT("Generating schema (incremental)");			  // UNR-XXXX Localise
 		OnTaskCompleteMessage = TEXT("Incremental schema generation completed!"); // UNR-XXXX Localise
-		OnTaskFaliMessage = TEXT("Incremental schema generation failed"); // UNR-XXXX Localise
+		OnTaskFaliMessage = TEXT("Incremental schema generation failed");		  // UNR-XXXX Localise
 	}
 
 	OnShowTaskStartNotification(OnTaskStartMessage);
@@ -1249,7 +1249,8 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	GenerateSchemaResult(SchemaResult, OnTaskCompleteMessage, OnTaskFaliMessage);
 }
 
-void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> SchemaResult, const FString& OnTaskCompleteMessage, const FString& OnTaskFaliMessage)
+void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> SchemaResult, const FString& OnTaskCompleteMessage,
+														  const FString& OnTaskFaliMessage)
 {
 	if (SchemaResult.IsReady())
 	{
@@ -1266,11 +1267,10 @@ void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> Sc
 	else
 	{
 		/* Wait for the schema result to become available. */
-		Async(EAsyncExecution::Thread, [this, SchemaResult, OnTaskCompleteMessage, OnTaskFaliMessage]()
-			{
-				SchemaResult.Wait();
-				GenerateSchemaResult(SchemaResult, OnTaskCompleteMessage, OnTaskFaliMessage);
-			});
+		Async(EAsyncExecution::Thread, [this, SchemaResult, OnTaskCompleteMessage, OnTaskFaliMessage]() {
+			SchemaResult.Wait();
+			GenerateSchemaResult(SchemaResult, OnTaskCompleteMessage, OnTaskFaliMessage);
+		});
 	}
 }
 
