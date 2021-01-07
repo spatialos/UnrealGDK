@@ -84,6 +84,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Unreal Engine version 4.26.0 is now supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
 - Added cross-server variants of ability activation functions on the Ability System Component.
 - Added `SpatialSwitchHasAuthority` function to differentiate authoritative server, non-authoritative server, and clients. This can be called in code or used in blueprints that derive from actor.
+- Added blueprint callable function `GetMaxDynamicallyAttachedSubobjectsPerClass` to `USpatialStatics` that gets the maximum dynamically attached subobjects per class as set in `SpatialGDKSettings`
 
 
 ### Bug fixes:
@@ -117,6 +118,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed a rare crash where a RepNotify callback can modify a GDK data structure being iterated upon.
 - Fixed race condition in Spatial Test framework that would cause tests to time out with one or more workers not ready to begin the test.
 - Fixed client connection not being cleaned up when moving out of interest of a server.
+- Fixed an issue where GameMode values won't be replicated between server workers if it's outside their Interest
 
 ## [`0.11.0`] - 2020-09-03
 
