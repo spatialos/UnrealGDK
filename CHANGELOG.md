@@ -84,6 +84,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Unreal Engine version 4.26.0 is now supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
 - Added cross-server variants of ability activation functions on the Ability System Component.
 - Added `SpatialSwitchHasAuthority` function to differentiate authoritative server, non-authoritative server, and clients. This can be called in code or used in blueprints that derive from actor.
+- Added blue print callable function `GetMaxDynamicallyAttachedSubobjectsPerClass` to `USpatialStatics` that get the maximum dynamically attached subobjects per class as set in `SpatialGDKSettings`
 
 
 ### Bug fixes:
