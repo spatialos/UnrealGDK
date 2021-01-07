@@ -1231,17 +1231,17 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	if (bFullScanRequired || bFullScan)
 	{
 		GenerationMethod = FSpatialGDKEditor::FullAssetScan;
-		const TCHAR* RequiredStr = bFullScanRequired ? TEXT(" required") : TEXT("");				
-		OnTaskStartMessage = FString::Printf(TEXT("Generating schema (full scan%s)"), RequiredStr); 
-		OnTaskCompleteMessage = TEXT("Full schema generation complete");							
-		OnTaskFaliMessage = TEXT("Full schema generation failed");									
+		const TCHAR* RequiredStr = bFullScanRequired ? TEXT(" required") : TEXT("");
+		OnTaskStartMessage = FString::Printf(TEXT("Generating schema (full scan%s)"), RequiredStr);
+		OnTaskCompleteMessage = TEXT("Full schema generation complete");
+		OnTaskFaliMessage = TEXT("Full schema generation failed");
 	}
 	else
 	{
 		GenerationMethod = FSpatialGDKEditor::InMemoryAsset;
 		OnTaskStartMessage = TEXT("Generating schema (incremental)");
 		OnTaskCompleteMessage = TEXT("Incremental schema generation completed!");
-		OnTaskFaliMessage = TEXT("Incremental schema generation failed");		  
+		OnTaskFaliMessage = TEXT("Incremental schema generation failed");
 	}
 
 	OnShowTaskStartNotification(OnTaskStartMessage);
