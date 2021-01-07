@@ -177,7 +177,7 @@ TFuture<bool> FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 												 *FUnrealEdMisc::Get().GetExecutableForCommandlets(), *OptionalParams);
 
 		TFunction<void(FString, double)> Callback = [Result](FString UATResult, double) {
-			Result->SetValue(UATResult == FString("Completed"));
+			Result->SetValue(UATResult == FString(TEXT("Completed")));
 		};
 		IUATHelperModule::Get().CreateUatTask(UATCommandLine, FText::FromString(PlatformName),
 											  LOCTEXT("CookAndGenerateSchemaTaskName", "Cook and generate project schema"),
