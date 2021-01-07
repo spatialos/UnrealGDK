@@ -209,7 +209,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 	if (PlayerControllerEntity != SpatialConstants::INVALID_ENTITY_ID)
 	{
 		if (!Cast<USpatialNetDriver>(Driver)->StaticComponentView->HasAuthority(PlayerControllerEntity,
-																				SpatialConstants::HEARTBEAT_COMPONENT_ID))
+																				SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID))
 		{
 			UE_LOG(LogSpatialNetConnection, Warning,
 				   TEXT("Quit the game but no authority over Heartbeat component: NetConnection %s, PlayerController entity %lld"),
@@ -228,7 +228,7 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 	}
 	else
 	{
-		UE_LOG(LogSpatialNetConnection, Warning, TEXT("Quitting before Heartbeat component has been initialized: NetConnection %s"),
+		UE_LOG(LogSpatialNetConnection, Verbose, TEXT("Quitting before Heartbeat component has been initialized: NetConnection %s"),
 			   *GetName());
 	}
 }

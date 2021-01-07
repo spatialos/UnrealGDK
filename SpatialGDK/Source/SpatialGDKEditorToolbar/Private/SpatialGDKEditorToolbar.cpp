@@ -24,6 +24,7 @@
 #include "LevelEditor.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "Sound/SoundBase.h"
 #include "Widgets/DeclarativeSyntaxSupport.h"
 #include "Widgets/Input/SEditableTextBox.h"
@@ -753,14 +754,30 @@ bool FSpatialGDKEditorToolbarModule::FetchInspectorBinaryWrapper(FString Inspect
 {
 	bFetchingInspectorBinary = true;
 
-	const bool bSuccess =
-		SpatialCommandUtils::FetchInspectorBinary(InspectorVersion, GetDefault<USpatialGDKSettings>()->IsRunningInChina());
+	bool bSuccess = SpatialCommandUtils::FetchInspectorBinary(InspectorVersion, GetDefault<USpatialGDKSettings>()->IsRunningInChina());
 
 	if (!bSuccess)
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not fetch the Inspector for version %s"), *InspectorVersion);
 		OnShowFailedNotification(TEXT("Failed to fetch local inspector!"));
+		bFetchingInspectorBinary = false;
+		return false;
 	}
+
+#if PLATFORM_MAC
+	int32 OutCode = 0;
+	FString OutString;
+	FString OutErr;
+	FString ChmodCommand = FPaths::Combine(SpatialGDKServicesConstants::BinPath, TEXT("chmod"));
+	FString ChmodArguments = FString::Printf(TEXT("+x \"%s\""), *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion));
+	bSuccess = FPlatformProcess::ExecProcess(*ChmodCommand, *ChmodArguments, &OutCode, &OutString, &OutErr);
+	if (!bSuccess)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not make the Inspector executable for version %s. %s %s"), *InspectorVersion,
+			   *OutString, *OutErr);
+		OnShowFailedNotification(TEXT("Failed to fetch local inspector!"));
+	}
+#endif
 
 	bFetchingInspectorBinary = false;
 
@@ -1378,6 +1395,11 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 			}
 		}
 
+#if ENGINE_MINOR_VERSION >= 26
+		FGlobalTabmanager::Get()->TryInvokeTab(FName(TEXT("OutputLog")));
+#else
+		FGlobalTabmanager::Get()->InvokeTab(FName(TEXT("OutputLog")));
+#endif
 		TSharedRef<FSpatialGDKPackageAssembly> PackageAssembly = SpatialGDKEditorInstance->GetPackageAssemblyRef();
 		PackageAssembly->OnSuccess.BindRaw(this, &FSpatialGDKEditorToolbarModule::OnBuildSuccess);
 		PackageAssembly->BuildAndUploadAssembly(CloudDeploymentConfiguration);

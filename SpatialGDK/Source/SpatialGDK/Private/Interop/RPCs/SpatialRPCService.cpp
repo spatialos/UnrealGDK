@@ -295,6 +295,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 												  const bool bCreatedEntity)
 {
 	const Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
+	const Worker_ComponentSetId RingBufferAuthComponentSetId = RPCRingBufferUtils::GetRingBufferAuthComponentSetId(Type);
 
 	const EntityComponentId EntityComponent = { EntityId, RingBufferComponentId };
 	const EntityRPCType EntityType = EntityRPCType(EntityId, Type);
@@ -303,7 +304,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 	uint64 LastAckedRPCId;
 	if (AuthSubView->HasComponent(EntityId, RingBufferComponentId))
 	{
-		if (!AuthSubView->HasAuthority(EntityId, RingBufferComponentId))
+		if (!AuthSubView->HasAuthority(EntityId, RingBufferAuthComponentSetId))
 		{
 			if (bCreatedEntity)
 			{
@@ -322,7 +323,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 		else
 		{
 			// We shouldn't have authority over the component that has the acks.
-			if (AuthSubView->HasAuthority(EntityId, RPCRingBufferUtils::GetAckComponentId(Type)))
+			if (AuthSubView->HasAuthority(EntityId, RPCRingBufferUtils::GetAckAuthComponentSetId(Type)))
 			{
 				return EPushRPCResult::HasAckAuthority;
 			}

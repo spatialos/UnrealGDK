@@ -15,10 +15,3 @@ component PlayerSpawner {
     id = 9998;
     command SpawnPlayerResponse spawn_player(SpawnPlayerRequest);
 }
-
-component_set PlayerSpawnerSet {
-  id = 9998;
-  components = [
-    PlayerSpawner
-  ];
-}

@@ -43,7 +43,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 		return EvaluateActorResult::RemoveAdditional;
 	}
 
-	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
+	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
 	{
 		AActor* NetOwner = GetReplicatedHierarchyRoot(Actor);
 		const bool bNetOwnerHasAuth = NetOwner->HasAuthority();

@@ -4,9 +4,7 @@
 
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientEndpoint.h"
-#include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/Component.h"
-#include "Schema/ComponentPresence.h"
 #include "Schema/DebugComponent.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
@@ -15,7 +13,6 @@
 #include "Schema/RPCPayload.h"
 #include "Schema/Restricted.h"
 #include "Schema/ServerEndpoint.h"
-#include "Schema/ServerRPCEndpointLegacy.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
@@ -83,15 +80,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::Heartbeat>(Op.data);
 		break;
-	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
-		Data = MakeUnique<SpatialGDK::RPCsOnEntityCreation>(Op.data);
-		break;
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
-		Data = MakeUnique<SpatialGDK::ClientRPCEndpointLegacy>(Op.data);
-		break;
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
-		Data = MakeUnique<SpatialGDK::ServerRPCEndpointLegacy>(Op.data);
-		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::AuthorityIntent>(Op.data);
 		break;
@@ -106,9 +94,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		break;
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::SpatialDebugging>(Op.data);
-		break;
-	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ComponentPresence>(Op.data);
 		break;
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::NetOwningClientWorker>(Op.data);
@@ -152,12 +137,6 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 	case SpatialConstants::POSITION_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::Position>(Op.entity_id);
 		break;
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
-		Component = GetComponentData<SpatialGDK::ClientRPCEndpointLegacy>(Op.entity_id);
-		break;
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID_LEGACY:
-		Component = GetComponentData<SpatialGDK::ServerRPCEndpointLegacy>(Op.entity_id);
-		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::AuthorityIntent>(Op.entity_id);
 		break;
@@ -172,9 +151,6 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::SpatialDebugging>(Op.entity_id);
-		break;
-	case SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::ComponentPresence>(Op.entity_id);
 		break;
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::NetOwningClientWorker>(Op.entity_id);
