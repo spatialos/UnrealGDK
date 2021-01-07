@@ -1249,7 +1249,8 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	GenerateSchemaResult(SchemaResult, MoveTemp(OnTaskCompleteMessage), MoveTemp(OnTaskFailMessage));
 }
 
-void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> SchemaResult, FString OnTaskCompleteMessage, FString OnTaskFaliMessage)
+void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> SchemaResult, FString OnTaskCompleteMessage,
+														  FString OnTaskFaliMessage)
 {
 	if (SchemaResult.IsReady())
 	{
@@ -1266,7 +1267,8 @@ void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> Sc
 	else
 	{
 		/* Wait for the schema result to become available. */
-		Async(EAsyncExecution::Thread, [this, SchemaResult, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage), OnTaskFaliMessage = MoveTemp(OnTaskFaliMessage)]() mutable {
+		Async(EAsyncExecution::Thread, [this, SchemaResult, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage),
+										OnTaskFaliMessage = MoveTemp(OnTaskFaliMessage)]() mutable {
 			SchemaResult.Wait();
 			GenerateSchemaResult(SchemaResult, MoveTemp(OnTaskCompleteMessage), MoveTemp(OnTaskFaliMessage));
 		});
