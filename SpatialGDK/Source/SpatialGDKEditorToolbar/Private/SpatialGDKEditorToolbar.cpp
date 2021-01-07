@@ -1246,11 +1246,10 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 
 	OnShowTaskStartNotification(OnTaskStartMessage);
 	TSharedFuture<bool> SchemaResult = SpatialGDKEditorInstance->GenerateSchema(GenerationMethod).Share();
-	GenerateSchemaResult(SchemaResult, OnTaskCompleteMessage, OnTaskFailMessage);
+	GenerateSchemaResult(SchemaResult, MoveTemp(OnTaskCompleteMessage), MoveTemp(OnTaskFailMessage));
 }
 
-void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> SchemaResult, const FString& OnTaskCompleteMessage,
-														  const FString& OnTaskFaliMessage)
+void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> SchemaResult, FString OnTaskCompleteMessage, FString OnTaskFaliMessage)
 {
 	if (SchemaResult.IsReady())
 	{
@@ -1267,9 +1266,9 @@ void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> Sc
 	else
 	{
 		/* Wait for the schema result to become available. */
-		Async(EAsyncExecution::Thread, [this, SchemaResult, OnTaskCompleteMessage, OnTaskFaliMessage]() {
+		Async(EAsyncExecution::Thread, [this, SchemaResult, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage), OnTaskFaliMessage = MoveTemp(OnTaskFaliMessage)]() mutable {
 			SchemaResult.Wait();
-			GenerateSchemaResult(SchemaResult, OnTaskCompleteMessage, OnTaskFaliMessage);
+			GenerateSchemaResult(SchemaResult, MoveTemp(OnTaskCompleteMessage), MoveTemp(OnTaskFaliMessage));
 		});
 	}
 }
