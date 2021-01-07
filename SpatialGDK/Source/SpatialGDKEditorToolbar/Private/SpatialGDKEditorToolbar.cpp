@@ -1269,7 +1269,7 @@ void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> Sc
 		/* Wait for the schema result to become available. */
 		Async(EAsyncExecution::Thread, [this, SchemaResult, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage),
 										OnTaskFaliMessage = MoveTemp(OnTaskFaliMessage)]() mutable {
-			SchemaResult.Wait();
+			SchemaResult.Wait(); // Block and wait for task to complete.
 			AsyncTask(ENamedThreads::GameThread, [this, SchemaResult, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage),
 												  OnTaskFaliMessage = MoveTemp(OnTaskFaliMessage)]() {
 				GenerateSchemaResult(SchemaResult, MoveTemp(OnTaskCompleteMessage), MoveTemp(OnTaskFaliMessage));
