@@ -124,8 +124,7 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 		}
 	}
 
-	// Receiver->FlushRemoveComponentOps();
-	Receiver->FlushRetryRPCs();
+	Receiver->FlushRemoveComponentOps();
 }
 
 bool SpatialDispatcher::IsExternalSchemaOp(const Worker_Op& Op) const

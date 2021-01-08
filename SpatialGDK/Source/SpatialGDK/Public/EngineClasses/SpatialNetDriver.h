@@ -193,8 +193,8 @@ public:
 	UPROPERTY()
 	USpatialNetDriverDebugContext* DebugCtx;
 
-	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
+	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
@@ -244,7 +244,6 @@ private:
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
-	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 	TUniquePtr<SpatialGDK::CrossServerRPCSender> CrossServerRPCSender;
 	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CrossServerRPCHandler;
 

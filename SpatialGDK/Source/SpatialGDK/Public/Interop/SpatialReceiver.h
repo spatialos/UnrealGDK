@@ -99,7 +99,6 @@ public:
 	virtual void OnSystemEntityCommandResponse(const Worker_CommandResponseOp& Op) override;
 
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
-	void FlushRetryRPCs();
 
 	void OnDisconnect(uint8 StatusCode, const FString& Reason);
 
