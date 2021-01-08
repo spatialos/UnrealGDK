@@ -39,6 +39,8 @@ public:
 
 	void CleanupRepStateMap(FSpatialObjectRepState& RepState);
 
+	void RemoveActor(Worker_EntityId EntityId);
+
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
 private:
@@ -110,7 +112,6 @@ private:
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 
 	// Entity remove
-	void RemoveActor(Worker_EntityId EntityId);
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref);
 	static FString GetObjectNameFromRepState(const FSpatialObjectRepState& RepState);

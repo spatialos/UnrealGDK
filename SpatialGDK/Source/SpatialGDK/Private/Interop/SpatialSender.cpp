@@ -873,7 +873,7 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 {
 	if (bIsNetStartupActor)
 	{
-		Receiver->RemoveActor(EntityId);
+		NetDriver->ActorSystem->RemoveActor(EntityId);
 		// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
 		if (!StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 		{
