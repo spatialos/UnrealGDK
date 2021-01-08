@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 
 namespace Improbable.WorkerCoordinator
 {
@@ -13,8 +15,10 @@ namespace Improbable.WorkerCoordinator
     /// </summary>
     internal abstract class AbstractWorkerCoordinator
     {
+        private const int PollSimulatedPlayerProcessIntervalMillis = 5000;
+
         protected Logger Logger;
-        private Stack<Process> ActiveProcesses = new Stack<Process>();
+        private List<Process> ActiveProcesses = new List<Process>();
 
         public AbstractWorkerCoordinator(Logger logger)
         {
@@ -39,7 +43,13 @@ namespace Improbable.WorkerCoordinator
             try
             {
                 var process = Process.Start(fileName, args);
-                ActiveProcesses.Push(process);
+
+                if (process != null)
+                {
+                    process.EnableRaisingEvents = true;
+                    ActiveProcesses.Add(process);
+                }
+
                 return process;
             }
             catch (Exception e)
@@ -51,20 +61,31 @@ namespace Improbable.WorkerCoordinator
 
         /// <summary>
         /// Blocks until all active simulated player processes have exited.
+        /// Restarts failed simulated player processes.
         /// Will only wait for processes started through CreateSimulatedPlayerProcess().
         /// </summary>
         protected void WaitForPlayersToExit()
         {
-            while (ActiveProcesses.Count > 0)
+            foreach (var process in ActiveProcesses)
             {
-                try
+                process.Exited += (sender, args) =>
                 {
-                    ActiveProcesses.Pop().WaitForExit();
-                }
-                catch (Exception e)
-                {
-                    Logger.WriteError($"Error while waiting for simulated player to exit: {e.Message}");
-                }
+                    if (process.ExitCode != 0)
+                    {
+                        Logger.WriteLog($"Restarting client process after it exited with code {process.ExitCode}");
+
+                        process.Start();
+                    }
+                    else
+                    {
+                        Logger.WriteLog($"Client process finished");
+                    }
+                };
+            }
+
+            while (!ActiveProcesses.All(process => process.HasExited))
+            {
+                Thread.Sleep(TimeSpan.FromMilliseconds(PollSimulatedPlayerProcessIntervalMillis));
             }
         }
     }
