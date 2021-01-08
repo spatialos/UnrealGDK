@@ -19,7 +19,8 @@ class USpatialNetDriver;
 
 namespace SpatialGDK
 {
-class FSubView;
+	class SpatialEventTracer;
+	class FSubView;
 
 struct ActorData
 {
@@ -31,7 +32,7 @@ struct ActorData
 class ActorSystem
 {
 public:
-	ActorSystem(const FSubView& InSubView, USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
+	ActorSystem(const FSubView& InSubView, USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer);
 
 	void Advance();
 
@@ -76,8 +77,8 @@ private:
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
 	void HandleEntityDeletedAuthority(Worker_EntityId EntityId) const;
 	void HandleDeferredEntityDeletion(const DeferredRetire& Retire) const;
-	void HandlePlayerLifecycleAuthority(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-										const Worker_Authority Authority, APlayerController* PlayerController);
+	void HandlePlayerLifecycleAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId,
+										Worker_Authority Authority, APlayerController* PlayerController);
 	void UpdateShadowData(Worker_EntityId EntityId) const;
 
 	// Component add
@@ -104,7 +105,7 @@ private:
 	bool IsReceivedEntityTornOff(Worker_EntityId EntityId) const;
 	AActor* TryGetOrCreateActor(ActorData& ActorComponents);
 	AActor* CreateActor(ActorData& ActorComponents);
-	void ApplyComponentDataOnActorCreation(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data,
+	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 
 	// Entity remove
@@ -120,6 +121,7 @@ private:
 	const FSubView* SubView;
 	USpatialNetDriver* NetDriver;
 	FTimerManager* TimerManager;
+	SpatialEventTracer* EventTracer;
 
 	// This will map PlayerController entities to the corresponding SpatialNetConnection
 	// for PlayerControllers that this server has authority over. This is used for player

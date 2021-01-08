@@ -78,10 +78,11 @@ private:
 
 struct FSubViewDelta;
 
-ActorSystem::ActorSystem(const FSubView& InSubView, USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
+ActorSystem::ActorSystem(const FSubView& InSubView, USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer)
 	: SubView(&InSubView)
 	, NetDriver(InNetDriver)
 	, TimerManager(InTimerManager)
+	, EventTracer(InEventTracer)
 {
 }
 
@@ -207,7 +208,7 @@ void ActorSystem::AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetI
 {
 	if (HasEntityBeenRequestedForDelete(EntityId))
 	{
-		if (ComponentSetId == SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID)
+		if (ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 		{
 			HandleEntityDeletedAuthority(EntityId);
 		}
@@ -215,7 +216,7 @@ void ActorSystem::AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetI
 	}
 
 	// TODO: Why is this here?
-	if (NetDriver->SpatialDebugger != nullptr && ComponentSetId == SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID)
+	if (NetDriver->SpatialDebugger != nullptr && ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 	{
 		NetDriver->SpatialDebugger->ActorAuthorityGained(EntityId);
 	}
@@ -223,7 +224,7 @@ void ActorSystem::AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetI
 	HandleActorAuthority(EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE);
 }
 
-void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId,
 									   const Worker_Authority Authority)
 {
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
@@ -239,11 +240,11 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 
 	if (Channel != nullptr)
 	{
-		if (ComponentId == SpatialConstants::POSITION_COMPONENT_ID)
+		if (ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 		{
 			Channel->SetServerAuthority(Authority == WORKER_AUTHORITY_AUTHORITATIVE);
 		}
-		else if (ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+		else if (ComponentSetId == SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
 		{
 			Channel->SetClientAuthority(Authority == WORKER_AUTHORITY_AUTHORITATIVE);
 		}
@@ -251,7 +252,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
-		HandlePlayerLifecycleAuthority(EntityId, ComponentId, Authority, PlayerController);
+		HandlePlayerLifecycleAuthority(EntityId, ComponentSetId, Authority, PlayerController);
 	}
 
 	if (NetDriver->IsServer())
@@ -259,7 +260,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
 		if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
-			NetDriver->Sender->ProcessUpdatesQueuedUntilAuthority(EntityId, ComponentId);
+			NetDriver->Sender->ProcessUpdatesQueuedUntilAuthority(EntityId, ComponentSetId);
 		}
 
 		// If we became authoritative over the position component. set our role to be ROLE_Authority
@@ -269,7 +270,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 		// is player controlled when gaining authority over the pawn and need to wait for the player
 		// state. Likewise, it's possible that the player state doesn't have a pointer to its pawn
 		// yet, so we need to wait for the pawn to arrive.
-		if (ComponentId == SpatialConstants::POSITION_COMPONENT_ID)
+		if (ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 		{
 			if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
@@ -350,42 +351,12 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 				}
 			}
 		}
-
-		// Subobject Delegation
-		TPair<Worker_EntityId_Key, Worker_ComponentId> EntityComponentPair =
-			MakeTuple(static_cast<Worker_EntityId_Key>(EntityId), ComponentId);
-		if (TSharedRef<FPendingSubobjectAttachment>* PendingSubobjectAttachmentPtr =
-				PendingEntitySubobjectDelegations.Find(EntityComponentPair))
-		{
-			FPendingSubobjectAttachment& PendingSubobjectAttachment = PendingSubobjectAttachmentPtr->Get();
-
-			PendingSubobjectAttachment.PendingAuthorityDelegations.Remove(ComponentId);
-
-			if (PendingSubobjectAttachment.PendingAuthorityDelegations.Num() == 0)
-			{
-				if (UObject* Object = PendingSubobjectAttachment.Subobject.Get())
-				{
-					if (IsValid(Channel))
-					{
-						// TODO: UNR-664 - We should track the bytes sent here and factor them into channel saturation.
-						uint32 BytesWritten = 0;
-						NetDriver->Sender->SendAddComponentForSubobject(Channel, Object, *PendingSubobjectAttachment.Info, BytesWritten);
-					}
-				}
-			}
-
-			PendingEntitySubobjectDelegations.Remove(EntityComponentPair);
-		}
 	}
-	else if (ComponentId == SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()))
+	else if (ComponentSetId == SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
 	{
 		if (Channel != nullptr)
 		{
-			// Soft handover isn't supported currently.
-			if (Authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
-			{
-				Channel->ClientProcessOwnershipChange(Authority == WORKER_AUTHORITY_AUTHORITATIVE);
-			}
+			Channel->ClientProcessOwnershipChange(Authority == WORKER_AUTHORITY_AUTHORITATIVE);
 		}
 
 		// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
@@ -393,6 +364,12 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 		{
 			Actor->Role = (Authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 		}
+	}
+
+	if (NetDriver->DebugCtx && Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE
+        && ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+	{
+		NetDriver->DebugCtx->OnDebugComponentAuthLost(EntityId);
 	}
 }
 
@@ -505,9 +482,9 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 
 	if (EventTracer != nullptr)
 	{
-		FSpatialGDKSpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(Op.entity_id, Op.update.component_id));
+		FSpatialGDKSpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
 		EventTracer->TraceEvent(
-			FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, Op.entity_id, Op.update.component_id),
+			FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, EntityId, ComponentId),
 			CauseSpanId.GetConstId(), 1);
 	}
 
@@ -608,7 +585,7 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 		// all actors for this connection's controller.
 		if (FString* WorkerName = WorkerConnectionEntities.Find(EntityId))
 		{
-			const TWeakObjectPtr<USpatialNetConnection> ClientConnectionPtr = NetDriver->FindClientConnectionFromWorkerId(*WorkerName);
+			const TWeakObjectPtr<USpatialNetConnection> ClientConnectionPtr = NetDriver->FindClientConnectionFromWorkerEntityId(EntityId);
 			if (USpatialNetConnection* ClientConnection = ClientConnectionPtr.Get())
 			{
 				if (APlayerController* Controller = ClientConnection->GetPlayerController(/*InWorld*/ nullptr))
@@ -658,16 +635,16 @@ void ActorSystem::HandleDeferredEntityDeletion(const DeferredRetire& Retire) con
 	}
 }
 
-void ActorSystem::HandlePlayerLifecycleAuthority(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+void ActorSystem::HandlePlayerLifecycleAuthority(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId,
 												 const Worker_Authority Authority, APlayerController* PlayerController)
 {
 	UE_LOG(LogActorSystem, Verbose, TEXT("HandlePlayerLifecycleAuthority for PlayerController %s."),
 		   *AActor::GetDebugName(PlayerController));
 
-	// Server initializes heartbeat logic based on its authority over the position component,
-	// client does the same for heartbeat component
-	if ((NetDriver->IsServer() && ComponentId == SpatialConstants::POSITION_COMPONENT_ID)
-		|| (!NetDriver->IsServer() && ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID))
+	// Server initializes heartbeat logic based on its authority over the server auth component set,
+	// client does the same for client auth component set
+	if ((NetDriver->IsServer() && ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+		|| (!NetDriver->IsServer() && ComponentSetId == SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID))
 	{
 		if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
@@ -1485,8 +1462,8 @@ AActor* ActorSystem::CreateActor(ActorData& ActorComponents)
 	if (NetDriver->IsServer() && bCreatingPlayerController)
 	{
 		// If we're spawning a PlayerController, it should definitely have a net-owning client worker ID.
-		check(ActorComponents.OwningClientWorker.WorkerId.IsSet());
-		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), *ActorComponents.OwningClientWorker.WorkerId);
+		check(ActorComponents.OwningClientWorker.ClientPartitionId.IsSet());
+		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor));
 	}
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
