@@ -46,7 +46,6 @@ namespace Improbable.WorkerCoordinator
 
                 if (process != null)
                 {
-                    process.EnableRaisingEvents = true;
                     ActiveProcesses.Add(process);
                 }
 
@@ -66,25 +65,22 @@ namespace Improbable.WorkerCoordinator
         /// </summary>
         protected void WaitForPlayersToExit()
         {
-            foreach (var process in ActiveProcesses)
+            while (true)
             {
-                process.Exited += (sender, args) =>
+                var finishedProcesses = ActiveProcesses.Where(process => process.HasExited).ToList();
+
+                var incorrectlyFinishedProcesses = finishedProcesses.Where(process => process.ExitCode != 0).ToList();
+
+                if (incorrectlyFinishedProcesses.Count == 0 && finishedProcesses.Count == ActiveProcesses.Count)
                 {
-                    if (process.ExitCode != 0)
-                    {
-                        Logger.WriteLog($"Restarting client process after it exited with code {process.ExitCode}");
+                    return;
+                }
 
-                        process.Start();
-                    }
-                    else
-                    {
-                        Logger.WriteLog($"Client process finished");
-                    }
-                };
-            }
+                foreach (var process in incorrectlyFinishedProcesses)
+                {
+                    process.Start();
+                }
 
-            while (!ActiveProcesses.All(process => process.HasExited))
-            {
                 Thread.Sleep(TimeSpan.FromMilliseconds(PollSimulatedPlayerProcessIntervalMillis));
             }
         }
