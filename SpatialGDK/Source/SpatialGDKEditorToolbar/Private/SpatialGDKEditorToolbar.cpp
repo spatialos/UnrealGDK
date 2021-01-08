@@ -1245,18 +1245,18 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	}
 
 	OnShowTaskStartNotification(OnTaskStartMessage);
-	SpatialGDKEditorInstance->GenerateSchema(GenerationMethod,
-		[this, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage), OnTaskFailMessage = MoveTemp(OnTaskFailMessage)](bool bResult)
+	SpatialGDKEditorInstance->GenerateSchema(GenerationMethod, [this, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage),
+																OnTaskFailMessage = MoveTemp(OnTaskFailMessage)](bool bResult) {
+		if (bResult)
 		{
-			if (bResult)
-			{
-				OnShowSuccessNotification(OnTaskCompleteMessage);
-			}
-			else
-			{
-				OnShowFailedNotification(OnTaskFailMessage);
-			}
-		});;
+			OnShowSuccessNotification(OnTaskCompleteMessage);
+		}
+		else
+		{
+			OnShowFailedNotification(OnTaskFailMessage);
+		}
+	});
+	;
 }
 
 bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated() const
@@ -1371,11 +1371,10 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 
 			bool bHasResult{ false };
 			bool bResult{ false };
-			SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset, [&bHasResult, &bResult](bool bTaskResult)
-				{
-					bResult = bTaskResult;
-					bHasResult = true;
-				});
+			SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset, [&bHasResult, &bResult](bool bTaskResult) {
+				bResult = bTaskResult;
+				bHasResult = true;
+			});
 			checkf(bHasResult, TEXT("Result is expected to be returned synchronously."));
 			if (!bResult)
 			{
