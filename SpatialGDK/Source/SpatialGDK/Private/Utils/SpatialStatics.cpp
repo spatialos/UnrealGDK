@@ -350,6 +350,11 @@ FName USpatialStatics::GetLayerName(const UObject* WorldContextObject)
 	return LBStrategy->GetLocalLayerName();
 }
 
+int64 USpatialStatics::GetMaxDynamicallyAttachedSubobjectsPerClass()
+{
+	return GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
+}
+
 void USpatialStatics::SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* WorldContextObject, FOnConfigUIClosedDelegate Delegate)
 {
 	const UWorld* World = WorldContextObject->GetWorld();
@@ -382,4 +387,33 @@ void USpatialStatics::SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* 
 
 		SpatialNetDriver->SpatialDebugger->OnConfigUIClosed = Delegate;
 	}));
+}
+
+void USpatialStatics::SpatialSwitchHasAuthority(const AActor* Target, ESpatialHasAuthority& Authority)
+{
+	// A static UFunction does not have the Target parameter, here it is recreated by adding our own Target parameter
+	// that is defaulted to self and hidden so that the user does not need to set it
+	check(IsValid(Target));
+	check(Target->IsA(AActor::StaticClass()));
+	check(Target->GetNetDriver() != nullptr);
+
+	const bool bHasAuthority = Target->HasAuthority();
+	const bool bIsServer = Target->GetNetDriver()->IsServer();
+
+	if (bHasAuthority && bIsServer)
+	{
+		Authority = ESpatialHasAuthority::ServerAuth;
+	}
+	else if (!bHasAuthority && bIsServer)
+	{
+		Authority = ESpatialHasAuthority::ServerNonAuth;
+	}
+	else if (bHasAuthority && !bIsServer)
+	{
+		Authority = ESpatialHasAuthority::ClientAuth;
+	}
+	else
+	{
+		Authority = ESpatialHasAuthority::ClientNonAuth;
+	}
 }
