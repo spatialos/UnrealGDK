@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "SpatialComponentTestActor.generated.h"
 
-class USpatialComponentTestActorComponent;
+class USpatialComponentTestCallbackComponent;
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialComponentTestActor : public AActor
@@ -17,5 +17,5 @@ public:
 	ASpatialComponentTestActor();
 
 	UPROPERTY()
-	USpatialComponentTestActorComponent* CallbackComponent;
+	USpatialComponentTestCallbackComponent* CallbackComponent;
 };

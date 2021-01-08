@@ -40,9 +40,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Default")
 	ASpatialComponentTestReplicatedActor* LevelReplicatedActor;
 
-	UPROPERTY(EditAnywhere, Category = "Default")
-	ASpatialComponentTestReplicatedActor* LevelReplicatedActorOnBorder;
-
 	// This needs to be a position that belongs to Server 1.
 	UPROPERTY(EditAnywhere, Category = "Default")
 	FVector Server1Position;
@@ -51,28 +48,15 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Default")
 	FVector Server2Position;
 
-	// This needs to be a position that belongs to Server 3.
-	UPROPERTY(EditAnywhere, Category = "Default")
-	FVector Server3Position;
-
-	// This needs to be a position that belongs to Server 4.
-	UPROPERTY(EditAnywhere, Category = "Default")
-	FVector Server4Position;
-
-	// This needs to be a position on the border between all servers.
-	FVector BorderPosition;
-
 	UPROPERTY(Replicated)
 	ASpatialComponentTestReplicatedActor* DynamicReplicatedActor;
-
-	UPROPERTY()
-	ASpatialComponentTestActor* DynamicNonReplicatedActor;
 
 	// Local timer used for some active waits.
 	float Timer;
 
 private:
-	void CheckComponentsNonMigration(ASpatialComponentTestActor* Actor, int ExpectedServerId);
-	void CheckComponentsMigration(ASpatialComponentTestActor* Actor, int StartServerId, int EndServerId);
+	void CheckComponents(ASpatialComponentTestActor* Actor, int ExpectedServerId, int ExpectedClient1ComponentCount = 0,
+						 int ExpectedClient2ComponentCount = 0);
+	void CheckComponentsCrossServer(ASpatialComponentTestActor* Actor, int StartServerId, int EndServerId);
 	bool VerifyTestActorComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount);
 };
