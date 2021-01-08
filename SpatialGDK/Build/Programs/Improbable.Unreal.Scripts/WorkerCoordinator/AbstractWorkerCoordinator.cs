@@ -78,6 +78,7 @@ namespace Improbable.WorkerCoordinator
 
                 foreach (var process in incorrectlyFinishedProcesses)
                 {
+                    Logger.WriteLog($"Restarting simulated player after it failed with exit code {process.ExitCode}");
                     process.Start();
                 }
 
