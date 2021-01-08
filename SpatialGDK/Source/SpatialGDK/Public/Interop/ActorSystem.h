@@ -19,8 +19,8 @@ class USpatialNetDriver;
 
 namespace SpatialGDK
 {
-	class SpatialEventTracer;
-	class FSubView;
+class SpatialEventTracer;
+class FSubView;
 
 struct ActorData
 {
@@ -32,7 +32,8 @@ struct ActorData
 class ActorSystem
 {
 public:
-	ActorSystem(const FSubView& InSubView, USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer);
+	ActorSystem(const FSubView& InSubView, USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager,
+				SpatialEventTracer* InEventTracer);
 
 	void Advance();
 
@@ -77,8 +78,8 @@ private:
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
 	void HandleEntityDeletedAuthority(Worker_EntityId EntityId) const;
 	void HandleDeferredEntityDeletion(const DeferredRetire& Retire) const;
-	void HandlePlayerLifecycleAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId,
-										Worker_Authority Authority, APlayerController* PlayerController);
+	void HandlePlayerLifecycleAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority,
+										APlayerController* PlayerController);
 	void UpdateShadowData(Worker_EntityId EntityId) const;
 
 	// Component add

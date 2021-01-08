@@ -78,7 +78,8 @@ private:
 
 struct FSubViewDelta;
 
-ActorSystem::ActorSystem(const FSubView& InSubView, USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer)
+ActorSystem::ActorSystem(const FSubView& InSubView, USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager,
+						 SpatialEventTracer* InEventTracer)
 	: SubView(&InSubView)
 	, NetDriver(InNetDriver)
 	, TimerManager(InTimerManager)
@@ -367,7 +368,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 	}
 
 	if (NetDriver->DebugCtx && Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE
-        && ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+		&& ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 	{
 		NetDriver->DebugCtx->OnDebugComponentAuthLost(EntityId);
 	}
@@ -483,9 +484,8 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 	if (EventTracer != nullptr)
 	{
 		FSpatialGDKSpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
-		EventTracer->TraceEvent(
-			FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, EntityId, ComponentId),
-			CauseSpanId.GetConstId(), 1);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, EntityId, ComponentId),
+								CauseSpanId.GetConstId(), 1);
 	}
 
 	ESchemaComponentType Category = NetDriver->ClassInfoManager->GetCategoryByComponentId(ComponentId);
