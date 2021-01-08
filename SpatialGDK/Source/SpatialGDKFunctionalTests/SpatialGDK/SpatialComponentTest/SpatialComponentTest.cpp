@@ -69,8 +69,7 @@ void ASpatialComponentTest::PrepareTest()
 		});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr,
-			nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
 				Timer -= DeltaTime;
 				if (Timer <= 0)
@@ -90,8 +89,7 @@ void ASpatialComponentTest::PrepareTest()
 				});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr,
-			nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
 				Timer -= DeltaTime;
 				if (Timer <= 0)
@@ -112,8 +110,7 @@ void ASpatialComponentTest::PrepareTest()
 				});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr,
-			nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
 				Timer -= DeltaTime;
 				if (Timer <= 0)
