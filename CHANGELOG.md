@@ -86,6 +86,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Added `SpatialSwitchHasAuthority` function to differentiate authoritative server, non-authoritative server, and clients. This can be called in code or used in blueprints that derive from actor.
 - Added blueprint callable function `GetMaxDynamicallyAttachedSubobjectsPerClass` to `USpatialStatics` that gets the maximum dynamically attached subobjects per class as set in `SpatialGDKSettings`
 - Simulated Player deployments no longer depend on DeploymentLauncher for readiness. You can now restart them via the Console and expect them to reconnect to your main deployment. DeploymentLauncher will also restart any crashed or incorrectly finished simulated players applications.
+- Simulated Player applications now exit with a non-zero exit code if can't connect to a deployment or load a map - these are connected to TravelFailure and NetworkFailure in Unreal Engine
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
@@ -119,6 +120,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed race condition in Spatial Test framework that would cause tests to time out with one or more workers not ready to begin the test.
 - Fixed client connection not being cleaned up when moving out of interest of a server.
 - Fixed an issue where GameMode values won't be replicated between server workers if it's outside their Interest
+- Fixed an issue where a NetworkFailure won't be reported when connecting to a deployment that doesn't support dev_login with a developer token, and in some other configuration-dependent cases
 
 ## [`0.11.0`] - 2020-09-03
 
