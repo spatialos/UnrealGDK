@@ -256,7 +256,6 @@ bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor
 			UE_LOG(LogSpatialLoadBalancingHandler, Warning, TEXT("Should call AController::Possess"));
 			return false;
 		}
-		VirtualWorkerId ActorAuthVirtualWorkerId = GetWorkerId(NetOwner);
 		AActor* TargetNetOwner = GetReplicatedHierarchyRoot(TargetActor);
 		VirtualWorkerId TargetVirtualWorkerId = GetWorkerId(TargetNetOwner);
 
@@ -265,16 +264,11 @@ bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor
 			UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"),
 				   *TargetActor->GetName());
 		}
-		else if (ActorAuthVirtualWorkerId != TargetVirtualWorkerId)
+		else
 		{
 			UE_LOG(LogSpatialLoadBalancingHandler, Log, TEXT("Migrate actor:%s to worker:%d"), *NetOwner->GetName(), TargetVirtualWorkerId);
 			WorkerId = TargetVirtualWorkerId;
 			return true;
-		}
-		else
-		{
-			UE_LOG(LogSpatialLoadBalancingHandler, Warning, TEXT("Actor:%s and Target:%s are in same worker %d"), *NetOwner->GetName(),
-				   *TargetActor->GetName(), TargetVirtualWorkerId);
 		}
 	}
 	else

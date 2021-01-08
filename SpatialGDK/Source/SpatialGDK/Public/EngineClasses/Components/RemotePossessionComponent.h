@@ -27,6 +27,9 @@ public:
 
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	UFUNCTION(BlueprintNativeEvent, Category = "RemotePossessionComponent", meta = (DisplayName = "OnInvalidTarget"))
+	void OnInvalidTarget();
+
 protected:
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	void MarkToDestroy();

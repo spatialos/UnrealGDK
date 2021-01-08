@@ -27,7 +27,7 @@ void URemotePossessionComponent::OnAuthorityGained()
 	ensure(Controller);
 	if (Target == nullptr)
 	{
-		UE_LOG(LogRemotePossessionComponent, Error, TEXT("Target is null"));
+		OnInvalidTarget();		
 		return;
 	}
 	if (!Target->HasAuthority())
@@ -63,6 +63,11 @@ void URemotePossessionComponent::TickComponent(float DeltaTime, enum ELevelTick 
 bool URemotePossessionComponent::EvaluatePossess_Implementation()
 {
 	return true;
+}
+
+void URemotePossessionComponent::OnInvalidTarget_Implementation()
+{
+	UE_LOG(LogRemotePossessionComponent, Error, TEXT("Target is invalid"));
 }
 
 void URemotePossessionComponent::MarkToDestroy()
