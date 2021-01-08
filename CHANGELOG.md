@@ -119,6 +119,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed a rare crash where a RepNotify callback can modify a GDK data structure being iterated upon.
 - Fixed race condition in Spatial Test framework that would cause tests to time out with one or more workers not ready to begin the test.
 - Fixed a assertion being triggered on async loaded entities due to queuing some component addition
+- Fix a crash opening session frontend with VS 16.8.0 and a bundled dbhelp.dll.
 
 ## [`0.11.0`] - 2020-09-03
 
