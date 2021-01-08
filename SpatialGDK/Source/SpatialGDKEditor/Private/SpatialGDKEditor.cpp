@@ -97,23 +97,20 @@ FSpatialGDKEditor::FSpatialGDKEditor()
 {
 }
 
-TFuture<bool> FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
+void FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method, TFunction<void(bool)> ResultCallback)
 {
-	TSharedPtr<TPromise<bool>> Result = MakeShared<TPromise<bool>>();
-	TFuture<bool> Future = Result->GetFuture();
-
 	if (bSchemaGeneratorRunning)
 	{
 		UE_LOG(LogSpatialGDKEditor, Warning, TEXT("Schema generation is already running"));
-		Result->SetValue(false);
-		return Future;
+		ResultCallback(false);
+		return;
 	}
 
 	if (!FPaths::IsProjectFilePathSet())
 	{
 		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema generation called when no project was opened"));
-		Result->SetValue(false);
-		return Future;
+		ResultCallback(false);
+		return;
 	}
 
 	// If this has been run from an open editor then prompt the user to save dirty packages and maps.
@@ -129,23 +126,23 @@ TFuture<bool> FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 												 bNotifyNoPackagesSaved, bCanBeDeclined))
 		{
 			// User hit cancel don't generate schema.
-			Result->SetValue(false);
-			return Future;
+			ResultCallback(false);
+			return;
 		}
 	}
 
 	if (Schema::IsAssetReadOnly(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
-		Result->SetValue(false);
-		return Future;
+		ResultCallback(false);
+		return;
 	}
 
 	if (Method == FullAssetScan)
 	{
 		if (!CheckAutomationToolsUpToDate())
 		{
-			Result->SetValue(false);
-			return Future;
+			ResultCallback(false);
+			return;
 		}
 
 		// Make sure SchemaDatabase is not loaded.
@@ -163,8 +160,8 @@ TFuture<bool> FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 		if (PlatformName.IsEmpty())
 		{
 			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Empty platform passed to CookAndGenerateSchema"));
-			Result->SetValue(false);
-			return Future;
+			ResultCallback(false);
+			return;
 		}
 
 		FString OptionalParams = EditorSettings->GetCookAndGenerateSchemaAdditionalArgs();
@@ -177,8 +174,8 @@ TFuture<bool> FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 												 *FUnrealEdMisc::Get().GetExecutableForCommandlets(), *OptionalParams);
 
 		bSchemaGeneratorRunning = true;
-		TFunction<void(FString, double)> Callback = [Result, this](const FString& UATResult, double) {
-			Result->SetValue(UATResult == FString(TEXT("Completed")));
+		TFunction<void(FString, double)> Callback = [this, ResultCallback = MoveTemp(ResultCallback)](const FString& UATResult, double) {
+			ResultCallback(UATResult == FString(TEXT("Completed")));
 			bSchemaGeneratorRunning = false;
 		};
 		IUATHelperModule::Get().CreateUatTask(UATCommandLine, FText::FromString(PlatformName),
@@ -186,7 +183,7 @@ TFuture<bool> FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 											  LOCTEXT("CookAndGenerateSchemaTaskShortName", "Generating schema"),
 											  FEditorStyle::GetBrush(TEXT("MainFrame.PackageProject")), MoveTemp(Callback));
 
-		return Future;
+		return;
 	}
 	else
 	{
@@ -237,8 +234,8 @@ TFuture<bool> FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema generation failed. View earlier log messages for errors."));
 		}
 
-		Result->SetValue(bResult);
-		return Future;
+		ResultCallback(bResult);
+		return;
 	}
 }
 

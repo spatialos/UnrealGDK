@@ -1245,37 +1245,18 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 	}
 
 	OnShowTaskStartNotification(OnTaskStartMessage);
-	TSharedFuture<bool> SchemaResult = SpatialGDKEditorInstance->GenerateSchema(GenerationMethod).Share();
-	GenerateSchemaResult(SchemaResult, MoveTemp(OnTaskCompleteMessage), MoveTemp(OnTaskFailMessage));
-}
-
-void FSpatialGDKEditorToolbarModule::GenerateSchemaResult(TSharedFuture<bool> SchemaResult, FString OnTaskCompleteMessage,
-														  FString OnTaskFailMessage)
-{
-	if (SchemaResult.IsReady())
-	{
-		bool bResult = SchemaResult.Get();
-		if (bResult)
+	SpatialGDKEditorInstance->GenerateSchema(GenerationMethod,
+		[this, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage), OnTaskFailMessage = MoveTemp(OnTaskFailMessage)](bool bResult)
 		{
-			OnShowSuccessNotification(OnTaskCompleteMessage);
-		}
-		else
-		{
-			OnShowFailedNotification(OnTaskFailMessage);
-		}
-	}
-	else
-	{
-		/* Wait for the schema result to become available. */
-		Async(EAsyncExecution::Thread, [this, SchemaResult, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage),
-										OnTaskFailMessage = MoveTemp(OnTaskFailMessage)]() mutable {
-			SchemaResult.Wait(); // Block and wait for task to complete.
-			AsyncTask(ENamedThreads::GameThread, [this, SchemaResult, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage),
-												  OnTaskFailMessage = MoveTemp(OnTaskFailMessage)]() mutable {
-				GenerateSchemaResult(SchemaResult, MoveTemp(OnTaskCompleteMessage), MoveTemp(OnTaskFailMessage));
-			});
-		});
-	}
+			if (bResult)
+			{
+				OnShowSuccessNotification(OnTaskCompleteMessage);
+			}
+			else
+			{
+				OnShowFailedNotification(OnTaskFailMessage);
+			}
+		});;
 }
 
 bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated() const
@@ -1388,9 +1369,15 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 				return FReply::Unhandled();
 			}
 
-			TFuture<bool> GenerateSchema = SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset);
-			GenerateSchema.Wait();
-			if (GenerateSchema.Get())
+			bool bHasResult{ false };
+			bool bResult{ false };
+			SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset, [&bHasResult, &bResult](bool bTaskResult)
+				{
+					bResult = bTaskResult;
+					bHasResult = true;
+				});
+			checkf(bHasResult, TEXT("Result is expected to be returned synchronously."));
+			if (!bResult)
 			{
 				OnShowSingleFailureNotification(TEXT("Generate schema failed."));
 				return FReply::Unhandled();
