@@ -23,7 +23,13 @@
  *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
  *	  - Set `Num Required Clients` as 1
  *  - Test:
- *    - Controller possessed the Pawn
+ *	  - Create a Pawn in first quadrant
+ *	  - Create Controller in other quadrant, the position is determined by ACrossServerPossessionGameMode
+ *	  - Wait for Pawn in right worker.
+ *	  -	The Controller possess the Pawn in server-side
+ *	- Result Check:
+ *    - ATestPossessionPlayerController::OnPossess should be called >= 1 times
+ *	  - the reason why accept > 1 is even we set `Num Required Clients` as 1, but still have 3 instance of clients in this case
  */
 
 ACrossServerPossessionTest::ACrossServerPossessionTest()
@@ -61,6 +67,7 @@ void ACrossServerPossessionTest::PrepareTest()
 			return ATestPossessionPlayerController::OnPossessCalled >= 1;
 		},
 		nullptr,
-		[this](float) {	FinishStep(); }
-	);
+		[this](float) {
+			FinishStep();
+		});
 }

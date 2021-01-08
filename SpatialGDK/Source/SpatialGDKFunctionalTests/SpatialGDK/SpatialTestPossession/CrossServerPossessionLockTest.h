@@ -3,11 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialFunctionalTest.h"
 #include "SpatialTestRemotePossession.h"
 #include "CrossServerPossessionLockTest.generated.h"
-
-class ATestPossessionPawn;
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ACrossServerPossessionLockTest : public ASpatialTestRemotePossession

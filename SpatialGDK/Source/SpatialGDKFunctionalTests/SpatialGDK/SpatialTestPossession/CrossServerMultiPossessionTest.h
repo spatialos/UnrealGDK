@@ -4,10 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "SpatialTestRemotePossession.h"
-
 #include "CrossServerMultiPossessionTest.generated.h"
-
-class ATestPossessionPawn;
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ACrossServerMultiPossessionTest : public ASpatialTestRemotePossession

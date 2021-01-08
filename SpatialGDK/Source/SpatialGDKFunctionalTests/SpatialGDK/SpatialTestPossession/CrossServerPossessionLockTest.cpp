@@ -20,14 +20,19 @@
  *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
  *	  - Set `Num Required Clients` as 1
  *  - Test:
- *    - Controller possess failed
+ *	  - Create a Pawn in first quadrant
+ *	  - Create Controller in other quadrant
+ *	  - Wait for Pawn in right worker.
+ *	  -	Lock the Controller and possess the Pawn
+ *	- Result Check:
+ *    - Pawn didn't have a Controller
  */
 
 ACrossServerPossessionLockTest::ACrossServerPossessionLockTest()
 	: Super()
 {
 	Author = "Jay";
-	Description = TEXT("Test Actor Remote Possession");
+	Description = TEXT("Test Locked Actor Cross-Server Possession");
 }
 
 void ACrossServerPossessionLockTest::PrepareTest()

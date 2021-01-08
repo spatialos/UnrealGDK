@@ -26,7 +26,12 @@
  *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
  *	  - Set `Num Required Clients` as 2 or more
  *  - Test:
- *    - One of Controller possessed the Pawn and others failed
+ *	  - Create a Pawn in first quadrant
+ *	  - Create Controllers in other quadrant, the position is determined by ACrossServerPossessionGameMode
+ *	  - Wait for Pawn and Controllers in right worker.
+ *	  -	The Controller possess the Pawn
+ *	- Result Check:
+ *    - ATestPossessionPlayerController::OnPossess should be called `Num Required Clients` times
  */
 
 ACrossServerMultiPossessionTest::ACrossServerMultiPossessionTest()
@@ -40,8 +45,7 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 {
 	ASpatialTestRemotePossession::PrepareTest();
 
-	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr,nullptr,
-			[this](float DeltaTime) {
+	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
@@ -65,6 +69,6 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 		},
 		nullptr,
 		[this](float DeltaTime) {
-		FinishStep();
-	});
+			FinishStep();
+		});
 }
