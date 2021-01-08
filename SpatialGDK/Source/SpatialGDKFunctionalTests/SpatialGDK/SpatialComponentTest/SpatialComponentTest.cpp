@@ -11,13 +11,12 @@
 #include "SpatialGDK/Public/EngineClasses/SpatialNetDriver.h"
 #include "SpatialGDK/Public/Utils/SpatialStatics.h"
 
-/** This Test is meant to check that you can add / remove actor components for the following cases:
+/** This Test is meant to check that you can add / remove components on spatial component callbacks for the following cases:
  *		- replicated level actor
- *		- dynamic replicated actor (one time with spatial authority and another without)
- *		- non-replicated actor spawned on client
- * Keep in mind that we're assuming a 2x2 Grid Load-Balancing Strategy, otherwise the ownership of
+ *		- dynamic replicated actor (spawned on the same server)
+ *		- dynamic replicated actor (spawned cross server)
+ * Keep in mind that we're assuming a 2x1 Grid Load-Balancing Strategy, otherwise the ownership of
  * these actors may be something completely different (specially important for actors placed in the Level).
- * You have some flexibility to change the Server Position properties to test in different Load-Balancing Strategies.
  */
 ASpatialComponentTest::ASpatialComponentTest()
 {
@@ -70,7 +69,7 @@ void ASpatialComponentTest::PrepareTest()
 		});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Server 1 Has Authority"), FWorkerDefinition::AllWorkers, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr,
 			nullptr,
 			[this](float DeltaTime) {
 				Timer -= DeltaTime;
@@ -91,7 +90,7 @@ void ASpatialComponentTest::PrepareTest()
 				});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify possess by client 1"), FWorkerDefinition::AllWorkers, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr,
 			nullptr,
 			[this](float DeltaTime) {
 				Timer -= DeltaTime;
@@ -113,7 +112,7 @@ void ASpatialComponentTest::PrepareTest()
 				});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify possess by client 2"), FWorkerDefinition::AllWorkers, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr,
 			nullptr,
 			[this](float DeltaTime) {
 				Timer -= DeltaTime;
@@ -137,7 +136,7 @@ void ASpatialComponentTest::PrepareTest()
 		});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Different Server - Verify Server 1 Has Authority on BeginPlay and Server 2 "
+			TEXT("Replicated Dynamic Actor Spawned On Different Server - Verify components "
 				 "on Tick"),
 			FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
