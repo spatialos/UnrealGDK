@@ -560,7 +560,7 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 		}
 	}
 	UE_LOG(LogSpatialOSNetDriver, Error,
-		TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
+		   TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
 }
 
 bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()
@@ -1846,6 +1846,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 			Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
+			CrossServerRPCHandler->ProcessMessages(Connection->GetWorkerMessages(), DeltaTime);
 			Receiver->ProcessActorsFromAsyncLoading();
 		}
 

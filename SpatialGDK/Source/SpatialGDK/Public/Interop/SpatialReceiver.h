@@ -111,7 +111,10 @@ public:
 
 	void RetireWhenAuthoritive(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
 
+	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
+
 	void ProcessActorsFromAsyncLoading();
+
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
