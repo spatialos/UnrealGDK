@@ -1030,7 +1030,7 @@ void USpatialReceiver::MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref)
 }
 
 void USpatialReceiver::RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup,
-											 bool bNeedsTearOff)
+											   bool bNeedsTearOff)
 {
 	DeferredRetire DeferredObj = { EntityId, ActorClassId, bIsNetStartup, bNeedsTearOff };
 	EntitiesToRetireOnAuthorityGain.Add(DeferredObj);
