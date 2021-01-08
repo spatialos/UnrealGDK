@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Components/ActorComponent.h"
-#include "CoreMinimal.h"
 #include "SpatialComponentTestDummyComponent.generated.h"
 
 /*

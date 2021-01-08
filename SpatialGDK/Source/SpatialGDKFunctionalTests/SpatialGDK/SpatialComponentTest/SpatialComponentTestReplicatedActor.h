@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "SpatialComponentTestActor.h"
 #include "SpatialComponentTestReplicatedActor.generated.h"
 

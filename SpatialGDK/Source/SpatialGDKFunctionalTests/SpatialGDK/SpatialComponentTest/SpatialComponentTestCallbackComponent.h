@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Components/SceneComponent.h"
-#include "CoreMinimal.h"
 #include "SpatialComponentTestCallbackComponent.generated.h"
 
 class ASpatialFunctionalTest;

@@ -2,12 +2,7 @@
 
 #include "SpatialComponentTestActor.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
-#include "Net/UnrealNetwork.h"
 #include "SpatialComponentTestCallbackComponent.h"
-#include "SpatialFunctionalTest.h"
-#include "SpatialFunctionalTestFlowController.h"
 
 ASpatialComponentTestActor::ASpatialComponentTestActor()
 {

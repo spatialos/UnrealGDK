@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
 #include "SpatialComponentTest.generated.h"
 
