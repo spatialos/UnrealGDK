@@ -1,10 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialComponentTestCallbackComponent.h"
-#include "SpatialComponentTestDummyComponent.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Net/UnrealNetwork.h"
+#include "SpatialComponentTestDummyComponent.h"
 #include "SpatialFunctionalTest.h"
 #include "SpatialFunctionalTestFlowController.h"
 

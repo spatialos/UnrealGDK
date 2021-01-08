@@ -58,7 +58,6 @@ void ASpatialComponentTest::PrepareTest()
 				}
 			},
 			5.0f);
-
 	}
 
 	// Replicated Dynamic Actor Spawned On Same Server.Server 1 should have Authority.
@@ -83,12 +82,13 @@ void ASpatialComponentTest::PrepareTest()
 			5.0f);
 
 		// Client 1 to get ownership of the dynamic actor - then check components
-		AddStep(TEXT("Replicated Dynamic Actor Spawned On Same Server - Set owner to client 1"), FWorkerDefinition::Server(1), nullptr, [this]() {
-					AController* PlayerController = Cast<AController>(
-						GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
-				DynamicReplicatedActor->SetOwner(PlayerController);
-				FinishStep();
-		});
+		AddStep(TEXT("Replicated Dynamic Actor Spawned On Same Server - Set owner to client 1"), FWorkerDefinition::Server(1), nullptr,
+				[this]() {
+					AController* PlayerController =
+						Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
+					DynamicReplicatedActor->SetOwner(PlayerController);
+					FinishStep();
+				});
 
 		AddStep(
 			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify possess by client 1"), FWorkerDefinition::AllWorkers, nullptr,
@@ -97,16 +97,18 @@ void ASpatialComponentTest::PrepareTest()
 				Timer -= DeltaTime;
 				if (Timer <= 0)
 				{
-					//FinishStep();
-					CheckComponents(DynamicReplicatedActor, 1, 1, 0); 
+					// FinishStep();
+					CheckComponents(DynamicReplicatedActor, 1, 1, 0);
 				}
 			},
 			5.0f);
 
-		 // Client 2 to get ownership of the dynamic actor - then check components
-		AddStep(TEXT("Replicated Dynamic Actor Spawned On Same Server - Set owner to client 2"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			AController* PlayerController = Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 2)->GetOwner());
-			DynamicReplicatedActor->SetOwner(PlayerController);
+		// Client 2 to get ownership of the dynamic actor - then check components
+		AddStep(TEXT("Replicated Dynamic Actor Spawned On Same Server - Set owner to client 2"), FWorkerDefinition::Server(1), nullptr,
+				[this]() {
+					AController* PlayerController =
+						Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 2)->GetOwner());
+					DynamicReplicatedActor->SetOwner(PlayerController);
 					FinishStep();
 				});
 
@@ -117,7 +119,7 @@ void ASpatialComponentTest::PrepareTest()
 				Timer -= DeltaTime;
 				if (Timer <= 0)
 				{
-					CheckComponents(DynamicReplicatedActor, 1, 2, 1); 
+					CheckComponents(DynamicReplicatedActor, 1, 2, 1);
 				}
 			},
 			5.0f);
@@ -148,7 +150,7 @@ void ASpatialComponentTest::PrepareTest()
 			5.0f);
 
 		AddStepFromDefinition(ReplicatedDestroyStepDefinition, FWorkerDefinition::Server(2));
-	}	
+	}
 }
 
 void ASpatialComponentTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -159,7 +161,8 @@ void ASpatialComponentTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 }
 
 // Checks the number of components on the servers when an actor does not migrate
-void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, int ExpectedServerId, int ExpectedClient1ComponentCount, int ExpectedClient2ComponentCount)
+void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, int ExpectedServerId, int ExpectedClient1ComponentCount,
+											int ExpectedClient2ComponentCount)
 {
 	const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 	if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
@@ -185,7 +188,7 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 			}
 			else
 			{
-				// Dynamic actors do not receive OnActorReady on non-auth servers 
+				// Dynamic actors do not receive OnActorReady on non-auth servers
 				if (VerifyTestActorComponents(Actor, 0))
 				{
 					FinishStep();
@@ -204,7 +207,7 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 	{
 		if (LocalWorkerDefinition.Id == 1)
 		{
-			// Client 1 
+			// Client 1
 			if (VerifyTestActorComponents(Actor, ExpectedClient1ComponentCount))
 			{
 				FinishStep();
@@ -212,13 +215,12 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 		}
 		else if (LocalWorkerDefinition.Id == 2)
 		{
-			// Client 2 
+			// Client 2
 			if (VerifyTestActorComponents(Actor, ExpectedClient2ComponentCount))
 			{
 				FinishStep();
 			}
 		}
-		
 	}
 }
 
@@ -233,7 +235,7 @@ void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActo
 		{
 			if (LocalWorkerDefinition.Id == StartServerId)
 			{
-				// Spawning server - OnActorReady component, OnAuthorityGained component and OnAuthorityLost component 
+				// Spawning server - OnActorReady component, OnAuthorityGained component and OnAuthorityLost component
 				if (VerifyTestActorComponents(Actor, 3))
 				{
 					FinishStep();
@@ -241,7 +243,7 @@ void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActo
 			}
 			else if (LocalWorkerDefinition.Id == EndServerId)
 			{
-				// Migrated server - OnAuthorityGained component 
+				// Migrated server - OnAuthorityGained component
 				if (VerifyTestActorComponents(Actor, 1))
 				{
 					FinishStep();
@@ -250,16 +252,16 @@ void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActo
 		}
 		else // Support for Native / Single Worker.
 		{
-			// Spawning server - OnActorReady component and OnAuthorityGained component 
+			// Spawning server - OnActorReady component and OnAuthorityGained component
 			if (VerifyTestActorComponents(Actor, 2))
 			{
 				FinishStep();
 			}
 		}
 	}
-	else 
+	else
 	{
-		// Clients 
+		// Clients
 		if (VerifyTestActorComponents(Actor, 0))
 		{
 			FinishStep();
