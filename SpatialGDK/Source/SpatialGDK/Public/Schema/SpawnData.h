@@ -30,9 +30,14 @@ struct SpawnData : Component
 		Velocity = RootComponent ? Actor->GetVelocity() : FVector::ZeroVector;
 	}
 
-	SpawnData(const Worker_ComponentData& Data)
+	explicit SpawnData(const Worker_ComponentData& Data)
+		: SpawnData(Data.schema_type)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	}
+
+	explicit SpawnData(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 		Location = GetVectorFromSchema(ComponentObject, 1);
 		Rotation = GetRotatorFromSchema(ComponentObject, 2);

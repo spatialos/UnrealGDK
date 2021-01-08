@@ -36,9 +36,14 @@ struct UnrealMetadata : Component
 	{
 	}
 
-	UnrealMetadata(const Worker_ComponentData& Data)
+	explicit UnrealMetadata(const Worker_ComponentData& Data)
+		: UnrealMetadata(Data.schema_type)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	}
+
+	explicit UnrealMetadata(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 		if (Schema_GetObjectCount(ComponentObject, SpatialConstants::UNREAL_METADATA_STABLY_NAMED_REF_ID) == 1)
 		{

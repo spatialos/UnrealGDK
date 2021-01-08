@@ -514,8 +514,6 @@ void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op
 			}
 		}
 	}
-
-	StaticComponentView->OnRemoveComponent(Op);
 }
 
 void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
@@ -534,10 +532,6 @@ void USpatialReceiver::OnAuthorityChange(const Worker_ComponentSetAuthorityChang
 		}
 		return;
 	}
-
-	// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
-	// This way systems that depend on having non-stale state can function correctly.
-	StaticComponentView->OnAuthorityChange(Op);
 
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverAuthChange);
 	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
@@ -597,7 +591,7 @@ void USpatialReceiver::HandleActorAuthority(const Worker_ComponentSetAuthorityCh
 	if (NetDriver->SpatialDebugger != nullptr && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE
 		&& Op.component_set_id == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 	{
-		NetDriver->SpatialDebugger->ActorAuthorityChanged(Op);
+		NetDriver->SpatialDebugger->ActorAuthorityGained(Op.entity_id);
 	}
 
 	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.entity_id));
@@ -1942,7 +1936,8 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), EventTracer);
 	bool bOutReferencesChanged = false;
-	Reader.ApplyComponentUpdate(ComponentUpdate, TargetObject, Channel, bIsHandover, bOutReferencesChanged);
+	Reader.ApplyComponentUpdate(ComponentUpdate.component_id, ComponentUpdate.schema_type, TargetObject, Channel, bIsHandover,
+								bOutReferencesChanged);
 	RepStateHelper.Update(*this, Channel, TargetObject, bOutReferencesChanged);
 
 	// This is a temporary workaround, see UNR-841:

@@ -112,12 +112,13 @@ public:
 	void RetireWhenAuthoritive(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
 
 	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
+	void ReceiveActor(Worker_EntityId EntityId);
+	void HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+									  TUniquePtr<SpatialGDK::DynamicComponent> Data);
 
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
-
-	void ReceiveActor(Worker_EntityId EntityId);
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 
 	AActor* TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData,
@@ -137,8 +138,6 @@ private:
 										   const FClassInfo& ActorClassInfo, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentData& Data);
 
-	void HandleIndividualAddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
-									  TUniquePtr<SpatialGDK::DynamicComponent> Data);
 	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info);
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& TargetObject, USpatialActorChannel& Channel,
