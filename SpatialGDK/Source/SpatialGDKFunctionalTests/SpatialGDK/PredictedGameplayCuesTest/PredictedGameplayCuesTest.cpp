@@ -25,7 +25,7 @@
  */
 APredictedGameplayCuesTest::APredictedGameplayCuesTest()
 {
-	Author = "Tilman Schmidt";
+	Author = TEXT("Tilman Schmidt");
 	Description =
 		TEXT("Tests that gameplay cue events correctly trigger on all clients when triggered by a predicted gameplay effect application.");
 	DuplicateActivationCheckWaitTime = 2.0f;
@@ -50,6 +50,42 @@ void APredictedGameplayCuesTest::PrepareTest()
 
 		FinishStep();
 	});
+
+	auto WaitForEventConfirmation = [this](int Counter, float DeltaTime) {
+		// StepTimer == -1.0f signals that we have not yet seen Counter be 1
+		if (StepTimer != -1.0f)
+		{
+			StepTimer += DeltaTime;
+		}
+
+		if (Counter == 0)
+		{
+			// The counter is allowed to be 0 while we are still waiting for the changed counter to replicated to us.
+			// However, if we've seen Counter at 1 before (and as a result started the timer), if we see it back at 0,
+			// it somehow got reset. This likely indicates a bug in the test implementation.
+			if (StepTimer != -1.0f)
+			{
+				FinishTest(EFunctionalTestResult::Invalid, TEXT("The counter was reset to 0 after being set to 1."));
+			}
+		}
+		else if (Counter == 1)
+		{
+			if (StepTimer == -1.0f)
+			{
+				StepTimer = 0.0f;
+			}
+			else if (StepTimer >= DuplicateActivationCheckWaitTime)
+			{
+				StepTimer = -1.0f;
+				FinishStep();
+			}
+		}
+		else
+		{
+			FinishTest(EFunctionalTestResult::Failed,
+					   FString::Printf(TEXT("The event was triggered %d times. It should only be triggered once."), Counter));
+		}
+	};
 
 	AddStep(
 		TEXT("Spawn Actor"), FWorkerDefinition::Server(1), nullptr,
@@ -96,9 +132,10 @@ void APredictedGameplayCuesTest::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Check that cue executed on all clients"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
-		WaitForEventConfirmation(TargetActor->GetExecuteCounter(), DeltaTime);
-	});
+	AddStep(TEXT("Check that cue executed on all clients"), FWorkerDefinition::AllClients, nullptr, nullptr,
+			[this, WaitForEventConfirmation](float DeltaTime) {
+				WaitForEventConfirmation(TargetActor->GetExecuteCounter(), DeltaTime);
+			});
 
 	AddStep(TEXT("Activate ability to add cue"), FWorkerDefinition::Client(1), nullptr, [this]() {
 		UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
@@ -109,44 +146,8 @@ void APredictedGameplayCuesTest::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Check that cue was added on all clients"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
-		WaitForEventConfirmation(TargetActor->GetOnActiveCounter(), DeltaTime);
-	});
-}
-
-void APredictedGameplayCuesTest::WaitForEventConfirmation(int Counter, float DeltaTime)
-{
-	// StepTimer == -1.0f signals that we have not yet seen Counter be 1
-	if (StepTimer != -1.0f)
-	{
-		StepTimer += DeltaTime;
-	}
-
-	if (Counter == 0)
-	{
-		// The counter is allowed to be 0 while we are still waiting for the changed counter to replicated to us.
-		// However, if we've seen Counter at 1 before (and as a result started the timer), if we see it back at 0,
-		// it somehow got reset. This likely indicates a bug in the test implementation.
-		if (StepTimer != -1.0f)
-		{
-			FinishTest(EFunctionalTestResult::Invalid, TEXT("The counter was reset to 0 after being set to 1."));
-		}
-	}
-	else if (Counter == 1)
-	{
-		if (StepTimer == -1.0f)
-		{
-			StepTimer = 0.0f;
-		}
-		else if (StepTimer >= DuplicateActivationCheckWaitTime)
-		{
-			StepTimer = -1.0f;
-			FinishStep();
-		}
-	}
-	else
-	{
-		FinishTest(EFunctionalTestResult::Failed,
-				   FString::Printf(TEXT("The event was triggered %d times. It should only be triggered once."), Counter));
-	}
+	AddStep(TEXT("Check that cue was added on all clients"), FWorkerDefinition::AllClients, nullptr, nullptr,
+			[this, WaitForEventConfirmation](float DeltaTime) {
+				WaitForEventConfirmation(TargetActor->GetOnActiveCounter(), DeltaTime);
+			});
 }

@@ -22,6 +22,4 @@ class SPATIALGDKFUNCTIONALTESTS_API APredictedGameplayCuesTest : public ASpatial
 private:
 	ACuesGASTestActor* TargetActor;
 	float StepTimer;
-
-	void WaitForEventConfirmation(int Counter, float DeltaTime);
 };
