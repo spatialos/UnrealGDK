@@ -6,7 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
 #include "CoreMinimal.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
+#include "ReplicatedTestActorBase.h"
 #include "GASTestActorBase.generated.h"
 
 /**

@@ -22,7 +22,4 @@ class SPATIALGDKFUNCTIONALTESTS_API ACrossServerAbilityActivationTest : public A
 private:
 	ASpyValueGASTestActor* TargetActor;
 	float StepTimer;
-
-	// Returns whether the caller should finish the step
-	bool WaitForActivationConfirmation(float DeltaTime);
 };

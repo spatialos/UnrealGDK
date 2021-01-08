@@ -28,14 +28,15 @@ void UGA_IncrementSpyValue::ActivateAbility(const FGameplayAbilitySpecHandle Han
 			return;
 		}
 
-		ASpyValueGASTestActor* TestActor = static_cast<ASpyValueGASTestActor*>(ActorInfo->OwnerActor.Get());
-		if (TestActor == nullptr)
+		AActor* TestActor = ActorInfo->OwnerActor.Get();
+		if (TestActor == nullptr || !TestActor->IsA<ASpyValueGASTestActor>())
 		{
+			UE_LOG(LogTemp, Error, TEXT("UGA_IncrementSpyValue was activated with an invalid owner actor %s."), *GetNameSafe(TestActor));
 			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 			return;
 		}
 
-		TestActor->IncrementCounter();
+		static_cast<ASpyValueGASTestActor*>(TestActor)->IncrementCounter();
 
 		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 	}
