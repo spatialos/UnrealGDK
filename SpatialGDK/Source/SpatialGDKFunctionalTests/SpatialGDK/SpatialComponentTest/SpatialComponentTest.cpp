@@ -265,14 +265,17 @@ bool ASpatialComponentTest::VerifyServerComponents(ASpatialComponentTestActor* A
 {
 	TArray<UActorComponent*> FoundComponents = GetDynamicComponents(Actor);
 	int FoundComponentCount = FoundComponents.Num();
+	if (FoundComponentCount != ExpectedComponentCount)
+	{
+		return false;
+	}
 
 	// Check each dynamically added test component has the expected number of spatial callbacks
 	for (UActorComponent* FoundComponent : FoundComponents)
 	{
 		USpatialComponentTestDummyComponent* DynamicComponent = Cast<USpatialComponentTestDummyComponent>(FoundComponent);
-		if (FoundComponentCount != ExpectedComponentCount && DynamicComponent->NumAuthorityGains != NumAuthorityGains
-			&& DynamicComponent->NumAuthorityLosses != NumAuthorityLosses && DynamicComponent->NumActorReadyAuth != NumActorReadyAuth
-			&& DynamicComponent->NumActorReadyNonAuth != NumActorReadyNonAuth)
+		if (DynamicComponent->NumAuthorityGains != NumAuthorityGains || DynamicComponent->NumAuthorityLosses != NumAuthorityLosses
+			|| DynamicComponent->NumActorReadyAuth != NumActorReadyAuth || DynamicComponent->NumActorReadyNonAuth != NumActorReadyNonAuth)
 		{
 			return false;
 		}
@@ -286,13 +289,17 @@ bool ASpatialComponentTest::VerifyClientComponents(ASpatialComponentTestActor* A
 {
 	TArray<UActorComponent*> FoundComponents = GetDynamicComponents(Actor);
 	int FoundComponentCount = FoundComponents.Num();
+	if (FoundComponentCount != ExpectedComponentCount)
+	{
+		return false;
+	}
 
 	// Check each dynamically added test component has the expected number of spatial callbacks
 	for (UActorComponent* FoundComponent : FoundComponents)
 	{
 		USpatialComponentTestDummyComponent* DynamicComponent = Cast<USpatialComponentTestDummyComponent>(FoundComponent);
-		if (FoundComponentCount != ExpectedComponentCount && DynamicComponent->NumClientOwnershipGains != NumClientOwnershipGained
-			&& DynamicComponent->NumClientOwnershipLosses != NumClientOwnershipLost)
+		if (DynamicComponent->NumClientOwnershipGains != NumClientOwnershipGained
+			|| DynamicComponent->NumClientOwnershipLosses != NumClientOwnershipLost)
 		{
 			return false;
 		}
