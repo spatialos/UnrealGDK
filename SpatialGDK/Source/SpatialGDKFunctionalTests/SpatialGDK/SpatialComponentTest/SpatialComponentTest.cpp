@@ -133,7 +133,7 @@ void ASpatialComponentTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(ASpatialComponentTest, DynamicReplicatedActor);
 }
 
-// Checks the number of components on the servers when an actor does not migrate
+// Checks the number of components on the servers and clients when an actor does not migrate
 void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, int ExpectedServerId, int ExpectedClient1ComponentCount,
 											int ExpectedClient2ComponentCount)
 {
@@ -168,7 +168,7 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 			FinishStep();
 		}
 	}
-	else
+	else // Clients
 	{
 		if (LocalWorkerDefinition.Id == 1)
 		{
@@ -177,14 +177,13 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 		}
 		else if (LocalWorkerDefinition.Id == 2)
 		{
-			// Client 2
 			RequireTrue(VerifyTestActorComponents(Actor, ExpectedClient2ComponentCount), "Client 2");
 			FinishStep();
 		}
 	}
 }
 
-// Checks the number of components when an actor migrates
+// Checks the number of components on the servers and clients when an actor migrates
 void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActor* Actor, int StartServerId, int EndServerId)
 {
 	const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
@@ -212,7 +211,7 @@ void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActo
 			FinishStep();
 		}
 	}
-	else
+	else // Clients
 	{
 		RequireTrue(VerifyTestActorComponents(Actor, 0), "Clients");
 		FinishStep();
