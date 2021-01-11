@@ -123,6 +123,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed client connection not being cleaned up when moving out of interest of a server.
 - Fixed a assertion being triggered on async loaded entities due to queuing some component addition.
 - Fixed a bug where consecutive invocations of CookAndGenerateSchemaCommandlet for different levels could fail when running the schema compiler.
+- Fixed a crash that occured when opening the session frontend with VS 16.8.0 using the bundled dbghelp.dll.
 
 ## [`0.11.0`] - 2020-09-03
 
