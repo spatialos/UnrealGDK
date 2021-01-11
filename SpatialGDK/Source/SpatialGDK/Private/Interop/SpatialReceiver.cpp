@@ -66,8 +66,7 @@ namespace // Anonymous namespace
 struct RepNotifyCall
 {
 	USpatialActorChannel* Channel;
-	UObject* Object;
-	TArray<GDK_PROPERTY(Property)*> Notifies;
+	TWeakObjectPtr<UObject> Object;
 };
 #if DO_CHECK
 FUsageLock ObjectRefToRepStateUsageLock; // A debug helper to trigger an ensure if something weird happens (re-entrancy)
@@ -2380,9 +2379,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 			continue;
 		}
 
-		UObject* ReplicatingObject = ChannelObjectIter->Value.Get();
-
-		if (!ReplicatingObject)
+		if (!ChannelObjectIter->Value.IsValid())
 		{
 			if (DependentChannel->ObjectReferenceMap.Find(ChannelObjectIter->Value))
 			{
@@ -2392,7 +2389,14 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 			continue;
 		}
 
-		FSpatialObjectRepState* RepState = DependentChannel->ObjectReferenceMap.Find(ChannelObjectIter->Value);
+		RepNotifyCalls.Push({ DependentChannel, ChannelObjectIter->Value });
+	}
+
+	for (const auto& RepNotifyCall : RepNotifyCalls)
+	{
+		USpatialActorChannel* DependentChannel = RepNotifyCall.Channel;
+		UObject* ReplicatingObject = RepNotifyCall.Object.Get();
+		FSpatialObjectRepState* RepState = DependentChannel->ObjectReferenceMap.Find(RepNotifyCall.Object);
 		if (!RepState || !RepState->UnresolvedRefs.Contains(ObjectRef))
 		{
 			continue;
@@ -2406,7 +2410,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 				UE_LOG(LogSpatialActorChannel, Log,
 					   TEXT("Actor to be resolved was torn off, so ignoring incoming operations. Object ref: %s, resolved object: %s"),
 					   *ObjectRef.ToString(), *Object->GetName());
-				DependentChannel->ObjectReferenceMap.Remove(ChannelObjectIter->Value);
+				DependentChannel->ObjectReferenceMap.Remove(RepNotifyCall.Object);
 				continue;
 			}
 		}
@@ -2418,7 +2422,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 					   TEXT("Owning Actor of the object to be resolved was torn off, so ignoring incoming operations. Object ref: %s, "
 							"resolved object: %s"),
 					   *ObjectRef.ToString(), *Object->GetName());
-				DependentChannel->ObjectReferenceMap.Remove(ChannelObjectIter->Value);
+				DependentChannel->ObjectReferenceMap.Remove(RepNotifyCall.Object);
 				continue;
 			}
 		}
@@ -2440,16 +2444,11 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 		if (bSomeObjectsWereMapped)
 		{
 			DependentChannel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, RepLayout, RepState->ReferenceMap, ReplicatingObject);
-			RepNotifyCalls.Push({ DependentChannel, ReplicatingObject, MoveTemp(RepNotifies) });
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
+			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies, {});
 		}
 
 		RepState->UnresolvedRefs.Remove(ObjectRef);
-	}
-
-	for (auto& RepNotify : RepNotifyCalls)
-	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolved for target object %s"), *RepNotify.Object->GetName());
-		RepNotify.Channel->PostReceiveSpatialUpdate(RepNotify.Object, RepNotify.Notifies, {});
 	}
 }
 
