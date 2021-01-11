@@ -65,8 +65,7 @@ class USpatialReceiver : public UObject, public SpatialOSDispatcherInterface
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager,
-			  SpatialGDK::SpatialEventTracer* InEventTracer);
+	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialEventTracer* InEventTracer);
 
 	// Dispatcher Calls
 	virtual void OnCommandRequest(const Worker_Op& Op) override;

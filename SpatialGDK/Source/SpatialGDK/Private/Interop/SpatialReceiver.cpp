@@ -74,8 +74,7 @@ FUsageLock ObjectRefToRepStateUsageLock; // A debug helper to trigger an ensure 
 #endif
 } // namespace
 
-void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager,
-							SpatialEventTracer* InEventTracer)
+void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;

@@ -262,8 +262,9 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		else if (bCreatedEntity) // We have not gained authority yet
 		{
 			Actor->SetReplicates(false);
-			NetDriver->ActorSystem->RetireWhenAuthoritative(EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()),
-											  Actor->IsNetStartupActor(), Actor->GetTearOff()); // Ensure we don't recreate the actor
+			NetDriver->ActorSystem->RetireWhenAuthoritative(
+				EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()), Actor->IsNetStartupActor(),
+				Actor->GetTearOff()); // Ensure we don't recreate the actor
 		}
 	}
 	else
