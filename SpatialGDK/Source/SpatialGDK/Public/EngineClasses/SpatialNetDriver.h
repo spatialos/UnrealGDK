@@ -148,6 +148,7 @@ public:
 	void RegisterClientConnection(const Worker_EntityId WorkerEntityId, USpatialNetConnection* ClientConnection);
 	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerEntityId(const Worker_EntityId InWorkerEntityId);
 	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
+	void CleanUpServerConnectionForPC(APlayerController* PC);
 
 	bool HasServerAuthority(Worker_EntityId EntityId) const;
 	bool HasClientAuthority(Worker_EntityId EntityId) const;

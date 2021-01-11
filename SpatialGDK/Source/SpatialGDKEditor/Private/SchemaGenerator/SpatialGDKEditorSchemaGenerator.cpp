@@ -264,7 +264,7 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 							   FComponentIdGenerator& IdGenerator)
 {
 	// Generate the actual schema.
-	FScopedSlowTask Progress((float)TypeInfos.Num(), LOCTEXT("GenerateSchemaFromClasses", "Generating Schema..."));
+	FScopedSlowTask Progress((float)TypeInfos.Num(), LOCTEXT("GenerateSchemaFromClasses", "Generating schema..."));
 	for (const auto& TypeInfo : TypeInfos)
 	{
 		Progress.EnterProgressFrame(1.f);
@@ -935,7 +935,7 @@ bool SaveSchemaDatabase(USchemaDatabase* SchemaDatabase)
 		FString FullPath = FPaths::ConvertRelativePathToFull(FilePath);
 		FPaths::MakePlatformFilename(FullPath);
 		FMessageDialog::Debugf(FText::Format(
-			LOCTEXT("SchemaDatabaseLocked_Error", "Unable to save Schema Database to '{0}'! The file may be locked by another process."),
+			LOCTEXT("SchemaDatabaseLocked_Error", "Unable to save schema database to '{0}'! The file may be locked by another process."),
 			FText::FromString(FullPath)));
 		return false;
 	}
@@ -1053,10 +1053,11 @@ void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& Co
 	}
 }
 
-bool RefreshSchemaFiles(const FString& SchemaOutputPath)
+bool RefreshSchemaFiles(const FString& SchemaOutputPath, const bool bDeleteExistingSchema /*= true*/,
+						const bool bCreateDirectoryTree /*= true*/)
 {
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if (PlatformFile.DirectoryExists(*SchemaOutputPath))
+	if (bDeleteExistingSchema && PlatformFile.DirectoryExists(*SchemaOutputPath))
 	{
 		if (!PlatformFile.DeleteDirectoryRecursively(*SchemaOutputPath))
 		{
@@ -1067,7 +1068,7 @@ bool RefreshSchemaFiles(const FString& SchemaOutputPath)
 		}
 	}
 
-	if (!PlatformFile.CreateDirectoryTree(*SchemaOutputPath))
+	if (bCreateDirectoryTree && !PlatformFile.CreateDirectoryTree(*SchemaOutputPath))
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error,
 			   TEXT("Could not create schema directory '%s'! Please make sure the parent directory is writeable."), *SchemaOutputPath);
@@ -1105,7 +1106,7 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 	{
 		FString AbsoluteFilePath = FPaths::ConvertRelativePathToFull(RelativeFileName);
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error,
-			   TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"),
+			   TEXT("Schema generation failed: Schema Database at %s is read only. Make it writable before generating schema"),
 			   *AbsoluteFilePath);
 		return false;
 	}
@@ -1121,7 +1122,7 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 		if (SchemaDatabase == nullptr)
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Error,
-				   TEXT("Schema Generation failed: Failed to load existing schema database. If this continues, delete the schema database "
+				   TEXT("Schema generation failed: Failed to load existing schema database. If this continues, delete the schema database "
 						"and try again."));
 			return false;
 		}
