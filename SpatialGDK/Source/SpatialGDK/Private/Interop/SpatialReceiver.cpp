@@ -3,36 +3,22 @@
 #include "Interop/SpatialReceiver.h"
 
 #include "Engine/Engine.h"
-#include "Engine/World.h"
-#include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
-#include "EngineClasses/SpatialFastArrayNetSerialize.h"
-#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetConnection.h"
-#include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
-#include "Schema/DynamicComponent.h"
 #include "Schema/MigrationDiagnostic.h"
-#include "Schema/RPCPayload.h"
-#include "Schema/Restricted.h"
-#include "Schema/SpawnData.h"
-#include "Schema/Tombstone.h"
-#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
-#include "Utils/ComponentReader.h"
 #include "Utils/ErrorCodeRemapping.h"
-#include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
@@ -60,19 +46,6 @@ DECLARE_CYCLE_STAT(TEXT("Receiver ReceiveActor"), STAT_ReceiverReceiveActor, STA
 DECLARE_CYCLE_STAT(TEXT("Receiver RemoveActor"), STAT_ReceiverRemoveActor, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_SpatialNet);
 using namespace SpatialGDK;
-
-namespace // Anonymous namespace
-{
-struct RepNotifyCall
-{
-	USpatialActorChannel* Channel;
-	UObject* Object;
-	TArray<GDK_PROPERTY(Property)*> Notifies;
-};
-#if DO_CHECK
-FUsageLock ObjectRefToRepStateUsageLock; // A debug helper to trigger an ensure if something weird happens (re-entrancy)
-#endif
-} // namespace
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer)
 {
