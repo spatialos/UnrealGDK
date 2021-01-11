@@ -217,14 +217,34 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 	return false;
 }
 
+namespace
+{
+constexpr uint8 SimPlayerErrorExitCode = 10;
+
+void HandleOnSimulatedPlayerTravelFailure(UWorld* World, ETravelFailure::Type TravelType, const FString& Reason)
+{
+	UE_LOG(LogSpatialGameInstance, Log, TEXT("SimulatedPlayer failed to travel due to: %s"), *Reason);
+
+	FPlatformMisc::RequestExitWithStatus(/*bForce =*/false, SimPlayerErrorExitCode);
+}
+
+void HandleOnSimulatedPlayerNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type NetworkFailureType,
+										   const FString& Reason)
+{
+	UE_LOG(LogSpatialGameInstance, Log, TEXT("SimulatedPlayer network failure due to: %s"), *Reason);
+
+	FPlatformMisc::RequestExitWithStatus(/*bForce =*/false, SimPlayerErrorExitCode);
+}
+} // namespace
+
 void USpatialGameInstance::Init()
 {
 	Super::Init();
 
 	if (IsSimulatedPlayer())
 	{
-		GetEngine()->OnTravelFailure().AddUObject(this, &USpatialGameInstance::HandleOnSimulatedPlayerTravelFailure);
-		GetEngine()->OnNetworkFailure().AddUObject(this, &USpatialGameInstance::HandleOnSimulatedPlayerNetworkFailure);
+		GetEngine()->OnTravelFailure().AddStatic(&HandleOnSimulatedPlayerTravelFailure);
+		GetEngine()->OnNetworkFailure().AddStatic(&HandleOnSimulatedPlayerNetworkFailure);
 	}
 
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
@@ -281,23 +301,6 @@ void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)
 {
 	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not spawn the local player on SpatialOS. Reason: %s"), *Reason);
 	OnSpatialPlayerSpawnFailed.Broadcast(Reason);
-}
-
-constexpr static uint8 SimPlayerErrorExitCode = 10;
-
-void USpatialGameInstance::HandleOnSimulatedPlayerTravelFailure(UWorld* World, ETravelFailure::Type TravelType, const FString& Reason)
-{
-	UE_LOG(LogSpatialGameInstance, Log, TEXT("SimulatedPlayer failed to travel due to: %s"), *Reason);
-
-	FPlatformMisc::RequestExitWithStatus(/*bForce =*/false, SimPlayerErrorExitCode);
-}
-
-void USpatialGameInstance::HandleOnSimulatedPlayerNetworkFailure(UWorld* World, UNetDriver* NetDriver,
-																 ENetworkFailure::Type NetworkFailureType, const FString& Reason)
-{
-	UE_LOG(LogSpatialGameInstance, Log, TEXT("SimulatedPlayer network failure due to: %s"), *Reason);
-
-	FPlatformMisc::RequestExitWithStatus(/*bForce =*/false, SimPlayerErrorExitCode);
 }
 
 void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld) const

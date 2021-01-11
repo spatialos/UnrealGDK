@@ -59,9 +59,6 @@ public:
 	void HandleOnConnectionFailed(const FString& Reason);
 	void HandleOnPlayerSpawnFailed(const FString& Reason);
 
-	void HandleOnSimulatedPlayerTravelFailure(UWorld* World, ETravelFailure::Type TravelType, const FString& Reason);
-	void HandleOnSimulatedPlayerNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type NetworkFailureType, const FString& Reason);
-
 	UFUNCTION()
 	void HandlePrepareShutdownWorkerFlagUpdated(const FString& FlagName, const FString& FlagValue);
 
@@ -128,4 +125,3 @@ private:
 	// Whether shutdown preparation has been triggered.
 	bool bPreparingForShutdown;
 };
-
