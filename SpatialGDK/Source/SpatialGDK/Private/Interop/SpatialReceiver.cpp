@@ -5,7 +5,6 @@
 #include "Engine/Engine.h"
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
-#include "TimerManager.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -47,15 +46,11 @@ DECLARE_CYCLE_STAT(TEXT("Receiver RemoveActor"), STAT_ReceiverRemoveActor, STATG
 DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_SpatialNet);
 using namespace SpatialGDK;
 
-void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer)
+void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, SpatialEventTracer* InEventTracer)
 {
 	NetDriver = InNetDriver;
-	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
 	PackageMap = InNetDriver->PackageMap;
-	ClassInfoManager = InNetDriver->ClassInfoManager;
-	GlobalStateManager = InNetDriver->GlobalStateManager;
-	TimerManager = InTimerManager;
 	EventTracer = InEventTracer;
 }
 
@@ -166,8 +161,8 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 {
 	const Worker_CommandResponseOp& CommandResponseOp = Op.op.command_response;
-	const Worker_CommandResponse& Repsonse = CommandResponseOp.response;
-	const Worker_ComponentId ComponentId = Repsonse.component_id;
+	const Worker_CommandResponse& CommandResponse = CommandResponseOp.response;
+	const Worker_ComponentId ComponentId = CommandResponse.component_id;
 	const Worker_RequestId RequestId = CommandResponseOp.request_id;
 
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandResponse);
@@ -213,7 +208,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		}
 
 		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponseOp.response.schema_type);
-		Worker_EntityId EntityId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
+		const Worker_EntityId EntityId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
 		AActor* BlockingActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
 		if (IsValid(BlockingActor))
 		{

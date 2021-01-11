@@ -36,36 +36,13 @@ namespace SpatialGDK
 class SpatialEventTracer;
 } // namespace SpatialGDK
 
-struct PendingAddComponentWrapper
-{
-	PendingAddComponentWrapper() = default;
-	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId,
-							   TUniquePtr<SpatialGDK::DynamicComponent>&& InData)
-		: EntityId(InEntityId)
-		, ComponentId(InComponentId)
-		, Data(MoveTemp(InData))
-	{
-	}
-
-	// We define equality to cover just entity and component IDs since duplicated AddComponent ops
-	// will be moved into unique pointers and we cannot equate the underlying Worker_ComponentData.
-	bool operator==(const PendingAddComponentWrapper& Other) const
-	{
-		return EntityId == Other.EntityId && ComponentId == Other.ComponentId;
-	}
-
-	Worker_EntityId EntityId;
-	Worker_ComponentId ComponentId;
-	TUniquePtr<SpatialGDK::DynamicComponent> Data;
-};
-
 UCLASS()
 class USpatialReceiver : public UObject, public SpatialOSDispatcherInterface
 {
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialEventTracer* InEventTracer);
+	void Init(USpatialNetDriver* NetDriver, SpatialGDK::SpatialEventTracer* InEventTracer);
 
 	// Dispatcher Calls
 	virtual void OnCommandRequest(const Worker_Op& Op) override;
@@ -107,30 +84,10 @@ private:
 	USpatialNetDriver* NetDriver;
 
 	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
-
-	UPROPERTY()
 	USpatialSender* Sender;
 
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
-
-	UPROPERTY()
-	USpatialClassInfoManager* ClassInfoManager;
-
-	UPROPERTY()
-	UGlobalStateManager* GlobalStateManager;
-
-	FTimerManager* TimerManager;
-
-	// Helper struct to manage FSpatialObjectRepState update cycle.
-	struct RepStateUpdateHelper;
-
-	bool bInCriticalSection;
-	TArray<Worker_EntityId> PendingAddActors;
-	TArray<Worker_ComponentSetAuthorityChangeOp> PendingAuthorityChanges;
-	TArray<PendingAddComponentWrapper> PendingAddComponents;
-	TArray<Worker_RemoveComponentOp> QueuedRemoveComponentOps;
 
 	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;
@@ -139,9 +96,6 @@ private:
 	TMap<Worker_RequestId_Key, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
 	TMap<Worker_RequestId_Key, CreateEntityDelegate> CreateEntityDelegates;
 	TMap<Worker_RequestId_Key, SystemEntityCommandDelegate> SystemEntityCommandDelegates;
-
-	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
-	TMap<Worker_EntityId_Key, FString> WorkerConnectionEntities;
 
 	SpatialGDK::SpatialEventTracer* EventTracer;
 };
