@@ -74,15 +74,17 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 
 	// We want to have a stably named ref if this is an Actor placed in the world.
 	// We use this to indicate if a new Actor should be created, or to link a pre-existing Actor when receiving an AddEntityOp.
+	// We presume that all actors not in game worlds are in editor worlds, therefore the actors are stably named.
 	// Previously, IsFullNameStableForNetworking was used but this was only true if bNetLoadOnClient=true.
 	// Actors with bNetLoadOnClient=false also need a StablyNamedObjectRef for linking in the case of loading from a snapshot or the server
 	// crashes and restarts.
 	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
 	TSchemaOption<bool> bNetStartup;
-	if (Actor->HasAnyFlags(RF_WasLoaded) || Actor->bNetStartup)
+	if ((Actor->GetWorld() != nullptr && !Actor->GetWorld()->IsGameWorld()) || Actor->HasAnyFlags(RF_WasLoaded)
+		|| Actor->IsNetStartupActor())
 	{
 		StablyNamedObjectRef = GetStablyNamedObjectRef(Actor);
-		bNetStartup = Actor->bNetStartup;
+		bNetStartup = Actor->IsNetStartupActor();
 	}
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateComponentData());
 
@@ -134,7 +136,7 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 
 	// Add actual load balancing components
 	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateComponentData());
-	ComponentDatas.Add(AuthorityIntent::CreateAuthorityIntentData(IntendedVirtualWorkerId));
+	ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 }
 
@@ -162,8 +164,15 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 			OuterObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 		}
 
-#if DO_GUARD_SLOW
-		FUnrealObjectRef Constructed = GetStablyNamedObjectRef(Actor);
+		// This block of code is just for checking purposes and should be removed in the future
+		// TODO: UNR-4783
+#if !UE_BUILD_SHIPPING
+		FWorkerComponentData* UnrealMetadataPtr = ComponentDatas.FindByPredicate([](const FWorkerComponentData& Data) {
+			return Data.component_id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
+		});
+		checkf(UnrealMetadataPtr,
+			   TEXT("Entity being constructed from an actor did not have the UnrealMetadata component. This is forbidden."));
+		UnrealMetadata Metadata(*UnrealMetadataPtr);
 		FString TempPath = Actor->GetFName().ToString();
 #if ENGINE_MINOR_VERSION >= 26
 		GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), TempPath, false /*bIsReading*/);
@@ -171,7 +180,21 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
 #endif
 		FUnrealObjectRef Remapped = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
-		checkSlow(Constructed == Remapped);
+		if (!Metadata.StablyNamedRef.IsSet() || *Metadata.StablyNamedRef != Remapped)
+		{
+			UE_LOG(LogEntityFactory, Error,
+				   TEXT("When constructing an entity, the network remapped path for the stably named object path was not equal to the one "
+						"constructed before. This is unexpected and could lead to bugs further down the line. Actor: %s, EntityId: %lld"),
+				   *Actor->GetPathName(), EntityId);
+		}
+
+		if (!Metadata.bNetStartup.IsSet() || Metadata.bNetStartup != Actor->bNetStartup)
+		{
+			UE_LOG(LogEntityFactory, Error,
+				   TEXT("When constructing an entity, the bNetStartup variable was not equal to the one constructed before. This is "
+						"unexpected and could lead to bugs further down the line. Actor: %s, EntityId: %lld"),
+				   *Actor->GetPathName(), EntityId);
+		}
 #endif
 	}
 
@@ -191,8 +214,6 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 	{
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID));
 	}
-
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID));
 
 	if (Actor->IsA<APlayerController>())
 	{
@@ -299,6 +320,22 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	TArray<FWorkerComponentData> ComponentDatas = CreateSkeletonEntityComponents(Channel->Actor);
 	WriteUnrealComponents(ComponentDatas, Channel, OutBytesWritten);
 	WriteLBComponents(ComponentDatas, Channel->Actor);
+	// This block of code is just for checking purposes and should be removed in the future
+	// TODO: UNR-4783
+#if !UE_BUILD_SHIPPING
+	TArray<Worker_ComponentId> ComponentIds;
+	ComponentIds.Reserve(ComponentDatas.Num());
+	for (FWorkerComponentData& ComponentData : ComponentDatas)
+	{
+		if (ComponentIds.Contains(ComponentData.component_id))
+		{
+			UE_LOG(LogEntityFactory, Error,
+				   TEXT("Constructed entity components for an Unreal actor channel contained a duplicate component. This is unexpected and "
+						"could cause problems later on."));
+		}
+		ComponentIds.Add(ComponentData.component_id);
+	}
+#endif
 	return ComponentDatas;
 }
 

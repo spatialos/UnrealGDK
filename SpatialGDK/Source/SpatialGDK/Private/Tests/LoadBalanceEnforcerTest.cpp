@@ -90,7 +90,7 @@ void AddLBEntityToView(SpatialGDK::EntityView& View, const Worker_EntityId Entit
 	}
 
 	AddComponentToView(View, EntityId, MakeComponentDataFromData(SpatialGDK::AuthorityDelegation(DelegationMap).CreateComponentData()));
-	AddComponentToView(View, EntityId, MakeComponentDataFromData(SpatialGDK::AuthorityIntent::CreateAuthorityIntentData(IntentWorkerId)));
+	AddComponentToView(View, EntityId, MakeComponentDataFromData(SpatialGDK::AuthorityIntent(IntentWorkerId).CreateComponentData()));
 	AddComponentToView(
 		View, EntityId,
 		MakeComponentDataFromData(SpatialGDK::NetOwningClientWorker::CreateNetOwningClientWorkerData(ClientAuthPartitionId)));
@@ -221,7 +221,7 @@ LOADBALANCEENFORCER_TEST(GIVEN_authority_intent_change_op_WHEN_we_inform_load_ba
 
 	PopulateViewDeltaWithComponentUpdated(
 		Delta, View, EntityIdOne,
-		MakeComponentUpdateFromUpdate(SpatialGDK::AuthorityIntent::CreateAuthorityIntentUpdate(ThisVirtualWorker)));
+		MakeComponentUpdateFromUpdate(SpatialGDK::AuthorityIntent(ThisVirtualWorker).CreateAuthorityIntentUpdate()));
 	SubView.Advance(Delta);
 	LoadBalanceEnforcer.Advance();
 
