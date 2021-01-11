@@ -22,11 +22,6 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	virtual void FinishStep() override
-	{
-		Super::FinishStep();
-	};
-
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerSetDynamicReplicatedActor(ASpatialComponentTestReplicatedActor* Actor);
 
