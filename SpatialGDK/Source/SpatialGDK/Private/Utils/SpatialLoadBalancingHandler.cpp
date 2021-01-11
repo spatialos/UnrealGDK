@@ -251,11 +251,6 @@ bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor
 {
 	if (TargetActor != nullptr)
 	{
-		if (TargetActor->HasAuthority())
-		{
-			UE_LOG(LogSpatialLoadBalancingHandler, Warning, TEXT("Should call AController::Possess"));
-			return false;
-		}
 		AActor* TargetNetOwner = GetReplicatedHierarchyRoot(TargetActor);
 		VirtualWorkerId TargetVirtualWorkerId = GetWorkerId(TargetNetOwner);
 

@@ -27,7 +27,7 @@ void URemotePossessionComponent::OnAuthorityGained()
 	ensure(Controller);
 	if (Target == nullptr)
 	{
-		OnInvalidTarget();		
+		OnInvalidTarget();
 		return;
 	}
 	if (!Target->HasAuthority())
