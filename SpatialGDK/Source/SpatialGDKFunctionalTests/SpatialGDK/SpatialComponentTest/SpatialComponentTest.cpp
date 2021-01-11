@@ -46,9 +46,17 @@ void ASpatialComponentTest::PrepareTest()
 	// Replicated Level Actor. Server 1 should have Authority, again assuming that the Level is setup accordingly.
 	{
 		AddStep(
-			TEXT("Replicated Level Actor - Verify Server Components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
+			TEXT("Replicated Level Actor - Verify Server Components"), FWorkerDefinition::AllServers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				CheckComponents(LevelReplicatedActor, 1);
+				CheckComponentsOnServer(LevelReplicatedActor, 1);
+			},
+			5.0f);
+		AddStep(
+			TEXT("Replicated Level Actor - Verify Client Components"), FWorkerDefinition::AllClients, nullptr, nullptr,
+			[this](float DeltaTime) {
+				RequireTrue(VerifyClientComponents(LevelReplicatedActor), "No client components expected");
+				RequireTrue(false, "No client components expected");
+				FinishStep();
 			},
 			5.0f);
 	}
@@ -63,9 +71,16 @@ void ASpatialComponentTest::PrepareTest()
 		});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Server Components"), FWorkerDefinition::AllServers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				CheckComponents(DynamicReplicatedActor, 1, 0);
+				CheckComponentsOnServer(DynamicReplicatedActor, 1);
+			},
+			5.0f);
+		AddStep(
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Client Components"), FWorkerDefinition::AllClients, nullptr, nullptr,
+			[this](float DeltaTime) {
+				RequireTrue(VerifyClientComponents(DynamicReplicatedActor), "No client components expected");
+				FinishStep();
 			},
 			5.0f);
 
@@ -79,9 +94,26 @@ void ASpatialComponentTest::PrepareTest()
 				});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Server Components"), FWorkerDefinition::AllServers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				CheckComponents(DynamicReplicatedActor, 1, 1, 0);
+				CheckComponentsOnServer(DynamicReplicatedActor, 1);
+			},
+			5.0f);
+
+		AddStep(
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Client Components"), FWorkerDefinition::AllClients, nullptr, nullptr,
+			[this](float DeltaTime) {
+				const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
+				if (LocalWorkerDefinition.Id == 1)
+				{
+					RequireTrue(VerifyClientComponents(DynamicReplicatedActor, 1, 1, 0), "Client 1 - OnClientOwnership gained component");
+					FinishStep();
+				}
+				else if (LocalWorkerDefinition.Id == 2)
+				{
+					RequireTrue(VerifyClientComponents(DynamicReplicatedActor), "Client 2 - No components");
+					FinishStep();
+				}
 			},
 			5.0f);
 
@@ -95,11 +127,30 @@ void ASpatialComponentTest::PrepareTest()
 				});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Server Components"), FWorkerDefinition::AllServers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				CheckComponents(DynamicReplicatedActor, 1, 2, 1);
+				CheckComponentsOnServer(DynamicReplicatedActor, 1);
 			},
 			5.0f);
+
+		AddStep(
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Client Components"), FWorkerDefinition::AllClients, nullptr, nullptr,
+			[this](float DeltaTime) {
+				const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
+				if (LocalWorkerDefinition.Id == 1)
+				{
+					RequireTrue(VerifyClientComponents(DynamicReplicatedActor, 2, 1, 1),
+								"Client 1 - OnClientOwnershipGained component and OnClientOwnership lost component");
+					FinishStep();
+				}
+				else if (LocalWorkerDefinition.Id == 2)
+				{
+					RequireTrue(VerifyClientComponents(DynamicReplicatedActor, 1, 1, 0), "Client 2 - OnClientOwnershipGained component");
+					FinishStep();
+				}
+			},
+			5.0f);
+
 
 		AddStepFromDefinition(ReplicatedDestroyStepDefinition, FWorkerDefinition::Server(1));
 	}
@@ -133,9 +184,8 @@ void ASpatialComponentTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(ASpatialComponentTest, DynamicReplicatedActor);
 }
 
-// Checks the number of components on the servers and clients when an actor does not migrate
-void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, int ExpectedServerId, int ExpectedClient1ComponentCount,
-											int ExpectedClient2ComponentCount)
+// Checks the number of dynamically added components and their callbacks on the servers and clients when an actor does not migrate
+void ASpatialComponentTest::CheckComponentsOnServer(ASpatialComponentTestActor* Actor, int ExpectedServerId)
 {
 	const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 	if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
@@ -145,45 +195,33 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 		{
 			if (LocalWorkerDefinition.Id == ExpectedServerId)
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 2), "Server auth - OnAuthorityGained component and OnActorReady component");
+				RequireTrue(VerifyServerComponents(Actor, 2, 1, 0, 1, 0),
+							"Server auth - OnAuthorityGained component and OnActorReady component");
 				FinishStep();
 			}
 			else if (Actor->bNetStartup)
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 1),
-							"Non-auth servers - Level actors receive OnActorReady only OnAuthorityGained");
+				RequireTrue(VerifyServerComponents(Actor, 1, 0, 0, 0, 1),
+							"Non-auth servers - Level actors receive OnActorReady only");
 				FinishStep();
 			}
 			else
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 0),
+				RequireTrue(VerifyServerComponents(Actor),
 							"Non-auth servers - Dynamic actors do not receive OnActorReady or OnAuthorityGained ");
 				FinishStep();
 			}
 		}
 		else // Support for Native / Single Worker.
 		{
-			RequireTrue(VerifyTestActorComponents(Actor, 2),
+			RequireTrue(VerifyServerComponents(Actor, 2, 1, 0, 1, 0),
 						"Native / Single Worker - OnActorReady component and OnAuthorityGained component");
-			FinishStep();
-		}
-	}
-	else // Clients
-	{
-		if (LocalWorkerDefinition.Id == 1)
-		{
-			RequireTrue(VerifyTestActorComponents(Actor, ExpectedClient1ComponentCount), "Client 1");
-			FinishStep();
-		}
-		else if (LocalWorkerDefinition.Id == 2)
-		{
-			RequireTrue(VerifyTestActorComponents(Actor, ExpectedClient2ComponentCount), "Client 2");
 			FinishStep();
 		}
 	}
 }
 
-// Checks the number of components on the servers and clients when an actor migrates
+// Checks the number of dynamically added components and their callbacks on the servers and clients when an actor migrates
 void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActor* Actor, int StartServerId, int EndServerId)
 {
 	const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
@@ -194,35 +232,82 @@ void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActo
 		{
 			if (LocalWorkerDefinition.Id == StartServerId)
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 3),
+				RequireTrue(VerifyServerComponents(Actor, 3),
 							"Spawning server - OnActorReady component, OnAuthorityGained component and OnAuthorityLost component");
 				FinishStep();
 			}
 			else if (LocalWorkerDefinition.Id == EndServerId)
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 1), "Migrated server - OnAuthorityGained component");
+				RequireTrue(VerifyServerComponents(Actor, 1), "Migrated server - OnAuthorityGained component");
 				FinishStep();
 			}
 		}
 		else // Support for Native / Single Worker.
 		{
-			RequireTrue(VerifyTestActorComponents(Actor, 2),
+			RequireTrue(VerifyServerComponents(Actor, 2),
 						"Native / Single Worker - OnActorReady component and OnAuthorityGained component");
 			FinishStep();
 		}
 	}
 	else // Clients
 	{
-		RequireTrue(VerifyTestActorComponents(Actor, 0), "Clients");
+		RequireTrue(VerifyClientComponents(Actor, 0), "No client components expected");
 		FinishStep();
 	}
 }
 
-bool ASpatialComponentTest::VerifyTestActorComponents(ASpatialComponentTestActor* Actor, int ExpectedTestComponentCount)
+bool ASpatialComponentTest::VerifyServerComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount,
+													int NumAuthorityGains, int NumAuthorityLosses, int NumActorReadyAuth,
+													int NumActorReadyNonAuth)
 {
-	TArray<UActorComponent*> FoundComponents = Actor->GetComponentsByClass(USpatialComponentTestDummyComponent::StaticClass());
-	int FoundTestComponentCount = FoundComponents.Num();
-	return FoundTestComponentCount == ExpectedTestComponentCount;
+	TArray<UActorComponent*> FoundComponents = GetDynamicComponents(Actor);
+	int FoundComponentCount = FoundComponents.Num();
+	
+	// Check each dynamically added test component has the expected number of spatial callbacks
+	for (UActorComponent* FoundComponent : FoundComponents)
+	{
+		USpatialComponentTestDummyComponent* DynamicComponent = Cast<USpatialComponentTestDummyComponent>(FoundComponent);
+		if (FoundComponentCount != ExpectedComponentCount 
+			&& DynamicComponent->NumAuthorityGains != NumAuthorityGains
+			&& DynamicComponent->NumAuthorityLosses != NumAuthorityLosses && DynamicComponent->NumActorReadyAuth != NumActorReadyAuth
+			&& DynamicComponent->NumActorReadyNonAuth != NumActorReadyNonAuth)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool ASpatialComponentTest::VerifyClientComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount, int NumClientOwnershipGained, int NumClientOwnershipLost)
+{
+	TArray<UActorComponent*> FoundComponents = GetDynamicComponents(Actor);
+	int FoundComponentCount = FoundComponents.Num();
+
+	// Check each dynamically added test component has the expected number of spatial callbacks
+	for (UActorComponent* FoundComponent : FoundComponents)
+	{
+		USpatialComponentTestDummyComponent* DynamicComponent = Cast<USpatialComponentTestDummyComponent>(FoundComponent);
+		if (FoundComponentCount != ExpectedComponentCount 
+			&& DynamicComponent->NumClientOwnershipGains != NumClientOwnershipGained
+			&& DynamicComponent->NumClientOwnershipLosses != NumClientOwnershipLost)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+TArray<UActorComponent*> ASpatialComponentTest::GetDynamicComponents(ASpatialComponentTestActor* Actor)
+{
+	if (!IsValid(Actor) || !Actor->HasActorBegunPlay())
+	{
+		TArray<UActorComponent*> Components;
+		return Components;
+	}
+
+	return Actor->GetComponentsByClass(USpatialComponentTestDummyComponent::StaticClass());
 }
 
 void ASpatialComponentTest::CrossServerSetDynamicReplicatedActor_Implementation(ASpatialComponentTestReplicatedActor* Actor)

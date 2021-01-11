@@ -43,8 +43,12 @@ public:
 	ASpatialComponentTestReplicatedActor* DynamicReplicatedActor;
 
 private:
-	void CheckComponents(ASpatialComponentTestActor* Actor, int ExpectedServerId, int ExpectedClient1ComponentCount = 0,
-						 int ExpectedClient2ComponentCount = 0);
+	void CheckComponentsOnServer(ASpatialComponentTestActor* Actor, int ExpectedServerId);
 	void CheckComponentsCrossServer(ASpatialComponentTestActor* Actor, int StartServerId, int EndServerId);
-	bool VerifyTestActorComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount);
+	bool VerifyServerComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount=0, int NumAuthorityGains=0,
+								int NumAuthorityLosses=0, int NumActorReadyAuth=0, int NumActorReadyNonAuth=0);
+	bool VerifyClientComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount=0, int NumClientOwnershipGained=0,
+								int NumClientOwnershipLost=0);
+
+	TArray<UActorComponent*> GetDynamicComponents(ASpatialComponentTestActor* Actor);
 };
