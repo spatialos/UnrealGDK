@@ -43,18 +43,12 @@ void ASpatialComponentTest::PrepareTest()
 		FinishStep();
 	});
 
-	ResetTimer();
-
 	// Replicated Level Actor. Server 1 should have Authority, again assuming that the Level is setup accordingly.
 	{
 		AddStep(
 			TEXT("Replicated Level Actor - Verify Server Components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				Timer -= DeltaTime;
-				if (Timer <= 0)
-				{
-					CheckComponents(LevelReplicatedActor, 1);
-				}
+				CheckComponents(LevelReplicatedActor, 1);
 			},
 			5.0f);
 	}
@@ -71,11 +65,7 @@ void ASpatialComponentTest::PrepareTest()
 		AddStep(
 			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				Timer -= DeltaTime;
-				if (Timer <= 0)
-				{
-					CheckComponents(DynamicReplicatedActor, 1, 0);
-				}
+				CheckComponents(DynamicReplicatedActor, 1, 0);
 			},
 			5.0f);
 
@@ -91,12 +81,7 @@ void ASpatialComponentTest::PrepareTest()
 		AddStep(
 			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				Timer -= DeltaTime;
-				if (Timer <= 0)
-				{
-					// FinishStep();
-					CheckComponents(DynamicReplicatedActor, 1, 1, 0);
-				}
+				CheckComponents(DynamicReplicatedActor, 1, 1, 0);
 			},
 			5.0f);
 
@@ -112,11 +97,7 @@ void ASpatialComponentTest::PrepareTest()
 		AddStep(
 			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				Timer -= DeltaTime;
-				if (Timer <= 0)
-				{
-					CheckComponents(DynamicReplicatedActor, 1, 2, 1);
-				}
+				CheckComponents(DynamicReplicatedActor, 1, 2, 1);
 			},
 			5.0f);
 
@@ -137,11 +118,7 @@ void ASpatialComponentTest::PrepareTest()
 				 "on Tick"),
 			FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				Timer -= DeltaTime;
-				if (Timer <= 0)
-				{
-					CheckComponentsCrossServer(DynamicReplicatedActor, 1, 2);
-				}
+				CheckComponentsCrossServer(DynamicReplicatedActor, 1, 2);
 			},
 			5.0f);
 
@@ -170,24 +147,25 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 			{
 				RequireTrue(VerifyTestActorComponents(Actor, 2), "Server auth - OnAuthorityGained component and OnActorReady component");
 				FinishStep();
-				
 			}
 			else if (Actor->bNetStartup)
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 1), "Non-auth servers - Level actors receive OnActorReady only OnAuthorityGained");
+				RequireTrue(VerifyTestActorComponents(Actor, 1),
+							"Non-auth servers - Level actors receive OnActorReady only OnAuthorityGained");
 				FinishStep();
 			}
 			else
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 0), "Non-auth servers - Dynamic actors do not receive OnActorReady or OnAuthorityGained ");
+				RequireTrue(VerifyTestActorComponents(Actor, 0),
+							"Non-auth servers - Dynamic actors do not receive OnActorReady or OnAuthorityGained ");
 				FinishStep();
 			}
 		}
 		else // Support for Native / Single Worker.
 		{
-			RequireTrue(VerifyTestActorComponents(Actor, 2), "Native / Single Worker - OnActorReady component and OnAuthorityGained component");
+			RequireTrue(VerifyTestActorComponents(Actor, 2),
+						"Native / Single Worker - OnActorReady component and OnAuthorityGained component");
 			FinishStep();
-			
 		}
 	}
 	else
@@ -217,7 +195,8 @@ void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActo
 		{
 			if (LocalWorkerDefinition.Id == StartServerId)
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 3), "Spawning server - OnActorReady component, OnAuthorityGained component and OnAuthorityLost component");
+				RequireTrue(VerifyTestActorComponents(Actor, 3),
+							"Spawning server - OnActorReady component, OnAuthorityGained component and OnAuthorityLost component");
 				FinishStep();
 			}
 			else if (LocalWorkerDefinition.Id == EndServerId)
@@ -228,7 +207,8 @@ void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActo
 		}
 		else // Support for Native / Single Worker.
 		{
-			RequireTrue(VerifyTestActorComponents(Actor, 2), "Native / Single Worker - OnActorReady component and OnAuthorityGained component");
+			RequireTrue(VerifyTestActorComponents(Actor, 2),
+						"Native / Single Worker - OnActorReady component and OnAuthorityGained component");
 			FinishStep();
 		}
 	}

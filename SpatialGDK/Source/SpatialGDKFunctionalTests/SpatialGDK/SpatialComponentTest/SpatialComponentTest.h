@@ -24,11 +24,8 @@ public:
 
 	virtual void FinishStep() override
 	{
-		ResetTimer();
 		Super::FinishStep();
 	};
-
-	void ResetTimer() { Timer = 0.5; };
 
 	UFUNCTION(CrossServer, Reliable)
 	void CrossServerSetDynamicReplicatedActor(ASpatialComponentTestReplicatedActor* Actor);
@@ -49,9 +46,6 @@ public:
 
 	UPROPERTY(Replicated)
 	ASpatialComponentTestReplicatedActor* DynamicReplicatedActor;
-
-	// Local timer used for some active waits.
-	float Timer;
 
 private:
 	void CheckComponents(ASpatialComponentTestActor* Actor, int ExpectedServerId, int ExpectedClient1ComponentCount = 0,
