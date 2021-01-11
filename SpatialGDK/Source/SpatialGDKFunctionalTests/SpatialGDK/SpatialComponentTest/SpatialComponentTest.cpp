@@ -71,13 +71,15 @@ void ASpatialComponentTest::PrepareTest()
 		});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Server Components"), FWorkerDefinition::AllServers, nullptr, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Server Components"), FWorkerDefinition::AllServers, nullptr,
+			nullptr,
 			[this](float DeltaTime) {
 				CheckComponentsOnServer(DynamicReplicatedActor, 1);
 			},
 			5.0f);
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Client Components"), FWorkerDefinition::AllClients, nullptr, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Client Components"), FWorkerDefinition::AllClients, nullptr,
+			nullptr,
 			[this](float DeltaTime) {
 				RequireTrue(VerifyClientComponents(DynamicReplicatedActor), "No client components expected");
 				FinishStep();
@@ -94,14 +96,16 @@ void ASpatialComponentTest::PrepareTest()
 				});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Server Components"), FWorkerDefinition::AllServers, nullptr, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Server Components"), FWorkerDefinition::AllServers, nullptr,
+			nullptr,
 			[this](float DeltaTime) {
 				CheckComponentsOnServer(DynamicReplicatedActor, 1);
 			},
 			5.0f);
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Client Components"), FWorkerDefinition::AllClients, nullptr, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Client Components"), FWorkerDefinition::AllClients, nullptr,
+			nullptr,
 			[this](float DeltaTime) {
 				const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 				if (LocalWorkerDefinition.Id == 1)
@@ -127,14 +131,16 @@ void ASpatialComponentTest::PrepareTest()
 				});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Server Components"), FWorkerDefinition::AllServers, nullptr, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Server Components"), FWorkerDefinition::AllServers, nullptr,
+			nullptr,
 			[this](float DeltaTime) {
 				CheckComponentsOnServer(DynamicReplicatedActor, 1);
 			},
 			5.0f);
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Client Components"), FWorkerDefinition::AllClients, nullptr, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify Client Components"), FWorkerDefinition::AllClients, nullptr,
+			nullptr,
 			[this](float DeltaTime) {
 				const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 				if (LocalWorkerDefinition.Id == 1)
@@ -150,7 +156,6 @@ void ASpatialComponentTest::PrepareTest()
 				}
 			},
 			5.0f);
-
 
 		AddStepFromDefinition(ReplicatedDestroyStepDefinition, FWorkerDefinition::Server(1));
 	}
@@ -201,8 +206,7 @@ void ASpatialComponentTest::CheckComponentsOnServer(ASpatialComponentTestActor* 
 			}
 			else if (Actor->bNetStartup)
 			{
-				RequireTrue(VerifyServerComponents(Actor, 1, 0, 0, 0, 1),
-							"Non-auth servers - Level actors receive OnActorReady only");
+				RequireTrue(VerifyServerComponents(Actor, 1, 0, 0, 0, 1), "Non-auth servers - Level actors receive OnActorReady only");
 				FinishStep();
 			}
 			else
@@ -256,19 +260,17 @@ void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActo
 	}
 }
 
-bool ASpatialComponentTest::VerifyServerComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount,
-													int NumAuthorityGains, int NumAuthorityLosses, int NumActorReadyAuth,
-													int NumActorReadyNonAuth)
+bool ASpatialComponentTest::VerifyServerComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount, int NumAuthorityGains,
+												   int NumAuthorityLosses, int NumActorReadyAuth, int NumActorReadyNonAuth)
 {
 	TArray<UActorComponent*> FoundComponents = GetDynamicComponents(Actor);
 	int FoundComponentCount = FoundComponents.Num();
-	
+
 	// Check each dynamically added test component has the expected number of spatial callbacks
 	for (UActorComponent* FoundComponent : FoundComponents)
 	{
 		USpatialComponentTestDummyComponent* DynamicComponent = Cast<USpatialComponentTestDummyComponent>(FoundComponent);
-		if (FoundComponentCount != ExpectedComponentCount 
-			&& DynamicComponent->NumAuthorityGains != NumAuthorityGains
+		if (FoundComponentCount != ExpectedComponentCount && DynamicComponent->NumAuthorityGains != NumAuthorityGains
 			&& DynamicComponent->NumAuthorityLosses != NumAuthorityLosses && DynamicComponent->NumActorReadyAuth != NumActorReadyAuth
 			&& DynamicComponent->NumActorReadyNonAuth != NumActorReadyNonAuth)
 		{
@@ -279,7 +281,8 @@ bool ASpatialComponentTest::VerifyServerComponents(ASpatialComponentTestActor* A
 	return true;
 }
 
-bool ASpatialComponentTest::VerifyClientComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount, int NumClientOwnershipGained, int NumClientOwnershipLost)
+bool ASpatialComponentTest::VerifyClientComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount,
+												   int NumClientOwnershipGained, int NumClientOwnershipLost)
 {
 	TArray<UActorComponent*> FoundComponents = GetDynamicComponents(Actor);
 	int FoundComponentCount = FoundComponents.Num();
@@ -288,8 +291,7 @@ bool ASpatialComponentTest::VerifyClientComponents(ASpatialComponentTestActor* A
 	for (UActorComponent* FoundComponent : FoundComponents)
 	{
 		USpatialComponentTestDummyComponent* DynamicComponent = Cast<USpatialComponentTestDummyComponent>(FoundComponent);
-		if (FoundComponentCount != ExpectedComponentCount 
-			&& DynamicComponent->NumClientOwnershipGains != NumClientOwnershipGained
+		if (FoundComponentCount != ExpectedComponentCount && DynamicComponent->NumClientOwnershipGains != NumClientOwnershipGained
 			&& DynamicComponent->NumClientOwnershipLosses != NumClientOwnershipLost)
 		{
 			return false;
