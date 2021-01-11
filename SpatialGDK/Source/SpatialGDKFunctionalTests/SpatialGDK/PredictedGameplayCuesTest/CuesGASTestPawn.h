@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "../TestActors/GASTestActorBase.h"
+#include "../TestActors/GASTestPawnBase.h"
 #include "CoreMinimal.h"
-#include "CuesGASTestActor.generated.h"
+#include "CuesGASTestPawn.generated.h"
 
 /**
  * Test actor with an ASC, set up to be able to run predictive abilities,
@@ -13,23 +13,18 @@
  * and updates the ASC's actor info in OnRep_Owner. See their respective comments for more info.
  */
 UCLASS()
-class ACuesGASTestActor : public AGASTestActorBase
+class ACuesGASTestPawn : public AGASTestPawnBase
 {
 	GENERATED_BODY()
 
 public:
-	ACuesGASTestActor();
+	ACuesGASTestPawn();
 
 	void SignalOnActive() { OnActiveCounter++; }
 	void SignalExecute() { ExecuteCounter++; }
 
 	int GetOnActiveCounter() { return OnActiveCounter; }
 	int GetExecuteCounter() { return ExecuteCounter; }
-
-	virtual void OnActorReady(bool bHasAuthority) override;
-
-protected:
-	virtual void OnRep_Owner() override;
 
 private:
 	TArray<TSubclassOf<UGameplayAbility>> GetInitialGrantedAbilities() override;

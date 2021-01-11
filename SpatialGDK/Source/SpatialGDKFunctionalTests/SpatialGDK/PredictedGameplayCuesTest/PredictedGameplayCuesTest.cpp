@@ -3,6 +3,7 @@
 #include "PredictedGameplayCuesTest.h"
 #include "AbilitySystemGlobals.h"
 #include "GC_SignalCueActivation.h"
+#include "GameFramework/Controller.h"
 #include "GameplayCueManager.h"
 #include "GameplayCueSet.h"
 #include "Kismet/GameplayStatics.h"
@@ -11,17 +12,22 @@
 /**
  * Tests that gameplay cue events correctly trigger on all clients when triggered by a predicted gameplay effect application.
  * - Setup:
- *	- Two servers, two clients.
- *	- One test actor is spawned, which has an Ability System Component (ASC) and the ability to be activated already granted to it.
- *	- The test actor is set to be owned by client 1, and configured such that the client will be able to activate a locally predicted
- *	  ability.
+ *	- One server, two clients.
+ *	- The server spawns the test pawn, which has an Ability System Component (ASC) and the ability to be activated already granted to it.
+ *	- The test pawn is possessed by client 1's player controller. This allows client 1 to activate predicted abilities on the pawn.
+ *	- All workers wait until the test pawn has been replicated to them.
  * - Test:
- *	- Server one activates the ability on the actor via it's ability spec handle.
- *	  Then it waits for confirmation that the ability got activated via a replicated property on the test actor which gets changed by the
- *	  ability's code. If confirmation does not arrive within the step timeout, or if a double activation is detected, the test is failed.
- *	- The above step is repeated for activation by class, gameplay tag and gameplay event.
+ *	- Client 1 activates the ability on the pawn through a gameplay event with the "execute" tag.
+ *	  Based on the tag, the activated ability applies an instant gameplay effect, which has the gameplay cue to be tested assigned to it.
+ *	  This should trigger an "execute" event on the gameplay cue.
+ *  - All clients wait until they have seen then gameplay cue receive an "execute" event exactly once.
+ *  - Client 1 activates the ability with the "activate" tag.
+ *	  When activated with this tag, the ability applies a gameplay effect with duration,
+ *    which should cause "OnActive", "WhileActive" and "Remove" events on the gameplay cue.
+ *	- All clients wait until they have seen the gameplay cue receive an "OnActive" event exactly once.
  * - Cleanup:
- *	- The test actor is registered to be auto-destroyed by the test framework at test end.
+ *	- The original pawn is re-possessed by client 1's player controller.
+ *	- The test pawn is registered to be auto-destroyed by the test framework at test end.
  */
 APredictedGameplayCuesTest::APredictedGameplayCuesTest()
 {
@@ -30,7 +36,7 @@ APredictedGameplayCuesTest::APredictedGameplayCuesTest()
 		TEXT("Tests that gameplay cue events correctly trigger on all clients when triggered by a predicted gameplay effect application.");
 	DuplicateActivationCheckWaitTime = 2.0f;
 
-	TargetActor = nullptr;
+	TestPawn = nullptr;
 	StepTimer = -1.0f;
 }
 
@@ -92,21 +98,24 @@ void APredictedGameplayCuesTest::PrepareTest()
 		[this]() {
 			UWorld* World = GetWorld();
 			// The exact spawn location doesn't matter much. 10,10 should at least not be on the boundary between servers
-			TargetActor = World->SpawnActor<ACuesGASTestActor>({ 10.0f, 10.0f, 0.0f }, FRotator::ZeroRotator);
-			AssertTrue(IsValid(TargetActor), TEXT("Target actor is valid."));
-			AssertEqual_Int(TargetActor->GetOnActiveCounter(), 0, TEXT("OnActive counter should start at 0."));
-			AssertEqual_Int(TargetActor->GetExecuteCounter(), 0, TEXT("Executed counter should start at 0."));
+			TestPawn = World->SpawnActor<ACuesGASTestPawn>({ 10.0f, 10.0f, 0.0f }, FRotator::ZeroRotator);
+			AssertTrue(IsValid(TestPawn), TEXT("Target actor is valid."));
+			AssertEqual_Int(TestPawn->GetOnActiveCounter(), 0, TEXT("OnActive counter should start at 0."));
+			AssertEqual_Int(TestPawn->GetExecuteCounter(), 0, TEXT("Executed counter should start at 0."));
 
 			// Set the target to be owned by client 1. An actor has to be client-owned to be able to run client-predicted gameplay abilities
 			// on it.
 			ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-			TargetActor->SetOwner(FlowController);
-			TargetActor->GetAbilitySystemComponent()->RefreshAbilityActorInfo();
+			AController* PlayerController = static_cast<AController*>(FlowController->GetOwner());
 
-			RegisterAutoDestroyActor(TargetActor);
+			// Store the current pawn so we can re-possess it during cleanup
+			PrevPawn = PlayerController->GetPawn();
+			PlayerController->Possess(TestPawn);
+
+			RegisterAutoDestroyActor(TestPawn);
 		},
 		[this](float DeltaTime) {
-			if (TargetActor->IsActorReady())
+			if (TestPawn->IsActorReady())
 			{
 				FinishStep();
 			}
@@ -114,18 +123,18 @@ void APredictedGameplayCuesTest::PrepareTest()
 
 	AddStep(TEXT("Wait to see actor"), FWorkerDefinition::AllWorkers, nullptr, nullptr, [this](float DeltaTime) {
 		TArray<AActor*> FoundActors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACuesGASTestActor::StaticClass(), FoundActors);
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACuesGASTestPawn::StaticClass(), FoundActors);
 
 		if (FoundActors.Num() == 1)
 		{
-			TargetActor = static_cast<ACuesGASTestActor*>(FoundActors[0]);
+			TestPawn = static_cast<ACuesGASTestPawn*>(FoundActors[0]);
 			FinishStep();
 		}
 	});
 
 	AddStep(TEXT("Activate ability to execute cue"), FWorkerDefinition::Client(1), nullptr, [this]() {
-		UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
-		AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
+		UAbilitySystemComponent* ASC = TestPawn->GetAbilitySystemComponent();
+		AssertIsValid(ASC, TEXT("TestPawn has an ability system component."));
 		FGameplayEventData EventData;
 		ASC->HandleGameplayEvent(UGC_SignalCueActivation::GetExecuteTag(), &EventData);
 
@@ -134,12 +143,12 @@ void APredictedGameplayCuesTest::PrepareTest()
 
 	AddStep(TEXT("Check that cue executed on all clients"), FWorkerDefinition::AllClients, nullptr, nullptr,
 			[this, WaitForEventConfirmation](float DeltaTime) {
-				WaitForEventConfirmation(TargetActor->GetExecuteCounter(), DeltaTime);
+				WaitForEventConfirmation(TestPawn->GetExecuteCounter(), DeltaTime);
 			});
 
 	AddStep(TEXT("Activate ability to add cue"), FWorkerDefinition::Client(1), nullptr, [this]() {
-		UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
-		AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
+		UAbilitySystemComponent* ASC = TestPawn->GetAbilitySystemComponent();
+		AssertIsValid(ASC, TEXT("TestPawn has an ability system component."));
 		FGameplayEventData EventData;
 		ASC->HandleGameplayEvent(UGC_SignalCueActivation::GetAddTag(), &EventData);
 
@@ -148,6 +157,15 @@ void APredictedGameplayCuesTest::PrepareTest()
 
 	AddStep(TEXT("Check that cue was added on all clients"), FWorkerDefinition::AllClients, nullptr, nullptr,
 			[this, WaitForEventConfirmation](float DeltaTime) {
-				WaitForEventConfirmation(TargetActor->GetOnActiveCounter(), DeltaTime);
+				WaitForEventConfirmation(TestPawn->GetOnActiveCounter(), DeltaTime);
 			});
+
+	AddStep(TEXT("Re-possess previous pawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		// Re-possess the original pawn to clean up after ourselves
+		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
+		AController* PlayerController = static_cast<AController*>(FlowController->GetOwner());
+		PlayerController->Possess(PrevPawn);
+
+		FinishStep();
+	});
 }

@@ -3,7 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CuesGASTestActor.h"
+#include "CuesGASTestPawn.h"
+#include "GameFramework/Pawn.h"
 #include "SpatialFunctionalTest.h"
 #include "PredictedGameplayCuesTest.generated.h"
 
@@ -20,6 +21,7 @@ class SPATIALGDKFUNCTIONALTESTS_API APredictedGameplayCuesTest : public ASpatial
 	float DuplicateActivationCheckWaitTime;
 
 private:
-	ACuesGASTestActor* TargetActor;
+	ACuesGASTestPawn* TestPawn;
+	APawn* PrevPawn;
 	float StepTimer;
 };

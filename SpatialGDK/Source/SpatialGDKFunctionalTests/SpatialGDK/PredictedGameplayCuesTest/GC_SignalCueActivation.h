@@ -9,7 +9,8 @@
 #include "GC_SignalCueActivation.generated.h"
 
 /**
- * TODO
+ * Gameplay cue that signals to ACuesGASTestPawn when it receives an Execute or OnActive event.
+ * Expects its target actor to be a ACuesGASTestPawn.
  */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API UGC_SignalCueActivation : public UGameplayCueNotify_Static
