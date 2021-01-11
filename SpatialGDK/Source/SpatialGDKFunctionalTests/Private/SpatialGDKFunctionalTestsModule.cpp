@@ -2,8 +2,8 @@
 
 #include "SpatialGDKFunctionalTestsModule.h"
 
-#include "SpatialGDKFunctionalTestsPrivate.h"
 #include "LogSpatialFunctionalTest.h"
+#include "SpatialGDKFunctionalTestsPrivate.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKFunctionalTestsModule"
 
