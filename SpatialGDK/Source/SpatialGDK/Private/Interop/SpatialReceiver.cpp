@@ -503,9 +503,3 @@ bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel& Channel)
 
 	return false;
 }
-
-void USpatialReceiver::CloseClientConnection(USpatialNetConnection* ClientConnection, Worker_EntityId PlayerControllerEntityId)
-{
-	ClientConnection->CleanUp();
-	AuthorityPlayerControllerConnectionMap.Remove(PlayerControllerEntityId);
-}

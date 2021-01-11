@@ -93,8 +93,6 @@ public:
 private:
 	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
 
-	void CloseClientConnection(USpatialNetConnection* ClientConnection, Worker_EntityId PlayerControllerEntityId);
-
 	void ReceiveWorkerDisconnectResponse(const Worker_CommandResponseOp& Op);
 	void ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op);
 
@@ -141,11 +139,6 @@ private:
 	TMap<Worker_RequestId_Key, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
 	TMap<Worker_RequestId_Key, CreateEntityDelegate> CreateEntityDelegates;
 	TMap<Worker_RequestId_Key, SystemEntityCommandDelegate> SystemEntityCommandDelegates;
-
-	// This will map PlayerController entities to the corresponding SpatialNetConnection
-	// for PlayerControllers that this server has authority over. This is used for player
-	// lifecycle logic (Heartbeat component updates, disconnection logic).
-	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
 
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
 	TMap<Worker_EntityId_Key, FString> WorkerConnectionEntities;
