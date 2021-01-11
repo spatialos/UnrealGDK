@@ -678,6 +678,12 @@ void ActorSystem::UpdateShadowData(const Worker_EntityId EntityId) const
 	ActorChannel->UpdateShadowData();
 }
 
+void ActorSystem::RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff)
+{
+	DeferredRetire DeferredObj = { EntityId, ActorClassId, bIsNetStartup, bNeedsTearOff };
+	EntitiesToRetireOnAuthorityGain.Add(DeferredObj);
+}
+
 void ActorSystem::HandleDormantComponentAdded(const Worker_EntityId EntityId) const
 {
 	if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))

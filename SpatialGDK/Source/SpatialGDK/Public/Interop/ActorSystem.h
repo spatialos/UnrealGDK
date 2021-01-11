@@ -37,8 +37,10 @@ public:
 
 	void Advance();
 
+	void MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref);
 	void CleanupRepStateMap(FSpatialObjectRepState& RepState);
-
+	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
+	void RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
 	void RemoveActor(Worker_EntityId EntityId);
 
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
@@ -91,7 +93,6 @@ private:
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentId ComponentId,
 							Schema_ComponentData* Data);
 	bool IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset);
-	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState,
 								 FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data,
@@ -113,7 +114,6 @@ private:
 
 	// Entity remove
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
-	void MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref);
 	static FString GetObjectNameFromRepState(const FSpatialObjectRepState& RepState);
 	void CloseClientConnection(USpatialNetConnection* ClientConnection, Worker_EntityId PlayerControllerEntityId);
 

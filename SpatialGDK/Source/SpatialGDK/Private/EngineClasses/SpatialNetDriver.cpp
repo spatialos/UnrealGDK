@@ -427,7 +427,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
-	Receiver->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
+	Receiver->Init(this, &TimerManager, Connection->GetEventTracer());
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
 	PlayerSpawner->Init(this);
@@ -1982,7 +1982,7 @@ void USpatialNetDriver::PollPendingLoads()
 		UObject* ResolvedObject = FUnrealObjectRef::ToObjectPtr(ObjectReference, PackageMap, bOutUnresolved);
 		if (ResolvedObject)
 		{
-			Receiver->ResolvePendingOperations(ResolvedObject, ObjectReference);
+			ActorSystem->ResolvePendingOperations(ResolvedObject, ObjectReference);
 		}
 		else
 		{

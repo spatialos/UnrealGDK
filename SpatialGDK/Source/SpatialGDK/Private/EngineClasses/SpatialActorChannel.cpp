@@ -262,7 +262,7 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		else if (bCreatedEntity) // We have not gained authority yet
 		{
 			Actor->SetReplicates(false);
-			Receiver->RetireWhenAuthoritative(EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()),
+			NetDriver->ActorSystem->RetireWhenAuthoritative(EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()),
 											  Actor->IsNetStartupActor(), Actor->GetTearOff()); // Ensure we don't recreate the actor
 		}
 	}
@@ -1417,10 +1417,10 @@ void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef,
 {
 	CreateSubObjects.Remove(Object);
 
-	Receiver->MoveMappedObjectToUnmapped(ObjectRef);
+	NetDriver->ActorSystem->MoveMappedObjectToUnmapped(ObjectRef);
 	if (FSpatialObjectRepState* SubObjectRefMap = ObjectReferenceMap.Find(ObjectWeakPtr))
 	{
-		Receiver->CleanupRepStateMap(*SubObjectRefMap);
+		NetDriver->ActorSystem->CleanupRepStateMap(*SubObjectRefMap);
 		ObjectReferenceMap.Remove(ObjectWeakPtr);
 	}
 }
