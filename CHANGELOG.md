@@ -87,6 +87,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - The SpatialNetDriver can now disconnect a client worker when given the system entity id for that client and will do so when `GameMode::PreLogin` returns with a non-empty error message.
 - Unreal Engine version 4.26.0 is now supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
 - Running with an out-of-date schema database will now report a version warning when attempting to launch in editor.
+- Reworked schema generation (incremental + full) pop-ups to be clearer. 
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
