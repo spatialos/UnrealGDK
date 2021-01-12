@@ -39,12 +39,12 @@ void URemotePossessionComponent::OnAuthorityGained()
 	{
 		if (EvaluatePossess())
 		{
-			UE_LOG(LogRemotePossessionComponent, Log, TEXT("Possess(%s)"), *Target->GetName());
+			UE_LOG(LogRemotePossessionComponent, Verbose, TEXT("Remote possession succesful on (%s)"), *Target->GetName());
 			Controller->Possess(Target);
 		}
 		else
 		{
-			UE_LOG(LogRemotePossessionComponent, Log, TEXT("EvaluatePossess(%s) failed"), *Target->GetName());
+			UE_LOG(LogRemotePossessionComponent, Verbose, TEXT("EvaluatePossess(%s) failed"), *Target->GetName());
 		}
 		MarkToDestroy();
 	}
@@ -55,7 +55,7 @@ void URemotePossessionComponent::TickComponent(float DeltaTime, enum ELevelTick 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (PendingDestroy)
 	{
-		UE_LOG(LogRemotePossessionComponent, Log, TEXT("DestroyComponent"));
+		UE_LOG(LogRemotePossessionComponent, Verbose, TEXT("Destroy RemotePossessionComponent"));
 		DestroyComponent();
 	}
 }
@@ -67,7 +67,7 @@ bool URemotePossessionComponent::EvaluatePossess_Implementation()
 
 void URemotePossessionComponent::OnInvalidTarget_Implementation()
 {
-	UE_LOG(LogRemotePossessionComponent, Error, TEXT("Target is invalid"));
+	UE_LOG(LogRemotePossessionComponent, Error, TEXT("Target is invalid for remote possession component on actor %s"), *GetOwner()->GetName());
 }
 
 void URemotePossessionComponent::MarkToDestroy()

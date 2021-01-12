@@ -58,7 +58,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 				{
 					if (NetDriver->LockingPolicy->IsLocked(Actor))
 					{
-						UE_LOG(LogRemotePossessionComponent, Warning, TEXT("Actor %s (%llu) cannot migration because of locked"),
+						UE_LOG(LogRemotePossessionComponent, Warning, TEXT("Actor %s (%llu) cannot migrate because it is locked"),
 							   *Actor->GetName(), EntityId);
 						Component->DestroyComponent();
 						return EvaluateActorResult::None;
@@ -259,9 +259,10 @@ bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor
 			UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"),
 				   *TargetActor->GetName());
 		}
+
 		else
 		{
-			UE_LOG(LogSpatialLoadBalancingHandler, Log, TEXT("Migrate actor:%s to worker:%d"), *NetOwner->GetName(), TargetVirtualWorkerId);
+			UE_LOG(LogSpatialLoadBalancingHandler, Verbose, TEXT("Migrate actor:%s to worker:%d"), *NetOwner->GetName(), TargetVirtualWorkerId);
 			WorkerId = TargetVirtualWorkerId;
 			return true;
 		}
