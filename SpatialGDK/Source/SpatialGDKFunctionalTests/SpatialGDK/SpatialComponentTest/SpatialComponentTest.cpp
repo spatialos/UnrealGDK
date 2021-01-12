@@ -98,7 +98,8 @@ void ASpatialComponentTest::PrepareTest()
 		AddStep(
 			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				// Client 1 OnClientOwnershipGained component and OnClientOwnershipLost component and Client 2 OnClientOwnershipGained component
+				// Client 1 OnClientOwnershipGained component and OnClientOwnershipLost component and Client 2 OnClientOwnershipGained
+				// component
 				CheckComponents(DynamicReplicatedActor, 1, 2, 1);
 			},
 			5.0f);
@@ -158,8 +159,7 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 			}
 			else
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 0),
-							"Non-auth servers - Dynamic actors do not receive OnActorReady");
+				RequireTrue(VerifyTestActorComponents(Actor, 0), "Non-auth servers - Dynamic actors do not receive OnActorReady");
 				FinishStep();
 			}
 		}
