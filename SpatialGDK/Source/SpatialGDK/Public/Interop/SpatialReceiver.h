@@ -113,6 +113,8 @@ public:
 
 	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
 
+	void ProcessActorsFromAsyncLoading();
+
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -261,6 +263,7 @@ private:
 	};
 	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
 	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
+	TSet<FName> LoadedPackages;
 	// END TODO
 
 	struct DeferredRetire
