@@ -41,7 +41,8 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 		TEXT("Post spawn check connections on server 2"), FWorkerDefinition::Server(2), nullptr, nullptr,
 		[this](float delta) {
 			USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
-			RequireEqual_Int(Driver->ClientConnections.Num(), (GetNumberOfClientWorkers() - 1) + 1, TEXT("Spawn: expected one less client connection and one spatial connection"));
+			RequireEqual_Int(Driver->ClientConnections.Num(), (GetNumberOfClientWorkers() - 1) + 1,
+							 TEXT("Spawn: expected one less client connection and one spatial connection"));
 			FinishStep();
 		},
 		5.0f);

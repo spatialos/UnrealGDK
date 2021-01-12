@@ -873,6 +873,8 @@ USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->ComponentSetIdToComponentIds.FindOrAdd(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 		.ComponentIDs.Append(NetCullDistanceComponentIds);
 
+	SchemaDatabase->SchemaDatabaseVersion = ESchemaDatabaseVersion::LatestVersion;
+
 	return SchemaDatabase;
 }
 
@@ -1051,10 +1053,11 @@ void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& Co
 	}
 }
 
-bool RefreshSchemaFiles(const FString& SchemaOutputPath)
+bool RefreshSchemaFiles(const FString& SchemaOutputPath, const bool bDeleteExistingSchema /*= true*/,
+						const bool bCreateDirectoryTree /*= true*/)
 {
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if (PlatformFile.DirectoryExists(*SchemaOutputPath))
+	if (bDeleteExistingSchema && PlatformFile.DirectoryExists(*SchemaOutputPath))
 	{
 		if (!PlatformFile.DeleteDirectoryRecursively(*SchemaOutputPath))
 		{
@@ -1065,7 +1068,7 @@ bool RefreshSchemaFiles(const FString& SchemaOutputPath)
 		}
 	}
 
-	if (!PlatformFile.CreateDirectoryTree(*SchemaOutputPath))
+	if (bCreateDirectoryTree && !PlatformFile.CreateDirectoryTree(*SchemaOutputPath))
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error,
 			   TEXT("Could not create schema directory '%s'! Please make sure the parent directory is writeable."), *SchemaOutputPath);
@@ -1208,6 +1211,30 @@ bool GeneratedSchemaDatabaseExists()
 	return PlatformFile.FileExists(*RelativeSchemaDatabaseFilePath);
 }
 
+FSpatialGDKEditor::ESchemaDatabaseValidationResult ValidateSchemaDatabase()
+{
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*RelativeSchemaDatabaseFilePath);
+	if (!StatData.bIsValid)
+	{
+		return FSpatialGDKEditor::NotFound;
+	}
+
+	const FString DatabaseAssetPath = FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase"));
+	const USchemaDatabase* const SchemaDatabase = Cast<USchemaDatabase>(FSoftObjectPath(DatabaseAssetPath).TryLoad());
+
+	if (SchemaDatabase == nullptr)
+	{
+		return FSpatialGDKEditor::NotFound;
+	}
+
+	if (SchemaDatabase->SchemaDatabaseVersion < ESchemaDatabaseVersion::LatestVersion)
+	{
+		return FSpatialGDKEditor::OldVersion;
+	}
+
+	return FSpatialGDKEditor::Ok;
+}
+
 void ResolveClassPathToSchemaName(const FString& ClassPath, const FString& SchemaName)
 {
 	if (SchemaName.IsEmpty())
@@ -1344,11 +1371,11 @@ bool SpatialGDKGenerateSchema()
 
 	TArray<UObject*> AllClasses;
 	GetObjectsOfClass(UClass::StaticClass(), AllClasses);
-	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses(AllClasses),
-											GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder()))
+	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses(AllClasses)))
 	{
 		return false;
 	}
+	SpatialGDKSanitizeGeneratedSchema();
 
 	GenerateSchemaForSublevels();
 	GenerateSchemaForRPCEndpoints();
@@ -1445,6 +1472,45 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 	NextAvailableComponentId = IdGenerator.Peek();
 
 	return true;
+}
+
+template <class T>
+void SanitizeClassMap(TMap<FString, T>& Map, const TSet<FName>& ValidClassNames)
+{
+	for (auto Item = Map.CreateIterator(); Item; ++Item)
+	{
+		FString SanitizeName = Item->Key;
+		SanitizeName.RemoveFromEnd(TEXT("_C"));
+		if (!ValidClassNames.Contains(FName(*SanitizeName)))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Found stale class (%s), removing from schema database."), *Item->Key);
+			Item.RemoveCurrent();
+		}
+	}
+}
+
+void SpatialGDKSanitizeGeneratedSchema()
+{
+	// Sanitize schema database, removing assets that no longer exist
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
+	TArray<FAssetData> Assets;
+	AssetRegistryModule.Get().GetAllAssets(Assets, false);
+	TSet<FName> ValidClassNames;
+	for (const auto& Asset : Assets)
+	{
+		ValidClassNames.Add(FName(*Asset.ObjectPath.ToString()));
+	}
+
+	TArray<UObject*> AllClasses;
+	GetObjectsOfClass(UClass::StaticClass(), AllClasses);
+	for (const auto& SupportedClass : GetAllSupportedClasses(AllClasses))
+	{
+		ValidClassNames.Add(FName(*SupportedClass->GetPathName()));
+	}
+
+	SanitizeClassMap(ActorClassPathToSchema, ValidClassNames);
+	SanitizeClassMap(SubobjectClassPathToSchema, ValidClassNames);
 }
 
 } // namespace Schema
