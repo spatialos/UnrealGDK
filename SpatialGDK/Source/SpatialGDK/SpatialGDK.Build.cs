@@ -149,7 +149,6 @@ public class SpatialGDK : ModuleRules
         }
 
         PublicAdditionalLibraries.Add(WorkerImportLib);
-        PublicRuntimeLibraryPaths.Add(WorkerLibraryDir);
 
         // Detect existence of trace library, if present add preprocessor
         string TraceStaticLibPath = "";
