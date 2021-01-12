@@ -216,12 +216,6 @@ void ActorSystem::AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetI
 		return;
 	}
 
-	// TODO: Why is this here?
-	if (NetDriver->SpatialDebugger != nullptr && ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-	{
-		NetDriver->SpatialDebugger->ActorAuthorityGained(EntityId);
-	}
-
 	HandleActorAuthority(EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE);
 }
 
@@ -365,12 +359,6 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 		{
 			Actor->Role = (Authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 		}
-	}
-
-	if (NetDriver->DebugCtx && Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE
-		&& ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-	{
-		NetDriver->DebugCtx->OnDebugComponentAuthLost(EntityId);
 	}
 }
 

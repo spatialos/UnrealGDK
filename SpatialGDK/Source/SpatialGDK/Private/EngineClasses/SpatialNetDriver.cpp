@@ -425,7 +425,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorNonAuthSubview, this, &TimerManager, Connection->GetEventTracer());
 
-	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
+	Dispatcher->Init(Receiver, DebugCtx, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
 	Receiver->Init(this, Connection->GetEventTracer());
 	GlobalStateManager->Init(this);
@@ -1867,6 +1867,28 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (WellKnownEntitySystem.IsValid())
 		{
 			WellKnownEntitySystem->Advance();
+		}
+
+		if (SpatialDebugger != nullptr)
+		{
+			for (const auto& EntityDelta : Connection->GetCoordinator().GetViewDelta().GetEntityDeltas())
+			{
+				if (EntityDelta.Type == SpatialGDK::EntityDelta::ADD)
+				{
+					SpatialDebugger->OnEntityAdded(EntityDelta.EntityId);
+				}
+				if (EntityDelta.Type == SpatialGDK::EntityDelta::REMOVE)
+				{
+					SpatialDebugger->OnEntityRemoved(EntityDelta.EntityId);
+				}
+				for (const auto& Authority : EntityDelta.AuthorityGained)
+				{
+					if (Authority.ComponentId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+					{
+						SpatialDebugger->ActorAuthorityGained(EntityDelta.EntityId);
+					}
+				}
+			}
 		}
 
 		if (!bIsReadyToStart)

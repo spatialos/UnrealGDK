@@ -141,10 +141,6 @@ void ASpatialDebugger::BeginPlay()
 			OnEntityAdded(EntityId);
 		}
 
-		// Register callbacks to get notified of all future entity arrivals / deletes.
-		OnEntityAddedHandle = NetDriver->Receiver->OnEntityAddedDelegate.AddUObject(this, &ASpatialDebugger::OnEntityAdded);
-		OnEntityRemovedHandle = NetDriver->Receiver->OnEntityRemovedDelegate.AddUObject(this, &ASpatialDebugger::OnEntityRemoved);
-
 		FontRenderInfo.bClipText = true;
 		FontRenderInfo.bEnableShadow = true;
 
@@ -257,19 +253,6 @@ void ASpatialDebugger::OnRep_SetWorkerRegions()
 
 void ASpatialDebugger::Destroyed()
 {
-	if (NetDriver != nullptr && NetDriver->Receiver != nullptr)
-	{
-		if (OnEntityAddedHandle.IsValid())
-		{
-			NetDriver->Receiver->OnEntityAddedDelegate.Remove(OnEntityAddedHandle);
-		}
-
-		if (OnEntityRemovedHandle.IsValid())
-		{
-			NetDriver->Receiver->OnEntityRemovedDelegate.Remove(OnEntityRemovedHandle);
-		}
-	}
-
 	if (DrawDebugDelegateHandle.IsValid())
 	{
 		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
@@ -300,7 +283,11 @@ void ASpatialDebugger::LoadIcons()
 
 void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 {
-	check(NetDriver != nullptr && !NetDriver->IsServer());
+	check(NetDriver != nullptr);
+	if (NetDriver->IsServer())
+	{
+		return;
+	}
 
 	TWeakObjectPtr<AActor>* ExistingActor = EntityActorMapping.Find(EntityId);
 
@@ -476,7 +463,11 @@ bool ASpatialDebugger::IsSelectActorEnabled() const
 
 void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 {
-	check(NetDriver != nullptr && !NetDriver->IsServer());
+	check(NetDriver != nullptr);
+	if (NetDriver->IsServer())
+	{
+		return;
+	}
 
 	EntityActorMapping.Remove(EntityId);
 }

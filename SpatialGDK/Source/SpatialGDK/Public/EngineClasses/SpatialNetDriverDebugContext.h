@@ -70,7 +70,7 @@ public:
 	// It will create debug components or update them. It also updates the worker's interest query if needed.
 	void TickServer();
 
-	// Called from SpatialReveiver when the corresponding Ops are encountered.
+	// Called from SpatialReceiver when the corresponding Ops are encountered.
 	void OnDebugComponentUpdateReceived(Worker_EntityId);
 	void OnDebugComponentAuthLost(Worker_EntityId EntityId);
 

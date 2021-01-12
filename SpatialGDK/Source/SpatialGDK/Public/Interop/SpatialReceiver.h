@@ -10,14 +10,8 @@
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialOSDispatcherInterface.h"
-#include "Schema/DynamicComponent.h"
-#include "Schema/NetOwningClientWorker.h"
-#include "Schema/RPCPayload.h"
-#include "Schema/SpawnData.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialCommonTypes.h"
-#include "SpatialView/OpList/EntityComponentOpList.h"
-#include "Utils/GDKPropertyMacros.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -74,9 +68,6 @@ private:
 	void ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op);
 
 public:
-	FOnEntityAddedDelegate OnEntityAddedDelegate;
-	FOnEntityRemovedDelegate OnEntityRemovedDelegate;
-
 	TMap<Worker_RequestId_Key, Worker_PartitionId> PendingPartitionAssignments;
 
 private:

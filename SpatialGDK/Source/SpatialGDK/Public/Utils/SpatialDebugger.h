@@ -82,6 +82,9 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
+	void OnEntityAdded(const Worker_EntityId EntityId);
+	void OnEntityRemoved(const Worker_EntityId EntityId);
+
 	virtual void OnAuthorityGained() override;
 
 	UFUNCTION(Exec, Category = "SpatialGDK", BlueprintCallable)
@@ -237,10 +240,6 @@ public:
 private:
 	void LoadIcons();
 
-	// FOnEntityAdded/FOnEntityRemoved Delegates
-	void OnEntityAdded(const Worker_EntityId EntityId);
-	void OnEntityRemoved(const Worker_EntityId EntityId);
-
 	// FDebugDrawDelegate
 	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
 
@@ -295,8 +294,6 @@ private:
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> EntityActorMapping;
 
 	FDelegateHandle DrawDebugDelegateHandle;
-	FDelegateHandle OnEntityAddedHandle;
-	FDelegateHandle OnEntityRemovedHandle;
 
 	TWeakObjectPtr<APawn> LocalPawn;
 	TWeakObjectPtr<APlayerController> LocalPlayerController;
