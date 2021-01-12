@@ -43,8 +43,8 @@ public:
 	ASpatialComponentTestReplicatedActor* DynamicReplicatedActor;
 
 private:
-	void CheckComponents(ASpatialComponentTestActor* Actor, int ExpectedServerId, int ExpectedClient1ComponentCount = 0,
-						 int ExpectedClient2ComponentCount = 0);
+	void CheckComponents(ASpatialComponentTestActor* Actor, int ExpectedServerId, int ExpectedClient1ComponentCount,
+						 int ExpectedClient2ComponentCount);
 	void CheckComponentsCrossServer(ASpatialComponentTestActor* Actor, int StartServerId, int EndServerId);
 	bool VerifyTestActorComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount);
 };

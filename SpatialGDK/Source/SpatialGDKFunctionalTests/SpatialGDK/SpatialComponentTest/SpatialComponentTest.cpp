@@ -48,7 +48,7 @@ void ASpatialComponentTest::PrepareTest()
 		AddStep(
 			TEXT("Replicated Level Actor - Verify Server Components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				CheckComponents(LevelReplicatedActor, 1);
+				CheckComponents(LevelReplicatedActor, 1, 0, 0);
 			},
 			5.0f);
 	}
@@ -65,7 +65,7 @@ void ASpatialComponentTest::PrepareTest()
 		AddStep(
 			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				CheckComponents(DynamicReplicatedActor, 1, 0);
+				CheckComponents(DynamicReplicatedActor, 1, 0, 0);
 			},
 			5.0f);
 
@@ -81,6 +81,7 @@ void ASpatialComponentTest::PrepareTest()
 		AddStep(
 			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
+				// Client 1 OnClientOwnershipGained component and Client 2 no events expected
 				CheckComponents(DynamicReplicatedActor, 1, 1, 0);
 			},
 			5.0f);
@@ -97,6 +98,7 @@ void ASpatialComponentTest::PrepareTest()
 		AddStep(
 			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
+				// Client 1 OnClientOwnershipGained component and OnClientOwnershipLost component and Client 2 OnClientOwnershipGained component
 				CheckComponents(DynamicReplicatedActor, 1, 2, 1);
 			},
 			5.0f);
@@ -157,7 +159,7 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 			else
 			{
 				RequireTrue(VerifyTestActorComponents(Actor, 0),
-							"Non-auth servers - Dynamic actors do not receive OnActorReady or OnAuthorityGained ");
+							"Non-auth servers - Dynamic actors do not receive OnActorReady");
 				FinishStep();
 			}
 		}
@@ -220,6 +222,11 @@ void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActo
 
 bool ASpatialComponentTest::VerifyTestActorComponents(ASpatialComponentTestActor* Actor, int ExpectedTestComponentCount)
 {
+	if (!IsValid(Actor) || !Actor->HasActorBegunPlay())
+	{
+		return false;
+	}
+
 	TArray<UActorComponent*> FoundComponents = Actor->GetComponentsByClass(USpatialComponentTestDummyComponent::StaticClass());
 	int FoundTestComponentCount = FoundComponents.Num();
 	return FoundTestComponentCount == ExpectedTestComponentCount;

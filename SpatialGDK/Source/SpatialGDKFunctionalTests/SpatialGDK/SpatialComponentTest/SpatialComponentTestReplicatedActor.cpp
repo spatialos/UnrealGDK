@@ -3,7 +3,6 @@
 #include "SpatialComponentTestReplicatedActor.h"
 
 ASpatialComponentTestReplicatedActor::ASpatialComponentTestReplicatedActor()
-	: Super()
 {
 	bReplicates = true;
 }
