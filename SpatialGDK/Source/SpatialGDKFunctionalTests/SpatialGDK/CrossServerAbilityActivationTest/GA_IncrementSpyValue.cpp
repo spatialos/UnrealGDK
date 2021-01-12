@@ -2,6 +2,7 @@
 
 #include "GA_IncrementSpyValue.h"
 #include "GameplayTagContainer.h"
+#include "LogSpatialFunctionalTest.h"
 #include "SpyValueGASTestActor.h"
 
 UGA_IncrementSpyValue::UGA_IncrementSpyValue()
@@ -31,7 +32,8 @@ void UGA_IncrementSpyValue::ActivateAbility(const FGameplayAbilitySpecHandle Han
 		AActor* TestActor = ActorInfo->OwnerActor.Get();
 		if (TestActor == nullptr || !TestActor->IsA<ASpyValueGASTestActor>())
 		{
-			UE_LOG(LogTemp, Error, TEXT("UGA_IncrementSpyValue was activated with an invalid owner actor %s."), *GetNameSafe(TestActor));
+			UE_LOG(LogSpatialFunctionalTest, Error, TEXT("UGA_IncrementSpyValue was activated with an invalid owner actor %s."),
+				   *GetNameSafe(TestActor));
 			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 			return;
 		}
