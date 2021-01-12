@@ -114,7 +114,7 @@ void ASpatialComponentTest::PrepareTest()
 				}
 				else if (LocalWorkerDefinition.Id == 2)
 				{
-					RequireTrue(VerifyClientComponents(DynamicReplicatedActor), "Client 2 - No components");
+					RequireTrue(VerifyClientComponents(DynamicReplicatedActor), "Client 2 - No components expected");
 					FinishStep();
 				}
 			},
@@ -210,8 +210,8 @@ void ASpatialComponentTest::CheckComponentsOnServer(ASpatialComponentTestActor* 
 			}
 			else
 			{
-				RequireTrue(VerifyServerComponents(Actor),
-							"Non-auth servers - Dynamic actors do not receive OnActorReady or OnAuthorityGained ");
+				RequireTrue(VerifyServerComponents(Actor, 0, 0, 0, 0, 0),
+							"Non-auth servers - Dynamic actors do not receive OnActorReady");
 				FinishStep();
 			}
 		}
@@ -235,19 +235,19 @@ void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActo
 		{
 			if (LocalWorkerDefinition.Id == StartServerId)
 			{
-				RequireTrue(VerifyServerComponents(Actor, 3),
+				RequireTrue(VerifyServerComponents(Actor, 3, 0, 0, 0, 0 ,0), // tODO check this
 							"Spawning server - OnActorReady component, OnAuthorityGained component and OnAuthorityLost component");
 				FinishStep();
 			}
 			else if (LocalWorkerDefinition.Id == EndServerId)
 			{
-				RequireTrue(VerifyServerComponents(Actor, 1), "Migrated server - OnAuthorityGained component");
+				RequireTrue(VerifyServerComponents(Actor, 1, 0, 0, 0, 0), "Migrated server - OnAuthorityGained component"); // tODO check this
 				FinishStep();
 			}
 		}
 		else // Support for Native / Single Worker.
 		{
-			RequireTrue(VerifyServerComponents(Actor, 2),
+			RequireTrue(VerifyServerComponents(Actor, 2, 0, 0, 0, 0,0),
 						"Native / Single Worker - OnActorReady component and OnAuthorityGained component");
 			FinishStep();
 		}

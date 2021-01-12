@@ -45,10 +45,10 @@ public:
 private:
 	void CheckComponentsOnServer(ASpatialComponentTestActor* Actor, int ExpectedServerId);
 	void CheckComponentsCrossServer(ASpatialComponentTestActor* Actor, int StartServerId, int EndServerId);
-	bool VerifyServerComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount = 0, int NumAuthorityGains = 0,
-								int NumAuthorityLosses = 0, int NumActorReadyAuth = 0, int NumActorReadyNonAuth = 0);
-	bool VerifyClientComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount = 0, int NumClientOwnershipGained = 0,
-								int NumClientOwnershipLost = 0);
+	bool VerifyServerComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount, int NumAuthorityGains,
+								int NumAuthorityLosses, int NumActorReadyAuth, int NumActorReadyNonAuth);
+	bool VerifyClientComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount, int NumClientOwnershipGained,
+								int NumClientOwnershipLost);
 
 	TArray<UActorComponent*> GetDynamicComponents(ASpatialComponentTestActor* Actor);
 };
