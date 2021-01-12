@@ -67,7 +67,8 @@ bool URemotePossessionComponent::EvaluatePossess_Implementation()
 
 void URemotePossessionComponent::OnInvalidTarget_Implementation()
 {
-	UE_LOG(LogRemotePossessionComponent, Error, TEXT("Target is invalid for remote possession component on actor %s"), *GetOwner()->GetName());
+	UE_LOG(LogRemotePossessionComponent, Error, TEXT("Target is invalid for remote possession component on actor %s"),
+		   *GetOwner()->GetName());
 }
 
 void URemotePossessionComponent::MarkToDestroy()

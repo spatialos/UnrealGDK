@@ -262,7 +262,8 @@ bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor
 
 		else
 		{
-			UE_LOG(LogSpatialLoadBalancingHandler, Verbose, TEXT("Migrate actor:%s to worker:%d"), *NetOwner->GetName(), TargetVirtualWorkerId);
+			UE_LOG(LogSpatialLoadBalancingHandler, Verbose, TEXT("Migrate actor:%s to worker:%d"), *NetOwner->GetName(),
+				   TargetVirtualWorkerId);
 			WorkerId = TargetVirtualWorkerId;
 			return true;
 		}
