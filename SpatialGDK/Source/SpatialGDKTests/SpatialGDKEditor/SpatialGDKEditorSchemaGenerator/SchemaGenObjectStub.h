@@ -17,6 +17,18 @@ public:
 	bool BoolValue;
 };
 
+UCLASS()
+class USchemaGenObjectStubCondOwnerOnly : public UObject
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(Replicated)
+	int IntValue;
+
+	UPROPERTY(Replicated)
+	bool BoolValue;
+};
+
 UCLASS(SpatialType)
 class USpatialTypeObjectStub : public UObject
 {
