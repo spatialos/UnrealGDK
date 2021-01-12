@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
+## [`0.12.0`] - 2020-12-14
+
 ### Breaking changes:
 - The condition for sending Spatial position updates has been changed, the two variables `PositionUpdateFrequency` and `PositionDistanceThreshold` have now been removed from the GDK settings. To update your project:
   1. Set the value of `PositionUpdateLowerThresholdCentimeters` to the value of `PositionDistanceThreshold` and  the value of `PositionUpdateLowerThresholdSeconds` to 60*(1/`PositionUpdateFrequency`). This will ensure that Actors send Spatial position updates as often as they did before this change.
@@ -26,6 +28,9 @@ These functions and structs can be referenced in both code and blueprints it may
 - Worker configurations must now be stored in the launch config for local deployments. These can be added in the SpatialGDKEditorSettings as before.
 - Spot and SpatialD (Spatial Service) dependencies have been removed.
 - Compatibility Mode runtime is no longer supported.
+- Running without Ring Buffered RPCs is no longer supported, and the option has been removed from SpatialGDKSettings.
+- The schema database format has been updated and versioning introduced. Please regenerate your schema after updating.
+- The CookAndGenerateSchemaCommandlet now no longer automatically deletes previously generated schema. Deletion of previously generated schema is now controlled by the `-DeleteExistingGeneratedSchema` flag.
 
 ### Features:
 - The DeploymentLauncher tool can now be used to start multiple simulated player deployments at once.
@@ -58,8 +63,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - You can now select an actor for spatial debugging in-game. Use F9 (by default) to open the Spatial Debugger in-game config menu and then press the `Start Select Actor(s)` button. Hover over an actor with the mouse to highlight and right-click  (by default) to select. You can select multiple actors. To deselect an actor right-click on it a second time. If there are multiple actors under the cursor use the mouse wheel (by default) to highlight the desired actor then right-click to confirm your selection.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
 - Worker SDK version compatibility is checked at compile time. 
-- Worker SDK version compatibility is checked at compile time.
-- Unreal GDK now uses SpatialOS 15.0.0-preview-2.
+- Unreal GDK now uses SpatialOS 15.0.0-preview-7.
 - SpatialWorkerFlags has reworked how to add callbacks for flag updates:
   1. `BindToOnWorkerFlagsUpdated` is changed to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added functions for register callbacks. 
   2. `RegisterFlagUpdatedCallback` is added to register callbacks for individual flag updates
@@ -85,6 +89,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Added cross-server variants of ability activation functions on the Ability System Component.
 - Added `SpatialSwitchHasAuthority` function to differentiate authoritative server, non-authoritative server, and clients. This can be called in code or used in blueprints that derive from actor.
 - Added blueprint callable function `GetMaxDynamicallyAttachedSubobjectsPerClass` to `USpatialStatics` that gets the maximum dynamically attached subobjects per class as set in `SpatialGDKSettings`
+- Running with an out-of-date schema database will now report a version warning when attempting to launch in editor.
 - Simulated Player deployments no longer depend on DeploymentLauncher for readiness. You can now restart them via the Console and expect them to reconnect to your main deployment. DeploymentLauncher will also restart any crashed or incorrectly finished simulated players applications.
 - Added a `-FailOnNetworkFailure` flag that makes a Spatial-enabled game fail on any NetworkFailure
 
@@ -119,7 +124,10 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed a rare crash where a RepNotify callback can modify a GDK data structure being iterated upon.
 - Fixed race condition in Spatial Test framework that would cause tests to time out with one or more workers not ready to begin the test.
 - Fixed client connection not being cleaned up when moving out of interest of a server.
+- Fixed a assertion being triggered on async loaded entities due to queuing some component addition.
+- Fixed a bug where consecutive invocations of CookAndGenerateSchemaCommandlet for different levels could fail when running the schema compiler.
 - Fixed an issue where GameMode values won't be replicated between server workers if it's outside their Interest
+- Fixed gameplay cues receiving OnActive/WhileActive events twice on the predicting client in a multi-worker single-process PIE environment.
 - Fixed an issue where a NetworkFailure won't be reported when connecting to a deployment that doesn't support dev_login with a developer token, and in some other configuration-dependent cases
 
 ## [`0.11.0`] - 2020-09-03
