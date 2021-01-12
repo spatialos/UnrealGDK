@@ -10,7 +10,7 @@ void UGC_SignalCueActivation::HandleGameplayCue(AActor* MyTarget, EGameplayCueEv
 {
 	if (MyTarget == nullptr || !MyTarget->IsA<ACuesGASTestPawn>())
 	{
-		UE_LOG(LogTemp, Error, TEXT("GC_SignalCueActivation, target actor %s is not an ACuesGASTestPawn."), *GetNameSafe(MyTarget));
+		UE_LOG(LogSpatialFunctionalTest, Error, TEXT("GC_SignalCueActivation, target actor %s is not an ACuesGASTestPawn."), *GetNameSafe(MyTarget));
 		return;
 	}
 
