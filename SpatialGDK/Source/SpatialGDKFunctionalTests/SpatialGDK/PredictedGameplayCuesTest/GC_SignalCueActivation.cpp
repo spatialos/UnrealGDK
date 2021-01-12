@@ -1,7 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "GC_SignalCueActivation.h"
 #include "CuesGASTestPawn.h"
+#include "GC_SignalCueActivation.h"
+#include "LogSpatialFunctionalTest.h"
 
 UGC_SignalCueActivation::UGC_SignalCueActivation() {}
 
