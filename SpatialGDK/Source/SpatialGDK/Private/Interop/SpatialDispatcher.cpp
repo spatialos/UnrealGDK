@@ -13,8 +13,9 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
-void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialNetDriverDebugContext* InDebugContext, USpatialStaticComponentView* InStaticComponentView,
-							 USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags)
+void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialNetDriverDebugContext* InDebugContext,
+							 USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics,
+							 USpatialWorkerFlags* InSpatialWorkerFlags)
 {
 	check(InReceiver != nullptr);
 	Receiver = InReceiver;
@@ -33,8 +34,6 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 {
 	check(Receiver.IsValid());
 	check(StaticComponentView.IsValid());
-
-
 
 	for (const Worker_Op& Op : Ops)
 	{
@@ -89,7 +88,8 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
 			// This way systems that depend on having non-stale state can function correctly.
 			StaticComponentView->OnAuthorityChange(Op.op.component_set_authority_change);
-			if (DebugContext.IsValid() && Op.op.component_set_authority_change.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE && Op.op.component_set_authority_change.component_set_id == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+			if (DebugContext.IsValid() && Op.op.component_set_authority_change.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE
+				&& Op.op.component_set_authority_change.component_set_id == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 			{
 				DebugContext->OnDebugComponentAuthLost(Op.op.component_set_authority_change.entity_id);
 			}
