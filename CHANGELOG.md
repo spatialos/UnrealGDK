@@ -119,6 +119,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed race condition in Spatial Test framework that would cause tests to time out with one or more workers not ready to begin the test.
 - Fixed client connection not being cleaned up when moving out of interest of a server.
 - Fixed an issue where GameMode values won't be replicated between server workers if it's outside their Interest
+- Fixed gameplay cues receiving OnActive/WhileActive events twice on the predicting client in a multi-worker single-process PIE environment.
 
 ## [`0.11.0`] - 2020-09-03
 
