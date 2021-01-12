@@ -55,7 +55,6 @@ void ASpatialComponentTest::PrepareTest()
 			TEXT("Replicated Level Actor - Verify Client Components"), FWorkerDefinition::AllClients, nullptr, nullptr,
 			[this](float DeltaTime) {
 				RequireTrue(VerifyClientComponents(LevelReplicatedActor), "No client components expected");
-				RequireTrue(false, "No client components expected");
 				FinishStep();
 			},
 			5.0f);
