@@ -12,6 +12,8 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #endif
 
+#include "Kismet/GameplayStatics.h"
+
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
@@ -221,13 +223,6 @@ namespace
 {
 constexpr uint8 SimPlayerErrorExitCode = 10;
 
-void HandleOnSimulatedPlayerTravelFailure(UWorld* World, ETravelFailure::Type TravelType, const FString& Reason)
-{
-	UE_LOG(LogSpatialGameInstance, Log, TEXT("SimulatedPlayer failed to travel due to: %s"), *Reason);
-
-	FPlatformMisc::RequestExitWithStatus(/*bForce =*/false, SimPlayerErrorExitCode);
-}
-
 void HandleOnSimulatedPlayerNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type NetworkFailureType,
 										   const FString& Reason)
 {
@@ -241,9 +236,8 @@ void USpatialGameInstance::Init()
 {
 	Super::Init();
 
-	if (IsSimulatedPlayer())
+	if (UGameplayStatics::HasLaunchOption(TEXT("FailOnNetworkFailure")))
 	{
-		GetEngine()->OnTravelFailure().AddStatic(&HandleOnSimulatedPlayerTravelFailure);
 		GetEngine()->OnNetworkFailure().AddStatic(&HandleOnSimulatedPlayerNetworkFailure);
 	}
 

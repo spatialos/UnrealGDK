@@ -17,6 +17,8 @@ namespace Improbable.WorkerCoordinator
     {
         private const int PollSimulatedPlayerProcessIntervalMillis = 5000;
 
+        private const string AdditionalProcessArguments = "-FailOnNetworkFailure";
+
         protected Logger Logger;
         private List<Process> ActiveProcesses = new List<Process>();
 
@@ -35,14 +37,19 @@ namespace Improbable.WorkerCoordinator
         /// <summary>
         /// Creates a new process that runs a simulated player, providing it with the specified arguments.
         /// </summary>
+        /// <param name="simulatedPlayerName">Simulated player instance name.</param>
         /// <param name="fileName">File name of the simulated player executable to start.</param>
         /// <param name="args">Arguments to pass to the started process.</param>
         /// <returns>The started simulated player process, or null if something went wrong.</returns>
-        protected Process CreateSimulatedPlayerProcess(string fileName, string args)
+        protected Process CreateSimulatedPlayerProcess(string simulatedPlayerName, string fileName, string args)
         {
             try
             {
-                var process = Process.Start(fileName, args);
+                var argsToStartWith = args + " " + AdditionalProcessArguments;
+
+                Logger.WriteLog("Starting worker " + simulatedPlayerName + " with args: " + argsToStartWith);
+
+                var process = Process.Start(fileName, argsToStartWith);
 
                 if (process != null)
                 {

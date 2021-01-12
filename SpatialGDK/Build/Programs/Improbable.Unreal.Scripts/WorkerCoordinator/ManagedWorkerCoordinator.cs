@@ -172,8 +172,7 @@ namespace Improbable.WorkerCoordinator
 
                     // Start the client
                     string flattenedArgs = string.Join(" ", simulatedPlayerArgs);
-                    Logger.WriteLog($"Starting simulated player {simulatedPlayerName} with args: {flattenedArgs}");
-                    CreateSimulatedPlayerProcess(SimulatedPlayerFilename, flattenedArgs); ;
+                    CreateSimulatedPlayerProcess(simulatedPlayerName, SimulatedPlayerFilename, flattenedArgs);
                 }
                 else
                 {
