@@ -178,7 +178,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 		GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), TempPath, false /*bIsReading*/);
 #else
 		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
-#endif
+#endif // !UE_BUILD_SHIPPING
 		FUnrealObjectRef Remapped = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
 		if (!Metadata.StablyNamedRef.IsSet() || *Metadata.StablyNamedRef != Remapped)
 		{
@@ -335,7 +335,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 		}
 		ComponentIds.Add(ComponentData.component_id);
 	}
-#endif
+#endif // !UE_BUILD_SHIPPING
 	return ComponentDatas;
 }
 
