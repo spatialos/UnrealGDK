@@ -13,7 +13,7 @@
 
 namespace SpatialGDK
 {
-struct NetOwningClientWorker : Component
+struct NetOwningClientWorker : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID;
 
@@ -38,7 +38,7 @@ struct NetOwningClientWorker : Component
 		}
 	}
 
-	Worker_ComponentData CreateNetOwningClientWorkerData() { return CreateNetOwningClientWorkerData(ClientPartitionId); }
+	Worker_ComponentData CreateComponentData() const override { return CreateNetOwningClientWorkerData(ClientPartitionId); }
 
 	static Worker_ComponentData CreateNetOwningClientWorkerData(const TSchemaOption<Worker_PartitionId>& PartitionId)
 	{

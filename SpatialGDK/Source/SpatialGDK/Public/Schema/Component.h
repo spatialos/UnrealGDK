@@ -13,4 +13,9 @@ struct Component
 	virtual void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) {}
 };
 
+struct AbstractMutableComponent : Component
+{
+	virtual struct Worker_ComponentData CreateComponentData() const = 0;
+};
+
 } // namespace SpatialGDK
