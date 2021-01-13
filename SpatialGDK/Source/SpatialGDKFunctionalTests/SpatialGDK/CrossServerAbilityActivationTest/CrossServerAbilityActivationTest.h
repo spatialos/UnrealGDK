@@ -22,5 +22,5 @@ class SPATIALGDKFUNCTIONALTESTS_API ACrossServerAbilityActivationTest : public A
 private:
 	ASpyValueGASTestActor* TargetActor;
 	float StepTimer;
-	bool TimerStarted;
+	bool bTimerStarted;
 };

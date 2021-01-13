@@ -27,7 +27,7 @@ ACrossServerAbilityActivationTest::ACrossServerAbilityActivationTest()
 	DuplicateActivationCheckWaitTime = 2.0f;
 
 	TargetActor = nullptr;
-	TimerStarted = false;
+	bTimerStarted = false;
 }
 
 static bool TargetActorReadyForActivation(ASpyValueGASTestActor* Target)
@@ -55,7 +55,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 	AddStepSetTagDelegation(TargetActorTag, 2);
 
 	auto CheckActivationConfirmed = [this](float DeltaTime) {
-		if (TimerStarted)
+		if (bTimerStarted)
 		{
 			StepTimer += DeltaTime;
 		}
@@ -66,7 +66,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 			// The counter is allowed to be 0 while we are still waiting for the changed counter to replicated to us.
 			// However, if we've seen Counter at 1 before (and as a result started the timer), if we see it back at 0,
 			// it somehow got reset. This likely indicates a bug in the test implementation.
-			if (TimerStarted)
+			if (bTimerStarted)
 			{
 				FinishTest(
 					EFunctionalTestResult::Invalid,
@@ -75,14 +75,14 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 		}
 		else if (Counter == 1)
 		{
-			if (!TimerStarted)
+			if (!bTimerStarted)
 			{
-				TimerStarted = true;
+				bTimerStarted = true;
 			}
 			else if (StepTimer >= DuplicateActivationCheckWaitTime)
 			{
 				StepTimer = 0.0f;
-				TimerStarted = false;
+				bTimerStarted = false;
 				TargetActor->ResetCounter();
 				FinishStep();
 			}
