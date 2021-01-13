@@ -148,7 +148,8 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 		{
 			if (LocalWorkerDefinition.Id == ExpectedServerId)
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 2), TEXT("Server auth - OnAuthorityGained component and OnActorReady component"));
+				RequireTrue(VerifyTestActorComponents(Actor, 2),
+							TEXT("Server auth - OnAuthorityGained component and OnActorReady component"));
 				FinishStep();
 			}
 			else if (Actor->bNetStartup)
