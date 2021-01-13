@@ -11,6 +11,8 @@
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
 
+DEFINE_LOG_CATEGORY(LogEventTracingTest);
+
 using namespace SpatialGDK;
 
 const FName AEventTracingTest::ReceiveOpEventName = "worker.receive_op";
@@ -103,6 +105,12 @@ void AEventTracingTest::GatherData()
 	TArray<FString> Files;
 	FileManager.FindFiles(Files, *EventsFolderPath, *FString(".trace"));
 
+	if (Files.Num() < 2)
+	{
+		UE_LOG(LogEventTracingTest, Error, TEXT("Could not find all require event tracing files"));
+		return;
+	}
+
 	struct FileCreationTime
 	{
 		FString FilePath;
@@ -120,10 +128,32 @@ void AEventTracingTest::GatherData()
 		return A.CreationTime > B.CreationTime;
 	});
 
-	if (FileCreationTimes.Num() >= 2)
+	bool bFoundClient = false;
+	bool bFoundWorker = false;
+	for (const FileCreationTime& FileCreation : FileCreationTimes)
 	{
-		GatherDataFromFile(FileCreationTimes[0].FilePath);
-		GatherDataFromFile(FileCreationTimes[1].FilePath);
+		if (!bFoundClient && FileCreation.FilePath.Contains("UnrealClient"))
+		{
+			GatherDataFromFile(FileCreation.FilePath);
+			bFoundClient = true;
+		}
+
+		if (!bFoundWorker && FileCreation.FilePath.Contains("UnrealWorker"))
+		{
+			GatherDataFromFile(FileCreation.FilePath);
+			bFoundWorker = true;
+		}
+
+		if (bFoundClient && bFoundWorker)
+		{
+			break;
+		}
+	}
+
+	if (!bFoundClient || !bFoundWorker)
+	{
+		UE_LOG(LogEventTracingTest, Error, TEXT("Could not find all require event tracing files"));
+		return;
 	}
 
 	FinishStep();
