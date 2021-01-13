@@ -37,7 +37,8 @@ APredictedGameplayCuesTest::APredictedGameplayCuesTest()
 	DuplicateActivationCheckWaitTime = 2.0f;
 
 	TestPawn = nullptr;
-	StepTimer = -1.0f;
+	bTimerStarted = false;
+	StepTimer = 0.0f;
 }
 
 void APredictedGameplayCuesTest::PrepareTest()
@@ -58,8 +59,7 @@ void APredictedGameplayCuesTest::PrepareTest()
 	});
 
 	auto WaitForEventConfirmation = [this](int Counter, float DeltaTime) {
-		// StepTimer == -1.0f signals that we have not yet seen Counter be 1
-		if (StepTimer != -1.0f)
+		if (bTimerStarted)
 		{
 			StepTimer += DeltaTime;
 		}
@@ -69,20 +69,21 @@ void APredictedGameplayCuesTest::PrepareTest()
 			// The counter is allowed to be 0 while we are still waiting for the changed counter to replicated to us.
 			// However, if we've seen Counter at 1 before (and as a result started the timer), if we see it back at 0,
 			// it somehow got reset. This likely indicates a bug in the test implementation.
-			if (StepTimer != -1.0f)
+			if (bTimerStarted)
 			{
 				FinishTest(EFunctionalTestResult::Invalid, TEXT("The counter was reset to 0 after being set to 1."));
 			}
 		}
 		else if (Counter == 1)
 		{
-			if (StepTimer == -1.0f)
+			if (!bTimerStarted)
 			{
-				StepTimer = 0.0f;
+				bTimerStarted = true;
 			}
 			else if (StepTimer >= DuplicateActivationCheckWaitTime)
 			{
-				StepTimer = -1.0f;
+				bTimerStarted = false;
+				StepTimer = 0.0f;
 				FinishStep();
 			}
 		}

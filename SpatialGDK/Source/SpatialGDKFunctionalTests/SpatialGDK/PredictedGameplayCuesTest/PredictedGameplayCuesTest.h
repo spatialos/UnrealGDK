@@ -24,4 +24,5 @@ private:
 	ACuesGASTestPawn* TestPawn;
 	APawn* PrevPawn;
 	float StepTimer;
+	bool bTimerStarted;
 };
