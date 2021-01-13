@@ -11,7 +11,7 @@ AGASTestActorBase::AGASTestActorBase()
 void AGASTestActorBase::BeginPlay()
 {
 	Super::BeginPlay();
-	if(HasAuthority())
+	if (HasAuthority())
 	{
 		GrantInitialAbilitiesIfNeeded();
 	}
