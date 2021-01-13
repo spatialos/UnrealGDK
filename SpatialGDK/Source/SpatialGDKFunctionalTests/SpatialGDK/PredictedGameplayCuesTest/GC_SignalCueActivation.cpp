@@ -9,20 +9,20 @@ UGC_SignalCueActivation::UGC_SignalCueActivation() {}
 void UGC_SignalCueActivation::HandleGameplayCue(AActor* MyTarget, EGameplayCueEvent::Type EventType,
 												const FGameplayCueParameters& Parameters)
 {
-	if (MyTarget == nullptr || !MyTarget->IsA<ACuesGASTestPawn>())
+	if (ACuesGASTestPawn* TestActor = Cast<ACuesGASTestPawn>(MyTarget))
 	{
-		UE_LOG(LogSpatialFunctionalTest, Error, TEXT("GC_SignalCueActivation, target actor %s is not an ACuesGASTestPawn."), *GetNameSafe(MyTarget));
-		return;
+		if (EventType == EGameplayCueEvent::OnActive)
+		{
+			TestActor->SignalOnActive();
+		}
+		else if (EventType == EGameplayCueEvent::Executed)
+		{
+			TestActor->SignalExecute();
+		}
 	}
-
-	ACuesGASTestPawn* TestActor = static_cast<ACuesGASTestPawn*>(MyTarget);
-
-	if (EventType == EGameplayCueEvent::OnActive)
+	else
 	{
-		TestActor->SignalOnActive();
-	}
-	else if (EventType == EGameplayCueEvent::Executed)
-	{
-		TestActor->SignalExecute();
+		UE_LOG(LogSpatialFunctionalTest, Error, TEXT("GC_SignalCueActivation, target actor %s is not an ACuesGASTestPawn."),
+			   *GetNameSafe(MyTarget));
 	}
 }

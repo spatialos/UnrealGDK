@@ -7,7 +7,7 @@
 UGE_AddCue::UGE_AddCue()
 {
 	DurationPolicy = EGameplayEffectDurationType::HasDuration;
-	DurationMagnitude = FGameplayEffectModifierMagnitude(FScalableFloat(2.0f));
+	DurationMagnitude = FGameplayEffectModifierMagnitude(FScalableFloat(2.0f)); // Fixed 2 seconds duration
 
 	GameplayCues.Add(FGameplayEffectCue(UGC_SignalCueActivation::GetAddTag(), 0.0f, 0.0f));
 }

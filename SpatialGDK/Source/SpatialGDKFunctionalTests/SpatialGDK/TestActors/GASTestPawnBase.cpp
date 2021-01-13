@@ -13,7 +13,10 @@ AGASTestPawnBase::AGASTestPawnBase()
 void AGASTestPawnBase::BeginPlay()
 {
 	Super::BeginPlay();
-	GrantInitialAbilitiesIfNeeded();
+	if (HasAuthority())
+	{
+		GrantInitialAbilitiesIfNeeded();
+	}
 }
 
 void AGASTestPawnBase::OnAuthorityGained()
@@ -24,7 +27,7 @@ void AGASTestPawnBase::OnAuthorityGained()
 
 void AGASTestPawnBase::GrantInitialAbilitiesIfNeeded()
 {
-	if (!bHasGrantedAbilities && HasAuthority())
+	if (!bHasGrantedAbilities)
 	{
 		for (const TSubclassOf<UGameplayAbility>& Ability : GetInitialGrantedAbilities())
 		{

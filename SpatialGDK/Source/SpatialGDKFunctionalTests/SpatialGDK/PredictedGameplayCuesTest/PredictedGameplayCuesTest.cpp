@@ -107,7 +107,7 @@ void APredictedGameplayCuesTest::PrepareTest()
 			// Set the target to be owned by client 1. An actor has to be client-owned to be able to run client-predicted gameplay abilities
 			// on it.
 			ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-			AController* PlayerController = static_cast<AController*>(FlowController->GetOwner());
+			AController* PlayerController = Cast<AController>(FlowController->GetOwner());
 
 			// Store the current pawn so we can re-possess it during cleanup
 			PrevPawn = PlayerController->GetPawn();
@@ -164,7 +164,7 @@ void APredictedGameplayCuesTest::PrepareTest()
 	AddStep(TEXT("Re-possess previous pawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Re-possess the original pawn to clean up after ourselves
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-		AController* PlayerController = static_cast<AController*>(FlowController->GetOwner());
+		AController* PlayerController = Cast<AController>(FlowController->GetOwner());
 		PlayerController->Possess(PrevPawn);
 
 		FinishStep();
