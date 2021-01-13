@@ -262,7 +262,6 @@ bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor
 {
 	if (TargetActor != nullptr)
 	{
-		
 		AActor* TargetNetOwner = GetReplicatedHierarchyRoot(TargetActor);
 		VirtualWorkerId TargetVirtualWorkerId = GetWorkerId(TargetNetOwner);
 

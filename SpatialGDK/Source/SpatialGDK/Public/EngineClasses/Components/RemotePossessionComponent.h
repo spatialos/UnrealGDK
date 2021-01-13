@@ -31,6 +31,7 @@ public:
 	void OnInvalidTarget();
 
 	void Possess();
+
 protected:
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	void MarkToDestroy();
