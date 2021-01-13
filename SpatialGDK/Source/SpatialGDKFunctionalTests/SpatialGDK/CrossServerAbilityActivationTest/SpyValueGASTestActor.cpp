@@ -14,7 +14,7 @@ void ASpyValueGASTestActor::IncrementCounter()
 	Counter++;
 }
 
-int ASpyValueGASTestActor::GetCounter()
+int ASpyValueGASTestActor::GetCounter() const
 {
 	return Counter;
 }

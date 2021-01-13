@@ -11,7 +11,10 @@ AGASTestActorBase::AGASTestActorBase()
 void AGASTestActorBase::BeginPlay()
 {
 	Super::BeginPlay();
-	GrantInitialAbilitiesIfNeeded();
+	if(HasAuthority())
+	{
+		GrantInitialAbilitiesIfNeeded();
+	}
 }
 
 void AGASTestActorBase::OnAuthorityGained()
@@ -22,7 +25,7 @@ void AGASTestActorBase::OnAuthorityGained()
 
 void AGASTestActorBase::GrantInitialAbilitiesIfNeeded()
 {
-	if (!bHasGrantedAbilities && HasAuthority())
+	if (!bHasGrantedAbilities)
 	{
 		for (const TSubclassOf<UGameplayAbility>& Ability : GetInitialGrantedAbilities())
 		{

@@ -19,13 +19,13 @@ public:
 	ASpyValueGASTestActor();
 
 	void IncrementCounter();
-	int GetCounter();
+	int GetCounter() const;
 
 	UFUNCTION(CrossServer, Reliable)
 	void ResetCounter();
 
 private:
-	TArray<TSubclassOf<UGameplayAbility>> GetInitialGrantedAbilities() override;
+	virtual TArray<TSubclassOf<UGameplayAbility>> GetInitialGrantedAbilities() override;
 
 	UPROPERTY(Replicated)
 	int Counter;
