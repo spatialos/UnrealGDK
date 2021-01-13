@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "CuesGASTestPawn.h"
-#include "GameFramework/Pawn.h"
 #include "SpatialFunctionalTest.h"
 #include "PredictedGameplayCuesTest.generated.h"
 

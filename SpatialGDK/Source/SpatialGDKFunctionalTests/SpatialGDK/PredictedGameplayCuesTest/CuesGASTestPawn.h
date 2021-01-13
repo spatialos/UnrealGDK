@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "../TestActors/GASTestPawnBase.h"
 #include "CoreMinimal.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/GASTestPawnBase.h"
 #include "CuesGASTestPawn.generated.h"
 
 /**
