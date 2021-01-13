@@ -237,6 +237,7 @@ void USpatialSender::SendRemoveComponents(Worker_EntityId EntityId, TArray<Worke
 	for (auto ComponentId : ComponentIds)
 	{
 		Connection->SendRemoveComponent(EntityId, ComponentId);
+		EventTracer->RemoveComponent(EntityId, ComponentId);
 	}
 }
 
