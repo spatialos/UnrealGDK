@@ -112,8 +112,6 @@ FString ComponentTypeToString(int Type)
 		return TEXT("OwnerOnly");
 	case SCHEMA_Handover:
 		return TEXT("Handover");
-	case SCHEMA_InitialOnly:
-		return TEXT("InitialOnly");
 	}
 	return TEXT("");
 }
@@ -191,7 +189,7 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 			}
 
 			TArray<int32> SavedIds;
-			TMap<int32, TPair<int,int> > SavedIdType;
+			TMap<int32, TPair<int, int> > SavedIdType;
 			const uint32 DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
 			for (uint32 i = 0; i < DynamicComponentsPerClass; ++i)
 			{
@@ -207,8 +205,7 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 			}
 			if (SavedIds.Num() != ParsedNamesAndIds.Ids.Num())
 			{
-				UE_LOG(LogSpatialGDKSchemaGeneratorTest, Error,
-					   TEXT("SavedIds.Num() is not equal with ParsedNamesAndIds.Ids.Num()"));
+				UE_LOG(LogSpatialGDKSchemaGeneratorTest, Error, TEXT("SavedIds.Num() is not equal with ParsedNamesAndIds.Ids.Num()"));
 				return false;
 			}
 
