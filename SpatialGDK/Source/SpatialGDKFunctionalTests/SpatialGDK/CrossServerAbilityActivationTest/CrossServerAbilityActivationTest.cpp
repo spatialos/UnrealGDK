@@ -30,11 +30,6 @@ ACrossServerAbilityActivationTest::ACrossServerAbilityActivationTest()
 	bTimerStarted = false;
 }
 
-static bool TargetActorReadyForActivation(ASpyValueGASTestActor* Target)
-{
-	return Target->GetLocalRole() == ENetRole::ROLE_SimulatedProxy && Target->GetCounter() == 0;
-}
-
 void ACrossServerAbilityActivationTest::PrepareTest()
 {
 	Super::PrepareTest();
@@ -53,6 +48,10 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 	});
 
 	AddStepSetTagDelegation(TargetActorTag, 2);
+
+	auto WaitForTargetReadyForActivation = [this]() {
+		return TargetActor->GetLocalRole() == ENetRole::ROLE_SimulatedProxy && TargetActor->GetCounter() == 0;
+	};
 
 	auto CheckActivationConfirmed = [this](float DeltaTime) {
 		if (bTimerStarted)
@@ -96,10 +95,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 
 	// Step 2 - Trigger an ability by spec handle, cross-server, and confirm that it got activated
 	AddStep(
-		TEXT("Activate Ability by Spec Handle"), FWorkerDefinition::Server(1),
-		[this]() {
-			return TargetActorReadyForActivation(TargetActor);
-		},
+		TEXT("Activate Ability by Spec Handle"), FWorkerDefinition::Server(1), WaitForTargetReadyForActivation,
 		[this]() {
 			UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
 			AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
@@ -117,10 +113,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 
 	// Step 3 - Same as 2, but activate by class
 	AddStep(
-		TEXT("Activate Ability by Class"), FWorkerDefinition::Server(1),
-		[this]() {
-			return TargetActorReadyForActivation(TargetActor);
-		},
+		TEXT("Activate Ability by Class"), FWorkerDefinition::Server(1), WaitForTargetReadyForActivation,
 		[this]() {
 			UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
 			AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
@@ -131,10 +124,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 
 	// Step 4 - Same as 2, but activate by tag
 	AddStep(
-		TEXT("Activate Ability by Tag"), FWorkerDefinition::Server(1),
-		[this]() {
-			return TargetActorReadyForActivation(TargetActor);
-		},
+		TEXT("Activate Ability by Tag"), FWorkerDefinition::Server(1), WaitForTargetReadyForActivation,
 		[this]() {
 			UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
 			AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
@@ -145,10 +135,7 @@ void ACrossServerAbilityActivationTest::PrepareTest()
 
 	// Step 5 - Activate by event.
 	AddStep(
-		TEXT("Activate Ability by Event"), FWorkerDefinition::Server(1),
-		[this]() {
-			return TargetActorReadyForActivation(TargetActor);
-		},
+		TEXT("Activate Ability by Event"), FWorkerDefinition::Server(1), WaitForTargetReadyForActivation,
 		[this]() {
 			UAbilitySystemComponent* ASC = TargetActor->GetAbilitySystemComponent();
 			AssertIsValid(ASC, TEXT("TargetActor has an ability system component."));
