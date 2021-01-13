@@ -32,8 +32,8 @@ struct ActorData
 class ActorSystem
 {
 public:
-	ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager,
-				SpatialEventTracer* InEventTracer);
+	ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
+				FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer);
 
 	void Advance();
 
