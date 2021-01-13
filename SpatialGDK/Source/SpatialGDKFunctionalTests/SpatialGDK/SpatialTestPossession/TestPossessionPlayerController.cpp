@@ -26,13 +26,13 @@ void ATestPossessionPlayerController::OnUnPossess()
 	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s OnUnPossess()"), *GetName());
 }
 
-void ATestPossessionPlayerController::RemotePossessOnClient_Implementation(APawn* InPawn, bool LockBefore)
+void ATestPossessionPlayerController::RemotePossessOnClient_Implementation(APawn* InPawn, bool bLockBefore)
 {
 	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s RemotePossessOnClient_Implementation:%s"), *GetName(), *InPawn->GetName());
-	if (LockBefore)
+	if (bLockBefore)
 	{
 		USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-		if (NetDriver && NetDriver->LockingPolicy)
+		if (NetDriver != nullptr && NetDriver->LockingPolicy)
 		{
 			NetDriver->LockingPolicy->AcquireLock(this, TEXT("TestLock"));
 		}

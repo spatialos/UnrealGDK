@@ -29,7 +29,6 @@
  *	  -	The Controller possess the Pawn in server-side
  *	- Result Check:
  *    - ATestPossessionPlayerController::OnPossess should be called >= 1 times
- *	  - the reason why accept > 1 is even we set `Num Required Clients` as 1, but still have 3 instance of clients in this case
  */
 
 ACrossServerPossessionTest::ACrossServerPossessionTest()

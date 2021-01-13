@@ -50,10 +50,10 @@ void ACrossServerPossessionGameMode::Generate_SpawnPoints()
 
 		SpawnPoints.Add(World->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), FVector(-500.0f, -500.0f, 50.0f),
 														FRotator::ZeroRotator, SpawnInfo));
-		SpawnPoints.Add(World->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), FVector(500.0f, -500.0f, 50.0f), FRotator::ZeroRotator,
-														SpawnInfo));
-		SpawnPoints.Add(World->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), FVector(-500.0f, 500.0f, 50.0f), FRotator::ZeroRotator,
-														SpawnInfo));
+		SpawnPoints.Add(World->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), FVector(500.0f, -500.0f, 50.0f),
+														FRotator::ZeroRotator, SpawnInfo));
+		SpawnPoints.Add(World->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), FVector(-500.0f, 500.0f, 50.0f),
+														FRotator::ZeroRotator, SpawnInfo));
 
 		bInitializedSpawnPoints = true;
 	}

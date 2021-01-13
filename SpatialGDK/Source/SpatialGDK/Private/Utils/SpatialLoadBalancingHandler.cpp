@@ -58,9 +58,15 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 				{
 					if (NetDriver->LockingPolicy->IsLocked(Actor))
 					{
-						UE_LOG(LogRemotePossessionComponent, Warning, TEXT("Actor %s (%llu) cannot migrate because it is locked"),
+						UE_LOG(LogSpatialLoadBalancingHandler, Warning, TEXT("Actor %s (%llu) cannot migrate because it is locked"),
 							   *Actor->GetName(), EntityId);
 						Component->DestroyComponent();
+						return EvaluateActorResult::None;
+					}
+
+					if (Component->Target->HasAuthority())
+					{
+						Component->Possess();
 						return EvaluateActorResult::None;
 					}
 
@@ -72,6 +78,11 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 						return EvaluateActorResult::Migrate;
 					}
 				}
+			}
+			else if (Components.Num() > 1)
+			{
+				UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Actor %s (%llu) has more than 1 URemotePossessionComponent"),
+					   *Actor->GetName(), EntityId);
 			}
 		}
 
@@ -247,10 +258,11 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 }
 
 bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor* NetOwner, const AActor* TargetActor,
-																	VirtualWorkerId& WorkerId)
+																	VirtualWorkerId& OutWorkerId)
 {
 	if (TargetActor != nullptr)
 	{
+		
 		AActor* TargetNetOwner = GetReplicatedHierarchyRoot(TargetActor);
 		VirtualWorkerId TargetVirtualWorkerId = GetWorkerId(TargetNetOwner);
 
@@ -264,7 +276,7 @@ bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor
 		{
 			UE_LOG(LogSpatialLoadBalancingHandler, Verbose, TEXT("Migrate actor:%s to worker:%d"), *NetOwner->GetName(),
 				   TargetVirtualWorkerId);
-			WorkerId = TargetVirtualWorkerId;
+			OutWorkerId = TargetVirtualWorkerId;
 			return true;
 		}
 	}

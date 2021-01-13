@@ -30,6 +30,7 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = "RemotePossessionComponent", meta = (DisplayName = "OnInvalidTarget"))
 	void OnInvalidTarget();
 
+	void Possess();
 protected:
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	void MarkToDestroy();
@@ -39,5 +40,5 @@ public:
 	APawn* Target;
 
 private:
-	bool PendingDestroy;
+	bool bPendingDestroy;
 };

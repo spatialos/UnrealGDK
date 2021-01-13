@@ -105,7 +105,7 @@ protected:
 
 	void LogMigrationFailure(EActorMigrationResult ActorMigrationResult, AActor* Actor);
 
-	bool EvaluateRemoteMigrationComponent(const AActor* NetOwner, const AActor* Target, VirtualWorkerId& WorkerId);
+	bool EvaluateRemoteMigrationComponent(const AActor* NetOwner, const AActor* Target, VirtualWorkerId& OutWorkerId);
 
 	VirtualWorkerId GetWorkerId(const AActor* NetOwner);
 

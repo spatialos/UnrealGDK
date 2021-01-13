@@ -9,7 +9,7 @@ DEFINE_LOG_CATEGORY(LogRemotePossessionComponent);
 
 URemotePossessionComponent::URemotePossessionComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, PendingDestroy(false)
+	, bPendingDestroy(false)
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = true;
@@ -23,8 +23,6 @@ URemotePossessionComponent::URemotePossessionComponent(const FObjectInitializer&
 
 void URemotePossessionComponent::OnAuthorityGained()
 {
-	AController* Controller = Cast<AController>(GetOwner());
-	ensure(Controller);
 	if (Target == nullptr)
 	{
 		OnInvalidTarget();
@@ -33,27 +31,33 @@ void URemotePossessionComponent::OnAuthorityGained()
 	if (!Target->HasAuthority())
 	{
 		UE_LOG(LogRemotePossessionComponent, Verbose, TEXT("Worker is not authoritative over target: %s"), *Target->GetName());
-		return;
 	}
 	else
 	{
-		if (EvaluatePossess())
-		{
-			UE_LOG(LogRemotePossessionComponent, Verbose, TEXT("Remote possession succesful on (%s)"), *Target->GetName());
-			Controller->Possess(Target);
-		}
-		else
-		{
-			UE_LOG(LogRemotePossessionComponent, Verbose, TEXT("EvaluatePossess(%s) failed"), *Target->GetName());
-		}
-		MarkToDestroy();
+		Possess();
 	}
+}
+
+void URemotePossessionComponent::Possess()
+{
+	if (EvaluatePossess())
+	{
+		AController* Controller = Cast<AController>(GetOwner());
+		ensure(Controller);
+		Controller->Possess(Target);
+		UE_LOG(LogRemotePossessionComponent, Verbose, TEXT("Remote possession succesful on (%s)"), *Target->GetName());
+	}
+	else
+	{
+		UE_LOG(LogRemotePossessionComponent, Verbose, TEXT("EvaluatePossess(%s) failed"), *Target->GetName());
+	}
+	MarkToDestroy();
 }
 
 void URemotePossessionComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	if (PendingDestroy)
+	if (bPendingDestroy)
 	{
 		UE_LOG(LogRemotePossessionComponent, Verbose, TEXT("Destroy RemotePossessionComponent"));
 		DestroyComponent();
@@ -73,5 +77,5 @@ void URemotePossessionComponent::OnInvalidTarget_Implementation()
 
 void URemotePossessionComponent::MarkToDestroy()
 {
-	PendingDestroy = true;
+	bPendingDestroy = true;
 }
