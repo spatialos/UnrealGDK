@@ -236,19 +236,19 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	check(NetDriver != nullptr);
 
 	TArray<FWorkerComponentData> Components;
-	Components.Add(Position().CreatePositionData());
-	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
+	Components.Add(Position().CreateComponentData());
+	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateComponentData());
 	Components.Add(ServerWorker(Connection->GetWorkerId(), false, Connection->GetWorkerSystemEntityId()).CreateServerWorkerData());
 
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, EntityId);
-	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
+	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
 	check(NetDriver != nullptr);
 
 	// The load balance strategy won't be set up at this point, but we call this function again later when it is ready in
 	// order to set the interest of the server worker according to the strategy.
-	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateInterestData());
+	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateComponentData());
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
@@ -931,7 +931,7 @@ void USpatialSender::AddTombstoneToEntity(const Worker_EntityId EntityId)
 
 	Worker_AddComponentOp AddComponentOp{};
 	AddComponentOp.entity_id = EntityId;
-	AddComponentOp.data = Tombstone().CreateData();
+	AddComponentOp.data = Tombstone().CreateComponentData();
 	SendAddComponents(EntityId, { AddComponentOp.data });
 	StaticComponentView->OnAddComponent(AddComponentOp);
 

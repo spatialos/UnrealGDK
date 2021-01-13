@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
+### Breaking changes:
+
+### Features:
+
+### Bug fixes:
+- Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
 
 ## [`0.12.0`] - 2020-12-14
 
