@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/GASTestActorBase.h"
 #include "CoreMinimal.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/GASTestActorBase.h"
 #include "SpyValueGASTestActor.generated.h"
 
 /**
