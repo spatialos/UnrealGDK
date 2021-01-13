@@ -23,10 +23,8 @@ namespace Improbable.WorkerCoordinator
         private const string DevAuthTokenWorkerFlag = "simulated_players_dev_auth_token";
         private const string TargetDeploymentWorkerFlag = "simulated_players_target_deployment";
         private const string DeploymentTotalNumSimulatedPlayersWorkerFlag = "total_num_simulated_players";
-        private const string TargetDeploymentReadyWorkerFlag = "target_deployment_ready";
 
         private const int AverageDelayMillisBetweenConnections = 1500;
-        private const int PollTargetDeploymentReadyIntervalMillis = 5000;
 
         // Argument placeholders for simulated players - these will be replaced by the coordinator by their actual values.
         private const string SimulatedPlayerWorkerNamePlaceholderArg = "<IMPROBABLE_SIM_PLAYER_WORKER_ID>";
@@ -117,20 +115,12 @@ namespace Improbable.WorkerCoordinator
         {
             var connection = CoordinatorConnection.ConnectAndKeepAlive(Logger, ReceptionistHost, ReceptionistPort, CoordinatorWorkerId, CoordinatorWorkerType);
 
-
-            Logger.WriteLog("Waiting for target deployment to become ready.");
-            var deploymentReadyTask = Task.Run(() => WaitForTargetDeploymentReady(connection));
-            if (!deploymentReadyTask.Wait(TimeSpan.FromMinutes(15)))
-            {
-                throw new TimeoutException("Timed out waiting for the deployment to be ready. Waited 15 minutes.");
-            }
-
             // Read worker flags.
             string devAuthToken = connection.GetWorkerFlag(DevAuthTokenWorkerFlag);
             string targetDeployment = connection.GetWorkerFlag(TargetDeploymentWorkerFlag);
             int deploymentTotalNumSimulatedPlayers = int.Parse(GetWorkerFlagOrDefault(connection, DeploymentTotalNumSimulatedPlayersWorkerFlag, "100"));
 
-            Logger.WriteLog($"Target deployment is ready. Starting {NumSimulatedPlayersToStart} simulated players.");
+            Logger.WriteLog($"Starting {NumSimulatedPlayersToStart} simulated players.");
             Thread.Sleep(InitialStartDelayMillis);
 
             var maxDelayMillis = deploymentTotalNumSimulatedPlayers * AverageDelayMillisBetweenConnections;
@@ -182,8 +172,7 @@ namespace Improbable.WorkerCoordinator
 
                     // Start the client
                     string flattenedArgs = string.Join(" ", simulatedPlayerArgs);
-                    Logger.WriteLog($"Starting simulated player {simulatedPlayerName} with args: {flattenedArgs}");
-                    CreateSimulatedPlayerProcess(SimulatedPlayerFilename, flattenedArgs); ;
+                    CreateSimulatedPlayerProcess(simulatedPlayerName, SimulatedPlayerFilename, flattenedArgs);
                 }
                 else
                 {
@@ -205,21 +194,6 @@ namespace Improbable.WorkerCoordinator
             }
 
             return defaultValue;
-        }
-
-        private void WaitForTargetDeploymentReady(Connection connection)
-        {
-            while (true)
-            {
-                string readyFlag = connection.GetWorkerFlag(TargetDeploymentReadyWorkerFlag);
-                if (String.Compare(readyFlag, "true", true) == 0)
-                {
-                    // Ready.
-                    break;
-                }
-
-                Thread.Sleep(PollTargetDeploymentReadyIntervalMillis);
-            }
         }
     }
 }
