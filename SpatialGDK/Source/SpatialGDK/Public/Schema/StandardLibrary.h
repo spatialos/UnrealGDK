@@ -73,7 +73,7 @@ inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId
 	return IndexCoordinateFromSchema(Object, Id, 0);
 }
 
-struct Metadata : Component
+struct Metadata : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::METADATA_COMPONENT_ID;
 
@@ -91,7 +91,7 @@ struct Metadata : Component
 		EntityType = GetStringFromSchema(ComponentObject, 1);
 	}
 
-	Worker_ComponentData CreateMetadataData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -106,7 +106,7 @@ struct Metadata : Component
 	FString EntityType;
 };
 
-struct Position : Component
+struct Position : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::POSITION_COMPONENT_ID;
 
@@ -124,7 +124,7 @@ struct Position : Component
 		Coords = GetCoordinateFromSchema(ComponentObject, 1);
 	}
 
-	Worker_ComponentData CreatePositionData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -160,14 +160,14 @@ struct Position : Component
 	Coordinates Coords;
 };
 
-struct Persistence : Component
+struct Persistence : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::PERSISTENCE_COMPONENT_ID;
 
 	Persistence() = default;
 	Persistence(const Worker_ComponentData& Data) {}
 
-	FORCEINLINE Worker_ComponentData CreatePersistenceData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -234,7 +234,7 @@ struct Worker : Component
 	}
 };
 
-struct AuthorityDelegation : Component
+struct AuthorityDelegation : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
 
@@ -285,7 +285,7 @@ struct AuthorityDelegation : Component
 		}
 	}
 
-	Worker_ComponentData CreateAuthorityDelegationData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
