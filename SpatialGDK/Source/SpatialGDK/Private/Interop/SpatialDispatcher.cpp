@@ -59,20 +59,12 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 		// Components
 		case WORKER_OP_TYPE_ADD_COMPONENT:
 			StaticComponentView->OnAddComponent(Op.op.add_component);
-			if (DebugContext.IsValid() && Op.op.add_component.data.component_id == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
-			{
-				DebugContext->OnDebugComponentUpdateReceived(Op.op.add_component.entity_id);
-			}
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
 			StaticComponentView->OnRemoveComponent(Op.op.remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			StaticComponentView->OnComponentUpdate(Op.op.component_update);
-			if (DebugContext.IsValid() && Op.op.component_update.update.component_id == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
-			{
-				DebugContext->OnDebugComponentUpdateReceived(Op.op.component_update.entity_id);
-			}
 			break;
 
 		// Commands
@@ -88,11 +80,6 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
 			// This way systems that depend on having non-stale state can function correctly.
 			StaticComponentView->OnAuthorityChange(Op.op.component_set_authority_change);
-			if (DebugContext.IsValid() && Op.op.component_set_authority_change.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE
-				&& Op.op.component_set_authority_change.component_set_id == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-			{
-				DebugContext->OnDebugComponentAuthLost(Op.op.component_set_authority_change.entity_id);
-			}
 			break;
 
 		// World Command Responses
