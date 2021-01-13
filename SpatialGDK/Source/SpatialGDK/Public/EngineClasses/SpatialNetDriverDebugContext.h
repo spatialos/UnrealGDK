@@ -22,6 +22,11 @@ class USpatialNetDriver;
  * this object was made to behave like a singleton).
  */
 
+namespace SpatialGDK
+{
+struct ComponentChange;
+}
+
 UCLASS()
 class SPATIALGDK_API USpatialNetDriverDebugContext : public UObject
 {
@@ -68,11 +73,8 @@ public:
 
 	// This will be called from SpatialNetDriver::ServerReplicateActor
 	// It will create debug components or update them. It also updates the worker's interest query if needed.
+	void AdvanceView();
 	void TickServer();
-
-	// Called from SpatialReceiver when the corresponding Ops are encountered.
-	void OnDebugComponentUpdateReceived(Worker_EntityId);
-	void OnDebugComponentAuthLost(Worker_EntityId EntityId);
 
 	void ClearNeedEntityInterestUpdate() { bNeedToUpdateInterest = false; }
 
@@ -82,7 +84,13 @@ public:
 	UDebugLBStrategy* DebugStrategy = nullptr;
 
 protected:
-	struct DebugComponentView
+	// Called from SpatialReveiver when the corresponding Ops are encountered.
+	void AddComponent(Worker_EntityId EntityId);
+	void OnComponentChange(Worker_EntityId EntityId, const SpatialGDK::ComponentChange& Change);
+	void ApplyComponentUpdate(Worker_EntityId EntityId, Schema_ComponentUpdate* Update);
+	void AuthorityLost(Worker_EntityId EntityId);
+
+	struct DebugComponentAuthData
 	{
 		SpatialGDK::DebugComponent Component;
 		Worker_EntityId Entity = SpatialConstants::INVALID_ENTITY_ID;
@@ -90,7 +98,7 @@ protected:
 		bool bDirty = false;
 	};
 
-	DebugComponentView& GetDebugComponentView(AActor* Actor);
+	DebugComponentAuthData& GetAuthDebugComponent(AActor* Actor);
 
 	TOptional<VirtualWorkerId> GetActorExplicitDelegation(const AActor* Actor);
 	TOptional<VirtualWorkerId> GetActorHierarchyExplicitDelegation_Traverse(const AActor* Actor);
@@ -109,7 +117,8 @@ protected:
 	TSet<FName> SemanticInterest;
 
 	// Debug info for actors. Only keeps entries for Actors we have authority over.
-	TMap<AActor*, DebugComponentView> ActorDebugInfo;
+	TMap<AActor*, DebugComponentAuthData> ActorDebugInfo;
+	TMap<Worker_EntityId_Key, SpatialGDK::DebugComponent> DebugComponents;
 
 	// Contains a cache of entities computed from the semantic interest.
 	TSet<Worker_EntityId_Key> CachedInterestSet;

@@ -421,6 +421,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, RefreshCallbacks);
 	const SpatialGDK::FSubView& TombstoneActorSubview = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::TOMBSTONE_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+	DebugActorSubView =
+		&Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_DEBUG_COMPONENT_ID, ActorFilter, RefreshCallbacks);
 
 	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
 		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
@@ -1851,6 +1853,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (RPCService.IsValid())
 		{
 			RPCService->AdvanceView();
+		}
+		
+		if (DebugCtx != nullptr)
+		{
+			DebugCtx->AdvanceView();
 		}
 
 		if (ActorSystem.IsValid())

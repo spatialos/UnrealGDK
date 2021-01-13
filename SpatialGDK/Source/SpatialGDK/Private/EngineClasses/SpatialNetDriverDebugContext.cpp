@@ -4,7 +4,6 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialSender.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "Utils/SpatialActorUtils.h"
 
@@ -70,6 +69,69 @@ void USpatialNetDriverDebugContext::Cleanup()
 	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
 }
 
+void USpatialNetDriverDebugContext::AdvanceView()
+{
+	const SpatialGDK::FSubViewDelta& ViewDelta = NetDriver->DebugActorSubView->GetViewDelta();
+	for (const SpatialGDK::EntityDelta& Delta : ViewDelta.EntityDeltas)
+	{
+		switch (Delta.Type)
+		{
+		case SpatialGDK::EntityDelta::ADD:
+			AddComponent(Delta.EntityId);
+			break;
+		case SpatialGDK::EntityDelta::REMOVE:
+			DebugComponents.Remove(Delta.EntityId);
+			break;
+		case SpatialGDK::EntityDelta::TEMPORARILY_REMOVED:
+			DebugComponents.Remove(Delta.EntityId);
+			AddComponent(Delta.EntityId);
+			break;
+		case SpatialGDK::EntityDelta::UPDATE:
+			for (const SpatialGDK::AuthorityChange& Change : Delta.AuthorityLostTemporarily)
+			{
+				if (Change.ComponentId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+				{
+					AuthorityLost(Delta.EntityId);
+				}
+			}
+			for (const SpatialGDK::AuthorityChange& Change : Delta.AuthorityLost)
+			{
+				if (Change.ComponentId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+				{
+					AuthorityLost(Delta.EntityId);
+				}
+			}
+			for (const SpatialGDK::ComponentChange& Change : Delta.ComponentUpdates)
+			{
+				if (Change.ComponentId == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+				{
+					OnComponentChange(Delta.EntityId, Change);
+				}
+			}
+			for (const SpatialGDK::ComponentChange& Change : Delta.ComponentsRefreshed)
+			{
+				if (Change.ComponentId == SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+				{
+					OnComponentChange(Delta.EntityId, Change);
+				}
+			}
+			break;
+		}
+	}
+}
+
+void USpatialNetDriverDebugContext::OnComponentChange(Worker_EntityId EntityId, const SpatialGDK::ComponentChange& Change)
+{
+	if (Change.Type == SpatialGDK::ComponentChange::UPDATE)
+	{
+		ApplyComponentUpdate(EntityId, Change.Update);
+	}
+	else if (Change.Type == SpatialGDK::ComponentChange::COMPLETE_UPDATE)
+	{
+		AddComponent(EntityId);
+	}
+}
+
 void USpatialNetDriverDebugContext::Reset()
 {
 	for (const auto& Entry : NetDriver->Connection->GetView())
@@ -92,7 +154,7 @@ void USpatialNetDriverDebugContext::Reset()
 	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
 }
 
-USpatialNetDriverDebugContext::DebugComponentView& USpatialNetDriverDebugContext::GetDebugComponentView(AActor* Actor)
+USpatialNetDriverDebugContext::DebugComponentAuthData& USpatialNetDriverDebugContext::GetAuthDebugComponent(AActor* Actor)
 {
 	check(Actor && Actor->HasAuthority());
 	SpatialGDK::DebugComponent* DbgComp = nullptr;
@@ -100,10 +162,10 @@ USpatialNetDriverDebugContext::DebugComponentView& USpatialNetDriverDebugContext
 	Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 	if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 	{
-		DbgComp = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::DebugComponent>(Entity);
+		DbgComp = DebugComponents.Find(Entity);
 	}
 
-	DebugComponentView& Comp = ActorDebugInfo.FindOrAdd(Actor);
+	DebugComponentAuthData& Comp = ActorDebugInfo.FindOrAdd(Actor);
 	if (DbgComp && Comp.Entity == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		Comp.Component = *DbgComp;
@@ -118,7 +180,7 @@ void USpatialNetDriverDebugContext::AddActorTag(AActor* Actor, FName Tag)
 {
 	if (Actor->HasAuthority())
 	{
-		DebugComponentView& Comp = GetDebugComponentView(Actor);
+		DebugComponentAuthData& Comp = GetAuthDebugComponent(Actor);
 		Comp.Component.ActorTags.Add(Tag);
 		if (SemanticInterest.Contains(Tag) && Comp.Entity != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -132,7 +194,7 @@ void USpatialNetDriverDebugContext::RemoveActorTag(AActor* Actor, FName Tag)
 {
 	if (Actor->HasAuthority())
 	{
-		DebugComponentView& Comp = GetDebugComponentView(Actor);
+		DebugComponentAuthData& Comp = GetAuthDebugComponent(Actor);
 		Comp.Component.ActorTags.Remove(Tag);
 		if (IsSetIntersectionEmpty(SemanticInterest, Comp.Component.ActorTags) && Comp.Entity != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -142,24 +204,33 @@ void USpatialNetDriverDebugContext::RemoveActorTag(AActor* Actor, FName Tag)
 	}
 }
 
-void USpatialNetDriverDebugContext::OnDebugComponentUpdateReceived(Worker_EntityId Entity)
+void USpatialNetDriverDebugContext::AddComponent(Worker_EntityId EntityId)
 {
-	SpatialGDK::DebugComponent* DbgComp = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::DebugComponent>(Entity);
+	const SpatialGDK::EntityViewElement& Element = NetDriver->DebugActorSubView->GetView().FindChecked(EntityId);
+	const SpatialGDK::ComponentData* Data = Element.Components.FindByPredicate([](const SpatialGDK::ComponentData& Component) {
+		return Component.GetComponentId() == SpatialConstants::GDK_DEBUG_COMPONENT_ID;
+	});
+	check(Data != nullptr);
+	DebugComponents.Add(EntityId, SpatialGDK::DebugComponent(Data->GetUnderlying()));
+}
+
+void USpatialNetDriverDebugContext::ApplyComponentUpdate(Worker_EntityId Entity, Schema_ComponentUpdate* Update)
+{
+	SpatialGDK::DebugComponent* DbgComp = DebugComponents.Find(Entity);
 	check(DbgComp);
-	if (!NetDriver->StaticComponentView->HasAuthority(Entity, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
+	DbgComp->ApplyComponentUpdate(Update);
+
+	if (IsSetIntersectionEmpty(SemanticInterest, DbgComp->ActorTags))
 	{
-		if (IsSetIntersectionEmpty(SemanticInterest, DbgComp->ActorTags))
-		{
-			RemoveEntityToWatch(Entity);
-		}
-		else
-		{
-			AddEntityToWatch(Entity);
-		}
+		RemoveEntityToWatch(Entity);
+	}
+	else
+	{
+		AddEntityToWatch(Entity);
 	}
 }
 
-void USpatialNetDriverDebugContext::OnDebugComponentAuthLost(Worker_EntityId EntityId)
+void USpatialNetDriverDebugContext::AuthorityLost(Worker_EntityId EntityId)
 {
 	for (auto Iterator = ActorDebugInfo.CreateIterator(); Iterator; ++Iterator)
 	{
@@ -193,17 +264,11 @@ void USpatialNetDriverDebugContext::AddInterestOnTag(FName Tag)
 
 	if (!bAlreadyInSet)
 	{
-		TArray<Worker_EntityId_Key> EntityIds;
-		NetDriver->StaticComponentView->GetEntityIds(EntityIds);
-
-		for (auto Entity : EntityIds)
+		for (auto& EntityView : DebugComponents)
 		{
-			if (SpatialGDK::DebugComponent* DbgComp = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::DebugComponent>(Entity))
+			if (EntityView.Value.ActorTags.Contains(Tag))
 			{
-				if (DbgComp->ActorTags.Contains(Tag))
-				{
-					AddEntityToWatch(Entity);
-				}
+				AddEntityToWatch(EntityView.Key);
 			}
 		}
 
@@ -228,17 +293,11 @@ void USpatialNetDriverDebugContext::RemoveInterestOnTag(FName Tag)
 		CachedInterestSet.Empty();
 		bNeedToUpdateInterest = true;
 
-		TArray<Worker_EntityId_Key> EntityIds;
-		NetDriver->StaticComponentView->GetEntityIds(EntityIds);
-
-		for (auto Entity : EntityIds)
+		for (auto& EntityView : DebugComponents)
 		{
-			if (SpatialGDK::DebugComponent* DbgComp = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::DebugComponent>(Entity))
+			if (!IsSetIntersectionEmpty(EntityView.Value.ActorTags, SemanticInterest))
 			{
-				if (!IsSetIntersectionEmpty(DbgComp->ActorTags, SemanticInterest))
-				{
-					AddEntityToWatch(Entity);
-				}
+				AddEntityToWatch(EntityView.Key);
 			}
 		}
 
@@ -260,7 +319,7 @@ void USpatialNetDriverDebugContext::KeepActorOnLocalWorker(AActor* Actor)
 {
 	if (Actor->HasAuthority())
 	{
-		DebugComponentView& Comp = GetDebugComponentView(Actor);
+		DebugComponentAuthData& Comp = GetAuthDebugComponent(Actor);
 		Comp.Component.DelegatedWorkerId = DebugStrategy->GetLocalVirtualWorkerId();
 		Comp.bDirty = true;
 	}
@@ -305,7 +364,7 @@ TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorHierarchyExpli
 TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorExplicitDelegation(const AActor* Actor)
 {
 	SpatialGDK::DebugComponent* DbgComp = nullptr;
-	if (DebugComponentView* DebugInfo = ActorDebugInfo.Find(Actor))
+	if (DebugComponentAuthData* DebugInfo = ActorDebugInfo.Find(Actor))
 	{
 		DbgComp = &DebugInfo->Component;
 	}
@@ -314,7 +373,7 @@ TOptional<VirtualWorkerId> USpatialNetDriverDebugContext::GetActorExplicitDelega
 		Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 		if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 		{
-			DbgComp = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::DebugComponent>(Entity);
+			DbgComp = DebugComponents.Find(Entity);
 		}
 	}
 
@@ -350,13 +409,13 @@ void USpatialNetDriverDebugContext::TickServer()
 	for (auto& Entry : ActorDebugInfo)
 	{
 		AActor* Actor = Entry.Key;
-		DebugComponentView& View = Entry.Value;
-		if (!View.bAdded)
+		DebugComponentAuthData& Data = Entry.Value;
+		if (!Data.bAdded)
 		{
 			Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 			if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 			{
-				if (!IsSetIntersectionEmpty(View.Component.ActorTags, SemanticInterest))
+				if (!IsSetIntersectionEmpty(Data.Component.ActorTags, SemanticInterest))
 				{
 					AddEntityToWatch(Entity);
 				}
@@ -364,18 +423,18 @@ void USpatialNetDriverDebugContext::TickServer()
 				// There is a requirement of readiness before we can use SendAddComponent
 				if (IsActorReady(Actor))
 				{
-					Worker_ComponentData CompData = View.Component.CreateDebugComponent();
+					Worker_ComponentData CompData = Data.Component.CreateDebugComponent();
 					NetDriver->Sender->SendAddComponents(Entity, { CompData });
-					View.Entity = Entity;
-					View.bAdded = true;
+					Data.Entity = Entity;
+					Data.bAdded = true;
 				}
 			}
 		}
-		else if (View.bDirty)
+		else if (Data.bDirty)
 		{
-			FWorkerComponentUpdate CompUpdate = View.Component.CreateDebugComponentUpdate();
-			NetDriver->Connection->SendComponentUpdate(View.Entity, &CompUpdate);
-			View.bDirty = false;
+			FWorkerComponentUpdate CompUpdate = Data.Component.CreateDebugComponentUpdate();
+			NetDriver->Connection->SendComponentUpdate(Data.Entity, &CompUpdate);
+			Data.bDirty = false;
 		}
 	}
 

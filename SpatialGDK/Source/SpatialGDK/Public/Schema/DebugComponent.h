@@ -12,15 +12,15 @@
 
 namespace SpatialGDK
 {
-struct DebugComponent : Component
+struct DebugComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 
 	DebugComponent() {}
 
-	DebugComponent(const Worker_ComponentData& Data)
+	DebugComponent(Schema_ComponentData* Data)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 		ReadFromSchema(ComponentObject);
 	}
 
@@ -50,9 +50,9 @@ struct DebugComponent : Component
 		return Data;
 	}
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
 		ReadFromSchema(ComponentObject);
 	}
 
