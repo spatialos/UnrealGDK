@@ -409,6 +409,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	const FFilterPredicate ActorFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
 		return !Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
 	};
+	const FFilterPredicate TombstoneFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+		return Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
+	};
 	const TArray<FDispatcherRefreshCallback> RefreshCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
 		SpatialConstants::TOMBSTONE_COMPONENT_ID) };
 
@@ -416,6 +419,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, ActorFilter, RefreshCallbacks);
 	const SpatialGDK::FSubView& ActorNonAuthSubview =
 		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, RefreshCallbacks);
+	const SpatialGDK::FSubView& TombstoneActorSubview =
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::TOMBSTONE_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
 	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
 		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
@@ -423,7 +428,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	CrossServerRPCHandler =
 		MakeUnique<SpatialGDK::CrossServerRPCHandler>(Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this));
 
-	ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorNonAuthSubview, this, &TimerManager, Connection->GetEventTracer());
+	ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorNonAuthSubview, TombstoneActorSubview, this, &TimerManager, Connection->GetEventTracer());
 
 	Dispatcher->Init(Receiver, DebugCtx, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());

@@ -32,7 +32,7 @@ struct ActorData
 class ActorSystem
 {
 public:
-	ActorSystem(const FSubView& InSubView, USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager,
+	ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager,
 				SpatialEventTracer* InEventTracer);
 
 	void Advance();
@@ -42,8 +42,6 @@ public:
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
 	void RemoveActor(Worker_EntityId EntityId);
-
-	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
 private:
 	// Helper struct to manage FSpatialObjectRepState update cycle.
@@ -107,6 +105,7 @@ private:
 	// Entity add
 	void ReceiveActor(Worker_EntityId EntityId);
 	bool IsReceivedEntityTornOff(Worker_EntityId EntityId) const;
+	AActor* TryGetActor(const UnrealMetadata& Metadata) const;
 	AActor* TryGetOrCreateActor(ActorData& ActorComponents);
 	AActor* CreateActor(ActorData& ActorComponents);
 	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
@@ -121,6 +120,7 @@ private:
 	bool EntityHasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
 	const FSubView* SubView;
+	const FSubView* TombstoneSubView;
 	USpatialNetDriver* NetDriver;
 	FTimerManager* TimerManager;
 	SpatialEventTracer* EventTracer;
