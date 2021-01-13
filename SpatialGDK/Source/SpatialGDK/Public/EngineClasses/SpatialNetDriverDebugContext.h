@@ -86,6 +86,7 @@ public:
 protected:
 	// Called from SpatialReveiver when the corresponding Ops are encountered.
 	void AddComponent(Worker_EntityId EntityId);
+	void RemoveComponent(Worker_EntityId EntityId);
 	void OnComponentChange(Worker_EntityId EntityId, const SpatialGDK::ComponentChange& Change);
 	void ApplyComponentUpdate(Worker_EntityId EntityId, Schema_ComponentUpdate* Update);
 	void AuthorityLost(Worker_EntityId EntityId);

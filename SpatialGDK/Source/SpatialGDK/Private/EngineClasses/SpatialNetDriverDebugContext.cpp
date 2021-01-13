@@ -80,10 +80,10 @@ void USpatialNetDriverDebugContext::AdvanceView()
 			AddComponent(Delta.EntityId);
 			break;
 		case SpatialGDK::EntityDelta::REMOVE:
-			DebugComponents.Remove(Delta.EntityId);
+			RemoveComponent(Delta.EntityId);
 			break;
 		case SpatialGDK::EntityDelta::TEMPORARILY_REMOVED:
-			DebugComponents.Remove(Delta.EntityId);
+			RemoveComponent(Delta.EntityId);
 			AddComponent(Delta.EntityId);
 			break;
 		case SpatialGDK::EntityDelta::UPDATE:
@@ -128,6 +128,7 @@ void USpatialNetDriverDebugContext::OnComponentChange(Worker_EntityId EntityId, 
 	}
 	else if (Change.Type == SpatialGDK::ComponentChange::COMPLETE_UPDATE)
 	{
+		RemoveComponent(EntityId);
 		AddComponent(EntityId);
 	}
 }
@@ -211,7 +212,18 @@ void USpatialNetDriverDebugContext::AddComponent(Worker_EntityId EntityId)
 		return Component.GetComponentId() == SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 	});
 	check(Data != nullptr);
-	DebugComponents.Add(EntityId, SpatialGDK::DebugComponent(Data->GetUnderlying()));
+	SpatialGDK::DebugComponent& DbgComp = DebugComponents.Add(EntityId, SpatialGDK::DebugComponent(Data->GetUnderlying()));
+
+	if (!IsSetIntersectionEmpty(SemanticInterest, DbgComp.ActorTags))
+	{
+		AddEntityToWatch(EntityId);
+	}
+}
+
+void USpatialNetDriverDebugContext::RemoveComponent(Worker_EntityId EntityId)
+{
+	RemoveEntityToWatch(EntityId);
+	DebugComponents.Remove(EntityId);
 }
 
 void USpatialNetDriverDebugContext::ApplyComponentUpdate(Worker_EntityId Entity, Schema_ComponentUpdate* Update)
