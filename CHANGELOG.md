@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
+### Breaking changes:
+
+### Features:
+
+### Bug fixes:
+- Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
 
 ## [`0.12.0`] - 2020-12-14
 
@@ -125,7 +131,6 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed a assertion being triggered on async loaded entities due to queuing some component addition.
 - Fixed a bug where consecutive invocations of CookAndGenerateSchemaCommandlet for different levels could fail when running the schema compiler.
 - Fixed an issue where GameMode values won't be replicated between server workers if it's outside their Interest
-- Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
 - Fixed gameplay cues receiving OnActive/WhileActive events twice on the predicting client in a multi-worker single-process PIE environment.
 
 ## [`0.11.0`] - 2020-09-03

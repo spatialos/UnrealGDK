@@ -53,7 +53,7 @@ void ASpatialComponentTest::PrepareTest()
 			5.0f);
 	}
 
-	// Replicated Dynamic Actor Spawned On Same Server.Server 1 should have Authority.
+	// Replicated Dynamic Actor Spawned On Same Server. Server 1 should have Authority.
 	{
 		AddStep(TEXT("Replicated Dynamic Actor Spawned On Same Server - Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			ASpatialComponentTestReplicatedActor* Actor =
@@ -148,25 +148,25 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 		{
 			if (LocalWorkerDefinition.Id == ExpectedServerId)
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 2), "Server auth - OnAuthorityGained component and OnActorReady component");
+				RequireTrue(VerifyTestActorComponents(Actor, 2), TEXT("Server auth - OnAuthorityGained component and OnActorReady component"));
 				FinishStep();
 			}
 			else if (Actor->bNetStartup)
 			{
 				RequireTrue(VerifyTestActorComponents(Actor, 1),
-							"Non-auth servers - Level actors receive OnActorReady only OnAuthorityGained");
+							TEXT("Non-auth servers - Level actors receive OnActorReady only OnAuthorityGained"));
 				FinishStep();
 			}
 			else
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 0), "Non-auth servers - Dynamic actors do not receive OnActorReady");
+				RequireTrue(VerifyTestActorComponents(Actor, 0), TEXT("Non-auth servers - Dynamic actors do not receive OnActorReady"));
 				FinishStep();
 			}
 		}
 		else // Support for Native / Single Worker.
 		{
 			RequireTrue(VerifyTestActorComponents(Actor, 2),
-						"Native / Single Worker - OnActorReady component and OnAuthorityGained component");
+						TEXT("Native / Single Worker - OnActorReady component and OnAuthorityGained component"));
 			FinishStep();
 		}
 	}
@@ -174,12 +174,12 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 	{
 		if (LocalWorkerDefinition.Id == 1)
 		{
-			RequireTrue(VerifyTestActorComponents(Actor, ExpectedClient1ComponentCount), "Client 1");
+			RequireTrue(VerifyTestActorComponents(Actor, ExpectedClient1ComponentCount), TEXT("Client 1"));
 			FinishStep();
 		}
 		else if (LocalWorkerDefinition.Id == 2)
 		{
-			RequireTrue(VerifyTestActorComponents(Actor, ExpectedClient2ComponentCount), "Client 2");
+			RequireTrue(VerifyTestActorComponents(Actor, ExpectedClient2ComponentCount), TEXT("Client 2"));
 			FinishStep();
 		}
 	}
@@ -197,25 +197,25 @@ void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActo
 			if (LocalWorkerDefinition.Id == StartServerId)
 			{
 				RequireTrue(VerifyTestActorComponents(Actor, 3),
-							"Spawning server - OnActorReady component, OnAuthorityGained component and OnAuthorityLost component");
+							TEXT("Spawning server - OnActorReady component, OnAuthorityGained component and OnAuthorityLost component"));
 				FinishStep();
 			}
 			else if (LocalWorkerDefinition.Id == EndServerId)
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 1), "Migrated server - OnAuthorityGained component");
+				RequireTrue(VerifyTestActorComponents(Actor, 1), TEXT("Migrated server - OnAuthorityGained component"));
 				FinishStep();
 			}
 		}
 		else // Support for Native / Single Worker.
 		{
 			RequireTrue(VerifyTestActorComponents(Actor, 2),
-						"Native / Single Worker - OnActorReady component and OnAuthorityGained component");
+						TEXT("Native / Single Worker - OnActorReady component and OnAuthorityGained component"));
 			FinishStep();
 		}
 	}
 	else // Clients
 	{
-		RequireTrue(VerifyTestActorComponents(Actor, 0), "Clients");
+		RequireTrue(VerifyTestActorComponents(Actor, 0), TEXT("Clients"));
 		FinishStep();
 	}
 }
