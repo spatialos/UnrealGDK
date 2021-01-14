@@ -358,13 +358,13 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 
 // A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>{ // RPCs from the server
-																											SERVER_ENDPOINT_COMPONENT_ID,
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
+	TArray<Worker_ComponentId>{ // RPCs from the server
+								SERVER_ENDPOINT_COMPONENT_ID,
 
-																											// Actor tags
-		ACTOR_NON_AUTH_TAG_COMPONENT_ID,
-																											ACTOR_AUTH_TAG_COMPONENT_ID
-};
+								// Actor tags
+								ACTOR_NON_AUTH_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID
+	};
 
 // A list of components servers require on top of any generated data and handover components in order to handle non-authoritative actors
 // correctly.
@@ -393,18 +393,18 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST = TArray<Worker_ComponentId>{ // RPCs from clients
-																											CLIENT_ENDPOINT_COMPONENT_ID,
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
+	TArray<Worker_ComponentId>{ // RPCs from clients
+								CLIENT_ENDPOINT_COMPONENT_ID,
 
-																											// Heartbeat
-																											HEARTBEAT_COMPONENT_ID,
+								// Heartbeat
+								HEARTBEAT_COMPONENT_ID,
 
-																											// Actor tags
-		ACTOR_NON_AUTH_TAG_COMPONENT_ID,
-																											ACTOR_AUTH_TAG_COMPONENT_ID,
+								// Actor tags
+								ACTOR_NON_AUTH_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
 
-																											PARTITION_COMPONENT_ID
-};
+								PARTITION_COMPONENT_ID
+	};
 
 inline bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId)
 {
