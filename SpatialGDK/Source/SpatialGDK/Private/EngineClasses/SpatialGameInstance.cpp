@@ -224,7 +224,7 @@ namespace
 constexpr uint8 SimPlayerErrorExitCode = 10;
 
 void HandleOnSimulatedPlayerNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type NetworkFailureType,
-	const FString& Reason)
+										   const FString& Reason)
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("SimulatedPlayer network failure due to: %s"), *Reason);
 

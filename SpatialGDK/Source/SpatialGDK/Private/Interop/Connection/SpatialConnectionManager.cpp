@@ -209,7 +209,7 @@ void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_Login
 			   UTF8_TO_TCHAR(LoginTokens->status.detail));
 
 		ConnectionManager->OnConnectionFailure(LoginTokens->status.code, FString::Printf(TEXT("Failed to get login token, Error: %s"),
-			UTF8_TO_TCHAR(LoginTokens->status.detail)));
+																						 UTF8_TO_TCHAR(LoginTokens->status.detail)));
 
 		return;
 	}
@@ -310,8 +310,8 @@ void USpatialConnectionManager::OnPlayerIdentityToken(void* UserData, const Work
 			   PIToken->status.code, UTF8_TO_TCHAR(PIToken->status.detail));
 
 		ConnectionManager->OnConnectionFailure(PIToken->status.code,
-			FString::Printf(TEXT("Failed to get PlayerIdentityToken, StatusCode: %d, Error: %s"),
-				PIToken->status.code, UTF8_TO_TCHAR(PIToken->status.detail)));
+											   FString::Printf(TEXT("Failed to get PlayerIdentityToken, StatusCode: %d, Error: %s"),
+															   PIToken->status.code, UTF8_TO_TCHAR(PIToken->status.detail)));
 
 		return;
 	}
