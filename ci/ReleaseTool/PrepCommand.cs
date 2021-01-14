@@ -1,8 +1,5 @@
 using System;
-using System.IO;
-using System.Linq;
 using CommandLine;
-using Newtonsoft.Json.Linq;
 
 namespace ReleaseTool
 {
