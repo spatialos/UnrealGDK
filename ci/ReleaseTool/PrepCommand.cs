@@ -98,17 +98,14 @@ namespace ReleaseTool
                         gitClient.CheckoutRemoteBranch(options.SourceBranch);
 
                         // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
-                        if (Common.UpdateVersionFilesWithEngine(gitClient, gitRepoName, options.Version, options.EngineVersions, Logger, "-rc"))
-                        {
-                            // 4. Commit changes and push them to a remote candidate branch.
-                            gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
-                            gitClient.ForcePush(options.CandidateBranch);
-                            Logger.Info($"Updated branch '{options.CandidateBranch}' for the release candidate release.");
-                        }
-                        else
-                        {
-                            Logger.Info($"Tried to update branch '{options.CandidateBranch}' for the release candidate release, but it was already up-to-date.");
-                        }
+                        // UpdateVersionFilesWithEngine returns a bool to indicate if anything has changed, we could use this to only push when
+                        // version files etc have changed which may be reasonable but might have side-effects as our github ci interactions are fragile
+                        Common.UpdateVersionFilesWithEngine(gitClient, gitRepoName, options.Version, options.EngineVersions, Logger, "-rc");
+                        // 4. Commit changes and push them to a remote candidate branch.
+                        gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
+                        gitClient.ForcePush(options.CandidateBranch);
+                        Logger.Info($"Updated branch '{options.CandidateBranch}' for the release candidate release.");
+    
                     }
 
                     // 5. IF the release branch does not exist, creates it from the source branch and pushes it to the remote.
