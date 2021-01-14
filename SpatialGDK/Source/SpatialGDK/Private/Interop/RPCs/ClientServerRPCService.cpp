@@ -59,7 +59,6 @@ void ClientServerRPCService::AdvanceView()
 
 void ClientServerRPCService::ProcessChanges()
 {
-
 	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
 	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
 	{
@@ -74,12 +73,8 @@ void ClientServerRPCService::ProcessChanges()
 			break;
 		}
 		case EntityDelta::ADD:
-		{
 			EntityAdded(Delta.EntityId);
-
-			
 			break;
-		}
 		case EntityDelta::TEMPORARILY_REMOVED:
 			EntityAdded(Delta.EntityId);
 			break;
