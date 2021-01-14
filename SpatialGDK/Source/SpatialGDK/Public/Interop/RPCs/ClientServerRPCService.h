@@ -32,6 +32,7 @@ struct ClientServerEndpoints
 class SPATIALGDK_API ClientServerRPCService
 {
 	using EntityRPCTypePair = TPair<Worker_EntityId, ERPCType>;
+
 public:
 	ClientServerRPCService(const ExtractRPCDelegate InExtractRPCCallback, const FSubView& InSubView, USpatialNetDriver* InNetDriver,
 						   FRPCStore& InRPCStore);
