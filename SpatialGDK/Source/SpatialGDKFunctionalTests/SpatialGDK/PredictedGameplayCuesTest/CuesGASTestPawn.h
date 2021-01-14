@@ -23,11 +23,11 @@ public:
 	void SignalOnActive() { OnActiveCounter++; }
 	void SignalExecute() { ExecuteCounter++; }
 
-	int GetOnActiveCounter() { return OnActiveCounter; }
-	int GetExecuteCounter() { return ExecuteCounter; }
+	int GetOnActiveCounter() const { return OnActiveCounter; }
+	int GetExecuteCounter() const { return ExecuteCounter; }
 
 private:
-	TArray<TSubclassOf<UGameplayAbility>> GetInitialGrantedAbilities() override;
+	virtual TArray<TSubclassOf<UGameplayAbility>> GetInitialGrantedAbilities() override;
 
 	int OnActiveCounter;
 	int ExecuteCounter;
