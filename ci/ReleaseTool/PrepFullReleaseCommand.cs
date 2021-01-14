@@ -22,13 +22,7 @@ namespace ReleaseTool
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         // Changelog file configuration
-        private const string ChangeLogFilename = "CHANGELOG.md";
         private const string CandidateCommitMessageTemplate = "Prepare GDK for Unreal release {0}.";
-        private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
-
-        // Names of the version files that live in the UnrealEngine repository.
-        private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
-        private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
 
         [Verb("prepfullrelease", HelpText = "Prepare a release candidate branch for the full release.")]
         public class Options : GitHubClient.IGitHubOptions
@@ -76,35 +70,8 @@ namespace ReleaseTool
                     // 2. Checks out the candidate branch, which defaults to 4.xx-SpatialOSUnrealGDK-x.y.z-rc in UnrealEngine and x.y.z-rc in all other repos.
                     gitClient.CheckoutRemoteBranch(options.CandidateBranch);
 
-                    bool madeChanges = false;
-
                     // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
-                    switch (gitRepoName)
-                    {
-                        case "UnrealEngine":
-                            madeChanges |= Common.UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile, Logger);
-                            madeChanges |= Common.UpdateVersionFile(gitClient, options.Version, UnrealGDKExampleProjectVersionFile, Logger);
-                            break;
-                        case "UnrealGDK":
-                            Logger.Info("Updating {0}...", ChangeLogFilename);
-                            madeChanges |= Common.UpdateChangeLog(ChangeLogFilename, options.Version, gitClient, ChangeLogReleaseHeadingTemplate);
-                            if (!madeChanges) Logger.Info("{0} was already up-to-date.", ChangeLogFilename);
-                            break;
-                        case "UnrealGDKExampleProject":
-                            madeChanges |= Common.UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile, Logger);
-                            break;
-                        case "UnrealGDKTestGyms":
-                            madeChanges |= Common.UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile, Logger);
-                            break;
-                        case "UnrealGDKEngineNetTest":
-                            madeChanges |= Common.UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile, Logger);
-                            break;
-                        case "TestGymBuildKite":
-                            madeChanges |= Common.UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile, Logger);
-                            break;
-                    }
-
-                    if (madeChanges)
+                    if (Common.UpdateVersionFilesButNotEngine(gitClient, gitRepoName, options.Version, Logger))
                     {
                         // 4. Commit changes and push them to a remote candidate branch.
                         gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));

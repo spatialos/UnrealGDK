@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using CommandLine;
 using Octokit;
@@ -30,10 +28,7 @@ namespace ReleaseTool
             "in the repo `{1}` from `{2}` into `{3}`. " +
             "Your human labour is now required to merge these PRs.\n";
 
-        // Changelog file configuration
-        private const string ChangeLogFilename = "CHANGELOG.md";
         private const string CandidateCommitMessageTemplate = "Update branch for GDK for Unreal {0}.";
-        private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
 
         [Verb("release", HelpText = "Merge a release branch and create a github release draft.")]
         public class Options : GitHubClient.IGitHubOptions
@@ -151,7 +146,7 @@ namespace ReleaseTool
                         gitClient.CheckoutRemoteBranch(options.CandidateBranch);
 
                         // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
-                        Common.UpdateChangeLog(ChangeLogFilename, options.Version, gitClient, ChangeLogReleaseHeadingTemplate);
+                        Common.UpdateChangeLog(gitClient, options.Version, Common.ChangeLogReleaseHeadingTemplate, Common.ChangeLogFilename);
 
                         var releaseHashes = options.EngineVersions.Replace("\"", "").Split(" ")
                             .Select(version => $"{version.Trim()}")
@@ -159,7 +154,7 @@ namespace ReleaseTool
                             .Select(hash => $"{hash}")
                             .ToList();
 
-                        UpdateUnrealEngineVersionFile(releaseHashes, gitClient);
+                        Common.UpdateUnrealEngineVersionFile(gitClient, releaseHashes, Common.UnrealEngineVersionFile);
 
                         // 4. Commit changes and push them to a remote candidate branch.
                         gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
@@ -263,6 +258,105 @@ namespace ReleaseTool
             CreatePRFromReleaseToSource(gitHubClient, gitHubRepo, repoUrl, gitRepoName, gitClient);
         }
 
+        private void CreatePRFromReleaseToSource(GitHubClient gitHubClient, Repository gitHubRepo, string repoUrl, string repoName, GitClient gitClient)
+        {
+            // Check if a PR has already been opened from release branch into source branch.
+            // If it has, log the PR URL and move on.
+            // This ensures the idempotence of the pipeline.
+            var githubOrg = options.GithubOrgName;
+            var branchFrom = $"{options.CandidateBranch}-cleanup";
+            var branchTo = options.SourceBranch;
+
+            if (!gitHubClient.TryGetPullRequest(gitHubRepo, githubOrg, branchFrom, branchTo, out var pullRequest))
+            {
+                try
+                {
+                    if (gitClient == null)
+                    {
+                        using (gitClient = GitClient.FromRemote(repoUrl))
+                        {
+                            gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
+                            gitClient.ForcePush(branchFrom);
+                        }
+                    }
+                    else
+                    {
+                        gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
+                        gitClient.ForcePush(branchFrom);
+                    }
+                    pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
+                    branchFrom,
+                    branchTo,
+                    string.Format(PullRequestNameTemplate, options.Version, options.ReleaseBranch, options.SourceBranch),
+                    string.Format(pullRequestBody, options.ReleaseBranch, options.SourceBranch));
+                }
+                catch (Octokit.ApiValidationException e)
+                {
+                    // Handles the case where source-branch (default master) and release-branch (default release) are identical, so there is no need to merge source-branch back into release-branch.
+                    if (e.ApiError.Errors.Count > 0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
+                    {
+                        Logger.Info(e.ApiError.Errors[0].Message);
+                        Logger.Info("No PR will be created.");
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+            else
+            {
+                Logger.Info("A PR has already been opened from release branch into source branch: {0}", pullRequest.HtmlUrl);
+            }
+
+            var prAnnotation = string.Format(prAnnotationTemplate,
+                pullRequest.HtmlUrl, repoName, options.ReleaseBranch, options.SourceBranch);
+            BuildkiteAgent.Annotate(AnnotationLevel.Info, "release-into-source-prs", prAnnotation, true);
+
+            Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
+            Logger.Info($"Successfully created PR for merging {options.ReleaseBranch} into {options.SourceBranch}.");
+        }
+
+        private static string GetReleaseNotesFromChangeLog()
+        {
+            if (!File.Exists(Common.ChangeLogFilename))
+            {
+                throw new InvalidOperationException("Could not get draft release notes, as the change log file, " +
+                    $"{Common.ChangeLogFilename}, does not exist.");
+            }
+
+            Logger.Info("Reading {0}...", Common.ChangeLogFilename);
+
+            var releaseBody = new StringBuilder();
+            var changedSection = 0;
+
+            using (var reader = new StreamReader(Common.ChangeLogFilename))
+            {
+                while (!reader.EndOfStream)
+                {
+                    // Here we target the second Heading2 ("##") section.
+                    // The first section will be the "Unreleased" section. The second will be the correct release notes.
+                    var line = reader.ReadLine();
+                    if (line.StartsWith("## "))
+                    {
+                        changedSection += 1;
+
+                        if (changedSection == 3)
+                        {
+                            break;
+                        }
+
+                        continue;
+                    }
+
+                    if (changedSection == 2)
+                    {
+                        releaseBody.AppendLine(line);
+                    }
+                }
+            }
+
+            return releaseBody.ToString();
+        }
         private Release CreateRelease(GitHubClient gitHubClient, Repository gitHubRepo, GitClient gitClient, string repoName)
         {
             var headCommit = gitClient.GetHeadCommit().Sha;
@@ -420,117 +514,6 @@ GDK team";
             }
 
             return gitHubClient.CreateDraftRelease(gitHubRepo, tag, releaseBody, name, headCommit);
-        }
-
-        private void CreatePRFromReleaseToSource(GitHubClient gitHubClient, Repository gitHubRepo, string repoUrl, string repoName, GitClient gitClient)
-        {
-            // Check if a PR has already been opened from release branch into source branch.
-            // If it has, log the PR URL and move on.
-            // This ensures the idempotence of the pipeline.
-            var githubOrg = options.GithubOrgName;
-            var branchFrom = $"{options.CandidateBranch}-cleanup";
-            var branchTo = options.SourceBranch;
-
-            if (!gitHubClient.TryGetPullRequest(gitHubRepo, githubOrg, branchFrom, branchTo, out var pullRequest))
-            {
-                try
-                {
-                    if (gitClient == null)
-                    {
-                        using (gitClient = GitClient.FromRemote(repoUrl))
-                        {
-                            gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
-                            gitClient.ForcePush(branchFrom);
-                        }
-                    }
-                    else
-                    {
-                        gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
-                        gitClient.ForcePush(branchFrom);
-                    }
-                    pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
-                    branchFrom,
-                    branchTo,
-                    string.Format(PullRequestNameTemplate, options.Version, options.ReleaseBranch, options.SourceBranch),
-                    string.Format(pullRequestBody, options.ReleaseBranch, options.SourceBranch));
-                }
-                catch (Octokit.ApiValidationException e)
-                {
-                    // Handles the case where source-branch (default master) and release-branch (default release) are identical, so there is no need to merge source-branch back into release-branch.
-                    if (e.ApiError.Errors.Count > 0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
-                    {
-                        Logger.Info(e.ApiError.Errors[0].Message);
-                        Logger.Info("No PR will be created.");
-                        return;
-                    }
-
-                    throw;
-                }
-            }
-            else
-            {
-                Logger.Info("A PR has already been opened from release branch into source branch: {0}", pullRequest.HtmlUrl);
-            }
-
-            var prAnnotation = string.Format(prAnnotationTemplate,
-                pullRequest.HtmlUrl, repoName, options.ReleaseBranch, options.SourceBranch);
-            BuildkiteAgent.Annotate(AnnotationLevel.Info, "release-into-source-prs", prAnnotation, true);
-
-            Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
-            Logger.Info($"Successfully created PR for merging {options.ReleaseBranch} into {options.SourceBranch}.");
-        }
-
-        private static string GetReleaseNotesFromChangeLog()
-        {
-            if (!File.Exists(ChangeLogFilename))
-            {
-                throw new InvalidOperationException("Could not get draft release notes, as the change log file, " +
-                    $"{ChangeLogFilename}, does not exist.");
-            }
-
-            Logger.Info("Reading {0}...", ChangeLogFilename);
-
-            var releaseBody = new StringBuilder();
-            var changedSection = 0;
-
-            using (var reader = new StreamReader(ChangeLogFilename))
-            {
-                while (!reader.EndOfStream)
-                {
-                    // Here we target the second Heading2 ("##") section.
-                    // The first section will be the "Unreleased" section. The second will be the correct release notes.
-                    var line = reader.ReadLine();
-                    if (line.StartsWith("## "))
-                    {
-                        changedSection += 1;
-
-                        if (changedSection == 3)
-                        {
-                            break;
-                        }
-
-                        continue;
-                    }
-
-                    if (changedSection == 2)
-                    {
-                        releaseBody.AppendLine(line);
-                    }
-                }
-            }
-
-            return releaseBody.ToString();
-        }
-
-        private static void UpdateUnrealEngineVersionFile(List<string> versions, GitClient client)
-        {
-            const string unrealEngineVersionFile = "ci/unreal-engine.version";
-
-            using (new WorkingDirectoryScope(client.RepositoryPath))
-            {
-                File.WriteAllLines(unrealEngineVersionFile, versions);
-                client.StageFile(unrealEngineVersionFile);
-            }
         }
     }
 }

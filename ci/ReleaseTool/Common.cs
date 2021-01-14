@@ -1,5 +1,6 @@
-using NLog;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -9,6 +10,70 @@ namespace ReleaseTool
     internal static class Common
     {
         public const string RepoUrlTemplate = "git@github.com:{0}/{1}.git";
+
+        // Names of the version files that live in the UnrealEngine repository.
+        public const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
+        public const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
+
+        // Plugin file configuration.
+        public const string PluginFileName = "SpatialGDK.uplugin";
+        public const string VersionKey = "Version";
+        public const string VersionNameKey = "VersionName";
+
+        // Changelog file configuration
+        public const string ChangeLogFilename = "CHANGELOG.md";
+        public const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
+
+        // Unreal version configuration
+        public const string UnrealEngineVersionFile = "ci/unreal-engine.version";
+
+        public static bool UpdateVersionFilesWithEngine(GitClient gitClient, string gitRepoName, string versionRaw, string versionSuffix, string engineVersions, NLog.Logger logger)
+        {
+            return UpdateVersionFiles_Internal(gitClient, gitRepoName, versionRaw, logger, versionSuffix, engineVersions);
+        }
+
+        public static bool UpdateVersionFilesButNotEngine(GitClient gitClient, string gitRepoName, string versionRaw, NLog.Logger logger)
+        {
+            return UpdateVersionFiles_Internal(gitClient, gitRepoName, versionRaw, logger);
+        }
+
+        private static bool UpdateVersionFiles_Internal(GitClient gitClient, string gitRepoName,  string versionRaw, NLog.Logger logger, string versionSuffix = "", string engineVersions = "")
+        {
+            string versionDecorated = versionRaw + versionSuffix;
+            switch (gitRepoName)
+            {
+                case "UnrealEngine":
+                {
+                    bool madeChanges = false;
+                    madeChanges |= UpdateVersionFile(gitClient, versionDecorated, UnrealGDKVersionFile, logger);
+                    madeChanges |= UpdateVersionFile(gitClient, versionDecorated, UnrealGDKExampleProjectVersionFile, logger);
+                    return madeChanges;
+                }
+                case "UnrealGDK":
+                {
+                    bool madeChanges = false;
+                    madeChanges |= UpdateChangeLog(gitClient, versionRaw, ChangeLogReleaseHeadingTemplate, ChangeLogFilename);
+                    if (!madeChanges) logger.Info("{0} was already up-to-date.", ChangeLogFilename);
+                    if (engineVersions != "")
+                    {
+                        madeChanges |= UpdatePluginFile(gitClient, versionRaw, PluginFileName, logger);
+
+                        var engineCandidateBranches = engineVersions.Split(" ")
+                            .Select(engineVersion => $"HEAD {engineVersion.Trim()}-{versionDecorated}")
+                            .ToList();
+                        madeChanges |= UpdateUnrealEngineVersionFile(gitClient, engineCandidateBranches, UnrealEngineVersionFile);
+                    }
+                    return madeChanges;
+                }
+                case "UnrealGDKExampleProject":
+                case "UnrealGDKTestGyms":
+                case "UnrealGDKEngineNetTest":
+                case "TestGymBuildKite":
+                    return UpdateVersionFile(gitClient, versionDecorated, UnrealGDKVersionFile, logger);
+                default:
+                    throw new ArgumentException($"Invalid gitRepoName: '{gitRepoName}'");
+            }
+        }
 
         public static void VerifySemanticVersioningFormat(string version)
         {
@@ -65,7 +130,7 @@ namespace ReleaseTool
             return markdownLine.StartsWith(heading);
         }
 
-        public static bool UpdateChangeLog(string changeLogFilePath, string version, GitClient gitClient, string changeLogReleaseHeadingTemplate)
+        public static bool UpdateChangeLog(GitClient gitClient, string version, string changeLogReleaseHeadingTemplate, string changeLogFilePath)
         {
             using (new WorkingDirectoryScope(gitClient.RepositoryPath))
             {
@@ -133,6 +198,81 @@ namespace ReleaseTool
             }
 
             return true;
+        }
+
+        public static bool UpdateUnrealEngineVersionFile(GitClient client, List<string> versions, string unrealEngineVersionFile)
+        {
+            using (new WorkingDirectoryScope(client.RepositoryPath))
+            {
+                if (!File.Exists(unrealEngineVersionFile))
+                {
+                    throw new InvalidOperationException("Could not update the unreal engine file as the file " +
+                        $"'{unrealEngineVersionFile}' does not exist.");
+                }
+                var originalContents = File.ReadAllText(unrealEngineVersionFile);
+                File.WriteAllLines(unrealEngineVersionFile, versions);
+
+                // If nothing has changed, return false, so we can react to it from the caller.
+                if (File.ReadAllText(unrealEngineVersionFile) == originalContents)
+                {
+                    return false;
+                }
+
+                client.StageFile(unrealEngineVersionFile);
+                return true;
+            }
+        }
+
+        public static bool UpdatePluginFile(GitClient gitClient, string version, string pluginFileName, NLog.Logger Logger)
+        {
+            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
+            {
+                var pluginFilePath = Directory.GetFiles(".", pluginFileName, SearchOption.AllDirectories).First();
+                if (File.Exists(pluginFilePath))
+                {
+                    Logger.Info("Updating {0}...", pluginFilePath);
+                    var originalContents = File.ReadAllText(pluginFilePath);
+
+                    JObject jsonObject;
+                    using (var streamReader = new StreamReader(pluginFilePath))
+                    {
+                        jsonObject = JObject.Parse(streamReader.ReadToEnd());
+
+                        if (!jsonObject.ContainsKey(Common.VersionKey) || !jsonObject.ContainsKey(VersionNameKey))
+                        {
+                            throw new InvalidOperationException($"Could not update the plugin file at '{pluginFilePath}', " + $"because at least one of the two expected keys '{Common.VersionKey}' and '{Common.VersionNameKey}' " + $"could not be found.");
+                        }
+
+                        var oldVersion = (string)jsonObject[VersionNameKey];
+                        if (ShouldIncrementPluginVersion(oldVersion, version))
+                        {
+                            jsonObject[VersionKey] = ((int)jsonObject[VersionKey] + 1);
+                        }
+
+                        // Update the version name to the new one
+                        jsonObject[VersionNameKey] = version;
+                    }
+
+                    File.WriteAllText(pluginFilePath, jsonObject.ToString());
+
+                    // If nothing has changed, return false, so we can react to it from the caller.
+                    if (File.ReadAllText(pluginFilePath) == originalContents)
+                    {
+                        return false;
+                    }
+
+                    gitClient.StageFile(pluginFilePath);
+                    return true;
+                }
+
+                throw new Exception($"Failed to update the plugin file. Argument: " + $"pluginFilePath: {pluginFilePath}.");
+            }
+        }
+        public static bool ShouldIncrementPluginVersion(string oldVersionName, string newVersionName)
+        {
+            var oldMajorMinorVersions = oldVersionName.Split('.').Take(2).Select(s => int.Parse(s));
+            var newMajorMinorVersions = newVersionName.Split('.').Take(2).Select(s => int.Parse(s));
+            return Enumerable.Any(Enumerable.Zip(oldMajorMinorVersions, newMajorMinorVersions, (o, n) => o < n));
         }
 
         public static (string, int) ExtractPullRequestInfo(string pullRequestUrl)

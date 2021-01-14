@@ -1,0 +1,750 @@
+diff --git a/ci/ReleaseTool/Common.cs b/ci/ReleaseTool/Common.cs
+index 2bb6be6b7..25de7f2d3 100644
+--- a/ci/ReleaseTool/Common.cs
++++ b/ci/ReleaseTool/Common.cs
+@@ -1,5 +1,6 @@
+-using NLog;
++using Newtonsoft.Json.Linq;
+ using System;
++using System.Collections.Generic;
+ using System.IO;
+ using System.Linq;
+ using System.Text.RegularExpressions;
+@@ -10,6 +11,70 @@ namespace ReleaseTool
+     {
+         public const string RepoUrlTemplate = "git@github.com:{0}/{1}.git";
+ 
++        // Names of the version files that live in the UnrealEngine repository.
++        public const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
++        public const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
++
++        // Plugin file configuration.
++        public const string PluginFileName = "SpatialGDK.uplugin";
++        public const string VersionKey = "Version";
++        public const string VersionNameKey = "VersionName";
++
++        // Changelog file configuration
++        public const string ChangeLogFilename = "CHANGELOG.md";
++        public const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
++
++        // Unreal version configuration
++        public const string UnrealEngineVersionFile = "ci/unreal-engine.version";
++
++        public static bool UpdateVersionFilesWithEngine(GitClient gitClient, string gitRepoName, string versionRaw, string versionSuffix, string engineVersions, NLog.Logger logger)
++        {
++            return UpdateVersionFiles_Internal(gitClient, gitRepoName, versionRaw, logger, versionSuffix, engineVersions);
++        }
++
++        public static bool UpdateVersionFilesButNotEngine(GitClient gitClient, string gitRepoName, string versionRaw, NLog.Logger logger)
++        {
++            return UpdateVersionFiles_Internal(gitClient, gitRepoName, versionRaw, logger);
++        }
++
++        private static bool UpdateVersionFiles_Internal(GitClient gitClient, string gitRepoName,  string versionRaw, NLog.Logger logger, string versionSuffix = "", string engineVersions = "")
++        {
++            string versionDecorated = versionRaw + versionSuffix;
++            switch (gitRepoName)
++            {
++                case "UnrealEngine":
++                {
++                    bool madeChanges = false;
++                    madeChanges |= UpdateVersionFile(gitClient, versionDecorated, UnrealGDKVersionFile, logger);
++                    madeChanges |= UpdateVersionFile(gitClient, versionDecorated, UnrealGDKExampleProjectVersionFile, logger);
++                    return madeChanges;
++                }
++                case "UnrealGDK":
++                {
++                    bool madeChanges = false;
++                    madeChanges |= UpdateChangeLog(gitClient, versionRaw, ChangeLogReleaseHeadingTemplate, ChangeLogFilename);
++                    if (!madeChanges) logger.Info("{0} was already up-to-date.", ChangeLogFilename);
++                    if (engineVersions != "")
++                    {
++                        madeChanges |= UpdatePluginFile(gitClient, versionRaw, PluginFileName, logger);
++
++                        var engineCandidateBranches = engineVersions.Split(" ")
++                            .Select(engineVersion => $"HEAD {engineVersion.Trim()}-{versionDecorated}")
++                            .ToList();
++                        madeChanges |= UpdateUnrealEngineVersionFile(gitClient, engineCandidateBranches, UnrealEngineVersionFile);
++                    }
++                    return madeChanges;
++                }
++                case "UnrealGDKExampleProject":
++                case "UnrealGDKTestGyms":
++                case "UnrealGDKEngineNetTest":
++                case "TestGymBuildKite":
++                    return UpdateVersionFile(gitClient, versionDecorated, UnrealGDKVersionFile, logger);
++                default:
++                    throw new ArgumentException($"Invalid gitRepoName: '{gitRepoName}'");
++            }
++        }
++
+         public static void VerifySemanticVersioningFormat(string version)
+         {
+             var majorMinorPatch = version.Split('.');
+@@ -65,7 +130,7 @@ namespace ReleaseTool
+             return markdownLine.StartsWith(heading);
+         }
+ 
+-        public static bool UpdateChangeLog(string changeLogFilePath, string version, GitClient gitClient, string changeLogReleaseHeadingTemplate)
++        public static bool UpdateChangeLog(GitClient gitClient, string version, string changeLogReleaseHeadingTemplate, string changeLogFilePath)
+         {
+             using (new WorkingDirectoryScope(gitClient.RepositoryPath))
+             {
+@@ -135,6 +200,81 @@ namespace ReleaseTool
+             return true;
+         }
+ 
++        public static bool UpdateUnrealEngineVersionFile(GitClient client, List<string> versions, string unrealEngineVersionFile)
++        {
++            using (new WorkingDirectoryScope(client.RepositoryPath))
++            {
++                if (!File.Exists(unrealEngineVersionFile))
++                {
++                    throw new InvalidOperationException("Could not update the unreal engine file as the file " +
++                        $"'{unrealEngineVersionFile}' does not exist.");
++                }
++                var originalContents = File.ReadAllText(unrealEngineVersionFile);
++                File.WriteAllLines(unrealEngineVersionFile, versions);
++
++                // If nothing has changed, return false, so we can react to it from the caller.
++                if (File.ReadAllText(unrealEngineVersionFile) == originalContents)
++                {
++                    return false;
++                }
++
++                client.StageFile(unrealEngineVersionFile);
++                return true;
++            }
++        }
++
++        public static bool UpdatePluginFile(GitClient gitClient, string version, string pluginFileName, NLog.Logger Logger)
++        {
++            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
++            {
++                var pluginFilePath = Directory.GetFiles(".", pluginFileName, SearchOption.AllDirectories).First();
++                if (File.Exists(pluginFilePath))
++                {
++                    Logger.Info("Updating {0}...", pluginFilePath);
++                    var originalContents = File.ReadAllText(pluginFilePath);
++
++                    JObject jsonObject;
++                    using (var streamReader = new StreamReader(pluginFilePath))
++                    {
++                        jsonObject = JObject.Parse(streamReader.ReadToEnd());
++
++                        if (!jsonObject.ContainsKey(Common.VersionKey) || !jsonObject.ContainsKey(VersionNameKey))
++                        {
++                            throw new InvalidOperationException($"Could not update the plugin file at '{pluginFilePath}', " + $"because at least one of the two expected keys '{Common.VersionKey}' and '{Common.VersionNameKey}' " + $"could not be found.");
++                        }
++
++                        var oldVersion = (string)jsonObject[VersionNameKey];
++                        if (ShouldIncrementPluginVersion(oldVersion, version))
++                        {
++                            jsonObject[VersionKey] = ((int)jsonObject[VersionKey] + 1);
++                        }
++
++                        // Update the version name to the new one
++                        jsonObject[VersionNameKey] = version;
++                    }
++
++                    File.WriteAllText(pluginFilePath, jsonObject.ToString());
++
++                    // If nothing has changed, return false, so we can react to it from the caller.
++                    if (File.ReadAllText(pluginFilePath) == originalContents)
++                    {
++                        return false;
++                    }
++
++                    gitClient.StageFile(pluginFilePath);
++                    return true;
++                }
++
++                throw new Exception($"Failed to update the plugin file. Argument: " + $"pluginFilePath: {pluginFilePath}.");
++            }
++        }
++        public static bool ShouldIncrementPluginVersion(string oldVersionName, string newVersionName)
++        {
++            var oldMajorMinorVersions = oldVersionName.Split('.').Take(2).Select(s => int.Parse(s));
++            var newMajorMinorVersions = newVersionName.Split('.').Take(2).Select(s => int.Parse(s));
++            return Enumerable.Any(Enumerable.Zip(oldMajorMinorVersions, newMajorMinorVersions, (o, n) => o < n));
++        }
++
+         public static (string, int) ExtractPullRequestInfo(string pullRequestUrl)
+         {
+             const string regexString = "github\\.com\\/.*\\/(.*)\\/pull\\/([0-9]*)";
+diff --git a/ci/ReleaseTool/PrepCommand.cs b/ci/ReleaseTool/PrepCommand.cs
+index c73c831fb..8d1a22e7f 100644
+--- a/ci/ReleaseTool/PrepCommand.cs
++++ b/ci/ReleaseTool/PrepCommand.cs
+@@ -1,10 +1,8 @@
+ using System;
+-using System.Collections.Generic;
+ using System.IO;
+ using System.Linq;
+ using CommandLine;
+ using Newtonsoft.Json.Linq;
+-using NLog;
+ 
+ namespace ReleaseTool
+ {
+@@ -22,7 +20,7 @@ namespace ReleaseTool
+ 
+     internal class PrepCommand
+     {
+-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
++        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+ 
+         private const string CandidateCommitMessageTemplate = "Release candidate for version {0}.";
+         private const string PullRequestTemplate = "Release {0}";
+@@ -32,19 +30,6 @@ namespace ReleaseTool
+         private const string branchAnnotationTemplate = "* Successfully created a [release candidate branch]({0}) " +
+             "in the repo `{1}`, and it will evantually become `{2}` (no pull request as the specified release branch did not exist for this repository).\n";
+ 
+-        // Names of the version files that live in the UnrealEngine repository.
+-        private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
+-        private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
+-
+-        // Plugin file configuration.
+-        private const string pluginFileName = "SpatialGDK.uplugin";
+-        private const string VersionKey = "Version";
+-        private const string VersionNameKey = "VersionName";
+-
+-        // Changelog file configuration
+-        private const string ChangeLogFilename = "CHANGELOG.md";
+-        private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
+-
+         [Verb("prep", HelpText = "Prep a release candidate branch.")]
+         public class Options : GitHubClient.IGitHubOptions
+         {
+@@ -103,13 +88,11 @@ namespace ReleaseTool
+         public int Run()
+         {
+             Common.VerifySemanticVersioningFormat(options.Version);
+-
+-            var remoteUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, options.GitRepoName);
+-
++            var gitRepoName = options.GitRepoName;
++            var remoteUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, gitRepoName);
+             try
+             {
+-                var gitHubClient = new GitHubClient(options);
+-                    // 1. Clones the source repo.
++                // 1. Clones the source repo.
+                 using (var gitClient = GitClient.FromRemote(remoteUrl))
+                 {
+                     if (!gitClient.LocalBranchExists($"origin/{options.CandidateBranch}"))
+@@ -118,38 +101,17 @@ namespace ReleaseTool
+                         gitClient.CheckoutRemoteBranch(options.SourceBranch);
+ 
+                         // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
+-                        switch (options.GitRepoName)
++                        if (Common.UpdateVersionFilesWithEngine(gitClient, gitRepoName, options.Version, "-rc", options.EngineVersions, Logger))
+                         {
+-                            case "UnrealGDK":
+-                                UpdateChangeLog(ChangeLogFilename, options, gitClient);
+-                                UpdatePluginFile(pluginFileName, gitClient);
+-
+-                                var engineCandidateBranches = options.EngineVersions.Split(" ")
+-                                    .Select(engineVersion => $"HEAD {engineVersion.Trim()}-{options.Version}-rc")
+-                                    .ToList();
+-                                UpdateUnrealEngineVersionFile(engineCandidateBranches, gitClient);
+-                                break;
+-                            case "UnrealEngine":
+-                                UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
+-                                UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKExampleProjectVersionFile);
+-                                break;
+-                            case "UnrealGDKExampleProject":
+-                                UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
+-                                break;
+-                            case "UnrealGDKTestGyms":
+-                                UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
+-                                break;
+-                            case "UnrealGDKEngineNetTest":
+-                                UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
+-                                break;
+-                            case "TestGymBuildKite":
+-                                UpdateVersionFile(gitClient, $"{options.Version}-rc", UnrealGDKVersionFile);
+-                                break;
++                            // 4. Commit changes and push them to a remote candidate branch.
++                            gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
++                            gitClient.ForcePush(options.CandidateBranch);
++                            Logger.Info($"Updated branch '{options.CandidateBranch}' in preparation for the full release.");
++                        }
++                        else
++                        {
++                            Logger.Info($"Tried to update branch '{options.CandidateBranch}' in preparation for the full release, but it was already up-to-date.");
+                         }
+-
+-                        // 4. Commit changes and push them to a remote candidate branch.
+-                        gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
+-                        gitClient.ForcePush(options.CandidateBranch);
+                     }
+ 
+                     // 5. IF the release branch does not exist, creates it from the source branch and pushes it to the remote.
+@@ -164,6 +126,7 @@ namespace ReleaseTool
+                     }
+ 
+                     // 6. Opens a PR for merging the RC branch into the release branch.
++                    var gitHubClient = new GitHubClient(options);
+                     var gitHubRepo = gitHubClient.GetRepositoryFromUrl(remoteUrl);
+                     var githubOrg = options.GithubOrgName;
+                     var branchFrom = options.CandidateBranch;
+@@ -200,112 +163,49 @@ namespace ReleaseTool
+             return 0;
+         }
+ 
+-        internal static void UpdateChangeLog(string ChangeLogFilePath, Options options, GitClient gitClient)
++        private bool UpdatePluginFile(GitClient gitClient, string pluginFileName)
+         {
+             using (new WorkingDirectoryScope(gitClient.RepositoryPath))
+             {
+-                if (File.Exists(ChangeLogFilePath))
++                var pluginFilePath = Directory.GetFiles(".", pluginFileName, SearchOption.AllDirectories).First();
++                if (File.Exists(pluginFilePath))
+                 {
+-                    Logger.Info("Updating {0}...", ChangeLogFilePath);
+-
+-                    var changelog = File.ReadAllLines(ChangeLogFilePath).ToList();
+-
+-                    // If we already have a changelog entry for this release. Skip this step.
+-                    if (changelog.Any(line => IsMarkdownHeading(line, 2, $"[`{options.Version}`] - ")))
+-                    {
+-                        Logger.Info($"Changelog already has release version {options.Version}. Skipping..", ChangeLogFilePath);
+-                        return;
+-                    }
+-
+-                    // First add the new release heading under the "## Unreleased" one.
+-                    // Assuming that this is the first heading.
+-                    var unreleasedIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2));
+-                    var releaseHeading = string.Format(ChangeLogReleaseHeadingTemplate, options.Version,
+-                        DateTime.Now);
++                    Logger.Info("Updating {0}...", pluginFilePath);
++                    var originalContents = File.ReadAllText(pluginFilePath);
+ 
+-                    changelog.InsertRange(unreleasedIndex + 1, new[]
++                    JObject jsonObject;
++                    using (var streamReader = new StreamReader(pluginFilePath))
+                     {
+-                        string.Empty,
+-                        releaseHeading
+-                    });
++                        jsonObject = JObject.Parse(streamReader.ReadToEnd());
+ 
+-                    File.WriteAllLines(ChangeLogFilePath, changelog);
+-                    gitClient.StageFile(ChangeLogFilePath);
+-                }
+-            }
+-        }
+-
+-        private static void UpdateUnrealEngineVersionFile(List<string> versions, GitClient client)
+-        {
+-            const string unrealEngineVersionFile = "ci/unreal-engine.version";
+-
+-            using (new WorkingDirectoryScope(client.RepositoryPath))
+-            {
+-                File.WriteAllLines(unrealEngineVersionFile, versions);
+-                client.StageFile(unrealEngineVersionFile);
+-            }
+-        }
+-
+-        private static bool IsMarkdownHeading(string markdownLine, int level, string startTitle = null)
+-        {
+-            var heading = $"{new string('#', level)} {startTitle ?? string.Empty}";
+-
+-            return markdownLine.StartsWith(heading);
+-        }
+-
+-        private static void UpdateVersionFile(GitClient gitClient, string fileContents, string relativeFilePath)
+-        {
+-            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
+-            {
+-                Logger.Info("Updating contents of version file '{0}' to '{1}'...", relativeFilePath, fileContents);
+-
+-                if (!File.Exists(relativeFilePath))
+-                {
+-                    throw new InvalidOperationException("Could not update the version file as the file " +
+-                        $"'{relativeFilePath}' does not exist.");
+-                }
+-
+-                File.WriteAllText(relativeFilePath, $"{fileContents}");
+-
+-                gitClient.StageFile(relativeFilePath);
+-            }
+-        }
+-
+-        private void UpdatePluginFile(string pluginFileName, GitClient gitClient)
+-        {
+-            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
+-            {
+-                var pluginFilePath = Directory.GetFiles(".", pluginFileName, SearchOption.AllDirectories).First();
+-
+-                Logger.Info("Updating {0}...", pluginFilePath);
+-
+-                JObject jsonObject;
+-                using (var streamReader = new StreamReader(pluginFilePath))
+-                {
+-                    jsonObject = JObject.Parse(streamReader.ReadToEnd());
++                        if (!jsonObject.ContainsKey(Common.VersionKey) || !jsonObject.ContainsKey(Common.VersionNameKey))
++                        {
++                            throw new InvalidOperationException($"Could not update the plugin file at '{pluginFilePath}', " + $"because at least one of the two expected keys '{Common.VersionKey}' and '{Common.VersionNameKey}' " + $"could not be found.");
++                        }
+ 
+-                    if (jsonObject.ContainsKey(VersionKey) && jsonObject.ContainsKey(VersionNameKey))
+-                    {
+-                        var oldVersion = (string)jsonObject[VersionNameKey];
++                        var oldVersion = (string)jsonObject[Common.VersionNameKey];
+                         if (ShouldIncrementPluginVersion(oldVersion, options.Version))
+                         {
+-                            jsonObject[VersionKey] = ((int)jsonObject[VersionKey] + 1);
++                            jsonObject[Common.VersionKey] = ((int)jsonObject[Common.VersionKey] + 1);
+                         }
+ 
+                         // Update the version name to the new one
+-                        jsonObject[VersionNameKey] = options.Version;
++                        jsonObject[Common.VersionNameKey] = options.Version;
+                     }
+-                    else
++
++                    File.WriteAllText(pluginFilePath, jsonObject.ToString());
++
++                    // If nothing has changed, return false, so we can react to it from the caller.
++                    if (File.ReadAllText(pluginFilePath) == originalContents)
+                     {
+-                        throw new InvalidOperationException($"Could not update the plugin file at '{pluginFilePath}', " +
+-                            $"because at least one of the two expected keys '{VersionKey}' and '{VersionNameKey}' " +
+-                            $"could not be found.");
++                        return false;
+                     }
+-                }
+ 
+-                File.WriteAllText(pluginFilePath, jsonObject.ToString());
++                    gitClient.StageFile(pluginFilePath);
++                    return true;
++                }
+ 
+-                gitClient.StageFile(pluginFilePath);
++                throw new Exception($"Failed to update the plugin file. Argument: " + $"pluginFilePath: {pluginFilePath}.");
+             }
+         }
+ 
+diff --git a/ci/ReleaseTool/PrepFullReleaseCommand.cs b/ci/ReleaseTool/PrepFullReleaseCommand.cs
+index 433fff4af..77d7b9752 100644
+--- a/ci/ReleaseTool/PrepFullReleaseCommand.cs
++++ b/ci/ReleaseTool/PrepFullReleaseCommand.cs
+@@ -22,13 +22,7 @@ namespace ReleaseTool
+         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+ 
+         // Changelog file configuration
+-        private const string ChangeLogFilename = "CHANGELOG.md";
+         private const string CandidateCommitMessageTemplate = "Prepare GDK for Unreal release {0}.";
+-        private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
+-
+-        // Names of the version files that live in the UnrealEngine repository.
+-        private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
+-        private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
+ 
+         [Verb("prepfullrelease", HelpText = "Prepare a release candidate branch for the full release.")]
+         public class Options : GitHubClient.IGitHubOptions
+@@ -76,35 +70,8 @@ namespace ReleaseTool
+                     // 2. Checks out the candidate branch, which defaults to 4.xx-SpatialOSUnrealGDK-x.y.z-rc in UnrealEngine and x.y.z-rc in all other repos.
+                     gitClient.CheckoutRemoteBranch(options.CandidateBranch);
+ 
+-                    bool madeChanges = false;
+-
+                     // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
+-                    switch (gitRepoName)
+-                    {
+-                        case "UnrealEngine":
+-                            madeChanges |= Common.UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile, Logger);
+-                            madeChanges |= Common.UpdateVersionFile(gitClient, options.Version, UnrealGDKExampleProjectVersionFile, Logger);
+-                            break;
+-                        case "UnrealGDK":
+-                            Logger.Info("Updating {0}...", ChangeLogFilename);
+-                            madeChanges |= Common.UpdateChangeLog(ChangeLogFilename, options.Version, gitClient, ChangeLogReleaseHeadingTemplate);
+-                            if (!madeChanges) Logger.Info("{0} was already up-to-date.", ChangeLogFilename);
+-                            break;
+-                        case "UnrealGDKExampleProject":
+-                            madeChanges |= Common.UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile, Logger);
+-                            break;
+-                        case "UnrealGDKTestGyms":
+-                            madeChanges |= Common.UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile, Logger);
+-                            break;
+-                        case "UnrealGDKEngineNetTest":
+-                            madeChanges |= Common.UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile, Logger);
+-                            break;
+-                        case "TestGymBuildKite":
+-                            madeChanges |= Common.UpdateVersionFile(gitClient, options.Version, UnrealGDKVersionFile, Logger);
+-                            break;
+-                    }
+-
+-                    if (madeChanges)
++                    if (Common.UpdateVersionFilesButNotEngine(gitClient, gitRepoName, options.Version, Logger))
+                     {
+                         // 4. Commit changes and push them to a remote candidate branch.
+                         gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
+diff --git a/ci/ReleaseTool/ReleaseCommand.cs b/ci/ReleaseTool/ReleaseCommand.cs
+index 847b7c28f..f8c3b03d6 100644
+--- a/ci/ReleaseTool/ReleaseCommand.cs
++++ b/ci/ReleaseTool/ReleaseCommand.cs
+@@ -1,9 +1,7 @@
+ using System;
+-using System.Collections.Generic;
+ using System.IO;
+ using System.Linq;
+ using System.Text;
+-using System.Text.RegularExpressions;
+ using System.Threading;
+ using CommandLine;
+ using Octokit;
+@@ -30,10 +28,7 @@ namespace ReleaseTool
+             "in the repo `{1}` from `{2}` into `{3}`. " +
+             "Your human labour is now required to merge these PRs.\n";
+ 
+-        // Changelog file configuration
+-        private const string ChangeLogFilename = "CHANGELOG.md";
+         private const string CandidateCommitMessageTemplate = "Update branch for GDK for Unreal {0}.";
+-        private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
+ 
+         [Verb("release", HelpText = "Merge a release branch and create a github release draft.")]
+         public class Options : GitHubClient.IGitHubOptions
+@@ -151,7 +146,7 @@ namespace ReleaseTool
+                         gitClient.CheckoutRemoteBranch(options.CandidateBranch);
+ 
+                         // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
+-                        Common.UpdateChangeLog(ChangeLogFilename, options.Version, gitClient, ChangeLogReleaseHeadingTemplate);
++                        Common.UpdateChangeLog(gitClient, options.Version, Common.ChangeLogReleaseHeadingTemplate, Common.ChangeLogFilename);
+ 
+                         var releaseHashes = options.EngineVersions.Replace("\"", "").Split(" ")
+                             .Select(version => $"{version.Trim()}")
+@@ -159,7 +154,7 @@ namespace ReleaseTool
+                             .Select(hash => $"{hash}")
+                             .ToList();
+ 
+-                        UpdateUnrealEngineVersionFile(releaseHashes, gitClient);
++                        Common.UpdateUnrealEngineVersionFile(gitClient, releaseHashes, Common.UnrealEngineVersionFile);
+ 
+                         // 4. Commit changes and push them to a remote candidate branch.
+                         gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
+@@ -263,6 +258,105 @@ namespace ReleaseTool
+             CreatePRFromReleaseToSource(gitHubClient, gitHubRepo, repoUrl, gitRepoName, gitClient);
+         }
+ 
++        private void CreatePRFromReleaseToSource(GitHubClient gitHubClient, Repository gitHubRepo, string repoUrl, string repoName, GitClient gitClient)
++        {
++            // Check if a PR has already been opened from release branch into source branch.
++            // If it has, log the PR URL and move on.
++            // This ensures the idempotence of the pipeline.
++            var githubOrg = options.GithubOrgName;
++            var branchFrom = $"{options.CandidateBranch}-cleanup";
++            var branchTo = options.SourceBranch;
++
++            if (!gitHubClient.TryGetPullRequest(gitHubRepo, githubOrg, branchFrom, branchTo, out var pullRequest))
++            {
++                try
++                {
++                    if (gitClient == null)
++                    {
++                        using (gitClient = GitClient.FromRemote(repoUrl))
++                        {
++                            gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
++                            gitClient.ForcePush(branchFrom);
++                        }
++                    }
++                    else
++                    {
++                        gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
++                        gitClient.ForcePush(branchFrom);
++                    }
++                    pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
++                    branchFrom,
++                    branchTo,
++                    string.Format(PullRequestNameTemplate, options.Version, options.ReleaseBranch, options.SourceBranch),
++                    string.Format(pullRequestBody, options.ReleaseBranch, options.SourceBranch));
++                }
++                catch (Octokit.ApiValidationException e)
++                {
++                    // Handles the case where source-branch (default master) and release-branch (default release) are identical, so there is no need to merge source-branch back into release-branch.
++                    if (e.ApiError.Errors.Count > 0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
++                    {
++                        Logger.Info(e.ApiError.Errors[0].Message);
++                        Logger.Info("No PR will be created.");
++                        return;
++                    }
++
++                    throw;
++                }
++            }
++            else
++            {
++                Logger.Info("A PR has already been opened from release branch into source branch: {0}", pullRequest.HtmlUrl);
++            }
++
++            var prAnnotation = string.Format(prAnnotationTemplate,
++                pullRequest.HtmlUrl, repoName, options.ReleaseBranch, options.SourceBranch);
++            BuildkiteAgent.Annotate(AnnotationLevel.Info, "release-into-source-prs", prAnnotation, true);
++
++            Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
++            Logger.Info($"Successfully created PR for merging {options.ReleaseBranch} into {options.SourceBranch}.");
++        }
++
++        private static string GetReleaseNotesFromChangeLog()
++        {
++            if (!File.Exists(Common.ChangeLogFilename))
++            {
++                throw new InvalidOperationException("Could not get draft release notes, as the change log file, " +
++                    $"{Common.ChangeLogFilename}, does not exist.");
++            }
++
++            Logger.Info("Reading {0}...", Common.ChangeLogFilename);
++
++            var releaseBody = new StringBuilder();
++            var changedSection = 0;
++
++            using (var reader = new StreamReader(Common.ChangeLogFilename))
++            {
++                while (!reader.EndOfStream)
++                {
++                    // Here we target the second Heading2 ("##") section.
++                    // The first section will be the "Unreleased" section. The second will be the correct release notes.
++                    var line = reader.ReadLine();
++                    if (line.StartsWith("## "))
++                    {
++                        changedSection += 1;
++
++                        if (changedSection == 3)
++                        {
++                            break;
++                        }
++
++                        continue;
++                    }
++
++                    if (changedSection == 2)
++                    {
++                        releaseBody.AppendLine(line);
++                    }
++                }
++            }
++
++            return releaseBody.ToString();
++        }
+         private Release CreateRelease(GitHubClient gitHubClient, Repository gitHubRepo, GitClient gitClient, string repoName)
+         {
+             var headCommit = gitClient.GetHeadCommit().Sha;
+@@ -421,116 +515,5 @@ GDK team";
+ 
+             return gitHubClient.CreateDraftRelease(gitHubRepo, tag, releaseBody, name, headCommit);
+         }
+-
+-        private void CreatePRFromReleaseToSource(GitHubClient gitHubClient, Repository gitHubRepo, string repoUrl, string repoName, GitClient gitClient)
+-        {
+-            // Check if a PR has already been opened from release branch into source branch.
+-            // If it has, log the PR URL and move on.
+-            // This ensures the idempotence of the pipeline.
+-            var githubOrg = options.GithubOrgName;
+-            var branchFrom = $"{options.CandidateBranch}-cleanup";
+-            var branchTo = options.SourceBranch;
+-
+-            if (!gitHubClient.TryGetPullRequest(gitHubRepo, githubOrg, branchFrom, branchTo, out var pullRequest))
+-            {
+-                try
+-                {
+-                    if (gitClient == null)
+-                    {
+-                        using (gitClient = GitClient.FromRemote(repoUrl))
+-                        {
+-                            gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
+-                            gitClient.ForcePush(branchFrom);
+-                        }
+-                    }
+-                    else
+-                    {
+-                        gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
+-                        gitClient.ForcePush(branchFrom);
+-                    }
+-                    pullRequest = gitHubClient.CreatePullRequest(gitHubRepo,
+-                    branchFrom,
+-                    branchTo,
+-                    string.Format(PullRequestNameTemplate, options.Version, options.ReleaseBranch, options.SourceBranch),
+-                    string.Format(pullRequestBody, options.ReleaseBranch, options.SourceBranch));
+-                }
+-                catch (Octokit.ApiValidationException e)
+-                {
+-                    // Handles the case where source-branch (default master) and release-branch (default release) are identical, so there is no need to merge source-branch back into release-branch.
+-                    if (e.ApiError.Errors.Count > 0 && e.ApiError.Errors[0].Message.Contains("No commits between"))
+-                    {
+-                        Logger.Info(e.ApiError.Errors[0].Message);
+-                        Logger.Info("No PR will be created.");
+-                        return;
+-                    }
+-
+-                    throw;
+-                }
+-            }
+-            else
+-            {
+-                Logger.Info("A PR has already been opened from release branch into source branch: {0}", pullRequest.HtmlUrl);
+-            }
+-
+-            var prAnnotation = string.Format(prAnnotationTemplate,
+-                pullRequest.HtmlUrl, repoName, options.ReleaseBranch, options.SourceBranch);
+-            BuildkiteAgent.Annotate(AnnotationLevel.Info, "release-into-source-prs", prAnnotation, true);
+-
+-            Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
+-            Logger.Info($"Successfully created PR for merging {options.ReleaseBranch} into {options.SourceBranch}.");
+-        }
+-
+-        private static string GetReleaseNotesFromChangeLog()
+-        {
+-            if (!File.Exists(ChangeLogFilename))
+-            {
+-                throw new InvalidOperationException("Could not get draft release notes, as the change log file, " +
+-                    $"{ChangeLogFilename}, does not exist.");
+-            }
+-
+-            Logger.Info("Reading {0}...", ChangeLogFilename);
+-
+-            var releaseBody = new StringBuilder();
+-            var changedSection = 0;
+-
+-            using (var reader = new StreamReader(ChangeLogFilename))
+-            {
+-                while (!reader.EndOfStream)
+-                {
+-                    // Here we target the second Heading2 ("##") section.
+-                    // The first section will be the "Unreleased" section. The second will be the correct release notes.
+-                    var line = reader.ReadLine();
+-                    if (line.StartsWith("## "))
+-                    {
+-                        changedSection += 1;
+-
+-                        if (changedSection == 3)
+-                        {
+-                            break;
+-                        }
+-
+-                        continue;
+-                    }
+-
+-                    if (changedSection == 2)
+-                    {
+-                        releaseBody.AppendLine(line);
+-                    }
+-                }
+-            }
+-
+-            return releaseBody.ToString();
+-        }
+-
+-        private static void UpdateUnrealEngineVersionFile(List<string> versions, GitClient client)
+-        {
+-            const string unrealEngineVersionFile = "ci/unreal-engine.version";
+-
+-            using (new WorkingDirectoryScope(client.RepositoryPath))
+-            {
+-                File.WriteAllLines(unrealEngineVersionFile, versions);
+-                client.StageFile(unrealEngineVersionFile);
+-            }
+-        }
+     }
+ }
