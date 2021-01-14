@@ -10,14 +10,14 @@
 
 namespace
 {
-	float GetTargetDistanceOnLine(const FVector& From, const FVector& Target, const FVector& Location)
-	{
-		FVector Norm = (Target - From);
-		Norm.Normalize();
-		FVector RelativePosition = Location - Target;
-		return FVector::DotProduct(Norm, RelativePosition);
-	}
+float GetTargetDistanceOnLine(const FVector& From, const FVector& Target, const FVector& Location)
+{
+	FVector Norm = (Target - From);
+	Norm.Normalize();
+	FVector RelativePosition = Location - Target;
+	return FVector::DotProduct(Norm, RelativePosition);
 }
+} // namespace
 
 /**
  * This test moves a character backward and forward repeatedly between two workers, adding actors. Based on the SpatialTestCharacterMovement
@@ -33,7 +33,6 @@ ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
 	Author = "Victoria";
 	Description = TEXT("Test Character Migration");
 	TimeLimit = 300;
-	
 }
 
 void ASpatialTestCharacterMigration::PrepareTest()
@@ -78,8 +77,9 @@ void ASpatialTestCharacterMigration::PrepareTest()
 		ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
 		PlayerCharacter->AddMovementInput(FVector(1, 0, 0), 10.0f, true);
-		
-		bCharacterReachedDestination = GetTargetDistanceOnLine(Origin, Destination, PlayerCharacter->GetActorLocation()) > -20.0f; // 20cm overlap
+
+		bCharacterReachedDestination =
+			GetTargetDistanceOnLine(Origin, Destination, PlayerCharacter->GetActorLocation()) > -20.0f; // 20cm overlap
 
 		if (bCharacterReachedDestination)
 		{
@@ -98,7 +98,8 @@ void ASpatialTestCharacterMigration::PrepareTest()
 
 		PlayerCharacter->AddMovementInput(FVector(-1, 0, 0), 10.0f, true);
 
-		bCharacterReachedOrigin = GetTargetDistanceOnLine(Destination, Origin, PlayerCharacter->GetActorLocation()) > -20.0f;; // 20cm overlap
+		bCharacterReachedOrigin = GetTargetDistanceOnLine(Destination, Origin, PlayerCharacter->GetActorLocation()) > -20.0f;
+		; // 20cm overlap
 
 		if (bCharacterReachedOrigin)
 		{
