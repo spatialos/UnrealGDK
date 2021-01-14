@@ -101,7 +101,7 @@ namespace ReleaseTool
                         gitClient.CheckoutRemoteBranch(options.SourceBranch);
 
                         // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
-                        if (Common.UpdateVersionFilesWithEngine(gitClient, gitRepoName, options.Version, "-rc", options.EngineVersions, Logger))
+                        if (Common.UpdateVersionFilesWithEngine(gitClient, gitRepoName, options.Version, options.EngineVersions, Logger, "-rc"))
                         {
                             // 4. Commit changes and push them to a remote candidate branch.
                             gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));

@@ -27,14 +27,14 @@ namespace ReleaseTool
         // Unreal version configuration
         public const string UnrealEngineVersionFile = "ci/unreal-engine.version";
 
-        public static bool UpdateVersionFilesWithEngine(GitClient gitClient, string gitRepoName, string versionRaw, string versionSuffix, string engineVersions, NLog.Logger logger)
+        public static bool UpdateVersionFilesWithEngine(GitClient gitClient, string gitRepoName, string versionRaw, string engineVersions, NLog.Logger logger, string versionSuffix = "")
         {
             return UpdateVersionFiles_Internal(gitClient, gitRepoName, versionRaw, logger, versionSuffix, engineVersions);
         }
 
-        public static bool UpdateVersionFilesButNotEngine(GitClient gitClient, string gitRepoName, string versionRaw, NLog.Logger logger)
+        public static bool UpdateVersionFilesButNotEngine(GitClient gitClient, string gitRepoName, string versionRaw, NLog.Logger logger, string versionSuffix = "")
         {
-            return UpdateVersionFiles_Internal(gitClient, gitRepoName, versionRaw, logger);
+            return UpdateVersionFiles_Internal(gitClient, gitRepoName, versionRaw, logger, versionSuffix);
         }
 
         private static bool UpdateVersionFiles_Internal(GitClient gitClient, string gitRepoName,  string versionRaw, NLog.Logger logger, string versionSuffix = "", string engineVersions = "")
