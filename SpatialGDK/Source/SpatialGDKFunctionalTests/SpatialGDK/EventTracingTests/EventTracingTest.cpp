@@ -107,7 +107,7 @@ void AEventTracingTest::GatherData()
 
 	if (Files.Num() < 2)
 	{
-		UE_LOG(LogEventTracingTest, Error, TEXT("Could not find all require event tracing files"));
+		UE_LOG(LogEventTracingTest, Error, TEXT("Could not find all required event tracing files"));
 		return;
 	}
 
@@ -152,7 +152,7 @@ void AEventTracingTest::GatherData()
 
 	if (!bFoundClient || !bFoundWorker)
 	{
-		UE_LOG(LogEventTracingTest, Error, TEXT("Could not find all require event tracing files"));
+		UE_LOG(LogEventTracingTest, Error, TEXT("Could not find all required event tracing files"));
 		return;
 	}
 
