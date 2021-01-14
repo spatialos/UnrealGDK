@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -31,6 +31,7 @@ struct ClientServerEndpoints
 
 class SPATIALGDK_API ClientServerRPCService
 {
+	using EntityRPCTypePair = TPair<Worker_EntityId, ERPCType>;
 public:
 	ClientServerRPCService(const ExtractRPCDelegate InExtractRPCCallback, const FSubView& InSubView, USpatialNetDriver* InNetDriver,
 						   FRPCStore& InRPCStore);
@@ -85,6 +86,7 @@ private:
 	TMap<EntityRPCType, uint64> LastAckedRPCIds;
 	TMap<EntityRPCType, uint64> LastSeenRPCIds;
 	TMap<EntityRPCType, TArray<PendingRPCPayload>> OverflowedRPCs;
+	TArray<EntityRPCTypePair> PotentiallyPendingRPCsOnEntity;
 };
 
 } // namespace SpatialGDK

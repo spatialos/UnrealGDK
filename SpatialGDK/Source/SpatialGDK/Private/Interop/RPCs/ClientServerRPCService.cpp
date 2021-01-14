@@ -59,6 +59,12 @@ void ClientServerRPCService::AdvanceView()
 
 void ClientServerRPCService::ProcessChanges()
 {
+	for (const EntityRPCTypePair& Item : PotentiallyPendingRPCsOnEntity)
+	{
+		ExtractRPCsForType(Item.Key, Item.Value);
+	}
+	PotentiallyPendingRPCsOnEntity.SetNum(0);
+
 	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
 	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
 	{
@@ -219,6 +225,12 @@ void ClientServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId Ent
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerUnreliable), Endpoint.UnreliableRPCAck);
 		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint.ReliableRPCBuffer.LastSentRPCId);
 		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientUnreliable), Endpoint.UnreliableRPCBuffer.LastSentRPCId);
+
+		// Ensure that any RPCs pending in this entity are executed.
+		for (ERPCType Type : { ERPCType::ServerReliable, ERPCType::ServerUnreliable })
+		{
+			PotentiallyPendingRPCsOnEntity.Push(EntityRPCTypePair{ EntityId, Type });
+		}
 		break;
 	}
 	default:
