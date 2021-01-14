@@ -102,7 +102,7 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FStrin
 	return ParsedNamesAndIds;
 }
 
-FString ComponentTypeToString(int Type)
+FString ComponentTypeToString(ESchemaComponentType Type)
 {
 	switch (Type)
 	{
@@ -189,17 +189,17 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 			}
 
 			TArray<int32> SavedIds;
-			TMap<int32, TPair<int, int> > SavedIdType;
+			TMap<int32, TPair<int, ESchemaComponentType> > SavedIdType;
 			const uint32 DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
 			for (uint32 i = 0; i < DynamicComponentsPerClass; ++i)
 			{
-				for (int j = SCHEMA_Data; j < SCHEMA_Count; ++j)
+				for (int j = SCHEMA_Begin; j < SCHEMA_Count; ++j)
 				{
 					int32 Id = SubobjectSchemaData->DynamicSubobjectComponents[i].SchemaComponents[j];
 					if (Id != 0)
 					{
 						SavedIds.Push(Id);
-						SavedIdType.Emplace(Id, TPair<int, int>(i, j));
+						SavedIdType.Emplace(Id, TPair<int, ESchemaComponentType>(i, (ESchemaComponentType)j));
 					}
 				}
 			}
@@ -218,7 +218,7 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 					return false;
 				}
 
-				const TPair<int, int>& IdType = SavedIdType[SavedIds[i]];
+				const TPair<int, ESchemaComponentType>& IdType = SavedIdType[SavedIds[i]];
 				FString ExpectedComponentName = SubobjectSchemaData->GeneratedSchemaName;
 				ExpectedComponentName += ComponentTypeToString(IdType.Value);
 				ExpectedComponentName += TEXT("Dynamic");
