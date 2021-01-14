@@ -34,6 +34,7 @@ APredictedGameplayCuesTest::APredictedGameplayCuesTest()
 	Author = TEXT("Tilman Schmidt");
 	Description =
 		TEXT("Tests that gameplay cue events correctly trigger on all clients when triggered by a predicted gameplay effect application.");
+	SetNumRequiredClients(2);
 	DuplicateActivationCheckWaitTime = 2.0f;
 
 	TestPawn = nullptr;
@@ -116,10 +117,8 @@ void APredictedGameplayCuesTest::PrepareTest()
 			RegisterAutoDestroyActor(TestPawn);
 		},
 		[this](float DeltaTime) {
-			if (TestPawn->IsActorReady())
-			{
-				FinishStep();
-			}
+			RequireTrue(TestPawn->IsActorReady(), TEXT("Spawn Actor: Expect TestPawn to be ready."));
+			FinishStep();
 		});
 
 	AddStep(TEXT("Wait to see actor"), FWorkerDefinition::AllWorkers, nullptr, nullptr, [this](float DeltaTime) {
