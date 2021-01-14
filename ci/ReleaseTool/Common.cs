@@ -3,29 +3,30 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ReleaseTool
 {
     internal static class Common
     {
-        public const string RepoUrlTemplate = "git@github.com:{0}/{1}.git";
+        private const string RepoUrlTemplate = "git@github.com:{0}/{1}.git";
 
         // Names of the version files that live in the UnrealEngine repository.
-        public const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
-        public const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
+        private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
+        private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
 
         // Plugin file configuration.
-        public const string PluginFileName = "SpatialGDK.uplugin";
-        public const string VersionKey = "Version";
-        public const string VersionNameKey = "VersionName";
+        private const string PluginFileName = "SpatialGDK.uplugin";
+        private const string VersionKey = "Version";
+        private const string VersionNameKey = "VersionName";
 
         // Changelog file configuration
-        public const string ChangeLogFilename = "CHANGELOG.md";
-        public const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
+        private const string ChangeLogFilename = "CHANGELOG.md";
+        private const string ChangeLogReleaseHeadingTemplate = "## [`{0}`] - {1:yyyy-MM-dd}";
 
         // Unreal version configuration
-        public const string UnrealEngineVersionFile = "ci/unreal-engine.version";
+        private const string UnrealEngineVersionFile = "ci/unreal-engine.version";
 
         public static bool UpdateVersionFilesWithEngine(GitClient gitClient, string gitRepoName, string versionRaw, string engineVersions, NLog.Logger logger, string versionSuffix = "")
         {
@@ -52,7 +53,7 @@ namespace ReleaseTool
                 case "UnrealGDK":
                 {
                     bool madeChanges = false;
-                    madeChanges |= UpdateChangeLog(gitClient, versionRaw, ChangeLogReleaseHeadingTemplate, ChangeLogFilename);
+                    madeChanges |= UpdateChangeLog(gitClient, versionRaw);
                     if (!madeChanges) logger.Info("{0} was already up-to-date.", ChangeLogFilename);
                     if (engineVersions != "")
                     {
@@ -61,7 +62,7 @@ namespace ReleaseTool
                         var engineCandidateBranches = engineVersions.Split(" ")
                             .Select(engineVersion => $"HEAD {engineVersion.Trim()}-{versionDecorated}")
                             .ToList();
-                        madeChanges |= UpdateUnrealEngineVersionFile(gitClient, engineCandidateBranches, UnrealEngineVersionFile);
+                        madeChanges |= UpdateUnrealEngineVersionFile(gitClient, engineCandidateBranches);
                     }
                     return madeChanges;
                 }
@@ -130,15 +131,15 @@ namespace ReleaseTool
             return markdownLine.StartsWith(heading);
         }
 
-        public static bool UpdateChangeLog(GitClient gitClient, string version, string changeLogReleaseHeadingTemplate, string changeLogFilePath)
+        public static bool UpdateChangeLog(GitClient gitClient, string version)
         {
             using (new WorkingDirectoryScope(gitClient.RepositoryPath))
             {
-                if (File.Exists(changeLogFilePath))
+                if (File.Exists(ChangeLogFilename))
                 {
-                    var originalContents = File.ReadAllText(changeLogFilePath);
-                    var changelog = File.ReadAllLines(changeLogFilePath).ToList();
-                    var releaseHeading = string.Format(changeLogReleaseHeadingTemplate, version,
+                    var originalContents = File.ReadAllText(ChangeLogFilename);
+                    var changelog = File.ReadAllLines(ChangeLogFilename).ToList();
+                    var releaseHeading = string.Format(ChangeLogReleaseHeadingTemplate, version,
                         DateTime.Now);
                     var releaseIndex = changelog.FindIndex(line => IsMarkdownHeading(line, 2, $"[`{version}`] - "));
                     // If we already have a changelog entry for this release, replace it.
@@ -157,21 +158,21 @@ namespace ReleaseTool
                             releaseHeading
                         });
                     }
-                    File.WriteAllLines(changeLogFilePath, changelog);
+                    File.WriteAllLines(ChangeLogFilename, changelog);
 
                     // If nothing has changed, return false, so we can react to it from the caller.
-                    if (File.ReadAllText(changeLogFilePath) == originalContents)
+                    if (File.ReadAllText(ChangeLogFilename) == originalContents)
                     {
                         return false;
                     }
 
-                    gitClient.StageFile(changeLogFilePath);
+                    gitClient.StageFile(ChangeLogFilename);
                     return true;
                 }
             }
 
             throw new Exception($"Failed to update the changelog. Arguments: " +
-                $"ChangeLogFilePath: {changeLogFilePath}, Version: {version}, Heading template: {changeLogReleaseHeadingTemplate}.");
+                $"ChangeLogFilePath: {ChangeLogFilename}, Version: {version}, Heading template: {ChangeLogReleaseHeadingTemplate}.");
         }
 
         public static bool UpdateVersionFile(GitClient gitClient, string fileContents, string versionFileRelativePath, NLog.Logger logger)
@@ -200,25 +201,25 @@ namespace ReleaseTool
             return true;
         }
 
-        public static bool UpdateUnrealEngineVersionFile(GitClient client, List<string> versions, string unrealEngineVersionFile)
+        public static bool UpdateUnrealEngineVersionFile(GitClient client, List<string> versions)
         {
             using (new WorkingDirectoryScope(client.RepositoryPath))
             {
-                if (!File.Exists(unrealEngineVersionFile))
+                if (!File.Exists(UnrealEngineVersionFile))
                 {
                     throw new InvalidOperationException("Could not update the unreal engine file as the file " +
-                        $"'{unrealEngineVersionFile}' does not exist.");
+                        $"'{UnrealEngineVersionFile}' does not exist.");
                 }
-                var originalContents = File.ReadAllText(unrealEngineVersionFile);
-                File.WriteAllLines(unrealEngineVersionFile, versions);
+                var originalContents = File.ReadAllText(UnrealEngineVersionFile);
+                File.WriteAllLines(UnrealEngineVersionFile, versions);
 
                 // If nothing has changed, return false, so we can react to it from the caller.
-                if (File.ReadAllText(unrealEngineVersionFile) == originalContents)
+                if (File.ReadAllText(UnrealEngineVersionFile) == originalContents)
                 {
                     return false;
                 }
 
-                client.StageFile(unrealEngineVersionFile);
+                client.StageFile(UnrealEngineVersionFile);
                 return true;
             }
         }
@@ -301,6 +302,53 @@ namespace ReleaseTool
             }
 
             return (repoName, pullRequestId);
+        }
+
+        public static string GetReleaseNotesFromChangeLog(NLog.Logger Logger)
+        {
+            if (!File.Exists(ChangeLogFilename))
+            {
+                throw new InvalidOperationException("Could not get draft release notes, as the change log file, " +
+                    $"{ChangeLogFilename}, does not exist.");
+            }
+
+            Logger.Info("Reading {0}...", ChangeLogFilename);
+
+            var releaseBody = new StringBuilder();
+            var changedSection = 0;
+
+            using (var reader = new StreamReader(ChangeLogFilename))
+            {
+                while (!reader.EndOfStream)
+                {
+                    // Here we target the second Heading2 ("##") section.
+                    // The first section will be the "Unreleased" section. The second will be the correct release notes.
+                    var line = reader.ReadLine();
+                    if (line.StartsWith("## "))
+                    {
+                        changedSection += 1;
+
+                        if (changedSection == 3)
+                        {
+                            break;
+                        }
+
+                        continue;
+                    }
+
+                    if (changedSection == 2)
+                    {
+                        releaseBody.AppendLine(line);
+                    }
+                }
+            }
+
+            return releaseBody.ToString();
+        }
+
+        public static string makeRepoUrl(string githubOrgName, string gitRepoName)
+        {
+            return string.Format(RepoUrlTemplate, githubOrgName, gitRepoName);
         }
     }
 }

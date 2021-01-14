@@ -82,10 +82,10 @@ namespace ReleaseTool
         {
             Common.VerifySemanticVersioningFormat(options.Version);
             var gitRepoName = options.GitRepoName;
-            var gitHubClient = new GitHubClient(options);
-            var repoUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, gitRepoName);
-            var gitHubRepo = gitHubClient.GetRepositoryFromUrl(repoUrl);
+            var repoUrl = Common.makeRepoUrl(options.GithubOrgName, gitRepoName);
 
+            var gitHubClient = new GitHubClient(options);
+            var gitHubRepo = gitHubClient.GetRepositoryFromUrl(repoUrl);
             if (string.IsNullOrWhiteSpace(options.PullRequestUrl.Trim().Replace("\"","")))
             {
                 Logger.Info("The passed PullRequestUrl was empty or missing. Trying to release without merging a PR.");
@@ -133,7 +133,7 @@ namespace ReleaseTool
                 return 0;
             }
 
-            var remoteUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, repoName);
+            var remoteUrl = Common.makeRepoUrl(options.GithubOrgName, repoName);
             try
             {
                 // Only do something for the UnrealGDK, since the other repos should have been prepped by the PrepFullReleaseCommand.
@@ -146,7 +146,7 @@ namespace ReleaseTool
                         gitClient.CheckoutRemoteBranch(options.CandidateBranch);
 
                         // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
-                        Common.UpdateChangeLog(gitClient, options.Version, Common.ChangeLogReleaseHeadingTemplate, Common.ChangeLogFilename);
+                        Common.UpdateChangeLog(gitClient, options.Version);
 
                         var releaseHashes = options.EngineVersions.Replace("\"", "").Split(" ")
                             .Select(version => $"{version.Trim()}")
@@ -154,7 +154,7 @@ namespace ReleaseTool
                             .Select(hash => $"{hash}")
                             .ToList();
 
-                        Common.UpdateUnrealEngineVersionFile(gitClient, releaseHashes, Common.UnrealEngineVersionFile);
+                        Common.UpdateUnrealEngineVersionFile(gitClient, releaseHashes);
 
                         // 4. Commit changes and push them to a remote candidate branch.
                         gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
@@ -262,7 +262,7 @@ namespace ReleaseTool
         {
             // Check if a PR has already been opened from release branch into source branch.
             // If it has, log the PR URL and move on.
-            // This ensures the idempotence of the pipeline.
+            // This ensures the impotency of the pipeline.
             var githubOrg = options.GithubOrgName;
             var branchFrom = $"{options.CandidateBranch}-cleanup";
             var branchTo = options.SourceBranch;
@@ -316,47 +316,6 @@ namespace ReleaseTool
             Logger.Info($"Successfully created PR for merging {options.ReleaseBranch} into {options.SourceBranch}.");
         }
 
-        private static string GetReleaseNotesFromChangeLog()
-        {
-            if (!File.Exists(Common.ChangeLogFilename))
-            {
-                throw new InvalidOperationException("Could not get draft release notes, as the change log file, " +
-                    $"{Common.ChangeLogFilename}, does not exist.");
-            }
-
-            Logger.Info("Reading {0}...", Common.ChangeLogFilename);
-
-            var releaseBody = new StringBuilder();
-            var changedSection = 0;
-
-            using (var reader = new StreamReader(Common.ChangeLogFilename))
-            {
-                while (!reader.EndOfStream)
-                {
-                    // Here we target the second Heading2 ("##") section.
-                    // The first section will be the "Unreleased" section. The second will be the correct release notes.
-                    var line = reader.ReadLine();
-                    if (line.StartsWith("## "))
-                    {
-                        changedSection += 1;
-
-                        if (changedSection == 3)
-                        {
-                            break;
-                        }
-
-                        continue;
-                    }
-
-                    if (changedSection == 2)
-                    {
-                        releaseBody.AppendLine(line);
-                    }
-                }
-            }
-
-            return releaseBody.ToString();
-        }
         private Release CreateRelease(GitHubClient gitHubClient, Repository gitHubRepo, GitClient gitClient, string repoName)
         {
             var headCommit = gitClient.GetHeadCommit().Sha;
@@ -373,7 +332,7 @@ namespace ReleaseTool
                     string changelog;
                     using (new WorkingDirectoryScope(gitClient.RepositoryPath))
                     {
-                        changelog = GetReleaseNotesFromChangeLog();
+                        changelog = Common.GetReleaseNotesFromChangeLog(Logger);
                     }
                     name = $"GDK for Unreal Release {options.Version}";
                     releaseBody =

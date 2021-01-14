@@ -86,7 +86,7 @@ namespace ReleaseTool
         {
             Common.VerifySemanticVersioningFormat(options.Version);
             var gitRepoName = options.GitRepoName;
-            var remoteUrl = string.Format(Common.RepoUrlTemplate, options.GithubOrgName, gitRepoName);
+            var remoteUrl = Common.makeRepoUrl(options.GithubOrgName, gitRepoName);
             try
             {
                 // 1. Clones the source repo.
