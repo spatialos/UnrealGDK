@@ -29,6 +29,18 @@ public:
 	bool BoolValue;
 };
 
+UCLASS()
+class USchemaGenObjectStubHandOver : public UObject
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(Handover)
+	int IntValue;
+
+	UPROPERTY(Handover)
+	bool BoolValue;
+};
+
 UCLASS(SpatialType)
 class USpatialTypeObjectStub : public UObject
 {

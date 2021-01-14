@@ -257,6 +257,7 @@ const TArray<UObject*>& AllTestClassesArray()
 {
 	static TArray<UObject*> TestClassesArray = { USchemaGenObjectStub::StaticClass(),
 												 USchemaGenObjectStubCondOwnerOnly::StaticClass(),
+												 USchemaGenObjectStubHandOver::StaticClass(),
 												 USpatialTypeObjectStub::StaticClass(),
 												 UChildOfSpatialTypeObjectStub::StaticClass(),
 												 UNotSpatialTypeObjectStub::StaticClass(),
@@ -277,6 +278,7 @@ const TSet<UClass*>& AllTestClassesSet()
 {
 	static TSet<UClass*> TestClassesSet = { USchemaGenObjectStub::StaticClass(),
 											USchemaGenObjectStubCondOwnerOnly::StaticClass(),
+											USchemaGenObjectStubHandOver::StaticClass(),
 											USpatialTypeObjectStub::StaticClass(),
 											UChildOfSpatialTypeObjectStub::StaticClass(),
 											UNotSpatialTypeObjectStub::StaticClass(),
