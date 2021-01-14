@@ -361,7 +361,8 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>{ // RPCs from the server
 																											SERVER_ENDPOINT_COMPONENT_ID,
 
-																											// Actor auth tag
+																											// Actor tags
+		ACTOR_NON_AUTH_TAG_COMPONENT_ID,
 																											ACTOR_AUTH_TAG_COMPONENT_ID
 };
 
@@ -398,7 +399,8 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST = 
 																											// Heartbeat
 																											HEARTBEAT_COMPONENT_ID,
 
-																											// Auth actor tag
+																											// Actor tags
+		ACTOR_NON_AUTH_TAG_COMPONENT_ID,
 																											ACTOR_AUTH_TAG_COMPONENT_ID,
 
 																											PARTITION_COMPONENT_ID

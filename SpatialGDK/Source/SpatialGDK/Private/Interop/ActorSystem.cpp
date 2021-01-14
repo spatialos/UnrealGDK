@@ -1358,7 +1358,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 	}
 
 	// Any Actor created here will have been received over the wire as an entity so we can mark it ready.
-	EntityActor->SetActorReady(false);
+	EntityActor->SetActorReady(NetDriver->IsServer() && EntityActor->bNetStartup);
 
 	// Taken from PostNetInit
 	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
