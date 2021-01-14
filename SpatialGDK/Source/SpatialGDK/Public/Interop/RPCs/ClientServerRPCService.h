@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -44,6 +44,7 @@ public:
 	TMap<EntityRPCType, TArray<PendingRPCPayload>>& GetOverflowedRPCs();
 	void AddOverflowedRPC(EntityRPCType EntityType, PendingRPCPayload&& Payload);
 	void IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType Type);
+	void IncrementAckedMovementRPCID(Worker_EntityId EntityId);
 	uint64 GetAckFromView(Worker_EntityId EntityId, ERPCType Type);
 
 private:
@@ -67,6 +68,7 @@ private:
 	// stops retrieving RPCs.
 	void ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);
+	void ExtractMovementRPC(Worker_EntityId EntityId);
 
 	// Helpers
 	const RPCRingBuffer& GetBufferFromView(Worker_EntityId EntityId, ERPCType Type);
@@ -85,6 +87,9 @@ private:
 	TMap<EntityRPCType, uint64> LastAckedRPCIds;
 	TMap<EntityRPCType, uint64> LastSeenRPCIds;
 	TMap<EntityRPCType, TArray<PendingRPCPayload>> OverflowedRPCs;
+
+	TMap<Worker_EntityId_Key, uint64> LastAckedMovementRPCIds;
+	TMap<Worker_EntityId_Key, uint64> LastSeenMovementRPCIds;
 };
 
 } // namespace SpatialGDK

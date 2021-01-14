@@ -46,13 +46,23 @@ Schema_FieldId GetAckFieldId(ERPCType Type);
 
 Schema_FieldId GetInitiallyPresentMulticastRPCsCountFieldId();
 
+Schema_FieldId GetLastSentMovementRPCFieldId();
+Schema_FieldId GetMovementRPCFieldId();
+Schema_FieldId GetMovementRPCAckFieldId();
+
 bool ShouldQueueOverflowed(ERPCType Type);
 
 void ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer);
 void ReadAckFromSchema(const Schema_Object* SchemaObject, ERPCType Type, uint64& OutAck);
 
+void ReadMovementRPCFromSchema(Schema_Object* SchemaObject, TOptional<RPCPayload>& OutRPC, uint64& OutLastSent);
+void ReadMovementAckFromSchema(const Schema_Object* SchemaObject, uint64& OutAck);
+
 void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, const RPCPayload& Payload);
 void WriteAckToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 Ack);
+
+void WriteMovementRPCToSchema(Schema_Object* SchemaObject, uint64 RPCId, const RPCPayload& Payload);
+void WriteMovementAckToSchema(Schema_Object* SchemaObject, uint64 Ack);
 
 void MoveLastSentIdToInitiallyPresentCount(Schema_Object* SchemaObject, uint64 LastSentId);
 

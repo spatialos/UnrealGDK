@@ -149,6 +149,21 @@ Schema_FieldId GetInitiallyPresentMulticastRPCsCountFieldId()
 	return 1 + MaxRingBufferSize + 1;
 }
 
+Schema_FieldId GetLastSentMovementRPCFieldId()
+{
+	return GetAckFieldId(ERPCType::ServerUnreliable) + 1;
+}
+
+Schema_FieldId GetMovementRPCFieldId()
+{
+	return GetAckFieldId(ERPCType::ServerUnreliable) + 2;
+}
+
+Schema_FieldId GetMovementRPCAckFieldId()
+{
+	return GetAckFieldId(ERPCType::ClientUnreliable) + 1;
+}
+
 bool ShouldQueueOverflowed(ERPCType Type)
 {
 	switch (Type)
@@ -195,6 +210,31 @@ void ReadAckFromSchema(const Schema_Object* SchemaObject, ERPCType Type, uint64&
 	}
 }
 
+void ReadMovementRPCFromSchema(Schema_Object* SchemaObject, TOptional<RPCPayload>& OutRPC, uint64& OutLastSent)
+{
+	Schema_FieldId MovementRPCFieldId = GetMovementRPCFieldId();
+	Schema_FieldId LastSentMovementRPCFieldId = GetLastSentMovementRPCFieldId();
+
+	if (Schema_GetObjectCount(SchemaObject, MovementRPCFieldId) > 0)
+	{
+		OutRPC = RPCPayload(Schema_GetObject(SchemaObject, MovementRPCFieldId));
+	}
+	if (Schema_GetUint64Count(SchemaObject, LastSentMovementRPCFieldId) > 0)
+	{
+		OutLastSent = Schema_GetUint64(SchemaObject, LastSentMovementRPCFieldId);
+	}
+}
+
+void ReadMovementAckFromSchema(const Schema_Object* SchemaObject, uint64& OutAck)
+{
+	Schema_FieldId AckFieldId = GetMovementRPCAckFieldId();
+
+	if (Schema_GetUint64Count(SchemaObject, AckFieldId) > 0)
+	{
+		OutAck = Schema_GetUint64(SchemaObject, AckFieldId);
+	}
+}
+
 void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, const RPCPayload& Payload)
 {
 	RPCRingBufferDescriptor Descriptor = GetRingBufferDescriptor(Type);
@@ -209,6 +249,26 @@ void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, 
 void WriteAckToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 Ack)
 {
 	Schema_FieldId AckFieldId = GetAckFieldId(Type);
+
+	Schema_ClearField(SchemaObject, AckFieldId);
+	Schema_AddUint64(SchemaObject, AckFieldId, Ack);
+}
+
+void WriteMovementRPCToSchema(Schema_Object* SchemaObject, uint64 RPCId, const RPCPayload& Payload)
+{
+	Schema_FieldId MovementRPCFieldId = GetMovementRPCFieldId();
+	Schema_ClearField(SchemaObject, MovementRPCFieldId);
+	Schema_Object* RPCObject = Schema_AddObject(SchemaObject, MovementRPCFieldId);
+	Payload.WriteToSchemaObject(RPCObject);
+
+	Schema_FieldId LastSentMovementRPCFieldId = GetLastSentMovementRPCFieldId();
+	Schema_ClearField(SchemaObject, LastSentMovementRPCFieldId);
+	Schema_AddUint64(SchemaObject, LastSentMovementRPCFieldId, RPCId);
+}
+
+void WriteMovementAckToSchema(Schema_Object* SchemaObject, uint64 Ack)
+{
+	Schema_FieldId AckFieldId = GetMovementRPCAckFieldId();
 
 	Schema_ClearField(SchemaObject, AckFieldId);
 	Schema_AddUint64(SchemaObject, AckFieldId, Ack);

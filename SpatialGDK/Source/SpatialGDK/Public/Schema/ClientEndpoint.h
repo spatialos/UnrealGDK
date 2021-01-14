@@ -26,6 +26,9 @@ struct ClientEndpoint : Component
 	uint64 ReliableRPCAck = 0;
 	uint64 UnreliableRPCAck = 0;
 
+	uint64 LastSentMovementRPCId = 0;
+	TOptional<RPCPayload> MovementRPC;
+
 private:
 	void ReadFromSchema(Schema_Object* SchemaObject);
 };

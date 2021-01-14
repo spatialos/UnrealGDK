@@ -119,6 +119,24 @@ void ClientServerRPCService::IncrementAckedRPCID(const Worker_EntityId EntityId,
 	RPCRingBufferUtils::WriteAckToSchema(EndpointObject, Type, *LastAckedRPCId);
 }
 
+void ClientServerRPCService::IncrementAckedMovementRPCID(Worker_EntityId EntityId)
+{
+	uint64* LastAckedRPCId = LastAckedMovementRPCIds.Find(EntityId);
+	if (LastAckedRPCId == nullptr)
+	{
+		UE_LOG(LogClientServerRPCService, Warning,
+			   TEXT("ClientServerRPCService::IncrementAckedMovementRPCID: Could not find last acked RPC id. Entity: %lld"), EntityId);
+		return;
+	}
+
+	++(*LastAckedRPCId);
+
+	const EntityComponentId EntityComponentPair = { EntityId, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID };
+	Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(RPCStore->GetOrCreateComponentUpdate(EntityComponentPair));
+
+	RPCRingBufferUtils::WriteMovementAckToSchema(EndpointObject, *LastAckedRPCId);
+}
+
 uint64 ClientServerRPCService::GetAckFromView(const Worker_EntityId EntityId, const ERPCType Type)
 {
 	switch (Type)
@@ -208,6 +226,8 @@ void ClientServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId Ent
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientUnreliable), Endpoint.UnreliableRPCAck);
 		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint.ReliableRPCBuffer.LastSentRPCId);
 		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerUnreliable), Endpoint.UnreliableRPCBuffer.LastSentRPCId);
+
+		RPCStore->LastSentMovementRPCIds.Add(EntityId, Endpoint.LastSentMovementRPCId);
 		break;
 	}
 	case SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID:
@@ -219,6 +239,9 @@ void ClientServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId Ent
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerUnreliable), Endpoint.UnreliableRPCAck);
 		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint.ReliableRPCBuffer.LastSentRPCId);
 		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientUnreliable), Endpoint.UnreliableRPCBuffer.LastSentRPCId);
+
+		LastAckedMovementRPCIds.Add(EntityId, Endpoint.MovementRPCAck);
+		LastSeenMovementRPCIds.Add(EntityId, Endpoint.MovementRPCAck);
 		break;
 	}
 	default:
@@ -239,6 +262,7 @@ void ClientServerRPCService::OnEndpointAuthorityLost(const Worker_EntityId Entit
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
 		RPCStore->LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerReliable));
 		RPCStore->LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
+		RPCStore->LastSentMovementRPCIds.Remove(EntityId);
 		ClearOverflowedRPCs(EntityId);
 		break;
 	}
@@ -250,6 +274,8 @@ void ClientServerRPCService::OnEndpointAuthorityLost(const Worker_EntityId Entit
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
 		RPCStore->LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
 		RPCStore->LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
+		LastAckedMovementRPCIds.Remove(EntityId);
+		LastSeenMovementRPCIds.Remove(EntityId);
 		ClearOverflowedRPCs(EntityId);
 		break;
 	}
@@ -305,6 +331,7 @@ void ClientServerRPCService::ExtractRPCsForEntity(const Worker_EntityId EntityId
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
 		ExtractRPCsForType(EntityId, ERPCType::ServerReliable);
 		ExtractRPCsForType(EntityId, ERPCType::ServerUnreliable);
+		ExtractMovementRPC(EntityId);
 		break;
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
 		ExtractRPCsForType(EntityId, ERPCType::ClientReliable);
@@ -377,6 +404,48 @@ void ClientServerRPCService::ExtractRPCsForType(const Worker_EntityId EntityId, 
 	if (LastProcessedRPCId > LastSeenRPCId)
 	{
 		LastSeenRPCIds[EntityTypePair] = LastProcessedRPCId;
+	}
+}
+
+void ClientServerRPCService::ExtractMovementRPC(Worker_EntityId EntityId)
+{
+	if (!LastSeenMovementRPCIds.Contains(EntityId))
+	{
+		UE_LOG(LogClientServerRPCService, Warning,
+			   TEXT("Tried to extract movement RPC but no entry in Last Seen Map! This can happen after server travel. Entity: %lld"),
+			   EntityId);
+		return;
+	}
+	const uint64 LastSeenRPCId = LastSeenMovementRPCIds[EntityId];
+
+	uint64 LastSentMovementRPCId = ClientServerDataStore[EntityId].Client.LastSentMovementRPCId;
+
+	uint64 LastProcessedRPCId = LastSeenRPCId;
+	if (LastSentMovementRPCId > LastSeenRPCId)
+	{
+		const TOptional<RPCPayload>& Element = ClientServerDataStore[EntityId].Client.MovementRPC;
+		if (Element.IsSet())
+		{
+			ExtractRPCCallback.Execute(FUnrealObjectRef(EntityId, Element.GetValue().Offset), Element.GetValue(), LastSentMovementRPCId);
+			LastProcessedRPCId = LastSentMovementRPCId;
+		}
+		else
+		{
+			UE_LOG(LogClientServerRPCService, Warning, TEXT("ClientServerRPCService::ExtractRPCsForType: Should have movement RPC but it's empty. Entity: %lld"), EntityId);
+		}
+	}
+	else if (LastSentMovementRPCId < LastSeenRPCId)
+	{
+		UE_LOG(
+			LogClientServerRPCService, Warning,
+			TEXT("ClientServerRPCService::ExtractRPCsForType: Last sent movement RPC has smaller ID than last seen RPC. Entity: %lld, "
+				 "last sent ID: %d, last seen ID: %d"),
+			EntityId, LastSentMovementRPCId, LastSeenRPCId);
+	}
+
+	if (LastProcessedRPCId > LastSeenRPCId)
+	{
+		LastSeenMovementRPCIds[EntityId] = LastProcessedRPCId;
 	}
 }
 

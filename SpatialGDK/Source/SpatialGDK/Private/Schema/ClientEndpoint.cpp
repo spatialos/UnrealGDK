@@ -32,6 +32,8 @@ void ClientEndpoint::ReadFromSchema(Schema_Object* SchemaObject)
 	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, UnreliableRPCBuffer);
 	RPCRingBufferUtils::ReadAckFromSchema(SchemaObject, ERPCType::ClientReliable, ReliableRPCAck);
 	RPCRingBufferUtils::ReadAckFromSchema(SchemaObject, ERPCType::ClientUnreliable, UnreliableRPCAck);
+
+	RPCRingBufferUtils::ReadMovementRPCFromSchema(SchemaObject, MovementRPC, LastSentMovementRPCId);
 }
 
 } // namespace SpatialGDK

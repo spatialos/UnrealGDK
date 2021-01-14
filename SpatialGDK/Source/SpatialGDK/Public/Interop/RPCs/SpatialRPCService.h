@@ -56,6 +56,8 @@ public:
 private:
 	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, PendingRPCPayload Payload, bool bCreatedEntity);
 
+	EPushRPCResult PushMovementRPCInternal(Worker_EntityId EntityId, ERPCType Type, const PendingRPCPayload& Payload, bool bCreatedEntity);
+
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
 	// Note: It's like applying an RPC, but more secretive
 	FRPCErrorInfo ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams);

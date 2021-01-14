@@ -53,6 +53,11 @@ void SpatialRPCService::ProcessIncomingRPCs()
 	IncomingRPCs.ProcessRPCs();
 }
 
+bool IsMovementRPC(UFunction* Function)
+{
+	return Function->GetName() == TEXT("ServerMovePacked");
+}
+
 EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const ERPCType Type, RPCPayload Payload,
 										  const bool bCreatedEntity, UObject* Target, UFunction* Function)
 {
@@ -65,6 +70,12 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 	{
 		PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePushRPC(Target, Function),
 														EventTracer->GetFromStack().GetConstId(), 1);
+	}
+
+	if (IsMovementRPC(Function))
+	{
+		Result = PushMovementRPCInternal(EntityId, Type, PendingPayload, bCreatedEntity);
+		return Result;
 	}
 
 #if TRACE_LIB_ACTIVE
@@ -392,6 +403,53 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 	return EPushRPCResult::Success;
 }
 
+EPushRPCResult SpatialRPCService::PushMovementRPCInternal(const Worker_EntityId EntityId, const ERPCType Type, const PendingRPCPayload& Payload,
+														  const bool bCreatedEntity)
+{
+	check(Type == ERPCType::ServerUnreliable);
+
+	const Worker_ComponentId RingBufferComponentId = RPCRingBufferUtils::GetRingBufferComponentId(Type);
+	const Worker_ComponentSetId RingBufferAuthComponentSetId = RPCRingBufferUtils::GetRingBufferAuthComponentSetId(Type);
+
+	const EntityComponentId EntityComponent = { EntityId, RingBufferComponentId };
+
+	Schema_Object* EndpointObject;
+	if (AuthSubView->HasComponent(EntityId, RingBufferComponentId))
+	{
+		if (!AuthSubView->HasAuthority(EntityId, RingBufferAuthComponentSetId))
+		{
+			if (bCreatedEntity)
+			{
+				return EPushRPCResult::EntityBeingCreated;
+			}
+			return EPushRPCResult::NoRingBufferAuthority;
+		}
+
+		EndpointObject = Schema_GetComponentUpdateFields(RPCStore.GetOrCreateComponentUpdate(EntityComponent, Payload.SpanId));
+	}
+	else
+	{
+		if (bCreatedEntity)
+		{
+			return EPushRPCResult::EntityBeingCreated;
+		}
+		// If the entity isn't in the view, we assume this RPC was called before
+		// CreateEntityRequest, so we put it into a component data object.
+		EndpointObject = Schema_GetComponentDataFields(RPCStore.GetOrCreateComponentData(EntityComponent));
+	}
+
+	const uint64 NewRPCId = RPCStore.LastSentMovementRPCIds.FindRef(EntityId) + 1;
+
+	// Always write the RPC.
+
+	// TODO: Trace
+
+	RPCRingBufferUtils::WriteMovementRPCToSchema(EndpointObject, NewRPCId, Payload.Payload);
+	RPCStore.LastSentMovementRPCIds.Add(EntityId, NewRPCId);
+
+	return EPushRPCResult::Success;
+}
+
 FRPCErrorInfo SpatialRPCService::ApplyRPC(const FPendingRPCParams& Params)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
@@ -484,7 +542,14 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 
 			if (RPCType != ERPCType::CrossServer && RPCType != ERPCType::NetMulticast)
 			{
-				ClientServerRPCs.IncrementAckedRPCID(PendingRPCParams.ObjectRef.Entity, RPCType);
+				if (IsMovementRPC(Function))
+				{
+					ClientServerRPCs.IncrementAckedMovementRPCID(PendingRPCParams.ObjectRef.Entity);
+				}
+				else
+				{
+					ClientServerRPCs.IncrementAckedRPCID(PendingRPCParams.ObjectRef.Entity, RPCType);
+				}
 			}
 
 			ErrorInfo.ErrorCode = ERPCResult::Success;

@@ -348,6 +348,16 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 		Writer.Printf("uint32 initially_present_multicast_rpc_count = {0};", FieldId++);
 	}
 
+	if (ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID)
+	{
+		Writer.Printf("uint64 last_sent_movement_rpc_id = {0};", FieldId++);
+		Writer.Printf("option<UnrealRPCPayload> movement_rpc = {0};", FieldId++);
+	}
+	if (ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID)
+	{
+		Writer.Printf("uint64 last_acked_movement_rpc_id = {0};", FieldId++);
+	}
+
 	Writer.Outdent().Print("}");
 }
 

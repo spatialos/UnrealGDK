@@ -73,6 +73,7 @@ struct FRPCStore
 	void AddSpanIdForComponentUpdate(EntityComponentId EntityComponentIdPair, const FSpatialGDKSpanId& SpanId);
 
 	TMap<EntityRPCType, uint64> LastSentRPCIds;
+	TMap<Worker_EntityId_Key, uint64> LastSentMovementRPCIds;
 	TMap<EntityComponentId, PendingUpdate> PendingComponentUpdatesToSend;
 	TMap<EntityComponentId, Schema_ComponentData*> PendingRPCsOnEntityCreation;
 };
