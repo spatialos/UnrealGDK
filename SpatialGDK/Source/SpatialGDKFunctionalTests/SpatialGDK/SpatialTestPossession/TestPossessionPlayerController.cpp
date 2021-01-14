@@ -17,7 +17,8 @@ int32 ATestPossessionPlayerController::OnPossessCalled = 0;
 ATestPossessionPlayerController::ATestPossessionPlayerController()
 	: BeforePossessionWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 	, AfterPossessionWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-{}
+{
+}
 
 void ATestPossessionPlayerController::OnPossess(APawn* InPawn)
 {
@@ -31,8 +32,8 @@ void ATestPossessionPlayerController::OnPossess(APawn* InPawn)
 	}
 	else
 	{
-		UE_LOG(LogTestPossessionPlayerController, Error, TEXT("%s OnPossess(%s) OnPossessCalled:%d in different worker"), *GetName(), *InPawn->GetName(),
-			   OnPossessCalled);
+		UE_LOG(LogTestPossessionPlayerController, Error, TEXT("%s OnPossess(%s) OnPossessCalled:%d in different worker"), *GetName(),
+			   *InPawn->GetName(), OnPossessCalled);
 	}
 }
 
