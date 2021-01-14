@@ -12,6 +12,8 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #endif
 
+#include "Kismet/GameplayStatics.h"
+
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
@@ -217,9 +219,27 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 	return false;
 }
 
+namespace
+{
+constexpr uint8 SimPlayerErrorExitCode = 10;
+
+void HandleOnSimulatedPlayerNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type NetworkFailureType,
+	const FString& Reason)
+{
+	UE_LOG(LogSpatialGameInstance, Log, TEXT("SimulatedPlayer network failure due to: %s"), *Reason);
+
+	FPlatformMisc::RequestExitWithStatus(/*bForce =*/false, SimPlayerErrorExitCode);
+}
+} // namespace
+
 void USpatialGameInstance::Init()
 {
 	Super::Init();
+
+	if (UGameplayStatics::HasLaunchOption(TEXT("FailOnNetworkFailure")))
+	{
+		GetEngine()->OnNetworkFailure().AddStatic(&HandleOnSimulatedPlayerNetworkFailure);
+	}
 
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
 
