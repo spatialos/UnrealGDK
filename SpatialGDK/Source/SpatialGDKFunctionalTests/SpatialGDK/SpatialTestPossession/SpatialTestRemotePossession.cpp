@@ -10,6 +10,7 @@ const float ASpatialTestRemotePossession::MaxWaitTime = 2.0f;
 
 ASpatialTestRemotePossession::ASpatialTestRemotePossession()
 	: Super()
+	, LocationOfPawn(500.0f, 500.0f, 50.0f)
 {
 	Author = "Jay";
 	Description = TEXT("Test Actor Remote Possession");
@@ -34,7 +35,7 @@ void ASpatialTestRemotePossession::PrepareTest()
 
 	AddStep(TEXT("Create Pawn"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
 		ATestPossessionPawn* Pawn =
-			GetWorld()->SpawnActor<ATestPossessionPawn>(FVector(500.0f, 500.0f, 50.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+			GetWorld()->SpawnActor<ATestPossessionPawn>(LocationOfPawn, FRotator::ZeroRotator, FActorSpawnParameters());
 		RegisterAutoDestroyActor(Pawn);
 		FinishStep();
 	});

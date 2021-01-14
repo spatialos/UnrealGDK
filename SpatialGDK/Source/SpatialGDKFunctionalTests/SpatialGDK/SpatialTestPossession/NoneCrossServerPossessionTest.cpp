@@ -1,17 +1,16 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "CrossServerPossessionTest.h"
+#include "NoneCrossServerPossessionTest.h"
 
 #include "Containers/Array.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/PlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "TestPossessionPawn.h"
 #include "TestPossessionPlayerController.h"
 
 /**
- * This test tests 1 Controller remote possess over 1 Pawn.
+ * This test tests 1 Controller possess over 1 Pawn.
  *
  * This test expects a load balancing grid and ACrossServerPossessionGameMode
  * Recommand to use 2*2 load balancing grid because the position is written in the code
@@ -23,25 +22,26 @@
  *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
  *	  - Set `Num Required Clients` as 1
  *  - Test:
- *	  - Create a Pawn in first quadrant
- *	  - Create Controller in other quadrant, the position is determined by ACrossServerPossessionGameMode
+ *	  - Create a Pawn in 4th quadrant
+ *	  - Create 1 Controller in 4th quadrant, the position is determined by ACrossServerPossessionGameMode
  *	  - Wait for Pawn in right worker.
  *	  -	The Controller possess the Pawn in server-side
  *	- Result Check:
  *    - ATestPossessionPlayerController::OnPossess should be called >= 1 times
  */
 
-ACrossServerPossessionTest::ACrossServerPossessionTest()
+ANoneCrossServerPossessionTest::ANoneCrossServerPossessionTest()
 {
 	Author = "Ken.Yu";
-	Description = TEXT("Test Cross-Server Possession");
+	Description = TEXT("Test Local Possession via RemotePossessionComponent");
+	LocationOfPawn = FVector(-500.0f, -500.0f, 50.0f);
 }
 
-void ACrossServerPossessionTest::PrepareTest()
+void ANoneCrossServerPossessionTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(TEXT("Cross-Server Possession"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
+	AddStep(TEXT("Possession"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
@@ -52,7 +52,7 @@ void ACrossServerPossessionTest::PrepareTest()
 				if (PlayerController && PlayerController->HasAuthority())
 				{
 					AssertTrue(PlayerController->HasAuthority(), TEXT("PlayerController should HasAuthority"), PlayerController);
-					AssertFalse(Pawn->HasAuthority(), TEXT("Pawn shouldn't HasAuthority"), Pawn);
+					AssertTrue(Pawn->HasAuthority(), TEXT("Pawn should HasAuthority"), Pawn);
 					PlayerController->RemotePossessOnServer(Pawn);
 				}
 			}
@@ -74,7 +74,7 @@ void ACrossServerPossessionTest::PrepareTest()
 					ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
 					if (PlayerController && PlayerController->HasAuthority())
 					{
-						AssertTrue(PlayerController->IsMigration(), TEXT("PlayerController should migration"), PlayerController);
+						AssertFalse(PlayerController->IsMigration(), TEXT("PlayerController shouldn't migration"), PlayerController);
 					}
 				}
 			}

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SpatialCommonTypes.h"
 #include "TestPossessionPlayerController.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTestPossessionPlayerController, Log, All);
@@ -24,7 +25,15 @@ public:
 	UFUNCTION(Server, Reliable)
 	void RemotePossessOnClient(APawn* InPawn, bool bLockBefore);
 
+	bool IsMigration() const { return BeforePossessionWorkerId != AfterPossessionWorkerId; }
+
 	static void ResetCalledCounter();
 
 	static int32 OnPossessCalled;
+
+private:
+	VirtualWorkerId GetCurrentWorkerId();
+
+	VirtualWorkerId BeforePossessionWorkerId;
+	VirtualWorkerId AfterPossessionWorkerId;
 };

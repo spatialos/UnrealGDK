@@ -7,7 +7,6 @@
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerController.h"
 #include "GameMapsSettings.h"
-#include "LoadBalancing/LayeredLBStrategy.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "TestPossessionPawn.h"
@@ -15,7 +14,7 @@
 #include "Utils/SpatialStatics.h"
 
 /**
- * This test tests multi Controllers possess over 1 Pawn.
+ * This test tests multi Controllers remote possess over 1 Pawn.
  *
  * This test expects a 2x2 load balancing grid and ACrossServerPossessionGameMode
  * The client workers begin with a player controller and their default pawns, which they initially possess.
@@ -69,6 +68,17 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 		},
 		nullptr,
 		[this](float DeltaTime) {
+			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
+			{
+				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
+				{
+					ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
+					if (PlayerController && PlayerController->HasAuthority())
+					{
+						AssertTrue(PlayerController->IsMigration(), TEXT("PlayerController should migration"), PlayerController);
+					}
+				}
+			}
 			FinishStep();
 		});
 }

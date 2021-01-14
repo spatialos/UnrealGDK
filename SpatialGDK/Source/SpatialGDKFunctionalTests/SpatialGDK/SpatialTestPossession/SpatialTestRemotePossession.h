@@ -23,7 +23,8 @@ public:
 
 	void AddWaitStep(const FWorkerDefinition& Worker);
 
-private:
+protected:
+	FVector LocationOfPawn;
 	float WaitTime;
 	const static float MaxWaitTime;
 };

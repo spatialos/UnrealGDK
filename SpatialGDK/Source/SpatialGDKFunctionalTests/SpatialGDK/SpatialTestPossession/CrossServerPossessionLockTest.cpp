@@ -9,7 +9,7 @@
 #include "TestPossessionPlayerController.h"
 
 /**
- * This test tests 1 locked Controller possess over 1 pawn.
+ * This test tests 1 locked Controller remote possess over 1 pawn.
  *
  * This test expects a load balancing grid and ACrossServerPossessionGameMode
  * Recommand to use 2*2 load balancing grid because the position of Pawn was written in the code
