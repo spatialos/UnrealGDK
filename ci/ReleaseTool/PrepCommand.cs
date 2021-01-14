@@ -106,11 +106,11 @@ namespace ReleaseTool
                             // 4. Commit changes and push them to a remote candidate branch.
                             gitClient.Commit(string.Format(CandidateCommitMessageTemplate, options.Version));
                             gitClient.ForcePush(options.CandidateBranch);
-                            Logger.Info($"Updated branch '{options.CandidateBranch}' in preparation for the release candidate release.");
+                            Logger.Info($"Updated branch '{options.CandidateBranch}' for the release candidate release.");
                         }
                         else
                         {
-                            Logger.Info($"Tried to update branch '{options.CandidateBranch}' in preparation for the release candidate release, but it was already up-to-date.");
+                            Logger.Info($"Tried to update branch '{options.CandidateBranch}' for the release candidate release, but it was already up-to-date.");
                         }
                     }
 
