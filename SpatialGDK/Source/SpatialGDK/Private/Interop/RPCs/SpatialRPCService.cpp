@@ -403,8 +403,8 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 	return EPushRPCResult::Success;
 }
 
-EPushRPCResult SpatialRPCService::PushMovementRPCInternal(const Worker_EntityId EntityId, const ERPCType Type, const PendingRPCPayload& Payload,
-														  const bool bCreatedEntity)
+EPushRPCResult SpatialRPCService::PushMovementRPCInternal(const Worker_EntityId EntityId, const ERPCType Type,
+														  const PendingRPCPayload& Payload, const bool bCreatedEntity)
 {
 	check(Type == ERPCType::ServerUnreliable);
 

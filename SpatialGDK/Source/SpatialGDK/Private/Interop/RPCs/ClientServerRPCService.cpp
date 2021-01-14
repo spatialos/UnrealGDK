@@ -431,16 +431,16 @@ void ClientServerRPCService::ExtractMovementRPC(Worker_EntityId EntityId)
 		}
 		else
 		{
-			UE_LOG(LogClientServerRPCService, Warning, TEXT("ClientServerRPCService::ExtractRPCsForType: Should have movement RPC but it's empty. Entity: %lld"), EntityId);
+			UE_LOG(LogClientServerRPCService, Warning,
+				   TEXT("ClientServerRPCService::ExtractRPCsForType: Should have movement RPC but it's empty. Entity: %lld"), EntityId);
 		}
 	}
 	else if (LastSentMovementRPCId < LastSeenRPCId)
 	{
-		UE_LOG(
-			LogClientServerRPCService, Warning,
-			TEXT("ClientServerRPCService::ExtractRPCsForType: Last sent movement RPC has smaller ID than last seen RPC. Entity: %lld, "
-				 "last sent ID: %d, last seen ID: %d"),
-			EntityId, LastSentMovementRPCId, LastSeenRPCId);
+		UE_LOG(LogClientServerRPCService, Warning,
+			   TEXT("ClientServerRPCService::ExtractRPCsForType: Last sent movement RPC has smaller ID than last seen RPC. Entity: %lld, "
+					"last sent ID: %d, last seen ID: %d"),
+			   EntityId, LastSentMovementRPCId, LastSeenRPCId);
 	}
 
 	if (LastProcessedRPCId > LastSeenRPCId)
