@@ -33,11 +33,6 @@ namespace Improbable
         private static string ChinaRefreshToken = String.Empty;
         private static PlatformRefreshTokenCredential ChinaCredentials;
 
-        private static string GetConsoleHost(bool useChinaPlatform)
-        {
-            return useChinaPlatform ? "console.spatialoschina.com" : "console.improbable.io";
-        }
-
         private static string UploadSnapshot(SnapshotServiceClient client, string snapshotPath, string projectName,
             string deploymentName, bool useChinaPlatform)
         {
@@ -443,7 +438,7 @@ namespace Improbable
             }
 
             Console.WriteLine(
-                $"Creating the main deployment {mainDeploymentName} in project {projectName} with snapshot ID {mainSnapshotId}. Link: https://{GetConsoleHost(useChinaPlatform)}/projects/{projectName}/deployments/{mainDeploymentName}/overview");
+                $"Creating the main deployment {mainDeploymentName} in project {projectName} with snapshot ID {mainSnapshotId}. Link: https://console.improbable.io/projects/{projectName}/deployments/{mainDeploymentName}/overview");
 
             var mainDeploymentCreateOp = deploymentServiceClient.CreateDeployment(new CreateDeploymentRequest
             {
@@ -587,7 +582,7 @@ namespace Improbable
             simDeployment.Tag.Add(SIM_PLAYER_DEPLOYMENT_TAG);
 
             Console.WriteLine(
-                $"Creating the simulated player deployment {simDeploymentName} in project {projectName} with {numSimPlayers} simulated players. Link: https://{GetConsoleHost(useChinaPlatform)}/projects/{projectName}/deployments/{simDeploymentName}/overview");
+                $"Creating the simulated player deployment {simDeploymentName} in project {projectName} with {numSimPlayers} simulated players. Link: https://console.improbable.io/projects/{projectName}/deployments/{simDeploymentName}/overview");
 
             var simDeploymentCreateOp = deploymentServiceClient.CreateDeployment(new CreateDeploymentRequest
             {
@@ -738,7 +733,7 @@ namespace Improbable
             foreach (var deployment in activeDeployments)
             {
                 var status = deployment.Status;
-                var overviewPageUrl = $"https://{GetConsoleHost(useChinaPlatform)}/projects/{projectName}/deployments/{deployment.Name}/overview/{deployment.Id}";
+                var overviewPageUrl = $"https://console.improbable.io/projects/{projectName}/deployments/{deployment.Name}/overview/{deployment.Id}";
 
                 if (deployment.Tag.Contains(SIM_PLAYER_DEPLOYMENT_TAG))
                 {

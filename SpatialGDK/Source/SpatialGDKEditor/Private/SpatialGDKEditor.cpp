@@ -97,20 +97,18 @@ FSpatialGDKEditor::FSpatialGDKEditor()
 {
 }
 
-void FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method, TFunction<void(bool)> ResultCallback)
+bool FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method)
 {
 	if (bSchemaGeneratorRunning)
 	{
 		UE_LOG(LogSpatialGDKEditor, Warning, TEXT("Schema generation is already running"));
-		ResultCallback(false);
-		return;
+		return false;
 	}
 
 	if (!FPaths::IsProjectFilePathSet())
 	{
 		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema generation called when no project was opened"));
-		ResultCallback(false);
-		return;
+		return false;
 	}
 
 	// If this has been run from an open editor then prompt the user to save dirty packages and maps.
@@ -126,23 +124,20 @@ void FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method, TFunction
 												 bNotifyNoPackagesSaved, bCanBeDeclined))
 		{
 			// User hit cancel don't generate schema.
-			ResultCallback(false);
-			return;
+			return false;
 		}
 	}
 
 	if (Schema::IsAssetReadOnly(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
-		ResultCallback(false);
-		return;
+		return false;
 	}
 
 	if (Method == FullAssetScan)
 	{
 		if (!CheckAutomationToolsUpToDate())
 		{
-			ResultCallback(false);
-			return;
+			return false;
 		}
 
 		// Make sure SchemaDatabase is not loaded.
@@ -160,8 +155,7 @@ void FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method, TFunction
 		if (PlatformName.IsEmpty())
 		{
 			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Empty platform passed to CookAndGenerateSchema"));
-			ResultCallback(false);
-			return;
+			return false;
 		}
 
 		FString OptionalParams = EditorSettings->GetCookAndGenerateSchemaAdditionalArgs();
@@ -173,23 +167,17 @@ void FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method, TFunction
 												 *ProjectPath, FApp::IsEngineInstalled() ? TEXT(" -installed") : TEXT(""), *ProjectPath,
 												 *FUnrealEdMisc::Get().GetExecutableForCommandlets(), *OptionalParams);
 
-		bSchemaGeneratorRunning = true;
-		TFunction<void(FString, double)> Callback = [this, ResultCallback = MoveTemp(ResultCallback)](const FString& UATResult, double) {
-			ResultCallback(UATResult == FString(TEXT("Completed")));
-			bSchemaGeneratorRunning = false;
-		};
-		IUATHelperModule::Get().CreateUatTask(UATCommandLine, FText::FromString(PlatformName),
-											  LOCTEXT("CookAndGenerateSchemaTaskName", "Cook and generate project schema"),
-											  LOCTEXT("CookAndGenerateSchemaTaskShortName", "Generating schema"),
-											  FEditorStyle::GetBrush(TEXT("MainFrame.PackageProject")), MoveTemp(Callback));
+		IUATHelperModule::Get().CreateUatTask(
+			UATCommandLine, FText::FromString(PlatformName), LOCTEXT("CookAndGenerateSchemaTaskName", "Cook and generate project schema"),
+			LOCTEXT("CookAndGenerateSchemaTaskShortName", "Generating Schema"), FEditorStyle::GetBrush(TEXT("MainFrame.PackageProject")));
 
-		return;
+		return true;
 	}
 	else
 	{
 		bSchemaGeneratorRunning = true;
 
-		FScopedSlowTask Progress(100.f, LOCTEXT("GeneratingSchema", "Generating schema..."));
+		FScopedSlowTask Progress(100.f, LOCTEXT("GeneratingSchema", "Generating Schema..."));
 		Progress.MakeDialog(true);
 
 		RemoveEditorAssetLoadedCallback();
@@ -227,15 +215,14 @@ void FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method, TFunction
 
 		if (bResult)
 		{
-			UE_LOG(LogSpatialGDKEditor, Display, TEXT("Schema generation succeeded!"));
+			UE_LOG(LogSpatialGDKEditor, Display, TEXT("Schema Generation succeeded!"));
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema generation failed. View earlier log messages for errors."));
+			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema Generation failed. View earlier log messages for errors."));
 		}
 
-		ResultCallback(bResult);
-		return;
+		return bResult;
 	}
 }
 
@@ -286,7 +273,7 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 
 	FScopedSlowTask Progress(
 		static_cast<float>(FoundAssets.Num()),
-		FText::Format(LOCTEXT("LoadingAssets_Text", "Loading {0} assets before generating schema"), FoundAssets.Num()));
+		FText::Format(LOCTEXT("LoadingAssets_Text", "Loading {0} Assets before generating schema"), FoundAssets.Num()));
 
 	for (const FAssetData& Data : FoundAssets)
 	{
