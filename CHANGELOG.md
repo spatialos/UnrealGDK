@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
+### Breaking changes:
+
+### Features:
+
+### Bug fixes:
+- Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
 
 ## [`0.12.0`] - 2020-12-14
 
@@ -40,7 +46,7 @@ These functions and structs can be referenced in both code and blueprints it may
   1. The time elapsed since the last sent Spatial position update is greater than or equal to `PositionUpdateThresholdMaxSeconds` AND the Actor has moved a non-zero amount.
   1. The distance travelled since the last Spatial position update was sent is greater than or equal to `PositionUpdateThresholdMaxCentimeters`.
 - New setting "Auto-stop local SpatialOS deployment" that allows you to specific Never (doesn't automatically stop), OnEndPIE (when a PIE session is ended) and OnExitEditor (only when the editor is shutdown). The default is OnExitEditor.
-- Added `OnActorReady` bindable callback triggered when SpatialOS entity data is first received after creating an entity corresponding to an Actor. This event indicates you can safely refer to the entity without risk of inconsistent state after worker crashes or snapshot restarts.
+- Added `OnActorReady` bindable callback triggered when SpatialOS entity data is first received after creating an entity corresponding to an Actor. This event indicates you can safely refer to the entity without risk of inconsistent state after worker crashes or snapshot restarts. The callback contains the active actor's authority.
 - Added support for the main build target having `TargetType.Client` (`<ProjectName>.Target.cs`). This target will be automatically built with arguments `-client -noserver` passed to UAT when building from the editor. If you use the GDK build script or executable manually, you need to pass `-client -noserver` when building this target (for example, `BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject -client -noserver`).
 - Add ability to specify `USpatialMultiWorkerSettings` class from command line. Specifying a `SoftClassPath` via `-OverrideMultiWorkerSettingsClass=MultiWorkerSettingsClassName`.
 - You can now override the load balancing strategy in-editor so that it is different from the cloud. Set `Editor Multi Worker Settings Class` in the `World Settings` to specify the in-editor load balancing strategy. If it is not specified, the existing `Multi Worker Settings Class` will determine both the local and cloud load balancing strategy.
@@ -85,10 +91,14 @@ These functions and structs can be referenced in both code and blueprints it may
   - Snapshots taken of running local deployments are now saved in `<GameProject>\spatial\snapshots\<yyyy.mm.dd-hh.mm.ss>\snapshot_<n>.snapshot`
   - Inspector URL is now http://localhost:33333/inspector-v2
   - Inspector version can now be overridden in the SpatialGDKEditorSettings under `Inspector Version Override`
-- The SpatialNetDriver can now disconnect a client worker when given the system entity id for that client and will do so when `GameMode::PreLogin` returns with a non-empty error message.
 - Unreal Engine version 4.26.0 is now supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
+- Added cross-server variants of ability activation functions on the Ability System Component.
+- Added `SpatialSwitchHasAuthority` function to differentiate authoritative server, non-authoritative server, and clients. This can be called in code or used in blueprints that derive from actor.
+- Added blueprint callable function `GetMaxDynamicallyAttachedSubobjectsPerClass` to `USpatialStatics` that gets the maximum dynamically attached subobjects per class as set in `SpatialGDKSettings`
 - Running with an out-of-date schema database will now report a version warning when attempting to launch in editor.
-- Reworked schema generation (incremental + full) pop-ups to be clearer. 
+- Simulated Player deployments no longer depend on DeploymentLauncher for readiness. You can now restart them via the Console and expect them to reconnect to your main deployment. DeploymentLauncher will also restart any crashed or incorrectly finished simulated players applications.
+- Added a `-FailOnNetworkFailure` flag that makes a Spatial-enabled game fail on any NetworkFailure.
+- Reworked schema generation (incremental + full) pop-ups to be clearer.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
@@ -123,6 +133,9 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed client connection not being cleaned up when moving out of interest of a server.
 - Fixed a assertion being triggered on async loaded entities due to queuing some component addition.
 - Fixed a bug where consecutive invocations of CookAndGenerateSchemaCommandlet for different levels could fail when running the schema compiler.
+- Fixed an issue where GameMode values won't be replicated between server workers if it's outside their Interest.
+- Fixed gameplay cues receiving OnActive/WhileActive events twice on the predicting client in a multi-worker single-process PIE environment.
+- Fixed an issue where a NetworkFailure won't be reported when connecting to a deployment that doesn't support dev_login with a developer token, and in some other configuration-dependent cases.
 - Fixed a crash that occured when opening the session frontend with VS 16.8.0 using the bundled dbghelp.dll.
 - Spatial debugger no longer consumes input.
 

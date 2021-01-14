@@ -504,7 +504,7 @@ void ASpatialDebugger::ActorAuthorityChanged(const Worker_ComponentSetAuthorityC
 		// Some entities won't have debug info, so create it now.
 		SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
 										  InvalidServerTintColor, false);
-		NetDriver->Sender->SendAddComponents(AuthOp.entity_id, { NewDebuggingInfo.CreateSpatialDebuggingData() });
+		NetDriver->Sender->SendAddComponents(AuthOp.entity_id, { NewDebuggingInfo.CreateComponentData() });
 		return;
 	}
 

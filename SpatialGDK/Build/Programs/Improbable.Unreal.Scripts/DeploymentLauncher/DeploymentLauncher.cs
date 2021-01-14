@@ -21,7 +21,6 @@ namespace Improbable
     {
         private const string SIM_PLAYER_DEPLOYMENT_TAG = "simulated_players";
         private const string DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG = "unreal_deployment_launcher";
-        private const string TARGET_DEPLOYMENT_READY_TAG = "target_deployment_ready";
 
         private const string CoordinatorWorkerName = "SimulatedPlayerCoordinator";
 
@@ -237,8 +236,7 @@ namespace Improbable
                         continue;
                     }
 
-                    Console.WriteLine($"Deployment startup complete! Setting its flags...");
-                    UpdateSimDeploymentFlags(simPlayerDeployment, true, deploymentServiceClient);
+                    Console.WriteLine($"Deployment startup complete!");
 
                     numSuccessfullyStartedSimDeployments++;
                 }
@@ -338,8 +336,7 @@ namespace Improbable
                     continue;
                 }
 
-                Console.WriteLine($"Deployment startup complete! Setting its flags...");
-                UpdateSimDeploymentFlags(simPlayerDeployment, autoConnect, deploymentServiceClient);
+                Console.WriteLine($"Deployment startup complete!");
 
                 numSuccessfullyStartedDeployments++;
             }
@@ -347,23 +344,6 @@ namespace Improbable
             Console.WriteLine($"Successfully started {numSuccessfullyStartedDeployments} out of {simDeploymentCreationOps.Count} simulated player deployments.");
 
             return 0;
-        }
-
-        private static void UpdateSimDeploymentFlags(Deployment deployment, bool autoConnect, DeploymentServiceClient deploymentServiceClient)
-        {
-            // Update coordinator worker flag for simulated player deployment to notify target deployment is ready.
-            deployment.WorkerFlags.Add(new WorkerFlag
-            {
-                Key = TARGET_DEPLOYMENT_READY_TAG,
-                Value = autoConnect.ToString().ToLower(),
-                WorkerType = CoordinatorWorkerName
-            });
-            deploymentServiceClient.UpdateDeployment(new UpdateDeploymentRequest { Deployment = deployment });
-
-            if (autoConnect)
-            {
-                Console.WriteLine($"Simulated players from this deployment '{deployment.Name}' will start to connect to the target deployment");
-            }
         }
 
         // Determines the name for a simulated player deployment. The first index is assumed to be 1.
