@@ -163,59 +163,6 @@ namespace ReleaseTool
             return 0;
         }
 
-        private bool UpdatePluginFile(GitClient gitClient, string pluginFileName)
-        {
-            using (new WorkingDirectoryScope(gitClient.RepositoryPath))
-            {
-                var pluginFilePath = Directory.GetFiles(".", pluginFileName, SearchOption.AllDirectories).First();
-                if (File.Exists(pluginFilePath))
-                {
-                    Logger.Info("Updating {0}...", pluginFilePath);
-                    var originalContents = File.ReadAllText(pluginFilePath);
-
-                    JObject jsonObject;
-                    using (var streamReader = new StreamReader(pluginFilePath))
-                    {
-                        jsonObject = JObject.Parse(streamReader.ReadToEnd());
-
-                        if (!jsonObject.ContainsKey(Common.VersionKey) || !jsonObject.ContainsKey(Common.VersionNameKey))
-                        {
-                            throw new InvalidOperationException($"Could not update the plugin file at '{pluginFilePath}', " + $"because at least one of the two expected keys '{Common.VersionKey}' and '{Common.VersionNameKey}' " + $"could not be found.");
-                        }
-
-                        var oldVersion = (string)jsonObject[Common.VersionNameKey];
-                        if (ShouldIncrementPluginVersion(oldVersion, options.Version))
-                        {
-                            jsonObject[Common.VersionKey] = ((int)jsonObject[Common.VersionKey] + 1);
-                        }
-
-                        // Update the version name to the new one
-                        jsonObject[Common.VersionNameKey] = options.Version;
-                    }
-
-                    File.WriteAllText(pluginFilePath, jsonObject.ToString());
-
-                    // If nothing has changed, return false, so we can react to it from the caller.
-                    if (File.ReadAllText(pluginFilePath) == originalContents)
-                    {
-                        return false;
-                    }
-
-                    gitClient.StageFile(pluginFilePath);
-                    return true;
-                }
-
-                throw new Exception($"Failed to update the plugin file. Argument: " + $"pluginFilePath: {pluginFilePath}.");
-            }
-        }
-
-        private bool ShouldIncrementPluginVersion(string oldVersionName, string newVersionName)
-        {
-            var oldMajorMinorVersions = oldVersionName.Split('.').Take(2).Select(s => int.Parse(s));
-            var newMajorMinorVersions = newVersionName.Split('.').Take(2).Select(s => int.Parse(s));
-            return Enumerable.Any(Enumerable.Zip(oldMajorMinorVersions, newMajorMinorVersions, (o, n) => o < n));
-        }
-
         private string GetPullRequestBody(string repoName, string candidateBranch, string releaseBranch)
         {
             // If repoName is UnrealGDK do nothing, otherwise get the UnrealGDK-pr-url
