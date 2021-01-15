@@ -168,8 +168,6 @@ private:
 	FDelegateHandle OnPropertyChangedDelegateHandle;
 	EAutoStopLocalDeploymentMode AutoStopLocalDeployment;
 
-	bool bSchemaBuildError;
-
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 
 	// Sounds used for execution of tasks.
