@@ -55,7 +55,7 @@ void SpatialRPCService::ProcessIncomingRPCs()
 
 bool IsMovementRPC(UFunction* Function)
 {
-	return Function->GetName() == TEXT("ServerMovePacked");
+	return Function->GetName().StartsWith(TEXT("ServerMove"));
 }
 
 EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const ERPCType Type, RPCPayload Payload,
@@ -72,7 +72,7 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 														EventTracer->GetFromStack().GetConstId(), 1);
 	}
 
-	if (IsMovementRPC(Function))
+	if (GetDefault<USpatialGDKSettings>()->bEnableMovementRPCChannel && IsMovementRPC(Function))
 	{
 		Result = PushMovementRPCInternal(EntityId, Type, PendingPayload, bCreatedEntity);
 		return Result;
@@ -542,7 +542,7 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 
 			if (RPCType != ERPCType::CrossServer && RPCType != ERPCType::NetMulticast)
 			{
-				if (IsMovementRPC(Function))
+				if (GetDefault<USpatialGDKSettings>()->bEnableMovementRPCChannel && IsMovementRPC(Function))
 				{
 					ClientServerRPCs.IncrementAckedMovementRPCID(PendingRPCParams.ObjectRef.Entity);
 				}

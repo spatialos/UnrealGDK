@@ -133,6 +133,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEventTracingEnabled(false)
 	, SamplingProbability(1.0f)
 	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
+	, bEnableMovementRPCChannel(true)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
