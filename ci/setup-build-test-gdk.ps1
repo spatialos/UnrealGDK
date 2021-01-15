@@ -23,7 +23,7 @@ class TestProjectTarget {
             $this.test_repo_branch = $gdk_branch
         }
         else {
-            $this.test_repo_branch = "$($BUILDKITE_PULL_REQUEST_BASE_BRANCH)"
+            $this.test_repo_branch = "$env:BUILDKITE_PULL_REQUEST_BASE_BRANCH"
         }
     }
 }
