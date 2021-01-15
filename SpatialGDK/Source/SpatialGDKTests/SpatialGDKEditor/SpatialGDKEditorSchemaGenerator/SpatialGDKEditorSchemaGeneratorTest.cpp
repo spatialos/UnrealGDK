@@ -773,6 +773,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_s
 	return true;
 }
 
+// This test tests AllTestClassesSet classes schema generation.
+//   Compare the loaded schema data with the saved schema to check if the given classes are fully supported.
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_expected_schema_database_exists)
 {
 	SchemaTestFixture Fixture;
