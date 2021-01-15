@@ -32,7 +32,7 @@ public:
 		OldVersion,
 	};
 
-	bool GenerateSchema(ESchemaGenerationMethod Method);
+	void GenerateSchema(ESchemaGenerationMethod Method, TFunction<void(bool)> ResultCallback);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback,
 						  FSpatialGDKEditorErrorHandler ErrorCallback);
 	void StartCloudDeployment(const FCloudDeploymentConfiguration& Configuration, FSimpleDelegate SuccessCallback,
