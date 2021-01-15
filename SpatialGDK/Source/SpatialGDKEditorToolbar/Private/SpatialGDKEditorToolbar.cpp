@@ -52,6 +52,7 @@
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -138,17 +139,20 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeVersion, InspectorVersion] {
-		if (!FetchRuntimeBinaryWrapper(RuntimeVersion))
-		{
-			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local runtime binary but failed!"));
-		}
+	if (USpatialStatics::IsSpatialNetworkingEnabled())
+	{
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeVersion, InspectorVersion] {
+			if (!FetchRuntimeBinaryWrapper(RuntimeVersion))
+			{
+				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local runtime binary but failed!"));
+			}
 
-		if (!FetchInspectorBinaryWrapper(InspectorVersion))
-		{
-			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local inspector binary but failed!"));
-		}
-	});
+			if (!FetchInspectorBinaryWrapper(InspectorVersion))
+			{
+				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local inspector binary but failed!"));
+			}
+		});
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
