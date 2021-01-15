@@ -135,12 +135,12 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	FDelegateHandle OnMapChangedHandle = LevelEditorModule.OnMapChanged().AddRaw(this, &FSpatialGDKEditorToolbarModule::MapChanged);
 
-	// Grab the runtime and inspector binaries ahead of time so they are ready when the user wants them.
-	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
-	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
-
 	if (USpatialStatics::IsSpatialNetworkingEnabled())
 	{
+		// Grab the runtime and inspector binaries ahead of time so they are ready when the user wants them.
+		const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
+		const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
+
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeVersion, InspectorVersion] {
 			if (!FetchRuntimeBinaryWrapper(RuntimeVersion))
 			{
