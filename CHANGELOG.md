@@ -125,6 +125,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed a bug where consecutive invocations of CookAndGenerateSchemaCommandlet for different levels could fail when running the schema compiler.
 - Fixed a crash that occured when opening the session frontend with VS 16.8.0 using the bundled dbghelp.dll.
 - Spatial debugger no longer consumes input.
+- Fixed an issue that led to the launch config being left in non-classic style with certain engine and project path configurations
 
 ## [`0.11.0`] - 2020-09-03
 
