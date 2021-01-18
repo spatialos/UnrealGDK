@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`0.12.0`] - 2020-12-14
 
 ### Breaking changes:
+- We no longer support Server Travel. This feature is being re-designed and will be reintroduced in a future version.
 - The condition for sending Spatial position updates has been changed, the two variables `PositionUpdateFrequency` and `PositionDistanceThreshold` have now been removed from the GDK settings. To update your project:
   1. Set the value of `PositionUpdateLowerThresholdCentimeters` to the value of `PositionDistanceThreshold` and  the value of `PositionUpdateLowerThresholdSeconds` to 60*(1/`PositionUpdateFrequency`). This will ensure that Actors send Spatial position updates as often as they did before this change.
   2. Set the value of `PositionUpdateThresholdMaxCentimeters` and `PositionUpdateThresholdMaxSeconds` to larger values than the lower thresholds.
@@ -125,6 +126,9 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed a bug where consecutive invocations of CookAndGenerateSchemaCommandlet for different levels could fail when running the schema compiler.
 - Fixed a crash that occured when opening the session frontend with VS 16.8.0 using the bundled dbghelp.dll.
 - Spatial debugger no longer consumes input.
+- Fixed an issue in the SpatialTestCharacterMigration test where trigger boxes sometimes wouldn't trigger at low framerates.
+- Spatial bundles no longer requested at startup if `UGeneralProjectSettings::bSpatialNetworking` is disabled.
+- Fixed an issue where heartbeats could be ran on a controller after its destruction
 - Fixed an issue that led to the launch config being left in non-classic style with certain engine and project path configurations
 
 ## [`0.11.0`] - 2020-09-03

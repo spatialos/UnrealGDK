@@ -226,7 +226,7 @@ void SpatialEventTracer::RemoveComponent(Worker_EntityId EntityId, Worker_Compon
 
 void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId)
 {
-	FSpatialGDKSpanId& StoredSpanId = EntityComponentSpanIds.FindChecked({ EntityId, ComponentId });
+	FSpatialGDKSpanId& StoredSpanId = EntityComponentSpanIds.FindOrAdd({ EntityId, ComponentId });
 	FSpatialGDKSpanId CauseSpanIds[2] = { SpanId, StoredSpanId };
 	StoredSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(EntityId, ComponentId),
 							  reinterpret_cast<uint8_t*>(&CauseSpanIds), 2);

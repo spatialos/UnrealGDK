@@ -183,9 +183,9 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 		},
 		GetDefault<USpatialGDKSettings>()->HeartbeatIntervalSeconds, true, 0.0f);
 
-	if (APlayerController* Controller = GetPlayerController(GetWorld()))
+	if (PlayerController != nullptr)
 	{
-		Controller->OnDestroyed.AddDynamic(this, &USpatialNetConnection::OnControllerDestroyed);
+		PlayerController->OnDestroyed.AddDynamic(this, &USpatialNetConnection::OnControllerDestroyed);
 	}
 }
 
