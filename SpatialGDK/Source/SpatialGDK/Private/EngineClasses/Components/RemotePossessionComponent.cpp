@@ -33,15 +33,6 @@ void URemotePossessionComponent::BeginPlay()
 			OnInvalidTarget();
 			return;
 		}
-		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetOwner()->GetNetDriver());
-		if (SpatialNetDriver != nullptr)
-		{
-			if (SpatialNetDriver->LockingPolicy->IsLocked(GetOwner()))
-			{
-				UE_LOG(LogRemotePossessionComponent, Warning, TEXT("Actor %s cannot migrate because it is locked"), *GetOwner()->GetName());
-				MarkToDestroy();
-			}
-		}
 		if (Target->HasAuthority())
 		{
 			Possess();

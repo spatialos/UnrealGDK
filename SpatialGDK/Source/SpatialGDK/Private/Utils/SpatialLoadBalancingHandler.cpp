@@ -56,6 +56,12 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 			{
 				if (URemotePossessionComponent* Component = Cast<URemotePossessionComponent>(Components[0]))
 				{
+					if (NetDriver->LockingPolicy->IsLocked(Actor))
+					{
+						UE_LOG(LogSpatialLoadBalancingHandler, Verbose, TEXT("Actor %s (%llu) cannot migrate because it is locked"),
+							   *Actor->GetName(), EntityId);
+						return EvaluateActorResult::None;
+					}
 					VirtualWorkerId TargetVirtualWorkerId;
 					if (EvaluateRemoteMigrationComponent(NetOwner, Component->Target, TargetVirtualWorkerId))
 					{
