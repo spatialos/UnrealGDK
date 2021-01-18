@@ -2364,9 +2364,9 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving incoming operations depending on object ref %s, resolved object: %s"),
 		   *ObjectRef.ToString(), *Object->GetName());
 
-	/* Rep-notify can modify ObjectRefToRepStateMap in some situations which can cause the TSet to access
-	invalid memory if a) the set is removed or b) the TMap containing the TSet is reallocated. So to fix this
-	we just gather the channel object pairs to inspect here, and only afterwards do we write the resolved objects and call Rep-notifies. */
+	/* Rep-notify can modify ObjectRefToRepStateMap in some situations which can cause the TSet to access invalid
+	memory if a) the set is removed or b) the TMap containing the TSet is reallocated. So to fix this we just gather
+	the channel-object-repstate tuples to inspect here, and only afterwards do we write the resolved objects and call Rep-notifies. */
 	TArray<ChannelObjectsToBeResolved> ObjectsToInspect;
 
 	for (auto ChannelObjectIter = TargetObjectSet->CreateIterator(); ChannelObjectIter; ++ChannelObjectIter)
