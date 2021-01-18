@@ -204,11 +204,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverAddComponent);
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddComponent component ID: %u entity ID: %lld"), Op.data.component_id, Op.entity_id);
 
-	if (IsEntityWaitingForAsyncLoad(Op.entity_id))
-	{
-		QueueAddComponentOpForAsyncLoad(Op);
-		return;
-	}
+	const bool bWaitingForAsyncLoad = IsEntityWaitingForAsyncLoad(Op.entity_id);
 
 	if (HasEntityBeenRequestedForDelete(Op.entity_id))
 	{
@@ -221,6 +217,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return RemoveComponentOp.entity_id == Op.entity_id && RemoveComponentOp.component_id == Op.data.component_id;
 	});
 
+	// Handle the first batch of components which do not need queuing when doing async loading.
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::METADATA_COMPONENT_ID:
@@ -266,6 +263,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		// that the received component data will get dropped (likely outdated data), and is
 		// something we do not wish to happen for ready actor (likely new data received through
 		// a component refresh on authority delegation).
+		if (!bWaitingForAsyncLoad)
 		{
 			AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id));
 			if (EntityActor == nullptr || !EntityActor->IsActorReady())
@@ -274,6 +272,16 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 			}
 		}
 		return;
+	}
+
+	if (bWaitingForAsyncLoad)
+	{
+		QueueAddComponentOpForAsyncLoad(Op);
+		return;
+	}
+
+	switch (Op.data.component_id)
+	{
 	case SpatialConstants::WORKER_COMPONENT_ID:
 		if (NetDriver->IsServer() && !WorkerConnectionEntities.Contains(Op.entity_id))
 		{
@@ -1159,6 +1167,11 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 				   TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. Actor: %s EntityId: %lld"),
 				   *GetNameSafe(Actor), EntityId);
 		}
+	}
+
+	if (APlayerController* PC = Cast<APlayerController>(Actor))
+	{
+		NetDriver->CleanUpServerConnectionForPC(PC);
 	}
 
 	// It is safe to call AActor::Destroy even if the destruction has already started.
@@ -2581,40 +2594,53 @@ void USpatialReceiver::StartAsyncLoadingClass(const FString& ClassPath, Worker_E
 
 void USpatialReceiver::OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result)
 {
-	TArray<Worker_EntityId> Entities;
-	if (!AsyncLoadingPackages.RemoveAndCopyValue(PackageName, Entities))
-	{
-		UE_LOG(LogSpatialReceiver, Error,
-			   TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package loaded but no entry in AsyncLoadingPackages. Package: %s"),
-			   *PackageName.ToString());
-		return;
-	}
-
 	if (Result != EAsyncLoadingResult::Succeeded)
 	{
 		UE_LOG(LogSpatialReceiver, Error, TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package was not loaded successfully. Package: %s"),
 			   *PackageName.ToString());
+		AsyncLoadingPackages.Remove(PackageName);
 		return;
 	}
 
-	for (Worker_EntityId Entity : Entities)
+	LoadedPackages.Add(PackageName);
+}
+
+void USpatialReceiver::ProcessActorsFromAsyncLoading()
+{
+	static_assert(TContainerTraits<decltype(LoadedPackages)>::MoveWillEmptyContainer, "Moving the set won't empty it");
+	TSet<FName> PackagesToProcess = MoveTemp(LoadedPackages);
+
+	for (const auto& PackageName : PackagesToProcess)
 	{
-		if (IsEntityWaitingForAsyncLoad(Entity))
+		TArray<Worker_EntityId> Entities;
+		if (!AsyncLoadingPackages.RemoveAndCopyValue(PackageName, Entities))
 		{
-			UE_LOG(LogSpatialReceiver, Log, TEXT("Finished async loading package %s for entity %lld."), *PackageName.ToString(), Entity);
+			UE_LOG(LogSpatialReceiver, Error,
+				   TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package loaded but no entry in AsyncLoadingPackages. Package: %s"),
+				   *PackageName.ToString());
+			return;
+		}
 
-			// Save critical section if we're in one and restore upon leaving this scope.
-			CriticalSectionSaveState CriticalSectionState(*this);
-
-			EntityWaitingForAsyncLoad AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindAndRemoveChecked(Entity);
-			PendingAddActors.Add(Entity);
-			PendingAddComponents = MoveTemp(AsyncLoadEntity.InitialPendingAddComponents);
-			LeaveCriticalSection();
-
-			OpList Ops = MoveTemp(AsyncLoadEntity.PendingOps).CreateOpList();
-			for (uint32 i = 0; i < Ops.Count; ++i)
+		for (Worker_EntityId Entity : Entities)
+		{
+			if (IsEntityWaitingForAsyncLoad(Entity))
 			{
-				HandleQueuedOpForAsyncLoad(Ops.Ops[i]);
+				UE_LOG(LogSpatialReceiver, Log, TEXT("Finished async loading package %s for entity %lld."), *PackageName.ToString(),
+					   Entity);
+
+				// Save critical section if we're in one and restore upon leaving this scope.
+				CriticalSectionSaveState CriticalSectionState(*this);
+
+				EntityWaitingForAsyncLoad AsyncLoadEntity = EntitiesWaitingForAsyncLoad.FindAndRemoveChecked(Entity);
+				PendingAddActors.Add(Entity);
+				PendingAddComponents = MoveTemp(AsyncLoadEntity.InitialPendingAddComponents);
+				LeaveCriticalSection();
+
+				OpList Ops = MoveTemp(AsyncLoadEntity.PendingOps).CreateOpList();
+				for (uint32 i = 0; i < Ops.Count; ++i)
+				{
+					HandleQueuedOpForAsyncLoad(Ops.Ops[i]);
+				}
 			}
 		}
 	}

@@ -351,7 +351,6 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 
 		if (!ConfigFile)
 		{
-			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Could not open configuration file %s"), *LaunchConfigPath);
 			return false;
 		}
 

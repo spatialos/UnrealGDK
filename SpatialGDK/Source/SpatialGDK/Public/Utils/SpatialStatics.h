@@ -180,6 +180,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static FName GetLayerName(const UObject* WorldContextObject);
 
+	/**
+	 * Returns the Max Dynamically Attached Subobjects Per Class as per Spatial GDK settings
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS")
+	static int64 GetMaxDynamicallyAttachedSubobjectsPerClass();
+
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Spatial Debugger", meta = (WorldContext = "WorldContextObject"))
 	static void SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* WorldContextObject, FOnConfigUIClosedDelegate Delegate);
 

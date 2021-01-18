@@ -320,9 +320,12 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 
 			if (GetNetMode() == NM_Client)
 			{
-				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI);
-				LocalPlayerController->InputComponent->BindKey(SelectActorKey, IE_Pressed, this, &ASpatialDebugger::OnSelectActor);
-				LocalPlayerController->InputComponent->BindKey(HighlightActorKey, IE_Pressed, this, &ASpatialDebugger::OnHighlightActor);
+				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI)
+					.bConsumeInput = false;
+				LocalPlayerController->InputComponent->BindKey(SelectActorKey, IE_Pressed, this, &ASpatialDebugger::OnSelectActor)
+					.bConsumeInput = false;
+				LocalPlayerController->InputComponent->BindKey(HighlightActorKey, IE_Pressed, this, &ASpatialDebugger::OnHighlightActor)
+					.bConsumeInput = false;
 			}
 		}
 	}
@@ -501,7 +504,7 @@ void ASpatialDebugger::ActorAuthorityChanged(const Worker_ComponentSetAuthorityC
 		// Some entities won't have debug info, so create it now.
 		SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
 										  InvalidServerTintColor, false);
-		NetDriver->Sender->SendAddComponents(AuthOp.entity_id, { NewDebuggingInfo.CreateSpatialDebuggingData() });
+		NetDriver->Sender->SendAddComponents(AuthOp.entity_id, { NewDebuggingInfo.CreateComponentData() });
 		return;
 	}
 
