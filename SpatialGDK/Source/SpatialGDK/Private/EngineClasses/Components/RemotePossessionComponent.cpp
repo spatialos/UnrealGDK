@@ -21,6 +21,20 @@ URemotePossessionComponent::URemotePossessionComponent(const FObjectInitializer&
 #endif
 }
 
+void URemotePossessionComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	if (Target == nullptr)
+	{
+		OnInvalidTarget();
+		return;
+	}
+	if (Target->HasAuthority())
+	{
+		Possess();
+	}
+}
+
 void URemotePossessionComponent::OnAuthorityGained()
 {
 	if (Target == nullptr)

@@ -64,12 +64,6 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 						return EvaluateActorResult::None;
 					}
 
-					if (Component->Target->HasAuthority())
-					{
-						Component->Possess();
-						return EvaluateActorResult::None;
-					}
-
 					VirtualWorkerId TargetVirtualWorkerId;
 					if (EvaluateRemoteMigrationComponent(NetOwner, Component->Target, TargetVirtualWorkerId))
 					{

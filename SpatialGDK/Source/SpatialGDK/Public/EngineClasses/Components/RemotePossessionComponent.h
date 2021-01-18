@@ -32,6 +32,8 @@ public:
 
 	void Possess();
 
+	virtual void BeginPlay() override;
+
 protected:
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 	void MarkToDestroy();
