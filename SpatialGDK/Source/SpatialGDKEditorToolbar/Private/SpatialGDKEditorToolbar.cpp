@@ -59,7 +59,6 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
 	: AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::Never)
-	, bSchemaBuildError(false)
 	, bStartingCloudDeployment(false)
 	, SpatialDebugger(nullptr)
 {
@@ -1223,50 +1222,41 @@ void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
 	LocalDeploymentManager->SetRedeployRequired();
 
-	bSchemaBuildError = false;
+	const bool bFullScanRequired = SpatialGDKEditorInstance->FullScanRequired();
 
-	if (SpatialGDKEditorInstance->FullScanRequired())
+	FSpatialGDKEditor::ESchemaGenerationMethod GenerationMethod;
+	FString OnTaskStartMessage;
+	FString OnTaskCompleteMessage;
+	FString OnTaskFailMessage;
+	if (bFullScanRequired || bFullScan)
 	{
-		OnShowTaskStartNotification("Initial Schema Generation");
-
-		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::FullAssetScan))
-		{
-			OnShowSuccessNotification("Initial Schema Generation completed!");
-		}
-		else
-		{
-			OnShowFailedNotification("Initial Schema Generation failed");
-			bSchemaBuildError = true;
-		}
-	}
-	else if (bFullScan)
-	{
-		OnShowTaskStartNotification("Generating Schema (Full)");
-
-		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::FullAssetScan))
-		{
-			OnShowSuccessNotification("Full Schema Generation completed!");
-		}
-		else
-		{
-			OnShowFailedNotification("Full Schema Generation failed");
-			bSchemaBuildError = true;
-		}
+		GenerationMethod = FSpatialGDKEditor::FullAssetScan;
+		const TCHAR* RequiredStr = bFullScanRequired ? TEXT(" required") : TEXT("");
+		OnTaskStartMessage = FString::Printf(TEXT("Generating schema (full scan%s)"), RequiredStr);
+		OnTaskCompleteMessage = TEXT("Full schema generation complete");
+		OnTaskFailMessage = TEXT("Full schema generation failed");
 	}
 	else
 	{
-		OnShowTaskStartNotification("Generating Schema (Incremental)");
+		GenerationMethod = FSpatialGDKEditor::InMemoryAsset;
+		OnTaskStartMessage = TEXT("Generating schema (incremental)");
+		OnTaskCompleteMessage = TEXT("Incremental schema generation completed!");
+		OnTaskFailMessage = TEXT("Incremental schema generation failed");
+	}
 
-		if (SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset))
+	OnShowTaskStartNotification(OnTaskStartMessage);
+	SpatialGDKEditorInstance->GenerateSchema(GenerationMethod, [this, OnTaskCompleteMessage = MoveTemp(OnTaskCompleteMessage),
+																OnTaskFailMessage = MoveTemp(OnTaskFailMessage)](bool bResult) {
+		if (bResult)
 		{
-			OnShowSuccessNotification("Incremental Schema Generation completed!");
+			OnShowSuccessNotification(OnTaskCompleteMessage);
 		}
 		else
 		{
-			OnShowFailedNotification("Incremental Schema Generation failed");
-			bSchemaBuildError = true;
+			OnShowFailedNotification(OnTaskFailMessage);
 		}
-	}
+	});
+	;
 }
 
 bool FSpatialGDKEditorToolbarModule::IsSnapshotGenerated() const
@@ -1379,7 +1369,14 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 				return FReply::Unhandled();
 			}
 
-			if (!SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset))
+			bool bHasResult{ false };
+			bool bResult{ false };
+			SpatialGDKEditorInstance->GenerateSchema(FSpatialGDKEditor::InMemoryAsset, [&bHasResult, &bResult](bool bTaskResult) {
+				bResult = bTaskResult;
+				bHasResult = true;
+			});
+			checkf(bHasResult, TEXT("Result is expected to be returned synchronously."));
+			if (!bResult)
 			{
 				OnShowSingleFailureNotification(TEXT("Generate schema failed."));
 				return FReply::Unhandled();
