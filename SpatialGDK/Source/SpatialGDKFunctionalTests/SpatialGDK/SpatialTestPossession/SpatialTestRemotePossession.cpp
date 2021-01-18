@@ -25,8 +25,6 @@ void ASpatialTestRemotePossession::PrepareTest()
 {
 	Super::PrepareTest();
 
-	ATestPossessionPlayerController::ResetCalledCounter();
-
 	AddStep(TEXT("EnsureSpatialOS"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		ULayeredLBStrategy* LoadBalanceStrategy = GetLoadBalancingStrategy();
 		AssertTrue(LoadBalanceStrategy != nullptr, TEXT("Test requires SpatialOS enabled with Load-Balancing Strategy"));
@@ -42,6 +40,8 @@ void ASpatialTestRemotePossession::PrepareTest()
 
 	// Ensure that all Controllers are located on the right Worker
 	AddWaitStep(FWorkerDefinition::AllServers);
+
+	ATestPossessionPlayerController::ResetCalledCounter();
 }
 
 bool ASpatialTestRemotePossession::IsReadyForPossess()

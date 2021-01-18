@@ -1,9 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "EngineClasses/Components/RemotePossessionComponent.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
 
 #include "Engine/World.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/OwnershipLockingPolicy.h"
 
 DEFINE_LOG_CATEGORY(LogRemotePossessionComponent);
 
@@ -26,12 +28,22 @@ void URemotePossessionComponent::BeginPlay()
 	Super::BeginPlay();
 	if (Target == nullptr)
 	{
-		OnInvalidTarget();
 		return;
+	}
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetOwner()->GetNetDriver());
+	if (SpatialNetDriver != nullptr)
+	{
+		if (SpatialNetDriver->LockingPolicy->IsLocked(GetOwner()))
+		{
+			UE_LOG(LogRemotePossessionComponent, Warning, TEXT("Actor %s cannot migrate because it is locked"),
+				   *GetOwner()->GetName());
+			MarkToDestroy();
+		}
 	}
 	if (Target->HasAuthority())
 	{
 		Possess();
+		MarkToDestroy();
 	}
 }
 
@@ -49,6 +61,7 @@ void URemotePossessionComponent::OnAuthorityGained()
 	else
 	{
 		Possess();
+		DestroyComponent();
 	}
 }
 
@@ -65,7 +78,6 @@ void URemotePossessionComponent::Possess()
 	{
 		UE_LOG(LogRemotePossessionComponent, Verbose, TEXT("EvaluatePossess(%s) failed"), *Target->GetName());
 	}
-	MarkToDestroy();
 }
 
 void URemotePossessionComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
