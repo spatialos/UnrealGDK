@@ -63,11 +63,11 @@ using namespace SpatialGDK;
 
 namespace // Anonymous namespace
 {
-struct RepNotifyCall
+struct ChannelObjectsToBeResolved
 {
 	USpatialActorChannel* Channel;
-	UObject* Object;
-	TArray<GDK_PROPERTY(Property)*> Notifies;
+	TWeakObjectPtr<UObject> Object;
+	FSpatialObjectRepState* RepState;
 };
 #if DO_CHECK
 FUsageLock ObjectRefToRepStateUsageLock; // A debug helper to trigger an ensure if something weird happens (re-entrancy)
@@ -2364,10 +2364,10 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving incoming operations depending on object ref %s, resolved object: %s"),
 		   *ObjectRef.ToString(), *Object->GetName());
 
-	/* Rep-notify can modify ObjectRefToRepStateMap in some situations which can cause the TSet to access
-	invalid memory if a) the set is removed or b) the TMap containing the TSet is reallocated. So to fix this
-	we just defer the rep-notify calls to the end of this function. */
-	TArray<RepNotifyCall> RepNotifyCalls;
+	// Rep-notify can modify ObjectRefToRepStateMap in some situations which can cause the TSet to access invalid
+	// memory if a) the set is removed or b) the TMap containing the TSet is reallocated. So to fix this we just gather
+	// the channel-object-repstate tuples to inspect here, and only afterwards do we write the resolved objects and call Rep-notifies.
+	TArray<ChannelObjectsToBeResolved> ObjectsToInspect;
 
 	for (auto ChannelObjectIter = TargetObjectSet->CreateIterator(); ChannelObjectIter; ++ChannelObjectIter)
 	{
@@ -2423,6 +2423,20 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 			}
 		}
 
+		ObjectsToInspect.Add(ChannelObjectsToBeResolved{ DependentChannel, ReplicatingObject, RepState });
+	}
+
+	for (const auto& ObjectToInspect : ObjectsToInspect)
+	{
+		USpatialActorChannel* DependentChannel = ObjectToInspect.Channel;
+		// Since the RepNotifies could theoretically destroy objects and close channels
+		// we will check here again to see if the object is still valid and the channel is open
+		if (!ObjectToInspect.Object.IsValid() || DependentChannel->Actor == nullptr)
+		{
+			continue;
+		}
+		UObject* ReplicatingObject = ObjectToInspect.Object.Get();
+		FSpatialObjectRepState* RepState = ObjectToInspect.RepState;
 		bool bSomeObjectsWereMapped = false;
 		TArray<GDK_PROPERTY(Property)*> RepNotifies;
 
@@ -2440,16 +2454,12 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 		if (bSomeObjectsWereMapped)
 		{
 			DependentChannel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, RepLayout, RepState->ReferenceMap, ReplicatingObject);
-			RepNotifyCalls.Push({ DependentChannel, ReplicatingObject, MoveTemp(RepNotifies) });
+
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
+			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies, {});
 		}
 
 		RepState->UnresolvedRefs.Remove(ObjectRef);
-	}
-
-	for (auto& RepNotify : RepNotifyCalls)
-	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolved for target object %s"), *RepNotify.Object->GetName());
-		RepNotify.Channel->PostReceiveSpatialUpdate(RepNotify.Object, RepNotify.Notifies, {});
 	}
 }
 
