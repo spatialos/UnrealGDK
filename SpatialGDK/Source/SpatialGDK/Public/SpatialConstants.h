@@ -34,6 +34,7 @@ enum ESchemaComponentType : int32
 	SCHEMA_Data, // Represents properties being replicated to all workers
 	SCHEMA_OwnerOnly,
 	SCHEMA_Handover,
+	SCHEMA_InitialOnly,
 
 	SCHEMA_Count,
 
@@ -106,12 +107,14 @@ const Worker_ComponentId DATA_COMPONENT_SET_ID = 9902;
 const Worker_ComponentId OWNER_ONLY_COMPONENT_SET_ID = 9903;
 const Worker_ComponentId HANDOVER_COMPONENT_SET_ID = 9904;
 const Worker_ComponentId GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID = 9905;
+const Worker_ComponentId INITIAL_ONLY_COMPONENT_SET_ID = 9906;
 
 const FString SERVER_AUTH_COMPONENT_SET_NAME = TEXT("ServerAuthoritativeComponentSet");
 const FString CLIENT_AUTH_COMPONENT_SET_NAME = TEXT("ClientAuthoritativeComponentSet");
 const FString DATA_COMPONENT_SET_NAME = TEXT("DataComponentSet");
 const FString OWNER_ONLY_COMPONENT_SET_NAME = TEXT("OwnerOnlyComponentSet");
 const FString HANDOVER_COMPONENT_SET_NAME = TEXT("HandoverComponentSet");
+const FString INITIAL_ONLY_COMPONENT_SET_NAME = TEXT("InitialOnlyComponentSet");
 
 const Worker_ComponentId NOT_STREAMED_COMPONENT_ID = 9986;
 const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID = 9984;

@@ -31,6 +31,10 @@ ESchemaComponentType PropertyGroupToSchemaComponentType(EReplicatedPropertyGroup
 	{
 		return SCHEMA_OwnerOnly;
 	}
+	else if (Group == REP_MultiClient_InitialOnly)
+	{
+		return SCHEMA_InitialOnly;
+	}
 	else
 	{
 		checkNoEntry();
@@ -147,6 +151,12 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		// We need to generate a schema component for every subobject. So if we have no replicated
 		// properties, we only don't generate a schema component if we are REP_SingleClient
 		if (RepData[Group].Num() == 0 && Group == REP_SingleClient)
+		{
+			continue;
+		}
+
+		// We do not generate a schema component if we are REP_MultiClient_InitialOnly.
+		if (RepData[Group].Num() == 0 && Group == REP_MultiClient_InitialOnly)
 		{
 			continue;
 		}
@@ -421,6 +431,12 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			continue;
 		}
 
+		// We do not generate a schema component if we are REP_MultiClient_InitialOnly.
+		if (RepData[Group].Num() == 0 && Group == REP_MultiClient_InitialOnly)
+		{
+			continue;
+		}
+
 		// If this class is an Actor Component, it MUST have bReplicates at field ID 1.
 		if (Group == REP_MultiClient && Class->IsChildOf<UActorComponent>())
 		{
@@ -490,6 +506,12 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			// We need to generate a schema component for every subobject. So if we have no replicated
 			// properties, we only don't generate a schema component if we are REP_SingleClient
 			if (RepData[Group].Num() == 0 && Group == REP_SingleClient)
+			{
+				continue;
+			}
+
+			// We do not generate a schema component if we are REP_MultiClient_InitialOnly.
+			if (RepData[Group].Num() == 0 && Group == REP_MultiClient_InitialOnly)
 			{
 				continue;
 			}

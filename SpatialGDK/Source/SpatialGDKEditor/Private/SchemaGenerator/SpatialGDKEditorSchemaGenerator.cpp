@@ -466,6 +466,8 @@ FString GetComponentSetNameBySchemaType(ESchemaComponentType SchemaType)
 		return SpatialConstants::OWNER_ONLY_COMPONENT_SET_NAME;
 	case SCHEMA_Handover:
 		return SpatialConstants::HANDOVER_COMPONENT_SET_NAME;
+	case SCHEMA_InitialOnly:
+		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_NAME;
 	default:
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not return component set name. Schema component type was invalid: %d"),
 			   SchemaType);
@@ -483,6 +485,8 @@ Worker_ComponentId GetComponentSetIdBySchemaType(ESchemaComponentType SchemaType
 		return SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID;
 	case SCHEMA_Handover:
 		return SpatialConstants::HANDOVER_COMPONENT_SET_ID;
+	case SCHEMA_InitialOnly:
+		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID;
 	default:
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not return component set ID. Schema component type was invalid: %d"),
 			   SchemaType);
@@ -574,6 +578,9 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, TAr
 					case SCHEMA_Handover:
 						Writer.Printf("unreal.generated.{0}.{1}Handover,", ActorClassName.ToLower(), ActorClassName);
 						break;
+					case SCHEMA_InitialOnly:
+						Writer.Printf("unreal.generated.{0}.{1}InitialOnly,", ActorClassName.ToLower(), ActorClassName);
+						break;
 					default:
 						break;
 					}
@@ -599,6 +606,9 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, TAr
 							break;
 						case SCHEMA_Handover:
 							Writer.Printf("unreal.generated.{0}.subobjects.{1}Handover,", ActorClassName.ToLower(), ActorSubObjectName);
+							break;
+						case SCHEMA_InitialOnly:
+							Writer.Printf("unreal.generated.{0}.subobjects.{1}InitialOnly,", ActorClassName.ToLower(), ActorSubObjectName);
 							break;
 						default:
 							break;
@@ -632,6 +642,9 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, TAr
 							break;
 						case SCHEMA_Handover:
 							Writer.Printf("unreal.generated.{0}HandoverDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
+							break;
+						case SCHEMA_InitialOnly:
+							Writer.Printf("unreal.generated.{0}.{1}InitialOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
 							break;
 						default:
 							break;
@@ -752,6 +765,9 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 				case SCHEMA_Handover:
 					Writer.Printf("unreal.generated.{0}.{1}Handover,", ActorClassName.ToLower(), ActorClassName);
 					break;
+				case SCHEMA_InitialOnly:
+					Writer.Printf("unreal.generated.{0}.{1}InitialOnly,", ActorClassName.ToLower(), ActorClassName);
+					break;
 				default:
 					break;
 				}
@@ -772,6 +788,9 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 						break;
 					case SCHEMA_Handover:
 						Writer.Printf("unreal.generated.{0}.subobjects.{1}Handover,", ActorClassName.ToLower(), ActorSubObjectName);
+						break;
+					case SCHEMA_InitialOnly:
+						Writer.Printf("unreal.generated.{0}.subobjects.{1}InitialOnly,", ActorClassName.ToLower(), ActorSubObjectName);
 						break;
 					default:
 						break;
@@ -800,6 +819,9 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 						break;
 					case SCHEMA_Handover:
 						Writer.Printf("unreal.generated.{0}HandoverDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
+						break;
+					case SCHEMA_InitialOnly:
+						Writer.Printf("unreal.generated.{0}InitialOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
 						break;
 					default:
 						break;
@@ -847,6 +869,7 @@ USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->DataComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Data].Array();
 	SchemaDatabase->OwnerOnlyComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_OwnerOnly].Array();
 	SchemaDatabase->HandoverComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Handover].Array();
+	SchemaDatabase->InitialOnlyComponentsIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_InitialOnly].Array();
 
 	SchemaDatabase->NetCullDistanceComponentIds.Reset();
 	TArray<Worker_ComponentId> NetCullDistanceComponentIds;
@@ -1135,6 +1158,8 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 											TSet<Worker_ComponentId>(SchemaDatabase->OwnerOnlyComponentIds));
 		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_Handover,
 											TSet<Worker_ComponentId>(SchemaDatabase->HandoverComponentIds));
+		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_InitialOnly,
+											TSet<Worker_ComponentId>(SchemaDatabase->InitialOnlyComponentsIds));
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 		NetCullDistanceToComponentId = SchemaDatabase->NetCullDistanceToComponentId;
@@ -1391,6 +1416,7 @@ bool SpatialGDKGenerateSchema()
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Data);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover);
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_InitialOnly);
 
 	// Finish initializing the schema database through updating the server authoritative component set.
 	for (const auto& ComponentId : GeneratedServerAuthoritativeComponentIds)
