@@ -129,6 +129,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed an issue in the SpatialTestCharacterMigration test where trigger boxes sometimes wouldn't trigger at low framerates.
 - Spatial bundles no longer requested at startup if `UGeneralProjectSettings::bSpatialNetworking` is disabled.
 - Fixed an issue where heartbeats could be ran on a controller after its destruction
+- Fixed an issue that led to the launch config being left in non-classic style with certain engine and project path configurations
 
 ## [`0.11.0`] - 2020-09-03
 
