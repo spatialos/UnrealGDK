@@ -128,6 +128,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Spatial debugger no longer consumes input.
 - Fixed an issue in the SpatialTestCharacterMigration test where trigger boxes sometimes wouldn't trigger at low framerates.
 - Spatial bundles no longer requested at startup if `UGeneralProjectSettings::bSpatialNetworking` is disabled.
+- Fixed an issue where heartbeats could be ran on a controller after its destruction
 
 ## [`0.11.0`] - 2020-09-03
 
