@@ -89,14 +89,13 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 				FinishStep();
 			});
 
-
-	 AddStep(TEXT("Startup actor tests: Post-RPC entity ID check"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float
-	 DeltaTime) {
+	AddStep(TEXT("Startup actor tests: Post-RPC entity ID check"), FWorkerDefinition::AllServers, nullptr, nullptr,
+			[this](float DeltaTime) {
 				CheckInvalidEntityID(ReplicatedLevelCube);
-	});
+			});
 
-	 // Normal case
-	 AddStep(TEXT("Startup actor tests: Auth server - Set replicated"), FWorkerDefinition::Server(4), nullptr, [this]() {
+	// Normal case
+	AddStep(TEXT("Startup actor tests: Auth server - Set replicated"), FWorkerDefinition::Server(4), nullptr, [this]() {
 		ReplicatedLevelCube->TurnOnReplication();
 		FinishStep();
 	});
