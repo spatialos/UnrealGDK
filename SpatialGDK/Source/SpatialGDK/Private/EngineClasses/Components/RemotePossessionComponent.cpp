@@ -35,8 +35,7 @@ void URemotePossessionComponent::BeginPlay()
 	{
 		if (SpatialNetDriver->LockingPolicy->IsLocked(GetOwner()))
 		{
-			UE_LOG(LogRemotePossessionComponent, Warning, TEXT("Actor %s cannot migrate because it is locked"),
-				   *GetOwner()->GetName());
+			UE_LOG(LogRemotePossessionComponent, Warning, TEXT("Actor %s cannot migrate because it is locked"), *GetOwner()->GetName());
 			MarkToDestroy();
 		}
 	}
