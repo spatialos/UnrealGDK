@@ -63,7 +63,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - You can now select an actor for spatial debugging in-game. Use F9 (by default) to open the Spatial Debugger in-game config menu and then press the `Start Select Actor(s)` button. Hover over an actor with the mouse to highlight and right-click  (by default) to select. You can select multiple actors. To deselect an actor right-click on it a second time. If there are multiple actors under the cursor use the mouse wheel (by default) to highlight the desired actor then right-click to confirm your selection.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
 - Worker SDK version compatibility is checked at compile time. 
-- Unreal GDK now uses SpatialOS 15.0.0-preview-7.
+- Unreal GDK now uses SpatialOS 15.0.0-preview-8.
 - SpatialWorkerFlags has reworked how to add callbacks for flag updates:
   1. `BindToOnWorkerFlagsUpdated` is changed to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added functions for register callbacks. 
   2. `RegisterFlagUpdatedCallback` is added to register callbacks for individual flag updates
@@ -125,6 +125,8 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed a bug where consecutive invocations of CookAndGenerateSchemaCommandlet for different levels could fail when running the schema compiler.
 - Fixed a crash that occured when opening the session frontend with VS 16.8.0 using the bundled dbghelp.dll.
 - Spatial debugger no longer consumes input.
+- Fixed an issue in the SpatialTestCharacterMigration test where trigger boxes sometimes wouldn't trigger at low framerates.
+- Spatial bundles no longer requested at startup if `UGeneralProjectSettings::bSpatialNetworking` is disabled.
 - Fixed an issue where heartbeats could be ran on a controller after its destruction
 
 ## [`0.11.0`] - 2020-09-03

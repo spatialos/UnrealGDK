@@ -52,7 +52,7 @@ static const FString GetInspectorExecutablePath(const FString& InspectorVersion)
 	return FPaths::Combine(GDKProgramPath, InspectorPackageName, InspectorVersion, InspectorExe);
 }
 
-const FString SpatialOSRuntimePinnedStandardVersion = TEXT("15.0.0-preview-7");
+const FString SpatialOSRuntimePinnedStandardVersion = TEXT("15.0.0-preview-8");
 
 const int32 RuntimeGRPCPort = 7777;
 
