@@ -9,7 +9,6 @@
 
 #include "SpatialFunctionalTestFlowController.h"
 
-
 /**
  * This test automates the Server to server RPC gym, that was used to demonstrate that actors owned by different servers correctly send
  * server-to-server RPCs. The test includes 4 server workers and 2 clients. NOTE: This test requires the map it runs in to have the
@@ -20,7 +19,8 @@
  * The flow for the startup actor tests is as follows:
  * - Setup:
  *  - The level contains one CrossServerRPCCube on Server 4 that is not replicated initially.
- *  - On authoritative server we turn on replication, change the authority to non-authoritative and then send an RPC. These specific steps were needed to recreate an error of the entity ID being incorrectly allocated on a non-auth server.
+ *  - On authoritative server we turn on replication, change the authority to non-authoritative and then send an RPC. These specific steps
+ * were needed to recreate an error of the entity ID being incorrectly allocated on a non-auth server.
  * - Test
  *  - Check for valid entity IDs on all servers
  * - Clean-up
@@ -67,14 +67,15 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 		int LocalWorkerId = GetLocalWorkerId();
 		if (LocalWorkerId < 4)
 		{
-			ReplicatedLevelCube->TurnOnReplication(); 
+			ReplicatedLevelCube->TurnOnReplication();
 			ReplicatedLevelCube->SetNonAuth();
 			ReplicatedLevelCube->CrossServerTestRPC(LocalWorkerId);
 		}
 		FinishStep();
 	});
 
-	// AddStep(TEXT("Startup actor tests: Post-RPC entity ID check"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
+	// AddStep(TEXT("Startup actor tests: Post-RPC entity ID check"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float
+	// DeltaTime) {
 	//	CheckInvalidEntityID(); // Will cause test to fail without fix
 	//});
 
@@ -88,9 +89,10 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Startup actor tests: Post-Auth entity ID check"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
-		CheckValidEntityID(ReplicatedLevelCube);
-	});
+	AddStep(TEXT("Startup actor tests: Post-Auth entity ID check"), FWorkerDefinition::AllServers, nullptr, nullptr,
+			[this](float DeltaTime) {
+				CheckValidEntityID(ReplicatedLevelCube);
+			});
 
 	AddStep(TEXT("Startup actor tests: Auth server - Destroy startup actor"), FWorkerDefinition::Server(4), nullptr, [this]() {
 		ReplicatedLevelCube->Destroy();
@@ -224,7 +226,6 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 		}
 	});
 }
-
 
 void ASpatialTestCrossServerRPC::CheckInvalidEntityID(ACrossServerRPCCube* TestCube)
 {

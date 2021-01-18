@@ -6,9 +6,6 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Net/UnrealNetwork.h"
 
-
-
-
 ACrossServerRPCCube::ACrossServerRPCCube()
 {
 	bReplicates = false;
@@ -36,7 +33,6 @@ void ACrossServerRPCCube::TurnOnReplication()
 
 	SetReplicates(true);
 	SetReplicateMovement(true);
-	
 }
 
 void ACrossServerRPCCube::SetNonAuth()
@@ -53,5 +49,3 @@ void ACrossServerRPCCube::RecordEntityId()
 		AuthEntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(this);
 	}
 }
-
-

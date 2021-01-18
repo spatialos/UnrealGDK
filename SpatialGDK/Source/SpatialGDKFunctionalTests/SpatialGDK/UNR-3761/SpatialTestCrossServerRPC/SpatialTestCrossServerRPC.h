@@ -19,7 +19,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Default")
 	ACrossServerRPCCube* ReplicatedLevelCube;
-	
+
 	virtual void PrepareTest() override;
 
 	void CheckInvalidEntityID(ACrossServerRPCCube* TestCube);

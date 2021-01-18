@@ -7,7 +7,6 @@
 
 #include "CrossServerRPCCube.generated.h"
 
-
 UCLASS()
 class ACrossServerRPCCube : public AReplicatedTestActorBase
 {
