@@ -2429,7 +2429,9 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 	for (const auto& ObjectToInspect : ObjectsToInspect)
 	{
 		USpatialActorChannel* DependentChannel = ObjectToInspect.Channel;
-		if (!ObjectToInspect.Object.IsValid())
+		// Since the RepNotifies could theoretically destroy objects and close channels
+		// we will check here again to see if the object is still valid and the channel is open
+		if (!ObjectToInspect.Object.IsValid() || DependentChannel->Actor == nullptr)
 		{
 			continue;
 		}
