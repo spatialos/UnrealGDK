@@ -65,11 +65,6 @@ public class SpatialGDK : ModuleRules
 
         var WorkerLibraryDir = Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString());
 
-        var WorkerLibraryPaths = new List<string>
-            {
-                WorkerLibraryDir,
-            };
-
         string LibPrefix = "libimprobable_";
         string ImportLibSuffix = ".so";
         string SharedLibSuffix = ".so";
@@ -127,14 +122,12 @@ public class SpatialGDK : ModuleRules
         }
         else
         {
-            WorkerLibraryPaths.Clear();
-            WorkerSharedLib = System.String.Format("{0}worker{1}", LibPrefix, SharedLibSuffix);
-            WorkerLibraryPaths.AddRange(new string[]
+            var WorkerLibraryPaths = new List<string>
             {
                 Path.Combine(WorkerLibraryDir, "arm64-v8a"),
                 Path.Combine(WorkerLibraryDir, "armeabi-v7a"),
                 Path.Combine(WorkerLibraryDir, "x86_64"),
-            });
+            };
 
             string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
             AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(PluginPath, "SpatialGDK_APL.xml"));
