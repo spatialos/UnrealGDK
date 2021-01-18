@@ -131,6 +131,7 @@ These functions and structs can be referenced in both code and blueprints it may
 ## [`0.11.0`] - 2020-09-03
 
 ### Breaking changes:
+- We no longer support Server Travel. This feature is being re-designed and will be reintroduce in a future version.
 - We no longer support Unreal Engine version 4.23. We recommend that you upgrade to the newest version 4.25 to continue receiving updates. See [Unreal Engine Version Support](https://documentation.improbable.io/gdk-for-unreal/docs/versioning-scheme#section-unreal-engine-version-support) for more information on versions. Follow the instructions in [Update your GDK](https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date) to update to 4.25.
 - We have removed multi-worker settings from the `SpatialWorldSettings` properties and added them to a new class `USpatialMultiWorkerSettings`. To update your project, create a derived `USpatialMultiWorkerSettings` class mimicking your previous configuration. Then, in your level’s World settings, select that class as the `Multi-worker settings class` property.
 - The `-nocompile` flag used with `Buildworker.bat` is now split into two. Use the following flags:
