@@ -1612,6 +1612,25 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 
 	if (IsServer())
 	{
+		if (PackageMap->GetEntityIdFromObject(CallingObject) == SpatialConstants::INVALID_ENTITY_ID)
+		{
+			AActor* TargetActor = Cast<AActor>(CallingObject);
+			if (TargetActor == nullptr)
+			{
+				TargetActor = Cast<AActor>(CallingObject->GetOuter());
+			}
+			check(TargetActor);
+			if (!TargetActor->HasAuthority() && TargetActor->IsNameStableForNetworking() && TargetActor->GetIsReplicated())
+			{
+				// We don't want GetOrCreateSpatialActorChannel to pre-allocate an entity id here, because it exists on another worker.
+				// We just haven't received the entity from runtime (yet).
+				UE_LOG(LogSpatialOSNetDriver, Warning,
+					   TEXT("Called RPC %s on object %s that is replicated and exists on another worker, but we haven't received from "
+							"runtime. Dropping RPC."),
+					   *Function->GetName(), *CallingObject->GetFullName());
+				return;
+			}
+		}
 		// Creating channel to ensure that object will be resolvable
 		if (GetOrCreateSpatialActorChannel(CallingObject) == nullptr)
 		{

@@ -63,23 +63,40 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 	});
 
 	// Startup actor tests
-	AddStep(TEXT("Startup actor tests: Non-auth server - Set replicated"), FWorkerDefinition::AllServers, nullptr, [this]() {
-		int LocalWorkerId = GetLocalWorkerId();
-		if (LocalWorkerId < 4)
-		{
-			ReplicatedLevelCube->TurnOnReplication();
-			ReplicatedLevelCube->SetNonAuth();
-			ReplicatedLevelCube->CrossServerTestRPC(LocalWorkerId);
-		}
-		FinishStep();
+	//
+	// Repro the error case of the entity ID being incorrectly allocated on a non-auth server - expect warnings
+	if (HasAuthority())
+	{
+		// Expect this warning from each non-authoritative server
+		AddExpectedLogError(TEXT("that is replicated and exists on another worker, but we haven't received from runtime. Dropping RPC."), 3,
+							false);
+	}
+	AddStep(TEXT("Startup actor tests: repro error case for entity ID after RPC on non-auth server"), FWorkerDefinition::AllServers,
+			nullptr, [this]() {
+				int LocalWorkerId = GetLocalWorkerId();
+
+				// These specific steps were needed to recreate an error of the entity ID being incorrectly allocated on a non-auth server.
+				// The level actor is located on server 4 in the map and is not replicated initially. Therefore, all actors are initially
+				// authoritative. First we turn on replication on the level actor, then we change it to non-auth and finally send a cross
+				// server RPC. It is the ProcessRPC call that was causing an incorrect entity ID to be allocated in this specific case but
+				// this has now been fixed and we are expecting a warning error in this case.
+				if (LocalWorkerId < 4)
+				{
+					ReplicatedLevelCube->TurnOnReplication();
+					ReplicatedLevelCube->SetNonAuth();
+					ReplicatedLevelCube->CrossServerTestRPC(LocalWorkerId);
+				}
+				FinishStep();
+			});
+
+
+	 AddStep(TEXT("Startup actor tests: Post-RPC entity ID check"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float
+	 DeltaTime) {
+				CheckInvalidEntityID(ReplicatedLevelCube);
 	});
 
-	// AddStep(TEXT("Startup actor tests: Post-RPC entity ID check"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float
-	// DeltaTime) {
-	//	CheckInvalidEntityID(); // Will cause test to fail without fix
-	//});
-
-	AddStep(TEXT("Startup actor tests: Auth server - Set replicated"), FWorkerDefinition::Server(4), nullptr, [this]() {
+	 // Normal case
+	 AddStep(TEXT("Startup actor tests: Auth server - Set replicated"), FWorkerDefinition::Server(4), nullptr, [this]() {
 		ReplicatedLevelCube->TurnOnReplication();
 		FinishStep();
 	});
@@ -94,6 +111,7 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 				CheckValidEntityID(ReplicatedLevelCube);
 			});
 
+	// Clean up
 	AddStep(TEXT("Startup actor tests: Auth server - Destroy startup actor"), FWorkerDefinition::Server(4), nullptr, [this]() {
 		ReplicatedLevelCube->Destroy();
 		ReplicatedLevelCube = nullptr;
