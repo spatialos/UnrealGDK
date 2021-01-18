@@ -26,23 +26,27 @@ URemotePossessionComponent::URemotePossessionComponent(const FObjectInitializer&
 void URemotePossessionComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	if (Target == nullptr)
+	if (GetOwner()->HasAuthority())
 	{
-		return;
-	}
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetOwner()->GetNetDriver());
-	if (SpatialNetDriver != nullptr)
-	{
-		if (SpatialNetDriver->LockingPolicy->IsLocked(GetOwner()))
+		if (Target == nullptr)
 		{
-			UE_LOG(LogRemotePossessionComponent, Warning, TEXT("Actor %s cannot migrate because it is locked"), *GetOwner()->GetName());
+			OnInvalidTarget();
+			return;
+		}
+		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetOwner()->GetNetDriver());
+		if (SpatialNetDriver != nullptr)
+		{
+			if (SpatialNetDriver->LockingPolicy->IsLocked(GetOwner()))
+			{
+				UE_LOG(LogRemotePossessionComponent, Warning, TEXT("Actor %s cannot migrate because it is locked"), *GetOwner()->GetName());
+				MarkToDestroy();
+			}
+		}
+		if (Target->HasAuthority())
+		{
+			Possess();
 			MarkToDestroy();
 		}
-	}
-	if (Target->HasAuthority())
-	{
-		Possess();
-		MarkToDestroy();
 	}
 }
 
