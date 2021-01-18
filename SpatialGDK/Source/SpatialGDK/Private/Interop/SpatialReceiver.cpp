@@ -2426,15 +2426,15 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 		ObjectsToInspect.Add(ChannelObjectsToBeResolved{ DependentChannel, ReplicatingObject, RepState });
 	}
 
-	for (const auto& Objects : ObjectsToInspect)
+	for (const auto& ObjectToInspect : ObjectsToInspect)
 	{
-		USpatialActorChannel* DependentChannel = Objects.Channel;
-		if (!Objects.Object.IsValid())
+		USpatialActorChannel* DependentChannel = ObjectToInspect.Channel;
+		if (!ObjectToInspect.Object.IsValid())
 		{
 			continue;
 		}
-		UObject* ReplicatingObject = Objects.Object.Get();
-		FSpatialObjectRepState* RepState = Objects.RepState;
+		UObject* ReplicatingObject = ObjectToInspect.Object.Get();
+		FSpatialObjectRepState* RepState = ObjectToInspect.RepState;
 		bool bSomeObjectsWereMapped = false;
 		TArray<GDK_PROPERTY(Property)*> RepNotifies;
 
