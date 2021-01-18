@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
-
 #include "CrossServerRPCCube.generated.h"
 
 UCLASS()

@@ -1,13 +1,16 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "CrossServerRPCCube.h"
-
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Net/UnrealNetwork.h"
 
 ACrossServerRPCCube::ACrossServerRPCCube()
 {
+	bAlwaysRelevant = true;
+	bNetLoadOnClient = true;
+	bNetLoadOnNonAuthServer = true;
+
 	bReplicates = false;
 	SetReplicateMovement(false);
 }
@@ -27,10 +30,6 @@ void ACrossServerRPCCube::CrossServerTestRPC_Implementation(int SendingServerID)
 
 void ACrossServerRPCCube::TurnOnReplication()
 {
-	bAlwaysRelevant = true;
-	bNetLoadOnClient = true;
-	bNetLoadOnNonAuthServer = true;
-
 	SetReplicates(true);
 	SetReplicateMovement(true);
 }

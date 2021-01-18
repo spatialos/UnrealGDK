@@ -18,7 +18,7 @@ public:
 	ASpatialTestCrossServerRPC();
 
 	UPROPERTY(EditAnywhere, Category = "Default")
-	ACrossServerRPCCube* ReplicatedLevelCube;
+	ACrossServerRPCCube* LevelCube;
 
 	virtual void PrepareTest() override;
 

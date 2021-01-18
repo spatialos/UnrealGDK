@@ -6,7 +6,6 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Kismet/GameplayStatics.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-
 #include "SpatialFunctionalTestFlowController.h"
 
 /**
@@ -58,7 +57,7 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 		}
 		else
 		{
-			CheckInvalidEntityID(ReplicatedLevelCube);
+			CheckInvalidEntityID(LevelCube);
 		}
 	});
 
@@ -82,38 +81,38 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 				// this has now been fixed and we are expecting a warning error in this case.
 				if (LocalWorkerId < 4)
 				{
-					ReplicatedLevelCube->TurnOnReplication();
-					ReplicatedLevelCube->SetNonAuth();
-					ReplicatedLevelCube->CrossServerTestRPC(LocalWorkerId);
+					LevelCube->TurnOnReplication();
+					LevelCube->SetNonAuth();
+					LevelCube->CrossServerTestRPC(LocalWorkerId);
 				}
 				FinishStep();
 			});
 
 	AddStep(TEXT("Startup actor tests: Post-RPC entity ID check"), FWorkerDefinition::AllServers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				CheckInvalidEntityID(ReplicatedLevelCube);
+				CheckInvalidEntityID(LevelCube);
 			});
 
 	// Normal case
 	AddStep(TEXT("Startup actor tests: Auth server - Set replicated"), FWorkerDefinition::Server(4), nullptr, [this]() {
-		ReplicatedLevelCube->TurnOnReplication();
+		LevelCube->TurnOnReplication();
 		FinishStep();
 	});
 
 	AddStep(TEXT("Startup actor tests: Auth server - Record entity id"), FWorkerDefinition::Server(4), nullptr, [this]() {
-		ReplicatedLevelCube->RecordEntityId();
+		LevelCube->RecordEntityId();
 		FinishStep();
 	});
 
 	AddStep(TEXT("Startup actor tests: Post-Auth entity ID check"), FWorkerDefinition::AllServers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				CheckValidEntityID(ReplicatedLevelCube);
+				CheckValidEntityID(LevelCube);
 			});
 
 	// Clean up
 	AddStep(TEXT("Startup actor tests: Auth server - Destroy startup actor"), FWorkerDefinition::Server(4), nullptr, [this]() {
-		ReplicatedLevelCube->Destroy();
-		ReplicatedLevelCube = nullptr;
+		LevelCube->Destroy();
+		LevelCube = nullptr;
 		FinishStep();
 	});
 
