@@ -65,7 +65,8 @@ FUnrealType
 enum EReplicatedPropertyGroup
 {
 	REP_SingleClient,
-	REP_MultiClient
+	REP_MultiClient,
+	REP_MultiClient_InitialOnly
 };
 
 struct FUnrealProperty;
