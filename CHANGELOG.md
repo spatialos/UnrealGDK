@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
+- Fixed incorrect allocation of entity ID from non-authoritative server for replicated level actor that hasn't been received from runtime.
 
 ## [`0.12.0`] - 2020-12-14
 
