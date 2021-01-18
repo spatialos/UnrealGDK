@@ -5,4 +5,4 @@
 #include "Logging/LogMacros.h"
 
 // Intended for logging from test implementations
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialFunctionalTest, Log, All);
+SPATIALGDKFUNCTIONALTESTS_API DECLARE_LOG_CATEGORY_EXTERN(LogSpatialFunctionalTest, Log, All);
