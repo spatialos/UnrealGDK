@@ -112,6 +112,8 @@ FString ComponentTypeToString(ESchemaComponentType Type)
 		return TEXT("OwnerOnly");
 	case SCHEMA_Handover:
 		return TEXT("Handover");
+	case SCHEMA_InitialOnly:
+		return TEXT("InitialOnly");
 	}
 	return TEXT("");
 }
@@ -258,6 +260,7 @@ const TArray<UObject*>& AllTestClassesArray()
 	static TArray<UObject*> TestClassesArray = { USchemaGenObjectStub::StaticClass(),
 												 USchemaGenObjectStubCondOwnerOnly::StaticClass(),
 												 USchemaGenObjectStubHandOver::StaticClass(),
+												 USchemaGenObjectStubInitialOnly::StaticClass(),
 												 USpatialTypeObjectStub::StaticClass(),
 												 UChildOfSpatialTypeObjectStub::StaticClass(),
 												 UNotSpatialTypeObjectStub::StaticClass(),
@@ -279,6 +282,7 @@ const TSet<UClass*>& AllTestClassesSet()
 	static TSet<UClass*> TestClassesSet = { USchemaGenObjectStub::StaticClass(),
 											USchemaGenObjectStubCondOwnerOnly::StaticClass(),
 											USchemaGenObjectStubHandOver::StaticClass(),
+											USchemaGenObjectStubInitialOnly::StaticClass(),
 											USpatialTypeObjectStub::StaticClass(),
 											UChildOfSpatialTypeObjectStub::StaticClass(),
 											UNotSpatialTypeObjectStub::StaticClass(),
@@ -365,7 +369,7 @@ public:
 	}
 	virtual ~SchemaTestFixture()
 	{
-		DeleteTestFolders();
+		// DeleteTestFolders();
 		ResetSpatialNetworking();
 	}
 
@@ -429,6 +433,19 @@ SCHEMA_GENERATOR_TEST(GIVEN_spatial_type_class_WHEN_checked_if_supported_THEN_is
 
 	// THEN
 	TestTrue("Spatial type class is supported", bIsSupported);
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_replicate_with_InitialOnly_spatial_type_class_WHEN_checked_if_supported_THEN_is_supported)
+{
+	// GIVEN
+	const UClass* SupportedClass = USchemaGenObjectStubInitialOnly::StaticClass();
+
+	// WHEN
+	bool bIsSupported = SpatialGDKEditor::Schema::IsSupportedClass(SupportedClass);
+
+	// THEN
+	TestFalse("InitialOnly spatial type class is not supported", bIsSupported);
 	return true;
 }
 
