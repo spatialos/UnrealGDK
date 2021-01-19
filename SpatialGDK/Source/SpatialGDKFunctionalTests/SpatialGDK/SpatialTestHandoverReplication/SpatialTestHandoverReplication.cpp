@@ -200,7 +200,7 @@ void ASpatialTestHandoverReplication::PrepareTest() {
 
 	AddStep(TEXT("Wait until all servers receive updated handover value"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float)
 	{
-		RequireEqual_Int(HandoverCube->HandoverTestProperty, ADynamicReplicationHandoverCube::UpdatedTestPropertyValue, TEXT("Server received handed over value"));
+		RequireEqual_Int(HandoverCube->HandoverTestProperty, ADynamicReplicationHandoverCube::UpdatedTestPropertyValue, FString::Printf(TEXT("Server received handed over value %d"), ADynamicReplicationHandoverCube::UpdatedTestPropertyValue));
 		FinishStep();
 	});
 
@@ -231,7 +231,7 @@ void ASpatialTestHandoverReplication::PrepareTest() {
 		if (GetLocalWorkerId() == 4)
 		{
 			RequireTrue(HandoverCube->HasAuthority(), TEXT("Handover cube was handed over correctly"));
-			RequireEqual_Int(HandoverCube->HandoverTestProperty, ADynamicReplicationHandoverCube::BasicTestPropertyValue, TEXT("The cube handed over has updated value correctly"));
+			RequireEqual_Int(HandoverCube->HandoverTestProperty, ADynamicReplicationHandoverCube::BasicTestPropertyValue, FString::Printf(TEXT("The cube handed over has updated value to %d"), ADynamicReplicationHandoverCube::BasicTestPropertyValue));
 		}
 
 		FinishStep();
