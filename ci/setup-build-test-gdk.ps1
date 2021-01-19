@@ -4,7 +4,7 @@ param(
     [string] $msbuild_exe = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe",
     [string] $build_home = (Get-Item "$($PSScriptRoot)").parent.parent.FullName, ## The root of the entire build. Should ultimately resolve to "C:\b\<number>\".
     [string] $unreal_engine_symlink_dir = "$build_home\UnrealEngine",
-    [string] $gym_version_path = "$unreal_engine_symlink_dir\UnrealGDKTestGymVersion.txt"
+    [string] $gym_version_path = "$gdk_home\UnrealGDKTestGymVersion.txt"
 )
 
 class TestProjectTarget {
