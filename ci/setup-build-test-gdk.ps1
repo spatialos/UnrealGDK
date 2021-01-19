@@ -4,7 +4,7 @@ param(
     [string] $msbuild_exe = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe",
     [string] $build_home = (Get-Item "$($PSScriptRoot)").parent.parent.FullName, ## The root of the entire build. Should ultimately resolve to "C:\b\<number>\".
     [string] $unreal_engine_symlink_dir = "$build_home\UnrealEngine",
-    [string] $gym_version_path = "$gdk_home\UnrealGDKTestGymVersion.txt"
+    [string] $gyms_version_path = "$gdk_home\UnrealGDKTestGymsVersion.txt"
 )
 
 class TestProjectTarget {
@@ -12,20 +12,20 @@ class TestProjectTarget {
     [ValidateNotNullOrEmpty()][string]$test_repo_branch
     [ValidateNotNullOrEmpty()][string]$test_repo_relative_uproject_path
     [ValidateNotNullOrEmpty()][string]$test_project_name
-    [ValidateNotNullOrEmpty()][string]$test_gym_version_path
+    [ValidateNotNullOrEmpty()][string]$test_gyms_version_path
     [ValidateNotNull()][string]$test_env_override
     
-    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name, [string]$test_gym_version_path, [string]$test_env_override) {
+    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name, [string]$test_gyms_version_path, [string]$test_env_override) {
         $this.test_repo_url = $test_repo_url
         $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
         $this.test_project_name = $test_project_name
-        $this.test_gym_version_path = $test_gym_version_path
+        $this.test_gyms_version_path = $test_gyms_version_path
         $this.test_env_override = $test_env_override
         
         # Resolve the branch to run against. The order of priority is:
         # envvar > same-name branch as the branch we are currently on > UnrealGDKTestGymVersion.txt > "master".
         $testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
-        $test_gym_version = if (Test-Path -Path $test_gym_version_path) {[System.IO.File]::ReadAllText($test_gym_version_path)} else {[string]::Empty}
+        $test_gym_version = if (Test-Path -Path $test_gyms_version_path) {[System.IO.File]::ReadAllText($test_gyms_version_path)} else {[string]::Empty}
         if (Test-Path $test_env_override) {
             $this.test_repo_branch = $test_env_override
         }
@@ -67,8 +67,8 @@ class TestSuite {
 [string] $user_cmd_line_args = "$env:TEST_ARGS"
 [string] $gdk_branch = "$env:BUILDKITE_BRANCH"
 
-[TestProjectTarget] $gdk_test_project = [TestProjectTarget]::new("git@github.com:spatialos/UnrealGDKTestGyms.git", $gdk_branch, "Game\GDKTestGyms.uproject", "GDKTestGyms", $gym_version_path, $env:TEST_REPO_BRANCH)
-[TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject", $gym_version_path, $env:NATIVE_TEST_REPO_BRANCH)
+[TestProjectTarget] $gdk_test_project = [TestProjectTarget]::new("git@github.com:spatialos/UnrealGDKTestGyms.git", $gdk_branch, "Game\GDKTestGyms.uproject", "GDKTestGyms", $gyms_version_path, $env:TEST_REPO_BRANCH)
+[TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject", $gyms_version_path, $env:NATIVE_TEST_REPO_BRANCH)
 
 $tests = @()
 
