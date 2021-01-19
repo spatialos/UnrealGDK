@@ -549,13 +549,8 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 
 void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const
 {
-	// We want to do nothing for RemoveComponent ops for which we never received a corresponding
-	// AddComponent op. This can happen because of the worker SDK generating a RemoveComponent op
-	// when a worker receives authority over a component without having already received the
-	// AddComponent op. The generation is a known part of the worker SDK we need to tolerate for
-	// enabling dynamic components, and having authority ACL entries without having the component
-	// data present on an entity is permitted as part of our Unreal dynamic component implementation.
-	if (!EntityHasComponent(EntityId, ComponentId) || SemanticActorComponents.Contains(ComponentId))
+	// Early out if this isn't a generated component.
+	if (SemanticActorComponents.Contains(ComponentId))
 	{
 		return;
 	}
