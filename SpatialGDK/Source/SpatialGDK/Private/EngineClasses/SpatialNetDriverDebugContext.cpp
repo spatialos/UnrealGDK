@@ -89,14 +89,14 @@ void USpatialNetDriverDebugContext::AdvanceView()
 		case SpatialGDK::EntityDelta::UPDATE:
 			for (const SpatialGDK::AuthorityChange& Change : Delta.AuthorityLostTemporarily)
 			{
-				if (Change.ComponentId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+				if (Change.ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 				{
 					AuthorityLost(Delta.EntityId);
 				}
 			}
 			for (const SpatialGDK::AuthorityChange& Change : Delta.AuthorityLost)
 			{
-				if (Change.ComponentId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+				if (Change.ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 				{
 					AuthorityLost(Delta.EntityId);
 				}

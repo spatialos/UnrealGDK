@@ -1702,6 +1702,11 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		return 0;
 	}
 
+	if (DebugCtx)
+	{
+		DebugCtx->TickServer();
+	}
+
 	AWorldSettings* WorldSettings = World->GetWorldSettings();
 
 	bool bCPUSaturated = false;
@@ -1807,11 +1812,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		LastNonRelevantActors.Empty();
 
 		DebugRelevantActors = false;
-	}
-
-	if (DebugCtx)
-	{
-		DebugCtx->TickServer();
 	}
 
 #if !UE_BUILD_SHIPPING
