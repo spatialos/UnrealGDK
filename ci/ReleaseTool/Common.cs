@@ -15,7 +15,7 @@ namespace ReleaseTool
         // Names of the version files that live in the UnrealEngine repository.
         private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
         private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
-        private const string UnrealGDKTestGymVersionFile = "Engine/Plugins/UnrealGDK/UnrealGDKTestGymVersion.txt";
+        private const string UnrealGDKTestGymVersionFile = "Engine/Plugins/UnrealGDK/UnrealGDKTestGymsVersion.txt";
         
         // Plugin file configuration.
         private const string PluginFileName = "SpatialGDK.uplugin";
@@ -41,7 +41,7 @@ namespace ReleaseTool
 
         private static bool UpdateVersionFiles_Internal(GitClient gitClient, string gitRepoName,  string versionRaw, NLog.Logger logger, string versionSuffix = "", string engineVersions = "")
         {
-            // if a suffix is provided usually something like '0.12' + '-rc'
+            // if a suffix is provided usually something like '0.12.0' + '-rc'
             string versionDecorated = versionRaw + versionSuffix;
             switch (gitRepoName)
             {
