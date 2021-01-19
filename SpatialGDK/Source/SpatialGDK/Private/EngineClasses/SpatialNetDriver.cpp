@@ -1889,7 +1889,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				}
 				for (const auto& Authority : EntityDelta.AuthorityGained)
 				{
-					if (Authority.ComponentId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+					if (Authority.ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 					{
 						SpatialDebugger->ActorAuthorityGained(EntityDelta.EntityId);
 					}

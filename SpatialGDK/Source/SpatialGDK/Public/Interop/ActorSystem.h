@@ -4,6 +4,7 @@
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
+#include "SpatialConstants.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogActorSystem, Log, All);
 
@@ -36,6 +37,8 @@ public:
 				FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer);
 
 	void Advance();
+
+	UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
 
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref);
 	void CleanupRepStateMap(FSpatialObjectRepState& RepState);
@@ -98,7 +101,7 @@ private:
 
 	// Component update
 	void OnHeartbeatComponentUpdate(const Worker_EntityId EntityId, Schema_ComponentUpdate* Update);
-	USpatialActorChannel* GetOrRecreateChannelForDomantActor(AActor* Actor, Worker_EntityId EntityID) const;
+	USpatialActorChannel* GetOrRecreateChannelForDormantActor(AActor* Actor, Worker_EntityId EntityID) const;
 	void ApplyComponentUpdate(Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& TargetObject,
 							  USpatialActorChannel& Channel, bool bIsHandover);
 
@@ -134,6 +137,9 @@ private:
 
 	TSet<TPair<Worker_EntityId_Key, Worker_ComponentId>> PendingDynamicSubobjectComponents;
 
+	TArray<Worker_ComponentId> SemanticActorComponents = { SpatialConstants::SPAWN_DATA_COMPONENT_ID,
+														   SpatialConstants::UNREAL_METADATA_COMPONENT_ID,
+														   SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;
 };

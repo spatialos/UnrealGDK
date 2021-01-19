@@ -117,11 +117,11 @@ void ActorSystem::Advance()
 		{
 			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
 			{
-				AuthorityLost(Delta.EntityId, Change.ComponentId);
+				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
 			}
 			for (const AuthorityChange& Change : Delta.AuthorityLost)
 			{
-				AuthorityLost(Delta.EntityId, Change.ComponentId);
+				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
 			}
 			for (const ComponentChange& Change : Delta.ComponentsAdded)
 			{
@@ -135,8 +135,7 @@ void ActorSystem::Advance()
 			}
 			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
 			{
-				ComponentRemoved(Delta.EntityId, Change.ComponentId);
-				ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.Data);
+				ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
 				ComponentAdded(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
 			}
 			for (const ComponentChange& Change : Delta.ComponentsRemoved)
@@ -145,11 +144,11 @@ void ActorSystem::Advance()
 			}
 			for (const AuthorityChange& Change : Delta.AuthorityGained)
 			{
-				AuthorityGained(Delta.EntityId, Change.ComponentId);
+				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
 			}
 			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
 			{
-				AuthorityGained(Delta.EntityId, Change.ComponentId);
+				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
 			}
 			break;
 		}
@@ -171,6 +170,15 @@ void ActorSystem::Advance()
 			break;
 		}
 	}
+}
+
+UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
+{
+	if (ActorDataStore.Contains(EntityId))
+	{
+		return &ActorDataStore[EntityId].Metadata;
+	}
+	return nullptr;
 }
 
 void ActorSystem::PopulateDataStore(const Worker_EntityId EntityId)
@@ -201,10 +209,14 @@ void ActorSystem::ApplyComponentAdd(const Worker_EntityId EntityId, const Worker
 	{
 	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 		ActorDataStore[EntityId].Spawn = SpawnData(Data);
-	case SpatialConstants::METADATA_COMPONENT_ID:
+		break;
+	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		ActorDataStore[EntityId].Metadata = UnrealMetadata(Data);
+		ActorDataStore[EntityId].Metadata.GetNativeEntityClass();
+		break;
 	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
 		ActorDataStore[EntityId].OwningClientWorker = NetOwningClientWorker(Data);
+		break;
 	default:
 		break;
 	}
@@ -221,11 +233,23 @@ void ActorSystem::ApplyComponentUpdate(const Worker_EntityId EntityId, const Wor
 
 void ActorSystem::AuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
-	HandleActorAuthority(EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE);
+	if (ComponentSetId != SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
+		&& ComponentSetId != SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
+	{
+		return;
+	}
+
+	HandleActorAuthority(EntityId, ComponentSetId, WORKER_AUTHORITY_NOT_AUTHORITATIVE);
 }
 
 void ActorSystem::AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId)
 {
+	if (ComponentSetId != SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
+		&& ComponentSetId != SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
+	{
+		return;
+	}
+
 	if (HasEntityBeenRequestedForDelete(EntityId))
 	{
 		if (ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
@@ -435,7 +459,7 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 		{
 			if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId)))
 			{
-				Channel = GetOrRecreateChannelForDomantActor(Actor, EntityId);
+				Channel = GetOrRecreateChannelForDormantActor(Actor, EntityId);
 
 				// As we haven't removed the dormant component just yet, this might be a single replication update where the actor
 				// remains dormant. Add it back to pending dormancy so the local worker can clean up the channel. If we do process
@@ -531,7 +555,7 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 	// AddComponent op. The generation is a known part of the worker SDK we need to tolerate for
 	// enabling dynamic components, and having authority ACL entries without having the component
 	// data present on an entity is permitted as part of our Unreal dynamic component implementation.
-	if (!EntityHasComponent(EntityId, ComponentId))
+	if (!EntityHasComponent(EntityId, ComponentId) || SemanticActorComponents.Contains(ComponentId))
 	{
 		return;
 	}
@@ -541,7 +565,7 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 		FUnrealObjectRef ObjectRef(EntityId, ComponentId);
 		if (ComponentId == SpatialConstants::DORMANT_COMPONENT_ID)
 		{
-			GetOrRecreateChannelForDomantActor(Actor, EntityId);
+			GetOrRecreateChannelForDormantActor(Actor, EntityId);
 		}
 		else if (UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
@@ -564,9 +588,9 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 {
 	ReceiveActor(EntityId);
-	for (const auto& AuthoritativeComponent : SubView->GetView()[EntityId].Authority)
+	for (const auto& AuthoritativeComponentSet : SubView->GetView()[EntityId].Authority)
 	{
-		AuthorityGained(EntityId, AuthoritativeComponent);
+		AuthorityGained(EntityId, AuthoritativeComponentSet);
 	}
 }
 
@@ -1164,7 +1188,7 @@ void ActorSystem::OnHeartbeatComponentUpdate(const Worker_EntityId EntityId, Sch
 	}
 }
 
-USpatialActorChannel* ActorSystem::GetOrRecreateChannelForDomantActor(AActor* Actor, const Worker_EntityId EntityID) const
+USpatialActorChannel* ActorSystem::GetOrRecreateChannelForDormantActor(AActor* Actor, const Worker_EntityId EntityID) const
 {
 	// Receive would normally create channel in ReceiveActor - this function is used to recreate the channel after waking up a dormant actor
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(Actor);
@@ -1363,18 +1387,6 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 	// Taken from PostNetInit
 	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
 	{
-		// The Actor role can be authority here if a PendingAddComponent processed above set the role.
-		// Calling BeginPlay() with authority a 2nd time globally is always incorrect, so we set role
-		// to SimulatedProxy and let the processing of authority ops (later in the LeaveCriticalSection
-		// flow) take care of setting roles correctly.
-		if (EntityActor->HasAuthority())
-		{
-			UE_LOG(LogActorSystem, Error,
-				   TEXT("Trying to unexpectedly spawn received network Actor with authority. Actor %s. Entity: %lld"),
-				   *EntityActor->GetName(), EntityId);
-			EntityActor->Role = ROLE_SimulatedProxy;
-			EntityActor->RemoteRole = ROLE_Authority;
-		}
 		EntityActor->DispatchBeginPlay();
 	}
 

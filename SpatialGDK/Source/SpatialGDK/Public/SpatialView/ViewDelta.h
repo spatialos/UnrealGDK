@@ -132,7 +132,7 @@ private:
 	// Returns a pointer to the next entity in the authority changes list.
 	Worker_ComponentSetAuthorityChangeOp* ProcessEntityAuthorityChanges(Worker_ComponentSetAuthorityChangeOp* It,
 																		Worker_ComponentSetAuthorityChangeOp* End,
-																		TArray<Worker_ComponentId>& EntityAuthority, EntityDelta& Delta);
+																		TArray<Worker_ComponentSetId>& EntityAuthority, EntityDelta& Delta);
 	// Sets `bAdded` and `bRemoved` fields in the `Delta`.
 	// `It` must point to the first element with a given entity ID.
 	// `ViewElement` must point to the same entity in the view or end if it doesn't exist.
