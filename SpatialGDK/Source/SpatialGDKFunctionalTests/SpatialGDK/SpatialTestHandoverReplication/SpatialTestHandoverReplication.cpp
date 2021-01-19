@@ -190,6 +190,52 @@ void ASpatialTestHandoverReplication::PrepareTest() {
         RequireHandoverCubeAuthorityAndPosition(4, Server4Position);
         FinishStep();
       }, StepTimeLimit);
+
+
+	AddStep(TEXT("Modify handover replicated value on Server 4"), FWorkerDefinition::Server(4), nullptr, [this]()
+	{
+		HandoverCube->HandoverTestProperty = ADynamicReplicationHandoverCube::UpdatedTestPropertyValue;
+		FinishStep();
+	});
+
+	AddStep(TEXT("Wait until all servers receive updated handover value"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float)
+	{
+		RequireEqual_Int(HandoverCube->HandoverTestProperty, ADynamicReplicationHandoverCube::UpdatedTestPropertyValue, TEXT("Server received handed over value"));
+		FinishStep();
+	});
+
+	AddStep(TEXT("Move the cube to Server 3's authority area"), FWorkerDefinition::Server(4), nullptr, nullptr, [this](float)
+	{
+		RequireTrue(MoveHandoverCube(Server3Position), TEXT("Server 4 has authority over the cube"));
+		FinishStep();
+	});
+
+	AddStep(
+        TEXT("Check that Server 3 is now authoritative over the HandoverCube."),
+        FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
+          RequireHandoverCubeAuthorityAndPosition(3, Server3Position);
+          FinishStep();
+        }, StepTimeLimit);
+
+	AddStep(
+		TEXT("Revert Handover property to default value and hand the cube over back to Server 4"), FWorkerDefinition::Server(3), nullptr, [this]()
+		{
+			HandoverCube->HandoverTestProperty = GetDefault<ADynamicReplicationHandoverCube>()->HandoverTestProperty;
+			RequireTrue(MoveHandoverCube(Server4Position), TEXT("Server 3 has authority over the cube"));
+			FinishStep();
+		}
+	);
+
+	AddStep(TEXT("Check that Server 4 has updated handover value to default"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float)
+	{
+		if (GetLocalWorkerId() == 4)
+		{
+			RequireTrue(HandoverCube->HasAuthority(), TEXT("Handover cube was handed over correctly"));
+			RequireEqual_Int(HandoverCube->HandoverTestProperty, ADynamicReplicationHandoverCube::BasicTestPropertyValue, TEXT("The cube handed over has updated value correctly"));
+		}
+
+		FinishStep();
+	});
 }
 
 void ASpatialTestHandoverReplication::RequireHandoverCubeAuthorityAndPosition(
