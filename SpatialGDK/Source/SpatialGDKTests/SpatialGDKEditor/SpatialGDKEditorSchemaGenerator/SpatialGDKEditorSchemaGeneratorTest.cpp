@@ -369,7 +369,7 @@ public:
 	}
 	virtual ~SchemaTestFixture()
 	{
-		// DeleteTestFolders();
+		DeleteTestFolders();
 		ResetSpatialNetworking();
 	}
 
