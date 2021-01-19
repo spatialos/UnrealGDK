@@ -17,4 +17,10 @@ class ADynamicReplicationHandoverCube : public AHandoverCube
 
 public:
 	ADynamicReplicationHandoverCube();
+
+	static constexpr int BasicTestPropertyValue = 0;
+	static constexpr int UpdatedTestPropertyValue = 100;
+
+	UPROPERTY(Handover)
+	int HandoverTestProperty = BasicTestPropertyValue;
 };
