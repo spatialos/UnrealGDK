@@ -15,7 +15,7 @@ namespace ReleaseTool
         // Names of the version files that live in the UnrealEngine repository.
         private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
         private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
-        private const string UnrealGDKTestGymVersionFile = "Engine/Plugins/UnrealGDK/UnrealGDKTestGymsVersion.txt";
+        private const string UnrealGDKTestGymVersionFile = "UnrealGDKTestGymsVersion.txt";
         
         // Plugin file configuration.
         private const string PluginFileName = "SpatialGDK.uplugin";
