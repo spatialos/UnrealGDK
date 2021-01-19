@@ -24,9 +24,6 @@ public class SpatialGDKFunctionalTests : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "FunctionalTesting",
-                "GameplayAbilities",
-                "GameplayTags",
-                "GameplayTasks",
                 "HTTP"
             });
     }
