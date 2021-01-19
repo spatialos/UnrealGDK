@@ -141,10 +141,6 @@ void ASpatialDebugger::BeginPlay()
 			OnEntityAdded(EntityId);
 		}
 
-		// Register callbacks to get notified of all future entity arrivals / deletes.
-		OnEntityAddedHandle = NetDriver->Receiver->OnEntityAddedDelegate.AddUObject(this, &ASpatialDebugger::OnEntityAdded);
-		OnEntityRemovedHandle = NetDriver->Receiver->OnEntityRemovedDelegate.AddUObject(this, &ASpatialDebugger::OnEntityRemoved);
-
 		FontRenderInfo.bClipText = true;
 		FontRenderInfo.bEnableShadow = true;
 
@@ -257,19 +253,6 @@ void ASpatialDebugger::OnRep_SetWorkerRegions()
 
 void ASpatialDebugger::Destroyed()
 {
-	if (NetDriver != nullptr && NetDriver->Receiver != nullptr)
-	{
-		if (OnEntityAddedHandle.IsValid())
-		{
-			NetDriver->Receiver->OnEntityAddedDelegate.Remove(OnEntityAddedHandle);
-		}
-
-		if (OnEntityRemovedHandle.IsValid())
-		{
-			NetDriver->Receiver->OnEntityRemovedDelegate.Remove(OnEntityRemovedHandle);
-		}
-	}
-
 	if (DrawDebugDelegateHandle.IsValid())
 	{
 		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
@@ -300,7 +283,11 @@ void ASpatialDebugger::LoadIcons()
 
 void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 {
-	check(NetDriver != nullptr && !NetDriver->IsServer());
+	check(NetDriver != nullptr);
+	if (NetDriver->IsServer())
+	{
+		return;
+	}
 
 	TWeakObjectPtr<AActor>* ExistingActor = EntityActorMapping.Find(EntityId);
 
@@ -479,15 +466,17 @@ bool ASpatialDebugger::IsSelectActorEnabled() const
 
 void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 {
-	check(NetDriver != nullptr && !NetDriver->IsServer());
+	check(NetDriver != nullptr);
+	if (NetDriver->IsServer())
+	{
+		return;
+	}
 
 	EntityActorMapping.Remove(EntityId);
 }
 
-void ASpatialDebugger::ActorAuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp) const
+void ASpatialDebugger::ActorAuthorityGained(const Worker_EntityId EntityId) const
 {
-	check(AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE && AuthOp.component_set_id == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
-
 	if (NetDriver->VirtualWorkerTranslator == nullptr)
 	{
 		// Currently, there's nothing to display in the debugger other than load balancing information.
@@ -498,20 +487,20 @@ void ASpatialDebugger::ActorAuthorityChanged(const Worker_ComponentSetAuthorityC
 	const FColor LocalVirtualWorkerColor =
 		SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
 
-	SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(AuthOp.entity_id);
+	SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId);
 	if (DebuggingInfo == nullptr)
 	{
 		// Some entities won't have debug info, so create it now.
 		SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
 										  InvalidServerTintColor, false);
-		NetDriver->Sender->SendAddComponents(AuthOp.entity_id, { NewDebuggingInfo.CreateComponentData() });
+		NetDriver->Sender->SendAddComponents(EntityId, { NewDebuggingInfo.CreateSpatialDebuggingData() });
 		return;
 	}
 
 	DebuggingInfo->AuthoritativeVirtualWorkerId = LocalVirtualWorkerId;
 	DebuggingInfo->AuthoritativeColor = LocalVirtualWorkerColor;
 	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
-	NetDriver->Connection->SendComponentUpdate(AuthOp.entity_id, &DebuggingUpdate);
+	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
 }
 
 void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const

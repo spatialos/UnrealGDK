@@ -21,6 +21,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
+#include "Interop/ActorSystem.h"
 #include "Interop/RPCExecutorInterface.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
@@ -75,6 +76,7 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 
 public:
 	USpatialNetDriver(const FObjectInitializer& ObjectInitializer);
+	~USpatialNetDriver();
 
 	// Begin UObject Interface
 	virtual void BeginDestroy() override;
@@ -190,6 +192,10 @@ public:
 	USpatialWorkerFlags* SpatialWorkerFlags;
 	UPROPERTY()
 	USpatialNetDriverDebugContext* DebugCtx;
+	const SpatialGDK::FSubView* DebugActorSubView = nullptr;
+
+	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
+	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
@@ -239,7 +245,6 @@ private:
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
-	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 	TUniquePtr<SpatialGDK::CrossServerRPCSender> CrossServerRPCSender;
 	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CrossServerRPCHandler;
 

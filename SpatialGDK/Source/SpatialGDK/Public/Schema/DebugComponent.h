@@ -18,9 +18,9 @@ struct DebugComponent : AbstractMutableComponent
 
 	DebugComponent() {}
 
-	DebugComponent(const Worker_ComponentData& Data)
+	DebugComponent(Schema_ComponentData* Data)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 		ReadFromSchema(ComponentObject);
 	}
 
@@ -50,9 +50,9 @@ struct DebugComponent : AbstractMutableComponent
 		return Data;
 	}
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
 		ReadFromSchema(ComponentObject);
 	}
 
