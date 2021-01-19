@@ -15,7 +15,8 @@ namespace ReleaseTool
         // Names of the version files that live in the UnrealEngine repository.
         private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
         private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
-
+        private const string UnrealGDKTestGymVersionFile = "Engine/Plugins/UnrealGDK/UnrealGDKTestGymVersion.txt";
+        
         // Plugin file configuration.
         private const string PluginFileName = "SpatialGDK.uplugin";
         private const string VersionKey = "Version";
@@ -40,6 +41,7 @@ namespace ReleaseTool
 
         private static bool UpdateVersionFiles_Internal(GitClient gitClient, string gitRepoName,  string versionRaw, NLog.Logger logger, string versionSuffix = "", string engineVersions = "")
         {
+            // if a suffix is provided usually something like '0.12' + '-rc'
             string versionDecorated = versionRaw + versionSuffix;
             switch (gitRepoName)
             {
@@ -55,6 +57,7 @@ namespace ReleaseTool
                     bool madeChanges = false;
                     madeChanges |= UpdateChangeLog(gitClient, versionRaw);
                     if (!madeChanges) logger.Info("{0} was already up-to-date.", ChangeLogFilename);
+                    madeChanges |= UpdateVersionFile(gitClient, versionDecorated, UnrealGDKTestGymVersionFile, logger);
                     if (engineVersions != "")
                     {
                         madeChanges |= UpdatePluginFile(gitClient, versionRaw, PluginFileName, logger);
@@ -326,19 +329,12 @@ namespace ReleaseTool
                     var line = reader.ReadLine();
                     if (line.StartsWith("## "))
                     {
-                        changedSection += 1;
-
-                        if (changedSection == 3)
+                        ++changedSection;
+                        if (changedSection == 2)
                         {
+                            releaseBody.AppendLine(line);
                             break;
                         }
-
-                        continue;
-                    }
-
-                    if (changedSection == 2)
-                    {
-                        releaseBody.AppendLine(line);
                     }
                 }
             }
