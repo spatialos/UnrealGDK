@@ -1474,6 +1474,14 @@ bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
 	return false;
 }
 
+void USpatialActorChannel::HackOverrideHandoverData(UObject* Actor123)
+{
+	if (ensure(ActorHandoverShadowData != nullptr))
+	{
+		GetHandoverChangeList(*ActorHandoverShadowData, Actor123);
+	}
+}
+
 void FObjectReferencesMapDeleter::operator()(FObjectReferencesMap* Ptr) const
 {
 	delete Ptr;
