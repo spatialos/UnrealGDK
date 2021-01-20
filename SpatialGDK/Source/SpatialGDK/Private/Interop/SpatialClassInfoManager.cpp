@@ -191,6 +191,30 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	}
 
+	if (bTrackHandoverProperties)
+	{
+		uint32 Size = 0;
+		uint32 Offset = 0;
+
+		for (FHandoverPropertyInfo& PropertyInfo : Info->HandoverProperties)
+		{
+			if (PropertyInfo.ArrayIdx == 0) // For static arrays, the first element will handle the whole array
+			{
+				// Make sure we conform to Unreal's alignment requirements; this is matched below and in ReplicateActor()
+				Size = Align(Size, PropertyInfo.Property->GetMinAlignment());
+
+				Offset = Align(Offset, PropertyInfo.Property->GetMinAlignment());
+
+				PropertyInfo.ShadowOffset = Offset;
+
+				Offset += PropertyInfo.Property->GetSize();
+				Size += PropertyInfo.Property->GetSize();
+			}
+		}
+
+		Info->HandoverPropertiesSize = Size;
+	}
+
 	if (Class->IsChildOf<AActor>())
 	{
 		FinishConstructingActorClassInfo(ClassPath, Info);

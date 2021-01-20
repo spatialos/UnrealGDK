@@ -312,8 +312,6 @@ public:
 		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UObject>, FSpatialObjectRepState, false>>
 		ObjectReferenceMap;
 
-	void HackOverrideHandoverData(UObject* Actor);
-
 private:
 	Worker_EntityId EntityId;
 	bool bInterestDirty;
