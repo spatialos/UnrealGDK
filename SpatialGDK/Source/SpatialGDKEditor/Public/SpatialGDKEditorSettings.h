@@ -363,9 +363,9 @@ private:
 			  meta = (Tooltip = "Additional arguments passed to Cook And Generate Schema"))
 	FString CookAndGenerateAdditionalArguments;
 
-	/** Add flags to the `spatial local launch` command; they alter the deployment’s behavior. Select the trash icon to remove all the
+	/** Add flags to the local runtime deployment; they alter the deployment’s behavior. Select the trash icon to remove all the
 	 * flags.*/
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Command line flags for local launch"))
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Command line flags for local runtime"))
 	TArray<FString> SpatialOSCommandLineLaunchFlags;
 
 private:
