@@ -993,25 +993,12 @@ void USpatialActorChannel::InitializeHandoverShadowData(TArray<uint8>& ShadowDat
 {
 	const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
-	uint32 Size = 0;
+	ShadowData.AddZeroed(ClassInfo.HandoverPropertiesSize);
 	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
 	{
 		if (PropertyInfo.ArrayIdx == 0) // For static arrays, the first element will handle the whole array
 		{
-			// Make sure we conform to Unreal's alignment requirements; this is matched below and in ReplicateActor()
-			Size = Align(Size, PropertyInfo.Property->GetMinAlignment());
-			Size += PropertyInfo.Property->GetSize();
-		}
-	}
-	ShadowData.AddZeroed(Size);
-	uint32 Offset = 0;
-	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
-	{
-		if (PropertyInfo.ArrayIdx == 0)
-		{
-			Offset = Align(Offset, PropertyInfo.Property->GetMinAlignment());
-			PropertyInfo.Property->InitializeValue(ShadowData.GetData() + Offset);
-			Offset += PropertyInfo.Property->GetSize();
+			PropertyInfo.Property->InitializeValue(ShadowData.GetData() + PropertyInfo.ShadowOffset);
 		}
 	}
 }
@@ -1151,6 +1138,13 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	{
 		Replicator.RepLayout->PreRepNotify.BindLambda(PreCallRepNotify);
 		Replicator.RepLayout->PostRepNotify.BindLambda(PostCallRepNotify);
+	}
+
+	TSharedRef<TArray<uint8>>* ObjectShadowData = HandoverShadowDataMap.Find(TargetObject);
+
+	if (ObjectShadowData != nullptr)
+	{
+		GetHandoverChangeList(ObjectShadowData->Get(), TargetObject);
 	}
 
 	Replicator.CallRepNotifies(false);
@@ -1472,14 +1466,6 @@ bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
 	}
 
 	return false;
-}
-
-void USpatialActorChannel::HackOverrideHandoverData(UObject* Actor123)
-{
-	if (ensure(ActorHandoverShadowData != nullptr))
-	{
-		GetHandoverChangeList(*ActorHandoverShadowData, Actor123);
-	}
 }
 
 void FObjectReferencesMapDeleter::operator()(FObjectReferencesMap* Ptr) const

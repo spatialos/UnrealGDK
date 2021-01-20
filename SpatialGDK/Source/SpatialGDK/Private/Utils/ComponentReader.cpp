@@ -418,8 +418,6 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 		}
 	}
 
-	Channel.HackOverrideHandoverData(&Object);
-
 	Channel.PostReceiveSpatialUpdate(&Object, TArray<GDK_PROPERTY(Property)*>(), {});
 }
 
