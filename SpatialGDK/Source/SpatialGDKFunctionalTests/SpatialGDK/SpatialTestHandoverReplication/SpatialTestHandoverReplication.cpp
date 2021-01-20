@@ -39,238 +39,268 @@
  *	- The HandoverCube is destroyed.
  */
 
-ASpatialTestHandoverReplication::ASpatialTestHandoverReplication() : Super() {
-  Author = "Antoine Cordelle";
-  Description = TEXT("Test dynamically set replication for an actor");
+ASpatialTestHandoverReplication::ASpatialTestHandoverReplication()
+	: Super()
+{
+	Author = "Antoine Cordelle";
+	Description = TEXT("Test dynamically set replication for an actor");
 
-  Server1Position = FVector(-500.0f, -500.0f, 50.0f);
-  Server2Position = FVector(500.0f, -500.0f, 50.0f);
-  Server3Position = FVector(-500.0f, 500.0f, 50.0f);
-  Server4Position = FVector(500.0f, 500.0f, 50.0f);
+	Server1Position = FVector(-500.0f, -500.0f, 50.0f);
+	Server2Position = FVector(500.0f, -500.0f, 50.0f);
+	Server3Position = FVector(-500.0f, 500.0f, 50.0f);
+	Server4Position = FVector(500.0f, 500.0f, 50.0f);
 }
 
-void ASpatialTestHandoverReplication::PrepareTest() {
-  Super::PrepareTest();
+void ASpatialTestHandoverReplication::PrepareTest()
+{
+	Super::PrepareTest();
 
-  AddStep(
-      TEXT("Server 1 spawns a HandoverCube (called "
-           "ADynamicReplicationHandoverCube) with bReplicates set to false "
-           "inside its authority area."),
-      FWorkerDefinition::Server(1), nullptr, [this]() {
-        HandoverCube = GetWorld()->SpawnActor<ADynamicReplicationHandoverCube>(
-            Server1Position, FRotator::ZeroRotator, FActorSpawnParameters());
-        RegisterAutoDestroyActor(HandoverCube);
-        FinishStep();
-      });
+	AddStep(TEXT("Server 1 spawns a HandoverCube (called "
+				 "ADynamicReplicationHandoverCube) with bReplicates set to false "
+				 "inside its authority area."),
+			FWorkerDefinition::Server(1), nullptr, [this]() {
+				HandoverCube = GetWorld()->SpawnActor<ADynamicReplicationHandoverCube>(Server1Position, FRotator::ZeroRotator,
+																					   FActorSpawnParameters());
+				RegisterAutoDestroyActor(HandoverCube);
+				FinishStep();
+			});
 
-  AddStep(TEXT("Server sets Actor's replication to true"),
-          FWorkerDefinition::Server(1), nullptr, [this]() {
-            HandoverCube->SetReplicates(true);
-            FinishStep();
-          });
+	AddStep(TEXT("Server sets Actor's replication to true"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		HandoverCube->SetReplicates(true);
+		FinishStep();
+	});
 
-  const float StepTimeLimit = 10.0f;
+	const float StepTimeLimit = 10.0f;
 
-  // All servers set a reference to the HandoverCube and reset the LocationIndex
-  // and AuthorityCheckIndex.
-  AddStep(
-      TEXT("All servers set a reference to the HandoverCube and reset their "
-           "local copy of the LocationIndex and the AuthorityCheckIndex."),
-      FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
-        TArray<AActor *> HandoverCubes;
-        UGameplayStatics::GetAllActorsOfClass(
-            GetWorld(), ADynamicReplicationHandoverCube::StaticClass(),
-            HandoverCubes);
+	// All servers set a reference to the HandoverCube and reset the LocationIndex
+	// and AuthorityCheckIndex.
+	AddStep(
+		TEXT("All servers set a reference to the HandoverCube and reset their "
+			 "local copy of the LocationIndex and the AuthorityCheckIndex."),
+		FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float DeltaTime) {
+			TArray<AActor*> HandoverCubes;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ADynamicReplicationHandoverCube::StaticClass(), HandoverCubes);
 
-        if (HandoverCubes.Num() == 1) {
-          HandoverCube =
-              Cast<ADynamicReplicationHandoverCube>(HandoverCubes[0]);
+			if (HandoverCubes.Num() == 1)
+			{
+				HandoverCube = Cast<ADynamicReplicationHandoverCube>(HandoverCubes[0]);
 
-          USpatialNetDriver *NetDriver =
-              Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
+				USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
 
-          AssertTrue(IsValid(NetDriver),
-                     TEXT("This test should be run with Spatial Networking"));
+				AssertTrue(IsValid(NetDriver), TEXT("This test should be run with Spatial Networking"));
 
-          LoadBalancingStrategy =
-              Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
+				LoadBalancingStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
 
-          AssertTrue(IsValid(HandoverCube) && IsValid(LoadBalancingStrategy),
-                     TEXT("All servers should have a valid reference to the "
-                          "HandoverCube and the strategy"));
-          FinishStep();
-        }
-      }, StepTimeLimit);
+				AssertTrue(IsValid(HandoverCube) && IsValid(LoadBalancingStrategy), TEXT("All servers should have a valid reference to the "
+																						 "HandoverCube and the strategy"));
+				FinishStep();
+			}
+		},
+		StepTimeLimit);
 
-  // Check that Server 1 is authoritative over the HandoverCube.
-  AddStep(TEXT("Check that Server 1 is authoritative over the HandoverCube."),
-          FWorkerDefinition::AllServers, nullptr,
-          nullptr, [this](float DeltaTime) {
-            RequireHandoverCubeAuthorityAndPosition(1, Server1Position);
-            FinishStep();
-          }, StepTimeLimit);
+	// Check that Server 1 is authoritative over the HandoverCube.
+	AddStep(
+		TEXT("Check that Server 1 is authoritative over the HandoverCube."), FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireHandoverCubeAuthorityAndPosition(1, Server1Position);
+			FinishStep();
+		},
+		StepTimeLimit);
 
-  // Move the HandoverCube to the next location, which is inside the authority
-  // area of Server 2.
-  AddStep(TEXT("Move the HandoverCube to the next location, which is inside "
-               "the authority area of Server 2."),
-          FWorkerDefinition::Server(1), nullptr,
-          nullptr, [this](float DeltaTime) {
-            if (MoveHandoverCube(Server2Position)) {
-              FinishStep();
-            }
-          }, StepTimeLimit);
+	// Move the HandoverCube to the next location, which is inside the authority
+	// area of Server 2.
+	AddStep(
+		TEXT("Move the HandoverCube to the next location, which is inside "
+			 "the authority area of Server 2."),
+		FWorkerDefinition::Server(1), nullptr, nullptr,
+		[this](float DeltaTime) {
+			if (MoveHandoverCube(Server2Position))
+			{
+				FinishStep();
+			}
+		},
+		StepTimeLimit);
 
-  // Check that Server 2 is authoritative over the HandoverCube.
-  AddStep(TEXT("Check that Server 2 is authoritative over the HandoverCube."),
-          FWorkerDefinition::AllServers, nullptr,
-          nullptr, [this](float DeltaTime) {
-            RequireHandoverCubeAuthorityAndPosition(2, Server2Position);
-            FinishStep();
-          }, StepTimeLimit);
+	// Check that Server 2 is authoritative over the HandoverCube.
+	AddStep(
+		TEXT("Check that Server 2 is authoritative over the HandoverCube."), FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireHandoverCubeAuthorityAndPosition(2, Server2Position);
+			FinishStep();
+		},
+		StepTimeLimit);
 
-  // Server 2 acquires a lock on the HandoverCube.
-  AddStep(TEXT("Server 2 acquires a lock on the HandoverCube."),
-          FWorkerDefinition::Server(2), nullptr, [this]() {
-            HandoverCube->AcquireLock(2);
-            FinishStep();
-          });
+	// Server 2 acquires a lock on the HandoverCube.
+	AddStep(TEXT("Server 2 acquires a lock on the HandoverCube."), FWorkerDefinition::Server(2), nullptr, [this]() {
+		HandoverCube->AcquireLock(2);
+		FinishStep();
+	});
 
-  // Move the HandoverCube to the next location, which is inside the authority
-  // area of Server 3.
-  AddStep(TEXT("Move the HandoverCube to the next location, which is inside "
-               "the authority area of Server 3."),
-          FWorkerDefinition::Server(2), nullptr,
-          nullptr, [this](float DeltaTime) {
-            if (MoveHandoverCube(Server3Position)) {
-              FinishStep();
-            }
-          }, StepTimeLimit);
+	// Move the HandoverCube to the next location, which is inside the authority
+	// area of Server 3.
+	AddStep(
+		TEXT("Move the HandoverCube to the next location, which is inside "
+			 "the authority area of Server 3."),
+		FWorkerDefinition::Server(2), nullptr, nullptr,
+		[this](float DeltaTime) {
+			if (MoveHandoverCube(Server3Position))
+			{
+				FinishStep();
+			}
+		},
+		StepTimeLimit);
 
-  // Check that Server 2 is still authoritative over the HandoverCube due to
-  // acquiring the lock earlier.
-  AddStep(TEXT("Check that Server 2 is still authoritative over the "
-               "HandoverCube due to acquiring the lock earlier."),
-          FWorkerDefinition::AllServers, nullptr,
-          nullptr, [this](float DeltaTime) {
-            RequireHandoverCubeAuthorityAndPosition(2, Server3Position);
-            FinishStep();
-          }, StepTimeLimit);
+	// Check that Server 2 is still authoritative over the HandoverCube due to
+	// acquiring the lock earlier.
+	AddStep(
+		TEXT("Check that Server 2 is still authoritative over the "
+			 "HandoverCube due to acquiring the lock earlier."),
+		FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireHandoverCubeAuthorityAndPosition(2, Server3Position);
+			FinishStep();
+		},
+		StepTimeLimit);
 
-  // Server 2 releases the lock on the HandoverCube.
-  AddStep(TEXT("Server 2 releases the lock on the HandoverCube."),
-          FWorkerDefinition::Server(2), nullptr, [this]() {
-            HandoverCube->ReleaseLock();
-            FinishStep();
-          });
+	// Server 2 releases the lock on the HandoverCube.
+	AddStep(TEXT("Server 2 releases the lock on the HandoverCube."), FWorkerDefinition::Server(2), nullptr, [this]() {
+		HandoverCube->ReleaseLock();
+		FinishStep();
+	});
 
-  // Check that Server 3 is now authoritative over the HandoverCube.
-  AddStep(
-      TEXT("Check that Server 3 is now authoritative over the HandoverCube."),
-      FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
-        RequireHandoverCubeAuthorityAndPosition(3, Server3Position);
-        FinishStep();
-      }, StepTimeLimit);
+	// Check that Server 3 is now authoritative over the HandoverCube.
+	AddStep(
+		TEXT("Check that Server 3 is now authoritative over the HandoverCube."), FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireHandoverCubeAuthorityAndPosition(3, Server3Position);
+			FinishStep();
+		},
+		StepTimeLimit);
 
-  // Move the HandoverCube to the next location, which is inside the authority
-  // area of Server 4.
-  AddStep(TEXT("Move the HandoverCube to the next location, which is inside "
-               "the authority area of Server 4."),
-          FWorkerDefinition::Server(3), nullptr,
-          nullptr, [this](float DeltaTime) {
-            if (MoveHandoverCube(Server4Position)) {
-              FinishStep();
-            }
-          }, StepTimeLimit);
+	// Move the HandoverCube to the next location, which is inside the authority
+	// area of Server 4.
+	AddStep(
+		TEXT("Move the HandoverCube to the next location, which is inside "
+			 "the authority area of Server 4."),
+		FWorkerDefinition::Server(3), nullptr, nullptr,
+		[this](float DeltaTime) {
+			if (MoveHandoverCube(Server4Position))
+			{
+				FinishStep();
+			}
+		},
+		StepTimeLimit);
 
-  // Check that Server 4 is now authoritative over the HandoverCube.
-  AddStep(
-      TEXT("Check that Server 4 is now authoritative over the HandoverCube."),
-      FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
-        RequireHandoverCubeAuthorityAndPosition(4, Server4Position);
-        FinishStep();
-      }, StepTimeLimit);
+	// Check that Server 4 is now authoritative over the HandoverCube.
+	AddStep(
+		TEXT("Check that Server 4 is now authoritative over the HandoverCube."), FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireHandoverCubeAuthorityAndPosition(4, Server4Position);
+			FinishStep();
+		},
+		StepTimeLimit);
 
-
-	AddStep(TEXT("Modify handover replicated value on Server 4"), FWorkerDefinition::Server(4), nullptr, [this]()
-	{
+	AddStep(TEXT("Modify handover replicated value on Server 4"), FWorkerDefinition::Server(4), nullptr, [this]() {
 		HandoverCube->HandoverTestProperty = ADynamicReplicationHandoverCube::UpdatedTestPropertyValue;
+		HandoverCube->ReplicatedTestProperty = ADynamicReplicationHandoverCube::UpdatedTestPropertyValue;
 		FinishStep();
 	});
 
-	AddStep(TEXT("Wait until all servers receive updated handover value"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float)
-	{
-		RequireEqual_Int(HandoverCube->HandoverTestProperty, ADynamicReplicationHandoverCube::UpdatedTestPropertyValue, FString::Printf(TEXT("Server received handed over value %d"), ADynamicReplicationHandoverCube::UpdatedTestPropertyValue));
+	AddStep(TEXT("Wait until all servers receive updated handover value"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
+		RequireEqual_Int(
+			HandoverCube->HandoverTestProperty, ADynamicReplicationHandoverCube::UpdatedTestPropertyValue,
+			FString::Printf(TEXT("Server received handed over value %d"), ADynamicReplicationHandoverCube::UpdatedTestPropertyValue));
+		RequireEqual_Int(
+			HandoverCube->ReplicatedTestProperty, ADynamicReplicationHandoverCube::UpdatedTestPropertyValue,
+			FString::Printf(TEXT("Server received replicated value %d"), ADynamicReplicationHandoverCube::UpdatedTestPropertyValue));
 		FinishStep();
 	});
 
-	AddStep(TEXT("Mark the handover cube to trigger default value revert"), FWorkerDefinition::Server(4), nullptr, nullptr, [this](float)
-	{
-		HandoverCube->ShouldResetValueToDefaultCounter = 1;
-		FinishStep();
-	}, StepTimeLimit);
+	AddStep(
+		TEXT("Mark the handover cube to trigger default value revert"), FWorkerDefinition::Server(4), nullptr, nullptr,
+		[this](float) {
+			HandoverCube->ShouldResetValueToDefaultCounter = 1;
+			FinishStep();
+		},
+		StepTimeLimit);
 
-	AddStep(TEXT("Move the cube to Server 3's authority area"), FWorkerDefinition::Server(4), nullptr, nullptr, [this](float)
-	{
+	AddStep(TEXT("Move the cube to Server 3's authority area"), FWorkerDefinition::Server(4), nullptr, nullptr, [this](float) {
 		RequireTrue(MoveHandoverCube(Server3Position), TEXT("Server 4 has authority over the cube"));
 		FinishStep();
 	});
 
 	AddStep(
-        TEXT("Check that Server 3 is now authoritative over the HandoverCube."),
-        FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
-          RequireHandoverCubeAuthorityAndPosition(3, Server3Position);
-          FinishStep();
-        }, StepTimeLimit);
+		TEXT("Check that Server 3 is now authoritative over the HandoverCube."), FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireHandoverCubeAuthorityAndPosition(3, Server3Position);
+			FinishStep();
+		},
+		StepTimeLimit);
 
 	AddStep(
-		TEXT("Revert Handover property to default value and hand the cube over back to Server 4"), FWorkerDefinition::Server(3), nullptr, nullptr, [this](float)
-		{
-			RequireEqual_Int(HandoverCube->HandoverTestProperty, GetDefault<ADynamicReplicationHandoverCube>()->HandoverTestProperty, TEXT("Handover property reverted to default value"));
+		TEXT("Revert Handover property to default value and hand the cube over back to Server 4"), FWorkerDefinition::Server(3), nullptr,
+		nullptr,
+		[this](float) {
+			RequireEqual_Int(HandoverCube->HandoverTestProperty, GetDefault<ADynamicReplicationHandoverCube>()->HandoverTestProperty,
+							 TEXT("Handover property reverted to default value"));
+			RequireEqual_Int(HandoverCube->ReplicatedTestProperty, GetDefault<ADynamicReplicationHandoverCube>()->HandoverTestProperty,
+							 TEXT("Replicated property reverted to default value"));
 			RequireEqual_Int(HandoverCube->ShouldResetValueToDefaultCounter, 2, TEXT("Handover counter incremented"));
 			RequireTrue(MoveHandoverCube(Server4Position), TEXT("Server 3 has authority over the cube"));
 			FinishStep();
-		}, StepTimeLimit
-	);
+		},
+		StepTimeLimit);
 
-	AddStep(TEXT("Check that Server 4 has updated handover value to default"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float)
+	AddStep(
+		TEXT("Check that Server 4 has updated handover value to default"), FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float) {
+			if (GetLocalWorkerId() == 4)
+			{
+				RequireTrue(HandoverCube->HasAuthority(), TEXT("Handover cube was handed over correctly"));
+			}
+
+			RequireEqual_Int(
+				HandoverCube->HandoverTestProperty, ADynamicReplicationHandoverCube::BasicTestPropertyValue,
+				FString::Printf(TEXT("Handover value reverted to %d"), ADynamicReplicationHandoverCube::BasicTestPropertyValue));
+
+			RequireEqual_Int(
+				HandoverCube->ReplicatedTestProperty, ADynamicReplicationHandoverCube::BasicTestPropertyValue,
+				FString::Printf(TEXT("Replicated value reverted to %d"), ADynamicReplicationHandoverCube::BasicTestPropertyValue));
+
+			FinishStep();
+		},
+		StepTimeLimit);
+}
+
+void ASpatialTestHandoverReplication::RequireHandoverCubeAuthorityAndPosition(int WorkerShouldHaveAuthority,
+																			  const FVector& ExpectedPosition)
+{
+	if (!ensureMsgf(GetLocalWorkerType() == ESpatialFunctionalTestWorkerType::Server, TEXT("Should only be called in Servers")))
 	{
-		if (GetLocalWorkerId() == 4)
-		{
-			RequireTrue(HandoverCube->HasAuthority(), TEXT("Handover cube was handed over correctly"));
-			RequireEqual_Int(HandoverCube->HandoverTestProperty, ADynamicReplicationHandoverCube::BasicTestPropertyValue, FString::Printf(TEXT("The cube handed over has updated value to %d"), ADynamicReplicationHandoverCube::BasicTestPropertyValue));
-		}
+		return;
+	}
 
-		FinishStep();
-	}, StepTimeLimit);
+	RequireEqual_Vector(HandoverCube->GetActorLocation(), ExpectedPosition,
+						FString::Printf(TEXT("HandoverCube in %s"), *ExpectedPosition.ToCompactString()), 1.0f);
+
+	if (WorkerShouldHaveAuthority == GetLocalWorkerId())
+	{
+		RequireTrue(HandoverCube->HasAuthority(), TEXT("Has Authority"));
+	}
+	else
+	{
+		RequireFalse(HandoverCube->HasAuthority(), TEXT("Doesn't Have Authority"));
+	}
 }
 
-void ASpatialTestHandoverReplication::RequireHandoverCubeAuthorityAndPosition(
-    int WorkerShouldHaveAuthority, const FVector& ExpectedPosition) {
-  if (!ensureMsgf(GetLocalWorkerType() ==
-                      ESpatialFunctionalTestWorkerType::Server,
-                  TEXT("Should only be called in Servers"))) {
-    return;
-  }
+bool ASpatialTestHandoverReplication::MoveHandoverCube(const FVector& Position)
+{
+	if (HandoverCube->HasAuthority())
+	{
+		HandoverCube->SetActorLocation(Position);
+		return true;
+	}
 
-  RequireEqual_Vector(HandoverCube->GetActorLocation(), ExpectedPosition,
-                      FString::Printf(TEXT("HandoverCube in %s"),
-                                      *ExpectedPosition.ToCompactString()),
-                      1.0f);
-
-  if (WorkerShouldHaveAuthority == GetLocalWorkerId()) {
-    RequireTrue(HandoverCube->HasAuthority(), TEXT("Has Authority"));
-  } else {
-    RequireFalse(HandoverCube->HasAuthority(), TEXT("Doesn't Have Authority"));
-  }
-}
-
-bool ASpatialTestHandoverReplication::MoveHandoverCube(
-    const FVector& Position) {
-  if (HandoverCube->HasAuthority()) {
-    HandoverCube->SetActorLocation(Position);
-    return true;
-  }
-
-  return false;
+	return false;
 }
