@@ -68,8 +68,9 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 	if (HasAuthority())
 	{
 		// Expect this error from each non-authoritative server
-		AddExpectedLogError(TEXT("before receiving entity from runtime. This RPC will be dropped. Please update code execution to wait for actor ready state"), 3,
-							false);
+		AddExpectedLogError(TEXT("before receiving entity from runtime. This RPC will be dropped. Please update code execution to wait for "
+								 "actor ready state"),
+							3, false);
 	}
 	AddStep(TEXT("Startup actor tests: repro error case for entity ID after RPC on non-auth server"), FWorkerDefinition::AllServers,
 			nullptr, [this]() {
@@ -101,14 +102,15 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 	});
 
 	AddStep(
-		TEXT("Startup actor tests: Auth server - Record entity id"), FWorkerDefinition::Server(4), [this]() -> bool {
+		TEXT("Startup actor tests: Auth server - Record entity id"), FWorkerDefinition::Server(4),
+		[this]() -> bool {
 			// Make sure actor is ready before recording the entity id
 			return LevelCube->IsActorReady();
 		},
-	[this]() {
-		LevelCube->RecordEntityId();
-		FinishStep();
-	});
+		[this]() {
+			LevelCube->RecordEntityId();
+			FinishStep();
+		});
 
 	AddStep(
 		TEXT("Startup actor tests: Post-Auth entity ID check"), FWorkerDefinition::AllServers,
@@ -116,9 +118,10 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 			// Make sure actor is ready before checking the entity id
 			return LevelCube->IsActorReady();
 		},
-	nullptr, [this](float DeltaTime) {
-				CheckValidEntityID(LevelCube);
-			});
+		nullptr,
+		[this](float DeltaTime) {
+			CheckValidEntityID(LevelCube);
+		});
 
 	// Clean up
 	AddStep(TEXT("Startup actor tests: Auth server - Destroy startup actor"), FWorkerDefinition::Server(4), nullptr, [this]() {
