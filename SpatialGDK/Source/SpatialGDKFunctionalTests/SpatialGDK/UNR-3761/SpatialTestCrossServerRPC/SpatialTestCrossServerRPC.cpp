@@ -17,7 +17,7 @@
  *
  * The flow for the startup actor tests is as follows:
  * - Setup:
- *  - The level contains one CrossServerRPCCube on Server 4 that is not replicated initially.
+ *  - The level contains one CrossServerRPCCube positioned in Server 4's authority area that is not replicated initially.
  *  - On authoritative server we turn on replication, change the authority to non-authoritative and then send an RPC. These specific steps
  * were needed to recreate an error of the entity ID being incorrectly allocated on a non-auth server.
  * - Test
