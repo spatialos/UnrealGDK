@@ -61,18 +61,6 @@ public:
 
 	bool IsPendingOpsOnChannel(USpatialActorChannel& Channel);
 
-<<<<<<< HEAD
-	void CleanupRepStateMap(FSpatialObjectRepState& Replicator);
-	void MoveMappedObjectToUnmapped(const FUnrealObjectRef&);
-
-	void RetireWhenAuthoritive(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
-
-	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
-
-	void ProcessActorsFromAsyncLoading();
-
-=======
->>>>>>> 4763aa17c... squash
 private:
 	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
 
@@ -99,42 +87,5 @@ private:
 	TMap<Worker_RequestId_Key, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
 	TMap<Worker_RequestId_Key, CreateEntityDelegate> CreateEntityDelegates;
 	TMap<Worker_RequestId_Key, SystemEntityCommandDelegate> SystemEntityCommandDelegates;
-
-<<<<<<< HEAD
-	// This will map PlayerController entities to the corresponding SpatialNetConnection
-	// for PlayerControllers that this server has authority over. This is used for player
-	// lifecycle logic (Heartbeat component updates, disconnection logic).
-	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
-
-	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
-	TMap<Worker_EntityId_Key, FString> WorkerConnectionEntities;
-
-	// TODO: Refactor into a separate class so we can add automated tests for this. UNR-2649
-	struct EntityWaitingForAsyncLoad
-	{
-		FString ClassPath;
-		TArray<PendingAddComponentWrapper> InitialPendingAddComponents;
-		SpatialGDK::EntityComponentOpListBuilder PendingOps;
-	};
-	TMap<Worker_EntityId_Key, EntityWaitingForAsyncLoad> EntitiesWaitingForAsyncLoad;
-	TMap<FName, TArray<Worker_EntityId>> AsyncLoadingPackages;
-	TSet<FName> LoadedPackages;
-	// END TODO
-
-	struct DeferredRetire
-	{
-		Worker_EntityId EntityId;
-		Worker_ComponentId ActorClassId;
-		bool bIsNetStartupActor;
-		bool bNeedsTearOff;
-	};
-	TArray<DeferredRetire> EntitiesToRetireOnAuthorityGain;
-	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId);
-	void HandleDeferredEntityDeletion(const DeferredRetire& Retire);
-	void HandleEntityDeletedAuthority(Worker_EntityId EntityId);
-	bool IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset);
-
-=======
->>>>>>> 4763aa17c... squash
 	SpatialGDK::SpatialEventTracer* EventTracer;
 };

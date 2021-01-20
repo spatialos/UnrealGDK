@@ -435,7 +435,7 @@ void USpatialNetDriverDebugContext::TickServer()
 				// There is a requirement of readiness before we can use SendAddComponent
 				if (IsActorReady(Actor))
 				{
-					Worker_ComponentData CompData = View.Component.CreateComponentData();
+					Worker_ComponentData CompData = Data.Component.CreateComponentData();
 					NetDriver->Sender->SendAddComponents(Entity, { CompData });
 					Data.Entity = Entity;
 					Data.bAdded = true;
