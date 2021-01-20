@@ -1619,7 +1619,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 			{
 				TargetActor = Cast<AActor>(CallingObject->GetOuter());
 			}
-			check(TargetActor);
+			check(TargetActor != nullptr);
 			if (!TargetActor->HasAuthority() && TargetActor->IsNameStableForNetworking() && TargetActor->GetIsReplicated())
 			{
 				// We don't want GetOrCreateSpatialActorChannel to pre-allocate an entity id here, because it exists on another worker.
