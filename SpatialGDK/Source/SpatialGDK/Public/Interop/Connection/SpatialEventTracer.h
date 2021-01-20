@@ -73,7 +73,7 @@ private:
 	uint64 MaxFileSize = 0;
 
 	// Span IDs received from the wire, these live for a frame and are expected to continue into the stack
-	// on an ops tick. 
+	// on an ops tick.
 	TMap<EntityComponentId, TArray<FSpatialGDKSpanId>> EntityComponentSpanIds;
 };
 

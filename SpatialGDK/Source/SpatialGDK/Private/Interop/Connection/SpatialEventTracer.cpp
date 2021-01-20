@@ -216,7 +216,8 @@ void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) c
 
 void SpatialEventTracer::BeginOpsForFrame()
 {
-	EntityComponentSpanIds.Empty(EntityComponentSpanIds.Num()); // Reset all entries. It is assumed all entries are consumed during processing.
+	EntityComponentSpanIds.Empty(
+		EntityComponentSpanIds.Num()); // Reset all entries. It is assumed all entries are consumed during processing.
 }
 
 void SpatialEventTracer::AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId)
@@ -231,11 +232,9 @@ void SpatialEventTracer::RemoveEntity(const Worker_RemoveEntityOp& Op, const FSp
 
 void SpatialEventTracer::AuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	TraceEvent(FSpatialTraceEventBuilder::CreateAuthorityChange(
-								Op.entity_id, Op.component_set_id,
-								static_cast<Worker_Authority>(Op.authority)),
-							SpanId.GetConstId(), 1); // No continuation
-
+	TraceEvent(
+		FSpatialTraceEventBuilder::CreateAuthorityChange(Op.entity_id, Op.component_set_id, static_cast<Worker_Authority>(Op.authority)),
+		SpanId.GetConstId(), 1); // No continuation
 }
 void SpatialEventTracer::AddComponent(const Worker_AddComponentOp& Op, const FSpatialGDKSpanId& SpanId)
 {
@@ -267,7 +266,8 @@ FSpatialGDKSpanId SpatialEventTracer::GetMergedUpdateEvent(const EntityComponent
 	{
 		return {};
 	}
-	return TraceEvent(FSpatialTraceEventBuilder::CreateProcessComponentUpdate(Id.EntityId, Id.ComponentId), reinterpret_cast<const uint8_t*>(StoredSpanIds->GetData()), 2);
+	return TraceEvent(FSpatialTraceEventBuilder::CreateProcessComponentUpdate(Id.EntityId, Id.ComponentId),
+					  reinterpret_cast<const uint8_t*>(StoredSpanIds->GetData()), 2);
 }
 
 void SpatialEventTracer::AddToStack(const FSpatialGDKSpanId& SpanId)

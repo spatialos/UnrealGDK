@@ -178,9 +178,9 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateMergeSendRPCs(const Worker_E
 }
 
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateProcessComponentUpdate(const Worker_EntityId EntityId,
-																		 const Worker_ComponentId ComponentId)
+																		   const Worker_ComponentId ComponentId)
 {
-	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "process_component_update") // TODO: Update docs 
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "process_component_update") // TODO: Update docs
 		.AddEntityId(TEXT("EntityId"), EntityId)
 		.AddComponentId(TEXT("ComponentId"), ComponentId)
 		.GetEvent();
