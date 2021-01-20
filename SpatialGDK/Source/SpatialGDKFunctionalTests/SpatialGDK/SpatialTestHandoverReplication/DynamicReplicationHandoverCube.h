@@ -18,9 +18,14 @@ class ADynamicReplicationHandoverCube : public AHandoverCube
 public:
 	ADynamicReplicationHandoverCube();
 
+	virtual void OnAuthorityGained() override;
+
 	static constexpr int BasicTestPropertyValue = 10;
 	static constexpr int UpdatedTestPropertyValue = 100;
 
 	UPROPERTY(Handover)
 	int HandoverTestProperty = BasicTestPropertyValue;
+
+	UPROPERTY(Handover)
+	int ShouldResetValueToDefaultCounter = 0;
 };
