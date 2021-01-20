@@ -27,7 +27,7 @@ namespace Improbable
 
             if (help)
             {
-                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nobuild] [-nocompile] <Additional UAT args>");
+                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-filebeat] [-nobuild] [-nocompile] <Additional UAT args>");
 
                 Environment.Exit(exitCode);
             }
@@ -36,6 +36,9 @@ namespace Improbable
             var platform = args[1];
             var configuration = args[2];
             var projectFile = Path.GetFullPath(args[3]);
+            // Begin filebeat custom
+            var installFilebeat = args.Count(arg => arg.ToLowerInvariant() == "-filebeat") > 0;
+            // End custom
             var noBuild = args.Count(arg => arg.ToLowerInvariant() == "-nobuild") > 0;
             var noCompile = args.Count(arg => arg.ToLowerInvariant() == "-nocompile") > 0;
             var additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => (arg.ToLowerInvariant() != "-nobuild") && (arg.ToLowerInvariant() != "-nocompile")));
@@ -294,6 +297,19 @@ exit /b !ERRORLEVEL!";
 
                 if (isLinux)
                 {
+                    // Begin Filebeat Custom
+                    if(installFilebeat)
+                    {
+                        Common.WriteHeading(" > Copying filebeat to staging.");
+                        Common.RunRedirectedWithExitCode("robocopy", new[]
+                        {
+                                "../filebeat-sidecar",
+                                serverPath,
+                                "/E"
+                        });                       
+                    }
+                    // End Custom
+
                     // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
                     // Also ensure script uses Linux line endings
                     LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetUnrealWorkerShellScript(baseGameName), Path.Combine(serverPath, "StartWorker.sh"));
