@@ -466,7 +466,7 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 			{
 				Worker_ComponentId ComponentId = RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
 				EntityComponentId Id = EntityComponentId(PendingRPCParams.ObjectRef.Entity, ComponentId);
-				FSpatialGDKSpanId CauseSpanId = EventTracer->GetSpanId(Id);
+				FSpatialGDKSpanId CauseSpanId = EventTracer->GetMergedUpdateEvent(Id);
 
 				EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForRPC(
 					PendingRPCParams.ObjectRef.Entity, static_cast<uint8>(RPCType), PendingRPCParams.RPCIdForLinearEventTrace.GetValue());

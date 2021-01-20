@@ -1692,7 +1692,7 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 
 	if (EventTracer != nullptr)
 	{
-		FSpatialGDKSpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(Op.entity_id, Op.update.component_id));
+		FSpatialGDKSpanId CauseSpanId = EventTracer->GetMergedUpdateEvent(EntityComponentId(Op.entity_id, Op.update.component_id));
 		EventTracer->TraceEvent(
 			FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, Op.entity_id, Op.update.component_id),
 			CauseSpanId.GetConstId(), 1);

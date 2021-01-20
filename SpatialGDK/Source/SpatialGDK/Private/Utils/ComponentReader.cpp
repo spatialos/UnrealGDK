@@ -194,7 +194,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 		FSpatialGDKSpanId CauseSpanId;
 		if (bEventTracerEnabled)
 		{
-			CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
+			CauseSpanId = EventTracer->GetMergedUpdateEvent(EntityComponentId(EntityId, ComponentId));
 		}
 
 		for (uint32 FieldId : UpdatedIds)
