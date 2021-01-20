@@ -409,9 +409,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	const FFilterPredicate ActorFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
 		return !Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
 	};
-	const FFilterPredicate TombstoneFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
-		return Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
-	};
 	const TArray<FDispatcherRefreshCallback> RefreshCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
 		SpatialConstants::TOMBSTONE_COMPONENT_ID) };
 

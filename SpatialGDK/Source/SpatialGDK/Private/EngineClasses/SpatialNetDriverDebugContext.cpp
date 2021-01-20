@@ -230,7 +230,7 @@ void USpatialNetDriverDebugContext::ApplyComponentUpdate(Worker_EntityId Entity,
 {
 	SpatialGDK::DebugComponent* DbgComp = DebugComponents.Find(Entity);
 	check(DbgComp);
-	DbgComp->ApplyUpdate(Update);
+	DbgComp->ApplyComponentUpdate(Update);
 
 	if (IsSetIntersectionEmpty(SemanticInterest, DbgComp->ActorTags))
 	{
@@ -435,7 +435,7 @@ void USpatialNetDriverDebugContext::TickServer()
 				// There is a requirement of readiness before we can use SendAddComponent
 				if (IsActorReady(Actor))
 				{
-					Worker_ComponentData CompData = Data.Component.CreateComponentData();
+					Worker_ComponentData CompData = Data.Component.CreateDebugComponent();
 					NetDriver->Sender->SendAddComponents(Entity, { CompData });
 					Data.Entity = Entity;
 					Data.bAdded = true;
