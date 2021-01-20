@@ -50,7 +50,6 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 	// Pre-test checks
 	AddStep(TEXT("Pre-test check"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-		SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 
 		if (SpatialNetDriver == nullptr || SpatialNetDriver->LoadBalanceStrategy == nullptr)
 		{
