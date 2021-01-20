@@ -8,7 +8,6 @@
 
 class AReplicatedCrossServerRPCCube;
 class ANonReplicatedCrossServerRPCCube;
-class USpatialNetDriver;
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestCrossServerRPC : public ASpatialFunctionalTest

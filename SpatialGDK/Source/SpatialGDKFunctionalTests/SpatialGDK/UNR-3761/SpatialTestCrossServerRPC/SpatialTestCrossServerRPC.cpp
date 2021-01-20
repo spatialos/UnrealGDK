@@ -58,7 +58,7 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 		}
 		else
 		{
-			CheckInvalidEntityID(LevelCube);
+			FinishStep();
 		}
 	});
 
@@ -67,8 +67,8 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 	// Repro the error case of the entity ID being incorrectly allocated on a non-auth server - expect warnings
 	if (HasAuthority())
 	{
-		// Expect this warning from each non-authoritative server
-		AddExpectedLogError(TEXT("that is replicated and exists on another worker, but we haven't received from runtime. Dropping RPC."), 3,
+		// Expect this error from each non-authoritative server
+		AddExpectedLogError(TEXT("before receiving entity from runtime. This RPC will be dropped. Please update code execution to wait for actor ready state"), 3,
 							false);
 	}
 	AddStep(TEXT("Startup actor tests: repro error case for entity ID after RPC on non-auth server"), FWorkerDefinition::AllServers,
@@ -80,7 +80,7 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 				// authoritative. First we turn on replication on the level actor, then we change it to non-auth and finally send a cross
 				// server RPC. It is the ProcessRPC call that was causing an incorrect entity ID to be allocated in this specific case but
 				// this has now been fixed and we are expecting a warning error in this case.
-				if (LocalWorkerId < 4)
+				if (LocalWorkerId != 4)
 				{
 					LevelCube->TurnOnReplication();
 					LevelCube->SetNonAuth();
@@ -100,13 +100,23 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Startup actor tests: Auth server - Record entity id"), FWorkerDefinition::Server(4), nullptr, [this]() {
+	AddStep(
+		TEXT("Startup actor tests: Auth server - Record entity id"), FWorkerDefinition::Server(4), [this]() -> bool {
+			// Make sure actor is ready before recording the entity id
+			return LevelCube->IsActorReady();
+		},
+	[this]() {
 		LevelCube->RecordEntityId();
 		FinishStep();
 	});
 
-	AddStep(TEXT("Startup actor tests: Post-Auth entity ID check"), FWorkerDefinition::AllServers, nullptr, nullptr,
-			[this](float DeltaTime) {
+	AddStep(
+		TEXT("Startup actor tests: Post-Auth entity ID check"), FWorkerDefinition::AllServers,
+		[this]() -> bool {
+			// Make sure actor is ready before checking the entity id
+			return LevelCube->IsActorReady();
+		},
+	nullptr, [this](float DeltaTime) {
 				CheckValidEntityID(LevelCube);
 			});
 

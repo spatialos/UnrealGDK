@@ -1624,9 +1624,8 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 			{
 				// We don't want GetOrCreateSpatialActorChannel to pre-allocate an entity id here, because it exists on another worker.
 				// We just haven't received the entity from runtime (yet).
-				UE_LOG(LogSpatialOSNetDriver, Warning,
-					   TEXT("Called RPC %s on object %s that is replicated and exists on another worker, but we haven't received from "
-							"runtime. Dropping RPC."),
+				UE_LOG(LogSpatialOSNetDriver, Error,
+					   TEXT("Called cross server RPC %s on object %s before receiving entity from runtime. This RPC will be dropped. Please update code execution to wait for actor ready state"),
 					   *Function->GetName(), *CallingObject->GetFullName());
 				return;
 			}

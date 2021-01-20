@@ -28,6 +28,6 @@ void ANonReplicatedCrossServerRPCCube::TurnOnReplication()
 
 void ANonReplicatedCrossServerRPCCube::SetNonAuth()
 {
-	SetRole(ROLE_SimulatedProxy);
-	SetRemoteRoleForBackwardsCompat(ROLE_Authority);
+	Role = ROLE_SimulatedProxy;
+	RemoteRole = ROLE_Authority;
 }
