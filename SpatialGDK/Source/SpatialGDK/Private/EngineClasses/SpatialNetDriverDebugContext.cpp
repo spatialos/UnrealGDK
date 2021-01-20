@@ -230,7 +230,7 @@ void USpatialNetDriverDebugContext::ApplyComponentUpdate(Worker_EntityId Entity,
 {
 	SpatialGDK::DebugComponent* DbgComp = DebugComponents.Find(Entity);
 	check(DbgComp);
-	DbgComp->ApplyComponentUpdate(Update);
+	DbgComp->ApplyUpdate(Update);
 
 	if (IsSetIntersectionEmpty(SemanticInterest, DbgComp->ActorTags))
 	{

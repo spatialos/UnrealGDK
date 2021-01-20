@@ -50,7 +50,7 @@ struct DebugComponent : AbstractMutableComponent
 		return Data;
 	}
 
-	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
+	void ApplyUpdate(Schema_ComponentUpdate* Update)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
 		ReadFromSchema(ComponentObject);
