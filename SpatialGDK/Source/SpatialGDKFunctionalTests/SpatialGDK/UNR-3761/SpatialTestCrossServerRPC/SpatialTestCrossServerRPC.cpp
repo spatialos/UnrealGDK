@@ -1,12 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestCrossServerRPC.h"
-#include "ReplicatedCrossServerRPCCube.h"
-#include "NonReplicatedCrossServerRPCCube.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Kismet/GameplayStatics.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "NonReplicatedCrossServerRPCCube.h"
+#include "ReplicatedCrossServerRPCCube.h"
 #include "SpatialFunctionalTestFlowController.h"
 
 /**
@@ -19,8 +19,8 @@
  * The flow for the startup actor tests is as follows:
  * - Setup:
  *  - The level contains one CrossServerRPCCube positioned in Server 4's authority area that is not replicated initially.
- *  - On all non-authoritative servers we turn on replication, explicitly set authority to non-authoritative and then send an RPC. These specific steps
- * were needed to recreate an error of the entity ID being incorrectly allocated on a non-auth server.
+ *  - On all non-authoritative servers we turn on replication, explicitly set authority to non-authoritative and then send an RPC. These
+ * specific steps were needed to recreate an error of the entity ID being incorrectly allocated on a non-auth server.
  * - Test
  *  - Check for valid entity IDs on all servers
  * - Clean-up
