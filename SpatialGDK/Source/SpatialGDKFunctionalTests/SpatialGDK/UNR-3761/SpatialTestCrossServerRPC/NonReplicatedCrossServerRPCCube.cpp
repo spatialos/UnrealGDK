@@ -4,10 +4,6 @@
 
 ANonReplicatedCrossServerRPCCube::ANonReplicatedCrossServerRPCCube()
 {
-	bAlwaysRelevant = true;
-	bNetLoadOnClient = true;
-	bNetLoadOnNonAuthServer = true;
-
 	bReplicates = false;
 	SetReplicateMovement(false);
 }
