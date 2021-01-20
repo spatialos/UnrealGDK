@@ -204,6 +204,12 @@ void ASpatialTestHandoverReplication::PrepareTest() {
 		FinishStep();
 	});
 
+	AddStep(TEXT("Mark the handover cube to trigger default value revert"), FWorkerDefinition::Server(4), nullptr, nullptr, [this](float)
+	{
+		HandoverCube->ShouldResetValueToDefaultCounter = 1;
+		FinishStep();
+	}, StepTimeLimit);
+
 	AddStep(TEXT("Move the cube to Server 3's authority area"), FWorkerDefinition::Server(4), nullptr, nullptr, [this](float)
 	{
 		RequireTrue(MoveHandoverCube(Server3Position), TEXT("Server 4 has authority over the cube"));
@@ -218,12 +224,13 @@ void ASpatialTestHandoverReplication::PrepareTest() {
         }, StepTimeLimit);
 
 	AddStep(
-		TEXT("Revert Handover property to default value and hand the cube over back to Server 4"), FWorkerDefinition::Server(3), nullptr, [this]()
+		TEXT("Revert Handover property to default value and hand the cube over back to Server 4"), FWorkerDefinition::Server(3), nullptr, nullptr, [this](float)
 		{
-			HandoverCube->HandoverTestProperty = GetDefault<ADynamicReplicationHandoverCube>()->HandoverTestProperty;
+			RequireEqual_Int(HandoverCube->HandoverTestProperty, GetDefault<ADynamicReplicationHandoverCube>()->HandoverTestProperty, TEXT("Handover property reverted to default value"));
+			RequireEqual_Int(HandoverCube->ShouldResetValueToDefaultCounter, 2, TEXT("Handover counter incremented"));
 			RequireTrue(MoveHandoverCube(Server4Position), TEXT("Server 3 has authority over the cube"));
 			FinishStep();
-		}
+		}, StepTimeLimit
 	);
 
 	AddStep(TEXT("Check that Server 4 has updated handover value to default"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float)
@@ -235,7 +242,7 @@ void ASpatialTestHandoverReplication::PrepareTest() {
 		}
 
 		FinishStep();
-	});
+	}, StepTimeLimit);
 }
 
 void ASpatialTestHandoverReplication::RequireHandoverCubeAuthorityAndPosition(
