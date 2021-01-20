@@ -1352,6 +1352,13 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 		GenerateCloudConfigFromCurrentMap();
 	}
 
+	if (!SpatialGDKSettings->CheckManualWorkerConnectionOnLaunch())
+	{
+		OnShowFailedNotification(TEXT("Launch halted because of unexpected workers requiring manual launch."));
+
+		return FReply::Unhandled();
+	}
+
 	AddDeploymentTagIfMissing(SpatialConstants::DEV_LOGIN_TAG);
 
 	CloudDeploymentConfiguration.InitFromSettings();
