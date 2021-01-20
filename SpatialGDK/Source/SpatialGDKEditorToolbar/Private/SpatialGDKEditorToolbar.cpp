@@ -960,7 +960,8 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		}
 
 		FString InspectorArgs =
-			FString::Printf(TEXT("--backend_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorBackendAddress,
+			FString::Printf(TEXT("--grpc_addr=%s --http_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorGRPCAddress,
+							*SpatialGDKServicesConstants::InspectorHTTPAddress,
 							*SpatialGDKServicesConstants::SchemaBundlePath);
 
 		InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,
