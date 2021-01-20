@@ -1,7 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestCrossServerRPC.h"
-#include "CrossServerRPCCube.h"
+#include "ReplicatedCrossServerRPCCube.h"
+#include "NonReplicatedCrossServerRPCCube.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Kismet/GameplayStatics.h"
@@ -38,7 +39,7 @@
 ASpatialTestCrossServerRPC::ASpatialTestCrossServerRPC()
 	: Super()
 {
-	Author = "Andrei";
+	Author = "Andrei / Victoria";
 	Description = TEXT("Test CrossServer RPCs");
 }
 
@@ -128,17 +129,16 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 		FVector SpawnPosition = CubesLocations[i - 1];
 		// Each server spawns a cube
 		AddStep(TEXT("Dynamic actor tests: ServerSetupStep"), FWorkerDefinition::Server(i), nullptr, [this, SpawnPosition]() {
-			ACrossServerRPCCube* TestCube =
-				GetWorld()->SpawnActor<ACrossServerRPCCube>(SpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
+			AReplicatedCrossServerRPCCube* TestCube =
+				GetWorld()->SpawnActor<AReplicatedCrossServerRPCCube>(SpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
 			RegisterAutoDestroyActor(TestCube);
-			TestCube->TurnOnReplication();
 			FinishStep();
 		});
 	}
 
 	AddStep(TEXT("Dynamic actor tests: Auth server - Record entity id"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		TArray<AActor*> TestCubes;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACrossServerRPCCube::StaticClass(), TestCubes);
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedCrossServerRPCCube::StaticClass(), TestCubes);
 
 		int LocalWorkerId = GetLocalWorkerId();
 
@@ -146,7 +146,7 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 		{
 			if (Cube->HasAuthority())
 			{
-				ACrossServerRPCCube* CrossServerRPCCube = Cast<ACrossServerRPCCube>(Cube);
+				AReplicatedCrossServerRPCCube* CrossServerRPCCube = Cast<AReplicatedCrossServerRPCCube>(Cube);
 				CrossServerRPCCube->RecordEntityId();
 			}
 		}
@@ -161,7 +161,7 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 		[this, NumCubes]() -> bool {
 			// Make sure that all cubes were spawned and are visible to all servers before trying to send the RPCs.
 			TArray<AActor*> TestCubes;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACrossServerRPCCube::StaticClass(), TestCubes);
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedCrossServerRPCCube::StaticClass(), TestCubes);
 
 			UAbstractLBStrategy* LBStrategy = Cast<USpatialNetDriver>(GetNetDriver())->LoadBalanceStrategy;
 
@@ -187,7 +187,7 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 		},
 		[this]() {
 			TArray<AActor*> TestCubes;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACrossServerRPCCube::StaticClass(), TestCubes);
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedCrossServerRPCCube::StaticClass(), TestCubes);
 
 			int LocalWorkerId = GetLocalWorkerId();
 
@@ -195,7 +195,7 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 			{
 				if (!Cube->HasAuthority())
 				{
-					ACrossServerRPCCube* CrossServerRPCCube = Cast<ACrossServerRPCCube>(Cube);
+					AReplicatedCrossServerRPCCube* CrossServerRPCCube = Cast<AReplicatedCrossServerRPCCube>(Cube);
 					CrossServerRPCCube->CrossServerTestRPC(LocalWorkerId);
 				}
 			}
@@ -208,13 +208,13 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 		TEXT("Dynamic actor tests: Server1CheckRPCs"), FWorkerDefinition::Server(1), nullptr, nullptr,
 		[this](float DeltaTime) {
 			TArray<AActor*> TestCubes;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACrossServerRPCCube::StaticClass(), TestCubes);
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedCrossServerRPCCube::StaticClass(), TestCubes);
 
 			int CorrectCubes = 0;
 
 			for (AActor* Cube : TestCubes)
 			{
-				ACrossServerRPCCube* CrossServerRPCCube = Cast<ACrossServerRPCCube>(Cube);
+				AReplicatedCrossServerRPCCube* CrossServerRPCCube = Cast<AReplicatedCrossServerRPCCube>(Cube);
 
 				int ReceivedRPCS = CrossServerRPCCube->ReceivedCrossServerRPCS.Num();
 
@@ -233,17 +233,17 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 
 	AddStep(TEXT("Dynamic actor tests: Post-RPC entity ID check"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		TArray<AActor*> TestCubes;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACrossServerRPCCube::StaticClass(), TestCubes);
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedCrossServerRPCCube::StaticClass(), TestCubes);
 
 		for (AActor* Cube : TestCubes)
 		{
-			ACrossServerRPCCube* CrossServerRPCCube = Cast<ACrossServerRPCCube>(Cube);
+			AReplicatedCrossServerRPCCube* CrossServerRPCCube = Cast<AReplicatedCrossServerRPCCube>(Cube);
 			CheckValidEntityID(CrossServerRPCCube);
 		}
 	});
 }
 
-void ASpatialTestCrossServerRPC::CheckInvalidEntityID(ACrossServerRPCCube* TestCube)
+void ASpatialTestCrossServerRPC::CheckInvalidEntityID(AReplicatedCrossServerRPCCube* TestCube)
 {
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 	Worker_EntityId Entity = SpatialNetDriver->PackageMap->GetEntityIdFromObject(TestCube);
@@ -251,7 +251,7 @@ void ASpatialTestCrossServerRPC::CheckInvalidEntityID(ACrossServerRPCCube* TestC
 	FinishStep();
 }
 
-void ASpatialTestCrossServerRPC::CheckValidEntityID(ACrossServerRPCCube* TestCube)
+void ASpatialTestCrossServerRPC::CheckValidEntityID(AReplicatedCrossServerRPCCube* TestCube)
 {
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 	Worker_EntityId Entity = SpatialNetDriver->PackageMap->GetEntityIdFromObject(TestCube);

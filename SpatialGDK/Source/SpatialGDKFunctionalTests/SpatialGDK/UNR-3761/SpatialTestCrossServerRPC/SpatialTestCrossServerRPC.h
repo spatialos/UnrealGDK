@@ -6,7 +6,8 @@
 #include "SpatialFunctionalTest.h"
 #include "SpatialTestCrossServerRPC.generated.h"
 
-class ACrossServerRPCCube;
+class AReplicatedCrossServerRPCCube;
+class ANonReplicatedCrossServerRPCCube;
 class USpatialNetDriver;
 
 UCLASS()
@@ -18,10 +19,10 @@ public:
 	ASpatialTestCrossServerRPC();
 
 	UPROPERTY(EditAnywhere, Category = "Default")
-	ACrossServerRPCCube* LevelCube;
+	ANonReplicatedCrossServerRPCCube* LevelCube;
 
 	virtual void PrepareTest() override;
 
-	void CheckInvalidEntityID(ACrossServerRPCCube* TestCube);
-	void CheckValidEntityID(ACrossServerRPCCube* TestCube);
+	void CheckInvalidEntityID(AReplicatedCrossServerRPCCube* TestCube);
+	void CheckValidEntityID(AReplicatedCrossServerRPCCube* TestCube);
 };
