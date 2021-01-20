@@ -25,7 +25,7 @@ namespace ReleaseTool
             "in the repo `{1}` from `{2}` into `{3}`. " +
             "Your human labour is now required to complete the tasks listed in the PR descriptions and unblock the pipeline and resume the release.\n";
         private const string branchAnnotationTemplate = "* Successfully created a [release candidate branch]({0}) " +
-            "in the repo `{1}`, and it will evantually become `{2}` (no pull request as the specified release branch did not exist for this repository).\n";
+            "in the repo `{1}`, and it will eventually become `{2}` (no pull request as the specified release branch did not exist for this repository).\n";
 
         [Verb("prep", HelpText = "Prep a release candidate branch.")]
         public class Options : GitHubClient.IGitHubOptions
