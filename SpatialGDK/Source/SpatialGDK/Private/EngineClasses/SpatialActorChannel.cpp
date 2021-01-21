@@ -368,6 +368,16 @@ void USpatialActorChannel::UpdateShadowData()
 		ResetShadowData(*ComponentReplicator.RepLayout, ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer,
 						ActorComponent);
 	}
+
+	// UNR-4447: Update handover shadow data
+	for (auto& HandoverData : HandoverShadowDataMap)
+	{
+		TArray<uint8>& ShadowDataBuffer = HandoverData.Value.Get();
+		UObject* Object = HandoverData.Key.Get();
+
+		// this updates ShadowDataBuffer to Object's current handover state
+		GetHandoverChangeList(ShadowDataBuffer, Object);
+	}
 }
 
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
@@ -1138,13 +1148,6 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	{
 		Replicator.RepLayout->PreRepNotify.BindLambda(PreCallRepNotify);
 		Replicator.RepLayout->PostRepNotify.BindLambda(PostCallRepNotify);
-	}
-
-	TSharedRef<TArray<uint8>>* ObjectShadowData = HandoverShadowDataMap.Find(TargetObject);
-
-	if (ObjectShadowData != nullptr)
-	{
-		GetHandoverChangeList(ObjectShadowData->Get(), TargetObject);
 	}
 
 	Replicator.CallRepNotifies(false);
