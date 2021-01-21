@@ -6,6 +6,8 @@
 #include "Schema/DebugComponent.h"
 #include "Schema/Interest.h"
 #include "SpatialCommonTypes.h"
+#include "SpatialView/SubView.h"
+
 
 #include "SpatialNetDriverDebugContext.generated.h"
 
@@ -32,11 +34,11 @@ class SPATIALGDK_API USpatialNetDriverDebugContext : public UObject
 {
 	GENERATED_BODY()
 public:
-	static void EnableDebugSpatialGDK(USpatialNetDriver* NetDriver);
+	static void EnableDebugSpatialGDK(const SpatialGDK::FSubView& InSubView, USpatialNetDriver* NetDriver);
 	static void DisableDebugSpatialGDK(USpatialNetDriver* NetDriver);
 
 	// ------ Startup / Shutdown
-	void Init(USpatialNetDriver* NetDriver);
+	void Init(const SpatialGDK::FSubView& InSubView, USpatialNetDriver* InNetDriver);
 	void Cleanup();
 	void Reset();
 
@@ -110,6 +112,7 @@ protected:
 	bool NeedEntityInterestUpdate() { return bNeedToUpdateInterest; }
 
 	USpatialNetDriver* NetDriver;
+	const SpatialGDK::FSubView* SubView;
 
 	// Collection of actor tag delegations.
 	TMap<FName, VirtualWorkerId> SemanticDelegations;

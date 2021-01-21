@@ -28,10 +28,8 @@ bool IsSetIntersectionEmpty(const TSet<T>& Set1, const TSet<T>& Set2)
 }
 } // namespace
 
-void USpatialNetDriverDebugContext::EnableDebugSpatialGDK(USpatialNetDriver* NetDriver)
+void USpatialNetDriverDebugContext::EnableDebugSpatialGDK(const SpatialGDK::FSubView& InSubView, USpatialNetDriver* NetDriver)
 {
-	check(NetDriver);
-
 	if (NetDriver->DebugCtx == nullptr)
 	{
 		if (!ensureMsgf(NetDriver->LoadBalanceStrategy, TEXT("Enabling SpatialGDKDebug too soon")))
@@ -39,7 +37,7 @@ void USpatialNetDriverDebugContext::EnableDebugSpatialGDK(USpatialNetDriver* Net
 			return;
 		}
 		NetDriver->DebugCtx = NewObject<USpatialNetDriverDebugContext>();
-		NetDriver->DebugCtx->Init(NetDriver);
+		NetDriver->DebugCtx->Init(InSubView, NetDriver);
 	}
 }
 
@@ -51,9 +49,11 @@ void USpatialNetDriverDebugContext::DisableDebugSpatialGDK(USpatialNetDriver* Ne
 	}
 }
 
-void USpatialNetDriverDebugContext::Init(USpatialNetDriver* InNetDriver)
+void USpatialNetDriverDebugContext::Init(const SpatialGDK::FSubView& InSubView, USpatialNetDriver* InNetDriver)
 {
+	SubView = &InSubView;
 	NetDriver = InNetDriver;
+
 	DebugStrategy = NewObject<UDebugLBStrategy>();
 	DebugStrategy->InitDebugStrategy(this, NetDriver->LoadBalanceStrategy);
 	NetDriver->LoadBalanceStrategy = DebugStrategy;
@@ -71,7 +71,7 @@ void USpatialNetDriverDebugContext::Cleanup()
 
 void USpatialNetDriverDebugContext::AdvanceView()
 {
-	const SpatialGDK::FSubViewDelta& ViewDelta = NetDriver->DebugActorSubView->GetViewDelta();
+	const SpatialGDK::FSubViewDelta& ViewDelta = SubView->GetViewDelta();
 	for (const SpatialGDK::EntityDelta& Delta : ViewDelta.EntityDeltas)
 	{
 		switch (Delta.Type)
@@ -207,7 +207,7 @@ void USpatialNetDriverDebugContext::RemoveActorTag(AActor* Actor, FName Tag)
 
 void USpatialNetDriverDebugContext::AddComponent(Worker_EntityId EntityId)
 {
-	const SpatialGDK::EntityViewElement& Element = NetDriver->DebugActorSubView->GetView().FindChecked(EntityId);
+	const SpatialGDK::EntityViewElement& Element = NetDriver->Connection->GetView().FindChecked(EntityId);
 	const SpatialGDK::ComponentData* Data = Element.Components.FindByPredicate([](const SpatialGDK::ComponentData& Component) {
 		return Component.GetComponentId() == SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 	});

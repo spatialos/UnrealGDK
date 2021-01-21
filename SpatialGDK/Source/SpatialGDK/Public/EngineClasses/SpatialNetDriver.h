@@ -192,7 +192,10 @@ public:
 	USpatialWorkerFlags* SpatialWorkerFlags;
 	UPROPERTY()
 	USpatialNetDriverDebugContext* DebugCtx;
-	const SpatialGDK::FSubView* DebugActorSubView = nullptr;
+
+	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
+	FFilterPredicate ActorFilter;
+	TArray<FDispatcherRefreshCallback> TombstoneRefreshCallbacks;
 
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;

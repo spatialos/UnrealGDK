@@ -13,14 +13,12 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
-void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialNetDriverDebugContext* InDebugContext,
+void SpatialDispatcher::Init(USpatialReceiver* InReceiver,
 							 USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics,
 							 USpatialWorkerFlags* InSpatialWorkerFlags)
 {
 	check(InReceiver != nullptr);
 	Receiver = InReceiver;
-
-	DebugContext = InDebugContext;
 
 	check(InStaticComponentView != nullptr);
 	StaticComponentView = InStaticComponentView;
