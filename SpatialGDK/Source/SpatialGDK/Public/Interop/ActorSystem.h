@@ -27,7 +27,6 @@ struct ActorData
 {
 	SpawnData Spawn;
 	UnrealMetadata Metadata;
-	NetOwningClientWorker OwningClientWorker;
 };
 
 class ActorSystem
@@ -66,7 +65,6 @@ private:
 
 	void PopulateDataStore(Worker_EntityId EntityId);
 	void ApplyComponentAdd(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
-	void ApplyComponentUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 
 	void AuthorityLost(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
 	void AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
@@ -138,8 +136,7 @@ private:
 	TSet<TPair<Worker_EntityId_Key, Worker_ComponentId>> PendingDynamicSubobjectComponents;
 
 	TArray<Worker_ComponentId> SemanticActorComponents = { SpatialConstants::SPAWN_DATA_COMPONENT_ID,
-														   SpatialConstants::UNREAL_METADATA_COMPONENT_ID,
-														   SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
+														   SpatialConstants::UNREAL_METADATA_COMPONENT_ID };
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;
 };

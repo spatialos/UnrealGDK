@@ -139,7 +139,6 @@ void ActorSystem::Advance()
 			}
 			for (const ComponentChange& Change : Delta.ComponentUpdates)
 			{
-				ApplyComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update);
 				ComponentUpdated(Delta.EntityId, Change.ComponentId, Change.Update);
 			}
 			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
@@ -202,9 +201,7 @@ void ActorSystem::PopulateDataStore(const Worker_EntityId EntityId)
 			break;
 		case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 			Components.Metadata = UnrealMetadata(Data.GetUnderlying());
-			break;
-		case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
-			Components.OwningClientWorker = NetOwningClientWorker(Data.GetUnderlying());
+			Components.Metadata.GetNativeEntityClass();
 			break;
 		default:
 			break;
@@ -223,21 +220,9 @@ void ActorSystem::ApplyComponentAdd(const Worker_EntityId EntityId, const Worker
 		ActorDataStore[EntityId].Metadata = UnrealMetadata(Data);
 		ActorDataStore[EntityId].Metadata.GetNativeEntityClass();
 		break;
-	case SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID:
-		ActorDataStore[EntityId].OwningClientWorker = NetOwningClientWorker(Data);
-		break;
 	default:
 		break;
 	}
-}
-
-void ActorSystem::ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update)
-{
-	if (ComponentId != SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID)
-	{
-		return;
-	}
-	ActorDataStore[EntityId].OwningClientWorker.ApplyComponentUpdate(Update);
 }
 
 void ActorSystem::AuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
@@ -559,7 +544,7 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const
 {
 	// Early out if this isn't a generated component.
-	if (SemanticActorComponents.Contains(ComponentId))
+	if (ComponentId < SpatialConstants::STARTING_GENERATED_COMPONENT_ID && ComponentId != SpatialConstants::DORMANT_COMPONENT_ID)
 	{
 		return;
 	}
@@ -1503,8 +1488,6 @@ AActor* ActorSystem::CreateActor(ActorData& ActorComponents)
 
 	if (NetDriver->IsServer() && bCreatingPlayerController)
 	{
-		// If we're spawning a PlayerController, it should definitely have a net-owning client worker ID.
-		check(ActorComponents.OwningClientWorker.ClientPartitionId.IsSet());
 		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor));
 	}
 
