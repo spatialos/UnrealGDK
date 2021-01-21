@@ -91,9 +91,9 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 
 	AddStep(TEXT("Startup actor tests: Post-RPC entity ID check"), FWorkerDefinition::AllServers, nullptr, nullptr,
 			[this](float DeltaTime) {
-				// Before the fix, incorrect entity IDs were generated on non-auth servers 1, 2 and 3. So this step confirms that the entity IDs remain unset.
-			    // Also, it confirms the entity ID is unset on server 4 the auth server before we do the next step of turning on replication which correctly sets the entity
-				// ID on all servers.
+				// Before the fix, incorrect entity IDs were generated on non-auth servers 1, 2 and 3. So this step confirms that the entity
+				// IDs remain unset. Also, it confirms the entity ID is unset on server 4 the auth server before we do the next step of
+				// turning on replication which correctly sets the entity ID on all servers.
 				CheckInvalidEntityID(LevelCube);
 			});
 
