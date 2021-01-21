@@ -23,8 +23,7 @@ class SPATIALGDK_API SpatialDispatcher
 public:
 	using FCallbackId = uint32;
 
-	void Init(USpatialReceiver* InReceiver,
-			  USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics,
+	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics,
 			  USpatialWorkerFlags* InSpatialWorkerFlags);
 	void ProcessOps(const TArray<Worker_Op>& Ops);
 

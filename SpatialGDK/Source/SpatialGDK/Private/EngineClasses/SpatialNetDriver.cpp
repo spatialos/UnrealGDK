@@ -414,8 +414,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	const SpatialGDK::FSubView& ActorAuthSubview =
 		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, ActorFilter, TombstoneRefreshCallbacks);
-	const SpatialGDK::FSubView& ActorNonAuthSubview =
-		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, TombstoneRefreshCallbacks);
+	const SpatialGDK::FSubView& ActorNonAuthSubview = Connection->GetCoordinator().CreateSubView(
+		SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, TombstoneRefreshCallbacks);
 	const SpatialGDK::FSubView& TombstoneActorSubview = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::TOMBSTONE_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
@@ -435,7 +435,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
 	PlayerSpawner->Init(this);
 	PlayerSpawner->OnPlayerSpawnFailed.BindUObject(GameInstance, &USpatialGameInstance::HandleOnPlayerSpawnFailed);
-	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
 	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
 	SpatialMetrics->ControllerRefProvider.BindUObject(this, &USpatialNetDriver::GetCurrentPlayerControllerRef);
 
@@ -2724,15 +2723,14 @@ void USpatialNetDriver::TryFinishStartup()
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();
 
-
 #if WITH_EDITORONLY_DATA
 			ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
 			if (WorldSettings && WorldSettings->bEnableDebugInterface)
 			{
 				// Create the subview here rather than with the others as we only know if we need it or not at
 				// this point.
-				const SpatialGDK::FSubView& DebugActorSubView =
-                    Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_DEBUG_COMPONENT_ID, ActorFilter, TombstoneRefreshCallbacks);
+				const SpatialGDK::FSubView& DebugActorSubView = Connection->GetCoordinator().CreateSubView(
+					SpatialConstants::GDK_DEBUG_COMPONENT_ID, ActorFilter, TombstoneRefreshCallbacks);
 				USpatialNetDriverDebugContext::EnableDebugSpatialGDK(DebugActorSubView, this);
 			}
 #endif

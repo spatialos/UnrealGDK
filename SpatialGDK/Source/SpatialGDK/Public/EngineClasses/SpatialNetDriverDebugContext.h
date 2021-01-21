@@ -6,8 +6,6 @@
 #include "Schema/DebugComponent.h"
 #include "Schema/Interest.h"
 #include "SpatialCommonTypes.h"
-#include "SpatialView/SubView.h"
-
 
 #include "SpatialNetDriverDebugContext.generated.h"
 
@@ -26,8 +24,9 @@ class USpatialNetDriver;
 
 namespace SpatialGDK
 {
+class FSubView;
 struct ComponentChange;
-}
+} // namespace SpatialGDK
 
 UCLASS()
 class SPATIALGDK_API USpatialNetDriverDebugContext : public UObject

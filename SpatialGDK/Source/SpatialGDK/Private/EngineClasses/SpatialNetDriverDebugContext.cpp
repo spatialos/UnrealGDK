@@ -207,7 +207,7 @@ void USpatialNetDriverDebugContext::RemoveActorTag(AActor* Actor, FName Tag)
 
 void USpatialNetDriverDebugContext::AddComponent(Worker_EntityId EntityId)
 {
-	const SpatialGDK::EntityViewElement& Element = NetDriver->Connection->GetView().FindChecked(EntityId);
+	const SpatialGDK::EntityViewElement& Element = SubView->GetView().FindChecked(EntityId);
 	const SpatialGDK::ComponentData* Data = Element.Components.FindByPredicate([](const SpatialGDK::ComponentData& Component) {
 		return Component.GetComponentId() == SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 	});

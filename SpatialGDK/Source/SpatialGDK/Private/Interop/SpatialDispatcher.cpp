@@ -13,9 +13,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
-void SpatialDispatcher::Init(USpatialReceiver* InReceiver,
-							 USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics,
-							 USpatialWorkerFlags* InSpatialWorkerFlags)
+void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView,
+							 USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags)
 {
 	check(InReceiver != nullptr);
 	Receiver = InReceiver;
@@ -73,7 +72,7 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			Receiver->OnCommandResponse(Op);
 			break;
 
-			// Authority Change
+		// Authority Change
 		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
 			// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
 			// This way systems that depend on having non-stale state can function correctly.

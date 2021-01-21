@@ -17,6 +17,12 @@
 
 DEFINE_LOG_CATEGORY(LogActorSystem);
 
+DECLARE_CYCLE_STAT(TEXT("Actor System RemoveEntity"), STAT_ActorSystemRemoveEntity, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Actor System ApplyData"), STAT_ActorSystemApplyData, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Actor System ApplyHandover"), STAT_ActorSystemApplyHandover, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Actor System ReceiveActor"), STAT_ActorSystemReceiveActor, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Actor System RemoveActor"), STAT_ActorSystemRemoveActor, STATGROUP_SpatialNet);
+
 namespace SpatialGDK
 {
 struct ActorSystem::RepStateUpdateHelper
@@ -115,6 +121,9 @@ void ActorSystem::Advance()
 		{
 		case EntityDelta::UPDATE:
 		{
+			// We process authority lost temporarily twice. Once at the start, to lose authority, and again at the end
+			// to regain it. Why? Because if we temporarily lost authority, we may see surprising updates during the
+			// tick, such as updates for components we would otherwise think we were authoritative over, and ignore.
 			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
 			{
 				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
@@ -523,12 +532,12 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 
 	if (Category == SCHEMA_Data || Category == SCHEMA_OwnerOnly)
 	{
-		// SCOPE_CYCLE_COUNTER(STAT_ReceiverApplyData);
+		SCOPE_CYCLE_COUNTER(STAT_ActorSystemApplyData);
 		ApplyComponentUpdate(ComponentId, Update, *TargetObject, *Channel, /* bIsHandover */ false);
 	}
 	else if (Category == SCHEMA_Handover)
 	{
-		// SCOPE_CYCLE_COUNTER(STAT_ReceiverApplyHandover);
+		SCOPE_CYCLE_COUNTER(STAT_ActorSystemApplyHandover);
 		if (!NetDriver->IsServer())
 		{
 			UE_LOG(LogActorSystem, Verbose, TEXT("Entity: %d Component: %d - Skipping Handover component because we're a client."),
@@ -591,7 +600,7 @@ void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 
 void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 {
-	// SCOPE_CYCLE_COUNTER(STAT_ReceiverRemoveEntity);
+	SCOPE_CYCLE_COUNTER(STAT_ActorSystemRemoveEntity);
 
 	RemoveActor(EntityId);
 
@@ -1226,7 +1235,7 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 
 void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 {
-	// SCOPE_CYCLE_COUNTER(STAT_ReceiverReceiveActor);
+	SCOPE_CYCLE_COUNTER(STAT_ActorSystemReceiveActor);
 
 	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
 	checkf(NetDriver->GetWorld(), TEXT("We should have a World whilst processing ops."));
@@ -1587,7 +1596,7 @@ void ActorSystem::ApplyComponentDataOnActorCreation(const Worker_EntityId Entity
 
 void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 {
-	// SCOPE_CYCLE_COUNTER(STAT_ReceiverRemoveActor);
+	SCOPE_CYCLE_COUNTER(STAT_ActorSystemRemoveActor);
 
 	TWeakObjectPtr<UObject> WeakActor = NetDriver->PackageMap->GetObjectFromEntityId(EntityId);
 
