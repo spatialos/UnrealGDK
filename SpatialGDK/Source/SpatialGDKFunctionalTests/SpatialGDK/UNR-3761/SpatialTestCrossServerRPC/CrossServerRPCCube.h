@@ -4,15 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
-#include "ReplicatedCrossServerRPCCube.generated.h"
+#include "CrossServerRPCCube.generated.h"
 
 UCLASS()
-class AReplicatedCrossServerRPCCube : public AReplicatedTestActorBase
+class ACrossServerRPCCube : public AReplicatedTestActorBase
 {
 	GENERATED_BODY()
 
 public:
-	AReplicatedCrossServerRPCCube();
+	ACrossServerRPCCube();
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

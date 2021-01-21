@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ReplicatedCrossServerRPCCube.h"
+#include "CrossServerRPCCube.h"
 #include "NonReplicatedCrossServerRPCCube.generated.h"
 
 UCLASS()
-class ANonReplicatedCrossServerRPCCube : public AReplicatedCrossServerRPCCube
+class ANonReplicatedCrossServerRPCCube : public ACrossServerRPCCube
 {
 	GENERATED_BODY()
 

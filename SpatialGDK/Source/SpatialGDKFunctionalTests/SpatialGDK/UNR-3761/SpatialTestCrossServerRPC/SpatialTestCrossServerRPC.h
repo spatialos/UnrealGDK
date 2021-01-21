@@ -6,7 +6,7 @@
 #include "SpatialFunctionalTest.h"
 #include "SpatialTestCrossServerRPC.generated.h"
 
-class AReplicatedCrossServerRPCCube;
+class ACrossServerRPCCube;
 class ANonReplicatedCrossServerRPCCube;
 
 UCLASS()
@@ -22,6 +22,6 @@ public:
 
 	virtual void PrepareTest() override;
 
-	void CheckInvalidEntityID(AReplicatedCrossServerRPCCube* TestCube);
-	void CheckValidEntityID(AReplicatedCrossServerRPCCube* TestCube);
+	void CheckInvalidEntityID(ACrossServerRPCCube* TestCube);
+	void CheckValidEntityID(ACrossServerRPCCube* TestCube);
 };

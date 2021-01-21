@@ -1,31 +1,31 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "ReplicatedCrossServerRPCCube.h"
+#include "CrossServerRPCCube.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Net/UnrealNetwork.h"
 
-AReplicatedCrossServerRPCCube::AReplicatedCrossServerRPCCube()
+ACrossServerRPCCube::ACrossServerRPCCube()
 {
 	bAlwaysRelevant = true;
 	bNetLoadOnClient = true;
 	bNetLoadOnNonAuthServer = true;
 }
 
-void AReplicatedCrossServerRPCCube::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void ACrossServerRPCCube::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AReplicatedCrossServerRPCCube, ReceivedCrossServerRPCS);
-	DOREPLIFETIME(AReplicatedCrossServerRPCCube, AuthEntityId);
+	DOREPLIFETIME(ACrossServerRPCCube, ReceivedCrossServerRPCS);
+	DOREPLIFETIME(ACrossServerRPCCube, AuthEntityId);
 }
 
-void AReplicatedCrossServerRPCCube::CrossServerTestRPC_Implementation(int SendingServerID)
+void ACrossServerRPCCube::CrossServerTestRPC_Implementation(int SendingServerID)
 {
 	ReceivedCrossServerRPCS.Add(SendingServerID);
 }
 
-void AReplicatedCrossServerRPCCube::RecordEntityId()
+void ACrossServerRPCCube::RecordEntityId()
 {
 	if (HasAuthority())
 	{
