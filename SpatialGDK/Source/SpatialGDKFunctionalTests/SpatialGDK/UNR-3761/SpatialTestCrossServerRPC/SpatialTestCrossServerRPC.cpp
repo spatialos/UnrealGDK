@@ -1,12 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestCrossServerRPC.h"
+#include "CrossServerRPCCube.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Kismet/GameplayStatics.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "NonReplicatedCrossServerRPCCube.h"
-#include "CrossServerRPCCube.h"
 #include "SpatialFunctionalTestFlowController.h"
 
 /**
