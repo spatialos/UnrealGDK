@@ -24,12 +24,12 @@ struct NetOwningClientWorker : AbstractMutableComponent
 	{
 	}
 
-	NetOwningClientWorker(const Worker_ComponentData& Data)
+	explicit NetOwningClientWorker(const Worker_ComponentData& Data)
 		: NetOwningClientWorker(Data.schema_type)
 	{
 	}
 
-	NetOwningClientWorker(Schema_ComponentData* Data)
+	explicit NetOwningClientWorker(Schema_ComponentData* Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 		if (Schema_GetEntityIdCount(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID) == 1)

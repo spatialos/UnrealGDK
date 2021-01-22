@@ -140,7 +140,8 @@ const Worker_ComponentId ACTOR_AUTH_TAG_COMPONENT_ID = 2001;
 const Worker_ComponentId ACTOR_NON_AUTH_TAG_COMPONENT_ID = 2002;
 const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
 const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
-const Worker_ComponentId LAST_EC_COMPONENT_ID = 2008;
+const Worker_ComponentId TOMBSTONE_TAG_COMPONENT_ID = 2008;
+const Worker_ComponentId LAST_EC_COMPONENT_ID = 2009;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
@@ -338,38 +339,39 @@ const FString EMPTY_TEST_MAP_PATH = TEXT("/SpatialGDK/Maps/Empty");
 const FString DEV_LOGIN_TAG = TEXT("dev_login");
 
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST =
-	TArray<Worker_ComponentId>{ // Actor components
-								UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, TOMBSTONE_COMPONENT_ID, DORMANT_COMPONENT_ID,
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>{
+	// Actor components
+	UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, TOMBSTONE_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID, DORMANT_COMPONENT_ID,
 
-								// Multicast RPCs
-								MULTICAST_RPCS_COMPONENT_ID,
+	// Multicast RPCs
+	MULTICAST_RPCS_COMPONENT_ID,
 
-								// Global state components
-								DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID,
+	// Global state components
+	DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID,
 
-								// Debugging information
-								DEBUG_METRICS_COMPONENT_ID, SPATIAL_DEBUGGING_COMPONENT_ID,
+	// Debugging information
+	DEBUG_METRICS_COMPONENT_ID, SPATIAL_DEBUGGING_COMPONENT_ID,
 
-								// Non auth actor tag
-								ACTOR_NON_AUTH_TAG_COMPONENT_ID
-	};
+	// Non auth actor tag
+	ACTOR_NON_AUTH_TAG_COMPONENT_ID
+};
 
 // A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>{ // RPCs from the server
-																											SERVER_ENDPOINT_COMPONENT_ID,
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
+	TArray<Worker_ComponentId>{ // RPCs from the server
+								SERVER_ENDPOINT_COMPONENT_ID,
 
-																											// Actor auth tag
-																											ACTOR_AUTH_TAG_COMPONENT_ID
-};
+								// Actor tags
+								ACTOR_NON_AUTH_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID
+	};
 
 // A list of components servers require on top of any generated data and handover components in order to handle non-authoritative actors
 // correctly.
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST =
 	TArray<Worker_ComponentId>{ // Actor components
-								UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, TOMBSTONE_COMPONENT_ID, DORMANT_COMPONENT_ID,
-								NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
+								UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, TOMBSTONE_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID,
+								DORMANT_COMPONENT_ID, NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
 
 								// Multicast RPCs
 								MULTICAST_RPCS_COMPONENT_ID,
@@ -391,17 +393,18 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST = TArray<Worker_ComponentId>{ // RPCs from clients
-																											CLIENT_ENDPOINT_COMPONENT_ID,
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
+	TArray<Worker_ComponentId>{ // RPCs from clients
+								CLIENT_ENDPOINT_COMPONENT_ID,
 
-																											// Heartbeat
-																											HEARTBEAT_COMPONENT_ID,
+								// Heartbeat
+								HEARTBEAT_COMPONENT_ID,
 
-																											// Auth actor tag
-																											ACTOR_AUTH_TAG_COMPONENT_ID,
+								// Actor tags
+								ACTOR_NON_AUTH_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
 
-																											PARTITION_COMPONENT_ID
-};
+								PARTITION_COMPONENT_ID
+	};
 
 inline bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId)
 {
