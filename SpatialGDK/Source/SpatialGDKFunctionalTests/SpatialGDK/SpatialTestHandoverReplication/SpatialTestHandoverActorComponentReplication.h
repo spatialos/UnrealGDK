@@ -10,7 +10,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3761/SpatialTestHandover/HandoverCube.h"
 #include "Utils/LayerInfo.h"
 
-#include "SpatialTestHandoverReplication.generated.h"
+#include "SpatialTestHandoverActorComponentReplication.generated.h"
 
 UENUM()
 enum class EHandoverReplicationTestStage
@@ -45,7 +45,7 @@ public:
 	int ReplicatedTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
 };
 
-class ASpatialTestHandoverReplication;
+class ASpatialTestHandoverActorComponentReplication;
 
 UCLASS()
 class AHandoverReplicationTestCube : public AHandoverCube
@@ -57,7 +57,7 @@ public:
 
 	void SetTestValues(int UpdatedTestPropertyValue);
 
-	void RequireTestValues(ASpatialTestHandoverReplication* FunctionalTest, int RequiredValue, const FString& Postfix) const;
+	void RequireTestValues(ASpatialTestHandoverActorComponentReplication* FunctionalTest, int RequiredValue, const FString& Postfix) const;
 
 	virtual void OnAuthorityGained() override;
 
@@ -104,11 +104,11 @@ public:
 };
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestHandoverReplication : public ASpatialFunctionalTest
+class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestHandoverActorComponentReplication : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
 public:
-	ASpatialTestHandoverReplication();
+	ASpatialTestHandoverActorComponentReplication();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

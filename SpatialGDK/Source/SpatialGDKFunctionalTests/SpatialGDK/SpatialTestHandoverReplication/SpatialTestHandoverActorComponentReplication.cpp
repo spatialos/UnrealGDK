@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialTestHandoverReplication.h"
+#include "SpatialTestHandoverActorComponentReplication.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Kismet/GameplayStatics.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
@@ -21,7 +21,7 @@ void UTestHandoverComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(UTestHandoverComponent, ReplicatedTestProperty);
+	DOREPLIFETIME(ThisClass, ReplicatedTestProperty);
 }
 
 AHandoverReplicationTestCube::AHandoverReplicationTestCube()
@@ -41,7 +41,7 @@ void AHandoverReplicationTestCube::SetTestValues(int UpdatedTestPropertyValue)
 	HandoverComponent->ReplicatedTestProperty = UpdatedTestPropertyValue;
 }
 
-void AHandoverReplicationTestCube::RequireTestValues(ASpatialTestHandoverReplication* FunctionalTest, int RequiredValue,
+void AHandoverReplicationTestCube::RequireTestValues(ASpatialTestHandoverActorComponentReplication* FunctionalTest, int RequiredValue,
 													 const FString& Postfix) const
 {
 	FunctionalTest->RequireEqual_Int(HandoverTestProperty, RequiredValue, TEXT("Handover Cube: ") + Postfix);
@@ -64,7 +64,7 @@ void AHandoverReplicationTestCube::GetLifetimeReplicatedProps(TArray<FLifetimePr
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AHandoverReplicationTestCube, ReplicatedTestProperty);
+	DOREPLIFETIME(ThisClass, ReplicatedTestProperty);
 }
 
 /**
@@ -80,29 +80,29 @@ void AHandoverReplicationTestCube::GetLifetimeReplicatedProps(TArray<FLifetimePr
  *		* Check that the value change was registered
  */
 
-ASpatialTestHandoverReplication::ASpatialTestHandoverReplication()
+ASpatialTestHandoverActorComponentReplication::ASpatialTestHandoverActorComponentReplication()
 	: Super()
 {
 	Author = TEXT("Dmitrii Kozlov");
 	Description = TEXT("Test handover replication for an actor and its component");
 
-	// Forward-Left.
+	// Forward-Left, will be in Server 1's authority area.
 	Server1Position = FVector(HandoverReplicationTestValues::WorldSize / 4, -HandoverReplicationTestValues::WorldSize / 4, 0.0f);
 
-	// Forward-Right.
+	// Forward-Right, will be in Server 2's authority area.
 	Server2Position = FVector(HandoverReplicationTestValues::WorldSize / 4, HandoverReplicationTestValues::WorldSize / 4, 0.0f);
 
 	bReplicates = true;
 }
 
-void ASpatialTestHandoverReplication::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void ASpatialTestHandoverActorComponentReplication::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, HandoverCube);
 }
 
-void ASpatialTestHandoverReplication::PrepareTest()
+void ASpatialTestHandoverActorComponentReplication::PrepareTest()
 {
 	Super::PrepareTest();
 
@@ -169,13 +169,13 @@ void ASpatialTestHandoverReplication::PrepareTest()
 	});
 }
 
-void ASpatialTestHandoverReplication::SaveHandoverCube_Implementation(AHandoverReplicationTestCube* InHandoverCube)
+void ASpatialTestHandoverActorComponentReplication::SaveHandoverCube_Implementation(AHandoverReplicationTestCube* InHandoverCube)
 {
 	HandoverCube = InHandoverCube;
 }
 
-void ASpatialTestHandoverReplication::RequireHandoverCubeAuthorityAndPosition(int WorkerShouldHaveAuthority,
-																			  const FVector& ExpectedPosition)
+void ASpatialTestHandoverActorComponentReplication::RequireHandoverCubeAuthorityAndPosition(int WorkerShouldHaveAuthority,
+																							const FVector& ExpectedPosition)
 {
 	if (!ensureMsgf(GetLocalWorkerType() == ESpatialFunctionalTestWorkerType::Server, TEXT("Should only be called in Servers")))
 	{
@@ -195,7 +195,7 @@ void ASpatialTestHandoverReplication::RequireHandoverCubeAuthorityAndPosition(in
 	}
 }
 
-bool ASpatialTestHandoverReplication::MoveHandoverCube(const FVector& Position)
+bool ASpatialTestHandoverActorComponentReplication::MoveHandoverCube(const FVector& Position)
 {
 	if (HandoverCube->HasAuthority())
 	{
