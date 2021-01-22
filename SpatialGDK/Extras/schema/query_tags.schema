@@ -18,3 +18,7 @@ component LBTag {
 component GDKKnownEntityTag {
     id = 2007;
 }
+
+component TombstoneTag {
+    id = 2008;
+}

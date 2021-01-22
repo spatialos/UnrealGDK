@@ -141,6 +141,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed an issue where a NetworkFailure won't be reported when connecting to a deployment that doesn't support dev_login with a developer token, and in some other configuration-dependent cases.
 - Fixed a crash that occured when opening the session frontend with VS 16.8.0 using the bundled dbghelp.dll.
 - Spatial debugger no longer consumes input.
+- Fixed an issue where we would always create a folder for a snapshots for a deployment even when we made no snapshots
 
 ## [`0.11.0`] - 2020-09-03
 

@@ -22,6 +22,7 @@
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
@@ -106,6 +107,8 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 
 	SpatialDebuggerReady = NewObject<USpatialBasicAwaiter>();
 }
+
+USpatialNetDriver::~USpatialNetDriver() = default;
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
 {
@@ -403,16 +406,18 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	CreateAndInitializeLoadBalancingClasses();
 
-	const FFilterPredicate ActorFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+	ActorFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
 		return !Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
 	};
-	const TArray<FDispatcherRefreshCallback> RefreshCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+	TombstoneRefreshCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
 		SpatialConstants::TOMBSTONE_COMPONENT_ID) };
 
 	const SpatialGDK::FSubView& ActorAuthSubview =
-		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, ActorFilter, RefreshCallbacks);
-	const SpatialGDK::FSubView& ActorNonAuthSubview =
-		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, RefreshCallbacks);
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, ActorFilter, TombstoneRefreshCallbacks);
+	const SpatialGDK::FSubView& ActorNonAuthSubview = Connection->GetCoordinator().CreateSubView(
+		SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, TombstoneRefreshCallbacks);
+	const SpatialGDK::FSubView& TombstoneActorSubview = Connection->GetCoordinator().CreateSubView(
+		SpatialConstants::TOMBSTONE_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
 	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
 		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
@@ -420,9 +425,12 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	CrossServerRPCHandler =
 		MakeUnique<SpatialGDK::CrossServerRPCHandler>(Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this));
 
+	ActorSystem =
+		MakeUnique<SpatialGDK::ActorSystem>(ActorNonAuthSubview, TombstoneActorSubview, this, &TimerManager, Connection->GetEventTracer());
+
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
-	Receiver->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
+	Receiver->Init(this, Connection->GetEventTracer());
 	GlobalStateManager->Init(this);
 	SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
 	PlayerSpawner->Init(this);
@@ -1705,6 +1713,11 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		return 0;
 	}
 
+	if (DebugCtx != nullptr)
+	{
+		DebugCtx->TickServer();
+	}
+
 	AWorldSettings* WorldSettings = World->GetWorldSettings();
 
 	bool bCPUSaturated = false;
@@ -1812,11 +1825,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		DebugRelevantActors = false;
 	}
 
-	if (DebugCtx)
-	{
-		DebugCtx->TickServer();
-	}
-
 #if !UE_BUILD_SHIPPING
 	ConsiderListSize = FinalSortedCount;
 #endif
@@ -1858,12 +1866,21 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			RPCService->AdvanceView();
 		}
 
+		if (DebugCtx != nullptr)
+		{
+			DebugCtx->AdvanceView();
+		}
+
+		if (ActorSystem.IsValid())
+		{
+			ActorSystem->Advance();
+		}
+
 		{
 			SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 			Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
 			Dispatcher->ProcessOps(Connection->GetWorkerMessages());
 			CrossServerRPCHandler->ProcessMessages(Connection->GetWorkerMessages(), DeltaTime);
-			Receiver->ProcessActorsFromAsyncLoading();
 		}
 
 		if (RPCService.IsValid())
@@ -1874,6 +1891,28 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (WellKnownEntitySystem.IsValid())
 		{
 			WellKnownEntitySystem->Advance();
+		}
+
+		if (SpatialDebugger != nullptr)
+		{
+			for (const auto& EntityDelta : Connection->GetCoordinator().GetViewDelta().GetEntityDeltas())
+			{
+				if (EntityDelta.Type == SpatialGDK::EntityDelta::ADD)
+				{
+					SpatialDebugger->OnEntityAdded(EntityDelta.EntityId);
+				}
+				if (EntityDelta.Type == SpatialGDK::EntityDelta::REMOVE)
+				{
+					SpatialDebugger->OnEntityRemoved(EntityDelta.EntityId);
+				}
+				for (const auto& Authority : EntityDelta.AuthorityGained)
+				{
+					if (Authority.ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+					{
+						SpatialDebugger->ActorAuthorityGained(EntityDelta.EntityId);
+					}
+				}
+			}
 		}
 
 		if (!bIsReadyToStart)
@@ -1989,7 +2028,7 @@ void USpatialNetDriver::PollPendingLoads()
 		UObject* ResolvedObject = FUnrealObjectRef::ToObjectPtr(ObjectReference, PackageMap, bOutUnresolved);
 		if (ResolvedObject)
 		{
-			Receiver->ResolvePendingOperations(ResolvedObject, ObjectReference);
+			ActorSystem->ResolvePendingOperations(ResolvedObject, ObjectReference);
 		}
 		else
 		{
@@ -2440,7 +2479,7 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId, USpatialAct
 {
 	for (auto& ChannelRefs : Channel.ObjectReferenceMap)
 	{
-		Receiver->CleanupRepStateMap(ChannelRefs.Value);
+		ActorSystem->CleanupRepStateMap(ChannelRefs.Value);
 	}
 	Channel.ObjectReferenceMap.Empty();
 
@@ -2704,7 +2743,11 @@ void USpatialNetDriver::TryFinishStartup()
 			ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
 			if (WorldSettings && WorldSettings->bEnableDebugInterface)
 			{
-				USpatialNetDriverDebugContext::EnableDebugSpatialGDK(this);
+				// Create the subview here rather than with the others as we only know if we need it or not at
+				// this point.
+				const SpatialGDK::FSubView& DebugActorSubView = Connection->GetCoordinator().CreateSubView(
+					SpatialConstants::GDK_DEBUG_COMPONENT_ID, ActorFilter, TombstoneRefreshCallbacks);
+				USpatialNetDriverDebugContext::EnableDebugSpatialGDK(DebugActorSubView, this);
 			}
 #endif
 
