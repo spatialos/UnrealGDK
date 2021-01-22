@@ -26,6 +26,13 @@ static constexpr int BasicTestPropertyValue = 10;
 static constexpr int UpdatedTestPropertyValue = 100;
 
 static constexpr float WorldSize = 1000.0f;
+
+// Positions that belong to specific server according to 1x2 Grid LBS.
+// Forward-Left, will be in Server 1's authority area.
+static const FVector Server1Position{ WorldSize / 4, -WorldSize / 4, 0.0f };
+
+// Forward-Right, will be in Server 2's authority area.
+static const FVector Server2Position{ WorldSize / 4, WorldSize / 4, 0.0f };
 } // namespace HandoverReplicationTestValues
 
 UCLASS()
@@ -87,7 +94,6 @@ class USpatialTestHandoverReplicationLBStrategy : public UGridBasedLBStrategy
 		Cols = 2;
 		WorldWidth = HandoverReplicationTestValues::WorldSize;
 		WorldHeight = HandoverReplicationTestValues::WorldSize;
-		InterestBorder = HandoverReplicationTestValues::WorldSize * 100;
 	}
 };
 
@@ -119,12 +125,6 @@ public:
 
 	void RequireHandoverCubeAuthorityAndPosition(int WorkerShouldHaveAuthority, const FVector& ExpectedPosition);
 
-	bool MoveHandoverCube(const FVector& Position);
-
 	UPROPERTY(Replicated)
 	AHandoverReplicationTestCube* HandoverCube;
-
-	// Positions that belong to specific server according to 1x2 Grid LBS.
-	FVector Server1Position;
-	FVector Server2Position;
 };

@@ -44,19 +44,27 @@ void AHandoverReplicationTestCube::SetTestValues(int UpdatedTestPropertyValue)
 void AHandoverReplicationTestCube::RequireTestValues(ASpatialTestHandoverActorComponentReplication* FunctionalTest, int RequiredValue,
 													 const FString& Postfix) const
 {
-	FunctionalTest->RequireEqual_Int(HandoverTestProperty, RequiredValue, TEXT("Handover Cube: ") + Postfix);
-	FunctionalTest->RequireEqual_Int(ReplicatedTestProperty, RequiredValue, TEXT("Replicated Cube: ") + Postfix);
-	FunctionalTest->RequireEqual_Int(HandoverComponent->HandoverTestProperty, RequiredValue, TEXT("Handover Component: ") + Postfix);
-	FunctionalTest->RequireEqual_Int(HandoverComponent->ReplicatedTestProperty, RequiredValue, TEXT("Replicated Component: ") + Postfix);
+	FunctionalTest->RequireEqual_Int(HandoverTestProperty, RequiredValue,
+									 FString::Printf(TEXT("Handover Cube = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(ReplicatedTestProperty, RequiredValue,
+									 FString::Printf(TEXT("Replicated Cube = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverComponent->HandoverTestProperty, RequiredValue,
+									 FString::Printf(TEXT("Handover Component = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverComponent->ReplicatedTestProperty, RequiredValue,
+									 FString::Printf(TEXT("Replicated Component = %d: %s"), RequiredValue, *Postfix));
 }
 
 void AHandoverReplicationTestCube::OnAuthorityGained()
 {
+	Super::OnAuthorityGained();
+
 	if (TestStage == EHandoverReplicationTestStage::ChangeValuesToDefaultOnGainingAuthority)
 	{
 		SetTestValues(HandoverReplicationTestValues::BasicTestPropertyValue);
 
 		TestStage = EHandoverReplicationTestStage::Final;
+
+		SetActorLocation(HandoverReplicationTestValues::Server1Position);
 	}
 }
 
@@ -86,12 +94,6 @@ ASpatialTestHandoverActorComponentReplication::ASpatialTestHandoverActorComponen
 	Author = TEXT("Dmitrii Kozlov");
 	Description = TEXT("Test handover replication for an actor and its component");
 
-	// Forward-Left, will be in Server 1's authority area.
-	Server1Position = FVector(HandoverReplicationTestValues::WorldSize / 4, -HandoverReplicationTestValues::WorldSize / 4, 0.0f);
-
-	// Forward-Right, will be in Server 2's authority area.
-	Server2Position = FVector(HandoverReplicationTestValues::WorldSize / 4, HandoverReplicationTestValues::WorldSize / 4, 0.0f);
-
 	bReplicates = true;
 }
 
@@ -120,8 +122,8 @@ void ASpatialTestHandoverActorComponentReplication::PrepareTest()
 	});
 
 	AddStep(TEXT("Server 1 spawns a HandoverCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		HandoverCube =
-			GetWorld()->SpawnActor<AHandoverReplicationTestCube>(Server1Position, FRotator::ZeroRotator, FActorSpawnParameters());
+		HandoverCube = GetWorld()->SpawnActor<AHandoverReplicationTestCube>(HandoverReplicationTestValues::Server1Position,
+																			FRotator::ZeroRotator, FActorSpawnParameters());
 		SaveHandoverCube(HandoverCube);
 		RegisterAutoDestroyActor(HandoverCube);
 		FinishStep();
@@ -154,13 +156,10 @@ void ASpatialTestHandoverActorComponentReplication::PrepareTest()
 										TEXT("Non-default value received on the server"));
 	});
 
+	// This step will trigger value change to the default one, after which the cube would be transported back to Server 1's authority area
 	AddStep(TEXT("Move Cube to Server 2's authority area"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		HandoverCube->SetActorLocation(Server2Position);
+		HandoverCube->SetActorLocation(HandoverReplicationTestValues::Server2Position);
 		FinishStep();
-	});
-
-	AddWaitingStep(TEXT("Wait until authority is transferred to Server 2"), FWorkerDefinition::AllServers, [this]() {
-		RequireHandoverCubeAuthorityAndPosition(2, Server2Position);
 	});
 
 	AddWaitingStep(TEXT("Wait until value is reverted to default on all servers"), FWorkerDefinition::AllServers, [this]() {
@@ -193,15 +192,4 @@ void ASpatialTestHandoverActorComponentReplication::RequireHandoverCubeAuthority
 	{
 		RequireFalse(HandoverCube->HasAuthority(), TEXT("Doesn't Have Authority"));
 	}
-}
-
-bool ASpatialTestHandoverActorComponentReplication::MoveHandoverCube(const FVector& Position)
-{
-	if (HandoverCube->HasAuthority())
-	{
-		HandoverCube->SetActorLocation(Position);
-		return true;
-	}
-
-	return false;
 }
