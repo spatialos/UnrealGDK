@@ -6,271 +6,159 @@
 #include "LoadBalancing/LayeredLBStrategy.h"
 
 #include "DynamicReplicationHandoverCube.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "SpatialFunctionalTestStep.h"
+
+#include "Net/UnrealNetwork.h"
+
+UTestHandoverComponent::UTestHandoverComponent()
+{
+	SetIsReplicatedByDefault(true);
+}
+
+void UTestHandoverComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UTestHandoverComponent, ReplicatedTestProperty);
+}
+
+AHandoverReplicationTestCube::AHandoverReplicationTestCube()
+{
+	bReplicates = false;
+
+	HandoverComponent = CreateDefaultSubobject<UTestHandoverComponent>(TEXT("HandoverComponent"));
+}
+
+void AHandoverReplicationTestCube::SetTestValues(int UpdatedTestPropertyValue)
+{
+	HandoverTestProperty = UpdatedTestPropertyValue;
+	ReplicatedTestProperty = UpdatedTestPropertyValue;
+	HandoverComponent->HandoverTestProperty = UpdatedTestPropertyValue;
+	HandoverComponent->ReplicatedTestProperty = UpdatedTestPropertyValue;
+}
+
+void AHandoverReplicationTestCube::RequireTestValues(ASpatialTestHandoverReplication* FunctionalTest, int RequiredValue,
+													 const FString& Postfix) const
+{
+	FunctionalTest->RequireEqual_Int(HandoverTestProperty, RequiredValue, TEXT("Handover Cube: ") + Postfix);
+	FunctionalTest->RequireEqual_Int(ReplicatedTestProperty, RequiredValue, TEXT("Replicated Cube: ") + Postfix);
+	FunctionalTest->RequireEqual_Int(HandoverComponent->HandoverTestProperty, RequiredValue, TEXT("Handover Component: ") + Postfix);
+	FunctionalTest->RequireEqual_Int(HandoverComponent->ReplicatedTestProperty, RequiredValue, TEXT("Replicated Component: ") + Postfix);
+}
+
+void AHandoverReplicationTestCube::OnAuthorityGained()
+{
+	if (ShouldResetValueToDefaultCounter == EHandoverReplicationTestStage::ChangeValuesToDefaultOnGainingAuthority)
+	{
+		SetTestValues(HandoverReplicationTestValues::BasicTestPropertyValue);
+
+		ShouldResetValueToDefaultCounter = EHandoverReplicationTestStage::Final;
+	}
+}
+
+void AHandoverReplicationTestCube::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AHandoverReplicationTestCube, ReplicatedTestProperty);
+}
 
 /**
- * This tests that an Actor's bReplicate flag is properly handed over when
- * dynamically set.
- * Tests UNR-4441
- * This test contains 4 Server and 2 Client workers.
+ *	This tests handover values replication on actors and attached components,
+ *	as well as a corner case from UNR-4447: when a server sets a handover property to
+ *	its default value, this property's change isn't passed to other servers.
  *
- * The flow is as follows:
- * - Setup:
- *	- Server 1 spawns a HandoverCube (called ADynamicReplicationHandoverCube)
- *    which has bReplicates set to false in it's
- *    constructor.
- *	- The bReplicates flag is set to true after the end of the Actor's
- *    initialization.
- *  - All servers set a reference to the HandoverCube and reset their local copy
- *    of the LocationIndex and the AuthorityCheckIndex.
- * - Test:
- *	- At this stage, Server 1 should have authority over the HandoverCube.
- *  - The HandoverCube moves into the authority area of Server 2.
- *  - At this stage, Server 2 should have authority over the HandoverCube.
- *  - Server 2 acquires a lock on the HandoverCube and moves it into the
- *    authority area of Server 3.
- *	- Since Server 2 has the lock on the HandoverCube it should still be
- * 	  authoritative over it.
- *  - Server 2 releases the lock on the HandoverCube.
- *  - At this point, Server 3 should become authoritative over the HandoverCube.
- *  - The HandoverCube moves into the authority area of Server 4.
- *  - At this point, Server 4 should be authoritative over the Handover	Cube.
- * - Clean-up:
- *	- The HandoverCube is destroyed.
+ *	The overall flow is as follows:
+ *		* Spawn a cube on Server 1
+ *		* Modify handover values on the cube and on an attached component
+ *		* Move this cube to Server 2's authority area
+ *		* Change these values to default state
+ *		* Check that the value change was registered
  */
 
 ASpatialTestHandoverReplication::ASpatialTestHandoverReplication()
 	: Super()
 {
-	Author = "Antoine Cordelle";
-	Description = TEXT("Test dynamically set replication for an actor");
+	Author = TEXT("Dmitrii Kozlov");
+	Description = TEXT("Test handover replication for an actor and its component");
 
-	Server1Position = FVector(-500.0f, -500.0f, 50.0f);
-	Server2Position = FVector(500.0f, -500.0f, 50.0f);
-	Server3Position = FVector(-500.0f, 500.0f, 50.0f);
-	Server4Position = FVector(500.0f, 500.0f, 50.0f);
+	// Forward-Left.
+	Server1Position = FVector(HandoverReplicationTestValues::WorldSize / 2, -HandoverReplicationTestValues::WorldSize / 2, 0.0f);
+
+	// Forward-Right.
+	Server2Position = FVector(HandoverReplicationTestValues::WorldSize / 2, HandoverReplicationTestValues::WorldSize / 2, 0.0f);
 }
 
 void ASpatialTestHandoverReplication::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(TEXT("Server 1 spawns a HandoverCube (called "
-				 "ADynamicReplicationHandoverCube) with bReplicates set to false "
-				 "inside its authority area."),
-			FWorkerDefinition::Server(1), nullptr, [this]() {
-				HandoverCube = GetWorld()->SpawnActor<ADynamicReplicationHandoverCube>(Server1Position, FRotator::ZeroRotator,
-																					   FActorSpawnParameters());
-				RegisterAutoDestroyActor(HandoverCube);
+	AddStep(TEXT("Check initial settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
+		ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
+
+		if (AssertIsValid(WorldSettings, TEXT("World Settings of correct type")))
+		{
+			AssertTrue(IsValid(WorldSettings->GetMultiWorkerSettingsClass())
+						   && WorldSettings->GetMultiWorkerSettingsClass()->IsChildOf<USpatialTestHandoverReplicationMultiWorkerSettings>(),
+					   TEXT("MultiWorkerSettings should be of class USpatialTestHandoverReplicationMultiWorkerSettings"));
+		}
+	});
+
+	AddStep(TEXT("Server 1 spawns a HandoverCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		HandoverCube =
+			GetWorld()->SpawnActor<AHandoverReplicationTestCube>(Server1Position, FRotator::ZeroRotator, FActorSpawnParameters());
+		RegisterAutoDestroyActor(HandoverCube);
+		FinishStep();
+	});
+
+	constexpr float StepTimeLimit = 10.0f;
+
+	auto AddWaitingStep = [this](const FString& StepName, const FWorkerDefinition& WorkerDefinition, TFunction<void()> TickFunction) {
+		AddStep(
+			StepName, WorkerDefinition, nullptr, nullptr,
+			[this, TickFunction](float) {
+				TickFunction();
 				FinishStep();
-			});
+			},
+			StepTimeLimit);
+	};
 
-	AddStep(TEXT("Server sets Actor's replication to true"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		HandoverCube->SetReplicates(true);
+	AddWaitingStep(TEXT("Wait until the cube is synced with all servers"), FWorkerDefinition::AllServers, [this]() {
+		RequireTrue(IsValid(HandoverCube), TEXT("Server received the cube"));
+
+		RequireHandoverCubeAuthorityAndPosition(1, Server1Position);
+	});
+
+	AddWaitingStep(TEXT("Wait until authority over the cube is given to Server 1"), FWorkerDefinition::AllServers, [this]() {
+		RequireHandoverCubeAuthorityAndPosition(1, Server1Position);
+	});
+
+	AddStep(TEXT("Modify values on the Cube to non-default values"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		HandoverCube->SetTestValues(HandoverReplicationTestValues::UpdatedTestPropertyValue);
+		HandoverCube->ShouldResetValueToDefaultCounter = EHandoverReplicationTestStage::ChangeValuesToDefaultOnGainingAuthority;
 		FinishStep();
 	});
 
-	const float StepTimeLimit = 10.0f;
+	AddWaitingStep(TEXT("Wait until updated values are received on all servers"), FWorkerDefinition::AllServers, [this]() {
+		HandoverCube->RequireTestValues(this, HandoverReplicationTestValues::UpdatedTestPropertyValue,
+										TEXT("Non-default value received on the server"));
+	});
 
-	// All servers set a reference to the HandoverCube and reset the LocationIndex
-	// and AuthorityCheckIndex.
-	AddStep(
-		TEXT("All servers set a reference to the HandoverCube and reset their "
-			 "local copy of the LocationIndex and the AuthorityCheckIndex."),
-		FWorkerDefinition::AllServers, nullptr, nullptr,
-		[this](float DeltaTime) {
-			TArray<AActor*> HandoverCubes;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ADynamicReplicationHandoverCube::StaticClass(), HandoverCubes);
-
-			if (HandoverCubes.Num() == 1)
-			{
-				HandoverCube = Cast<ADynamicReplicationHandoverCube>(HandoverCubes[0]);
-
-				USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
-
-				AssertTrue(IsValid(NetDriver), TEXT("This test should be run with Spatial Networking"));
-
-				LoadBalancingStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
-
-				AssertTrue(IsValid(HandoverCube) && IsValid(LoadBalancingStrategy), TEXT("All servers should have a valid reference to the "
-																						 "HandoverCube and the strategy"));
-				FinishStep();
-			}
-		},
-		StepTimeLimit);
-
-	// Check that Server 1 is authoritative over the HandoverCube.
-	AddStep(
-		TEXT("Check that Server 1 is authoritative over the HandoverCube."), FWorkerDefinition::AllServers, nullptr, nullptr,
-		[this](float DeltaTime) {
-			RequireHandoverCubeAuthorityAndPosition(1, Server1Position);
-			FinishStep();
-		},
-		StepTimeLimit);
-
-	// Move the HandoverCube to the next location, which is inside the authority
-	// area of Server 2.
-	AddStep(
-		TEXT("Move the HandoverCube to the next location, which is inside "
-			 "the authority area of Server 2."),
-		FWorkerDefinition::Server(1), nullptr, nullptr,
-		[this](float DeltaTime) {
-			if (MoveHandoverCube(Server2Position))
-			{
-				FinishStep();
-			}
-		},
-		StepTimeLimit);
-
-	// Check that Server 2 is authoritative over the HandoverCube.
-	AddStep(
-		TEXT("Check that Server 2 is authoritative over the HandoverCube."), FWorkerDefinition::AllServers, nullptr, nullptr,
-		[this](float DeltaTime) {
-			RequireHandoverCubeAuthorityAndPosition(2, Server2Position);
-			FinishStep();
-		},
-		StepTimeLimit);
-
-	// Server 2 acquires a lock on the HandoverCube.
-	AddStep(TEXT("Server 2 acquires a lock on the HandoverCube."), FWorkerDefinition::Server(2), nullptr, [this]() {
-		HandoverCube->AcquireLock(2);
+	AddStep(TEXT("Move Cube to Server 2's authority area"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		HandoverCube->SetActorLocation(Server2Position);
 		FinishStep();
 	});
 
-	// Move the HandoverCube to the next location, which is inside the authority
-	// area of Server 3.
-	AddStep(
-		TEXT("Move the HandoverCube to the next location, which is inside "
-			 "the authority area of Server 3."),
-		FWorkerDefinition::Server(2), nullptr, nullptr,
-		[this](float DeltaTime) {
-			if (MoveHandoverCube(Server3Position))
-			{
-				FinishStep();
-			}
-		},
-		StepTimeLimit);
-
-	// Check that Server 2 is still authoritative over the HandoverCube due to
-	// acquiring the lock earlier.
-	AddStep(
-		TEXT("Check that Server 2 is still authoritative over the "
-			 "HandoverCube due to acquiring the lock earlier."),
-		FWorkerDefinition::AllServers, nullptr, nullptr,
-		[this](float DeltaTime) {
-			RequireHandoverCubeAuthorityAndPosition(2, Server3Position);
-			FinishStep();
-		},
-		StepTimeLimit);
-
-	// Server 2 releases the lock on the HandoverCube.
-	AddStep(TEXT("Server 2 releases the lock on the HandoverCube."), FWorkerDefinition::Server(2), nullptr, [this]() {
-		HandoverCube->ReleaseLock();
-		FinishStep();
+	AddWaitingStep(TEXT("Wait until authority is transferred to Server 2"), FWorkerDefinition::AllServers, [this]() {
+		RequireHandoverCubeAuthorityAndPosition(2, Server2Position);
 	});
 
-	// Check that Server 3 is now authoritative over the HandoverCube.
-	AddStep(
-		TEXT("Check that Server 3 is now authoritative over the HandoverCube."), FWorkerDefinition::AllServers, nullptr, nullptr,
-		[this](float DeltaTime) {
-			RequireHandoverCubeAuthorityAndPosition(3, Server3Position);
-			FinishStep();
-		},
-		StepTimeLimit);
-
-	// Move the HandoverCube to the next location, which is inside the authority
-	// area of Server 4.
-	AddStep(
-		TEXT("Move the HandoverCube to the next location, which is inside "
-			 "the authority area of Server 4."),
-		FWorkerDefinition::Server(3), nullptr, nullptr,
-		[this](float DeltaTime) {
-			if (MoveHandoverCube(Server4Position))
-			{
-				FinishStep();
-			}
-		},
-		StepTimeLimit);
-
-	// Check that Server 4 is now authoritative over the HandoverCube.
-	AddStep(
-		TEXT("Check that Server 4 is now authoritative over the HandoverCube."), FWorkerDefinition::AllServers, nullptr, nullptr,
-		[this](float DeltaTime) {
-			RequireHandoverCubeAuthorityAndPosition(4, Server4Position);
-			FinishStep();
-		},
-		StepTimeLimit);
-
-	AddStep(TEXT("Modify handover replicated value on Server 4"), FWorkerDefinition::Server(4), nullptr, [this]() {
-		HandoverCube->HandoverTestProperty = ADynamicReplicationHandoverCube::UpdatedTestPropertyValue;
-		HandoverCube->ReplicatedTestProperty = ADynamicReplicationHandoverCube::UpdatedTestPropertyValue;
-		FinishStep();
+	AddWaitingStep(TEXT("Wait until value is reverted to default on all servers"), FWorkerDefinition::AllServers, [this]() {
+		HandoverCube->RequireTestValues(this, GetDefault<AHandoverReplicationTestCube>()->HandoverTestProperty,
+										TEXT("Value reverted to default on the server"));
 	});
-
-	AddStep(TEXT("Wait until all servers receive updated handover value"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
-		RequireEqual_Int(
-			HandoverCube->HandoverTestProperty, ADynamicReplicationHandoverCube::UpdatedTestPropertyValue,
-			FString::Printf(TEXT("Server received handed over value %d"), ADynamicReplicationHandoverCube::UpdatedTestPropertyValue));
-		RequireEqual_Int(
-			HandoverCube->ReplicatedTestProperty, ADynamicReplicationHandoverCube::UpdatedTestPropertyValue,
-			FString::Printf(TEXT("Server received replicated value %d"), ADynamicReplicationHandoverCube::UpdatedTestPropertyValue));
-		FinishStep();
-	});
-
-	AddStep(
-		TEXT("Mark the handover cube to trigger default value revert"), FWorkerDefinition::Server(4), nullptr, nullptr,
-		[this](float) {
-			HandoverCube->ShouldResetValueToDefaultCounter = 1;
-			FinishStep();
-		},
-		StepTimeLimit);
-
-	AddStep(TEXT("Move the cube to Server 3's authority area"), FWorkerDefinition::Server(4), nullptr, nullptr, [this](float) {
-		RequireTrue(MoveHandoverCube(Server3Position), TEXT("Server 4 has authority over the cube"));
-		FinishStep();
-	});
-
-	AddStep(
-		TEXT("Check that Server 3 is now authoritative over the HandoverCube."), FWorkerDefinition::AllServers, nullptr, nullptr,
-		[this](float DeltaTime) {
-			RequireHandoverCubeAuthorityAndPosition(3, Server3Position);
-			FinishStep();
-		},
-		StepTimeLimit);
-
-	AddStep(
-		TEXT("Revert Handover property to default value and hand the cube over back to Server 4"), FWorkerDefinition::Server(3), nullptr,
-		nullptr,
-		[this](float) {
-			RequireEqual_Int(HandoverCube->HandoverTestProperty, GetDefault<ADynamicReplicationHandoverCube>()->HandoverTestProperty,
-							 TEXT("Handover property reverted to default value"));
-			RequireEqual_Int(HandoverCube->ReplicatedTestProperty, GetDefault<ADynamicReplicationHandoverCube>()->HandoverTestProperty,
-							 TEXT("Replicated property reverted to default value"));
-			RequireEqual_Int(HandoverCube->ShouldResetValueToDefaultCounter, 2, TEXT("Handover counter incremented"));
-			RequireTrue(MoveHandoverCube(Server4Position), TEXT("Server 3 has authority over the cube"));
-			FinishStep();
-		},
-		StepTimeLimit);
-
-	AddStep(
-		TEXT("Check that Server 4 has updated handover value to default"), FWorkerDefinition::AllServers, nullptr, nullptr,
-		[this](float) {
-			if (GetLocalWorkerId() == 4)
-			{
-				RequireTrue(HandoverCube->HasAuthority(), TEXT("Handover cube was handed over correctly"));
-			}
-
-			RequireEqual_Int(
-				HandoverCube->HandoverTestProperty, ADynamicReplicationHandoverCube::BasicTestPropertyValue,
-				FString::Printf(TEXT("Handover value reverted to %d"), ADynamicReplicationHandoverCube::BasicTestPropertyValue));
-
-			RequireEqual_Int(
-				HandoverCube->ReplicatedTestProperty, ADynamicReplicationHandoverCube::BasicTestPropertyValue,
-				FString::Printf(TEXT("Replicated value reverted to %d"), ADynamicReplicationHandoverCube::BasicTestPropertyValue));
-
-			FinishStep();
-		},
-		StepTimeLimit);
 }
 
 void ASpatialTestHandoverReplication::RequireHandoverCubeAuthorityAndPosition(int WorkerShouldHaveAuthority,

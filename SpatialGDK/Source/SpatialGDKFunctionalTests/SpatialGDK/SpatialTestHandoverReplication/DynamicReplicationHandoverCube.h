@@ -17,20 +17,4 @@ class ADynamicReplicationHandoverCube : public AHandoverCube
 
 public:
 	ADynamicReplicationHandoverCube();
-
-	virtual void OnAuthorityGained() override;
-
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	static constexpr int BasicTestPropertyValue = 10;
-	static constexpr int UpdatedTestPropertyValue = 100;
-
-	UPROPERTY(Handover)
-	int HandoverTestProperty = BasicTestPropertyValue;
-
-	UPROPERTY(Replicated)
-	int ReplicatedTestProperty = BasicTestPropertyValue;
-
-	UPROPERTY(Handover)
-	int ShouldResetValueToDefaultCounter = 0;
 };

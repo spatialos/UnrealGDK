@@ -4,10 +4,107 @@
 
 #include "CoreMinimal.h"
 
+#include "LoadBalancing/GridBasedLBStrategy.h"
+#include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "SpatialFunctionalTest.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3761/SpatialTestHandover/HandoverCube.h"
+#include "Utils/LayerInfo.h"
+
 #include "SpatialTestHandoverReplication.generated.h"
 
-class ADynamicReplicationHandoverCube;
+UENUM()
+enum class EHandoverReplicationTestStage
+{
+	Initial,
+	ChangeValuesToDefaultOnGainingAuthority,
+	Final,
+};
+
+namespace HandoverReplicationTestValues
+{
+static constexpr int BasicTestPropertyValue = 10;
+static constexpr int UpdatedTestPropertyValue = 100;
+
+static constexpr float WorldSize = 1000.0f;
+} // namespace HandoverReplicationTestValues
+
+UCLASS()
+class UTestHandoverComponent : public UActorComponent
+{
+	GENERATED_BODY()
+
+public:
+	UTestHandoverComponent();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(Handover)
+	int HandoverTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
+
+	UPROPERTY(Replicated)
+	int ReplicatedTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
+};
+
+class ASpatialTestHandoverReplication;
+
+UCLASS()
+class AHandoverReplicationTestCube : public AHandoverCube
+{
+	GENERATED_BODY()
+
+public:
+	AHandoverReplicationTestCube();
+
+	void SetTestValues(int UpdatedTestPropertyValue);
+
+	void RequireTestValues(ASpatialTestHandoverReplication* FunctionalTest, int RequiredValue, const FString& Postfix) const;
+
+	virtual void OnAuthorityGained() override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(Handover)
+	int HandoverTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
+
+	UPROPERTY(Replicated)
+	int ReplicatedTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
+
+	UPROPERTY(Handover)
+	EHandoverReplicationTestStage ShouldResetValueToDefaultCounter = EHandoverReplicationTestStage::Initial;
+
+	UPROPERTY()
+	UTestHandoverComponent* HandoverComponent;
+};
+
+UCLASS()
+class USpatialTestHandoverReplicationLBStrategy : public UGridBasedLBStrategy
+{
+	GENERATED_BODY()
+
+	USpatialTestHandoverReplicationLBStrategy()
+	{
+		Rows = 2;
+		Cols = 1;
+		WorldWidth = HandoverReplicationTestValues::WorldSize;
+		WorldHeight = HandoverReplicationTestValues::WorldSize;
+	}
+};
+
+UCLASS(BlueprintType)
+class SPATIALGDKFUNCTIONALTESTS_API USpatialTestHandoverReplicationMultiWorkerSettings : public USpatialMultiWorkerSettings
+{
+public:
+	GENERATED_BODY()
+
+	static TArray<FLayerInfo> GetLayerSetup()
+	{
+		const FLayerInfo GridLayer(TEXT("Grid"), { AActor::StaticClass() }, USpatialTestHandoverReplicationLBStrategy::StaticClass());
+
+		return { GridLayer };
+	}
+
+	USpatialTestHandoverReplicationMultiWorkerSettings() { WorkerLayers.Append(GetLayerSetup()); }
+};
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestHandoverReplication : public ASpatialFunctionalTest
@@ -18,19 +115,14 @@ public:
 
 	virtual void PrepareTest() override;
 
-private:
-	ADynamicReplicationHandoverCube* HandoverCube;
-
-	// The Load Balancing used by the test, needed to decide what Server should have authority over the TestActor.
-	ULayeredLBStrategy* LoadBalancingStrategy;
+	UPROPERTY(Handover)
+	AHandoverReplicationTestCube* HandoverCube;
 
 	void RequireHandoverCubeAuthorityAndPosition(int WorkerShouldHaveAuthority, const FVector& ExpectedPosition);
 
 	bool MoveHandoverCube(const FVector& Position);
 
-	// Positions that belong to specific server according to 2x2 Grid LBS.
+	// Positions that belong to specific server according to 1x2 Grid LBS.
 	FVector Server1Position;
 	FVector Server2Position;
-	FVector Server3Position;
-	FVector Server4Position;
 };
