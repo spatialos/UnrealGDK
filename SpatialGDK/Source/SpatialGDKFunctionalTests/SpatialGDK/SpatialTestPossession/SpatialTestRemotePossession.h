@@ -7,6 +7,7 @@
 #include "SpatialTestRemotePossession.generated.h"
 
 class ATestPossessionPawn;
+class ATestPossessionController;
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestRemotePossession : public ASpatialFunctionalTest
@@ -17,14 +18,21 @@ public:
 
 	virtual void PrepareTest() override;
 
+	virtual void CreateControllerAndPawn() {}
+
 	ATestPossessionPawn* GetPawn();
+	ATestPossessionController* GetController();
+
+	void CreateController(FVector Location);
+	void CreatePawn(FVector Location);
 
 	bool IsReadyForPossess();
 
 	void AddWaitStep(const FWorkerDefinition& Worker);
 
+	void AddCleanStep();
+
 protected:
-	FVector LocationOfPawn;
 	float WaitTime;
 	const static float MaxWaitTime;
 };

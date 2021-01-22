@@ -15,4 +15,5 @@ public:
 	ACrossServerMultiPossessionTest();
 
 	virtual void PrepareTest() override;
+	virtual void CreateControllerAndPawn() override;
 };

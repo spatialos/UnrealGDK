@@ -4,12 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "SpatialCommonTypes.h"
-#include "TestPossessionPlayerController.generated.h"
+#include "TestPossessionController.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogTestPossessionPlayerController, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogTestPossessionController, Log, All);
 
 UCLASS()
-class ATestPossessionPlayerController : public APlayerController
+class ATestPossessionController : public AController
 {
 	GENERATED_BODY()
 private:
@@ -18,12 +18,14 @@ private:
 	virtual void OnUnPossess() override;
 
 public:
-	ATestPossessionPlayerController();
+	ATestPossessionController();
 
-	void RemotePossessOnServer(APawn* InPawn);
+	UFUNCTION(CrossServer, Reliable)
+	void RemotePossess(APawn* InPawn);
 
-	UFUNCTION(Server, Reliable)
-	void RemotePossessOnClient(APawn* InPawn, bool bLockBefore);
+	void RemotePossessOnServer(APawn* InPawn, bool bLockBefore = false);
+
+	void ReleaseLock();
 
 	bool IsMigration() const { return BeforePossessionWorkerId != AfterPossessionWorkerId; }
 
@@ -36,4 +38,6 @@ private:
 
 	VirtualWorkerId BeforePossessionWorkerId;
 	VirtualWorkerId AfterPossessionWorkerId;
+
+	ActorLockToken LockToken;
 };

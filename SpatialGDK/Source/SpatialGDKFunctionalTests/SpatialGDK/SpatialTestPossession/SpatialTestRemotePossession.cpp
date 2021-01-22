@@ -3,14 +3,13 @@
 #include "SpatialTestRemotePossession.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "TestPossessionController.h"
 #include "TestPossessionPawn.h"
-#include "TestPossessionPlayerController.h"
 
 const float ASpatialTestRemotePossession::MaxWaitTime = 2.0f;
 
 ASpatialTestRemotePossession::ASpatialTestRemotePossession()
 	: Super()
-	, LocationOfPawn(500.0f, 500.0f, 50.0f)
 {
 	Author = "Jay";
 	Description = TEXT("Test Actor Remote Possession");
@@ -19,6 +18,11 @@ ASpatialTestRemotePossession::ASpatialTestRemotePossession()
 ATestPossessionPawn* ASpatialTestRemotePossession::GetPawn()
 {
 	return Cast<ATestPossessionPawn>(UGameplayStatics::GetActorOfClass(GetWorld(), ATestPossessionPawn::StaticClass()));
+}
+
+ATestPossessionController* ASpatialTestRemotePossession::GetController()
+{
+	return Cast<ATestPossessionController>(UGameplayStatics::GetActorOfClass(GetWorld(), ATestPossessionController::StaticClass()));
 }
 
 void ASpatialTestRemotePossession::PrepareTest()
@@ -31,17 +35,28 @@ void ASpatialTestRemotePossession::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Create Pawn"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
-		ATestPossessionPawn* Pawn =
-			GetWorld()->SpawnActor<ATestPossessionPawn>(LocationOfPawn, FRotator::ZeroRotator, FActorSpawnParameters());
-		RegisterAutoDestroyActor(Pawn);
+	AddStep(TEXT("Create Controller(s) and Pawn"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
+		CreateControllerAndPawn();
 		FinishStep();
 	});
 
 	// Ensure that all Controllers are located on the right Worker
 	AddWaitStep(FWorkerDefinition::AllServers);
 
-	ATestPossessionPlayerController::ResetCalledCounter();
+	ATestPossessionController::ResetCalledCounter();
+}
+
+void ASpatialTestRemotePossession::CreateController(FVector Location)
+{
+	ATestPossessionController* Controller =
+		GetWorld()->SpawnActor<ATestPossessionController>(Location, FRotator::ZeroRotator, FActorSpawnParameters());
+	RegisterAutoDestroyActor(Controller);
+}
+
+void ASpatialTestRemotePossession::CreatePawn(FVector Location)
+{
+	ATestPossessionPawn* Pawn = GetWorld()->SpawnActor<ATestPossessionPawn>(Location, FRotator::ZeroRotator, FActorSpawnParameters());
+	RegisterAutoDestroyActor(Pawn);
 }
 
 bool ASpatialTestRemotePossession::IsReadyForPossess()
@@ -59,5 +74,30 @@ void ASpatialTestRemotePossession::AddWaitStep(const FWorkerDefinition& Worker)
 			FinishStep();
 		}
 		WaitTime += DeltaTime;
+	});
+}
+
+void ASpatialTestRemotePossession::AddCleanStep()
+{
+	AddStep(TEXT("Clean"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
+		if (ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController())
+		{
+			ATestPossessionPawn* Pawn = GetPawn();
+			if (Pawn != nullptr && Pawn->HasAuthority())
+			{
+				GetWorld()->DestroyActor(Pawn);
+			}
+
+			TArray<AActor*> OutActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATestPossessionController::StaticClass(), OutActors);
+			for (AActor* Actor : OutActors)
+			{
+				if (Actor != nullptr && Actor->HasAuthority())
+				{
+					GetWorld()->DestroyActor(Actor);
+				}
+			}
+		}
+		FinishStep();
 	});
 }

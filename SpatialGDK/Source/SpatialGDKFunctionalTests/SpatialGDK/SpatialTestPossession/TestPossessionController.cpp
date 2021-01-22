@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "TestPossessionPlayerController.h"
+#include "TestPossessionController.h"
 #include "Engine/World.h"
 #include "EngineClasses/Components/RemotePossessionComponent.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -10,55 +10,60 @@
 #include "SpatialConstants.h"
 #include "Utils/SpatialStatics.h"
 
-DEFINE_LOG_CATEGORY(LogTestPossessionPlayerController);
+DEFINE_LOG_CATEGORY(LogTestPossessionController);
 
-int32 ATestPossessionPlayerController::OnPossessCalled = 0;
+int32 ATestPossessionController::OnPossessCalled = 0;
 
-ATestPossessionPlayerController::ATestPossessionPlayerController()
+ATestPossessionController::ATestPossessionController()
 	: BeforePossessionWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 	, AfterPossessionWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+	, LockToken(SpatialConstants::INVALID_ACTOR_LOCK_TOKEN)
 {
+	bReplicates = true;
 }
 
-void ATestPossessionPlayerController::OnPossess(APawn* InPawn)
+void ATestPossessionController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	if (HasAuthority() && InPawn->HasAuthority())
 	{
 		++OnPossessCalled;
 		AfterPossessionWorkerId = GetCurrentWorkerId();
-		UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s OnPossess(%s) OnPossessCalled:%d"), *GetName(), *InPawn->GetName(),
+		UE_LOG(LogTestPossessionController, Log, TEXT("%s OnPossess(%s) OnPossessCalled:%d"), *GetName(), *InPawn->GetName(),
 			   OnPossessCalled);
 	}
 	else
 	{
-		UE_LOG(LogTestPossessionPlayerController, Error, TEXT("%s OnPossess(%s) OnPossessCalled:%d in different worker"), *GetName(),
+		UE_LOG(LogTestPossessionController, Error, TEXT("%s OnPossess(%s) OnPossessCalled:%d in different worker"), *GetName(),
 			   *InPawn->GetName(), OnPossessCalled);
 	}
 }
 
-void ATestPossessionPlayerController::OnUnPossess()
+void ATestPossessionController::OnUnPossess()
 {
 	Super::OnUnPossess();
-	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s OnUnPossess()"), *GetName());
+	UE_LOG(LogTestPossessionController, Log, TEXT("%s OnUnPossess()"), *GetName());
 }
 
-void ATestPossessionPlayerController::RemotePossessOnClient_Implementation(APawn* InPawn, bool bLockBefore)
+void ATestPossessionController::ReleaseLock()
 {
-	UE_LOG(LogTestPossessionPlayerController, Log, TEXT("%s RemotePossessOnClient_Implementation:%s"), *GetName(), *InPawn->GetName());
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+	if (NetDriver != nullptr && NetDriver->LockingPolicy)
+	{
+		NetDriver->LockingPolicy->ReleaseLock(LockToken);
+	}
+}
+
+void ATestPossessionController::RemotePossessOnServer(APawn* InPawn, bool bLockBefore)
+{
 	if (bLockBefore)
 	{
 		USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 		if (NetDriver != nullptr && NetDriver->LockingPolicy)
 		{
-			NetDriver->LockingPolicy->AcquireLock(this, TEXT("TestLock"));
+			LockToken = NetDriver->LockingPolicy->AcquireLock(this, TEXT("TestLock"));
 		}
 	}
-	RemotePossessOnServer(InPawn);
-}
-
-void ATestPossessionPlayerController::RemotePossessOnServer(APawn* InPawn)
-{
 	URemotePossessionComponent* Component =
 		NewObject<URemotePossessionComponent>(this, URemotePossessionComponent::StaticClass(), TEXT("CrossServer Possession"));
 	Component->Target = InPawn;
@@ -66,12 +71,17 @@ void ATestPossessionPlayerController::RemotePossessOnServer(APawn* InPawn)
 	BeforePossessionWorkerId = GetCurrentWorkerId();
 }
 
-void ATestPossessionPlayerController::ResetCalledCounter()
+void ATestPossessionController::RemotePossess_Implementation(APawn* InPawn)
+{
+	RemotePossessOnServer(InPawn, false);
+}
+
+void ATestPossessionController::ResetCalledCounter()
 {
 	OnPossessCalled = 0;
 }
 
-VirtualWorkerId ATestPossessionPlayerController::GetCurrentWorkerId()
+VirtualWorkerId ATestPossessionController::GetCurrentWorkerId()
 {
 	UAbstractLBStrategy* LBStrategy = nullptr;
 	UWorld* World = GetWorld();

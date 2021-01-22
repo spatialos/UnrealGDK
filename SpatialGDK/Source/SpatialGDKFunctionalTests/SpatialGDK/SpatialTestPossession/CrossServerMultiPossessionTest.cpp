@@ -7,10 +7,11 @@
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerController.h"
 #include "GameMapsSettings.h"
+#include "Kismet/GameplayStatics.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
+#include "TestPossessionController.h"
 #include "TestPossessionPawn.h"
-#include "TestPossessionPlayerController.h"
 #include "Utils/SpatialStatics.h"
 
 /**
@@ -21,16 +22,16 @@
  * The flow is as follows:
  *	Recommend to use PossessionGym.umap in UnrealGDKTestGyms project which ready for tests.
  *  - Setup:
- *    - Specify `GameMode Override` as ACrossServerPossessionGameMode
  *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
- *	  - Set `Num Required Clients` as 2 or more
+ *	  - Set `Num Required Clients` as 1
  *  - Test:
  *	  - Create a Pawn in first quadrant
- *	  - Create Controllers in other quadrant, the position is determined by ACrossServerPossessionGameMode
+ *	  - Create 3 Controllers in other quadrant
  *	  - Wait for Pawn and Controllers in right worker.
  *	  -	The Controller possess the Pawn
  *	- Result Check:
- *    - ATestPossessionPlayerController::OnPossess should be called `Num Required Clients` times
+ *    - ATestPossessionPlayerController::OnPossess should be called 3 times
+ *	  - Controller should migration
  */
 
 ACrossServerMultiPossessionTest::ACrossServerMultiPossessionTest()
@@ -44,17 +45,20 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 {
 	ASpatialTestRemotePossession::PrepareTest();
 
-	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
+	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
-		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
+
+		if (ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController())
 		{
-			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
+			TArray<AActor*> OutActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATestPossessionController::StaticClass(), OutActors);
+			for (AActor* Actor : OutActors)
 			{
-				ATestPossessionPlayerController* Controller = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
+				ATestPossessionController* Controller = Cast<ATestPossessionController>(Actor);
 				if (Controller != nullptr)
 				{
-					Controller->RemotePossessOnClient(Pawn, false);
+					Controller->RemotePossess(Pawn);
 				}
 			}
 		}
@@ -64,21 +68,30 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 	AddStep(
 		TEXT("Check results on all servers"), FWorkerDefinition::AllServers,
 		[this]() -> bool {
-			return ATestPossessionPlayerController::OnPossessCalled == GetNumRequiredClients();
+			LogStep(ELogVerbosity::Log, FString::Printf(TEXT("OnPossessCalled:%d"), ATestPossessionController::OnPossessCalled));
+			return ATestPossessionController::OnPossessCalled == 3;
 		},
 		nullptr,
 		[this](float DeltaTime) {
-			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
+			if (ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController())
 			{
-				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
+				ATestPossessionController* Controller = GetController();
+				if (Controller && Controller->HasAuthority())
 				{
-					ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-					if (PlayerController && PlayerController->HasAuthority())
-					{
-						AssertTrue(PlayerController->IsMigration(), TEXT("PlayerController should migration"), PlayerController);
-					}
+					AssertTrue(Controller->IsMigration(), TEXT("Controller should migration"), Controller);
 				}
+				FinishStep();
 			}
-			FinishStep();
 		});
+
+	AddCleanStep();
+}
+
+void ACrossServerMultiPossessionTest::CreateControllerAndPawn()
+{
+	CreateController(FVector(-500.0f, -500.0f, 50.0f));
+	CreateController(FVector(500.0f, -500.0f, 50.0f));
+	CreateController(FVector(-500.0f, 500.0f, 50.0f));
+
+	CreatePawn(FVector(500.0f, 500.0f, 50.0f));
 }

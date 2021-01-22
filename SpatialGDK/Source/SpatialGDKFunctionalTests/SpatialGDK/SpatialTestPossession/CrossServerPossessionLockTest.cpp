@@ -5,18 +5,17 @@
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "TestPossessionController.h"
 #include "TestPossessionPawn.h"
-#include "TestPossessionPlayerController.h"
 
 /**
  * This test tests 1 locked Controller remote possess over 1 pawn.
  *
  * This test expects a load balancing grid and ACrossServerPossessionGameMode
- * Recommand to use 2*2 load balancing grid because the position of Pawn was written in the code
+ * Recommend to use 2*2 load balancing grid because the position of Pawn was written in the code
  * The client workers begin with a player controller and their default pawns, which they initially possess.
  * The flow is as follows:
  *  - Setup:
- *    - Specify `GameMode Override` as ACrossServerPossessionGameMode
  *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
  *	  - Set `Num Required Clients` as 1
  *  - Test:
@@ -39,18 +38,15 @@ void ACrossServerPossessionLockTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
+	AddStep(TEXT("Locked Controller remote possess"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float DeltaTime) {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
-		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
+		if (ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController())
 		{
-			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
+			ATestPossessionController* Controller = GetController();
+			if (Controller && Controller->HasAuthority())
 			{
-				ATestPossessionPlayerController* Controller = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-				if (Controller != nullptr)
-				{
-					Controller->RemotePossessOnClient(Pawn, true);
-				}
+				Controller->RemotePossessOnServer(Pawn, true);
 			}
 		}
 		FinishStep();
@@ -64,4 +60,12 @@ void ACrossServerPossessionLockTest::PrepareTest()
 		AssertTrue(Pawn->GetController() == nullptr, TEXT("Pawn shouldn't have a controller"), Pawn);
 		FinishStep();
 	});
+
+	AddCleanStep();
+}
+
+void ACrossServerPossessionLockTest::CreateControllerAndPawn()
+{
+	CreateController(FVector(-500.0f, -500.0f, 50.0f));
+	CreatePawn(FVector(500.0f, 500.0f, 50.0f));
 }
