@@ -1615,10 +1615,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		if (PackageMap->GetEntityIdFromObject(CallingObject) == SpatialConstants::INVALID_ENTITY_ID)
 		{
 			AActor* TargetActor = Cast<AActor>(CallingObject);
-			if (TargetActor == nullptr)
-			{
-				TargetActor = Cast<AActor>(CallingObject->GetOuter());
-			}
+			
 			check(TargetActor != nullptr);
 			if (!TargetActor->HasAuthority() && TargetActor->IsNameStableForNetworking() && TargetActor->GetIsReplicated())
 			{
