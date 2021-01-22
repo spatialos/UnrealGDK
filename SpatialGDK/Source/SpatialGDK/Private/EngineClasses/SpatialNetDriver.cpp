@@ -1622,17 +1622,15 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	{
 		if (PackageMap->GetEntityIdFromObject(CallingObject) == SpatialConstants::INVALID_ENTITY_ID)
 		{
-			AActor* TargetActor = Cast<AActor>(CallingObject);
-
-			check(TargetActor != nullptr);
-			if (!TargetActor->HasAuthority() && TargetActor->IsNameStableForNetworking() && TargetActor->GetIsReplicated())
+			check(Actor != nullptr);
+			if (!Actor->HasAuthority() && Actor->IsNameStableForNetworking() && Actor->GetIsReplicated())
 			{
 				// We don't want GetOrCreateSpatialActorChannel to pre-allocate an entity id here, because it exists on another worker.
 				// We just haven't received the entity from runtime (yet).
 				UE_LOG(LogSpatialOSNetDriver, Error,
-					   TEXT("Called cross server RPC %s on object %s before receiving entity from runtime. This RPC will be dropped. "
+					   TEXT("Called cross server RPC %s on actor %s before receiving entity from runtime. This RPC will be dropped. "
 							"Please update code execution to wait for actor ready state"),
-					   *Function->GetName(), *CallingObject->GetFullName());
+					   *Function->GetName(), *Actor->GetFullName());
 				return;
 			}
 		}
