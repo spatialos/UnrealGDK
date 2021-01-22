@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 
 #include "SpatialFunctionalTest.h"
-#include "SpatialTestHandoverReplication.generated.h"
+#include "SpatialTestHandoverDynamicReplication.generated.h"
 
 class ADynamicReplicationHandoverCube;
 

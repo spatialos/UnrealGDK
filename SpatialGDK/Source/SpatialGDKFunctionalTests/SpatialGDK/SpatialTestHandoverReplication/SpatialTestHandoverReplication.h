@@ -70,7 +70,7 @@ public:
 	int ReplicatedTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
 
 	UPROPERTY(Handover)
-	EHandoverReplicationTestStage ShouldResetValueToDefaultCounter = EHandoverReplicationTestStage::Initial;
+	EHandoverReplicationTestStage TestStage = EHandoverReplicationTestStage::Initial;
 
 	UPROPERTY()
 	UTestHandoverComponent* HandoverComponent;
@@ -83,10 +83,11 @@ class USpatialTestHandoverReplicationLBStrategy : public UGridBasedLBStrategy
 
 	USpatialTestHandoverReplicationLBStrategy()
 	{
-		Rows = 2;
-		Cols = 1;
+		Rows = 1;
+		Cols = 2;
 		WorldWidth = HandoverReplicationTestValues::WorldSize;
 		WorldHeight = HandoverReplicationTestValues::WorldSize;
+		InterestBorder = HandoverReplicationTestValues::WorldSize * 100;
 	}
 };
 
@@ -96,14 +97,10 @@ class SPATIALGDKFUNCTIONALTESTS_API USpatialTestHandoverReplicationMultiWorkerSe
 public:
 	GENERATED_BODY()
 
-	static TArray<FLayerInfo> GetLayerSetup()
+	USpatialTestHandoverReplicationMultiWorkerSettings()
 	{
-		const FLayerInfo GridLayer(TEXT("Grid"), { AActor::StaticClass() }, USpatialTestHandoverReplicationLBStrategy::StaticClass());
-
-		return { GridLayer };
+		WorkerLayers[0].LoadBalanceStrategy = USpatialTestHandoverReplicationLBStrategy::StaticClass();
 	}
-
-	USpatialTestHandoverReplicationMultiWorkerSettings() { WorkerLayers.Append(GetLayerSetup()); }
 };
 
 UCLASS()
@@ -113,14 +110,19 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestHandoverReplication : public ASp
 public:
 	ASpatialTestHandoverReplication();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	virtual void PrepareTest() override;
 
-	UPROPERTY(Handover)
-	AHandoverReplicationTestCube* HandoverCube;
+	UFUNCTION(CrossServer, Reliable)
+	void SaveHandoverCube(AHandoverReplicationTestCube* InHandoverCube);
 
 	void RequireHandoverCubeAuthorityAndPosition(int WorkerShouldHaveAuthority, const FVector& ExpectedPosition);
 
 	bool MoveHandoverCube(const FVector& Position);
+
+	UPROPERTY(Replicated)
+	AHandoverReplicationTestCube* HandoverCube;
 
 	// Positions that belong to specific server according to 1x2 Grid LBS.
 	FVector Server1Position;

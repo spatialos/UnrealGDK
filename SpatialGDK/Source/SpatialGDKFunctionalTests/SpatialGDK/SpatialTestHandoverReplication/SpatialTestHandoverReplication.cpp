@@ -26,7 +26,9 @@ void UTestHandoverComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 
 AHandoverReplicationTestCube::AHandoverReplicationTestCube()
 {
-	bReplicates = false;
+	bReplicates = true;
+
+	bAlwaysRelevant = true;
 
 	HandoverComponent = CreateDefaultSubobject<UTestHandoverComponent>(TEXT("HandoverComponent"));
 }
@@ -50,11 +52,11 @@ void AHandoverReplicationTestCube::RequireTestValues(ASpatialTestHandoverReplica
 
 void AHandoverReplicationTestCube::OnAuthorityGained()
 {
-	if (ShouldResetValueToDefaultCounter == EHandoverReplicationTestStage::ChangeValuesToDefaultOnGainingAuthority)
+	if (TestStage == EHandoverReplicationTestStage::ChangeValuesToDefaultOnGainingAuthority)
 	{
 		SetTestValues(HandoverReplicationTestValues::BasicTestPropertyValue);
 
-		ShouldResetValueToDefaultCounter = EHandoverReplicationTestStage::Final;
+		TestStage = EHandoverReplicationTestStage::Final;
 	}
 }
 
@@ -85,10 +87,19 @@ ASpatialTestHandoverReplication::ASpatialTestHandoverReplication()
 	Description = TEXT("Test handover replication for an actor and its component");
 
 	// Forward-Left.
-	Server1Position = FVector(HandoverReplicationTestValues::WorldSize / 2, -HandoverReplicationTestValues::WorldSize / 2, 0.0f);
+	Server1Position = FVector(HandoverReplicationTestValues::WorldSize / 4, -HandoverReplicationTestValues::WorldSize / 4, 0.0f);
 
 	// Forward-Right.
-	Server2Position = FVector(HandoverReplicationTestValues::WorldSize / 2, HandoverReplicationTestValues::WorldSize / 2, 0.0f);
+	Server2Position = FVector(HandoverReplicationTestValues::WorldSize / 4, HandoverReplicationTestValues::WorldSize / 4, 0.0f);
+
+	bReplicates = true;
+}
+
+void ASpatialTestHandoverReplication::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ThisClass, HandoverCube);
 }
 
 void ASpatialTestHandoverReplication::PrepareTest()
@@ -104,18 +115,21 @@ void ASpatialTestHandoverReplication::PrepareTest()
 						   && WorldSettings->GetMultiWorkerSettingsClass()->IsChildOf<USpatialTestHandoverReplicationMultiWorkerSettings>(),
 					   TEXT("MultiWorkerSettings should be of class USpatialTestHandoverReplicationMultiWorkerSettings"));
 		}
+
+		FinishStep();
 	});
 
 	AddStep(TEXT("Server 1 spawns a HandoverCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		HandoverCube =
 			GetWorld()->SpawnActor<AHandoverReplicationTestCube>(Server1Position, FRotator::ZeroRotator, FActorSpawnParameters());
+		SaveHandoverCube(HandoverCube);
 		RegisterAutoDestroyActor(HandoverCube);
 		FinishStep();
 	});
 
-	constexpr float StepTimeLimit = 10.0f;
-
 	auto AddWaitingStep = [this](const FString& StepName, const FWorkerDefinition& WorkerDefinition, TFunction<void()> TickFunction) {
+		constexpr float StepTimeLimit = 10.0f;
+
 		AddStep(
 			StepName, WorkerDefinition, nullptr, nullptr,
 			[this, TickFunction](float) {
@@ -127,17 +141,11 @@ void ASpatialTestHandoverReplication::PrepareTest()
 
 	AddWaitingStep(TEXT("Wait until the cube is synced with all servers"), FWorkerDefinition::AllServers, [this]() {
 		RequireTrue(IsValid(HandoverCube), TEXT("Server received the cube"));
-
-		RequireHandoverCubeAuthorityAndPosition(1, Server1Position);
-	});
-
-	AddWaitingStep(TEXT("Wait until authority over the cube is given to Server 1"), FWorkerDefinition::AllServers, [this]() {
-		RequireHandoverCubeAuthorityAndPosition(1, Server1Position);
 	});
 
 	AddStep(TEXT("Modify values on the Cube to non-default values"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		HandoverCube->SetTestValues(HandoverReplicationTestValues::UpdatedTestPropertyValue);
-		HandoverCube->ShouldResetValueToDefaultCounter = EHandoverReplicationTestStage::ChangeValuesToDefaultOnGainingAuthority;
+		HandoverCube->TestStage = EHandoverReplicationTestStage::ChangeValuesToDefaultOnGainingAuthority;
 		FinishStep();
 	});
 
@@ -159,6 +167,11 @@ void ASpatialTestHandoverReplication::PrepareTest()
 		HandoverCube->RequireTestValues(this, GetDefault<AHandoverReplicationTestCube>()->HandoverTestProperty,
 										TEXT("Value reverted to default on the server"));
 	});
+}
+
+void ASpatialTestHandoverReplication::SaveHandoverCube_Implementation(AHandoverReplicationTestCube* InHandoverCube)
+{
+	HandoverCube = InHandoverCube;
 }
 
 void ASpatialTestHandoverReplication::RequireHandoverCubeAuthorityAndPosition(int WorkerShouldHaveAuthority,
