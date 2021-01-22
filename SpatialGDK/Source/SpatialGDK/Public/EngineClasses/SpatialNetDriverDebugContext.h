@@ -22,16 +22,22 @@ class USpatialNetDriver;
  * this object was made to behave like a singleton).
  */
 
+namespace SpatialGDK
+{
+class FSubView;
+struct ComponentChange;
+} // namespace SpatialGDK
+
 UCLASS()
 class SPATIALGDK_API USpatialNetDriverDebugContext : public UObject
 {
 	GENERATED_BODY()
 public:
-	static void EnableDebugSpatialGDK(USpatialNetDriver* NetDriver);
+	static void EnableDebugSpatialGDK(const SpatialGDK::FSubView& InSubView, USpatialNetDriver* NetDriver);
 	static void DisableDebugSpatialGDK(USpatialNetDriver* NetDriver);
 
 	// ------ Startup / Shutdown
-	void Init(USpatialNetDriver* NetDriver);
+	void Init(const SpatialGDK::FSubView& InSubView, USpatialNetDriver* InNetDriver);
 	void Cleanup();
 	void Reset();
 
@@ -68,11 +74,8 @@ public:
 
 	// This will be called from SpatialNetDriver::ServerReplicateActor
 	// It will create debug components or update them. It also updates the worker's interest query if needed.
+	void AdvanceView();
 	void TickServer();
-
-	// Called from SpatialReveiver when the corresponding Ops are encountered.
-	void OnDebugComponentUpdateReceived(Worker_EntityId);
-	void OnDebugComponentAuthLost(Worker_EntityId EntityId);
 
 	void ClearNeedEntityInterestUpdate() { bNeedToUpdateInterest = false; }
 
@@ -82,7 +85,14 @@ public:
 	UDebugLBStrategy* DebugStrategy = nullptr;
 
 protected:
-	struct DebugComponentView
+	// Called from SpatialReveiver when the corresponding Ops are encountered.
+	void AddComponent(Worker_EntityId EntityId);
+	void RemoveComponent(Worker_EntityId EntityId);
+	void OnComponentChange(Worker_EntityId EntityId, const SpatialGDK::ComponentChange& Change);
+	void ApplyComponentUpdate(Worker_EntityId EntityId, Schema_ComponentUpdate* Update);
+	void AuthorityLost(Worker_EntityId EntityId);
+
+	struct DebugComponentAuthData
 	{
 		SpatialGDK::DebugComponent Component;
 		Worker_EntityId Entity = SpatialConstants::INVALID_ENTITY_ID;
@@ -90,7 +100,7 @@ protected:
 		bool bDirty = false;
 	};
 
-	DebugComponentView& GetDebugComponentView(AActor* Actor);
+	DebugComponentAuthData& GetAuthDebugComponent(AActor* Actor);
 
 	TOptional<VirtualWorkerId> GetActorExplicitDelegation(const AActor* Actor);
 	TOptional<VirtualWorkerId> GetActorHierarchyExplicitDelegation_Traverse(const AActor* Actor);
@@ -101,6 +111,7 @@ protected:
 	bool NeedEntityInterestUpdate() { return bNeedToUpdateInterest; }
 
 	USpatialNetDriver* NetDriver;
+	const SpatialGDK::FSubView* SubView;
 
 	// Collection of actor tag delegations.
 	TMap<FName, VirtualWorkerId> SemanticDelegations;
@@ -109,7 +120,8 @@ protected:
 	TSet<FName> SemanticInterest;
 
 	// Debug info for actors. Only keeps entries for Actors we have authority over.
-	TMap<AActor*, DebugComponentView> ActorDebugInfo;
+	TMap<AActor*, DebugComponentAuthData> ActorDebugInfo;
+	TMap<Worker_EntityId_Key, SpatialGDK::DebugComponent> DebugComponents;
 
 	// Contains a cache of entities computed from the semantic interest.
 	TSet<Worker_EntityId_Key> CachedInterestSet;

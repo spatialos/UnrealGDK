@@ -163,12 +163,12 @@ inline bool CompareComponentChanges(const ComponentChange& Lhs, const ComponentC
 
 inline bool CompareAuthorityChangeById(const AuthorityChange& Lhs, const AuthorityChange& Rhs)
 {
-	return Lhs.ComponentId < Rhs.ComponentId;
+	return Lhs.ComponentSetId < Rhs.ComponentSetId;
 }
 
 inline bool CompareAuthorityChanges(const AuthorityChange& Lhs, const AuthorityChange& Rhs)
 {
-	if (Lhs.ComponentId != Rhs.ComponentId)
+	if (Lhs.ComponentSetId != Rhs.ComponentSetId)
 	{
 		return false;
 	}

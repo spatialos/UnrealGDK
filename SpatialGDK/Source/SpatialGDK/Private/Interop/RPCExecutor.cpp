@@ -65,11 +65,6 @@ bool RPCExecutor::ExecuteCommand(const FCrossServerRPCParams& Params)
 
 TOptional<FCrossServerRPCParams> RPCExecutor::TryRetrieveCrossServerRPCParams(const Worker_Op& Op)
 {
-	if (NetDriver->Receiver->IsEntityWaitingForAsyncLoad(Op.op.command_request.entity_id))
-	{
-		return {};
-	}
-
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.op.command_request.request.schema_type);
 	RPCPayload Payload(RequestObject);
 	const FUnrealObjectRef ObjectRef = FUnrealObjectRef(Op.op.command_request.entity_id, Payload.Offset);
