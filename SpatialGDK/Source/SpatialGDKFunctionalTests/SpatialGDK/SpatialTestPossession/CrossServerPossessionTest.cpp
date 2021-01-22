@@ -2,11 +2,7 @@
 
 #include "CrossServerPossessionTest.h"
 
-#include "Containers/Array.h"
-#include "EngineClasses/SpatialNetDriver.h"
-#include "GameFramework/Controller.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "TestPossessionController.h"
 #include "TestPossessionPawn.h"
 

@@ -1,9 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "CrossServerPossessionLockTest.h"
-#include "EngineClasses/SpatialNetDriver.h"
-#include "GameFramework/PlayerController.h"
-#include "Net/UnrealNetwork.h"
+
 #include "SpatialFunctionalTestFlowController.h"
 #include "TestPossessionController.h"
 #include "TestPossessionPawn.h"
