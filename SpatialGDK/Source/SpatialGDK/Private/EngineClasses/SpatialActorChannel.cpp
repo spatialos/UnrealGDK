@@ -369,13 +369,13 @@ void USpatialActorChannel::UpdateShadowData()
 						ActorComponent);
 	}
 
-	// UNR-4447: Update handover shadow data
+	// Update handover shadow data.
 	for (auto& HandoverData : HandoverShadowDataMap)
 	{
 		TArray<uint8>& ShadowDataBuffer = HandoverData.Value.Get();
 		UObject* Object = HandoverData.Key.Get();
 
-		// this updates ShadowDataBuffer to Object's current handover state
+		// This updates ShadowDataBuffer to Object's current handover state.
 		GetHandoverChangeList(ShadowDataBuffer, Object);
 	}
 }
