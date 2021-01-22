@@ -97,7 +97,7 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 				CheckInvalidEntityID(LevelCube);
 			});
 
-	// Normal case
+	// Normal case - on server which should have authority if replication was initially on
 	AddStep(TEXT("Startup actor tests: Auth server - Set replicated"), FWorkerDefinition::Server(4), nullptr, [this]() {
 		LevelCube->TurnOnReplication();
 		FinishStep();
