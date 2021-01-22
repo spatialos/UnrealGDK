@@ -228,7 +228,8 @@ bool ASpatialComponentTest::VerifyTestActorComponents(ASpatialComponentTestActor
 		return false;
 	}
 
-	TArray<UActorComponent*> FoundComponents = Actor->GetComponentsByClass(USpatialComponentTestDummyComponent::StaticClass());
+	TArray<UActorComponent*> FoundComponents;
+	Actor->GetComponents(USpatialComponentTestDummyComponent::StaticClass(), FoundComponents);
 	int FoundTestComponentCount = FoundComponents.Num();
 	return FoundTestComponentCount == ExpectedTestComponentCount;
 }
