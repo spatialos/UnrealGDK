@@ -101,9 +101,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::AuthorityDelegation>(Op.data);
 		break;
-	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::DebugComponent>(Op.data);
-		break;
 	case SpatialConstants::PARTITION_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::Partition>(Op.data);
 		break;
@@ -157,9 +154,6 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::AuthorityDelegation>(Op.entity_id);
-		break;
-	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::DebugComponent>(Op.entity_id);
 		break;
 	case SpatialConstants::PARTITION_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::Partition>(Op.entity_id);

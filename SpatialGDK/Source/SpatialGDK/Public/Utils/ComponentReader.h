@@ -20,8 +20,10 @@ public:
 
 	void ApplyComponentData(const Worker_ComponentData& ComponentData, UObject& Object, USpatialActorChannel& Channel, bool bIsHandover,
 							bool& bOutReferencesChanged);
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& Object, USpatialActorChannel& Channel,
-							  bool bIsHandover, bool& bOutReferencesChanged);
+	void ApplyComponentData(Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object, USpatialActorChannel& Channel,
+							bool bIsHandover, bool& bOutReferencesChanged);
+	void ApplyComponentUpdate(Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update, UObject& Object,
+							  USpatialActorChannel& Channel, bool bIsHandover, bool& bOutReferencesChanged);
 
 private:
 	void ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
