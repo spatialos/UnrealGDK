@@ -17,7 +17,6 @@ int32 ATestPossessionController::OnPossessCalled = 0;
 ATestPossessionController::ATestPossessionController()
 	: BeforePossessionWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 	, AfterPossessionWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
-	, LockToken(SpatialConstants::INVALID_ACTOR_LOCK_TOKEN)
 {
 	bReplicates = true;
 }
@@ -45,15 +44,6 @@ void ATestPossessionController::OnUnPossess()
 	UE_LOG(LogTestPossessionController, Log, TEXT("%s OnUnPossess()"), *GetName());
 }
 
-void ATestPossessionController::ReleaseLock()
-{
-	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-	if (NetDriver != nullptr && NetDriver->LockingPolicy)
-	{
-		NetDriver->LockingPolicy->ReleaseLock(LockToken);
-	}
-}
-
 void ATestPossessionController::RemotePossessOnServer(APawn* InPawn, bool bLockBefore)
 {
 	if (bLockBefore)
@@ -61,7 +51,7 @@ void ATestPossessionController::RemotePossessOnServer(APawn* InPawn, bool bLockB
 		USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 		if (NetDriver != nullptr && NetDriver->LockingPolicy)
 		{
-			LockToken = NetDriver->LockingPolicy->AcquireLock(this, TEXT("TestLock"));
+			NetDriver->LockingPolicy->AcquireLock(this, TEXT("TestLock"));
 		}
 	}
 	URemotePossessionComponent* Component =

@@ -35,4 +35,6 @@ public:
 protected:
 	float WaitTime;
 	const static float MaxWaitTime;
+
+	FSpatialFunctionalTestStepDefinition CleanStepDefinition;
 };

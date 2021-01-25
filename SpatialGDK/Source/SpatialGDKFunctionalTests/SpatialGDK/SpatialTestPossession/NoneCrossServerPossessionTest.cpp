@@ -65,7 +65,7 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 				ATestPossessionController* Controller = GetController();
 				if (Controller && Controller->HasAuthority())
 				{
-					AssertFalse(Controller->IsMigration(), TEXT("Controller shouldn't migration"), Controller);
+					AssertFalse(Controller->HasMigrated(), TEXT("Controller shouldn't have migrated"), Controller);
 					Controller->UnPossess();
 				}
 			}

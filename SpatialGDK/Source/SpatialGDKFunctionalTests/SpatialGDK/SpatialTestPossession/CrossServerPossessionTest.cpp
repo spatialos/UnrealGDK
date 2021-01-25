@@ -45,8 +45,8 @@ void ACrossServerPossessionTest::PrepareTest()
 			ATestPossessionController* Controller = GetController();
 			if (Controller && Controller->HasAuthority())
 			{
-				AssertTrue(Controller->HasAuthority(), TEXT("Controller should HasAuthority"), Controller);
-				AssertFalse(Pawn->HasAuthority(), TEXT("Pawn shouldn't HasAuthority"), Pawn);
+				AssertTrue(Controller->HasAuthority(), TEXT("Controller should have authority"), Controller);
+				AssertFalse(Pawn->HasAuthority(), TEXT("Pawn shouldn't have authority"), Pawn);
 				Controller->RemotePossessOnServer(Pawn);
 			}
 		}
@@ -66,7 +66,7 @@ void ACrossServerPossessionTest::PrepareTest()
 				ATestPossessionController* Controller = GetController();
 				if (Controller && Controller->HasAuthority())
 				{
-					AssertTrue(Controller->IsMigration(), TEXT("Controller should migration"), Controller);
+					AssertTrue(Controller->HasMigrated(), TEXT("Controller should had migrated"), Controller);
 
 					Controller->UnPossess();
 				}

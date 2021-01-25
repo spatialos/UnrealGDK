@@ -10,9 +10,34 @@ const float ASpatialTestRemotePossession::MaxWaitTime = 2.0f;
 
 ASpatialTestRemotePossession::ASpatialTestRemotePossession()
 	: Super()
+	, CleanStepDefinition(true)
 {
 	Author = "Jay";
 	Description = TEXT("Test Actor Remote Possession");
+
+	CleanStepDefinition.StepName = TEXT("Clean RemotePossession Test");
+	CleanStepDefinition.TimeLimit = 5.0f;
+	CleanStepDefinition.NativeStartEvent.BindLambda([this]() {
+		if (ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController())
+		{
+			ATestPossessionPawn* Pawn = GetPawn();
+			if (Pawn != nullptr && Pawn->HasAuthority())
+			{
+				GetWorld()->DestroyActor(Pawn);
+			}
+
+			TArray<AActor*> OutActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATestPossessionController::StaticClass(), OutActors);
+			for (AActor* Actor : OutActors)
+			{
+				if (Actor != nullptr && Actor->HasAuthority())
+				{
+					GetWorld()->DestroyActor(Actor);
+				}
+			}
+		}
+		FinishStep();
+	});
 }
 
 ATestPossessionPawn* ASpatialTestRemotePossession::GetPawn()
@@ -79,25 +104,5 @@ void ASpatialTestRemotePossession::AddWaitStep(const FWorkerDefinition& Worker)
 
 void ASpatialTestRemotePossession::AddCleanStep()
 {
-	AddStep(TEXT("Clean"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
-		if (ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController())
-		{
-			ATestPossessionPawn* Pawn = GetPawn();
-			if (Pawn != nullptr && Pawn->HasAuthority())
-			{
-				GetWorld()->DestroyActor(Pawn);
-			}
-
-			TArray<AActor*> OutActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATestPossessionController::StaticClass(), OutActors);
-			for (AActor* Actor : OutActors)
-			{
-				if (Actor != nullptr && Actor->HasAuthority())
-				{
-					GetWorld()->DestroyActor(Actor);
-				}
-			}
-		}
-		FinishStep();
-	});
+	AddStepFromDefinition(CleanStepDefinition, FWorkerDefinition::Server(1));
 }

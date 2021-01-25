@@ -25,9 +25,7 @@ public:
 
 	void RemotePossessOnServer(APawn* InPawn, bool bLockBefore = false);
 
-	void ReleaseLock();
-
-	bool IsMigration() const { return BeforePossessionWorkerId != AfterPossessionWorkerId; }
+	bool HasMigrated() const { return BeforePossessionWorkerId != AfterPossessionWorkerId; }
 
 	static void ResetCalledCounter();
 
@@ -38,6 +36,4 @@ private:
 
 	VirtualWorkerId BeforePossessionWorkerId;
 	VirtualWorkerId AfterPossessionWorkerId;
-
-	ActorLockToken LockToken;
 };

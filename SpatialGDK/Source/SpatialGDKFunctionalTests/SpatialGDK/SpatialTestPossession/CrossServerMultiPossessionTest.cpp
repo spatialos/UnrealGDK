@@ -72,7 +72,7 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 				ATestPossessionController* Controller = GetController();
 				if (Controller && Controller->HasAuthority())
 				{
-					AssertTrue(Controller->IsMigration(), TEXT("Controller should migration"), Controller);
+					AssertTrue(Controller->HasMigrated(), TEXT("Controller should had migrated"), Controller);
 				}
 				FinishStep();
 			}
