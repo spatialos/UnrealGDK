@@ -126,8 +126,6 @@ public:
 						 const Worker_EntityId& ClientSystemEntityId);
 	void PostSpawnPlayerController(APlayerController* PlayerController);
 
-	void DisconnectPlayer(Worker_EntityId ClientEntityId);
-
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId, USpatialActorChannel& Channel);
 	TMap<Worker_EntityId_Key, USpatialActorChannel*>& GetEntityToActorChannelMap();
@@ -149,9 +147,6 @@ public:
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
-	void RegisterClientConnection(const Worker_EntityId WorkerEntityId, USpatialNetConnection* ClientConnection);
-	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerEntityId(const Worker_EntityId InWorkerEntityId);
-	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
 	void CleanUpServerConnectionForPC(APlayerController* PC);
 
 	bool HasServerAuthority(Worker_EntityId EntityId) const;
@@ -254,8 +249,6 @@ private:
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
 	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>> PendingDormantChannels;
-
-	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 
 	FTimerManager TimerManager;
 

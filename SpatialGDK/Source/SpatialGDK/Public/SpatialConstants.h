@@ -83,6 +83,9 @@ const Worker_ComponentId POSITION_COMPONENT_ID = 54;
 const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
 const Worker_ComponentId INTEREST_COMPONENT_ID = 58;
 
+// This is a marker component used by the Runtime to define which entities are system entities.
+const Worker_ComponentId SYSTEM_COMPONENT_ID = 59;
+
 // This is a component on per-worker system entities.
 const Worker_ComponentId WORKER_COMPONENT_ID = 60;
 const Worker_ComponentId PLAYERIDENTITY_COMPONENT_ID = 61;

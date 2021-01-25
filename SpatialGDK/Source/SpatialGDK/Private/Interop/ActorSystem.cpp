@@ -598,30 +598,6 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 	{
 		EntitiesToRetireOnAuthorityGain.RemoveAtSwap(RetiredActorIndex);
 	}
-
-	if (NetDriver->IsServer())
-	{
-		// Check to see if we are removing a system entity for a worker connection. If so clean up the ClientConnection to delete any and
-		// all actors for this connection's controller.
-		if (FString* WorkerName = WorkerConnectionEntities.Find(EntityId))
-		{
-			const TWeakObjectPtr<USpatialNetConnection> ClientConnectionPtr = NetDriver->FindClientConnectionFromWorkerEntityId(EntityId);
-			if (USpatialNetConnection* ClientConnection = ClientConnectionPtr.Get())
-			{
-				if (APlayerController* Controller = ClientConnection->GetPlayerController(/*InWorld*/ nullptr))
-				{
-					Worker_EntityId PCEntity = NetDriver->PackageMap->GetEntityIdFromObject(Controller);
-					if (AuthorityPlayerControllerConnectionMap.Find(PCEntity))
-					{
-						UE_LOG(LogActorSystem, Verbose, TEXT("Worker %s disconnected after its system identity was removed."),
-							   *(*WorkerName));
-						CloseClientConnection(ClientConnection, PCEntity);
-					}
-				}
-			}
-			WorkerConnectionEntities.Remove(EntityId);
-		}
-	}
 }
 
 bool ActorSystem::HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const
@@ -652,43 +628,6 @@ void ActorSystem::HandleDeferredEntityDeletion(const DeferredRetire& Retire) con
 	else
 	{
 		NetDriver->Sender->RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
-	}
-}
-
-void ActorSystem::HandlePlayerLifecycleAuthority(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId,
-												 const Worker_Authority Authority, APlayerController* PlayerController)
-{
-	UE_LOG(LogActorSystem, Verbose, TEXT("HandlePlayerLifecycleAuthority for PlayerController %s."),
-		   *AActor::GetDebugName(PlayerController));
-
-	// Server initializes heartbeat logic based on its authority over the server auth component set,
-	// client does the same for client auth component set
-	if ((NetDriver->IsServer() && ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-		|| (!NetDriver->IsServer() && ComponentSetId == SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID))
-	{
-		if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
-		{
-			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
-			{
-				if (NetDriver->IsServer())
-				{
-					// TODO: Do we need this map? Can just check spatial view
-					AuthorityPlayerControllerConnectionMap.Add(EntityId, Connection);
-				}
-				Connection->InitHeartbeat(TimerManager, EntityId);
-			}
-		}
-		else if (Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
-		{
-			if (NetDriver->IsServer())
-			{
-				AuthorityPlayerControllerConnectionMap.Remove(EntityId);
-			}
-			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
-			{
-				Connection->DisableHeartbeat();
-			}
-		}
 	}
 }
 
@@ -1125,55 +1064,6 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 				}
 			}
 		}
-	}
-}
-
-void ActorSystem::OnHeartbeatComponentUpdate(const Worker_EntityId EntityId, Schema_ComponentUpdate* Update)
-{
-	if (!NetDriver->IsServer())
-	{
-		// Clients can ignore Heartbeat component updates.
-		return;
-	}
-
-	TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = AuthorityPlayerControllerConnectionMap.Find(EntityId);
-	if (ConnectionPtr == nullptr)
-	{
-		// Heartbeat component update on a PlayerController that this server does not have authority over.
-		// TODO: Disable component interest for Heartbeat components this server doesn't care about - UNR-986
-		return;
-	}
-
-	if (!ConnectionPtr->IsValid())
-	{
-		UE_LOG(LogActorSystem, Warning,
-			   TEXT("Received heartbeat component update after NetConnection has been cleaned up. PlayerController entity: %lld"),
-			   EntityId);
-		AuthorityPlayerControllerConnectionMap.Remove(EntityId);
-		return;
-	}
-
-	USpatialNetConnection* NetConnection = ConnectionPtr->Get();
-
-	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update);
-	uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
-	if (EventCount > 0)
-	{
-		if (EventCount > 1)
-		{
-			UE_LOG(LogActorSystem, Verbose, TEXT("Received multiple heartbeat events in a single component update, entity %lld."),
-				   EntityId);
-		}
-
-		NetConnection->OnHeartbeat();
-	}
-
-	Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Update);
-	if (Schema_GetBoolCount(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID) > 0
-		&& GetBoolFromSchema(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID))
-	{
-		// Client has disconnected, let's clean up their connection.
-		CloseClientConnection(NetConnection, EntityId);
 	}
 }
 
@@ -1806,12 +1696,6 @@ FString ActorSystem::GetObjectNameFromRepState(const FSpatialObjectRepState& Rep
 		return Obj->GetName();
 	}
 	return TEXT("<unknown>");
-}
-
-void ActorSystem::CloseClientConnection(USpatialNetConnection* ClientConnection, const Worker_EntityId PlayerControllerEntityId)
-{
-	ClientConnection->CleanUp();
-	AuthorityPlayerControllerConnectionMap.Remove(PlayerControllerEntityId);
 }
 
 bool ActorSystem::EntityHasComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const

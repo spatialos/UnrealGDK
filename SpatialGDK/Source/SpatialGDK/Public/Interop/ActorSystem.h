@@ -81,8 +81,6 @@ private:
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
 	void HandleEntityDeletedAuthority(Worker_EntityId EntityId) const;
 	void HandleDeferredEntityDeletion(const DeferredRetire& Retire) const;
-	void HandlePlayerLifecycleAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority,
-										APlayerController* PlayerController);
 	void UpdateShadowData(Worker_EntityId EntityId) const;
 
 	// Component add
@@ -98,7 +96,6 @@ private:
 								 int32 MaxAbsOffset, TArray<GDK_PROPERTY(Property) *>& RepNotifies, bool& bOutSomeObjectsWereMapped);
 
 	// Component update
-	void OnHeartbeatComponentUpdate(const Worker_EntityId EntityId, Schema_ComponentUpdate* Update);
 	USpatialActorChannel* GetOrRecreateChannelForDormantActor(AActor* Actor, Worker_EntityId EntityID) const;
 	void ApplyComponentUpdate(Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& TargetObject,
 							  USpatialActorChannel& Channel, bool bIsHandover);
@@ -115,7 +112,6 @@ private:
 	// Entity remove
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 	static FString GetObjectNameFromRepState(const FSpatialObjectRepState& RepState);
-	void CloseClientConnection(USpatialNetConnection* ClientConnection, Worker_EntityId PlayerControllerEntityId);
 
 	// Helper
 	bool EntityHasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
@@ -125,13 +121,6 @@ private:
 	USpatialNetDriver* NetDriver;
 	FTimerManager* TimerManager;
 	SpatialEventTracer* EventTracer;
-
-	// This will map PlayerController entities to the corresponding SpatialNetConnection
-	// for PlayerControllers that this server has authority over. This is used for player
-	// lifecycle logic (Heartbeat component updates, disconnection logic).
-	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
-
-	TMap<Worker_EntityId_Key, FString> WorkerConnectionEntities;
 
 	TSet<TPair<Worker_EntityId_Key, Worker_ComponentId>> PendingDynamicSubobjectComponents;
 

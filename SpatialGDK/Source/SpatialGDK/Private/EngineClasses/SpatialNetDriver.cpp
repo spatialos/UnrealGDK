@@ -2179,29 +2179,6 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	return true;
 }
 
-void USpatialNetDriver::RegisterClientConnection(const Worker_EntityId InWorkerEntityId, USpatialNetConnection* ClientConnection)
-{
-	WorkerConnections.Add(InWorkerEntityId, ClientConnection);
-}
-
-TWeakObjectPtr<USpatialNetConnection> USpatialNetDriver::FindClientConnectionFromWorkerEntityId(const Worker_EntityId InWorkerEntityId)
-{
-	if (TWeakObjectPtr<USpatialNetConnection>* ClientConnectionPtr = WorkerConnections.Find(InWorkerEntityId))
-	{
-		return *ClientConnectionPtr;
-	}
-
-	return {};
-}
-
-void USpatialNetDriver::CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp)
-{
-	if (ConnectionCleanedUp->ConnectionClientWorkerSystemEntityId != SpatialConstants::INVALID_ENTITY_ID)
-	{
-		WorkerConnections.Remove(ConnectionCleanedUp->ConnectionClientWorkerSystemEntityId);
-	}
-}
-
 bool USpatialNetDriver::HasServerAuthority(Worker_EntityId EntityId) const
 {
 	return StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
@@ -2297,26 +2274,6 @@ void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerContr
 	PlayerController->SetReplicates(true);
 	PlayerController->Role = OriginalRole;
 	PlayerController->SetPlayer(OwnershipConnection);
-}
-
-void USpatialNetDriver::DisconnectPlayer(Worker_EntityId ClientEntityId)
-{
-	Worker_CommandRequest Request = {};
-	Request.component_id = SpatialConstants::WORKER_COMPONENT_ID;
-	Request.command_index = SpatialConstants::WORKER_DISCONNECT_COMMAND_ID;
-	Request.schema_type = Schema_CreateCommandRequest();
-	Worker_RequestId RequestId = Connection->SendCommandRequest(ClientEntityId, &Request, SpatialGDK::RETRY_UNTIL_COMPLETE, {});
-
-	SystemEntityCommandDelegate CommandResponseDelegate;
-	CommandResponseDelegate.BindWeakLambda(this, [this, ClientEntityId](const Worker_CommandResponseOp& Op) {
-		TWeakObjectPtr<USpatialNetConnection> ClientConnection = FindClientConnectionFromWorkerEntityId(ClientEntityId);
-		if (ClientConnection.IsValid())
-		{
-			ClientConnection->CleanUp();
-		}
-	});
-
-	Receiver->AddSystemEntityCommandDelegate(RequestId, CommandResponseDelegate);
 }
 
 bool USpatialNetDriver::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
