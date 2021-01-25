@@ -142,6 +142,10 @@ private:
 
 	bool ShouldTrackHandoverProperties() const;
 
+#if UE_EDITOR
+	void ReportMissingSchema(const FString& ObjectPath) const;
+#endif
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;

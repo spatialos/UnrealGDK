@@ -25,7 +25,15 @@
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialStatics.h"
 
+#if UE_EDITOR
+#include "Editor.h"
+#include "Widgets/Notifications/SNotificationList.h"
+#include "Framework/Notifications/NotificationManager.h"
+#endif
+
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
+
+#define LOCTEXT_NAMESPACE "SpatialClassInfoManager"
 
 bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver)
 {
@@ -64,6 +72,11 @@ bool USpatialClassInfoManager::ValidateOrExit_IsSupportedClass(const FString& Pa
 			   TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is "
 					"marked as SpatialType, and schema has been generated."),
 			   *PathName);
+
+#if UE_EDITOR
+		ReportMissingSchema(PathName);
+#endif
+
 #if !UE_BUILD_SHIPPING
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *PathName);
 		QuitGame();
@@ -73,6 +86,90 @@ bool USpatialClassInfoManager::ValidateOrExit_IsSupportedClass(const FString& Pa
 
 	return true;
 }
+
+#if UE_EDITOR
+struct FLocalPopupInfo
+{
+	void OpenObject() const
+	{
+		const FSoftObjectPath ObjectAtPath(ObjectPath);
+
+		UObject* ObjectToOpen = ObjectAtPath.ResolveObject();
+
+		if (!IsValid((ObjectToOpen)))
+		{
+			// The object could be unloaded; try and load it from the path.
+			ObjectToOpen = ObjectAtPath.TryLoad();
+		}
+
+		if (IsValid(ObjectToOpen))
+		{
+			if (ObjectToOpen->IsA<UBlueprintGeneratedClass>())
+			{
+				// BlueprintGeneratedClass can't be edited, but ClassGeneratedBy references
+				// the UBlueprint that has caused the class to be generated - open it instead.
+				ObjectToOpen = Cast<UBlueprintGeneratedClass>(ObjectToOpen)->ClassGeneratedBy;
+			}
+		}
+		if (IsValid(ObjectToOpen))
+		{
+			// Finally, if the object is available - ask the editor to edit it.
+			GEditor->EditObject(ObjectToOpen);
+		}
+	}
+
+	void Dismiss() const
+	{
+		if (Notification.IsValid())
+		{
+			Notification.Pin()->Fadeout();
+		}
+	}
+
+	FString ObjectPath;
+
+	TWeakPtr<SNotificationItem> Notification;
+};
+
+void USpatialClassInfoManager::ReportMissingSchema(const FString& ObjectPath) const
+{
+	const FText NotificationTextTemplate =
+		LOCTEXT("NoGeneratedSchemaPopupTitle", "Didn't find generated schema for {ClassPath}. See logs for more details.");
+
+	const FText Message = FText::FormatNamed(NotificationTextTemplate, TEXT("ClassPath"), FText::FromString(ObjectPath));
+
+	FNotificationInfo Notification(Message);
+
+	constexpr static float NotificationExpireDuration = 20.0f;
+	Notification.ExpireDuration = NotificationExpireDuration;
+	Notification.FadeOutDuration = 1.0f;
+
+	TSharedRef<FLocalPopupInfo> PopupInfo = MakeShared<FLocalPopupInfo>();
+	PopupInfo->ObjectPath = ObjectPath;
+
+	const FNotificationButtonInfo OpenBlueprintButton(
+		LOCTEXT("NoGeneratedSchemaPopupOpenObject", "Open Object"),
+		LOCTEXT("NoGeneratedSchemaPopupOpenObject", "Open the blueprint or asset that has caused this issue"),
+		FSimpleDelegate::CreateLambda([PopupInfo]() {
+			PopupInfo->OpenObject();
+		}),
+		SNotificationItem::CS_None);
+
+	Notification.ButtonDetails.Add(OpenBlueprintButton);
+
+	const FNotificationButtonInfo DismissButton(
+		LOCTEXT("NoGeneratedSchemaPopupDismiss", "Dismiss"),
+		LOCTEXT("NoGeneratedSchemaPopupDismissTT", "Dismiss this notification"),
+		FSimpleDelegate::CreateLambda([PopupInfo]() {
+			PopupInfo->Dismiss();
+		}),
+		SNotificationItem::CS_None);
+
+	Notification.ButtonDetails.Add(DismissButton);
+
+	PopupInfo->Notification = FSlateNotificationManager::Get().AddNotification(Notification);
+}
+#endif
 
 FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 {
@@ -624,3 +721,5 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 	}
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }
+
+#undef LOCTEXT_NAMESPACE
