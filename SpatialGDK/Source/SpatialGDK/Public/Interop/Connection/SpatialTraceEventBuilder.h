@@ -29,7 +29,8 @@ public:
 	FSpatialTraceEventBuilder AddKeyValue(FString Key, FString Value);
 	FSpatialTraceEvent GetEvent() &&;
 
-	static FSpatialTraceEvent CreateProcessRPC(const UObject* Object, UFunction* Function, const EventTraceUniqueId& LinearTraceId);
+	static FSpatialTraceEvent CreateReceiveRPC(const EventTraceUniqueId& LinearTraceId);
+	static FSpatialTraceEvent CreateApplyRPC(const UObject* Object, UFunction* Function);
 	static FSpatialTraceEvent CreatePushRPC(const UObject* Object, UFunction* Function);
 	static FSpatialTraceEvent CreateSendRPC(const EventTraceUniqueId& LinearTraceId);
 

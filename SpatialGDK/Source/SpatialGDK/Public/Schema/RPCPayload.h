@@ -6,6 +6,7 @@
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 #include "Utils/SpatialLatencyTracer.h"
+#include "Interop/Connection/SpatialGDKSpanId.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -73,9 +74,10 @@ struct RPCPayload
 
 	uint32 Offset;
 	uint32 Index;
-	TOptional<uint64> Id;
+	TOptional<uint64> Id; 
 	TArray<uint8> PayloadData;
 	TraceKey Trace = InvalidTraceKey;
+	FSpatialGDKSpanId SpanId; // Not serialized 
 };
 
 } // namespace SpatialGDK

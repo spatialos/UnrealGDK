@@ -259,15 +259,14 @@ void SpatialEventTracer::UpdateComponent(const Worker_ComponentUpdateOp& Op, con
 	}
 }
 
-FSpatialGDKSpanId SpatialEventTracer::GetMergedUpdateEvent(const EntityComponentId& Id) const
+TArray<FSpatialGDKSpanId> SpatialEventTracer::GetSpansForComponent(const EntityComponentId& Id) const
 {
 	const TArray<FSpatialGDKSpanId>* StoredSpanIds = EntityComponentSpanIds.Find(Id);
 	if (StoredSpanIds == nullptr)
 	{
 		return {};
 	}
-	return TraceEvent(FSpatialTraceEventBuilder::CreateProcessComponentUpdate(Id.EntityId, Id.ComponentId),
-					  reinterpret_cast<const uint8_t*>(StoredSpanIds->GetData()), 2);
+	return *StoredSpanIds;
 }
 
 void SpatialEventTracer::AddToStack(const FSpatialGDKSpanId& SpanId)

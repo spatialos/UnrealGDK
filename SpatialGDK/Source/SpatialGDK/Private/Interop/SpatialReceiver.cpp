@@ -1692,10 +1692,10 @@ void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 
 	if (EventTracer != nullptr)
 	{
-		FSpatialGDKSpanId CauseSpanId = EventTracer->GetMergedUpdateEvent(EntityComponentId(Op.entity_id, Op.update.component_id));
+		TArray<FSpatialGDKSpanId> CauseSpanId = EventTracer->GetSpansForComponent(EntityComponentId(Op.entity_id, Op.update.component_id));
 		EventTracer->TraceEvent(
 			FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, Op.entity_id, Op.update.component_id),
-			CauseSpanId.GetConstId(), 1);
+			(const Trace_SpanIdType*)CauseSpanId.GetData(), CauseSpanId.Num());
 	}
 
 	ESchemaComponentType Category = ClassInfoManager->GetCategoryByComponentId(Op.update.component_id);

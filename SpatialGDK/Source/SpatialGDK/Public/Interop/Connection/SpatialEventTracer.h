@@ -38,7 +38,7 @@ public:
 	void RemoveComponent(const Worker_RemoveComponentOp& Op, const FSpatialGDKSpanId& SpanId);
 	void UpdateComponent(const Worker_ComponentUpdateOp& Op, const FSpatialGDKSpanId& SpanId);
 
-	FSpatialGDKSpanId GetMergedUpdateEvent(const EntityComponentId& Id) const;
+	TArray<FSpatialGDKSpanId> GetSpansForComponent(const EntityComponentId& Id) const;
 
 	static FUserSpanId GDKSpanIdToUserSpanId(const FSpatialGDKSpanId& SpanId);
 	static FSpatialGDKSpanId UserSpanIdToGDKSpanId(const FUserSpanId& UserSpanId);
