@@ -102,12 +102,18 @@ ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver,
 void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentData, UObject& Object, USpatialActorChannel& Channel,
 										 bool bIsHandover, bool& bOutReferencesChanged)
 {
+	ApplyComponentData(ComponentData.component_id, ComponentData.schema_type, Object, Channel, bIsHandover, bOutReferencesChanged);
+}
+
+void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object,
+										 USpatialActorChannel& Channel, bool bIsHandover, bool& bOutReferencesChanged)
+{
 	if (Object.IsPendingKill())
 	{
 		return;
 	}
 
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 	TArray<uint32> UpdatedIds;
 	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
@@ -115,23 +121,23 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentDa
 
 	if (bIsHandover)
 	{
-		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentData.component_id, bOutReferencesChanged);
+		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentId, bOutReferencesChanged);
 	}
 	else
 	{
-		ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentData.component_id, bOutReferencesChanged);
+		ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentId, bOutReferencesChanged);
 	}
 }
 
-void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& Object, USpatialActorChannel& Channel,
-										   bool bIsHandover, bool& bOutReferencesChanged)
+void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& Object,
+										   USpatialActorChannel& Channel, bool bIsHandover, bool& bOutReferencesChanged)
 {
 	if (Object.IsPendingKill())
 	{
 		return;
 	}
 
-	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate);
 
 	// Retrieve all the fields that have been updated in this component update
 	TArray<uint32> UpdatedIds;
@@ -140,8 +146,8 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 
 	// Retrieve all the fields that have been cleared (eg. list with no entries)
 	TArray<Schema_FieldId> ClearedIds;
-	ClearedIds.SetNumUninitialized(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
-	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate.schema_type, ClearedIds.GetData());
+	ClearedIds.SetNumUninitialized(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate));
+	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate, ClearedIds.GetData());
 
 	// Merge cleared fields into updated fields to ensure they will be processed (Schema_FieldId == uint32)
 	UpdatedIds.Append(ClearedIds);
@@ -150,12 +156,11 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 	{
 		if (bIsHandover)
 		{
-			ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentUpdate.component_id,
-									  bOutReferencesChanged);
+			ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged);
 		}
 		else
 		{
-			ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentUpdate.component_id, bOutReferencesChanged);
+			ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged);
 		}
 	}
 }

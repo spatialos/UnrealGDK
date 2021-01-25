@@ -30,7 +30,7 @@ enum class ESpatialFunctionalTestWorkerType : uint8
 };
 
 USTRUCT(BlueprintType)
-struct FWorkerDefinition
+struct SPATIALGDKFUNCTIONALTESTS_API FWorkerDefinition
 {
 	GENERATED_BODY()
 

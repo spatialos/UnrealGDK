@@ -39,7 +39,7 @@ void WellKnownEntitySystem::Advance()
 			}
 			for (const AuthorityChange& Change : Delta.AuthorityGained)
 			{
-				ProcessAuthorityGain(Delta.EntityId, Change.ComponentId);
+				ProcessAuthorityGain(Delta.EntityId, Change.ComponentSetId);
 			}
 			break;
 		}

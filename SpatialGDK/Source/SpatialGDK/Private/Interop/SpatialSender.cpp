@@ -873,7 +873,7 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 {
 	if (bIsNetStartupActor)
 	{
-		Receiver->RemoveActor(EntityId);
+		NetDriver->ActorSystem->RemoveActor(EntityId);
 		// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
 		if (!StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 		{
@@ -929,11 +929,13 @@ void USpatialSender::AddTombstoneToEntity(const Worker_EntityId EntityId)
 {
 	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID));
 
-	Worker_AddComponentOp AddComponentOp{};
+	Worker_AddComponentOp AddComponentOp;
 	AddComponentOp.entity_id = EntityId;
 	AddComponentOp.data = Tombstone().CreateComponentData();
 	SendAddComponents(EntityId, { AddComponentOp.data });
 	StaticComponentView->OnAddComponent(AddComponentOp);
+
+	NetDriver->Connection->GetCoordinator().RefreshEntityCompleteness(EntityId);
 
 #if WITH_EDITOR
 	NetDriver->TrackTombstone(EntityId);
