@@ -4,8 +4,8 @@
 
 #include "Kismet/GameplayStatics.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "TestPossessionPlayerController.h"
 #include "TestPossessionPawn.h"
+#include "TestPossessionPlayerController.h"
 
 /**
  * This test tests 1 Controller remote possess over 1 Pawn.
@@ -104,19 +104,17 @@ void ACrossServerPlayerControllerPossessPawn::PrepareTest()
 			FinishStep();
 		});
 
-	AddStep(
-		TEXT("Clean"), FWorkerDefinition::AllServers, nullptr, nullptr,
-		[this](float) {
-			if (ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController())
+	AddStep(TEXT("Clean"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
+		if (ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController())
+		{
+			ATestPossessionPawn* Pawn = GetPawn();
+			if (Pawn != nullptr && Pawn->HasAuthority())
 			{
-				ATestPossessionPawn* Pawn = GetPawn();
-				if (Pawn != nullptr && Pawn->HasAuthority())
-				{
-					GetWorld()->DestroyActor(Pawn);
-				}
+				GetWorld()->DestroyActor(Pawn);
 			}
-			FinishStep();
-		});
+		}
+		FinishStep();
+	});
 }
 
 ATestPossessionPawn* ACrossServerPlayerControllerPossessPawn::GetPawn()

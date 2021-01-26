@@ -14,6 +14,7 @@ class ATestPossessionPlayerController : public APlayerController
 	GENERATED_BODY()
 private:
 	virtual void OnPossess(APawn* InPawn) override;
+
 public:
 	ATestPossessionPlayerController();
 
