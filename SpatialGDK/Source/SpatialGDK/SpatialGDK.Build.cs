@@ -43,8 +43,7 @@ public class SpatialGDK : ModuleRules
                 "ReplicationGraph",
                 "Sockets",
                 "Slate",
-                "SlateCore",
-                "UMG",
+                "UMG"
             });
 
         if (Target.bBuildDeveloperTools || (Target.Configuration != UnrealTargetConfiguration.Shipping &&
