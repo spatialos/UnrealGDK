@@ -6,6 +6,7 @@
 
 #include "Commandlets/Commandlet.h"
 #include "CoreMinimal.h"
+#include "UObject/ConstructorHelpers.h"
 #include "GenerateTestMapsCommandlet.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogGenerateTestMapsCommandlet, Log, All);
@@ -22,5 +23,12 @@ class SPATIALGDKFUNCTIONALTESTS_API UGenerateTestMapsCommandlet : public UComman
 
 public:
 	virtual int32 Main(const FString& CmdLineParams) override;
+
+private:
+	UStaticMesh* PlaneStaticMesh;
+	UMaterial* BasicShapeMaterial;
+
+	UWorld* CreateNewTestMapWorld();
+	void CreateSpatialNetworkingMap();
 };
 #endif // WITH_EDITOR

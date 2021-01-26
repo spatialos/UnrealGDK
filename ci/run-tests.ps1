@@ -33,6 +33,18 @@ function Parse-UnrealOptions {
 
 . "$PSScriptRoot\common.ps1"
 
+# Generate test maps
+Write-Output "Generating test maps for testing project"
+Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
+    "$uproject_path", `
+    "-SkipShaderCompile", # Skip shader compilation
+    "-nopause", # Close the unreal log window automatically on exit
+    "-nosplash", # No splash screen
+    "-unattended", # Disable anything requiring user feedback
+    "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+    "-run=GenerateTestMapsCommandlet" # Run the commandlet
+)
+
 if ($run_with_spatial) {
     # Generate schema and snapshots
     Write-Output "Generating snapshot and schema for testing project"
