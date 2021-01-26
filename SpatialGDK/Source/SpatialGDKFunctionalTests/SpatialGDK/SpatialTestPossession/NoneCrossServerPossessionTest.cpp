@@ -7,11 +7,8 @@
 #include "TestPossessionPawn.h"
 
 /**
- * This test tests 1 Controller possess over 1 Pawn.
+ * This test tests 1 Controller possess over 1 Pawn in same worker.
  *
- * This test expects a load balancing grid and ACrossServerPossessionGameMode
- * Recommend to use 2*2 load balancing grid because the position is written in the code
- * The client workers begin with a player controller and their default pawns, which they initially possess.
  * The flow is as follows:
  *	Recommend to use PossessionGym.umap in UnrealGDKTestGyms project which ready for tests.
  *  - Setup:
@@ -45,8 +42,7 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 			ATestPossessionController* Controller = GetController();
 			if (Controller && Controller->HasAuthority())
 			{
-				AssertTrue(Controller->HasAuthority(), TEXT("Controller should HasAuthority"), Controller);
-				AssertTrue(Pawn->HasAuthority(), TEXT("Pawn should HasAuthority"), Pawn);
+				AssertTrue(Pawn->HasAuthority(), TEXT("Pawn should have authority"), Pawn);
 				Controller->RemotePossessOnServer(Pawn);
 			}
 		}

@@ -11,8 +11,6 @@
 /**
  * This test tests multi Controllers remote possess over 1 Pawn.
  *
- * This test expects a 2x2 load balancing grid and ACrossServerPossessionGameMode
- * The client workers begin with a player controller and their default pawns, which they initially possess.
  * The flow is as follows:
  *	Recommend to use PossessionGym.umap in UnrealGDKTestGyms project which ready for tests.
  *  - Setup:
@@ -24,15 +22,15 @@
  *	  - Wait for Pawn and Controllers in right worker.
  *	  -	The Controller possess the Pawn
  *	- Result Check:
- *    - ATestPossessionPlayerController::OnPossess should be called 3 times
- *	  - Controller should migration
+ *    - ATestPossessionController::OnPossess should be called 3 times
+ *	  - Controllers should have migrated
  */
 
 ACrossServerMultiPossessionTest::ACrossServerMultiPossessionTest()
 	: Super()
 {
 	Author = "Ken.Yu";
-	Description = TEXT("Test Cross-Server Multi Controllers Possess 1 Pawn");
+	Description = TEXT("Test Cross-Server 3 Controllers Possess 1 Pawn");
 }
 
 void ACrossServerMultiPossessionTest::PrepareTest()

@@ -84,12 +84,6 @@ void ASpatialTestRemotePossession::CreatePawn(FVector Location)
 	RegisterAutoDestroyActor(Pawn);
 }
 
-bool ASpatialTestRemotePossession::IsReadyForPossess()
-{
-	ATestPossessionPawn* Pawn = GetPawn();
-	return Pawn->Controller != nullptr;
-}
-
 void ASpatialTestRemotePossession::AddWaitStep(const FWorkerDefinition& Worker)
 {
 	AddStep(TEXT("Wait"), Worker, nullptr, nullptr, [this](float DeltaTime) {

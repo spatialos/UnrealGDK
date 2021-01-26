@@ -9,22 +9,20 @@
 /**
  * This test tests 1 Controller remote possess over 1 Pawn.
  *
- * This test expects a load balancing grid and ACrossServerPossessionGameMode
  * Recommand to use 2*2 load balancing grid because the position is written in the code
- * The client workers begin with a player controller and their default pawns, which they initially possess.
  * The flow is as follows:
  *	Recommend to use PossessionGym.umap in UnrealGDKTestGyms project which ready for tests.
  *  - Setup:
  *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
  *	  - Set `Num Required Clients` as 1
  *  - Test:
+ *	  - Create Controller in 3rd quadrant
  *	  - Create a Pawn in first quadrant
- *	  - Create Controller in other quadrant
- *	  - Wait for Pawn in right worker.
+ *	  - Wait for Controller and Pawn in right worker.
  *	  -	The Controller possess the Pawn in server-side
  *	- Result Check:
  *    - ATestPossessionController::OnPossess should be called 1 time
- *	  - Controller should migration
+ *	  - Controller should have migrated
  */
 
 ACrossServerPossessionTest::ACrossServerPossessionTest()
@@ -45,7 +43,6 @@ void ACrossServerPossessionTest::PrepareTest()
 			ATestPossessionController* Controller = GetController();
 			if (Controller && Controller->HasAuthority())
 			{
-				AssertTrue(Controller->HasAuthority(), TEXT("Controller should have authority"), Controller);
 				AssertFalse(Pawn->HasAuthority(), TEXT("Pawn shouldn't have authority"), Pawn);
 				Controller->RemotePossessOnServer(Pawn);
 			}
@@ -67,8 +64,6 @@ void ACrossServerPossessionTest::PrepareTest()
 				if (Controller && Controller->HasAuthority())
 				{
 					AssertTrue(Controller->HasMigrated(), TEXT("Controller should have migrated"), Controller);
-
-					Controller->UnPossess();
 				}
 			}
 			FinishStep();

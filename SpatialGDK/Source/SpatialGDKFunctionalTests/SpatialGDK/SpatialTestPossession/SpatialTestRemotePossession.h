@@ -26,8 +26,6 @@ public:
 	void CreateController(FVector Location);
 	void CreatePawn(FVector Location);
 
-	bool IsReadyForPossess();
-
 	void AddWaitStep(const FWorkerDefinition& Worker);
 
 	void AddCleanStep();
