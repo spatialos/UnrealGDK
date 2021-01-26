@@ -30,6 +30,7 @@ void ATestPossessionController::OnPossess(APawn* InPawn)
 		AfterPossessionWorkerId = GetCurrentWorkerId();
 		UE_LOG(LogTestPossessionController, Log, TEXT("%s OnPossess(%s) OnPossessCalled:%d"), *GetName(), *InPawn->GetName(),
 			   OnPossessCalled);
+		UE_LOG(LogTestPossessionController, Log, TEXT("%s AfterPossessionWorkerId:%d"), *GetName(), AfterPossessionWorkerId);
 	}
 	else
 	{
@@ -59,6 +60,7 @@ void ATestPossessionController::RemotePossessOnServer(APawn* InPawn, bool bLockB
 	Component->Target = InPawn;
 	Component->RegisterComponent();
 	BeforePossessionWorkerId = GetCurrentWorkerId();
+	UE_LOG(LogTestPossessionController, Log, TEXT("%s BeforePossessionWorkerId:%d"), *GetName(), BeforePossessionWorkerId);
 }
 
 void ATestPossessionController::RemotePossess_Implementation(APawn* InPawn)

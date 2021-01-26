@@ -54,10 +54,10 @@ void ACrossServerPossessionTest::PrepareTest()
 	});
 
 	AddStep(
-		TEXT("Check test result"), FWorkerDefinition::Server(1),
+		TEXT("Check test result"), FWorkerDefinition::AllServers,
 		[this]() -> bool {
 			LogStep(ELogVerbosity::Log, FString::Printf(TEXT("OnPossessCalled:%d"), ATestPossessionController::OnPossessCalled));
-			return ATestPossessionController::OnPossessCalled >= 1;
+			return ATestPossessionController::OnPossessCalled == 1;
 		},
 		nullptr,
 		[this](float) {

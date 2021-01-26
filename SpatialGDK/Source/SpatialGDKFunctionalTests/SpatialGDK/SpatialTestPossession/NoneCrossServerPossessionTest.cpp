@@ -54,9 +54,10 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 	});
 
 	AddStep(
-		TEXT("Check test result"), FWorkerDefinition::Server(1),
+		TEXT("Check test result"), FWorkerDefinition::AllServers,
 		[this]() -> bool {
-			return ATestPossessionController::OnPossessCalled >= 1;
+			LogStep(ELogVerbosity::Log, FString::Printf(TEXT("OnPossessCalled:%d"), ATestPossessionController::OnPossessCalled));
+			return ATestPossessionController::OnPossessCalled == 1;
 		},
 		nullptr,
 		[this](float) {
@@ -66,7 +67,10 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 				if (Controller && Controller->HasAuthority())
 				{
 					AssertFalse(Controller->HasMigrated(), TEXT("Controller shouldn't have migrated"), Controller);
-					Controller->UnPossess();
+				}
+				else
+				{
+					LogStep(ELogVerbosity::Log, FString::Printf(TEXT("Controller:%s has not authority"), *Controller->GetName()));
 				}
 			}
 			FinishStep();
