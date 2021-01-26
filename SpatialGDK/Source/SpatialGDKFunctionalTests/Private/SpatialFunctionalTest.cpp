@@ -251,7 +251,23 @@ void ASpatialFunctionalTest::FinishStep()
 	ensureMsgf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
 	if (AuxLocalFlowController != nullptr)
 	{
-		AuxLocalFlowController->NotifyStepFinished(CurrentStepIndex);
+		if (bRunSlowlyForDebugging)
+		{
+			FTimerHandle Useless;
+			GetWorldTimerManager().SetTimer(
+				Useless,
+				[AuxLocalFlowController, CurrentStepIndex = CurrentStepIndex, &CurrentRealStepIndex = CurrentStepIndex]() {
+					if (CurrentStepIndex == CurrentRealStepIndex)
+					{
+						AuxLocalFlowController->NotifyStepFinished(CurrentStepIndex);
+					}
+				},
+				2.0f, false);
+		}
+		else
+		{
+			AuxLocalFlowController->NotifyStepFinished(CurrentStepIndex);
+		}
 	}
 }
 

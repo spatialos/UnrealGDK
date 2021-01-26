@@ -377,6 +377,9 @@ private:
 	// Number of servers that should be running in the world.
 	int NumExpectedServers = 0;
 
+	UPROPERTY(EditAnywhere, Category = "Spatial Functional Test")
+	bool bRunSlowlyForDebugging = false;
+
 	// FlowController which is locally owned.
 	ASpatialFunctionalTestFlowController* LocalFlowController = nullptr;
 
