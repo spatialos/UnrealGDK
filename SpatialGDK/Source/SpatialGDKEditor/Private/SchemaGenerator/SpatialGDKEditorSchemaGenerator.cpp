@@ -1499,7 +1499,13 @@ void SpatialGDKSanitizeGeneratedSchema()
 	TSet<FName> ValidClassNames;
 	for (const auto& Asset : Assets)
 	{
-		ValidClassNames.Add(FName(*Asset.ObjectPath.ToString()));
+		FAssetDataTagMapSharedView::FFindTagResult GeneratedClassPathResult = Asset.TagsAndValues.FindTag(TEXT("GeneratedClass"));
+		if (GeneratedClassPathResult.IsSet())
+		{
+			FString SanitizedClassPath = FPackageName::ExportTextPathToObjectPath(GeneratedClassPathResult.GetValue());
+			SanitizedClassPath.RemoveFromEnd(TEXT("_C"));
+			ValidClassNames.Add(FName(*SanitizedClassPath));
+		}
 	}
 
 	TArray<UObject*> AllClasses;
