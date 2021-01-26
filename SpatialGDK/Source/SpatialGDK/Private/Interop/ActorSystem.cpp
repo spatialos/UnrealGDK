@@ -515,7 +515,7 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 
 	ESchemaComponentType Category = NetDriver->ClassInfoManager->GetCategoryByComponentId(ComponentId);
 
-	if (Category == SCHEMA_Data || Category == SCHEMA_OwnerOnly)
+	if (Category == SCHEMA_Data || Category == SCHEMA_OwnerOnly || Category == SCHEMA_InitialOnly)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_ActorSystemApplyData);
 		ApplyComponentUpdate(ComponentId, Update, *TargetObject, *Channel, /* bIsHandover */ false);
@@ -832,7 +832,7 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 
 	ESchemaComponentType ComponentType = NetDriver->ClassInfoManager->GetCategoryByComponentId(ComponentId);
 
-	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly)
+	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly || ComponentType == SCHEMA_InitialOnly)
 	{
 		if (ComponentType == SCHEMA_Data && TargetObject.IsA<UActorComponent>())
 		{
