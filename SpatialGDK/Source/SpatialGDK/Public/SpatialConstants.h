@@ -23,6 +23,7 @@ enum class ERPCType : uint8
 	ServerReliable,
 	ServerUnreliable,
 	NetMulticast,
+	Movement,
 	CrossServer
 };
 

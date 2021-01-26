@@ -23,6 +23,7 @@ struct ClientEndpoint : Component
 
 	RPCRingBuffer ReliableRPCBuffer;
 	RPCRingBuffer UnreliableRPCBuffer;
+	RPCRingBuffer MovementRPCBuffer;
 	uint64 ReliableRPCAck = 0;
 	uint64 UnreliableRPCAck = 0;
 

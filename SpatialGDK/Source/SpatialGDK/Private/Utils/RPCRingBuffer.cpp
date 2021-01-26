@@ -23,6 +23,7 @@ Worker_ComponentId GetRingBufferComponentId(ERPCType Type)
 		return SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
 	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
+	case ERPCType::Movement:
 		return SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 	case ERPCType::NetMulticast:
 		return SpatialConstants::MULTICAST_RPCS_COMPONENT_ID;
@@ -42,6 +43,7 @@ Worker_ComponentId GetRingBufferAuthComponentSetId(ERPCType Type)
 		return SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID;
 	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
+	case ERPCType::Movement:
 		return SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
 	default:
 		checkNoEntry();
@@ -61,6 +63,9 @@ RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 	//   Unreliable ring buffer, containing MaxRingBufferSize elements,
 	//   Last sent unreliable RPC,
 	//   followed by reliable and unreliable RPC acks.
+	// The client endpoint also contains the movement RPC field as well as last sent ID,
+	// while the server endpoint contains the movement RPC ack.
+	//
 	// MulticastRPCs component will only have one buffer that looks like the reliable buffer above.
 	// The numbers below are based on this structure, and have to match the component generated in SchemaGenerator
 	// (GenerateRPCEndpointsSchema).
@@ -76,6 +81,10 @@ RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 	case ERPCType::ServerUnreliable:
 		Descriptor.SchemaFieldStart = 1 + MaxRingBufferSize + 1;
 		Descriptor.LastSentRPCFieldId = 1 + MaxRingBufferSize + 1 + MaxRingBufferSize;
+		break;
+	case ERPCType::Movement:
+		Descriptor.SchemaFieldStart = 2 * (MaxRingBufferSize + 1) + 3;
+		Descriptor.LastSentRPCFieldId = 2 * (MaxRingBufferSize + 1) + 3 + Descriptor.RingBufferSize;
 		break;
 	default:
 		checkNoEntry();
@@ -99,6 +108,7 @@ Worker_ComponentId GetAckComponentId(ERPCType Type)
 		return SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
+	case ERPCType::Movement:
 		return SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
 	default:
 		checkNoEntry();
@@ -115,6 +125,7 @@ Worker_ComponentId GetAckAuthComponentSetId(ERPCType Type)
 		return SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
 	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
+	case ERPCType::Movement:
 		return SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID;
 	default:
 		checkNoEntry();
@@ -136,6 +147,9 @@ Schema_FieldId GetAckFieldId(ERPCType Type)
 	case ERPCType::ClientUnreliable:
 	case ERPCType::ServerUnreliable:
 		return 1 + 2 * (MaxRingBufferSize + 1) + 1;
+	case ERPCType::Movement:
+		// Movement RPC ack will directly follow ServerUnreliable ack.
+		return 1 + 2 * (MaxRingBufferSize + 1) + 2;
 	default:
 		checkNoEntry();
 		return 0;
@@ -156,6 +170,25 @@ bool ShouldQueueOverflowed(ERPCType Type)
 	case ERPCType::ClientReliable:
 	case ERPCType::ServerReliable:
 		return true;
+	case ERPCType::ClientUnreliable:
+	case ERPCType::ServerUnreliable:
+	case ERPCType::NetMulticast:
+	case ERPCType::Movement:
+		return false;
+	default:
+		checkNoEntry();
+		return false;
+	}
+}
+
+bool ShouldIgnoreCapacity(ERPCType Type)
+{
+	switch (Type)
+	{
+	case ERPCType::Movement:
+		return true;
+	case ERPCType::ClientReliable:
+	case ERPCType::ServerReliable:
 	case ERPCType::ClientUnreliable:
 	case ERPCType::ServerUnreliable:
 	case ERPCType::NetMulticast:

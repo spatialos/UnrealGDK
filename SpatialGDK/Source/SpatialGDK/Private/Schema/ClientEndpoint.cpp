@@ -12,6 +12,7 @@ ClientEndpoint::ClientEndpoint(const Worker_ComponentData& Data)
 ClientEndpoint::ClientEndpoint(Schema_ComponentData* Data)
 	: ReliableRPCBuffer(ERPCType::ServerReliable)
 	, UnreliableRPCBuffer(ERPCType::ServerUnreliable)
+	, MovementRPCBuffer(ERPCType::Movement)
 {
 	ReadFromSchema(Schema_GetComponentDataFields(Data));
 }
@@ -32,6 +33,7 @@ void ClientEndpoint::ReadFromSchema(Schema_Object* SchemaObject)
 	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, UnreliableRPCBuffer);
 	RPCRingBufferUtils::ReadAckFromSchema(SchemaObject, ERPCType::ClientReliable, ReliableRPCAck);
 	RPCRingBufferUtils::ReadAckFromSchema(SchemaObject, ERPCType::ClientUnreliable, UnreliableRPCAck);
+	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, MovementRPCBuffer);
 }
 
 } // namespace SpatialGDK
