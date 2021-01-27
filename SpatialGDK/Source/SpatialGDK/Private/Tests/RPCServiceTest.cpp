@@ -214,8 +214,7 @@ RPC_SERVICE_TEST(GIVEN_authority_over_server_endpoint_WHEN_push_client_unreliabl
 {
 	SpatialGDK::EntityView View;
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH, View);
-	const SpatialGDK::EPushRPCResult Result =
-		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientUnreliable, SimplePayload, false);
+	const SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientUnreliable, SimplePayload, false);
 	TestTrue("Push RPC returned expected results", Result == SpatialGDK::EPushRPCResult::Success);
 	return true;
 }
@@ -235,8 +234,7 @@ RPC_SERVICE_TEST(
 {
 	SpatialGDK::EntityView View;
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, SERVER_AUTH, View);
-	const SpatialGDK::EPushRPCResult Result =
-		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerUnreliable, SimplePayload, false);
+	const SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerUnreliable, SimplePayload, false);
 	TestTrue("Push RPC returned expected results", Result == SpatialGDK::EPushRPCResult::NoRingBufferAuthority);
 	return true;
 }
@@ -256,8 +254,7 @@ RPC_SERVICE_TEST(
 {
 	SpatialGDK::EntityView View;
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, CLIENT_AUTH, View);
-	const SpatialGDK::EPushRPCResult Result =
-		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientUnreliable, SimplePayload, false);
+	const SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientUnreliable, SimplePayload, false);
 	TestTrue("Push RPC returned expected results", Result == SpatialGDK::EPushRPCResult::NoRingBufferAuthority);
 	return true;
 }
@@ -275,8 +272,7 @@ RPC_SERVICE_TEST(GIVEN_authority_over_client_endpoint_WHEN_push_server_unreliabl
 {
 	SpatialGDK::EntityView View;
 	SpatialGDK::SpatialRPCService RPCService = CreateRPCService({ RPCTestEntityId_1 }, CLIENT_AUTH, View);
-	const SpatialGDK::EPushRPCResult Result =
-		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerUnreliable, SimplePayload, false);
+	const SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerUnreliable, SimplePayload, false);
 	TestTrue("Push RPC returned expected results", Result == SpatialGDK::EPushRPCResult::Success);
 	return true;
 }
@@ -339,8 +335,7 @@ RPC_SERVICE_TEST(
 		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientUnreliable, SimplePayload, false);
 	}
 
-	const SpatialGDK::EPushRPCResult Result =
-		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientUnreliable, SimplePayload, false);
+	const SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ClientUnreliable, SimplePayload, false);
 	TestTrue("Push RPC returned expected results", Result == SpatialGDK::EPushRPCResult::DropOverflowed);
 	return true;
 }
@@ -376,8 +371,7 @@ RPC_SERVICE_TEST(
 		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerUnreliable, SimplePayload, false);
 	}
 
-	const SpatialGDK::EPushRPCResult Result =
-		RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerUnreliable, SimplePayload, false);
+	const SpatialGDK::EPushRPCResult Result = RPCService.PushRPC(RPCTestEntityId_1, ERPCType::ServerUnreliable, SimplePayload, false);
 	TestTrue("Push RPC returned expected results", (Result == SpatialGDK::EPushRPCResult::DropOverflowed));
 	return true;
 }
@@ -450,8 +444,8 @@ RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_client_reliable_
 
 	const FWorkerComponentData ComponentData =
 		GetComponentDataOnEntityCreationFromRPCService(RPCService, RPCTestEntityId_1, ERPCType::ClientReliable);
-	const bool bTestPassed = CompareComponentDataAndEntityPayload(ComponentData, EntityPayload(RPCTestEntityId_1, SimplePayload),
-																  ERPCType::ClientReliable, 1);
+	const bool bTestPassed =
+		CompareComponentDataAndEntityPayload(ComponentData, EntityPayload(RPCTestEntityId_1, SimplePayload), ERPCType::ClientReliable, 1);
 	TestTrue("Entity creation test returned expected results", bTestPassed);
 	return true;
 }

@@ -688,7 +688,8 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 }
 
 bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
-										 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef, const FSpatialGDKSpanId& SpanId)
+										 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef,
+										 const FSpatialGDKSpanId& SpanId)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	const EPushRPCResult Result =
@@ -797,7 +798,8 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePushRPC(TargetObject, Function), EventTracer->GetFromStack().GetConstId(), 1);
+		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePushRPC(TargetObject, Function),
+										 EventTracer->GetFromStack().GetConstId(), 1);
 	}
 
 	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload), SpanId);
