@@ -239,7 +239,8 @@ void SpatialEventTracer::AuthorityChange(const Worker_ComponentSetAuthorityChang
 
 void SpatialEventTracer::AddComponent(const Worker_AddComponentOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	EntityComponentSpanIds.FindOrAdd({ Op.entity_id, Op.data.component_id }, { SpanId });
+	TArray<FSpatialGDKSpanId>& StoredSpanIds = EntityComponentSpanIds.FindOrAdd({ Op.entity_id, Op.data.component_id });
+	StoredSpanIds.Push(SpanId);
 }
 
 void SpatialEventTracer::RemoveComponent(const Worker_RemoveComponentOp& Op, const FSpatialGDKSpanId& SpanId)
