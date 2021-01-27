@@ -77,7 +77,6 @@ struct RPCPayload
 	TOptional<uint64> Id;
 	TArray<uint8> PayloadData;
 	TraceKey Trace = InvalidTraceKey;
-	FSpatialGDKSpanId SpanId; // Not serialized
 };
 
 } // namespace SpatialGDK

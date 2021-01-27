@@ -87,17 +87,17 @@ void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const 
 }
 } // namespace
 
-FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload)
+FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload, const FSpatialGDKSpanId& SpanId)
 	: ObjectRef(InTargetObjectRef)
 	, Payload(MoveTemp(InPayload))
 	, Timestamp(FDateTime::Now())
 	, Type(InType)
-{
-}
+	, SpanId(SpanId)
+{}
 
-void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload)
+void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload, const FSpatialGDKSpanId& SpanId = {})
 {
-	FPendingRPCParams Params{ TargetObjectRef, Type, MoveTemp(Payload) };
+	FPendingRPCParams Params{ TargetObjectRef, Type, MoveTemp(Payload), SpanId };
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
 		const ERPCQueueProcessResult QueueProcessResult = ApplyFunction(Params);

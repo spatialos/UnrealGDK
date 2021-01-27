@@ -39,7 +39,7 @@ public:
 								   TOptional<uint64> RPCIdForLinearEventTrace);
 
 	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target = nullptr,
-						   UFunction* Function = nullptr);
+		UFunction* Function = nullptr, const FSpatialGDKSpanId& SpanId = {});
 	void PushOverflowedRPCs();
 
 	struct UpdateToSend
