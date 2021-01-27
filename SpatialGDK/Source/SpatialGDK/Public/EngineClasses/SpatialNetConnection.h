@@ -60,6 +60,7 @@ public:
 
 	void ClientNotifyClientHasQuit();
 
+	UFUNCTION()
 	void OnControllerDestroyed(AActor* DestroyedActor);
 
 	UPROPERTY()
