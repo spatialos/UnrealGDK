@@ -37,6 +37,12 @@ DECLARE_CYCLE_STAT(TEXT("DrawText"), STAT_DrawText, STATGROUP_SpatialDebugger);
 DECLARE_CYCLE_STAT(TEXT("BuildText"), STAT_BuildText, STATGROUP_SpatialDebugger);
 DECLARE_CYCLE_STAT(TEXT("SortingActors"), STAT_SortingActors, STATGROUP_SpatialDebugger);
 
+namespace SpatialGDK
+{
+class FSubView;
+struct SpatialDebugging;
+} // namespace SpatialGDK
+
 USTRUCT()
 struct FWorkerRegionInfo
 {
@@ -227,9 +233,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Visualization)
 	void SetShowWorkerRegions(const bool bNewShow);
 
-	void ActorAuthorityGained(const Worker_EntityId EntityId) const;
-	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
-
 #if WITH_EDITOR
 	void EditorRefreshWorkerRegions();
 	static void EditorRefreshDisplay();
@@ -237,7 +240,13 @@ public:
 	void EditorSpatialToggleDebugger(bool bEnabled);
 #endif
 
+	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
+
 private:
+	void ActorAuthorityGained(const Worker_EntityId EntityId) const;
+
+	TOptional<SpatialGDK::SpatialDebugging> GetDebuggingData(Worker_EntityId Entity) const;
+
 	void LoadIcons();
 
 	// FDebugDrawDelegate
@@ -288,6 +297,8 @@ private:
 	};
 
 	USpatialNetDriver* NetDriver;
+
+	SpatialGDK::FSubView* SubView;
 
 	// These mappings are maintained independently on each client
 	// Mapping of the entities a client has checked out

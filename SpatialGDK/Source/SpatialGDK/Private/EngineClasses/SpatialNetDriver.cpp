@@ -1914,28 +1914,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			WellKnownEntitySystem->Advance();
 		}
 
-		if (SpatialDebugger != nullptr)
-		{
-			for (const auto& EntityDelta : Connection->GetCoordinator().GetViewDelta().GetEntityDeltas())
-			{
-				if (EntityDelta.Type == SpatialGDK::EntityDelta::ADD)
-				{
-					SpatialDebugger->OnEntityAdded(EntityDelta.EntityId);
-				}
-				if (EntityDelta.Type == SpatialGDK::EntityDelta::REMOVE)
-				{
-					SpatialDebugger->OnEntityRemoved(EntityDelta.EntityId);
-				}
-				for (const auto& Authority : EntityDelta.AuthorityGained)
-				{
-					if (Authority.ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-					{
-						SpatialDebugger->ActorAuthorityGained(EntityDelta.EntityId);
-					}
-				}
-			}
-		}
-
 		if (!bIsReadyToStart)
 		{
 			TryFinishStartup();
