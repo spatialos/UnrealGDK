@@ -67,7 +67,10 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Compo
 	}
 	else
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("Gained authority with invalid translator mapping count. Are you attempting to load a snapshot with a different load balancing strategy? Expected (%d) Present (%d)"), NumVirtualWorkers, ExistingTranslatorMappingCount);
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error,
+			   TEXT("Gained authority with invalid translator mapping count. Are you attempting to load a snapshot with a different load "
+					"balancing strategy? Expected (%d) Present (%d)"),
+			   NumVirtualWorkers, ExistingTranslatorMappingCount);
 	}
 }
 
