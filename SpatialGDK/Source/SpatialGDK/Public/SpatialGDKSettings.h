@@ -301,6 +301,22 @@ public:
 	UPROPERTY(Config)
 	uint32 UdpClientDownstreamUpdateIntervalMS;
 
+	/** Specifies the client downstream window size - see c_worker.h */
+	UPROPERTY(Config)
+	uint32 ClientDownstreamWindowSizeBytes;
+
+	/** Specifies the client upstream window size - see c_worker.h */
+	UPROPERTY(Config)
+	uint32 ClientUpstreamWindowSizeBytes;
+
+	/** Specifies the client downstream window size - see c_worker.h */
+	UPROPERTY(Config)
+	uint32 ServerDownstreamWindowSizeBytes;
+
+	/** Specifies the client upstream window size - see c_worker.h */
+	UPROPERTY(Config)
+	uint32 ServerUpstreamWindowSizeBytes;
+
 	/** Will flush worker messages immediately after every RPC. Higher bandwidth but lower latency on RPC calls. */
 	UPROPERTY(Config)
 	bool bWorkerFlushAfterOutgoingNetworkOp;

@@ -73,6 +73,14 @@ struct FConnectionConfig
 													: SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 
 		LinkProtocol = ConnectionTypeMap[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
+		static_assert(EWorkerType::Client == 0 && EWorkerType::Server == 1, "Assuming indexes of enum for client and server");
+
+		uint32 DownstreamWindowSizes[2] = { SpatialGDKSettings->ClientDownstreamWindowSizeBytes, SpatialGDKSettings->ServerDownstreamWindowSizeBytes };
+		uint32 UpstreamWindowSizes[2] = { SpatialGDKSettings->ClientUpstreamWindowSizeBytes, SpatialGDKSettings->ServerUpstreamWindowSizeBytes };
+		static_assert(EWorkerType::Client == 0 && EWorkerType::Server == 1, "Assuming indexes of enum");
+
+		DownstreamWindowSize = DownstreamWindowSizes[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
+		UpstreamWindowSize = UpstreamWindowSizes[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
 	}
 
 private:
@@ -147,6 +155,8 @@ public:
 	uint8 TcpNoDelay;
 	uint8 UdpUpstreamIntervalMS;
 	uint8 UdpDownstreamIntervalMS;
+	uint16 DownstreamWindowSize;
+	uint16 UpstreamWindowSize;
 };
 
 class FLocatorConfig : public FConnectionConfig

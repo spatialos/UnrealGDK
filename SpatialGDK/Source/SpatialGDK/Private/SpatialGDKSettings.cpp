@@ -133,6 +133,10 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEventTracingEnabled(false)
 	, SamplingProbability(1.0f)
 	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
+	, ClientDownstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_DOWNSTREAM_WINDOW_SIZE_BYTES)
+	, ClientUpstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_UPSTREAM_WINDOW_SIZE_BYTES)
+	, ServerDownstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_DOWNSTREAM_WINDOW_SIZE_BYTES)
+	, ServerUpstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_UPSTREAM_WINDOW_SIZE_BYTES)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
