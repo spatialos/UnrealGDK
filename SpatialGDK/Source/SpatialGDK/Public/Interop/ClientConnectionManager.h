@@ -23,10 +23,11 @@ public:
 	void RegisterClientConnection(Worker_EntityId InWorkerEntityId, USpatialNetConnection* ClientConnection);
 	void CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp);
 
+	void DisconnectPlayer(Worker_EntityId ClientEntityId);
+
 private:
 	void EntityRemoved(const Worker_EntityId EntityId);
 
-	void DisconnectPlayer(Worker_EntityId ClientEntityId);
 	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerEntityId(Worker_EntityId WorkerEntityId);
 	static void CloseClientConnection(USpatialNetConnection* ClientConnection);
 

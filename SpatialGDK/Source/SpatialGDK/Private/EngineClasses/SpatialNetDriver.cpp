@@ -23,6 +23,7 @@
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/ActorSystem.h"
+#include "Interop/ClientConnectionManager.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
@@ -418,15 +419,17 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, TombstoneRefreshCallbacks);
 	const SpatialGDK::FSubView& TombstoneActorSubview = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::TOMBSTONE_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+	const SpatialGDK::FSubView& SystemEntitySubview = Connection->GetCoordinator().CreateSubView(
+		SpatialConstants::SYSTEM_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
 	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
 		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
 	CrossServerRPCSender = MakeUnique<SpatialGDK::CrossServerRPCSender>(Connection->GetCoordinator(), SpatialMetrics);
 	CrossServerRPCHandler =
 		MakeUnique<SpatialGDK::CrossServerRPCHandler>(Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this));
-
 	ActorSystem =
 		MakeUnique<SpatialGDK::ActorSystem>(ActorNonAuthSubview, TombstoneActorSubview, this, &TimerManager, Connection->GetEventTracer());
+	ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
@@ -1869,6 +1872,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			DebugCtx->AdvanceView();
 		}
 
+		if (ClientConnectionManager.IsValid())
+		{
+			ClientConnectionManager->Advance();
+		}
+
 		if (ActorSystem.IsValid())
 		{
 			ActorSystem->Advance();
@@ -2141,7 +2149,7 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	{
 		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %lld 's NetConnection created."), ClientSystemEntityId);
 
-		RegisterClientConnection(ClientSystemEntityId, SpatialConnection);
+		ClientConnectionManager->RegisterClientConnection(ClientSystemEntityId, SpatialConnection);
 	}
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
@@ -2165,7 +2173,7 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("PreLogin failure: %s"), *ErrorMsg);
 
-		DisconnectPlayer(ClientSystemEntityId);
+		ClientConnectionManager->DisconnectPlayer(ClientSystemEntityId);
 
 		// TODO: Destroy connection. UNR-584
 		return false;

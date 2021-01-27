@@ -42,8 +42,7 @@ void USpatialNetConnection::CleanUp()
 {
 	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver))
 	{
-		// Clean up should call the client connection manager (Need either a function which calls, or access directly)
-		SpatialNetDriver->CleanUpClientConnection(this);
+		SpatialNetDriver->ClientConnectionManager->CleanUpClientConnection(this);
 	}
 
 	Super::CleanUp();

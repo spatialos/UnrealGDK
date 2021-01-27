@@ -50,6 +50,26 @@ void ClientConnectionManager::CleanUpClientConnection(USpatialNetConnection* Con
 	}
 }
 
+void ClientConnectionManager::DisconnectPlayer(Worker_EntityId ClientEntityId)
+{
+	Worker_CommandRequest Request = {};
+	Request.component_id = SpatialConstants::WORKER_COMPONENT_ID;
+	Request.command_index = SpatialConstants::WORKER_DISCONNECT_COMMAND_ID;
+	Request.schema_type = Schema_CreateCommandRequest();
+	Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(ClientEntityId, &Request, RETRY_UNTIL_COMPLETE, {});
+
+	SystemEntityCommandDelegate CommandResponseDelegate;
+	CommandResponseDelegate.BindLambda([this, ClientEntityId](const Worker_CommandResponseOp&) {
+		TWeakObjectPtr<USpatialNetConnection> ClientConnection = FindClientConnectionFromWorkerEntityId(ClientEntityId);
+		if (ClientConnection.IsValid())
+		{
+			ClientConnection->CleanUp();
+		}
+	});
+
+	NetDriver->Receiver->AddSystemEntityCommandDelegate(RequestId, CommandResponseDelegate);
+}
+
 void ClientConnectionManager::EntityRemoved(const Worker_EntityId EntityId)
 {
 	// Check to see if we are removing a system entity for a client worker connection. If so clean up the
@@ -63,26 +83,6 @@ void ClientConnectionManager::EntityRemoved(const Worker_EntityId EntityId)
 		}
 		WorkerConnectionEntities.Remove(EntityId);
 	}
-}
-
-void ClientConnectionManager::DisconnectPlayer(Worker_EntityId ClientEntityId)
-{
-	Worker_CommandRequest Request = {};
-	Request.component_id = SpatialConstants::WORKER_COMPONENT_ID;
-	Request.command_index = SpatialConstants::WORKER_DISCONNECT_COMMAND_ID;
-	Request.schema_type = Schema_CreateCommandRequest();
-	Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(ClientEntityId, &Request, RETRY_UNTIL_COMPLETE, {});
-
-	SystemEntityCommandDelegate CommandResponseDelegate;
-	CommandResponseDelegate.BindWeakLambda(this, [this, ClientEntityId](const Worker_CommandResponseOp& Op) {
-		TWeakObjectPtr<USpatialNetConnection> ClientConnection = FindClientConnectionFromWorkerEntityId(ClientEntityId);
-		if (ClientConnection.IsValid())
-		{
-			ClientConnection->CleanUp();
-		}
-	});
-
-	NetDriver->Receiver->AddSystemEntityCommandDelegate(RequestId, CommandResponseDelegate);
 }
 
 TWeakObjectPtr<USpatialNetConnection> ClientConnectionManager::FindClientConnectionFromWorkerEntityId(const Worker_EntityId WorkerEntityId)

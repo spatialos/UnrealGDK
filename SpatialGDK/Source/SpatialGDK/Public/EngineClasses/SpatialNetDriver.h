@@ -22,6 +22,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "Interop/ActorSystem.h"
+#include "Interop/ClientConnectionManager.h"
 #include "Interop/RPCExecutorInterface.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
@@ -200,6 +201,7 @@ public:
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
+	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 

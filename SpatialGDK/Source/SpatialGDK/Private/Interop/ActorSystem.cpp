@@ -282,11 +282,6 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 		}
 	}
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
-	{
-		HandlePlayerLifecycleAuthority(EntityId, ComponentSetId, Authority, PlayerController);
-	}
-
 	if (NetDriver->IsServer())
 	{
 		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
@@ -434,11 +429,6 @@ void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_Co
 
 void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update)
 {
-	if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID)
-	{
-		OnHeartbeatComponentUpdate(EntityId, Update);
-	}
-
 	if (ComponentId < SpatialConstants::STARTING_GENERATED_COMPONENT_ID
 		|| NetDriver->ClassInfoManager->IsGeneratedQBIMarkerComponent(ComponentId))
 	{
