@@ -98,13 +98,6 @@ bool SpatialVirtualWorkerTranslator::IsValidMapping(Schema_Object* Object) const
 // a worker first becomes authoritative for the mapping.
 void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Object)
 {
-	if (!IsValidMapping(Object))
-	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log,
-			   TEXT("Received invalid mapping, server is still waiting for a valid mapping from the virtual worker translation manager."));
-		return;
-	}
-
 	// Resize the map to accept the new data.
 	VirtualToPhysicalWorkerMapping.Empty();
 	const uint32 TranslationCount = Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);

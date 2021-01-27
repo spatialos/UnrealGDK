@@ -131,6 +131,7 @@ const Worker_ComponentId SERVER_WORKER_COMPONENT_ID = 9974;
 const Worker_ComponentId SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID = 9973;
 const Worker_ComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID = 9971;
 const Worker_ComponentId MIGRATION_DIAGNOSTIC_COMPONENT_ID = 9969;
+const Worker_ComponentId PARTITION_SHADOW_COMPONENT_ID = 9967;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
@@ -415,6 +416,7 @@ const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
 	"unreal/gdk/debug_metrics.schema",
 	"unreal/gdk/net_owning_client_worker.schema",
 	"unreal/gdk/not_streamed.schema",
+	"unreal/gdk/partition_shadow.schema",
 	"unreal/gdk/query_tags.schema",
 	"unreal/gdk/relevant.schema",
 	"unreal/gdk/rpc_components.schema",
@@ -435,6 +437,7 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
 	{ DEBUG_METRICS_COMPONENT_ID, "unreal.DebugMetrics" },
 	{ NET_OWNING_CLIENT_WORKER_COMPONENT_ID, "unreal.NetOwningClientWorker" },
 	{ NOT_STREAMED_COMPONENT_ID, "unreal.NotStreamed" },
+	{ PARTITION_SHADOW_COMPONENT_ID, "unreal.PartitionShadow" },
 	{ ALWAYS_RELEVANT_COMPONENT_ID, "unreal.AlwaysRelevant" },
 	{ DORMANT_COMPONENT_ID, "unreal.Dormant" },
 	{ VISIBLE_COMPONENT_ID, "unreal.Visible" },

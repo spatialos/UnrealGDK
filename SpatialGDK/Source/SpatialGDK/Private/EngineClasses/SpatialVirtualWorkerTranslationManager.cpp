@@ -54,8 +54,21 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Compo
 
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("This worker now has authority over the VirtualWorker translation."));
 
-	// We need to create partition entities before we start assigning virtual workers.
-	SpawnPartitionEntitiesForVirtualWorkerIds();
+	int32 ExistingTranslatorMappingCount = Translator->GetMappingCount();
+	if (ExistingTranslatorMappingCount == 0)
+	{
+		// Fresh deployment, we need to create partition entities before we start assigning virtual workers.
+		SpawnPartitionEntitiesForVirtualWorkerIds();
+	}
+	else if (ExistingTranslatorMappingCount == NumVirtualWorkers)
+	{
+		// Partitions already exist, reclaim them with latest server worker entities
+		ReclaimPartitionEntities();
+	}
+	else
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("Gained authority with invalid translator mapping count. Are you attempting to load a snapshot with a different load balancing strategy? Expected (%d) Present (%d)"), NumVirtualWorkers, ExistingTranslatorMappingCount);
+	}
 }
 
 void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntitiesForVirtualWorkerIds()
@@ -69,6 +82,18 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntitiesForVirtualWor
 			   PartitionEntityId);
 		SpawnPartitionEntity(PartitionEntityId, VirtualWorkerId);
 	}
+}
+
+void SpatialVirtualWorkerTranslationManager::ReclaimPartitionEntities()
+{
+	Partitions.Empty();
+	for (VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
+	{
+		Worker_PartitionId PartitionId = Translator->GetPartitionEntityForVirtualWorker(VirtualWorkerId);
+		check(PartitionId != SpatialConstants::INVALID_ENTITY_ID);
+		Partitions.Emplace(PartitionInfo{ PartitionId, VirtualWorkerId, SpatialConstants::INVALID_ENTITY_ID });
+	}
+	QueryForServerWorkerEntities();
 }
 
 // For each entry in the map, write a VirtualWorkerMapping type object to the Schema object.
