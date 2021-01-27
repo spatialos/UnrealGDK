@@ -165,6 +165,12 @@ uint32 UGridBasedLBStrategy::GetMinimumRequiredWorkers() const
 	return Rows * Cols;
 }
 
+FBox2D UGridBasedLBStrategy::GetWorkerBounds() const
+{
+	check((uint32)WorkerCells.Num() > LocalCellId);
+	return WorkerCells[LocalCellId];
+}
+
 void UGridBasedLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId)
 {
 	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Setting VirtualWorkerIds %d to %d"), FirstVirtualWorkerId, LastVirtualWorkerId);
