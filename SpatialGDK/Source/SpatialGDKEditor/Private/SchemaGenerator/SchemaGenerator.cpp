@@ -307,6 +307,8 @@ FString GetRPCFieldPrefix(ERPCType RPCType)
 		return TEXT("client_to_server_reliable");
 	case ERPCType::ServerUnreliable:
 		return TEXT("client_to_server_unreliable");
+	case ERPCType::Movement:
+		return TEXT("movement");
 	case ERPCType::NetMulticast:
 		return TEXT("multicast");
 	default:
@@ -328,6 +330,10 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 	for (ERPCType SentRPCType : SentRPCTypes)
 	{
 		uint32 RingBufferSize = GetDefault<USpatialGDKSettings>()->MaxRPCRingBufferSize;
+		if (SentRPCType == ERPCType::Movement)
+		{
+			RingBufferSize = GetDefault<USpatialGDKSettings>()->MovementRPCBufferSize;
+		}
 
 		for (uint32 RingBufferIndex = 0; RingBufferIndex < RingBufferSize; RingBufferIndex++)
 		{
@@ -346,16 +352,6 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 		// This counter is used to let clients execute initial multicast RPCs when entity is just getting created,
 		// while ignoring existing multicast RPCs when an entity enters the interest range.
 		Writer.Printf("uint32 initially_present_multicast_rpc_count = {0};", FieldId++);
-	}
-
-	if (ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID)
-	{
-		Writer.Printf("option<UnrealRPCPayload> movement_rpc = {0};", FieldId++);
-		Writer.Printf("uint64 last_sent_movement_rpc_id = {0};", FieldId++);
-	}
-	if (ComponentId == SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID)
-	{
-		Writer.Printf("uint64 last_acked_movement_rpc_id = {0};", FieldId++);
 	}
 
 	Writer.Outdent().Print("}");
@@ -704,9 +700,9 @@ void GenerateRPCEndpointsSchema(FString SchemaPath)
 	Writer.Print("import \"unreal/gdk/rpc_payload.schema\";");
 
 	GenerateRPCEndpoint(Writer, TEXT("ClientEndpoint"), SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
-						{ ERPCType::ServerReliable, ERPCType::ServerUnreliable }, { ERPCType::ClientReliable, ERPCType::ClientUnreliable });
+						{ ERPCType::ServerReliable, ERPCType::ServerUnreliable, ERPCType::Movement }, { ERPCType::ClientReliable, ERPCType::ClientUnreliable });
 	GenerateRPCEndpoint(Writer, TEXT("ServerEndpoint"), SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
-						{ ERPCType::ClientReliable, ERPCType::ClientUnreliable }, { ERPCType::ServerReliable, ERPCType::ServerUnreliable });
+						{ ERPCType::ClientReliable, ERPCType::ClientUnreliable }, { ERPCType::ServerReliable, ERPCType::ServerUnreliable, ERPCType::Movement });
 	GenerateRPCEndpoint(Writer, TEXT("MulticastRPCs"), SpatialConstants::MULTICAST_RPCS_COMPONENT_ID, { ERPCType::NetMulticast }, {});
 
 	Writer.WriteToFile(FString::Printf(TEXT("%srpc_endpoints.schema"), *SchemaPath));

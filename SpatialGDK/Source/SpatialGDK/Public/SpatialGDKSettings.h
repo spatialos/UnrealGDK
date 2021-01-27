@@ -271,7 +271,7 @@ private:
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Default RPC Ring Buffer Size"))
 	uint32 DefaultRPCRingBufferSize;
 
-	/** Overrides default ring buffer size. */
+	/** Overrides default ring buffer size. Does not apply to movement RPCs. */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "RPC Ring Buffer Size Map"))
 	TMap<ERPCType, uint32> RPCRingBufferSizeMap;
 
@@ -410,6 +410,16 @@ public:
 	UPROPERTY(Config)
 	uint64 MaxEventTracingFileSizeBytes;
 
+	/*
+	 * The number of fields that the movement RPC buffer is generated with. Changing this will require schema to be regenerated and break
+	 * snapshot compatibility.
+	 */
+	UPROPERTY(Config)
+	uint32 MovementRPCBufferSize;
+
+	/*
+	 * Enable to route ServerMove RPCs through their own channel, separately from other Server unreliable RPCs.
+	 */
 	UPROPERTY(Config)
 	bool bEnableMovementRPCChannel;
 };

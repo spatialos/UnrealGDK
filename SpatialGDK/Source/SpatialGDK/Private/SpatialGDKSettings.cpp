@@ -133,10 +133,10 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEventTracingEnabled(false)
 	, SamplingProbability(1.0f)
 	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
+	, MovementRPCBufferSize(1)
 	, bEnableMovementRPCChannel(true)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
-	RPCRingBufferSizeMap.Add(ERPCType::Movement, 1);
 }
 
 void USpatialGDKSettings::PostInitProperties()
@@ -226,6 +226,12 @@ void USpatialGDKSettings::UpdateServicesRegionFile()
 
 uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 {
+	if (RPCType == ERPCType::Movement)
+	{
+		// Movement RPCs are routed through a separate channel, and thus use a different size.
+		return MovementRPCBufferSize;
+	}
+
 	if (const uint32* Size = RPCRingBufferSizeMap.Find(RPCType))
 	{
 		return *Size;

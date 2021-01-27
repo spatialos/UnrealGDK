@@ -88,6 +88,7 @@ enum class ESchemaDatabaseVersion : uint8
 {
 	BeforeVersionSupportAdded = 0,
 	VersionSupportAdded,
+	MovementRPCChannel,
 
 	// Add new versions here
 
@@ -145,6 +146,12 @@ public:
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FComponentIDs> ComponentSetIdToComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	uint32 MaxRPCRingBufferSize;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	uint32 MovementRPCBufferSize;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	ESchemaDatabaseVersion SchemaDatabaseVersion;
