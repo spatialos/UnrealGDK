@@ -2,7 +2,6 @@
 
 #include "Utils/SpatialDebugger.h"
 
-#include "Editor.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
@@ -27,6 +26,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "Modules/ModuleManager.h"
 #include "Net/UnrealNetwork.h"
+
+#if UE_EDITOR
+#include "Editor.h"
+#endif
 
 using namespace SpatialGDK;
 
