@@ -10,7 +10,6 @@
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialGDKSettings.h"
 
-
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
 namespace SpatialGDK
