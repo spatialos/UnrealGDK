@@ -34,7 +34,7 @@ struct ConfigureConnection
 		Logsink.rotating_logfile_parameters.max_log_files = 1;
 		// TODO: When upgrading to Worker SDK 14.6.2, remove the WorkerSDKLogFileSize parameter and set this to 0 for infinite file size
 		// Logsink.rotating_logfile_parameters.max_log_file_size_bytes = Config.WorkerSDKLogFileSize;
-		Logsink.rotating_logfile_parameters.max_log_file_size_bytes = 200;
+		Logsink.rotating_logfile_parameters.max_log_file_size_bytes = 210000000;
 
 		uint32_t Categories = 0;
 		if (Config.EnableWorkerSDKOpLogging)
@@ -46,7 +46,7 @@ struct ConfigureConnection
 			Categories |= WORKER_LOG_CATEGORY_NETWORK_STATUS | WORKER_LOG_CATEGORY_NETWORK_TRAFFIC;
 		}
 		Logsink.filter_parameters.categories = Categories;
-		//Logsink.filter_parameters.level = Config.WorkerSDKLogLevel;
+		// Logsink.filter_parameters.level = Config.WorkerSDKLogLevel;
 		Logsink.filter_parameters.level = WORKER_LOG_LEVEL_INFO;
 
 		Params.logsinks = &Logsink;
