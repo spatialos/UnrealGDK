@@ -145,7 +145,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& Spati
 	}
 
 	// Worker requires ansi const char*
-	std::string MessageSrc = (const char*)TCHAR_TO_ANSI(*SpatialTraceEvent.Message); // Worker requires platform ansi const char*
+	std::string MessageSrc = (const char*)TCHAR_TO_ANSI(*SpatialTraceEvent.Message);	  // Worker requires platform ansi const char*
 	std::string TypeSrc = (const char*)TCHAR_TO_ANSI(*SpatialTraceEvent.Type.ToString()); // Worker requires platform ansi const char*
 
 	// We could add the data to this event if a custom sampling callback was used.
