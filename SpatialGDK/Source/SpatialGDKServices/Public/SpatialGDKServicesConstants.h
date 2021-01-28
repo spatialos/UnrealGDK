@@ -60,7 +60,7 @@ const int32 RuntimeHTTPPort = 5006;
 const FString InspectorGRPCAddress = FString::Printf(TEXT("localhost:%s"), *FString::FromInt(RuntimeGRPCPort));
 const FString InspectorHTTPAddress = FString::Printf(TEXT("localhost:%s"), *FString::FromInt(RuntimeHTTPPort));
 const FString InspectorV2URL = TEXT("http://localhost:33333/inspector-v2");
-const FString InspectorPinnedVersion = TEXT("15.0.0-preview-2");
+const FString InspectorPinnedVersion = TEXT("15.0.0");
 
 const FString PinnedStandardRuntimeTemplate = TEXT("n1standard4_std40_action1g1");
 const FString PinnedCompatibilityModeRuntimeTemplate = TEXT("n1standard4_std40_r0500");
