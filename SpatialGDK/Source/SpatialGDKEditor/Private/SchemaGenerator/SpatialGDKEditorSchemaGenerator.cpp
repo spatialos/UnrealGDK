@@ -860,20 +860,6 @@ USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
 	LevelPathToComponentId.GenerateValueArray(SchemaDatabase->LevelComponentIds);
 
 	SchemaDatabase->ComponentSetIdToComponentIds.Reset();
-	for (const auto& WellKnownComponent : SpatialConstants::ServerAuthorityWellKnownComponents)
-	{
-		SchemaDatabase->ComponentSetIdToComponentIds.FindOrAdd(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-			.ComponentIDs.Push(WellKnownComponent.Key);
-	}
-	for (const auto& WellKnownComponent : SpatialConstants::ClientAuthorityWellKnownComponents)
-	{
-		SchemaDatabase->ComponentSetIdToComponentIds.FindOrAdd(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
-			.ComponentIDs.Push(WellKnownComponent.Key);
-	}
-	SchemaDatabase->ComponentSetIdToComponentIds.FindOrAdd(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID)
-		.ComponentIDs.Append(SpatialConstants::KnownEntityAuthorityComponents);
-	SchemaDatabase->ComponentSetIdToComponentIds.FindOrAdd(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-		.ComponentIDs.Append(NetCullDistanceComponentIds);
 
 	SchemaDatabase->SchemaDatabaseVersion = ESchemaDatabaseVersion::LatestVersion;
 
@@ -1386,26 +1372,25 @@ bool RunSchemaCompiler(FString& SchemaBundleJsonOutput)
 		}                                                                                                                                  \
 	} while (false)
 
-bool ExtractComponentSetFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap)
+bool ExtractComponentSetsFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap)
 {
+	TUniquePtr<FArchive> SchemaFile(IFileManager::Get().CreateFileReader(*SchemaJsonPath));
+	if (!SchemaFile)
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not open schema bundle file %s"), *SchemaJsonPath);
+		return false;
+	}
+
 	TSharedPtr<FJsonValue> SchemaBundleJson;
 	{
-		TUniquePtr<FArchive> SchemaFile(IFileManager::Get().CreateFileReader(*SchemaJsonPath));
-		if (!SchemaFile)
-		{
-			return false;
-		}
-
 		TSharedRef<TJsonReader<char>> JsonReader = TJsonReader<char>::Create(SchemaFile.Get());
-
 		FJsonSerializer::Deserialize(*JsonReader, SchemaBundleJson);
 	}
 
 	const TSharedPtr<FJsonObject>* RootObject;
-
 	if (!SchemaBundleJson || !SchemaBundleJson->TryGetObject(RootObject))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Invalid schema bundle file %s"), *SchemaJsonPath);
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("%s is not a valid Json file"), *SchemaJsonPath);
 		return false;
 	}
 
@@ -1481,7 +1466,12 @@ bool ExtractComponentSetFromSchemaJson(const FString& SchemaJsonPath, TMap<uint3
 		for (const auto& CompRef : ComponentRefs)
 		{
 			uint32* FoundId = ComponentMap.Find(CompRef);
-			check(FoundId);
+			if (FoundId == nullptr)
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema file %s is missing a component entry for %s"), *SchemaJsonPath,
+					   *CompRef);
+				return false;
+			}
 
 			SetIds.ComponentIDs.Add(*FoundId);
 		}
@@ -1523,20 +1513,13 @@ bool SpatialGDKGenerateSchema()
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover);
 
-	// Finish initializing the schema database through updating the server authoritative component set.
-	for (const auto& ComponentId : GeneratedServerAuthoritativeComponentIds)
-	{
-		SchemaDatabase->ComponentSetIdToComponentIds.FindOrAdd(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-			.ComponentIDs.Push(ComponentId);
-	}
-
 	FString SchemaJsonOutput;
 	if (!RunSchemaCompiler(SchemaJsonOutput))
 	{
 		return false;
 	}
 
-	if (!ExtractComponentSetFromSchemaJson(SchemaJsonOutput, SchemaDatabase->ComponentSetIdToComponentIds))
+	if (!ExtractComponentSetsFromSchemaJson(SchemaJsonOutput, SchemaDatabase->ComponentSetIdToComponentIds))
 	{
 		return false;
 	}

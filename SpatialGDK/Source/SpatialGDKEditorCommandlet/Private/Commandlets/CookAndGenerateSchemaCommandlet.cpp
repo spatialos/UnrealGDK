@@ -164,13 +164,6 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover);
 
-	// Finish initializing the schema database through updating the server authoritative component set.
-	for (const auto& ComponentId : GeneratedServerAuthoritativeComponentIds)
-	{
-		SchemaDatabase->ComponentSetIdToComponentIds.FindOrAdd(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-			.ComponentIDs.Push(ComponentId);
-	}
-
 	FString SchemaJsonOutput;
 	if (!RunSchemaCompiler(SchemaJsonOutput))
 	{
@@ -178,7 +171,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		return 0;
 	}
 
-	if (!ExtractComponentSetFromSchemaJson(SchemaJsonOutput, SchemaDatabase->ComponentSetIdToComponentIds))
+	if (!ExtractComponentSetsFromSchemaJson(SchemaJsonOutput, SchemaDatabase->ComponentSetIdToComponentIds))
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to extract component set from schema bundle."));
 		return 0;
