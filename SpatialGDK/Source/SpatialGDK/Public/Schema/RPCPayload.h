@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"

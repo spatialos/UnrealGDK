@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"

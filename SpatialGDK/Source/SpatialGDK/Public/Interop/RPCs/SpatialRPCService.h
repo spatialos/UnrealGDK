@@ -6,6 +6,7 @@
 
 #include "ClientServerRPCService.h"
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "MulticastRPCService.h"
 #include "RPCStore.h"
