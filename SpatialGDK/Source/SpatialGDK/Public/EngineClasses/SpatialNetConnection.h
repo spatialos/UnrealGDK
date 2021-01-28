@@ -50,17 +50,11 @@ public:
 	///////
 	// End NetConnection Interface
 
-	void InitHeartbeat(class FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity);
-	void SetHeartbeatTimeoutTimer();
-	void SetHeartbeatEventTimer();
+	void Init(Worker_EntityId InPlayerControllerEntity);
 
-	void DisableHeartbeat();
-
-	void OnHeartbeat();
+	void Disable();
 
 	void ClientNotifyClientHasQuit();
-
-	void OnControllerDestroyed(AActor* DestroyedActor);
 
 	UPROPERTY()
 	bool bReliableSpatialConnection;

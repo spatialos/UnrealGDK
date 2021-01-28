@@ -282,6 +282,21 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 		}
 	}
 
+	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+	{
+		if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
+		{
+			if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+			{
+				Connection->Init(EntityId);
+			}
+			else if (Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
+			{
+				Connection->Disable();
+			}
+		}
+	}
+
 	if (NetDriver->IsServer())
 	{
 		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
