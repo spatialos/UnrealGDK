@@ -74,7 +74,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
 
 	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
-	TArray<std::string> AnsiStrings; // Worker requires ansi const char*
+	TArray<std::string> AnsiStrings; // // Worker requires platform ansi const char*
 
 	for (const auto& Pair : Settings->EventSamplingModeOverrides)
 	{
