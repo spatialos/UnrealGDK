@@ -1426,10 +1426,7 @@ bool ExtractComponentSetFromSchemaJson(const FString& SchemaJsonPath, TMap<uint3
 		for (const auto& CompValue : *ComponentsDecl)
 		{
 			const TSharedPtr<FJsonObject>* CompObject;
-			if (!CompValue->TryGetObject(CompObject))
-			{
-				return false;
-			}
+			SAFE_TRYGET(CompValue, Object, CompObject);
 
 			FString ComponentName;
 			SAFE_TRYGETFIELD((*CompObject), String, "qualifiedName", ComponentName);
