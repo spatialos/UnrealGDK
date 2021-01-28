@@ -74,14 +74,14 @@ void ClientConnectionManager::EntityRemoved(const Worker_EntityId EntityId)
 {
 	// Check to see if we are removing a system entity for a client worker connection. If so clean up the
 	// ClientConnection to delete any and all actors for this connection's controller.
-	if (WorkerConnectionEntities.Contains(EntityId))
+	if (WorkerConnections.Contains(EntityId))
 	{
 		const TWeakObjectPtr<USpatialNetConnection> ClientConnectionPtr = FindClientConnectionFromWorkerEntityId(EntityId);
 		if (USpatialNetConnection* ClientConnection = ClientConnectionPtr.Get())
 		{
 			CloseClientConnection(ClientConnection);
 		}
-		WorkerConnectionEntities.Remove(EntityId);
+		WorkerConnections.Remove(EntityId);
 	}
 }
 

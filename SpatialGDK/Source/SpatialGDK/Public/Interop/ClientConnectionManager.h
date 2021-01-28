@@ -34,7 +34,6 @@ private:
 	const FSubView* SubView;
 	USpatialNetDriver* NetDriver;
 
-	TMap<Worker_EntityId_Key, FString> WorkerConnectionEntities;
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 };
 
