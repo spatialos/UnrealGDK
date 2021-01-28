@@ -80,7 +80,7 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntitiesForVirtualWor
 {
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Spawning partition entities for %d virtual workers"),
 		   VirtualWorkersToAssign.Num());
-	for (VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
+	for (const VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
 	{
 		const Worker_EntityId PartitionEntityId = Translator->NetDriver->PackageMap->AllocateNewEntityId();
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("- Virtual Worker: %d. Entity: %lld. "), VirtualWorkerId,
@@ -92,9 +92,9 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntitiesForVirtualWor
 void SpatialVirtualWorkerTranslationManager::ReclaimPartitionEntities()
 {
 	Partitions.Empty();
-	for (VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
+	for (const VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
 	{
-		Worker_PartitionId PartitionId = Translator->GetPartitionEntityForVirtualWorker(VirtualWorkerId);
+		const Worker_PartitionId PartitionId = Translator->GetPartitionEntityForVirtualWorker(VirtualWorkerId);
 		check(PartitionId != SpatialConstants::INVALID_ENTITY_ID);
 		Partitions.Emplace(PartitionInfo{ PartitionId, VirtualWorkerId, SpatialConstants::INVALID_ENTITY_ID });
 	}
