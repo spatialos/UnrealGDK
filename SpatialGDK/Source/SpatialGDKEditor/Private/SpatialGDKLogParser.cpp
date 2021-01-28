@@ -6,9 +6,14 @@
 #include "Dialogs/CustomDialog.h"
 #include "Editor.h"
 #include "Internationalization/Regex.h"
+#include "Logging/MessageLog.h"
+#include "MessageLogModule.h"
+#include "Modules/ModuleManager.h"
 #include "Widgets/Input/SHyperlink.h"
 
 #define LOCTEXT_NAMESPACE "SpatialGDKLogParser"
+
+const TCHAR MessageLogCategoryName[] = TEXT("MissingSchemaMessageLog");
 
 static void ShowMissingSchemaDialog(const TSet<FString>& MissingSchemaPaths)
 {
@@ -51,25 +56,36 @@ static void ShowMissingSchemaDialog(const TSet<FString>& MissingSchemaPaths)
 		}
 	};
 
+	const FText MissingSchemaLabel =
+		LOCTEXT("MissingSchemaLabel", "The following objects have missing schema, check the logs for more information.");
+
 	TSharedRef<SVerticalBox> DialogContents =
-		SNew(SVerticalBox)
-		+ SVerticalBox::Slot().Padding(
-			0, 0, 0, 16)[SNew(STextBlock)
-							 .Text(LOCTEXT("MissingSchemaDialog",
-										   "The following objects have missing schema, check the logs for more information."))];
+		SNew(SVerticalBox) + SVerticalBox::Slot().Padding(0, 0, 0, 16)[SNew(STextBlock).Text(MissingSchemaLabel)];
 
 	TSharedPtr<SCustomDialog> CustomDialog;
 
+	FMessageLog MissingSchemaLog(MessageLogCategoryName);
+
+	MissingSchemaLog.NewPage(MissingSchemaLabel);
+
+	const FText LogMessage = LOCTEXT("MissingSchemaLogMessage", "Object doesn't have schema generated for it.");
+
 	for (const FString& MissingSchemaPath : MissingSchemaPaths)
 	{
+		const FText MissingSchemaPathText = FText::FromString(MissingSchemaPath);
+
 		DialogContents->AddSlot().AutoHeight().HAlign(
 			HAlign_Left)[SNew(SHyperlink)
 							 .OnNavigate(FSimpleDelegate::CreateLambda([MissingSchemaPath, &CustomDialog]() {
 								 Local::OnHyperlinkClicked(MissingSchemaPath, CustomDialog);
 							 }))
-							 .Text(FText::FromString(MissingSchemaPath))
+							 .Text(MissingSchemaPathText)
 							 .ToolTipText(LOCTEXT("MissingSchemaDialogLinkTT", "Click to open the object"))];
+
+		MissingSchemaLog.Error(LogMessage)->AddToken(FAssetNameToken::Create(MissingSchemaPath));
 	}
+
+	MissingSchemaLog.Open();
 
 	const FText DialogTitle = LOCTEXT("MissingSchemaDialogTitle", "Missing Schema");
 
@@ -93,7 +109,9 @@ public:
 
 	virtual void Serialize(const TCHAR* LogMessage, ELogVerbosity::Type Verbosity, const FName& Category) override
 	{
-		if (Category == TEXT("LogSpatialClassInfoManager") && Verbosity <= ELogVerbosity::Warning)
+		static const FName SpatialClassInfoManagerLogCategoryName(TEXT("LogSpatialClassInfoManager"));
+
+		if (Category == SpatialClassInfoManagerLogCategoryName && Verbosity <= ELogVerbosity::Warning)
 		{
 			const FString Message(LogMessage);
 
@@ -128,6 +146,9 @@ public:
 
 FSpatialGDKLogParser::FSpatialGDKLogParser()
 {
+	FMessageLogModule& MessageLogModule = FModuleManager::LoadModuleChecked<FMessageLogModule>("MessageLog");
+	MessageLogModule.RegisterLogListing(MessageLogCategoryName, LOCTEXT("MissingSchemaMessageLogLabel", "Missing Schema"));
+
 	PreBeginPIEDelegateHandle = FEditorDelegates::PreBeginPIE.AddLambda([this](bool) {
 		ensure(!MissingSchemaErrorParser.IsValid());
 		MissingSchemaErrorParser = MakeShared<FMissingSchemaLogParser>();
