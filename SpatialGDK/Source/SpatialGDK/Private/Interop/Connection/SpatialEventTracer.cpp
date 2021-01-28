@@ -8,6 +8,7 @@
 #include "HAL/PlatformFilemanager.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialGDKSettings.h"
+#include <string>
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
