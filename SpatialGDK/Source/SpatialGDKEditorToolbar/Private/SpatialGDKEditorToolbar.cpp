@@ -959,10 +959,9 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 			return;
 		}
 
-		FString InspectorArgs =
-			FString::Printf(TEXT("--grpc_addr=%s --http_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorGRPCAddress,
-							*SpatialGDKServicesConstants::InspectorHTTPAddress,
-							*SpatialGDKServicesConstants::SchemaBundlePath);
+		FString InspectorArgs = FString::Printf(
+			TEXT("--grpc_addr=%s --http_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorGRPCAddress,
+			*SpatialGDKServicesConstants::InspectorHTTPAddress, *SpatialGDKServicesConstants::SchemaBundlePath);
 
 		InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,
 							 SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
@@ -976,7 +975,7 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		});
 
 		InspectorProcess->OnCanceled().BindLambda([this] {
-			if (InspectorProcess->GetReturnCode() != SpatialGDKServicesConstants::ExitCodeSuccess)
+			if (InspectorProcess.IsSet() && InspectorProcess->GetReturnCode() != SpatialGDKServicesConstants::ExitCodeSuccess)
 			{
 				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Inspector crashed! Please check logs for more details. Exit code: %s"),
 					   *FString::FromInt(InspectorProcess->GetReturnCode()));

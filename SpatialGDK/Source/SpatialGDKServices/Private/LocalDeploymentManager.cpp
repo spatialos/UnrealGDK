@@ -210,6 +210,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 													  const LocalDeploymentCallback& CallBack)
 {
 	RuntimeStartTime = FDateTime::Now();
+	bRedeployRequired = false;
 
 	if (bLocalDeploymentRunning)
 	{

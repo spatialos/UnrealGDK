@@ -52,17 +52,19 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Compo
 		return;
 	}
 
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("This worker now has authority over the VirtualWorker translation."));
-
-	int32 ExistingTranslatorMappingCount = Translator->GetMappingCount();
+	const int32 ExistingTranslatorMappingCount = Translator->GetMappingCount();
 	if (ExistingTranslatorMappingCount == 0)
 	{
 		// Fresh deployment, we need to create partition entities before we start assigning virtual workers.
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
+			   TEXT("Gained authority over the VirtualWorker translation, spawning partition entities."));
 		SpawnPartitionEntitiesForVirtualWorkerIds();
 	}
 	else if (ExistingTranslatorMappingCount == NumVirtualWorkers)
 	{
 		// Partitions already exist, reclaim them with latest server worker entities
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
+			   TEXT("Gained authority over the VirtualWorker translation, reclaiming partition entities."));
 		ReclaimPartitionEntities();
 	}
 	else

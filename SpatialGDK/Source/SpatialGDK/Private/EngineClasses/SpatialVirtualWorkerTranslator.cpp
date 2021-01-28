@@ -99,9 +99,8 @@ bool SpatialVirtualWorkerTranslator::IsValidMapping(Schema_Object* Object) const
 void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Object)
 {
 	// Resize the map to accept the new data.
-	VirtualToPhysicalWorkerMapping.Empty();
 	const uint32 TranslationCount = Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
-	VirtualToPhysicalWorkerMapping.Reserve(TranslationCount);
+	VirtualToPhysicalWorkerMapping.Empty(TranslationCount);
 
 	UE_LOG(LogSpatialVirtualWorkerTranslator, Verbose, TEXT("(%d) Apply valid mapping from schema"), LocalVirtualWorkerId);
 
