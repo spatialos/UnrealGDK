@@ -1471,7 +1471,7 @@ bool ExtractComponentSetFromSchemaJson(const FString& SchemaJsonPath, TMap<uint3
 		}
 	}
 
-	TMap<uint32, FComponentIDs> TestMap;
+	TMap<uint32, FComponentIDs> FinalMap;
 
 	for (const auto& SetEntry : ComponentRefSetMap)
 	{
@@ -1486,10 +1486,10 @@ bool ExtractComponentSetFromSchemaJson(const FString& SchemaJsonPath, TMap<uint3
 			SetIds.ComponentIDs.Add(*FoundId);
 		}
 
-		TestMap.Add(SetEntry.Key, MoveTemp(SetIds));
+		FinalMap.Add(SetEntry.Key, MoveTemp(SetIds));
 	}
 
-	OutComponentSetMap = MoveTemp(TestMap);
+	OutComponentSetMap = MoveTemp(FinalMap);
 
 	return true;
 }
