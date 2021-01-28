@@ -3,6 +3,7 @@
 #include "Interop/Connection/SpatialEventTracer.h"
 
 #include <inttypes.h>
+#include <string>
 
 #include "HAL/PlatformFile.h"
 #include "HAL/PlatformFilemanager.h"
