@@ -337,7 +337,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property);
 					SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(
 														 &Object, EntityId, ComponentId, Cmd.Property->GetName(), LinearTraceId),
-													 static_cast<const Trace_SpanIdType*>(CauseSpanIds.GetData()), CauseSpanIds.Num());
+								reinterpret_cast<const Trace_SpanIdType*>(CauseSpanIds.GetData()), CauseSpanIds.Num());
 				}
 
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
