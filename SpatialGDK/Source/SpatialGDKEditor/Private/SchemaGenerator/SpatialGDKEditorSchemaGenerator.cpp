@@ -19,6 +19,8 @@
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
 #include "Runtime/Launch/Resources/Version.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "Templates/SharedPointer.h"
 #include "UObject/UObjectIterator.h"
 
@@ -1271,7 +1273,7 @@ void ResetUsedNames()
 	}
 }
 
-bool RunSchemaCompiler()
+bool RunSchemaCompiler(FString& SchemaBundleJsonOutput)
 {
 	FString PluginDir = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory();
 
@@ -1284,7 +1286,7 @@ bool RunSchemaCompiler()
 	FString CompiledSchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema"));
 	FString CompiledSchemaASTDir = FPaths::Combine(CompiledSchemaDir, TEXT("ast"));
 	FString SchemaBundleOutput = FPaths::Combine(CompiledSchemaDir, TEXT("schema.sb"));
-	FString SchemaBundleJsonOutput = FPaths::Combine(CompiledSchemaDir, TEXT("schema.json"));
+	SchemaBundleJsonOutput = FPaths::Combine(CompiledSchemaDir, TEXT("schema.json"));
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
@@ -1363,6 +1365,138 @@ bool RunSchemaCompiler()
 	}
 }
 
+#define SAFE_TRYGET(Value, Type, OutParam)                                                                                                 \
+	do                                                                                                                                     \
+	{                                                                                                                                      \
+		if (!Value->TryGet##Type(OutParam))                                                                                                \
+		{                                                                                                                                  \
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to get %s as type %s"), TEXT(#Value), TEXT(#Type));                   \
+			return false;                                                                                                                  \
+		}                                                                                                                                  \
+	} while (false)
+
+#define SAFE_TRYGETFIELD(Value, Type, FieldName, OutParam)                                                                                 \
+	do                                                                                                                                     \
+	{                                                                                                                                      \
+		if (!Value->TryGet##Type##Field(TEXT(FieldName), OutParam))                                                                        \
+		{                                                                                                                                  \
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to get field %s of type %s from %s"), TEXT(FieldName), TEXT(#Type),   \
+				   TEXT(#Value));                                                                                                          \
+			return false;                                                                                                                  \
+		}                                                                                                                                  \
+	} while (false)
+
+bool ExtractComponentSetFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap)
+{
+	TSharedPtr<FJsonValue> SchemaBundleJson;
+	{
+		TUniquePtr<FArchive> SchemaFile(IFileManager::Get().CreateFileReader(*SchemaJsonPath));
+		if (!SchemaFile)
+		{
+			return false;
+		}
+
+		TSharedRef<TJsonReader<char>> JsonReader = TJsonReader<char>::Create(SchemaFile.Get());
+
+		FJsonSerializer::Deserialize(*JsonReader, SchemaBundleJson);
+	}
+
+	const TSharedPtr<FJsonObject>* RootObject;
+
+	if (!SchemaBundleJson || !SchemaBundleJson->TryGetObject(RootObject))
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Invalid schema bundle file %s"), *SchemaJsonPath);
+		return false;
+	}
+
+	const TArray<TSharedPtr<FJsonValue>>* SchemaFiles;
+	SAFE_TRYGETFIELD((*RootObject), Array, "schemaFiles", SchemaFiles);
+
+	TMap<FString, uint32> ComponentMap;
+	TMap<uint32, TSet<FString>> ComponentRefSetMap;
+
+	for (const auto& FileValue : *SchemaFiles)
+	{
+		const TSharedPtr<FJsonObject>* FileObject;
+		SAFE_TRYGET(FileValue, Object, FileObject);
+
+		const TArray<TSharedPtr<FJsonValue>>* ComponentsDecl;
+		SAFE_TRYGETFIELD((*FileObject), Array, "components", ComponentsDecl);
+
+		for (const auto& CompValue : *ComponentsDecl)
+		{
+			const TSharedPtr<FJsonObject>* CompObject;
+			if (!CompValue->TryGetObject(CompObject))
+			{
+				return false;
+			}
+
+			FString ComponentName;
+			SAFE_TRYGETFIELD((*CompObject), String, "qualifiedName", ComponentName);
+
+			int32 ComponentId;
+			SAFE_TRYGETFIELD((*CompObject), Number, "componentId", ComponentId);
+
+			ComponentMap.Add(ComponentName, ComponentId);
+		}
+
+		const TArray<TSharedPtr<FJsonValue>>* ComponentSets;
+		SAFE_TRYGETFIELD((*FileObject), Array, "componentSets", ComponentSets);
+
+		for (const auto& CompSetValue : *ComponentSets)
+		{
+			const TSharedPtr<FJsonObject>* CompSetObject;
+			SAFE_TRYGET(CompSetValue, Object, CompSetObject);
+
+			int32 ComponentSetId;
+			SAFE_TRYGETFIELD((*CompSetObject), Number, "componentSetId", ComponentSetId);
+
+			const TSharedPtr<FJsonObject>* CompListObject;
+			SAFE_TRYGETFIELD((*CompSetObject), Object, "componentList", CompListObject);
+
+			const TArray<TSharedPtr<FJsonValue>>* RefComponents;
+			SAFE_TRYGETFIELD((*CompListObject), Array, "components", RefComponents);
+
+			TSet<FString> Components;
+
+			for (const auto& CompRefValue : *RefComponents)
+			{
+				const TSharedPtr<FJsonObject>* CompRefObject;
+				SAFE_TRYGET(CompRefValue, Object, CompRefObject);
+
+				FString ComponentName;
+				SAFE_TRYGETFIELD((*CompRefObject), String, "component", ComponentName);
+
+				Components.Add(ComponentName);
+			}
+
+			ComponentRefSetMap.Add(ComponentSetId, MoveTemp(Components));
+		}
+	}
+
+	TMap<uint32, FComponentIDs> TestMap;
+
+	for (const auto& SetEntry : ComponentRefSetMap)
+	{
+		const TSet<FString>& ComponentRefs = SetEntry.Value;
+
+		FComponentIDs SetIds;
+		for (const auto& CompRef : ComponentRefs)
+		{
+			uint32* FoundId = ComponentMap.Find(CompRef);
+			check(FoundId);
+
+			SetIds.ComponentIDs.Add(*FoundId);
+		}
+
+		TestMap.Add(SetEntry.Key, MoveTemp(SetIds));
+	}
+
+	OutComponentSetMap = MoveTemp(TestMap);
+
+	return true;
+}
+
 bool SpatialGDKGenerateSchema()
 {
 	SchemaGeneratedClasses.Empty();
@@ -1399,7 +1533,13 @@ bool SpatialGDKGenerateSchema()
 			.ComponentIDs.Push(ComponentId);
 	}
 
-	if (!RunSchemaCompiler())
+	FString SchemaJsonOutput;
+	if (!RunSchemaCompiler(SchemaJsonOutput))
+	{
+		return false;
+	}
+
+	if (!ExtractComponentSetFromSchemaJson(SchemaJsonOutput, SchemaDatabase->ComponentSetIdToComponentIds))
 	{
 		return false;
 	}
