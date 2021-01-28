@@ -74,12 +74,12 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
 
 	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
-	TArray<TStringConversion<TStringConvert<TCHAR, ANSICHAR>, 128>> AnsiTypes;
+	TArray<std::string> AnsiStrings; // Worker requires platform ansi const char*
 
 	for (const auto& Pair : Settings->EventSamplingModeOverrides)
 	{
-		int32 Index = AnsiTypes.Add(StringCast<ANSICHAR>(*Pair.Key.ToString()));
-		SpanSamplingProbabilities.Add({ AnsiTypes[Index].Get(), Pair.Value });
+		int32 Index = AnsiStrings.Add((const char*)TCHAR_TO_ANSI(*Pair.Key.ToString()));
+		SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
 	}
 
 	SamplingParameters.probabilistic_parameters.default_probability = Settings->SamplingProbability;
@@ -144,12 +144,13 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& Spati
 		return {};
 	}
 
-	auto MessageSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Message);
-	auto TypeSrc = StringCast<ANSICHAR>(*SpatialTraceEvent.Type.ToString());
+	// Worker requires ansi const char*
+	std::string MessageSrc = (const char*)TCHAR_TO_ANSI(*SpatialTraceEvent.Message);	  // Worker requires platform ansi const char*
+	std::string TypeSrc = (const char*)TCHAR_TO_ANSI(*SpatialTraceEvent.Type.ToString()); // Worker requires platform ansi const char*
 
 	// We could add the data to this event if a custom sampling callback was used.
 	// This would allow for sampling dependent on trace event data.
-	Trace_Event Event = { nullptr, 0, MessageSrc.Get(), TypeSrc.Get(), nullptr };
+	Trace_Event Event = { nullptr, 0, MessageSrc.c_str(), TypeSrc.c_str(), nullptr };
 
 	Trace_SamplingResult SpanSamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event);
 	if (SpanSamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
@@ -179,10 +180,10 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& Spati
 
 		for (const auto& Pair : SpatialTraceEvent.Data)
 		{
-			auto KeySrc = StringCast<ANSICHAR>(*Pair.Key);
-			const ANSICHAR* Key = KeySrc.Get();
-			auto ValueSrc = StringCast<ANSICHAR>(*Pair.Value);
-			const ANSICHAR* Value = ValueSrc.Get();
+			std::string KeySrc = (const char*)TCHAR_TO_ANSI(*Pair.Key); // Worker requires platform ansi const char*
+			const char* Key = KeySrc.c_str();
+			std::string ValueSrc = (const char*)TCHAR_TO_ANSI(*Pair.Value); // Worker requires platform ansi const char*
+			const char* Value = ValueSrc.c_str();
 			Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
 		}
 
