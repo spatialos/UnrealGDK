@@ -67,10 +67,14 @@ struct FConnectionConfig
 
 		TcpNoDelay = (SpatialGDKSettings->bTcpNoDelay ? 1 : 0);
 
-		UdpUpstreamIntervalMS =
-			10; // Despite flushing on the worker ops thread, WorkerSDK still needs to send periodic data (like ACK, resends and ping).
-		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS
-													: SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
+		//UdpUpstreamIntervalMS =
+		//	10; // Despite flushing on the worker ops thread, WorkerSDK still needs to send periodic data (like ACK, resends and ping).
+		//UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS
+		//											: SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
+
+		UdpUpstreamIntervalMS = 1; // Despite flushing on the worker ops thread, WorkerSDK still needs to send periodic data (like ACK, resends and ping).
+		UdpDownstreamIntervalMS = 10;
+
 
 		LinkProtocol = ConnectionTypeMap[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
 	}
