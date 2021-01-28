@@ -3,12 +3,13 @@
 #include "Interop/Connection/SpatialEventTracer.h"
 
 #include <inttypes.h>
+#include <string>
 
 #include "HAL/PlatformFile.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialGDKSettings.h"
-#include <string>
+
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
