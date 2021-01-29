@@ -270,7 +270,7 @@ private:
 
 public:
 	/**
-	 * The number of RPCs that can be in flight, per type. Changing this will require schema to be regenerated and
+	 * The number of RPCs that can be in flight, per type. Changing this may require schema to be regenerated and
 	 * break snapshot compatibility.
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Default RPC Ring Buffer Size"))
