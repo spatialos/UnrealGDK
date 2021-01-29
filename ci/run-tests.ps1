@@ -35,7 +35,7 @@ function Parse-UnrealOptions {
 
 # Generate test maps
 Write-Output "Generating test maps for testing project"
-Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
+$handle = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
     "$uproject_path", `
     "-SkipShaderCompile", # Skip shader compilation
     "-nopause", # Close the unreal log window automatically on exit
@@ -44,11 +44,12 @@ Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @
     "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
     "-run=GenerateTestMapsCommandlet" # Run the commandlet
 )
+if ($handle.ExitCode -ne 0) { throw "Generating test maps failed" }
 
 if ($run_with_spatial) {
     # Generate schema and snapshots
     Write-Output "Generating snapshot and schema for testing project"
-    Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
+    $handle = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
         "$uproject_path", `
         "-SkipShaderCompile", # Skip shader compilation
         "-nopause", # Close the unreal log window automatically on exit
@@ -59,8 +60,9 @@ if ($run_with_spatial) {
         "-cookall", # Make sure it runs for all maps (and other things)
         "-targetplatform=LinuxServer"
     )
+    if ($handle.ExitCode -ne 0) { throw "Generating schema failed" }
     
-    Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
+    $handle = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
         "$uproject_path", `
         "-NoShaderCompile", # Prevent shader compilation
         "-nopause", # Close the unreal log window automatically on exit
@@ -70,6 +72,7 @@ if ($run_with_spatial) {
         "-run=GenerateSnapshot", # Run the commandlet
         "-MapPaths=`"$test_repo_map`"" # Which maps to run the commandlet for
     )
+    if ($handle.ExitCode -ne 0) { throw "Generating snapshot failed" }
 
     # Create the default snapshot
     Copy-Item -Force `
@@ -118,6 +121,7 @@ try {
     Wait-Process -Timeout 1800 -InputObject $run_tests_proc
     # If the Editor crashes, these processes can stay lingering and prevent the job from ever timing out
     Stop-Runtime
+    if ($run_tests_proc.ExitCode -ne 0) { throw "Running the editor returned a non-zero exit code!" }
 }
 catch {
     Stop-Process -Force -InputObject $run_tests_proc # kill the dangling process
