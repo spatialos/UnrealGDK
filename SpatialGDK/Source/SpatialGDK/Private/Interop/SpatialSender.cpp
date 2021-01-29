@@ -486,7 +486,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 		FWorkerComponentUpdate& Update = ComponentUpdates[i];
 
 		FSpatialGDKSpanId SpanId;
-		if (EventTracer)
+		if (EventTracer != nullptr)
 		{
 			SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdate(Object, EntityId, Update.component_id),
 											 (const Trace_SpanIdType*)PropertySpans.GetData(), PropertySpans.Num());

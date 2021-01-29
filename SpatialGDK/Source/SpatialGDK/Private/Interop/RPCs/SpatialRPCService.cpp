@@ -278,7 +278,7 @@ void SpatialRPCService::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarg
 	const ERPCType Type = RPCInfo.Type;
 
 	FSpatialGDKSpanId SpanId{};
-	if (RPCIdForLinearEventTrace.IsSet())
+	if (EventTracer != nullptr && RPCIdForLinearEventTrace.IsSet())
 	{
 		TArray<FSpatialGDKSpanId> ComponentUpdateSpans = EventTracer->GetSpansForComponent(
 			EntityComponentId(InTargetObjectRef.Entity, RPCRingBufferUtils::GetRingBufferComponentId(Type)));
