@@ -408,15 +408,27 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	CreateAndInitializeLoadBalancingClasses();
 
 	ActorFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
-		return !Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
+		if (Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID }))
+		{
+			// This actor has been tombstoned, we leave it alone
+			return false;
+		}
+
+		// If we see a heartbeat component on this entity, it must be a player controller. Hold it back until
+		// we also have the partition component.
+		return Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::HEARTBEAT_COMPONENT_ID })
+			   == Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID });
 	};
-	TombstoneRefreshCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-		SpatialConstants::TOMBSTONE_COMPONENT_ID) };
+	ActorRefreshCallbacks = {
+		Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::TOMBSTONE_COMPONENT_ID),
+		Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::HEARTBEAT_COMPONENT_ID),
+		Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::PARTITION_COMPONENT_ID)
+	};
 
 	const SpatialGDK::FSubView& ActorAuthSubview =
-		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, ActorFilter, TombstoneRefreshCallbacks);
-	const SpatialGDK::FSubView& ActorNonAuthSubview = Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, TombstoneRefreshCallbacks);
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
+	const SpatialGDK::FSubView& ActorNonAuthSubview =
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
 	const SpatialGDK::FSubView& TombstoneActorSubview = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::TOMBSTONE_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 	const SpatialGDK::FSubView& SystemEntitySubview = Connection->GetCoordinator().CreateSubView(
@@ -2709,7 +2721,7 @@ void USpatialNetDriver::TryFinishStartup()
 				// Create the subview here rather than with the others as we only know if we need it or not at
 				// this point.
 				const SpatialGDK::FSubView& DebugActorSubView = Connection->GetCoordinator().CreateSubView(
-					SpatialConstants::GDK_DEBUG_COMPONENT_ID, ActorFilter, TombstoneRefreshCallbacks);
+					SpatialConstants::GDK_DEBUG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
 				USpatialNetDriverDebugContext::EnableDebugSpatialGDK(DebugActorSubView, this);
 			}
 #endif
