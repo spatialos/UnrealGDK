@@ -88,9 +88,7 @@ void ASpatialDebugger::BeginPlay()
 
 	check(NetDriver != nullptr);
 
-	SubView = &NetDriver->Connection->GetCoordinator().CreateSubView(
-		NetDriver->IsServer() ? SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID : SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID,
-		FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
+	DebuggerSystem.Emplace(NetDriver);
 
 	if (!NetDriver->IsServer())
 	{
@@ -120,118 +118,11 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	check(NetDriver != nullptr);
-
-	for (const EntityDelta& EntityDelta : SubView->GetViewDelta().EntityDeltas)
-	{
-		switch (EntityDelta.Type)
-		{
-		case EntityDelta::ADD:
-			OnEntityAdded(EntityDelta.EntityId);
-			break;
-		case EntityDelta::REMOVE:
-			OnEntityRemoved(EntityDelta.EntityId);
-			break;
-		default:
-			break;
-		}
-
-		for (const AuthorityChange& AuthorityChange : EntityDelta.AuthorityGained)
-		{
-			if (AuthorityChange.Type == AuthorityChange::AUTHORITY_GAINED
-				&& AuthorityChange.ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-			{
-				ActorAuthorityGained(EntityDelta.EntityId);
-			}
-		}
-	}
-
-	if (!NetDriver->IsServer())
-	{
-		for (TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>::TIterator It = EntityActorMapping.CreateIterator(); It; ++It)
-		{
-			if (!It->Value.IsValid())
-			{
-				It.RemoveCurrent();
-			}
-		}
-
-		// Since we have no guarantee on the order we'll receive the PC/Pawn/PlayerState
-		// over the wire, we check here once per tick (currently 1 Hz tick rate) to setup our local pointers.
-		// Note that we can capture the PC in OnEntityAdded() since we know we will only receive one of those.
-		if (LocalPawn.IsValid() == false && LocalPlayerController.IsValid())
-		{
-			LocalPawn = LocalPlayerController->GetPawn();
-		}
-
-		if (LocalPlayerState.IsValid() == false && LocalPawn.IsValid())
-		{
-			LocalPlayerState = LocalPawn->GetPlayerState();
-		}
-
-		if (LocalPawn.IsValid())
-		{
-			SCOPE_CYCLE_COUNTER(STAT_SortingActors);
-			const FVector& PlayerLocation = LocalPawn->GetActorLocation();
-
-			EntityActorMapping.ValueSort([PlayerLocation](const TWeakObjectPtr<AActor>& A, const TWeakObjectPtr<AActor>& B) {
-				return FVector::Dist(PlayerLocation, A->GetActorLocation()) > FVector::Dist(PlayerLocation, B->GetActorLocation());
-			});
-		}
-	}
 }
 
-void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
-{
-	check(NetDriver != nullptr);
-	if (NetDriver->IsServer())
-	{
-		if (SubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
-		{
-			ActorAuthorityGained(EntityId);
-		}
+void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId) {}
 
-		return;
-	}
-
-	TWeakObjectPtr<AActor>* ExistingActor = EntityActorMapping.Find(EntityId);
-
-	if (ExistingActor != nullptr)
-	{
-		return;
-	}
-
-	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
-	{
-		EntityActorMapping.Add(EntityId, Actor);
-
-		// Each client will only receive a PlayerController once.
-		if (Actor->IsA<APlayerController>())
-		{
-			LocalPlayerController = Cast<APlayerController>(Actor);
-
-			if (GetNetMode() == NM_Client)
-			{
-				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI)
-					.bConsumeInput = false;
-				LocalPlayerController->InputComponent->BindKey(SelectActorKey, IE_Pressed, this, &ASpatialDebugger::OnSelectActor)
-					.bConsumeInput = false;
-				LocalPlayerController->InputComponent->BindKey(HighlightActorKey, IE_Pressed, this, &ASpatialDebugger::OnHighlightActor)
-					.bConsumeInput = false;
-			}
-		}
-	}
-}
-
-void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
-{
-	check(NetDriver != nullptr);
-	if (NetDriver->IsServer())
-	{
-		return;
-	}
-
-	EntityActorMapping.Remove(EntityId);
-}
+void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId) {}
 
 void ASpatialDebugger::ActorAuthorityGained(const Worker_EntityId EntityId) const
 {
@@ -283,17 +174,8 @@ TOptional<SpatialDebugging> ASpatialDebugger::GetDebuggingData(Worker_EntityId E
 
 void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
 {
-	TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
-	check(DebuggingInfo.IsSet());
-	DebuggingInfo->IntentVirtualWorkerId = NewIntentVirtualWorkerId;
-
-	const PhysicalWorkerName* NewAuthoritativePhysicalWorkerName =
-		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(NewIntentVirtualWorkerId);
-	check(NewAuthoritativePhysicalWorkerName != nullptr);
-
-	DebuggingInfo->IntentColor = SpatialGDK::GetColorForWorkerName(*NewAuthoritativePhysicalWorkerName);
-	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
+	DebuggerSystem->ActorAuthorityIntentChanged(EntityId, NewIntentVirtualWorkerId);
+	return;
 }
 
 void ASpatialDebugger::OnAuthorityGained()
@@ -396,6 +278,8 @@ void ASpatialDebugger::Destroyed()
 		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
 	}
 
+	DebuggerSystem.Reset();
+
 	DestroyWorkerRegions();
 
 	Super::Destroyed();
@@ -410,13 +294,14 @@ void ASpatialDebugger::LoadIcons()
 	const float IconWidth = 16.0f;
 	const float IconHeight = 16.0f;
 
-	Icons[ICON_AUTH] = UCanvas::MakeIcon(AuthTexture != nullptr ? AuthTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
-	Icons[ICON_AUTH_INTENT] =
+	Icons[EIcon::ICON_AUTH] = UCanvas::MakeIcon(AuthTexture != nullptr ? AuthTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
+	Icons[EIcon::ICON_AUTH_INTENT] =
 		UCanvas::MakeIcon(AuthIntentTexture != nullptr ? AuthIntentTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
-	Icons[ICON_UNLOCKED] =
+	Icons[EIcon::ICON_UNLOCKED] =
 		UCanvas::MakeIcon(UnlockedTexture != nullptr ? UnlockedTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
-	Icons[ICON_LOCKED] = UCanvas::MakeIcon(LockedTexture != nullptr ? LockedTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
-	Icons[ICON_BOX] = UCanvas::MakeIcon(BoxTexture != nullptr ? BoxTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
+	Icons[EIcon::ICON_LOCKED] =
+		UCanvas::MakeIcon(LockedTexture != nullptr ? LockedTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
+	Icons[EIcon::ICON_BOX] = UCanvas::MakeIcon(BoxTexture != nullptr ? BoxTexture : DefaultTexture, 0.0f, 0.0f, IconWidth, IconHeight);
 }
 
 void ASpatialDebugger::OnToggleConfigUI()
@@ -565,135 +450,6 @@ bool ASpatialDebugger::IsSelectActorEnabled() const
 	return bSelectActor;
 }
 
-void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
-							   const bool bCentre)
-{
-	SCOPE_CYCLE_COUNTER(STAT_DrawTag);
-
-	check(NetDriver != nullptr && !NetDriver->IsServer());
-
-	const TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
-
-	if (!DebuggingInfo.IsSet())
-	{
-		return;
-	}
-
-	if (!FApp::CanEverRender()) // DrawIcon can attempt to use the underlying texture resource even when using nullrhi
-	{
-		return;
-	}
-
-	static const float BaseHorizontalOffset = 16.0f;
-	static const float NumberScale = 0.75f;
-	static const float TextScale = 0.5f;
-	const float AuthIdWidth = NumberScale * GetNumberOfDigitsIn(DebuggingInfo->AuthoritativeVirtualWorkerId);
-	const float AuthIntentIdWidth = NumberScale * GetNumberOfDigitsIn(DebuggingInfo->IntentVirtualWorkerId);
-	const float EntityIdWidth = NumberScale * GetNumberOfDigitsIn(EntityId);
-
-	int32 HorizontalOffset = 0;
-	if (bCentre)
-	{
-		// If tag should be centered, calculate the total width of the icons and text to be rendered
-		float TagWidth = 0;
-		if (bShowLock)
-		{
-			// If showing the lock, add the lock icon width
-			TagWidth += BaseHorizontalOffset;
-		}
-		if (bShowAuth)
-		{
-			// If showing the authority, add the authority icon width and the width of the authoritative virtual worker ID
-			TagWidth += BaseHorizontalOffset;
-			TagWidth += (BaseHorizontalOffset * AuthIdWidth);
-		}
-		if (bShowAuthIntent)
-		{
-			// If showing the authority intent, add the authority intent icon width and the width of the authoritative intent virtual worker
-			// ID
-			TagWidth += BaseHorizontalOffset;
-			TagWidth += (BaseHorizontalOffset * AuthIntentIdWidth);
-		}
-		if (bShowEntityId)
-		{
-			// If showing the entity ID, add the width of the entity ID
-			TagWidth += (BaseHorizontalOffset * EntityIdWidth);
-		}
-		if (bShowActorName)
-		{
-			// If showing the actor name, add the width of the actor name
-			const float ActorNameWidth = TextScale * ActorName.Len();
-			TagWidth += (BaseHorizontalOffset * ActorNameWidth);
-		}
-
-		// Calculate the offset based on the total width of the tag
-		HorizontalOffset = TagWidth / -2;
-	}
-
-	// Draw icons and text based on the offset
-	if (bShowLock)
-	{
-		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
-		const bool bIsLocked = DebuggingInfo->IsLocked;
-		const EIcon LockIcon = bIsLocked ? ICON_LOCKED : ICON_UNLOCKED;
-
-		Canvas->SetDrawColor(FColor::White);
-		Canvas->DrawIcon(Icons[LockIcon], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
-		HorizontalOffset += BaseHorizontalOffset;
-	}
-
-	if (bShowAuth)
-	{
-		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
-		const FColor& ServerWorkerColor = DebuggingInfo->AuthoritativeColor;
-		Canvas->SetDrawColor(FColor::White);
-		Canvas->DrawIcon(Icons[ICON_AUTH], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
-		HorizontalOffset += BaseHorizontalOffset;
-		Canvas->SetDrawColor(ServerWorkerColor);
-		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, FVector(AuthIdWidth, 1.f, 1.f));
-		Canvas->SetDrawColor(GetTextColorForBackgroundColor(ServerWorkerColor));
-		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->AuthoritativeVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 1,
-						 ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
-		HorizontalOffset += (BaseHorizontalOffset * AuthIdWidth);
-	}
-
-	if (bShowAuthIntent)
-	{
-		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
-		const FColor& VirtualWorkerColor = DebuggingInfo->IntentColor;
-		Canvas->SetDrawColor(FColor::White);
-		Canvas->DrawIcon(Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
-		HorizontalOffset += BaseHorizontalOffset;
-		Canvas->SetDrawColor(VirtualWorkerColor);
-		Canvas->DrawScaledIcon(Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y,
-							   FVector(AuthIntentIdWidth, 1.f, 1.f));
-		Canvas->SetDrawColor(GetTextColorForBackgroundColor(VirtualWorkerColor));
-		Canvas->DrawText(RenderFont, FString::FromInt(DebuggingInfo->IntentVirtualWorkerId), ScreenLocation.X + HorizontalOffset + 1,
-						 ScreenLocation.Y, 1.1f, 1.1f, FontRenderInfo);
-		HorizontalOffset += (BaseHorizontalOffset * AuthIntentIdWidth);
-	}
-
-	FString Label;
-	if (bShowEntityId)
-	{
-		SCOPE_CYCLE_COUNTER(STAT_BuildText);
-		Label += FString::Printf(TEXT("%lld "), EntityId);
-	}
-
-	if (bShowActorName)
-	{
-		SCOPE_CYCLE_COUNTER(STAT_BuildText);
-		Label += FString::Printf(TEXT("(%s)"), *ActorName);
-	}
-
-	if (bShowEntityId || bShowActorName)
-	{
-		SCOPE_CYCLE_COUNTER(STAT_DrawText);
-		Canvas->SetDrawColor(FColor::Green);
-		Canvas->DrawText(RenderFont, Label, ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f, 1.0f, FontRenderInfo);
-	}
-}
-
 FColor ASpatialDebugger::GetTextColorForBackgroundColor(const FColor& BackgroundColor) const
 {
 	return BackgroundColor.ReinterpretAsLinear().ComputeLuminance() > 0.5 ? FColor::Black : FColor::White;
@@ -704,55 +460,6 @@ int32 ASpatialDebugger::GetNumberOfDigitsIn(int32 SomeNumber) const
 {
 	SomeNumber = FMath::Abs(SomeNumber);
 	return (SomeNumber < 10 ? 1 : (SomeNumber < 100 ? 2 : (SomeNumber < 1000 ? 3 : 4)));
-}
-
-void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controller */) // Controller is invalid.
-{
-	SCOPE_CYCLE_COUNTER(STAT_DrawDebug);
-
-	check(NetDriver != nullptr && !NetDriver->IsServer());
-
-#if WITH_EDITOR
-	// Prevent one client's data rendering in another client's view in PIE when using UDebugDrawService.  Lifted from EQSRenderingComponent.
-	if (Canvas && Canvas->SceneView && Canvas->SceneView->Family && Canvas->SceneView->Family->Scene
-		&& Canvas->SceneView->Family->Scene->GetWorld() != GetWorld())
-	{
-		return;
-	}
-#endif
-
-	if (bSelectActor)
-	{
-		SelectActorsToTag(Canvas);
-		return;
-	}
-
-	if (ActorTagDrawMode >= EActorTagDrawMode::LocalPlayer)
-	{
-		DrawDebugLocalPlayer(Canvas);
-	}
-
-	if (ActorTagDrawMode == EActorTagDrawMode::All)
-	{
-		FVector PlayerLocation = GetLocalPawnLocation();
-
-		for (TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
-		{
-			const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
-			const Worker_EntityId EntityId = EntityActorPair.Key;
-
-			if (Actor != nullptr)
-			{
-				FVector2D ScreenLocation = ProjectActorToScreen(Actor, PlayerLocation);
-				if (ScreenLocation.IsZero())
-				{
-					continue;
-				}
-
-				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName(), true /*bCentre*/);
-			}
-		}
-	}
 }
 
 void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
@@ -1020,14 +727,14 @@ void ASpatialDebugger::SpatialToggleDebugger()
 
 	if (DrawDebugDelegateHandle.IsValid())
 	{
-		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
-		DrawDebugDelegateHandle.Reset();
+		// UDebugDrawService::Unregister(DrawDebugDelegateHandle);
+		// DrawDebugDelegateHandle.Reset();
 		DestroyWorkerRegions();
 	}
 	else
 	{
-		DrawDebugDelegateHandle =
-			UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialDebugger::DrawDebug));
+		// DrawDebugDelegateHandle =
+		// UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialDebugger::DrawDebug));
 		if (bShowWorkerRegions)
 		{
 			CreateWorkerRegions();
@@ -1128,4 +835,438 @@ void ASpatialDebugger::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 		}
 	}
 }
+
 #endif // WITH_EDITOR
+
+FSpatialDebuggerSystem::FSpatialDebuggerSystem(USpatialNetDriver* InNetDriver)
+	: NetDriver(InNetDriver)
+	, GameInstance(InNetDriver->GetWorld()->GetGameInstance())
+{
+	SubView = &NetDriver->Connection->GetCoordinator().CreateSubView(
+		NetDriver->IsServer() ? SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID : SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID,
+		FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
+
+	if (!NetDriver->IsServer())
+	{
+		DrawDebugHandle =
+			UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateRaw(this, &FSpatialDebuggerSystem::DrawDebug));
+	}
+}
+
+FSpatialDebuggerSystem::~FSpatialDebuggerSystem()
+{
+	if (DrawDebugHandle.IsValid())
+	{
+		UDebugDrawService::Unregister(DrawDebugHandle);
+		DrawDebugHandle.Reset();
+	}
+}
+
+void FSpatialDebuggerSystem::Tick(float DeltaTime)
+{
+	for (const EntityDelta& EntityDelta : SubView->GetViewDelta().EntityDeltas)
+	{
+		switch (EntityDelta.Type)
+		{
+		case EntityDelta::ADD:
+			OnEntityAdded(EntityDelta.EntityId);
+			break;
+		case EntityDelta::REMOVE:
+			OnEntityRemoved(EntityDelta.EntityId);
+			break;
+		default:
+			break;
+		}
+
+		for (const AuthorityChange& AuthorityChange : EntityDelta.AuthorityGained)
+		{
+			if (AuthorityChange.Type == AuthorityChange::AUTHORITY_GAINED
+				&& AuthorityChange.ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+			{
+				OnEntityAuthorityGained(EntityDelta.EntityId);
+			}
+		}
+	}
+
+	if (!NetDriver->IsServer())
+	{
+		for (TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>::TIterator It = EntityActorMapping.CreateIterator(); It; ++It)
+		{
+			if (!It->Value.IsValid())
+			{
+				It.RemoveCurrent();
+			}
+		}
+
+		// Since we have no guarantee on the order we'll receive the PC/Pawn/PlayerState
+		// over the wire, we check here once per tick (currently 1 Hz tick rate) to setup our local pointers.
+		// Note that we can capture the PC in OnEntityAdded() since we know we will only receive one of those.
+		if (LocalPawn.IsValid() == false && LocalPlayerController.IsValid())
+		{
+			LocalPawn = LocalPlayerController->GetPawn();
+		}
+
+		if (LocalPlayerState.IsValid() == false && LocalPawn.IsValid())
+		{
+			LocalPlayerState = LocalPawn->GetPlayerState();
+		}
+
+		if (LocalPawn.IsValid())
+		{
+			SCOPE_CYCLE_COUNTER(STAT_SortingActors);
+			const FVector& PlayerLocation = LocalPawn->GetActorLocation();
+
+			EntityActorMapping.ValueSort([PlayerLocation](const TWeakObjectPtr<AActor>& A, const TWeakObjectPtr<AActor>& B) {
+				return FVector::Dist(PlayerLocation, A->GetActorLocation()) > FVector::Dist(PlayerLocation, B->GetActorLocation());
+			});
+		}
+	}
+}
+
+void FSpatialDebuggerSystem::OnEntityAdded(Worker_EntityId AddedEntityId)
+{
+	check(NetDriver != nullptr);
+	if (NetDriver->IsServer())
+	{
+		if (SubView->HasAuthority(AddedEntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
+		{
+			OnEntityAuthorityGained(AddedEntityId);
+		}
+
+		return;
+	}
+
+	TWeakObjectPtr<AActor>* ExistingActor = EntityActorMapping.Find(AddedEntityId);
+
+	if (ExistingActor != nullptr)
+	{
+		return;
+	}
+
+	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(AddedEntityId).Get()))
+	{
+		EntityActorMapping.Add(AddedEntityId, Actor);
+
+		// Each client will only receive a PlayerController once.
+		if (Actor->IsA<APlayerController>())
+		{
+			LocalPlayerController = Cast<APlayerController>(Actor);
+
+			// LocalPlayerController->InputComponent->BindKey(GetDebuggerConfig().ConfigUIToggleKey, IE_Pressed, this,
+			// &ASpatialDebugger::OnToggleConfigUI)
+			//              .bConsumeInput = false;
+			// LocalPlayerController->InputComponent->BindKey(GetDebuggerConfig().SelectActorKey, IE_Pressed, this,
+			// &ASpatialDebugger::OnSelectActor)
+			//              .bConsumeInput = false;
+			// LocalPlayerController->InputComponent->BindKey(GetDebuggerConfig().HighlightActorKey, IE_Pressed, this,
+			// &ASpatialDebugger::OnHighlightActor)
+			//              .bConsumeInput = false;
+		}
+	}
+}
+
+void FSpatialDebuggerSystem::OnEntityRemoved(Worker_EntityId RemovedEntityId)
+{
+	EntityActorMapping.Remove(RemovedEntityId);
+}
+
+void FSpatialDebuggerSystem::OnEntityAuthorityGained(Worker_EntityId NewlyAuthorityEntityId)
+{
+	if (NetDriver->VirtualWorkerTranslator == nullptr)
+	{
+		// Currently, there's nothing to display in the debugger other than load balancing information.
+		return;
+	}
+
+	const VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
+	const FColor LocalVirtualWorkerColor =
+		SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
+
+	TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(NewlyAuthorityEntityId);
+	if (!DebuggingInfo.IsSet())
+	{
+		// Some entities won't have debug info, so create it now.
+		SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
+										  GetDebuggerConfig().InvalidServerTintColor, false);
+		NetDriver->Sender->SendAddComponents(NewlyAuthorityEntityId, { NewDebuggingInfo.CreateComponentData() });
+		return;
+	}
+
+	DebuggingInfo->AuthoritativeVirtualWorkerId = LocalVirtualWorkerId;
+	DebuggingInfo->AuthoritativeColor = LocalVirtualWorkerColor;
+	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+	NetDriver->Connection->SendComponentUpdate(NewlyAuthorityEntityId, &DebuggingUpdate);
+}
+
+void FSpatialDebuggerSystem::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
+{
+	TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
+	check(DebuggingInfo.IsSet());
+	DebuggingInfo->IntentVirtualWorkerId = NewIntentVirtualWorkerId;
+
+	const PhysicalWorkerName* NewAuthoritativePhysicalWorkerName =
+		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(NewIntentVirtualWorkerId);
+	check(NewAuthoritativePhysicalWorkerName != nullptr);
+
+	DebuggingInfo->IntentColor = SpatialGDK::GetColorForWorkerName(*NewAuthoritativePhysicalWorkerName);
+	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
+}
+
+TStatId FSpatialDebuggerSystem::GetStatId() const
+{
+	RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialDebuggerSystem, STATGROUP_Tickables);
+}
+
+void FSpatialDebuggerSystem::DrawDebug(UCanvas* Canvas, APlayerController* Controller)
+{
+	SCOPE_CYCLE_COUNTER(STAT_DrawDebug);
+
+	check(NetDriver != nullptr && !NetDriver->IsServer());
+
+#if WITH_EDITOR
+	// Prevent one client's data rendering in another client's view in PIE when using UDebugDrawService.  Lifted from EQSRenderingComponent.
+	if (Canvas && Canvas->SceneView && Canvas->SceneView->Family && Canvas->SceneView->Family->Scene
+		&& Canvas->SceneView->Family->Scene->GetWorld() != GetWorld())
+	{
+		return;
+	}
+#endif
+#define DO_THIS_LATER 0
+#if DO_THIS_LATER
+	if (bSelectActor)
+	{
+		SelectActorsToTag(Canvas);
+		return;
+	}
+
+	if (ActorTagDrawMode >= EActorTagDrawMode::LocalPlayer)
+	{
+		DrawDebugLocalPlayer(Canvas);
+	}
+	if (ActorTagDrawMode == EActorTagDrawMode::All)
+#endif
+	{
+		FVector PlayerLocation = GetLocalPawnLocation();
+
+		for (TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
+		{
+			const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
+			const Worker_EntityId EntityId = EntityActorPair.Key;
+
+			if (Actor.IsValid())
+			{
+				FVector2D ScreenLocation = ProjectActorToScreen(Actor.Get(), PlayerLocation);
+				if (ScreenLocation.IsZero())
+				{
+					continue;
+				}
+
+				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName(), true /*bCentre*/);
+			}
+		}
+	}
+}
+
+void FSpatialDebuggerSystem::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, Worker_EntityId EntityId, const FString& ActorName,
+									 bool bCentre)
+{
+	SCOPE_CYCLE_COUNTER(STAT_DrawTag);
+
+	using namespace EIcon;
+
+	check(NetDriver != nullptr && !NetDriver->IsServer());
+
+	const TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
+
+	if (!DebuggingInfo.IsSet())
+	{
+		return;
+	}
+
+	if (!FApp::CanEverRender()) // DrawIcon can attempt to use the underlying texture resource even when using nullrhi
+	{
+		return;
+	}
+
+	static const float BaseHorizontalOffset = 16.0f;
+	static const float NumberScale = 0.75f;
+	static const float TextScale = 0.5f;
+	const float AuthIdWidth = NumberScale * GetDebuggerConfig().GetNumberOfDigitsIn(DebuggingInfo->AuthoritativeVirtualWorkerId);
+	const float AuthIntentIdWidth = NumberScale * GetDebuggerConfig().GetNumberOfDigitsIn(DebuggingInfo->IntentVirtualWorkerId);
+	const float EntityIdWidth = NumberScale * GetDebuggerConfig().GetNumberOfDigitsIn(EntityId);
+
+	int32 HorizontalOffset = 0;
+	if (bCentre)
+	{
+		// If tag should be centered, calculate the total width of the icons and text to be rendered
+		float TagWidth = 0;
+		if (GetDebuggerConfig().bShowLock)
+		{
+			// If showing the lock, add the lock icon width
+			TagWidth += BaseHorizontalOffset;
+		}
+		if (GetDebuggerConfig().bShowAuth)
+		{
+			// If showing the authority, add the authority icon width and the width of the authoritative virtual worker ID
+			TagWidth += BaseHorizontalOffset;
+			TagWidth += (BaseHorizontalOffset * AuthIdWidth);
+		}
+		if (GetDebuggerConfig().bShowAuthIntent)
+		{
+			// If showing the authority intent, add the authority intent icon width and the width of the authoritative intent virtual worker
+			// ID
+			TagWidth += BaseHorizontalOffset;
+			TagWidth += (BaseHorizontalOffset * AuthIntentIdWidth);
+		}
+		if (GetDebuggerConfig().bShowEntityId)
+		{
+			// If showing the entity ID, add the width of the entity ID
+			TagWidth += (BaseHorizontalOffset * EntityIdWidth);
+		}
+		if (GetDebuggerConfig().bShowActorName)
+		{
+			// If showing the actor name, add the width of the actor name
+			const float ActorNameWidth = TextScale * ActorName.Len();
+			TagWidth += (BaseHorizontalOffset * ActorNameWidth);
+		}
+
+		// Calculate the offset based on the total width of the tag
+		HorizontalOffset = TagWidth / -2;
+	}
+
+	// Draw icons and text based on the offset
+	if (GetDebuggerConfig().bShowLock)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
+		const bool bIsLocked = DebuggingInfo->IsLocked;
+		const int LockIcon = bIsLocked ? ICON_LOCKED : ICON_UNLOCKED;
+
+		Canvas->SetDrawColor(FColor::White);
+		Canvas->DrawIcon(GetDebuggerConfig().Icons[LockIcon], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
+		HorizontalOffset += BaseHorizontalOffset;
+	}
+
+	if (GetDebuggerConfig().bShowAuth)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
+		const FColor& ServerWorkerColor = DebuggingInfo->AuthoritativeColor;
+		Canvas->SetDrawColor(FColor::White);
+		Canvas->DrawIcon(GetDebuggerConfig().Icons[ICON_AUTH], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
+		HorizontalOffset += BaseHorizontalOffset;
+		Canvas->SetDrawColor(ServerWorkerColor);
+		Canvas->DrawScaledIcon(GetDebuggerConfig().Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y,
+							   FVector(AuthIdWidth, 1.f, 1.f));
+		Canvas->SetDrawColor(GetDebuggerConfig().GetTextColorForBackgroundColor(ServerWorkerColor));
+		Canvas->DrawText(GetDebuggerConfig().RenderFont, FString::FromInt(DebuggingInfo->AuthoritativeVirtualWorkerId),
+						 ScreenLocation.X + HorizontalOffset + 1, ScreenLocation.Y, 1.1f, 1.1f, GetDebuggerConfig().FontRenderInfo);
+		HorizontalOffset += (BaseHorizontalOffset * AuthIdWidth);
+	}
+
+	if (GetDebuggerConfig().bShowAuthIntent)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_DrawIcons);
+		const FColor& VirtualWorkerColor = DebuggingInfo->IntentColor;
+		Canvas->SetDrawColor(FColor::White);
+		Canvas->DrawIcon(GetDebuggerConfig().Icons[ICON_AUTH_INTENT], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f);
+		HorizontalOffset += BaseHorizontalOffset;
+		Canvas->SetDrawColor(VirtualWorkerColor);
+		Canvas->DrawScaledIcon(GetDebuggerConfig().Icons[ICON_BOX], ScreenLocation.X + HorizontalOffset, ScreenLocation.Y,
+							   FVector(AuthIntentIdWidth, 1.f, 1.f));
+		Canvas->SetDrawColor(GetDebuggerConfig().GetTextColorForBackgroundColor(VirtualWorkerColor));
+		Canvas->DrawText(GetDebuggerConfig().RenderFont, FString::FromInt(DebuggingInfo->IntentVirtualWorkerId),
+						 ScreenLocation.X + HorizontalOffset + 1, ScreenLocation.Y, 1.1f, 1.1f, GetDebuggerConfig().FontRenderInfo);
+		HorizontalOffset += (BaseHorizontalOffset * AuthIntentIdWidth);
+	}
+
+	FString Label;
+	if (GetDebuggerConfig().bShowEntityId)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_BuildText);
+		Label += FString::Printf(TEXT("%lld "), EntityId);
+	}
+
+	if (GetDebuggerConfig().bShowActorName)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_BuildText);
+		Label += FString::Printf(TEXT("(%s)"), *ActorName);
+	}
+
+	if (GetDebuggerConfig().bShowEntityId || GetDebuggerConfig().bShowActorName)
+	{
+		SCOPE_CYCLE_COUNTER(STAT_DrawText);
+		Canvas->SetDrawColor(FColor::Green);
+		Canvas->DrawText(GetDebuggerConfig().RenderFont, Label, ScreenLocation.X + HorizontalOffset, ScreenLocation.Y, 1.0f, 1.0f,
+						 GetDebuggerConfig().FontRenderInfo);
+	}
+}
+
+FVector FSpatialDebuggerSystem::GetLocalPawnLocation() const
+{
+	FVector PlayerLocation = FVector::ZeroVector;
+	if (LocalPlayerController.IsValid() && IsValid(LocalPlayerController->GetPawn()))
+	{
+		PlayerLocation = LocalPlayerController->GetPawn()->GetActorLocation();
+	}
+	return PlayerLocation;
+}
+
+FVector2D FSpatialDebuggerSystem::ProjectActorToScreen(AActor* Actor, const FVector& WorldCenter)
+{
+	FVector2D ScreenLocation = FVector2D::ZeroVector;
+
+	FVector ActorLocation = Actor->GetActorLocation();
+
+	if (ActorLocation.IsZero())
+	{
+		return ScreenLocation;
+	}
+
+	if (FVector::Dist(WorldCenter, ActorLocation) > GetDebuggerConfig().MaxRange)
+	{
+		return ScreenLocation;
+	}
+
+	if (LocalPlayerController.IsValid())
+	{
+		SCOPE_CYCLE_COUNTER(STAT_Projection);
+		UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + GetDebuggerConfig().WorldSpaceActorTagOffset,
+											   ScreenLocation, false);
+		return ScreenLocation;
+	}
+	return ScreenLocation;
+}
+
+TOptional<SpatialDebugging> FSpatialDebuggerSystem::GetDebuggingData(Worker_EntityId Entity) const
+{
+	const EntityViewElement* EntityViewElementPtr = SubView->GetView().Find(Entity);
+
+	if (EntityViewElementPtr != nullptr)
+	{
+		const ComponentData* SpatialDebuggingDataPtr =
+			EntityViewElementPtr->Components.FindByPredicate([](const ComponentData& ComponentData) {
+				return ComponentData.GetComponentId() == SpatialDebugging::ComponentId;
+			});
+
+		if (SpatialDebuggingDataPtr != nullptr)
+		{
+			return SpatialDebugging(SpatialDebuggingDataPtr->GetWorkerComponentData());
+		}
+	}
+
+	return {};
+}
+
+const ASpatialDebugger& FSpatialDebuggerSystem::GetDebuggerConfig() const
+{
+	for (ASpatialDebugger* Debugger : TActorRange<ASpatialDebugger>(GetWorld()))
+	{
+		return *Debugger;
+	}
+	return *Cast<const ASpatialDebugger>(GetDefault<USpatialGDKSettings>()->SpatialDebugger->GetDefaultObject());
+}
+
+UWorld* FSpatialDebuggerSystem::GetWorld() const
+{
+	return GameInstance->GetWorld();
+}

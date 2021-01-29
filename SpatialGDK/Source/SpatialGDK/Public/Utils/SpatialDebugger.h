@@ -16,6 +16,9 @@
 #include "Templates/Tuple.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
+
+#include "Tickable.h"
+
 #include "SpatialDebugger.generated.h"
 
 class APawn;
@@ -42,6 +45,67 @@ namespace SpatialGDK
 class FSubView;
 struct SpatialDebugging;
 } // namespace SpatialGDK
+namespace EIcon
+{
+enum EIcon
+{
+	ICON_AUTH,
+	ICON_AUTH_INTENT,
+	ICON_UNLOCKED,
+	ICON_LOCKED,
+	ICON_BOX,
+	ICON_MAX
+};
+}
+
+class FSpatialDebuggerSystem : private FTickableGameObject
+{
+public:
+	FSpatialDebuggerSystem(USpatialNetDriver* InNetDriver);
+	virtual ~FSpatialDebuggerSystem();
+	FSpatialDebuggerSystem(const FSpatialDebuggerSystem&) = delete;
+	FSpatialDebuggerSystem& operator=(const FSpatialDebuggerSystem&) = delete;
+	FSpatialDebuggerSystem(FSpatialDebuggerSystem&&) = default;
+	FSpatialDebuggerSystem& operator=(FSpatialDebuggerSystem&&) = default;
+
+	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
+
+private:
+	virtual void Tick(float DeltaTime) override;
+	virtual TStatId GetStatId() const override;
+
+	void OnEntityAdded(Worker_EntityId AddedEntityId);
+	void OnEntityRemoved(Worker_EntityId RemovedEntityId);
+
+	void OnEntityAuthorityGained(Worker_EntityId NewlyAuthorityEntityId);
+
+	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
+
+	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, Worker_EntityId EntityId, const FString& Text, bool bCentre);
+
+	FVector GetLocalPawnLocation() const;
+
+	FVector2D ProjectActorToScreen(AActor* Actor, const FVector& WorldCenter);
+
+	TOptional<SpatialGDK::SpatialDebugging> GetDebuggingData(Worker_EntityId Entity) const;
+
+	const ASpatialDebugger& GetDebuggerConfig() const;
+
+	UWorld* GetWorld() const;
+
+	TMap<Worker_EntityId, TWeakObjectPtr<AActor>> EntityActorMapping;
+
+	TWeakObjectPtr<APlayerController> LocalPlayerController;
+	TWeakObjectPtr<APawn> LocalPawn;
+	TWeakObjectPtr<APlayerState> LocalPlayerState;
+
+	SpatialGDK::FSubView* SubView;
+
+	TWeakObjectPtr<USpatialNetDriver> NetDriver;
+	TWeakObjectPtr<UGameInstance> GameInstance;
+
+	FDelegateHandle DrawDebugHandle;
+};
 
 USTRUCT()
 struct FWorkerRegionInfo
@@ -242,7 +306,7 @@ public:
 
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
-private:
+public:
 	void ActorAuthorityGained(const Worker_EntityId EntityId) const;
 
 	TOptional<SpatialGDK::SpatialDebugging> GetDebuggingData(Worker_EntityId Entity) const;
@@ -250,7 +314,7 @@ private:
 	void LoadIcons();
 
 	// FDebugDrawDelegate
-	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
+	void DrawDebug(UCanvas* Canvas, APlayerController* Controller) {}
 
 	FVector GetLocalPawnLocation();
 
@@ -269,7 +333,9 @@ private:
 	void RevertHoverMaterials();
 
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
-				 const bool bCentre);
+				 const bool bCentre)
+	{
+	}
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
 	void CreateWorkerRegions();
@@ -286,15 +352,7 @@ private:
 	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;
 
-	enum EIcon
-	{
-		ICON_AUTH,
-		ICON_AUTH_INTENT,
-		ICON_UNLOCKED,
-		ICON_LOCKED,
-		ICON_BOX,
-		ICON_MAX
-	};
+	TOptional<class FSpatialDebuggerSystem> DebuggerSystem;
 
 	USpatialNetDriver* NetDriver;
 
@@ -312,7 +370,7 @@ private:
 	UFont* RenderFont;
 
 	FFontRenderInfo FontRenderInfo;
-	FCanvasIcon Icons[ICON_MAX];
+	FCanvasIcon Icons[EIcon::ICON_MAX];
 
 	USpatialDebuggerConfigUI* ConfigUIWidget;
 
