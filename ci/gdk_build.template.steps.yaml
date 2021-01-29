@@ -25,6 +25,7 @@ windows: &windows
     - "scaler_version=2"
     - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-11-18-224740-bk17641-0c4125be-d}"
     - "boot_disk_size_gb=1000"
+    - "node_stability=canary_josh_gdk" # Josh - Changed to canary agent for blessing
   retry:
     automatic:
       - <<: *agent_transients
