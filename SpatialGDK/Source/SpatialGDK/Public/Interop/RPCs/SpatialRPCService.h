@@ -6,6 +6,7 @@
 
 #include "ClientServerRPCService.h"
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "MulticastRPCService.h"
 #include "RPCStore.h"
@@ -39,7 +40,7 @@ public:
 								   TOptional<uint64> RPCIdForLinearEventTrace);
 
 	EPushRPCResult PushRPC(Worker_EntityId EntityId, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target = nullptr,
-						   UFunction* Function = nullptr);
+						   UFunction* Function = nullptr, const FSpatialGDKSpanId& SpanId = {});
 	void PushOverflowedRPCs();
 
 	struct UpdateToSend
