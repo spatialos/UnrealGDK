@@ -311,6 +311,7 @@ TMap<FString, FString> ExpectedContentsFilenames = {
 	{ "SpatialTypeActorWithMultipleObjectComponents", "SpatialTypeActorWithMultipleObjectComponents.schema" }
 };
 uint32 ExpectedRPCEndpointsRingBufferSize = 32;
+TMap<ERPCType, uint32> ExpectedRPCRingBufferSizeOverrides = {};
 FString ExpectedRPCEndpointsSchemaFilename = TEXT("rpc_endpoints.schema");
 
 class SchemaValidator
@@ -397,24 +398,28 @@ private:
 class SchemaRPCEndpointTestFixture : public SchemaTestFixture
 {
 public:
-	SchemaRPCEndpointTestFixture() { SetMaxRPCRingBufferSize(); }
-	~SchemaRPCEndpointTestFixture() { ResetMaxRPCRingBufferSize(); }
+	SchemaRPCEndpointTestFixture() { SetRPCRingBufferSize(); }
+	~SchemaRPCEndpointTestFixture() { ResetRPCRingBufferSize(); }
 
 private:
-	void SetMaxRPCRingBufferSize()
+	void SetRPCRingBufferSize()
 	{
 		USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-		CachedMaxRPCRingBufferSize = SpatialGDKSettings->MaxRPCRingBufferSize;
-		SpatialGDKSettings->MaxRPCRingBufferSize = ExpectedRPCEndpointsRingBufferSize;
+		CachedDefaultRPCRingBufferSize = SpatialGDKSettings->DefaultRPCRingBufferSize;
+		CachedRPCRingBufferSizeOverrides = SpatialGDKSettings->RPCRingBufferSizeOverrides;
+		SpatialGDKSettings->DefaultRPCRingBufferSize = ExpectedRPCEndpointsRingBufferSize;
+		SpatialGDKSettings->RPCRingBufferSizeOverrides = ExpectedRPCRingBufferSizeOverrides;
 	}
 
-	void ResetMaxRPCRingBufferSize()
+	void ResetRPCRingBufferSize()
 	{
 		USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-		SpatialGDKSettings->MaxRPCRingBufferSize = CachedMaxRPCRingBufferSize;
+		SpatialGDKSettings->DefaultRPCRingBufferSize = CachedDefaultRPCRingBufferSize;
+		SpatialGDKSettings->RPCRingBufferSizeOverrides = CachedRPCRingBufferSizeOverrides;
 	}
 
-	uint32 CachedMaxRPCRingBufferSize;
+	uint32 CachedDefaultRPCRingBufferSize;
+	TMap<ERPCType, uint32> CachedRPCRingBufferSizeOverrides;
 };
 
 } // anonymous namespace

@@ -54,7 +54,8 @@ RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 	RPCRingBufferDescriptor Descriptor;
 	Descriptor.RingBufferSize = GetRingBufferSize(Type);
 
-	uint32 MaxRingBufferSize = GetDefault<USpatialGDKSettings>()->MaxRPCRingBufferSize;
+	const Schema_FieldId SchemaStart = 1;
+
 	// In schema, the client and server endpoints will first have a
 	//   Reliable ring buffer, starting from 1 and containing MaxRingBufferSize elements, then
 	//   Last sent reliable RPC,
@@ -69,18 +70,30 @@ RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 	case ERPCType::ClientReliable:
 	case ERPCType::ServerReliable:
 	case ERPCType::NetMulticast:
-		Descriptor.SchemaFieldStart = 1;
-		Descriptor.LastSentRPCFieldId = 1 + MaxRingBufferSize;
+		Descriptor.SchemaFieldStart = SchemaStart;
 		break;
 	case ERPCType::ClientUnreliable:
+		{
+			// Client Unreliable buffer starts after Client Reliable. Add 1 to account for the last sent ID field.
+			const uint32 ClientReliableBufferSize = GetRingBufferSize(ERPCType::ClientReliable) + 1;
+
+			Descriptor.SchemaFieldStart = SchemaStart + ClientReliableBufferSize;
+		}
+		break;
 	case ERPCType::ServerUnreliable:
-		Descriptor.SchemaFieldStart = 1 + MaxRingBufferSize + 1;
-		Descriptor.LastSentRPCFieldId = 1 + MaxRingBufferSize + 1 + MaxRingBufferSize;
+		{
+			// Server Unreliable buffer starts after Server Reliable. Add 1 to account for the last sent ID field.
+			const uint32 ServerReliableBufferSize = GetRingBufferSize(ERPCType::ServerReliable) + 1;
+
+			Descriptor.SchemaFieldStart = SchemaStart + ServerReliableBufferSize;
+		}
 		break;
 	default:
 		checkNoEntry();
 		break;
 	}
+
+	Descriptor.LastSentRPCFieldId = Descriptor.SchemaFieldStart + Descriptor.RingBufferSize;
 
 	return Descriptor;
 }
@@ -124,18 +137,34 @@ Worker_ComponentId GetAckAuthComponentSetId(ERPCType Type)
 
 Schema_FieldId GetAckFieldId(ERPCType Type)
 {
-	uint32 MaxRingBufferSize = GetDefault<USpatialGDKSettings>()->MaxRPCRingBufferSize;
+	const Schema_FieldId SchemaStart = 1;
 
 	switch (Type)
 	{
 	case ERPCType::ClientReliable:
-	case ERPCType::ServerReliable:
-		// In the generated schema components, acks will follow two ring buffers, each containing MaxRingBufferSize elements as well as a
-		// last sent ID.
-		return 1 + 2 * (MaxRingBufferSize + 1);
+		{
+			// Client acks follow Server Reliable and Unreliable buffers.
+			// Add 1 to each to account for the last sent ID fields.
+			const uint32 ServerReliableBufferSize = GetRingBufferSize(ERPCType::ServerReliable) + 1;
+			const uint32 ServerUnreliableBufferSize = GetRingBufferSize(ERPCType::ServerUnreliable) + 1;
+
+			return SchemaStart + ServerReliableBufferSize + ServerUnreliableBufferSize;
+		}
 	case ERPCType::ClientUnreliable:
+		// Client Unreliable ack directly follows Reliable ack.
+		return GetAckFieldId(ERPCType::ClientReliable) + 1;
+	case ERPCType::ServerReliable:
+		{
+			// Server acks follow Client Reliable and Unreliable buffers.
+			// Add 1 to each to account for the last sent ID fields.
+			const uint32 ClientReliableBufferSize = GetRingBufferSize(ERPCType::ClientReliable) + 1;
+			const uint32 ClientUnreliableBufferSize = GetRingBufferSize(ERPCType::ClientUnreliable) + 1;
+
+			return SchemaStart + ClientReliableBufferSize + ClientUnreliableBufferSize;
+		}
 	case ERPCType::ServerUnreliable:
-		return 1 + 2 * (MaxRingBufferSize + 1) + 1;
+		// Server Unreliable ack directly follows Reliable ack.
+		return GetAckFieldId(ERPCType::ServerReliable) + 1;
 	default:
 		checkNoEntry();
 		return 0;
@@ -144,9 +173,12 @@ Schema_FieldId GetAckFieldId(ERPCType Type)
 
 Schema_FieldId GetInitiallyPresentMulticastRPCsCountFieldId()
 {
-	uint32 MaxRingBufferSize = GetDefault<USpatialGDKSettings>()->MaxRPCRingBufferSize;
 	// This field directly follows the ring buffer + last sent id.
-	return 1 + MaxRingBufferSize + 1;
+	const Schema_FieldId SchemaStart = 1;
+	// Add 1 to account for the last sent ID field.
+	const uint32 MulticastBufferSize = GetRingBufferSize(ERPCType::NetMulticast) + 1;
+
+	return SchemaStart + MulticastBufferSize;
 }
 
 bool ShouldQueueOverflowed(ERPCType Type)
