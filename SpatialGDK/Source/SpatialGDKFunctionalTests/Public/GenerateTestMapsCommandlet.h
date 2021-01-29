@@ -34,5 +34,6 @@ private:
 	void CreateSpatial2WorkerSmallInterestMap();
 	void CreateSpatialAuthorityMap();
 	void CreateSpatialComponentMap();
+	void CreateSpatialHandoverMap();
 };
 #endif // WITH_EDITOR

@@ -10,6 +10,7 @@
 #include "SpatialGDKFunctionalTests/Public/SpatialCleanupConnectionTest.h" //didn't spot this during review, but I would argue this one is "SpatialGDK" as well
 #include "SpatialGDKFunctionalTests/Public/SpatialTest1x2GridSmallInterestWorkerSettings.h"
 #include "SpatialGDKFunctionalTests/Public/Test1x2WorkerSettings.h"
+#include "SpatialGDKFunctionalTests/Public/Test2x2WorkerSettings.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/CrossServerAndClientOrchestrationTest/CrossServerAndClientOrchestrationTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyAndTombstoneTest/DormancyAndTombstoneTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyAndTombstoneTest/DormancyTestActor.h"
@@ -28,6 +29,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestSingleServerDynamicComponents/SpatialTestSingleServerDynamicComponents.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3066/OwnerOnlyPropertyReplication.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3157/RPCInInterfaceTest.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3761/SpatialTestHandover/SpatialTestHandover.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/VisibilityTest/ReplicatedVisibilityTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/VisibilityTest/VisibilityTest.h"
 #include "Tests/AutomationEditorCommon.h"
@@ -230,6 +232,26 @@ void UGenerateTestMapsCommandlet::CreateSpatialComponentMap()
 	FEditorFileUtils::SaveLevel(CurrentLevel, PathToSave);
 }
 
+// Custom made for the SpatialTestHandover, placed in the slow category
+void UGenerateTestMapsCommandlet::CreateSpatialHandoverMap()
+{
+	UWorld* CurrentWorld = CreateNewTestMapWorld();
+	ULevel* CurrentLevel = CurrentWorld->GetCurrentLevel();
+
+	// Add the tests
+	// This test is here, because I cannot run it a 100 times in a row
+	GEditor->AddActor(CurrentLevel, ASpatialTestHandover::StaticClass(), FTransform::Identity);
+
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(CurrentWorld->GetWorldSettings());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2WorkerSettings::StaticClass());
+	WorldSettings->bEnableDebugInterface =
+		false; // The test directly accesses the LayeredStrategy and expects it to be the top one, setting to false for now
+
+	FString PathToSave = FPaths::ConvertRelativePathToFull(
+		FPaths::ProjectContentDir() + TEXT("Maps/FunctionalTests/GeneratedMaps/CI_Slow_Spatial_Only/SpatialHandoverMap.umap"));
+	FEditorFileUtils::SaveLevel(CurrentLevel, PathToSave);
+}
+
 int32 UGenerateTestMapsCommandlet::Main(const FString& CmdLineParams)
 {
 	UE_LOG(LogGenerateTestMapsCommandlet, Display, TEXT("Generate test maps commandlet started. Pray."));
@@ -244,6 +266,8 @@ int32 UGenerateTestMapsCommandlet::Main(const FString& CmdLineParams)
 	CreateSpatialAuthorityMap();
 	UE_LOG(LogGenerateTestMapsCommandlet, Display, TEXT("Creating the SpatialComponentMap."));
 	CreateSpatialComponentMap();
+	UE_LOG(LogGenerateTestMapsCommandlet, Display, TEXT("Creating the SpatialHandoverMap."));
+	CreateSpatialHandoverMap();
 
 	// Success
 	return 0;
