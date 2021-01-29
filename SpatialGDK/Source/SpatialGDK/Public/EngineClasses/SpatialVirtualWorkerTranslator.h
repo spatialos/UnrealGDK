@@ -66,7 +66,6 @@ private:
 
 	// Serialization and deserialization of the mapping.
 	void ApplyMappingFromSchema(Schema_Object* Object);
-	bool IsValidMapping(Schema_Object* Object) const;
 
 	void UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName WorkerName, Worker_PartitionId PartitionEntityId,
 					   Worker_EntityId ServerWorkerEntityId);
