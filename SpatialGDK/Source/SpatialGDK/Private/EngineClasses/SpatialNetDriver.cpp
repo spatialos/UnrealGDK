@@ -410,7 +410,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	ActorFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
 		if (Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID }))
 		{
-			// This actor has been tombstoned, we leave it alone
+			// This actor has been tombstoned, we leave it alone.
 			return false;
 		}
 
@@ -2157,12 +2157,8 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	SpatialConnection->ConnectionClientWorkerSystemEntityId = ClientSystemEntityId;
 
 	// Register workerId and its connection.
-	if (ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %lld 's NetConnection created."), ClientSystemEntityId);
-
-		ClientConnectionManager->RegisterClientConnection(ClientSystemEntityId, SpatialConnection);
-	}
+	UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Worker %lld 's NetConnection created."), ClientSystemEntityId);
+	ClientConnectionManager->RegisterClientConnection(ClientSystemEntityId, SpatialConnection);
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
 	// Note that in the initial implementation, we carry over no data about the user here (such as a unique player id, or the real IP)
@@ -2265,7 +2261,7 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 }
 
 // This function is called for server workers who received the PC over the wire
-void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerController)
+void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerController, const Worker_EntityId ClientSystemEntityId)
 {
 	check(PlayerController != nullptr);
 
@@ -2276,8 +2272,8 @@ void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerContr
 	// We create a connection here so that any code that searches for owning connection, etc on the server
 	// resolves ownership correctly
 	USpatialNetConnection* OwnershipConnection = nullptr;
-	if (!CreateSpatialNetConnection(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(),
-									SpatialConstants::INVALID_ENTITY_ID, &OwnershipConnection))
+	if (!CreateSpatialNetConnection(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), ClientSystemEntityId,
+									&OwnershipConnection))
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to create SpatialNetConnection!"));
 		return;

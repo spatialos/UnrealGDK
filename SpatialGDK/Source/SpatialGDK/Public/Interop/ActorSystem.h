@@ -104,8 +104,8 @@ private:
 	void ReceiveActor(Worker_EntityId EntityId);
 	bool IsReceivedEntityTornOff(Worker_EntityId EntityId) const;
 	AActor* TryGetActor(const UnrealMetadata& Metadata) const;
-	AActor* TryGetOrCreateActor(ActorData& ActorComponents);
-	AActor* CreateActor(ActorData& ActorComponents);
+	AActor* TryGetOrCreateActor(ActorData& ActorComponents, Worker_EntityId EntityId);
+	AActor* CreateActor(ActorData& ActorComponents, Worker_EntityId EntityId);
 	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 

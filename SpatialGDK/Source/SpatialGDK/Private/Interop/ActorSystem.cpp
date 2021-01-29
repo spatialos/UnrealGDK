@@ -9,6 +9,7 @@
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Schema/Restricted.h"
 #include "SpatialConstants.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SubView.h"
@@ -1164,7 +1165,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	EntityActor = TryGetOrCreateActor(ActorComponents);
+	EntityActor = TryGetOrCreateActor(ActorComponents, EntityId);
 
 	if (EntityActor == nullptr)
 	{
@@ -1326,7 +1327,7 @@ AActor* ActorSystem::TryGetActor(const UnrealMetadata& Metadata) const
 	return nullptr;
 }
 
-AActor* ActorSystem::TryGetOrCreateActor(ActorData& ActorComponents)
+AActor* ActorSystem::TryGetOrCreateActor(ActorData& ActorComponents, const Worker_EntityId EntityId)
 {
 	if (ActorComponents.Metadata.StablyNamedRef.IsSet())
 	{
@@ -1352,11 +1353,11 @@ AActor* ActorSystem::TryGetOrCreateActor(ActorData& ActorComponents)
 		return NetDriver->PackageMap->GetUniqueActorInstanceByClass(ActorClass);
 	}
 
-	return CreateActor(ActorComponents);
+	return CreateActor(ActorComponents, EntityId);
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
-AActor* ActorSystem::CreateActor(ActorData& ActorComponents)
+AActor* ActorSystem::CreateActor(ActorData& ActorComponents, const Worker_EntityId EntityId)
 {
 	UClass* ActorClass = ActorComponents.Metadata.GetNativeEntityClass();
 
@@ -1383,7 +1384,14 @@ AActor* ActorSystem::CreateActor(ActorData& ActorComponents)
 
 	if (NetDriver->IsServer() && bCreatingPlayerController)
 	{
-		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor));
+		// Grab the client system entity ID from the partition component in order to correctly link this
+		// connection to the client it corresponds to.
+		const Worker_EntityId ClientSystemEntityId =
+			Partition(SubView->GetView()[EntityId]
+						  .Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID })
+						  ->GetUnderlying())
+				.WorkerConnectionId;
+		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), ClientSystemEntityId);
 	}
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
