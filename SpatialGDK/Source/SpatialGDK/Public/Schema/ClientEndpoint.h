@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/RPCRingBuffer.h"
 
@@ -11,14 +10,10 @@
 
 namespace SpatialGDK
 {
-struct ClientEndpoint : Component
+struct ClientEndpoint
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
-
-	ClientEndpoint(const Worker_ComponentData& Data);
 	ClientEndpoint(Schema_ComponentData* Data);
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
 	void ApplyComponentUpdate(Schema_ComponentUpdate* Update);
 
 	RPCRingBuffer ReliableRPCBuffer;
