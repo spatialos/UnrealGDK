@@ -27,8 +27,6 @@ namespace
 {
 const PhysicalWorkerName ThisWorker = TEXT("ThisWorker");
 const PhysicalWorkerName OtherWorker = TEXT("OtherWorker");
-const PhysicalWorkerName ClientWorker = TEXT("ClientWorker");
-const PhysicalWorkerName OtherClientWorker = TEXT("OtherClientWorker");
 
 const Worker_PartitionId ThisWorkerId = 101;
 const Worker_PartitionId OtherWorkerId = 102;
@@ -40,11 +38,7 @@ constexpr VirtualWorkerId OtherVirtualWorker = 2;
 
 constexpr Worker_EntityId EntityIdOne = 1;
 
-constexpr Worker_ComponentId TestComponentIdOne = 123;
-constexpr Worker_ComponentId TestComponentIdTwo = 456;
-
 const TArray<Worker_ComponentId> NonAuthDelegationLBComponents = { SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID };
-const TArray<Worker_ComponentId> TestComponentIds = { TestComponentIdOne, TestComponentIdTwo };
 const TArray<Worker_ComponentId> ClientComponentIds = { SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID };
 
 TUniquePtr<SpatialVirtualWorkerTranslator> CreateVirtualWorkerTranslator()
