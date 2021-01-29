@@ -23,7 +23,7 @@ windows: &windows
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-11-18-224740-bk17641-0c4125be-d}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-11-18-224740-bk17641-0c4125be-d-at-1611942075}" # Blessed with standard 426
     - "boot_disk_size_gb=1100"
     - "node_stability=canary_josh_gdk_2" # Josh - Changed to canary agent for blessing
   retry:
