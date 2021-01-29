@@ -5,6 +5,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "GameFramework/PlayerController.h"
+#include "Improbable/SpatialEngineConstants.h"
 #include "Interop/SpatialOSDispatcherInterface.h"
 #include "Interop/SpatialReceiver.h"
 #include "SpatialView/EntityDelta.h"
@@ -44,7 +45,10 @@ void ClientConnectionManager::RegisterClientConnection(const Worker_EntityId InW
 
 void ClientConnectionManager::CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp)
 {
-	WorkerConnections.Remove(ConnectionCleanedUp->ConnectionClientWorkerSystemEntityId);
+	if (ConnectionCleanedUp->ConnectionClientWorkerSystemEntityId != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		WorkerConnections.Remove(ConnectionCleanedUp->ConnectionClientWorkerSystemEntityId);
+	}
 }
 
 void ClientConnectionManager::DisconnectPlayer(Worker_EntityId ClientEntityId)
