@@ -44,10 +44,7 @@ void ClientConnectionManager::RegisterClientConnection(const Worker_EntityId InW
 
 void ClientConnectionManager::CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp)
 {
-	if (ConnectionCleanedUp->ConnectionClientWorkerSystemEntityId != SpatialConstants::INVALID_ENTITY_ID)
-	{
-		WorkerConnections.Remove(ConnectionCleanedUp->ConnectionClientWorkerSystemEntityId);
-	}
+	WorkerConnections.Remove(ConnectionCleanedUp->ConnectionClientWorkerSystemEntityId);
 }
 
 void ClientConnectionManager::DisconnectPlayer(Worker_EntityId ClientEntityId)
