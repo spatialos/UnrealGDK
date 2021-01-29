@@ -30,5 +30,9 @@ private:
 
 	UWorld* CreateNewTestMapWorld();
 	void CreateSpatialNetworkingMap();
+	void CreateSpatial2WorkerMap();
+	void CreateSpatial2WorkerSmallInterestMap();
+	void CreateSpatialAuthorityMap();
+	void CreateSpatialComponentMap();
 };
 #endif // WITH_EDITOR

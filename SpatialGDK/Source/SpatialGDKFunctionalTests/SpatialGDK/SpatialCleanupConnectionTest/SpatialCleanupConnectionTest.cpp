@@ -33,7 +33,7 @@ ASpatialCleanupConnectionTest::ASpatialCleanupConnectionTest()
 
 	Server1Position = FVector(-500.0f, -500.0f, 50.0f);
 	Server1PositionAndInInterestBorderServer2 = FVector(-50.0f, -50.0f, 50.0f);
-	Server2Position = FVector(500.0f, -500.0f, 50.0f);
+	Server2Position = FVector(-500.0f, 500.0f, 50.0f);
 }
 
 void ASpatialCleanupConnectionTest::PrepareTest()

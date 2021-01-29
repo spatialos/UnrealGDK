@@ -51,6 +51,11 @@ TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetMultiWorkerSe
 	return GetValidWorkerSettings();
 }
 
+void ASpatialWorldSettings::SetMultiWorkerSettingsClass(TSubclassOf<USpatialMultiWorkerSettings> InMultiWorkerSettingsClass)
+{
+	MultiWorkerSettingsClass = InMultiWorkerSettingsClass;
+}
+
 TSubclassOf<USpatialMultiWorkerSettings> ASpatialWorldSettings::GetValidWorkerSettings() const
 {
 	if (MultiWorkerSettingsClass != nullptr)

@@ -60,6 +60,9 @@ public:
 	 * Otherwise return the single worker settings class.  */
 	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceNonEditorSettings = false);
 
+	// This function should only be used to set the multi-worker setting class when the world isn't open in the editor
+	void SetMultiWorkerSettingsClass(TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass);
+
 #if WITH_EDITORONLY_DATA
 	/** Defines how Unreal Editor will run the Tests in this map, without changing current Settings. */
 	UPROPERTY(EditAnywhere, Category = "Testing")
