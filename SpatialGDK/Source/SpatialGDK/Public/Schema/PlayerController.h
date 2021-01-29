@@ -11,12 +11,12 @@
 
 namespace SpatialGDK
 {
-struct Heartbeat : AbstractMutableComponent
+struct PlayerController : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::HEARTBEAT_COMPONENT_ID;
+	static const Worker_ComponentId ComponentId = SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID;
 
-	Heartbeat() = default;
-	Heartbeat(const Worker_ComponentData& Data) {}
+	PlayerController() = default;
+	PlayerController(const Worker_ComponentData& Data) {}
 
 	Worker_ComponentData CreateComponentData() const override
 	{
@@ -25,7 +25,7 @@ struct Heartbeat : AbstractMutableComponent
 		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		Schema_AddBool(ComponentObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID, false);
+		Schema_AddBool(ComponentObject, SpatialConstants::PLAYER_CONTROLLER_CLIENT_HAS_QUIT_ID, false);
 
 		return Data;
 	}
