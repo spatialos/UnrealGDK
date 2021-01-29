@@ -34,6 +34,8 @@ windows: &windows
   timeout_in_minutes: 120
   plugins:
     - improbable-eng/taskkill#v4.4.1: ~
+    - git-clean#v0.0.1:
+        flags: "-n"
 
 macos: &macos
   agents:
