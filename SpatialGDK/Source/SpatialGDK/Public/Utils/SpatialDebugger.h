@@ -70,7 +70,11 @@ public:
 
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
-private:
+	DECLARE_MULTICAST_DELEGATE_OneParam(FEntityDelegate, Worker_EntityId);
+
+	FEntityDelegate OnEntityAddedDelegate;
+
+public:
 	virtual void Tick(float DeltaTime) override;
 	virtual TStatId GetStatId() const override;
 
@@ -304,17 +308,10 @@ public:
 	void EditorSpatialToggleDebugger(bool bEnabled);
 #endif
 
-	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
-
-public:
-	void ActorAuthorityGained(const Worker_EntityId EntityId) const;
-
-	TOptional<SpatialGDK::SpatialDebugging> GetDebuggingData(Worker_EntityId Entity) const;
-
 	void LoadIcons();
 
 	// FDebugDrawDelegate
-	void DrawDebug(UCanvas* Canvas, APlayerController* Controller) {}
+	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
 
 	FVector GetLocalPawnLocation();
 
@@ -333,9 +330,7 @@ public:
 	void RevertHoverMaterials();
 
 	void DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
-				 const bool bCentre)
-	{
-	}
+				 const bool bCentre);
 	void DrawDebugLocalPlayer(UCanvas* Canvas);
 
 	void CreateWorkerRegions();
