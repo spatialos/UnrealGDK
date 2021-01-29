@@ -73,21 +73,21 @@ RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 		Descriptor.SchemaFieldStart = SchemaStart;
 		break;
 	case ERPCType::ClientUnreliable:
-		{
-			// Client Unreliable buffer starts after Client Reliable. Add 1 to account for the last sent ID field.
-			const uint32 ClientReliableBufferSize = GetRingBufferSize(ERPCType::ClientReliable) + 1;
+	{
+		// Client Unreliable buffer starts after Client Reliable. Add 1 to account for the last sent ID field.
+		const uint32 ClientReliableBufferSize = GetRingBufferSize(ERPCType::ClientReliable) + 1;
 
-			Descriptor.SchemaFieldStart = SchemaStart + ClientReliableBufferSize;
-		}
+		Descriptor.SchemaFieldStart = SchemaStart + ClientReliableBufferSize;
 		break;
+	}
 	case ERPCType::ServerUnreliable:
-		{
-			// Server Unreliable buffer starts after Server Reliable. Add 1 to account for the last sent ID field.
-			const uint32 ServerReliableBufferSize = GetRingBufferSize(ERPCType::ServerReliable) + 1;
+	{
+		// Server Unreliable buffer starts after Server Reliable. Add 1 to account for the last sent ID field.
+		const uint32 ServerReliableBufferSize = GetRingBufferSize(ERPCType::ServerReliable) + 1;
 
-			Descriptor.SchemaFieldStart = SchemaStart + ServerReliableBufferSize;
-		}
+		Descriptor.SchemaFieldStart = SchemaStart + ServerReliableBufferSize;
 		break;
+	}
 	default:
 		checkNoEntry();
 		break;
@@ -142,26 +142,26 @@ Schema_FieldId GetAckFieldId(ERPCType Type)
 	switch (Type)
 	{
 	case ERPCType::ClientReliable:
-		{
-			// Client acks follow Server Reliable and Unreliable buffers.
-			// Add 1 to each to account for the last sent ID fields.
-			const uint32 ServerReliableBufferSize = GetRingBufferSize(ERPCType::ServerReliable) + 1;
-			const uint32 ServerUnreliableBufferSize = GetRingBufferSize(ERPCType::ServerUnreliable) + 1;
+	{
+		// Client acks follow Server Reliable and Unreliable buffers.
+		// Add 1 to each to account for the last sent ID fields.
+		const uint32 ServerReliableBufferSize = GetRingBufferSize(ERPCType::ServerReliable) + 1;
+		const uint32 ServerUnreliableBufferSize = GetRingBufferSize(ERPCType::ServerUnreliable) + 1;
 
-			return SchemaStart + ServerReliableBufferSize + ServerUnreliableBufferSize;
-		}
+		return SchemaStart + ServerReliableBufferSize + ServerUnreliableBufferSize;
+	}
 	case ERPCType::ClientUnreliable:
 		// Client Unreliable ack directly follows Reliable ack.
 		return GetAckFieldId(ERPCType::ClientReliable) + 1;
 	case ERPCType::ServerReliable:
-		{
-			// Server acks follow Client Reliable and Unreliable buffers.
-			// Add 1 to each to account for the last sent ID fields.
-			const uint32 ClientReliableBufferSize = GetRingBufferSize(ERPCType::ClientReliable) + 1;
-			const uint32 ClientUnreliableBufferSize = GetRingBufferSize(ERPCType::ClientUnreliable) + 1;
+	{
+		// Server acks follow Client Reliable and Unreliable buffers.
+		// Add 1 to each to account for the last sent ID fields.
+		const uint32 ClientReliableBufferSize = GetRingBufferSize(ERPCType::ClientReliable) + 1;
+		const uint32 ClientUnreliableBufferSize = GetRingBufferSize(ERPCType::ClientUnreliable) + 1;
 
-			return SchemaStart + ClientReliableBufferSize + ClientUnreliableBufferSize;
-		}
+		return SchemaStart + ClientReliableBufferSize + ClientUnreliableBufferSize;
+	}
 	case ERPCType::ServerUnreliable:
 		// Server Unreliable ack directly follows Reliable ack.
 		return GetAckFieldId(ERPCType::ServerReliable) + 1;
