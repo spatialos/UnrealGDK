@@ -407,21 +407,24 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	CreateAndInitializeLoadBalancingClasses();
 
-	ActorFilter = [](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+	ActorFilter = [this](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
 		if (Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID }))
 		{
 			// This actor has been tombstoned, we leave it alone.
 			return false;
 		}
 
-		// If we see a heartbeat component on this entity, it must be a player controller. Hold it back until
-		// we also have the partition component.
-		return Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::HEARTBEAT_COMPONENT_ID })
-			   == Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID });
+		// If we see a player controller component on this entity and we're a server we should hold it back until we
+		// also have the partition component.
+		return !IsServer()
+			   || Element.Components.ContainsByPredicate(
+					  SpatialGDK::ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID })
+					  == Element.Components.ContainsByPredicate(
+						  SpatialGDK::ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID });
 	};
 	ActorRefreshCallbacks = {
 		Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::TOMBSTONE_COMPONENT_ID),
-		Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::HEARTBEAT_COMPONENT_ID),
+		Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID),
 		Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::PARTITION_COMPONENT_ID)
 	};
 

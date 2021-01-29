@@ -89,7 +89,7 @@ void AddLBEntityToView(SpatialGDK::EntityView& View, const Worker_EntityId Entit
 		View, EntityId,
 		MakeComponentDataFromData(SpatialGDK::NetOwningClientWorker::CreateNetOwningClientWorkerData(ClientAuthPartitionId)));
 	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID));
-	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::HEARTBEAT_COMPONENT_ID));
+	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID));
 	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 
 	AddAuthorityToView(View, EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);

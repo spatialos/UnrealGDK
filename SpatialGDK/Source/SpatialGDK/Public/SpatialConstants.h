@@ -101,7 +101,7 @@ const Worker_ComponentId GDK_DEBUG_COMPONENT_ID = 9995;
 const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
 const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
-const Worker_ComponentId HEARTBEAT_COMPONENT_ID = 9991;
+const Worker_ComponentId PLAYER_CONTROLLER_COMPONENT_ID = 9991;
 
 const Worker_ComponentId SERVER_AUTH_COMPONENT_SET_ID = 9900;
 const Worker_ComponentId CLIENT_AUTH_COMPONENT_SET_ID = 9901;
@@ -156,8 +156,7 @@ const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID = 1;
 const Schema_FieldId ACTOR_COMPONENT_REPLICATES_ID = 1;
 const Schema_FieldId ACTOR_TEAROFF_ID = 3;
 
-const Schema_FieldId HEARTBEAT_EVENT_ID = 1;
-const Schema_FieldId HEARTBEAT_CLIENT_HAS_QUIT_ID = 1;
+const Schema_FieldId PLAYER_CONTROLLER_CLIENT_HAS_QUIT_ID = 1;
 
 const Schema_FieldId SHUTDOWN_MULTI_PROCESS_REQUEST_ID = 1;
 const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID = 1;
@@ -391,7 +390,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 								// Tags: Well known entities, non-auth actors, and tombstone tags
 								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_NON_AUTH_TAG_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID,
 
-								PARTITION_COMPONENT_ID
+								PLAYER_CONTROLLER_COMPONENT_ID, PARTITION_COMPONENT_ID
 	};
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
@@ -400,8 +399,8 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 	TArray<Worker_ComponentId>{ // RPCs from clients
 								CLIENT_ENDPOINT_COMPONENT_ID,
 
-								// Heartbeat
-								HEARTBEAT_COMPONENT_ID,
+								// Player controller
+								PLAYER_CONTROLLER_COMPONENT_ID,
 
 								// Actor tags
 								ACTOR_NON_AUTH_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
@@ -454,11 +453,11 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
 	{ MULTICAST_RPCS_COMPONENT_ID, "unreal.generated.UnrealMulticastRPCs" },
 };
 
-const TArray<FString> ClientAuthorityWellKnownSchemaImports = { "unreal/gdk/heartbeat.schema", "unreal/gdk/rpc_components.schema",
+const TArray<FString> ClientAuthorityWellKnownSchemaImports = { "unreal/gdk/player_controller.schema", "unreal/gdk/rpc_components.schema",
 																"unreal/generated/rpc_endpoints.schema" };
 
 const TMap<Worker_ComponentId, FString> ClientAuthorityWellKnownComponents = {
-	{ HEARTBEAT_COMPONENT_ID, "unreal.Heartbeat" },
+	{ PLAYER_CONTROLLER_COMPONENT_ID, "unreal.PlayerController" },
 	{ CLIENT_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealClientEndpoint" },
 };
 

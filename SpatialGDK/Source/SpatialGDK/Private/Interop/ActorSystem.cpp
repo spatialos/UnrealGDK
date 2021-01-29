@@ -1391,6 +1391,7 @@ AActor* ActorSystem::CreateActor(ActorData& ActorComponents, const Worker_Entity
 						  .Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID })
 						  ->GetUnderlying())
 				.WorkerConnectionId;
+
 		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), ClientSystemEntityId);
 	}
 

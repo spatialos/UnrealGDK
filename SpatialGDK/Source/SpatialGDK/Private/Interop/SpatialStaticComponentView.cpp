@@ -5,12 +5,9 @@
 #include "Schema/AuthorityIntent.h"
 #include "Schema/ClientEndpoint.h"
 #include "Schema/Component.h"
-#include "Schema/DebugComponent.h"
-#include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/MulticastRPCs.h"
 #include "Schema/NetOwningClientWorker.h"
-#include "Schema/RPCPayload.h"
 #include "Schema/Restricted.h"
 #include "Schema/ServerEndpoint.h"
 #include "Schema/SpatialDebugging.h"
@@ -76,9 +73,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		break;
 	case SpatialConstants::INTEREST_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::Interest>(Op.data);
-		break;
-	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::Heartbeat>(Op.data);
 		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::AuthorityIntent>(Op.data);

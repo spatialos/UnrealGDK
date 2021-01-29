@@ -138,17 +138,17 @@ void USpatialNetConnection::ClientNotifyClientHasQuit()
 																				SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID))
 		{
 			UE_LOG(LogSpatialNetConnection, Warning,
-				   TEXT("Quit the game but no authority over Heartbeat component: NetConnection %s, PlayerController entity %lld"),
+				   TEXT("Quit the game but no authority over Client Auth component set: NetConnection %s, PlayerController entity %lld"),
 				   *GetName(), PlayerControllerEntity);
 			return;
 		}
 
 		FWorkerComponentUpdate Update = {};
-		Update.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
+		Update.component_id = SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID;
 		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-		Schema_AddBool(ComponentObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID, true);
+		Schema_AddBool(ComponentObject, SpatialConstants::PLAYER_CONTROLLER_CLIENT_HAS_QUIT_ID, true);
 
 		Cast<USpatialNetDriver>(Driver)->Connection->SendComponentUpdate(PlayerControllerEntity, &Update);
 	}

@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
-component Heartbeat {
+component PlayerController {
     id = 9991;
     bool client_has_quit = 1;
 }
