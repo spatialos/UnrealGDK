@@ -1,5 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#if WITH_EDITOR
+
 #include "GenerateTestMapsCommandlet.h"
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyLight.h"
@@ -33,8 +35,6 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/VisibilityTest/ReplicatedVisibilityTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/VisibilityTest/VisibilityTest.h"
 #include "Tests/AutomationEditorCommon.h"
-
-#if WITH_EDITOR
 
 DEFINE_LOG_CATEGORY(LogGenerateTestMapsCommandlet);
 
