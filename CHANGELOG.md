@@ -11,9 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking changes:
 
 ### Features:
+- Added a message box notification when game is closed due to missing generated schema.
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
+- Fixed incorrect allocation of entity ID from a non-authoritative server sending a cross-server RPC to a replicated level actor that hasn't been received from runtime.
 
 ## [`0.12.0`] - 2020-12-14
 
@@ -99,6 +101,8 @@ These functions and structs can be referenced in both code and blueprints it may
 - Simulated Player deployments no longer depend on DeploymentLauncher for readiness. You can now restart them via the Console and expect them to reconnect to your main deployment. DeploymentLauncher will also restart any crashed or incorrectly finished simulated players applications.
 - Added a `-FailOnNetworkFailure` flag that makes a Spatial-enabled game fail on any NetworkFailure.
 - Reworked schema generation (incremental + full) pop-ups to be clearer.
+- Added a `-FailOnNetworkFailure` flag that makes a Spatial-enabled game fail on any NetworkFailure
+- Added `URemotePossessionComponent` to deal with Cross-Server Possession. Add this componenet to an AController, it will possess the Target Pawn after OnAuthorityGained. It can be implemented in C++ and Blueprint.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
@@ -138,6 +142,7 @@ These functions and structs can be referenced in both code and blueprints it may
 - Fixed an issue where a NetworkFailure won't be reported when connecting to a deployment that doesn't support dev_login with a developer token, and in some other configuration-dependent cases.
 - Fixed a crash that occured when opening the session frontend with VS 16.8.0 using the bundled dbghelp.dll.
 - Spatial debugger no longer consumes input.
+- Fixed an issue where we would always create a folder for a snapshots for a deployment even when we made no snapshots
 
 ## [`0.11.0`] - 2020-09-03
 

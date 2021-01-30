@@ -262,8 +262,9 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		else if (bCreatedEntity) // We have not gained authority yet
 		{
 			Actor->SetReplicates(false);
-			Receiver->RetireWhenAuthoritive(EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()),
-											Actor->IsNetStartupActor(), Actor->GetTearOff()); // Ensure we don't recreate the actor
+			NetDriver->ActorSystem->RetireWhenAuthoritative(
+				EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()), Actor->IsNetStartupActor(),
+				Actor->GetTearOff()); // Ensure we don't recreate the actor
 		}
 	}
 	else
@@ -1226,7 +1227,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 	{
 		// With USLB, we want the client worker that results in the spawning of a PlayerController to claim the
 		// PlayerController entity as a partition entity so the client can become authoritative over necessary
-		// components (such as client RPC endpoints, heartbeat component, etc).
+		// components (such as client RPC endpoints, player controller component, etc).
 		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Cast<APlayerController>(Actor));
 		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
 		Sender->SendClaimPartitionRequest(ClientSystemEntityId, Op.entity_id);
@@ -1417,10 +1418,10 @@ void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef,
 {
 	CreateSubObjects.Remove(Object);
 
-	Receiver->MoveMappedObjectToUnmapped(ObjectRef);
+	NetDriver->ActorSystem->MoveMappedObjectToUnmapped(ObjectRef);
 	if (FSpatialObjectRepState* SubObjectRefMap = ObjectReferenceMap.Find(ObjectWeakPtr))
 	{
-		Receiver->CleanupRepStateMap(*SubObjectRefMap);
+		NetDriver->ActorSystem->CleanupRepStateMap(*SubObjectRefMap);
 		ObjectReferenceMap.Remove(ObjectWeakPtr);
 	}
 }

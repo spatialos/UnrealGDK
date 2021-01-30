@@ -10,9 +10,8 @@
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AuthorityIntent.h"
-#include "Schema/Heartbeat.h"
 #include "Schema/NetOwningClientWorker.h"
-#include "Schema/RPCPayload.h"
+#include "Schema/PlayerController.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
@@ -220,7 +219,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 #if !UE_BUILD_SHIPPING
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DEBUG_METRICS_COMPONENT_ID));
 #endif // !UE_BUILD_SHIPPING
-		ComponentDatas.Add(Heartbeat().CreateComponentData());
+		ComponentDatas.Add(PlayerController().CreateComponentData());
 	}
 
 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Actor);
@@ -389,6 +388,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::TOMBSTONE_TAG_COMPONENT_ID));
 
 	return Components;
 }
