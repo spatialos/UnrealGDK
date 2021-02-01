@@ -3,7 +3,6 @@
 #pragma once
 #include "EngineClasses/SpatialNetConnection.h"
 #include "SpatialCommonTypes.h"
-#include "improbable/c_worker.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogWorkerEntitySystem, Log, All)
 
