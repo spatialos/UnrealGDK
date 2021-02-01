@@ -899,7 +899,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "debug_component.schema",
 										   "debug_metrics.schema",
 										   "global_state_manager.schema",
-										   "heartbeat.schema",
+										   "player_controller.schema",
 										   "known_entity_auth_component_set.schema",
 										   "migration_diagnostic.schema",
 										   "net_owning_client_worker.schema",

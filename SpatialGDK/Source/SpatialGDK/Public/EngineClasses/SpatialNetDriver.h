@@ -22,6 +22,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "Interop/ActorSystem.h"
+#include "Interop/ClientConnectionManager.h"
 #include "Interop/RPCExecutorInterface.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
@@ -124,9 +125,7 @@ public:
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
 						 const Worker_EntityId& ClientSystemEntityId);
-	void PostSpawnPlayerController(APlayerController* PlayerController);
-
-	void DisconnectPlayer(Worker_EntityId ClientEntityId);
+	void PostSpawnPlayerController(APlayerController* PlayerController, const Worker_EntityId ClientSystemEntityId);
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId, USpatialActorChannel& Channel);
@@ -149,9 +148,6 @@ public:
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
-	void RegisterClientConnection(const Worker_EntityId WorkerEntityId, USpatialNetConnection* ClientConnection);
-	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerEntityId(const Worker_EntityId InWorkerEntityId);
-	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
 	void CleanUpServerConnectionForPC(APlayerController* PC);
 
 	bool HasServerAuthority(Worker_EntityId EntityId) const;
@@ -195,7 +191,7 @@ public:
 
 	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
 	FFilterPredicate ActorFilter;
-	TArray<FDispatcherRefreshCallback> TombstoneRefreshCallbacks;
+	TArray<FDispatcherRefreshCallback> ActorRefreshCallbacks;
 
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
@@ -205,6 +201,7 @@ public:
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
+	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
@@ -254,8 +251,6 @@ private:
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
 	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>> PendingDormantChannels;
-
-	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 
 	FTimerManager TimerManager;
 
