@@ -25,7 +25,7 @@ class TestProjectTarget {
         $testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
         $test_gym_version = if (Test-Path -Path $test_gyms_version_path) {[System.IO.File]::ReadAllText($test_gyms_version_path)} else {[string]::Empty}
         if (Test-Path $test_env_override) {
-            $this.test_repo_branch = $test_env_override
+            $this.test_repo_branch = (Get-Item $test_env_override).value
         }
         elseif($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
             $this.test_repo_branch = $gdk_branch
