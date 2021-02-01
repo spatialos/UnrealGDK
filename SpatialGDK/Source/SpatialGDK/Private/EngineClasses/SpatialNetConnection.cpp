@@ -40,6 +40,9 @@ void USpatialNetConnection::BeginDestroy()
 
 void USpatialNetConnection::CleanUp()
 {
+	UE_LOG(LogSpatialNetConnection, Log, TEXT("USpatialNetConnection::CleanUp PlayerController %s entity:%lld."),
+		   *AActor::GetDebugName(PlayerController), PlayerControllerEntity);
+
 	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver))
 	{
 		SpatialNetDriver->ClientConnectionManager->CleanUpClientConnection(this);
@@ -123,11 +126,16 @@ void USpatialNetConnection::FlushDormancy(AActor* Actor)
 void USpatialNetConnection::Init(const Worker_EntityId InPlayerControllerEntity)
 {
 	PlayerControllerEntity = InPlayerControllerEntity;
+
+	UE_LOG(LogSpatialNetConnection, Log, TEXT("USpatialNetConnection::Init PlayerController %s entity:%lld."),
+		   *AActor::GetDebugName(PlayerController), PlayerControllerEntity);
 }
 
 void USpatialNetConnection::Disable()
 {
 	PlayerControllerEntity = SpatialConstants::INVALID_ENTITY_ID;
+	UE_LOG(LogSpatialNetConnection, Log, TEXT("USpatialNetConnection::Disable PlayerController %s entity:%lld."),
+		   *AActor::GetDebugName(PlayerController), PlayerControllerEntity);
 }
 
 void USpatialNetConnection::ClientNotifyClientHasQuit()
