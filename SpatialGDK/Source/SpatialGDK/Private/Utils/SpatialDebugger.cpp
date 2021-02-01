@@ -185,7 +185,7 @@ AActor* FSpatialDebuggerSystem::GetActor(Worker_EntityId EntityId) const
 	return nullptr;
 }
 
-const Worker_EntityId* FSpatialDebuggerSystem::GetActorEntityId(AActor* Actor) const
+const Worker_EntityId_Key* FSpatialDebuggerSystem::GetActorEntityId(AActor* Actor) const
 {
 	return EntityActorMapping.FindKey(Actor);
 }

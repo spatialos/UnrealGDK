@@ -58,7 +58,7 @@ public:
 
 	TOptional<SpatialGDK::SpatialDebugging> GetDebuggingData(Worker_EntityId Entity) const;
 	AActor* GetActor(Worker_EntityId EntityId) const;
-	const Worker_EntityId* GetActorEntityId(AActor* Actor) const;
+	const Worker_EntityId_Key* GetActorEntityId(AActor* Actor) const;
 	const TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& GetActors() const;
 
 private:
