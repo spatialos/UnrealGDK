@@ -108,7 +108,7 @@ void ActorSystem::Advance()
 			{
 				continue;
 			}
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
+			UE_LOG(LogSpatialReceiver, Log, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
 				   Delta.EntityId);
 			// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
 			NetDriver->PackageMap->ResolveEntityActor(EntityActor, Delta.EntityId);
@@ -372,7 +372,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 				}
 				else
 				{
-					UE_LOG(LogActorSystem, Verbose,
+					UE_LOG(LogActorSystem, Log,
 						   TEXT("Received authority over actor %s, with entity id %lld, which has no channel. This means it attempted to "
 								"delete it earlier, when it had no authority. Retrying to delete now."),
 						   *Actor->GetName(), EntityId);
@@ -597,6 +597,7 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ActorSystemRemoveEntity);
 
+	UE_LOG(LogActorSystem, Log, TEXT("EntityRemoved(%lld)"), EntityId);
 	RemoveActor(EntityId);
 
 	// Stop tracking if the entity was deleted as a result of deleting the actor during creation.
@@ -637,6 +638,7 @@ void ActorSystem::HandleDeferredEntityDeletion(const DeferredRetire& Retire) con
 	}
 	else
 	{
+		UE_LOG(LogActorSystem, Log, TEXT("HandleDeferredEntityDeletion(%lld)"), Retire.EntityId);
 		NetDriver->Sender->RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
 	}
 }

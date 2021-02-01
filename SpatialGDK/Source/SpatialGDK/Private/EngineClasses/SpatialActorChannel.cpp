@@ -256,6 +256,7 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 			}
 			else
 			{
+				UE_LOG(LogSpatialActorChannel, Log, TEXT("RetireEntityIfAuthoritative(%lld)"), EntityId);
 				Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
 			}
 		}
