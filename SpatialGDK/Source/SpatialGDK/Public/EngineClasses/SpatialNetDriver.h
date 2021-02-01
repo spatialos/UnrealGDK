@@ -194,7 +194,7 @@ public:
 	FFilterPredicate ActorFilter;
 	TArray<FDispatcherRefreshCallback> ActorRefreshCallbacks;
 
-	TUniquePtr<class FSpatialDebuggerSystem> SpatialDebuggerSystem;
+	TUniquePtr<FSpatialDebuggerSystem> SpatialDebuggerSystem;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 

@@ -129,7 +129,7 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 
 		SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId,
 									   IntentColor, bIsLocked);
-		// ComponentDatas.Add(DebuggingInfo.CreateComponentData());
+		ComponentDatas.Add(DebuggingInfo.CreateComponentData());
 	}
 #endif // !UE_BUILD_SHIPPING
 

@@ -17,8 +17,6 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
-#include "Tickable.h"
-
 #include "SpatialDebugger.generated.h"
 
 class APawn;
@@ -38,15 +36,12 @@ DECLARE_CYCLE_STAT(TEXT("Projection"), STAT_Projection, STATGROUP_SpatialDebugge
 DECLARE_CYCLE_STAT(TEXT("DrawIcons"), STAT_DrawIcons, STATGROUP_SpatialDebugger);
 DECLARE_CYCLE_STAT(TEXT("DrawText"), STAT_DrawText, STATGROUP_SpatialDebugger);
 DECLARE_CYCLE_STAT(TEXT("BuildText"), STAT_BuildText, STATGROUP_SpatialDebugger);
-DECLARE_CYCLE_STAT(TEXT("SortingActors"), STAT_SortingActors, STATGROUP_SpatialDebugger);
 
 namespace SpatialGDK
 {
 class FSubView;
 struct SpatialDebugging;
 } // namespace SpatialGDK
-
-class ASpatialDebugger;
 
 class FSpatialDebuggerSystem
 {
@@ -127,7 +122,6 @@ public:
 	virtual void Destroyed() override;
 
 	void OnEntityAdded(AActor* Actor);
-	void OnEntityRemoved(const Worker_EntityId EntityId);
 
 	virtual void OnAuthorityGained() override;
 
@@ -276,8 +270,6 @@ public:
 	bool EditorAllowWorkerBoundaries() const;
 	void EditorSpatialToggleDebugger(bool bEnabled);
 #endif
-
-	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
 private:
 	void LoadIcons();

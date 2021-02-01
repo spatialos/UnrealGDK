@@ -322,11 +322,6 @@ void ASpatialDebugger::OnEntityAdded(AActor* Actor)
 	}
 }
 
-void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
-{
-	GetDebuggerSystem()->ActorAuthorityIntentChanged(EntityId, NewIntentVirtualWorkerId);
-}
-
 void FSpatialDebuggerSystem::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
 {
 	TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
