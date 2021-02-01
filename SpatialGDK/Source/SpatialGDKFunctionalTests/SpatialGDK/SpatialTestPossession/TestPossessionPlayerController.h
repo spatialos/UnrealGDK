@@ -25,7 +25,7 @@ public:
 	UFUNCTION(Server, Reliable)
 	void RemotePossessOnClient(APawn* InPawn, bool bLockBefore);
 
-	bool IsMigration() const { return BeforePossessionWorkerId != AfterPossessionWorkerId; }
+	bool HasMigrated() const { return BeforePossessionWorkerId != AfterPossessionWorkerId; }
 
 	static void ResetCalledCounter();
 
