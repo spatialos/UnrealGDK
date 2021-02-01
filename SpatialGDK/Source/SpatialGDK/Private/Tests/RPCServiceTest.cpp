@@ -467,3 +467,123 @@ RPC_SERVICE_TEST(GIVEN_no_authority_over_rpc_endpoint_WHEN_push_multicast_rpcs_t
 	TestTrue("Entity creation multicast test returned expected results", (InitiallyPresent == 2));
 	return true;
 }
+
+RPC_SERVICE_TEST(GIVEN_ring_buffer_sizes_WHEN_get_descriptors_and_ack_field_ids_THEN_ring_buffer_descriptors_and_ack_field_ids_are_consistent)
+{
+	// Client Endpoint should have this layout:
+	// - Server Reliable buffer
+	// - Server Reliable last sent ID
+	// - Server Unreliable buffer
+	// - Server Unreliable last sent ID
+	// - Client Reliable ack
+	// - Client Unreliable ack
+	{
+		Schema_FieldId CurrentId = 1;
+
+		{
+			const SpatialGDK::RPCRingBufferDescriptor ServerReliableDescriptor =
+				SpatialGDK::RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::ServerReliable);
+			TestTrue("Server Reliable buffer starts as expected", ServerReliableDescriptor.SchemaFieldStart == CurrentId);
+			const uint32 ExpectedBufferSize = SpatialGDK::RPCRingBufferUtils::GetRingBufferSize(ERPCType::ServerReliable);
+			TestTrue("Server Reliable buffer has expected size", ServerReliableDescriptor.RingBufferSize == ExpectedBufferSize);
+			CurrentId += ExpectedBufferSize;
+			TestTrue("Server Reliable last sent ID field has expected value", ServerReliableDescriptor.LastSentRPCFieldId == CurrentId);
+			CurrentId++;
+		}
+
+		{
+			const SpatialGDK::RPCRingBufferDescriptor ServerUnreliableDescriptor =
+				SpatialGDK::RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::ServerUnreliable);
+			TestTrue("Server Unreliable buffer starts as expected", ServerUnreliableDescriptor.SchemaFieldStart == CurrentId);
+			const uint32 ExpectedBufferSize = SpatialGDK::RPCRingBufferUtils::GetRingBufferSize(ERPCType::ServerUnreliable);
+			TestTrue("Server Unreliable buffer has expected size", ServerUnreliableDescriptor.RingBufferSize == ExpectedBufferSize);
+			CurrentId += ExpectedBufferSize;
+			TestTrue("Server Unreliable last sent ID field has expected value", ServerUnreliableDescriptor.LastSentRPCFieldId == CurrentId);
+			CurrentId++;
+		}
+
+		{
+			const Schema_FieldId ClientReliableAckFieldId = SpatialGDK::RPCRingBufferUtils::GetAckFieldId(ERPCType::ClientReliable);
+			TestTrue("Client Reliable ack field ID has expected value", ClientReliableAckFieldId == CurrentId);
+			CurrentId++;
+		}
+
+		{
+			const Schema_FieldId ClientUnreliableAckFieldId = SpatialGDK::RPCRingBufferUtils::GetAckFieldId(ERPCType::ClientUnreliable);
+			TestTrue("Client Unreliable ack field ID has expected value", ClientUnreliableAckFieldId == CurrentId);
+			CurrentId++;
+		}
+	}
+
+	// Server Endpoint should have this layout:
+	// - Client Reliable buffer
+	// - Client Reliable last sent ID
+	// - Client Unreliable buffer
+	// - Client Unreliable last sent ID
+	// - Server Reliable ack
+	// - Server Unreliable ack
+	{
+		Schema_FieldId CurrentId = 1;
+
+		{
+			const SpatialGDK::RPCRingBufferDescriptor ClientReliableDescriptor =
+				SpatialGDK::RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::ClientReliable);
+			TestTrue("Client Reliable buffer starts as expected", ClientReliableDescriptor.SchemaFieldStart == CurrentId);
+			const uint32 ExpectedBufferSize = SpatialGDK::RPCRingBufferUtils::GetRingBufferSize(ERPCType::ClientReliable);
+			TestTrue("Client Reliable buffer has expected size", ClientReliableDescriptor.RingBufferSize == ExpectedBufferSize);
+			CurrentId += ExpectedBufferSize;
+			TestTrue("Client Reliable last sent ID field has expected value", ClientReliableDescriptor.LastSentRPCFieldId == CurrentId);
+			CurrentId++;
+		}
+
+		{
+			const SpatialGDK::RPCRingBufferDescriptor ClientUnreliableDescriptor =
+				SpatialGDK::RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::ClientUnreliable);
+			TestTrue("Client Unreliable buffer starts as expected", ClientUnreliableDescriptor.SchemaFieldStart == CurrentId);
+			const uint32 ExpectedBufferSize = SpatialGDK::RPCRingBufferUtils::GetRingBufferSize(ERPCType::ClientUnreliable);
+			TestTrue("Client Unreliable buffer has expected size", ClientUnreliableDescriptor.RingBufferSize == ExpectedBufferSize);
+			CurrentId += ExpectedBufferSize;
+			TestTrue("Client Unreliable last sent ID field has expected value", ClientUnreliableDescriptor.LastSentRPCFieldId == CurrentId);
+			CurrentId++;
+		}
+
+		{
+			const Schema_FieldId ServerReliableAckFieldId = SpatialGDK::RPCRingBufferUtils::GetAckFieldId(ERPCType::ServerReliable);
+			TestTrue("Server Reliable ack field ID has expected value", ServerReliableAckFieldId == CurrentId);
+			CurrentId++;
+		}
+
+		{
+			const Schema_FieldId ServerUnreliableAckFieldId = SpatialGDK::RPCRingBufferUtils::GetAckFieldId(ERPCType::ServerUnreliable);
+			TestTrue("Server Unreliable ack field ID has expected value", ServerUnreliableAckFieldId == CurrentId);
+			CurrentId++;
+		}
+	}
+
+	// Multicast RPCs should have this layout:
+	// - Multicast buffer
+	// - Multicast last sent ID
+	// - Initially present RPCs count
+	{
+		Schema_FieldId CurrentId = 1;
+
+		{
+			const SpatialGDK::RPCRingBufferDescriptor MulticastDescriptor =
+				SpatialGDK::RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::NetMulticast);
+			TestTrue("Multicast buffer starts as expected", MulticastDescriptor.SchemaFieldStart == CurrentId);
+			const uint32 ExpectedBufferSize = SpatialGDK::RPCRingBufferUtils::GetRingBufferSize(ERPCType::NetMulticast);
+			TestTrue("Multicast buffer has expected size", MulticastDescriptor.RingBufferSize == ExpectedBufferSize);
+			CurrentId += ExpectedBufferSize;
+			TestTrue("Multicast last sent ID field has expected value", MulticastDescriptor.LastSentRPCFieldId == CurrentId);
+			CurrentId++;
+		}
+
+		{
+			const Schema_FieldId InitiallyPresentRPCsFieldId = SpatialGDK::RPCRingBufferUtils::GetInitiallyPresentMulticastRPCsCountFieldId();
+			TestTrue("Initially Present Multicast RPCs Count field ID has expected value", InitiallyPresentRPCsFieldId == CurrentId);
+			CurrentId++;
+		}
+	}
+
+	return true;
+}
