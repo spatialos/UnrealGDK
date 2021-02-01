@@ -100,12 +100,17 @@ struct ConfigureConnection
 	FString FormatWorkerSDKLogFilePrefix() const
 	{
 		FString FinalLogFilePrefix = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir());
+		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("FinalLogFilePrefix1: %s"), *FinalLogFilePrefix);
 		if (!Config.WorkerSDKLogPrefix.IsEmpty())
 		{
 			FinalLogFilePrefix += Config.WorkerSDKLogPrefix;
+			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("FinalLogFilePrefix with Prefix: %s"), *FinalLogFilePrefix);
 		}
 		FinalLogFilePrefix += Config.WorkerId + TEXT("-");
+		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("FinalLogFilePrefix with workerID: %s"), *FinalLogFilePrefix);
+		FinalLogFilePrefix = "/sdcard/UE4Game/GDKShooter/GDKShooter/Saved/Logs/111.log";
 		return FinalLogFilePrefix;
+
 	}
 
 	const FConnectionConfig& Config;

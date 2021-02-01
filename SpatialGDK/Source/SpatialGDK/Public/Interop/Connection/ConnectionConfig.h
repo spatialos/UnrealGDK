@@ -25,11 +25,11 @@ struct FConnectionConfig
 
 	FConnectionConfig()
 		: UseExternalIp(false)
-		, EnableWorkerSDKProtocolLogging(false)
+		, EnableWorkerSDKProtocolLogging(true)
 		, EnableWorkerSDKOpLogging(false)
 		, WorkerSDKLogFileSize(10 * 1024 * 1024)
 		, WorkerSDKLogLevel(WORKER_LOG_LEVEL_INFO)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_TCP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_KCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 		// These settings will be overridden by Spatial GDK settings before connection applied (see PreConnectInit)
 		, TcpNoDelay(0)
