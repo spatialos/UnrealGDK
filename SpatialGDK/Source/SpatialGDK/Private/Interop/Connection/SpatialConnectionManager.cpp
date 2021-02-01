@@ -110,7 +110,6 @@ struct ConfigureConnection
 		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("FinalLogFilePrefix with workerID: %s"), *FinalLogFilePrefix);
 		FinalLogFilePrefix = "/sdcard/UE4Game/GDKShooter/GDKShooter/Saved/Logs/111.log";
 		return FinalLogFilePrefix;
-
 	}
 
 	const FConnectionConfig& Config;
