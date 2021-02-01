@@ -9,6 +9,7 @@
 #include "UObject/TextProperty.h"
 
 #include "SpatialGDKSettings.h"
+#include "Utils/SpatialDebugger.h"
 
 #include "SpatialStatics.generated.h"
 
@@ -32,7 +33,6 @@ class SPATIALGDK_API USpatialStatics : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
-
 	/**
 	 * Returns true if SpatialOS Networking is enabled.
 	 */
@@ -40,14 +40,27 @@ public:
 	static bool IsSpatialNetworkingEnabled();
 
 	/**
-	* Returns true if spatial networking and multi worker are enabled.
-	*/
+	 * Returns whether handover is disabled in offloading scenarios.
+	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-	static bool IsSpatialMultiWorkerEnabled(const UObject* WorldContextObject);
+	static bool IsHandoverEnabled(const UObject* WorldContextObject);
 
 	/**
-	* Returns true if there is more than one worker layer in the SpatialWorldSettings and IsMultiWorkerEnabled.
-	*/
+	 * Returns true if spatial networking and multi worker are enabled.
+	 */
+	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool IsMultiWorkerEnabled();
+
+	/**
+	 * Returns the multi worker settings class.
+	 */
+	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static TSubclassOf<UAbstractSpatialMultiWorkerSettings> GetSpatialMultiWorkerClass(const UObject* WorldContextObject,
+																					   bool bForceNonEditorSettings = false);
+
+	/**
+	 * Returns true if there is more than one worker layer in the SpatialWorldSettings and IsMultiWorkerEnabled.
+	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading")
 	static bool IsSpatialOffloadingEnabled(const UWorld* World);
 
@@ -68,14 +81,22 @@ public:
 	/**
 	 * Functionally the same as the native Unreal PrintString but also logs to the spatial runtime.
 	 */
-	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject", CallableWithoutWorldContext, Keywords = "log print spatial", AdvancedDisplay = "2", DevelopmentOnly), Category = "Utilities|String")
-	static void PrintStringSpatial(UObject* WorldContextObject, const FString& InString = FString(TEXT("Hello")), bool bPrintToScreen = true, FLinearColor TextColor = FLinearColor(0.0, 0.66, 1.0), float Duration = 2.f);
+	UFUNCTION(BlueprintCallable,
+			  meta = (WorldContext = "WorldContextObject", CallableWithoutWorldContext, Keywords = "log print spatial",
+					  AdvancedDisplay = "2", DevelopmentOnly),
+			  Category = "Utilities|String")
+	static void PrintStringSpatial(UObject* WorldContextObject, const FString& InString = FString(TEXT("Hello")),
+								   bool bPrintToScreen = true, FLinearColor TextColor = FLinearColor(0.0, 0.66, 1.0), float Duration = 2.f);
 
 	/**
 	 * Functionally the same as the native Unreal PrintText but also logs to the spatial runtime.
 	 */
-	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject", CallableWithoutWorldContext, Keywords = "log spatial", AdvancedDisplay = "2", DevelopmentOnly), Category = "Utilities|Text")
-	static void PrintTextSpatial(UObject* WorldContextObject, const FText InText = INVTEXT("Hello"), bool bPrintToScreen = true, FLinearColor TextColor = FLinearColor(0.0, 0.66, 1.0), float Duration = 2.f);
+	UFUNCTION(BlueprintCallable,
+			  meta = (WorldContext = "WorldContextObject", CallableWithoutWorldContext, Keywords = "log spatial", AdvancedDisplay = "2",
+					  DevelopmentOnly),
+			  Category = "Utilities|Text")
+	static void PrintTextSpatial(UObject* WorldContextObject, const FText InText = INVTEXT("Hello"), bool bPrintToScreen = true,
+								 FLinearColor TextColor = FLinearColor(0.0, 0.66, 1.0), float Duration = 2.f);
 
 	/**
 	 * Returns true if worker flag with the given name was found.
@@ -126,22 +147,32 @@ public:
 	 * If Spatial networking or multi-worker is disabled, this will return an invalid locking token.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Locking")
-    static FLockingToken AcquireLock(AActor* Actor, const FString& DebugString = TEXT(""));
+	static FLockingToken AcquireLock(AActor* Actor, const FString& DebugString = TEXT(""));
 
 	/**
-	* ReleaseLock should only be called for an authoritative Actor from a server where the LockToken argument
-	* was previously returned from a call to AcquireLock.
-	* If Spatial networking or multi-worker is disabled, this will early.
-	*/
+	 * ReleaseLock should only be called for an authoritative Actor from a server where the LockToken argument
+	 * was previously returned from a call to AcquireLock.
+	 * If Spatial networking or multi-worker is disabled, this will early.
+	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Locking")
-    static void ReleaseLock(const AActor* Actor, FLockingToken LockToken);
+	static void ReleaseLock(const AActor* Actor, FLockingToken LockToken);
 
 	/**
-	* IsLocked should only be called for an authoritative Actor from a server.
-	* If Spatial networking or multi-worker is disabled, this will early.
-	*/
+	 * IsLocked should only be called for an authoritative Actor from a server.
+	 * If Spatial networking or multi-worker is disabled, this will early.
+	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialGDK|Locking")
-    static bool IsLocked(const AActor* Actor);
+	static bool IsLocked(const AActor* Actor);
+
+	/**
+	 * Returns the local layer name for this worker. Returns client worker type for all clients,
+	 * and default layer for native servers.
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static FName GetLayerName(const UObject* WorldContextObject);
+
+	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Spatial Debugger", meta = (WorldContext = "WorldContextObject"))
+	static void SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* WorldContextObject, FOnConfigUIClosedDelegate Delegate);
 
 private:
 	static FName GetCurrentWorkerType(const UObject* WorldContext);

@@ -18,6 +18,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Spatial Functional Test")
 	UCameraComponent* CameraComponent;
+
 public:
 	ATestPossessionPawn();
 };

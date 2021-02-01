@@ -10,12 +10,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKFunctionalTests);
 
 IMPLEMENT_MODULE(FSpatialGDKFunctionalTestsModule, SpatialGDKFunctionalTests);
 
-void FSpatialGDKFunctionalTestsModule::StartupModule()
-{
-}
+void FSpatialGDKFunctionalTestsModule::StartupModule() {}
 
-void FSpatialGDKFunctionalTestsModule::ShutdownModule()
-{
-}
+void FSpatialGDKFunctionalTestsModule::ShutdownModule() {}
 
 #undef LOCTEXT_NAMESPACE

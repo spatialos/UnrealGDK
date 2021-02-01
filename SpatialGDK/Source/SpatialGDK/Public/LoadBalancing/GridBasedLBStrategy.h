@@ -36,7 +36,7 @@ public:
 
 	using LBStrategyRegions = TArray<TPair<VirtualWorkerId, FBox2D>>;
 
-/* UAbstractLBStrategy Interface */
+	/* UAbstractLBStrategy Interface */
 	virtual void Init() override;
 
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
@@ -45,7 +45,7 @@ public:
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 
-	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const override;
+	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const override;
 
 	virtual bool RequiresHandoverData() const override { return Rows * Cols > 1; }
 
@@ -53,9 +53,13 @@ public:
 
 	virtual uint32 GetMinimumRequiredWorkers() const override;
 	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId) override;
-/* End UAbstractLBStrategy Interface */
+	/* End UAbstractLBStrategy Interface */
 
 	LBStrategyRegions GetLBStrategyRegions() const;
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
 
 protected:
 	UPROPERTY(EditDefaultsOnly, meta = (ClampMin = "1"), Category = "Grid Based Load Balancing")

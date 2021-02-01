@@ -1,13 +1,35 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/OpList/EntityComponentOpList.h"
 
+#include "SpatialView/EntityView.h"
+#include "SpatialView/OpList/StringStorage.h"
+
 namespace SpatialGDK
 {
-
 EntityComponentOpListBuilder::EntityComponentOpListBuilder()
 	: OpListData(MakeUnique<EntityComponentOpListData>())
 {
+}
+
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntity(Worker_EntityId EntityId)
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_ADD_ENTITY;
+	Op.op.add_entity.entity_id = EntityId;
+
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveEntity(Worker_EntityId EntityId)
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_REMOVE_ENTITY;
+	Op.op.remove_entity.entity_id = EntityId;
+
+	OpListData->Ops.Add(Op);
+	return *this;
 }
 
 EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddComponent(Worker_EntityId EntityId, ComponentData Data)
@@ -45,21 +67,139 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveComponent(Work
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId,
+																		 Worker_Authority Authority, TArray<ComponentData> Components)
 {
 	Worker_Op Op = {};
-	Op.op_type = WORKER_OP_TYPE_AUTHORITY_CHANGE;
-	Op.op.authority_change.entity_id = EntityId;
-	Op.op.authority_change.component_id = ComponentId;
-	Op.op.authority_change.authority = Authority;
+	Op.op_type = WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE;
+	Op.op.component_set_authority_change.entity_id = EntityId;
+	Op.op.component_set_authority_change.component_set_id = ComponentSetId;
+	Op.op.component_set_authority_change.authority = Authority;
+	Op.op.component_set_authority_change.canonical_component_set_data_count = Components.Num();
+	Op.op.component_set_authority_change.canonical_component_set_data = StoreComponentDataArray(MoveTemp(Components));
 
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetDisconnect(Worker_ConnectionStatusCode StatusCode,
+																		  StringStorage DisconnectReason)
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_DISCONNECT;
+	Op.op.disconnect.connection_status_code = StatusCode;
+	Op.op.disconnect.reason = StoreString(MoveTemp(DisconnectReason));
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddCreateEntityCommandResponse(Worker_EntityId EntityID,
+																						   Worker_RequestId RequestId,
+																						   Worker_StatusCode StatusCode,
+																						   StringStorage Message)
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE;
+	Op.op.create_entity_response.entity_id = EntityID;
+	Op.op.create_entity_response.request_id = RequestId;
+	Op.op.create_entity_response.status_code = StatusCode;
+	Op.op.create_entity_response.message = StoreString(MoveTemp(Message));
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddReserveEntityIdsCommandResponse(
+	Worker_EntityId EntityID, uint32 NumberOfEntities, Worker_RequestId RequestId, Worker_StatusCode StatusCode, StringStorage Message)
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE;
+	Op.op.reserve_entity_ids_response.first_entity_id = EntityID;
+	Op.op.reserve_entity_ids_response.number_of_entity_ids = NumberOfEntities;
+	Op.op.reserve_entity_ids_response.request_id = RequestId;
+	Op.op.reserve_entity_ids_response.status_code = StatusCode;
+	Op.op.reserve_entity_ids_response.message = StoreString(MoveTemp(Message));
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddDeleteEntityCommandResponse(Worker_EntityId EntityID,
+																						   Worker_RequestId RequestId,
+																						   Worker_StatusCode StatusCode,
+																						   StringStorage Message)
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE;
+	Op.op.delete_entity_response.entity_id = EntityID;
+	Op.op.delete_entity_response.request_id = RequestId;
+	Op.op.delete_entity_response.status_code = StatusCode;
+	Op.op.delete_entity_response.message = StoreString(MoveTemp(Message));
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityQueryCommandResponse(Worker_RequestId RequestId,
+																						  TArray<OpListEntity> Results,
+																						  Worker_StatusCode StatusCode,
+																						  StringStorage Message)
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE;
+	Op.op.entity_query_response.result_count = Results.Num();
+	Op.op.entity_query_response.results = StoreQueriedEntities(MoveTemp(Results));
+	Op.op.entity_query_response.request_id = RequestId;
+	Op.op.entity_query_response.status_code = StatusCode;
+	Op.op.entity_query_response.message = StoreString(MoveTemp(Message));
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
+																					 Worker_StatusCode StatusCode, StringStorage Message)
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_COMMAND_RESPONSE;
+	Op.op.command_response.entity_id = EntityID;
+	Op.op.command_response.request_id = RequestId;
+	Op.op.command_response.status_code = StatusCode;
+	Op.op.command_response.message = StoreString(MoveTemp(Message));
 	OpListData->Ops.Add(Op);
 	return *this;
 }
 
 OpList EntityComponentOpListBuilder::CreateOpList() &&
 {
-	return {OpListData->Ops.GetData(), static_cast<uint32>(OpListData->Ops.Num()), MoveTemp(OpListData)};
+	return { OpListData->Ops.GetData(), static_cast<uint32>(OpListData->Ops.Num()), MoveTemp(OpListData) };
 }
 
+const char* EntityComponentOpListBuilder::StoreString(StringStorage Message) const
+{
+	OpListData->MessageStorage.Add(MoveTemp(Message));
+	return OpListData->MessageStorage.Last().Get();
+}
+
+const Worker_Entity* EntityComponentOpListBuilder::StoreQueriedEntities(TArray<OpListEntity> Entities) const
+{
+	TArray<Worker_Entity> WorkerEntities = OpListData->QueriedEntities.Add_GetRef(TArray<Worker_Entity>());
+	for (auto& Entity : Entities)
+	{
+		Worker_Entity CurrentEntity;
+		CurrentEntity.entity_id = Entity.EntityId;
+		CurrentEntity.component_count = Entity.Components.Num();
+		CurrentEntity.components = StoreComponentDataArray(MoveTemp(Entity.Components));
+		WorkerEntities.Add(MoveTemp(CurrentEntity));
+	}
+
+	return WorkerEntities.GetData();
+}
+
+const Worker_ComponentData* EntityComponentOpListBuilder::StoreComponentDataArray(TArray<ComponentData> Components) const
+{
+	TArray<Worker_ComponentData>& ComponentArray = OpListData->ComponentArrayStorage.Add_GetRef(TArray<Worker_ComponentData>());
+	for (ComponentData& Component : Components)
+	{
+		ComponentArray.Add(Component.GetWorkerComponentData());
+		OpListData->DataStorage.Add(MoveTemp(Component));
+	}
+	return ComponentArray.GetData();
+}
 } // namespace SpatialGDK

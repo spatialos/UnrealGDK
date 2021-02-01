@@ -7,5 +7,5 @@ github:
 teams:
 - name: Everyone
   permission: BUILD_AND_READ
-- name: gbu/develop/unreal
+- name: gen/team/unreal
   permission: MANAGE_BUILD_AND_READ

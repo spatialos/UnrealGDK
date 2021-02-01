@@ -13,83 +13,92 @@
 
 namespace SpatialGDK
 {
-	struct NetOwningClientWorker : Component
+struct NetOwningClientWorker : Component
+{
+	static const Worker_ComponentId ComponentId = SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID;
+
+	NetOwningClientWorker() = default;
+
+	NetOwningClientWorker(const TSchemaOption<Worker_PartitionId>& InPartitionId)
+		: ClientPartitionId(InPartitionId)
 	{
-		static const Worker_ComponentId ComponentId = SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID;
+	}
 
-		NetOwningClientWorker() = default;
+	NetOwningClientWorker(const Worker_ComponentData& Data)
+		: NetOwningClientWorker(Data.schema_type)
+	{
+	}
 
-		NetOwningClientWorker(const TSchemaOption<PhysicalWorkerName>& InWorkerId)
-			: WorkerId(InWorkerId) {}
-
-		NetOwningClientWorker(const Worker_ComponentData& Data)
+	NetOwningClientWorker(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
+		if (Schema_GetEntityIdCount(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID) == 1)
 		{
-			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-			if (Schema_GetBytesCount(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID) == 1)
-			{
-				WorkerId = GetStringFromSchema(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID);
-			}
+			ClientPartitionId = Schema_GetEntityId(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID);
+		}
+	}
+
+	Worker_ComponentData CreateNetOwningClientWorkerData() { return CreateNetOwningClientWorkerData(ClientPartitionId); }
+
+	static Worker_ComponentData CreateNetOwningClientWorkerData(const TSchemaOption<Worker_PartitionId>& PartitionId)
+	{
+		Worker_ComponentData Data = {};
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData();
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		if (PartitionId.IsSet())
+		{
+			Schema_AddEntityId(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID, *PartitionId);
 		}
 
-		Worker_ComponentData CreateNetOwningClientWorkerData()
+		return Data;
+	}
+
+	Worker_ComponentUpdate CreateNetOwningClientWorkerUpdate() const { return CreateNetOwningClientWorkerUpdate(ClientPartitionId); }
+
+	static Worker_ComponentUpdate CreateNetOwningClientWorkerUpdate(const TSchemaOption<Worker_PartitionId>& PartitionId)
+	{
+		Worker_ComponentUpdate Update = {};
+		Update.component_id = ComponentId;
+		Update.schema_type = Schema_CreateComponentUpdate();
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+		if (PartitionId.IsSet())
 		{
-			return CreateNetOwningClientWorkerData(WorkerId);
+			Schema_AddEntityId(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID, *PartitionId);
+		}
+		else
+		{
+			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID);
 		}
 
-		static Worker_ComponentData CreateNetOwningClientWorkerData(const TSchemaOption<PhysicalWorkerName>& WorkerId)
+		return Update;
+	}
+
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) { ApplyComponentUpdate(Update.schema_type); }
+
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update);
+
+		if (Schema_GetEntityIdCount(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID) == 1)
 		{
-			Worker_ComponentData Data = {};
-			Data.component_id = ComponentId;
-			Data.schema_type = Schema_CreateComponentData();
-			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-			if (WorkerId.IsSet())
-			{
-				AddStringToSchema(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID, *WorkerId);
-			}
-
-			return Data;
+			ClientPartitionId = Schema_GetEntityId(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID);
 		}
-
-		Worker_ComponentUpdate CreateNetOwningClientWorkerUpdate()
+		else if (Schema_IsComponentUpdateFieldCleared(Update, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID))
 		{
-			return CreateNetOwningClientWorkerUpdate(WorkerId);
+			ClientPartitionId = TSchemaOption<Worker_PartitionId>();
 		}
+	}
 
-		static Worker_ComponentUpdate CreateNetOwningClientWorkerUpdate(const TSchemaOption<PhysicalWorkerName>& WorkerId)
-		{
-			Worker_ComponentUpdate Update = {};
-			Update.component_id = ComponentId;
-			Update.schema_type = Schema_CreateComponentUpdate();
-			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+	void SetPartitionId(const Worker_PartitionId& InPartitionId)
+	{
+		ClientPartitionId = InPartitionId == SpatialConstants::INVALID_ENTITY_ID ? TSchemaOption<Worker_PartitionId>() : InPartitionId;
+	}
 
-			if (WorkerId.IsSet())
-			{
-				AddStringToSchema(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID, *WorkerId);
-			}
-			else
-			{
-				Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID);
-			}
-
-			return Update;
-		}
-
-		void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
-		{
-			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
-			if (Schema_GetBytesCount(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID) == 1)
-			{
-				WorkerId = GetStringFromSchema(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID);
-			}
-			else if (Schema_IsComponentUpdateFieldCleared(Update.schema_type, SpatialConstants::NET_OWNING_CLIENT_WORKER_FIELD_ID))
-			{
-				WorkerId = TSchemaOption<PhysicalWorkerName>();
-			}
-		}
-
-		// Client worker ID corresponding to the owning net connection (if exists).
-		TSchemaOption<PhysicalWorkerName> WorkerId;
-	};
+	// Client partition entity ID corresponding to the owning net connection (if exists).
+	TSchemaOption<Worker_PartitionId> ClientPartitionId;
+};
 
 } // namespace SpatialGDK

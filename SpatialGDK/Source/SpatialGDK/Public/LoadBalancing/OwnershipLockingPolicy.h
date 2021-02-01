@@ -49,7 +49,7 @@ private:
 	UFUNCTION()
 	void OnHierarchyRootActorDeleted(AActor* DestroyedActorRoot);
 
-	virtual bool AcquireLockFromDelegate(AActor* ActorToLock,    const FString& DelegateLockIdentifier) override;
+	virtual bool AcquireLockFromDelegate(AActor* ActorToLock, const FString& DelegateLockIdentifier) override;
 	virtual bool ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier) override;
 
 	void RecalculateAllExplicitlyLockedActorsInThisHierarchy(const AActor* HierarchyRoot);

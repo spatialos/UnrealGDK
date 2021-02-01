@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -7,7 +7,6 @@
 
 namespace SpatialGDK
 {
-
 // A wrapper around a Worker_EntityQuery that allows it to be stored and moved.
 class EntityQuery
 {
@@ -35,7 +34,6 @@ private:
 
 	TArray<Worker_ComponentId> SnapshotComponentIds;
 	TArray<Worker_Constraint> Constraints; // Stable pointer storage.
-	uint8 ResultType;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

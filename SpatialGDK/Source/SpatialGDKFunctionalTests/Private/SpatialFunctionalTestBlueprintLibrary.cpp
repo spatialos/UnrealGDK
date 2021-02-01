@@ -2,7 +2,11 @@
 
 #include "SpatialFunctionalTestBlueprintLibrary.h"
 
-FSpatialFunctionalTestStepDefinition USpatialFunctionalTestBlueprintLibrary::MakeStepDefinition(const FString& StepName, const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, const float StepTimeLimit)
+FSpatialFunctionalTestStepDefinition USpatialFunctionalTestBlueprintLibrary::MakeStepDefinition(const FString& StepName,
+																								const FStepIsReadyDelegate& IsReadyEvent,
+																								const FStepStartDelegate& StartEvent,
+																								const FStepTickDelegate& TickEvent,
+																								const float StepTimeLimit)
 {
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 	StepDefinition.StepName = StepName;

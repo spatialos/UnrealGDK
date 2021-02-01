@@ -11,15 +11,11 @@
 
 namespace SpatialGDK
 {
-
 struct RPCRingBuffer
 {
 	RPCRingBuffer(ERPCType InType);
 
-	const TOptional<RPCPayload>& GetRingBufferElement(uint64 RPCId) const
-	{
-		return RingBuffer[(RPCId - 1) % RingBuffer.Num()];
-	}
+	const TOptional<RPCPayload>& GetRingBufferElement(uint64 RPCId) const { return RingBuffer[(RPCId - 1) % RingBuffer.Num()]; }
 
 	ERPCType Type;
 	TArray<TOptional<RPCPayload>> RingBuffer;
@@ -28,15 +24,9 @@ struct RPCRingBuffer
 
 struct RPCRingBufferDescriptor
 {
-	uint32 GetRingBufferElementIndex(uint64 RPCId) const
-	{
-		return (RPCId - 1) % RingBufferSize;
-	}
+	uint32 GetRingBufferElementIndex(uint64 RPCId) const { return (RPCId - 1) % RingBufferSize; }
 
-	Schema_FieldId GetRingBufferElementFieldId(uint64 RPCId) const
-	{
-		return SchemaFieldStart + GetRingBufferElementIndex(RPCId);
-	}
+	Schema_FieldId GetRingBufferElementFieldId(uint64 RPCId) const { return SchemaFieldStart + GetRingBufferElementIndex(RPCId); }
 
 	uint32 RingBufferSize;
 	Schema_FieldId SchemaFieldStart;
@@ -45,12 +35,13 @@ struct RPCRingBufferDescriptor
 
 namespace RPCRingBufferUtils
 {
-
 Worker_ComponentId GetRingBufferComponentId(ERPCType Type);
+Worker_ComponentId GetRingBufferAuthComponentSetId(ERPCType Type);
 RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type);
 uint32 GetRingBufferSize(ERPCType Type);
 
 Worker_ComponentId GetAckComponentId(ERPCType Type);
+Worker_ComponentId GetAckAuthComponentSetId(ERPCType Type);
 Schema_FieldId GetAckFieldId(ERPCType Type);
 
 Schema_FieldId GetInitiallyPresentMulticastRPCsCountFieldId();

@@ -25,11 +25,12 @@ namespace ReleaseTool
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private const string CandidateCommitMessageTemplate = "Release candidate for version {0}.";
-        private const string ReleaseBranchCreationCommitMessageTemplate = "Created a release branch based on {0} release candidate.";
         private const string PullRequestTemplate = "Release {0}";
         private const string prAnnotationTemplate = "* Successfully created a [pull request]({0}) " +
             "in the repo `{1}` from `{2}` into `{3}`. " +
             "Your human labour is now required to complete the tasks listed in the PR descriptions and unblock the pipeline and resume the release.\n";
+        private const string branchAnnotationTemplate = "* Successfully created a [release candidate branch]({0}) " +
+            "in the repo `{1}`, and it will evantually become `{2}` (no pull request as the specified release branch did not exist for this repository).\n";
 
         // Names of the version files that live in the UnrealEngine repository.
         private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
@@ -111,11 +112,11 @@ namespace ReleaseTool
                     // 1. Clones the source repo.
                 using (var gitClient = GitClient.FromRemote(remoteUrl))
                 {
-                    // 2. Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
-                    gitClient.CheckoutRemoteBranch(options.SourceBranch);
-
                     if (!gitClient.LocalBranchExists($"origin/{options.CandidateBranch}"))
                     {
+                        // 2. Checks out the source branch, which defaults to 4.xx-SpatialOSUnrealGDK in UnrealEngine and master in all other repos.
+                        gitClient.CheckoutRemoteBranch(options.SourceBranch);
+
                         // 3. Makes repo-specific changes for prepping the release (e.g. updating version files, formatting the CHANGELOG).
                         switch (options.GitRepoName)
                         {
@@ -154,10 +155,12 @@ namespace ReleaseTool
                     // 5. IF the release branch does not exist, creates it from the source branch and pushes it to the remote.
                     if (!gitClient.LocalBranchExists($"origin/{options.ReleaseBranch}"))
                     {
-                        gitClient.Fetch();
-                        gitClient.CheckoutRemoteBranch(options.CandidateBranch);
-                        gitClient.Commit(string.Format(ReleaseBranchCreationCommitMessageTemplate, options.Version));
-                        gitClient.ForcePush(options.ReleaseBranch);
+                        Logger.Info("The release branch {0} does not exist! Going ahead with the PR-less release process.", options.ReleaseBranch);
+                        Logger.Info("Release candidate head hash: {0}", gitClient.GetHeadCommit().Sha);
+                        var branchAnnotation = string.Format(branchAnnotationTemplate,
+                            $"https://github.com/{options.GithubOrgName}/{options.GitRepoName}/tree/{options.CandidateBranch}", options.GitRepoName, options.ReleaseBranch);
+                        BuildkiteAgent.Annotate(AnnotationLevel.Info, "candidate-into-release-prs", branchAnnotation, true);
+                        return 0;
                     }
 
                     // 6. Opens a PR for merging the RC branch into the release branch.
@@ -184,8 +187,8 @@ namespace ReleaseTool
                     BuildkiteAgent.Annotate(AnnotationLevel.Info, "candidate-into-release-prs", prAnnotation, true);
 
                     Logger.Info("Pull request available: {0}", pullRequest.HtmlUrl);
-                    Logger.Info("Successfully created release!");
-                    Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
+                    Logger.Info("Successfully created pull request for the release!");
+                    Logger.Info("PR head hash: {0}", gitClient.GetHeadCommit().Sha);
                 }
             }
             catch (Exception e)

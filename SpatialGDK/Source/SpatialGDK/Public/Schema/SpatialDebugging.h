@@ -10,7 +10,6 @@
 
 namespace SpatialGDK
 {
-
 // The SpatialDebugging component exists to hold information which needs to be displayed by the
 // SpatialDebugger on clients but which would not normally be available to clients.
 struct SpatialDebugging : Component
@@ -23,9 +22,11 @@ struct SpatialDebugging : Component
 		, IntentVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		, IntentColor()
 		, IsLocked(false)
-	{}
+	{
+	}
 
-	SpatialDebugging(const VirtualWorkerId AuthoritativeVirtualWorkerIdIn, const FColor& AuthoritativeColorIn, const VirtualWorkerId IntentVirtualWorkerIdIn, const FColor& IntentColorIn, bool IsLockedIn)
+	SpatialDebugging(const VirtualWorkerId AuthoritativeVirtualWorkerIdIn, const FColor& AuthoritativeColorIn,
+					 const VirtualWorkerId IntentVirtualWorkerIdIn, const FColor& IntentColorIn, bool IsLockedIn)
 	{
 		AuthoritativeVirtualWorkerId = AuthoritativeVirtualWorkerIdIn;
 		AuthoritativeColor = AuthoritativeColorIn;
@@ -38,7 +39,8 @@ struct SpatialDebugging : Component
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		AuthoritativeVirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID);
+		AuthoritativeVirtualWorkerId =
+			Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID);
 		AuthoritativeColor = FColor(Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_COLOR));
 		IntentVirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_VIRTUAL_WORKER_ID);
 		IntentColor = FColor(Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_COLOR));
@@ -52,7 +54,8 @@ struct SpatialDebugging : Component
 		Data.schema_type = Schema_CreateComponentData();
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID, AuthoritativeVirtualWorkerId);
+		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID,
+						 AuthoritativeVirtualWorkerId);
 		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_COLOR, AuthoritativeColor.DWColor());
 		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_VIRTUAL_WORKER_ID, IntentVirtualWorkerId);
 		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_COLOR, IntentColor.DWColor());
@@ -68,7 +71,8 @@ struct SpatialDebugging : Component
 		Update.schema_type = Schema_CreateComponentUpdate();
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID, AuthoritativeVirtualWorkerId);
+		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID,
+						 AuthoritativeVirtualWorkerId);
 		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_COLOR, AuthoritativeColor.DWColor());
 		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_VIRTUAL_WORKER_ID, IntentVirtualWorkerId);
 		Schema_AddUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_COLOR, IntentColor.DWColor());
@@ -81,7 +85,8 @@ struct SpatialDebugging : Component
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-		AuthoritativeVirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID);
+		AuthoritativeVirtualWorkerId =
+			Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_VIRTUAL_WORKER_ID);
 		AuthoritativeColor = FColor(Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_AUTHORITATIVE_COLOR));
 		IntentVirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_VIRTUAL_WORKER_ID);
 		IntentColor = FColor(Schema_GetUint32(ComponentObject, SpatialConstants::SPATIAL_DEBUGGING_INTENT_COLOR));
@@ -107,4 +112,3 @@ struct SpatialDebugging : Component
 };
 
 } // namespace SpatialGDK
-

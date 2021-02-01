@@ -25,14 +25,24 @@ public:
 		FullAssetScan
 	};
 
-	bool GenerateSchema(ESchemaGenerationMethod Method);
-	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
-	void StartCloudDeployment(const FCloudDeploymentConfiguration& Configuration, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
+	enum ESchemaDatabaseValidationResult
+	{
+		Ok,
+		NotFound,
+		OldVersion,
+	};
+
+	void GenerateSchema(ESchemaGenerationMethod Method, TFunction<void(bool)> ResultCallback);
+	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback,
+						  FSpatialGDKEditorErrorHandler ErrorCallback);
+	void StartCloudDeployment(const FCloudDeploymentConfiguration& Configuration, FSimpleDelegate SuccessCallback,
+							  FSimpleDelegate FailureCallback);
 	void StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
 	bool FullScanRequired();
-	bool IsSchemaGenerated();
+
+	ESchemaDatabaseValidationResult ValidateSchemaDatabase();
 
 	void SetProjectName(const FString& InProjectName);
 

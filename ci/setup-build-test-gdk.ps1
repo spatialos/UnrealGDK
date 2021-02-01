@@ -3,7 +3,8 @@ param(
     [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production/UnrealEngine",
     [string] $msbuild_exe = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe",
     [string] $build_home = (Get-Item "$($PSScriptRoot)").parent.parent.FullName, ## The root of the entire build. Should ultimately resolve to "C:\b\<number>\".
-    [string] $unreal_engine_symlink_dir = "$build_home\UnrealEngine"
+    [string] $unreal_engine_symlink_dir = "$build_home\UnrealEngine",
+    [string] $gyms_version_path = "$gdk_home\UnrealGDKTestGymsVersion.txt"
 )
 
 class TestProjectTarget {
@@ -11,16 +12,28 @@ class TestProjectTarget {
     [ValidateNotNullOrEmpty()][string]$test_repo_branch
     [ValidateNotNullOrEmpty()][string]$test_repo_relative_uproject_path
     [ValidateNotNullOrEmpty()][string]$test_project_name
+    [ValidateNotNullOrEmpty()][string]$test_gyms_version_path
+    [ValidateNotNull()][string]$test_env_override
     
-    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name) {
+    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name, [string]$test_gyms_version_path, [string]$test_env_override) {
         $this.test_repo_url = $test_repo_url
         $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
         $this.test_project_name = $test_project_name
+        $this.test_gyms_version_path = $test_gyms_version_path
+        $this.test_env_override = $test_env_override
         
-        # If the testing repo has a branch with the same name as the current branch, use that
+        # Resolve the branch to run against. The order of priority is:
+        # envvar > same-name branch as the branch we are currently on > UnrealGDKTestGymVersion.txt > "master".
         $testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
-        if($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
+        $test_gym_version = if (Test-Path -Path $test_gyms_version_path) {[System.IO.File]::ReadAllText($test_gyms_version_path)} else {[string]::Empty}
+        if (Test-Path $test_env_override) {
+            $this.test_repo_branch = $test_env_override
+        }
+        elseif($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
             $this.test_repo_branch = $gdk_branch
+        }
+        elseif(Test-Path $test_gym_version) {
+            $this.test_repo_branch = $test_gym_version
         }
         else {
             $this.test_repo_branch = "master"
@@ -54,24 +67,17 @@ class TestSuite {
 [string] $user_cmd_line_args = "$env:TEST_ARGS"
 [string] $gdk_branch = "$env:BUILDKITE_BRANCH"
 
-[TestProjectTarget] $gdk_test_project = [TestProjectTarget]::new("git@github.com:spatialos/UnrealGDKTestGyms.git", $gdk_branch, "Game\GDKTestGyms.uproject", "GDKTestGyms")
-[TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject")
-
-# Allow overriding testing branch via environment variable
-if (Test-Path env:TEST_REPO_BRANCH) {
-    $gdk_test_project.test_repo_branch = $env:TEST_REPO_BRANCH
-}
-if (Test-Path env:NATIVE_TEST_REPO_BRANCH) {
-    $native_test_project.test_repo_branch = $env:NATIVE_TEST_REPO_BRANCH
-}
+[TestProjectTarget] $gdk_test_project = [TestProjectTarget]::new("git@github.com:spatialos/UnrealGDKTestGyms.git", $gdk_branch, "Game\GDKTestGyms.uproject", "GDKTestGyms", $gyms_version_path, $env:TEST_REPO_BRANCH)
+[TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject", $gyms_version_path, $env:NATIVE_TEST_REPO_BRANCH)
 
 $tests = @()
 
 if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
     # We run spatial tests against Vanilla UE4
-    $tests += [TestSuite]::new($gdk_test_project, "NetworkingMap", "VanillaTestResults", "/Game/Maps/FunctionalTests/SpatialNetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
+    $tests += [TestSuite]::new($gdk_test_project, "NetworkingMap", "VanillaTestResults", "/Game/Maps/FunctionalTests/CI_Fast/", "$user_gdk_settings", $False, "$user_cmd_line_args")
     
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
+        $tests[0].tests_path += "+/Game/Maps/FunctionalTests/CI_Slow/"
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
         
         # And if slow, we run NetTest functional maps against Vanilla UE4 as well
@@ -80,11 +86,11 @@ if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
 }
 else {
     # We run all tests and networked functional maps
-    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResults", "SpatialGDK.+/Game/Maps/FunctionalTests/SpatialNetworkingMap+/Game/Maps/FunctionalTests/SpatialZoningMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
-    
+    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResults", "SpatialGDK.+/Game/Maps/FunctionalTests/CI_Fast/+/Game/Maps/FunctionalTests/CI_Fast_Spatial_Only/", "$user_gdk_settings", $True, "$user_cmd_line_args")
+
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
         # And if slow, we run GDK slow tests
-        $tests[0].tests_path += "+SpatialGDKSlow."
+        $tests[0].tests_path += "+SpatialGDKSlow.+/Game/Maps/FunctionalTests/CI_Slow/+/Game/Maps/FunctionalTests/CI_Slow_Spatial_Only/"
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
         
         # And NetTests functional maps against GDK as well

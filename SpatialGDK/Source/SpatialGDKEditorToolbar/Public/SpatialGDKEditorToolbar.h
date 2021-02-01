@@ -15,6 +15,7 @@
 #include "CloudDeploymentConfiguration.h"
 #include "LocalDeploymentManager.h"
 #include "LocalReceptionistProxyServerManager.h"
+#include "SpatialGDKEditorSettings.h"
 
 class FMenuBuilder;
 class FSpatialGDKEditor;
@@ -26,6 +27,7 @@ class USoundBase;
 
 struct FWorkerTypeLaunchSection;
 class UAbstractRuntimeLoadBalancingStrategy;
+class ASpatialDebugger;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorToolbar, Log, All);
 
@@ -40,15 +42,9 @@ public:
 
 	/** FTickableEditorObject interface */
 	void Tick(float DeltaTime) override;
-	bool IsTickable() const override
-	{
-		return true;
-	}
+	bool IsTickable() const override { return true; }
 
-	TStatId GetStatId() const override
-	{
-		RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables);
-	}
+	TStatId GetStatId() const override { RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables); }
 
 	void OnShowSingleFailureNotification(const FString& NotificationText);
 	void OnShowSuccessNotification(const FString& NotificationText);
@@ -71,14 +67,23 @@ private:
 	void AddToolbarExtension(FToolBarBuilder& Builder);
 	void AddMenuExtension(FMenuBuilder& Builder);
 
-	void VerifyAndStartDeployment();
+	bool FetchRuntimeBinaryWrapper(FString RuntimeVersion);
+	bool FetchInspectorBinaryWrapper(FString InspectorVersion);
+
+	void VerifyAndStartDeployment(FString ForceSnapshot = "");
 
 	void StartLocalSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
 
-	void StartSpatialServiceButtonClicked();
-	void StopSpatialServiceButtonClicked();
+	void MapChanged(UWorld* World, EMapChangeType MapChangeType);
+	void DestroySpatialDebuggerEditor();
+	void InitialiseSpatialDebuggerEditor(UWorld* World);
+	bool IsSpatialDebuggerEditorEnabled() const;
+	bool IsMultiWorkerEnabled() const;
+	bool AllowWorkerBoundaries() const;
+	void ToggleSpatialDebuggerEditor();
 
+	void ToggleMultiworkerEditor();
 	bool StartNativeIsVisible() const;
 	bool StartNativeCanExecute() const;
 
@@ -88,14 +93,10 @@ private:
 	bool StartCloudSpatialDeploymentIsVisible() const;
 	bool StartCloudSpatialDeploymentCanExecute() const;
 
+	bool LaunchInspectorWebpageCanExecute() const;
+
 	bool StopSpatialDeploymentIsVisible() const;
 	bool StopSpatialDeploymentCanExecute() const;
-
-	bool StartSpatialServiceIsVisible() const;
-	bool StartSpatialServiceCanExecute() const;
-
-	bool StopSpatialServiceIsVisible() const;
-	bool StopSpatialServiceCanExecute() const;
 
 	void OnToggleSpatialNetworking();
 	bool OnIsSpatialNetworkingEnabled() const;
@@ -114,6 +115,7 @@ private:
 	static bool IsLocalDeploymentIPEditable();
 	static bool AreCloudDeploymentPropertiesEditable();
 
+	void OpenInspectorURL();
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
@@ -143,7 +145,8 @@ private:
 	TSharedRef<SWidget> CreateStartDropDownMenuContent();
 
 	using IsEnabledFunc = bool();
-	TSharedRef<SWidget> CreateBetterEditableTextWidget(const FText& Label, const FText& Text, FOnTextCommitted::TFuncType OnTextCommitted, IsEnabledFunc IsEnabled);
+	TSharedRef<SWidget> CreateBetterEditableTextWidget(const FText& Label, const FText& Text, FOnTextCommitted::TFuncType OnTextCommitted,
+													   IsEnabledFunc IsEnabled);
 
 	void ShowSingleFailureNotification(const FString& NotificationText);
 	void ShowTaskStartNotification(const FString& NotificationText);
@@ -163,10 +166,7 @@ private:
 
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
-	bool bStopSpatialOnExit;
-	bool bStopLocalDeploymentOnEndPIE;
-
-	bool bSchemaBuildError;
+	EAutoStopLocalDeploymentMode AutoStopLocalDeployment;
 
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 
@@ -180,7 +180,7 @@ private:
 
 	TSharedPtr<SWindow> CloudDeploymentSettingsWindowPtr;
 	TSharedPtr<SSpatialGDKCloudDeploymentConfiguration> CloudDeploymentConfigPtr;
-	
+
 	FLocalDeploymentManager* LocalDeploymentManager;
 	FLocalReceptionistProxyServerManager* LocalReceptionistProxyServerManager;
 
@@ -189,6 +189,13 @@ private:
 	FCloudDeploymentConfiguration CloudDeploymentConfiguration;
 
 	bool bStartingCloudDeployment;
+	bool bFetchingRuntimeBinary;
+	bool bFetchingInspectorBinary;
 
-	void GenerateConfigFromCurrentMap();
+	void GenerateCloudConfigFromCurrentMap();
+
+	// Used to show worker boundaries in the editor
+	TWeakObjectPtr<ASpatialDebugger> SpatialDebugger;
+
+	TOptional<FMonitoredProcess> InspectorProcess = {};
 };

@@ -11,14 +11,15 @@
 
 namespace SpatialGDK
 {
-
 struct ServerEndpoint : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
 
 	ServerEndpoint(const Worker_ComponentData& Data);
+	ServerEndpoint(Schema_ComponentData* Data);
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
+	void ApplyComponentUpdate(Schema_ComponentUpdate* Update);
 
 	RPCRingBuffer ReliableRPCBuffer;
 	RPCRingBuffer UnreliableRPCBuffer;

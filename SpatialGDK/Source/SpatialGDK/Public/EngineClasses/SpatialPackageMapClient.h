@@ -22,7 +22,7 @@ class FTimerManager;
 UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
-	GENERATED_BODY()		
+	GENERATED_BODY()
 public:
 	void Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager);
 
@@ -43,18 +43,22 @@ public:
 	void UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef);
 
 	FNetworkGUID ResolveStablyNamedObject(UObject* Object);
-	
+
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const Worker_EntityId& EntityId) const;
 
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
-	TWeakObjectPtr<UObject> GetObjectFromEntityId(const Worker_EntityId& EntityId);
+	TWeakObjectPtr<UObject> GetObjectFromEntityId(const Worker_EntityId EntityId);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(const UObject* Object);
 	Worker_EntityId GetEntityIdFromObject(const UObject* Object);
 
 	AActor* GetUniqueActorInstanceByClassRef(const FUnrealObjectRef& ClassRef);
 	AActor* GetUniqueActorInstanceByClass(UClass* Class) const;
+
+	FNetworkGUID* GetRemovedDynamicSubobjectNetGUID(const FUnrealObjectRef& ObjectRef);
+	void AddRemovedDynamicSubobjectObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID);
+	void ClearRemovedDynamicSubobjectObjectRefs(const Worker_EntityId& InEntityId);
 
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
@@ -63,12 +67,14 @@ public:
 	bool IsEntityPoolReady() const;
 	FEntityPoolReadyEvent& GetEntityPoolReadyDelegate();
 
-	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
+	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID* OutNetGUID = NULL) override;
 
 	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
 
 	// Pending object references, being asynchronously loaded.
 	TSet<FNetworkGUID> PendingReferences;
+
+	Worker_EntityId AllocateNewEntityId() const;
 
 private:
 	UPROPERTY()
@@ -78,13 +84,14 @@ private:
 
 	// Entities that have been assigned on this server and not created yet
 	TSet<Worker_EntityId_Key> PendingCreationEntityIds;
+	TMap<FUnrealObjectRef, FNetworkGUID> RemovedDynamicSubobjectObjectRefs;
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 {
 public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
-		
+
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId);
 	void AssignNewSubobjectNetGUID(UObject* Subobject, const FUnrealObjectRef& SubobjectRef);
 
@@ -92,7 +99,7 @@ public:
 	void RemoveSubobjectNetGUID(const FUnrealObjectRef& SubobjectRef);
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(UObject* Object);
-	
+
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(Worker_EntityId EntityId) const;
@@ -108,11 +115,10 @@ private:
 
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(UObject* Object);
 	void RegisterObjectRef(FNetworkGUID NetGUID, const FUnrealObjectRef& ObjectRef);
-	
+
 	FNetworkGUID RegisterNetGUIDFromPathForStaticObject(const FString& PathName, const FNetworkGUID& OuterGUID, bool bNoLoadOnClient);
 	FNetworkGUID GenerateNewNetGUID(const int32 IsStatic);
 
 	TMap<FNetworkGUID, FUnrealObjectRef> NetGUIDToUnrealObjectRef;
 	TMap<FUnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
 };
-

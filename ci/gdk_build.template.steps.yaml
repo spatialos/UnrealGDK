@@ -23,7 +23,7 @@ windows: &windows
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-03-26-102432-bk9951-8afe0ffb}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-11-18-224740-bk17641-0c4125be-d}"
     - "boot_disk_size_gb=500"
   retry:
     automatic:
@@ -32,7 +32,7 @@ windows: &windows
       - <<: *bk_interrupted_by_signal
   timeout_in_minutes: 120
   plugins:
-    - ca-johnson/taskkill#v4.1: ~
+    - improbable-eng/taskkill#v4.4.1: ~
 
 macos: &macos
   agents:
@@ -59,6 +59,7 @@ steps:
     command: "${BUILD_COMMAND}"
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+      - "GDKTestGyms/spatial/logs/**/*"
     env:
       BUILD_ALL_CONFIGURATIONS: "${BUILD_ALL_CONFIGURATIONS}"
       ENGINE_COMMIT_HASH: "${ENGINE_COMMIT_HASH}"

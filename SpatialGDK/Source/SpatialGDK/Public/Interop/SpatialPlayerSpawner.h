@@ -9,8 +9,8 @@
 #include "Templates/UniquePtr.h"
 #include "UObject/NoExportTypes.h"
 
-#include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialPlayerSpawner.generated.h"
 
@@ -27,8 +27,7 @@ class SPATIALGDK_API USpatialPlayerSpawner : public UObject
 	GENERATED_BODY()
 
 public:
-
-	void Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager);
+	void Init(USpatialNetDriver* NetDriver);
 
 	// Client
 	void SendPlayerSpawnRequest();
@@ -60,9 +59,11 @@ private:
 	SpatialGDK::SpawnPlayerRequest ObtainPlayerParams() const;
 
 	// Authoritative server worker
-	void FindPlayerStartAndProcessPlayerSpawn(Schema_Object* Request, const PhysicalWorkerName& ClientWorkerId);
-	void ForwardSpawnRequestToStrategizedServer(const Schema_Object* OriginalPlayerSpawnRequest, AActor* PlayerStart, const PhysicalWorkerName& ClientWorkerId, const VirtualWorkerId SpawningVirtualWorker);
-	void RetryForwardSpawnPlayerRequest(const Worker_EntityId EntityId, const Worker_RequestId RequestId, const bool bShouldTryDifferentPlayerStart = false);
+	void FindPlayerStartAndProcessPlayerSpawn(Schema_Object* Request, const Worker_EntityId& ClientWorkerId);
+	void ForwardSpawnRequestToStrategizedServer(const Schema_Object* OriginalPlayerSpawnRequest, AActor* PlayerStart,
+												const Worker_EntityId& ClientWorkerId, const VirtualWorkerId SpawningVirtualWorker);
+	void RetryForwardSpawnPlayerRequest(const Worker_EntityId EntityId, const Worker_RequestId RequestId,
+										const bool bShouldTryDifferentPlayerStart = false);
 
 	// Any server
 	void PassSpawnRequestToNetDriver(const Schema_Object* PlayerSpawnData, AActor* PlayerStart);
@@ -70,9 +71,7 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	FTimerManager* TimerManager;
-	int NumberOfAttempts;
 	TMap<Worker_RequestId_Key, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>> OutgoingForwardPlayerSpawnRequests;
 
-	TSet<FString> WorkersWithPlayersSpawned;
+	TSet<Worker_EntityId_Key> WorkersWithPlayersSpawned;
 };

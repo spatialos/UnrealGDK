@@ -7,7 +7,12 @@
 namespace SpatialGDK
 {
 using EdgeLength = Coordinates;
-using SchemaResultType = TArray<Worker_ComponentId>;
+
+struct SchemaResultType
+{
+	TArray<Worker_ComponentId> ComponentIds;
+	TArray<Worker_ComponentId> ComponentSetsIds;
+};
 
 struct SphereConstraint
 {
@@ -54,6 +59,7 @@ struct QueryConstraint
 	TSchemaOption<uint32> ComponentConstraint;
 	TArray<QueryConstraint> AndConstraint;
 	TArray<QueryConstraint> OrConstraint;
+	bool bSelfConstraint = false;
 
 	FORCEINLINE bool IsValid() const
 	{
@@ -102,6 +108,11 @@ struct QueryConstraint
 			return true;
 		}
 
+		if (bSelfConstraint)
+		{
+			return true;
+		}
+
 		return false;
 	}
 };
@@ -110,9 +121,16 @@ struct Query
 {
 	QueryConstraint Constraint;
 
-	// Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid.
-	TSchemaOption<bool> FullSnapshotResult; // Whether all components should be included or none.
-	SchemaResultType ResultComponentIds; // Which components should be included.
+	// These three fields determine the set of components that are sent back to the worker interested in the
+	// query.
+	// - If FullSnapshotResult is set to false, the query in invalid;
+	// - If FullSnapshotResult is true and ResultComponentIds and ResultComponentSetIds are empty, all the
+	//   components are sent.
+	// - If FullSnapshotResult is not set, the set of components sent is the union of ResultComponentIds and
+	//   all the sets in ResultComponentSetIds (these sets are defined in the schema).
+	TSchemaOption<bool> FullSnapshotResult;			  // Whether all components should be included or none.
+	TArray<Worker_ComponentId> ResultComponentIds;	  // Which components should be included.
+	TArray<Worker_ComponentId> ResultComponentSetIds; // Which component sets should be included.
 
 	// Used for frequency-based rate limiting. Represents the maximum frequency of updates for this
 	// particular query. An empty option represents no rate-limiting (ie. updates are received
@@ -145,7 +163,7 @@ using FrequencyToConstraintsMap = TMap<float, TArray<QueryConstraint>>;
 // A common type for lists of frequency constraints to be converted into queries later
 using FrequencyConstraints = TArray<FrequencyConstraint>;
 
-struct ComponentInterest
+struct ComponentSetInterest
 {
 	TArray<Query> Queries;
 };
@@ -154,7 +172,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 {
 	Schema_Object* QueryConstraintObject = Schema_AddObject(QueryObject, Id);
 
-	//option<SphereConstraint> sphere_constraint = 1;
+	// option<SphereConstraint> sphere_constraint = 1;
 	if (Constraint.SphereConstraint.IsSet())
 	{
 		Schema_Object* SphereConstraintObject = Schema_AddObject(QueryConstraintObject, 1);
@@ -163,7 +181,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 		Schema_AddDouble(SphereConstraintObject, 2, Constraint.SphereConstraint->Radius);
 	}
 
-	//option<CylinderConstraint> cylinder_constraint = 2;
+	// option<CylinderConstraint> cylinder_constraint = 2;
 	if (Constraint.CylinderConstraint.IsSet())
 	{
 		Schema_Object* CylinderConstraintObject = Schema_AddObject(QueryConstraintObject, 2);
@@ -172,7 +190,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 		Schema_AddDouble(CylinderConstraintObject, 2, Constraint.CylinderConstraint->Radius);
 	}
 
-	//option<BoxConstraint> box_constraint = 3;
+	// option<BoxConstraint> box_constraint = 3;
 	if (Constraint.BoxConstraint.IsSet())
 	{
 		Schema_Object* BoxConstraintObject = Schema_AddObject(QueryConstraintObject, 3);
@@ -180,7 +198,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 		AddCoordinateToSchema(BoxConstraintObject, 2, Constraint.BoxConstraint->EdgeLength);
 	}
 
-	//option<RelativeSphereConstraint> relative_sphere_constraint = 4;
+	// option<RelativeSphereConstraint> relative_sphere_constraint = 4;
 	if (Constraint.RelativeSphereConstraint.IsSet())
 	{
 		Schema_Object* RelativeSphereConstraintObject = Schema_AddObject(QueryConstraintObject, 4);
@@ -188,33 +206,33 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 		Schema_AddDouble(RelativeSphereConstraintObject, 1, Constraint.RelativeSphereConstraint->Radius);
 	}
 
-	//option<RelativeCylinderConstraint> relative_cylinder_constraint = 5;
+	// option<RelativeCylinderConstraint> relative_cylinder_constraint = 5;
 	if (Constraint.RelativeCylinderConstraint.IsSet())
 	{
 		Schema_Object* RelativeCylinderConstraintObject = Schema_AddObject(QueryConstraintObject, 5);
 		Schema_AddDouble(RelativeCylinderConstraintObject, 1, Constraint.RelativeCylinderConstraint->Radius);
 	}
 
-	//option<RelativeBoxConstraint> relative_box_constraint = 6;
+	// option<RelativeBoxConstraint> relative_box_constraint = 6;
 	if (Constraint.RelativeBoxConstraint.IsSet())
 	{
 		Schema_Object* RelativeBoxConstraintObject = Schema_AddObject(QueryConstraintObject, 6);
 		AddCoordinateToSchema(RelativeBoxConstraintObject, 1, Constraint.RelativeBoxConstraint->EdgeLength);
 	}
 
-	//option<int64> entity_id_constraint = 7;
+	// option<int64> entity_id_constraint = 7;
 	if (Constraint.EntityIdConstraint.IsSet())
 	{
 		Schema_AddInt64(QueryConstraintObject, 7, *Constraint.EntityIdConstraint);
 	}
 
-	//option<uint32> component_constraint = 8;
-	if (Constraint.ComponentConstraint)
+	// option<uint32> component_constraint = 8;
+	if (Constraint.ComponentConstraint.IsSet())
 	{
 		Schema_AddUint32(QueryConstraintObject, 8, *Constraint.ComponentConstraint);
 	}
 
-	//list<QueryConstraint> and_constraint = 9;
+	// list<QueryConstraint> and_constraint = 9;
 	if (Constraint.AndConstraint.Num() > 0)
 	{
 		for (const QueryConstraint& AndConstraintEntry : Constraint.AndConstraint)
@@ -223,7 +241,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 		}
 	}
 
-	//list<QueryConstraint> or_constraint = 10;
+	// list<QueryConstraint> or_constraint = 10;
 	if (Constraint.OrConstraint.Num() > 0)
 	{
 		for (const QueryConstraint& OrConstraintEntry : Constraint.OrConstraint)
@@ -231,11 +249,17 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 			AddQueryConstraintToQuerySchema(QueryConstraintObject, 10, OrConstraintEntry);
 		}
 	}
+
+	// option<SelfConstraint> self_constraint = 12;
+	if (Constraint.bSelfConstraint)
+	{
+		Schema_AddObject(QueryConstraintObject, 12);
+	}
 }
 
 inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestObject, Schema_FieldId Id, const Query& Query)
 {
-	checkf(!(Query.FullSnapshotResult.IsSet() && Query.ResultComponentIds.Num() > 0), TEXT("Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid."));
+	checkf(!(Query.FullSnapshotResult.IsSet() && !Query.FullSnapshotResult), TEXT("Invalid to set FullSnapshotResult to false"));
 
 	Schema_Object* QueryObject = Schema_AddObject(ComponentInterestObject, Id);
 
@@ -251,13 +275,18 @@ inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestOb
 		Schema_AddUint32(QueryObject, 3, ComponentId);
 	}
 
+	for (uint32 ComponentSetId : Query.ResultComponentSetIds)
+	{
+		Schema_AddUint32(QueryObject, 5, ComponentSetId);
+	}
+
 	if (Query.Frequency.IsSet())
 	{
 		Schema_AddFloat(QueryObject, 4, *Query.Frequency);
 	}
 }
 
-inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, Schema_FieldId Id, const ComponentInterest& Value)
+inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, Schema_FieldId Id, const ComponentSetInterest& Value)
 {
 	Schema_Object* ComponentInterestObject = Schema_AddObject(InterestObject, Id);
 
@@ -269,7 +298,7 @@ inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, 
 
 inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
-	QueryConstraint NewQueryConstraint;
+	QueryConstraint NewQueryConstraint{};
 
 	Schema_Object* QueryConstraintObject = Schema_IndexObject(Object, Id, Index);
 
@@ -278,6 +307,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* SphereConstraintObject = Schema_GetObject(QueryConstraintObject, 1);
 
+		NewQueryConstraint.SphereConstraint = SphereConstraint{};
 		NewQueryConstraint.SphereConstraint->Center = GetCoordinateFromSchema(SphereConstraintObject, 1);
 		NewQueryConstraint.SphereConstraint->Radius = Schema_GetDouble(SphereConstraintObject, 2);
 	}
@@ -287,6 +317,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* CylinderConstraintObject = Schema_GetObject(QueryConstraintObject, 2);
 
+		NewQueryConstraint.CylinderConstraint = CylinderConstraint{};
 		NewQueryConstraint.CylinderConstraint->Center = GetCoordinateFromSchema(CylinderConstraintObject, 1);
 		NewQueryConstraint.CylinderConstraint->Radius = Schema_GetDouble(CylinderConstraintObject, 2);
 	}
@@ -296,6 +327,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* BoxConstraintObject = Schema_GetObject(QueryConstraintObject, 3);
 
+		NewQueryConstraint.BoxConstraint = BoxConstraint{};
 		NewQueryConstraint.BoxConstraint->Center = GetCoordinateFromSchema(BoxConstraintObject, 1);
 		NewQueryConstraint.BoxConstraint->EdgeLength = GetCoordinateFromSchema(BoxConstraintObject, 2);
 	}
@@ -305,6 +337,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* RelativeSphereConstraintObject = Schema_GetObject(QueryConstraintObject, 4);
 
+		NewQueryConstraint.RelativeSphereConstraint = RelativeSphereConstraint{};
 		NewQueryConstraint.RelativeSphereConstraint->Radius = Schema_GetDouble(RelativeSphereConstraintObject, 1);
 	}
 
@@ -313,6 +346,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* RelativeCylinderConstraintObject = Schema_GetObject(QueryConstraintObject, 5);
 
+		NewQueryConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{};
 		NewQueryConstraint.RelativeCylinderConstraint->Radius = Schema_GetDouble(RelativeCylinderConstraintObject, 1);
 	}
 
@@ -321,23 +355,20 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	{
 		Schema_Object* RelativeBoxConstraintObject = Schema_GetObject(QueryConstraintObject, 6);
 
+		NewQueryConstraint.RelativeBoxConstraint = RelativeBoxConstraint{};
 		NewQueryConstraint.RelativeBoxConstraint->EdgeLength = GetCoordinateFromSchema(RelativeBoxConstraintObject, 1);
 	}
 
-	//option<int64> entity_id_constraint = 7;
-	if (Schema_GetObjectCount(QueryConstraintObject, 7) > 0)
+	// option<int64> entity_id_constraint = 7;
+	if (Schema_GetInt64Count(QueryConstraintObject, 7) > 0)
 	{
-		Schema_Object* EntityIdConstraintObject = Schema_GetObject(QueryConstraintObject, 7);
-
-		NewQueryConstraint.EntityIdConstraint = Schema_GetInt64(EntityIdConstraintObject, 1);
+		NewQueryConstraint.EntityIdConstraint = Schema_GetInt64(QueryConstraintObject, 7);
 	}
 
 	// option<uint32> component_constraint = 8;
-	if (Schema_GetObjectCount(QueryConstraintObject, 8) > 0)
+	if (Schema_GetUint32Count(QueryConstraintObject, 8) > 0)
 	{
-		Schema_Object* ComponentConstraintObject = Schema_GetObject(QueryConstraintObject, 8);
-
-		NewQueryConstraint.ComponentConstraint = Schema_GetUint32(ComponentConstraintObject, 1);
+		NewQueryConstraint.ComponentConstraint = Schema_GetUint32(QueryConstraintObject, 8);
 	}
 
 	// list<QueryConstraint> and_constraint = 9;
@@ -358,12 +389,18 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 		NewQueryConstraint.OrConstraint.Add(IndexQueryConstraintFromSchema(QueryConstraintObject, 10, OrIndex));
 	}
 
+	// option<SelfConstraint> self_constraint = 12;
+	if (Schema_GetObjectCount(QueryConstraintObject, 12) > 0)
+	{
+		NewQueryConstraint.bSelfConstraint = true;
+	}
+
 	return NewQueryConstraint;
 }
 
 inline QueryConstraint GetQueryConstraintFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
-	return IndexQueryConstraintFromSchema(Object, Id, 1);
+	return IndexQueryConstraintFromSchema(Object, Id, 0);
 }
 
 inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
@@ -374,29 +411,36 @@ inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint
 
 	NewQuery.Constraint = GetQueryConstraintFromSchema(QueryObject, 1);
 
-	if (Schema_GetObjectCount(QueryObject, 2) > 0)
+	if (Schema_GetBoolCount(QueryObject, 2) > 0)
 	{
 		NewQuery.FullSnapshotResult = GetBoolFromSchema(QueryObject, 2);
 	}
 
-	uint32 ResultComponentIdCount = Schema_GetObjectCount(QueryObject, 3);
+	const uint32 ResultComponentIdCount = Schema_GetUint32Count(QueryObject, 3);
 	NewQuery.ResultComponentIds.Reserve(ResultComponentIdCount);
 	for (uint32 ComponentIdIndex = 0; ComponentIdIndex < ResultComponentIdCount; ComponentIdIndex++)
 	{
 		NewQuery.ResultComponentIds.Add(Schema_IndexUint32(QueryObject, 3, ComponentIdIndex));
 	}
 
-	if (Schema_GetObjectCount(QueryObject, 4) > 0)
+	if (Schema_GetFloatCount(QueryObject, 4) > 0)
 	{
 		NewQuery.Frequency = Schema_GetFloat(QueryObject, 4);
+	}
+
+	const uint32 ResultComponentSetIdCount = Schema_GetUint32Count(QueryObject, 5);
+	NewQuery.ResultComponentSetIds.Reserve(ResultComponentSetIdCount);
+	for (uint32 ComponentSetIdIndex = 0; ComponentSetIdIndex < ResultComponentSetIdCount; ComponentSetIdIndex++)
+	{
+		NewQuery.ResultComponentSetIds.Add(Schema_IndexUint32(QueryObject, 5, ComponentSetIdIndex));
 	}
 
 	return NewQuery;
 }
 
-inline ComponentInterest GetComponentInterestFromSchema(Schema_Object* Object, Schema_FieldId Id)
+inline ComponentSetInterest GetComponentInterestFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
-	ComponentInterest NewComponentInterest;
+	ComponentSetInterest NewComponentInterest;
 
 	Schema_Object* ComponentInterestObject = Schema_GetObject(Object, Id);
 
@@ -425,16 +469,13 @@ struct Interest : Component
 		{
 			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 1, i);
 			uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-			ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+			ComponentSetInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 			ComponentInterestMap.Add(Key, Value);
 		}
 	}
 
-	bool IsEmpty()
-	{
-		return ComponentInterestMap.Num() == 0;
-	}
+	bool IsEmpty() { return ComponentInterestMap.Num() == 0; }
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 	{
@@ -449,7 +490,7 @@ struct Interest : Component
 			{
 				Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 1, i);
 				uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-				ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+				ComponentSetInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 				ComponentInterestMap.Add(Key, Value);
 			}
@@ -490,7 +531,7 @@ struct Interest : Component
 		}
 	}
 
-	TMap<uint32, ComponentInterest> ComponentInterestMap;
+	TMap<Worker_ComponentSetId, ComponentSetInterest> ComponentInterestMap;
 };
 
 } // namespace SpatialGDK

@@ -6,7 +6,6 @@
 
 namespace SpatialGDK
 {
-
 RPCRingBuffer::RPCRingBuffer(ERPCType InType)
 	: Type(InType)
 {
@@ -15,7 +14,6 @@ RPCRingBuffer::RPCRingBuffer(ERPCType InType)
 
 namespace RPCRingBufferUtils
 {
-
 Worker_ComponentId GetRingBufferComponentId(ERPCType Type)
 {
 	switch (Type)
@@ -28,6 +26,23 @@ Worker_ComponentId GetRingBufferComponentId(ERPCType Type)
 		return SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 	case ERPCType::NetMulticast:
 		return SpatialConstants::MULTICAST_RPCS_COMPONENT_ID;
+	default:
+		checkNoEntry();
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
+}
+
+Worker_ComponentId GetRingBufferAuthComponentSetId(ERPCType Type)
+{
+	switch (Type)
+	{
+	case ERPCType::ClientReliable:
+	case ERPCType::ClientUnreliable:
+	case ERPCType::NetMulticast:
+		return SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID;
+	case ERPCType::ServerReliable:
+	case ERPCType::ServerUnreliable:
+		return SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
 	default:
 		checkNoEntry();
 		return SpatialConstants::INVALID_COMPONENT_ID;
@@ -47,7 +62,8 @@ RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 	//   Last sent unreliable RPC,
 	//   followed by reliable and unreliable RPC acks.
 	// MulticastRPCs component will only have one buffer that looks like the reliable buffer above.
-	// The numbers below are based on this structure, and have to match the component generated in SchemaGenerator (GenerateRPCEndpointsSchema).
+	// The numbers below are based on this structure, and have to match the component generated in SchemaGenerator
+	// (GenerateRPCEndpointsSchema).
 	switch (Type)
 	{
 	case ERPCType::ClientReliable:
@@ -90,6 +106,22 @@ Worker_ComponentId GetAckComponentId(ERPCType Type)
 	}
 }
 
+Worker_ComponentId GetAckAuthComponentSetId(ERPCType Type)
+{
+	switch (Type)
+	{
+	case ERPCType::ClientReliable:
+	case ERPCType::ClientUnreliable:
+		return SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
+	case ERPCType::ServerReliable:
+	case ERPCType::ServerUnreliable:
+		return SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID;
+	default:
+		checkNoEntry();
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
+}
+
 Schema_FieldId GetAckFieldId(ERPCType Type)
 {
 	uint32 MaxRingBufferSize = GetDefault<USpatialGDKSettings>()->MaxRPCRingBufferSize;
@@ -98,7 +130,8 @@ Schema_FieldId GetAckFieldId(ERPCType Type)
 	{
 	case ERPCType::ClientReliable:
 	case ERPCType::ServerReliable:
-		// In the generated schema components, acks will follow two ring buffers, each containing MaxRingBufferSize elements as well as a last sent ID.
+		// In the generated schema components, acks will follow two ring buffers, each containing MaxRingBufferSize elements as well as a
+		// last sent ID.
 		return 1 + 2 * (MaxRingBufferSize + 1);
 	case ERPCType::ClientUnreliable:
 	case ERPCType::ServerUnreliable:

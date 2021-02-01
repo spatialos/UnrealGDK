@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 using System.IO;
-using Improbable.Worker;
+using Improbable.Worker.CInterop;
 
 namespace Improbable.WorkerCoordinator
 {

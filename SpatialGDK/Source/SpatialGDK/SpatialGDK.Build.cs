@@ -13,7 +13,7 @@ public class SpatialGDK : ModuleRules
 {
     public SpatialGDK(ReadOnlyTargetRules Target) : base(Target)
     {
-		bLegacyPublicIncludePaths = false;
+        bLegacyPublicIncludePaths = false;
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 #pragma warning disable 0618
         bFasterWithoutUnity = true;             // Deprecated in 4.24, replace with bUseUnity = false; once we drop support for 4.23
@@ -37,12 +37,20 @@ public class SpatialGDK : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "EngineSettings",
-                "Projects",
-                "OnlineSubsystemUtils",
                 "InputCore",
+                "OnlineSubsystemUtils",
+                "Projects",
+                "ReplicationGraph",
                 "Sockets",
-                "ReplicationGraph"
+                "Slate",
+                "UMG"
             });
+
+        if (Target.bBuildDeveloperTools || (Target.Configuration != UnrealTargetConfiguration.Shipping &&
+                                            Target.Configuration != UnrealTargetConfiguration.Test))
+        {
+            PublicDependencyModuleNames.Add("GameplayDebugger");
+        }
 
         if (Target.bBuildEditor)
         {
@@ -55,7 +63,7 @@ public class SpatialGDK : ModuleRules
             PublicDependencyModuleNames.Add("PerfCounters");
         }
 
-        var WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
+        var WorkerLibraryDir = Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString());
 
         var WorkerLibraryPaths = new List<string>
             {
@@ -132,12 +140,15 @@ public class SpatialGDK : ModuleRules
             }
 
             WorkerImportLib = Path.Combine(WorkerLibraryDir, WorkerImportLib);
+            PublicRuntimeLibraryPaths.Add(WorkerLibraryDir);
+
+        }
+        else
+        {
+            PublicLibraryPaths.AddRange(WorkerLibraryPaths);
         }
 
         PublicAdditionalLibraries.Add(WorkerImportLib);
-#pragma warning disable 0618
-        PublicLibraryPaths.AddRange(WorkerLibraryPaths); // Deprecated in 4.24, replace with PublicRuntimeLibraryPaths or move the full path into PublicAdditionalLibraries once we drop support for 4.23
-#pragma warning restore 0618
 
         // Detect existence of trace library, if present add preprocessor
         string TraceStaticLibPath = "";

@@ -2,13 +2,12 @@
 
 #pragma once
 
+#include "Containers/Array.h"
 #include "SpatialView/EntityComponentId.h"
 #include "SpatialView/EntityComponentUpdateRecord.h"
-#include "Containers/Array.h"
 
 namespace SpatialGDK
 {
-
 // Can be recorded as at most one of
 //	added
 //	removed

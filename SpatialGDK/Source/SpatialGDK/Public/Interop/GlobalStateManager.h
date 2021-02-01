@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-
 #include "Utils/SchemaUtils.h"
+
+#include "CoreMinimal.h"
+#include "EngineUtils.h"
+#include "UObject/NoExportTypes.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -28,15 +29,16 @@ class SPATIALGDK_API UGlobalStateManager : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver);
 
-	void ApplyDeploymentMapData(const Worker_ComponentData& Data);
-	void ApplyStartupActorManagerData(const Worker_ComponentData& Data);
+	void ApplyDeploymentMapData(Schema_ComponentData* Data);
+	void ApplyStartupActorManagerData(Schema_ComponentData* Data);
 
-	void ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update);
-	void ApplyStartupActorManagerUpdate(const Worker_ComponentUpdate& Update);
+	void ApplyDeploymentMapUpdate(Schema_ComponentUpdate* Update);
+	void ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update);
 
 	DECLARE_DELEGATE_OneParam(QueryDelegate, const Worker_EntityQueryResponseOp&);
 	void QueryGSM(const QueryDelegate& Callback);
-	bool GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers, int32& OutSessionId);
+	static bool GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers,
+																 int32& OutSessionId);
 	void ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const;
 	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
@@ -51,8 +53,7 @@ public:
 	FORCEINLINE int32 GetSessionId() const { return DeploymentSessionId; }
 	FORCEINLINE uint32 GetSchemaHash() const { return SchemaHash; }
 
-	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
-	bool HandlesComponent(const Worker_ComponentId ComponentId) const;
+	void AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthChangeOp);
 
 	void ResetGSM();
 
@@ -63,6 +64,11 @@ public:
 	bool GetCanBeginPlay() const;
 
 	bool IsReady() const;
+
+	void HandleActorBasedOnLoadBalancer(AActor* ActorIterator) const;
+
+	Worker_EntityId GetLocalServerWorkerEntityId() const;
+	void ClaimSnapshotPartition() const;
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
@@ -83,15 +89,14 @@ public:
 	void OnPrePIEEnded(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
 
-	void OnShutdownComponentUpdate(const Worker_ComponentUpdate& Update);
+	void OnShutdownComponentUpdate(Schema_ComponentUpdate* Update);
 	void ReceiveShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
+
 private:
 	void SetDeploymentMapURL(const FString& MapURL);
 	void SendSessionIdUpdate();
 
-	void BecomeAuthoritativeOverAllActors();
-	void SetAllActorRolesBasedOnLBStrategy();
 	void SendCanBeginPlayUpdate(const bool bInCanBeginPlay);
 
 #if WITH_EDITOR
