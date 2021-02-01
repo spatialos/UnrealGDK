@@ -52,9 +52,6 @@ public:
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService,
 			  SpatialGDK::SpatialEventTracer* InEventTracer);
 
-	// Actor Updates
-	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
-							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const;
@@ -76,20 +73,12 @@ public:
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	void RetireEntity(const Worker_EntityId EntityId, bool bIsNetStartupActor);
 
-	// Creates an entity containing just a tombstone component and the minimal data to resolve an actor.
-	void CreateTombstoneEntity(AActor* Actor);
-
-	void EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
-	void FlushRetryRPCs();
-	void RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
-
 	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
 	void ProcessPositionUpdates();
 
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
-	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	void FlushRPCService();
 
@@ -110,19 +99,8 @@ public:
 	void SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const;
 
 private:
-	// Create a copy of an array of components. Deep copies all Schema_ComponentData.
-	static TArray<FWorkerComponentData> CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents);
-	// Create a copy of an array of components. Deep copies all Schema_ComponentData.
-	static void DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents);
-
-	// Create an entity given a set of components and an ID. Retries with the same component data and entity ID on timeout.
-	void CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> Components);
-
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten);
-	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
-
-	void AddTombstoneToEntity(const Worker_EntityId EntityId);
 
 	void PeriodicallyProcessOutgoingRPCs();
 
@@ -160,8 +138,6 @@ private:
 	FRPCContainer OutgoingRPCs{ ERPCQueueType::Send };
 
 	TArray<TSharedRef<FReliableRPCForRetry>> RetryRPCs;
-
-	FUpdatesQueuedUntilAuthority UpdatesQueuedUntilAuthorityMap;
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
 

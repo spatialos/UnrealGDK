@@ -150,9 +150,6 @@ public:
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 	void CleanUpServerConnectionForPC(APlayerController* PC);
 
-	bool HasServerAuthority(Worker_EntityId EntityId) const;
-	bool HasClientAuthority(Worker_EntityId EntityId) const;
-
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
 	UPROPERTY()

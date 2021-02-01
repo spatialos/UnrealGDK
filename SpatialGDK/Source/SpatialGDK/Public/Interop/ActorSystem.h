@@ -5,7 +5,9 @@
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
+#include "Utils/RepDataUtils.h"
 
+struct FRepChangeState;
 DECLARE_LOG_CATEGORY_EXTERN(LogActorSystem, Log, All);
 
 struct FPendingSubobjectAttachment;
@@ -115,6 +117,18 @@ private:
 
 	// Helper
 	bool EntityHasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+
+	// Tombstones
+	void CreateTombstoneEntity(AActor* Actor);
+	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
+	void CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> EntityComponents);
+	static TArray<FWorkerComponentData> CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents);
+	static void DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents);
+	void AddTombstoneToEntity(Worker_EntityId EntityId) const;
+
+	// Updates
+	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
+							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
 
 	const FSubView* SubView;
 	const FSubView* TombstoneSubView;

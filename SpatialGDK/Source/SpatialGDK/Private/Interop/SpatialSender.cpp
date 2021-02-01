@@ -47,52 +47,6 @@ DECLARE_CYCLE_STAT(TEXT("Sender QueueOutgoingUpdate"), STAT_SpatialSenderQueueOu
 DECLARE_CYCLE_STAT(TEXT("Sender UpdateInterestComponent"), STAT_SpatialSenderUpdateInterestComponent, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Sender SendRPC"), STAT_SpatialSenderSendRPC, STATGROUP_SpatialNet);
 
-namespace
-{
-struct FChangeListPropertyIterator
-{
-	const FRepChangeState* Changes;
-	FChangelistIterator ChangeListIterator;
-	FRepHandleIterator HandleIterator;
-	bool bValid;
-	FChangeListPropertyIterator(const FRepChangeState* Changes)
-		: Changes(Changes)
-		, ChangeListIterator(Changes->RepChanged, 0)
-		, HandleIterator(static_cast<UStruct*>(Changes->RepLayout.GetOwner()), ChangeListIterator, Changes->RepLayout.Cmds,
-						 Changes->RepLayout.BaseHandleToCmdIndex, /* InMaxArrayIndex */ 0, /* InMinCmdIndex */ 1, 0,
-						 /* InMaxCmdIndex */ Changes->RepLayout.Cmds.Num() - 1)
-		, bValid(HandleIterator.NextHandle())
-	{
-	}
-
-	GDK_PROPERTY(Property) * operator*() const
-	{
-		if (bValid)
-		{
-			const FRepLayoutCmd& Cmd = Changes->RepLayout.Cmds[HandleIterator.CmdIndex];
-			return Cmd.Property;
-		}
-		return nullptr;
-	}
-
-	operator bool() const { return bValid; }
-
-	FChangeListPropertyIterator& operator++()
-	{
-		// Move forward
-		if (bValid && Changes->RepLayout.Cmds[HandleIterator.CmdIndex].Type == ERepLayoutCmdType::DynamicArray)
-		{
-			bValid = !HandleIterator.JumpOverArray();
-		}
-		if (bValid)
-		{
-			bValid = HandleIterator.NextHandle();
-		}
-		return *this;
-	}
-};
-} // namespace
-
 void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService,
 						  SpatialGDK::SpatialEventTracer* InEventTracer)
 {
@@ -135,27 +89,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 		Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, RETRY_UNTIL_COMPLETE, SpanId);
 
 	return CreateEntityRequestId;
-}
-
-Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
-{
-	UWorld* ActorWorld = Actor->GetTypedOuter<UWorld>();
-	if (ActorWorld != NetDriver->World)
-	{
-		const uint32 ComponentId = ClassInfoManager->GetComponentIdFromLevelPath(ActorWorld->GetOuter()->GetPathName());
-		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			return ComponentFactory::CreateEmptyComponentData(ComponentId);
-		}
-		else
-		{
-			UE_LOG(LogSpatialSender, Error,
-				   TEXT("Could not find Streaming Level Component for Level %s, processing Actor %s. Have you generated schema?"),
-				   *ActorWorld->GetOuter()->GetPathName(), *Actor->GetPathName());
-		}
-	}
-
-	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
 }
 
 void USpatialSender::PeriodicallyProcessOutgoingRPCs()
@@ -340,67 +273,6 @@ void USpatialSender::SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntit
 	Receiver->PendingPartitionAssignments.Add(RequestId, PartitionId);
 }
 
-void USpatialSender::DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents)
-{
-	for (FWorkerComponentData& Component : EntityComponents)
-	{
-		Schema_DestroyComponentData(Component.schema_type);
-	}
-
-	EntityComponents.Empty();
-}
-
-TArray<FWorkerComponentData> USpatialSender::CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents)
-{
-	TArray<FWorkerComponentData> Copy;
-	Copy.Reserve(EntityComponents.Num());
-	for (const FWorkerComponentData& Component : EntityComponents)
-	{
-		Copy.Emplace(
-			Worker_ComponentData{ Component.reserved, Component.component_id, Schema_CopyComponentData(Component.schema_type), nullptr });
-	}
-
-	return Copy;
-}
-
-void USpatialSender::CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> EntityComponents)
-{
-	const Worker_RequestId RequestId =
-		Connection->SendCreateEntityRequest(CopyEntityComponentData(EntityComponents), &EntityId, RETRY_UNTIL_COMPLETE);
-
-	CreateEntityDelegate Delegate;
-
-	Delegate.BindLambda([this, EntityId, Name = MoveTemp(EntityName),
-						 Components = MoveTemp(EntityComponents)](const Worker_CreateEntityResponseOp& Op) mutable {
-		switch (Op.status_code)
-		{
-		case WORKER_STATUS_CODE_SUCCESS:
-			UE_LOG(LogSpatialSender, Log,
-				   TEXT("Created entity. "
-						"Entity name: %s, entity id: %lld"),
-				   *Name, EntityId);
-			DeleteEntityComponentData(Components);
-			break;
-		case WORKER_STATUS_CODE_TIMEOUT:
-			UE_LOG(LogSpatialSender, Log,
-				   TEXT("Timed out creating entity. Retrying. "
-						"Entity name: %s, entity id: %lld"),
-				   *Name, EntityId);
-			CreateEntityWithRetries(EntityId, MoveTemp(Name), MoveTemp(Components));
-			break;
-		default:
-			UE_LOG(LogSpatialSender, Log,
-				   TEXT("Failed to create entity. It might already be created. Not retrying. "
-						"Entity name: %s, entity id: %lld"),
-				   *Name, EntityId);
-			DeleteEntityComponentData(Components);
-			break;
-		}
-	});
-
-	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(Delegate));
-}
-
 void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 {
 	check(Connection != nullptr);
@@ -421,100 +293,9 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 	Connection->SendComponentUpdate(PartitionId, &InterestUpdate);
 
 	// Also update the position of the partition entity to the center of the load balancing region.
-	SendPositionUpdate(PartitionId, NetDriver->LoadBalanceStrategy->GetWorkerEntityPosition());
-}
-
-void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel,
-										  const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges,
-										  uint32& OutBytesWritten)
-{
-	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendComponentUpdates);
-	Worker_EntityId EntityId = Channel->GetEntityId();
-
-	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
-
-	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Object);
-	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer);
-
-	TArray<FWorkerComponentUpdate> ComponentUpdates =
-		UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
-
-	TArray<FSpatialGDKSpanId> PropertySpans;
-	if (EventTracer != nullptr && RepChanges != nullptr
-		&& RepChanges->RepChanged.Num() > 0) // Only need to add these if they are actively being traced
-	{
-		FSpatialGDKSpanId CauseSpanId;
-		if (EventTracer != nullptr)
-		{
-			CauseSpanId = EventTracer->PopLatentPropertyUpdateSpanId(Object);
-		}
-
-		for (FChangeListPropertyIterator Itr(RepChanges); Itr; ++Itr)
-		{
-			GDK_PROPERTY(Property)* Property = *Itr;
-
-			EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForProperty(EntityId, Property);
-			FSpatialGDKSpanId PropertySpan = EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::CreatePropertyChanged(Object, EntityId, Property->GetName(), LinearTraceId),
-				CauseSpanId.GetConstId(), 1);
-
-			PropertySpans.Push(PropertySpan);
-		}
-	}
-
-	// It's not clear if this is ever valid for authority to not be true anymore (since component sets), but still possible if we attempt
-	// to process updates whilst an entity creation is in progress, or after the entity has been deleted or removed from view. So in the
-	// meantime we've kept the checking and queuing of updates, along with an error message.
-	const bool bHasAuthority = NetDriver->HasServerAuthority(EntityId);
-	if (!bHasAuthority)
-	{
-		UE_LOG(LogSpatialSender, Warning,
-			   TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. "
-					"entity: %lld"),
-			   EntityId);
-
-		// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the
-		// update, to send upon receiving authority. Note: This will break in a multi-worker context, if we try to create an entity that
-		// we don't intend to have authority over. For this reason, this fix is only temporary.
-		TArray<FWorkerComponentUpdate>& UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.FindOrAdd(EntityId);
-		UpdatesQueuedUntilAuthority.Append(ComponentUpdates);
-		return;
-	}
-
-	for (int i = 0; i < ComponentUpdates.Num(); i++)
-	{
-		FWorkerComponentUpdate& Update = ComponentUpdates[i];
-
-		FSpatialGDKSpanId SpanId;
-		if (EventTracer != nullptr)
-		{
-			SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdate(Object, EntityId, Update.component_id),
-											 (const Trace_SpanIdType*)PropertySpans.GetData(), PropertySpans.Num());
-		}
-
-		Connection->SendComponentUpdate(EntityId, &Update, SpanId);
-	}
-}
-
-// Apply (and clean up) any updates queued, due to being sent previously when they didn't have authority.
-void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
-{
-	if (TArray<FWorkerComponentUpdate>* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
-	{
-		for (auto It = UpdatesQueuedUntilAuthority->CreateIterator(); It; It++)
-		{
-			if (ComponentId == It->component_id)
-			{
-				Connection->SendComponentUpdate(EntityId, &(*It));
-				It.RemoveCurrent();
-			}
-		}
-
-		if (UpdatesQueuedUntilAuthority->Num() == 0)
-		{
-			UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
-		}
-	}
+	FWorkerComponentUpdate Update =
+		Position::CreatePositionUpdate(Coordinates::FromFVector(NetDriver->LoadBalanceStrategy->GetWorkerEntityPosition()));
+	Connection->SendComponentUpdate(PartitionId, &Update);
 }
 
 void USpatialSender::FlushRPCService()
@@ -908,44 +689,4 @@ void USpatialSender::RetireEntity(const Worker_EntityId EntityId, bool bIsNetSta
 
 		Connection->SendDeleteEntityRequest(EntityId, RETRY_UNTIL_COMPLETE);
 	}
-}
-
-void USpatialSender::CreateTombstoneEntity(AActor* Actor)
-{
-	check(Actor->IsNetStartupActor());
-
-	const Worker_EntityId EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
-
-	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
-	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
-
-	Components.Add(CreateLevelComponentData(Actor));
-
-	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
-
-	UE_LOG(LogSpatialSender, Log,
-		   TEXT("Creating tombstone entity for actor. "
-				"Actor: %s. Entity ID: %d."),
-		   *Actor->GetName(), EntityId);
-
-#if WITH_EDITOR
-	NetDriver->TrackTombstone(EntityId);
-#endif
-}
-
-void USpatialSender::AddTombstoneToEntity(const Worker_EntityId EntityId)
-{
-	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID));
-
-	Worker_AddComponentOp AddComponentOp;
-	AddComponentOp.entity_id = EntityId;
-	AddComponentOp.data = Tombstone().CreateComponentData();
-	SendAddComponents(EntityId, { AddComponentOp.data });
-	StaticComponentView->OnAddComponent(AddComponentOp);
-
-	NetDriver->Connection->GetCoordinator().RefreshEntityCompleteness(EntityId);
-
-#if WITH_EDITOR
-	NetDriver->TrackTombstone(EntityId);
-#endif
 }

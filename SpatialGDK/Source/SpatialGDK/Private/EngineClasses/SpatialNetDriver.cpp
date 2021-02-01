@@ -1005,7 +1005,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 				&& ThisActor->HasAuthority())
 			{
 				UE_LOG(LogSpatialOSNetDriver, Log,
-					   TEXT("Creating a tombstone entity for initially dormant statup actor. "
+					   TEXT("Creating a tombstone entity for initially dormant startup actor. "
 							"Actor: %s."),
 					   *ThisActor->GetName());
 				Sender->CreateTombstoneEntity(ThisActor);
@@ -2198,16 +2198,6 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	return true;
 }
 
-bool USpatialNetDriver::HasServerAuthority(Worker_EntityId EntityId) const
-{
-	return StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
-}
-
-bool USpatialNetDriver::HasClientAuthority(Worker_EntityId EntityId) const
-{
-	return StaticComponentView->HasAuthority(EntityId, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
-}
-
 void USpatialNetDriver::ProcessPendingDormancy()
 {
 	decltype(PendingDormantChannels) RemainingChannels;
@@ -2546,22 +2536,15 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 	{
 		if (!bDormancyComponentExists)
 		{
-			Worker_AddComponentOp AddComponentOp{};
-			AddComponentOp.entity_id = EntityId;
-			AddComponentOp.data = ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID);
-			Sender->SendAddComponents(AddComponentOp.entity_id, { AddComponentOp.data });
-			StaticComponentView->OnAddComponent(AddComponentOp);
+			FWorkerComponentData DormantData = ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID);
+			Connection->SendAddComponent(EntityId, &DormantData);
 		}
 	}
 	else
 	{
 		if (bDormancyComponentExists)
 		{
-			Worker_RemoveComponentOp RemoveComponentOp{};
-			RemoveComponentOp.entity_id = EntityId;
-			RemoveComponentOp.component_id = SpatialConstants::DORMANT_COMPONENT_ID;
-			Sender->SendRemoveComponents(EntityId, { SpatialConstants::DORMANT_COMPONENT_ID });
-			StaticComponentView->OnRemoveComponent(RemoveComponentOp);
+			Connection->SendRemoveComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
 		}
 	}
 }
@@ -2592,19 +2575,12 @@ void USpatialNetDriver::RefreshActorVisibility(AActor* Actor, bool bMakeVisible)
 	// If the Actor is Visible make sure it has the Visible component
 	if (bMakeVisible && !bVisibilityComponentExists)
 	{
-		Worker_AddComponentOp AddComponentOp{};
-		AddComponentOp.entity_id = EntityId;
-		AddComponentOp.data = ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID);
-		Sender->SendAddComponents(AddComponentOp.entity_id, { AddComponentOp.data });
-		StaticComponentView->OnAddComponent(AddComponentOp);
+		FWorkerComponentData VisibilityData = ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID);
+		Connection->SendAddComponent(EntityId, &VisibilityData);
 	}
 	else if (!bMakeVisible && bVisibilityComponentExists)
 	{
-		Worker_RemoveComponentOp RemoveComponentOp{};
-		RemoveComponentOp.entity_id = EntityId;
-		RemoveComponentOp.component_id = SpatialConstants::VISIBLE_COMPONENT_ID;
-		Sender->SendRemoveComponents(EntityId, { SpatialConstants::VISIBLE_COMPONENT_ID });
-		StaticComponentView->OnRemoveComponent(RemoveComponentOp);
+		Connection->SendRemoveComponent(EntityId, SpatialConstants::VISIBLE_COMPONENT_ID);
 	}
 }
 
