@@ -23,6 +23,7 @@ Worker_ComponentId GetRingBufferComponentId(ERPCType Type)
 		return SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
 	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
+	case ERPCType::ServerAlwaysWrite:
 		return SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 	case ERPCType::NetMulticast:
 		return SpatialConstants::MULTICAST_RPCS_COMPONENT_ID;
@@ -42,6 +43,7 @@ Worker_ComponentId GetRingBufferAuthComponentSetId(ERPCType Type)
 		return SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID;
 	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
+	case ERPCType::ServerAlwaysWrite:
 		return SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
 	default:
 		checkNoEntry();
@@ -56,25 +58,18 @@ RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 
 	const Schema_FieldId SchemaStart = 1;
 
-	// In schema, the client and server endpoints will first have a
-	//   Reliable ring buffer, starting from 1 and containing MaxRingBufferSize elements, then
-	//   Last sent reliable RPC,
-	//   Unreliable ring buffer, containing MaxRingBufferSize elements,
-	//   Last sent unreliable RPC,
-	//   followed by reliable and unreliable RPC acks.
-	// MulticastRPCs component will only have one buffer that looks like the reliable buffer above.
-	// The numbers below are based on this structure, and have to match the component generated in SchemaGenerator
-	// (GenerateRPCEndpointsSchema).
 	switch (Type)
 	{
 	case ERPCType::ClientReliable:
 	case ERPCType::ServerReliable:
 	case ERPCType::NetMulticast:
+		// These buffers start at the beginning on their corresponding components.
 		Descriptor.SchemaFieldStart = SchemaStart;
 		break;
+
 	case ERPCType::ClientUnreliable:
 	{
-		// Client Unreliable buffer starts after Client Reliable. Add 1 to account for the last sent ID field.
+		// ClientUnreliable buffer starts after ClientReliable. Add 1 to account for the last sent ID field.
 		const uint32 ClientReliableBufferSize = GetRingBufferSize(ERPCType::ClientReliable) + 1;
 
 		Descriptor.SchemaFieldStart = SchemaStart + ClientReliableBufferSize;
@@ -82,10 +77,20 @@ RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 	}
 	case ERPCType::ServerUnreliable:
 	{
-		// Server Unreliable buffer starts after Server Reliable. Add 1 to account for the last sent ID field.
+		// ServerUnreliable buffer starts after ServerReliable. Add 1 to account for the last sent ID field.
 		const uint32 ServerReliableBufferSize = GetRingBufferSize(ERPCType::ServerReliable) + 1;
 
 		Descriptor.SchemaFieldStart = SchemaStart + ServerReliableBufferSize;
+		break;
+	}
+	case ERPCType::ServerAlwaysWrite:
+	{
+		// ServerAlwaysWrite buffer starts after ServerReliable and ServerUnreliable buffers.
+		// Add 1 to each to account for the last sent ID fields.
+		const uint32 ServerReliableBufferSize = GetRingBufferSize(ERPCType::ServerReliable) + 1;
+		const uint32 ServerUnreliableBufferSize = GetRingBufferSize(ERPCType::ServerUnreliable) + 1;
+
+		Descriptor.SchemaFieldStart = SchemaStart + ServerReliableBufferSize + ServerUnreliableBufferSize;
 		break;
 	}
 	default:
@@ -112,6 +117,7 @@ Worker_ComponentId GetAckComponentId(ERPCType Type)
 		return SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID;
 	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
+	case ERPCType::ServerAlwaysWrite:
 		return SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
 	default:
 		checkNoEntry();
@@ -128,6 +134,7 @@ Worker_ComponentId GetAckAuthComponentSetId(ERPCType Type)
 		return SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
 	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
+	case ERPCType::ServerAlwaysWrite:
 		return SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID;
 	default:
 		checkNoEntry();
@@ -143,16 +150,18 @@ Schema_FieldId GetAckFieldId(ERPCType Type)
 	{
 	case ERPCType::ClientReliable:
 	{
-		// Client acks follow Server Reliable and Unreliable buffers.
+		// Client acks follow ServerReliable, ServerUnreliable, and ServerAlwaysWrite buffers.
 		// Add 1 to each to account for the last sent ID fields.
 		const uint32 ServerReliableBufferSize = GetRingBufferSize(ERPCType::ServerReliable) + 1;
 		const uint32 ServerUnreliableBufferSize = GetRingBufferSize(ERPCType::ServerUnreliable) + 1;
+		const uint32 ServerAlwaysWriteBufferSize = GetRingBufferSize(ERPCType::ServerAlwaysWrite) + 1;
 
-		return SchemaStart + ServerReliableBufferSize + ServerUnreliableBufferSize;
+		return SchemaStart + ServerReliableBufferSize + ServerUnreliableBufferSize + ServerAlwaysWriteBufferSize;
 	}
 	case ERPCType::ClientUnreliable:
 		// Client Unreliable ack directly follows Reliable ack.
 		return GetAckFieldId(ERPCType::ClientReliable) + 1;
+
 	case ERPCType::ServerReliable:
 	{
 		// Server acks follow Client Reliable and Unreliable buffers.
@@ -165,6 +174,11 @@ Schema_FieldId GetAckFieldId(ERPCType Type)
 	case ERPCType::ServerUnreliable:
 		// Server Unreliable ack directly follows Reliable ack.
 		return GetAckFieldId(ERPCType::ServerReliable) + 1;
+
+	case ERPCType::ServerAlwaysWrite:
+		// Server Always Write ack directly follows Unreliable ack.
+		return GetAckFieldId(ERPCType::ServerUnreliable) + 1;
+
 	default:
 		checkNoEntry();
 		return 0;
@@ -189,6 +203,25 @@ bool ShouldQueueOverflowed(ERPCType Type)
 	case ERPCType::ServerReliable:
 		return true;
 	case ERPCType::ClientUnreliable:
+	case ERPCType::ServerUnreliable:
+	case ERPCType::ServerAlwaysWrite:
+	case ERPCType::NetMulticast:
+		return false;
+	default:
+		checkNoEntry();
+		return false;
+	}
+}
+
+bool ShouldIgnoreCapacity(ERPCType Type)
+{
+	switch (Type)
+	{
+	case ERPCType::ServerAlwaysWrite:
+		return true;
+	case ERPCType::ClientReliable:
+	case ERPCType::ClientUnreliable:
+	case ERPCType::ServerReliable:
 	case ERPCType::ServerUnreliable:
 	case ERPCType::NetMulticast:
 		return false;

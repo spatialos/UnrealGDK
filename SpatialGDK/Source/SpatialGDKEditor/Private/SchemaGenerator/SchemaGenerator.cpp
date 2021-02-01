@@ -307,6 +307,8 @@ FString GetRPCFieldPrefix(ERPCType RPCType)
 		return TEXT("client_to_server_reliable");
 	case ERPCType::ServerUnreliable:
 		return TEXT("client_to_server_unreliable");
+	case ERPCType::ServerAlwaysWrite:
+		return TEXT("client_to_server_always_write");
 	case ERPCType::NetMulticast:
 		return TEXT("multicast");
 	default:
@@ -694,9 +696,11 @@ void GenerateRPCEndpointsSchema(FString SchemaPath)
 	Writer.Print("import \"unreal/gdk/rpc_payload.schema\";");
 
 	GenerateRPCEndpoint(Writer, TEXT("ClientEndpoint"), SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
-						{ ERPCType::ServerReliable, ERPCType::ServerUnreliable }, { ERPCType::ClientReliable, ERPCType::ClientUnreliable });
+						{ ERPCType::ServerReliable, ERPCType::ServerUnreliable, ERPCType::ServerAlwaysWrite },
+						{ ERPCType::ClientReliable, ERPCType::ClientUnreliable });
 	GenerateRPCEndpoint(Writer, TEXT("ServerEndpoint"), SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
-						{ ERPCType::ClientReliable, ERPCType::ClientUnreliable }, { ERPCType::ServerReliable, ERPCType::ServerUnreliable });
+						{ ERPCType::ClientReliable, ERPCType::ClientUnreliable },
+						{ ERPCType::ServerReliable, ERPCType::ServerUnreliable, ERPCType::ServerAlwaysWrite });
 	GenerateRPCEndpoint(Writer, TEXT("MulticastRPCs"), SpatialConstants::MULTICAST_RPCS_COMPONENT_ID, { ERPCType::NetMulticast }, {});
 
 	Writer.WriteToFile(FString::Printf(TEXT("%srpc_endpoints.schema"), *SchemaPath));

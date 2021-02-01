@@ -20,6 +20,7 @@ struct ServerEndpoint
 	RPCRingBuffer UnreliableRPCBuffer;
 	uint64 ReliableRPCAck = 0;
 	uint64 UnreliableRPCAck = 0;
+	uint64 AlwaysWriteRPCAck = 0;
 
 private:
 	void ReadFromSchema(Schema_Object* SchemaObject);

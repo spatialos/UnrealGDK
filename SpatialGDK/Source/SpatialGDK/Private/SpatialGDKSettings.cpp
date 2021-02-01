@@ -134,6 +134,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
+	RPCRingBufferSizeOverrides.Add(ERPCType::ServerAlwaysWrite, 1);
 }
 
 void USpatialGDKSettings::PostInitProperties()

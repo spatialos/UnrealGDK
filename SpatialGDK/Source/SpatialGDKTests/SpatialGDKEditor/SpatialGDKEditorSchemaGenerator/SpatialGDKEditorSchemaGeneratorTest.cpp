@@ -311,7 +311,7 @@ TMap<FString, FString> ExpectedContentsFilenames = {
 	{ "SpatialTypeActorWithMultipleObjectComponents", "SpatialTypeActorWithMultipleObjectComponents.schema" }
 };
 uint32 ExpectedRPCEndpointsRingBufferSize = 32;
-TMap<ERPCType, uint32> ExpectedRPCRingBufferSizeOverrides = {};
+TMap<ERPCType, uint32> ExpectedRPCRingBufferSizeOverrides = { { ERPCType::ServerAlwaysWrite, 1 } };
 FString ExpectedRPCEndpointsSchemaFilename = TEXT("rpc_endpoints.schema");
 
 class SchemaValidator
