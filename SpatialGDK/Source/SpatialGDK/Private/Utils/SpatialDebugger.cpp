@@ -493,7 +493,8 @@ void ASpatialDebugger::ActorAuthorityGained(const Worker_EntityId EntityId) cons
 		// Some entities won't have debug info, so create it now.
 		SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
 										  InvalidServerTintColor, false);
-		NetDriver->Sender->SendAddComponents(EntityId, { NewDebuggingInfo.CreateComponentData() });
+		FWorkerComponentData DebuggingData = NewDebuggingInfo.CreateComponentData();
+		NetDriver->Connection->SendAddComponent(EntityId, &DebuggingData);
 		return;
 	}
 
