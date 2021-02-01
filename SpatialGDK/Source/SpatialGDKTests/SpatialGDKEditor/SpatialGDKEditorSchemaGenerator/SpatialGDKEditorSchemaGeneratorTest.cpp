@@ -1087,7 +1087,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 
 	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 7);
 
-	if (TestTrue("Found spatial well known components", SchemaDatabase->ComponentSetIdToComponentIds.Contains(50)))
+	TestTrue("Found spatial well known components", SchemaDatabase->ComponentSetIdToComponentIds.Contains(50));
+	if (SchemaDatabase->ComponentSetIdToComponentIds.Contains(50))
 	{
 		TestTrue("Spatial well know component is not empty", SchemaDatabase->ComponentSetIdToComponentIds[50].ComponentIDs.Num() > 0);
 	}
@@ -1096,7 +1097,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 		// Check the resulting schema contains the expected Sets.
 
 		FComponentIDs* ServerComponents = SchemaDatabase->ComponentSetIdToComponentIds.Find(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
-		if (!TestTrue("Found entry for server authority", ServerComponents != nullptr))
+		TestTrue("Found entry for server authority", ServerComponents != nullptr);
+		if (ServerComponents == nullptr)
 		{
 			return false;
 		}
@@ -1113,7 +1115,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 		for (uint32 DataType = SCHEMA_Data; DataType < SCHEMA_Count; ++DataType)
 		{
 			FComponentIDs* DataComponents = SchemaDatabase->ComponentSetIdToComponentIds.Find(ServerAuthSets[DataType]);
-			if (!TestTrue("Found entry for class in data type component set", DataComponents != nullptr))
+			TestTrue("Found entry for class in data type component set", DataComponents != nullptr);
+			if (DataComponents == nullptr)
 			{
 				return false;
 			}
@@ -1125,7 +1128,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 				if (Class->IsChildOf<AActor>())
 				{
 					FActorSchemaData* SchemaData = SchemaDatabase->ActorClassPathToSchema.Find(Class->GetPathName());
-					if (!TestTrue("Found schema data", SchemaData != nullptr))
+					TestTrue("Found schema data", SchemaData != nullptr);
+					if (SchemaData == nullptr)
 					{
 						continue;
 					}
@@ -1142,7 +1146,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 				else
 				{
 					FSubobjectSchemaData* SchemaData = SchemaDatabase->SubobjectClassPathToSchema.Find(Class->GetPathName());
-					if (!TestTrue("Found schema data", SchemaData != nullptr))
+					TestTrue("Found schema data", SchemaData != nullptr);
+					if (SchemaData == nullptr)
 					{
 						continue;
 					}
@@ -1165,7 +1170,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 
 	{
 		FComponentIDs* ClientComponents = SchemaDatabase->ComponentSetIdToComponentIds.Find(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
-		if (!TestTrue("Found entry for client authority", ClientComponents != nullptr))
+		TestTrue("Found entry for client authority", ClientComponents != nullptr);
+		if (ClientComponents == nullptr)
 		{
 			return false;
 		}
@@ -1180,7 +1186,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	{
 		FComponentIDs* GDKWellKnownComponents =
 			SchemaDatabase->ComponentSetIdToComponentIds.Find(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
-		if (!TestTrue("Found entry for GDK well know entities authority", GDKWellKnownComponents != nullptr))
+		TestTrue("Found entry for GDK well know entities authority", GDKWellKnownComponents != nullptr);
+		if (GDKWellKnownComponents == nullptr)
 		{
 			return false;
 		}
