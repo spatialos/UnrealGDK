@@ -16,6 +16,9 @@
 #include "Templates/Tuple.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
+
+#include "Tickable.h"
+
 #include "SpatialDebugger.generated.h"
 
 class APawn;
@@ -42,6 +45,38 @@ namespace SpatialGDK
 class FSubView;
 struct SpatialDebugging;
 } // namespace SpatialGDK
+
+class ASpatialDebugger;
+
+class FSpatialDebuggerSystem : private FTickableGameObject
+{
+public:
+	FSpatialDebuggerSystem(USpatialNetDriver* InNetDriver, const SpatialGDK::FSubView& InSubView, ASpatialDebugger* InDebugger);
+	virtual ~FSpatialDebuggerSystem();
+	void OnEntityAdded(Worker_EntityId AddedEntityId);
+	void OnEntityRemoved(Worker_EntityId RemovedEntityId);
+	void ActorAuthorityGained(Worker_EntityId EntityId) const;
+	TOptional<SpatialGDK::SpatialDebugging> GetDebuggingData(Worker_EntityId Entity) const;
+	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
+	virtual void Tick(float DeltaTime) override;
+	virtual TStatId GetStatId() const override;
+
+	// These mappings are maintained independently on each client
+	// Mapping of the entities a client has checked out
+	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> EntityActorMapping;
+
+	DECLARE_MULTICAST_DELEGATE_OneParam(FSpatialDebuggerSystemActorDelegate, AActor*);
+
+	FSpatialDebuggerSystemActorDelegate OnEntityActorAddedDelegate;
+
+private:
+	static constexpr int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
+
+	TWeakObjectPtr<USpatialNetDriver> NetDriver;
+	TWeakObjectPtr<UGameInstance> GameInstance;
+	TWeakObjectPtr<ASpatialDebugger> Debugger;
+	const SpatialGDK::FSubView* SubView;
+};
 
 USTRUCT()
 struct FWorkerRegionInfo
@@ -88,7 +123,7 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
-	void OnEntityAdded(const Worker_EntityId EntityId);
+	void OnEntityAdded(AActor* Actor);
 	void OnEntityRemoved(const Worker_EntityId EntityId);
 
 	virtual void OnAuthorityGained() override;
@@ -243,10 +278,6 @@ public:
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
 private:
-	void ActorAuthorityGained(const Worker_EntityId EntityId) const;
-
-	TOptional<SpatialGDK::SpatialDebugging> GetDebuggingData(Worker_EntityId Entity) const;
-
 	void LoadIcons();
 
 	// FDebugDrawDelegate
@@ -283,7 +314,6 @@ private:
 	void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);
 #endif
 
-	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;
 
 	enum EIcon
@@ -298,11 +328,7 @@ private:
 
 	USpatialNetDriver* NetDriver;
 
-	SpatialGDK::FSubView* SubView;
-
-	// These mappings are maintained independently on each client
-	// Mapping of the entities a client has checked out
-	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> EntityActorMapping;
+	TOptional<FSpatialDebuggerSystem> DebuggerSystem;
 
 	FDelegateHandle DrawDebugDelegateHandle;
 

@@ -75,51 +75,26 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	}
 }
 
-void ASpatialDebugger::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+FSpatialDebuggerSystem::FSpatialDebuggerSystem(USpatialNetDriver* InNetDriver, const FSubView& InSubView, ASpatialDebugger* InDebugger)
+	: NetDriver(InNetDriver)
+	, GameInstance(InNetDriver->GetWorld()->GetGameInstance())
+	, Debugger(InDebugger)
+	, SubView(&InSubView)
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME_CONDITION(ASpatialDebugger, WorkerRegions, COND_SimulatedOnly);
+	EntityActorMapping.Reserve(ENTITY_ACTOR_MAP_RESERVATION_COUNT);
 }
 
-void ASpatialDebugger::BeginPlay()
+FSpatialDebuggerSystem::~FSpatialDebuggerSystem() {}
+
+void FSpatialDebuggerSystem::Tick(float DeltaTime)
 {
-	Super::BeginPlay();
-
-	check(NetDriver != nullptr);
-
-	SubView = &NetDriver->Connection->GetCoordinator().CreateSubView(
-		NetDriver->IsServer() ? SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID : SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID,
-		FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
-
-	if (!NetDriver->IsServer())
+	for (TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>::TIterator It = EntityActorMapping.CreateIterator(); It; ++It)
 	{
-		EntityActorMapping.Reserve(ENTITY_ACTOR_MAP_RESERVATION_COUNT);
-
-		LoadIcons();
-
-		FontRenderInfo.bClipText = true;
-		FontRenderInfo.bEnableShadow = true;
-
-		RenderFont = GEngine->GetSmallFont();
-
-		if (bAutoStart)
+		if (!It->Value.IsValid())
 		{
-			SpatialToggleDebugger();
-		}
-		WireFrameMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WIREFRAME_MATERIAL);
-		if (WireFrameMaterial == nullptr)
-		{
-			UE_LOG(LogSpatialDebugger, Warning, TEXT("SpatialDebugger enabled but unable to get WireFrame Material."));
+			It.RemoveCurrent();
 		}
 	}
-}
-
-void ASpatialDebugger::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-
-	check(NetDriver != nullptr);
 
 	for (const EntityDelta& EntityDelta : SubView->GetViewDelta().EntityDeltas)
 	{
@@ -145,16 +120,74 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 		}
 	}
 
+	// TODO: See if we need this
+#if 0
+	if (LocalPawn.IsValid())
+	{
+		SCOPE_CYCLE_COUNTER(STAT_SortingActors);
+		const FVector& PlayerLocation = LocalPawn->GetActorLocation();
+
+		EntityActorMapping.ValueSort([PlayerLocation](const TWeakObjectPtr<AActor>& A, const TWeakObjectPtr<AActor>& B) {
+            return FVector::Dist(PlayerLocation, A->GetActorLocation()) > FVector::Dist(PlayerLocation, B->GetActorLocation());
+        });
+	}
+#endif
+}
+
+TStatId FSpatialDebuggerSystem::GetStatId() const
+{
+	RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialDebuggerSystem, STATGROUP_Tickables);
+}
+
+void ASpatialDebugger::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ASpatialDebugger, WorkerRegions, COND_SimulatedOnly);
+}
+
+void ASpatialDebugger::BeginPlay()
+{
+	Super::BeginPlay();
+
+	check(NetDriver != nullptr);
+
+	const FSubView& DebuggerSubView = NetDriver->Connection->GetCoordinator().CreateSubView(
+		NetDriver->IsServer() ? SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID : SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID,
+		FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
+
+	DebuggerSystem.Emplace(NetDriver, DebuggerSubView, this);
+
 	if (!NetDriver->IsServer())
 	{
-		for (TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>::TIterator It = EntityActorMapping.CreateIterator(); It; ++It)
-		{
-			if (!It->Value.IsValid())
-			{
-				It.RemoveCurrent();
-			}
-		}
+		DebuggerSystem->OnEntityActorAddedDelegate.AddUObject(this, &ASpatialDebugger::OnEntityAdded);
+		LoadIcons();
 
+		FontRenderInfo.bClipText = true;
+		FontRenderInfo.bEnableShadow = true;
+
+		RenderFont = GEngine->GetSmallFont();
+
+		if (bAutoStart)
+		{
+			SpatialToggleDebugger();
+		}
+		WireFrameMaterial = LoadObject<UMaterial>(nullptr, *DEFAULT_WIREFRAME_MATERIAL);
+		if (WireFrameMaterial == nullptr)
+		{
+			UE_LOG(LogSpatialDebugger, Warning, TEXT("SpatialDebugger enabled but unable to get WireFrame Material."));
+		}
+	}
+}
+
+void ASpatialDebugger::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	check(NetDriver != nullptr);
+
+	if (!NetDriver->IsServer())
+	{
 		// Since we have no guarantee on the order we'll receive the PC/Pawn/PlayerState
 		// over the wire, we check here once per tick (currently 1 Hz tick rate) to setup our local pointers.
 		// Note that we can capture the PC in OnEntityAdded() since we know we will only receive one of those.
@@ -167,20 +200,10 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 		{
 			LocalPlayerState = LocalPawn->GetPlayerState();
 		}
-
-		if (LocalPawn.IsValid())
-		{
-			SCOPE_CYCLE_COUNTER(STAT_SortingActors);
-			const FVector& PlayerLocation = LocalPawn->GetActorLocation();
-
-			EntityActorMapping.ValueSort([PlayerLocation](const TWeakObjectPtr<AActor>& A, const TWeakObjectPtr<AActor>& B) {
-				return FVector::Dist(PlayerLocation, A->GetActorLocation()) > FVector::Dist(PlayerLocation, B->GetActorLocation());
-			});
-		}
 	}
 }
 
-void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
+void FSpatialDebuggerSystem::OnEntityAdded(const Worker_EntityId EntityId)
 {
 	check(NetDriver != nullptr);
 	if (NetDriver->IsServer())
@@ -189,40 +212,45 @@ void ASpatialDebugger::OnEntityAdded(const Worker_EntityId EntityId)
 		{
 			ActorAuthorityGained(EntityId);
 		}
-
-		return;
 	}
-
-	TWeakObjectPtr<AActor>* ExistingActor = EntityActorMapping.Find(EntityId);
-
-	if (ExistingActor != nullptr)
+	else
 	{
-		return;
-	}
+		TWeakObjectPtr<AActor>* ExistingActor = EntityActorMapping.Find(EntityId);
 
-	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
-	{
-		EntityActorMapping.Add(EntityId, Actor);
-
-		// Each client will only receive a PlayerController once.
-		if (Actor->IsA<APlayerController>())
+		if (ExistingActor != nullptr)
 		{
-			LocalPlayerController = Cast<APlayerController>(Actor);
+			return;
+		}
 
-			if (GetNetMode() == NM_Client)
-			{
-				LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI)
-					.bConsumeInput = false;
-				LocalPlayerController->InputComponent->BindKey(SelectActorKey, IE_Pressed, this, &ASpatialDebugger::OnSelectActor)
-					.bConsumeInput = false;
-				LocalPlayerController->InputComponent->BindKey(HighlightActorKey, IE_Pressed, this, &ASpatialDebugger::OnHighlightActor)
-					.bConsumeInput = false;
-			}
+		if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
+		{
+			EntityActorMapping.Add(EntityId, Actor);
+
+			OnEntityActorAddedDelegate.Broadcast(Actor);
 		}
 	}
 }
 
-void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
+void ASpatialDebugger::OnEntityAdded(AActor* Actor)
+{
+	// Each client will only receive a PlayerController once.
+	if (Actor->IsA<APlayerController>())
+	{
+		LocalPlayerController = Cast<APlayerController>(Actor);
+
+		if (GetNetMode() == NM_Client)
+		{
+			LocalPlayerController->InputComponent->BindKey(ConfigUIToggleKey, IE_Pressed, this, &ASpatialDebugger::OnToggleConfigUI)
+				.bConsumeInput = false;
+			LocalPlayerController->InputComponent->BindKey(SelectActorKey, IE_Pressed, this, &ASpatialDebugger::OnSelectActor)
+				.bConsumeInput = false;
+			LocalPlayerController->InputComponent->BindKey(HighlightActorKey, IE_Pressed, this, &ASpatialDebugger::OnHighlightActor)
+				.bConsumeInput = false;
+		}
+	}
+}
+
+void FSpatialDebuggerSystem::OnEntityRemoved(const Worker_EntityId EntityId)
 {
 	check(NetDriver != nullptr);
 	if (NetDriver->IsServer())
@@ -233,7 +261,7 @@ void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
 	EntityActorMapping.Remove(EntityId);
 }
 
-void ASpatialDebugger::ActorAuthorityGained(const Worker_EntityId EntityId) const
+void FSpatialDebuggerSystem::ActorAuthorityGained(const Worker_EntityId EntityId) const
 {
 	if (NetDriver->VirtualWorkerTranslator == nullptr)
 	{
@@ -250,7 +278,7 @@ void ASpatialDebugger::ActorAuthorityGained(const Worker_EntityId EntityId) cons
 	{
 		// Some entities won't have debug info, so create it now.
 		SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
-										  InvalidServerTintColor, false);
+										  Debugger->InvalidServerTintColor, false);
 		NetDriver->Sender->SendAddComponents(EntityId, { NewDebuggingInfo.CreateComponentData() });
 		return;
 	}
@@ -261,7 +289,7 @@ void ASpatialDebugger::ActorAuthorityGained(const Worker_EntityId EntityId) cons
 	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
 }
 
-TOptional<SpatialDebugging> ASpatialDebugger::GetDebuggingData(Worker_EntityId Entity) const
+TOptional<SpatialDebugging> FSpatialDebuggerSystem::GetDebuggingData(Worker_EntityId Entity) const
 {
 	const EntityViewElement* EntityViewElementPtr = SubView->GetView().Find(Entity);
 
@@ -282,6 +310,11 @@ TOptional<SpatialDebugging> ASpatialDebugger::GetDebuggingData(Worker_EntityId E
 }
 
 void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
+{
+	DebuggerSystem->ActorAuthorityIntentChanged(EntityId, NewIntentVirtualWorkerId);
+}
+
+void FSpatialDebuggerSystem::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
 {
 	TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
 	check(DebuggingInfo.IsSet());
@@ -572,7 +605,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 
 	check(NetDriver != nullptr && !NetDriver->IsServer());
 
-	const TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
+	const TOptional<SpatialDebugging> DebuggingInfo = DebuggerSystem->GetDebuggingData(EntityId);
 
 	if (!DebuggingInfo.IsSet())
 	{
@@ -736,7 +769,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 	{
 		FVector PlayerLocation = GetLocalPawnLocation();
 
-		for (TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
+		for (TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : DebuggerSystem->EntityActorMapping)
 		{
 			const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
 			const Worker_EntityId EntityId = EntityActorPair.Key;
@@ -785,7 +818,7 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 		{
 			if (SelectedActor.IsValid())
 			{
-				if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(SelectedActor))
+				if (const Worker_EntityId_Key* HitEntityId = DebuggerSystem->EntityActorMapping.FindKey(SelectedActor))
 				{
 					FVector PlayerLocation = GetLocalPawnLocation();
 
@@ -907,7 +940,7 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(const FVector2D& New
 
 				// Only add actors to the list of hit actors if they have a valid entity id and screen position. As later when we scroll
 				// through the actors, we only want to highlight ones that we can show a tag for.
-				if (const Worker_EntityId_Key* HitEntityId = EntityActorMapping.FindKey(HitResult.GetActor()))
+				if (const Worker_EntityId_Key* HitEntityId = DebuggerSystem->EntityActorMapping.FindKey(HitResult.GetActor()))
 				{
 					FVector PlayerLocation = GetLocalPawnLocation();
 
