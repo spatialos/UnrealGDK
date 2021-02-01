@@ -156,13 +156,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	USchemaDatabase* SchemaDatabase = InitialiseSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH);
 
 	// Needs to happen before RunSchemaCompiler
-	// We construct the list of all server authoritative components while writing the file.
-	TArray<Worker_ComponentId> GeneratedServerAuthoritativeComponentIds{};
-	WriteServerAuthorityComponentSet(SchemaDatabase, GeneratedServerAuthoritativeComponentIds);
-	WriteClientAuthorityComponentSet();
-	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Data);
-	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly);
-	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover);
+	WriteComponentSetFiles(SchemaDatabase);
 
 	FString SchemaJsonOutput;
 	if (!RunSchemaCompiler(SchemaJsonOutput))

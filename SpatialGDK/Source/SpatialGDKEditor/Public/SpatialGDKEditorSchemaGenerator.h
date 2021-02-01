@@ -63,17 +63,21 @@ SPATIALGDKEDITOR_API bool RefreshSchemaFiles(const FString& SchemaOutputPath, co
 
 SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& CoreSDKSchemaCopyDir);
 
-SPATIALGDKEDITOR_API bool RunSchemaCompiler(FString& SchemaJsonPath);
+SPATIALGDKEDITOR_API bool RunSchemaCompiler(FString& SchemaJsonPath, FString SchemaInputDir = "", FString BuildDir = "");
 
 SPATIALGDKEDITOR_API bool ExtractComponentSetsFromSchemaJson(const FString& SchemaJsonPath,
 															 TMap<uint32, FComponentIDs>& OutComponentSetMap);
 
+SPATIALGDKEDITOR_API void WriteComponentSetFiles(const USchemaDatabase* SchemaDatabase, FString SchemaOutputPath = "");
+
 SPATIALGDKEDITOR_API void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase,
-														   TArray<Worker_ComponentId>& ServerAuthoritativeComponentIds);
+														   TArray<Worker_ComponentId>& ServerAuthoritativeComponentIds,
+														   const FString& SchemaOutputPath);
 
-SPATIALGDKEDITOR_API void WriteClientAuthorityComponentSet();
+SPATIALGDKEDITOR_API void WriteClientAuthorityComponentSet(const FString& SchemaOutputPath);
 
-SPATIALGDKEDITOR_API void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchemaComponentType SchemaType);
+SPATIALGDKEDITOR_API void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchemaComponentType SchemaType,
+														const FString& SchemaOutputPath);
 
 } // namespace Schema
 } // namespace SpatialGDKEditor
