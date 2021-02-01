@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
-## [`0.12.0`] - 2020-02-01
+## [`0.12.0`] - 2021-02-01
 
 ### Breaking changes:
 - We no longer support Server Travel. This feature is being re-designed and will be reintroduced in a future version.
