@@ -14,6 +14,7 @@
 #include "Interop/SpatialSnapshotManager.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialBasicAwaiter.h"
+#include "Utils/SpatialDebugger.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
@@ -193,6 +194,7 @@ public:
 	FFilterPredicate ActorFilter;
 	TArray<FDispatcherRefreshCallback> ActorRefreshCallbacks;
 
+	TUniquePtr<class FSpatialDebuggerSystem> SpatialDebuggerSystem;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 

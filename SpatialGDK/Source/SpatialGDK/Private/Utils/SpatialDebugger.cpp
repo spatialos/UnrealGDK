@@ -35,6 +35,166 @@ using namespace SpatialGDK;
 
 DEFINE_LOG_CATEGORY(LogSpatialDebugger);
 
+FSpatialDebuggerSystem::FSpatialDebuggerSystem(USpatialNetDriver* InNetDriver, const FSubView& InSubView)
+	: NetDriver(InNetDriver)
+	, SubView(&InSubView)
+{
+	check(IsValid(InNetDriver));
+
+	EntityActorMapping.Reserve(ENTITY_ACTOR_MAP_RESERVATION_COUNT);
+}
+
+FSpatialDebuggerSystem::~FSpatialDebuggerSystem() = default;
+
+void FSpatialDebuggerSystem::AdvanceView()
+{
+	for (TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>::TIterator It = EntityActorMapping.CreateIterator(); It; ++It)
+	{
+		if (!It->Value.IsValid())
+		{
+			It.RemoveCurrent();
+		}
+	}
+
+	for (const EntityDelta& EntityDelta : SubView->GetViewDelta().EntityDeltas)
+	{
+		switch (EntityDelta.Type)
+		{
+		case EntityDelta::ADD:
+			OnEntityAdded(EntityDelta.EntityId);
+			break;
+		case EntityDelta::REMOVE:
+			OnEntityRemoved(EntityDelta.EntityId);
+			break;
+		case EntityDelta::TEMPORARILY_REMOVED:
+			OnEntityRemoved(EntityDelta.EntityId);
+			OnEntityAdded(EntityDelta.EntityId);
+			break;
+		default:
+			break;
+		}
+
+		for (const AuthorityChange& AuthorityChange : EntityDelta.AuthorityGained)
+		{
+			if (AuthorityChange.Type == AuthorityChange::AUTHORITY_GAINED
+				&& AuthorityChange.ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+			{
+				ActorAuthorityGained(EntityDelta.EntityId);
+			}
+		}
+	}
+}
+
+void FSpatialDebuggerSystem::OnEntityAdded(const Worker_EntityId EntityId)
+{
+	check(NetDriver != nullptr);
+	if (NetDriver->IsServer())
+	{
+		if (SubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
+		{
+			ActorAuthorityGained(EntityId);
+		}
+
+		return;
+	}
+
+	TWeakObjectPtr<AActor>* ExistingActor = EntityActorMapping.Find(EntityId);
+
+	if (ExistingActor != nullptr)
+	{
+		return;
+	}
+
+	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
+	{
+		EntityActorMapping.Add(EntityId, Actor);
+
+		OnEntityActorAddedDelegate.Broadcast(Actor);
+	}
+}
+
+void FSpatialDebuggerSystem::OnEntityRemoved(const Worker_EntityId EntityId)
+{
+	if (!NetDriver->IsServer())
+	{
+		EntityActorMapping.Remove(EntityId);
+	}
+}
+
+void FSpatialDebuggerSystem::ActorAuthorityGained(const Worker_EntityId EntityId) const
+{
+	if (NetDriver->VirtualWorkerTranslator == nullptr)
+	{
+		// Currently, there's nothing to display in the debugger other than load balancing information.
+		return;
+	}
+
+	const VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
+	const FColor LocalVirtualWorkerColor =
+		SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
+
+	TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
+	if (!DebuggingInfo.IsSet())
+	{
+		// ASpatialDebugger could not exist on our side yet as it's replicated, but this setting can be retrieved from its CDO.
+		const FColor& InvalidServerTintColor =
+			GetDefault<USpatialGDKSettings>()->SpatialDebugger.GetDefaultObject()->InvalidServerTintColor;
+
+		// Some entities won't have debug info, so create it now.
+		const SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
+												InvalidServerTintColor, false);
+		NetDriver->Sender->SendAddComponents(EntityId, { NewDebuggingInfo.CreateComponentData() });
+		return;
+	}
+
+	DebuggingInfo->AuthoritativeVirtualWorkerId = LocalVirtualWorkerId;
+	DebuggingInfo->AuthoritativeColor = LocalVirtualWorkerColor;
+	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
+}
+
+TOptional<SpatialDebugging> FSpatialDebuggerSystem::GetDebuggingData(Worker_EntityId Entity) const
+{
+	const EntityViewElement* EntityViewElementPtr = SubView->GetView().Find(Entity);
+
+	if (EntityViewElementPtr != nullptr)
+	{
+		const ComponentData* SpatialDebuggingDataPtr =
+			EntityViewElementPtr->Components.FindByPredicate([](const ComponentData& ComponentData) {
+				return ComponentData.GetComponentId() == SpatialDebugging::ComponentId;
+			});
+
+		if (SpatialDebuggingDataPtr != nullptr)
+		{
+			return SpatialDebugging(SpatialDebuggingDataPtr->GetWorkerComponentData());
+		}
+	}
+
+	return {};
+}
+
+AActor* FSpatialDebuggerSystem::GetActor(Worker_EntityId EntityId) const
+{
+	const TWeakObjectPtr<AActor>* ActorPtr = EntityActorMapping.Find(EntityId);
+
+	if (ActorPtr != nullptr)
+	{
+		return ActorPtr->Get();
+	}
+
+	return nullptr;
+}
+
+const Worker_EntityId* FSpatialDebuggerSystem::GetActorEntityId(AActor* Actor) const
+{
+	return EntityActorMapping.FindKey(Actor);
+}
+
+const TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& FSpatialDebuggerSystem::GetActors() const
+{
+	return EntityActorMapping;
+}
+
 namespace
 {
 // Background material for worker region
@@ -75,70 +235,6 @@ ASpatialDebugger::ASpatialDebugger(const FObjectInitializer& ObjectInitializer)
 	}
 }
 
-FSpatialDebuggerSystem::FSpatialDebuggerSystem(USpatialNetDriver* InNetDriver, const FSubView& InSubView, ASpatialDebugger* InDebugger)
-	: NetDriver(InNetDriver)
-	, GameInstance(InNetDriver->GetWorld()->GetGameInstance())
-	, Debugger(InDebugger)
-	, SubView(&InSubView)
-{
-	EntityActorMapping.Reserve(ENTITY_ACTOR_MAP_RESERVATION_COUNT);
-}
-
-FSpatialDebuggerSystem::~FSpatialDebuggerSystem() {}
-
-void FSpatialDebuggerSystem::Tick(float DeltaTime)
-{
-	for (TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>::TIterator It = EntityActorMapping.CreateIterator(); It; ++It)
-	{
-		if (!It->Value.IsValid())
-		{
-			It.RemoveCurrent();
-		}
-	}
-
-	for (const EntityDelta& EntityDelta : SubView->GetViewDelta().EntityDeltas)
-	{
-		switch (EntityDelta.Type)
-		{
-		case EntityDelta::ADD:
-			OnEntityAdded(EntityDelta.EntityId);
-			break;
-		case EntityDelta::REMOVE:
-			OnEntityRemoved(EntityDelta.EntityId);
-			break;
-		default:
-			break;
-		}
-
-		for (const AuthorityChange& AuthorityChange : EntityDelta.AuthorityGained)
-		{
-			if (AuthorityChange.Type == AuthorityChange::AUTHORITY_GAINED
-				&& AuthorityChange.ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-			{
-				ActorAuthorityGained(EntityDelta.EntityId);
-			}
-		}
-	}
-
-	// TODO: See if we need this
-#if 0
-	if (LocalPawn.IsValid())
-	{
-		SCOPE_CYCLE_COUNTER(STAT_SortingActors);
-		const FVector& PlayerLocation = LocalPawn->GetActorLocation();
-
-		EntityActorMapping.ValueSort([PlayerLocation](const TWeakObjectPtr<AActor>& A, const TWeakObjectPtr<AActor>& B) {
-            return FVector::Dist(PlayerLocation, A->GetActorLocation()) > FVector::Dist(PlayerLocation, B->GetActorLocation());
-        });
-	}
-#endif
-}
-
-TStatId FSpatialDebuggerSystem::GetStatId() const
-{
-	RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialDebuggerSystem, STATGROUP_Tickables);
-}
-
 void ASpatialDebugger::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -152,15 +248,19 @@ void ASpatialDebugger::BeginPlay()
 
 	check(NetDriver != nullptr);
 
-	const FSubView& DebuggerSubView = NetDriver->Connection->GetCoordinator().CreateSubView(
-		NetDriver->IsServer() ? SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID : SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID,
-		FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
-
-	DebuggerSystem.Emplace(NetDriver, DebuggerSubView, this);
-
 	if (!NetDriver->IsServer())
 	{
-		DebuggerSystem->OnEntityActorAddedDelegate.AddUObject(this, &ASpatialDebugger::OnEntityAdded);
+		GetDebuggerSystem()->OnEntityActorAddedDelegate.AddUObject(this, &ASpatialDebugger::OnEntityAdded);
+
+		for (const TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& PresentActorPair : GetDebuggerSystem()->GetActors())
+		{
+			AActor* PresentActor = PresentActorPair.Value.Get();
+
+			check(IsValid(PresentActor));
+
+			OnEntityAdded(PresentActor);
+		}
+
 		LoadIcons();
 
 		FontRenderInfo.bClipText = true;
@@ -203,34 +303,6 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 	}
 }
 
-void FSpatialDebuggerSystem::OnEntityAdded(const Worker_EntityId EntityId)
-{
-	check(NetDriver != nullptr);
-	if (NetDriver->IsServer())
-	{
-		if (SubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
-		{
-			ActorAuthorityGained(EntityId);
-		}
-	}
-	else
-	{
-		TWeakObjectPtr<AActor>* ExistingActor = EntityActorMapping.Find(EntityId);
-
-		if (ExistingActor != nullptr)
-		{
-			return;
-		}
-
-		if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
-		{
-			EntityActorMapping.Add(EntityId, Actor);
-
-			OnEntityActorAddedDelegate.Broadcast(Actor);
-		}
-	}
-}
-
 void ASpatialDebugger::OnEntityAdded(AActor* Actor)
 {
 	// Each client will only receive a PlayerController once.
@@ -250,68 +322,9 @@ void ASpatialDebugger::OnEntityAdded(AActor* Actor)
 	}
 }
 
-void FSpatialDebuggerSystem::OnEntityRemoved(const Worker_EntityId EntityId)
-{
-	check(NetDriver != nullptr);
-	if (NetDriver->IsServer())
-	{
-		return;
-	}
-
-	EntityActorMapping.Remove(EntityId);
-}
-
-void FSpatialDebuggerSystem::ActorAuthorityGained(const Worker_EntityId EntityId) const
-{
-	if (NetDriver->VirtualWorkerTranslator == nullptr)
-	{
-		// Currently, there's nothing to display in the debugger other than load balancing information.
-		return;
-	}
-
-	const VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
-	const FColor LocalVirtualWorkerColor =
-		SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
-
-	TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
-	if (!DebuggingInfo.IsSet())
-	{
-		// Some entities won't have debug info, so create it now.
-		SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
-										  Debugger->InvalidServerTintColor, false);
-		NetDriver->Sender->SendAddComponents(EntityId, { NewDebuggingInfo.CreateComponentData() });
-		return;
-	}
-
-	DebuggingInfo->AuthoritativeVirtualWorkerId = LocalVirtualWorkerId;
-	DebuggingInfo->AuthoritativeColor = LocalVirtualWorkerColor;
-	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
-}
-
-TOptional<SpatialDebugging> FSpatialDebuggerSystem::GetDebuggingData(Worker_EntityId Entity) const
-{
-	const EntityViewElement* EntityViewElementPtr = SubView->GetView().Find(Entity);
-
-	if (EntityViewElementPtr != nullptr)
-	{
-		const ComponentData* SpatialDebuggingDataPtr =
-			EntityViewElementPtr->Components.FindByPredicate([](const ComponentData& ComponentData) {
-				return ComponentData.GetComponentId() == SpatialDebugging::ComponentId;
-			});
-
-		if (SpatialDebuggingDataPtr != nullptr)
-		{
-			return SpatialDebugging(SpatialDebuggingDataPtr->GetWorkerComponentData());
-		}
-	}
-
-	return {};
-}
-
 void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
 {
-	DebuggerSystem->ActorAuthorityIntentChanged(EntityId, NewIntentVirtualWorkerId);
+	GetDebuggerSystem()->ActorAuthorityIntentChanged(EntityId, NewIntentVirtualWorkerId);
 }
 
 void FSpatialDebuggerSystem::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
@@ -605,7 +618,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 
 	check(NetDriver != nullptr && !NetDriver->IsServer());
 
-	const TOptional<SpatialDebugging> DebuggingInfo = DebuggerSystem->GetDebuggingData(EntityId);
+	const TOptional<SpatialDebugging> DebuggingInfo = GetDebuggerSystem()->GetDebuggingData(EntityId);
 
 	if (!DebuggingInfo.IsSet())
 	{
@@ -767,9 +780,9 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 
 	if (ActorTagDrawMode == EActorTagDrawMode::All)
 	{
-		FVector PlayerLocation = GetLocalPawnLocation();
+		const FVector PlayerLocation = GetLocalPawnLocation();
 
-		for (TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : DebuggerSystem->EntityActorMapping)
+		for (const TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : GetDebuggerSystem()->GetActors())
 		{
 			const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
 			const Worker_EntityId EntityId = EntityActorPair.Key;
@@ -818,7 +831,7 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 		{
 			if (SelectedActor.IsValid())
 			{
-				if (const Worker_EntityId_Key* HitEntityId = DebuggerSystem->EntityActorMapping.FindKey(SelectedActor))
+				if (const Worker_EntityId_Key* HitEntityId = GetDebuggerSystem()->GetActorEntityId(SelectedActor.Get()))
 				{
 					FVector PlayerLocation = GetLocalPawnLocation();
 
@@ -940,7 +953,7 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(const FVector2D& New
 
 				// Only add actors to the list of hit actors if they have a valid entity id and screen position. As later when we scroll
 				// through the actors, we only want to highlight ones that we can show a tag for.
-				if (const Worker_EntityId_Key* HitEntityId = DebuggerSystem->EntityActorMapping.FindKey(HitResult.GetActor()))
+				if (const Worker_EntityId_Key* HitEntityId = GetDebuggerSystem()->GetActorEntityId(HitResult.GetActor()))
 				{
 					FVector PlayerLocation = GetLocalPawnLocation();
 
@@ -1160,5 +1173,10 @@ void ASpatialDebugger::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 			EditorRefreshWorkerRegions();
 		}
 	}
+}
+
+FSpatialDebuggerSystem* ASpatialDebugger::GetDebuggerSystem() const
+{
+	return NetDriver->SpatialDebuggerSystem.Get();
 }
 #endif // WITH_EDITOR

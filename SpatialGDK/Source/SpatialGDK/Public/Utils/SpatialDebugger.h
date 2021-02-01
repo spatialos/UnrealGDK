@@ -48,33 +48,36 @@ struct SpatialDebugging;
 
 class ASpatialDebugger;
 
-class FSpatialDebuggerSystem : private FTickableGameObject
+class FSpatialDebuggerSystem
 {
 public:
-	FSpatialDebuggerSystem(USpatialNetDriver* InNetDriver, const SpatialGDK::FSubView& InSubView, ASpatialDebugger* InDebugger);
+	FSpatialDebuggerSystem(USpatialNetDriver* InNetDriver, const SpatialGDK::FSubView& InSubView);
 	virtual ~FSpatialDebuggerSystem();
+
+	void AdvanceView();
+
+	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
+
+	DECLARE_MULTICAST_DELEGATE_OneParam(FSpatialDebuggerActorAddedDelegate, AActor*);
+	FSpatialDebuggerActorAddedDelegate OnEntityActorAddedDelegate;
+
+	TOptional<SpatialGDK::SpatialDebugging> GetDebuggingData(Worker_EntityId Entity) const;
+	AActor* GetActor(Worker_EntityId EntityId) const;
+	const Worker_EntityId* GetActorEntityId(AActor* Actor) const;
+	const TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& GetActors() const;
+
+private:
 	void OnEntityAdded(Worker_EntityId AddedEntityId);
 	void OnEntityRemoved(Worker_EntityId RemovedEntityId);
 	void ActorAuthorityGained(Worker_EntityId EntityId) const;
-	TOptional<SpatialGDK::SpatialDebugging> GetDebuggingData(Worker_EntityId Entity) const;
-	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
-	virtual void Tick(float DeltaTime) override;
-	virtual TStatId GetStatId() const override;
+
+	static constexpr int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 
 	// These mappings are maintained independently on each client
 	// Mapping of the entities a client has checked out
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> EntityActorMapping;
 
-	DECLARE_MULTICAST_DELEGATE_OneParam(FSpatialDebuggerSystemActorDelegate, AActor*);
-
-	FSpatialDebuggerSystemActorDelegate OnEntityActorAddedDelegate;
-
-private:
-	static constexpr int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
-
 	TWeakObjectPtr<USpatialNetDriver> NetDriver;
-	TWeakObjectPtr<UGameInstance> GameInstance;
-	TWeakObjectPtr<ASpatialDebugger> Debugger;
 	const SpatialGDK::FSubView* SubView;
 };
 
@@ -235,8 +238,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
 	FVector WorldSpaceActorTagOffset = FVector(0.0f, 0.0f, 200.0f);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
-			  meta = (ToolTip = "Color used for any server with an unresolved name"))
+	UPROPERTY(EditDefaultsOnly, Category = Visualization, meta = (ToolTip = "Color used for any server with an unresolved name"))
 	FColor InvalidServerTintColor = FColor::Magenta;
 
 	UPROPERTY(ReplicatedUsing = OnRep_SetWorkerRegions)
@@ -328,7 +330,7 @@ private:
 
 	USpatialNetDriver* NetDriver;
 
-	TOptional<FSpatialDebuggerSystem> DebuggerSystem;
+	FSpatialDebuggerSystem* GetDebuggerSystem() const;
 
 	FDelegateHandle DrawDebugDelegateHandle;
 

@@ -446,6 +446,12 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		MakeUnique<SpatialGDK::ActorSystem>(ActorNonAuthSubview, TombstoneActorSubview, this, &TimerManager, Connection->GetEventTracer());
 	ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
+	const SpatialGDK::FSubView& DebuggerSubView = Connection->GetCoordinator().CreateSubView(
+		IsServer() ? SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID : SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID,
+		SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+
+	SpatialDebuggerSystem = MakeUnique<FSpatialDebuggerSystem>(this, DebuggerSubView);
+
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
 	Receiver->Init(this, Connection->GetEventTracer());
@@ -1895,6 +1901,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (ActorSystem.IsValid())
 		{
 			ActorSystem->Advance();
+		}
+
+		if (SpatialDebuggerSystem != nullptr)
+		{
+			SpatialDebuggerSystem->AdvanceView();
 		}
 
 		{
