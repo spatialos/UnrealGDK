@@ -23,7 +23,11 @@ enum class ERPCType : uint8
 	ServerReliable,
 	ServerUnreliable,
 	NetMulticast,
-	CrossServer
+	CrossServer,
+
+	// Helpers to iterate RPC types with ring buffers
+	RingBufferTypeBegin = ClientReliable,
+	RingBufferTypeEnd = NetMulticast
 };
 
 enum ESchemaComponentType : int32

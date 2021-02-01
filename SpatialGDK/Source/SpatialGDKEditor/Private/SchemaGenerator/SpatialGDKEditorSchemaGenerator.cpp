@@ -873,6 +873,14 @@ USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->ComponentSetIdToComponentIds.FindOrAdd(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 		.ComponentIDs.Append(NetCullDistanceComponentIds);
 
+	// Save ring buffer sizes
+	for (uint8 RPCType = static_cast<uint8>(ERPCType::RingBufferTypeBegin); RPCType <= static_cast<uint8>(ERPCType::RingBufferTypeEnd);
+		 RPCType++)
+	{
+		SchemaDatabase->RPCRingBufferSizeMap.Add(static_cast<ERPCType>(RPCType),
+												 GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(static_cast<ERPCType>(RPCType)));
+	}
+
 	SchemaDatabase->SchemaDatabaseVersion = ESchemaDatabaseVersion::LatestVersion;
 
 	return SchemaDatabase;
@@ -1230,6 +1238,17 @@ FSpatialGDKEditor::ESchemaDatabaseValidationResult ValidateSchemaDatabase()
 	if (SchemaDatabase->SchemaDatabaseVersion < ESchemaDatabaseVersion::LatestVersion)
 	{
 		return FSpatialGDKEditor::OldVersion;
+	}
+
+	// Check ring buffer sizes
+	for (uint8 RPCType = static_cast<uint8>(ERPCType::RingBufferTypeBegin); RPCType <= static_cast<uint8>(ERPCType::RingBufferTypeEnd);
+		 RPCType++)
+	{
+		if (SchemaDatabase->RPCRingBufferSizeMap.FindRef(static_cast<ERPCType>(RPCType))
+			!= GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(static_cast<ERPCType>(RPCType)))
+		{
+			return FSpatialGDKEditor::RingBufferSizeChanged;
+		}
 	}
 
 	return FSpatialGDKEditor::Ok;
