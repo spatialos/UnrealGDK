@@ -40,8 +40,6 @@ class SpatialEventTracer;
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<FWorkerComponentUpdate>>;
-using FChannelsToUpdatePosition =
-	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>>;
 
 UCLASS()
 class SPATIALGDK_API USpatialSender : public UObject
@@ -135,11 +133,7 @@ private:
 
 	SpatialGDK::SpatialRPCService* RPCService;
 
-	FRPCContainer OutgoingRPCs{ ERPCQueueType::Send };
-
 	TArray<TSharedRef<FReliableRPCForRetry>> RetryRPCs;
-
-	FChannelsToUpdatePosition ChannelsToUpdatePosition;
 
 	SpatialGDK::SpatialEventTracer* EventTracer;
 };

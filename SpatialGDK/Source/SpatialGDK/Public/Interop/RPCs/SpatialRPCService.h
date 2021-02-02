@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 #include "ClientServerRPCService.h"
+#include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Interop/SpatialClassInfoManager.h"
@@ -53,6 +54,7 @@ public:
 	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
 
 	void ClearPendingRPCs(Worker_EntityId EntityId);
+	void PeriodicallyProcessOutgoingRPCs();
 
 private:
 	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, PendingRPCPayload Payload, bool bCreatedEntity);
@@ -60,11 +62,24 @@ private:
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
 	// Note: It's like applying an RPC, but more secretive
 	FRPCErrorInfo ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams);
+	void Flush();
+	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
+	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, USpatialActorChannel* Channel,
+							 const FUnrealObjectRef& TargetObjectRef, const FSpatialGDKSpanId& SpanId);
+#if !UE_BUILD_SHIPPING
+	void TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, ERPCType RPCType);
+#endif
+	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload&& InPayload);
+	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters) const;
+	RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
+										  ERPCType Type, void* Params) const;
 
 	USpatialNetDriver* NetDriver;
 	USpatialLatencyTracer* SpatialLatencyTracer;
 	SpatialEventTracer* EventTracer;
+
 	FRPCContainer IncomingRPCs{ ERPCQueueType::Receive };
+	FRPCContainer OutgoingRPCs{ ERPCQueueType::Send };
 
 	FRPCStore RPCStore;
 	ClientServerRPCService ClientServerRPCs;

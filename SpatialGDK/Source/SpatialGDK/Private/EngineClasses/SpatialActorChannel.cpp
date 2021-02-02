@@ -739,8 +739,8 @@ int64 USpatialActorChannel::ReplicateActor()
 			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
 			if (SubobjectHandoverChangeState.Num() > 0)
 			{
-				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState,
-											 ReplicationBytesWritten);
+				NetDriver->ActorSystem->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState,
+															 ReplicationBytesWritten);
 			}
 		}
 
@@ -1281,9 +1281,20 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
 {
-	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(InEntityId))
+	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID)
 	{
-		Sender->SendPositionUpdate(InEntityId, NewPosition);
+#if !UE_BUILD_SHIPPING
+		if (!NetDriver->Connection->GetView()[EntityId].Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
+		{
+			UE_LOG(LogSpatialSender, Verbose,
+				   TEXT("Trying to send Position component update but don't have authority! Update will not be sent. Entity: %lld"),
+				   EntityId);
+			return;
+		}
+#endif
+
+		FWorkerComponentUpdate Update = SpatialGDK::Position::CreatePositionUpdate(SpatialGDK::Coordinates::FromFVector(NewPosition));
+		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 	}
 
 	for (const auto& Child : InActor->Children)

@@ -2,10 +2,12 @@
 
 #include "Interop/RPCs/SpatialRPCService.h"
 
+#include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialStaticComponentView.h"
+#include "Net/NetworkProfiler.h"
 #include "SpatialConstants.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialLatencyTracer.h"
@@ -28,6 +30,13 @@ SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const F
 	, LastProcessingTime(-GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCRetryTime)
 {
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateRaw(this, &SpatialRPCService::ApplyRPC));
+	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateRaw(this, &SpatialRPCService::SendRPC));
+
+	// Attempt to send RPCs that might have been queued while waiting for authority over entities this worker created.
+	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime > 0.0f)
+	{
+		PeriodicallyProcessOutgoingRPCs();
+	}
 }
 
 void SpatialRPCService::AdvanceView()
@@ -291,9 +300,25 @@ void SpatialRPCService::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarg
 	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, Type, MoveTemp(InPayload), SpanId);
 }
 
-void SpatialRPCService::ClearPendingRPCs(Worker_EntityId EntityId)
+void SpatialRPCService::ClearPendingRPCs(const Worker_EntityId EntityId)
 {
 	IncomingRPCs.DropForEntity(EntityId);
+	OutgoingRPCs.DropForEntity(EntityId);
+}
+
+void SpatialRPCService::PeriodicallyProcessOutgoingRPCs()
+{
+	FTimerHandle Timer;
+	// TODO: Move this to advance and pass delta time in to that
+	TimerManager->SetTimer(
+		Timer,
+		[WeakThis = TWeakObjectPtr<SpatialRPCService>(this)]() {
+			if (SpatialRPCService* RPCService = WeakThis.Get())
+			{
+				RPCService->OutgoingRPCs.ProcessRPCs();
+			}
+		},
+		GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime, true);
 }
 
 EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId, const ERPCType Type, PendingRPCPayload Payload,
@@ -497,6 +522,183 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 	}
 
 	return ErrorInfo;
+}
+
+void SpatialRPCService::Flush()
+{
+	PushOverflowedRPCs();
+
+	TArray<UpdateToSend> RPCs = GetRPCsAndAcksToSend();
+	for (UpdateToSend& Update : RPCs)
+	{
+		NetDriver->Connection->SendComponentUpdate(Update.EntityId, &Update.Update, Update.SpanId);
+	}
+
+	if (RPCs.Num() && GetDefault<USpatialGDKSettings>()->bWorkerFlushAfterOutgoingNetworkOp)
+	{
+		NetDriver->Connection->Flush();
+	}
+}
+
+FRPCErrorInfo SpatialRPCService::SendRPC(const FPendingRPCParams& Params)
+{
+	// SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendRPC);
+
+	TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
+	if (!TargetObjectWeakPtr.IsValid())
+	{
+		// Target object was destroyed before the RPC could be (re)sent
+		return FRPCErrorInfo{ nullptr, nullptr, ERPCResult::UnresolvedTargetObject, ERPCQueueProcessResult::DropEntireQueue };
+	}
+	UObject* TargetObject = TargetObjectWeakPtr.Get();
+
+	const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
+	if (Function == nullptr)
+	{
+		return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
+	}
+
+	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
+	if (Channel == nullptr)
+	{
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::NoActorChannel, ERPCQueueProcessResult::DropEntireQueue };
+	}
+
+	const FRPCInfo& RPCInfo = NetDriver->ClassInfoManager->GetRPCInfo(TargetObject, Function);
+
+	if (SendRingBufferedRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef, Params.SpanId))
+	{
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
+	}
+	else
+	{
+		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::RPCServiceFailure };
+	}
+}
+
+bool SpatialRPCService::SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload,
+											USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef,
+											const FSpatialGDKSpanId& SpanId)
+{
+	const FRPCInfo& RPCInfo = NetDriver->ClassInfoManager->GetRPCInfo(TargetObject, Function);
+	const EPushRPCResult Result =
+		PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload, Channel->bCreatedEntity, TargetObject, Function, SpanId);
+
+	if (Result == EPushRPCResult::Success)
+	{
+		Flush();
+	}
+
+#if !UE_BUILD_SHIPPING
+	if (Result == EPushRPCResult::Success || Result == EPushRPCResult::QueueOverflowed)
+	{
+		TrackRPC(Channel->Actor, Function, Payload, RPCInfo.Type);
+	}
+#endif // !UE_BUILD_SHIPPING
+
+	switch (Result)
+	{
+	case EPushRPCResult::QueueOverflowed:
+		UE_LOG(LogSpatialSender, Log,
+			   TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, queuing RPC locally. Actor: %s, entity: %lld, "
+					"function: %s"),
+			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		return true;
+	case EPushRPCResult::DropOverflowed:
+		UE_LOG(
+			LogSpatialSender, Log,
+			TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, function: %s"),
+			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		return true;
+	case EPushRPCResult::HasAckAuthority:
+		UE_LOG(LogSpatialSender, Warning,
+			   TEXT("USpatialSender::SendRingBufferedRPC: Worker has authority over ack component for RPC it is sending. RPC will not be "
+					"sent. Actor: %s, entity: %lld, function: %s"),
+			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		return true;
+	case EPushRPCResult::NoRingBufferAuthority:
+		// TODO: Change engine logic that calls Client RPCs from non-auth servers and change this to error. UNR-2517
+		UE_LOG(LogSpatialSender, Log,
+			   TEXT("USpatialSender::SendRingBufferedRPC: Failed to send RPC because the worker does not have authority over ring buffer "
+					"component. Actor: %s, entity: %lld, function: %s"),
+			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		return true;
+	case EPushRPCResult::EntityBeingCreated:
+		UE_LOG(LogSpatialSender, Log,
+			   TEXT("USpatialSender::SendRingBufferedRPC: RPC was called between entity creation and initial authority gain, so it will be "
+					"queued. Actor: %s, entity: %lld, function: %s"),
+			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		return false;
+	default:
+		return true;
+	}
+}
+
+#if !UE_BUILD_SHIPPING
+void SpatialRPCService::TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, const ERPCType RPCType)
+{
+	NETWORK_PROFILER(GNetworkProfiler.TrackSendRPC(Actor, Function, 0, Payload.CountDataBits(), 0, NetDriver->GetSpatialOSNetConnection()));
+	NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCType, Payload.PayloadData.Num());
+}
+#endif
+
+void SpatialRPCService::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload&& InPayload)
+{
+	TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);
+	if (!TargetObjectWeakPtr.IsValid())
+	{
+		// Target object was destroyed before the RPC could be (re)sent
+		return;
+	}
+
+	UObject* TargetObject = TargetObjectWeakPtr.Get();
+	const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
+	const FRPCInfo& RPCInfo = NetDriver->ClassInfoManager->GetRPCInfo(TargetObject, Function);
+
+	FSpatialGDKSpanId SpanId;
+	if (EventTracer != nullptr)
+	{
+		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePushRPC(TargetObject, Function),
+										 EventTracer->GetFromStack().GetConstId(), 1);
+	}
+
+	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload), SpanId);
+
+	// Try to send all pending RPCs unconditionally
+	OutgoingRPCs.ProcessRPCs();
+}
+
+FSpatialNetBitWriter SpatialRPCService::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters) const
+{
+	FSpatialNetBitWriter PayloadWriter(NetDriver->PackageMap);
+
+	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
+	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
+
+	return PayloadWriter;
+}
+
+RPCPayload SpatialRPCService::CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef,
+														 UFunction* Function, ERPCType Type, void* Params) const
+{
+	const FRPCInfo& RPCInfo = NetDriver->ClassInfoManager->GetRPCInfo(TargetObject, Function);
+
+	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params);
+
+	TOptional<uint64> Id;
+	if (Type == ERPCType::CrossServer)
+	{
+		Id = FMath::RandRange(static_cast<int64>(0), static_cast<int64>(INT64_MAX));
+	}
+
+#if TRACE_LIB_ACTIVE
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, Id, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()),
+					  USpatialLatencyTracer::GetTracer(TargetObject)->RetrievePendingTrace(TargetObject, Function));
+#else
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, Id, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
+#endif
 }
 
 #if TRACE_LIB_ACTIVE

@@ -20,6 +20,9 @@ class USpatialNetDriver;
 class SpatialActorChannel;
 class USpatialNetDriver;
 
+using FChannelsToUpdatePosition =
+	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>>;
+
 namespace SpatialGDK
 {
 class SpatialEventTracer;
@@ -35,7 +38,7 @@ class ActorSystem
 {
 public:
 	ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
-				FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer);
+				SpatialEventTracer* InEventTracer);
 
 	void Advance();
 
@@ -117,7 +120,9 @@ private:
 
 	// Helper
 	bool EntityHasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 
+	Worker_RequestId CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	// Tombstones
 	void CreateTombstoneEntity(AActor* Actor);
 	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
@@ -125,18 +130,23 @@ private:
 	static TArray<FWorkerComponentData> CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents);
 	static void DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents);
 	void AddTombstoneToEntity(Worker_EntityId EntityId) const;
+	void RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor);
 
 	// Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
 							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
+	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
+	void ProcessPositionUpdates();
 
 	const FSubView* SubView;
 	const FSubView* TombstoneSubView;
 	USpatialNetDriver* NetDriver;
-	FTimerManager* TimerManager;
 	SpatialEventTracer* EventTracer;
 
 	TSet<TPair<Worker_EntityId_Key, Worker_ComponentId>> PendingDynamicSubobjectComponents;
+
+	FChannelsToUpdatePosition ChannelsToUpdatePosition;
 
 	TArray<Worker_ComponentId> SemanticActorComponents = { SpatialConstants::SPAWN_DATA_COMPONENT_ID,
 														   SpatialConstants::UNREAL_METADATA_COMPONENT_ID };
