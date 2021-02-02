@@ -15,6 +15,8 @@ struct FSubViewDelta
 	const TArray<Worker_Op>* WorkerMessages;
 };
 
+DECLARE_LOG_CATEGORY_EXTERN(LogViewDelta, Log, All);
+
 /**
  * Lists of changes made to a view as a list of EntityDeltas and miscellaneous other messages.
  * EntityDeltas are sorted by entity ID.

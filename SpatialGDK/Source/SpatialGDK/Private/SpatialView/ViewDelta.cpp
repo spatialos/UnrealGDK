@@ -10,6 +10,8 @@
 
 namespace SpatialGDK
 {
+DEFINE_LOG_CATEGORY(LogViewDelta);
+
 void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View, const FComponentSetData& ComponentSetData)
 {
 	Clear();
@@ -64,6 +66,7 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 			{
 				// This is a delta for a complete entity which was also temporarily removed. Change its type to
 				// reflect that.
+				UE_LOG(LogViewDelta, Log, TEXT("EntityDeltas.Emplace entity ID %lld as TEMPORARILY_REMOVED"), CurrentEntityId);
 				CompleteDelta.Type = EntityDelta::TEMPORARILY_REMOVED;
 				++TemporarilyIncompleteIt;
 			}
@@ -73,6 +76,7 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 		// temporarily removed entities with no state.
 		else if (TemporarilyIncompleteId == CurrentEntityId)
 		{
+			UE_LOG(LogViewDelta, Log, TEXT("EntityDeltas.Emplace entity ID %lld as TEMPORARILY_REMOVED"), CurrentEntityId);
 			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::TEMPORARILY_REMOVED });
 			++TemporarilyIncompleteIt;
 		}
@@ -85,6 +89,7 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 		// Newly incomplete entities are represented as marker remove entities with no state.
 		else if (NewlyIncompleteId == CurrentEntityId)
 		{
+			UE_LOG(LogViewDelta, Log, TEXT("EntityDeltas.Emplace entity ID %lld as REMOVE"), CurrentEntityId);
 			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::REMOVE });
 			++NewlyIncompleteIt;
 		}
