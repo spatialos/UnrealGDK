@@ -1112,9 +1112,9 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 		uint32 ServerAuthSets[3] = { SpatialConstants::DATA_COMPONENT_SET_ID, SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID,
 									 SpatialConstants::HANDOVER_COMPONENT_SET_ID };
 
-		for (uint32 DataType = SCHEMA_Data; DataType < SCHEMA_Count; ++DataType)
+		for (uint32 ComponentType = SCHEMA_Data; ComponentType < SCHEMA_Count; ++ComponentType)
 		{
-			FComponentIDs* DataComponents = SchemaDatabase->ComponentSetIdToComponentIds.Find(ServerAuthSets[DataType]);
+			FComponentIDs* DataComponents = SchemaDatabase->ComponentSetIdToComponentIds.Find(ServerAuthSets[ComponentType]);
 			TestTrue("Found entry for class in data type component set", DataComponents != nullptr);
 			if (DataComponents == nullptr)
 			{
@@ -1133,7 +1133,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 					{
 						continue;
 					}
-					uint32 ComponentId = SchemaData->SchemaComponents[DataType];
+					uint32 ComponentId = SchemaData->SchemaComponents[ComponentType];
 					if (ComponentId != 0)
 					{
 						FString DebugString = FString::Printf(TEXT("Schema data for component %i found in"), ComponentId);
@@ -1153,7 +1153,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 					}
 					for (auto& DynamicComponent : SchemaData->DynamicSubobjectComponents)
 					{
-						uint32 ComponentId = DynamicComponent.SchemaComponents[DataType];
+						uint32 ComponentId = DynamicComponent.SchemaComponents[ComponentType];
 						if (ComponentId != 0)
 						{
 							FString DebugString = FString::Printf(TEXT("Schema data for component %i found in"), ComponentId);
