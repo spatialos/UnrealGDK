@@ -204,7 +204,7 @@ void ASpatialFunctionalTest::PrepareTest()
 		OnReplicated_bPreparedTest();
 
 		//// Duplicate the original settings so that we can restore them later - get errors when including SpatialGDKSettings into headerso
-		///for now have to save to file instead
+		/// for now have to save to file instead
 		// FObjectDuplicationParameters DuplicationParams(SpatialGDKSettings, GetTransientPackage());
 		/*FObjectDuplicationParameters DuplicationParams(SpatialGDKSettings, this);
 		USpatialGDKSettings* OriginalSpatialGDKSettings = CastChecked<USpatialGDKSettings>(StaticDuplicateObjectEx(DuplicationParams));*/
