@@ -53,7 +53,7 @@ private:
 	UPROPERTY(ReplicatedUsing = StartServerFlowControllerSpawn)
 	uint8 bReadyToSpawnServerControllers : 1;
 
-	//USpatialGDKSettings* OriginalSpatialGDKSettings2;
+	// USpatialGDKSettings* OriginalSpatialGDKSettings2;
 
 public:
 	ASpatialFunctionalTest();
