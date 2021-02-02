@@ -5,6 +5,7 @@
 #include "Interop/CrossServerRPCHandler.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
+#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/RPCPayload.h"
@@ -59,7 +60,7 @@ public:
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const;
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
-							 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
+							 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef, const FSpatialGDKSpanId& SpanId);
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId);
 	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
 								  const FSpatialGDKSpanId& CauseSpanId);

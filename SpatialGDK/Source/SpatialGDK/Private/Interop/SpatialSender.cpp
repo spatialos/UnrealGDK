@@ -486,7 +486,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 		FWorkerComponentUpdate& Update = ComponentUpdates[i];
 
 		FSpatialGDKSpanId SpanId;
-		if (EventTracer)
+		if (EventTracer != nullptr)
 		{
 			SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdate(Object, EntityId, Update.component_id),
 											 (const Trace_SpanIdType*)PropertySpans.GetData(), PropertySpans.Num());
@@ -677,7 +677,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
 	checkf(RPCService != nullptr, TEXT("RPCService is assumed to be valid."));
-	if (SendRingBufferedRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef))
+	if (SendRingBufferedRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef, Params.SpanId))
 	{
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 	}
@@ -688,11 +688,12 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 }
 
 bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
-										 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
+										 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef,
+										 const FSpatialGDKSpanId& SpanId)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	const EPushRPCResult Result =
-		RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload, Channel->bCreatedEntity, TargetObject, Function);
+		RPCService->PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload, Channel->bCreatedEntity, TargetObject, Function, SpanId);
 
 	if (Result == EPushRPCResult::Success)
 	{
@@ -794,7 +795,14 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 	UFunction* Function = ClassInfo.RPCs[InPayload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload), 0);
+	FSpatialGDKSpanId SpanId;
+	if (EventTracer != nullptr)
+	{
+		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePushRPC(TargetObject, Function),
+										 EventTracer->GetFromStack().GetConstId(), 1);
+	}
+
+	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload), SpanId);
 
 	// Try to send all pending RPCs unconditionally
 	OutgoingRPCs.ProcessRPCs();
