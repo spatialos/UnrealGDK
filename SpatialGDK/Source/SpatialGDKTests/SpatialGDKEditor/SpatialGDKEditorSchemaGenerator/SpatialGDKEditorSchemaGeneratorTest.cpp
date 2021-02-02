@@ -25,6 +25,9 @@ const FString SchemaOutputFolder = FPaths::Combine(SpatialGDKServicesConstants::
 const FString SchemaDatabaseFileName = TEXT("Spatial/Tests/SchemaDatabase");
 const FString DatabaseOutputFile = TEXT("/Game/Spatial/Tests/SchemaDatabase");
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSchemaGeneratorTest, Log, All);
+DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGeneratorTest);
+
 TArray<FString> LoadSchemaFileForClassToStringArray(const FString& InSchemaOutputFolder, const UClass* CurrentClass)
 {
 	FString SchemaFileFolder = TEXT("");
@@ -99,6 +102,20 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FStrin
 	return ParsedNamesAndIds;
 }
 
+FString ComponentTypeToString(ESchemaComponentType Type)
+{
+	switch (Type)
+	{
+	case SCHEMA_Data:
+		return TEXT("");
+	case SCHEMA_OwnerOnly:
+		return TEXT("OwnerOnly");
+	case SCHEMA_Handover:
+		return TEXT("Handover");
+	}
+	return TEXT("");
+}
+
 bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FString& InSchemaOutputFolder,
 										 const USchemaDatabase* SchemaDatabase)
 {
@@ -159,27 +176,57 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 		const FSubobjectSchemaData* SubobjectSchemaData = SchemaDatabase->SubobjectClassPathToSchema.Find(CurrentClass->GetPathName());
 		if (SubobjectSchemaData == nullptr)
 		{
+			UE_LOG(LogSpatialGDKSchemaGeneratorTest, Error, TEXT("SubobjectSchemaData is null"));
 			return false;
 		}
 		else
 		{
 			if (ParsedNamesAndIds.Names.Num() != ParsedNamesAndIds.Ids.Num())
 			{
+				UE_LOG(LogSpatialGDKSchemaGeneratorTest, Error,
+					   TEXT("ParsedNamesAndIds.Names.Num() is not equal with ParsedNamesAndIds.Ids.Num()"));
+				return false;
+			}
+
+			TArray<int32> SavedIds;
+			TMap<int32, TPair<int, ESchemaComponentType> > SavedIdType;
+			const uint32 DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
+			for (uint32 i = 0; i < DynamicComponentsPerClass; ++i)
+			{
+				for (int j = SCHEMA_Begin; j < SCHEMA_Count; ++j)
+				{
+					int32 Id = SubobjectSchemaData->DynamicSubobjectComponents[i].SchemaComponents[j];
+					if (Id != 0)
+					{
+						SavedIds.Push(Id);
+						SavedIdType.Emplace(Id, TPair<int, ESchemaComponentType>(i, (ESchemaComponentType)j));
+					}
+				}
+			}
+			if (SavedIds.Num() != ParsedNamesAndIds.Ids.Num())
+			{
+				UE_LOG(LogSpatialGDKSchemaGeneratorTest, Error, TEXT("SavedIds.Num() is not equal with ParsedNamesAndIds.Ids.Num()"));
 				return false;
 			}
 
 			for (int i = 0; i < ParsedNamesAndIds.Ids.Num(); ++i)
 			{
-				if (SubobjectSchemaData->DynamicSubobjectComponents[i].SchemaComponents[SCHEMA_Data] != ParsedNamesAndIds.Ids[i])
+				if (SavedIds[i] != ParsedNamesAndIds.Ids[i])
 				{
+					UE_LOG(LogSpatialGDKSchemaGeneratorTest, Error, TEXT("%d Saved Id %d != Loaded Id %d"), i, SavedIds[i],
+						   ParsedNamesAndIds.Ids[i]);
 					return false;
 				}
 
+				const TPair<int, ESchemaComponentType>& IdType = SavedIdType[SavedIds[i]];
 				FString ExpectedComponentName = SubobjectSchemaData->GeneratedSchemaName;
+				ExpectedComponentName += ComponentTypeToString(IdType.Value);
 				ExpectedComponentName += TEXT("Dynamic");
-				ExpectedComponentName.AppendInt(i + 1);
+				ExpectedComponentName.AppendInt(IdType.Key + 1);
 				if (ParsedNamesAndIds.Names[i].Compare(ExpectedComponentName) != 0)
 				{
+					UE_LOG(LogSpatialGDKSchemaGeneratorTest, Error, TEXT("Expected component name %s not matched %s"),
+						   *ExpectedComponentName, *ParsedNamesAndIds.Names[i]);
 					return false;
 				}
 			}
@@ -209,6 +256,8 @@ FString LoadSchemaFileForClass(const FString& InSchemaOutputFolder, const UClass
 const TArray<UObject*>& AllTestClassesArray()
 {
 	static TArray<UObject*> TestClassesArray = { USchemaGenObjectStub::StaticClass(),
+												 USchemaGenObjectStubCondOwnerOnly::StaticClass(),
+												 USchemaGenObjectStubHandOver::StaticClass(),
 												 USpatialTypeObjectStub::StaticClass(),
 												 UChildOfSpatialTypeObjectStub::StaticClass(),
 												 UNotSpatialTypeObjectStub::StaticClass(),
@@ -228,6 +277,8 @@ const TArray<UObject*>& AllTestClassesArray()
 const TSet<UClass*>& AllTestClassesSet()
 {
 	static TSet<UClass*> TestClassesSet = { USchemaGenObjectStub::StaticClass(),
+											USchemaGenObjectStubCondOwnerOnly::StaticClass(),
+											USchemaGenObjectStubHandOver::StaticClass(),
 											USpatialTypeObjectStub::StaticClass(),
 											UChildOfSpatialTypeObjectStub::StaticClass(),
 											UNotSpatialTypeObjectStub::StaticClass(),
@@ -722,6 +773,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_a_class_with_schema_generated_WHEN_schema_database_s
 	return true;
 }
 
+// This test tests AllTestClassesSet classes schema generation.
+//   Compare the loaded schema data with the saved schema to check if the given classes are fully supported.
 SCHEMA_GENERATOR_TEST(GIVEN_multiple_classes_with_schema_generated_WHEN_schema_database_saved_THEN_expected_schema_database_exists)
 {
 	SchemaTestFixture Fixture;
@@ -841,7 +894,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "debug_component.schema",
 										   "debug_metrics.schema",
 										   "global_state_manager.schema",
-										   "heartbeat.schema",
+										   "player_controller.schema",
 										   "known_entity_auth_component_set.schema",
 										   "migration_diagnostic.schema",
 										   "net_owning_client_worker.schema",

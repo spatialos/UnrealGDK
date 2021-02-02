@@ -75,7 +75,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
 
 	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
-	TArray<std::string> AnsiStrings; // Worker requires platform ansi const char*
+	TArray<std::string> AnsiStrings; // Worker requires ansi const char*
 
 	for (const auto& Pair : Settings->EventSamplingModeOverrides)
 	{
@@ -138,7 +138,7 @@ FSpatialGDKSpanId SpatialEventTracer::UserSpanIdToGDKSpanId(const FUserSpanId& U
 }
 
 FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes /* = nullptr*/,
-												 int32 NumCauses /* = 0*/)
+												 int32 NumCauses /* = 0*/) const
 {
 	if (Causes == nullptr && NumCauses > 0)
 	{
@@ -216,33 +216,54 @@ void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) c
 	Io_Stream_Destroy(StreamToDestroy);
 }
 
-void SpatialEventTracer::AddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId)
+void SpatialEventTracer::BeginOpsForFrame()
 {
-	EntityComponentSpanIds.FindOrAdd({ EntityId, ComponentId }, SpanId);
+	EntityComponentSpanIds.Empty(
+		EntityComponentSpanIds.Num()); // Reset all entries. It is assumed all entries are consumed during processing.
 }
 
-void SpatialEventTracer::RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void SpatialEventTracer::AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	EntityComponentSpanIds.Remove({ EntityId, ComponentId });
+	TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntity(Op.entity_id), SpanId.GetConstId(), 1);
 }
 
-void SpatialEventTracer::UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId)
+void SpatialEventTracer::RemoveEntity(const Worker_RemoveEntityOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	FSpatialGDKSpanId& StoredSpanId = EntityComponentSpanIds.FindOrAdd({ EntityId, ComponentId });
-	FSpatialGDKSpanId CauseSpanIds[2] = { SpanId, StoredSpanId };
-	StoredSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateMergeComponentUpdate(EntityId, ComponentId),
-							  reinterpret_cast<uint8_t*>(&CauseSpanIds), 2);
+	TraceEvent(FSpatialTraceEventBuilder::CreateReceiveRemoveEntity(Op.entity_id), SpanId.GetConstId(), 1);
 }
 
-FSpatialGDKSpanId SpatialEventTracer::GetSpanId(const EntityComponentId& Id) const
+void SpatialEventTracer::AuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	const FSpatialGDKSpanId* SpanId = EntityComponentSpanIds.Find(Id);
-	if (SpanId == nullptr)
+	TraceEvent(
+		FSpatialTraceEventBuilder::CreateAuthorityChange(Op.entity_id, Op.component_set_id, static_cast<Worker_Authority>(Op.authority)),
+		SpanId.GetConstId(), 1);
+}
+
+void SpatialEventTracer::AddComponent(const Worker_AddComponentOp& Op, const FSpatialGDKSpanId& SpanId)
+{
+	TArray<FSpatialGDKSpanId>& StoredSpanIds = EntityComponentSpanIds.FindOrAdd({ Op.entity_id, Op.data.component_id });
+	StoredSpanIds.Push(SpanId);
+}
+
+void SpatialEventTracer::RemoveComponent(const Worker_RemoveComponentOp& Op, const FSpatialGDKSpanId& SpanId)
+{
+	EntityComponentSpanIds.Remove({ Op.entity_id, Op.component_id });
+}
+
+void SpatialEventTracer::UpdateComponent(const Worker_ComponentUpdateOp& Op, const FSpatialGDKSpanId& SpanId)
+{
+	TArray<FSpatialGDKSpanId>& StoredSpanIds = EntityComponentSpanIds.FindOrAdd({ Op.entity_id, Op.update.component_id });
+	StoredSpanIds.Push(SpanId);
+}
+
+TArray<FSpatialGDKSpanId> SpatialEventTracer::GetSpansForComponent(const EntityComponentId& Id) const
+{
+	const TArray<FSpatialGDKSpanId>* StoredSpanIds = EntityComponentSpanIds.Find(Id);
+	if (StoredSpanIds == nullptr)
 	{
 		return {};
 	}
-
-	return *SpanId;
+	return *StoredSpanIds;
 }
 
 void SpatialEventTracer::AddToStack(const FSpatialGDKSpanId& SpanId)

@@ -2,8 +2,10 @@
 
 #pragma once
 
+#include "Interop/CrossServerRPCHandler.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
+#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/RPCPayload.h"
@@ -34,33 +36,6 @@ namespace SpatialGDK
 class SpatialEventTracer;
 }
 
-struct FReliableRPCForRetry
-{
-	FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex,
-						 const TArray<uint8>& InPayload, int InRetryIndex, const FSpatialGDKSpanId& InSpanId);
-
-	TWeakObjectPtr<UObject> TargetObject;
-	UFunction* Function;
-	Worker_ComponentId ComponentId;
-	Schema_FieldId RPCIndex;
-	TArray<uint8> Payload;
-	int Attempts; // For reliable RPCs
-
-	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
-	FSpatialGDKSpanId SpanId;
-};
-
-struct FPendingRPC
-{
-	FPendingRPC() = default;
-	FPendingRPC(FPendingRPC&& Other) = default;
-
-	uint32 Offset;
-	Schema_FieldId Index;
-	TArray<uint8> Data;
-	Schema_EntityId Entity;
-};
-
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
@@ -84,10 +59,8 @@ public:
 
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const;
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
-	void SendCrossServerRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
-							USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
-							 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
+							 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef, const FSpatialGDKSpanId& SpanId);
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId);
 	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
 								  const FSpatialGDKSpanId& CauseSpanId);
@@ -121,7 +94,7 @@ public:
 	void FlushRPCService();
 
 	SpatialGDK::RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
-													  void* Params);
+													  ERPCType Type, void* Params);
 
 	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
 	UFUNCTION()
@@ -155,11 +128,6 @@ private:
 
 	// RPC Construction
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters) const;
-
-	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, const SpatialGDK::RPCPayload& Payload,
-												  Worker_ComponentId ComponentId, Schema_FieldId CommandIndex,
-												  Worker_EntityId& OutEntityId);
-	Worker_CommandRequest CreateRetryRPCCommandRequest(const FReliableRPCForRetry& RPC, uint32 TargetObjectOffset);
 
 	// RPC Tracking
 #if !UE_BUILD_SHIPPING

@@ -3,16 +3,10 @@
 #include "Interop/SpatialStaticComponentView.h"
 
 #include "Schema/AuthorityIntent.h"
-#include "Schema/ClientEndpoint.h"
 #include "Schema/Component.h"
-#include "Schema/DebugComponent.h"
-#include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
-#include "Schema/MulticastRPCs.h"
 #include "Schema/NetOwningClientWorker.h"
-#include "Schema/RPCPayload.h"
 #include "Schema/Restricted.h"
-#include "Schema/ServerEndpoint.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
@@ -77,20 +71,8 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::INTEREST_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::Interest>(Op.data);
 		break;
-	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::Heartbeat>(Op.data);
-		break;
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::AuthorityIntent>(Op.data);
-		break;
-	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ClientEndpoint>(Op.data);
-		break;
-	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::ServerEndpoint>(Op.data);
-		break;
-	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::MulticastRPCs>(Op.data);
 		break;
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::SpatialDebugging>(Op.data);
@@ -100,9 +82,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		break;
 	case SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::AuthorityDelegation>(Op.data);
-		break;
-	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::DebugComponent>(Op.data);
 		break;
 	case SpatialConstants::PARTITION_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::Partition>(Op.data);
@@ -140,15 +119,6 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 	case SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::AuthorityIntent>(Op.entity_id);
 		break;
-	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::ClientEndpoint>(Op.entity_id);
-		break;
-	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::ServerEndpoint>(Op.entity_id);
-		break;
-	case SpatialConstants::MULTICAST_RPCS_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::MulticastRPCs>(Op.entity_id);
-		break;
 	case SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::SpatialDebugging>(Op.entity_id);
 		break;
@@ -157,9 +127,6 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::AuthorityDelegation>(Op.entity_id);
-		break;
-	case SpatialConstants::GDK_DEBUG_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::DebugComponent>(Op.entity_id);
 		break;
 	case SpatialConstants::PARTITION_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::Partition>(Op.entity_id);

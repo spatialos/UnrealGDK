@@ -88,20 +88,19 @@ void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const 
 } // namespace
 
 FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload,
-									 TOptional<uint64> RPCIdForLinearEventTrace)
+									 const FSpatialGDKSpanId& SpanId)
 	: ObjectRef(InTargetObjectRef)
 	, Payload(MoveTemp(InPayload))
 	, Timestamp(FDateTime::Now())
 	, Type(InType)
-	, RPCIdForLinearEventTrace(RPCIdForLinearEventTrace)
+	, SpanId(SpanId)
 {
 }
 
 void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload,
-									  TOptional<uint64> RPCIdForLinearEventTrace)
+									  const FSpatialGDKSpanId& SpanId = {})
 {
-	FPendingRPCParams Params{ TargetObjectRef, Type, MoveTemp(Payload), RPCIdForLinearEventTrace };
-
+	FPendingRPCParams Params{ TargetObjectRef, Type, MoveTemp(Payload), SpanId };
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
 		const ERPCQueueProcessResult QueueProcessResult = ApplyFunction(Params);

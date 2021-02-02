@@ -24,12 +24,24 @@ void USpatialAuthorityTestActorComponent::GetLifetimeReplicatedProps(TArray<FLif
 
 void USpatialAuthorityTestActorComponent::OnAuthorityGained()
 {
-	NumAuthorityGains += 1;
+	NumAuthorityGains++;
 }
 
 void USpatialAuthorityTestActorComponent::OnAuthorityLost()
 {
-	NumAuthorityLosses += 1;
+	NumAuthorityLosses++;
+}
+
+void USpatialAuthorityTestActorComponent::OnActorReady(bool bHasAuthority)
+{
+	if (bHasAuthority)
+	{
+		NumActorReadyAuth++;
+	}
+	else
+	{
+		NumActorReadyNonAuth++;
+	}
 }
 
 void USpatialAuthorityTestActorComponent::BeginPlay()

@@ -44,6 +44,8 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	PrimaryActorTick.TickInterval = 0.0f;
 
 	PreparationTimeLimit = 30.0f;
+	bReadyToSpawnServerControllers = false;
+	CachedTestResult = EFunctionalTestResult::Default;
 }
 
 void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -834,11 +836,12 @@ void ASpatialFunctionalTest::KeepActorOnCurrentWorker(AActor* Actor)
 
 void ASpatialFunctionalTest::AddStepSetTagDelegation(FName Tag, int32 ServerWorkerId /*= 1*/)
 {
+	// Valid ServerWorkerIDs range from 1 to NumExpectedServers, inclusive
 	if (!ensureMsgf(ServerWorkerId > 0, TEXT("Invalid Server Worker Id")))
 	{
 		return;
 	}
-	if (ServerWorkerId >= GetNumExpectedServers())
+	if (ServerWorkerId > GetNumExpectedServers())
 	{
 		ServerWorkerId = 1; // Support for single worker environments.
 	}
