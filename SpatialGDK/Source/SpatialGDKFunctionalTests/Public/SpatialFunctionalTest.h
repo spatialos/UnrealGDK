@@ -1,15 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+#pragma optimize("", on)
 
 #include "CoreMinimal.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "FunctionalTest.h"
-#include "Improbable/SpatialGDKSettingsBridge.h"
+//#include "Improbable/SpatialGDKSettingsBridge.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
 #include "SpatialFunctionalTestRequireHandler.h"
 #include "SpatialFunctionalTestStep.h"
+//#include "SpatialGDKSettings.h"
 #include "SpatialFunctionalTest.generated.h"
 
 // Blueprint Delegate
@@ -50,6 +52,8 @@ private:
 
 	UPROPERTY(ReplicatedUsing = StartServerFlowControllerSpawn)
 	uint8 bReadyToSpawnServerControllers : 1;
+
+	//USpatialGDKSettings* OriginalSpatialGDKSettings2;
 
 public:
 	ASpatialFunctionalTest();

@@ -202,6 +202,29 @@ void ASpatialFunctionalTest::PrepareTest()
 	{
 		bPreparedTest = true;
 		OnReplicated_bPreparedTest();
+
+		//// Duplicate the original settings so that we can restore them later - get errors when including SpatialGDKSettings into headerso for now have to save to file instead
+		//FObjectDuplicationParameters DuplicationParams(SpatialGDKSettings, GetTransientPackage());
+		/*FObjectDuplicationParameters DuplicationParams(SpatialGDKSettings, this);
+		USpatialGDKSettings* OriginalSpatialGDKSettings = CastChecked<USpatialGDKSettings>(StaticDuplicateObjectEx(DuplicationParams));*/
+		//OriginalSpatialGDKSettings = CastChecked<USpatialGDKSettings>(StaticDuplicateObjectEx(DuplicationParams));
+		
+		// OriginalSpatialGDKSettings = NewObject<USpatialGDKSettings>(
+		//	GetTransientPackage(), USpatialGDKSettings::StaticClass(), NAME_None, RF_NoFlags, GetMutableDefault<USpatialGDKSettings>());
+
+		
+		// Save settings before before overriding so that they can be reverted later
+		USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+		SpatialGDKSettings->SaveConfig(
+			0, TEXT("C:\\UESpatialGDK426\\Samples\\UnrealGDKTestGyms\\Game\\Intermediate\\Config\\Tmp\\TmpSpatialGDKSettings"));
+
+		int valBefore = SpatialGDKSettings->PositionUpdateThresholdMaxCentimeters;
+		SpatialGDKSettings->LoadConfig(USpatialGDKSettings::StaticClass(),
+									   TEXT("C:"
+															"\\UESpatialGDK426\\Samples\\UnrealGDKTestGyms\\Game\\Intermediate\\Config"
+															"\\CoalescedSourceConfigs\\TestASettingOverrides.ini"));
+		int valAfter = SpatialGDKSettings->PositionUpdateThresholdMaxCentimeters;
+		//check(valBefore != valAfter);
 	}
 }
 
@@ -301,6 +324,13 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 		if (CurrentStepIndex != SPATIAL_FUNCTIONAL_TEST_FINISHED)
 		{
 			bPreparedTest = false; // Clear for PrepareTest to run on all again if the test re-runs.
+
+			USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+
+			SpatialGDKSettings->LoadConfig(
+				0, TEXT("C:\\UESpatialGDK426\\Samples\\UnrealGDKTestGyms\\Game\\Intermediate\\Config\\Tmp\\TmpSpatialGDKSettings"));
+					
+
 			OnReplicated_bPreparedTest();
 
 			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(),

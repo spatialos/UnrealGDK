@@ -58,6 +58,8 @@ ASpatialTestNetReference::ASpatialTestNetReference()
 
 void ASpatialTestNetReference::PrepareTest()
 {
+	PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
+
 	Super::PrepareTest();
 
 	PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
@@ -96,8 +98,8 @@ void ASpatialTestNetReference::PrepareTest()
 
 		// Set the PositionUpdateThresholdMaxCentimeeters to a lower value so that the spatial position updates can be sent every time the
 		// character moves, decreasing the overall duration of the test
-		PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
-		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = 0.0f;
+		//PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
+		//GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = 0.0f;
 
 		// Spawn the TestMovementCharacter actor for Client 1 to possess.
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
@@ -238,5 +240,5 @@ void ASpatialTestNetReference::FinishTest(EFunctionalTestResult TestResult, cons
 
 	// Restoring the PositionUpdateThresholdMaxCentimeters here catches most but not all of the cases when the test failing would cause
 	// PositionUpdateThresholdMaxCentimeters to be changed.
-	GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = PreviousMaximumDistanceThreshold;
+	//GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = PreviousMaximumDistanceThreshold;
 }
