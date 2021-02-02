@@ -36,7 +36,8 @@ public class SpatialGDKEditor : ModuleRules
 				"SpatialGDKServices",
  				"UATHelper",
 				"UnrealEd",
-				"DesktopPlatform"
+				"DesktopPlatform",
+				"MessageLog",
 			});
 
 		PrivateIncludePaths.AddRange(

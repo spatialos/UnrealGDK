@@ -13,10 +13,10 @@
  * This test tests 1 Controller possess over 1 Pawn.
  *
  * This test expects a load balancing grid and ACrossServerPossessionGameMode
- * Recommand to use 2*2 load balancing grid because the position is written in the code
+ * Recommend to use 2*2 load balancing grid because the position is written in the code
  * The client workers begin with a player controller and their default pawns, which they initially possess.
  * The flow is as follows:
- *	Recommend to use PossessionGym.umap in UnrealGDKTestGyms project which ready for tests.
+ *	Recommend to use LocalControllerPossessPawnGym.umap in UnrealGDKTestGyms project which ready for tests.
  *  - Setup:
  *    - Specify `GameMode Override` as ACrossServerPossessionGameMode
  *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
@@ -27,7 +27,7 @@
  *	  - Wait for Pawn in right worker.
  *	  -	The Controller possess the Pawn in server-side
  *	- Result Check:
- *    - ATestPossessionPlayerController::OnPossess should be called >= 1 times
+ *    - ATestPossessionPlayerController::OnPossess should be called == 1 times
  */
 
 ANoneCrossServerPossessionTest::ANoneCrossServerPossessionTest()
@@ -53,6 +53,7 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 				{
 					AssertTrue(PlayerController->HasAuthority(), TEXT("PlayerController should HasAuthority"), PlayerController);
 					AssertTrue(Pawn->HasAuthority(), TEXT("Pawn should HasAuthority"), Pawn);
+					PlayerController->UnPossess();
 					PlayerController->RemotePossessOnServer(Pawn);
 				}
 			}
@@ -63,7 +64,7 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 	AddStep(
 		TEXT("Check test result"), FWorkerDefinition::Server(1),
 		[this]() -> bool {
-			return ATestPossessionPlayerController::OnPossessCalled >= 1;
+			return ATestPossessionPlayerController::OnPossessCalled == 1;
 		},
 		nullptr,
 		[this](float) {
@@ -74,7 +75,7 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 					ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
 					if (PlayerController && PlayerController->HasAuthority())
 					{
-						AssertFalse(PlayerController->IsMigration(), TEXT("PlayerController shouldn't migration"), PlayerController);
+						AssertFalse(PlayerController->HasMigrated(), TEXT("PlayerController shouldn't have migrated"), PlayerController);
 					}
 				}
 			}

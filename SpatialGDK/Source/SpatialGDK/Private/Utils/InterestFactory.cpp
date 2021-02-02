@@ -112,7 +112,8 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 
 	// Workers have interest in all system worker entities.
 	ServerQuery = Query();
-	ServerQuery.ResultComponentIds = { SpatialConstants::WORKER_COMPONENT_ID };
+	ServerQuery.ResultComponentIds = { SpatialConstants::WORKER_COMPONENT_ID,
+									   /* System component query tag */ SpatialConstants::SYSTEM_COMPONENT_ID };
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
 
