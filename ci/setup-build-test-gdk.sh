@@ -7,11 +7,9 @@ fi
 
 source /opt/improbable/environment
 
-# Download the unreal-engine.version file from the GDK repo so we can run the example project builds on the same versions the GDK was run against.
-# This is not the pinnacle of engineering, as we rely on GitHub's web interface to download the file, but it seems like GitHub disallows git archive
-# which would be our other option for downloading a single file.
-# Also resolve the GDK branch to run against. The order of priority is:
-# TEST_REPO_BRANCH envvar > same-name branch as the branch we are currently on > UnrealGDKVersion.txt > "master".
+# Detection code copied from ci folder from UnrealGDKExampleProject 
+# Resolve the GDK branch to run against. The order of priority is:
+# GDK_BRANCH envvar > same-name branch as the branch we are currently on > UnrealGDKVersion.txt > "master".
 GDK_BRANCH_LOCAL="${TEST_REPO_BRANCH:-}"
 if [ -z "${GDK_BRANCH_LOCAL}" ]; then
     GDK_REPO_HEADS=$(git ls-remote --heads "git@github.com:spatialos/UnrealGDK.git" "${BUILDKITE_BRANCH}")
