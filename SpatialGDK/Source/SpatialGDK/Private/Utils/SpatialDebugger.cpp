@@ -1169,9 +1169,9 @@ void ASpatialDebugger::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 		}
 	}
 }
+#endif // WITH_EDITOR
 
 FSpatialDebuggerSystem* ASpatialDebugger::GetDebuggerSystem() const
 {
 	return NetDriver->SpatialDebuggerSystem.Get();
 }
-#endif // WITH_EDITOR
