@@ -22,7 +22,7 @@ enum class EHandoverReplicationTestStage
 
 namespace HandoverReplicationTestValues
 {
-static constexpr int BasicTestPropertyValue = 10;
+static constexpr int BasicTestPropertyValue = 0;
 static constexpr int UpdatedTestPropertyValue = 100;
 
 static constexpr float WorldSize = 1000.0f;
