@@ -428,7 +428,7 @@ bool USpatialLatencyTracer::ContinueLatencyTrace_Internal(const AActor* Actor, c
 	}
 
 	// We do minimal internal tracking for native rpcs/properties
-	const bool bInternalTracking = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() || Type == ETraceType::Tagged;
+	const bool bInternalTracking = Type == ETraceType::Tagged; // GDK now also ends traces in the same way native does, ticket here UNR-4672
 
 	FScopeLock Lock(&Mutex);
 

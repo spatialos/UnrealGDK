@@ -79,8 +79,7 @@ namespace Improbable.WorkerCoordinator
             });
 
             string simulatedPlayerArgs = string.Join(" ", args);
-            Logger.WriteLog("Starting worker " + name + " with args: " + simulatedPlayerArgs);
-            CreateSimulatedPlayerProcess(SimulatedPlayerFilename, simulatedPlayerArgs);
+            CreateSimulatedPlayerProcess(name, SimulatedPlayerFilename, simulatedPlayerArgs);
         }
     }
 }

@@ -3,6 +3,7 @@
 #include "Interop/Connection/SpatialConnectionManager.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
 
@@ -200,10 +201,16 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 
 void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_LoginTokensResponse* LoginTokens)
 {
+	USpatialConnectionManager* ConnectionManager = static_cast<USpatialConnectionManager*>(UserData);
+
 	if (LoginTokens->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to get login token, StatusCode: %d, Error: %s"), LoginTokens->status.code,
 			   UTF8_TO_TCHAR(LoginTokens->status.detail));
+
+		ConnectionManager->OnConnectionFailure(LoginTokens->status.code, FString::Printf(TEXT("Failed to get login token, Error: %s"),
+																						 UTF8_TO_TCHAR(LoginTokens->status.detail)));
+
 		return;
 	}
 
@@ -211,11 +218,12 @@ void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_Login
 	{
 		UE_LOG(LogSpatialWorkerConnection, Warning,
 			   TEXT("No deployment found to connect to. Did you add the 'dev_login' tag to the deployment you want to connect to?"));
+
+		ConnectionManager->OnConnectionFailure(WORKER_CONNECTION_STATUS_CODE_REJECTED, TEXT("Zero login tokens received"));
 		return;
 	}
 
 	UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
-	USpatialConnectionManager* ConnectionManager = static_cast<USpatialConnectionManager*>(UserData);
 	ConnectionManager->ProcessLoginTokensResponse(LoginTokens);
 }
 
@@ -264,6 +272,17 @@ void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_LoginTok
 	ConnectToLocator(&DevAuthConfig);
 }
 
+void USpatialConnectionManager::SetComponentSets(const TMap<uint32, FComponentIDs>& InComponentSetMap)
+{
+	for (const auto& ComponentSet : InComponentSetMap)
+	{
+		for (const auto& Component : ComponentSet.Value.ComponentIDs)
+		{
+			ComponentSetData.ComponentSets.FindOrAdd(ComponentSet.Key).Add(Component);
+		}
+	}
+}
+
 void USpatialConnectionManager::RequestDeploymentLoginTokens()
 {
 	Worker_LoginTokensRequest LTParams{};
@@ -282,15 +301,21 @@ void USpatialConnectionManager::RequestDeploymentLoginTokens()
 
 void USpatialConnectionManager::OnPlayerIdentityToken(void* UserData, const Worker_PlayerIdentityTokenResponse* PIToken)
 {
+	USpatialConnectionManager* ConnectionManager = static_cast<USpatialConnectionManager*>(UserData);
+
 	if (PIToken->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to get PlayerIdentityToken, StatusCode: %d, Error: %s"),
 			   PIToken->status.code, UTF8_TO_TCHAR(PIToken->status.detail));
+
+		ConnectionManager->OnConnectionFailure(PIToken->status.code,
+											   FString::Printf(TEXT("Failed to get PlayerIdentityToken, StatusCode: %d, Error: %s"),
+															   PIToken->status.code, UTF8_TO_TCHAR(PIToken->status.detail)));
+
 		return;
 	}
 
 	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully received PIToken: %s"), UTF8_TO_TCHAR(PIToken->player_identity_token));
-	USpatialConnectionManager* ConnectionManager = static_cast<USpatialConnectionManager*>(UserData);
 	ConnectionManager->DevAuthConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
 
 	ConnectionManager->RequestDeploymentLoginTokens();
@@ -338,6 +363,9 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 	if (InLocatorConfig == nullptr)
 	{
 		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Trying to connect to locator with invalid locator config"));
+
+		OnConnectionFailure(WORKER_CONNECTION_STATUS_CODE_INVALID_ARGUMENT, TEXT("Invalid locator config"));
+
 		return;
 	}
 
@@ -391,7 +419,8 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
 
-				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing));
+				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
+																		  SpatialConnectionManager->ComponentSetData);
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
 			else

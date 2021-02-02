@@ -54,7 +54,6 @@ public:
 	FORCEINLINE uint32 GetSchemaHash() const { return SchemaHash; }
 
 	void AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthChangeOp);
-	bool HandlesComponent(const Worker_ComponentId ComponentId) const;
 
 	void ResetGSM();
 

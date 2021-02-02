@@ -11,12 +11,14 @@
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
 
+DEFINE_LOG_CATEGORY(LogEventTracingTest);
+
 using namespace SpatialGDK;
 
 const FName AEventTracingTest::ReceiveOpEventName = "worker.receive_op";
-const FName AEventTracingTest::SendPropertyUpdatesEventName = "unreal_gdk.send_property_updates";
+const FName AEventTracingTest::PropertyChangedEventName = "unreal_gdk.property_changed";
 const FName AEventTracingTest::ReceivePropertyUpdateEventName = "unreal_gdk.receive_property_update";
-const FName AEventTracingTest::SendRPCEventName = "unreal_gdk.send_rpc";
+const FName AEventTracingTest::PushRPCEventName = "unreal_gdk.push_rpc";
 const FName AEventTracingTest::ProcessRPCEventName = "unreal_gdk.process_rpc";
 const FName AEventTracingTest::ComponentUpdateEventName = "unreal_gdk.component_update";
 const FName AEventTracingTest::MergeComponentUpdateEventName = "unreal_gdk.merge_component_update";
@@ -103,6 +105,12 @@ void AEventTracingTest::GatherData()
 	TArray<FString> Files;
 	FileManager.FindFiles(Files, *EventsFolderPath, *FString(".trace"));
 
+	if (Files.Num() < 2)
+	{
+		UE_LOG(LogEventTracingTest, Error, TEXT("Could not find all required event tracing files"));
+		return;
+	}
+
 	struct FileCreationTime
 	{
 		FString FilePath;
@@ -120,10 +128,32 @@ void AEventTracingTest::GatherData()
 		return A.CreationTime > B.CreationTime;
 	});
 
-	if (FileCreationTimes.Num() >= 2)
+	bool bFoundClient = false;
+	bool bFoundWorker = false;
+	for (const FileCreationTime& FileCreation : FileCreationTimes)
 	{
-		GatherDataFromFile(FileCreationTimes[0].FilePath);
-		GatherDataFromFile(FileCreationTimes[1].FilePath);
+		if (!bFoundClient && FileCreation.FilePath.Contains("UnrealClient"))
+		{
+			GatherDataFromFile(FileCreation.FilePath);
+			bFoundClient = true;
+		}
+
+		if (!bFoundWorker && FileCreation.FilePath.Contains("UnrealWorker"))
+		{
+			GatherDataFromFile(FileCreation.FilePath);
+			bFoundWorker = true;
+		}
+
+		if (bFoundClient && bFoundWorker)
+		{
+			break;
+		}
+	}
+
+	if (!bFoundClient || !bFoundWorker)
+	{
+		UE_LOG(LogEventTracingTest, Error, TEXT("Could not find all required event tracing files"));
+		return;
 	}
 
 	FinishStep();
@@ -165,7 +195,7 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 					CachedEventName = EventName;
 				}
 			}
-			else
+			else if (Item->item_type == TRACE_ITEM_TYPE_SPAN)
 			{
 				const Trace_Span& Span = Item->item.span;
 

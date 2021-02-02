@@ -23,9 +23,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "Schema/ClientRPCEndpointLegacy.h"
 #include "Schema/NetOwningClientWorker.h"
-#include "Schema/ServerRPCEndpointLegacy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
@@ -91,7 +89,7 @@ bool FSpatialObjectRepState::MoveMappedObjectToUnmapped_r(const FUnrealObjectRef
 	{
 		FObjectReferences& ObjReferences = ObjReferencePair.Value;
 
-		if (ObjReferences.Array != NULL)
+		if (ObjReferences.Array.IsValid())
 		{
 			if (MoveMappedObjectToUnmapped_r(ObjRef, *ObjReferences.Array))
 			{
@@ -124,7 +122,7 @@ bool FSpatialObjectRepState::MoveMappedObjectToUnmapped(const FUnrealObjectRef& 
 void FSpatialObjectRepState::GatherObjectRef(TSet<FUnrealObjectRef>& OutReferenced, TSet<FUnrealObjectRef>& OutUnresolved,
 											 const FObjectReferences& CurReferences) const
 {
-	if (CurReferences.Array)
+	if (CurReferences.Array.IsValid())
 	{
 		for (auto const& Entry : *CurReferences.Array)
 		{
@@ -264,8 +262,9 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		else if (bCreatedEntity) // We have not gained authority yet
 		{
 			Actor->SetReplicates(false);
-			Receiver->RetireWhenAuthoritive(EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()),
-											Actor->IsNetStartupActor(), Actor->GetTearOff()); // Ensure we don't recreate the actor
+			NetDriver->ActorSystem->RetireWhenAuthoritative(
+				EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()), Actor->IsNetStartupActor(),
+				Actor->GetTearOff()); // Ensure we don't recreate the actor
 		}
 	}
 	else
@@ -472,7 +471,11 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Group actors by exact class, one level below parent native class.
 	SCOPE_CYCLE_UOBJECT(ReplicateActor, Actor);
 
+#if ENGINE_MINOR_VERSION >= 26
+	const bool bReplay = ActorWorld && ActorWorld->GetDemoNetDriver() == Connection->GetDriver();
+#else
 	const bool bReplay = ActorWorld && ActorWorld->DemoNetDriver == Connection->GetDriver();
+#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	// Begin - error and stat duplication from DataChannel::ReplicateActor()
@@ -587,8 +590,25 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 
+#if ENGINE_MINOR_VERSION >= 26
+	const ERepLayoutResult UpdateResult =
+		ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr,
+														Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
+
+	if (UNLIKELY(ERepLayoutResult::FatalError == UpdateResult))
+	{
+		// This happens when a replicated array is over the maximum size (UINT16_MAX).
+		// Native Unreal just closes the connection at this point, but we can't do that as
+		// it may lead to unexpected consequences for the deployment. Instead, we just early out.
+		// TODO: UNR-4667 - Investigate this behavior in more detail.
+
+		// Connection->SetPendingCloseDueToReplicationFailure();
+		return 0;
+	}
+#else
 	ActorReplicator->RepLayout->UpdateChangelistMgr(ActorReplicator->RepState->GetSendingRepState(), *ActorReplicator->ChangelistMgr, Actor,
 													Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
+#endif
 	FSendingRepState* SendingRepState = ActorReplicator->RepState->GetSendingRepState();
 
 	const int32 PossibleNewHistoryIndex = SendingRepState->HistoryEnd % MaxSendingChangeHistory;
@@ -792,39 +812,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 
 	check(Info != nullptr);
 
-	// Check to see if we already have authority over the subobject to be added
-	if (NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[SCHEMA_Data]))
-	{
-		Sender->SendAddComponentForSubobject(this, Object, *Info, ReplicationBytesWritten);
-	}
-	else
-	{
-		// If we don't, modify the auth delegation to gain authority.
-		PendingDynamicSubobjects.Add(TWeakObjectPtr<UObject>(Object));
-		Sender->GainAuthorityThenAddComponent(this, Object, Info);
-	}
-}
-
-bool USpatialActorChannel::IsListening() const
-{
-	if (NetDriver->IsServer())
-	{
-		if (SpatialGDK::ClientRPCEndpointLegacy* Endpoint =
-				NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ClientRPCEndpointLegacy>(EntityId))
-		{
-			return Endpoint->bReady;
-		}
-	}
-	else
-	{
-		if (SpatialGDK::ServerRPCEndpointLegacy* Endpoint =
-				NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ServerRPCEndpointLegacy>(EntityId))
-		{
-			return Endpoint->bReady;
-		}
-	}
-
-	return false;
+	Sender->SendAddComponentForSubobject(this, Object, *Info, ReplicationBytesWritten);
 }
 
 bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicationFlags& RepFlags)
@@ -866,8 +854,26 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
 
+#if ENGINE_MINOR_VERSION >= 26
+	const ERepLayoutResult UpdateResult =
+		Replicator.RepLayout->UpdateChangelistMgr(Replicator.RepState->GetSendingRepState(), *Replicator.ChangelistMgr, Object,
+												  Replicator.Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
+
+	if (UNLIKELY(ERepLayoutResult::FatalError == UpdateResult))
+	{
+		// This happens when a replicated array is over the maximum size (UINT16_MAX).
+		// Native Unreal just closes the connection at this point, but we can't do that as
+		// it may lead to unexpected consequences for the deployment. Instead, we just early out.
+		// TODO: UNR-4667 - Investigate this behavior in more detail.
+
+		// Connection->SetPendingCloseDueToReplicationFailure();
+		return false;
+	}
+#else
 	Replicator.RepLayout->UpdateChangelistMgr(Replicator.RepState->GetSendingRepState(), *Replicator.ChangelistMgr, Object,
 											  Replicator.Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
+#endif
+
 	FSendingRepState* SendingRepState = Replicator.RepState->GetSendingRepState();
 
 	const int32 PossibleNewHistoryIndex = SendingRepState->HistoryEnd % MaxSendingChangeHistory;
@@ -1221,7 +1227,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 	{
 		// With USLB, we want the client worker that results in the spawning of a PlayerController to claim the
 		// PlayerController entity as a partition entity so the client can become authoritative over necessary
-		// components (such as client RPC endpoints, heartbeat component, etc).
+		// components (such as client RPC endpoints, player controller component, etc).
 		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Cast<APlayerController>(Actor));
 		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
 		Sender->SendClaimPartitionRequest(ClientSystemEntityId, Op.entity_id);
@@ -1335,7 +1341,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	bool bUpdatedThisActor = false;
 
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
-	check(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID));
+	check(NetDriver->HasServerAuthority(EntityId));
 	SpatialGDK::NetOwningClientWorker* CurrentNetOwningClientData =
 		NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
 	const Worker_PartitionId CurrentClientPartitionId = CurrentNetOwningClientData->ClientPartitionId.IsSet()
@@ -1412,10 +1418,10 @@ void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef,
 {
 	CreateSubObjects.Remove(Object);
 
-	Receiver->MoveMappedObjectToUnmapped(ObjectRef);
+	NetDriver->ActorSystem->MoveMappedObjectToUnmapped(ObjectRef);
 	if (FSpatialObjectRepState* SubObjectRefMap = ObjectReferenceMap.Find(ObjectWeakPtr))
 	{
-		Receiver->CleanupRepStateMap(*SubObjectRefMap);
+		NetDriver->ActorSystem->CleanupRepStateMap(*SubObjectRefMap);
 		ObjectReferenceMap.Remove(ObjectWeakPtr);
 	}
 }
@@ -1466,4 +1472,9 @@ bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
 	}
 
 	return false;
+}
+
+void FObjectReferencesMapDeleter::operator()(FObjectReferencesMap* Ptr) const
+{
+	delete Ptr;
 }

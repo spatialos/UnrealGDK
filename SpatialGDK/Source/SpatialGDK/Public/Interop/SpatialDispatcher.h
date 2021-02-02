@@ -4,15 +4,12 @@
 
 #include "CoreMinimal.h"
 
-#include "Schema/Component.h"
-#include "Schema/StandardLibrary.h"
-#include "Schema/UnrealMetadata.h"
 #include "SpatialCommonTypes.h"
-#include "SpatialConstants.h"
-#include "SpatialView/OpList/OpList.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
+
+#include "EngineClasses/SpatialNetDriverDebugContext.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialView, Log, All);
 
@@ -64,6 +61,7 @@ private:
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
 
 	TWeakObjectPtr<USpatialReceiver> Receiver;
+	TWeakObjectPtr<USpatialNetDriverDebugContext> DebugContext;
 	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
 	TWeakObjectPtr<USpatialMetrics> SpatialMetrics;
 

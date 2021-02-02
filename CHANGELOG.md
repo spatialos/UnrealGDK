@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
+### Breaking changes:
+
+### Features:
+- Added a message box notification when game is closed due to missing generated schema.
+
+### Bug fixes:
+- Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
+- Fixed incorrect allocation of entity ID from a non-authoritative server sending a cross-server RPC to a replicated level actor that hasn't been received from runtime.
+- Fixed a regression where bReplicates would not be handed over correctly when dynamically set.
+
+## [`0.12.0`] - 2020-12-14
 
 ### Breaking changes:
 - The condition for sending Spatial position updates has been changed, the two variables `PositionUpdateFrequency` and `PositionDistanceThreshold` have now been removed from the GDK settings. To update your project:
@@ -23,6 +34,12 @@ These functions and structs can be referenced in both code and blueprints it may
   2. Delegate struct `FOnWorkerFlagsUpdated` has been renamed `FOnAnyWorkerFlagUpdated`,
   3. Function `BindToOnWorkerFlagsUpdated` has been renamed to `RegisterAnyFlagUpdatedCallback`
   4. Function `UnbindFromOnWorkerFlagsUpdated` has been renamed to `UnregisterAnyFlagUpdatedCallback`
+- Worker configurations must now be stored in the launch config for local deployments. These can be added in the SpatialGDKEditorSettings as before.
+- Spot and SpatialD (Spatial Service) dependencies have been removed.
+- Compatibility Mode runtime is no longer supported.
+- Running without Ring Buffered RPCs is no longer supported, and the option has been removed from SpatialGDKSettings.
+- The schema database format has been updated and versioning introduced. Please regenerate your schema after updating.
+- The CookAndGenerateSchemaCommandlet now no longer automatically deletes previously generated schema. Deletion of previously generated schema is now controlled by the `-DeleteExistingGeneratedSchema` flag.
 
 ### Features:
 - The DeploymentLauncher tool can now be used to start multiple simulated player deployments at once.
@@ -32,7 +49,7 @@ These functions and structs can be referenced in both code and blueprints it may
   1. The time elapsed since the last sent Spatial position update is greater than or equal to `PositionUpdateThresholdMaxSeconds` AND the Actor has moved a non-zero amount.
   1. The distance travelled since the last Spatial position update was sent is greater than or equal to `PositionUpdateThresholdMaxCentimeters`.
 - New setting "Auto-stop local SpatialOS deployment" that allows you to specific Never (doesn't automatically stop), OnEndPIE (when a PIE session is ended) and OnExitEditor (only when the editor is shutdown). The default is OnExitEditor.
-- Added `OnActorReady` bindable callback triggered when SpatialOS entity data is first received after creating an entity corresponding to an Actor. This event indicates you can safely refer to the entity without risk of inconsistent state after worker crashes or snapshot restarts.
+- Added `OnActorReady` bindable callback triggered when SpatialOS entity data is first received after creating an entity corresponding to an Actor. This event indicates you can safely refer to the entity without risk of inconsistent state after worker crashes or snapshot restarts. The callback contains the active actor's authority.
 - Added support for the main build target having `TargetType.Client` (`<ProjectName>.Target.cs`). This target will be automatically built with arguments `-client -noserver` passed to UAT when building from the editor. If you use the GDK build script or executable manually, you need to pass `-client -noserver` when building this target (for example, `BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject -client -noserver`).
 - Add ability to specify `USpatialMultiWorkerSettings` class from command line. Specifying a `SoftClassPath` via `-OverrideMultiWorkerSettingsClass=MultiWorkerSettingsClassName`.
 - You can now override the load balancing strategy in-editor so that it is different from the cloud. Set `Editor Multi Worker Settings Class` in the `World Settings` to specify the in-editor load balancing strategy. If it is not specified, the existing `Multi Worker Settings Class` will determine both the local and cloud load balancing strategy.
@@ -51,16 +68,42 @@ These functions and structs can be referenced in both code and blueprints it may
 - You can now disable logging to spatial for local and/or cloud deployments from the GUI (Project Settings -> Runtime Settings -> Logging). The command line argument -NoLogToSpatial can still be used for that as well.
 - Servers now log a warning message when detecting a client has timed out.
 - Handover is now optional depending on whether the load balancing strategy implementations require it . See `RequiresHandoverData`
-- Improved the failed hierarchy migration logs. The logs now contain more specific reasons for the failure and the frequency of repeated logs is suppressed.
+- Improved the failed hierarchy migration logs. The logs are now more specific, the frequency of repeated logs is suppressed and cross-server migration diagnostic logs have been added.
 - You can now select an actor for spatial debugging in-game. Use F9 (by default) to open the Spatial Debugger in-game config menu and then press the `Start Select Actor(s)` button. Hover over an actor with the mouse to highlight and right-click  (by default) to select. You can select multiple actors. To deselect an actor right-click on it a second time. If there are multiple actors under the cursor use the mouse wheel (by default) to highlight the desired actor then right-click to confirm your selection.
 - SpatialWorldSettings is now the default world settings in supported engine versions.
 - Worker SDK version compatibility is checked at compile time. 
-- Worker SDK version compatibility is checked at compile time.
-- Unreal GDK now uses SpatialOS 15.0.0-preview-2.
+- Unreal GDK now uses SpatialOS 15.0.0-preview-8.
 - SpatialWorkerFlags has reworked how to add callbacks for flag updates:
   1. `BindToOnWorkerFlagsUpdated` is changed to `RegisterAnyFlagUpdatedCallback` to better differentiate it from the newly added functions for register callbacks. 
   2. `RegisterFlagUpdatedCallback` is added to register callbacks for individual flag updates
   3. `RegisterAndInvokeAnyFlagUpdatedCallback` & `RegisterAndInvokeFlagUpdatedCallback` variants are added that will invoke the callback if the flag was previously set.
+- Overhauled local deployment workflows. Significantly faster local deployment start times (0.1s~ vs 7s~).
+  - Switched to using binary (standalone) versions of the Runtime and Inspector which allow us to start deployments much faster.
+  - Runtime and Inspector binary fetching is now handled by the GDK. To fetch these binaries you must start the game project at least once.
+  - The Runtime and Inspector will be restarted between each editor session.
+  - Support for standalone launch configurations introduced, these are now generated by default for your local deployments, worker configurations for local deployments are now stored inside the launch config. 
+    - Generated local launch configs can still be found in `<GameProject>\Game\Intermediate\Improbable\<MapName>_LocalLaunchConfig.json`.
+  - Cloud deployments still use the older launch config and worker config format, we still generate these automatically for your maps.
+    - Generated cloud launch configs can  be found in `<GameProject>\Game\Intermediate\Improbable\<MapName>_CloudLaunchConfig.json`.
+  - The Launch Configuration Generator tool can be used to generate either local or cloud launch configs via a checkbox in the GUI.
+  - Spot and SpatialD dependencies have been removed.
+  - Compatibility Mode runtime is no longer supported.
+  - Local deployment logs timestamp format has changed to `yyyy.mm.dd-hh.mm.ss`. Example log path: `<GameProject>\spatial\logs\localdeployment\2020.12.02-14.13.39`
+  - Launch.log no longer exists in the localdeployment logs, the equivalent logs can be found in the runtime.log
+  - Local deployments are now restarted by default on PIE end. We now recommend this setting for all your projects. 
+  - Snapshots taken of running local deployments are now saved in `<GameProject>\spatial\snapshots\<yyyy.mm.dd-hh.mm.ss>\snapshot_<n>.snapshot`
+  - Inspector URL is now http://localhost:33333/inspector-v2
+  - Inspector version can now be overridden in the SpatialGDKEditorSettings under `Inspector Version Override`
+- Unreal Engine version 4.26.0 is now supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
+- Added cross-server variants of ability activation functions on the Ability System Component.
+- Added `SpatialSwitchHasAuthority` function to differentiate authoritative server, non-authoritative server, and clients. This can be called in code or used in blueprints that derive from actor.
+- Added blueprint callable function `GetMaxDynamicallyAttachedSubobjectsPerClass` to `USpatialStatics` that gets the maximum dynamically attached subobjects per class as set in `SpatialGDKSettings`
+- Running with an out-of-date schema database will now report a version warning when attempting to launch in editor.
+- Simulated Player deployments no longer depend on DeploymentLauncher for readiness. You can now restart them via the Console and expect them to reconnect to your main deployment. DeploymentLauncher will also restart any crashed or incorrectly finished simulated players applications.
+- Added a `-FailOnNetworkFailure` flag that makes a Spatial-enabled game fail on any NetworkFailure.
+- Reworked schema generation (incremental + full) pop-ups to be clearer.
+- Added a `-FailOnNetworkFailure` flag that makes a Spatial-enabled game fail on any NetworkFailure
+- Added `URemotePossessionComponent` to deal with Cross-Server Possession. Add this componenet to an AController, it will possess the Target Pawn after OnAuthorityGained. It can be implemented in C++ and Blueprint.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
@@ -85,6 +128,22 @@ These functions and structs can be referenced in both code and blueprints it may
 - Worker configuration watcher only rebuilds worker configs when `*.worker.json` files are changed.
 - Added support for FPredictionKey's conditional replication logic. GameplayCues now activate on all clients, instead of only the client that initiated them.
 - Fixed a bug where deployment would fail in the presence of trailing spaces in the `Flags` and `LegacyFlags` fields of the `SpatialGDKEditorSettings`.
+- Fixed a crash that would occur when performing multiple Client Travels at once.
+- Fixed an issue where bReplicates would not be handed over correctly when dynamically set.
+- Add ServerOnlyAlwaysRelevant component and component set schema definitions
+- Fixed a snapshot reloading issue where worker would create extra actors, as if they were loading on a fresh deployment.
+- Server workers use TCP (instead of KCP) by default.
+- Fixed a rare crash where a RepNotify callback can modify a GDK data structure being iterated upon.
+- Fixed race condition in Spatial Test framework that would cause tests to time out with one or more workers not ready to begin the test.
+- Fixed client connection not being cleaned up when moving out of interest of a server.
+- Fixed a assertion being triggered on async loaded entities due to queuing some component addition.
+- Fixed a bug where consecutive invocations of CookAndGenerateSchemaCommandlet for different levels could fail when running the schema compiler.
+- Fixed an issue where GameMode values won't be replicated between server workers if it's outside their Interest.
+- Fixed gameplay cues receiving OnActive/WhileActive events twice on the predicting client in a multi-worker single-process PIE environment.
+- Fixed an issue where a NetworkFailure won't be reported when connecting to a deployment that doesn't support dev_login with a developer token, and in some other configuration-dependent cases.
+- Fixed a crash that occured when opening the session frontend with VS 16.8.0 using the bundled dbghelp.dll.
+- Spatial debugger no longer consumes input.
+- Fixed an issue where we would always create a folder for a snapshots for a deployment even when we made no snapshots
 
 ## [`0.11.0`] - 2020-09-03
 

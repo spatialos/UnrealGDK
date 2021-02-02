@@ -2,15 +2,19 @@
 
 #include "Utils/SpatialLoadBalancingHandler.h"
 
+#include "EngineClasses/Components/RemotePossessionComponent.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "Schema/AuthorityIntent.h"
+#include "Schema/MigrationDiagnostic.h"
 #include "Schema/SpatialDebugging.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalancingHandler);
+
+using namespace SpatialGDK;
 
 FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
@@ -40,9 +44,40 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 		return EvaluateActorResult::RemoveAdditional;
 	}
 
-	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID))
+	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
 	{
-		AActor* NetOwner = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
+		AActor* NetOwner = GetReplicatedHierarchyRoot(Actor);
+
+		if (AController* Controller = Cast<AController>(Actor))
+		{
+			TArray<UActorComponent*> Components;
+			Controller->GetComponents(URemotePossessionComponent::StaticClass(), Components);
+			if (Components.Num() == 1)
+			{
+				if (URemotePossessionComponent* Component = Cast<URemotePossessionComponent>(Components[0]))
+				{
+					if (NetDriver->LockingPolicy->IsLocked(Actor))
+					{
+						UE_LOG(LogSpatialLoadBalancingHandler, Verbose, TEXT("Actor %s (%llu) cannot migrate because it is locked"),
+							   *Actor->GetName(), EntityId);
+						return EvaluateActorResult::None;
+					}
+					VirtualWorkerId TargetVirtualWorkerId;
+					if (EvaluateRemoteMigrationComponent(NetOwner, Component->Target, TargetVirtualWorkerId))
+					{
+						OutNetOwner = NetOwner;
+						OutWorkerId = TargetVirtualWorkerId;
+						return EvaluateActorResult::Migrate;
+					}
+				}
+			}
+			else if (Components.Num() > 1)
+			{
+				UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Actor %s (%llu) has more than 1 URemotePossessionComponent"),
+					   *Actor->GetName(), EntityId);
+			}
+		}
+
 		const bool bNetOwnerHasAuth = NetOwner->HasAuthority();
 
 		// Load balance if we are not supposed to be on this worker, or if we are separated from our owner.
@@ -72,8 +107,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 					// so the load balancing strategy could give us a worker different from where it should be.
 					// Instead, we read its currently assigned worker, which will eventually make us land where our owner is.
 					Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
-					if (SpatialGDK::AuthorityIntent* OwnerAuthIntent =
-							NetDriver->StaticComponentView->GetComponentData<SpatialGDK::AuthorityIntent>(OwnerId))
+					if (AuthorityIntent* OwnerAuthIntent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(OwnerId))
 					{
 						NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
 					}
@@ -121,8 +155,7 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 
 void FSpatialLoadBalancingHandler::UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const
 {
-	if (SpatialGDK::SpatialDebugging* DebuggingInfo =
-			NetDriver->StaticComponentView->GetComponentData<SpatialGDK::SpatialDebugging>(EntityId))
+	if (SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId))
 	{
 		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
 		if (DebuggingInfo->IsLocked != bIsLocked)
@@ -199,10 +232,66 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 		// Check if we have recently logged this actor / reason and if so suppress the log
 		if (!NetDriver->IsLogged(ActorEntityId, ActorMigrationResult))
 		{
-			AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
-			UE_LOG(LogSpatialLoadBalancingHandler, Warning,
-				   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *HierarchyRoot->GetName(),
-				   *Actor->GetName(), ActorEntityId, *FailureReason);
+			if (ActorMigrationResult == EActorMigrationResult::NotAuthoritative)
+			{
+				// Request further diagnostics from authoritative server of blocking actor
+				Worker_CommandRequest MigrationDiagnosticCommandRequest = MigrationDiagnostic::CreateMigrationDiagnosticRequest();
+				NetDriver->Connection->SendCommandRequest(ActorEntityId, &MigrationDiagnosticCommandRequest, RETRY_MAX_TIMES, {});
+			}
+			else
+			{
+				AActor* HierarchyRoot = GetReplicatedHierarchyRoot(Actor);
+				UE_LOG(LogSpatialLoadBalancingHandler, Warning,
+					   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *HierarchyRoot->GetName(),
+					   *Actor->GetName(), ActorEntityId, *FailureReason);
+			}
 		}
 	}
+}
+
+bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor* NetOwner, const AActor* TargetActor,
+																	VirtualWorkerId& OutWorkerId)
+{
+	if (TargetActor != nullptr)
+	{
+		AActor* TargetNetOwner = GetReplicatedHierarchyRoot(TargetActor);
+		VirtualWorkerId TargetVirtualWorkerId = GetWorkerId(TargetNetOwner);
+
+		if (TargetVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
+		{
+			UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"),
+				   *TargetActor->GetName());
+		}
+
+		else
+		{
+			UE_LOG(LogSpatialLoadBalancingHandler, Verbose, TEXT("Migrate actor:%s to worker:%d"), *NetOwner->GetName(),
+				   TargetVirtualWorkerId);
+			OutWorkerId = TargetVirtualWorkerId;
+			return true;
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialLoadBalancingHandler, Log, TEXT("Target is:null"));
+	}
+	return false;
+}
+
+VirtualWorkerId FSpatialLoadBalancingHandler::GetWorkerId(const AActor* NetOwner)
+{
+	VirtualWorkerId NewAuthVirtualWorkerId = SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	if (NetOwner->HasAuthority())
+	{
+		NewAuthVirtualWorkerId = NetDriver->LoadBalanceStrategy->WhoShouldHaveAuthority(*NetOwner);
+	}
+	else
+	{
+		Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+		if (AuthorityIntent* OwnerAuthIntent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(OwnerId))
+		{
+			NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
+		}
+	}
+	return NewAuthVirtualWorkerId;
 }

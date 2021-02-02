@@ -176,7 +176,7 @@ void FSubView::OnTaggedEntityRemoved(const Worker_EntityId EntityId)
 
 void FSubView::CheckEntityAgainstFilter(const Worker_EntityId EntityId)
 {
-	if (Filter(EntityId, (*View)[EntityId]))
+	if (View->Contains(EntityId) && Filter(EntityId, (*View)[EntityId]))
 	{
 		EntityComplete(EntityId);
 		return;

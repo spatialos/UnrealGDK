@@ -5,31 +5,14 @@ component AlwaysRelevant {
     id = 9983;
 }
 
+component ServerOnlyAlwaysRelevant {
+    id = 9968;
+}
+
 component Dormant {
     id = 9981;
 }
 
 component Visible {
     id = 9970;
-}
-
-component_set AlwaysRelevantSet {
-	id = 9983;
-	components = [
-		AlwaysRelevant
-	];
-}
-
-component_set DormantSet {
-	id = 9981;
-	components = [
-		Dormant
-	];
-}
-
-component_set VisibleSet {
-	id = 9970;
-	components = [
-		Visible
-	];
 }

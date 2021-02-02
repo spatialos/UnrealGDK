@@ -27,8 +27,6 @@ namespace
 {
 const PhysicalWorkerName ThisWorker = TEXT("ThisWorker");
 const PhysicalWorkerName OtherWorker = TEXT("OtherWorker");
-const PhysicalWorkerName ClientWorker = TEXT("ClientWorker");
-const PhysicalWorkerName OtherClientWorker = TEXT("OtherClientWorker");
 
 const Worker_PartitionId ThisWorkerId = 101;
 const Worker_PartitionId OtherWorkerId = 102;
@@ -40,20 +38,8 @@ constexpr VirtualWorkerId OtherVirtualWorker = 2;
 
 constexpr Worker_EntityId EntityIdOne = 1;
 
-constexpr Worker_ComponentId TestComponentIdOne = 123;
-constexpr Worker_ComponentId TestComponentIdTwo = 456;
-
-const TArray<Worker_ComponentId> PresentComponents = {
-	SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID, SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
-	SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,	 SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
-	SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,		 SpatialConstants::HEARTBEAT_COMPONENT_ID
-};
-const TArray<Worker_ComponentId> NonAuthDelegationLBComponents = { SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID,
-																   SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID,
-																   SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID };
-const TArray<Worker_ComponentId> TestComponentIds = { TestComponentIdOne, TestComponentIdTwo };
-const TArray<Worker_ComponentId> ClientComponentIds = { SpatialConstants::HEARTBEAT_COMPONENT_ID,
-														SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID };
+const TArray<Worker_ComponentId> NonAuthDelegationLBComponents = { SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID };
+const TArray<Worker_ComponentId> ClientComponentIds = { SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID };
 
 TUniquePtr<SpatialVirtualWorkerTranslator> CreateVirtualWorkerTranslator()
 {
@@ -90,30 +76,23 @@ void AddLBEntityToView(SpatialGDK::EntityView& View, const Worker_EntityId Entit
 	AddEntityToView(View, EntityId);
 
 	AuthorityDelegationMap DelegationMap;
-	DelegationMap.Add(SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID, AuthPartitionId);
-	DelegationMap.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID, AuthPartitionId);
-	DelegationMap.Add(SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID, AuthPartitionId);
-	DelegationMap.Add(SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID, AuthPartitionId);
+	DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthPartitionId);
 
 	if (ClientAuthPartitionId != SpatialConstants::INVALID_ENTITY_ID)
 	{
-		DelegationMap.Add(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, ClientAuthPartitionId);
-		DelegationMap.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, ClientAuthPartitionId);
+		DelegationMap.Add(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, ClientAuthPartitionId);
 	}
 
-	AddComponentToView(View, EntityId,
-					   MakeComponentDataFromData(SpatialGDK::AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData()));
-	AddComponentToView(View, EntityId, MakeComponentDataFromData(SpatialGDK::AuthorityIntent::CreateAuthorityIntentData(IntentWorkerId)));
-	AddComponentToView(View, EntityId,
-					   MakeComponentDataFromData(SpatialGDK::ComponentPresence::CreateComponentPresenceData(PresentComponents)));
+	AddComponentToView(View, EntityId, MakeComponentDataFromData(SpatialGDK::AuthorityDelegation(DelegationMap).CreateComponentData()));
+	AddComponentToView(View, EntityId, MakeComponentDataFromData(SpatialGDK::AuthorityIntent(IntentWorkerId).CreateComponentData()));
 	AddComponentToView(
 		View, EntityId,
 		MakeComponentDataFromData(SpatialGDK::NetOwningClientWorker::CreateNetOwningClientWorkerData(ClientAuthPartitionId)));
 	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID));
-	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::HEARTBEAT_COMPONENT_ID));
+	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID));
 	AddComponentToView(View, EntityId, SpatialGDK::ComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 
-	AddAuthorityToView(View, EntityId, SpatialConstants::WELL_KNOWN_COMPONENT_SET_ID);
+	AddAuthorityToView(View, EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
 }
 
 AuthorityDelegationMap GetAuthDelegationMapFromUpdate(const SpatialGDK::EntityComponentUpdate& Update)
@@ -236,7 +215,7 @@ LOADBALANCEENFORCER_TEST(GIVEN_authority_intent_change_op_WHEN_we_inform_load_ba
 
 	PopulateViewDeltaWithComponentUpdated(
 		Delta, View, EntityIdOne,
-		MakeComponentUpdateFromUpdate(SpatialGDK::AuthorityIntent::CreateAuthorityIntentUpdate(ThisVirtualWorker)));
+		MakeComponentUpdateFromUpdate(SpatialGDK::AuthorityIntent(ThisVirtualWorker).CreateAuthorityIntentUpdate()));
 	SubView.Advance(Delta);
 	LoadBalanceEnforcer.Advance();
 
@@ -253,53 +232,6 @@ LOADBALANCEENFORCER_TEST(GIVEN_authority_intent_change_op_WHEN_we_inform_load_ba
 		bSuccess = false;
 	}
 
-	TestTrue("LoadBalanceEnforcer returned expected authority delegation assignment results", bSuccess);
-
-	return true;
-}
-
-LOADBALANCEENFORCER_TEST(
-	GIVEN_component_presence_change_op_WHEN_we_advance_load_balance_enforcer_THEN_auth_delegation_update_contains_new_components)
-{
-	SpatialGDK::FDispatcher Dispatcher;
-	SpatialGDK::EntityView View;
-	SpatialGDK::ViewDelta Delta;
-	const TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator = CreateVirtualWorkerTranslator();
-
-	AddLBEntityToView(View, EntityIdOne, ThisWorkerId, ThisVirtualWorker);
-
-	SpatialGDK::FSubView SubView(SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, &View, Dispatcher,
-								 SpatialGDK::FSubView::NoDispatcherCallbacks);
-
-	TArray<SpatialGDK::EntityComponentUpdate> Updates;
-
-	SpatialGDK::SpatialLoadBalanceEnforcer LoadBalanceEnforcer = SpatialGDK::SpatialLoadBalanceEnforcer(
-		ThisWorker, SubView, VirtualWorkerTranslator.Get(), [&Updates](SpatialGDK::EntityComponentUpdate Update) {
-			Updates.Add(MoveTemp(Update));
-		});
-
-	// Create a ComponentPresence component update op with the required components.
-	TArray<Worker_ComponentId> NewPresentIds = PresentComponents;
-	NewPresentIds.Append(TestComponentIds);
-	Worker_ComponentUpdate Update;
-	Update.component_id = SpatialConstants::COMPONENT_PRESENCE_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate();
-	Schema_Object* UpdateFields = Schema_GetComponentUpdateFields(Update.schema_type);
-	Schema_AddUint32List(UpdateFields, SpatialConstants::COMPONENT_PRESENCE_COMPONENT_LIST_ID, NewPresentIds.GetData(),
-						 NewPresentIds.Num());
-
-	PopulateViewDeltaWithComponentUpdated(Delta, View, EntityIdOne, MakeComponentUpdateFromUpdate(Update));
-	SubView.Advance(Delta);
-	LoadBalanceEnforcer.Advance();
-
-	bool bSuccess = true;
-	if (Updates.Num() == 1)
-	{
-		bSuccess &= Updates[0].EntityId == EntityIdOne;
-		bSuccess &= Updates[0].Update.GetComponentId() == SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
-		AuthorityDelegationMap AuthDelegationMap = GetAuthDelegationMapFromUpdate(Updates[0]);
-		bSuccess &= AuthorityMapDelegatesComponents(AuthDelegationMap, ThisWorkerId, TestComponentIds);
-	}
 	TestTrue("LoadBalanceEnforcer returned expected authority delegation assignment results", bSuccess);
 
 	return true;

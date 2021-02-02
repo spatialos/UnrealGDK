@@ -25,7 +25,8 @@ SpatialGDK::ComponentUpdate ToComponentUpdate(FWorkerComponentUpdate* Update)
 } // anonymous namespace
 
 void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn,
-											 TSharedPtr<SpatialGDK::SpatialEventTracer> SharedEventTracer)
+											 TSharedPtr<SpatialGDK::SpatialEventTracer> SharedEventTracer,
+											 SpatialGDK::FComponentSetData ComponentSetData)
 {
 	EventTracer = SharedEventTracer.Get();
 	StartupComplete = false;
@@ -40,7 +41,7 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 			ExtractStartupOps(Ops, ExtractedOps);
 			return false;
 		});
-	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(InitialOpListHandler), SharedEventTracer);
+	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(InitialOpListHandler), SharedEventTracer, MoveTemp(ComponentSetData));
 }
 
 void USpatialWorkerConnection::FinishDestroy()
@@ -309,7 +310,7 @@ void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, Spa
 			}
 			break;
 		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
-			if (IsStartupComponent(Op.op.component_set_authority_change.component_set_id))
+			if (Op.op.component_set_authority_change.component_set_id == SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID)
 			{
 				ExtractedOpList.AddOp(Op);
 			}

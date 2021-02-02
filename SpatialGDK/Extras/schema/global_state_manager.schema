@@ -28,24 +28,3 @@ component GSMShutdown {
     command ShutdownMultiProcessResponse begin_shutdown_multiprocess(ShutdownMultiProcessRequest);
     event ShutdownAdditionalServersEvent shutdown_additional_servers;
 }
-
-component_set DeploymentMapSet {
-  id = 9994;
-  components = [
-    DeploymentMap
-  ];
-}
-
-component_set StartupActorManagerSet {
-  id = 9993;
-  components = [
-    StartupActorManager
-  ];
-}
-
-component_set GSMShutdownSet {
-  id = 9992;
-  components = [
-    GSMShutdown
-  ];
-}

@@ -4,6 +4,7 @@
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitReader.h"
+#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
@@ -16,6 +17,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "UObject/UObjectGlobals.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
@@ -517,14 +519,11 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(UObject* Ob
 			   TEXT("Found object called PersistentLevel which isn't a Level! This is not allowed when using the GDK"));
 	}
 
-	bool bNoLoadOnClient = false;
-	if (IsNetGUIDAuthority())
-	{
-		// If the server is replicating references to things inside levels, it needs to indicate
-		// that the client should not load these. Once the level is streamed in, the client will
-		// resolve the references.
-		bNoLoadOnClient = !CanClientLoadObject(Object, NetGUID);
-	}
+	// It is important we set this value correctly regardless of if we are the client or the server.
+	// It might be that the client has streamed a sub-level that the server has not yet told it about.
+	// This means the client will be registering the ObjectRef itself and will not cache the servers values.
+	bool bNoLoadOnClient = !CanClientLoadObject(Object, NetGUID);
+
 	FUnrealObjectRef StablyNamedObjRef(
 		0, 0, Object->GetFName().ToString(),
 		(OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : FUnrealObjectRef(), bNoLoadOnClient);
@@ -538,8 +537,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
-	SpatialGDK::UnrealMetadata* UnrealMetadata =
-		SpatialNetDriver->StaticComponentView->GetComponentData<SpatialGDK::UnrealMetadata>(EntityId);
+	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialNetDriver->ActorSystem->GetUnrealMetadata(EntityId);
 
 	// If UnrealMetadata is nullptr (can happen if the editor is closing down) just return.
 	if (UnrealMetadata == nullptr)
@@ -619,8 +617,7 @@ void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& Subobj
 	}
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
-	SpatialGDK::UnrealMetadata* UnrealMetadata =
-		SpatialNetDriver->StaticComponentView->GetComponentData<SpatialGDK::UnrealMetadata>(SubobjectRef.Entity);
+	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialNetDriver->ActorSystem->GetUnrealMetadata(SubobjectRef.Entity);
 
 	// If UnrealMetadata is nullptr (can happen if the editor is closing down) just return.
 	if (UnrealMetadata == nullptr)
@@ -701,7 +698,11 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRe
 		if (Iterator->Path.IsSet())
 		{
 			FString TempPath(*Iterator->Path);
+#if ENGINE_MINOR_VERSION >= 26
+			GEngine->NetworkRemapPath(Cast<USpatialNetDriver>(Driver)->GetSpatialOSNetConnection(), TempPath, bReading);
+#else
 			GEngine->NetworkRemapPath(Driver, TempPath, bReading);
+#endif
 			Iterator->Path = TempPath;
 		}
 		if (!Iterator->Outer.IsSet())
@@ -738,7 +739,11 @@ FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPathForStaticObject(const 
 {
 	// Put the PIE prefix back (if applicable) so that the correct object can be found.
 	FString TempPath = PathName;
-	GEngine->NetworkRemapPath(Driver, TempPath, true);
+#if ENGINE_MINOR_VERSION >= 26
+	GEngine->NetworkRemapPath(Cast<USpatialNetDriver>(Driver)->GetSpatialOSNetConnection(), TempPath, true /*bIsReading*/);
+#else
+	GEngine->NetworkRemapPath(Driver, TempPath, true /*bIsReading*/);
+#endif
 
 	// This function should only be called for stably named object references, not dynamic ones.
 	FNetGuidCacheObject CacheObject;
@@ -773,11 +778,21 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(UObject* Object
 	{
 		NetGUID = GenerateNewNetGUID(IsDynamicObject(Object) ? 0 : 1);
 
+		// Since this function is the client attempting to generate a NetGUID which will not match the server one
+		// so it can serialize an object before the server has told the client the correct UnrealObjectRef for said object
+		// The client must therefore generate the CacheObject in the same way as the server
+		// This is to ensure we get the correct `bNoLoad` and `bIgnoreWhenMissing`
+		// Failure to do so will mean we populate our map with incorrect values and even if we receive the correct values from the server
+		// they will be ignored since the object is already cached. This can lead to the client attempting to Async load objects
+		// when it shouldn't be. Therefore we need to use the server function CanClientLoadObject to set bNoLoadOnClient correctly.
+		bool bNoLoadOnClient = !CanClientLoadObject(Object, NetGUID);
+
 		FNetGuidCacheObject CacheObject;
 		CacheObject.Object = MakeWeakObjectPtr(const_cast<UObject*>(Object));
 		CacheObject.PathName = Object->GetFName();
 		CacheObject.OuterGUID = GetOrAssignNetGUID_SpatialGDK(Object->GetOuter());
-		CacheObject.bIgnoreWhenMissing = true;
+		CacheObject.bNoLoad = bNoLoadOnClient;
+		CacheObject.bIgnoreWhenMissing = bNoLoadOnClient;
 		RegisterNetGUID_Internal(NetGUID, CacheObject);
 
 		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("%s: NetGUID for object %s was not found in the cache. Generated new NetGUID %s."),

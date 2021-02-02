@@ -44,6 +44,8 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	PrimaryActorTick.TickInterval = 0.0f;
 
 	PreparationTimeLimit = 30.0f;
+	bReadyToSpawnServerControllers = false;
+	CachedTestResult = EFunctionalTestResult::Default;
 }
 
 void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -53,6 +55,7 @@ void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ASpatialFunctionalTest, FlowControllers);
 	DOREPLIFETIME(ASpatialFunctionalTest, CurrentStepIndex);
 	DOREPLIFETIME(ASpatialFunctionalTest, bPreparedTest);
+	DOREPLIFETIME(ASpatialFunctionalTest, bFinishedTest);
 }
 
 void ASpatialFunctionalTest::BeginPlay()
@@ -146,6 +149,10 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 		{
 			GetWorld()->GetTimerManager().ClearTimer(FinishTestTimerHandle);
 			Super::FinishTest(CachedTestResult, CachedTestMessage);
+
+			// This will call NotifyTestFinishedObserver on other workers.
+			bFinishedTest = true;
+
 			// Clear cached variables
 			CachedTestResult = EFunctionalTestResult::Default;
 			CachedTestMessage.Empty();
@@ -403,7 +410,13 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 {
 	if (FlowController->IsLocalController())
 	{
-		checkf(LocalFlowController == nullptr, TEXT("Already had LocalFlowController, this shouldn't happen"));
+		if (LocalFlowController != nullptr)
+		{
+			checkf(LocalFlowController == FlowController,
+				   TEXT("OwningTest already had different LocalFlowController, this shouldn't happen"));
+			return;
+		}
+
 		LocalFlowController = FlowController;
 	}
 
@@ -638,10 +651,6 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 				ClearTagDelegationAndInterest();
 			}
 		}
-		if (!HasAuthority()) // Authority already does this on Super::FinishTest
-		{
-			NotifyTestFinishedObserver();
-		}
 
 		DeleteActorsRegisteredForAutoDestroy();
 	}
@@ -666,6 +675,15 @@ void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
 				LocalFlowController->SetReadyToRunTest(true);
 			}
 		});
+	}
+}
+
+void ASpatialFunctionalTest::OnReplicated_bFinishedTest()
+{
+	if (!HasAuthority())
+	{
+		// The server that started this test has to call this in order for the test to properly finish.
+		NotifyTestFinishedObserver();
 	}
 }
 
@@ -818,11 +836,12 @@ void ASpatialFunctionalTest::KeepActorOnCurrentWorker(AActor* Actor)
 
 void ASpatialFunctionalTest::AddStepSetTagDelegation(FName Tag, int32 ServerWorkerId /*= 1*/)
 {
+	// Valid ServerWorkerIDs range from 1 to NumExpectedServers, inclusive
 	if (!ensureMsgf(ServerWorkerId > 0, TEXT("Invalid Server Worker Id")))
 	{
 		return;
 	}
-	if (ServerWorkerId >= GetNumExpectedServers())
+	if (ServerWorkerId > GetNumExpectedServers())
 	{
 		ServerWorkerId = 1; // Support for single worker environments.
 	}

@@ -27,6 +27,10 @@ ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const
 #else
 	SetReplicatingMovement(false);
 #endif
+	OwningTest = nullptr;
+	bHasAckFinishedTest = true;
+	bReadyToRegisterWithTest = false;
+	bIsReadyToRunTest = false;
 }
 
 void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -81,6 +85,16 @@ void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation
 }
 
 void ASpatialFunctionalTestFlowController::OnReadyToRegisterWithTest()
+{
+	TryRegisterFlowControllerWithOwningTest();
+}
+
+void ASpatialFunctionalTestFlowController::OnRep_OwningTest()
+{
+	TryRegisterFlowControllerWithOwningTest();
+}
+
+void ASpatialFunctionalTestFlowController::TryRegisterFlowControllerWithOwningTest()
 {
 	if (!bReadyToRegisterWithTest || OwningTest == nullptr)
 	{

@@ -24,13 +24,13 @@ FSpatialTraceEventBuilder FSpatialTraceEventBuilder::AddObject(FString Key, cons
 	{
 		if (const AActor* Actor = Cast<AActor>(Object))
 		{
-			AddKeyValue(Key + TEXT(".ActorPosition"), Actor->GetTransform().GetTranslation().ToString());
+			AddKeyValue(Key + TEXT("ActorPosition"), Actor->GetTransform().GetTranslation().ToString());
 		}
 		if (UWorld* World = Object->GetWorld())
 		{
 			if (USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 			{
-				AddKeyValue(Key + TEXT(".NetGuid"), NetDriver->PackageMap->GetNetGUIDFromObject(Object).ToString());
+				AddKeyValue(Key + TEXT("NetGuid"), NetDriver->PackageMap->GetNetGUIDFromObject(Object).ToString());
 			}
 		}
 		AddKeyValue(MoveTemp(Key), Object->GetName());
@@ -100,12 +100,17 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::GetEvent() &&
 	return MoveTemp(SpatialTraceEvent);
 }
 
-FSpatialTraceEvent FSpatialTraceEventBuilder::CreateProcessRPC(const UObject* Object, UFunction* Function,
-															   const EventTraceUniqueId& LinearTraceId)
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateApplyRPC(const UObject* Object, UFunction* Function)
 {
-	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "process_rpc")
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "apply_rpc")
 		.AddObject(TEXT("Object"), Object)
 		.AddFunction(TEXT("Function"), Function)
+		.GetEvent();
+}
+
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceiveRPC(const EventTraceUniqueId& LinearTraceId)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "receive_rpc")
 		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
 		.GetEvent();
 }
@@ -172,15 +177,6 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(const 
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateMergeSendRPCs(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_send_rpcs")
-		.AddEntityId(TEXT("EntityId"), EntityId)
-		.AddComponentId(TEXT("ComponentId"), ComponentId)
-		.GetEvent();
-}
-
-FSpatialTraceEvent FSpatialTraceEventBuilder::CreateMergeComponentUpdate(const Worker_EntityId EntityId,
-																		 const Worker_ComponentId ComponentId)
-{
-	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_component_update")
 		.AddEntityId(TEXT("EntityId"), EntityId)
 		.AddComponentId(TEXT("ComponentId"), ComponentId)
 		.GetEvent();

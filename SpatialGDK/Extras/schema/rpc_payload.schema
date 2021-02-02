@@ -11,4 +11,6 @@ type UnrealRPCPayload {
     uint32 rpc_index = 2;
     bytes rpc_payload = 3;
     option<TracePayload> rpc_trace = 4;
+    option<uint64> rpc_id = 5;
 }
+

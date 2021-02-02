@@ -15,6 +15,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #endif
 
+#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
@@ -39,6 +40,15 @@ bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver)
 	{
 		UE_LOG(LogSpatialClassInfoManager, Error,
 			   TEXT("SchemaDatabase not found! Please generate schema or turn off SpatialOS networking."));
+		QuitGame();
+		return false;
+	}
+
+	if (SchemaDatabase->SchemaDatabaseVersion < ESchemaDatabaseVersion::LatestVersion)
+	{
+		UE_LOG(LogSpatialClassInfoManager, Error,
+			   TEXT("SchemaDatabase version old! Loaded: %d Expected: %d Please regenerate schema or turn off SpatialOS networking."),
+			   SchemaDatabase->SchemaDatabaseVersion, ESchemaDatabaseVersion::LatestVersion);
 		QuitGame();
 		return false;
 	}
@@ -116,7 +126,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
 	// Remove PIE prefix on class if it exists to properly look up the class.
 	FString ClassPath = Class->GetPathName();
-	GEngine->NetworkRemapPath(NetDriver, ClassPath, false);
+#if ENGINE_MINOR_VERSION >= 26
+	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), ClassPath, false /*bIsReading*/);
+#else
+	GEngine->NetworkRemapPath(NetDriver, ClassPath, false /*bIsReading*/);
+#endif
 
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
@@ -494,24 +508,6 @@ const TMap<float, Worker_ComponentId>& USpatialClassInfoManager::GetNetCullDista
 	return SchemaDatabase->NetCullDistanceToComponentId;
 }
 
-const TArray<Worker_ComponentId>& USpatialClassInfoManager::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const
-{
-	switch (ComponentType)
-	{
-	case ESchemaComponentType::SCHEMA_Data:
-		return SchemaDatabase->DataComponentIds;
-	case ESchemaComponentType::SCHEMA_OwnerOnly:
-		return SchemaDatabase->OwnerOnlyComponentIds;
-	case ESchemaComponentType::SCHEMA_Handover:
-		return SchemaDatabase->HandoverComponentIds;
-	default:
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Component type %d not recognised."), ComponentType);
-		checkNoEntry();
-		static const TArray<Worker_ComponentId> EmptyArray;
-		return EmptyArray;
-	}
-}
-
 const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId,
 																		USpatialPackageMapClient* PackageMapClient)
 {
@@ -588,7 +584,14 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 
 	if (ActorForRelevancy->bAlwaysRelevant)
 	{
-		return SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
+		if (ActorForRelevancy->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+		{
+			return SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID;
+		}
+		else
+		{
+			return SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
+		}
 	}
 
 	// Don't add NCD component to player controller and server only actors as we don't want client's to gain interest in them

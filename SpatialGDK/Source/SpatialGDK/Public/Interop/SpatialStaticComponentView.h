@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Schema/Component.h"
-#include "Schema/StandardLibrary.h"
 #include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -22,6 +21,7 @@ class SPATIALGDK_API USpatialStaticComponentView : public UObject
 
 public:
 	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	bool HasEntity(Worker_EntityId EntityId) const;
 
 	template <typename T>
 	T* GetComponentData(Worker_EntityId EntityId) const

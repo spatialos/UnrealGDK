@@ -71,24 +71,11 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	TSet<FSoftClassPath> ReferencedClasses;
 	ObjectListener.StartListening(&ReferencedClasses);
 
-	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Try Load Schema Database."));
+	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Try load schema database."));
 	if (IsAssetReadOnly(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
-		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to load Schema Database."));
+		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to load schema database."));
 		return 0;
-	}
-
-	// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash
-	// local launch and cloud upload.
-	FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
-	FString CoreSDKSchemaCopyDir =
-		FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
-	SpatialGDKEditor::Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
-	SpatialGDKEditor::Schema::RefreshSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder());
-
-	if (!LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
-	{
-		ResetSchemaGeneratorStateAndCleanupFolders();
 	}
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Finding supported C++ and in-memory Classes."));
@@ -114,12 +101,27 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 
 	ObjectListener.StopListening();
 
+	// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash
+	// local launch and cloud upload.
+	FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
+	FString CoreSDKSchemaCopyDir =
+		FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
+	SpatialGDKEditor::Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
+	const bool bDeleteExistingSchema = Switches.Contains(TEXT("DeleteExistingGeneratedSchema"));
+	SpatialGDKEditor::Schema::RefreshSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder(),
+												 bDeleteExistingSchema);
+
+	if (!LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
+	{
+		ResetSchemaGeneratorStateAndCleanupFolders();
+	}
+
 	// Sort classes here so that batching does not have an effect on ordering.
 	ReferencedClasses.Sort([](const FSoftClassPath& A, const FSoftClassPath& B) {
 		return FNameLexicalLess()(A.GetAssetPathName(), B.GetAssetPathName());
 	});
 
-	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Start Schema Generation for discovered assets."));
+	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Start schema generation for discovered assets."));
 	FDateTime StartTime = FDateTime::Now();
 	TSet<UClass*> Classes;
 	const int BatchSize = 100;
@@ -141,6 +143,7 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 		}
 	}
 	SpatialGDKGenerateSchemaForClasses(Classes);
+	SpatialGDKSanitizeGeneratedSchema();
 
 	GenerateSchemaForSublevels();
 	GenerateSchemaForRPCEndpoints();
@@ -150,13 +153,31 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 
 	UE_LOG(LogCookAndGenerateSchemaCommandlet, Display, TEXT("Schema Generation Finished in %.2f seconds"), Duration.GetTotalSeconds());
 
+	USchemaDatabase* SchemaDatabase = InitialiseSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH);
+
+	// Needs to happen before RunSchemaCompiler
+	// We construct the list of all server authoritative components while writing the file.
+	TArray<Worker_ComponentId> GeneratedServerAuthoritativeComponentIds{};
+	WriteServerAuthorityComponentSet(SchemaDatabase, GeneratedServerAuthoritativeComponentIds);
+	WriteClientAuthorityComponentSet();
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Data);
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly);
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover);
+
+	// Finish initializing the schema database through updating the server authoritative component set.
+	for (const auto& ComponentId : GeneratedServerAuthoritativeComponentIds)
+	{
+		SchemaDatabase->ComponentSetIdToComponentIds.FindOrAdd(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+			.ComponentIDs.Push(ComponentId);
+	}
+
 	if (!RunSchemaCompiler())
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to run schema compiler."));
 		return 0;
 	}
 
-	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
+	if (!SaveSchemaDatabase(SchemaDatabase))
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to save schema database."));
 		return 0;

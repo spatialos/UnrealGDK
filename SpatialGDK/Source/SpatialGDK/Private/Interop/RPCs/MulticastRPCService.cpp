@@ -32,11 +32,11 @@ void MulticastRPCService::AdvanceView()
 			{
 				// We process auth lost temporarily twice. Once before updates and once after, so as not
 				// to process updates that we received while we think we are still authoritiative.
-				AuthorityLost(Delta.EntityId, Change.ComponentId);
+				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
 			}
 			for (const AuthorityChange& Change : Delta.AuthorityLost)
 			{
-				AuthorityLost(Delta.EntityId, Change.ComponentId);
+				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
 			}
 			for (const ComponentChange& Change : Delta.ComponentUpdates)
 			{
@@ -51,13 +51,13 @@ void MulticastRPCService::AdvanceView()
 			}
 			for (const AuthorityChange& Change : Delta.AuthorityGained)
 			{
-				AuthorityGained(Delta.EntityId, Change.ComponentId);
+				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
 			}
 			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
 			{
 				// Updates that we could have received while we weren't authoritative have now been processed.
 				// Regain authority.
-				AuthorityGained(Delta.EntityId, Change.ComponentId);
+				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
 			}
 		}
 		case EntityDelta::ADD:
@@ -126,7 +126,7 @@ void MulticastRPCService::ComponentUpdate(const Worker_EntityId EntityId, const 
 
 void MulticastRPCService::AuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
 {
-	if (ComponentId != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+	if (ComponentId != SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 	{
 		return;
 	}
@@ -135,7 +135,7 @@ void MulticastRPCService::AuthorityGained(const Worker_EntityId EntityId, const 
 
 void MulticastRPCService::AuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
 {
-	if (ComponentId != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+	if (ComponentId != SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 	{
 		return;
 	}
@@ -179,8 +179,8 @@ void MulticastRPCService::OnEndpointAuthorityGained(const Worker_EntityId Entity
 		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::NetMulticast), Component.InitiallyPresentMulticastRPCsCount);
 
 		const RPCRingBufferDescriptor Descriptor = RPCRingBufferUtils::GetRingBufferDescriptor(ERPCType::NetMulticast);
-		Schema_Object* SchemaObject =
-			Schema_GetComponentUpdateFields(RPCStore->GetOrCreateComponentUpdate(EntityComponentId{ EntityId, ComponentId }));
+		Schema_Object* SchemaObject = Schema_GetComponentUpdateFields(
+			RPCStore->GetOrCreateComponentUpdate(EntityComponentId{ EntityId, SpatialConstants::MULTICAST_RPCS_COMPONENT_ID }));
 		Schema_AddUint64(SchemaObject, Descriptor.LastSentRPCFieldId, Component.InitiallyPresentMulticastRPCsCount);
 	}
 	else

@@ -10,12 +10,12 @@
 #include "Engine/World.h"
 #include "GameFramework/DefaultPawn.h"
 #include "GameFramework/GameStateBase.h"
-#include "SpatialGDKTests/SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 #include "Tests/AutomationCommon.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "Tests/TestDefinitions.h"
 
-#define GRIDBASEDLBSTRATEGY_TEST(TestName) GDK_TEST(Core, UGridBasedLBStrategy, TestName)
+#define GRIDBASEDLBSTRATEGY_TEST(TestName) GDK_AUTOMATION_TEST(Core, UGridBasedLBStrategy, TestName)
 
 // Test Globals
 namespace

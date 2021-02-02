@@ -44,30 +44,24 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 		{
 		// Critical Section
 		case WORKER_OP_TYPE_CRITICAL_SECTION:
-			Receiver->OnCriticalSection(Op.op.critical_section.in_critical_section != 0);
 			break;
 
 		// Entity Lifetime
 		case WORKER_OP_TYPE_ADD_ENTITY:
-			Receiver->OnAddEntity(Op.op.add_entity);
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			Receiver->OnRemoveEntity(Op.op.remove_entity);
 			StaticComponentView->OnRemoveEntity(Op.op.remove_entity.entity_id);
-			Receiver->DropQueuedRemoveComponentOpsForEntity(Op.op.remove_entity.entity_id);
 			break;
 
 		// Components
 		case WORKER_OP_TYPE_ADD_COMPONENT:
 			StaticComponentView->OnAddComponent(Op.op.add_component);
-			Receiver->OnAddComponent(Op.op.add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			Receiver->OnRemoveComponent(Op.op.remove_component);
+			StaticComponentView->OnRemoveComponent(Op.op.remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			StaticComponentView->OnComponentUpdate(Op.op.component_update);
-			Receiver->OnComponentUpdate(Op.op.component_update);
 			break;
 
 		// Commands
@@ -80,7 +74,9 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 
 		// Authority Change
 		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
-			Receiver->OnAuthorityChange(Op.op.component_set_authority_change);
+			// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
+			// This way systems that depend on having non-stale state can function correctly.
+			StaticComponentView->OnAuthorityChange(Op.op.component_set_authority_change);
 			break;
 
 		// World Command Responses
@@ -97,7 +93,14 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			break;
 
 		case WORKER_OP_TYPE_FLAG_UPDATE:
-			SpatialWorkerFlags->ApplyWorkerFlagUpdate(Op.op.flag_update);
+			if (Op.op.flag_update.value == nullptr)
+			{
+				SpatialWorkerFlags->RemoveWorkerFlag(UTF8_TO_TCHAR(Op.op.flag_update.name));
+			}
+			else
+			{
+				SpatialWorkerFlags->SetWorkerFlag(UTF8_TO_TCHAR(Op.op.flag_update.name), UTF8_TO_TCHAR(Op.op.flag_update.value));
+			}
 			break;
 		case WORKER_OP_TYPE_METRICS:
 #if !UE_BUILD_SHIPPING
@@ -111,9 +114,6 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			break;
 		}
 	}
-
-	Receiver->FlushRemoveComponentOps();
-	Receiver->FlushRetryRPCs();
 }
 
 bool SpatialDispatcher::IsExternalSchemaOp(const Worker_Op& Op) const

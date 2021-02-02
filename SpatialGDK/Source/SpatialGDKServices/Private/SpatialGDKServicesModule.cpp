@@ -24,13 +24,17 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKServices);
 IMPLEMENT_MODULE(FSpatialGDKServicesModule, SpatialGDKServices);
 
 static const FName SpatialOutputLogTabName = FName(TEXT("SpatialOutputLog"));
+TWeakPtr<SSpatialOutputLog> SpatialOutputLog;
 
 TSharedRef<SDockTab> SpawnSpatialOutputLog(const FSpawnTabArgs& Args)
 {
+	TSharedRef<SSpatialOutputLog> SpatialOutputLogRef = SNew(SSpatialOutputLog);
+	SpatialOutputLog = TWeakPtr<SSpatialOutputLog>(SpatialOutputLogRef);
+
 	return SNew(SDockTab)
 		.Icon(FEditorStyle::GetBrush("Log.TabIcon"))
 		.TabRole(ETabRole::NomadTab)
-		.Label(NSLOCTEXT("SpatialOutputLog", "TabTitle", "Spatial Output"))[SNew(SSpatialOutputLog)];
+		.Label(NSLOCTEXT("SpatialOutputLog", "TabTitle", "Spatial Output"))[SpatialOutputLogRef];
 }
 
 void FSpatialGDKServicesModule::StartupModule()
@@ -63,6 +67,11 @@ FLocalReceptionistProxyServerManager* FSpatialGDKServicesModule::GetLocalRecepti
 	return &LocalReceptionistProxyServerManager;
 }
 
+TWeakPtr<SSpatialOutputLog> FSpatialGDKServicesModule::GetSpatialOutputLog()
+{
+	return SpatialOutputLog;
+}
+
 FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(const FString& AppendPath)
 {
 	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
@@ -90,19 +99,6 @@ bool FSpatialGDKServicesModule::SpatialPreRunChecks(bool bIsInChina)
 			LogSpatialDeploymentManager, Warning,
 			TEXT("%s does not exist on this machine! Please make sure Spatial is installed before trying to start a local deployment. %s"),
 			*SpatialGDKServicesConstants::SpatialExe, *SpatialExistenceCheckResult);
-		return false;
-	}
-
-	FString SpotExistenceCheckResult;
-	FString StdErr;
-	FPlatformProcess::ExecProcess(*SpatialGDKServicesConstants::SpotExe, TEXT("version"), &ExitCode, &SpotExistenceCheckResult, &StdErr);
-
-	if (ExitCode != 0)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Warning,
-			   TEXT("%s does not exist on this machine! Please make sure to run Setup.bat in the UnrealGDK Plugin before trying to start a "
-					"local deployment."),
-			   *SpatialGDKServicesConstants::SpotExe);
 		return false;
 	}
 

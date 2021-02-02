@@ -10,12 +10,12 @@
 
 namespace SpatialGDK
 {
-void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
+void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View, const FComponentSetData& ComponentSetData)
 {
 	Clear();
 	for (OpList& Ops : OpLists)
 	{
-		ProcessOpList(Ops);
+		ProcessOpList(Ops, View, ComponentSetData);
 	}
 	OpListStorage = MoveTemp(OpLists);
 
@@ -330,7 +330,7 @@ ComponentChange ViewDelta::CalculateUpdate(ReceivedComponentChange* Start, Recei
 	return ComponentChange(Start->ComponentId, Update);
 }
 
-void ViewDelta::ProcessOpList(const OpList& Ops)
+void ViewDelta::ProcessOpList(const OpList& Ops, const EntityView& View, const FComponentSetData& ComponentSetData)
 {
 	for (uint32 i = 0; i < Ops.Count; ++i)
 	{
@@ -367,6 +367,7 @@ void ViewDelta::ProcessOpList(const OpList& Ops)
 			ComponentChanges.Emplace(Op.op.remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
+			GenerateComponentChangesFromSetData(Op.op.component_set_authority_change, View, ComponentSetData);
 			AuthorityChanges.Emplace(Op.op.component_set_authority_change);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
@@ -375,6 +376,39 @@ void ViewDelta::ProcessOpList(const OpList& Ops)
 		default:
 			break;
 		}
+	}
+}
+
+void ViewDelta::GenerateComponentChangesFromSetData(const Worker_ComponentSetAuthorityChangeOp& Op, const EntityView& View,
+													const FComponentSetData& ComponentSetData)
+{
+	// Generate component changes to:
+	// * Remove all components on the entity, that are in the component set.
+	// * Add all components the with data in the op.
+	// If one component is both removed and added then this is interpreted as component refresh in the view delta.
+	// Otherwise the component will be added or removed as appropriate.
+
+	const TSet<Worker_ComponentId>& Set = ComponentSetData.ComponentSets[Op.component_set_id];
+
+	// If a component on the entity is in the set then generate a remove operation.
+	if (const EntityViewElement* Entity = View.Find(Op.entity_id))
+	{
+		for (const ComponentData& Component : Entity->Components)
+		{
+			const Worker_ComponentId ComponentId = Component.GetComponentId();
+			if (Set.Contains(ComponentId))
+			{
+				Worker_RemoveComponentOp RemoveOp = { Op.entity_id, ComponentId };
+				ComponentChanges.Emplace(RemoveOp);
+			}
+		}
+	}
+
+	// If the component has data in the authority op then generate an add operation.
+	for (uint32 i = 0; i < Op.canonical_component_set_data_count; ++i)
+	{
+		Worker_AddComponentOp AddOp = { Op.entity_id, Op.canonical_component_set_data[i] };
+		ComponentChanges.Emplace(AddOp);
 	}
 }
 
@@ -544,7 +578,7 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 
 Worker_ComponentSetAuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_ComponentSetAuthorityChangeOp* It,
 																			   Worker_ComponentSetAuthorityChangeOp* End,
-																			   TArray<Worker_ComponentId>& EntityAuthority,
+																			   TArray<Worker_ComponentSetId>& EntityAuthority,
 																			   EntityDelta& Delta)
 {
 	int32 GainCount = 0;
@@ -558,28 +592,28 @@ Worker_ComponentSetAuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(W
 	for (;;)
 	{
 		// Find the last element for this entity-component.
-		const Worker_ComponentSetId ComponentId = It->component_set_id; // TODO: fix this moving from component to component set
-		It = std::find_if(It, End, DifferentEntityComponent{ EntityId, ComponentId }) - 1;
-		const int32 AuthorityIndex = EntityAuthority.Find(ComponentId);
+		const Worker_ComponentSetId ComponentSetId = It->component_set_id;
+		It = std::find_if(It, End, DifferentEntityComponent{ EntityId, ComponentSetId }) - 1;
+		const int32 AuthorityIndex = EntityAuthority.Find(ComponentSetId);
 		const bool bHasAuthority = AuthorityIndex != INDEX_NONE;
 
 		if (It->authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
 			if (bHasAuthority)
 			{
-				AuthorityLostTempForDelta.Emplace(ComponentId, AuthorityChange::AUTHORITY_LOST_TEMPORARILY);
+				AuthorityLostTempForDelta.Emplace(ComponentSetId, AuthorityChange::AUTHORITY_LOST_TEMPORARILY);
 				++LossTempCount;
 			}
 			else
 			{
-				EntityAuthority.Push(ComponentId);
-				AuthorityGainedForDelta.Emplace(ComponentId, AuthorityChange::AUTHORITY_GAINED);
+				EntityAuthority.Push(ComponentSetId);
+				AuthorityGainedForDelta.Emplace(ComponentSetId, AuthorityChange::AUTHORITY_GAINED);
 				++GainCount;
 			}
 		}
 		else if (bHasAuthority)
 		{
-			AuthorityLostForDelta.Emplace(ComponentId, AuthorityChange::AUTHORITY_LOST);
+			AuthorityLostForDelta.Emplace(ComponentSetId, AuthorityChange::AUTHORITY_LOST);
 			EntityAuthority.RemoveAtSwap(AuthorityIndex);
 			++LossCount;
 		}
