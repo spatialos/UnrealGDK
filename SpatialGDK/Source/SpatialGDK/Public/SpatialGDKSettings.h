@@ -406,4 +406,7 @@ public:
 	 */
 	UPROPERTY(Config)
 	uint64 MaxEventTracingFileSizeBytes;
+
+	UPROPERTY(Config)
+	bool bEnableAlwaysWriteRPCs;
 };
