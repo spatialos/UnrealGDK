@@ -103,7 +103,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_resolved_and_no_queue_THEN_execute)
 
 	// No queue: Handler should be able to execute it
 	ViewCoordinator Coordinator(MoveTemp(ConnHandler), nullptr, ComponentSetData);
-	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
+	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>(), nullptr);
 	Coordinator.Advance(AdvancedTime);
 	Handler.ProcessMessages(Coordinator.GetViewDelta().GetWorkerMessages(), AdvancedTime);
 	TestEqual("Number of queued up Cross Server RPCs", Handler.GetQueuedCrossServerRPCs().Num(), 0);
@@ -133,7 +133,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_rpc_already_queued_THEN_discard)
 	ListsOfOpLists.Add(MoveTemp(OpLists));
 	ConnHandler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
 	ViewCoordinator Coordinator(MoveTemp(ConnHandler), nullptr, ComponentSetData);
-	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
+	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>(), nullptr);
 	Coordinator.Advance(AdvancedTime);
 	Handler.ProcessMessages(Coordinator.GetViewDelta().GetWorkerMessages(), AdvancedTime);
 	const auto& QueuedRPCs = Handler.GetQueuedCrossServerRPCs();
@@ -190,7 +190,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_resolved_and_queue_THEN_queue)
 	TUniquePtr<MockRPCExecutor> Executor = MakeUnique<MockRPCExecutor>();
 	MockRPCExecutor* ExecutorPtr = Executor.Get();
 	ViewCoordinator Coordinator((MoveTemp(ConnHandler)), nullptr, ComponentSetData);
-	CrossServerRPCHandler Handler(Coordinator, MoveTemp(Executor));
+	CrossServerRPCHandler Handler(Coordinator, MoveTemp(Executor), nullptr);
 
 	// Advance 1: RPC can't be processed. Queue it
 	Coordinator.Advance(AdvancedTime);
@@ -229,7 +229,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_rpc_WHEN_unresolved_THEN_queue)
 
 	ConnHandler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
 	ViewCoordinator Coordinator((MoveTemp(ConnHandler)), nullptr, ComponentSetData);
-	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>());
+	CrossServerRPCHandler Handler(Coordinator, MakeUnique<MockRPCExecutor>(), nullptr);
 
 	// Advance 1: RPC is unresolved. Queue it
 	Coordinator.Advance(AdvancedTime);
@@ -274,7 +274,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_queued_rpc_WHEN_timeout_THEN_try_execute)
 	ViewCoordinator Coordinator((MoveTemp(ConnHandler)), nullptr, ComponentSetData);
 	TUniquePtr<MockRPCExecutor> Executor = MakeUnique<MockRPCExecutor>();
 	MockRPCExecutor* ExecutorPtr = Executor.Get();
-	CrossServerRPCHandler Handler(Coordinator, MoveTemp(Executor));
+	CrossServerRPCHandler Handler(Coordinator, MoveTemp(Executor), nullptr);
 
 	// Advance 1: Unresolved RPC. Queue it
 	Coordinator.Advance(AdvancedTime);
@@ -336,7 +336,7 @@ CROSSSERVERRPCHANDLER_TEST(GIVEN_same_rpc_WHEN_rpc_just_executed_THEN_skip)
 	ViewCoordinator Coordinator((MoveTemp(ConnHandler)), nullptr, ComponentSetData);
 	TUniquePtr<MockRPCExecutor> Executor = MakeUnique<MockRPCExecutor>();
 	MockRPCExecutor* ExecutorPtr = Executor.Get();
-	CrossServerRPCHandler Handler(Coordinator, MoveTemp(Executor));
+	CrossServerRPCHandler Handler(Coordinator, MoveTemp(Executor), nullptr);
 
 	// Advance 1: Unresolved RPC. Queue it
 	Coordinator.Advance(AdvancedTime);

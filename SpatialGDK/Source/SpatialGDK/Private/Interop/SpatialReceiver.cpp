@@ -173,22 +173,20 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		if (EventTracer != nullptr)
 		{
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TEXT("SPAWN_PLAYER_COMMAND"), RequestId),
-									Op.span_id, 1);
+				EventTracer->GetSpanForResponseId(CommandResponseOp.request_id).GetConstId(), 1);
 		}
 
 		return;
 	}
 	else if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
 	{
-		NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
-
 		if (EventTracer != nullptr)
 		{
 			EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId),
-				Op.span_id, 1);
+				EventTracer->GetSpanForResponseId(CommandResponseOp.request_id).GetConstId(), 1);
 		}
-
+		NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
 		return;
 	}
 	else if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID)

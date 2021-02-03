@@ -21,7 +21,7 @@ class ViewCoordinator
 {
 public:
 	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer,
-							 FComponentSetData ComponentSetData);
+		FComponentSetData ComponentSetData);
 
 	~ViewCoordinator();
 
@@ -38,7 +38,7 @@ public:
 
 	// Create a subview with the specified tag, filter, and refresh callbacks.
 	FSubView& CreateSubView(Worker_ComponentId Tag, const FFilterPredicate& Filter,
-							const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
+		const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
 	// Force a refresh of the given entity ID across all subviews. Used when local state changes which could
 	// change any subview's filter's truth value for the given entity. Conceptually this can be thought of
 	// as marking the entity dirty for all subviews, although the refresh is immediate.
@@ -57,12 +57,12 @@ public:
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
 	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-											 TOptional<uint32> TimeoutMillis = {}, const FSpatialGDKSpanId& SpanId = {});
+		TOptional<uint32> TimeoutMillis = {}, const FSpatialGDKSpanId& SpanId = {});
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis = {},
-											 const FSpatialGDKSpanId& SpanId = {});
+		const FSpatialGDKSpanId& SpanId = {});
 	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {},
-											  const FSpatialGDKSpanId& SpanId = {});
+		const FSpatialGDKSpanId& SpanId = {});
 	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const FSpatialGDKSpanId& SpanId);
 	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const FSpatialGDKSpanId& SpanId);
 	void SendMetrics(SpatialMetrics Metrics);
@@ -70,11 +70,11 @@ public:
 
 	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, FRetryData RetryData);
 	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-											 FRetryData RetryData, const FSpatialGDKSpanId& SpanId);
+		FRetryData RetryData, const FSpatialGDKSpanId& SpanId);
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData, const FSpatialGDKSpanId& SpanId);
 	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, FRetryData RetryData);
 	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData,
-											  const FSpatialGDKSpanId& SpanId);
+		const FSpatialGDKSpanId& SpanId);
 
 	CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
 	CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
@@ -94,6 +94,7 @@ public:
 		Worker_ComponentId ComponentId,
 		const FAuthorityChangeRefreshPredicate& RefreshPredicate = FSubView::NoAuthorityChangeRefreshPredicate);
 
+	Worker_RequestId GetNextRequestId(); // TODO: This or allocate request first and pass in?
 private:
 	WorkerView View;
 	TUniquePtr<AbstractConnectionHandler> ConnectionHandler;

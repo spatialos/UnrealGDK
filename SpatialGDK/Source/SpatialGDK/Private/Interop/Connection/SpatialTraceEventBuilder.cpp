@@ -123,6 +123,22 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreatePushRPC(const UObject* Objec
 		.GetEvent();
 }
 
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendCrossServerRPC(const UObject* Object, UFunction* Function, const EventTraceUniqueId& LinearTraceId)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_cross_server_rpc")
+		.AddObject(TEXT("Object"), Object)
+		.AddFunction(TEXT("Function"), Function)
+		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
+		.GetEvent();
+}
+
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceiveCrossServerRPC(const EventTraceUniqueId& LinearTraceId)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "receive_cross_server_rpc")
+		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
+		.GetEvent();
+}
+
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendRPC(const EventTraceUniqueId& LinearTraceId)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_rpc")

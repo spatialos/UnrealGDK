@@ -218,8 +218,10 @@ void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) c
 
 void SpatialEventTracer::BeginOpsForFrame()
 {
-	EntityComponentSpanIds.Empty(
-		EntityComponentSpanIds.Num()); // Reset all entries. It is assumed all entries are consumed during processing.
+	// Reset all entries. It is assumed all entries are consumed during processing.
+	EntityComponentSpanIds.Empty(EntityComponentSpanIds.Num()); 
+	ResponseIdSpanIds.Empty(ResponseIdSpanIds.Num());
+
 }
 
 void SpatialEventTracer::AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId)
@@ -256,6 +258,13 @@ void SpatialEventTracer::UpdateComponent(const Worker_ComponentUpdateOp& Op, con
 	StoredSpanIds.Push(SpanId);
 }
 
+void SpatialEventTracer::CommandRequest(const Worker_CommandRequestOp& Op, const FSpatialGDKSpanId& SpanId)
+{
+	FSpatialGDKSpanId& StoredSpanId = ResponseIdSpanIds.FindOrAdd({ Op.request_id });
+	checkf(StoredSpanId.IsNull(), TEXT("CommandResponse received multiple times for request id %lld"), Op.request_id);
+	StoredSpanId = SpanId;
+}
+
 TArray<FSpatialGDKSpanId> SpatialEventTracer::GetSpansForComponent(const EntityComponentId& Id) const
 {
 	const TArray<FSpatialGDKSpanId>* StoredSpanIds = EntityComponentSpanIds.Find(Id);
@@ -264,6 +273,16 @@ TArray<FSpatialGDKSpanId> SpatialEventTracer::GetSpansForComponent(const EntityC
 		return {};
 	}
 	return *StoredSpanIds;
+}
+
+FSpatialGDKSpanId SpatialEventTracer::GetSpanForResponseId(Worker_RequestId RequestId) const
+{
+	const FSpatialGDKSpanId* SpanId = ResponseIdSpanIds.Find(RequestId);
+	if (SpanId == nullptr)
+	{
+		return {};
+	}
+	return *SpanId;
 }
 
 void SpatialEventTracer::AddToStack(const FSpatialGDKSpanId& SpanId)

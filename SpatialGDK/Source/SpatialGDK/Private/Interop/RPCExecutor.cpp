@@ -1,7 +1,8 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/RPCExecutor.h"
 
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
@@ -10,7 +11,7 @@
 
 namespace SpatialGDK
 {
-RPCExecutor::RPCExecutor(class USpatialNetDriver* InNetDriver)
+RPCExecutor::RPCExecutor(USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 {
 }
@@ -50,7 +51,20 @@ bool RPCExecutor::ExecuteCommand(const FCrossServerRPCParams& Params)
 
 	if (CanProcessRPC)
 	{
+		SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+		if (EventTracer != nullptr)
+		{
+			FSpatialGDKSpanId SpanId =
+				EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateApplyRPC(TargetObject, Function), Params.SpanId.GetConstId(), 1);
+			EventTracer->AddToStack(SpanId);
+		}
+
 		TargetObject->ProcessEvent(Function, Parms);
+
+		if (EventTracer != nullptr)
+		{
+			EventTracer->PopFromStack();
+		}
 	}
 
 	// Destroy the parameters.

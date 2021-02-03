@@ -37,8 +37,10 @@ public:
 	void AddComponent(const Worker_AddComponentOp& Op, const FSpatialGDKSpanId& SpanId);
 	void RemoveComponent(const Worker_RemoveComponentOp& Op, const FSpatialGDKSpanId& SpanId);
 	void UpdateComponent(const Worker_ComponentUpdateOp& Op, const FSpatialGDKSpanId& SpanId);
+	void CommandRequest(const Worker_CommandRequestOp& Op, const FSpatialGDKSpanId& SpanId);
 
 	TArray<FSpatialGDKSpanId> GetSpansForComponent(const EntityComponentId& Id) const;
+	FSpatialGDKSpanId GetSpanForResponseId(Worker_RequestId RequestId) const;
 
 	static FUserSpanId GDKSpanIdToUserSpanId(const FSpatialGDKSpanId& SpanId);
 	static FSpatialGDKSpanId UserSpanIdToGDKSpanId(const FUserSpanId& UserSpanId);
@@ -75,6 +77,7 @@ private:
 	// Span IDs received from the wire, these live for a frame and are expected to continue into the stack
 	// on an ops tick.
 	TMap<EntityComponentId, TArray<FSpatialGDKSpanId>> EntityComponentSpanIds;
+	TMap<Worker_RequestId, FSpatialGDKSpanId> ResponseIdSpanIds;
 };
 
 // SpatialScopedActiveSpanIds are creating prior to calling worker send functions so that worker can use the input SpanId to continue
