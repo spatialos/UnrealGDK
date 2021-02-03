@@ -1687,6 +1687,19 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	}
 }
 
+bool USpatialNetDriver::ValidateOrExit_IsSupportedClass(const FString& PathName)
+{
+	// Level blueprint classes could have a PIE prefix, this will remove it.
+	FString RemappedPathName = PathName;
+#if ENGINE_MINOR_VERSION >= 26
+	GEngine->NetworkRemapPath(GetSpatialOSNetConnection(), RemappedPathName, false /*bIsReading*/);
+#else
+	GEngine->NetworkRemapPath(NetDriver, RemappedPathName, false /*bIsReading*/);
+#endif
+
+	return ClassInfoManager->ValidateOrExit_IsSupportedClass(RemappedPathName);
+}
+
 // SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
 // In our implementation, connections on the server do not represent clients. They represent direct connections to SpatialOS.
 // For this reason, things like ready checks, acks, throttling based on number of updated connections, interest management are irrelevant at

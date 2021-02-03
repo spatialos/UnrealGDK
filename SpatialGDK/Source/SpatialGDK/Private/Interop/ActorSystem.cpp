@@ -2026,7 +2026,7 @@ void ActorSystem::SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_Compon
 
 	Schema_AddBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID, 1);
 
-	Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+	NetDriver->Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 }
 
 void ActorSystem::RegisterChannelForPositionUpdate(USpatialActorChannel* Channel)
@@ -2045,5 +2045,90 @@ void ActorSystem::ProcessPositionUpdates()
 	}
 
 	ChannelsToUpdatePosition.Empty();
+}
+
+void ActorSystem::SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo,
+											   uint32& OutBytesWritten)
+{
+	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
+	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
+
+	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject));
+
+	TArray<FWorkerComponentData> SubobjectDatas =
+		DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
+	SendAddComponents(Channel->GetEntityId(), SubobjectDatas);
+
+	Channel->PendingDynamicSubobjects.Remove(TWeakObjectPtr<UObject>(Subobject));
+}
+
+void ActorSystem::SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas) const
+{
+	if (ComponentDatas.Num() == 0)
+	{
+		return;
+	}
+
+	for (FWorkerComponentData& ComponentData : ComponentDatas)
+	{
+		NetDriver->Connection->SendAddComponent(EntityId, &ComponentData);
+	}
+}
+
+void ActorSystem::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info)
+{
+	TArray<Worker_ComponentId> ComponentsToRemove;
+	ComponentsToRemove.Reserve(SCHEMA_Count);
+	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
+	{
+		if (SubobjectComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			ComponentsToRemove.Add(SubobjectComponentId);
+		}
+	}
+
+	SendRemoveComponents(EntityId, ComponentsToRemove);
+
+	NetDriver->PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
+}
+
+void ActorSystem::SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds) const
+{
+	for (auto ComponentId : ComponentIds)
+	{
+		NetDriver->Connection->SendRemoveComponent(EntityId, ComponentId);
+	}
+}
+
+void ActorSystem::SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent,
+													const Worker_ComponentId NewComponent) const
+{
+	if (OldComponent != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		NetDriver->Connection->SendRemoveComponent(EntityId, OldComponent);
+	}
+
+	if (NewComponent != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		FWorkerComponentData Data = ComponentFactory::CreateEmptyComponentData(NewComponent);
+		NetDriver->Connection->SendAddComponent(EntityId, &Data);
+	}
+}
+
+void ActorSystem::UpdateInterestComponent(AActor* Actor)
+{
+	// SCOPE_CYCLE_COUNTER(STAT_SpatialSenderUpdateInterestComponent);
+
+	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogSpatialSender, Verbose, TEXT("Attempted to update interest for non replicated actor: %s"), *GetNameSafe(Actor));
+		return;
+	}
+
+	FWorkerComponentUpdate Update =
+		NetDriver->InterestFactory->CreateInterestUpdate(Actor, NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Actor), EntityId);
+
+	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }
 } // namespace SpatialGDK

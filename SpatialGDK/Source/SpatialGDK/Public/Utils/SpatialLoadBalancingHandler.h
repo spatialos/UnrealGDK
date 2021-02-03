@@ -53,6 +53,7 @@ public:
 
 	// Sends the migration instructions and update actor authority.
 	void ProcessMigrations();
+	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const;
 
 	enum class EvaluateActorResult
 	{

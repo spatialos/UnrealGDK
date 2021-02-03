@@ -15,7 +15,7 @@ namespace SpatialGDK
 class WellKnownEntitySystem
 {
 public:
-	WellKnownEntitySystem(const FSubView& SubView, USpatialReceiver* InReceiver, USpatialWorkerConnection* InConnection,
+	WellKnownEntitySystem(const FSubView& SubView, USpatialNetDriver* InNetDriver, USpatialWorkerConnection* InConnection,
 						  int InNumberOfWorkers, SpatialVirtualWorkerTranslator& InVirtualWorkerTranslator,
 						  UGlobalStateManager& InGlobalStateManager);
 	void Advance();
@@ -28,10 +28,14 @@ private:
 
 	void InitializeVirtualWorkerTranslationManager();
 	void MaybeClaimSnapshotPartition();
+	void CreateServerWorkerEntity();
+	void RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounter);
+	void SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const;
+	void UpdatePartitionEntityInterestAndPosition();
 
 	const FSubView* SubView;
 
-	USpatialReceiver* Receiver;
+	USpatialNetDriver* NetDriver;
 
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
 	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;

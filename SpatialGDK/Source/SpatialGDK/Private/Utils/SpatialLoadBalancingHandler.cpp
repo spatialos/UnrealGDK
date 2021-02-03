@@ -5,6 +5,7 @@
 #include "EngineClasses/Components/RemotePossessionComponent.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
@@ -142,7 +143,7 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 	{
 		AActor* Actor = MigrationInfo.Key;
 
-		NetDriver->Sender->SendAuthorityIntentUpdate(*Actor, MigrationInfo.Value);
+		SendAuthorityIntentUpdate(*Actor, MigrationInfo.Value);
 
 		// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy
 		Actor->Role = ROLE_SimulatedProxy;
@@ -151,6 +152,42 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 		Actor->OnAuthorityLost();
 	}
 	ActorsToMigrate.Empty();
+}
+
+void FSpatialLoadBalancingHandler::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const
+{
+	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(&Actor);
+	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+
+	AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
+	check(AuthorityIntentComponent != nullptr);
+	checkf(AuthorityIntentComponent->VirtualWorkerId != NewAuthoritativeVirtualWorkerId,
+		   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
+		   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
+
+	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
+	UE_LOG(LogSpatialSender, Log,
+		   TEXT("(%s) Sending AuthorityIntent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
+		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
+
+	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
+
+	FSpatialGDKSpanId SpanId;
+	if (NetDriver->!= nullptr)
+	{
+		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
+	}
+
+	Connection->SendComponentUpdate(EntityId, &Update, SpanId);
+
+	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
+	// This should always happen with USLB.
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+
+	if (NetDriver->SpatialDebugger != nullptr)
+	{
+		NetDriver->SpatialDebugger->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
+	}
 }
 
 void FSpatialLoadBalancingHandler::UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const

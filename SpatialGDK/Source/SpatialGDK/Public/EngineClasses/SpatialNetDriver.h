@@ -301,6 +301,7 @@ private:
 #endif
 
 	void ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters);
+	bool ValidateOrExit_IsSupportedClass(const FString& PathName);
 	bool CreateSpatialNetConnection(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
 									const Worker_EntityId& ClientSystemEntityId, USpatialNetConnection** OutConn);
 

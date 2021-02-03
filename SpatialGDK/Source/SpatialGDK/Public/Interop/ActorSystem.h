@@ -138,12 +138,21 @@ private:
 	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
 	void ProcessPositionUpdates();
+	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo,
+									  uint32& OutBytesWritten);
+	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas) const;
+	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);
+	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds) const;
+	void SendInterestBucketComponentChange(Worker_EntityId EntityId, Worker_ComponentId OldComponent,
+										   Worker_ComponentId NewComponent) const;
+	void UpdateInterestComponent(AActor* Actor);
 
 	const FSubView* SubView;
 	const FSubView* TombstoneSubView;
 	USpatialNetDriver* NetDriver;
 	SpatialEventTracer* EventTracer;
 
+	TMap<Worker_EntityId_Key, TArray<FWorkerComponentUpdate>> UpdatesQueuedUntilAuthorityMap;
 	TSet<TPair<Worker_EntityId_Key, Worker_ComponentId>> PendingDynamicSubobjectComponents;
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
