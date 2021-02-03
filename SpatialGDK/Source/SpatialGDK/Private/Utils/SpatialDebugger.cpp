@@ -41,12 +41,13 @@ FSpatialDebuggerSystem::FSpatialDebuggerSystem(USpatialNetDriver* InNetDriver, c
 {
 	check(IsValid(InNetDriver));
 
-	EntityActorMapping.Reserve(ENTITY_ACTOR_MAP_RESERVATION_COUNT);
+	if (!InNetDriver->IsServer())
+	{
+		EntityActorMapping.Reserve(ENTITY_ACTOR_MAP_RESERVATION_COUNT);
+	}
 }
 
-FSpatialDebuggerSystem::~FSpatialDebuggerSystem() = default;
-
-void FSpatialDebuggerSystem::AdvanceView()
+void FSpatialDebuggerSystem::Advance()
 {
 	for (TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>::TIterator It = EntityActorMapping.CreateIterator(); It; ++It)
 	{

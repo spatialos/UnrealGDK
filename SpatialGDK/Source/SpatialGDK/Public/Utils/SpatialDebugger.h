@@ -47,9 +47,8 @@ class FSpatialDebuggerSystem
 {
 public:
 	FSpatialDebuggerSystem(USpatialNetDriver* InNetDriver, const SpatialGDK::FSubView& InSubView);
-	virtual ~FSpatialDebuggerSystem();
 
-	void AdvanceView();
+	void Advance();
 
 	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
