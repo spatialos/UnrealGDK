@@ -94,7 +94,6 @@ public:
 		Worker_ComponentId ComponentId,
 		const FAuthorityChangeRefreshPredicate& RefreshPredicate = FSubView::NoAuthorityChangeRefreshPredicate);
 
-	Worker_RequestId GetNextRequestId(); // TODO: This or allocate request first and pass in?
 private:
 	WorkerView View;
 	TUniquePtr<AbstractConnectionHandler> ConnectionHandler;

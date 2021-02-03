@@ -237,11 +237,6 @@ FDispatcherRefreshCallback ViewCoordinator::CreateAuthorityChangeRefreshCallback
 	return FSubView::CreateAuthorityChangeRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
 }
 
-Worker_RequestId ViewCoordinator::GetNextRequestId()
-{
-	return NextRequestId;
-}
-
 const FString& ViewCoordinator::GetWorkerId() const
 {
 	return ConnectionHandler->GetWorkerId();

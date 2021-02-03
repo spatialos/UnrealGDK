@@ -1,4 +1,4 @@
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/CrossServerRPCHandler.h"
 
@@ -125,17 +125,6 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 	RPCGuidsInFlight.Add(Params.GetValue().Payload.Id.GetValue());
 	QueuedCrossServerRPCs[CommandOp.entity_id].Add(MoveTemp(Params.GetValue()));
 }
-
-template <typename FN>
-struct OnExit
-{
-	OnExit(FN&& FN)
-		: FN(F)
-	{
-	}
-	~OnExit() { FN(); }
-	FN FN;
-};
 
 bool CrossServerRPCHandler::TryExecuteCrossServerRPC(const FCrossServerRPCParams& Params) const
 {

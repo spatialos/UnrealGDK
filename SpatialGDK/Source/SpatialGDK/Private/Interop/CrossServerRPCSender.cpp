@@ -1,4 +1,4 @@
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/CrossServerRPCSender.h"
 
