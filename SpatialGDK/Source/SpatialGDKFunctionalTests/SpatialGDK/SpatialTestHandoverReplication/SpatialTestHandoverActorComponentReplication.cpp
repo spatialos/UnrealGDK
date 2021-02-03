@@ -97,13 +97,6 @@ ASpatialTestHandoverActorComponentReplication::ASpatialTestHandoverActorComponen
 	bReplicates = true;
 }
 
-void ASpatialTestHandoverActorComponentReplication::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ThisClass, HandoverCube);
-}
-
 void ASpatialTestHandoverActorComponentReplication::PrepareTest()
 {
 	Super::PrepareTest();
@@ -124,7 +117,6 @@ void ASpatialTestHandoverActorComponentReplication::PrepareTest()
 	AddStep(TEXT("Server 1 spawns a HandoverCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		HandoverCube = GetWorld()->SpawnActor<AHandoverReplicationTestCube>(HandoverReplicationTestValues::Server1Position,
 																			FRotator::ZeroRotator, FActorSpawnParameters());
-		SaveHandoverCube(HandoverCube);
 		RegisterAutoDestroyActor(HandoverCube);
 		FinishStep();
 	});
@@ -142,6 +134,13 @@ void ASpatialTestHandoverActorComponentReplication::PrepareTest()
 	};
 
 	AddWaitingStep(TEXT("Wait until the cube is synced with all servers"), FWorkerDefinition::AllServers, [this]() {
+		TArray<AActor*> DiscoveredReplicationCubes;
+		UGameplayStatics::GetAllActorsOfClass(this, AHandoverReplicationTestCube::StaticClass(), DiscoveredReplicationCubes);
+		RequireEqual_Int(DiscoveredReplicationCubes.Num(), 1, TEXT("Cube discovered"));
+		if (DiscoveredReplicationCubes.Num() == 1)
+		{
+			HandoverCube = Cast<AHandoverReplicationTestCube>(DiscoveredReplicationCubes[0]);
+		}
 		RequireTrue(IsValid(HandoverCube), TEXT("Server received the cube"));
 	});
 
@@ -166,11 +165,6 @@ void ASpatialTestHandoverActorComponentReplication::PrepareTest()
 		HandoverCube->RequireTestValues(this, GetDefault<AHandoverReplicationTestCube>()->HandoverTestProperty,
 										TEXT("Value reverted to default on the server"));
 	});
-}
-
-void ASpatialTestHandoverActorComponentReplication::SaveHandoverCube_Implementation(AHandoverReplicationTestCube* InHandoverCube)
-{
-	HandoverCube = InHandoverCube;
 }
 
 void ASpatialTestHandoverActorComponentReplication::RequireHandoverCubeAuthorityAndPosition(int WorkerShouldHaveAuthority,

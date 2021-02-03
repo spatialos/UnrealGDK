@@ -116,15 +116,10 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestHandoverActorComponentReplicatio
 public:
 	ASpatialTestHandoverActorComponentReplication();
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
 	virtual void PrepareTest() override;
-
-	UFUNCTION(CrossServer, Reliable)
-	void SaveHandoverCube(AHandoverReplicationTestCube* InHandoverCube);
 
 	void RequireHandoverCubeAuthorityAndPosition(int WorkerShouldHaveAuthority, const FVector& ExpectedPosition);
 
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	AHandoverReplicationTestCube* HandoverCube;
 };
