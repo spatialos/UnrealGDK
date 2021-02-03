@@ -324,6 +324,12 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 					Actor->Role = ROLE_Authority;
 					Actor->RemoteRole = ROLE_SimulatedProxy;
 
+					// bReplicates is not replicated, but this actor is replicated.
+					if (!Actor->GetIsReplicated())
+					{
+						Actor->SetReplicates(true);
+					}
+
 					if (Actor->IsA<APlayerController>())
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
