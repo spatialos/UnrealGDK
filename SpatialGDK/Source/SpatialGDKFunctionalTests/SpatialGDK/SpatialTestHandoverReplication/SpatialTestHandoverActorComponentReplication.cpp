@@ -121,6 +121,8 @@ void ASpatialTestHandoverActorComponentReplication::PrepareTest()
 		FinishStep();
 	});
 
+	// A helper to add awaiting steps to the test; RequireXXX used in TickFunction
+	// must be satisfied before StepTimeLimit is over, or the step would fail.
 	auto AddWaitingStep = [this](const FString& StepName, const FWorkerDefinition& WorkerDefinition, TFunction<void()> TickFunction) {
 		constexpr float StepTimeLimit = 10.0f;
 
@@ -146,6 +148,8 @@ void ASpatialTestHandoverActorComponentReplication::PrepareTest()
 
 	AddStep(TEXT("Modify values on the Cube to non-default values"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		HandoverCube->SetTestValues(HandoverReplicationTestValues::UpdatedTestPropertyValue);
+		// This causes the cube to update its values on OnAuthorityGained, so once another server gains authority,
+		// it will update the values before any other code had an opportunity to read them.
 		HandoverCube->TestStage = EHandoverReplicationTestStage::ChangeValuesToDefaultOnGainingAuthority;
 		FinishStep();
 	});
@@ -153,6 +157,8 @@ void ASpatialTestHandoverActorComponentReplication::PrepareTest()
 	AddWaitingStep(TEXT("Wait until updated values are received on all servers"), FWorkerDefinition::AllServers, [this]() {
 		HandoverCube->RequireTestValues(this, HandoverReplicationTestValues::UpdatedTestPropertyValue,
 										TEXT("Non-default value received on the server"));
+		RequireTrue(HandoverCube->TestStage == EHandoverReplicationTestStage::ChangeValuesToDefaultOnGainingAuthority,
+					TEXT("Cube state received on the server"));
 	});
 
 	// This step will trigger value change to the default one, after which the cube would be transported back to Server 1's authority area

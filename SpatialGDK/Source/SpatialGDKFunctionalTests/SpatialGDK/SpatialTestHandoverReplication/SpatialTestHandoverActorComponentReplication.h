@@ -22,6 +22,7 @@ enum class EHandoverReplicationTestStage
 
 namespace HandoverReplicationTestValues
 {
+// This value has to be zero as handover shadow state is zero-initialized
 static constexpr int BasicTestPropertyValue = 0;
 static constexpr int UpdatedTestPropertyValue = 100;
 

@@ -1003,7 +1003,7 @@ void USpatialActorChannel::InitializeHandoverShadowData(TArray<uint8>& ShadowDat
 {
 	const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
-	ShadowData.AddZeroed(ClassInfo.HandoverPropertiesSize);
+	ShadowData.SetNumUninitialized(ClassInfo.HandoverPropertiesSize);
 	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
 	{
 		if (PropertyInfo.ArrayIdx == 0) // For static arrays, the first element will handle the whole array
