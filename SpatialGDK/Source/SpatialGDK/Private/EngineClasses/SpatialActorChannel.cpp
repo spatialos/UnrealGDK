@@ -225,13 +225,6 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	check(NetDriver);
 	Sender = NetDriver->Sender;
 	Receiver = NetDriver->Receiver;
-
-	//char c[1] = {};
-	//c[offsetof(USpatialActorChannel, bIsAuthServer)] = 1;
-	//char(*__kaboom)[offsetof(USpatialActorChannel, NetDriver)] = 1;
-	char c[1] = {};
-	//c[offsetof(USpatialActorChannel, NetDriver)] = 1;
-	//char(*__kaboom)[offsetof(FObjectReplicator, RepLayout)] = 1;
 }
 
 void USpatialActorChannel::RetireEntityIfAuthoritative()
