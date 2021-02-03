@@ -9,7 +9,8 @@
 
 namespace SpatialGDK
 {
-CrossServerRPCSender::CrossServerRPCSender(ViewCoordinator& InCoordinator, USpatialMetrics* InSpatialMetrics, SpatialEventTracer* EventTracer)
+CrossServerRPCSender::CrossServerRPCSender(ViewCoordinator& InCoordinator, USpatialMetrics* InSpatialMetrics,
+										   SpatialEventTracer* EventTracer)
 	: Coordinator(&InCoordinator)
 	, SpatialMetrics(InSpatialMetrics)
 	, EventTracer(EventTracer)
@@ -37,8 +38,7 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef InTargetObjectRef,
 	{
 		SpanId = EventTracer->TraceEvent(
 			FSpatialTraceEventBuilder::CreateSendCrossServerRPC(
-				TargetObject, Function,
-				EventTraceUniqueId::GenerateForCrossServerRPC(InTargetObjectRef.Entity, UniqueRPCId)),
+				TargetObject, Function, EventTraceUniqueId::GenerateForCrossServerRPC(InTargetObjectRef.Entity, UniqueRPCId)),
 			EventTracer->GetFromStack().GetConstId(), 1);
 	}
 

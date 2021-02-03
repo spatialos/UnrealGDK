@@ -219,9 +219,8 @@ void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) c
 void SpatialEventTracer::BeginOpsForFrame()
 {
 	// Reset all entries. It is assumed all entries are consumed during processing.
-	EntityComponentSpanIds.Empty(EntityComponentSpanIds.Num()); 
+	EntityComponentSpanIds.Empty(EntityComponentSpanIds.Num());
 	ResponseIdSpanIds.Empty(ResponseIdSpanIds.Num());
-
 }
 
 void SpatialEventTracer::AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId)

@@ -19,6 +19,7 @@ class EventTraceUniqueId
 		: Hash(Hash)
 	{
 	}
+
 public:
 	FString ToString() const;
 

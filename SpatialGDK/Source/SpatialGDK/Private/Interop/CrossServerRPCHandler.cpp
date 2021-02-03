@@ -2,8 +2,8 @@
 
 #include "Interop/CrossServerRPCHandler.h"
 
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialGDKSettings.h"
 
@@ -11,7 +11,8 @@ DEFINE_LOG_CATEGORY(LogCrossServerRPCHandler);
 
 namespace SpatialGDK
 {
-CrossServerRPCHandler::CrossServerRPCHandler(ViewCoordinator& InCoordinator, TUniquePtr<RPCExecutorInterface> InRPCExecutor, SpatialEventTracer* InEventTracer)
+CrossServerRPCHandler::CrossServerRPCHandler(ViewCoordinator& InCoordinator, TUniquePtr<RPCExecutorInterface> InRPCExecutor,
+											 SpatialEventTracer* InEventTracer)
 	: Coordinator(&InCoordinator)
 	, RPCExecutor(MoveTemp(InRPCExecutor))
 	, EventTracer(InEventTracer)
@@ -80,7 +81,10 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 	{
 		if (ensureMsgf(Params->Payload.Id.IsSet(), TEXT("Cross-server RPCs are expected to have a payload ID for event tracing.")))
 		{
-			SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCrossServerRPC(EventTraceUniqueId::GenerateForCrossServerRPC(CommandOp.entity_id, Params->Payload.Id.GetValue())), EventTracer->GetSpanForResponseId(Op.op.command_request.request_id).GetConstId(), 1);
+			SpanId = EventTracer->TraceEvent(
+				FSpatialTraceEventBuilder::CreateReceiveCrossServerRPC(
+					EventTraceUniqueId::GenerateForCrossServerRPC(CommandOp.entity_id, Params->Payload.Id.GetValue())),
+				EventTracer->GetSpanForResponseId(Op.op.command_request.request_id).GetConstId(), 1);
 		}
 	}
 
@@ -122,7 +126,16 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 	QueuedCrossServerRPCs[CommandOp.entity_id].Add(MoveTemp(Params.GetValue()));
 }
 
-template<typename FN> struct OnExit { OnExit(FN&& FN) : FN(F) {} ~OnExit() { FN(); } FN FN; };
+template <typename FN>
+struct OnExit
+{
+	OnExit(FN&& FN)
+		: FN(F)
+	{
+	}
+	~OnExit() { FN(); }
+	FN FN;
+};
 
 bool CrossServerRPCHandler::TryExecuteCrossServerRPC(const FCrossServerRPCParams& Params) const
 {
@@ -130,9 +143,9 @@ bool CrossServerRPCHandler::TryExecuteCrossServerRPC(const FCrossServerRPCParams
 	if (bResult)
 	{
 		Coordinator->SendEntityCommandResponse(Params.RequestId,
-			CommandResponse(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID,
-				SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID),
-			Params.SpanId);
+											   CommandResponse(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID,
+															   SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID),
+											   Params.SpanId);
 	}
 
 	return bResult;

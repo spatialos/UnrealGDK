@@ -173,7 +173,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		if (EventTracer != nullptr)
 		{
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TEXT("SPAWN_PLAYER_COMMAND"), RequestId),
-				EventTracer->GetSpanForResponseId(CommandResponseOp.request_id).GetConstId(), 1);
+									EventTracer->GetSpanForResponseId(CommandResponseOp.request_id).GetConstId(), 1);
 		}
 
 		return;

@@ -9,7 +9,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogCrossServerRPCHandler, Log, All);
 
 namespace SpatialGDK
 {
-	class SpatialEventTracer;
+class SpatialEventTracer;
 DECLARE_DELEGATE_RetVal_OneParam(bool, FProcessCrossServerRPC, const FCrossServerRPCParams&);
 DECLARE_DELEGATE_RetVal_OneParam(FCrossServerRPCParams, FTryRetrieveCrossServerRPCParams, const Worker_CommandRequestOp&);
 
