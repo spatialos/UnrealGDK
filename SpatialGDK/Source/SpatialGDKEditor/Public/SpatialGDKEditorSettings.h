@@ -661,6 +661,7 @@ public:
 	}
 
 	bool IsDeploymentConfigurationValid() const;
+	bool CheckManualWorkerConnectionOnLaunch() const;
 
 	void SetDevelopmentAuthenticationToken(const FString& Token);
 

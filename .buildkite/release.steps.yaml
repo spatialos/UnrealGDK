@@ -35,7 +35,7 @@ steps:
         key: "engine-source-branches"
         required: true
         hint: "The Unreal Engine branch (or branches) that you want to create release candidates from. Put each branch on a separate line with the primary Engine version at the top."
-        default: "4.25-SpatialOSUnrealGDK\n4.24-SpatialOSUnrealGDK"
+        default: "4.26-SpatialOSUnrealGDK\n4.25-SpatialOSUnrealGDK\n4.24-SpatialOSUnrealGDK"
 
       - select: "Actual release or dry-run?"
         key: "dry-run"

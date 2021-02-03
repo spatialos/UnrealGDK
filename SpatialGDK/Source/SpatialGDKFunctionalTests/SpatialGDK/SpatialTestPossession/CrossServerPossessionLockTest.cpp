@@ -12,9 +12,10 @@
  * This test tests 1 locked Controller remote possess over 1 pawn.
  *
  * This test expects a load balancing grid and ACrossServerPossessionGameMode
- * Recommand to use 2*2 load balancing grid because the position of Pawn was written in the code
+ * Recommend to use 2*2 load balancing grid because the position of Pawn was written in the code
  * The client workers begin with a player controller and their default pawns, which they initially possess.
  * The flow is as follows:
+ *  Recommend to use LockedControllerPossessPawnGym.umap in UnrealGDKTestGyms project which ready for tests.
  *  - Setup:
  *    - Specify `GameMode Override` as ACrossServerPossessionGameMode
  *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)

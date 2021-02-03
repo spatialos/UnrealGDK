@@ -1,2 +1,2 @@
-15.0.0-preview-8
+15.0.0
 // If changing version, update SpatialGDK/Source/SpatialGDK/Public/Utils/WorkerVersionCheck.h too
