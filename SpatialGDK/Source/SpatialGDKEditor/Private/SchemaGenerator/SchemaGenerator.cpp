@@ -291,7 +291,8 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 
 	if (bHasComponents)
 	{
-		Writer.WriteToFile(FString::Printf(TEXT("%s%sComponents.schema"), *SchemaPath, *ClassPathToSchemaName[ActorClass->GetPathName()]));
+		FString FileName = FString::Printf(TEXT("%sComponents.schema"), *ClassPathToSchemaName[ActorClass->GetPathName()]);
+		Writer.WriteToFile(*FPaths::Combine(*SchemaPath, FileName));
 	}
 }
 
@@ -547,7 +548,8 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		SubobjectSchemaData.DynamicSubobjectComponents.Add(MoveTemp(DynamicSubobjectComponents));
 	}
 
-	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
+	FString FileName = FString::Printf(TEXT("%s.schema"), *ClassPathToSchemaName[Class->GetPathName()]);
+	Writer.WriteToFile(FPaths::Combine(*SchemaPath, *FileName));
 	SubobjectSchemaData.GeneratedSchemaName = ClassPathToSchemaName[Class->GetPathName()];
 	SubobjectClassPathToSchema.Add(Class->GetPathName(), SubobjectSchemaData);
 }
@@ -679,8 +681,8 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 			NetCullDistanceToComponentId.Add(NCD, 0);
 		}
 	}
-
-	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
+	FString FileName = FString::Printf(TEXT("%s.schema"), *ClassPathToSchemaName[Class->GetPathName()]);
+	Writer.WriteToFile(*FPaths::Combine(*SchemaPath, FileName));
 }
 
 void GenerateRPCEndpointsSchema(FString SchemaPath)
@@ -703,7 +705,7 @@ void GenerateRPCEndpointsSchema(FString SchemaPath)
 						{ ERPCType::ServerReliable, ERPCType::ServerUnreliable, ERPCType::ServerAlwaysWrite });
 	GenerateRPCEndpoint(Writer, TEXT("MulticastRPCs"), SpatialConstants::MULTICAST_RPCS_COMPONENT_ID, { ERPCType::NetMulticast }, {});
 
-	Writer.WriteToFile(FString::Printf(TEXT("%srpc_endpoints.schema"), *SchemaPath));
+	Writer.WriteToFile(*FPaths::Combine(*SchemaPath, TEXT("rpc_endpoints.schema")));
 }
 
 // Add the component ID to the passed schema components array and the set of components of that type.
