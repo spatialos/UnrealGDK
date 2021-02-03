@@ -204,7 +204,7 @@ bool ConvertToClassicConfig(const FString& LaunchConfigPath, const FSpatialLaunc
 	FString RuntimePath =
 		SpatialGDKServicesConstants::GetRuntimeExecutablePath(SpatialGDKEditor->GetSelectedRuntimeVariantVersion().GetVersionForLocal());
 
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(RuntimePath, ConversionArgs, LaunchConfigDir, Output, ExitCode);
+	FSpatialGDKServicesModule::ExecuteAndReadOutput(RuntimePath, ConversionArgs, FPlatformProcess::BaseDir(), Output, ExitCode);
 
 	if (ExitCode != SpatialGDKServicesConstants::ExitCodeSuccess)
 	{

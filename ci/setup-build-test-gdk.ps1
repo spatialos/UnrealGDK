@@ -3,7 +3,8 @@ param(
     [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production/UnrealEngine",
     [string] $msbuild_exe = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe",
     [string] $build_home = (Get-Item "$($PSScriptRoot)").parent.parent.FullName, ## The root of the entire build. Should ultimately resolve to "C:\b\<number>\".
-    [string] $unreal_engine_symlink_dir = "$build_home\UnrealEngine"
+    [string] $unreal_engine_symlink_dir = "$build_home\UnrealEngine",
+    [string] $gyms_version_path = "$gdk_home\UnrealGDKTestGymsVersion.txt"
 )
 
 class TestProjectTarget {
@@ -12,15 +13,23 @@ class TestProjectTarget {
     [ValidateNotNullOrEmpty()][string]$test_repo_relative_uproject_path
     [ValidateNotNullOrEmpty()][string]$test_project_name
     
-    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name) {
+    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name, [string]$test_gyms_version_path, [string]$test_env_override) {
         $this.test_repo_url = $test_repo_url
         $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
         $this.test_project_name = $test_project_name
         
-        # If the testing repo has a branch with the same name as the current branch, use that
+        # Resolve the branch to run against. The order of priority is:
+        # envvar > same-name branch as the branch we are currently on > UnrealGDKTestGymVersion.txt > "master".
         $testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
-        if($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
+        $test_gym_version = if (Test-Path -Path $test_gyms_version_path) {[System.IO.File]::ReadAllText($test_gyms_version_path)} else {[string]::Empty}
+        if (Test-Path $test_env_override) {
+            $this.test_repo_branch = (Get-Item $test_env_override).value
+        }
+        elseif($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
             $this.test_repo_branch = $gdk_branch
+        }
+        elseif($test_gym_version -ne [string]::Empty) {
+            $this.test_repo_branch = $test_gym_version
         }
         else {
             $this.test_repo_branch = "master"
@@ -54,16 +63,8 @@ class TestSuite {
 [string] $user_cmd_line_args = "$env:TEST_ARGS"
 [string] $gdk_branch = "$env:BUILDKITE_BRANCH"
 
-[TestProjectTarget] $gdk_test_project = [TestProjectTarget]::new("git@github.com:spatialos/UnrealGDKTestGyms.git", $gdk_branch, "Game\GDKTestGyms.uproject", "GDKTestGyms")
-[TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject")
-
-# Allow overriding testing branch via environment variable
-if (Test-Path env:TEST_REPO_BRANCH) {
-    $gdk_test_project.test_repo_branch = $env:TEST_REPO_BRANCH
-}
-if (Test-Path env:NATIVE_TEST_REPO_BRANCH) {
-    $native_test_project.test_repo_branch = $env:NATIVE_TEST_REPO_BRANCH
-}
+[TestProjectTarget] $gdk_test_project = [TestProjectTarget]::new("git@github.com:spatialos/UnrealGDKTestGyms.git", $gdk_branch, "Game\GDKTestGyms.uproject", "GDKTestGyms", $gyms_version_path, "env:TEST_REPO_BRANCH")
+[TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject", $gyms_version_path, "env:NATIVE_TEST_REPO_BRANCH")
 
 $tests = @()
 
