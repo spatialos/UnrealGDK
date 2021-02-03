@@ -52,6 +52,7 @@
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -134,21 +135,24 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	FDelegateHandle OnMapChangedHandle = LevelEditorModule.OnMapChanged().AddRaw(this, &FSpatialGDKEditorToolbarModule::MapChanged);
 
-	// Grab the runtime and inspector binaries ahead of time so they are ready when the user wants them.
-	const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
-	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
+	if (USpatialStatics::IsSpatialNetworkingEnabled())
+	{
+		// Grab the runtime and inspector binaries ahead of time so they are ready when the user wants them.
+		const FString RuntimeVersion = SpatialGDKEditorSettings->GetSelectedRuntimeVariantVersion().GetVersionForLocal();
+		const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeVersion, InspectorVersion] {
-		if (!FetchRuntimeBinaryWrapper(RuntimeVersion))
-		{
-			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local runtime binary but failed!"));
-		}
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, RuntimeVersion, InspectorVersion] {
+			if (!FetchRuntimeBinaryWrapper(RuntimeVersion))
+			{
+				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local runtime binary but failed!"));
+			}
 
-		if (!FetchInspectorBinaryWrapper(InspectorVersion))
-		{
-			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local inspector binary but failed!"));
-		}
-	});
+			if (!FetchInspectorBinaryWrapper(InspectorVersion))
+			{
+				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to cache the local inspector binary but failed!"));
+			}
+		});
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -955,9 +959,9 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 			return;
 		}
 
-		FString InspectorArgs =
-			FString::Printf(TEXT("--backend_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorBackendAddress,
-							*SpatialGDKServicesConstants::SchemaBundlePath);
+		FString InspectorArgs = FString::Printf(
+			TEXT("--grpc_addr=%s --http_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorGRPCAddress,
+			*SpatialGDKServicesConstants::InspectorHTTPAddress, *SpatialGDKServicesConstants::SchemaBundlePath);
 
 		InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,
 							 SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
@@ -971,7 +975,7 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		});
 
 		InspectorProcess->OnCanceled().BindLambda([this] {
-			if (InspectorProcess->GetReturnCode() != SpatialGDKServicesConstants::ExitCodeSuccess)
+			if (InspectorProcess.IsSet() && InspectorProcess->GetReturnCode() != SpatialGDKServicesConstants::ExitCodeSuccess)
 			{
 				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Inspector crashed! Please check logs for more details. Exit code: %s"),
 					   *FString::FromInt(InspectorProcess->GetReturnCode()));
@@ -1346,6 +1350,13 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 	if (SpatialGDKSettings->ShouldAutoGenerateCloudLaunchConfig())
 	{
 		GenerateCloudConfigFromCurrentMap();
+	}
+
+	if (!SpatialGDKSettings->CheckManualWorkerConnectionOnLaunch())
+	{
+		OnShowFailedNotification(TEXT("Launch halted because of unexpected workers requiring manual launch."));
+
+		return FReply::Unhandled();
 	}
 
 	AddDeploymentTagIfMissing(SpatialConstants::DEV_LOGIN_TAG);

@@ -66,49 +66,14 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 	}
 }
 
-// Check to see if this worker's physical worker name is in the mapping. If it isn't, it's possibly an old mapping.
-// This is needed to give good behaviour across restarts. It's not very efficient, but it should happen only a few times
-// after a PiE restart.
-bool SpatialVirtualWorkerTranslator::IsValidMapping(Schema_Object* Object) const
-{
-	const uint32 TranslationCount = Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
-
-	for (uint32 i = 0; i < TranslationCount; i++)
-	{
-		// Get each entry of the list and then unpack the virtual and physical IDs from the entry.
-		Schema_Object* MappingObject = Schema_IndexObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID, i);
-		if (SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID) == LocalPhysicalWorkerName)
-		{
-			const VirtualWorkerId ReceivedVirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
-			if (LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID && LocalVirtualWorkerId != ReceivedVirtualWorkerId)
-			{
-				UE_LOG(LogSpatialVirtualWorkerTranslator, Error,
-					   TEXT("Received mapping containing a new and updated virtual worker ID, this shouldn't happen."));
-				return false;
-			}
-			return true;
-		}
-	}
-
-	return false;
-}
-
 // The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID.
 // This method should only be called on workers who are not authoritative over the mapping and also when
 // a worker first becomes authoritative for the mapping.
 void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Object)
 {
-	if (!IsValidMapping(Object))
-	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log,
-			   TEXT("Received invalid mapping, server is still waiting for a valid mapping from the virtual worker translation manager."));
-		return;
-	}
-
 	// Resize the map to accept the new data.
-	VirtualToPhysicalWorkerMapping.Empty();
 	const uint32 TranslationCount = Schema_GetObjectCount(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
-	VirtualToPhysicalWorkerMapping.Reserve(TranslationCount);
+	VirtualToPhysicalWorkerMapping.Empty(TranslationCount);
 
 	UE_LOG(LogSpatialVirtualWorkerTranslator, Verbose, TEXT("(%d) Apply valid mapping from schema"), LocalVirtualWorkerId);
 
