@@ -35,7 +35,9 @@ using namespace SpatialGDK;
 
 DEFINE_LOG_CATEGORY(LogSpatialDebugger);
 
-FSpatialDebuggerSystem::FSpatialDebuggerSystem(USpatialNetDriver* InNetDriver, const FSubView& InSubView)
+namespace SpatialGDK
+{
+SpatialDebuggerSystem::SpatialDebuggerSystem(USpatialNetDriver* InNetDriver, const FSubView& InSubView)
 	: NetDriver(InNetDriver)
 	, SubView(&InSubView)
 {
@@ -47,7 +49,7 @@ FSpatialDebuggerSystem::FSpatialDebuggerSystem(USpatialNetDriver* InNetDriver, c
 	}
 }
 
-void FSpatialDebuggerSystem::Advance()
+void SpatialDebuggerSystem::Advance()
 {
 	for (TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>::TIterator It = EntityActorMapping.CreateIterator(); It; ++It)
 	{
@@ -86,7 +88,7 @@ void FSpatialDebuggerSystem::Advance()
 	}
 }
 
-void FSpatialDebuggerSystem::OnEntityAdded(const Worker_EntityId EntityId)
+void SpatialDebuggerSystem::OnEntityAdded(const Worker_EntityId EntityId)
 {
 	check(NetDriver != nullptr);
 	if (NetDriver->IsServer())
@@ -99,12 +101,7 @@ void FSpatialDebuggerSystem::OnEntityAdded(const Worker_EntityId EntityId)
 		return;
 	}
 
-	TWeakObjectPtr<AActor>* ExistingActor = EntityActorMapping.Find(EntityId);
-
-	if (ExistingActor != nullptr)
-	{
-		return;
-	}
+	check(!EntityActorMapping.Contains(EntityId));
 
 	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
@@ -114,7 +111,7 @@ void FSpatialDebuggerSystem::OnEntityAdded(const Worker_EntityId EntityId)
 	}
 }
 
-void FSpatialDebuggerSystem::OnEntityRemoved(const Worker_EntityId EntityId)
+void SpatialDebuggerSystem::OnEntityRemoved(const Worker_EntityId EntityId)
 {
 	if (!NetDriver->IsServer())
 	{
@@ -122,7 +119,7 @@ void FSpatialDebuggerSystem::OnEntityRemoved(const Worker_EntityId EntityId)
 	}
 }
 
-void FSpatialDebuggerSystem::ActorAuthorityGained(const Worker_EntityId EntityId) const
+void SpatialDebuggerSystem::ActorAuthorityGained(const Worker_EntityId EntityId) const
 {
 	if (NetDriver->VirtualWorkerTranslator == nullptr)
 	{
@@ -154,7 +151,7 @@ void FSpatialDebuggerSystem::ActorAuthorityGained(const Worker_EntityId EntityId
 	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
 }
 
-TOptional<SpatialDebugging> FSpatialDebuggerSystem::GetDebuggingData(Worker_EntityId Entity) const
+TOptional<SpatialDebugging> SpatialDebuggerSystem::GetDebuggingData(Worker_EntityId Entity) const
 {
 	const EntityViewElement* EntityViewElementPtr = SubView->GetView().Find(Entity);
 
@@ -174,7 +171,7 @@ TOptional<SpatialDebugging> FSpatialDebuggerSystem::GetDebuggingData(Worker_Enti
 	return {};
 }
 
-AActor* FSpatialDebuggerSystem::GetActor(Worker_EntityId EntityId) const
+AActor* SpatialDebuggerSystem::GetActor(Worker_EntityId EntityId) const
 {
 	const TWeakObjectPtr<AActor>* ActorPtr = EntityActorMapping.Find(EntityId);
 
@@ -186,15 +183,16 @@ AActor* FSpatialDebuggerSystem::GetActor(Worker_EntityId EntityId) const
 	return nullptr;
 }
 
-const Worker_EntityId_Key* FSpatialDebuggerSystem::GetActorEntityId(AActor* Actor) const
+const Worker_EntityId_Key* SpatialDebuggerSystem::GetActorEntityId(AActor* Actor) const
 {
 	return EntityActorMapping.FindKey(Actor);
 }
 
-const TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& FSpatialDebuggerSystem::GetActors() const
+const TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& SpatialDebuggerSystem::GetActors() const
 {
 	return EntityActorMapping;
 }
+} // namespace SpatialGDK
 
 namespace
 {
@@ -323,7 +321,7 @@ void ASpatialDebugger::OnEntityAdded(AActor* Actor)
 	}
 }
 
-void FSpatialDebuggerSystem::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
+void SpatialDebuggerSystem::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
 {
 	TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
 	check(DebuggingInfo.IsSet());
@@ -1172,7 +1170,7 @@ void ASpatialDebugger::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 }
 #endif // WITH_EDITOR
 
-FSpatialDebuggerSystem* ASpatialDebugger::GetDebuggerSystem() const
+SpatialDebuggerSystem* ASpatialDebugger::GetDebuggerSystem() const
 {
 	return NetDriver->SpatialDebuggerSystem.Get();
 }

@@ -455,7 +455,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		},
 		{ Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID) });
 
-	SpatialDebuggerSystem = MakeUnique<FSpatialDebuggerSystem>(this, DebuggerSubView);
+	SpatialDebuggerSystem = MakeUnique<SpatialGDK::SpatialDebuggerSystem>(this, DebuggerSubView);
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());

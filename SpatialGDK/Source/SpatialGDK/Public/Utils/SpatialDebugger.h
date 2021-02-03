@@ -41,12 +41,11 @@ namespace SpatialGDK
 {
 class FSubView;
 struct SpatialDebugging;
-} // namespace SpatialGDK
 
-class FSpatialDebuggerSystem
+class SpatialDebuggerSystem
 {
 public:
-	FSpatialDebuggerSystem(USpatialNetDriver* InNetDriver, const SpatialGDK::FSubView& InSubView);
+	SpatialDebuggerSystem(USpatialNetDriver* InNetDriver, const SpatialGDK::FSubView& InSubView);
 
 	void Advance();
 
@@ -55,7 +54,7 @@ public:
 	DECLARE_MULTICAST_DELEGATE_OneParam(FSpatialDebuggerActorAddedDelegate, AActor*);
 	FSpatialDebuggerActorAddedDelegate OnEntityActorAddedDelegate;
 
-	TOptional<SpatialGDK::SpatialDebugging> GetDebuggingData(Worker_EntityId Entity) const;
+	TOptional<SpatialDebugging> GetDebuggingData(Worker_EntityId Entity) const;
 	AActor* GetActor(Worker_EntityId EntityId) const;
 	const Worker_EntityId_Key* GetActorEntityId(AActor* Actor) const;
 	const TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& GetActors() const;
@@ -72,8 +71,9 @@ private:
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> EntityActorMapping;
 
 	TWeakObjectPtr<USpatialNetDriver> NetDriver;
-	const SpatialGDK::FSubView* SubView;
+	const FSubView* SubView;
 };
+} // namespace SpatialGDK
 
 USTRUCT()
 struct FWorkerRegionInfo
@@ -321,7 +321,7 @@ private:
 
 	USpatialNetDriver* NetDriver;
 
-	FSpatialDebuggerSystem* GetDebuggerSystem() const;
+	SpatialGDK::SpatialDebuggerSystem* GetDebuggerSystem() const;
 
 	FDelegateHandle DrawDebugDelegateHandle;
 
