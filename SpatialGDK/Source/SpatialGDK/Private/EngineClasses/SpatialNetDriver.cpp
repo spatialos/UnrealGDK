@@ -448,15 +448,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		MakeUnique<SpatialGDK::ActorSystem>(ActorNonAuthSubview, TombstoneActorSubview, this, &TimerManager, Connection->GetEventTracer());
 	ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
-	const SpatialGDK::FSubView& DebuggerSubView = Connection->GetCoordinator().CreateSubView(
-		IsServer() ? SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID : SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID,
-		[](const Worker_EntityId, const SpatialGDK::EntityViewElement& El) -> bool {
-			return El.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID });
-		},
-		{ Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID) });
-
-	SpatialDebuggerSystem = MakeUnique<SpatialGDK::SpatialDebuggerSystem>(this, DebuggerSubView);
-
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
 	Receiver->Init(this, Connection->GetEventTracer());

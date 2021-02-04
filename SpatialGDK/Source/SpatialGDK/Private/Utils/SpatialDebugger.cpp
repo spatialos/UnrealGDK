@@ -253,6 +253,19 @@ void ASpatialDebugger::BeginPlay()
 
 	check(NetDriver != nullptr);
 
+	if (ensureMsgf(!NetDriver->SpatialDebuggerSystem.IsValid(), TEXT("SpatialDebugger system is already created at BeginPlay")))
+	{
+		const FSubView& DebuggerSubView = NetDriver->Connection->GetCoordinator().CreateSubView(
+			NetDriver->IsServer() ? SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID : SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID,
+			[](const Worker_EntityId, const EntityViewElement& Element) -> bool {
+				return Element.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID });
+			},
+			{ NetDriver->Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+				SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID) });
+
+		NetDriver->SpatialDebuggerSystem = MakeUnique<SpatialDebuggerSystem>(NetDriver, DebuggerSubView);
+	}
+
 	if (!NetDriver->IsServer())
 	{
 		GetDebuggerSystem()->OnEntityActorAddedDelegate.AddUObject(this, &ASpatialDebugger::OnEntityAdded);
@@ -1178,5 +1191,6 @@ void ASpatialDebugger::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 
 SpatialDebuggerSystem* ASpatialDebugger::GetDebuggerSystem() const
 {
+	check(NetDriver->SpatialDebuggerSystem.IsValid());
 	return NetDriver->SpatialDebuggerSystem.Get();
 }
