@@ -904,6 +904,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "migration_diagnostic.schema",
 										   "net_owning_client_worker.schema",
 										   "not_streamed.schema",
+										   "partition_shadow.schema",
 										   "query_tags.schema",
 										   "relevant.schema",
 										   "rpc_components.schema",

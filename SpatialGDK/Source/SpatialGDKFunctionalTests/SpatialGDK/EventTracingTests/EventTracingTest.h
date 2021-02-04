@@ -45,7 +45,7 @@ protected:
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
 
-	float TestTime = 20.0f;
+	float TestTime = 8.0f;
 
 	TMap<FString, FName> TraceEvents;
 	TMap<FString, TArray<FString>> TraceSpans;
