@@ -420,14 +420,17 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			return false;
 		}
 
-		SpatialGDK::UnrealMetadata Metadata(
-			Element.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::UNREAL_METADATA_COMPONENT_ID })
-				->GetUnderlying());
-
-		if (AsyncPackageLoadFilter != nullptr && AsyncPackageLoadFilter->NeedToLoadClass(Metadata.ClassPath))
+		if (AsyncPackageLoadFilter != nullptr)
 		{
-			AsyncPackageLoadFilter->StartAsyncLoadingClass(Metadata.ClassPath, EntityId);
-			return false;
+			SpatialGDK::UnrealMetadata Metadata(
+				Element.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::UNREAL_METADATA_COMPONENT_ID })
+					->GetUnderlying());
+
+			if (AsyncPackageLoadFilter->NeedToLoadClass(Metadata.ClassPath))
+			{
+				AsyncPackageLoadFilter->StartAsyncLoadingClass(Metadata.ClassPath, EntityId);
+				return false;
+			}
 		}
 
 		// If we see a player controller component on this entity and we're a server we should hold it back until we
@@ -447,8 +450,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	const SpatialGDK::FSubView& ActorAuthSubview =
 		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
 
-	const SpatialGDK::FSubView& ActorNonAuthSubview =
-		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
+	const SpatialGDK::FSubView& ActorSubview =
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
 
 	const SpatialGDK::FSubView& TombstoneActorSubview = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::TOMBSTONE_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
@@ -456,8 +459,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	const SpatialGDK::FSubView& SystemEntitySubview = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::SYSTEM_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
-		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
+	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, USpatialLatencyTracer::GetTracer(GetWorld()),
+														   Connection->GetEventTracer(), this);
 
 	CrossServerRPCSender = MakeUnique<SpatialGDK::CrossServerRPCSender>(Connection->GetCoordinator(), SpatialMetrics);
 
@@ -465,7 +468,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		MakeUnique<SpatialGDK::CrossServerRPCHandler>(Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this));
 
 	ActorSystem =
-		MakeUnique<SpatialGDK::ActorSystem>(ActorNonAuthSubview, TombstoneActorSubview, this, &TimerManager, Connection->GetEventTracer());
+		MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, TombstoneActorSubview, this, &TimerManager, Connection->GetEventTracer());
 
 	ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 

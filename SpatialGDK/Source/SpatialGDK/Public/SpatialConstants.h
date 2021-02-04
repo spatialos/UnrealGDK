@@ -141,7 +141,7 @@ const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 // System query tags for entity completeness
 const Worker_ComponentId FIRST_EC_COMPONENT_ID = 2001;
 const Worker_ComponentId ACTOR_AUTH_TAG_COMPONENT_ID = 2001;
-const Worker_ComponentId ACTOR_NON_AUTH_TAG_COMPONENT_ID = 2002;
+const Worker_ComponentId ACTOR_TAG_COMPONENT_ID = 2002;
 const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
 const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
 const Worker_ComponentId TOMBSTONE_TAG_COMPONENT_ID = 2008;
@@ -356,7 +356,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 	DEBUG_METRICS_COMPONENT_ID, SPATIAL_DEBUGGING_COMPONENT_ID,
 
 	// Non auth actor tag
-	ACTOR_NON_AUTH_TAG_COMPONENT_ID
+	ACTOR_TAG_COMPONENT_ID
 };
 
 // A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest
@@ -366,7 +366,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
 								SERVER_ENDPOINT_COMPONENT_ID,
 
 								// Actor tags
-								ACTOR_NON_AUTH_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID
+								ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID
 	};
 
 // A list of components servers require on top of any generated data and handover components in order to handle non-authoritative actors
@@ -389,7 +389,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 								AUTHORITY_INTENT_COMPONENT_ID,
 
 								// Tags: Well known entities, non-auth actors, and tombstone tags
-								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_NON_AUTH_TAG_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID,
+								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_TAG_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID,
 
 								PLAYER_CONTROLLER_COMPONENT_ID, PARTITION_COMPONENT_ID
 	};
@@ -404,7 +404,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 								PLAYER_CONTROLLER_COMPONENT_ID,
 
 								// Actor tags
-								ACTOR_NON_AUTH_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
+								ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
 
 								PARTITION_COMPONENT_ID
 	};

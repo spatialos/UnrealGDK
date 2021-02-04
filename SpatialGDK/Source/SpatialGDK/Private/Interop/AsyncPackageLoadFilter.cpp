@@ -68,7 +68,7 @@ void AsyncPackageLoadFilter::StartAsyncLoadingClass(const FString& ClassPath, Wo
 		// This shouldn't happen because even if the entity goes out and comes back into view,
 		// we would've received a RemoveEntity op that would remove the entry from the map.
 		UE_LOG(LogAsyncPackageLoadFilter, Error,
-			   TEXT("USpatialReceiver::ReceiveActor: Checked out entity but it's already waiting for async load! Entity: %lld"), EntityId);
+			   TEXT("Checked out entity but it's already waiting for async load! Entity: %lld"), EntityId);
 	}
 
 	EntitiesWaitingForAsyncLoad.Emplace(EntityId);
@@ -87,12 +87,11 @@ void AsyncPackageLoadFilter::OnAsyncPackageLoaded(const FName& PackageName, UPac
 	if (Result != EAsyncLoadingResult::Succeeded)
 	{
 		UE_LOG(LogAsyncPackageLoadFilter, Error,
-			   TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package was not loaded successfully. Package: %s"), *PackageName.ToString());
+			   TEXT("Package was not loaded successfully. Package: %s"), *PackageName.ToString());
 		AsyncLoadingPackages.Remove(PackageName);
+		return;
 	}
 
-	UE_LOG(LogAsyncPackageLoadFilter, Warning, TEXT("mcs: OnAsyncPackageLoaded: Package loaded successfully. Package: %s"),
-		   *PackageName.ToString());
 	LoadedPackages.Add(PackageName);
 }
 
