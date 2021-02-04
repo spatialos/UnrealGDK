@@ -149,6 +149,14 @@ bool USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_EntityId
 	if (!NetGUID.IsValid())
 	{
 		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor, EntityId);
+
+		for (UActorComponent* DynamicComponent : Actor->GetInstanceComponents())
+		{
+			if (DynamicComponent->IsSupportedForNetworking())
+			{
+				TryResolveNewDynamicSubobjectAndGetClassInfo(DynamicComponent);
+			}
+		}
 	}
 
 	if (GetEntityIdFromObject(Actor) != EntityId)
@@ -799,7 +807,8 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(UObject* Object
 			   *Cast<USpatialNetDriver>(Driver)->Connection->GetWorkerId(), *Object->GetPathName(), *NetGUID.ToString());
 	}
 
-	check((NetGUID.IsValid() && !NetGUID.IsDefault()) || Object == nullptr);
+	checkf((NetGUID.IsValid() && !NetGUID.IsDefault()) || Object == nullptr, TEXT("NetGUID: %s, Object %s"), *NetGUID.ToString(),
+		   *GetNameSafe(Object));
 	return NetGUID;
 }
 
