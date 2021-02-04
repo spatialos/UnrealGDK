@@ -29,7 +29,7 @@ pushd "$(dirname "$0")"
         else
             # This is a slight hack, we rely on the fact that this version should work even if it's not the TestGym repo
             # (also currently this script only operates on the TestGym repo)
-            TESTGYM_VERSION=$(cat UnrealGDKTestGymsVersion.txt)
+            TESTGYM_VERSION=$(cat ${GDK_HOME}/UnrealGDKTestGymsVersion.txt)
             if [ -z "${TESTGYM_VERSION}" ]; then
                 TEST_REPO_BRANCH_LOCAL="master"
             else
