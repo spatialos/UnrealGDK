@@ -22,6 +22,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "Interop/ActorSystem.h"
+#include "Interop/AsyncPackageLoadFilter.h"
 #include "Interop/ClientConnectionManager.h"
 #include "Interop/RPCExecutorInterface.h"
 #include "Interop/WellKnownEntitySystem.h"
@@ -202,6 +203,8 @@ public:
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
+
+	TUniquePtr<SpatialGDK::AsyncPackageLoadFilter> AsyncPackageLoadFilter;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
