@@ -86,5 +86,5 @@ notify:
   - slack: "#unreal-gdk-builds"
     if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge"
   - slack: "@support-unreal"
-    if: build.env(BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge"
+    if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge"
     
