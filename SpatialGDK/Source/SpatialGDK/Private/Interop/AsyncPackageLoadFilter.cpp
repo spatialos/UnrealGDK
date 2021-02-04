@@ -16,6 +16,22 @@ AsyncPackageLoadFilter::AsyncPackageLoadFilter(USpatialNetDriver* InNetDriver)
 {
 }
 
+bool AsyncPackageLoadFilter::ProcessAndCheckEntityFilter(Worker_EntityId EntityId, const FString& ClassPath)
+{
+	if (IsEntityWaitingForAsyncLoad(EntityId))
+	{
+		return true;
+	}
+
+	if (NeedToLoadClass(ClassPath))
+	{
+		StartAsyncLoadingClass(EntityId, ClassPath);
+		return true;
+	}
+
+	return false;
+}
+
 bool AsyncPackageLoadFilter::NeedToLoadClass(const FString& ClassPath)
 {
 	UObject* ClassObject = FindObject<UClass>(nullptr, *ClassPath, false);
@@ -56,20 +72,12 @@ bool AsyncPackageLoadFilter::IsEntityWaitingForAsyncLoad(Worker_EntityId Entity)
 	return EntitiesWaitingForAsyncLoad.Contains(Entity);
 }
 
-void AsyncPackageLoadFilter::StartAsyncLoadingClass(const FString& ClassPath, Worker_EntityId EntityId)
+void AsyncPackageLoadFilter::StartAsyncLoadingClass(Worker_EntityId EntityId, const FString& ClassPath)
 {
 	FString PackagePath = GetPackagePath(ClassPath);
 	FName PackagePathName = *PackagePath;
 
 	bool bAlreadyLoading = AsyncLoadingPackages.Contains(PackagePathName);
-
-	if (IsEntityWaitingForAsyncLoad(EntityId))
-	{
-		// This shouldn't happen because even if the entity goes out and comes back into view,
-		// we would've received a RemoveEntity op that would remove the entry from the map.
-		UE_LOG(LogAsyncPackageLoadFilter, Error,
-			   TEXT("Checked out entity but it's already waiting for async load! Entity: %lld"), EntityId);
-	}
 
 	EntitiesWaitingForAsyncLoad.Emplace(EntityId);
 	AsyncLoadingPackages.FindOrAdd(PackagePathName).Add(EntityId);
@@ -86,8 +94,7 @@ void AsyncPackageLoadFilter::OnAsyncPackageLoaded(const FName& PackageName, UPac
 {
 	if (Result != EAsyncLoadingResult::Succeeded)
 	{
-		UE_LOG(LogAsyncPackageLoadFilter, Error,
-			   TEXT("Package was not loaded successfully. Package: %s"), *PackageName.ToString());
+		UE_LOG(LogAsyncPackageLoadFilter, Error, TEXT("Package was not loaded successfully. Package: %s"), *PackageName.ToString());
 		AsyncLoadingPackages.Remove(PackageName);
 		return;
 	}

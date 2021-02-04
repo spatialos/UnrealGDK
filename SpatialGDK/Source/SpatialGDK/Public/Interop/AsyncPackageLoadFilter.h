@@ -17,12 +17,15 @@ class AsyncPackageLoadFilter
 public:
 	AsyncPackageLoadFilter(USpatialNetDriver* InNetDriver);
 
-	bool NeedToLoadClass(const FString& ClassPath);
-	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
-	void StartAsyncLoadingClass(const FString& ClassPath, Worker_EntityId EntityId);
+	// Returns if entity should be filtered
+	bool ProcessAndCheckEntityFilter(Worker_EntityId EntityId, const FString& ClassPath);
 	void ProcessActorsFromAsyncLoading();
 
 private:
+	bool NeedToLoadClass(const FString& ClassPath);
+	bool IsEntityWaitingForAsyncLoad(Worker_EntityId Entity);
+	void StartAsyncLoadingClass(Worker_EntityId EntityId, const FString& ClassPath);
+
 	FString GetPackagePath(const FString& ClassPath);
 	void OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result);
 
