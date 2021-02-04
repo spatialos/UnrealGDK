@@ -149,11 +149,7 @@ void ClientServerRPCService::EntityAdded(const Worker_EntityId EntityId)
 {
 	for (const Worker_ComponentId ComponentId : SubView->GetView()[EntityId].Authority)
 	{
-		if (!IsClientOrServerEndpoint(ComponentId))
-		{
-			continue;
-		}
-		ExtractRPCsForEntity(EntityId, ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+		ExtractRPCsForEntity(EntityId, ComponentId == SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID
 										   ? SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID
 										   : SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID);
 	}
