@@ -2193,48 +2193,6 @@ bool USpatialNetDriver::HasClientAuthority(Worker_EntityId EntityId) const
 	return StaticComponentView->HasAuthority(EntityId, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
 }
 
-void USpatialNetDriver::InitializeSpatialDebuggerSystem()
-{
-	if (!ensureMsgf(!SpatialDebuggerSystem.IsValid(), TEXT("SpatialDebugger system is already created at BeginPlay")))
-	{
-		return;
-	}
-
-	typedef SpatialGDK::FSubView FSubView;
-	typedef SpatialGDK::EntityViewElement EntityViewElement;
-	typedef SpatialGDK::ComponentIdEquality ComponentIdEquality;
-	
-	const FSubView* DebuggerSubViewPtr = nullptr;
-	
-	if (IsServer())
-	{
-		DebuggerSubViewPtr = &Connection->GetCoordinator().CreateSubView(
-            SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID,
-			FSubView::NoFilter,
-            FSubView::NoDispatcherCallbacks
-        );
-	}
-	else
-	{
-		const auto DebuggingFilter = [](const Worker_EntityId, const EntityViewElement& Element) -> bool {
-			return Element.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID });
-		};
-		
-		const auto DebuggingCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-            SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID) };
-	
-		DebuggerSubViewPtr = &Connection->GetCoordinator().CreateSubView(
-            SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID,
-            DebuggingFilter,
-            DebuggingCallbacks
-        );
-	}
-
-	check(DebuggerSubViewPtr != nullptr);
-	
-	SpatialDebuggerSystem = MakeUnique<SpatialGDK::SpatialDebuggerSystem>(this, *DebuggerSubViewPtr);
-}
-
 void USpatialNetDriver::ProcessPendingDormancy()
 {
 	decltype(PendingDormantChannels) RemainingChannels;
@@ -2842,17 +2800,50 @@ bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
 }
 
 // This should only be called once on each client, in the SpatialDebugger constructor after the class is replicated to each client.
-void USpatialNetDriver::SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger)
+void USpatialNetDriver::RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebugger)
 {
-	check(!IsServer());
-	if (SpatialDebugger != nullptr)
+	if (!SpatialDebuggerSystem.IsValid())
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("SpatialDebugger should only be set once on each client!"));
-		return;
+		typedef SpatialGDK::FSubView FSubView;
+		typedef SpatialGDK::EntityViewElement EntityViewElement;
+		typedef SpatialGDK::ComponentIdEquality ComponentIdEquality;
+
+		const FSubView* DebuggerSubViewPtr = nullptr;
+
+		if (IsServer())
+		{
+			DebuggerSubViewPtr = &Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
+																			 FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
+		}
+		else
+		{
+			const auto DebuggingFilter = [](const Worker_EntityId, const EntityViewElement& Element) -> bool {
+				return Element.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID });
+			};
+
+			const auto DebuggingCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+				SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID) };
+
+			DebuggerSubViewPtr = &Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID,
+																			 DebuggingFilter, DebuggingCallbacks);
+		}
+
+		check(DebuggerSubViewPtr != nullptr);
+
+		SpatialDebuggerSystem = MakeUnique<SpatialGDK::SpatialDebuggerSystem>(this, *DebuggerSubViewPtr);
 	}
 
-	SpatialDebugger = InSpatialDebugger;
-	SpatialDebuggerReady->Ready();
+	if (!IsServer())
+	{
+		if (SpatialDebugger != nullptr)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("SpatialDebugger should only be set once on each client!"));
+			return;
+		}
+
+		SpatialDebugger = InSpatialDebugger;
+		SpatialDebuggerReady->Ready();
+	}
 }
 
 FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
