@@ -499,6 +499,14 @@ void ASpatialDebugger::ActorAuthorityGained(const Worker_EntityId EntityId) cons
 
 	DebuggingInfo->AuthoritativeVirtualWorkerId = LocalVirtualWorkerId;
 	DebuggingInfo->AuthoritativeColor = LocalVirtualWorkerColor;
+
+	// Ensure the intent colour is up to date, as the physical worker name may have changed in the event of a snapshot reload
+	const PhysicalWorkerName* AuthIntentPhysicalWorkerName =
+		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(DebuggingInfo->IntentVirtualWorkerId);
+	DebuggingInfo->IntentColor = (AuthIntentPhysicalWorkerName != nullptr)
+									 ? SpatialGDK::GetColorForWorkerName(*AuthIntentPhysicalWorkerName)
+									 : InvalidServerTintColor;
+
 	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
 }
