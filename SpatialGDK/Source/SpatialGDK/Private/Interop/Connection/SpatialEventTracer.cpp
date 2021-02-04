@@ -82,27 +82,20 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	EventTracer = Trace_EventTracer_Create(&parameters);
 
 	Trace_SamplingParameters SamplingParameters = {};
-	if (Settings->EventSamplingModeOverrides.Num() > 0 || Settings->SamplingProbability != 1.0)
+	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
+
+	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
+	TArray<std::string> AnsiStrings; // Worker requires ansi const char*
+
+	for (const auto& Pair : Settings->EventSamplingModeOverrides)
 	{
-		SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
-
-		TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
-		TArray<std::string> AnsiStrings; // Worker requires ansi const char*
-
-		for (const auto& Pair : Settings->EventSamplingModeOverrides)
-		{
-			int32 Index = AnsiStrings.Add((const char*)TCHAR_TO_ANSI(*Pair.Key.ToString()));
-			SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
-		}
-
-		SamplingParameters.probabilistic_parameters.default_probability = Settings->SamplingProbability;
-		SamplingParameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
-		SamplingParameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
+		int32 Index = AnsiStrings.Add((const char*)TCHAR_TO_ANSI(*Pair.Key.ToString()));
+		SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
 	}
-	else
-	{
-		SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_ALWAYS;
-	}
+
+	SamplingParameters.probabilistic_parameters.default_probability = Settings->SamplingProbability;
+	SamplingParameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
+	SamplingParameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
 
 	Trace_EventTracer_SetSampler(EventTracer, &SamplingParameters);
 
