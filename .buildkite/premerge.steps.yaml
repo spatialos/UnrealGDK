@@ -83,7 +83,7 @@ steps:
     <<: *windows
 
 notify:
-  - slack: 
-    channels: 
-      - "#unreal-gdk-builds"
-    message: "Yo Matt wha guan bredrin @support-unreal"
+  - slack: "#unreal-gdk-builds"
+    if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge"
+      message: "Please work"
+    
