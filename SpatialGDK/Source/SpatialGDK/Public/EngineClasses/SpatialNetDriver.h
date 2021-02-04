@@ -148,6 +148,7 @@ public:
 	void WipeWorld(const PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
+	void InitializeSpatialDebuggerSystem();
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 	void CleanUpServerConnectionForPC(APlayerController* PC);
 
