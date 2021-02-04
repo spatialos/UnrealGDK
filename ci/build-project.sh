@@ -17,7 +17,7 @@ pushd "$(dirname "$0")"
     BUILD_TARGET="${9?Please enter the build target for your Unreal build.}"
 
     # Clone the testing project
-    echo "Cloning the testing project from ${TEST_REPO_URL}"
+    echo "Cloning the testing project from: ${TEST_REPO_URL}, branch: $($TEST_REPO_BRANCH)"
     git clone \
         --branch "${TEST_REPO_BRANCH}" \
         "${TEST_REPO_URL}" \
