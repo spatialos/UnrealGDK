@@ -87,4 +87,5 @@ notify:
       channels: 
         - "#unreal-gdk-builds"
       message: "Support message @support-unreal"
+    if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge"
     
