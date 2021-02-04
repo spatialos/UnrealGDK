@@ -87,6 +87,7 @@ notify:
       channels: 
         - "#unreal-gdk-builds"
     if: (build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge") && build.branch == "master"
+      message: "<!subteam^SDB5161M5> Pls fix" # SDB5161M5 is @support-unreal 
       channels: 
         - "#unreal-support"
       message: "Pls fix"
