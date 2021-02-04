@@ -86,10 +86,6 @@ notify:
   - slack: 
       channels: 
         - "#unreal-gdk-builds"
-      message: "<!subteam^SDB5161M5> Pls fix" # SDB5161M5 is @support-unreal 
-    if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge" && (build.state == "failed" || build.state == "canceled")
-    #   channels: 
-    #     - "#unreal-support"
-    #   message: "Pls fix"
-    # if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge" && build.state == "failed"
+      message: "<!subteam^SDB5161M5> Build failure! Please triage and post ticket." # SDB5161M5 is @support-unreal
+    if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge" && (build.state == "failed" || build.state == "canceled") && build.branch == "master"
     
