@@ -83,7 +83,8 @@ steps:
     <<: *windows
 
 notify:
-  - slack: "#unreal-gdk-builds"
-    if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge"
-      message: "Please work"
+  - slack: 
+      channels: 
+        - "#unreal-gdk-builds"
+      message: "Support message @support-unreal"
     
