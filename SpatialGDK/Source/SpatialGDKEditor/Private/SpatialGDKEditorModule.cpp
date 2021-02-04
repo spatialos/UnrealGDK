@@ -26,6 +26,7 @@
 #include "Engine/World.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "EngineUtils.h"
+#include "FileHelpers.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "WorkerTypeCustomization.h"
 
@@ -49,6 +50,9 @@ void FSpatialGDKEditorModule::StartupModule()
 	// This is relying on the module loading phase - SpatialGDKServices module should be already loaded
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalReceptionistProxyServerManager = GDKServices.GetLocalReceptionistProxyServerManager();
+	UEditorLoadingAndSavingUtils::OnSaveWorldDelegate.AddLambda([](UWorld* World) {
+		UE_LOG(LogTemp, Display, TEXT("I am saving a map named %s."), *World->GetName());
+	});
 }
 
 void FSpatialGDKEditorModule::ShutdownModule()

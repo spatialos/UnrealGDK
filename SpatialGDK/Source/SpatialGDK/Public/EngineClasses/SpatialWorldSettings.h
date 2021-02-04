@@ -24,6 +24,8 @@ public:
 	 * Otherwise return the single worker settings class.  */
 	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceNonEditorSettings = false);
 
+	TArray<char> RawSnapshotData;
+
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere, Category = "Testing")
 	bool bEnableDebugInterface = false;
