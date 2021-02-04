@@ -68,8 +68,6 @@ steps:
     commands:
       - "ci/generate-and-upload-build-steps.sh"
     <<: *script_runner
-    env:
-      MAC_BUILD: "true" # @SOS TEMP!!! to test branch behaviour
 
   - wait: ~
     continue_on_failure: true
