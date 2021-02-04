@@ -70,9 +70,6 @@ steps:
     <<: *script_runner
     env:
       MAC_BUILD: "true" # @SOS TEMP!!! to test branch behaviour
-      # BUILD_ALL_CONFIGURATIONS: "true" # @SOS TEMP!!! to test branch behaviour
-      # DEBUG: "true" # @SOS TEMP!!! to test branch behaviour
-
 
   - wait: ~
     continue_on_failure: true
