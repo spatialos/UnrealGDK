@@ -31,7 +31,16 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
 		if (Code != 1)
 		{
-			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s"), Code, Trace_GetLastError());
+			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s)"), Code, Trace_GetLastError());
+		}
+
+		if (FPlatformAtomics::AtomicRead_Relaxed(&EventTracer->FlushOnWriteAtomic))
+		{
+			int64_t Flushresult = Io_Stream_Flush(Stream);
+			if (Flushresult == -1)
+			{
+				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %d (%s)"), Code, Io_Stream_GetLastError(Stream));
+			}
 		}
 	}
 	else
@@ -72,20 +81,27 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	EventTracer = Trace_EventTracer_Create(&parameters);
 
 	Trace_SamplingParameters SamplingParameters = {};
-	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
-
-	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
-	TArray<std::string> AnsiStrings; // Worker requires ansi const char*
-
-	for (const auto& Pair : Settings->EventSamplingModeOverrides)
+	if (Settings->EventSamplingModeOverrides.Num() > 0 || Settings->SamplingProbability != 1.0)
 	{
-		int32 Index = AnsiStrings.Add((const char*)TCHAR_TO_ANSI(*Pair.Key.ToString()));
-		SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
-	}
+		SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
 
-	SamplingParameters.probabilistic_parameters.default_probability = Settings->SamplingProbability;
-	SamplingParameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
-	SamplingParameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
+		TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
+		TArray<std::string> AnsiStrings; // Worker requires ansi const char*
+
+		for (const auto& Pair : Settings->EventSamplingModeOverrides)
+		{
+			int32 Index = AnsiStrings.Add((const char*)TCHAR_TO_ANSI(*Pair.Key.ToString()));
+			SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
+		}
+
+		SamplingParameters.probabilistic_parameters.default_probability = Settings->SamplingProbability;
+		SamplingParameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
+		SamplingParameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
+	}
+	else
+	{
+		SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_ALWAYS;
+	}
 
 	Trace_EventTracer_SetSampler(EventTracer, &SamplingParameters);
 
@@ -242,8 +258,11 @@ void SpatialEventTracer::AuthorityChange(const Worker_ComponentSetAuthorityChang
 
 void SpatialEventTracer::AddComponent(const Worker_AddComponentOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	TArray<FSpatialGDKSpanId>& StoredSpanIds = EntityComponentSpanIds.FindOrAdd({ Op.entity_id, Op.data.component_id });
-	StoredSpanIds.Push(SpanId);
+	if (!SpanId.IsNull())
+	{
+		TArray<FSpatialGDKSpanId>& StoredSpanIds = EntityComponentSpanIds.FindOrAdd({ Op.entity_id, Op.data.component_id });
+		StoredSpanIds.Push(SpanId);
+	}
 }
 
 void SpatialEventTracer::RemoveComponent(const Worker_RemoveComponentOp& Op, const FSpatialGDKSpanId& SpanId)
@@ -253,8 +272,11 @@ void SpatialEventTracer::RemoveComponent(const Worker_RemoveComponentOp& Op, con
 
 void SpatialEventTracer::UpdateComponent(const Worker_ComponentUpdateOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	TArray<FSpatialGDKSpanId>& StoredSpanIds = EntityComponentSpanIds.FindOrAdd({ Op.entity_id, Op.update.component_id });
-	StoredSpanIds.Push(SpanId);
+	if (!SpanId.IsNull())
+	{
+		TArray<FSpatialGDKSpanId>& StoredSpanIds = EntityComponentSpanIds.FindOrAdd({ Op.entity_id, Op.update.component_id });
+		StoredSpanIds.Push(SpanId);
+	}
 }
 
 void SpatialEventTracer::CommandRequest(const Worker_CommandRequestOp& Op, const FSpatialGDKSpanId& SpanId)
@@ -340,6 +362,11 @@ FSpatialGDKSpanId SpatialEventTracer::PopLatentPropertyUpdateSpanId(const TWeakO
 	ObjectSpanIdStacks.Remove(Object);
 
 	return TempSpanId;
+}
+
+void SpatialEventTracer::SetFlushOnWrite(bool bValue)
+{
+	FPlatformAtomics::AtomicStore_Relaxed(&FlushOnWriteAtomic, bValue ? 1 : 0);
 }
 
 } // namespace SpatialGDK

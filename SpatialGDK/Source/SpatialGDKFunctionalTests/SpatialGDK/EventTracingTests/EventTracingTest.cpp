@@ -19,9 +19,9 @@ const FName AEventTracingTest::ReceiveOpEventName = "worker.receive_op";
 const FName AEventTracingTest::PropertyChangedEventName = "unreal_gdk.property_changed";
 const FName AEventTracingTest::ReceivePropertyUpdateEventName = "unreal_gdk.receive_property_update";
 const FName AEventTracingTest::PushRPCEventName = "unreal_gdk.push_rpc";
-const FName AEventTracingTest::ProcessRPCEventName = "unreal_gdk.process_rpc";
+const FName AEventTracingTest::ReceiveRPCEventName = "unreal_gdk.receive_rpc";
+const FName AEventTracingTest::ApplyRPCEventName = "unreal_gdk.apply_rpc";
 const FName AEventTracingTest::ComponentUpdateEventName = "unreal_gdk.component_update";
-const FName AEventTracingTest::MergeComponentUpdateEventName = "unreal_gdk.merge_component_update"; // TODO: Fix this test!
 const FName AEventTracingTest::UserProcessRPCEventName = "user.process_rpc";
 const FName AEventTracingTest::UserReceivePropertyEventName = "user.receive_property";
 const FName AEventTracingTest::UserReceiveComponentPropertyEventName = "user.receive_component_property";
@@ -45,6 +45,20 @@ void AEventTracingTest::PrepareTest()
 		TEXT("StartEventTracingTest"), WorkerDefinition, nullptr,
 		[this]() {
 			StartEventTracingTest();
+		},
+		nullptr);
+
+	AddStep(
+		TEXT("SetFlushMode"), FWorkerDefinition::AllWorkers, nullptr,
+		[this]() {
+			USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
+			USpatialConnectionManager* ConnectionManager = GameInstance->GetSpatialConnectionManager();
+			SpatialEventTracer* EventTracer = ConnectionManager->GetWorkerConnection()->GetEventTracer();
+			if (EventTracer)
+			{
+				EventTracer->SetFlushOnWrite(true);
+			}
+			FinishStep();
 		},
 		nullptr);
 
@@ -127,6 +141,8 @@ void AEventTracingTest::GatherData()
 	FileCreationTimes.Sort([](const FileCreationTime& A, const FileCreationTime& B) {
 		return A.CreationTime > B.CreationTime;
 	});
+
+	FPlatformProcess::Sleep(1); // Worker bug means file may not be flushed by the OS (WRK-2396)
 
 	bool bFoundClient = false;
 	bool bFoundWorker = false;

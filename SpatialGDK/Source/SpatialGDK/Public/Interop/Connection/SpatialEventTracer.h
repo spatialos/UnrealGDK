@@ -55,6 +55,7 @@ public:
 	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const FSpatialGDKSpanId& SpanId);
 	FSpatialGDKSpanId PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
 
+	void SetFlushOnWrite(bool bValue);
 private:
 	struct StreamDeleter
 	{
@@ -65,6 +66,7 @@ private:
 
 	FString FolderPath;
 
+	int32 FlushOnWriteAtomic = 0;
 	TUniquePtr<Io_Stream, StreamDeleter> Stream;
 	Trace_EventTracer* EventTracer = nullptr;
 

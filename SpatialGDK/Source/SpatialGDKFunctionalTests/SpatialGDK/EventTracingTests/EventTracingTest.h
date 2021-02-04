@@ -32,9 +32,9 @@ protected:
 	const static FName PropertyChangedEventName;
 	const static FName ReceivePropertyUpdateEventName;
 	const static FName PushRPCEventName;
-	const static FName ProcessRPCEventName;
+	const static FName ReceiveRPCEventName;
+	const static FName ApplyRPCEventName;
 	const static FName ComponentUpdateEventName;
-	const static FName MergeComponentUpdateEventName;
 	const static FName UserProcessRPCEventName;
 	const static FName UserReceivePropertyEventName;
 	const static FName UserReceiveComponentPropertyEventName;
