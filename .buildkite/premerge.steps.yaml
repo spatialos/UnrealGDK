@@ -86,6 +86,9 @@ notify:
   - slack: 
       channels: 
         - "#unreal-gdk-builds"
-      message: "Support message @support-unreal @theJoshHuburn"
-    if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge"
+    if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge"  && build.branch == "master"
+      channels: 
+        - "#unreal-support"
+      message: "Pls fix"
+    if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge" && build.state == "failed"
     
