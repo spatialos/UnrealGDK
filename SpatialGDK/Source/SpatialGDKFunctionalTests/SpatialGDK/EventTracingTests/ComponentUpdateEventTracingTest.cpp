@@ -7,7 +7,7 @@ AComponentUpdateEventTracingTest::AComponentUpdateEventTracingTest()
 	Author = "Matthew Sandford";
 	Description = TEXT("Test checking the component update trace events have appropriate causes");
 
-	FilterEventNames = { ComponentUpdateEventName, ReceiveOpEventName};
+	FilterEventNames = { ComponentUpdateEventName, ReceiveOpEventName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 

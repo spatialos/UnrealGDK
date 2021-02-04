@@ -39,7 +39,8 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 			int64_t Flushresult = Io_Stream_Flush(Stream);
 			if (Flushresult == -1)
 			{
-				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %d (%s)"), Code, Io_Stream_GetLastError(Stream));
+				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %d (%s)"), Code,
+					   Io_Stream_GetLastError(Stream));
 			}
 		}
 	}
