@@ -368,7 +368,6 @@ private:
 	// We set this flag in order to try to add interest as soon as possible.
 	bool bNeedOwnerInterestUpdate;
 
-
 public:
 	void TryFetchInitialOnlyData(Worker_EntityId EntityId);
 };

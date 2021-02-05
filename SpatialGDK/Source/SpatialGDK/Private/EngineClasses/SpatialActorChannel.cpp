@@ -1484,4 +1484,3 @@ void USpatialActorChannel::TryFetchInitialOnlyData(Worker_EntityId InitialOnlyEn
 	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(this->GetActor()->GetNetDriver());
 	Driver->ActorSystem->TryFetchInitialOnlyData(InitialOnlyEntityId);
 }
-

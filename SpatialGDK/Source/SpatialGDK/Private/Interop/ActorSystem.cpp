@@ -9,13 +9,13 @@
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Misc/FileHelper.h"
 #include "Schema/Restricted.h"
 #include "SpatialConstants.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SubView.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Misc/FileHelper.h"
 
 DEFINE_LOG_CATEGORY(LogActorSystem);
 
@@ -1887,6 +1887,5 @@ void ActorSystem::TryFetchInitialOnlyData(Worker_EntityId EntityId)
 
 	NetDriver->Receiver->AddEntityQueryDelegate(RequestID, InitialOnlyQueryDelegate);
 }
-
 
 } // namespace SpatialGDK
