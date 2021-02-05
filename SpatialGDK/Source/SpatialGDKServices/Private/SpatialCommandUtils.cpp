@@ -517,7 +517,7 @@ bool SpatialCommandUtils::FetchRuntimeBinary(const FString& RuntimeVersion, cons
 	FString RuntimePath =
 		FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, SpatialGDKServicesConstants::RuntimePackageName, RuntimeVersion);
 	return FetchPackageBinaryWithRetries(RuntimeVersion, SpatialGDKServicesConstants::RuntimeExe,
-										SpatialGDKServicesConstants::RuntimePackageName, RuntimePath, bIsRunningInChina, true);
+										 SpatialGDKServicesConstants::RuntimePackageName, RuntimePath, bIsRunningInChina, true);
 }
 
 bool SpatialCommandUtils::FetchInspectorBinary(const FString& InspectorVersion, const bool bIsRunningInChina)
@@ -525,12 +525,12 @@ bool SpatialCommandUtils::FetchInspectorBinary(const FString& InspectorVersion, 
 	FString InspectorPath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, SpatialGDKServicesConstants::InspectorPackageName,
 											InspectorVersion, SpatialGDKServicesConstants::InspectorExe);
 	return FetchPackageBinaryWithRetries(InspectorVersion, SpatialGDKServicesConstants::InspectorExe,
-										SpatialGDKServicesConstants::InspectorPackageName, InspectorPath, bIsRunningInChina, false);
+										 SpatialGDKServicesConstants::InspectorPackageName, InspectorPath, bIsRunningInChina, false);
 }
 
-bool SpatialCommandUtils::FetchPackageBinaryWithRetries(const FString& PackageVersion, const FString& PackageExe, const FString& PackageName,
-													   const FString& SaveLocation, const bool bIsRunningInChina, const bool bUnzip,
-													   int32 Retries /*= 3*/)
+bool SpatialCommandUtils::FetchPackageBinaryWithRetries(const FString& PackageVersion, const FString& PackageExe,
+														const FString& PackageName, const FString& SaveLocation,
+														const bool bIsRunningInChina, const bool bUnzip, int32 Retries /*= 3*/)
 {
 	while (Retries > 0 && !FetchPackageBinary(PackageVersion, PackageExe, PackageName, SaveLocation, bIsRunningInChina, bUnzip))
 	{
