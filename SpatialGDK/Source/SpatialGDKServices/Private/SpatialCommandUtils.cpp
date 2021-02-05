@@ -552,7 +552,7 @@ bool SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, cons
 											 const FString& SaveLocation, const bool bIsRunningInChina, const bool bUnzip)
 {
 	FPlatformMisc::SetEnvironmentVar(TEXT("IMPROBABLE_INTERNAL_CLI_WRAPPER_GRPC_TIMEOUT "),
-									 *FString::Printf(TEXT("%lld"), ProcessTimeoutTime));
+									 *FString::Printf(TEXT("%d"), ProcessTimeoutTime));
 
 	FString PackagePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, *PackageName, PackageVersion);
 
