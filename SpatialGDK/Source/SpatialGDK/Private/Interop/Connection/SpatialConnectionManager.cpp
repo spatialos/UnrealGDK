@@ -10,12 +10,40 @@
 #include "Async/Async.h"
 #include "Improbable/SpatialEngineConstants.h"
 #include "Improbable/SpatialGDKSettingsBridge.h"
+#include "Interfaces/IPluginManager.h"
 #include "Misc/Paths.h"
 #include "Modules/ModuleManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialConnectionManager);
 
 using namespace SpatialGDK;
+
+class GDKVersionLoader
+{
+public:
+	static FString GetGDKVersion()
+	{
+		if (GDKVerson.IsEmpty())
+		{
+			IPluginManager& PluginManager = IPluginManager::Get();
+			TArray<TSharedRef<IPlugin>> Plugins = PluginManager.GetDiscoveredPlugins();
+			for (const TSharedRef<IPlugin>& Plugin : Plugins)
+			{
+				const IPlugin& PluginPtr = Plugin.Get();
+				if (PluginPtr.GetName() == TEXT("SpatialGDK"))
+				{
+					GDKVerson = PluginPtr.GetDescriptor().VersionName;
+					break;
+				}
+			}
+		}
+		return GDKVerson;
+	}
+private:
+	static FString GDKVerson;
+};
+
+FString GDKVersionLoader::GDKVerson;
 
 struct ConfigureConnection
 {
@@ -81,6 +109,11 @@ struct ConfigureConnection
 		Params.network.kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
 		Params.network.tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
 
+		// Unreal GDK version
+		UnrealGDKVersionPair.name = "gdk_version";
+		UnrealGDKVersionPair.version = TCHAR_TO_ANSI(*GDKVersionLoader::GetGDKVersion());
+		Params.versions = &UnrealGDKVersionPair;
+
 		// Override the security type to be secure only if the user has requested it and we are not using an editor build.
 		if ((!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection)
 			|| (bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureClientConnection))
@@ -113,6 +146,7 @@ struct ConfigureConnection
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_CompressionParameters EnableCompressionParams{};
 	Worker_LogsinkParameters Logsink{};
+	Worker_NameVersionPair UnrealGDKVersionPair{};
 
 #if WITH_EDITOR
 	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, MAX_int64 };
@@ -229,6 +263,7 @@ void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_Login
 
 void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_LoginTokensResponse* LoginTokens)
 {
+
 	// If LoginTokenResCallback is callable and returns true, return early.
 	if (LoginTokenResCallback && LoginTokenResCallback(LoginTokens))
 	{
