@@ -309,18 +309,9 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 	FString TmpSpatialGDKSettingsFilename = FPaths::GeneratedConfigDir().Append("\\TmpSpatialGDKSettings.ini");
 	SpatialGDKSettings->SaveConfig(0, *TmpSpatialGDKSettingsFilename);
 
-	// Save settings before before overriding so that they can be reverted later - Temporary test
-	int valBefore = SpatialGDKSettings->PositionUpdateThresholdMaxCentimeters;
-
 	FString TestSettingOverridesFilename =
 		FPaths::ProjectConfigDir().Append("TestOverrides").Append(FPackageName::GetShortName(MapName)).Append(TEXT(".ini"));
 	SpatialGDKSettings->LoadConfig(USpatialGDKSettings::StaticClass(), *TestSettingOverridesFilename);
-
-	// Temporary test
-	int valAfter = SpatialGDKSettings->PositionUpdateThresholdMaxCentimeters;
-
-	// Temporary test
-	//check(valBefore != valAfter);
 
 	if (const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
