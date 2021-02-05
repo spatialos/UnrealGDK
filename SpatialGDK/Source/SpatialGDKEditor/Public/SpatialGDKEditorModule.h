@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+#pragma optimize("", on)
 
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Modules/ModuleManager.h"
@@ -17,6 +18,7 @@ public:
 	FSpatialGDKEditorModule();
 
 	virtual void StartupModule() override;
+	virtual void RevertSettingsOverrideForTesting() const;
 	virtual void ShutdownModule() override;
 
 	virtual bool SupportsDynamicReloading() override { return true; }
@@ -52,7 +54,7 @@ private:
 
 	virtual bool ForEveryServerWorker(TFunction<void(const FName&, int32)> Function) const override;
 
-	virtual FPlayInEditorSettingsOverride GetPlayInEditorSettingsOverrideForTesting(UWorld* World) const;
+	virtual FPlayInEditorSettingsOverride GetPlayInEditorSettingsOverrideForTesting(UWorld* World, const FString& MapName) const;
 
 private:
 	void RegisterSettings();

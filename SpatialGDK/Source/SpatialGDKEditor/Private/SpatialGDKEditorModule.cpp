@@ -286,18 +286,48 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 	return false;
 }
 
-FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(UWorld* World) const
+void FSpatialGDKEditorModule::RevertSettingsOverrideForTesting() const
+{
+	// From file
+	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+	FString TmpSpatialGDKSettingsFilename = FPaths::GeneratedConfigDir().Append("\\TmpSpatialGDKSettings.ini");
+	SpatialGDKSettings->LoadConfig(0, *TmpSpatialGDKSettingsFilename);
+}
+
+FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(UWorld* World,
+																								 const FString& MapName) const
 {
 	// By default, clear that the runtime/test was loaded from a snapshot taken for a given world.
 	ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot();
 
-	FPlayInEditorSettingsOverride PIESettingsOverride = ISpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(World);
+	FPlayInEditorSettingsOverride PIESettingsOverride = ISpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(World, MapName);
+
+	//// Duplicate the original settings so that we can restore them later - get errors when including SpatialGDKSettings into headerso
+	/// for now have to save to file instead
+	// From file - Save settings before before overriding so that they can be reverted later
+	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+	FString TmpSpatialGDKSettingsFilename = FPaths::GeneratedConfigDir().Append("\\TmpSpatialGDKSettings.ini");
+	SpatialGDKSettings->SaveConfig(0, *TmpSpatialGDKSettingsFilename);
+
+	// Save settings before before overriding so that they can be reverted later - Temporary test
+	int valBefore = SpatialGDKSettings->PositionUpdateThresholdMaxCentimeters;
+
+	FString TestSettingOverridesFilename =
+		FPaths::ProjectConfigDir().Append("TestOverrides").Append(FPackageName::GetShortName(MapName)).Append(TEXT(".ini"));
+	SpatialGDKSettings->LoadConfig(USpatialGDKSettings::StaticClass(), *TestSettingOverridesFilename);
+
+	// Temporary test
+	int valAfter = SpatialGDKSettings->PositionUpdateThresholdMaxCentimeters;
+
+	// Temporary test
+	//check(valBefore != valAfter);
+
 	if (const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
+		TActorIterator<ASpatialFunctionalTest> SpatialTestIt(World);
 		EMapTestingMode TestingMode = SpatialWorldSettings->TestingSettings.TestingMode;
 		if (TestingMode != EMapTestingMode::UseCurrentSettings)
 		{
-			TActorIterator<ASpatialFunctionalTest> SpatialTestIt(World);
 			if (TestingMode == EMapTestingMode::Detect)
 			{
 				if (SpatialTestIt)
