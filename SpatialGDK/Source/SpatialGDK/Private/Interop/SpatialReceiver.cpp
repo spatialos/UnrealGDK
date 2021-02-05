@@ -248,16 +248,15 @@ void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandRespons
 {
 	if (Op.request_id < 0)
 	{
-		// Invalid request id that will not be in the map PendingPartitionAssignments
+		// Invalid request id that will not be in PendingPartitionAssignments
 		return;
 	}
 
 	const Worker_PartitionId* PartitionId = PendingPartitionAssignments.Find(Op.request_id);
 	if (PartitionId == nullptr)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error,
-			TEXT("Could not find request id %d in PendingPartitionAssignments"),
-			Op.request_id);
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("Could not find request id %d in PendingPartitionAssignments"),
+			   Op.request_id);
 		return;
 	}
 
