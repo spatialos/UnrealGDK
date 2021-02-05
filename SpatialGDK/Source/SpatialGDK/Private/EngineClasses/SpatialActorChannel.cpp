@@ -1227,7 +1227,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 	{
 		// With USLB, we want the client worker that results in the spawning of a PlayerController to claim the
 		// PlayerController entity as a partition entity so the client can become authoritative over necessary
-		// components (such as client RPC endpoints, heartbeat component, etc).
+		// components (such as client RPC endpoints, player controller component, etc).
 		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Cast<APlayerController>(Actor));
 		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
 		Sender->SendClaimPartitionRequest(ClientSystemEntityId, Op.entity_id);

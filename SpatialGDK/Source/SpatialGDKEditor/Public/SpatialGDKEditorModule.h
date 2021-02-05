@@ -5,6 +5,7 @@
 
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Modules/ModuleManager.h"
+#include "SpatialGDKLogParser.h"
 
 class FSpatialGDKEditor;
 class FSpatialGDKEditorCommandLineArgsManager;
@@ -65,6 +66,8 @@ private:
 	bool ShouldStartLocalServer() const;
 
 private:
+	FSpatialGDKLogParser LogParser;
+
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 	TUniquePtr<FSpatialGDKEditorCommandLineArgsManager> CommandLineArgsManager;
 

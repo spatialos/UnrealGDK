@@ -57,8 +57,9 @@ struct PendingUpdate
 
 struct PendingRPCPayload
 {
-	PendingRPCPayload(const RPCPayload& InPayload)
+	PendingRPCPayload(const RPCPayload& InPayload, const FSpatialGDKSpanId& SpanId)
 		: Payload(InPayload)
+		, SpanId(SpanId)
 	{
 	}
 
