@@ -1660,7 +1660,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	// If this object's class isn't present in the schema database, we will log an error and tell the
 	// game to quit. Unfortunately, there's one more tick after that during which RPCs could be called.
 	// Check that the class is supported so we don't crash in USpatialClassInfoManager::GetRPCInfo.
-	if (!ClassInfoManager->ValidateOrExit_IsSupportedClass(CallingObject->GetClass()->GetPathName()))
+	if (!ValidateOrExit_IsSupportedClass(CallingObject->GetClass()->GetPathName()))
 	{
 		return;
 	}
@@ -1692,7 +1692,7 @@ bool USpatialNetDriver::ValidateOrExit_IsSupportedClass(const FString& PathName)
 #if ENGINE_MINOR_VERSION >= 26
 	GEngine->NetworkRemapPath(GetSpatialOSNetConnection(), RemappedPathName, false /*bIsReading*/);
 #else
-	GEngine->NetworkRemapPath(NetDriver, RemappedPathName, false /*bIsReading*/);
+	GEngine->NetworkRemapPath(this, RemappedPathName, false /*bIsReading*/);
 #endif
 
 	return ClassInfoManager->ValidateOrExit_IsSupportedClass(RemappedPathName);
