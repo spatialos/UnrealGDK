@@ -4,13 +4,11 @@
 
 #include "CoreMinimal.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
-#include "Utils/SchemaUtils.h"
-
-#include <WorkerSDK/improbable/c_schema.h>
-#include <WorkerSDK/improbable/c_worker.h>
+#include <improbable/c_worker.h>
 
 #include "EntityPool.generated.h"
+
+class USpatialNetDriver;
 
 struct EntityRange
 {
@@ -25,7 +23,7 @@ class FTimerManager;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEntityPool, Log, All)
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FEntityPoolReadyEvent);
+DECLARE_DELEGATE(FEntityPoolReadyEvent);
 
 UCLASS()
 class SPATIALGDK_API UEntityPool : public UObject

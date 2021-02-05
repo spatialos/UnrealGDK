@@ -3,18 +3,18 @@
 #pragma once
 
 #include "Engine/PackageMapClient.h"
-#include "Schema/UnrealMetadata.h"
 #include "Schema/UnrealObjectRef.h"
 #include "Utils/EntityPool.h"
 
 #include "CoreMinimal.h"
 
-#include <WorkerSDK/improbable/c_worker.h>
+#include "SpatialCommonTypes.h"
 
 #include "SpatialPackageMapClient.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
 
+struct FClassInfo;
 class USpatialNetDriver;
 class UEntityPool;
 class FTimerManager;

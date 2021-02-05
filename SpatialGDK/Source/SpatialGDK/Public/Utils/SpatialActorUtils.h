@@ -3,10 +3,8 @@
 #pragma once
 
 #include "EngineClasses/SpatialNetConnection.h"
-#include "EngineClasses/SpatialNetDriver.h"
 
 #include "Components/SceneComponent.h"
-#include "Containers/UnrealString.h"
 #include "Engine/EngineTypes.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Controller.h"

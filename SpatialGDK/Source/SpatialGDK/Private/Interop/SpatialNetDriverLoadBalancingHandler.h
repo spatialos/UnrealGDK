@@ -2,8 +2,11 @@
 
 #pragma once
 
+#include "Utils/SpatialLoadBalancingHandler.h"
+
 #include "Engine/NetworkObjectList.h"
-#include "EngineClasses/SpatialNetDriver.h"
+
+class USpatialNetDriver;
 
 struct FSpatialNetDriverLoadBalancingContext
 {

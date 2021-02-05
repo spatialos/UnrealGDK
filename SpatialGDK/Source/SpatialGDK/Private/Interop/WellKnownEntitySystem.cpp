@@ -56,6 +56,17 @@ void WellKnownEntitySystem::Advance()
 	}
 }
 
+void WellKnownEntitySystem::SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const
+{
+	UE_LOG(LogSpatialSender, Log,
+		   TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId: %lld. "
+				"PartitionId: %lld"),
+		   *Connection->GetWorkerId(), SystemWorkerEntityId, PartitionId);
+	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionId);
+	const Worker_RequestId RequestId = Connection->SendCommandRequest(SystemWorkerEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
+	NetDriver->Receiver->PendingPartitionAssignments.Add(RequestId, PartitionId);
+}
+
 void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update)
 {
 	switch (ComponentId)
@@ -258,17 +269,6 @@ void WellKnownEntitySystem::RetryServerWorkerEntityCreation(Worker_EntityId Enti
 	});
 
 	NetDriver->Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
-}
-
-void WellKnownEntitySystem::SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const
-{
-	UE_LOG(LogSpatialSender, Log,
-		   TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId: %lld. "
-				"PartitionId: %lld"),
-		   *Connection->GetWorkerId(), SystemWorkerEntityId, PartitionId);
-	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionId);
-	const Worker_RequestId RequestId = Connection->SendCommandRequest(SystemWorkerEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
-	NetDriver->Receiver->PendingPartitionAssignments.Add(RequestId, PartitionId);
 }
 
 void WellKnownEntitySystem::UpdatePartitionEntityInterestAndPosition()

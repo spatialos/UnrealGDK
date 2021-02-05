@@ -406,8 +406,8 @@ void UGlobalStateManager::ClaimSnapshotPartition() const
 {
 	if (ensure(Sender != nullptr))
 	{
-		Sender->SendClaimPartitionRequest(NetDriver->Connection->GetWorkerSystemEntityId(),
-										  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+		NetDriver->WellKnownEntitySystem->SendClaimPartitionRequest(NetDriver->Connection->GetWorkerSystemEntityId(),
+																	SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 	}
 }
 

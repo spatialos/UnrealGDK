@@ -315,5 +315,5 @@ void SpatialVirtualWorkerTranslationManager::AssignPartitionToWorker(const Physi
 		   TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on worker %s"), Partition.VirtualWorker,
 		   Partition.PartitionEntityId, *WorkerName);
 
-	Translator->NetDriver->Sender->SendClaimPartitionRequest(SystemEntityId, Partition.PartitionEntityId);
+	Translator->NetDriver->WellKnownEntitySystem->SendClaimPartitionRequest(SystemEntityId, Partition.PartitionEntityId);
 }

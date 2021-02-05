@@ -20,6 +20,10 @@ public:
 						  UGlobalStateManager& InGlobalStateManager);
 	void Advance();
 
+	void CreateServerWorkerEntity();
+	void SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const;
+	void UpdatePartitionEntityInterestAndPosition();
+
 private:
 	void ProcessComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 	void ProcessComponentAdd(const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
@@ -28,10 +32,7 @@ private:
 
 	void InitializeVirtualWorkerTranslationManager();
 	void MaybeClaimSnapshotPartition();
-	void CreateServerWorkerEntity();
 	void RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounter);
-	void SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const;
-	void UpdatePartitionEntityInterestAndPosition();
 
 	const FSubView* SubView;
 

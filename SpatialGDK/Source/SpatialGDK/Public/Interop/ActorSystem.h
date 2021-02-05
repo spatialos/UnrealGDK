@@ -52,10 +52,23 @@ public:
 
 	// Tombstones
 	void CreateTombstoneEntity(AActor* Actor);
+	void RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor);
 
 	// Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
 							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
+	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void ProcessPositionUpdates();
+	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
+	void UpdateInterestComponent(AActor* Actor);
+	void SendInterestBucketComponentChange(Worker_EntityId EntityId, Worker_ComponentId OldComponent,
+										   Worker_ComponentId NewComponent) const;
+	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo,
+									  uint32& OutBytesWritten);
+	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);
+
+	// Entity Creation
+	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 
 private:
 	// Helper struct to manage FSpatialObjectRepState update cycle.
@@ -127,7 +140,6 @@ private:
 
 	// Helper
 	bool EntityHasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
-	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
@@ -135,20 +147,10 @@ private:
 	static TArray<FWorkerComponentData> CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents);
 	static void DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents);
 	void AddTombstoneToEntity(Worker_EntityId EntityId) const;
-	void RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor);
 
 	// Updates
-	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
-	void ProcessPositionUpdates();
-	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo,
-									  uint32& OutBytesWritten);
 	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas) const;
-	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);
 	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds) const;
-	void SendInterestBucketComponentChange(Worker_EntityId EntityId, Worker_ComponentId OldComponent,
-										   Worker_ComponentId NewComponent) const;
-	void UpdateInterestComponent(AActor* Actor);
 
 	const FSubView* SubView;
 	const FSubView* TombstoneSubView;

@@ -13,10 +13,6 @@
 #include "Utils/RepDataUtils.h"
 
 #include "CoreMinimal.h"
-#include "TimerManager.h"
-
-#include <WorkerSDK/improbable/c_schema.h>
-#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialSender.generated.h"
 
@@ -49,66 +45,10 @@ class SPATIALGDK_API USpatialSender : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService,
 			  SpatialGDK::SpatialEventTracer* InEventTracer);
-
-	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
-
-	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const;
-	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
-	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload,
-							 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef, const FSpatialGDKSpanId& SpanId);
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId);
 	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
 								  const FSpatialGDKSpanId& CauseSpanId);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const FSpatialGDKSpanId& CauseSpanId);
-	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info, uint32& OutBytesWritten);
-	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas);
-	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);
-	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds);
-	void SendInterestBucketComponentChange(const Worker_EntityId EntityId, const Worker_ComponentId OldComponent,
-										   const Worker_ComponentId NewComponent);
-	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-
-	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
-	void RetireEntity(const Worker_EntityId EntityId, bool bIsNetStartupActor);
-
-	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
-	void ProcessPositionUpdates();
-
-	void UpdateInterestComponent(AActor* Actor);
-
-	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
-
-	void FlushRPCService();
-
-	SpatialGDK::RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
-													  ERPCType Type, void* Params);
-
-	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
-	UFUNCTION()
-	void CreateServerWorkerEntity();
-	void RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounter);
-
-	void UpdatePartitionEntityInterestAndPosition();
-
-	void ClearPendingRPCs(const Worker_EntityId EntityId);
-
-	bool ValidateOrExit_IsSupportedClass(const FString& PathName);
-
-	void SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const;
-
-private:
-	// Actor Lifecycle
-	Worker_RequestId CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten);
-
-	void PeriodicallyProcessOutgoingRPCs();
-
-	// RPC Construction
-	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters) const;
-
-	// RPC Tracking
-#if !UE_BUILD_SHIPPING
-	void TrackRPC(AActor* Actor, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const ERPCType RPCType);
-#endif
 
 private:
 	UPROPERTY()

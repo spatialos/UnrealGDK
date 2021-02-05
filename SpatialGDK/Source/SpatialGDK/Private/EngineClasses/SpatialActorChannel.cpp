@@ -256,7 +256,7 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 			}
 			else
 			{
-				Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
+				NetDriver->ActorSystem->RetireEntity(EntityId, Actor->IsNetStartupActor());
 			}
 		}
 		else if (bCreatedEntity) // We have not gained authority yet
@@ -303,7 +303,6 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 		if (CloseReason == EChannelCloseReason::Destroyed || CloseReason == EChannelCloseReason::LevelUnloaded)
 		{
 			NetDriver->GetRPCService()->ClearPendingRPCs(EntityId);
-			Sender->ClearPendingRPCs(EntityId);
 		}
 		NetDriver->RemoveActorChannel(EntityId, *this);
 	}
@@ -573,7 +572,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		if (SpatialGDKSettings->bBatchSpatialPositionUpdates)
 		{
-			Sender->RegisterChannelForPositionUpdate(this);
+			NetDriver->ActorSystem->RegisterChannelForPositionUpdate(this);
 		}
 		else
 		{
@@ -648,7 +647,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	if (!bCreatingNewEntity && NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
 	{
-		Sender->UpdateInterestComponent(Actor);
+		NetDriver->ActorSystem->UpdateInterestComponent(Actor);
 		SetNeedOwnerInterestUpdate(false);
 	}
 
@@ -661,7 +660,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			// so we know what subobjects are relevant for replication when creating the entity.
 			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 
-			Sender->SendCreateEntityRequest(this, ReplicationBytesWritten);
+			NetDriver->ActorSystem->SendCreateEntityRequest(this, ReplicationBytesWritten);
 
 			bCreatedEntity = true;
 
@@ -755,8 +754,8 @@ int64 USpatialActorChannel::ReplicateActor()
 				{
 					OnSubobjectDeleted(ObjectRef, RepComp.Key(), RepComp.Value()->GetWeakObjectPtr());
 
-					Sender->SendRemoveComponentForClassInfo(EntityId,
-															NetDriver->ClassInfoManager->GetClassInfoByComponentId(ObjectRef.Offset));
+					NetDriver->ActorSystem->SendRemoveComponentForClassInfo(
+						EntityId, NetDriver->ClassInfoManager->GetClassInfoByComponentId(ObjectRef.Offset));
 				}
 
 				RepComp.Value()->CleanUp();
@@ -812,7 +811,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 
 	check(Info != nullptr);
 
-	Sender->SendAddComponentForSubobject(this, Object, *Info, ReplicationBytesWritten);
+	NetDriver->ActorSystem->SendAddComponentForSubobject(this, Object, *Info, ReplicationBytesWritten);
 }
 
 bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicationFlags& RepFlags)
@@ -1195,7 +1194,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 			// TODO: UNR-664 - Track these bytes written to use in saturation.
 			uint32 BytesWritten = 0;
-			Sender->SendCreateEntityRequest(this, BytesWritten);
+			NetDriver->ActorSystem->SendCreateEntityRequest(this, BytesWritten);
 		}
 		break;
 	case WORKER_STATUS_CODE_APPLICATION_ERROR:
@@ -1230,7 +1229,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		// components (such as client RPC endpoints, player controller component, etc).
 		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Cast<APlayerController>(Actor));
 		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
-		Sender->SendClaimPartitionRequest(ClientSystemEntityId, Op.entity_id);
+		NetDriver->WellKnownEntitySystem->SendClaimPartitionRequest(ClientSystemEntityId, Op.entity_id);
 	}
 }
 
@@ -1373,14 +1372,14 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	}
 
 	// Owner changed, update the actor's interest over it.
-	Sender->UpdateInterestComponent(Actor);
+	NetDriver->ActorSystem->UpdateInterestComponent(Actor);
 	SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));
 
 	// Changing owner can affect which interest bucket the Actor should be in so we need to update it.
 	const Worker_ComponentId NewInterestBucketComponentId = NetDriver->ClassInfoManager->ComputeActorInterestComponentId(Actor);
 	if (SavedInterestBucketComponentID != NewInterestBucketComponentId)
 	{
-		Sender->SendInterestBucketComponentChange(EntityId, SavedInterestBucketComponentID, NewInterestBucketComponentId);
+		NetDriver->ActorSystem->SendInterestBucketComponentChange(EntityId, SavedInterestBucketComponentID, NewInterestBucketComponentId);
 		SavedInterestBucketComponentID = NewInterestBucketComponentId;
 		bUpdatedThisActor = true;
 	}

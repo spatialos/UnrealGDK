@@ -414,7 +414,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						   TEXT("Received authority over actor %s, with entity id %lld, which has no channel. This means it attempted to "
 								"delete it earlier, when it had no authority. Retrying to delete now."),
 						   *Actor->GetName(), EntityId);
-					NetDriver->Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
+					NetDriver->ActorSystem->RetireEntity(EntityId, Actor->IsNetStartupActor());
 				}
 			}
 			else if (Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
@@ -670,12 +670,12 @@ void ActorSystem::HandleDeferredEntityDeletion(const DeferredRetire& Retire) con
 {
 	if (Retire.bNeedsTearOff)
 	{
-		NetDriver->Sender->SendActorTornOffUpdate(Retire.EntityId, Retire.ActorClassId);
+		NetDriver->ActorSystem->SendActorTornOffUpdate(Retire.EntityId, Retire.ActorClassId);
 		NetDriver->DelayedRetireEntity(Retire.EntityId, 1.0f, Retire.bIsNetStartupActor);
 	}
 	else
 	{
-		NetDriver->Sender->RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
+		NetDriver->ActorSystem->RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
 	}
 }
 

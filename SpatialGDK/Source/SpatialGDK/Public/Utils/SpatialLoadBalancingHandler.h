@@ -3,11 +3,30 @@
 #pragma once
 
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Utils/SpatialActorUtils.h"
+#include "Schema/AuthorityIntent.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalancingHandler, Log, All);
 
+namespace SpatialGDK
+{
+class SpatialEventTracer;
+class FSubView;
+} // namespace SpatialGDK
+
 class USpatialNetDriver;
+
+enum class EActorMigrationResult : uint8
+{
+	Success,
+	NotAuthoritative,
+	NotReady,
+	PendingKill,
+	NotInitialized,
+	Streaming,
+	NetDormant,
+	NoSpatialClassFlags,
+	DormantOnConnection
+};
 
 class FSpatialLoadBalancingHandler
 {

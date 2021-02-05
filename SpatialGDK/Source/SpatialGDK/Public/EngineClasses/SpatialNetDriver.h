@@ -14,23 +14,21 @@
 #include "Interop/SpatialSnapshotManager.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialBasicAwaiter.h"
+#include "Utils/SpatialLoadBalancingHandler.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
 #include "CoreMinimal.h"
-#include "GameFramework/OnlineReplStructs.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/ClientConnectionManager.h"
-#include "Interop/RPCExecutorInterface.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
 
 #include "SpatialNetDriver.generated.h"
 
-class FSpatialLoadBalancingHandler;
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
 class UAbstractLBStrategy;
@@ -56,19 +54,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialConsiderList, STATGROUP_SpatialNet, );
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Relevant Actors"), STAT_SpatialActorsRelevant, STATGROUP_SpatialNet, );
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Changed Relevant Actors"), STAT_SpatialActorsChanged, STATGROUP_SpatialNet, );
-
-enum class EActorMigrationResult : uint8
-{
-	Success,
-	NotAuthoritative,
-	NotReady,
-	PendingKill,
-	NotInitialized,
-	Streaming,
-	NetDormant,
-	NoSpatialClassFlags,
-	DormantOnConnection
-};
 
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver

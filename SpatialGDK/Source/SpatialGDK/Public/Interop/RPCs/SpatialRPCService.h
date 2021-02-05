@@ -35,6 +35,8 @@ public:
 	void AdvanceView();
 	void ProcessChanges(const float NetDriverTime);
 
+	void Flush();
+
 	void ProcessIncomingRPCs();
 	void ProcessOutgoingRPCs();
 
@@ -56,23 +58,23 @@ public:
 
 	void ClearPendingRPCs(Worker_EntityId EntityId);
 
+	RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
+										  ERPCType Type, void* Params) const;
+	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload&& InPayload);
+
 private:
 	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, PendingRPCPayload Payload, bool bCreatedEntity);
 
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
 	// Note: It's like applying an RPC, but more secretive
 	FRPCErrorInfo ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams);
-	void Flush();
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
 	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, USpatialActorChannel* Channel,
 							 const FUnrealObjectRef& TargetObjectRef, const FSpatialGDKSpanId& SpanId);
 #if !UE_BUILD_SHIPPING
 	void TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, ERPCType RPCType);
 #endif
-	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload&& InPayload);
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters) const;
-	RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
-										  ERPCType Type, void* Params) const;
 
 	USpatialNetDriver* NetDriver;
 	USpatialLatencyTracer* SpatialLatencyTracer;

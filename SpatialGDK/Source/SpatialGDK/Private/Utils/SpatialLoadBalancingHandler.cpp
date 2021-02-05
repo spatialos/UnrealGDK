@@ -13,6 +13,7 @@
 #include "Schema/MigrationDiagnostic.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialConstants.h"
+#include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalancingHandler);
 

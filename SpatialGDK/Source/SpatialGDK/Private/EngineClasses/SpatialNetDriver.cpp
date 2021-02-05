@@ -22,8 +22,6 @@
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "Interop/ActorSystem.h"
-#include "Interop/ClientConnectionManager.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
@@ -42,6 +40,7 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialView/EntityComponentTypes.h"
+#include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 #include "SpatialView/SubView.h"
 #include "Templates/SharedPointer.h"
@@ -52,7 +51,6 @@
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
-#include "Utils/SpatialLoadBalancingHandler.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
@@ -467,22 +465,18 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PackageMap->Init(this, &TimerManager);
 	if (IsServer())
 	{
-		PackageMap->GetEntityPoolReadyDelegate().AddDynamic(Sender, &USpatialSender::CreateServerWorkerEntity);
+		SpatialGDK::FSubView& WellKnownSubView =
+			Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
+													   SpatialGDK::FSubView::NoDispatcherCallbacks);
+		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, this, Connection,
+																			  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
+																			  *VirtualWorkerTranslator, *GlobalStateManager);
+		PackageMap->GetEntityPoolReadyDelegate().BindRaw(WellKnownEntitySystem.Get(),
+														 &SpatialGDK::WellKnownEntitySystem::CreateServerWorkerEntity);
 	}
 
 	// The interest factory depends on the package map, so is created last.
 	InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
-
-	if (!IsServer())
-	{
-		return;
-	}
-
-	SpatialGDK::FSubView& WellKnownSubView = Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
-	WellKnownEntitySystem =
-		MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, this, Connection, LoadBalanceStrategy->GetMinimumRequiredWorkers(),
-													  *VirtualWorkerTranslator, *GlobalStateManager);
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
@@ -1022,7 +1016,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 						   TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId,
 						   *ThisActor->GetName());
 				}
-				Sender->RetireEntity(EntityId, ThisActor->IsNetStartupActor());
+				ActorSystem->RetireEntity(EntityId, ThisActor->IsNetStartupActor());
 			}
 		}
 
@@ -1666,7 +1660,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	// If this object's class isn't present in the schema database, we will log an error and tell the
 	// game to quit. Unfortunately, there's one more tick after that during which RPCs could be called.
 	// Check that the class is supported so we don't crash in USpatialClassInfoManager::GetRPCInfo.
-	if (!Sender->ValidateOrExit_IsSupportedClass(CallingObject->GetClass()->GetPathName()))
+	if (!ClassInfoManager->ValidateOrExit_IsSupportedClass(CallingObject->GetClass()->GetPathName()))
 	{
 		return;
 	}
@@ -1680,14 +1674,14 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	}
 
 	const FRPCInfo& Info = ClassInfoManager->GetRPCInfo(CallingObject, Function);
-	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, Info.Type, Parameters);
+	RPCPayload Payload = RPCService->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, Info.Type, Parameters);
 	if (Info.Type == ERPCType::CrossServer)
 	{
 		CrossServerRPCSender->SendCommand(MoveTemp(CallingObjectRef), CallingObject, Function, MoveTemp(Payload), Info, {});
 	}
 	else
 	{
-		Sender->ProcessOrQueueOutgoingRPC(CallingObjectRef, MoveTemp(Payload));
+		RPCService->ProcessOrQueueOutgoingRPC(CallingObjectRef, MoveTemp(Payload));
 	}
 }
 
@@ -2105,14 +2099,14 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 		if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
 		{
-			Sender->ProcessPositionUpdates();
+			ActorSystem->ProcessPositionUpdates();
 		}
 #endif // WITH_SERVER_CODE
 	}
 
-	if (Sender != nullptr)
+	if (RPCService != nullptr)
 	{
-		Sender->FlushRPCService();
+		RPCService->Flush();
 	}
 
 	if (IsServer())
@@ -2220,12 +2214,20 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 
 bool USpatialNetDriver::HasServerAuthority(Worker_EntityId EntityId) const
 {
-	return Connection->GetView()[EntityId].Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
+	if (const SpatialGDK::EntityViewElement* Element = Connection->GetView().Find(EntityId))
+	{
+		return Element->Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
+	}
+	return false;
 }
 
 bool USpatialNetDriver::HasClientAuthority(Worker_EntityId EntityId) const
 {
-	return Connection->GetView()[EntityId].Authority.Contains(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+	if (const SpatialGDK::EntityViewElement* Element = Connection->GetView().Find(EntityId))
+	{
+		return Element->Authority.Contains(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+	}
+	return false;
 }
 
 void USpatialNetDriver::ProcessPendingDormancy()
@@ -2682,7 +2684,7 @@ void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Dela
 	TimerManager.SetTimer(
 		RetryTimer,
 		[this, EntityId, bIsNetStartupActor]() {
-			Sender->RetireEntity(EntityId, bIsNetStartupActor);
+			ActorSystem->RetireEntity(EntityId, bIsNetStartupActor);
 		},
 		Delay, false);
 }

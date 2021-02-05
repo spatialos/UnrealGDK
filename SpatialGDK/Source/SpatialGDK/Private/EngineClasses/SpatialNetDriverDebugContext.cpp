@@ -58,7 +58,7 @@ void USpatialNetDriverDebugContext::Init(const SpatialGDK::FSubView& InSubView, 
 	DebugStrategy->InitDebugStrategy(this, NetDriver->LoadBalanceStrategy);
 	NetDriver->LoadBalanceStrategy = DebugStrategy;
 
-	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+	NetDriver->WellKnownEntitySystem->UpdatePartitionEntityInterestAndPosition();
 }
 
 void USpatialNetDriverDebugContext::Cleanup()
@@ -66,7 +66,7 @@ void USpatialNetDriverDebugContext::Cleanup()
 	Reset();
 	NetDriver->LoadBalanceStrategy = Cast<UDebugLBStrategy>(DebugStrategy)->GetWrappedStrategy();
 	NetDriver->DebugCtx = nullptr;
-	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+	NetDriver->WellKnownEntitySystem->UpdatePartitionEntityInterestAndPosition();
 }
 
 void USpatialNetDriverDebugContext::AdvanceView()
@@ -143,7 +143,7 @@ void USpatialNetDriverDebugContext::Reset()
 				   return Data.GetComponentId() == SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 			   }))
 		{
-			NetDriver->Sender->SendRemoveComponents(Entry.Key, { SpatialConstants::GDK_DEBUG_COMPONENT_ID });
+			NetDriver->Connection->SendRemoveComponent(Entry.Key, SpatialConstants::GDK_DEBUG_COMPONENT_ID);
 		}
 	}
 
@@ -152,7 +152,7 @@ void USpatialNetDriverDebugContext::Reset()
 	CachedInterestSet.Empty();
 	ActorDebugInfo.Empty();
 
-	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+	NetDriver->WellKnownEntitySystem->UpdatePartitionEntityInterestAndPosition();
 }
 
 USpatialNetDriverDebugContext::DebugComponentAuthData& USpatialNetDriverDebugContext::GetAuthDebugComponent(AActor* Actor)
@@ -452,7 +452,7 @@ void USpatialNetDriverDebugContext::TickServer()
 
 	if (NeedEntityInterestUpdate())
 	{
-		NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
+		NetDriver->WellKnownEntitySystem->UpdatePartitionEntityInterestAndPosition();
 	}
 }
 

@@ -2,11 +2,8 @@
 
 #pragma once
 
-#include "Schema/Interest.h"
-
 #include "CoreMinimal.h"
 #include "IpConnection.h"
-#include "Misc/Optional.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 #include <WorkerSDK/improbable/c_worker.h>

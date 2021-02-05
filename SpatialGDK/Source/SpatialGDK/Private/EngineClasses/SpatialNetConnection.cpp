@@ -16,6 +16,8 @@
 
 #include <WorkerSDK/improbable/c_schema.h>
 
+#include "Interop/ActorSystem.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialNetConnection);
 
 DECLARE_CYCLE_STAT(TEXT("UpdateLevelVisibility"), STAT_SpatialNetConnectionUpdateLevelVisibility, STATGROUP_SpatialNet);
@@ -103,8 +105,7 @@ void USpatialNetConnection::UpdateLevelVisibility(const struct FUpdateLevelVisib
 	// We want to update our interest as fast as possible
 	// So we send an Interest update immediately.
 
-	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
-	Sender->UpdateInterestComponent(Cast<AActor>(PlayerController));
+	Cast<USpatialNetDriver>(Driver)->ActorSystem->UpdateInterestComponent(Cast<AActor>(PlayerController));
 }
 
 void USpatialNetConnection::FlushDormancy(AActor* Actor)
