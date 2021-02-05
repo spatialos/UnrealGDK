@@ -39,6 +39,7 @@ public:
 		}
 		return GDKVerson;
 	}
+
 private:
 	static FString GDKVerson;
 };
@@ -263,7 +264,6 @@ void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_Login
 
 void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_LoginTokensResponse* LoginTokens)
 {
-
 	// If LoginTokenResCallback is callable and returns true, return early.
 	if (LoginTokenResCallback && LoginTokenResCallback(LoginTokens))
 	{
