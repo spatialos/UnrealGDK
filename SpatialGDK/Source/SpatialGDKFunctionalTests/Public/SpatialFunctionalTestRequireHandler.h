@@ -21,7 +21,9 @@ struct FSpatialFunctionalTestRequire
  * print at the end of a step / test.
  * Note that if there's fails in the Requires, ASpatialFunctionalTest::FinishStep() will not proceed.
  */
-class SpatialFunctionalTestRequireHandler
+class SPATIALGDKFUNCTIONALTESTS_API
+	SpatialFunctionalTestRequireHandler // Apparently, this requires the SPATIALGDKFUNCTIONALTESTS_API macro in Mac builds, even though the
+										// functions here are not directly exposed
 {
 public:
 	SpatialFunctionalTestRequireHandler();
