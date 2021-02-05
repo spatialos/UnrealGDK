@@ -15,7 +15,7 @@ void USpatialReplicationGraph::InitForNetDriver(UNetDriver* InNetDriver)
 	{
 		if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(InNetDriver))
 		{
-			LoadBalancingHandler = MakeUnique<FSpatialLoadBalancingHandler>(SpatialNetDriver);
+			LoadBalancingHandler = SpatialNetDriver->LoadBalancingHandler.Get();
 		}
 	}
 }
@@ -59,7 +59,7 @@ void USpatialReplicationGraph::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 
 void USpatialReplicationGraph::PreReplicateActors(UNetReplicationGraphConnection* ConnectionManager)
 {
-	if (LoadBalancingHandler.IsValid())
+	if (LoadBalancingHandler != nullptr)
 	{
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
 		FSpatialReplicationGraphLoadBalancingContext LoadBalancingCtx(SpatialNetDriver, this, ConnectionManager->ActorInfoMap,
@@ -82,7 +82,7 @@ void USpatialReplicationGraph::PreReplicateActors(UNetReplicationGraphConnection
 
 void USpatialReplicationGraph::PostReplicateActors(UNetReplicationGraphConnection* ConnectionManager)
 {
-	if (LoadBalancingHandler.IsValid())
+	if (LoadBalancingHandler != nullptr)
 	{
 		LoadBalancingHandler->ProcessMigrations();
 	}

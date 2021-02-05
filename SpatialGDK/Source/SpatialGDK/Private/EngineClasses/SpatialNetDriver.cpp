@@ -444,6 +444,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		MakeUnique<SpatialGDK::CrossServerRPCHandler>(Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this));
 	ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorNonAuthSubview, TombstoneActorSubview, this, Connection->GetEventTracer());
 	ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
+	if (IsServer())
+	{
+		LoadBalancingHandler = MakeUnique<FSpatialLoadBalancingHandler>(this, ActorAuthSubview, Connection->GetEventTracer());
+	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 	Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
@@ -476,9 +480,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	SpatialGDK::FSubView& WellKnownSubView = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
-	WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Receiver, Connection,
-																		  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
-																		  *VirtualWorkerTranslator, *GlobalStateManager);
+	WellKnownEntitySystem =
+		MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, this, Connection, LoadBalanceStrategy->GetMinimumRequiredWorkers(),
+													  *VirtualWorkerTranslator, *GlobalStateManager);
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
@@ -1007,7 +1011,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 					   TEXT("Creating a tombstone entity for initially dormant startup actor. "
 							"Actor: %s."),
 					   *ThisActor->GetName());
-				Sender->CreateTombstoneEntity(ThisActor);
+				ActorSystem->CreateTombstoneEntity(ThisActor);
 			}
 			else if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
 			{
@@ -1768,13 +1772,12 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	// Build the consider list (actors that are ready to replicate)
 	ServerReplicateActors_BuildConsiderList(ConsiderList, ServerTickTime);
 
-	FSpatialLoadBalancingHandler MigrationHandler(this);
 	FSpatialNetDriverLoadBalancingContext LoadBalancingContext(this, ConsiderList);
 
 	bool bHandoverEnabled = USpatialStatics::IsHandoverEnabled(this);
-	if (bHandoverEnabled)
+	if (bHandoverEnabled && LoadBalancingHandler.IsValid())
 	{
-		MigrationHandler.EvaluateActorsToMigrate(LoadBalancingContext);
+		LoadBalancingHandler->EvaluateActorsToMigrate(LoadBalancingContext);
 		LoadBalancingContext.UpdateWithAdditionalActors();
 	}
 
@@ -1821,17 +1824,17 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	FActorPriority** PriorityActors = NULL;
 
 	// Get a sorted list of actors for this connection
-	const int32 FinalSortedCount = ServerReplicateActors_PrioritizeActors(SpatialConnection, ConnectionViewers, MigrationHandler,
+	const int32 FinalSortedCount = ServerReplicateActors_PrioritizeActors(SpatialConnection, ConnectionViewers, *LoadBalancingHandler,
 																		  ConsiderList, bCPUSaturated, PriorityList, PriorityActors);
 
 	// Process the sorted list of actors for this connection
-	ServerReplicateActors_ProcessPrioritizedActors(SpatialConnection, ConnectionViewers, MigrationHandler, PriorityActors, FinalSortedCount,
-												   Updated);
+	ServerReplicateActors_ProcessPrioritizedActors(SpatialConnection, ConnectionViewers, *LoadBalancingHandler, PriorityActors,
+												   FinalSortedCount, Updated);
 
 	if (bHandoverEnabled)
 	{
 		// Once an up to date version of the actors have been sent, do the actual migration.
-		MigrationHandler.ProcessMigrations();
+		LoadBalancingHandler->ProcessMigrations();
 	}
 
 	// SpatialGDK - Here Unreal would mark relevant actors that weren't processed this frame as bPendingNetUpdate. This is not used in the
@@ -1897,6 +1900,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		if (DebugCtx != nullptr)
 		{
 			DebugCtx->AdvanceView();
+		}
+
+		if (LoadBalancingHandler.IsValid())
+		{
+			LoadBalancingHandler->AdvanceView();
 		}
 
 		if (ClientConnectionManager.IsValid())
@@ -2208,6 +2216,16 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 	GameMode->GameWelcomePlayer(SpatialConnection, RedirectURL);
 
 	return true;
+}
+
+bool USpatialNetDriver::HasServerAuthority(Worker_EntityId EntityId) const
+{
+	return Connection->GetView()[EntityId].Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
+}
+
+bool USpatialNetDriver::HasClientAuthority(Worker_EntityId EntityId) const
+{
+	return Connection->GetView()[EntityId].Authority.Contains(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
 }
 
 void USpatialNetDriver::ProcessPendingDormancy()

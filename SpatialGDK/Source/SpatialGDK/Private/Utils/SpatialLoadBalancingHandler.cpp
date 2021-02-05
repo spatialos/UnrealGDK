@@ -12,14 +12,41 @@
 #include "Schema/AuthorityIntent.h"
 #include "Schema/MigrationDiagnostic.h"
 #include "Schema/SpatialDebugging.h"
+#include "SpatialConstants.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalancingHandler);
 
 using namespace SpatialGDK;
 
-FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver)
+FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver, const FSubView& InSubView,
+														   SpatialEventTracer* InEventTracer)
 	: NetDriver(InNetDriver)
+	, SubView(&InSubView)
+	, EventTracer(InEventTracer)
 {
+}
+
+void FSpatialLoadBalancingHandler::AdvanceView()
+{
+	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
+	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
+	{
+		switch (Delta.Type)
+		{
+		case EntityDelta::ADD:
+		case EntityDelta::TEMPORARILY_REMOVED:
+			AuthIntentStore.Add(
+				Delta.EntityId,
+				AuthorityIntent(SubView->GetView()[Delta.EntityId]
+									.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID })
+									->GetUnderlying()));
+			break;
+		case EntityDelta::REMOVE:
+			AuthIntentStore.Remove(Delta.EntityId);
+		default:
+			break;
+		}
+	}
 }
 
 FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner,
@@ -154,12 +181,12 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 	ActorsToMigrate.Empty();
 }
 
-void FSpatialLoadBalancingHandler::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const
+void FSpatialLoadBalancingHandler::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId)
 {
 	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(&Actor);
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
-	AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
+	AuthorityIntent* AuthorityIntentComponent = AuthIntentStore.Find(EntityId);
 	check(AuthorityIntentComponent != nullptr);
 	checkf(AuthorityIntentComponent->VirtualWorkerId != NewAuthoritativeVirtualWorkerId,
 		   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
@@ -173,12 +200,12 @@ void FSpatialLoadBalancingHandler::SendAuthorityIntentUpdate(const AActor& Actor
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 
 	FSpatialGDKSpanId SpanId;
-	if (NetDriver->!= nullptr)
+	if (EventTracer != nullptr)
 	{
 		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
 	}
 
-	Connection->SendComponentUpdate(EntityId, &Update, SpanId);
+	NetDriver->Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 
 	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
 	// This should always happen with USLB.

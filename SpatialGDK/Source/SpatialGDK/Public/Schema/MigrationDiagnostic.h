@@ -65,9 +65,8 @@ struct MigrationDiagnostic : Component
 		AActor* NetOwner;
 		VirtualWorkerId NewAuthWorkerId;
 
-		FSpatialLoadBalancingHandler MigrationHandler(NetDriver);
 		FSpatialLoadBalancingHandler::EvaluateActorResult Result =
-			MigrationHandler.EvaluateSingleActor(BlockingActor, NetOwner, NewAuthWorkerId);
+			NetDriver->LoadBalancingHandler->EvaluateSingleActor(BlockingActor, NetOwner, NewAuthWorkerId);
 		Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
 
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_EVALUATION_ID,

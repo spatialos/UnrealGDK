@@ -30,9 +30,9 @@
 
 #include "SpatialNetDriver.generated.h"
 
+class FSpatialLoadBalancingHandler;
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
-class FSpatialLoadBalancingHandler;
 class UAbstractLBStrategy;
 class UEntityPool;
 class UGlobalStateManager;
@@ -150,6 +150,9 @@ public:
 	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 	void CleanUpServerConnectionForPC(APlayerController* PC);
 
+	bool HasServerAuthority(Worker_EntityId EntityId) const;
+	bool HasClientAuthority(Worker_EntityId EntityId) const;
+
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
 	UPROPERTY()
@@ -199,6 +202,8 @@ public:
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
+
+	TUniquePtr<FSpatialLoadBalancingHandler> LoadBalancingHandler;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 

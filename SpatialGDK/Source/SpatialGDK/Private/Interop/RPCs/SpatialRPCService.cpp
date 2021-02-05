@@ -27,16 +27,11 @@ SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const F
 					   RPCStore)
 	, MulticastRPCs(ExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ProcessOrQueueIncomingRPC), InActorNonAuthSubView, RPCStore)
 	, AuthSubView(&InActorAuthSubView)
-	, LastProcessingTime(-GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCRetryTime)
+	, LastIncomingProcessingTime(-GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCRetryTime)
+	, LastOutgoingProcessingTime(-GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime)
 {
 	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateRaw(this, &SpatialRPCService::ApplyRPC));
 	OutgoingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateRaw(this, &SpatialRPCService::SendRPC));
-
-	// Attempt to send RPCs that might have been queued while waiting for authority over entities this worker created.
-	if (GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime > 0.0f)
-	{
-		PeriodicallyProcessOutgoingRPCs();
-	}
 }
 
 void SpatialRPCService::AdvanceView()
@@ -50,16 +45,27 @@ void SpatialRPCService::ProcessChanges(const float NetDriverTime)
 	ClientServerRPCs.ProcessChanges();
 	MulticastRPCs.ProcessChanges();
 
-	if (NetDriverTime - LastProcessingTime > GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCRetryTime)
+	if (NetDriverTime - LastIncomingProcessingTime > GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCRetryTime)
 	{
-		LastProcessingTime = NetDriverTime;
+		LastIncomingProcessingTime = NetDriverTime;
 		ProcessIncomingRPCs();
+	}
+
+	if (NetDriverTime - LastOutgoingProcessingTime > GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime)
+	{
+		LastOutgoingProcessingTime = NetDriverTime;
+		ProcessOutgoingRPCs();
 	}
 }
 
 void SpatialRPCService::ProcessIncomingRPCs()
 {
 	IncomingRPCs.ProcessRPCs();
+}
+
+void SpatialRPCService::ProcessOutgoingRPCs()
+{
+	OutgoingRPCs.ProcessRPCs();
 }
 
 EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const ERPCType Type, RPCPayload Payload,
@@ -304,21 +310,6 @@ void SpatialRPCService::ClearPendingRPCs(const Worker_EntityId EntityId)
 {
 	IncomingRPCs.DropForEntity(EntityId);
 	OutgoingRPCs.DropForEntity(EntityId);
-}
-
-void SpatialRPCService::PeriodicallyProcessOutgoingRPCs()
-{
-	FTimerHandle Timer;
-	// TODO: Move this to advance and pass delta time in to that
-	TimerManager->SetTimer(
-		Timer,
-		[WeakThis = TWeakObjectPtr<SpatialRPCService>(this)]() {
-			if (SpatialRPCService* RPCService = WeakThis.Get())
-			{
-				RPCService->OutgoingRPCs.ProcessRPCs();
-			}
-		},
-		GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime, true);
 }
 
 EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId, const ERPCType Type, PendingRPCPayload Payload,

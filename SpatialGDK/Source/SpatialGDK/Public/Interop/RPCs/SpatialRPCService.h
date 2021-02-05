@@ -36,6 +36,7 @@ public:
 	void ProcessChanges(const float NetDriverTime);
 
 	void ProcessIncomingRPCs();
+	void ProcessOutgoingRPCs();
 
 	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload InPayload,
 								   TOptional<uint64> RPCIdForLinearEventTrace);
@@ -54,7 +55,6 @@ public:
 	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
 
 	void ClearPendingRPCs(Worker_EntityId EntityId);
-	void PeriodicallyProcessOutgoingRPCs();
 
 private:
 	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, PendingRPCPayload Payload, bool bCreatedEntity);
@@ -88,7 +88,8 @@ private:
 	// Keep around one of the passed subviews here in order to read the main view.
 	const FSubView* AuthSubView;
 
-	float LastProcessingTime;
+	float LastIncomingProcessingTime;
+	float LastOutgoingProcessingTime;
 
 #if TRACE_LIB_ACTIVE
 	void ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace);

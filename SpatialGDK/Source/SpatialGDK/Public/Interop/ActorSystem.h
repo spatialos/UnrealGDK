@@ -50,6 +50,13 @@ public:
 	void RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
 	void RemoveActor(Worker_EntityId EntityId);
 
+	// Tombstones
+	void CreateTombstoneEntity(AActor* Actor);
+
+	// Updates
+	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
+							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
+
 private:
 	// Helper struct to manage FSpatialObjectRepState update cycle.
 	// TODO: move into own class.
@@ -123,8 +130,6 @@ private:
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten);
-	// Tombstones
-	void CreateTombstoneEntity(AActor* Actor);
 	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
 	void CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> EntityComponents);
 	static TArray<FWorkerComponentData> CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents);
@@ -133,8 +138,6 @@ private:
 	void RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor);
 
 	// Updates
-	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
-							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
 	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
 	void ProcessPositionUpdates();

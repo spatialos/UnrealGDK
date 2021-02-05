@@ -1658,6 +1658,29 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 	DestroyActor(Actor, EntityId);
 }
 
+void ActorSystem::CreateTombstoneEntity(AActor* Actor)
+{
+	check(Actor->IsNetStartupActor());
+
+	const Worker_EntityId EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
+
+	EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, &*NetDriver->RPCService);
+	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
+
+	Components.Add(CreateLevelComponentData(Actor));
+
+	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
+
+	UE_LOG(LogSpatialSender, Log,
+		   TEXT("Creating tombstone entity for actor. "
+				"Actor: %s. Entity ID: %d."),
+		   *Actor->GetName(), EntityId);
+
+#if WITH_EDITOR
+	NetDriver->TrackTombstone(EntityId);
+#endif
+}
+
 void ActorSystem::DestroyActor(AActor* Actor, const Worker_EntityId EntityId)
 {
 	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
@@ -1793,29 +1816,6 @@ Worker_RequestId ActorSystem::CreateEntity(USpatialActorChannel* Channel, uint32
 		NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, RETRY_UNTIL_COMPLETE, SpanId);
 
 	return CreateEntityRequestId;
-}
-
-void ActorSystem::CreateTombstoneEntity(AActor* Actor)
-{
-	check(Actor->IsNetStartupActor());
-
-	const Worker_EntityId EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
-
-	EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, &*NetDriver->RPCService);
-	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
-
-	Components.Add(CreateLevelComponentData(Actor));
-
-	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
-
-	UE_LOG(LogSpatialSender, Log,
-		   TEXT("Creating tombstone entity for actor. "
-				"Actor: %s. Entity ID: %d."),
-		   *Actor->GetName(), EntityId);
-
-#if WITH_EDITOR
-	NetDriver->TrackTombstone(EntityId);
-#endif
 }
 
 Worker_ComponentData ActorSystem::CreateLevelComponentData(AActor* Actor)
