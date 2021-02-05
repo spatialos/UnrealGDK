@@ -20,16 +20,26 @@ void AProcessRPCEventTracingTest::FinishEventTraceTest()
 		const FString& SpanIdString = Pair.Key;
 		const FName& EventName = Pair.Value;
 
-		if (EventName != ReceiveRPCEventName)
+		if (EventName == ReceiveOpEventName)
 		{
 			continue;
 		}
 
 		EventsTested++;
 
-		if (!CheckEventTraceCause(SpanIdString, { ReceiveOpEventName }))
+		if (EventName == ApplyRPCEventName)
 		{
-			EventsFailed++;
+			if (!CheckEventTraceCause(SpanIdString, { ReceiveRPCEventName }, true))
+			{
+				EventsFailed++;
+			}
+		}
+		else // EventName == ReceiveRPCEventName
+		{
+			if (!CheckEventTraceCause(SpanIdString, { ReceiveOpEventName }, true))
+			{
+				EventsFailed++;
+			}
 		}
 	}
 
