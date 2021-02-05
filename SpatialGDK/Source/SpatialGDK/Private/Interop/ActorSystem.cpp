@@ -497,7 +497,7 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 	if (Channel == nullptr)
 	{
 		// If there is no actor channel as a result of the actor being dormant, then assume the actor is about to become active.
-		if (EntityHasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
+		if (SubView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
 		{
 			if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId)))
 			{
@@ -1319,7 +1319,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 
 	EntityActor->UpdateOverlaps();
 
-	if (EntityHasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
+	if (SubView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
 	{
 		NetDriver->AddPendingDormantChannel(Channel);
 	}
@@ -1775,15 +1775,6 @@ FString ActorSystem::GetObjectNameFromRepState(const FSpatialObjectRepState& Rep
 		return Obj->GetName();
 	}
 	return TEXT("<unknown>");
-}
-
-bool ActorSystem::EntityHasComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const
-{
-	if (const auto Entity = SubView->GetView().Find(EntityId))
-	{
-		return Entity->Components.ContainsByPredicate(ComponentIdEquality{ ComponentId });
-	}
-	return false;
 }
 
 void ActorSystem::SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten)

@@ -138,9 +138,6 @@ private:
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 	static FString GetObjectNameFromRepState(const FSpatialObjectRepState& RepState);
 
-	// Helper
-	bool EntityHasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
-
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
 	void CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> EntityComponents);

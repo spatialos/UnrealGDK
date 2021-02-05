@@ -5,6 +5,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ServerWorker.h"
+#include "SpatialConstants.h"
 #include "Utils/ComponentFactory.h"
 
 DEFINE_LOG_CATEGORY(LogWellKnownEntitySystem);
@@ -115,7 +116,7 @@ void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId,
 {
 	GlobalStateManager->AuthorityChanged({ EntityId, ComponentSetId, WORKER_AUTHORITY_AUTHORITATIVE });
 
-	if (SubView->GetView()[EntityId].Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID }))
+	if (SubView->HasComponent(EntityId, SpatialConstants::SERVER_WORKER_COMPONENT_ID))
 	{
 		GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 	}
