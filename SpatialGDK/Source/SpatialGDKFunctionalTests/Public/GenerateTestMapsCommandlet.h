@@ -2,17 +2,16 @@
 
 #pragma once
 
-#if WITH_EDITOR
-
 #include "Commandlets/Commandlet.h"
 #include "CoreMinimal.h"
-#include "UObject/ConstructorHelpers.h"
 #include "GenerateTestMapsCommandlet.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogGenerateTestMapsCommandlet, Log, All);
 
 /**
- * Generate test maps, pls.
+ * This commandlet is used to generate maps used for testing automatically.
+ * Highly specific for internal GDK-usage.
+ * See the GeneratedTestMap class if you want to define your own map to be used in testing.
  */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API UGenerateTestMapsCommandlet : public UCommandlet
@@ -23,17 +22,4 @@ class SPATIALGDKFUNCTIONALTESTS_API UGenerateTestMapsCommandlet : public UComman
 
 public:
 	virtual int32 Main(const FString& CmdLineParams) override;
-
-private:
-	UStaticMesh* PlaneStaticMesh;
-	UMaterial* BasicShapeMaterial;
-
-	UWorld* CreateNewTestMapWorld();
-	void CreateSpatialNetworkingMap();
-	void CreateSpatial2WorkerMap();
-	void CreateSpatial2WorkerSmallInterestMap();
-	void CreateSpatialAuthorityMap();
-	void CreateSpatialComponentMap();
-	void CreateSpatialHandoverMap();
 };
-#endif // WITH_EDITOR

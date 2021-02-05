@@ -24,12 +24,8 @@ public class SpatialGDKFunctionalTests : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "FunctionalTesting",
-                "HTTP"
+                "HTTP",
+                "UnrealEd"
             });
-
-        if (Target.bBuildEditor)
-        {
-            PrivateDependencyModuleNames.Add("UnrealEd");
-        }
     }
 }
