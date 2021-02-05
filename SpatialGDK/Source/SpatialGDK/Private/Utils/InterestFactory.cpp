@@ -50,6 +50,7 @@ SchemaResultType InterestFactory::CreateClientNonAuthInterestResultType()
 
 	// Add all data components- clients don't need to see handover or owner only components on other entities.
 	ClientNonAuthResultType.ComponentSetsIds.Push(SpatialConstants::DATA_COMPONENT_SET_ID);
+	// ClientNonAuthResultType.ComponentSetsIds.Push(SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID);
 
 	return ClientNonAuthResultType;
 }
@@ -65,6 +66,7 @@ SchemaResultType InterestFactory::CreateClientAuthInterestResultType()
 	// Add all the generated unreal components
 	ClientAuthResultType.ComponentSetsIds.Push(SpatialConstants::DATA_COMPONENT_SET_ID);
 	ClientAuthResultType.ComponentSetsIds.Push(SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID);
+	// ClientAuthResultType.ComponentSetsIds.Push(SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID);
 
 	return ClientAuthResultType;
 }
@@ -80,6 +82,7 @@ SchemaResultType InterestFactory::CreateServerNonAuthInterestResultType()
 	ServerNonAuthResultType.ComponentSetsIds.Push(SpatialConstants::DATA_COMPONENT_SET_ID);
 	ServerNonAuthResultType.ComponentSetsIds.Push(SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID);
 	ServerNonAuthResultType.ComponentSetsIds.Push(SpatialConstants::HANDOVER_COMPONENT_SET_ID);
+	ServerNonAuthResultType.ComponentSetsIds.Push(SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID);
 
 	return ServerNonAuthResultType;
 }
@@ -89,6 +92,7 @@ SchemaResultType InterestFactory::CreateServerAuthInterestResultType()
 	SchemaResultType ServerAuthResultType{};
 	// Just the components that we won't have already checked out through authority
 	ServerAuthResultType.ComponentIds.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST);
+	ServerAuthResultType.ComponentSetsIds.Push(SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID);
 	return ServerAuthResultType;
 }
 

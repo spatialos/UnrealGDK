@@ -1478,3 +1478,10 @@ void FObjectReferencesMapDeleter::operator()(FObjectReferencesMap* Ptr) const
 {
 	delete Ptr;
 }
+
+void USpatialActorChannel::TryFetchInitialOnlyData(Worker_EntityId InitialOnlyEntityId)
+{
+	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(this->GetActor()->GetNetDriver());
+	Driver->ActorSystem->TryFetchInitialOnlyData(InitialOnlyEntityId);
+}
+

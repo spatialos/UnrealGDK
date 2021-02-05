@@ -375,6 +375,12 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 			CreateHandoverComponentData(Info.SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState, OutBytesWritten));
 	}
 
+	if (Info.SchemaComponents[SCHEMA_InitialOnly] != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		ComponentDatas.Add(
+			CreateComponentData(Info.SchemaComponents[SCHEMA_InitialOnly], Object, RepChangeState, SCHEMA_InitialOnly, OutBytesWritten));
+	}
+
 	return ComponentDatas;
 }
 
@@ -444,6 +450,18 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			if (BytesWritten > 0)
 			{
 				ComponentUpdates.Add(SingleClientUpdate);
+				OutBytesWritten += BytesWritten;
+			}
+		}
+
+		if (Info.SchemaComponents[SCHEMA_InitialOnly] != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			uint32 BytesWritten = 0;
+			FWorkerComponentUpdate MultiClientUpdate =
+				CreateComponentUpdate(Info.SchemaComponents[SCHEMA_InitialOnly], Object, *RepChangeState, SCHEMA_InitialOnly, BytesWritten);
+			if (BytesWritten > 0)
+			{
+				ComponentUpdates.Add(MultiClientUpdate);
 				OutBytesWritten += BytesWritten;
 			}
 		}

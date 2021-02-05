@@ -644,7 +644,7 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, TAr
 							Writer.Printf("unreal.generated.{0}HandoverDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
 							break;
 						case SCHEMA_InitialOnly:
-							Writer.Printf("unreal.generated.{0}.{1}InitialOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
+							Writer.Printf("unreal.generated.{0}InitialOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
 							break;
 						default:
 							break;
