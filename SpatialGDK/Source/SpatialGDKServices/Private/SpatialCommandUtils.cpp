@@ -516,21 +516,43 @@ bool SpatialCommandUtils::FetchRuntimeBinary(const FString& RuntimeVersion, cons
 {
 	FString RuntimePath =
 		FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, SpatialGDKServicesConstants::RuntimePackageName, RuntimeVersion);
-	return FetchPackageBinary(RuntimeVersion, SpatialGDKServicesConstants::RuntimeExe, SpatialGDKServicesConstants::RuntimePackageName,
-							  RuntimePath, bIsRunningInChina, true);
+	return FetchPackageBinaryWithRetrys(RuntimeVersion, SpatialGDKServicesConstants::RuntimeExe, SpatialGDKServicesConstants::RuntimePackageName,
+										RuntimePath, bIsRunningInChina, true);
 }
 
 bool SpatialCommandUtils::FetchInspectorBinary(const FString& InspectorVersion, const bool bIsRunningInChina)
 {
 	FString InspectorPath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, SpatialGDKServicesConstants::InspectorPackageName,
 											InspectorVersion, SpatialGDKServicesConstants::InspectorExe);
-	return FetchPackageBinary(InspectorVersion, SpatialGDKServicesConstants::InspectorExe,
-							  SpatialGDKServicesConstants::InspectorPackageName, InspectorPath, bIsRunningInChina, false);
+	return FetchPackageBinaryWithRetrys(InspectorVersion, SpatialGDKServicesConstants::InspectorExe,
+									    SpatialGDKServicesConstants::InspectorPackageName, InspectorPath, bIsRunningInChina, false);
+}
+
+bool SpatialCommandUtils::FetchPackageBinaryWithRetrys(const FString& PackageVersion, const FString& PackageExe,
+												       const FString& PackageName, const FString& SaveLocation,
+													   const bool bIsRunningInChina, const bool bUnzip, int32 Retries /*= 3*/)
+{
+	while (Retries > 0 && !FetchPackageBinary(PackageVersion, PackageExe, PackageName, SaveLocation, bIsRunningInChina, bUnzip))
+	{
+		Retries--;
+		if (Retries == 0)
+		{
+			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Giving up trying to fetch %s binary"), *PackageName);
+		}
+		else
+		{
+			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Retrying to fetch %s binary"), *PackageName);
+		}
+	}
+
+	return Retries != 0;
 }
 
 bool SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, const FString& PackageExe, const FString& PackageName,
 											 const FString& SaveLocation, const bool bIsRunningInChina, const bool bUnzip)
 {
+	FPlatformMisc::SetEnvironmentVar(TEXT("IMPROBABLE_INTERNAL_CLI_WRAPPER_GRPC_TIMEOUT "), *FString::Printf(TEXT("%lld"), ProcessTimeoutTime));
+
 	FString PackagePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, *PackageName, PackageVersion);
 
 	// Check if the binary already exists for a given version
