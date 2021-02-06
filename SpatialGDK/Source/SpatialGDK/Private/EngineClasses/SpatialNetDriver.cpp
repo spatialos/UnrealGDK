@@ -43,6 +43,7 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Engine/WorldComposition.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
@@ -457,6 +458,20 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Receiver, Connection,
 																		  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
 																		  *VirtualWorkerTranslator, *GlobalStateManager);
+
+	// Server world composition strategy
+	UWorldComposition* WorldComposition = World->WorldComposition;
+	if(WorldComposition)
+	{
+		ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+		UClass* ServerLevelStreamingStrategyClass = WorldSettings->ServerLevelStreamingStrategyClass;
+		if (ServerLevelStreamingStrategyClass)
+		{
+			ServerLevelStreamingStrategy = NewObject<USpatialServerLevelStreamingStrategy>(this, ServerLevelStreamingStrategyClass);
+			ServerLevelStreamingStrategy->InitialiseStrategy(WorldComposition->GetTilesList(), World->OriginLocation);
+			World->WorldComposition->ServerLevelStreamingStrategy = Cast<UAbstractServerLevelStreamingStrategy>(ServerLevelStreamingStrategy);		
+		}
+	}	
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()

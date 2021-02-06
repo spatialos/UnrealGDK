@@ -23,6 +23,7 @@
 #include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
+#include "ServerWorldComposition/SpatialServerLevelStreamingStrategy.h"
 
 #include "SpatialNetDriver.generated.h"
 
@@ -188,6 +189,8 @@ public:
 	USpatialWorkerFlags* SpatialWorkerFlags;
 	UPROPERTY()
 	USpatialNetDriverDebugContext* DebugCtx;
+	UPROPERTY()
+	USpatialServerLevelStreamingStrategy* ServerLevelStreamingStrategy;
 
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;

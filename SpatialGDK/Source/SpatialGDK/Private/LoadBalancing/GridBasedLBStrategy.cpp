@@ -137,6 +137,7 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 		   VirtualWorker);
 
 	// For a grid-based strategy, the interest area is the cell that the worker is authoritative over plus some border region.
+	
 	const FBox2D Interest2D = WorkerCells[WorkerCell].ExpandBy(InterestBorder);
 
 	const FVector2D Center2D = Interest2D.GetCenter();
@@ -149,6 +150,15 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 	SpatialGDK::QueryConstraint Constraint;
 	Constraint.BoxConstraint =
 		SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D), SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
+	
+
+	/*const FVector Center3D{ 0.0f, 0.0f, 0.0f };
+	const FVector EdgeLengths3D{ 0, 0, 0};
+	
+	SpatialGDK::QueryConstraint Constraint;
+	Constraint.BoxConstraint =
+		SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D), SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };*/
+	
 	return Constraint;
 }
 

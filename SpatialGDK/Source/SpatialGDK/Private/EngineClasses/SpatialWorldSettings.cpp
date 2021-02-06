@@ -7,6 +7,7 @@
 
 ASpatialWorldSettings::ASpatialWorldSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
+	, ServerLevelStreamingStrategyClass(nullptr)
 	, MultiWorkerSettingsClass(nullptr)
 	, EditorMultiWorkerSettingsOverride(nullptr)
 {
