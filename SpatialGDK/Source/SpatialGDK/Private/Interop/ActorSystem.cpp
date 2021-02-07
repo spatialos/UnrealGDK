@@ -1808,6 +1808,8 @@ void ActorSystem::TryFetchInitialOnlyData()
 
 	TSet<Worker_ComponentId> ComponentIdsSet;
 	TArray<Worker_Constraint> EntityConstraintArray;
+	TArray<Worker_EntityId> RemovedEntities;
+
 	for (auto Entity : InitialOnlyEntities)
 	{
 		Worker_EntityId TmpEntityId = Entity.Key;
@@ -1817,8 +1819,7 @@ void ActorSystem::TryFetchInitialOnlyData()
 
 		EntityConstraintArray.Add(Constraints);
 		ComponentIdsSet.Append(Entity.Value);
-
-		InitialOnlyEntities.Remove(Entity.Key);
+		RemovedEntities.Add(Entity.Key);
 
 		if (++EntityCount >= InitialOnlyEntityMaxQueryCountPerTick)
 		{
@@ -1826,8 +1827,10 @@ void ActorSystem::TryFetchInitialOnlyData()
 		}
 	}
 
-	InitialOnlyEntities.Compact();
-	InitialOnlyEntities.Shrink();
+	for (auto RemovedEntityId : RemovedEntities)
+	{
+		InitialOnlyEntities.Remove(RemovedEntityId);
+	}
 
 	Worker_Constraint InitialOnlyConstraints;
 	InitialOnlyConstraints.constraint_type = WORKER_CONSTRAINT_TYPE_OR;
