@@ -180,6 +180,8 @@ void ActorSystem::Advance()
 			break;
 		}
 	}
+
+	TryFetchInitialOnlyData();
 }
 
 UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
@@ -587,6 +589,11 @@ void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 	for (const auto& AuthoritativeComponentSet : SubView->GetView()[EntityId].Authority)
 	{
 		AuthorityGained(EntityId, AuthoritativeComponentSet);
+	}
+
+	if (!NetDriver->GetWorld()->GetGameInstance()->IsDedicatedServerInstance())
+	{
+		TryCacheInitialOnlyEntity(EntityId);
 	}
 }
 
@@ -1722,9 +1729,10 @@ bool ActorSystem::EntityHasComponent(const Worker_EntityId EntityId, const Worke
 	return false;
 }
 
-void ActorSystem::TryFetchInitialOnlyData(Worker_EntityId EntityId)
+
+void ActorSystem::GetInitialOnlyComponentIds(Worker_EntityId EntityId, TArray<Worker_ComponentId>& OutInitialOnlyComponentIds)
 {
-	TArray<Worker_ComponentId> InitialOnlyComponentIds;
+	OutInitialOnlyComponentIds.Reset();
 	USchemaDatabase* SchemaDataBase = NetDriver->ClassInfoManager->SchemaDatabase;
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
 	const EntityView& CoordinatorEntityView = NetDriver->Connection->GetCoordinator().GetView();
@@ -1736,94 +1744,103 @@ void ActorSystem::TryFetchInitialOnlyData(Worker_EntityId EntityId)
 		return;
 	}
 
-	AActor* A = Channel->GetActor();
-	const TSet<UActorComponent*>& ActorComponents = A->GetComponents();
-	FString ClassPathName = A->GetClass()->GetPathName();
+	AActor* Actor = Channel->GetActor();
+	const TSet<UActorComponent*>& ActorComponents = Actor->GetComponents();
+	FString ClassPathName = Actor->GetClass()->GetPathName();
 
+	// Process InitialOnly data of actor
 	FActorSchemaData& ActorSchemaData = SchemaDataBase->ActorClassPathToSchema[ClassPathName];
 	int32_t InitialOnlyComponentId = ActorSchemaData.SchemaComponents[SCHEMA_InitialOnly];
 	if (InitialOnlyComponentId && InitialOnlyComponentId != SCHEMA_Invalid)
 	{
-		InitialOnlyComponentIds.Add(InitialOnlyComponentId);
+		OutInitialOnlyComponentIds.Add(InitialOnlyComponentId);
 	}
 
-	/*
-	UClass* SuperClass = A->GetClass()->GetSuperClass();
-	while (SuperClass)
-	{
-		if (!SuperClass->IsChildOf<AActor>())
-		{
-			break;
-		}
-
-		FString TmpClassPathName = SuperClass->GetClass()->GetPathName();
-		FActorSchemaData& TmpActorSchemaData = SchemaDataBase->ActorClassPathToSchema[TmpClassPathName];
-		int32_t TmpInitialOnlyComponentId = TmpActorSchemaData.SchemaComponents[SCHEMA_InitialOnly];
-		if (TmpInitialOnlyComponentId && TmpInitialOnlyComponentId != SCHEMA_Invalid)
-		{
-			InitialOnlyComponentIds.Add(TmpInitialOnlyComponentId);
-		}
-
-		SuperClass = SuperClass->GetSuperClass();
-	}
-	*/
-
+	// Process InitialOnly data of subobject 
 	for (auto SubobjectSchemaDataKV : ActorSchemaData.SubobjectData)
 	{
 		int32_t TmpInitialOnlyComponentId = SubobjectSchemaDataKV.Value.SchemaComponents[SCHEMA_InitialOnly];
 		if (TmpInitialOnlyComponentId && TmpInitialOnlyComponentId != SCHEMA_Invalid)
 		{
-			InitialOnlyComponentIds.Add(TmpInitialOnlyComponentId);
+			OutInitialOnlyComponentIds.Add(TmpInitialOnlyComponentId);
 		}
 	}
 
+	// Process InitialOnly data of dynamic subobject 
 	for (auto ActorComponent : ActorComponents)
 	{
 		FString TmpClassPathName = ActorComponent->GetClass()->GetPathName();
-		FSubobjectSchemaData& SubobjectSchemaData = SchemaDataBase->SubobjectClassPathToSchema[TmpClassPathName];
-		for (auto DynamicSubobjectComponents : SubobjectSchemaData.DynamicSubobjectComponents)
+		if (SchemaDataBase->SubobjectClassPathToSchema.Contains(TmpClassPathName))
 		{
-			int32_t TmpInitialOnlyComponentId = DynamicSubobjectComponents.SchemaComponents[SCHEMA_InitialOnly];
-			if (TmpInitialOnlyComponentId && TmpInitialOnlyComponentId != SCHEMA_Invalid)
+			FSubobjectSchemaData& SubobjectSchemaData = SchemaDataBase->SubobjectClassPathToSchema[TmpClassPathName];
+			for (auto DynamicSubobjectComponents : SubobjectSchemaData.DynamicSubobjectComponents)
 			{
-				InitialOnlyComponentIds.Add(TmpInitialOnlyComponentId);
+				int32_t TmpInitialOnlyComponentId = DynamicSubobjectComponents.SchemaComponents[SCHEMA_InitialOnly];
+				if (TmpInitialOnlyComponentId && TmpInitialOnlyComponentId != SCHEMA_Invalid)
+				{
+					OutInitialOnlyComponentIds.Add(TmpInitialOnlyComponentId);
+				}
 			}
 		}
 	}
+}
 
-	for (int32_t i = 0; i < Entity->Components.Num(); ++i)
+void ActorSystem::TryCacheInitialOnlyEntity(Worker_EntityId EntityId)
+{
+	TArray<Worker_ComponentId> LocalInitialOnlyComponentIds;
+	GetInitialOnlyComponentIds(EntityId, LocalInitialOnlyComponentIds);
+
+	if (0 == LocalInitialOnlyComponentIds.Num())
 	{
-		/*
-		Worker_ComponentId ComponentId = Entity->Components[i].GetComponentId();
-		if (SCHEMA_InitialOnly == NetDriver->ClassInfoManager->GetCategoryByComponentId(ComponentId))
-		{
-			InitialOnlyComponentIds.Add(ComponentId);
-		}
-		*/
+		return;
 	}
 
-	// auto ComponentSetData = Driver->ConnectionManager->ComponentSetData;
+	InitialOnlyEntities.Add(TPair<Worker_EntityId, TSet<Worker_ComponentId>>(EntityId, LocalInitialOnlyComponentIds));
+}
 
-	// Worker_ComponentId InitialOnlyComponentId = 11696;
+void ActorSystem::TryFetchInitialOnlyData()
+{
+	if (0 == InitialOnlyEntities.Num())
+	{
+		return;
+	}
 
-	Worker_Constraint Constraints[1];
-	Constraints[0].constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
-	Constraints[0].constraint.entity_id_constraint.entity_id = EntityId;
+	int32_t EntityCount = 0;
 
-	// Constraints[1].constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
-	// Constraints[1].constraint.component_constraint.component_id = InitialOnlyComponentId;
+	TSet<Worker_ComponentId> ComponentIdsSet;
+	TArray<Worker_Constraint> EntityConstraintArray;
+	for (auto Entity : InitialOnlyEntities)
+	{
+		Worker_EntityId TmpEntityId = Entity.Key;
+		Worker_Constraint Constraints;
+		Constraints.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
+		Constraints.constraint.entity_id_constraint.entity_id = TmpEntityId;
+
+		EntityConstraintArray.Add(Constraints);
+		ComponentIdsSet.Append(Entity.Value);
+
+		InitialOnlyEntities.Remove(Entity.Key);
+
+		if (++EntityCount >= InitialOnlyEntityMaxQueryCountPerTick)
+		{
+			break;
+		}
+	}
+
+	InitialOnlyEntities.Compact();
+	InitialOnlyEntities.Shrink();
 
 	Worker_Constraint InitialOnlyConstraints;
-	InitialOnlyConstraints.constraint_type = WORKER_CONSTRAINT_TYPE_AND;
-	InitialOnlyConstraints.constraint.and_constraint.constraint_count = sizeof(Constraints) / sizeof(Worker_Constraint);
-	InitialOnlyConstraints.constraint.and_constraint.constraints = Constraints;
+	InitialOnlyConstraints.constraint_type = WORKER_CONSTRAINT_TYPE_OR;
+	InitialOnlyConstraints.constraint.and_constraint.constraint_count = EntityConstraintArray.Num();
+	InitialOnlyConstraints.constraint.and_constraint.constraints = EntityConstraintArray.GetData();
+
+	const TArray<Worker_ComponentId>& TmpComponentIds = ComponentIdsSet.Array();
 
 	Worker_EntityQuery InitialOnlyQuery{};
 	InitialOnlyQuery.constraint = InitialOnlyConstraints;
-	InitialOnlyQuery.snapshot_result_type_component_id_count = InitialOnlyComponentIds.Num();
-	InitialOnlyQuery.snapshot_result_type_component_ids = InitialOnlyComponentIds.GetData();
-	// This memory address will not be read, but needs to be non-null, so that the WorkerSDK correctly doesn't send us ANY components.
-	// Setting it to a valid component id address, just in case.
+	InitialOnlyQuery.snapshot_result_type_component_id_count = TmpComponentIds.Num();
+	InitialOnlyQuery.snapshot_result_type_component_ids = TmpComponentIds.GetData();
 
 	const Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&InitialOnlyQuery, SpatialGDK::RETRY_UNTIL_COMPLETE);
 
@@ -1847,7 +1864,6 @@ void ActorSystem::TryFetchInitialOnlyData(Worker_EntityId EntityId)
 			{
 				const Worker_Entity* Entity = &Op.results[i];
 				USpatialActorChannel* Channel = Driver->GetActorChannelByEntityId(Entity->entity_id);
-				UObject* TargetObject = Channel->GetActor();
 
 				for (uint32_t j = 0; j < Entity->component_count; ++j)
 				{
@@ -1856,30 +1872,27 @@ void ActorSystem::TryFetchInitialOnlyData(Worker_EntityId EntityId)
 
 					UE_LOG(LogActorSystem, Warning, TEXT("%s - ComponentId:%d"), *FString(__FUNCTION__), ComponentId);
 
-					Schema_Object* ComponentObject = Schema_GetComponentDataFields(CompData->schema_type);
-					int32_t NetVar2 = Schema_GetInt32(ComponentObject, 47);
-					int32_t NetSubVar2 = Schema_GetInt32(ComponentObject, 49);
-
-					int32_t TmpVar2 = NetVar2 ? NetVar2 : NetSubVar2;
-					int32_t TmpIdx = NetVar2 ? 47 : 49;
-
-					UE_LOG(LogActorSystem, Warning, TEXT("%s - ComponentId:%d, Var2:%d, SchemaId:%d"), *FString(__FUNCTION__), ComponentId,
-						   TmpVar2, TmpIdx);
-
+					UObject* TargetObject = nullptr;
 					{
-						TArray<uint8> inBinaryArray;
-						FString ProjectDir = FPaths::ProjectDir();
-						FString SchemaSBFile = ProjectDir + "../spatial/build/assembly/schema/schema.sb";
-						FFileHelper::LoadFileToArray(inBinaryArray, *SchemaSBFile);
+						uint32 Offset;
+						bool bFoundOffset = NetDriver->ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);
+						if (!bFoundOffset)
+						{
+							return;
+						}
 
-						Schema_Bundle* Bundle = Schema_Bundle_Load(inBinaryArray.GetData(), inBinaryArray.Num());
-						const char* BundleError = Schema_Bundle_GetError(Bundle);
-
-						Schema_ComponentUpdate* ComponentUpdate =
-							Schema_ConvertComponentDataIntoUpdate(Bundle, CompData->component_id, CompData->schema_type, NULL, NULL);
-
-						ComponentUpdated(Entity->entity_id, ComponentId, ComponentUpdate);
+						if (Offset == 0)
+						{
+							TargetObject = Channel->GetActor();
+						}
+						else
+						{
+							TargetObject =
+								NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Entity->entity_id, Offset)).Get();
+						}
 					}
+
+					ApplyComponentData(*Channel, *TargetObject, ComponentId, CompData->schema_type);
 				}
 			}
 		}

@@ -117,7 +117,9 @@ public:
 	// Helper
 	bool EntityHasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
-	void TryFetchInitialOnlyData(Worker_EntityId EntityId);
+	void GetInitialOnlyComponentIds(Worker_EntityId EntityId, TArray<Worker_ComponentId>& OutInitialOnlyComponentIds);
+	void TryCacheInitialOnlyEntity(Worker_EntityId EntityId);
+	void TryFetchInitialOnlyData();
 
 	const FSubView* SubView;
 	const FSubView* TombstoneSubView;
@@ -131,6 +133,9 @@ public:
 														   SpatialConstants::UNREAL_METADATA_COMPONENT_ID };
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;
+
+	int32_t																	InitialOnlyEntityMaxQueryCountPerTick = 100;
+	TMap<Worker_EntityId, TSet<Worker_ComponentId>>							InitialOnlyEntities;
 };
 
 } // namespace SpatialGDK
