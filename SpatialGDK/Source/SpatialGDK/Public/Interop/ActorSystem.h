@@ -134,8 +134,8 @@ public:
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;
 
-	int32_t																	InitialOnlyEntityMaxQueryCountPerTick = 100;
-	TMap<Worker_EntityId, TSet<Worker_ComponentId>>							InitialOnlyEntities;
+	int32_t InitialOnlyEntityMaxQueryCountPerTick = 100;
+	TMap<Worker_EntityId, TSet<Worker_ComponentId>> InitialOnlyEntities;
 };
 
 } // namespace SpatialGDK

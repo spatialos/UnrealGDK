@@ -1729,7 +1729,6 @@ bool ActorSystem::EntityHasComponent(const Worker_EntityId EntityId, const Worke
 	return false;
 }
 
-
 void ActorSystem::GetInitialOnlyComponentIds(Worker_EntityId EntityId, TArray<Worker_ComponentId>& OutInitialOnlyComponentIds)
 {
 	OutInitialOnlyComponentIds.Reset();
@@ -1756,7 +1755,7 @@ void ActorSystem::GetInitialOnlyComponentIds(Worker_EntityId EntityId, TArray<Wo
 		OutInitialOnlyComponentIds.Add(InitialOnlyComponentId);
 	}
 
-	// Process InitialOnly data of subobject 
+	// Process InitialOnly data of subobject
 	for (auto SubobjectSchemaDataKV : ActorSchemaData.SubobjectData)
 	{
 		int32_t TmpInitialOnlyComponentId = SubobjectSchemaDataKV.Value.SchemaComponents[SCHEMA_InitialOnly];
@@ -1766,7 +1765,7 @@ void ActorSystem::GetInitialOnlyComponentIds(Worker_EntityId EntityId, TArray<Wo
 		}
 	}
 
-	// Process InitialOnly data of dynamic subobject 
+	// Process InitialOnly data of dynamic subobject
 	for (auto ActorComponent : ActorComponents)
 	{
 		FString TmpClassPathName = ActorComponent->GetClass()->GetPathName();
