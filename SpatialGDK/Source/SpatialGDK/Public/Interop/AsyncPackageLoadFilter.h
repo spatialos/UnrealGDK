@@ -17,8 +17,8 @@ class AsyncPackageLoadFilter
 public:
 	AsyncPackageLoadFilter(USpatialNetDriver* InNetDriver);
 
-	// Returns if entity should be filtered
-	bool ProcessAndCheckEntityFilter(Worker_EntityId EntityId, const FString& ClassPath);
+	// Returns if asset package required by entity-actor is loaded
+	bool IsAssetLoadedOrTriggerAsyncLoad(Worker_EntityId EntityId, const FString& ClassPath);
 	void ProcessActorsFromAsyncLoading();
 
 private:

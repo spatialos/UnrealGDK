@@ -428,7 +428,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 				Element.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::UNREAL_METADATA_COMPONENT_ID })
 					->GetUnderlying());
 
-			if (AsyncPackageLoadFilter->ProcessAndCheckEntityFilter(EntityId, Metadata.ClassPath))
+			if (!AsyncPackageLoadFilter->IsAssetLoadedOrTriggerAsyncLoad(EntityId, Metadata.ClassPath))
 			{
 				return false;
 			}

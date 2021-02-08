@@ -16,20 +16,20 @@ AsyncPackageLoadFilter::AsyncPackageLoadFilter(USpatialNetDriver* InNetDriver)
 {
 }
 
-bool AsyncPackageLoadFilter::ProcessAndCheckEntityFilter(Worker_EntityId EntityId, const FString& ClassPath)
+bool AsyncPackageLoadFilter::IsAssetLoadedOrTriggerAsyncLoad(Worker_EntityId EntityId, const FString& ClassPath)
 {
 	if (IsEntityWaitingForAsyncLoad(EntityId))
 	{
-		return true;
+		return false;
 	}
 
 	if (NeedToLoadClass(ClassPath))
 	{
 		StartAsyncLoadingClass(EntityId, ClassPath);
-		return true;
+		return false;
 	}
 
-	return false;
+	return true;
 }
 
 bool AsyncPackageLoadFilter::NeedToLoadClass(const FString& ClassPath)
@@ -43,13 +43,13 @@ bool AsyncPackageLoadFilter::NeedToLoadClass(const FString& ClassPath)
 	FString PackagePath = GetPackagePath(ClassPath);
 	FName PackagePathName = *PackagePath;
 
-	// UNR-3320 The following test checks if the package is currently being processed in the async loading thread.
+	// The following test checks if the package is currently being processed in the async loading thread.
 	// Without it, we could be using an object loaded in memory, but not completely ready to be used.
 	// Looking through PackageMapClient's code, which handles asset async loading in Native unreal, checking
 	// UPackage::IsFullyLoaded, or UObject::HasAnyInternalFlag(EInternalObjectFlag::AsyncLoading) should tell us if it is the case.
 	// In practice, these tests are not enough to prevent using objects too early (symptom is RF_NeedPostLoad being set, and crash when
 	// using them later). GetAsyncLoadPercentage will actually look through the async loading thread's UAsyncPackage maps to see if there
-	// are any entries.
+	// are any entries. See UNR-3320 for more context.
 	// TODO : UNR-3374 This looks like an expensive check, but it does the job. We should investigate further
 	// what is the issue with the other flags and why they do not give us reliable information.
 
