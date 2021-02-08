@@ -107,7 +107,7 @@ struct ConfigureConnection
 
 		// Unreal GDK version
 		UnrealGDKVersionPair.name = "gdk_version";
-		UnrealGDKVersionPair.version = TCHAR_TO_ANSI(*GDKVersionLoader::GetGDKVersion());
+		UnrealGDKVersionPair.version = TCHAR_TO_UTF8(*GDKVersionLoader::GetGDKVersion());
 		Params.versions = &UnrealGDKVersionPair;
 
 		// Override the security type to be secure only if the user has requested it and we are not using an editor build.
