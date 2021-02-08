@@ -5,16 +5,16 @@
 #include "CoreMinimal.h"
 
 #include "SpatialFunctionalTest.h"
-#include "SpatialTestHandoverReplication.generated.h"
+#include "SpatialTestHandoverDynamicReplication.generated.h"
 
 class ADynamicReplicationHandoverCube;
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestHandoverReplication : public ASpatialFunctionalTest
+class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestHandoverDynamicReplication : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
 public:
-	ASpatialTestHandoverReplication();
+	ASpatialTestHandoverDynamicReplication();
 
 	virtual void PrepareTest() override;
 

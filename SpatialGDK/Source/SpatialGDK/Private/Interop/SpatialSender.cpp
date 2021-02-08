@@ -270,7 +270,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 
 				// We claim each server worker entity as a partition for server worker interest. This is necessary for getting
 				// interest in the VirtualWorkerTranslator component.
-				Sender->SendClaimPartitionRequest(WeakSender->NetDriver->Connection->GetWorkerSystemEntityId(), Op.entity_id);
+				Sender->SendClaimPartitionRequest(Sender->NetDriver->Connection->GetWorkerSystemEntityId(), Op.entity_id);
 
 				return;
 			}
@@ -643,9 +643,9 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	// This should always happen with USLB.
 	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
 
-	if (NetDriver->SpatialDebugger != nullptr)
+	if (NetDriver->SpatialDebuggerSystem.IsValid())
 	{
-		NetDriver->SpatialDebugger->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
+		NetDriver->SpatialDebuggerSystem->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
 	}
 }
 
