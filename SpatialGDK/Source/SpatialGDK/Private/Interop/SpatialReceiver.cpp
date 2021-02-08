@@ -252,29 +252,27 @@ void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandRespons
 		return;
 	}
 
-	const Worker_PartitionId* PartitionId = PendingPartitionAssignments.Find(Op.request_id);
-	if (PartitionId == nullptr)
+	Worker_RequestId PartitionId;
+	if (!PendingPartitionAssignments.RemoveAndCopyValue(Op.request_id, PartitionId))
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("Could not find request id %d in PendingPartitionAssignments"),
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Could not find request id %d in PendingPartitionAssignments"),
 			   Op.request_id);
 		return;
 	}
-
-	PendingPartitionAssignments.Remove(Op.request_id);
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error,
 			   TEXT("ClaimPartition command failed for a reason other than timeout. "
 					"This is fatal. Partition entity: %lld. Reason: %s"),
-			   *PartitionId, UTF8_TO_TCHAR(Op.message));
+			   PartitionId, UTF8_TO_TCHAR(Op.message));
 		return;
 	}
 
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
 		   TEXT("ClaimPartition command succeeded. "
 				"Worker sytem entity: %lld. Partition entity: %lld"),
-		   Op.entity_id, *PartitionId);
+		   Op.entity_id, PartitionId);
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
