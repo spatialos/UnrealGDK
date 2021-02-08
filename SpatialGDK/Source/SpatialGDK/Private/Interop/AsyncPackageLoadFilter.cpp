@@ -109,8 +109,8 @@ void AsyncPackageLoadFilter::ProcessActorsFromAsyncLoading()
 
 	for (const auto& PackageName : PackagesToProcess)
 	{
-		TArray<Worker_EntityId> Entities;
-		if (!AsyncLoadingPackages.RemoveAndCopyValue(PackageName, Entities))
+		TArray<Worker_EntityId>* Entities = AsyncLoadingPackages.Find(PackageName);
+		if (Entities == nullptr)
 		{
 			UE_LOG(LogAsyncPackageLoadFilter, Error,
 				   TEXT("USpatialReceiver::OnAsyncPackageLoaded: Package loaded but no entry in AsyncLoadingPackages. Package: %s"),
@@ -118,7 +118,7 @@ void AsyncPackageLoadFilter::ProcessActorsFromAsyncLoading()
 			continue;
 		}
 
-		for (Worker_EntityId Entity : Entities)
+		for (Worker_EntityId Entity : *Entities)
 		{
 			if (IsEntityWaitingForAsyncLoad(Entity))
 			{
