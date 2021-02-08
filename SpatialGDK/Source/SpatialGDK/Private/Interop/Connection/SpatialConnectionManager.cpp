@@ -26,15 +26,10 @@ public:
 		if (GDKVerson.IsEmpty())
 		{
 			IPluginManager& PluginManager = IPluginManager::Get();
-			TArray<TSharedRef<IPlugin>> Plugins = PluginManager.GetDiscoveredPlugins();
-			for (const TSharedRef<IPlugin>& Plugin : Plugins)
+			IPlugin* SpatialGDKPlugin = PluginManager.FindPlugin("SpatialGDK").Get();
+			if (SpatialGDKPlugin != nullptr)
 			{
-				const IPlugin& PluginPtr = Plugin.Get();
-				if (PluginPtr.GetName() == TEXT("SpatialGDK"))
-				{
-					GDKVerson = PluginPtr.GetDescriptor().VersionName;
-					break;
-				}
+				GDKVerson = SpatialGDKPlugin->GetDescriptor().VersionName;
 			}
 		}
 		return GDKVerson;
