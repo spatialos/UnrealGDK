@@ -591,7 +591,8 @@ bool SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, cons
 	{
 		if (FetchingProcess->GetDuration().GetTotalSeconds() > ProcessTimeoutTime)
 		{
-			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Timed out waiting for the %s process fetching to start after %ds"), *PackageName, ProcessTimeoutTime);
+			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Timed out waiting for the %s process fetching to start after %ds"), *PackageName,
+				   ProcessTimeoutTime);
 
 			FetchingProcess->Exit();
 			return false;
