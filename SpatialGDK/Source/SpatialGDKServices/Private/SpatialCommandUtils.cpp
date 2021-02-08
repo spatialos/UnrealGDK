@@ -530,22 +530,24 @@ bool SpatialCommandUtils::FetchInspectorBinary(const FString& InspectorVersion, 
 
 bool SpatialCommandUtils::FetchPackageBinaryWithRetries(const FString& PackageVersion, const FString& PackageExe,
 														const FString& PackageName, const FString& SaveLocation,
-														const bool bIsRunningInChina, const bool bUnzip, int32 Retries /*= 3*/)
+														const bool bIsRunningInChina, const bool bUnzip, const int32 NumRetries /*= 3*/)
 {
-	while (Retries > 0 && !FetchPackageBinary(PackageVersion, PackageExe, PackageName, SaveLocation, bIsRunningInChina, bUnzip))
+	int32 Attempt = 0;
+	while (Attempt <= NumRetries && !FetchPackageBinary(PackageVersion, PackageExe, PackageName, SaveLocation, bIsRunningInChina, bUnzip))
 	{
-		Retries--;
-		if (Retries == 0)
+		Attempt++;
+		if (Attempt <= NumRetries)
 		{
-			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Giving up trying to fetch %s binary"), *PackageName);
+			UE_LOG(LogSpatialCommandUtils, Log, TEXT("Failed to featch %s binary. Attempting retry. Retry attempt number: %d"), *PackageName, Attempt);
 		}
 		else
 		{
-			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Retrying to fetch %s binary"), *PackageName);
+			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Giving up trying to fetch %s binary after %d retries"), *PackageName, NumRetries);
 		}
+
 	}
 
-	return Retries != 0;
+	return Attempt <= NumRetries;
 }
 
 bool SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, const FString& PackageExe, const FString& PackageName,
