@@ -13,9 +13,6 @@
 #include "Materials/Material.h"
 #include "Math/Box2D.h"
 #include "Math/Color.h"
-#include "Templates/Tuple.h"
-
-#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialDebugger.generated.h"
 
@@ -39,41 +36,8 @@ DECLARE_CYCLE_STAT(TEXT("BuildText"), STAT_BuildText, STATGROUP_SpatialDebugger)
 
 namespace SpatialGDK
 {
-class FSubView;
-struct SpatialDebugging;
-
-class SpatialDebuggerSystem
-{
-public:
-	SpatialDebuggerSystem(USpatialNetDriver* InNetDriver, const SpatialGDK::FSubView& InSubView);
-
-	void Advance();
-
-	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
-
-	DECLARE_MULTICAST_DELEGATE_OneParam(FSpatialDebuggerActorAddedDelegate, AActor*);
-	FSpatialDebuggerActorAddedDelegate OnEntityActorAddedDelegate;
-
-	TOptional<SpatialDebugging> GetDebuggingData(Worker_EntityId Entity) const;
-	AActor* GetActor(Worker_EntityId EntityId) const;
-	const Worker_EntityId_Key* GetActorEntityId(AActor* Actor) const;
-	const TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& GetActors() const;
-
-private:
-	void OnEntityAdded(Worker_EntityId AddedEntityId);
-	void OnEntityRemoved(Worker_EntityId RemovedEntityId);
-	void ActorAuthorityGained(Worker_EntityId EntityId) const;
-
-	static constexpr int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
-
-	// These mappings are maintained independently on each client
-	// Mapping of the entities a client has checked out
-	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> EntityActorMapping;
-
-	TWeakObjectPtr<USpatialNetDriver> NetDriver;
-	const FSubView* SubView;
-};
-} // namespace SpatialGDK
+class SpatialDebuggerSystem;
+}
 
 USTRUCT()
 struct FWorkerRegionInfo
@@ -304,7 +268,7 @@ private:
 
 #if WITH_EDITOR
 	void EditorInitialiseWorkerRegions();
-	void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
 	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;

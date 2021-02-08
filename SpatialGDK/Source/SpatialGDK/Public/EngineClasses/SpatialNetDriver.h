@@ -15,6 +15,7 @@
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialBasicAwaiter.h"
 #include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialDebuggerSystem.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"

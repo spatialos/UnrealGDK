@@ -2804,9 +2804,9 @@ void USpatialNetDriver::RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebug
 {
 	if (!SpatialDebuggerSystem.IsValid())
 	{
-		typedef SpatialGDK::FSubView FSubView;
-		typedef SpatialGDK::EntityViewElement EntityViewElement;
-		typedef SpatialGDK::ComponentIdEquality ComponentIdEquality;
+		using SpatialGDK::ComponentIdEquality;
+		using SpatialGDK::EntityViewElement;
+		using SpatialGDK::FSubView;
 
 		const FSubView* DebuggerSubViewPtr = nullptr;
 
