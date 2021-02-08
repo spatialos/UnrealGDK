@@ -19,7 +19,7 @@
  * This test expects a 2x2 load balancing grid and ACrossServerPossessionGameMode
  * The client workers begin with a player controller and their default pawns, which they initially possess.
  * The flow is as follows:
- *	Recommend to use PossessionGym.umap in UnrealGDKTestGyms project which ready for tests.
+ *	Recommend to use MultiControllerPossessPawnGym.umap in UnrealGDKTestGyms project which ready for tests.
  *  - Setup:
  *    - Specify `GameMode Override` as ACrossServerPossessionGameMode
  *    - Specify `Multi Worker Settings Class` as Zoning 2x2(e.g. BP_Possession_Settings_Zoning2_2 of UnrealGDKTestGyms)
@@ -75,7 +75,7 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 					ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
 					if (PlayerController && PlayerController->HasAuthority())
 					{
-						AssertTrue(PlayerController->IsMigration(), TEXT("PlayerController should migration"), PlayerController);
+						AssertTrue(PlayerController->HasMigrated(), TEXT("PlayerController should have migrated"), PlayerController);
 					}
 				}
 			}

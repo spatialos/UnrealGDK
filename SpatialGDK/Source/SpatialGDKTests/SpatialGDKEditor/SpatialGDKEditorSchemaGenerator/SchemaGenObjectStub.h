@@ -136,3 +136,12 @@ class ASpatialTypeActorWithSubobject : public AActor
 	UPROPERTY(Replicated)
 	USpatialTypeObjectStub* SpatialActorSubobject;
 };
+
+UCLASS(SpatialType)
+class ASpatialTypeActorWithOwnerOnly : public AActor
+{
+	GENERATED_UCLASS_BODY()
+
+	UPROPERTY(Replicated)
+	float OwnerOnlyProperty;
+};

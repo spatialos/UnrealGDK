@@ -54,6 +54,7 @@ void ATestPossessionPlayerController::RemotePossessOnClient_Implementation(APawn
 			NetDriver->LockingPolicy->AcquireLock(this, TEXT("TestLock"));
 		}
 	}
+	UnPossess();
 	RemotePossessOnServer(InPawn);
 }
 
