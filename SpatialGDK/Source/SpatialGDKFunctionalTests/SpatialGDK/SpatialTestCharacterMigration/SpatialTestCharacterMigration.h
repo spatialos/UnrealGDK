@@ -16,11 +16,9 @@ public:
 
 	virtual void PrepareTest() override;
 
+	FVector Origin;
+	FVector Destination;
+
 	bool bCharacterReachedDestination;
 	bool bCharacterReachedOrigin;
-
-	UFUNCTION()
-	void OnOverlapBeginDestination(AActor* OverlappedActor, AActor* OtherActor);
-	UFUNCTION()
-	void OnOverlapBeginOrigin(AActor* OverlappedActor, AActor* OtherActor);
 };
