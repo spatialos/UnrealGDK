@@ -180,8 +180,6 @@ void ActorSystem::Advance()
 			break;
 		}
 	}
-
-	TryFetchInitialOnlyData();
 }
 
 UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
@@ -593,7 +591,7 @@ void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 
 	if (!NetDriver->GetWorld()->GetGameInstance()->IsDedicatedServerInstance())
 	{
-		TryCacheInitialOnlyEntity(EntityId);
+		NetDriver->Sender->SendInitialOnlyRequest(EntityId);
 	}
 }
 
@@ -611,6 +609,11 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 	if (RetiredActorIndex != INDEX_NONE)
 	{
 		EntitiesToRetireOnAuthorityGain.RemoveAtSwap(RetiredActorIndex);
+	}
+
+	if (!NetDriver->GetWorld()->GetGameInstance()->IsDedicatedServerInstance())
+	{
+		NetDriver->Sender->CancelInitialOnlyRequest(EntityId);
 	}
 }
 
@@ -1729,178 +1732,47 @@ bool ActorSystem::EntityHasComponent(const Worker_EntityId EntityId, const Worke
 	return false;
 }
 
-void ActorSystem::GetInitialOnlyComponentIds(Worker_EntityId EntityId, TArray<Worker_ComponentId>& OutInitialOnlyComponentIds)
+void ActorSystem::HandleIntialOnlyResponse(const Worker_EntityQueryResponseOp& Op)
 {
-	OutInitialOnlyComponentIds.Reset();
-	USchemaDatabase* SchemaDataBase = NetDriver->ClassInfoManager->SchemaDatabase;
-	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
-	const EntityView& CoordinatorEntityView = NetDriver->Connection->GetCoordinator().GetView();
-
-	const EntityView& View = SubView->GetView();
-	const EntityViewElement* Entity = View.Find(EntityId);
-	if (Entity == nullptr)
+	USpatialNetDriver* Driver = Cast<USpatialNetDriver>(NetDriver);
+	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
+		UE_LOG(LogActorSystem, Warning, TEXT("%s - Entity query failed: %s"), *FString(__FUNCTION__), UTF8_TO_TCHAR(Op.message));
 		return;
 	}
 
-	AActor* Actor = Channel->GetActor();
-	const TSet<UActorComponent*>& ActorComponents = Actor->GetComponents();
-	FString ClassPathName = Actor->GetClass()->GetPathName();
-
-	// Process InitialOnly data of actor
-	FActorSchemaData& ActorSchemaData = SchemaDataBase->ActorClassPathToSchema[ClassPathName];
-	int32_t InitialOnlyComponentId = ActorSchemaData.SchemaComponents[SCHEMA_InitialOnly];
-	if (InitialOnlyComponentId && InitialOnlyComponentId != SCHEMA_Invalid)
+	if (Op.result_count == 0)
 	{
-		OutInitialOnlyComponentIds.Add(InitialOnlyComponentId);
+		UE_LOG(LogActorSystem, Warning, TEXT("%s - Could not find any entity: %s"), *FString(__FUNCTION__), UTF8_TO_TCHAR(Op.message));
+		return;
 	}
 
-	// Process InitialOnly data of subobject
-	for (auto SubobjectSchemaDataKV : ActorSchemaData.SubobjectData)
-	{
-		int32_t TmpInitialOnlyComponentId = SubobjectSchemaDataKV.Value.SchemaComponents[SCHEMA_InitialOnly];
-		if (TmpInitialOnlyComponentId && TmpInitialOnlyComponentId != SCHEMA_Invalid)
-		{
-			OutInitialOnlyComponentIds.Add(TmpInitialOnlyComponentId);
-		}
-	}
+	UE_LOG(LogActorSystem, Warning, TEXT("%s - EntityCount: %d"), *FString(__FUNCTION__), Op.result_count);
 
-	// Process InitialOnly data of dynamic subobject
-	for (auto ActorComponent : ActorComponents)
+	for (uint32_t i = 0; i < Op.result_count; ++i)
 	{
-		FString TmpClassPathName = ActorComponent->GetClass()->GetPathName();
-		if (SchemaDataBase->SubobjectClassPathToSchema.Contains(TmpClassPathName))
+		const Worker_Entity* Entity = &Op.results[i];
+		USpatialActorChannel* Channel = Driver->GetActorChannelByEntityId(Entity->entity_id);
+
+		for (uint32_t j = 0; j < Entity->component_count; ++j)
 		{
-			FSubobjectSchemaData& SubobjectSchemaData = SchemaDataBase->SubobjectClassPathToSchema[TmpClassPathName];
-			for (auto DynamicSubobjectComponents : SubobjectSchemaData.DynamicSubobjectComponents)
+			const Worker_ComponentData* CompData = &Entity->components[j];
+			Worker_ComponentId ComponentId = CompData->component_id;
+
+			uint32 Offset;
+			if (!NetDriver->ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset))
 			{
-				int32_t TmpInitialOnlyComponentId = DynamicSubobjectComponents.SchemaComponents[SCHEMA_InitialOnly];
-				if (TmpInitialOnlyComponentId && TmpInitialOnlyComponentId != SCHEMA_Invalid)
-				{
-					OutInitialOnlyComponentIds.Add(TmpInitialOnlyComponentId);
-				}
+				UE_LOG(LogActorSystem, Error, TEXT("%s - Failed to find corresponding component offset, ComponentId:%d"), *FString(__FUNCTION__), ComponentId);
+				continue;
 			}
+
+			UObject* TargetObject =
+				Offset ? NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Entity->entity_id, Offset)).Get()
+					   : Channel->GetActor();
+
+			ApplyComponentData(*Channel, *TargetObject, ComponentId, CompData->schema_type);
 		}
 	}
-}
-
-void ActorSystem::TryCacheInitialOnlyEntity(Worker_EntityId EntityId)
-{
-	TArray<Worker_ComponentId> LocalInitialOnlyComponentIds;
-	GetInitialOnlyComponentIds(EntityId, LocalInitialOnlyComponentIds);
-
-	if (0 == LocalInitialOnlyComponentIds.Num())
-	{
-		return;
-	}
-
-	InitialOnlyEntities.Add(TPair<Worker_EntityId, TSet<Worker_ComponentId>>(EntityId, LocalInitialOnlyComponentIds));
-}
-
-void ActorSystem::TryFetchInitialOnlyData()
-{
-	if (0 == InitialOnlyEntities.Num())
-	{
-		return;
-	}
-
-	int32_t EntityCount = 0;
-
-	TSet<Worker_ComponentId> ComponentIdsSet;
-	TArray<Worker_Constraint> EntityConstraintArray;
-	TArray<Worker_EntityId> RemovedEntities;
-
-	for (auto Entity : InitialOnlyEntities)
-	{
-		Worker_EntityId TmpEntityId = Entity.Key;
-		Worker_Constraint Constraints;
-		Constraints.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
-		Constraints.constraint.entity_id_constraint.entity_id = TmpEntityId;
-
-		EntityConstraintArray.Add(Constraints);
-		ComponentIdsSet.Append(Entity.Value);
-		RemovedEntities.Add(Entity.Key);
-
-		if (++EntityCount >= InitialOnlyEntityMaxQueryCountPerTick)
-		{
-			break;
-		}
-	}
-
-	for (auto RemovedEntityId : RemovedEntities)
-	{
-		InitialOnlyEntities.Remove(RemovedEntityId);
-	}
-
-	Worker_Constraint InitialOnlyConstraints;
-	InitialOnlyConstraints.constraint_type = WORKER_CONSTRAINT_TYPE_OR;
-	InitialOnlyConstraints.constraint.and_constraint.constraint_count = EntityConstraintArray.Num();
-	InitialOnlyConstraints.constraint.and_constraint.constraints = EntityConstraintArray.GetData();
-
-	const TArray<Worker_ComponentId>& TmpComponentIds = ComponentIdsSet.Array();
-
-	Worker_EntityQuery InitialOnlyQuery{};
-	InitialOnlyQuery.constraint = InitialOnlyConstraints;
-	InitialOnlyQuery.snapshot_result_type_component_id_count = TmpComponentIds.Num();
-	InitialOnlyQuery.snapshot_result_type_component_ids = TmpComponentIds.GetData();
-
-	const Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&InitialOnlyQuery, SpatialGDK::RETRY_UNTIL_COMPLETE);
-
-	EntityQueryDelegate InitialOnlyQueryDelegate;
-	InitialOnlyQueryDelegate.BindLambda([this, RequestID](const Worker_EntityQueryResponseOp& Op) {
-		USpatialNetDriver* Driver = Cast<USpatialNetDriver>(NetDriver);
-		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-		{
-			UE_LOG(LogActorSystem, Warning, TEXT("%s - Entity query failed: %s"), *FString(__FUNCTION__), UTF8_TO_TCHAR(Op.message));
-		}
-		else if (Op.result_count == 0)
-		{
-			UE_LOG(LogActorSystem, Warning, TEXT("%s - Could not find SpatialSpawner via entity query: %s"), *FString(__FUNCTION__),
-				   UTF8_TO_TCHAR(Op.message));
-		}
-		else
-		{
-			UE_LOG(LogActorSystem, Warning, TEXT("%s - EntityCount: %d"), *FString(__FUNCTION__), Op.result_count);
-
-			for (uint32_t i = 0; i < Op.result_count; ++i)
-			{
-				const Worker_Entity* Entity = &Op.results[i];
-				USpatialActorChannel* Channel = Driver->GetActorChannelByEntityId(Entity->entity_id);
-
-				for (uint32_t j = 0; j < Entity->component_count; ++j)
-				{
-					const Worker_ComponentData* CompData = &Entity->components[j];
-					Worker_ComponentId ComponentId = CompData->component_id;
-
-					UE_LOG(LogActorSystem, Warning, TEXT("%s - ComponentId:%d"), *FString(__FUNCTION__), ComponentId);
-
-					UObject* TargetObject = nullptr;
-					{
-						uint32 Offset;
-						bool bFoundOffset = NetDriver->ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset);
-						if (!bFoundOffset)
-						{
-							return;
-						}
-
-						if (Offset == 0)
-						{
-							TargetObject = Channel->GetActor();
-						}
-						else
-						{
-							TargetObject =
-								NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Entity->entity_id, Offset)).Get();
-						}
-					}
-
-					ApplyComponentData(*Channel, *TargetObject, ComponentId, CompData->schema_type);
-				}
-			}
-		}
-	});
-
-	NetDriver->Receiver->AddEntityQueryDelegate(RequestID, InitialOnlyQueryDelegate);
 }
 
 } // namespace SpatialGDK

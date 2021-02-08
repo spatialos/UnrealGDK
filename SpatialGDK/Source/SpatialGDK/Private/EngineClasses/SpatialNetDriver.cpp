@@ -2093,6 +2093,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	if (Sender != nullptr)
 	{
 		Sender->FlushRPCService();
+		Sender->FlushInitialOnlyRequests();
 	}
 
 	if (IsServer())

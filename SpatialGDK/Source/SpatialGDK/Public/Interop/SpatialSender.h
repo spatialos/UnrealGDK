@@ -22,6 +22,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
+#define MAX_INITIAL_ONLY_REQUEST_PER_TICK		100
+
 class USpatialActorChannel;
 class SpatialDispatcher;
 class USpatialNetDriver;
@@ -88,10 +90,15 @@ public:
 
 	void UpdateInterestComponent(AActor* Actor);
 
+	void GetInitialOnlyComponentIds(Worker_EntityId EntityId, TArray<Worker_ComponentId>& OutInitialOnlyComponentIds);
+	void SendInitialOnlyRequest(Worker_EntityId EntityId);
+	void CancelInitialOnlyRequest(Worker_EntityId EntityId);
+
 	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload);
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	void FlushRPCService();
+	void FlushInitialOnlyRequests();
 
 	SpatialGDK::RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
 													  ERPCType Type, void* Params);
@@ -166,4 +173,7 @@ private:
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
 
 	SpatialGDK::SpatialEventTracer* EventTracer;
+
+	int32_t MaxInitialOnlyRequestPerTick;
+	TMap<Worker_EntityId, TSet<Worker_ComponentId>> InitialOnlyRequests;
 };

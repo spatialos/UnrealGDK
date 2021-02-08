@@ -113,6 +113,9 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	{
 		PeriodicallyProcessOutgoingRPCs();
 	}
+
+	// TODO: make it configurable in the future
+	MaxInitialOnlyRequestPerTick = MAX_INITIAL_ONLY_REQUEST_PER_TICK;
 }
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten)
@@ -949,3 +952,125 @@ void USpatialSender::AddTombstoneToEntity(const Worker_EntityId EntityId)
 	NetDriver->TrackTombstone(EntityId);
 #endif
 }
+
+void USpatialSender::GetInitialOnlyComponentIds(Worker_EntityId EntityId, TArray<Worker_ComponentId>& OutInitialOnlyComponentIds)
+{
+	OutInitialOnlyComponentIds.Reset();
+	USchemaDatabase* SchemaDataBase = NetDriver->ClassInfoManager->SchemaDatabase;
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	const EntityView& CoordinatorEntityView = NetDriver->Connection->GetCoordinator().GetView();
+
+	AActor* Actor = Channel->GetActor();
+	const TSet<UActorComponent*>& ActorComponents = Actor->GetComponents();
+	FString ClassPathName = Actor->GetClass()->GetPathName();
+
+	// Process InitialOnly data of actor
+	FActorSchemaData& ActorSchemaData = SchemaDataBase->ActorClassPathToSchema[ClassPathName];
+	int32_t InitialOnlyComponentId = ActorSchemaData.SchemaComponents[SCHEMA_InitialOnly];
+	if (InitialOnlyComponentId && InitialOnlyComponentId != SCHEMA_Invalid)
+	{
+		OutInitialOnlyComponentIds.Add(InitialOnlyComponentId);
+	}
+
+	// Process InitialOnly data of subobject
+	for (auto SubobjectSchemaDataKV : ActorSchemaData.SubobjectData)
+	{
+		int32_t TmpInitialOnlyComponentId = SubobjectSchemaDataKV.Value.SchemaComponents[SCHEMA_InitialOnly];
+		if (TmpInitialOnlyComponentId && TmpInitialOnlyComponentId != SCHEMA_Invalid)
+		{
+			OutInitialOnlyComponentIds.Add(TmpInitialOnlyComponentId);
+		}
+	}
+
+	// Process InitialOnly data of dynamic subobject
+	for (auto ActorComponent : ActorComponents)
+	{
+		FString TmpClassPathName = ActorComponent->GetClass()->GetPathName();
+		if (SchemaDataBase->SubobjectClassPathToSchema.Contains(TmpClassPathName))
+		{
+			FSubobjectSchemaData& SubobjectSchemaData = SchemaDataBase->SubobjectClassPathToSchema[TmpClassPathName];
+			for (auto DynamicSubobjectComponents : SubobjectSchemaData.DynamicSubobjectComponents)
+			{
+				int32_t TmpInitialOnlyComponentId = DynamicSubobjectComponents.SchemaComponents[SCHEMA_InitialOnly];
+				if (TmpInitialOnlyComponentId && TmpInitialOnlyComponentId != SCHEMA_Invalid)
+				{
+					OutInitialOnlyComponentIds.Add(TmpInitialOnlyComponentId);
+				}
+			}
+		}
+	}
+}
+
+void USpatialSender::SendInitialOnlyRequest(Worker_EntityId EntityId)
+{
+	TArray<Worker_ComponentId> LocalInitialOnlyComponentIds;
+	GetInitialOnlyComponentIds(EntityId, LocalInitialOnlyComponentIds);
+
+	if (0 == LocalInitialOnlyComponentIds.Num())
+	{
+		return;
+	}
+
+	InitialOnlyRequests.Add(TPair<Worker_EntityId, TSet<Worker_ComponentId>>(EntityId, LocalInitialOnlyComponentIds));
+}
+
+void USpatialSender::CancelInitialOnlyRequest(Worker_EntityId EntityId)
+{
+	InitialOnlyRequests.Remove(EntityId);
+}
+
+void USpatialSender::FlushInitialOnlyRequests()
+{
+	if (0 == InitialOnlyRequests.Num())
+	{
+		return;
+	}
+
+	int32_t EntityCount = 0;
+
+	TSet<Worker_ComponentId> ComponentIdsSet;
+	TArray<Worker_Constraint> EntityConstraintArray;
+	TArray<Worker_EntityId> RemovedEntities;
+
+	for (auto Entity : InitialOnlyRequests)
+	{
+		Worker_EntityId TmpEntityId = Entity.Key;
+		Worker_Constraint Constraints;
+		Constraints.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
+		Constraints.constraint.entity_id_constraint.entity_id = TmpEntityId;
+
+		EntityConstraintArray.Add(Constraints);
+		ComponentIdsSet.Append(Entity.Value);
+		RemovedEntities.Add(Entity.Key);
+
+		if (++EntityCount >= MaxInitialOnlyRequestPerTick)
+		{
+			break;
+		}
+	}
+
+	for (auto RemovedEntityId : RemovedEntities)
+	{
+		InitialOnlyRequests.Remove(RemovedEntityId);
+	}
+
+	Worker_Constraint InitialOnlyConstraints;
+	InitialOnlyConstraints.constraint_type = WORKER_CONSTRAINT_TYPE_OR;
+	InitialOnlyConstraints.constraint.and_constraint.constraint_count = EntityConstraintArray.Num();
+	InitialOnlyConstraints.constraint.and_constraint.constraints = EntityConstraintArray.GetData();
+
+	const TArray<Worker_ComponentId>& TmpComponentIds = ComponentIdsSet.Array();
+
+	Worker_EntityQuery InitialOnlyQuery{};
+	InitialOnlyQuery.constraint = InitialOnlyConstraints;
+	InitialOnlyQuery.snapshot_result_type_component_id_count = TmpComponentIds.Num();
+	InitialOnlyQuery.snapshot_result_type_component_ids = TmpComponentIds.GetData();
+
+	const Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&InitialOnlyQuery, SpatialGDK::RETRY_UNTIL_COMPLETE);
+
+	EntityQueryDelegate InitialOnlyQueryDelegate;
+	InitialOnlyQueryDelegate.BindRaw(NetDriver->ActorSystem.Get(), &ActorSystem::HandleIntialOnlyResponse);
+
+	NetDriver->Receiver->AddEntityQueryDelegate(RequestID, InitialOnlyQueryDelegate);
+}
+
