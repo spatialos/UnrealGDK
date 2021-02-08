@@ -109,7 +109,7 @@ void AsyncPackageLoadFilter::ProcessActorsFromAsyncLoading()
 
 	for (const auto& PackageName : PackagesToProcess)
 	{
-		TArray<Worker_EntityId>* Entities = AsyncLoadingPackages.Find(PackageName);
+		TArray<Worker_EntityId_Key>* Entities = AsyncLoadingPackages.Find(PackageName);
 		if (Entities == nullptr)
 		{
 			UE_LOG(LogAsyncPackageLoadFilter, Error,
@@ -118,7 +118,7 @@ void AsyncPackageLoadFilter::ProcessActorsFromAsyncLoading()
 			continue;
 		}
 
-		for (Worker_EntityId Entity : *Entities)
+		for (Worker_EntityId_Key Entity : *Entities)
 		{
 			if (IsEntityWaitingForAsyncLoad(Entity))
 			{
