@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - Added a message box notification when game is closed due to missing generated schema.
+- Adapted SpatialDebugger to use SubViews
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
