@@ -35,6 +35,24 @@ public:
 	int ReplicatedValue = SpatialTestAttachedComponentReplicationValues::InitialValue;
 };
 
+UCLASS(BlueprintType)
+class ASpatialTestAttachedComponentReplicationActorWithDefaultComponent : public ASpatialTestAttachedComponentReplicationActor
+{
+	GENERATED_BODY()
+
+public:
+	ASpatialTestAttachedComponentReplicationActorWithDefaultComponent();
+};
+
+UENUM(BlueprintType)
+enum class ESpatialTestAttachedComponentReplicationType : uint8
+{
+	None,
+	LevelPlaced,
+	DynamicallySpawnedWithDynamicComponent,
+	DynamicallySpawnedWithDefaultComponent,
+};
+
 UCLASS()
 class ASpatialTestAttachedComponentReplication : public ASpatialFunctionalTest
 {
@@ -44,7 +62,15 @@ public:
 
 	virtual void PrepareTest() override;
 
+	UPROPERTY(EditAnywhere, Category = "Test Shit")
+	ESpatialTestAttachedComponentReplicationType bIsWorkingWithSceneActor;
+
+	UPROPERTY(EditAnywhere, Category = "Test Shit")
+	TSoftObjectPtr<AActor> SceneActor;
+
 private:
+	float TimeRunningStep2 = 0.0f;
+
 	UPROPERTY()
 	ASpatialTestAttachedComponentReplicationActor* LevelPlacedActor;
 
