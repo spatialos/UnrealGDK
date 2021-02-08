@@ -22,7 +22,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
-#define MAX_INITIAL_ONLY_REQUEST_PER_TICK		100
+#define MAX_INITIAL_ONLY_REQUEST_PER_TICK 100
 
 class USpatialActorChannel;
 class SpatialDispatcher;

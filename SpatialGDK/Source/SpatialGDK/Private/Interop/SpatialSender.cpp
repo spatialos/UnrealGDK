@@ -1073,4 +1073,3 @@ void USpatialSender::FlushInitialOnlyRequests()
 
 	NetDriver->Receiver->AddEntityQueryDelegate(RequestID, InitialOnlyQueryDelegate);
 }
-

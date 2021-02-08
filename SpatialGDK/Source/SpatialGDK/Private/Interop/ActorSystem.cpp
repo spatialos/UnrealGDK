@@ -1762,7 +1762,8 @@ void ActorSystem::HandleIntialOnlyResponse(const Worker_EntityQueryResponseOp& O
 			uint32 Offset;
 			if (!NetDriver->ClassInfoManager->GetOffsetByComponentId(ComponentId, Offset))
 			{
-				UE_LOG(LogActorSystem, Error, TEXT("%s - Failed to find corresponding component offset, ComponentId:%d"), *FString(__FUNCTION__), ComponentId);
+				UE_LOG(LogActorSystem, Error, TEXT("%s - Failed to find corresponding component offset, ComponentId:%d"),
+					   *FString(__FUNCTION__), ComponentId);
 				continue;
 			}
 
