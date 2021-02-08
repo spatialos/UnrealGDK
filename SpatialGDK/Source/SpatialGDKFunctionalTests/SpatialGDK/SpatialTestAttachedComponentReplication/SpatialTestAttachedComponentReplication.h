@@ -36,6 +36,18 @@ public:
 };
 
 UCLASS(BlueprintType)
+class ASpatialTestAttachedComponentReplicationActorForLevelPlacing : public ASpatialTestAttachedComponentReplicationActor
+{
+	GENERATED_BODY()
+};
+
+UCLASS(BlueprintType)
+class ASpatialTestAttachedComponentReplicationActorWithDynamicComponent : public ASpatialTestAttachedComponentReplicationActor
+{
+	GENERATED_BODY()
+};
+
+UCLASS(BlueprintType)
 class ASpatialTestAttachedComponentReplicationActorWithDefaultComponent : public ASpatialTestAttachedComponentReplicationActor
 {
 	GENERATED_BODY()
@@ -62,14 +74,10 @@ public:
 
 	virtual void PrepareTest() override;
 
-	UPROPERTY(EditAnywhere, Category = "Test Shit")
-	ESpatialTestAttachedComponentReplicationType bIsWorkingWithSceneActor;
-
-	UPROPERTY(EditAnywhere, Category = "Test Shit")
-	TSoftObjectPtr<AActor> SceneActor;
-
 private:
-	float TimeRunningStep2 = 0.0f;
+	void GenerateTestSteps(ESpatialTestAttachedComponentReplicationType TestType);
+
+	float TimeInStep = 0.0f;
 
 	UPROPERTY()
 	ASpatialTestAttachedComponentReplicationActor* LevelPlacedActor;
