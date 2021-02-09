@@ -1753,8 +1753,6 @@ void ActorSystem::HandleIntialOnlyResponse(const Worker_EntityQueryResponseOp& O
 		return;
 	}
 
-	UE_LOG(LogActorSystem, Warning, TEXT("%s - EntityCount: %d"), *FString(__FUNCTION__), Op.result_count);
-
 	for (uint32_t i = 0; i < Op.result_count; ++i)
 	{
 		const Worker_Entity* Entity = &Op.results[i];
