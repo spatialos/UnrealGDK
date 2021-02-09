@@ -79,6 +79,7 @@ struct FUnrealType
 	UObject* Object; // Actual instance of the object. Could be the CDO or a Subobject on the CDO/BlueprintGeneratedClass
 	FName Name;		 // Name for the object. This is either the name of the object itself, or the name of the property in the blueprint
 	TMultiMap<GDK_PROPERTY(Property)*, TSharedPtr<FUnrealProperty>> Properties;
+	TArray<TSharedPtr<FUnrealProperty>> NoPropertySubobjects;
 	TWeakPtr<FUnrealProperty> ParentProperty;
 };
 

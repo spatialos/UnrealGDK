@@ -259,6 +259,61 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		return TypeNode;
 	}
 
+	if (Class->IsChildOf<AActor>())
+	{
+		const AActor* CDO = Cast<AActor>(Class->GetDefaultObject());
+
+		TSet<UObject*> ObjectsPointedTo;
+
+		Algo::Transform(TFieldRange<GDK_PROPERTY(ObjectProperty)>(Class), ObjectsPointedTo, [CDO](GDK_PROPERTY(ObjectProperty) * Property) {
+			return Property->GetObjectPropertyValue_InContainer(CDO);
+		});
+
+		TSet<UActorComponent*> ComponentsPointedTo;
+
+		Algo::TransformIf(
+			ObjectsPointedTo, ComponentsPointedTo,
+			[](UObject* Object) {
+				return IsValid(Object) && Object->IsA<UActorComponent>();
+			},
+			[](UObject* Object) {
+				return Cast<UActorComponent>(Object);
+			});
+
+		const TSet<UActorComponent*> ComponentsNotCoveredByProperties = CDO->GetComponents().Difference(ComponentsPointedTo);
+
+		// Handle components attached to the actor that don't have a property pointing to them.
+		for (UActorComponent* Component : ComponentsNotCoveredByProperties)
+		{
+			if (Component->IsEditorOnly())
+			{
+				continue;
+			}
+
+			if (!Component->IsSupportedForNetworking())
+			{
+				continue;
+			}
+
+			TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
+			PropertyNode->Property = nullptr;
+			PropertyNode->ContainerType = TypeNode;
+			PropertyNode->ParentChecksum = ParentChecksum;
+			PropertyNode->StaticArrayIndex = StaticArrayIndex;
+
+			constexpr uint32 Checksum = 0;
+			PropertyNode->CompatibleChecksum = Checksum;
+
+			//  is definitely a strong reference, recurse into it.
+			PropertyNode->Type = CreateUnrealTypeInfo(Component->GetClass(), ParentChecksum, 0);
+			PropertyNode->Type->ParentProperty = PropertyNode;
+			PropertyNode->Type->Object = Component;
+			PropertyNode->Type->Name = Component->GetFName();
+
+			TypeNode->NoPropertySubobjects.Add(PropertyNode);
+		}
+	}
+
 	// Set up replicated properties by reading the rep layout and matching the properties with the ones in the type node.
 	// Based on inspection in InitFromObjectClass, the RepLayout will always replicate object properties using NetGUIDs, regardless of
 	// ownership. However, the rep layout will recurse into structs and allocate rep handles for their properties, unless the condition
@@ -491,6 +546,21 @@ FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
 	TSet<UObject*> SeenComponents;
 	uint32 CurrentOffset = 1;
 
+	auto AddSubobject = [&CurrentOffset, &SeenComponents, &Subobjects](TSharedPtr<FUnrealType> PropertyTypeInfo) {
+		UObject* Value = PropertyTypeInfo->Object;
+
+		if (Value != nullptr && IsSupportedClass(Value->GetClass()))
+		{
+			if (!SeenComponents.Contains(Value))
+			{
+				SeenComponents.Add(Value);
+				Subobjects.Add(CurrentOffset, PropertyTypeInfo);
+			}
+
+			CurrentOffset++;
+		}
+	};
+
 	for (auto& PropertyPair : TypeInfo->Properties)
 	{
 		GDK_PROPERTY(Property)* Property = PropertyPair.Key;
@@ -498,18 +568,15 @@ FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
 
 		if (Property->IsA<GDK_PROPERTY(ObjectProperty)>() && PropertyTypeInfo.IsValid())
 		{
-			UObject* Value = PropertyTypeInfo->Object;
+			AddSubobject(PropertyTypeInfo);
+		}
+	}
 
-			if (Value != nullptr && IsSupportedClass(Value->GetClass()))
-			{
-				if (!SeenComponents.Contains(Value))
-				{
-					SeenComponents.Add(Value);
-					Subobjects.Add(CurrentOffset, PropertyTypeInfo);
-				}
-
-				CurrentOffset++;
-			}
+	for (const TSharedPtr<FUnrealProperty>& NonPropertySubobject : TypeInfo->NoPropertySubobjects)
+	{
+		if (NonPropertySubobject->Type->Object->IsSupportedForNetworking())
+		{
+			AddSubobject(NonPropertySubobject->Type);
 		}
 	}
 
