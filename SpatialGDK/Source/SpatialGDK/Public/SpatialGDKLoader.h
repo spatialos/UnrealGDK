@@ -41,7 +41,7 @@ public:
 #endif // TRACE_LIB_ACTIVE
 
 #elif PLATFORM_PS4
-		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(TEXT("libworker.prx"));
+		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(TEXT("libimprobable_worker.prx"));
 #endif
 	}
 
