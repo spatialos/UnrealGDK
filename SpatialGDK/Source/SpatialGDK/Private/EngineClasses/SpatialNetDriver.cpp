@@ -409,9 +409,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	if (GetDefault<USpatialGDKSettings>()->bAsyncLoadNewClassesOnEntityCheckout)
 	{
 		AsyncPackageLoadFilter = NewObject<UAsyncPackageLoadFilter>();
-		AsyncPackageLoadFilter->Init(this);
-		AsyncPackageLoadFilter->GetOnPackageLoadedForEntityDelegate().AddDynamic(this,
-																				 &USpatialNetDriver::OnAsyncPackageLoadFilterComplete);
+		AsyncPackageLoadFilter->Init(FOnPackageLoadedForEntity::CreateUObject(this, &USpatialNetDriver::OnAsyncPackageLoadFilterComplete));
 	}
 
 	CreateAndInitializeLoadBalancingClasses();

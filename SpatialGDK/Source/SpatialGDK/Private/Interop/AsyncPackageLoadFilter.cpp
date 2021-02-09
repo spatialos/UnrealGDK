@@ -6,9 +6,10 @@
 
 DEFINE_LOG_CATEGORY(LogAsyncPackageLoadFilter);
 
-void UAsyncPackageLoadFilter::Init(USpatialNetDriver* InNetDriver)
+void UAsyncPackageLoadFilter::Init(const FOnPackageLoadedForEntity& InOnPackageLoadedForEntity)
 {
-	NetDriver = InNetDriver;
+	check(InOnPackageLoadedForEntity.IsBound());
+	OnPackageLoadedForEntity = InOnPackageLoadedForEntity;
 }
 
 bool UAsyncPackageLoadFilter::IsAssetLoadedOrTriggerAsyncLoad(Worker_EntityId EntityId, const FString& ClassPath)
@@ -122,7 +123,7 @@ void UAsyncPackageLoadFilter::ProcessActorsFromAsyncLoading()
 
 				check(EntitiesWaitingForAsyncLoad.Find(Entity) != nullptr);
 				EntitiesWaitingForAsyncLoad.Remove(Entity);
-				OnPackageLoadedForEntity.Broadcast(Entity);
+				OnPackageLoadedForEntity.ExecuteIfBound(Entity);
 			}
 		}
 

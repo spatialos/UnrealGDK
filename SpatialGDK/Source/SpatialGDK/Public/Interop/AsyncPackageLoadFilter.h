@@ -10,7 +10,7 @@
 
 class USpatialNetDriver;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPackageLoadedForEntity, int64, EntityId);
+DECLARE_DELEGATE_OneParam(FOnPackageLoadedForEntity, Worker_EntityId /*EntityId*/);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogAsyncPackageLoadFilter, Log, All);
 
@@ -20,12 +20,11 @@ class SPATIALGDK_API UAsyncPackageLoadFilter : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver);
+	void Init(const FOnPackageLoadedForEntity& OnPackageLoadedForEntityDelegate);
 
 	// Returns if asset package required by entity-actor is loaded
 	bool IsAssetLoadedOrTriggerAsyncLoad(Worker_EntityId EntityId, const FString& ClassPath);
 	void ProcessActorsFromAsyncLoading();
-	FOnPackageLoadedForEntity& GetOnPackageLoadedForEntityDelegate() { return OnPackageLoadedForEntity; }
 
 private:
 	bool NeedToLoadClass(const FString& ClassPath);
