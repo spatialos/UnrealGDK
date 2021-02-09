@@ -207,25 +207,19 @@ void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUn
 {
 	TSet<UStruct*> AlreadyImported;
 
-	for (auto& PropertyPair : TypeInfo->Properties)
+	for (const auto& OffsetToSubobject : GetAllSubobjects(TypeInfo))
 	{
-		GDK_PROPERTY(Property)* Property = PropertyPair.Key;
-		GDK_PROPERTY(ObjectProperty)* ObjectProperty = GDK_CASTFIELD<GDK_PROPERTY(ObjectProperty)>(Property);
+		const TSharedPtr<FUnrealType>& PropertyTypeInfo = OffsetToSubobject.Value;
 
-		TSharedPtr<FUnrealType>& PropertyTypeInfo = PropertyPair.Value->Type;
+		UObject* Value = PropertyTypeInfo->Object;
 
-		if (ObjectProperty && PropertyTypeInfo.IsValid())
+		if (Value != nullptr && IsSupportedClass(Value->GetClass()))
 		{
-			UObject* Value = PropertyTypeInfo->Object;
-
-			if (Value != nullptr && IsSupportedClass(Value->GetClass()))
+			UClass* Class = Value->GetClass();
+			if (!AlreadyImported.Contains(Class) && SchemaGeneratedClasses.Contains(Class))
 			{
-				UClass* Class = Value->GetClass();
-				if (!AlreadyImported.Contains(Class) && SchemaGeneratedClasses.Contains(Class))
-				{
-					Writer.Printf("import \"unreal/generated/Subobjects/{0}.schema\";", *ClassPathToSchemaName[Class->GetPathName()]);
-					AlreadyImported.Add(Class);
-				}
+				Writer.Printf("import \"unreal/generated/Subobjects/{0}.schema\";", *ClassPathToSchemaName[Class->GetPathName()]);
+				AlreadyImported.Add(Class);
 			}
 		}
 	}
