@@ -29,13 +29,13 @@ const FName AEventTracingTest::UserSendPropertyEventName = "user.send_property";
 const FName AEventTracingTest::UserSendComponentPropertyEventName = "user.send_component_property";
 const FName AEventTracingTest::UserSendRPCEventName = "user.send_rpc";
 
-const FName AEventTracingTest::UserSendCrossServerPropertyEventName = "user.send_cross_server_property";	   
-const FName AEventTracingTest::UserSendCrossServerRPCEventName = "user.send_cross_server_rpc";				   
-const FName AEventTracingTest::UserReceiveCrossServerPropertyEventName = "user.receive_cross_server_property"; 
-const FName AEventTracingTest::UserReceiveCrossServerRPCEventName = "user.receive_cross_server_rpc";		   
+const FName AEventTracingTest::UserSendCrossServerPropertyEventName = "user.send_cross_server_property";
+const FName AEventTracingTest::UserSendCrossServerRPCEventName = "user.send_cross_server_rpc";
+const FName AEventTracingTest::UserReceiveCrossServerPropertyEventName = "user.receive_cross_server_property";
+const FName AEventTracingTest::UserReceiveCrossServerRPCEventName = "user.receive_cross_server_rpc";
 const FName AEventTracingTest::ApplyCrossServerRPCName = "unreal_gdk.apply_cross_server_rpc";
-const FName AEventTracingTest::SendCrossServerRPCName = "unreal_gdk.send_cross_server_rpc";					   
-const FName AEventTracingTest::ReceiveCrossServerRPCName = "unreal_gdk.receive_cross_server_rpc";			   
+const FName AEventTracingTest::SendCrossServerRPCName = "unreal_gdk.send_cross_server_rpc";
+const FName AEventTracingTest::ReceiveCrossServerRPCName = "unreal_gdk.receive_cross_server_rpc";
 
 AEventTracingTest::AEventTracingTest()
 {
@@ -162,7 +162,7 @@ void AEventTracingTest::GatherData()
 			FoundClient++;
 		}
 
-		if (FoundClient != 2  && FileCreation.FilePath.Contains("UnrealWorker"))
+		if (FoundClient != 2 && FileCreation.FilePath.Contains("UnrealWorker"))
 		{
 			GatherDataFromFile(FileCreation.FilePath);
 			FoundWorker++;
