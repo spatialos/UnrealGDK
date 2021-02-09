@@ -29,6 +29,14 @@ const FName AEventTracingTest::UserSendPropertyEventName = "user.send_property";
 const FName AEventTracingTest::UserSendComponentPropertyEventName = "user.send_component_property";
 const FName AEventTracingTest::UserSendRPCEventName = "user.send_rpc";
 
+const FName AEventTracingTest::UserSendCrossServerPropertyEventName = "user.send_cross_server_property";	   
+const FName AEventTracingTest::UserSendCrossServerRPCEventName = "user.send_cross_server_rpc";				   
+const FName AEventTracingTest::UserReceiveCrossServerPropertyEventName = "user.receive_cross_server_property"; 
+const FName AEventTracingTest::UserReceiveCrossServerRPCEventName = "user.receive_cross_server_rpc";		   
+const FName AEventTracingTest::ApplyCrossServerRPCName = "unreal_gdk.apply_cross_server_rpc";
+const FName AEventTracingTest::SendCrossServerRPCName = "unreal_gdk.send_cross_server_rpc";					   
+const FName AEventTracingTest::ReceiveCrossServerRPCName = "unreal_gdk.receive_cross_server_rpc";			   
+
 AEventTracingTest::AEventTracingTest()
 {
 	Author = "Matthew Sandford";
@@ -144,29 +152,29 @@ void AEventTracingTest::GatherData()
 
 	FPlatformProcess::Sleep(1); // Worker bug means file may not be flushed by the OS (WRK-2396)
 
-	bool bFoundClient = false;
-	bool bFoundWorker = false;
+	int FoundClient = 0;
+	int FoundWorker = 0;
 	for (const FileCreationTime& FileCreation : FileCreationTimes)
 	{
-		if (!bFoundClient && FileCreation.FilePath.Contains("UnrealClient"))
+		if (FoundClient != 1 && FileCreation.FilePath.Contains("UnrealClient"))
 		{
 			GatherDataFromFile(FileCreation.FilePath);
-			bFoundClient = true;
+			FoundClient++;
 		}
 
-		if (!bFoundWorker && FileCreation.FilePath.Contains("UnrealWorker"))
+		if (FoundClient != 2  && FileCreation.FilePath.Contains("UnrealWorker"))
 		{
 			GatherDataFromFile(FileCreation.FilePath);
-			bFoundWorker = true;
+			FoundWorker++;
 		}
 
-		if (bFoundClient && bFoundWorker)
+		if (FoundClient == 1 && FoundWorker == 2)
 		{
 			break;
 		}
 	}
 
-	if (!bFoundClient || !bFoundWorker)
+	if (FoundClient != 1 || FoundWorker != 2)
 	{
 		UE_LOG(LogEventTracingTest, Error, TEXT("Could not find all required event tracing files"));
 		return;

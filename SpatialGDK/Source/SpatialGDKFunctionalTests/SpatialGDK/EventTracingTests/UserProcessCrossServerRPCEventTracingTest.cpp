@@ -1,17 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "UserProcessRPCEventTracingTest.h"
+#include "UserProcessCrossServerRPCEventTracingTest.h"
 
-AUserProcessRPCEventTracingTest::AUserProcessRPCEventTracingTest()
+AUserProcessCrossServerRPCEventTracingTest::AUserProcessCrossServerRPCEventTracingTest()
 {
-	Author = "Matthew Sandford";
-	Description = TEXT("Test checking user event traces can be caused by rpcs process events");
+	Author = "Danny Birch";
+	Description = TEXT("Test checking user event traces can be caused by rpcs process events for cross-server RPCs");
 
-	FilterEventNames = { UserProcessRPCEventName, ApplyCrossServerRPCName };
+	FilterEventNames = { UserReceiveCrossServerRPCEventName, ApplyCrossServerRPCName };
 	WorkerDefinition = FWorkerDefinition::Client(1);
 }
 
-void AUserProcessRPCEventTracingTest::FinishEventTraceTest()
+void AUserProcessCrossServerRPCEventTracingTest::FinishEventTraceTest()
 {
 	int EventsTested = 0;
 	int EventsFailed = 0;
@@ -20,7 +20,7 @@ void AUserProcessRPCEventTracingTest::FinishEventTraceTest()
 		const FString& SpanIdString = Pair.Key;
 		const FName& EventName = Pair.Value;
 
-		if (EventName != UserProcessRPCEventName)
+		if (EventName != UserReceiveCrossServerRPCEventName)
 		{
 			continue;
 		}

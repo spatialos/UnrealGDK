@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/RPCExecutor.h"
 
@@ -55,7 +55,7 @@ bool RPCExecutor::ExecuteCommand(const FCrossServerRPCParams& Params)
 		if (EventTracer != nullptr)
 		{
 			FSpatialGDKSpanId SpanId =
-				EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateApplyRPC(TargetObject, Function), Params.SpanId.GetConstId(), 1);
+				EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateApplyCrossServerRPC(TargetObject, Function), Params.SpanId.GetConstId(), 1);
 			EventTracer->AddToStack(SpanId);
 		}
 

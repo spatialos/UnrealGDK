@@ -42,6 +42,17 @@ protected:
 	const static FName UserSendComponentPropertyEventName;
 	const static FName UserSendRPCEventName;
 
+	const static FName SendCrossServerRPCName;
+	const static FName ReceiveCrossServerRPCName;
+
+	const static FName UserSendCrossServerRPCEventName;
+	const static FName UserReceiveCrossServerRPCEventName;
+
+	const static FName UserSendCrossServerPropertyEventName;
+	const static FName UserReceiveCrossServerPropertyEventName;
+
+	const static FName ApplyCrossServerRPCName;
+
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
 
