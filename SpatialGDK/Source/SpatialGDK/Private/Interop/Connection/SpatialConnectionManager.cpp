@@ -39,7 +39,7 @@ private:
 	static FString GDKVersion;
 };
 
-FString GDKVersionLoader::GDKVerson;
+FString GDKVersionLoader::GDKVersion;
 
 struct ConfigureConnection
 {
