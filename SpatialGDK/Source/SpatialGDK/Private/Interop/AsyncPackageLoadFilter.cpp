@@ -56,7 +56,7 @@ bool AsyncPackageLoadFilter::NeedToLoadClass(const FString& ClassPath)
 	float Percentage = GetAsyncLoadPercentage(PackagePathName);
 	if (Percentage != -1.0f)
 	{
-		UE_LOG(LogAsyncPackageLoadFilter, Warning, TEXT("Class %s package is registered in async loading thread."), *ClassPath)
+		UE_LOG(LogAsyncPackageLoadFilter, Warning, TEXT("Class package is registered in async loading thread. Class path: %s"), *ClassPath)
 		return true;
 	}
 	return false;
@@ -82,7 +82,7 @@ void AsyncPackageLoadFilter::StartAsyncLoadingClass(Worker_EntityId EntityId, co
 	EntitiesWaitingForAsyncLoad.Emplace(EntityId);
 	AsyncLoadingPackages.FindOrAdd(PackagePathName).Add(EntityId);
 
-	UE_LOG(LogAsyncPackageLoadFilter, Log, TEXT("Async loading package %s for entity %lld. Already loading: %s"), *PackagePath, EntityId,
+	UE_LOG(LogAsyncPackageLoadFilter, Log, TEXT("Async loading package for entity. Package: %s, entity: %lld, already loading: %s"), *PackagePath, EntityId,
 		   bAlreadyLoading ? TEXT("true") : TEXT("false"));
 	if (!bAlreadyLoading)
 	{
@@ -122,7 +122,7 @@ void AsyncPackageLoadFilter::ProcessActorsFromAsyncLoading()
 		{
 			if (IsEntityWaitingForAsyncLoad(Entity))
 			{
-				UE_LOG(LogAsyncPackageLoadFilter, Log, TEXT("Finished async loading package %s for entity %lld."), *PackageName.ToString(),
+				UE_LOG(LogAsyncPackageLoadFilter, Log, TEXT("Finished async loading package for entity. Package: %s, entity: %lld."), *PackageName.ToString(),
 					   Entity);
 
 				check(EntitiesWaitingForAsyncLoad.Find(Entity) != nullptr);
@@ -130,6 +130,8 @@ void AsyncPackageLoadFilter::ProcessActorsFromAsyncLoading()
 				NetDriver->Connection->GetCoordinator().RefreshEntityCompleteness(Entity);
 			}
 		}
+
+		AsyncLoadingPackages.Remove(PackageName);
 	}
 }
 
