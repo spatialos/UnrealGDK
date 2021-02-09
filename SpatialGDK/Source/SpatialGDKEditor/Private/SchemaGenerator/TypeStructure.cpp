@@ -263,27 +263,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	{
 		const AActor* CDO = Cast<AActor>(Class->GetDefaultObject());
 
-		TSet<UObject*> ObjectsPointedTo;
-
-		Algo::Transform(TFieldRange<GDK_PROPERTY(ObjectProperty)>(Class), ObjectsPointedTo, [CDO](GDK_PROPERTY(ObjectProperty) * Property) {
-			return Property->GetObjectPropertyValue_InContainer(CDO);
-		});
-
-		TSet<UActorComponent*> ComponentsPointedTo;
-
-		Algo::TransformIf(
-			ObjectsPointedTo, ComponentsPointedTo,
-			[](UObject* Object) {
-				return IsValid(Object) && Object->IsA<UActorComponent>();
-			},
-			[](UObject* Object) {
-				return Cast<UActorComponent>(Object);
-			});
-
-		const TSet<UActorComponent*> ComponentsNotCoveredByProperties = CDO->GetComponents().Difference(ComponentsPointedTo);
-
 		// Handle components attached to the actor that don't have a property pointing to them.
-		for (UActorComponent* Component : ComponentsNotCoveredByProperties)
+		for (UActorComponent* Component : CDO->GetComponents())
 		{
 			if (Component->IsEditorOnly())
 			{
