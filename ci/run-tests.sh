@@ -23,6 +23,15 @@ pushd "$(dirname "$0")"
     pushd "${UNREAL_PATH}"
         UNREAL_EDITOR_PATH="Engine/Binaries/Mac/UE4Editor.app/Contents/MacOS/UE4Editor"
 
+        # A hack to make the TestGyms cook cleanly for all engine versions hopefully
+        if [ "${TEST_PROJECT_NAME}" != "GDKTestGyms" ]; then
+            echo "Remove this hack for TestGyms when we are no longer using the repo"
+            exit 1
+        fi
+
+        rm -rf "${TEST_REPO_PATH}/Game/Content"
+        mkdir "${TEST_REPO_PATH}/Game/Content"
+
         echo "Generating test maps for testing project"
         "${UNREAL_EDITOR_PATH}" \
                 "${UPROJECT_PATH}" \

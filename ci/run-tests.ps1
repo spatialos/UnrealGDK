@@ -33,6 +33,12 @@ function Parse-UnrealOptions {
 
 . "$PSScriptRoot\common.ps1"
 
+# A hack to make the TestGyms cook cleanly for all engine versions hopefully
+if ($test_repo_path -like "*GDKTestGyms*") {
+    Remove-Item "$test_repo_path\Game\Content" -Recurse
+    New-Item "$test_repo_path\Game\Content" -ItemType Directory
+}
+
 # Generate test maps
 Write-Output "Generating test maps for testing project"
 $handle = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`

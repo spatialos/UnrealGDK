@@ -13,10 +13,10 @@ pushd "$(dirname "$0")"
     BUILD_HOME="${3:-"$(pwd)/../.."}"
 
     UNREAL_PATH="${BUILD_HOME}/UnrealEngine"
-    TEST_UPROJECT_NAME="EngineNetTest"
-    TEST_REPO_URL="git@github.com:improbable/UnrealGDKEngineNetTest.git"
-    TEST_REPO_MAP="NetworkingMap"
-    TEST_PROJECT_NAME="EngineNetTest"
+    TEST_UPROJECT_NAME="GDKTestGyms"
+    TEST_REPO_URL="git@github.com:spatialos/UnrealGDKTestGyms.git"
+    TEST_REPO_MAP="EmptyGym"
+    TEST_PROJECT_NAME="GDKTestGyms"
 
     # Resolve the TestGym branch to run against. The order of priority is:
     # TEST_REPO_BRANCH envvar > same-name branch as the branch we are currently on > UnrealGDKTestGymsVersion.txt > "master".
