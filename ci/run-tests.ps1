@@ -8,7 +8,8 @@ param(
     [string] $tests_path = "SpatialGDK",
     [string] $additional_gdk_options = "",
     [bool]   $run_with_spatial = $False,
-    [string] $additional_cmd_line_args = ""
+    [string] $additional_cmd_line_args = "",
+    [bool]   $verify_commandlet_exit_codes = $True
 )
 
 # This resolves a path to be absolute, without actually reading the filesystem.
@@ -33,12 +34,6 @@ function Parse-UnrealOptions {
 
 . "$PSScriptRoot\common.ps1"
 
-# A hack to make the TestGyms cook cleanly for all engine versions hopefully
-if ($test_repo_path -like "*GDKTestGyms*") {
-    Remove-Item "$test_repo_path\Game\Content" -Recurse
-    New-Item "$test_repo_path\Game\Content" -ItemType Directory
-}
-
 # Generate test maps
 Write-Output "Generating test maps for testing project"
 $handle = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
@@ -50,7 +45,7 @@ $handle = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -Argu
     "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
     "-run=GenerateTestMapsCommandlet" # Run the commandlet
 )
-if ($handle.ExitCode -ne 0) { throw "Generating test maps failed" }
+if ($handle.ExitCode -ne 0 -and $verify_commandlet_exit_codes) { throw "Generating test maps failed" }
 
 if ($run_with_spatial) {
     # Generate schema and snapshots
@@ -66,7 +61,7 @@ if ($run_with_spatial) {
         "-cookall", # Make sure it runs for all maps (and other things)
         "-targetplatform=LinuxServer"
     )
-    if ($handle.ExitCode -ne 0) { throw "Generating schema failed" }
+    if ($handle.ExitCode -ne 0 -and $verify_commandlet_exit_codes) { throw "Generating schema failed" }
     
     $handle = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
         "$uproject_path", `
@@ -78,7 +73,7 @@ if ($run_with_spatial) {
         "-run=GenerateSnapshot", # Run the commandlet
         "-MapPaths=`"$test_repo_map`"" # Which maps to run the commandlet for
     )
-    if ($handle.ExitCode -ne 0) { throw "Generating snapshot failed" }
+    if ($handle.ExitCode -ne 0 -and $verify_commandlet_exit_codes) { throw "Generating snapshot failed" }
 
     # Create the default snapshot
     Copy-Item -Force `

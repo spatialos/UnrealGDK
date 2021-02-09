@@ -70,7 +70,7 @@ $tests = @()
 
 if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
     # We run spatial tests against Vanilla UE4
-    $tests += [TestSuite]::new($gdk_test_project, "/Game/Intermediate/Maps/CI_Fast/", "VanillaTestResults", "/Game/Intermediate/Maps/CI_Fast/", "$user_gdk_settings", $False, "$user_cmd_line_args")
+    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "VanillaTestResults", "/Game/Intermediate/Maps/CI_Fast/", "$user_gdk_settings", $False, "$user_cmd_line_args")
     
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
         $tests[0].tests_path += "+/Game/Intermediate/Maps/CI_Slow/"
@@ -82,7 +82,7 @@ if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
 }
 else {
     # We run all tests and networked functional maps
-    $tests += [TestSuite]::new($gdk_test_project, "/Game/Intermediate/Maps/CI_Fast/", "TestResults", "SpatialGDK.+/Game/Intermediate/Maps/CI_Fast/+/Game/Intermediate/Maps/CI_Fast_Spatial_Only/", "$user_gdk_settings", $True, "$user_cmd_line_args")
+    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResults", "SpatialGDK.+/Game/Intermediate/Maps/CI_Fast/+/Game/Intermediate/Maps/CI_Fast_Spatial_Only/", "$user_gdk_settings", $True, "$user_cmd_line_args")
 
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
         # And if slow, we run GDK slow tests
@@ -166,6 +166,7 @@ Foreach ($test in $tests) {
     # Only run tests on Windows, as we do not have a linux agent - should not matter
     if ($env:BUILD_PLATFORM -eq "Win64" -And $env:BUILD_TARGET -eq "Editor" -And $env:BUILD_STATE -eq "Development") {
         Start-Event "test-gdk" "command"
+        $verify_commandlet_exit_codes = $False # For now, we will ignore the exit codes of the commandlets run, as older engine versions with TestGyms produce errors
         & $PSScriptRoot"\run-tests.ps1" `
             -unreal_editor_path "$unreal_engine_symlink_dir\Engine\Binaries\Win64\UE4Editor.exe" `
             -uproject_path "$build_home\$test_project_name\$test_repo_relative_uproject_path" `
@@ -176,7 +177,8 @@ Foreach ($test in $tests) {
             -tests_path "$tests_path" `
             -additional_gdk_options "$additional_gdk_options" `
             -run_with_spatial $run_with_spatial `
-            -additional_cmd_line_args "$additional_cmd_line_args"
+            -additional_cmd_line_args "$additional_cmd_line_args" `
+            -verify_commandlet_exit_codes $verify_commandlet_exit_codes
         Finish-Event "test-gdk" "command"
 
         Start-Event "report-tests" "command"

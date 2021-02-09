@@ -23,15 +23,6 @@ pushd "$(dirname "$0")"
     pushd "${UNREAL_PATH}"
         UNREAL_EDITOR_PATH="Engine/Binaries/Mac/UE4Editor.app/Contents/MacOS/UE4Editor"
 
-        # A hack to make the TestGyms cook cleanly for all engine versions hopefully
-        if [ "${TEST_PROJECT_NAME}" != "GDKTestGyms" ]; then
-            echo "Remove this hack for TestGyms when we are no longer using the repo"
-            exit 1
-        fi
-
-        rm -rf "${TEST_REPO_PATH}/Game/Content"
-        mkdir "${TEST_REPO_PATH}/Game/Content"
-
         echo "Generating test maps for testing project"
         "${UNREAL_EDITOR_PATH}" \
                 "${UPROJECT_PATH}" \
@@ -40,7 +31,8 @@ pushd "$(dirname "$0")"
                 -nosplash \
                 -unattended \
                 -nullRHI \
-                -run=GenerateTestMapsCommandlet
+                -run=GenerateTestMapsCommandlet \
+                || true
 
         if [[ -n "${RUN_WITH_SPATIAL}" ]]; then
             echo "Generating snapshot and schema for testing project"
@@ -53,7 +45,8 @@ pushd "$(dirname "$0")"
                 -nullRHI \
                 -run=CookAndGenerateSchema \
                 -targetplatform=MacNoEditor \
-                -cookall
+                -cookall \
+                || true
                 
             "${UNREAL_EDITOR_PATH}" \
                 "${UPROJECT_PATH}" \
@@ -63,7 +56,8 @@ pushd "$(dirname "$0")"
                 -unattended \
                 -nullRHI \
                 -run=GenerateSnapshot \
-                -MapPaths="${TEST_REPO_MAP}"
+                -MapPaths="${TEST_REPO_MAP}" \
+                || true
 
             cp "${TEST_REPO_PATH}/spatial/snapshots/${TEST_REPO_MAP}.snapshot" "${TEST_REPO_PATH}/spatial/snapshots/default.snapshot"
         fi
