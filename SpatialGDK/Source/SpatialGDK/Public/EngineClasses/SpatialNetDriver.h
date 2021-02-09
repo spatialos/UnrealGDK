@@ -14,6 +14,8 @@
 #include "Interop/SpatialSnapshotManager.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialBasicAwaiter.h"
+#include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialDebuggerSystem.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
@@ -147,7 +149,7 @@ public:
 	void WipeWorld(const PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
-	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
+	void RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 	void CleanUpServerConnectionForPC(APlayerController* PC);
 
 	bool HasServerAuthority(Worker_EntityId EntityId) const;
@@ -193,6 +195,7 @@ public:
 	FFilterPredicate ActorFilter;
 	TArray<FDispatcherRefreshCallback> ActorRefreshCallbacks;
 
+	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 
