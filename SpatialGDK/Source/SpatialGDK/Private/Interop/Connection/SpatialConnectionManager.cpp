@@ -23,20 +23,20 @@ class GDKVersionLoader
 public:
 	static FString GetGDKVersion()
 	{
-		if (GDKVerson.IsEmpty())
+		if (GDKVersion.IsEmpty())
 		{
 			IPluginManager& PluginManager = IPluginManager::Get();
 			IPlugin* SpatialGDKPlugin = PluginManager.FindPlugin("SpatialGDK").Get();
 			if (SpatialGDKPlugin != nullptr)
 			{
-				GDKVerson = SpatialGDKPlugin->GetDescriptor().VersionName;
+				GDKVersion = SpatialGDKPlugin->GetDescriptor().VersionName;
 			}
 		}
-		return GDKVerson;
+		return GDKVersion;
 	}
 
 private:
-	static FString GDKVerson;
+	static FString GDKVersion;
 };
 
 FString GDKVersionLoader::GDKVerson;
