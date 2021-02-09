@@ -42,6 +42,10 @@ public:
 
 #elif PLATFORM_PS4
 		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(TEXT("libimprobable_worker.prx"));
+		if (WorkerLibraryHandle == nullptr)
+		{
+			UE_LOG(LogTemp, Fatal, TEXT("Failed to load libimprobable_worker.prx"));
+		}
 #endif
 	}
 
