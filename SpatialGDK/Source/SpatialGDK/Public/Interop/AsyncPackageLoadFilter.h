@@ -8,8 +8,6 @@
 
 #include "AsyncPackageLoadFilter.generated.h"
 
-class USpatialNetDriver;
-
 DECLARE_DELEGATE_OneParam(FOnPackageLoadedForEntity, Worker_EntityId /*EntityId*/);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogAsyncPackageLoadFilter, Log, All);
@@ -36,7 +34,6 @@ private:
 
 	FOnPackageLoadedForEntity OnPackageLoadedForEntity;
 
-	USpatialNetDriver* NetDriver;
 	TSet<Worker_EntityId_Key> EntitiesWaitingForAsyncLoad;
 	TMap<FName, TArray<Worker_EntityId_Key>> AsyncLoadingPackages;
 	TSet<FName> LoadedPackages;
