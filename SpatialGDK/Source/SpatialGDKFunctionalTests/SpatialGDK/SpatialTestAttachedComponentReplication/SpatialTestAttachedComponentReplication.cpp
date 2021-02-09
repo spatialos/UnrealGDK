@@ -39,29 +39,40 @@ ASpatialTestAttachedComponentReplication::ASpatialTestAttachedComponentReplicati
 			LINE_TERMINATOR TEXT("* Component present on an actor") LINE_TERMINATOR TEXT("* Component dynamically added to an actor");
 }
 
+struct FSpatialTestAttachedComponentReplicationTypeDescription
+{
+	FString Description;
+	TSubclassOf<ASpatialTestAttachedComponentReplicationActor> TestActorClass;
+};
+
+static FSpatialTestAttachedComponentReplicationTypeDescription GetTestTypeDescription(
+	const ESpatialTestAttachedComponentReplicationType TestType)
+{
+	switch (TestType)
+	{
+	case ESpatialTestAttachedComponentReplicationType::LevelPlaced:
+		return { TEXT("Level Placed Actor"), ASpatialTestAttachedComponentReplicationActorForLevelPlacing::StaticClass() };
+	case ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDynamicComponent:
+		return { TEXT("Dynamic Actor with Dynamic Component"),
+				 ASpatialTestAttachedComponentReplicationActorWithDynamicComponent::StaticClass() };
+	case ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDefaultComponent:
+		return { TEXT("Dynamic Actor with Default Component"),
+				 ASpatialTestAttachedComponentReplicationActorWithDefaultComponent::StaticClass() };
+	default:
+		checkNoEntry();
+	}
+
+	return {};
+}
+
 static UClass* GetClassForTestType(const ESpatialTestAttachedComponentReplicationType TestType)
 {
-	static TMap<ESpatialTestAttachedComponentReplicationType, UClass*> ClassMap{
-		{ ESpatialTestAttachedComponentReplicationType::LevelPlaced,
-		  ASpatialTestAttachedComponentReplicationActorForLevelPlacing::StaticClass() },
-		{ ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDynamicComponent,
-		  ASpatialTestAttachedComponentReplicationActorWithDynamicComponent::StaticClass() },
-		{ ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDefaultComponent,
-		  ASpatialTestAttachedComponentReplicationActorWithDefaultComponent::StaticClass() }
-	};
-	return ClassMap.FindChecked(TestType);
+	return GetTestTypeDescription(TestType).TestActorClass;
 }
 
 static FString DescribeTestType(const ESpatialTestAttachedComponentReplicationType TestType)
 {
-	static TMap<ESpatialTestAttachedComponentReplicationType, FString> DescriptionMap{
-		{ ESpatialTestAttachedComponentReplicationType::LevelPlaced, TEXT("Level Placed Actor") },
-		{ ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDynamicComponent,
-		  TEXT("Dynamic Actor with Dynamic Component") },
-		{ ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDefaultComponent,
-		  TEXT("Dynamic Actor with Default Component") }
-	};
-	return DescriptionMap.FindChecked(TestType) + TEXT(" ");
+	return GetTestTypeDescription(TestType).Description + TEXT(": ");
 }
 
 void ASpatialTestAttachedComponentReplication::PrepareTest()
