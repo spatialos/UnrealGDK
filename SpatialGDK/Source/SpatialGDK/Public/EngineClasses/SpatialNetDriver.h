@@ -291,8 +291,7 @@ private:
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
 
-	UFUNCTION()
-	void OnAsyncPackageLoadFilterComplete(int64 EntityId);
+	void OnAsyncPackageLoadFilterComplete(Worker_EntityId EntityId);
 
 	void OnActorSpawned(AActor* Actor) const;
 
