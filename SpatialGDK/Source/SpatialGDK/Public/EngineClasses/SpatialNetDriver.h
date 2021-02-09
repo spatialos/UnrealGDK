@@ -191,6 +191,8 @@ public:
 	USpatialWorkerFlags* SpatialWorkerFlags;
 	UPROPERTY()
 	USpatialNetDriverDebugContext* DebugCtx;
+	UPROPERTY()
+	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
 
 	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
 	FFilterPredicate ActorFilter;
@@ -206,8 +208,6 @@ public:
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
-
-	TUniquePtr<SpatialGDK::AsyncPackageLoadFilter> AsyncPackageLoadFilter;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
@@ -290,6 +290,9 @@ private:
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
+
+	UFUNCTION()
+	void OnAsyncPackageLoadFilterComplete(int64 EntityId);
 
 	void OnActorSpawned(AActor* Actor) const;
 

@@ -355,7 +355,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTERES
 	// Debugging information
 	DEBUG_METRICS_COMPONENT_ID, SPATIAL_DEBUGGING_COMPONENT_ID,
 
-	// Non auth actor tag
+	// Actor tag
 	ACTOR_TAG_COMPONENT_ID
 };
 

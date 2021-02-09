@@ -4,19 +4,14 @@
 
 #include "UObject/UObjectGlobals.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
-
 DEFINE_LOG_CATEGORY(LogAsyncPackageLoadFilter);
 
-namespace SpatialGDK
+void UAsyncPackageLoadFilter::Init(USpatialNetDriver* InNetDriver)
 {
-AsyncPackageLoadFilter::AsyncPackageLoadFilter(USpatialNetDriver* InNetDriver)
-	: NetDriver(InNetDriver)
-{
+	NetDriver = InNetDriver;
 }
 
-bool AsyncPackageLoadFilter::IsAssetLoadedOrTriggerAsyncLoad(Worker_EntityId EntityId, const FString& ClassPath)
+bool UAsyncPackageLoadFilter::IsAssetLoadedOrTriggerAsyncLoad(Worker_EntityId EntityId, const FString& ClassPath)
 {
 	if (IsEntityWaitingForAsyncLoad(EntityId))
 	{
@@ -32,7 +27,7 @@ bool AsyncPackageLoadFilter::IsAssetLoadedOrTriggerAsyncLoad(Worker_EntityId Ent
 	return true;
 }
 
-bool AsyncPackageLoadFilter::NeedToLoadClass(const FString& ClassPath)
+bool UAsyncPackageLoadFilter::NeedToLoadClass(const FString& ClassPath)
 {
 	UObject* ClassObject = FindObject<UClass>(nullptr, *ClassPath, false);
 	if (ClassObject == nullptr)
@@ -62,17 +57,17 @@ bool AsyncPackageLoadFilter::NeedToLoadClass(const FString& ClassPath)
 	return false;
 }
 
-FString AsyncPackageLoadFilter::GetPackagePath(const FString& ClassPath)
+FString UAsyncPackageLoadFilter::GetPackagePath(const FString& ClassPath)
 {
 	return FSoftObjectPath(ClassPath).GetLongPackageName();
 }
 
-bool AsyncPackageLoadFilter::IsEntityWaitingForAsyncLoad(Worker_EntityId Entity)
+bool UAsyncPackageLoadFilter::IsEntityWaitingForAsyncLoad(Worker_EntityId Entity)
 {
 	return EntitiesWaitingForAsyncLoad.Contains(Entity);
 }
 
-void AsyncPackageLoadFilter::StartAsyncLoadingClass(Worker_EntityId EntityId, const FString& ClassPath)
+void UAsyncPackageLoadFilter::StartAsyncLoadingClass(Worker_EntityId EntityId, const FString& ClassPath)
 {
 	FString PackagePath = GetPackagePath(ClassPath);
 	FName PackagePathName = *PackagePath;
@@ -82,15 +77,15 @@ void AsyncPackageLoadFilter::StartAsyncLoadingClass(Worker_EntityId EntityId, co
 	EntitiesWaitingForAsyncLoad.Emplace(EntityId);
 	AsyncLoadingPackages.FindOrAdd(PackagePathName).Add(EntityId);
 
-	UE_LOG(LogAsyncPackageLoadFilter, Log, TEXT("Async loading package for entity. Package: %s, entity: %lld, already loading: %s"), *PackagePath, EntityId,
-		   bAlreadyLoading ? TEXT("true") : TEXT("false"));
+	UE_LOG(LogAsyncPackageLoadFilter, Log, TEXT("Async loading package for entity. Package: %s, entity: %lld, already loading: %s"),
+		   *PackagePath, EntityId, bAlreadyLoading ? TEXT("true") : TEXT("false"));
 	if (!bAlreadyLoading)
 	{
-		LoadPackageAsync(PackagePath, FLoadPackageAsyncDelegate::CreateRaw(this, &AsyncPackageLoadFilter::OnAsyncPackageLoaded));
+		LoadPackageAsync(PackagePath, FLoadPackageAsyncDelegate::CreateUObject(this, &UAsyncPackageLoadFilter::OnAsyncPackageLoaded));
 	}
 }
 
-void AsyncPackageLoadFilter::OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result)
+void UAsyncPackageLoadFilter::OnAsyncPackageLoaded(const FName& PackageName, UPackage* Package, EAsyncLoadingResult::Type Result)
 {
 	if (Result != EAsyncLoadingResult::Succeeded)
 	{
@@ -102,7 +97,7 @@ void AsyncPackageLoadFilter::OnAsyncPackageLoaded(const FName& PackageName, UPac
 	LoadedPackages.Add(PackageName);
 }
 
-void AsyncPackageLoadFilter::ProcessActorsFromAsyncLoading()
+void UAsyncPackageLoadFilter::ProcessActorsFromAsyncLoading()
 {
 	static_assert(TContainerTraits<decltype(LoadedPackages)>::MoveWillEmptyContainer, "Moving the set won't empty it");
 	TSet<FName> PackagesToProcess = MoveTemp(LoadedPackages);
@@ -122,17 +117,15 @@ void AsyncPackageLoadFilter::ProcessActorsFromAsyncLoading()
 		{
 			if (IsEntityWaitingForAsyncLoad(Entity))
 			{
-				UE_LOG(LogAsyncPackageLoadFilter, Log, TEXT("Finished async loading package for entity. Package: %s, entity: %lld."), *PackageName.ToString(),
-					   Entity);
+				UE_LOG(LogAsyncPackageLoadFilter, Log, TEXT("Finished async loading package for entity. Package: %s, entity: %lld."),
+					   *PackageName.ToString(), Entity);
 
 				check(EntitiesWaitingForAsyncLoad.Find(Entity) != nullptr);
 				EntitiesWaitingForAsyncLoad.Remove(Entity);
-				NetDriver->Connection->GetCoordinator().RefreshEntityCompleteness(Entity);
+				OnPackageLoadedForEntity.Broadcast(Entity);
 			}
 		}
 
 		AsyncLoadingPackages.Remove(PackageName);
 	}
 }
-
-} // namespace SpatialGDK

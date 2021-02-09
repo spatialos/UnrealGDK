@@ -125,8 +125,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
-	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &USpatialNetDriver::OnLevelAddedToWorld);
-
 	if (GetWorld() != nullptr)
 	{
 		GetWorld()->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateUObject(this, &USpatialNetDriver::OnActorSpawned));
@@ -410,7 +408,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	if (GetDefault<USpatialGDKSettings>()->bAsyncLoadNewClassesOnEntityCheckout)
 	{
-		AsyncPackageLoadFilter = MakeUnique<SpatialGDK::AsyncPackageLoadFilter>(this);
+		AsyncPackageLoadFilter = NewObject<UAsyncPackageLoadFilter>();
+		AsyncPackageLoadFilter->Init(this);
+		AsyncPackageLoadFilter->GetOnPackageLoadedForEntityDelegate().AddDynamic(this,
+																				 &USpatialNetDriver::OnAsyncPackageLoadFilterComplete);
 	}
 
 	CreateAndInitializeLoadBalancingClasses();
@@ -837,6 +838,14 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 
 	bMapLoaded = true;
+}
+
+void USpatialNetDriver::OnAsyncPackageLoadFilterComplete(Worker_EntityId EntityId)
+{
+	if (Connection != nullptr)
+	{
+		Connection->GetCoordinator().RefreshEntityCompleteness(EntityId);
+	}
 }
 
 void USpatialNetDriver::MakePlayerSpawnRequest()
