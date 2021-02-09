@@ -368,6 +368,16 @@ void USpatialActorChannel::UpdateShadowData()
 		ResetShadowData(*ComponentReplicator.RepLayout, ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer,
 						ActorComponent);
 	}
+
+	// Update handover shadow data.
+	for (auto& HandoverData : HandoverShadowDataMap)
+	{
+		TArray<uint8>& ShadowDataBuffer = HandoverData.Value.Get();
+		UObject* Object = HandoverData.Key.Get();
+
+		// This updates ShadowDataBuffer to Object's current handover state.
+		GetHandoverChangeList(ShadowDataBuffer, Object);
+	}
 }
 
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
@@ -993,25 +1003,12 @@ void USpatialActorChannel::InitializeHandoverShadowData(TArray<uint8>& ShadowDat
 {
 	const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
-	uint32 Size = 0;
+	ShadowData.SetNumUninitialized(ClassInfo.HandoverPropertiesSize);
 	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
 	{
 		if (PropertyInfo.ArrayIdx == 0) // For static arrays, the first element will handle the whole array
 		{
-			// Make sure we conform to Unreal's alignment requirements; this is matched below and in ReplicateActor()
-			Size = Align(Size, PropertyInfo.Property->GetMinAlignment());
-			Size += PropertyInfo.Property->GetSize();
-		}
-	}
-	ShadowData.AddZeroed(Size);
-	uint32 Offset = 0;
-	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
-	{
-		if (PropertyInfo.ArrayIdx == 0)
-		{
-			Offset = Align(Offset, PropertyInfo.Property->GetMinAlignment());
-			PropertyInfo.Property->InitializeValue(ShadowData.GetData() + Offset);
-			Offset += PropertyInfo.Property->GetSize();
+			PropertyInfo.Property->InitializeValue(ShadowData.GetData() + PropertyInfo.ShadowOffset);
 		}
 	}
 }
