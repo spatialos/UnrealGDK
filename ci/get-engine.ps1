@@ -82,7 +82,7 @@ Push-Location "$($gdk_home)"
     Remove-Item $unreal_path -ErrorAction ignore -Recurse -Force
     New-Item -ItemType Junction -Path "$unreal_path" -Target "$engine_cache_directory\$($unreal_version)"
 
-    $clang_path = "$unreal_path\ClangToolchain"
+    $clang_path = "C:\UnrealToolchains\v17_clang-10.0.1-centos7"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
     [Environment]::SetEnvironmentVariable("LINUX_MULTIARCH_ROOT", "$($clang_path)", "Machine")
     $Env:LINUX_MULTIARCH_ROOT = "$($clang_path)"
