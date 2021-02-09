@@ -24,6 +24,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "Interop/ActorSystem.h"
+#include "Interop/AsyncPackageLoadFilter.h"
 #include "Interop/ClientConnectionManager.h"
 #include "Interop/RPCExecutorInterface.h"
 #include "Interop/WellKnownEntitySystem.h"
@@ -190,6 +191,8 @@ public:
 	USpatialWorkerFlags* SpatialWorkerFlags;
 	UPROPERTY()
 	USpatialNetDriverDebugContext* DebugCtx;
+	UPROPERTY()
+	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
 
 	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
 	FFilterPredicate ActorFilter;
@@ -287,6 +290,8 @@ private:
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
+
+	void OnAsyncPackageLoadFilterComplete(Worker_EntityId EntityId);
 
 	void OnActorSpawned(AActor* Actor) const;
 
