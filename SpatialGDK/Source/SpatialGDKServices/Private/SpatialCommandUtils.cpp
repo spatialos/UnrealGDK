@@ -538,8 +538,8 @@ bool SpatialCommandUtils::FetchPackageBinaryWithRetries(const FString& PackageVe
 		Attempt++;
 		if (Attempt <= NumRetries)
 		{
-			UE_LOG(LogSpatialCommandUtils, Log, TEXT("Failed to fetch %s binary. Attempting retry. Retry attempt number: %d"),
-				   *PackageName, Attempt);
+			UE_LOG(LogSpatialCommandUtils, Log, TEXT("Failed to fetch %s binary. Attempting retry. Retry attempt number: %d"), *PackageName,
+				   Attempt);
 		}
 		else
 		{
