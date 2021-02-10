@@ -48,6 +48,7 @@ struct ConfigureConnection
 		, Params()
 		, WorkerType(*Config.WorkerType)
 		, WorkerSDKLogFilePrefix(*FormatWorkerSDKLogFilePrefix())
+		, GDKVersion(*GDKVersionLoader::GetGDKVersion())
 	{
 		Params = Worker_DefaultConnectionParameters();
 
@@ -107,7 +108,7 @@ struct ConfigureConnection
 
 		// Unreal GDK version
 		UnrealGDKVersionPair.name = "gdk_version";
-		UnrealGDKVersionPair.version = TCHAR_TO_UTF8(*GDKVersionLoader::GetGDKVersion());
+		UnrealGDKVersionPair.version = GDKVersion.Get();
 		Params.versions = &UnrealGDKVersionPair;
 
 		// Override the security type to be secure only if the user has requested it and we are not using an editor build.
@@ -139,6 +140,7 @@ struct ConfigureConnection
 	Worker_ConnectionParameters Params;
 	FTCHARToUTF8 WorkerType;
 	FTCHARToUTF8 WorkerSDKLogFilePrefix;
+	FTCHARToUTF8 GDKVersion;
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_CompressionParameters EnableCompressionParams{};
 	Worker_LogsinkParameters Logsink{};
