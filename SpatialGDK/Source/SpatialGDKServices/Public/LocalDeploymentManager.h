@@ -52,7 +52,6 @@ public:
 
 	void WorkerBuildConfigAsync();
 
-	FSimpleMulticastDelegate OnSpatialShutdown;
 	FSimpleMulticastDelegate OnDeploymentStart;
 
 	FDelegateHandle WorkerConfigDirectoryChangedDelegateHandle;
@@ -88,4 +87,7 @@ private:
 	bool bRedeployRequired = false;
 	bool bAutoDeploy = false;
 	bool bIsInChina = false;
+
+	//Cached version of the active runtime process.
+	FString ActiveRuntimeVersion;
 };
