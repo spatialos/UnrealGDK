@@ -149,14 +149,6 @@ bool USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_EntityId
 	if (!NetGUID.IsValid())
 	{
 		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor, EntityId);
-
-		for (UActorComponent* DynamicComponent : Actor->GetInstanceComponents())
-		{
-			if (DynamicComponent->IsSupportedForNetworking())
-			{
-				TryResolveNewDynamicSubobjectAndGetClassInfo(DynamicComponent);
-			}
-		}
 	}
 
 	if (GetEntityIdFromObject(Actor) != EntityId)
@@ -414,6 +406,41 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 {
 }
 
+namespace SpatialGDK
+{
+FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(Worker_EntityId EntityId, AActor* Actor, const FClassInfo& Info)
+{
+	SubobjectToOffsetMap SubobjectNameToOffset;
+
+	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
+	{
+		UObject* Subobject = StaticFindObjectFast(UObject::StaticClass(), Actor, SubobjectInfoPair.Value->SubobjectName);
+		uint32 Offset = SubobjectInfoPair.Key;
+
+		if (Subobject != nullptr && Subobject->IsPendingKill() == false && Subobject->IsSupportedForNetworking())
+		{
+			SubobjectNameToOffset.Add(Subobject, Offset);
+		}
+	}
+
+	for (UActorComponent* DynamicComponent : Actor->GetInstanceComponents())
+	{
+		USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver());
+		USpatialClassInfoManager* Manager = NetDriver->ClassInfoManager;
+		USpatialPackageMapClient* PackageMap = NetDriver->PackageMap;
+
+		const FClassInfo* DynamicComponentClassInfo = PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(DynamicComponent);
+
+		if (DynamicComponentClassInfo != nullptr)
+		{
+			SubobjectNameToOffset.Add(DynamicComponent, DynamicComponentClassInfo->SchemaComponents[SCHEMA_Data]);
+		}
+	}
+
+	return SubobjectNameToOffset;
+}
+} // namespace SpatialGDK
+
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId)
 {
 	check(EntityId > 0);
@@ -452,7 +479,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		   *NetGUID.ToString(), EntityId);
 
 	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	const SubobjectToOffsetMap& SubobjectToOffset = SpatialGDK::CreateOffsetMapFromActor(Actor, Info);
+	const SubobjectToOffsetMap& SubobjectToOffset = SpatialGDK::CreateOffsetMapFromActor(EntityId, Actor, Info);
 
 	for (auto& Pair : SubobjectToOffset)
 	{
@@ -818,11 +845,11 @@ void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const FUnreal
 	FUnrealObjectRef RemappedObjectRef = ObjectRef;
 	NetworkRemapObjectRefPaths(RemappedObjectRef, false /*bIsReading*/);
 
-	checkfSlow(!NetGUIDToUnrealObjectRef.Contains(NetGUID)
-				   || (NetGUIDToUnrealObjectRef.Contains(NetGUID) && NetGUIDToUnrealObjectRef.FindChecked(NetGUID) == RemappedObjectRef),
-			   TEXT("NetGUID to UnrealObjectRef mismatch - NetGUID: %s ObjRef in map: %s ObjRef expected: %s"), *NetGUID.ToString(),
-			   *NetGUIDToUnrealObjectRef.FindChecked(NetGUID).ToString(), *RemappedObjectRef.ToString());
-	checkfSlow(
+	checkf(!NetGUIDToUnrealObjectRef.Contains(NetGUID)
+			   || (NetGUIDToUnrealObjectRef.Contains(NetGUID) && NetGUIDToUnrealObjectRef.FindChecked(NetGUID) == RemappedObjectRef),
+		   TEXT("NetGUID to UnrealObjectRef mismatch - NetGUID: %s ObjRef in map: %s ObjRef expected: %s"), *NetGUID.ToString(),
+		   *NetGUIDToUnrealObjectRef.FindChecked(NetGUID).ToString(), *RemappedObjectRef.ToString());
+	checkf(
 		!UnrealObjectRefToNetGUID.Contains(RemappedObjectRef)
 			|| (UnrealObjectRefToNetGUID.Contains(RemappedObjectRef) && UnrealObjectRefToNetGUID.FindChecked(RemappedObjectRef) == NetGUID),
 		TEXT("UnrealObjectRef to NetGUID mismatch - UnrealObjectRef: %s NetGUID in map: %s NetGUID expected: %s"), *NetGUID.ToString(),
