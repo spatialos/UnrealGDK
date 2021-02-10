@@ -7,13 +7,12 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalancingHandler, Log, All);
 
+class USpatialNetDriver;
+
 namespace SpatialGDK
 {
 class SpatialEventTracer;
 class FSubView;
-} // namespace SpatialGDK
-
-class USpatialNetDriver;
 
 enum class EActorMigrationResult : uint8
 {
@@ -31,8 +30,7 @@ enum class EActorMigrationResult : uint8
 class FSpatialLoadBalancingHandler
 {
 public:
-	FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver, const SpatialGDK::FSubView& InSubView,
-								 SpatialGDK::SpatialEventTracer* InEventTracer);
+	FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver, const FSubView& InSubView, SpatialEventTracer* InEventTracer);
 	void AdvanceView();
 
 	// Iterates over the list of actors to replicate, to check if they should migrate to another worker
@@ -132,11 +130,12 @@ protected:
 	VirtualWorkerId GetWorkerId(const AActor* NetOwner);
 
 	USpatialNetDriver* NetDriver;
-	const SpatialGDK::FSubView* SubView;
-	SpatialGDK::SpatialEventTracer* EventTracer;
+	const FSubView* SubView;
+	SpatialEventTracer* EventTracer;
 
 	TMap<AActor*, VirtualWorkerId> ActorsToMigrate;
 	TSet<AActor*> TempActorsToMigrate;
 
-	TMap<Worker_EntityId_Key, SpatialGDK::AuthorityIntent> AuthIntentStore;
+	TMap<Worker_EntityId_Key, AuthorityIntent> AuthIntentStore;
 };
+} // namespace SpatialGDK

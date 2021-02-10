@@ -4,6 +4,7 @@
 
 #include "EngineClasses/Components/RemotePossessionComponent.h"
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialSender.h"
@@ -194,7 +195,7 @@ void FSpatialLoadBalancingHandler::SendAuthorityIntentUpdate(const AActor& Actor
 		   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
 
 	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
-	UE_LOG(LogSpatialSender, Log,
+	UE_LOG(LogSpatialLoadBalancingHandler, Log,
 		   TEXT("(%s) Sending AuthorityIntent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
 		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
 

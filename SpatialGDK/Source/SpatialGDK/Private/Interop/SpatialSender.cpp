@@ -37,8 +37,6 @@
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialStatics.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialSender);
-
 using namespace SpatialGDK;
 
 DECLARE_CYCLE_STAT(TEXT("Sender SendComponentUpdates"), STAT_SpatialSenderSendComponentUpdates, STATGROUP_SpatialNet);

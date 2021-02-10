@@ -31,5 +31,5 @@ protected:
 	virtual void PostReplicateActors(UNetReplicationGraphConnection* ConnectionManager) override;
 	//~ End UReplicationGraph Interface
 
-	FSpatialLoadBalancingHandler* LoadBalancingHandler;
+	TWeakPtr<SpatialGDK::FSpatialLoadBalancingHandler> LoadBalancingHandler;
 };

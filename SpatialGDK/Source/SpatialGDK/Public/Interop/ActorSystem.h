@@ -20,13 +20,12 @@ class USpatialNetDriver;
 class SpatialActorChannel;
 class USpatialNetDriver;
 
-using FChannelsToUpdatePosition =
-	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>>;
-
 namespace SpatialGDK
 {
 class SpatialEventTracer;
 class FSubView;
+
+using FChannelsToUpdatePosition = TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>>>;
 
 struct ActorData
 {

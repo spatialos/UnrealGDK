@@ -444,7 +444,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 	if (IsServer())
 	{
-		LoadBalancingHandler = MakeUnique<FSpatialLoadBalancingHandler>(this, ActorAuthSubview, Connection->GetEventTracer());
+		LoadBalancingHandler = MakeShared<SpatialGDK::FSpatialLoadBalancingHandler>(this, ActorAuthSubview, Connection->GetEventTracer());
 	}
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
@@ -471,8 +471,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, this, Connection,
 																			  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
 																			  *VirtualWorkerTranslator, *GlobalStateManager);
-		PackageMap->GetEntityPoolReadyDelegate().BindRaw(WellKnownEntitySystem.Get(),
-														 &SpatialGDK::WellKnownEntitySystem::CreateServerWorkerEntity);
+		PackageMap->GetEntityPoolReadyDelegate().AddRaw(WellKnownEntitySystem.Get(),
+														&SpatialGDK::WellKnownEntitySystem::CreateServerWorkerEntity);
 	}
 
 	// The interest factory depends on the package map, so is created last.
@@ -1270,7 +1270,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 
 struct FCompareActorPriorityAndMigration
 {
-	FCompareActorPriorityAndMigration(FSpatialLoadBalancingHandler& InMigrationHandler)
+	FCompareActorPriorityAndMigration(SpatialGDK::FSpatialLoadBalancingHandler& InMigrationHandler)
 		: MigrationHandler(InMigrationHandler)
 	{
 	}
@@ -1292,11 +1292,11 @@ struct FCompareActorPriorityAndMigration
 		return false;
 	}
 
-	const FSpatialLoadBalancingHandler& MigrationHandler;
+	const SpatialGDK::FSpatialLoadBalancingHandler& MigrationHandler;
 };
 
 int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers,
-																FSpatialLoadBalancingHandler& MigrationHandler,
+																SpatialGDK::FSpatialLoadBalancingHandler& MigrationHandler,
 																const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated,
 																FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors)
 {
@@ -1415,7 +1415,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* InConnection,
 																	   const TArray<FNetViewer>& ConnectionViewers,
-																	   FSpatialLoadBalancingHandler& MigrationHandler,
+																	   SpatialGDK::FSpatialLoadBalancingHandler& MigrationHandler,
 																	   FActorPriority** PriorityActors, const int32 FinalSortedCount,
 																	   int32& OutUpdated)
 {
@@ -2771,7 +2771,7 @@ bool USpatialNetDriver::IsReady() const
 	return bIsReadyToStart;
 }
 
-bool USpatialNetDriver::IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure)
+bool USpatialNetDriver::IsLogged(Worker_EntityId ActorEntityId, SpatialGDK::EActorMigrationResult ActorMigrationFailure)
 {
 	// Clear the log migration store at the specified interval
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();

@@ -108,7 +108,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 		else
 		{
 			UE_LOG(LogSpatialReceiver, Warning,
-				   TEXT("Migration diaganostic log failed because cannot retreive actor for entity (%llu) on authoritative worker %s"),
+				   TEXT("Migration diagnostic log failed because cannot retrieve actor for entity (%lld) on authoritative worker %s"),
 				   EntityId, *NetDriver->Connection->GetWorkerId());
 		}
 
@@ -203,7 +203,8 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 
 		if (CommandResponseOp.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed, status code %i."), CommandResponseOp.status_code);
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Migration diagnostic log failed as actor had already migrated away- Status code %i."),
+				   CommandResponseOp.status_code);
 			return;
 		}
 
@@ -220,7 +221,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed because blocking actor (%llu) is not valid."),
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diagnostic log failed because blocking actor (%lld) is not valid."),
 				   EntityId);
 		}
 

@@ -591,32 +591,32 @@ bool SpatialRPCService::SendRingBufferedRPC(UObject* TargetObject, UFunction* Fu
 	switch (Result)
 	{
 	case EPushRPCResult::QueueOverflowed:
-		UE_LOG(LogSpatialSender, Log,
+		UE_LOG(LogSpatialRPCService, Log,
 			   TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, queuing RPC locally. Actor: %s, entity: %lld, "
 					"function: %s"),
 			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return true;
 	case EPushRPCResult::DropOverflowed:
 		UE_LOG(
-			LogSpatialSender, Log,
+			LogSpatialRPCService, Log,
 			TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, function: %s"),
 			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return true;
 	case EPushRPCResult::HasAckAuthority:
-		UE_LOG(LogSpatialSender, Warning,
+		UE_LOG(LogSpatialRPCService, Warning,
 			   TEXT("USpatialSender::SendRingBufferedRPC: Worker has authority over ack component for RPC it is sending. RPC will not be "
 					"sent. Actor: %s, entity: %lld, function: %s"),
 			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return true;
 	case EPushRPCResult::NoRingBufferAuthority:
 		// TODO: Change engine logic that calls Client RPCs from non-auth servers and change this to error. UNR-2517
-		UE_LOG(LogSpatialSender, Log,
+		UE_LOG(LogSpatialRPCService, Log,
 			   TEXT("USpatialSender::SendRingBufferedRPC: Failed to send RPC because the worker does not have authority over ring buffer "
 					"component. Actor: %s, entity: %lld, function: %s"),
 			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return true;
 	case EPushRPCResult::EntityBeingCreated:
-		UE_LOG(LogSpatialSender, Log,
+		UE_LOG(LogSpatialRPCService, Log,
 			   TEXT("USpatialSender::SendRingBufferedRPC: RPC was called between entity creation and initial authority gain, so it will be "
 					"queued. Actor: %s, entity: %lld, function: %s"),
 			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());

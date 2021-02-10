@@ -59,7 +59,7 @@ void WellKnownEntitySystem::Advance()
 
 void WellKnownEntitySystem::SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const
 {
-	UE_LOG(LogSpatialSender, Log,
+	UE_LOG(LogWellKnownEntitySystem, Log,
 		   TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId: %lld. "
 				"PartitionId: %lld"),
 		   *Connection->GetWorkerId(), SystemWorkerEntityId, PartitionId);
@@ -216,8 +216,6 @@ void WellKnownEntitySystem::RetryServerWorkerEntityCreation(Worker_EntityId Enti
 	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, EntityId);
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
-	check(NetDriver != nullptr);
-
 	// The load balance strategy won't be set up at this point, but we call this function again later when it is ready in
 	// order to set the interest of the server worker according to the strategy.
 	Components.Add(NetDriver->InterestFactory->CreateServerWorkerInterest(NetDriver->LoadBalanceStrategy).CreateComponentData());
@@ -254,18 +252,18 @@ void WellKnownEntitySystem::RetryServerWorkerEntityCreation(Worker_EntityId Enti
 
 		if (Op.status_code != WORKER_STATUS_CODE_TIMEOUT)
 		{
-			UE_LOG(LogSpatialSender, Error, TEXT("Worker entity creation request failed: \"%s\""), UTF8_TO_TCHAR(Op.message));
+			UE_LOG(LogWellKnownEntitySystem, Error, TEXT("Worker entity creation request failed: \"%s\""), UTF8_TO_TCHAR(Op.message));
 			return;
 		}
 
 		if (AttemptCounter == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 		{
-			UE_LOG(LogSpatialSender, Error, TEXT("Worker entity creation request timed out too many times. (%u attempts)"),
+			UE_LOG(LogWellKnownEntitySystem, Error, TEXT("Worker entity creation request timed out too many times. (%u attempts)"),
 				   SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
 			return;
 		}
 
-		UE_LOG(LogSpatialSender, Warning, TEXT("Worker entity creation request timed out and will retry."));
+		UE_LOG(LogWellKnownEntitySystem, Warning, TEXT("Worker entity creation request timed out and will retry."));
 		RetryServerWorkerEntityCreation(EntityId, AttemptCounter + 1);
 	});
 

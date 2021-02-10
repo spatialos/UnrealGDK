@@ -188,7 +188,8 @@ public:
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
 
-	TUniquePtr<FSpatialLoadBalancingHandler> LoadBalancingHandler;
+	// Shared to enable weak pointers held by other classes (such as replication graph).
+	TSharedPtr<SpatialGDK::FSpatialLoadBalancingHandler> LoadBalancingHandler;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
@@ -223,7 +224,7 @@ public:
 #endif
 
 	// Check if we have already logged this actor / migration failure, if not update the log record
-	bool IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
+	bool IsLogged(Worker_EntityId ActorEntityId, SpatialGDK::EActorMigrationResult ActorMigrationFailure);
 
 	virtual int64 GetClientID() const override;
 
@@ -237,7 +238,7 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
-	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>> PendingDormantChannels;
+	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>>> PendingDormantChannels;
 
 	FTimerManager TimerManager;
 
@@ -282,11 +283,11 @@ private:
 	// anywhere except USpatialNetDriver::ServerReplicateActors.
 	int32 ServerReplicateActors_PrepConnections(const float DeltaSeconds);
 	int32 ServerReplicateActors_PrioritizeActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers,
-												 FSpatialLoadBalancingHandler&, const TArray<FNetworkObjectInfo*> ConsiderList,
+												 SpatialGDK::FSpatialLoadBalancingHandler&, const TArray<FNetworkObjectInfo*> ConsiderList,
 												 const bool bCPUSaturated, FActorPriority*& OutPriorityList,
 												 FActorPriority**& OutPriorityActors);
 	void ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers,
-														FSpatialLoadBalancingHandler&, FActorPriority** PriorityActors,
+														SpatialGDK::FSpatialLoadBalancingHandler&, FActorPriority** PriorityActors,
 														const int32 FinalSortedCount, int32& OutUpdated);
 #endif
 
@@ -336,6 +337,6 @@ private:
 	uint64 StartupTimestamp;
 	FString StartupClientDebugString;
 
-	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
+	TMultiMap<Worker_EntityId_Key, SpatialGDK::EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
 };

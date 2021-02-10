@@ -1671,7 +1671,7 @@ void ActorSystem::CreateTombstoneEntity(AActor* Actor)
 
 	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
 
-	UE_LOG(LogSpatialSender, Log,
+	UE_LOG(LogActorSystem, Log,
 		   TEXT("Creating tombstone entity for actor. "
 				"Actor: %s. Entity ID: %d."),
 		   *Actor->GetName(), EntityId);
@@ -1779,7 +1779,7 @@ FString ActorSystem::GetObjectNameFromRepState(const FSpatialObjectRepState& Rep
 
 void ActorSystem::SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
-	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"),
+	UE_LOG(LogActorSystem, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"),
 		   *Channel->Actor->GetName(), Channel->GetEntityId(), Channel->Actor->HasAuthority());
 
 	const Worker_RequestId RequestId = CreateEntity(Channel, OutBytesWritten);
@@ -1819,7 +1819,7 @@ Worker_ComponentData ActorSystem::CreateLevelComponentData(AActor* Actor)
 		{
 			return ComponentFactory::CreateEmptyComponentData(ComponentId);
 		}
-		UE_LOG(LogSpatialSender, Error,
+		UE_LOG(LogActorSystem, Error,
 			   TEXT("Could not find Streaming Level Component for Level %s, processing Actor %s. Have you generated schema?"),
 			   *ActorWorld->GetOuter()->GetPathName(), *Actor->GetPathName());
 	}
@@ -1839,21 +1839,21 @@ void ActorSystem::CreateEntityWithRetries(Worker_EntityId EntityId, FString Enti
 		switch (Op.status_code)
 		{
 		case WORKER_STATUS_CODE_SUCCESS:
-			UE_LOG(LogSpatialSender, Log,
+			UE_LOG(LogActorSystem, Log,
 				   TEXT("Created entity. "
 						"Entity name: %s, entity id: %lld"),
 				   *Name, EntityId);
 			DeleteEntityComponentData(Components);
 			break;
 		case WORKER_STATUS_CODE_TIMEOUT:
-			UE_LOG(LogSpatialSender, Log,
+			UE_LOG(LogActorSystem, Log,
 				   TEXT("Timed out creating entity. Retrying. "
 						"Entity name: %s, entity id: %lld"),
 				   *Name, EntityId);
 			CreateEntityWithRetries(EntityId, MoveTemp(Name), MoveTemp(Components));
 			break;
 		default:
-			UE_LOG(LogSpatialSender, Log,
+			UE_LOG(LogActorSystem, Log,
 				   TEXT("Failed to create entity. It might already be created. Not retrying. "
 						"Entity name: %s, entity id: %lld"),
 				   *Name, EntityId);
@@ -1910,12 +1910,12 @@ void ActorSystem::RetireEntity(const Worker_EntityId EntityId, bool bIsNetStartu
 		// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
 		if (!SubView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 		{
-			UE_LOG(LogSpatialSender, Log, TEXT("Adding tombstone to entity: %lld"), EntityId);
+			UE_LOG(LogActorSystem, Log, TEXT("Adding tombstone to entity: %lld"), EntityId);
 			AddTombstoneToEntity(EntityId);
 		}
 		else
 		{
-			UE_LOG(LogSpatialSender, Verbose, TEXT("RetireEntity called on already retired entity: %lld"), EntityId);
+			UE_LOG(LogActorSystem, Verbose, TEXT("RetireEntity called on already retired entity: %lld"), EntityId);
 		}
 	}
 	else
@@ -1923,7 +1923,7 @@ void ActorSystem::RetireEntity(const Worker_EntityId EntityId, bool bIsNetStartu
 		// Actor no longer guaranteed to be in package map, but still useful for additional logging info
 		AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
 
-		UE_LOG(LogSpatialSender, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"),
+		UE_LOG(LogActorSystem, Log, TEXT("Sending delete entity request for %s with EntityId %lld, HasAuthority: %d"),
 			   *GetPathNameSafe(Actor), EntityId, Actor != nullptr ? Actor->HasAuthority() : false);
 
 		if (EventTracer != nullptr)
@@ -1942,7 +1942,7 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 	// SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendComponentUpdates);
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
-	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
+	UE_LOG(LogActorSystem, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Object);
 	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer);
@@ -1979,7 +1979,7 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 	const bool bHasAuthority = SubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
 	if (!bHasAuthority)
 	{
-		UE_LOG(LogSpatialSender, Warning,
+		UE_LOG(LogActorSystem, Warning,
 			   TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. "
 					"entity: %lld"),
 			   EntityId);
@@ -2113,7 +2113,7 @@ void ActorSystem::UpdateInterestComponent(AActor* Actor)
 	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		UE_LOG(LogSpatialSender, Verbose, TEXT("Attempted to update interest for non replicated actor: %s"), *GetNameSafe(Actor));
+		UE_LOG(LogActorSystem, Verbose, TEXT("Attempted to update interest for non replicated actor: %s"), *GetNameSafe(Actor));
 		return;
 	}
 

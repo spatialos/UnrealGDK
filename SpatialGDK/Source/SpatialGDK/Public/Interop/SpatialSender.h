@@ -8,15 +8,12 @@
 #include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialClassInfoManager.h"
-#include "Schema/RPCPayload.h"
 #include "Utils/RPCContainer.h"
 #include "Utils/RepDataUtils.h"
 
 #include "CoreMinimal.h"
 
 #include "SpatialSender.generated.h"
-
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
 class USpatialActorChannel;
 class SpatialDispatcher;

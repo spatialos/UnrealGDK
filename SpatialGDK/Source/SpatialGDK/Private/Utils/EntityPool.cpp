@@ -81,7 +81,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 		if (!bIsReady)
 		{
 			bIsReady = true;
-			EntityPoolReadyDelegate.Execute();
+			EntityPoolReadyDelegate.Broadcast();
 		}
 	});
 

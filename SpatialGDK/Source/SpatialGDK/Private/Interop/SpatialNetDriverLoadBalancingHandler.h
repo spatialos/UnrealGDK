@@ -50,7 +50,7 @@ struct FSpatialNetDriverLoadBalancingContext
 
 	void UpdateWithAdditionalActors();
 
-	EActorMigrationResult IsActorReadyForMigration(AActor* Actor);
+	SpatialGDK::EActorMigrationResult IsActorReadyForMigration(AActor* Actor);
 
 protected:
 	USpatialNetDriver* NetDriver;
