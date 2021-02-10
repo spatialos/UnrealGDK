@@ -461,10 +461,17 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	// Server world composition strategy
 	UWorldComposition* WorldComposition = World->WorldComposition;
+	ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+	UClass* ServerLevelStreamingStrategyClass = WorldSettings->ServerLevelStreamingStrategyClass;
+
+	if(ServerLevelStreamingStrategyClass && !WorldComposition)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("If Load balancing is enabled, there must be a Locking Policy set. Using default policy."));
+	}
+	
 	if (WorldComposition)
 	{
-		ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
-		UClass* ServerLevelStreamingStrategyClass = WorldSettings->ServerLevelStreamingStrategyClass;
+		
 		if (ServerLevelStreamingStrategyClass)
 		{
 			ServerLevelStreamingStrategy = NewObject<USpatialServerLevelStreamingStrategy>(this, ServerLevelStreamingStrategyClass);
@@ -579,7 +586,7 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 		}
 	}
 	UE_LOG(LogSpatialOSNetDriver, Error,
-		   TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
+		TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
 }
 
 bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()

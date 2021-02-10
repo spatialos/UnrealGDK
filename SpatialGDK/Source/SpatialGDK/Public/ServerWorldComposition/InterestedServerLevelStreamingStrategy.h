@@ -10,7 +10,6 @@ class SPATIALGDK_API UInterestedServerLevelStreamingStrategy : public USpatialSe
 {
 	GENERATED_BODY()
 
-public:
 protected:
 	virtual FVisibilityResult GenerateVisibilityResultForTile(const FWorldCompositionTile& Tile, const FIntVector& OriginLocation,
 															  VirtualWorkerId Vid) const override;

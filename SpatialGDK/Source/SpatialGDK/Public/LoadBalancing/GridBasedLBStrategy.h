@@ -57,8 +57,6 @@ public:
 
 	LBStrategyRegions GetLBStrategyRegions() const;
 
-	FBox2D GetWorkerBounds() const;
-
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR

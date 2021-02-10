@@ -167,8 +167,7 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 	}
 	PartitionQuery.Constraint = FinalAlwaysRelevantConstraint;
 	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, PartitionQuery);
-	
-	
+
 	// Add a self query for completeness
 	PartitionQuery = Query();
 	PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };

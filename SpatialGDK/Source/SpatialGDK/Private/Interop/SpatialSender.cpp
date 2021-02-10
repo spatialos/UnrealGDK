@@ -429,8 +429,12 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 	VirtualWorkerId VirtualId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
 
 	// If the load balancing is updated, then we need to update the server level streaming strategy.
-	// TODO: This crashed
-	NetDriver->ServerLevelStreamingStrategy->InitialiseStrategy(GetWorld()->WorldComposition->GetTilesList(), GetWorld()->OriginLocation);
+	UWorld* World = GetWorld();
+	USpatialServerLevelStreamingStrategy* ServerLevelStreamingStrategy = NetDriver->ServerLevelStreamingStrategy;
+	if(World && World->WorldComposition && ServerLevelStreamingStrategy)
+	{
+		ServerLevelStreamingStrategy->InitialiseStrategy(World->WorldComposition->GetTilesList(), World->OriginLocation);
+	}
 
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
 	FWorkerComponentUpdate InterestUpdate =

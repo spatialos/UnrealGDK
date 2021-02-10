@@ -815,14 +815,14 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	{
 		if (!EntityActor->IsActorReady())
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
 				   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
 		}
 
 		return;
 	}
 
-	UE_LOG(LogSpatialReceiver, Warning,
+	UE_LOG(LogSpatialReceiver, Verbose,
 		   TEXT("%s: Entity has been checked out on a worker which didn't spawn it. "
 				"Entity ID: %lld"),
 		   *NetDriver->Connection->GetWorkerId(), EntityId);

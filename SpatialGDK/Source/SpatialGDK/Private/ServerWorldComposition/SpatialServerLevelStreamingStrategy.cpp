@@ -51,7 +51,7 @@ void USpatialServerLevelStreamingStrategy::MarkLevelLoaded(const FWorldCompositi
 	}
 
 	LoadedLevelNames[Vid].Add(Tile.PackageName);
-	UE_LOG(LogSpatialServerLevelStreamingStrategy, Warning, TEXT("Virtual worker %d loaded tile: %s"), Vid, *Tile.PackageName.ToString());
+	UE_LOG(LogSpatialServerLevelStreamingStrategy, Log, TEXT("Virtual worker %d loaded tile: %s"), Vid, *Tile.PackageName.ToString());
 }
 
 TSet<FName> USpatialServerLevelStreamingStrategy::GetLoadedLevelNames(VirtualWorkerId Vid) const
@@ -69,8 +69,7 @@ FVisibilityResult USpatialServerLevelStreamingStrategy::GetVisibilityResultForTi
 
 	if (!LoadBalanceStrategy->IsReady())
 	{
-		// TODO: Not warning
-		UE_LOG(LogSpatialServerLevelStreamingStrategy, Warning, TEXT("GetVisibilityResultForTile: Load balance strategy is not ready."));
+		UE_LOG(LogSpatialServerLevelStreamingStrategy, Verbose, TEXT("GetVisibilityResultForTile: Load balance strategy is not ready."));
 		return { false };
 	}
 

@@ -24,10 +24,10 @@ bool UInterestedServerLevelStreamingStrategy::IsTileVisibleFromInterest(const FW
 	const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
 	const UAbstractLBStrategy* LoadBalanceStrategy = SpatialNetDriver->LoadBalanceStrategy;
 
-	if(!LoadBalanceStrategy)
+	if (!LoadBalanceStrategy)
 	{
 		UE_LOG(LogInterestedServerLevelStreamingStrategy, Error,
-			TEXT("No load balancing strategy set for InterestedServerLevelStreamingStrategy. All tiles will be loaded."));
+			   TEXT("No load balancing strategy set for InterestedServerLevelStreamingStrategy. All tiles will be loaded."));
 		return true;
 	}
 
@@ -36,7 +36,6 @@ bool UInterestedServerLevelStreamingStrategy::IsTileVisibleFromInterest(const FW
 
 	if (!BoxConstraint.IsSet())
 	{
-		// TODO Only output this error once?
 		UE_LOG(LogInterestedServerLevelStreamingStrategy, Error,
 			   TEXT("Load balancing strategy does not use single box constraint for interest. Only load balancing strategies with single "
 					"box constraints are currently supported. All tiles will be loaded."));
@@ -60,6 +59,6 @@ bool UInterestedServerLevelStreamingStrategy::IsTileVisibleFromInterest(const FW
 	FIntPoint LevelOffset2D = LevelPosition2D - WorldOriginLocation2D;
 	FBox TileBounds3D = Tile.Info.Bounds.ShiftBy(FVector(LevelOffset2D));
 	FBox2D TileBounds2D(FVector2D(TileBounds3D.Min.X, TileBounds3D.Min.Y), FVector2D(TileBounds3D.Max.X, TileBounds3D.Max.Y));
-	
+
 	return TileBounds2D.Intersect(InterestBounds);
 }

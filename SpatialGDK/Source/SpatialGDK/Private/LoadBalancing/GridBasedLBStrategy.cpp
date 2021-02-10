@@ -151,13 +151,6 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 	Constraint.BoxConstraint =
 		SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D), SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
 
-	/*const FVector Center3D{ 0.0f, 0.0f, 0.0f };
-	const FVector EdgeLengths3D{ 0, 0, 0};
-
-	SpatialGDK::QueryConstraint Constraint;
-	Constraint.BoxConstraint =
-		SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D), SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };*/
-
 	return Constraint;
 }
 
@@ -172,12 +165,6 @@ FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const
 uint32 UGridBasedLBStrategy::GetMinimumRequiredWorkers() const
 {
 	return Rows * Cols;
-}
-
-FBox2D UGridBasedLBStrategy::GetWorkerBounds() const
-{
-	check((uint32)WorkerCells.Num() > LocalCellId);
-	return WorkerCells[LocalCellId];
 }
 
 void UGridBasedLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId)
