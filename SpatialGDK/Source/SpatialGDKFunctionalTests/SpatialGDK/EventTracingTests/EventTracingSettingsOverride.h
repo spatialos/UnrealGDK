@@ -1,4 +1,4 @@
- //Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -6,17 +6,16 @@
 #include "EventTracingTest.h"
 #include "EventTracingSettingsOverride.generated.h"
 
- UCLASS()
- class SPATIALGDKFUNCTIONALTESTS_API AEventTracingSettingsOverride : public AEventTracingTest
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API AEventTracingSettingsOverride : public AEventTracingTest
 {
 	GENERATED_BODY()
 
- public:
+public:
 	AEventTracingSettingsOverride();
 
 	virtual void PrepareTest() override;
 
-
- private:
+private:
 	virtual void FinishEventTraceTest() override;
 };

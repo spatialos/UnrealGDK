@@ -23,5 +23,5 @@ void SettingsOverrideHelper::VerifyNumberOfClients(int32 ExpectedNumberOfClients
 	}
 
 	SpatialFunctionalTest->RequireTrue(ActualNumberOfClients == ExpectedNumberOfClients,
-									  TEXT("Expected PlayNumberOfClients to be ActualNumberOfClients"));
+									   TEXT("Expected PlayNumberOfClients to be ActualNumberOfClients"));
 }

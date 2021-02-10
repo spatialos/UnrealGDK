@@ -2,9 +2,9 @@
 
 #include "SpatialTestNetReferenceSettingsOverride.h"
 #include "Settings/LevelEditorPlaySettings.h"
+#include "SettingsOverrideHelper.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKSettings.h"
-#include "SettingsOverrideHelper.h"
 
 /**
  * This test checks that the test settings overridden in the .ini file have been set correctly

@@ -2,9 +2,9 @@
 
 #include "EventTracingSettingsOverride.h"
 #include "Settings/LevelEditorPlaySettings.h"
+#include "SettingsOverrideHelper.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKSettings.h"
-#include "SettingsOverrideHelper.h"
 //#include "SpatialGDKEditorSettings.h"
 
 /**
@@ -26,7 +26,6 @@ AEventTracingSettingsOverride::AEventTracingSettingsOverride()
 {
 	Author = "Victoria Bloom";
 	Description = TEXT("Event Tracing - Settings Override");
-
 }
 
 void AEventTracingSettingsOverride::FinishEventTraceTest()
@@ -54,7 +53,8 @@ void AEventTracingSettingsOverride::PrepareTest()
 	//	AddStep(TEXT("Check SpatialGDKEditorSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
 	//	// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 	//	FString SpatialOSCommandLineLaunchFlags = GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSCommandLineLaunchFlags();
-	//	RequireTrue(SpatialOSCommandLineLaunchFlags.Equals("--event-tracing-enabled=true"), "Expected SpatialOSCommandLineLaunchFlags to contain --event-tracing-enabled=true");
+	//	RequireTrue(SpatialOSCommandLineLaunchFlags.Equals("--event-tracing-enabled=true"), "Expected SpatialOSCommandLineLaunchFlags to
+	//contain --event-tracing-enabled=true");
 
 	//	// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
 	//	// original values
