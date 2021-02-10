@@ -21,14 +21,14 @@ class TestProjectTarget {
         # Resolve the branch to run against. The order of priority is:
         # envvar > same-name branch as the branch we are currently on > UnrealGDKTestGymVersion.txt > "master".
         $testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
-        $test_gym_version = if (Test-Path -Path $test_gyms_version_path) {[System.IO.File]::ReadAllText($test_gyms_version_path)} else {[string]::Empty}
+        $test_gym_version = if (Test-Path -Path $test_gyms_version_path) { [System.IO.File]::ReadAllText($test_gyms_version_path) } else { [string]::Empty }
         if (Test-Path $test_env_override) {
             $this.test_repo_branch = (Get-Item $test_env_override).value
         }
-        elseif($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
+        elseif ($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
             $this.test_repo_branch = $gdk_branch
         }
-        elseif($test_gym_version -ne [string]::Empty) {
+        elseif ($test_gym_version -ne [string]::Empty) {
             $this.test_repo_branch = $test_gym_version
         }
         else {
@@ -47,8 +47,8 @@ class TestSuite {
     [ValidateNotNull()]       [string]$additional_cmd_line_args
 
     TestSuite([TestProjectTarget] $test_project_target, [string] $test_repo_map,
-              [string] $test_results_dir, [string] $tests_path, [string] $additional_gdk_options,
-              [bool] $run_with_spatial, [string] $additional_cmd_line_args) {
+        [string] $test_results_dir, [string] $tests_path, [string] $additional_gdk_options,
+        [bool] $run_with_spatial, [string] $additional_cmd_line_args) {
         $this.test_project_target = $test_project_target
         $this.test_repo_map = $test_repo_map
         $this.test_results_dir = $test_results_dir
@@ -71,7 +71,7 @@ $tests = @()
 if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
     # We run spatial tests against Vanilla UE4
     $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "VanillaTestResults", "/Game/Intermediate/Maps/CI_Premerge/", "$user_gdk_settings", $False, "$user_cmd_line_args")
-    
+
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
         $tests[0].tests_path += "+/Game/Intermediate/Maps/CI_Nightly/"
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
