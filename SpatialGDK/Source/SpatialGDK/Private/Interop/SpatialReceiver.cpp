@@ -255,7 +255,7 @@ void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandRespons
 	Worker_RequestId PartitionId;
 	if (!PendingPartitionAssignments.RemoveAndCopyValue(Op.request_id, PartitionId))
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Could not find request id %d in PendingPartitionAssignments"),
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Could not find request id in PendingPartitionAssignments. Request Id: %d"),
 			   Op.request_id);
 		return;
 	}
