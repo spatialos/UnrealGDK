@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/RPCRingBuffer.h"
 
@@ -11,14 +10,10 @@
 
 namespace SpatialGDK
 {
-struct MulticastRPCs : Component
+struct MulticastRPCs
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::MULTICAST_RPCS_COMPONENT_ID;
-
-	MulticastRPCs(const Worker_ComponentData& Data);
 	MulticastRPCs(Schema_ComponentData* Data);
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
 	void ApplyComponentUpdate(Schema_ComponentUpdate* Update);
 
 	RPCRingBuffer MulticastRPCBuffer;
@@ -26,6 +21,20 @@ struct MulticastRPCs : Component
 
 private:
 	void ReadFromSchema(Schema_Object* SchemaObject);
+};
+
+class MulticastRPCsLayout : RPCComponentLayout
+{
+public:
+	MulticastRPCsLayout();
+
+	virtual RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type) const override;
+
+	void MoveLastSentIdToInitiallyPresentCount(Schema_Object* SchemaObject, uint64 LastSentId);
+
+private:
+	RPCRingBufferDescriptor MulticastRPCBufferDescriptor;
+	Schema_FieldId InitiallyPresentMulticastRPCsCountFieldId;
 };
 
 } // namespace SpatialGDK

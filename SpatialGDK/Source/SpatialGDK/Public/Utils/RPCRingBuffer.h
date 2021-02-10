@@ -4,6 +4,7 @@
 
 #include "Misc/Optional.h"
 
+#include "Schema/RPCComponentLayout.h"
 #include "Schema/RPCPayload.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -24,39 +25,52 @@ struct RPCRingBuffer
 
 struct RPCRingBufferDescriptor
 {
+	RPCRingBufferDescriptor() = default;
+	RPCRingBufferDescriptor(Schema_FieldId InSchemaFieldStart, uint32 InBufferSize)
+		: RingBufferSize(InBufferSize)
+		, SchemaFieldStart(InSchemaFieldStart)
+		, LastSentRPCFieldId(SchemaFieldStart + RingBufferSize)
+	{
+	}
+
 	uint32 GetRingBufferElementIndex(uint64 RPCId) const { return (RPCId - 1) % RingBufferSize; }
 
 	Schema_FieldId GetRingBufferElementFieldId(uint64 RPCId) const { return SchemaFieldStart + GetRingBufferElementIndex(RPCId); }
 
-	uint32 RingBufferSize;
-	Schema_FieldId SchemaFieldStart;
-	Schema_FieldId LastSentRPCFieldId;
+	Schema_FieldId GetSchemaFieldEnd() const { return LastSentRPCFieldId; }
+
+	uint32 RingBufferSize = 0;
+	Schema_FieldId SchemaFieldStart = 0;
+	Schema_FieldId LastSentRPCFieldId = 0;
 };
 
 namespace RPCRingBufferUtils
 {
 Worker_ComponentId GetRingBufferComponentId(ERPCType Type);
 Worker_ComponentId GetRingBufferAuthComponentSetId(ERPCType Type);
-RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type);
 uint32 GetRingBufferSize(ERPCType Type);
 
 Worker_ComponentId GetAckComponentId(ERPCType Type);
 Worker_ComponentId GetAckAuthComponentSetId(ERPCType Type);
-Schema_FieldId GetAckFieldId(ERPCType Type);
 
 Schema_FieldId GetInitiallyPresentMulticastRPCsCountFieldId();
 
 bool ShouldQueueOverflowed(ERPCType Type);
 bool ShouldIgnoreCapacity(ERPCType Type);
 
-void ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer);
-void ReadAckFromSchema(const Schema_Object* SchemaObject, ERPCType Type, uint64& OutAck);
-
-void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, const RPCPayload& Payload);
-void WriteAckToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 Ack);
-
-void MoveLastSentIdToInitiallyPresentCount(Schema_Object* SchemaObject, uint64 LastSentId);
-
 } // namespace RPCRingBufferUtils
+
+class RPCComponentLayout
+{
+public:
+	void ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer);
+	void ReadAckFromSchema(const Schema_Object* SchemaObject, ERPCType Type, uint64& OutAck);
+
+	void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, const RPCPayload& Payload);
+	void WriteAckToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 Ack);
+
+	virtual RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type) const { return RPCRingBufferDescriptor(); }
+	virtual Schema_FieldId GetAckFieldId(ERPCType Type) const { return 0; }
+};
 
 } // namespace SpatialGDK

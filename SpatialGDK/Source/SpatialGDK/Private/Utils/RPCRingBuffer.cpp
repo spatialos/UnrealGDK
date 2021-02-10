@@ -199,7 +199,9 @@ bool ShouldIgnoreCapacity(ERPCType Type)
 	}
 }
 
-void ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer)
+} // namespace RPCRingBufferUtils
+
+void RPCComponentLayout::ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer)
 {
 	RPCRingBufferDescriptor Descriptor = GetRingBufferDescriptor(OutBuffer.Type);
 
@@ -218,7 +220,7 @@ void ReadBufferFromSchema(Schema_Object* SchemaObject, RPCRingBuffer& OutBuffer)
 	}
 }
 
-void ReadAckFromSchema(const Schema_Object* SchemaObject, ERPCType Type, uint64& OutAck)
+void RPCComponentLayout::ReadAckFromSchema(const Schema_Object* SchemaObject, ERPCType Type, uint64& OutAck)
 {
 	Schema_FieldId AckFieldId = GetAckFieldId(Type);
 
@@ -228,7 +230,7 @@ void ReadAckFromSchema(const Schema_Object* SchemaObject, ERPCType Type, uint64&
 	}
 }
 
-void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, const RPCPayload& Payload)
+void RPCComponentLayout::WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, const RPCPayload& Payload)
 {
 	RPCRingBufferDescriptor Descriptor = GetRingBufferDescriptor(Type);
 
@@ -239,7 +241,7 @@ void WriteRPCToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 RPCId, 
 	Schema_AddUint64(SchemaObject, Descriptor.LastSentRPCFieldId, RPCId);
 }
 
-void WriteAckToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 Ack)
+void RPCComponentLayout::WriteAckToSchema(Schema_Object* SchemaObject, ERPCType Type, uint64 Ack)
 {
 	Schema_FieldId AckFieldId = GetAckFieldId(Type);
 
@@ -257,7 +259,5 @@ void MoveLastSentIdToInitiallyPresentCount(Schema_Object* SchemaObject, uint64 L
 	Schema_ClearField(SchemaObject, Descriptor.LastSentRPCFieldId);
 	Schema_AddUint32(SchemaObject, GetInitiallyPresentMulticastRPCsCountFieldId(), static_cast<uint32>(LastSentId));
 }
-
-} // namespace RPCRingBufferUtils
 
 } // namespace SpatialGDK

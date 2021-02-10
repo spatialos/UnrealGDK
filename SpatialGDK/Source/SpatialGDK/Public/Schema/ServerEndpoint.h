@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/RPCRingBuffer.h"
 
@@ -11,24 +10,36 @@
 
 namespace SpatialGDK
 {
-struct ServerEndpoint : Component
+struct ServerEndpoint
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID;
-
-	ServerEndpoint(const Worker_ComponentData& Data);
 	ServerEndpoint(Schema_ComponentData* Data);
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
 	void ApplyComponentUpdate(Schema_ComponentUpdate* Update);
 
-	RPCRingBuffer ReliableRPCBuffer;
-	RPCRingBuffer UnreliableRPCBuffer;
-	uint64 ReliableRPCAck = 0;
-	uint64 UnreliableRPCAck = 0;
+	RPCRingBuffer ClientReliableRPCBuffer;
+	RPCRingBuffer ClientUnreliableRPCBuffer;
+	uint64 ServerReliableRPCAck = 0;
+	uint64 ServerUnreliableRPCAck = 0;
 	uint64 MovementRPCAck = 0;
 
 private:
 	void ReadFromSchema(Schema_Object* SchemaObject);
+};
+
+class ServerEndpointLayout : RPCComponentLayout
+{
+public:
+	ServerEndpointLayout();
+
+	virtual RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type) const override;
+	virtual Schema_FieldId GetAckFieldId(ERPCType Type) const override;
+
+private:
+	RPCRingBufferDescriptor ClientReliableRPCBufferDescriptor;
+	RPCRingBufferDescriptor ClientUnreliableRPCBufferDescriptor;
+	Schema_FieldId ServerReliableRPCAckFieldId;
+	Schema_FieldId ServerUnreliableRPCAckFieldId;
+	Schema_FieldId MovementRPCAckFieldId;
 };
 
 } // namespace SpatialGDK

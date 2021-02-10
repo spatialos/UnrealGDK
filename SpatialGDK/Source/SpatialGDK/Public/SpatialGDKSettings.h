@@ -268,12 +268,16 @@ private:
 	void UpdateServicesRegionFile();
 #endif
 
+	/**
+	 * The number of RPCs that can be in flight, per type. Changing this will require schema to be regenerated and
+	 * break snapshot compatibility.
+	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Default RPC Ring Buffer Size"))
 	uint32 DefaultRPCRingBufferSize;
 
-	/** Overrides default ring buffer size. Does not apply to movement RPCs. */
+	/** Overrides default ring buffer size. */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "RPC Ring Buffer Size Map"))
-	TMap<ERPCType, uint32> RPCRingBufferSizeMap;
+	TMap<ERPCType, uint32> RPCRingBufferSizeOverrides;
 
 public:
 	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
@@ -281,13 +285,6 @@ public:
 	float GetSecondsBeforeWarning(const ERPCResult Result) const;
 
 	bool ShouldRPCTypeAllowUnresolvedParameters(const ERPCType Type) const;
-
-	/**
-	 * The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and
-	 * break snapshot compatibility.
-	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Max RPC Ring Buffer Size"))
-	uint32 MaxRPCRingBufferSize;
 
 	/** Only valid on Tcp connections - indicates if we should enable TCP_NODELAY - see c_worker.h */
 	UPROPERTY(Config)
@@ -409,13 +406,6 @@ public:
 	 */
 	UPROPERTY(Config)
 	uint64 MaxEventTracingFileSizeBytes;
-
-	/*
-	 * The number of fields that the movement RPC buffer is generated with. Changing this will require schema to be regenerated and break
-	 * snapshot compatibility.
-	 */
-	UPROPERTY(Config)
-	uint32 MovementRPCBufferSize;
 
 	/*
 	 * Enable to route ServerMove RPCs through their own channel, separately from other Server unreliable RPCs.

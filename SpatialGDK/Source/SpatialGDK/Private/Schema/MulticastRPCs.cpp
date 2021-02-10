@@ -4,20 +4,10 @@
 
 namespace SpatialGDK
 {
-MulticastRPCs::MulticastRPCs(const Worker_ComponentData& Data)
-	: MulticastRPCs(Data.schema_type)
-{
-}
-
 MulticastRPCs::MulticastRPCs(Schema_ComponentData* Data)
 	: MulticastRPCBuffer(ERPCType::NetMulticast)
 {
 	ReadFromSchema(Schema_GetComponentDataFields(Data));
-}
-
-void MulticastRPCs::ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
-{
-	ApplyComponentUpdate(Update.schema_type);
 }
 
 void MulticastRPCs::ApplyComponentUpdate(Schema_ComponentUpdate* Update)
@@ -37,6 +27,34 @@ void MulticastRPCs::ReadFromSchema(Schema_Object* SchemaObject)
 	{
 		InitiallyPresentMulticastRPCsCount = Schema_GetUint32(SchemaObject, FieldId);
 	}
+}
+
+MulticastRPCsLayout::MulticastRPCsLayout()
+	: MulticastRPCBufferDescriptor(1, RPCRingBufferUtils::GetRingBufferSize(ERPCType::NetMulticast))
+	, InitiallyPresentMulticastRPCsCountFieldId(MulticastRPCBufferDescriptor.GetSchemaFieldEnd() + 1)
+{
+}
+
+RPCRingBufferDescriptor MulticastRPCsLayout::GetRingBufferDescriptor(ERPCType Type) const
+{
+	switch (Type)
+	{
+	case ERPCType::Multicast:
+		return MulticastRPCBufferDescriptor;
+	default:
+		checkNoEntry();
+		return RPCRingBufferDescriptor();
+	}
+}
+
+void MulticastRPCsLayout::MoveLastSentIdToInitiallyPresentCount(Schema_Object* SchemaObject, uint64 LastSentId)
+{
+	// This is a special field that is set when creating a MulticastRPCs component with initial RPCs.
+	// Last sent RPC Id is cleared so the clients don't ignore the initial RPCs.
+	// The server that first gains authority over the component will set last sent RPC ID to be equal
+	// to the initial count so the clients that already checked out this entity can execute initial RPCs.
+	Schema_ClearField(SchemaObject, MulticastRPCBufferDescriptor.LastSentRPCFieldId);
+	Schema_AddUint32(SchemaObject, InitiallyPresentMulticastRPCsCountFieldId, static_cast<uint32>(LastSentId));
 }
 
 } // namespace SpatialGDK

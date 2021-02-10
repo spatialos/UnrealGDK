@@ -329,11 +329,7 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 	Schema_FieldId FieldId = 1;
 	for (ERPCType SentRPCType : SentRPCTypes)
 	{
-		uint32 RingBufferSize = GetDefault<USpatialGDKSettings>()->MaxRPCRingBufferSize;
-		if (SentRPCType == ERPCType::Movement)
-		{
-			RingBufferSize = GetDefault<USpatialGDKSettings>()->MovementRPCBufferSize;
-		}
+		uint32 RingBufferSize = GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(SentRPCType);
 
 		for (uint32 RingBufferIndex = 0; RingBufferIndex < RingBufferSize; RingBufferIndex++)
 		{
