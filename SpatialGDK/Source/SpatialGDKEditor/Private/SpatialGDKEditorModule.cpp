@@ -290,12 +290,10 @@ void FSpatialGDKEditorModule::RevertSettingsOverrideForTesting() const
 {
 	// From file
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	SpatialGDKSettings->LoadConfig(0, *TmpSpatialGDKSettingsFilename);
+	SpatialGDKSettings->RevertSettings(TmpSpatialGDKSettingsFilename);
 
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	// Arrays are not cleared when loading from config file so we need to clear them before loading
-	SpatialGDKEditorSettings->ClearSpatialOSCommandLineLaunchFlags();
-	SpatialGDKEditorSettings->LoadConfig(0, *TmpSpatialGDKEditorSettingsFilename);
+	SpatialGDKEditorSettings->RevertSettings(TmpSpatialGDKEditorSettingsFilename);
 }
 
 FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(UWorld* World,
@@ -306,17 +304,13 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 
 	FPlayInEditorSettingsOverride PIESettingsOverride = ISpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(World, MapName);
 
-	// Save settings before before overriding so that they can be reverted later
-	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	SpatialGDKSettings->SaveConfig(0, *TmpSpatialGDKSettingsFilename);
-	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKEditorSettings->SaveConfig(0, *TmpSpatialGDKSettingsFilename);
-
 	// Override settings from ini file
 	FString TestSettingOverridesFilename =
 		OverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
-	SpatialGDKSettings->LoadConfig(USpatialGDKSettings::StaticClass(), *TestSettingOverridesFilename);
-	SpatialGDKEditorSettings->LoadConfig(USpatialGDKEditorSettings::StaticClass(), *TestSettingOverridesFilename);
+	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+	SpatialGDKSettings->OverrideSettings(TmpSpatialGDKSettingsFilename, TestSettingOverridesFilename);
+	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKEditorSettings->OverrideSettings(TmpSpatialGDKEditorSettingsFilename, TestSettingOverridesFilename);
 
 	if (const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{

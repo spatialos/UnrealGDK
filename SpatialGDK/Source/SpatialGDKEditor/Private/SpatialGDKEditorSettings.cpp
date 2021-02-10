@@ -557,4 +557,18 @@ const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVari
 	}
 }
 
+void USpatialGDKEditorSettings::OverrideSettings(const FString& FilenameToSave, const FString& FilenameForOverrides)
+{
+	// Save settings before before overriding so that they can be reverted later
+	SaveConfig(0, *FilenameToSave);
+	LoadConfig(USpatialGDKEditorSettings::StaticClass(), *FilenameForOverrides);
+}
+
+void USpatialGDKEditorSettings::RevertSettings(const FString& FilenameToLoad)
+{
+	// Containers (arrays/maps/sets) are not cleared when loading from config file if they originally were empty, so we need to clear them before loading
+	SpatialOSCommandLineLaunchFlags.Empty();
+	LoadConfig(0, *FilenameToLoad);
+} 
+
 #undef LOCTEXT_NAMESPACE
