@@ -7,7 +7,7 @@ component ActorAuthTag {
     id = 2001;
 }
 
-component ActorNonAuthTag {
+component ActorTag {
     id = 2002;
 }
 
