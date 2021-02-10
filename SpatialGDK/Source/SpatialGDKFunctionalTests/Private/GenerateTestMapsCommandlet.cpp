@@ -21,7 +21,9 @@ int32 UGenerateTestMapsCommandlet::Main(const FString& CmdLineParams)
 	if (FPaths::DirectoryExists(UGeneratedTestMap::GetGeneratedMapFolder()))
 	{
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-		PlatformFile.DeleteDirectoryRecursively(*UGeneratedTestMap::GetGeneratedMapFolder());
+		const bool bSuccess = PlatformFile.DeleteDirectoryRecursively(*UGeneratedTestMap::GetGeneratedMapFolder());
+		UE_CLOG(!bSuccess, LogGenerateTestMapsCommandlet, Error, TEXT("Failed to delete the generated test map folder %s."),
+				*UGeneratedTestMap::GetGeneratedMapFolder());
 	}
 
 	// Have to gather the classes first and then iterate over the copy, because creating a map triggers a GC which can modify the object

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -26,14 +26,12 @@ namespace HandoverReplicationTestValues
 static constexpr int BasicTestPropertyValue = 0;
 static constexpr int UpdatedTestPropertyValue = 100;
 
-static constexpr float WorldSize = 1000.0f;
-
 // Positions that belong to specific server according to 1x2 Grid LBS.
 // Forward-Left, will be in Server 1's authority area.
-static const FVector Server1Position{ WorldSize / 4, -WorldSize / 4, 0.0f };
+static const FVector Server1Position{ 1000.0f, -1000.0f, 0.0f };
 
 // Forward-Right, will be in Server 2's authority area.
-static const FVector Server2Position{ WorldSize / 4, WorldSize / 4, 0.0f };
+static const FVector Server2Position{ 1000.0f, 1000.0f, 0.0f };
 } // namespace HandoverReplicationTestValues
 
 UCLASS()
@@ -82,32 +80,6 @@ public:
 
 	UPROPERTY()
 	UTestHandoverComponent* HandoverComponent;
-};
-
-UCLASS()
-class USpatialTestHandoverReplicationLBStrategy : public UGridBasedLBStrategy
-{
-	GENERATED_BODY()
-
-	USpatialTestHandoverReplicationLBStrategy()
-	{
-		Rows = 1;
-		Cols = 2;
-		WorldWidth = HandoverReplicationTestValues::WorldSize;
-		WorldHeight = HandoverReplicationTestValues::WorldSize;
-	}
-};
-
-UCLASS(BlueprintType)
-class SPATIALGDKFUNCTIONALTESTS_API USpatialTestHandoverReplicationMultiWorkerSettings : public USpatialMultiWorkerSettings
-{
-public:
-	GENERATED_BODY()
-
-	USpatialTestHandoverReplicationMultiWorkerSettings()
-	{
-		WorkerLayers[0].LoadBalanceStrategy = USpatialTestHandoverReplicationLBStrategy::StaticClass();
-	}
 };
 
 UCLASS()

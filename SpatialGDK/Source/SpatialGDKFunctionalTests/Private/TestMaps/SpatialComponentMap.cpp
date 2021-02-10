@@ -10,24 +10,24 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialComponentTest/SpatialComponentTestReplicatedActor.h"
 
 USpatialComponentMap::USpatialComponentMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialComponentMap"))
 {
-	MapCategory = CI_FAST;
-	MapName = TEXT("SpatialComponentMap");
 }
 
 void USpatialComponentMap::CreateCustomContentForMap()
 {
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 
+	// The actors are placed in one quadrant of the map to make sure they are LBed together
+	FVector SpatialComponentTestActorPosition = FVector(-250, -250, 0);
+
 	// Add the test
-	ASpatialComponentTest* CompTest = CastChecked<ASpatialComponentTest>(
-		GEditor->AddActor(CurrentLevel, ASpatialComponentTest::StaticClass(), FTransform(FVector(-250, -250, 0))));
+	ASpatialComponentTest* CompTest = AddActorToLevel<ASpatialComponentTest>(CurrentLevel, FTransform(SpatialComponentTestActorPosition));
 
 	// Add the helpers, as we need things placed in the level
-	CompTest->LevelActor = CastChecked<ASpatialComponentTestActor>(
-		GEditor->AddActor(CurrentLevel, ASpatialComponentTestActor::StaticClass(), FTransform(FVector(-250, -250, 0))));
-	CompTest->LevelReplicatedActor = CastChecked<ASpatialComponentTestReplicatedActor>(
-		GEditor->AddActor(CurrentLevel, ASpatialComponentTestReplicatedActor::StaticClass(), FTransform(FVector(-250, -250, 0))));
+	CompTest->LevelActor = AddActorToLevel<ASpatialComponentTestActor>(CurrentLevel, FTransform(SpatialComponentTestActorPosition));
+	CompTest->LevelReplicatedActor =
+		AddActorToLevel<ASpatialComponentTestReplicatedActor>(CurrentLevel, FTransform(SpatialComponentTestActorPosition));
 
 	// Quirk of the test. We need the player spawns on the same portion of the map as the test, so they are LBed together
 	AActor** PlayerStart = CurrentLevel->Actors.FindByPredicate([](AActor* Actor) {

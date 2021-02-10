@@ -14,9 +14,8 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/VisibilityTest/VisibilityTest.h"
 
 USpatialNetworkingMap::USpatialNetworkingMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialNetworkingMap"))
 {
-	MapCategory = CI_FAST;
-	MapName = TEXT("SpatialNetworkingMap");
 }
 
 void USpatialNetworkingMap::CreateCustomContentForMap()
@@ -24,19 +23,19 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 
 	// Add the tests
-	GEditor->AddActor(CurrentLevel, ASpatialTestPossession::StaticClass(), FTransform::Identity);
-	GEditor->AddActor(CurrentLevel, ASpatialTestRepossession::StaticClass(), FTransform::Identity);
-	GEditor->AddActor(CurrentLevel, ASpatialTestRepNotify::StaticClass(), FTransform::Identity);
-	GEditor->AddActor(CurrentLevel, AVisibilityTest::StaticClass(), FTransform::Identity);
-	GEditor->AddActor(CurrentLevel, ARPCInInterfaceTest::StaticClass(), FTransform::Identity);
-	GEditor->AddActor(CurrentLevel, ARegisterAutoDestroyActorsTestPart1::StaticClass(), FTransform::Identity);
-	GEditor->AddActor(CurrentLevel, ARegisterAutoDestroyActorsTestPart2::StaticClass(), FTransform::Identity);
-	GEditor->AddActor(CurrentLevel, AOwnerOnlyPropertyReplication::StaticClass(), FTransform::Identity);
-	GEditor->AddActor(CurrentLevel, ADormancyAndTombstoneTest::StaticClass(), FTransform::Identity);
-	GEditor->AddActor(CurrentLevel, ASpatialTestSingleServerDynamicComponents::StaticClass(), FTransform::Identity);
+	AddActorToLevel<ASpatialTestPossession>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ASpatialTestRepossession>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ASpatialTestRepNotify>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<AVisibilityTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ARPCInInterfaceTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ARegisterAutoDestroyActorsTestPart1>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ARegisterAutoDestroyActorsTestPart2>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<AOwnerOnlyPropertyReplication>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ADormancyAndTombstoneTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ASpatialTestSingleServerDynamicComponents>(CurrentLevel, FTransform::Identity);
 
 	// Add test helpers
 	// Unfortunately, the nature of some tests requires them to have actors placed in the level, to trigger some Unreal behavior
-	GEditor->AddActor(CurrentLevel, ADormancyTestActor::StaticClass(), FTransform::Identity);
-	GEditor->AddActor(CurrentLevel, AReplicatedVisibilityTestActor::StaticClass(), FTransform::Identity);
+	AddActorToLevel<ADormancyTestActor>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<AReplicatedVisibilityTestActor>(CurrentLevel, FTransform::Identity);
 }

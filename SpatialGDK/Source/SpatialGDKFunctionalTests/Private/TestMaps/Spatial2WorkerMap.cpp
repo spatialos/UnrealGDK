@@ -8,9 +8,8 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/RelevancyTest/RelevancyTest.h"
 
 USpatial2WorkerMap::USpatial2WorkerMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("Spatial2WorkerMap"))
 {
-	MapCategory = CI_FAST_SPATIAL_ONLY;
-	MapName = TEXT("Spatial2WorkerMap");
 }
 
 void USpatial2WorkerMap::CreateCustomContentForMap()
@@ -19,15 +18,11 @@ void USpatial2WorkerMap::CreateCustomContentForMap()
 
 	// The two orchestration tests are placed at opposite points around the origin to "guarantee" they will land on different workers so
 	// that they can demonstrate they work in all situations
-	GEditor->AddActor(CurrentLevel, ACrossServerAndClientOrchestrationTest::StaticClass(), FTransform(FVector(-250, 250, 0)));
-	GEditor->AddActor(CurrentLevel, ACrossServerAndClientOrchestrationTest::StaticClass(), FTransform(FVector(250, -250, 0)));
-	// This one lives in the TestGyms, TODO
-	// GEditor->AddActor(CurrentLevel, APredictedGameplayCuesTest::StaticClass(), FTransform::Identity);
-	// This one lives in the TestGyms, TODO
-	// GEditor->AddActor(CurrentLevel, ACrossServerAbilityActivationTest::StaticClass(), FTransform::Identity);
-	GEditor->AddActor(CurrentLevel, ARegisterAutoDestroyActorsTestPart1::StaticClass(), FTransform::Identity);
-	GEditor->AddActor(CurrentLevel, ARegisterAutoDestroyActorsTestPart2::StaticClass(), FTransform::Identity);
-	GEditor->AddActor(CurrentLevel, ARelevancyTest::StaticClass(), FTransform::Identity);
+	AddActorToLevel<ACrossServerAndClientOrchestrationTest>(CurrentLevel, FTransform(FVector(-250, 250, 0)));
+	AddActorToLevel<ACrossServerAndClientOrchestrationTest>(CurrentLevel, FTransform(FVector(250, -250, 0)));
+	AddActorToLevel<ARegisterAutoDestroyActorsTestPart1>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ARegisterAutoDestroyActorsTestPart2>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ARelevancyTest>(CurrentLevel, FTransform::Identity);
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2WorkerSettings::StaticClass());

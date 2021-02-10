@@ -11,22 +11,34 @@
 #include "UObject/ConstructorHelpers.h"
 
 UGeneratedTestMap::UGeneratedTestMap()
+	: bIsValidForGeneration(false)
 {
-	ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneAsset(TEXT("StaticMesh'/Engine/BasicShapes/Plane.Plane'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneAsset(TEXT("/Engine/BasicShapes/Plane.Plane"));
 	check(PlaneAsset.Succeeded());
 	PlaneStaticMesh = PlaneAsset.Object;
 
-	ConstructorHelpers::FObjectFinder<UMaterial> MaterialAsset(TEXT("Material'/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial'"));
+	ConstructorHelpers::FObjectFinder<UMaterial> MaterialAsset(TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
 	check(MaterialAsset.Succeeded());
 	BasicShapeMaterial = MaterialAsset.Object;
+}
 
-	MapCategory = CI_FAST; // We will set the default to CI_FAST, even if almost every map will override this anyway
-						   // Just in case we can make a newly written map be immediately run in CI when the PR is still in development, so
-						   // that the developer gets feedback about whether their new map and presumably new test passes in CI
+UGeneratedTestMap::UGeneratedTestMap(EMapCategory InMapCategory, FString InMapName)
+	: UGeneratedTestMap()
+{
+	MapCategory = InMapCategory;
+	MapName = InMapName;
+	bIsValidForGeneration = true;
+}
+
+AActor* UGeneratedTestMap::AddActorToLevel(ULevel* Level, UClass* Class, const FTransform& Transform)
+{
+	return GEditor->AddActor(Level, Class, Transform);
 }
 
 void UGeneratedTestMap::GenerateMap()
 {
+	checkf(bIsValidForGeneration, TEXT("This test map object is not valid for map generation, please use the UGeneratedTestMap constructor "
+									   "with arguments when deriving from the base UGeneratedTestMap."));
 	GenerateBaseMap();
 	CreateCustomContentForMap();
 	SaveMap();
@@ -39,39 +51,38 @@ FString UGeneratedTestMap::GetGeneratedMapFolder()
 
 void UGeneratedTestMap::GenerateBaseMap()
 {
-	UWorld* CurrentWorld = FAutomationEditorCommonUtils::CreateNewMap();
-	ULevel* CurrentLevel = CurrentWorld->GetCurrentLevel();
+	World = FAutomationEditorCommonUtils::CreateNewMap();
+	ULevel* CurrentLevel = World->GetCurrentLevel();
 
-	AStaticMeshActor* Plane =
-		CastChecked<AStaticMeshActor>(GEditor->AddActor(CurrentLevel, AStaticMeshActor::StaticClass(), FTransform::Identity));
+	// Lights and fog are just for visual effects, strictly not needed for running tests, but it makes it a bit nicer to look at tests while
+	// they are running.
+	AExponentialHeightFog* Fog = AddActorToLevel<AExponentialHeightFog>(CurrentLevel, FTransform::Identity);
+	ASkyLight* SkyLight = AddActorToLevel<ASkyLight>(CurrentLevel, FTransform::Identity);
+
+	// On the other hand, the plane and the player start are needed for tests and they rely on various properties of them (plane catches
+	// things so they don't fall, player start controls not just the viewport, but is also used for certain tests to see how the spawned
+	// player behaves under LB conditions).
+	AStaticMeshActor* Plane = AddActorToLevel<AStaticMeshActor>(CurrentLevel, FTransform::Identity);
 	Plane->GetStaticMeshComponent()->SetStaticMesh(PlaneStaticMesh);
 	Plane->GetStaticMeshComponent()->SetMaterial(0, BasicShapeMaterial);
-	Plane->SetActorScale3D(FVector(
-		500, 500, 1)); // Make the initial platform larger so things don't fall off for tests which use a large area (visibility test)
+	// Make the initial platform much much larger so things don't fall off for tests which use a large area (visibility test)
+	Plane->SetActorScale3D(FVector(10000, 10000, 1));
 
-	AExponentialHeightFog* Fog =
-		CastChecked<AExponentialHeightFog>(GEditor->AddActor(CurrentLevel, AExponentialHeightFog::StaticClass(), FTransform::Identity));
-
-	APlayerStart* PlayerStart =
-		CastChecked<APlayerStart>(GEditor->AddActor(CurrentLevel, APlayerStart::StaticClass(), FTransform(FVector(-500, 0, 100))));
-
-	ASkyLight* SkyLight = CastChecked<ASkyLight>(GEditor->AddActor(CurrentLevel, ASkyLight::StaticClass(), FTransform::Identity));
+	APlayerStart* PlayerStart = AddActorToLevel<APlayerStart>(CurrentLevel, FTransform(FVector(-500, 0, 100)));
 
 	// Use current settings for all these generated maps as default.
-	// This will probably change with UNR-4801
-	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(CurrentWorld->GetWorldSettings());
+	// This will probably change with UNR-4801.
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->TestingSettings.TestingMode = EMapTestingMode::UseCurrentSettings;
-	WorldSettings->bEnableDebugInterface = true; // Setting to true for all test maps by default, TODO: consult Nic
 
-	// TODO: Maybe figure out how to create folders to put the actors into (just visual if someone opens the map in the editor)
-	// TODO: Maybe figure out how to set the default viewpoint when opening the map, so we don't start in the ground
-
-	World = CurrentWorld;
+	// TODO: Maybe figure out how to set the default viewpoint when opening the map, so we don't start in the ground (maybe together with
+	// other viewing position issues), ticket: UNR-4975.
 }
 
 void UGeneratedTestMap::SaveMap()
 {
-	FEditorFileUtils::SaveLevel(World->GetCurrentLevel(), GetPathToSaveTheMap());
+	const bool bSuccess = FEditorFileUtils::SaveLevel(World->GetCurrentLevel(), GetPathToSaveTheMap());
+	UE_CLOG(!bSuccess, LogGenerateTestMapsCommandlet, Error, TEXT("Failed to save the map %s."), *GetMapName());
 }
 
 FString UGeneratedTestMap::GetPathToSaveTheMap()
@@ -80,24 +91,24 @@ FString UGeneratedTestMap::GetPathToSaveTheMap()
 	FString DirName;
 	switch (MapCategory)
 	{
-	case CI_FAST:
-		DirName = TEXT("CI_Fast/");
+	case EMapCategory::CI_PREMERGE:
+		DirName = TEXT("CI_Premerge/");
 		break;
-	case CI_FAST_SPATIAL_ONLY:
-		DirName = TEXT("CI_Fast_Spatial_Only/");
+	case EMapCategory::CI_PREMERGE_SPATIAL_ONLY:
+		DirName = TEXT("CI_Premerge_Spatial_Only/");
 		break;
-	case CI_SLOW:
-		DirName = TEXT("CI_Slow/");
+	case EMapCategory::CI_NIGHTLY:
+		DirName = TEXT("CI_Nightly/");
 		break;
-	case CI_SLOW_SPATIAL_ONLY:
-		DirName = TEXT("CI_Slow_Spatial_Only/");
+	case EMapCategory::CI_NIGHTLY_SPATIAL_ONLY:
+		DirName = TEXT("CI_Nightly_Spatial_Only/");
 		break;
-	case NO_CI:
-		DirName = TEXT("");
+	case EMapCategory::NO_CI:
+		DirName = TEXT("No_CI/");
 		break;
 	default:
 		checkNoEntry();
 	}
 
-	return FString::Printf(TEXT("%s%s%s.umap"), *GetGeneratedMapFolder(), *DirName, *MapName);
+	return GetGeneratedMapFolder() / DirName / MapName + FPackageName::GetMapPackageExtension();
 }

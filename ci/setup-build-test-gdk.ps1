@@ -70,10 +70,10 @@ $tests = @()
 
 if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
     # We run spatial tests against Vanilla UE4
-    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "VanillaTestResults", "/Game/Intermediate/Maps/CI_Fast/", "$user_gdk_settings", $False, "$user_cmd_line_args")
+    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "VanillaTestResults", "/Game/Intermediate/Maps/CI_Premerge/", "$user_gdk_settings", $False, "$user_cmd_line_args")
     
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
-        $tests[0].tests_path += "+/Game/Intermediate/Maps/CI_Slow/"
+        $tests[0].tests_path += "+/Game/Intermediate/Maps/CI_Nightly/"
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
 
         # And if slow, we run NetTest functional maps against Vanilla UE4 as well
@@ -82,11 +82,11 @@ if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
 }
 else {
     # We run all tests and networked functional maps
-    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResults", "SpatialGDK.+/Game/Intermediate/Maps/CI_Fast/+/Game/Intermediate/Maps/CI_Fast_Spatial_Only/", "$user_gdk_settings", $True, "$user_cmd_line_args")
+    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResults", "SpatialGDK.+/Game/Intermediate/Maps/CI_Premerge/+/Game/Intermediate/Maps/CI_Premerge_Spatial_Only/", "$user_gdk_settings", $True, "$user_cmd_line_args")
 
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
         # And if slow, we run GDK slow tests
-        $tests[0].tests_path += "+SpatialGDKSlow.+/Game/Intermediate/Maps/CI_Slow/+/Game/Intermediate/Maps/CI_Slow_Spatial_Only/"
+        $tests[0].tests_path += "+SpatialGDKSlow.+/Game/Intermediate/Maps/CI_Nightly/+/Game/Intermediate/Maps/CI_Nightly_Spatial_Only/"
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
 
         # And NetTests functional maps against GDK as well

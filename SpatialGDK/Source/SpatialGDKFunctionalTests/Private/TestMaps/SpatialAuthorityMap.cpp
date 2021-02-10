@@ -8,27 +8,28 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthorityTestReplicatedActor.h"
 
 USpatialAuthorityMap::USpatialAuthorityMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialAuthorityMap"))
 {
-	MapCategory = CI_FAST;
-	MapName = TEXT("SpatialAuthorityMap");
 }
 
 void USpatialAuthorityMap::CreateCustomContentForMap()
 {
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 
+	// The actors were placed in one of the quadrants of the map, even though the map does not have multiworker
+	FVector SpatialAuthorityTestActorPosition(-250, -250, 0);
+
 	// Add the test
-	ASpatialAuthorityTest* AuthTestActor = CastChecked<ASpatialAuthorityTest>(
-		GEditor->AddActor(CurrentLevel, ASpatialAuthorityTest::StaticClass(), FTransform(FVector(-250, -250, 0))));
+	ASpatialAuthorityTest* AuthTestActor =
+		AddActorToLevel<ASpatialAuthorityTest>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
 
 	// Add the helpers, as we need things placed in the level
-	AuthTestActor->LevelActor = CastChecked<ASpatialAuthorityTestActor>(
-		GEditor->AddActor(CurrentLevel, ASpatialAuthorityTestActor::StaticClass(), FTransform(FVector(-250, -250, 0))));
-	AuthTestActor->LevelReplicatedActor = CastChecked<ASpatialAuthorityTestReplicatedActor>(
-		GEditor->AddActor(CurrentLevel, ASpatialAuthorityTestReplicatedActor::StaticClass(), FTransform(FVector(-250, -250, 0))));
-	AuthTestActor->LevelReplicatedActorOnBorder = CastChecked<ASpatialAuthorityTestReplicatedActor>(
-		GEditor->AddActor(CurrentLevel, ASpatialAuthorityTestReplicatedActor::StaticClass(),
-						  FTransform(FVector(0, 0, 0)))); // Says "on the border", but this map doesn't have multi-worker...?
+	AuthTestActor->LevelActor = AddActorToLevel<ASpatialAuthorityTestActor>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
+	AuthTestActor->LevelReplicatedActor =
+		AddActorToLevel<ASpatialAuthorityTestReplicatedActor>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
+	// Says "on the border", but this map doesn't have multi-worker...?
+	AuthTestActor->LevelReplicatedActorOnBorder =
+		AddActorToLevel<ASpatialAuthorityTestReplicatedActor>(CurrentLevel, FTransform(FVector(0, 0, 0)));
 
 	AWorldSettings* WorldSettings = World->GetWorldSettings();
 	WorldSettings->DefaultGameMode = ASpatialAuthorityTestGameMode::StaticClass();

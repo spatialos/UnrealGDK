@@ -5,11 +5,11 @@
 #include "GameFramework/PlayerStart.h"
 #include "SpatialGDKFunctionalTests/Public/SpatialCleanupConnectionTest.h" //didn't spot this during review, but I would argue this one is "SpatialGDK" as well
 #include "SpatialGDKFunctionalTests/Public/SpatialTest1x2GridSmallInterestWorkerSettings.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestHandoverReplication/SpatialTestHandoverActorComponentReplication.h"
 
 USpatial2WorkerSmallInterestMap::USpatial2WorkerSmallInterestMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("Spatial2WorkerSmallInterestMap"))
 {
-	MapCategory = CI_FAST_SPATIAL_ONLY;
-	MapName = TEXT("Spatial2WorkerSmallInterestMap");
 }
 
 void USpatial2WorkerSmallInterestMap::CreateCustomContentForMap()
@@ -17,8 +17,9 @@ void USpatial2WorkerSmallInterestMap::CreateCustomContentForMap()
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 
 	// Add the tests
-	GEditor->AddActor(CurrentLevel, ASpatialCleanupConnectionTest::StaticClass(),
-					  FTransform(FVector(-50, -50, 0))); // Seems like this position is required so that the LB plays nicely?
+	AddActorToLevel<ASpatialCleanupConnectionTest>(
+		CurrentLevel, FTransform(FVector(-50, -50, 0))); // Seems like this position is required so that the LB plays nicely?
+	AddActorToLevel<ASpatialTestHandoverActorComponentReplication>(CurrentLevel, FTransform::Identity);
 
 	// Quirk of the test. We need the player spawns on the same portion of the map as the test, so they are LBed together
 	AActor** PlayerStart = CurrentLevel->Actors.FindByPredicate([](AActor* Actor) {
