@@ -23,6 +23,7 @@
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/ActorSystem.h"
+#include "Interop/AsyncPackageLoadFilter.h"
 #include "Interop/ClientConnectionManager.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
@@ -123,8 +124,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	bConnectAsClient = bInitAsClient;
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
-
-	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &USpatialNetDriver::OnLevelAddedToWorld);
 
 	if (GetWorld() != nullptr)
 	{
@@ -407,13 +406,31 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SpatialMetrics = NewObject<USpatialMetrics>();
 	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
 
+	if (GetDefault<USpatialGDKSettings>()->bAsyncLoadNewClassesOnEntityCheckout)
+	{
+		AsyncPackageLoadFilter = NewObject<UAsyncPackageLoadFilter>();
+		AsyncPackageLoadFilter->Init(FOnPackageLoadedForEntity::CreateUObject(this, &USpatialNetDriver::OnAsyncPackageLoadFilterComplete));
+	}
+
 	CreateAndInitializeLoadBalancingClasses();
 
-	ActorFilter = [this](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+	ActorFilter = [this](const Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) {
 		if (Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID }))
 		{
 			// This actor has been tombstoned, we leave it alone.
 			return false;
+		}
+
+		if (AsyncPackageLoadFilter != nullptr)
+		{
+			SpatialGDK::UnrealMetadata Metadata(
+				Element.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::UNREAL_METADATA_COMPONENT_ID })
+					->GetUnderlying());
+
+			if (!AsyncPackageLoadFilter->IsAssetLoadedOrTriggerAsyncLoad(EntityId, Metadata.ClassPath))
+			{
+				return false;
+			}
 		}
 
 		// If we see a player controller component on this entity and we're a server we should hold it back until we
@@ -432,20 +449,27 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	const SpatialGDK::FSubView& ActorAuthSubview =
 		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
-	const SpatialGDK::FSubView& ActorNonAuthSubview =
-		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
+
+	const SpatialGDK::FSubView& ActorSubview =
+		Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
+
 	const SpatialGDK::FSubView& TombstoneActorSubview = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::TOMBSTONE_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+
 	const SpatialGDK::FSubView& SystemEntitySubview = Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::SYSTEM_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(
-		ActorAuthSubview, ActorNonAuthSubview, USpatialLatencyTracer::GetTracer(GetWorld()), Connection->GetEventTracer(), this);
+	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, USpatialLatencyTracer::GetTracer(GetWorld()),
+														   Connection->GetEventTracer(), this);
+
 	CrossServerRPCSender = MakeUnique<SpatialGDK::CrossServerRPCSender>(Connection->GetCoordinator(), SpatialMetrics);
+
 	CrossServerRPCHandler =
 		MakeUnique<SpatialGDK::CrossServerRPCHandler>(Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this));
+
 	ActorSystem =
-		MakeUnique<SpatialGDK::ActorSystem>(ActorNonAuthSubview, TombstoneActorSubview, this, &TimerManager, Connection->GetEventTracer());
+		MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, TombstoneActorSubview, this, &TimerManager, Connection->GetEventTracer());
+
 	ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
 	Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
@@ -812,6 +836,14 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 
 	bMapLoaded = true;
+}
+
+void USpatialNetDriver::OnAsyncPackageLoadFilterComplete(Worker_EntityId EntityId)
+{
+	if (Connection != nullptr)
+	{
+		Connection->GetCoordinator().RefreshEntityCompleteness(EntityId);
+	}
 }
 
 void USpatialNetDriver::MakePlayerSpawnRequest()
@@ -1930,6 +1962,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			SpatialMetrics->TickMetrics(GetElapsedTime());
 		}
+
+		if (AsyncPackageLoadFilter != nullptr)
+		{
+			AsyncPackageLoadFilter->ProcessActorsFromAsyncLoading();
+		}
 	}
 }
 
@@ -2824,8 +2861,8 @@ void USpatialNetDriver::RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebug
 			const auto DebuggingCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
 				SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID) };
 
-			DebuggerSubViewPtr = &Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID,
-																			 DebuggingFilter, DebuggingCallbacks);
+			DebuggerSubViewPtr =
+				&Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, DebuggingFilter, DebuggingCallbacks);
 		}
 
 		check(DebuggerSubViewPtr != nullptr);
