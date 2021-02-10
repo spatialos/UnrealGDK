@@ -73,7 +73,8 @@ public:
 	 * The number of entity IDs to be reserved when the entity pool is first created. Ensure that the number of entity IDs
 	 * reserved is greater than the number of Actors that you expect the server-worker instances to spawn at game deployment
 	 */
-	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (DisplayName = "Initial Entity ID Reservation Count"))
+	// TODO: UNR-4979 Allow full range of uint32 when SQD-1150 is fixed
+	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (DisplayName = "Initial Entity ID Reservation Count", ClampMax=0x7fffffff))
 	uint32 EntityPoolInitialReservationCount;
 
 	/**

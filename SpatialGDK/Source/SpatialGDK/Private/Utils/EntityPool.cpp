@@ -27,6 +27,9 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 
 	checkf(!bIsAwaitingResponse, TEXT("Trying to reserve Entity IDs while another reserve request is in flight"));
 
+	// TODO: UNR-4979 Allow full range of uint32 when SQD-1150 is fixed
+	EntitiesToReserve = FMath::Clamp(EntitiesToReserve, 0u, static_cast<uint32>(MAX_int32));
+
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate CacheEntityIDsDelegate;
 	CacheEntityIDsDelegate.BindLambda([EntitiesToReserve, this](const Worker_ReserveEntityIdsResponseOp& Op) {
