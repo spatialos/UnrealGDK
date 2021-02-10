@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialCommonTypes.h"
 #include "GameFramework/PlayerController.h"
+#include "SpatialCommonTypes.h"
 #include "TestPossessionPlayerController.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTestPossessionPlayerController, Log, All);

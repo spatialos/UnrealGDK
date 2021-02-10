@@ -9,4 +9,3 @@
  */
 
 SettingsOverrideHelper::SettingsOverrideHelper(){};
-

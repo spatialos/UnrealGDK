@@ -73,11 +73,10 @@ public:
 
 	int32 GetNumRequiredClients() const
 	{
-		const ULevelEditorPlaySettings * EditorPlaySettings = GetDefault<ULevelEditorPlaySettings>();
+		const ULevelEditorPlaySettings* EditorPlaySettings = GetDefault<ULevelEditorPlaySettings>();
 		int32 NumRequiredClients = 0;
 		EditorPlaySettings->GetPlayNumberOfClients(NumRequiredClients);
 		return NumRequiredClients;
-		
 	}
 
 	// Called at the beginning of the test, use it to setup your steps. Contrary to AFunctionalTest, this will
@@ -349,7 +348,6 @@ public:
 	static void ClearAllTakenSnapshots();
 
 protected:
-
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();
 
