@@ -162,7 +162,7 @@ void AEventTracingTest::GatherData()
 			FoundClient++;
 		}
 
-		if (FoundClient != 2 && FileCreation.FilePath.Contains("UnrealWorker"))
+		if (FoundWorker != 2 && FileCreation.FilePath.Contains("UnrealWorker"))
 		{
 			GatherDataFromFile(FileCreation.FilePath);
 			FoundWorker++;
