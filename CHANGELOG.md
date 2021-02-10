@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`x.y.z`] - Unreleased
 ### Breaking changes:
 - `MaxRPCRingBufferSize` setting is removed. This was previously used to specify the RPC ring buffer size when generating schema. Now, `DefaultRPCRingBufferSize` is used, and can be overridden per RPC type using `RPCRingBufferSizeOverrides`.
+- `RPCRingBufferSizeMap` setting has been renamed to `RPCRingBufferSizeOverrides`.
 
 ### Features:
 - Added a message box notification when game is closed due to missing generated schema.
