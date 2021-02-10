@@ -39,6 +39,7 @@
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
+#include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaDatabase.h"
 
 #if ENGINE_MINOR_VERSION >= 26
@@ -285,6 +286,54 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	for (auto& TypeInfo : TypeInfos)
 	{
 		CheckIdentifierNameValidity(TypeInfo, bSuccess);
+	}
+
+	return bSuccess;
+}
+
+bool ValidateAlwaysWriteRPCs(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
+{
+	bool bSuccess = true;
+
+	for (const auto& TypeInfo : TypeInfos)
+	{
+		UClass* Class = Cast<UClass>(TypeInfo->Type);
+		check(Class);
+
+		TArray<UFunction*> RPCs = SpatialGDK::GetClassRPCFunctions(Class);
+		TArray<UFunction*> AlwaysWriteRPCs;
+
+		for (UFunction* RPC : RPCs)
+		{
+			if (RPC->SpatialFunctionFlags & SPATIALFUNC_AlwaysWrite)
+			{
+				AlwaysWriteRPCs.Add(RPC);
+			}
+		}
+
+		if (!Class->IsChildOf<AActor>() && AlwaysWriteRPCs.Num() > 0)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error,
+				   TEXT("Found AlwaysWrite RPC(s) on a subobject class. This is not supported. Please route it through the owning actor if "
+						"AlwaysWrite behavior is necessary. Class: %s, function(s):"),
+				   *Class->GetPathName());
+			for (UFunction* RPC : AlwaysWriteRPCs)
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("%s"), *RPC->GetName());
+			}
+			bSuccess = false;
+		}
+		else if (AlwaysWriteRPCs.Num() > 1)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error,
+				   TEXT("Found more than 1 function with AlwaysWrite for class. This is not supported. Class: %s, functions:"),
+				   *Class->GetPathName());
+			for (UFunction* RPC : AlwaysWriteRPCs)
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("%s"), *RPC->GetName());
+			}
+			bSuccess = false;
+		}
 	}
 
 	return bSuccess;
@@ -1623,6 +1672,11 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 	}
 
 	if (!ValidateIdentifierNames(TypeInfos))
+	{
+		return false;
+	}
+
+	if (!ValidateAlwaysWriteRPCs(TypeInfos))
 	{
 		return false;
 	}
