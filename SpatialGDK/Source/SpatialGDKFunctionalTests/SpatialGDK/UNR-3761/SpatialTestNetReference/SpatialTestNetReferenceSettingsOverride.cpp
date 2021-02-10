@@ -12,9 +12,6 @@
  * Requires SpatialTestNetReferenceMap.ini in \Samples\UnrealGDKTestGyms\Game\Config directory with the following values:
  *			[/Script/SpatialGDK.SpatialGDKSettings]
  *			PositionUpdateThresholdMaxCentimeters=1
- *
- *			[/Script/UnrealEd.LevelEditorPlaySettings]
- *			PlayNumberOfClients=3
  */
 
 ASpatialTestNetReferenceSettingsOverride::ASpatialTestNetReferenceSettingsOverride()
@@ -42,9 +39,9 @@ void ASpatialTestNetReferenceSettingsOverride::PrepareTest()
 	});
 
 	AddStep(TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
-		// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
+		// Check for default number of clients when setting is not overriden
 
-		SettingsOverrideHelper::VerifyNumberOfClients(3, this);
+		SettingsOverrideHelper::VerifyNumberOfClients(2, this);
 
 		// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
 		// original values
