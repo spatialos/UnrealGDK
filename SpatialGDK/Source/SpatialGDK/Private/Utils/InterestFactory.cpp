@@ -133,18 +133,20 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, const USpatialServerLevelStreamingStrategy* ServerLevelStreamingStrategy, bool bDebug) const
+Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker,
+												  const USpatialServerLevelStreamingStrategy* ServerLevelStreamingStrategy,
+												  bool bDebug) const
 {
 	// Add load balancing query
 	Interest PartitionInterest{};
 	Query PartitionQuery{};
 	TOptional<QueryConstraint> LevelConstraint;
 
-	if(ServerLevelStreamingStrategy)
+	if (ServerLevelStreamingStrategy)
 	{
 		LevelConstraint = CreateLevelConstraints(ServerLevelStreamingStrategy->GetLoadedLevelNames(VirtualWorker));
 	}
-	
+
 	AddLoadBalancingInterestQuery(LBStrategy, VirtualWorker, PartitionInterest, LevelConstraint);
 
 	// Ensure server worker receives AlwaysRelevant entities.
@@ -154,7 +156,7 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 
 	QueryConstraint FinalAlwaysRelevantConstraint;
 	QueryConstraint AlwaysRelevantConstraint = CreateServerAlwaysRelevantConstraint();
-	if(ServerLevelStreamingStrategy)
+	if (ServerLevelStreamingStrategy)
 	{
 		FinalAlwaysRelevantConstraint.AndConstraint.Add(AlwaysRelevantConstraint);
 		FinalAlwaysRelevantConstraint.AndConstraint.Add(LevelConstraint.GetValue());
@@ -165,7 +167,8 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 	}
 	PartitionQuery.Constraint = FinalAlwaysRelevantConstraint;
 	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, PartitionQuery);
-
+	
+	
 	// Add a self query for completeness
 	PartitionQuery = Query();
 	PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
@@ -185,7 +188,7 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 
 	return PartitionInterest;
 }
-	
+
 void InterestFactory::AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker,
 													Interest& OutInterest, const TOptional<QueryConstraint>& LevelConstraint) const
 {
@@ -196,7 +199,7 @@ void InterestFactory::AddLoadBalancingInterestQuery(const UAbstractLBStrategy* L
 	PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
 	PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
 
-	if(LevelConstraint.IsSet())
+	if (LevelConstraint.IsSet())
 	{
 		PartitionQueryConstraint.AndConstraint.Add(WorkerInterestQueryConstraint);
 		PartitionQueryConstraint.AndConstraint.Add(LevelConstraint.GetValue());
@@ -641,7 +644,7 @@ QueryConstraint InterestFactory::CreateClientLevelConstraints(const AActor* InAc
 	APlayerController* PlayerController = Connection->GetPlayerController(nullptr);
 	check(PlayerController);
 	const TSet<FName>& LoadedLevels = PlayerController->NetConnection->ClientVisibleLevelNames;
-	
+
 	return CreateLevelConstraints(LoadedLevels);
 }
 
@@ -666,15 +669,14 @@ QueryConstraint InterestFactory::CreateLevelConstraints(const TSet<FName>& Loade
 		else
 		{
 			UE_LOG(LogInterestFactory, Error,
-				TEXT("Error creating query constraints."
-					"Could not find Streaming Level Component for Level %s. Have you generated schema?"),
-				*LevelPath.ToString());
+				   TEXT("Error creating query constraints."
+						"Could not find Streaming Level Component for Level %s. Have you generated schema?"),
+				   *LevelPath.ToString());
 		}
 	}
 
 	return LevelConstraint;
 }
-
 
 void InterestFactory::AddObjectToConstraint(GDK_PROPERTY(ObjectPropertyBase) * Property, uint8* Data, QueryConstraint& OutConstraint) const
 {

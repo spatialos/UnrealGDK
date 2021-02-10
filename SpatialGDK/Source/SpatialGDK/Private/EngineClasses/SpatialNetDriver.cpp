@@ -18,6 +18,7 @@
 #include "UObject/UObjectIterator.h"
 #include "UObject/WeakObjectPtrTemplates.h"
 
+#include "Engine/WorldComposition.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -43,7 +44,6 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "Engine/WorldComposition.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
@@ -461,7 +461,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 	// Server world composition strategy
 	UWorldComposition* WorldComposition = World->WorldComposition;
-	if(WorldComposition)
+	if (WorldComposition)
 	{
 		ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
 		UClass* ServerLevelStreamingStrategyClass = WorldSettings->ServerLevelStreamingStrategyClass;
@@ -469,9 +469,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		{
 			ServerLevelStreamingStrategy = NewObject<USpatialServerLevelStreamingStrategy>(this, ServerLevelStreamingStrategyClass);
 			ServerLevelStreamingStrategy->InitialiseStrategy(WorldComposition->GetTilesList(), World->OriginLocation);
-			World->WorldComposition->ServerLevelStreamingStrategy = Cast<UAbstractServerLevelStreamingStrategy>(ServerLevelStreamingStrategy);		
+			World->WorldComposition->ServerLevelStreamingStrategy =
+				Cast<UAbstractServerLevelStreamingStrategy>(ServerLevelStreamingStrategy);
 		}
-	}	
+	}
 }
 
 void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
@@ -578,7 +579,7 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 		}
 	}
 	UE_LOG(LogSpatialOSNetDriver, Error,
-		TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
+		   TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
 }
 
 bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()

@@ -7,7 +7,6 @@
 #include "GameFramework/WorldSettings.h"
 #include "Templates/SubclassOf.h"
 
-
 #include "SpatialWorldSettings.generated.h"
 
 /**
@@ -86,8 +85,8 @@ private:
 
 	/** Editor override to specify a different load balancing strategy to run in-editor */
 	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
-	TSubclassOf<USpatialMultiWorkerSettings> EditorMultiWorkerSettingsOverride;	
+	TSubclassOf<USpatialMultiWorkerSettings> EditorMultiWorkerSettingsOverride;
 
 	/** Gets MultiWorkerSettingsClass if set, otherwise returns a single worker behaviour. */
-	TSubclassOf<USpatialMultiWorkerSettings> GetValidWorkerSettings() const;	
+	TSubclassOf<USpatialMultiWorkerSettings> GetValidWorkerSettings() const;
 };

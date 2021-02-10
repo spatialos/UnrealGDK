@@ -11,13 +11,9 @@ class SPATIALGDK_API UInterestedServerLevelStreamingStrategy : public USpatialSe
 	GENERATED_BODY()
 
 public:
-	
-
 protected:
-	virtual FVisibilityResult GenerateVisibilityResultForTile(const FWorldCompositionTile& Tile,
-		const FIntVector& OriginLocation,
-		VirtualWorkerId Vid
-	) const override;
+	virtual FVisibilityResult GenerateVisibilityResultForTile(const FWorldCompositionTile& Tile, const FIntVector& OriginLocation,
+															  VirtualWorkerId Vid) const override;
 
 	/**
 	Reads interest query from load balancing strategy to determine whether a tile should be visible.

@@ -6,32 +6,41 @@
 
 DEFINE_LOG_CATEGORY(LogInterestedServerLevelStreamingStrategy);
 
-FVisibilityResult UInterestedServerLevelStreamingStrategy::GenerateVisibilityResultForTile(const FWorldCompositionTile& Tile, const FIntVector& OriginLocation, VirtualWorkerId Vid) const
+FVisibilityResult UInterestedServerLevelStreamingStrategy::GenerateVisibilityResultForTile(const FWorldCompositionTile& Tile,
+																						   const FIntVector& OriginLocation,
+																						   VirtualWorkerId Vid) const
 {
-	if(IsTileVisibleFromInterest(Tile, OriginLocation, Vid))
+	if (IsTileVisibleFromInterest(Tile, OriginLocation, Vid))
 	{
 		return FVisibilityResult{ true };
 	}
 
-	return FVisibilityResult{false};
+	return FVisibilityResult{ false };
 }
 
-//TODO: Disable if running without spatial networking
-//TODO: Similarly for running without load balancing.
-bool UInterestedServerLevelStreamingStrategy::IsTileVisibleFromInterest(const FWorldCompositionTile& Tile, const FIntVector& OriginLocation, VirtualWorkerId Vid) const
+bool UInterestedServerLevelStreamingStrategy::IsTileVisibleFromInterest(const FWorldCompositionTile& Tile, const FIntVector& OriginLocation,
+																		VirtualWorkerId Vid) const
 {
 	const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
 	const UAbstractLBStrategy* LoadBalanceStrategy = SpatialNetDriver->LoadBalanceStrategy;
 
-	// TODO: Probably want all of the above in a separate function that is common to all strategies?
+	if(!LoadBalanceStrategy)
+	{
+		UE_LOG(LogInterestedServerLevelStreamingStrategy, Error,
+			TEXT("No load balancing strategy set for InterestedServerLevelStreamingStrategy. All tiles will be loaded."));
+		return true;
+	}
+
 	const SpatialGDK::QueryConstraint WorkerInterestQuery = LoadBalanceStrategy->GetWorkerInterestQueryConstraint(Vid);
 	const auto BoxConstraint = WorkerInterestQuery.BoxConstraint;
-	
-	if(!BoxConstraint.IsSet())
+
+	if (!BoxConstraint.IsSet())
 	{
-		//TODO Only output this error once?
-		UE_LOG(LogInterestedServerLevelStreamingStrategy, Error, TEXT("Load balancing strategy does not use single box constraint for interest. Only load balancing strategies with single box constraints are currently supported."));
-		return false;
+		// TODO Only output this error once?
+		UE_LOG(LogInterestedServerLevelStreamingStrategy, Error,
+			   TEXT("Load balancing strategy does not use single box constraint for interest. Only load balancing strategies with single "
+					"box constraints are currently supported. All tiles will be loaded."));
+		return true;
 	}
 
 	SpatialGDK::Coordinates SpatialCenter = BoxConstraint->Center;
@@ -42,8 +51,8 @@ bool UInterestedServerLevelStreamingStrategy::IsTileVisibleFromInterest(const FW
 
 	FVector2D Center2D = FVector2D(Center3D.X, Center3D.Y);
 	FVector2D EdgeLength2D = FVector2D(EdgeLength3D.X, EdgeLength3D.Y);
-	
-	FBox2D InterestBounds(Center2D - EdgeLength2D/2.0f, Center2D + EdgeLength2D/2.0f);
+
+	FBox2D InterestBounds(Center2D - EdgeLength2D / 2.0f, Center2D + EdgeLength2D / 2.0f);
 
 	// Calculate bounds of level in world coordinates
 	FIntPoint WorldOriginLocation2D = FIntPoint(OriginLocation.X, OriginLocation.Y);
@@ -51,6 +60,6 @@ bool UInterestedServerLevelStreamingStrategy::IsTileVisibleFromInterest(const FW
 	FIntPoint LevelOffset2D = LevelPosition2D - WorldOriginLocation2D;
 	FBox TileBounds3D = Tile.Info.Bounds.ShiftBy(FVector(LevelOffset2D));
 	FBox2D TileBounds2D(FVector2D(TileBounds3D.Min.X, TileBounds3D.Min.Y), FVector2D(TileBounds3D.Max.X, TileBounds3D.Max.Y));
-
+	
 	return TileBounds2D.Intersect(InterestBounds);
 }

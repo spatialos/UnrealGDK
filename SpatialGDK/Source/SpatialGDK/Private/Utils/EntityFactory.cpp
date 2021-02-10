@@ -321,11 +321,9 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	return Components;
 }
 
-TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(const Worker_EntityId EntityId,
-																			const InterestFactory* InterestFactory,
-																			const UAbstractLBStrategy* LbStrategy,
-																			const USpatialServerLevelStreamingStrategy* ServerLevelStreamingStrategy,
-																			VirtualWorkerId VirtualWorker, bool bDebugContextValid)
+TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(
+	const Worker_EntityId EntityId, const InterestFactory* InterestFactory, const UAbstractLBStrategy* LbStrategy,
+	const USpatialServerLevelStreamingStrategy* ServerLevelStreamingStrategy, VirtualWorkerId VirtualWorker, bool bDebugContextValid)
 {
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, EntityId);
@@ -333,7 +331,8 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(cons
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("PartitionEntity:{0}"), { VirtualWorker })).CreateMetadataData());
-	Components.Add(InterestFactory->CreatePartitionInterest(LbStrategy, VirtualWorker, ServerLevelStreamingStrategy, bDebugContextValid).CreateInterestData());
+	Components.Add(InterestFactory->CreatePartitionInterest(LbStrategy, VirtualWorker, ServerLevelStreamingStrategy, bDebugContextValid)
+					   .CreateInterestData());
 	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
 

@@ -48,10 +48,10 @@ public:
 	Worker_ComponentUpdate CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
 	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy) const;
-	Interest CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, const USpatialServerLevelStreamingStrategy* ServerLevelStreamingStrategy, bool bDebug) const;
-	void AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, Interest& OutInterest, const TOptional<QueryConstraint>& LevelConstraint) const;
-
-
+	Interest CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker,
+									 const USpatialServerLevelStreamingStrategy* ServerLevelStreamingStrategy, bool bDebug) const;
+	void AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, Interest& OutInterest,
+									   const TOptional<QueryConstraint>& LevelConstraint) const;
 
 	// Returns false if we could not get an owner's entityId in the Actor's owner chain.
 	bool DoOwnersHaveEntityId(const AActor* Actor) const;

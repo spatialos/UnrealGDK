@@ -22,8 +22,8 @@
 #include "GameFramework/OnlineReplStructs.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
-#include "TimerManager.h"
 #include "ServerWorldComposition/SpatialServerLevelStreamingStrategy.h"
+#include "TimerManager.h"
 
 #include "SpatialNetDriver.generated.h"
 

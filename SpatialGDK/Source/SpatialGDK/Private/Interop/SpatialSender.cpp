@@ -8,6 +8,7 @@
 #include "Net/NetworkProfiler.h"
 #include "Runtime/Launch/Resources/Version.h"
 
+#include "Engine/WorldComposition.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -27,7 +28,6 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
 #include "SpatialConstants.h"
-#include "Engine/WorldComposition.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityFactory.h"
 #include "Utils/InterestFactory.h"
@@ -429,12 +429,14 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 	VirtualWorkerId VirtualId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
 
 	// If the load balancing is updated, then we need to update the server level streaming strategy.
+	// TODO: This crashed
 	NetDriver->ServerLevelStreamingStrategy->InitialiseStrategy(GetWorld()->WorldComposition->GetTilesList(), GetWorld()->OriginLocation);
 
 	// Update the interest. If it's ready and not null, also adds interest according to the load balancing strategy.
 	FWorkerComponentUpdate InterestUpdate =
 		NetDriver->InterestFactory
-			->CreatePartitionInterest(NetDriver->LoadBalanceStrategy, VirtualId, NetDriver->ServerLevelStreamingStrategy, NetDriver->DebugCtx != nullptr /*bDebug*/)
+			->CreatePartitionInterest(NetDriver->LoadBalanceStrategy, VirtualId, NetDriver->ServerLevelStreamingStrategy,
+									  NetDriver->DebugCtx != nullptr /*bDebug*/)
 			.CreateInterestUpdate();
 
 	Connection->SendComponentUpdate(PartitionId, &InterestUpdate);

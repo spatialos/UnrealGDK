@@ -179,8 +179,7 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 {
 	TArray<FWorkerComponentData> Components = SpatialGDK::EntityFactory::CreatePartitionEntityComponents(
 		PartitionEntityId, Translator->NetDriver->InterestFactory.Get(), Translator->LoadBalanceStrategy.Get(),
-		Translator->NetDriver->ServerLevelStreamingStrategy, VirtualWorkerId,
-		Translator->NetDriver->DebugCtx != nullptr);
+		Translator->NetDriver->ServerLevelStreamingStrategy, VirtualWorkerId, Translator->NetDriver->DebugCtx != nullptr);
 
 	const Worker_RequestId RequestId =
 		Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
