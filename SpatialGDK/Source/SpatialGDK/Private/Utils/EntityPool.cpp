@@ -21,7 +21,7 @@ void UEntityPool::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerMan
 	ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolInitialReservationCount);
 }
 
-void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
+void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 {
 	UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Sending bulk entity ID Reservation Request for %d IDs"), EntitiesToReserve);
 
