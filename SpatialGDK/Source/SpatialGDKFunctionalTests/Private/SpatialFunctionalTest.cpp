@@ -235,7 +235,7 @@ bool ASpatialFunctionalTest::IsReady_Implementation()
 void ASpatialFunctionalTest::StartTest()
 {
 	// Run a cmd to ask imp-ci to trace
-	FPlatformProcess::ExecProcess(TEXT("imp-ci"), TEXT("group-start test"), nullptr, nullptr, nullptr);
+	FPlatformProcess::ExecProcess(TEXT("imp-ci.exe"), TEXT("group-start test"), nullptr, nullptr, nullptr);
 
 	Super::StartTest();
 
@@ -397,7 +397,7 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 		}
 	}
 
-	FPlatformProcess::ExecProcess(TEXT("imp-ci"), TEXT("group-end test"), nullptr, nullptr, nullptr);
+	FPlatformProcess::ExecProcess(TEXT("imp-ci.exe"), TEXT("group-end test"), nullptr, nullptr, nullptr);
 }
 
 void ASpatialFunctionalTest::AddExpectedLogError(const FString& ExpectedPatternString, int32 Occurrences /*= 1*/,
