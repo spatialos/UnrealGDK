@@ -291,7 +291,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	return bSuccess;
 }
 
-bool ValidateAlwaysWriteRPCs(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
+bool ValidateAlwaysWriteRPCs(const TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 {
 	bool bSuccess = true;
 
