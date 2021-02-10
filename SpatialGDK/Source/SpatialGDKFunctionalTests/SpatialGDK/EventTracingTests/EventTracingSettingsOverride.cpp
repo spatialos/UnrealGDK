@@ -54,7 +54,7 @@ void AEventTracingSettingsOverride::PrepareTest()
 	//	// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 	//	FString SpatialOSCommandLineLaunchFlags = GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSCommandLineLaunchFlags();
 	//	RequireTrue(SpatialOSCommandLineLaunchFlags.Equals("--event-tracing-enabled=true"), "Expected SpatialOSCommandLineLaunchFlags to
-	//contain --event-tracing-enabled=true");
+	// contain --event-tracing-enabled=true");
 
 	//	// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
 	//	// original values
