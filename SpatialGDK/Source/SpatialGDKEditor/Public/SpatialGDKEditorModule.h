@@ -72,4 +72,9 @@ private:
 	TUniquePtr<FSpatialGDKEditorCommandLineArgsManager> CommandLineArgsManager;
 
 	FLocalReceptionistProxyServerManager* LocalReceptionistProxyServerManager;
+
+	const FString TmpSpatialGDKSettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpSpatialGDKSettings.ini"));
+	const FString TmpSpatialGDKEditorSettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpSpatialGDKEditorSettings.ini"));
+	const FString OverrideSettingsBaseFilename = FPaths::ProjectConfigDir().Append(TEXT("TestOverrides"));
+	const FString OverrideSettingsFileExtension = ".ini";
 };

@@ -290,8 +290,12 @@ void FSpatialGDKEditorModule::RevertSettingsOverrideForTesting() const
 {
 	// From file
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	FString TmpSpatialGDKSettingsFilename = FPaths::GeneratedConfigDir().Append("\\TmpSpatialGDKSettings.ini");
 	SpatialGDKSettings->LoadConfig(0, *TmpSpatialGDKSettingsFilename);
+
+	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	// Arrays are not cleared when loading from config file so we need to clear them before loading
+	SpatialGDKEditorSettings->ClearSpatialOSCommandLineLaunchFlags();
+	SpatialGDKEditorSettings->LoadConfig(0, *TmpSpatialGDKEditorSettingsFilename);
 }
 
 FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(UWorld* World,
@@ -302,16 +306,17 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 
 	FPlayInEditorSettingsOverride PIESettingsOverride = ISpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(World, MapName);
 
-	//// Duplicate the original settings so that we can restore them later - get errors when including SpatialGDKSettings into headerso
-	/// for now have to save to file instead
-	// From file - Save settings before before overriding so that they can be reverted later
+	// Save settings before before overriding so that they can be reverted later
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	FString TmpSpatialGDKSettingsFilename = FPaths::GeneratedConfigDir().Append("\\TmpSpatialGDKSettings.ini");
 	SpatialGDKSettings->SaveConfig(0, *TmpSpatialGDKSettingsFilename);
+	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKEditorSettings->SaveConfig(0, *TmpSpatialGDKSettingsFilename);
 
+	// Override settings from ini file
 	FString TestSettingOverridesFilename =
-		FPaths::ProjectConfigDir().Append("TestOverrides").Append(FPackageName::GetShortName(MapName)).Append(TEXT(".ini"));
+		OverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
 	SpatialGDKSettings->LoadConfig(USpatialGDKSettings::StaticClass(), *TestSettingOverridesFilename);
+	SpatialGDKEditorSettings->LoadConfig(USpatialGDKEditorSettings::StaticClass(), *TestSettingOverridesFilename);
 
 	if (const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{

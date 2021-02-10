@@ -563,6 +563,8 @@ public:
 		return CommandLineLaunchFlags;
 	}
 
+	FORCEINLINE void ClearSpatialOSCommandLineLaunchFlags() { SpatialOSCommandLineLaunchFlags.Empty(); }
+
 	void SetPrimaryDeploymentName(const FString& Name);
 	FORCEINLINE FString GetPrimaryDeploymentName() const { return PrimaryDeploymentName; }
 
@@ -674,4 +676,15 @@ public:
 	static bool IsAssemblyNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
 	static void TrimTMap(TMap<FString, FString>& Map);
+
+
+	void OverrideSettings(FString Filename)
+	{
+
+	}
+
+	void RevertSettings(FString Filename)
+	{
+
+	}
 };
