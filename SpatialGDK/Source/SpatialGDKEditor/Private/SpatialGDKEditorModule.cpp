@@ -289,6 +289,9 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 void FSpatialGDKEditorModule::RevertSettingsOverrideForTesting() const
 {
 	// From file
+	ULevelEditorPlaySettings* EditorPlaySettings = GetMutableDefault<ULevelEditorPlaySettings>();
+	EditorPlaySettings->RevertSettings(TmpLevelEditorPlaySettingsFilename);
+
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKSettings->RevertSettings(TmpSpatialGDKSettingsFilename);
 
@@ -307,6 +310,8 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 	// Override settings from ini file
 	FString TestSettingOverridesFilename =
 		OverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
+	ULevelEditorPlaySettings* EditorPlaySettings = GetMutableDefault<ULevelEditorPlaySettings>();
+	EditorPlaySettings->OverrideSettings(TmpLevelEditorPlaySettingsFilename, TestSettingOverridesFilename);
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKSettings->OverrideSettings(TmpSpatialGDKSettingsFilename, TestSettingOverridesFilename);
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();

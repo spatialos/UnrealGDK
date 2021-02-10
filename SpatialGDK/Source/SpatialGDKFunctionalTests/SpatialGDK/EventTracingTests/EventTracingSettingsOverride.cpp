@@ -2,7 +2,6 @@
 
 #include "EventTracingSettingsOverride.h"
 #include "Settings/LevelEditorPlaySettings.h"
-#include "SettingsOverrideHelper.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKSettings.h"
 //#include "SpatialGDKEditorSettings.h"
@@ -64,8 +63,12 @@ void AEventTracingSettingsOverride::PrepareTest()
 
 	AddStep(TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
-
-		SettingsOverrideHelper::VerifyNumberOfClients(1, this);
+		// Override the LevelEditorPlaySettings in a copy so cannot check the original here, instead check the number of clients actually
+		// running
+		int32 RequiredNumberOfClients = GetNumRequiredClients();
+		RequireTrue(RequiredNumberOfClients == 1, TEXT("Expected number of required clients to be 1"));
+		int32 ActualNumberOfClients = GetNumberOfClientWorkers();
+		RequireTrue(ActualNumberOfClients == 1, TEXT("Expected number of clients to be 2"));
 
 		// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
 		// original values

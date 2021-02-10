@@ -4,6 +4,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "SpatialSnapshotTestActor.h"
 #include "SpatialSnapshotTestGameMode.h"
+#include "Engine/NetDriver.h"
 
 /**
  * This test handles SpatialOS Snapshots.
@@ -53,7 +54,6 @@ ASpatialSnapshotTest::ASpatialSnapshotTest()
 	Description = TEXT(
 		"Test SpatialOS Snapshots. This test is expected to run twice, the first time sets up the data and takes a Snapshot and the second "
 		"time loads from it and verifies the data is set.");
-	SetNumRequiredClients(1);
 }
 
 void ASpatialSnapshotTest::PrepareTest()

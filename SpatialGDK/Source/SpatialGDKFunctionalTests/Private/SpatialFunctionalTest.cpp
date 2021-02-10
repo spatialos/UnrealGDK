@@ -229,7 +229,7 @@ bool ASpatialFunctionalTest::IsReady_Implementation()
 
 	checkf(NumRegisteredServers <= NumExpectedServers, TEXT("There's more servers registered than expected, this shouldn't happen"));
 
-	return Super::IsReady_Implementation() && NumRegisteredClients >= NumRequiredClients && NumExpectedServers == NumRegisteredServers;
+	return Super::IsReady_Implementation() && NumRegisteredClients >= GetNumRequiredClients() && NumExpectedServers == NumRegisteredServers;
 }
 
 void ASpatialFunctionalTest::StartTest()
@@ -329,13 +329,13 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 					}
 				}
 
-				if (NumRegisteredClients < NumRequiredClients)
+				if (NumRegisteredClients < GetNumRequiredClients())
 				{
 					UE_LOG(
 						LogSpatialGDKFunctionalTests, Warning,
 						TEXT("In %s, the number of connected clients is less than the number of required clients: Connected clients: %d, "
 							 "Required clients: %d!"),
-						*GetName(), NumRegisteredClients, NumRequiredClients);
+						*GetName(), NumRegisteredClients, GetNumRequiredClients());
 				}
 
 				if (NumRegisteredServers < NumExpectedServers)
