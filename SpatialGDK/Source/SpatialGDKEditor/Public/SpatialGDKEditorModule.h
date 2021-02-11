@@ -76,6 +76,7 @@ private:
 	const FString TmpSpatialGDKSettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpSpatialGDKSettings.ini"));
 	const FString TmpSpatialGDKEditorSettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpSpatialGDKEditorSettings.ini"));
 	const FString TmpLevelEditorPlaySettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpLevelEditorPlaySettings.ini"));
+	const FString TmpGeneralProjectSettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpGeneralProjectSettings.ini"));
 	const FString OverrideSettingsBaseFilename = FPaths::ProjectConfigDir().Append(TEXT("TestOverrides"));
 	const FString OverrideSettingsFileExtension = ".ini";
 };

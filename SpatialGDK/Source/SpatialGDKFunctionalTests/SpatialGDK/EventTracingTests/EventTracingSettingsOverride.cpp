@@ -49,6 +49,7 @@ void AEventTracingSettingsOverride::PrepareTest()
 		FinishStep();
 	});
 
+	// TODO: fix circular dependency so we can include this step
 	//	AddStep(TEXT("Check SpatialGDKEditorSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
 	//	// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 	//	FString SpatialOSCommandLineLaunchFlags = GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSCommandLineLaunchFlags();
@@ -65,10 +66,13 @@ void AEventTracingSettingsOverride::PrepareTest()
 		// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 		// Override the LevelEditorPlaySettings in a copy so cannot check the original here, instead check the number of clients actually
 		// running
+		int32 ExpectedNumberOfClients = 1;
 		int32 RequiredNumberOfClients = GetNumRequiredClients();
-		RequireTrue(RequiredNumberOfClients == 1, TEXT("Expected number of required clients to be 1"));
+		RequireTrue(RequiredNumberOfClients == ExpectedNumberOfClients,
+					FString::Printf(TEXT("Expected number of required clients to be %i"), ExpectedNumberOfClients));
 		int32 ActualNumberOfClients = GetNumberOfClientWorkers();
-		RequireTrue(ActualNumberOfClients == 1, TEXT("Expected number of clients to be 2"));
+		RequireTrue(ActualNumberOfClients == ExpectedNumberOfClients,
+					FString::Printf(TEXT("Expected number of actual clients to be %i"), ExpectedNumberOfClients));
 
 		// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
 		// original values

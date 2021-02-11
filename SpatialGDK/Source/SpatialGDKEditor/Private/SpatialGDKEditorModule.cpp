@@ -291,12 +291,12 @@ void FSpatialGDKEditorModule::RevertSettingsOverrideForTesting() const
 	// From file
 	ULevelEditorPlaySettings* EditorPlaySettings = GetMutableDefault<ULevelEditorPlaySettings>();
 	EditorPlaySettings->RevertSettings(TmpLevelEditorPlaySettingsFilename);
-
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKSettings->RevertSettings(TmpSpatialGDKSettingsFilename);
-
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->RevertSettings(TmpSpatialGDKEditorSettingsFilename);
+	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
+	GeneralProjectSettings->RevertSettings(TmpGeneralProjectSettingsFilename);
 }
 
 FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(UWorld* World,
@@ -316,70 +316,18 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 	SpatialGDKSettings->OverrideSettings(TmpSpatialGDKSettingsFilename, TestSettingOverridesFilename);
 	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
 	SpatialGDKEditorSettings->OverrideSettings(TmpSpatialGDKEditorSettingsFilename, TestSettingOverridesFilename);
+	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
+	GeneralProjectSettings->OverrideSettings(TmpGeneralProjectSettingsFilename, TestSettingOverridesFilename);
 
-	if (const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+	if (GeneralProjectSettings->UsesSpatialNetworking())
 	{
-		TActorIterator<ASpatialFunctionalTest> SpatialTestIt(World);
-		EMapTestingMode TestingMode = SpatialWorldSettings->TestingSettings.TestingMode;
-		if (TestingMode != EMapTestingMode::UseCurrentSettings)
+		FString SnapshotForMap = ASpatialFunctionalTest::GetTakenSnapshotPath(World);
+
+		if (!SnapshotForMap.IsEmpty())
 		{
-			if (TestingMode == EMapTestingMode::Detect)
-			{
-				if (SpatialTestIt)
-				{
-					TestingMode = EMapTestingMode::ForceSpatial;
-				}
-				else
-				{
-					TActorIterator<AFunctionalTest> NativeTestIt(World);
-					if (!NativeTestIt)
-					{
-						// if there's no AFunctionalTests assume it's a Unit Test, so use current settings
-						return PIESettingsOverride;
-					}
-					TestingMode = EMapTestingMode::ForceNativeOffline;
-				}
-			}
-
-			int NumberOfClients = 1;
-
-			PIESettingsOverride.bUseSpatial = false; // turn off by default
-
-			switch (TestingMode)
-			{
-			case EMapTestingMode::ForceNativeOffline:
-				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_Standalone;
-				break;
-			case EMapTestingMode::ForceNativeAsListenServer:
-				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_ListenServer;
-				break;
-			case EMapTestingMode::ForceNativeAsClient:
-				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_Client;
-				break;
-			case EMapTestingMode::ForceSpatial:
-				PIESettingsOverride.bUseSpatial = true; // turn on for Spatial
-				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_Client;
-				for (; SpatialTestIt; ++SpatialTestIt)
-				{
-					NumberOfClients = FMath::Max(SpatialTestIt->GetNumRequiredClients(), NumberOfClients);
-				}
-				{
-					FString SnapshotForMap = ASpatialFunctionalTest::GetTakenSnapshotPath(World);
-
-					if (!SnapshotForMap.IsEmpty())
-					{
-						PIESettingsOverride.ForceUseSnapshot = SnapshotForMap;
-						// Set that we're loading from taken snapshot.
-						ASpatialFunctionalTest::SetLoadedFromTakenSnapshot();
-					}
-				}
-				break;
-			default:
-				checkf(false, TEXT("Unsupported Testing Mode"));
-				break;
-			}
-
-			PIESettingsOverride.NumberOfClients = NumberOfClients;
+			PIESettingsOverride.ForceUseSnapshot = SnapshotForMap;
+			// Set that we're loading from taken snapshot.
+			ASpatialFunctionalTest::SetLoadedFromTakenSnapshot();
 		}
 	}
 	return PIESettingsOverride;
