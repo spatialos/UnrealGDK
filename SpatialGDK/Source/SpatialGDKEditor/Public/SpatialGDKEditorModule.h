@@ -19,7 +19,6 @@ public:
 	FSpatialGDKEditorModule();
 
 	virtual void StartupModule() override;
-	virtual void RevertSettingsOverrideForTesting() const;
 	virtual void ShutdownModule() override;
 
 	virtual bool SupportsDynamicReloading() override { return true; }
@@ -55,7 +54,8 @@ private:
 
 	virtual bool ForEveryServerWorker(TFunction<void(const FName&, int32)> Function) const override;
 
-	virtual FPlayInEditorSettingsOverride GetPlayInEditorSettingsOverrideForTesting(UWorld* World, const FString& MapName) const;
+	virtual void OverrideSettingsForTesting(UWorld* World, const FString& MapName) const;
+	virtual void RevertSettingsForTesting() const;
 
 private:
 	void RegisterSettings();
@@ -77,6 +77,7 @@ private:
 	const FString TmpSpatialGDKEditorSettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpSpatialGDKEditorSettings.ini"));
 	const FString TmpLevelEditorPlaySettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpLevelEditorPlaySettings.ini"));
 	const FString TmpGeneralProjectSettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpGeneralProjectSettings.ini"));
+	const FString TmpEditorPerformanceSettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpEditorPerformanceSettings.ini"));
 	const FString OverrideSettingsBaseFilename = FPaths::ProjectConfigDir().Append(TEXT("TestOverrides"));
 	const FString OverrideSettingsFileExtension = ".ini";
 };

@@ -10,6 +10,7 @@
 #include "LocalReceptionistProxyServerManager.h"
 #include "Misc/MessageDialog.h"
 #include "PropertyEditor/Public/PropertyEditorModule.h"
+#include "Editor/EditorPerformanceSettings.h"
 
 #include "SpatialCommandUtils.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
@@ -286,26 +287,10 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 	return false;
 }
 
-void FSpatialGDKEditorModule::RevertSettingsOverrideForTesting() const
-{
-	// From file
-	ULevelEditorPlaySettings* EditorPlaySettings = GetMutableDefault<ULevelEditorPlaySettings>();
-	EditorPlaySettings->RevertSettings(TmpLevelEditorPlaySettingsFilename);
-	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	SpatialGDKSettings->RevertSettings(TmpSpatialGDKSettingsFilename);
-	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKEditorSettings->RevertSettings(TmpSpatialGDKEditorSettingsFilename);
-	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-	GeneralProjectSettings->RevertSettings(TmpGeneralProjectSettingsFilename);
-}
-
-FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(UWorld* World,
-																								 const FString& MapName) const
+void FSpatialGDKEditorModule::OverrideSettingsForTesting(UWorld* World, const FString& MapName) const
 {
 	// By default, clear that the runtime/test was loaded from a snapshot taken for a given world.
 	ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot();
-
-	FPlayInEditorSettingsOverride PIESettingsOverride = ISpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(World, MapName);
 
 	// Override settings from ini file
 	FString TestSettingOverridesFilename =
@@ -318,6 +303,9 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 	SpatialGDKEditorSettings->OverrideSettings(TmpSpatialGDKEditorSettingsFilename, TestSettingOverridesFilename);
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
 	GeneralProjectSettings->OverrideSettings(TmpGeneralProjectSettingsFilename, TestSettingOverridesFilename);
+	UEditorPerformanceSettings* EditorPerformanceSettings = GetMutableDefault<UEditorPerformanceSettings>();
+	EditorPerformanceSettings->OverrideSettings(TmpEditorPerformanceSettingsFilename, TestSettingOverridesFilename);
+	
 
 	if (GeneralProjectSettings->UsesSpatialNetworking())
 	{
@@ -325,12 +313,26 @@ FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOv
 
 		if (!SnapshotForMap.IsEmpty())
 		{
-			PIESettingsOverride.ForceUseSnapshot = SnapshotForMap;
+			EditorPlaySettings->SetSnapshotOverride(SnapshotForMap);
 			// Set that we're loading from taken snapshot.
 			ASpatialFunctionalTest::SetLoadedFromTakenSnapshot();
 		}
 	}
-	return PIESettingsOverride;
+}
+
+void FSpatialGDKEditorModule::RevertSettingsForTesting() const
+{
+	// From file
+	ULevelEditorPlaySettings* EditorPlaySettings = GetMutableDefault<ULevelEditorPlaySettings>();
+	EditorPlaySettings->RevertSettings(TmpLevelEditorPlaySettingsFilename);
+	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+	SpatialGDKSettings->RevertSettings(TmpSpatialGDKSettingsFilename);
+	USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetMutableDefault<USpatialGDKEditorSettings>();
+	SpatialGDKEditorSettings->RevertSettings(TmpSpatialGDKEditorSettingsFilename);
+	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
+	GeneralProjectSettings->RevertSettings(TmpGeneralProjectSettingsFilename);
+	UEditorPerformanceSettings* EditorPerformanceSettings = GetMutableDefault<UEditorPerformanceSettings>();
+	EditorPerformanceSettings->RevertSettings(TmpEditorPerformanceSettingsFilename);
 }
 
 bool FSpatialGDKEditorModule::ShouldStartLocalServer() const

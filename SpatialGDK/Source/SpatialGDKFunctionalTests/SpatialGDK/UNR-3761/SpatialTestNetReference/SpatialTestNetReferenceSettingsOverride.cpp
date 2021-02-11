@@ -43,11 +43,11 @@ void ASpatialTestNetReferenceSettingsOverride::PrepareTest()
 		// running
 		int32 ExpectedNumberOfClients = 2;
 		int32 RequiredNumberOfClients = GetNumRequiredClients();
-		RequireTrue(RequiredNumberOfClients == ExpectedNumberOfClients, FString::Printf(TEXT("Expected number of required clients to be %i"),
-					ExpectedNumberOfClients));
+		RequireTrue(RequiredNumberOfClients == ExpectedNumberOfClients,
+					FString::Printf(TEXT("Expected number of required clients to be %i"), ExpectedNumberOfClients));
 		int32 ActualNumberOfClients = GetNumberOfClientWorkers();
-		RequireTrue(ActualNumberOfClients == ExpectedNumberOfClients, FString::Printf(TEXT("Expected number of actual clients to be %i"),
-					ExpectedNumberOfClients));
+		RequireTrue(ActualNumberOfClients == ExpectedNumberOfClients,
+					FString::Printf(TEXT("Expected number of actual clients to be %i"), ExpectedNumberOfClients));
 
 		// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
 		// original values

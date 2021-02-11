@@ -4,6 +4,7 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKSettings.h"
+#include "Editor/EditorPerformanceSettings.h"
 
 /**
  * This test checks that the test settings overridden in the .ini file have been set correctly
@@ -28,7 +29,6 @@ void ASpatialSnapshotTestPart2SettingsOverride::PrepareTest()
 {
 	Super::PrepareTest();
 
-
 	AddStep(TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		// Check for default number of clients when setting is not overriden
 		// Override the LevelEditorPlaySettings in a copy so cannot check the original here, instead check the number of clients actually
@@ -52,7 +52,7 @@ void ASpatialSnapshotTestPart2SettingsOverride::PrepareTest()
 		FinishStep();
 	});
 
-		AddStep(TEXT("Check GeneralProjectSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
+	AddStep(TEXT("Check GeneralProjectSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
 		// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 		bool bSpatialNetworking = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 		RequireFalse(bSpatialNetworking, TEXT("Expected bSpatialNetworking to be False"));
@@ -61,5 +61,15 @@ void ASpatialSnapshotTestPart2SettingsOverride::PrepareTest()
 		// original values
 
 		FinishStep();
+
+	AddStep(TEXT("Check Editor Peformance Settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
+			// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
+			bool bThrottleCPUWhenNotForeground = GetDefault<UEditorPerformanceSettings>()->bThrottleCPUWhenNotForeground;
+			RequireTrue(bThrottleCPUWhenNotForeground, TEXT("Expected bSpatialNetworking to be True"));
+			// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
+			// original values
+
+			FinishStep();
+		});
 	});
 }

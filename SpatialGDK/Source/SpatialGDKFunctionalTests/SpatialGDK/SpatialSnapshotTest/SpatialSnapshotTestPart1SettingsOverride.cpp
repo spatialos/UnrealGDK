@@ -4,6 +4,7 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKSettings.h"
+#include "Editor/EditorPerformanceSettings.h"
 
 /**
  * This test checks that the test settings overridden in the .ini file have been set correctly
@@ -51,11 +52,21 @@ void ASpatialSnapshotTestPart1SettingsOverride::PrepareTest()
 		FinishStep();
 	});
 
-		AddStep(TEXT("Check GeneralProjectSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
+	AddStep(TEXT("Check GeneralProjectSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
 		// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 		bool bSpatialNetworking = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
-		RequireTrue(bSpatialNetworking, TEXT("Expected bSpatialNetworking to be Rrue"));
+		RequireTrue(bSpatialNetworking, TEXT("Expected bSpatialNetworking to be True"));
 
+		// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
+		// original values
+
+		FinishStep();
+	});
+
+	AddStep(TEXT("Check Editor Peformance Settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
+		// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
+		bool bThrottleCPUWhenNotForeground = GetDefault<UEditorPerformanceSettings>()->bThrottleCPUWhenNotForeground;
+		RequireFalse(bThrottleCPUWhenNotForeground, TEXT("Expected bSpatialNetworking to be False"));
 		// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
 		// original values
 
