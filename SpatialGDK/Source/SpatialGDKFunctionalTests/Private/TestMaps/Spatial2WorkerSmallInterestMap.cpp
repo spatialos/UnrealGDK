@@ -3,7 +3,7 @@
 #include "TestMaps/Spatial2WorkerSmallInterestMap.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "GameFramework/PlayerStart.h"
-#include "SpatialGDKFunctionalTests/Public/SpatialCleanupConnectionTest.h" //didn't spot this during review, but I would argue this one is "SpatialGDK" as well
+#include "SpatialGDKFunctionalTests/Public/SpatialCleanupConnectionTest.h"
 #include "SpatialGDKFunctionalTests/Public/SpatialTest1x2GridSmallInterestWorkerSettings.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestHandoverReplication/SpatialTestHandoverActorComponentReplication.h"
 

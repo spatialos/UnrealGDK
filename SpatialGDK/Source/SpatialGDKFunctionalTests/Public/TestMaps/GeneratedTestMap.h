@@ -10,7 +10,7 @@
  * The base class for automatically generating test maps.
  * Descend from this and your class should automatically be picked up by the GenerateTestMapsCommandlet for generation.
  */
-UCLASS()
+UCLASS(Abstract)
 class SPATIALGDKFUNCTIONALTESTS_API UGeneratedTestMap : public UObject
 {
 	GENERATED_BODY()
@@ -50,8 +50,11 @@ protected:
 		return CastChecked<T>(AddActorToLevel(Level, T::StaticClass(), Transform));
 	}
 
+	UPROPERTY()
 	UWorld* World;
+	UPROPERTY()
 	UStaticMesh* PlaneStaticMesh;
+	UPROPERTY()
 	UMaterial* BasicShapeMaterial;
 
 private:

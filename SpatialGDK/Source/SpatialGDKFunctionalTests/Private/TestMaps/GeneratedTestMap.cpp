@@ -92,19 +92,19 @@ FString UGeneratedTestMap::GetPathToSaveTheMap()
 	switch (MapCategory)
 	{
 	case EMapCategory::CI_PREMERGE:
-		DirName = TEXT("CI_Premerge/");
+		DirName = TEXT("CI_Premerge");
 		break;
 	case EMapCategory::CI_PREMERGE_SPATIAL_ONLY:
-		DirName = TEXT("CI_Premerge_Spatial_Only/");
+		DirName = TEXT("CI_Premerge_Spatial_Only");
 		break;
 	case EMapCategory::CI_NIGHTLY:
-		DirName = TEXT("CI_Nightly/");
+		DirName = TEXT("CI_Nightly");
 		break;
 	case EMapCategory::CI_NIGHTLY_SPATIAL_ONLY:
-		DirName = TEXT("CI_Nightly_Spatial_Only/");
+		DirName = TEXT("CI_Nightly_Spatial_Only");
 		break;
 	case EMapCategory::NO_CI:
-		DirName = TEXT("No_CI/");
+		DirName = TEXT("No_CI");
 		break;
 	default:
 		checkNoEntry();
