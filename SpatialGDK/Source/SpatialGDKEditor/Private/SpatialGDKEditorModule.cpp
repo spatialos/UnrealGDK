@@ -156,18 +156,22 @@ bool FSpatialGDKEditorModule::CanExecuteLaunch() const
 bool FSpatialGDKEditorModule::CanStartSession(FText& OutErrorMessage) const
 {
 	FSpatialGDKEditor::ESchemaDatabaseValidationResult SchemaCheck = SpatialGDKEditorInstance->ValidateSchemaDatabase();
-	if (SchemaCheck == FSpatialGDKEditor::NotFound)
+	switch (SchemaCheck)
 	{
+	case FSpatialGDKEditor::NotFound:
 		OutErrorMessage = LOCTEXT("MissingSchema",
 								  "Attempted to start a local deployment but schema is not generated. You can generate it by clicking on "
 								  "the Schema button in the toolbar.");
 		return false;
-	}
-	else if (SchemaCheck == FSpatialGDKEditor::OldVersion)
-	{
+	case FSpatialGDKEditor::OldVersion:
 		OutErrorMessage = LOCTEXT("OldSchema",
 								  "Attempted to start a local deployment but schema is out of date. You can generate it by clicking on "
 								  "the Schema button in the toolbar.");
+		return false;
+	case FSpatialGDKEditor::RingBufferSizeChanged:
+		OutErrorMessage = LOCTEXT("RingBufferSizeChanged",
+								  "Attempted to start a local deployment but RPC ring buffer size(s) have changed. You need to regenerate "
+								  "schema by clicking on the Schema button in the toolbar.");
 		return false;
 	}
 

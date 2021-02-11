@@ -73,8 +73,10 @@ component UnrealClientEndpoint {
 	option<UnrealRPCPayload> client_to_server_unreliable_rpc_30 = 64;
 	option<UnrealRPCPayload> client_to_server_unreliable_rpc_31 = 65;
 	uint64 last_sent_client_to_server_unreliable_rpc_id = 66;
-	uint64 last_acked_server_to_client_reliable_rpc_id = 67;
-	uint64 last_acked_server_to_client_unreliable_rpc_id = 68;
+	option<UnrealRPCPayload> client_to_server_always_write_rpc_0 = 67;
+	uint64 last_sent_client_to_server_always_write_rpc_id = 68;
+	uint64 last_acked_server_to_client_reliable_rpc_id = 69;
+	uint64 last_acked_server_to_client_unreliable_rpc_id = 70;
 }
 
 component UnrealServerEndpoint {
@@ -147,6 +149,7 @@ component UnrealServerEndpoint {
 	uint64 last_sent_server_to_client_unreliable_rpc_id = 66;
 	uint64 last_acked_client_to_server_reliable_rpc_id = 67;
 	uint64 last_acked_client_to_server_unreliable_rpc_id = 68;
+	uint64 last_acked_client_to_server_always_write_rpc_id = 69;
 }
 
 component UnrealMulticastRPCs {

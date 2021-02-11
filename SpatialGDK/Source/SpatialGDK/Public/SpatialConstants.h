@@ -22,8 +22,13 @@ enum class ERPCType : uint8
 	ClientUnreliable,
 	ServerReliable,
 	ServerUnreliable,
+	ServerAlwaysWrite,
 	NetMulticast,
-	CrossServer
+	CrossServer,
+
+	// Helpers to iterate RPC types with ring buffers
+	RingBufferTypeBegin = ClientReliable,
+	RingBufferTypeEnd = NetMulticast
 };
 
 enum ESchemaComponentType : int32
@@ -55,6 +60,8 @@ inline FString RPCTypeToString(ERPCType RPCType)
 		return TEXT("Server, Reliable");
 	case ERPCType::ServerUnreliable:
 		return TEXT("Server, Unreliable");
+	case ERPCType::ServerAlwaysWrite:
+		return TEXT("Server, AlwaysWrite");
 	case ERPCType::NetMulticast:
 		return TEXT("Multicast");
 	case ERPCType::CrossServer:
