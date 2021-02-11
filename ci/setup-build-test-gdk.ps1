@@ -62,6 +62,7 @@ class TestSuite {
 [string] $user_gdk_settings = "$env:GDK_SETTINGS"
 [string] $user_cmd_line_args = "$env:TEST_ARGS"
 [string] $gdk_branch = "$env:BUILDKITE_BRANCH"
+[string] $test_map_path = "/Game/Intermediate/Maps/"
 
 [TestProjectTarget] $gdk_test_project = [TestProjectTarget]::new("git@github.com:spatialos/UnrealGDKTestGyms.git", $gdk_branch, "Game\GDKTestGyms.uproject", "GDKTestGyms", $gyms_version_path, "env:TEST_REPO_BRANCH")
 [TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject", $gyms_version_path, "env:NATIVE_TEST_REPO_BRANCH")
@@ -70,10 +71,10 @@ $tests = @()
 
 if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
     # We run spatial tests against Vanilla UE4
-    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "VanillaTestResults", "/Game/Intermediate/Maps/CI_Premerge/", "$user_gdk_settings", $False, "$user_cmd_line_args")
+    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "VanillaTestResults", "${test_map_path}CI_Premerge/", "$user_gdk_settings", $False, "$user_cmd_line_args")
 
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
-        $tests[0].tests_path += "+/Game/Intermediate/Maps/CI_Nightly/"
+        $tests[0].tests_path += "+${test_map_path}CI_Nightly/"
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
 
         # And if slow, we run NetTest functional maps against Vanilla UE4 as well
@@ -82,11 +83,11 @@ if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
 }
 else {
     # We run all tests and networked functional maps
-    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResults", "SpatialGDK.+/Game/Intermediate/Maps/CI_Premerge/+/Game/Intermediate/Maps/CI_Premerge_Spatial_Only/", "$user_gdk_settings", $True, "$user_cmd_line_args")
+    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResults", "SpatialGDK.+${test_map_path}CI_Premerge/+${test_map_path}CI_Premerge_Spatial_Only/", "$user_gdk_settings", $True, "$user_cmd_line_args")
 
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
         # And if slow, we run GDK slow tests
-        $tests[0].tests_path += "+SpatialGDKSlow.+/Game/Intermediate/Maps/CI_Nightly/+/Game/Intermediate/Maps/CI_Nightly_Spatial_Only/"
+        $tests[0].tests_path += "+SpatialGDKSlow.+${test_map_path}CI_Nightly/+${test_map_path}CI_Nightly_Spatial_Only/"
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
 
         # And NetTests functional maps against GDK as well
