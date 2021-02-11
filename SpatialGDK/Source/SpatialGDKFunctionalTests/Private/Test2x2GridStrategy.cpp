@@ -6,5 +6,6 @@ UTest2x2GridStrategy::UTest2x2GridStrategy()
 {
 	Rows = 2;
 	Cols = 2;
-	InterestBorder = 10000.0f;
+	// Maximum of the world size, so that the entire world is in the view of both the server-workers at all times
+	InterestBorder = FMath::Max(WorldWidth, WorldHeight);
 }
