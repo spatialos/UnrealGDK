@@ -8,9 +8,6 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "SpatialCleanupConnectionTest.generated.h"
 
-/**
- *
- */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialCleanupConnectionTest : public ASpatialFunctionalTest
 {
