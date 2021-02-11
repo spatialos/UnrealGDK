@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 ### Breaking changes:
+- Removed support for UE 4.24
 
 ### Features:
 - Added a message box notification when game is closed due to missing generated schema.
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed incorrect allocation of entity ID from a non-authoritative server sending a cross-server RPC to a replicated level actor that hasn't been received from runtime.
 - Fixed a regression where bReplicates would not be handed over correctly when dynamically set.
 - Fixed an issue where resetting handover property to default value would be omitted during handover value replication
+- Fixed EntityPool capacity overflow issue by removing the ability from the gdk settings to request a pool size larger than int32_max.
 
 ## [`0.12.0`] - 2021-02-01
 

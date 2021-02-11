@@ -34,7 +34,7 @@ class SPATIALGDK_API UEntityPool : public UObject
 
 public:
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* TimerManager);
-	void ReserveEntityIDs(int32 EntitiesToReserve);
+	void ReserveEntityIDs(uint32 EntitiesToReserve);
 	Worker_EntityId GetNextEntityId();
 	FEntityPoolReadyEvent& GetEntityPoolReadyDelegate();
 
