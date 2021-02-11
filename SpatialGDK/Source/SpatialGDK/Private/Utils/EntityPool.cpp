@@ -29,8 +29,10 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 
 	// TODO: UNR-4979 Allow full range of uint32 when SQD-1150 is fixed
 	const uint32 TempMaxEntitiesToReserve = static_cast<uint32>(MAX_int32);
-	if (EntitiesToReserve > TempMaxEntitiesToReserve) {
-		UE_LOG(LogSpatialEntityPool, Log, TEXT("Clamping requested 'EntitiesToReserve' to MAX_int32 (from %u to %d)"), EntitiesToReserve, MAX_int32);
+	if (EntitiesToReserve > TempMaxEntitiesToReserve)
+	{
+		UE_LOG(LogSpatialEntityPool, Log, TEXT("Clamping requested 'EntitiesToReserve' to MAX_int32 (from %u to %d)"), EntitiesToReserve,
+			   MAX_int32);
 		EntitiesToReserve = TempMaxEntitiesToReserve;
 	}
 

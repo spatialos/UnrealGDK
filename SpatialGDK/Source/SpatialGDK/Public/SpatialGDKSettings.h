@@ -74,7 +74,8 @@ public:
 	 * reserved is greater than the number of Actors that you expect the server-worker instances to spawn at game deployment
 	 */
 	// TODO: UNR-4979 Allow full range of uint32 when SQD-1150 is fixed
-	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (DisplayName = "Initial Entity ID Reservation Count", ClampMax = 0x7fffffff))
+	UPROPERTY(EditAnywhere, config, Category = "Entity Pool",
+			  meta = (DisplayName = "Initial Entity ID Reservation Count", ClampMax = 0x7fffffff))
 	uint32 EntityPoolInitialReservationCount;
 
 	/**
