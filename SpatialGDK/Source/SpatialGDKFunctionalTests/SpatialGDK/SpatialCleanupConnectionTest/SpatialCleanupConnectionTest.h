@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -8,9 +8,6 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "SpatialCleanupConnectionTest.generated.h"
 
-/**
- *
- */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialCleanupConnectionTest : public ASpatialFunctionalTest
 {
