@@ -563,8 +563,6 @@ public:
 		return CommandLineLaunchFlags;
 	}
 
-	FORCEINLINE void ClearSpatialOSCommandLineLaunchFlags() { SpatialOSCommandLineLaunchFlags.Empty(); }
-
 	void SetPrimaryDeploymentName(const FString& Name);
 	FORCEINLINE FString GetPrimaryDeploymentName() const { return PrimaryDeploymentName; }
 

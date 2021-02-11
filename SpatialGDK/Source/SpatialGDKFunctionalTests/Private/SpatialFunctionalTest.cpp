@@ -303,7 +303,6 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 		if (CurrentStepIndex != SPATIAL_FUNCTIONAL_TEST_FINISHED)
 		{
 			bPreparedTest = false; // Clear for PrepareTest to run on all again if the test re-runs.
-
 			OnReplicated_bPreparedTest();
 
 			UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("Test %s finished! Result: %s ; Message: %s"), *GetName(),
