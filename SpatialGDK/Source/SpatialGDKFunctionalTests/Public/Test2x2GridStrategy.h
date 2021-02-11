@@ -4,17 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
-#include "Test1x2GridStrategy.generated.h"
+#include "Test2x2GridStrategy.generated.h"
 
 /**
- * A 1 by 2 (rows by columns) load balancing strategy for testing zoning features.
+ * A 2 by 2 (rows by columns) load balancing strategy for testing zoning features.
  * Has a world-wide interest border, so everything should be in view.
  */
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API UTest1x2GridStrategy : public UGridBasedLBStrategy
+class SPATIALGDKFUNCTIONALTESTS_API UTest2x2GridStrategy : public UGridBasedLBStrategy
 {
 	GENERATED_BODY()
 
 public:
-	UTest1x2GridStrategy();
+	UTest2x2GridStrategy();
 };

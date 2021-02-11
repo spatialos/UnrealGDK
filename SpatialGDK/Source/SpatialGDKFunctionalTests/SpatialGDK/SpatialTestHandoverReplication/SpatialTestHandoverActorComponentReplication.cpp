@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestHandoverActorComponentReplication.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -6,7 +6,6 @@
 #include "LoadBalancing/LayeredLBStrategy.h"
 
 #include "DynamicReplicationHandoverCube.h"
-#include "EngineClasses/SpatialWorldSettings.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialFunctionalTestStep.h"
 
@@ -100,19 +99,6 @@ ASpatialTestHandoverActorComponentReplication::ASpatialTestHandoverActorComponen
 void ASpatialTestHandoverActorComponentReplication::PrepareTest()
 {
 	Super::PrepareTest();
-
-	AddStep(TEXT("Check initial settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
-		ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
-
-		if (AssertIsValid(WorldSettings, TEXT("World Settings of correct type")))
-		{
-			AssertTrue(IsValid(WorldSettings->GetMultiWorkerSettingsClass())
-						   && WorldSettings->GetMultiWorkerSettingsClass()->IsChildOf<USpatialTestHandoverReplicationMultiWorkerSettings>(),
-					   TEXT("MultiWorkerSettings should be of class USpatialTestHandoverReplicationMultiWorkerSettings"));
-		}
-
-		FinishStep();
-	});
 
 	AddStep(TEXT("Server 1 spawns a HandoverCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		HandoverCube = GetWorld()->SpawnActor<AHandoverReplicationTestCube>(HandoverReplicationTestValues::Server1Position,

@@ -21,14 +21,14 @@ class TestProjectTarget {
         # Resolve the branch to run against. The order of priority is:
         # envvar > same-name branch as the branch we are currently on > UnrealGDKTestGymVersion.txt > "master".
         $testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
-        $test_gym_version = if (Test-Path -Path $test_gyms_version_path) {[System.IO.File]::ReadAllText($test_gyms_version_path)} else {[string]::Empty}
+        $test_gym_version = if (Test-Path -Path $test_gyms_version_path) { [System.IO.File]::ReadAllText($test_gyms_version_path) } else { [string]::Empty }
         if (Test-Path $test_env_override) {
             $this.test_repo_branch = (Get-Item $test_env_override).value
         }
-        elseif($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
+        elseif ($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
             $this.test_repo_branch = $gdk_branch
         }
-        elseif($test_gym_version -ne [string]::Empty) {
+        elseif ($test_gym_version -ne [string]::Empty) {
             $this.test_repo_branch = $test_gym_version
         }
         else {
@@ -47,8 +47,8 @@ class TestSuite {
     [ValidateNotNull()]       [string]$additional_cmd_line_args
 
     TestSuite([TestProjectTarget] $test_project_target, [string] $test_repo_map,
-              [string] $test_results_dir, [string] $tests_path, [string] $additional_gdk_options,
-              [bool] $run_with_spatial, [string] $additional_cmd_line_args) {
+        [string] $test_results_dir, [string] $tests_path, [string] $additional_gdk_options,
+        [bool] $run_with_spatial, [string] $additional_cmd_line_args) {
         $this.test_project_target = $test_project_target
         $this.test_repo_map = $test_repo_map
         $this.test_results_dir = $test_results_dir
@@ -62,6 +62,7 @@ class TestSuite {
 [string] $user_gdk_settings = "$env:GDK_SETTINGS"
 [string] $user_cmd_line_args = "$env:TEST_ARGS"
 [string] $gdk_branch = "$env:BUILDKITE_BRANCH"
+[string] $test_map_path = "/Game/Intermediate/Maps/"
 
 [TestProjectTarget] $gdk_test_project = [TestProjectTarget]::new("git@github.com:spatialos/UnrealGDKTestGyms.git", $gdk_branch, "Game\GDKTestGyms.uproject", "GDKTestGyms", $gyms_version_path, "env:TEST_REPO_BRANCH")
 [TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject", $gyms_version_path, "env:NATIVE_TEST_REPO_BRANCH")
@@ -70,25 +71,25 @@ $tests = @()
 
 if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
     # We run spatial tests against Vanilla UE4
-    $tests += [TestSuite]::new($gdk_test_project, "NetworkingMap", "VanillaTestResults", "/Game/Maps/FunctionalTests/CI_Fast/", "$user_gdk_settings", $False, "$user_cmd_line_args")
-    
+    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "VanillaTestResults", "${test_map_path}CI_Premerge/", "$user_gdk_settings", $False, "$user_cmd_line_args")
+
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
-        $tests[0].tests_path += "+/Game/Maps/FunctionalTests/CI_Slow/"
+        $tests[0].tests_path += "+${test_map_path}CI_Nightly/"
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
-        
+
         # And if slow, we run NetTest functional maps against Vanilla UE4 as well
         $tests += [TestSuite]::new($native_test_project, "NetworkingMap", "NativeNetTestResults", "/Game/NetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
     }
 }
 else {
     # We run all tests and networked functional maps
-    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResults", "SpatialGDK.+/Game/Maps/FunctionalTests/CI_Fast/+/Game/Maps/FunctionalTests/CI_Fast_Spatial_Only/", "$user_gdk_settings", $True, "$user_cmd_line_args")
+    $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResults", "SpatialGDK.+${test_map_path}CI_Premerge/+${test_map_path}CI_Premerge_Spatial_Only/", "$user_gdk_settings", $True, "$user_cmd_line_args")
 
     if ($env:SLOW_NETWORKING_TESTS -like "true") {
         # And if slow, we run GDK slow tests
-        $tests[0].tests_path += "+SpatialGDKSlow.+/Game/Maps/FunctionalTests/CI_Slow/+/Game/Maps/FunctionalTests/CI_Slow_Spatial_Only/"
+        $tests[0].tests_path += "+SpatialGDKSlow.+${test_map_path}CI_Nightly/+${test_map_path}CI_Nightly_Spatial_Only/"
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
-        
+
         # And NetTests functional maps against GDK as well
         $tests += [TestSuite]::new($native_test_project, "NetworkingMap", "GDKNetTestResults", "/Game/NetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
     }
@@ -166,6 +167,7 @@ Foreach ($test in $tests) {
     # Only run tests on Windows, as we do not have a linux agent - should not matter
     if ($env:BUILD_PLATFORM -eq "Win64" -And $env:BUILD_TARGET -eq "Editor" -And $env:BUILD_STATE -eq "Development") {
         Start-Event "test-gdk" "command"
+        $verify_commandlet_exit_codes = $False # For now, we will ignore the exit codes of the commandlets run, as older engine versions with TestGyms produce errors
         & $PSScriptRoot"\run-tests.ps1" `
             -unreal_editor_path "$unreal_engine_symlink_dir\Engine\Binaries\Win64\UE4Editor.exe" `
             -uproject_path "$build_home\$test_project_name\$test_repo_relative_uproject_path" `
@@ -176,7 +178,8 @@ Foreach ($test in $tests) {
             -tests_path "$tests_path" `
             -additional_gdk_options "$additional_gdk_options" `
             -run_with_spatial $run_with_spatial `
-            -additional_cmd_line_args "$additional_cmd_line_args"
+            -additional_cmd_line_args "$additional_cmd_line_args" `
+            -verify_commandlet_exit_codes $verify_commandlet_exit_codes
         Finish-Event "test-gdk" "command"
 
         Start-Event "report-tests" "command"
