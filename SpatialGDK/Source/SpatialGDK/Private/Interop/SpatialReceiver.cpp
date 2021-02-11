@@ -244,7 +244,19 @@ void USpatialReceiver::ReceiveWorkerDisconnectResponse(const Worker_CommandRespo
 
 void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op)
 {
-	const Worker_PartitionId PartitionId = PendingPartitionAssignments.FindAndRemoveChecked(Op.request_id);
+	if (Op.request_id < 0)
+	{
+		// Invalid request id that will not be in PendingPartitionAssignments
+		return;
+	}
+
+	Worker_PartitionId PartitionId;
+	if (!PendingPartitionAssignments.RemoveAndCopyValue(Op.request_id, PartitionId))
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
+			   TEXT("Could not find request id in PendingPartitionAssignments. Request Id: %d"), Op.request_id);
+		return;
+	}
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{

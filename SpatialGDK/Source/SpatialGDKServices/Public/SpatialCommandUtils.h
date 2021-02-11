@@ -37,8 +37,12 @@ public:
 	SPATIALGDKSERVICES_API static bool FetchPackageBinary(const FString& PackageVersion, const FString& PackageExe,
 														  const FString& PackageName, const FString& SaveLocation,
 														  const bool bIsRunningInChina, const bool bUnzip);
+	SPATIALGDKSERVICES_API static bool FetchPackageBinaryWithRetries(const FString& PackageVersion, const FString& PackageExe,
+																	 const FString& PackageName, const FString& SaveLocation,
+																	 const bool bIsRunningInChina, const bool bUnzip,
+																	 const int32 NumRetries = 3);
 
 private:
 	// Timeout given in seconds.
-	static constexpr double ProcessTimeoutTime = 60.0;
+	static constexpr double ProcessTimeoutTime = 120.0;
 };
