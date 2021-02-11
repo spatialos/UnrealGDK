@@ -28,7 +28,11 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 	checkf(!bIsAwaitingResponse, TEXT("Trying to reserve Entity IDs while another reserve request is in flight"));
 
 	// TODO: UNR-4979 Allow full range of uint32 when SQD-1150 is fixed
-	EntitiesToReserve = FMath::Clamp(EntitiesToReserve, 0u, static_cast<uint32>(MAX_int32));
+	const uint32 TempMaxEntitiesToReserve = static_cast<uint32>(MAX_int32);
+	if (EntitiesToReserve > TempMaxEntitiesToReserve) {
+		UE_LOG(LogSpatialEntityPool, Log, TEXT("Clamping requested 'EntitiesToReserve' to MAX_int32 (from %u to %d)"), EntitiesToReserve, MAX_int32);
+		EntitiesToReserve = TempMaxEntitiesToReserve;
+	}
 
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate CacheEntityIDsDelegate;
