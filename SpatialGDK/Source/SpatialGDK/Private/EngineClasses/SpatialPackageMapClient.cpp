@@ -423,17 +423,34 @@ FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(Worker_EntityId Entity
 		}
 	}
 
-	for (UActorComponent* DynamicComponent : Actor->GetInstanceComponents())
+	if (Actor->GetInstanceComponents().Num() > 0)
 	{
-		USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver());
-		USpatialClassInfoManager* Manager = NetDriver->ClassInfoManager;
-		USpatialPackageMapClient* PackageMap = NetDriver->PackageMap;
+		// Process components attached to this object; this allows us to join up
+		// server- and client-side components added in the level.
+		TArray<UActorComponent*> ActorInstanceComponents = Actor->GetInstanceComponents();
 
-		const FClassInfo* DynamicComponentClassInfo = PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(DynamicComponent);
+		// These need to be ordered in case there are more than one component of the same type, or
+		// we may end up with wrong component instances having associations between them.
+		ActorInstanceComponents.Sort([](const UActorComponent& Lhs, const UActorComponent& Rhs) -> bool {
+			return Lhs.GetName().Compare(Rhs.GetName()) < 0;
+		});
 
-		if (DynamicComponentClassInfo != nullptr)
+		for (UActorComponent* DynamicComponent : ActorInstanceComponents)
 		{
-			SubobjectNameToOffset.Add(DynamicComponent, DynamicComponentClassInfo->SchemaComponents[SCHEMA_Data]);
+			if (!DynamicComponent->IsSupportedForNetworking())
+			{
+				continue;
+			}
+
+			USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Actor->GetWorld()->GetNetDriver());
+			USpatialPackageMapClient* PackageMap = NetDriver->PackageMap;
+
+			const FClassInfo* DynamicComponentClassInfo = PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(DynamicComponent);
+
+			if (DynamicComponentClassInfo != nullptr)
+			{
+				SubobjectNameToOffset.Add(DynamicComponent, DynamicComponentClassInfo->SchemaComponents[SCHEMA_Data]);
+			}
 		}
 	}
 

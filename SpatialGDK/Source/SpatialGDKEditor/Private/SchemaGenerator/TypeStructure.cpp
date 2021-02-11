@@ -518,9 +518,7 @@ FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
 	FSubobjectMap Subobjects;
 
 	TSet<UObject*> SeenComponents;
-	uint32 CurrentOffset = 1;
-
-	auto AddSubobject = [&CurrentOffset, &SeenComponents, &Subobjects](TSharedPtr<FUnrealType> PropertyTypeInfo) {
+	auto AddSubobject = [&SeenComponents, &Subobjects](TSharedPtr<FUnrealType> PropertyTypeInfo) {
 		UObject* Value = PropertyTypeInfo->Object;
 
 		if (Value != nullptr && IsSupportedClass(Value->GetClass()))
@@ -530,8 +528,6 @@ FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
 				SeenComponents.Add(Value);
 				Subobjects.Add({ PropertyTypeInfo });
 			}
-
-			CurrentOffset++;
 		}
 	};
 

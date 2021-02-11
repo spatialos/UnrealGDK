@@ -213,7 +213,7 @@ void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUn
 
 		UObject* Value = PropertyTypeInfo->Object;
 
-		if (Value != nullptr && IsSupportedClass(Value->GetClass()))
+		if (IsSupportedClass(Value->GetClass()))
 		{
 			UClass* Class = Value->GetClass();
 			if (!AlreadyImported.Contains(Class) && SchemaGeneratedClasses.Contains(Class))
