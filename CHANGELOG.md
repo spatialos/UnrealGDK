@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 ### Breaking changes:
+- Removed support for UE 4.24
 
 ### Features:
 - Added a message box notification when game is closed due to missing generated schema.
