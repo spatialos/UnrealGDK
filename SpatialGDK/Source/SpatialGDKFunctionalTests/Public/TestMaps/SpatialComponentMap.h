@@ -8,7 +8,6 @@
 /**
  * This map is custom-made for the SpatialComponentTest - it utilizes a gamemode override.
  */
-// TODO: Actually seems weird, I think this could be merged with some other map (authority map)...
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API USpatialComponentMap : public UGeneratedTestMap
 {
