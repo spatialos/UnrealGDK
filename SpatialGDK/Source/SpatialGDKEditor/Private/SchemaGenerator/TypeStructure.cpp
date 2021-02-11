@@ -276,22 +276,15 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				continue;
 			}
 
-			TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
-			PropertyNode->Property = nullptr;
-			PropertyNode->ContainerType = TypeNode;
-			PropertyNode->ParentChecksum = ParentChecksum;
-			PropertyNode->StaticArrayIndex = StaticArrayIndex;
-
-			constexpr uint32 Checksum = 0;
-			PropertyNode->CompatibleChecksum = Checksum;
-
 			//  is definitely a strong reference, recurse into it.
-			PropertyNode->Type = CreateUnrealTypeInfo(Component->GetClass(), ParentChecksum, 0);
-			PropertyNode->Type->ParentProperty = PropertyNode;
-			PropertyNode->Type->Object = Component;
-			PropertyNode->Type->Name = Component->GetFName();
+			TSharedPtr<FUnrealType> SubobjectType = CreateUnrealTypeInfo(Component->GetClass(), ParentChecksum, 0);
+			SubobjectType->Object = Component;
+			SubobjectType->Name = Component->GetFName();
 
-			TypeNode->NoPropertySubobjects.Add(PropertyNode);
+			FUnrealSubobject Subobject;
+			Subobject.Type = SubobjectType;
+
+			TypeNode->NoPropertySubobjects.Add(Subobject);
 		}
 	}
 
@@ -535,7 +528,7 @@ FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
 			if (!SeenComponents.Contains(Value))
 			{
 				SeenComponents.Add(Value);
-				Subobjects.Add(CurrentOffset, PropertyTypeInfo);
+				Subobjects.Add({ PropertyTypeInfo });
 			}
 
 			CurrentOffset++;
@@ -553,11 +546,11 @@ FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
 		}
 	}
 
-	for (const TSharedPtr<FUnrealProperty>& NonPropertySubobject : TypeInfo->NoPropertySubobjects)
+	for (const FUnrealSubobject& NonPropertySubobject : TypeInfo->NoPropertySubobjects)
 	{
-		if (NonPropertySubobject->Type->Object->IsSupportedForNetworking())
+		if (NonPropertySubobject.Type->Object->IsSupportedForNetworking())
 		{
-			AddSubobject(NonPropertySubobject->Type);
+			AddSubobject(NonPropertySubobject.Type);
 		}
 	}
 

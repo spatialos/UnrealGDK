@@ -209,7 +209,7 @@ void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUn
 
 	for (const auto& OffsetToSubobject : GetAllSubobjects(TypeInfo))
 	{
-		const TSharedPtr<FUnrealType>& PropertyTypeInfo = OffsetToSubobject.Value;
+		const TSharedPtr<FUnrealType>& PropertyTypeInfo = OffsetToSubobject.Type;
 
 		UObject* Value = PropertyTypeInfo->Object;
 
@@ -247,7 +247,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 
 	for (auto& It : Subobjects)
 	{
-		TSharedPtr<FUnrealType>& SubobjectTypeInfo = It.Value;
+		TSharedPtr<FUnrealType>& SubobjectTypeInfo = It.Type;
 		UClass* SubobjectClass = Cast<UClass>(SubobjectTypeInfo->Type);
 
 		FActorSpecificSubobjectSchemaData SubobjectData;
