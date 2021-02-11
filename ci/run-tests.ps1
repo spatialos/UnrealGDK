@@ -116,13 +116,13 @@ if($additional_cmd_line_args -ne "") {
 Write-Output "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
+# We do no check the exit code of the runtime process, but leave the error handling to the report-tests script
 try {
     # Give the Unreal Editor 30 minutes to run the tests, otherwise kill it
     # This is so we can get some logs out of it, before we are cancelled by buildkite
     Wait-Process -Timeout 1800 -InputObject $run_tests_proc
     # If the Editor crashes, these processes can stay lingering and prevent the job from ever timing out
     Stop-Runtime
-    if ($run_tests_proc.ExitCode -ne 0) { throw "Running the editor returned a non-zero exit code!" }
 }
 catch {
     Stop-Process -Force -InputObject $run_tests_proc # kill the dangling process
