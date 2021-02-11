@@ -203,7 +203,6 @@ void ActorSystem::PopulateDataStore(const Worker_EntityId EntityId)
 			break;
 		case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 			Components.Metadata = UnrealMetadata(Data.GetUnderlying());
-			Components.Metadata.GetNativeEntityClass();
 			break;
 		default:
 			break;
@@ -220,7 +219,6 @@ void ActorSystem::ApplyComponentAdd(const Worker_EntityId EntityId, const Worker
 		break;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		ActorDataStore[EntityId].Metadata = UnrealMetadata(Data);
-		ActorDataStore[EntityId].Metadata.GetNativeEntityClass();
 		break;
 	default:
 		break;
@@ -1141,8 +1139,6 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 	ActorData& ActorComponents = ActorDataStore[EntityId];
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	// TODO: Async loading
 
 	AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
 	if (EntityActor != nullptr)

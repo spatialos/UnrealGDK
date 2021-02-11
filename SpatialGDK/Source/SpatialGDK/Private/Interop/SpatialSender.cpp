@@ -646,9 +646,9 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	// This should always happen with USLB.
 	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
 
-	if (NetDriver->SpatialDebugger != nullptr)
+	if (NetDriver->SpatialDebuggerSystem.IsValid())
 	{
-		NetDriver->SpatialDebugger->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
+		NetDriver->SpatialDebuggerSystem->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
 	}
 }
 
