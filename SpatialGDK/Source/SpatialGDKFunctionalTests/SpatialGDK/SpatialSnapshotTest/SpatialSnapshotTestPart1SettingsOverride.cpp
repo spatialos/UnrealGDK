@@ -1,10 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialSnapshotTestPart1SettingsOverride.h"
+#include "Editor/EditorPerformanceSettings.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKSettings.h"
-#include "Editor/EditorPerformanceSettings.h"
 
 /**
  * This test checks that the test settings overridden in the .ini file have been set correctly

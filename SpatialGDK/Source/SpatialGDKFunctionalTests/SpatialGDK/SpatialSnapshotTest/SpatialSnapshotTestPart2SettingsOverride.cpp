@@ -1,10 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialSnapshotTestPart2SettingsOverride.h"
+#include "Editor/EditorPerformanceSettings.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKSettings.h"
-#include "Editor/EditorPerformanceSettings.h"
 
 /**
  * This test checks that the test settings overridden in the .ini file have been set correctly
@@ -62,7 +62,7 @@ void ASpatialSnapshotTestPart2SettingsOverride::PrepareTest()
 
 		FinishStep();
 
-	AddStep(TEXT("Check Editor Peformance Settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
+		AddStep(TEXT("Check Editor Peformance Settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
 			// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 			bool bThrottleCPUWhenNotForeground = GetDefault<UEditorPerformanceSettings>()->bThrottleCPUWhenNotForeground;
 			RequireTrue(bThrottleCPUWhenNotForeground, TEXT("Expected bSpatialNetworking to be True"));

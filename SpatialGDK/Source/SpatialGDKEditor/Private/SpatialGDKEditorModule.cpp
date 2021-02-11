@@ -3,6 +3,7 @@
 #include "SpatialGDKEditorModule.h"
 
 #include "Editor.h"
+#include "Editor/EditorPerformanceSettings.h"
 #include "GeneralProjectSettings.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
@@ -10,7 +11,6 @@
 #include "LocalReceptionistProxyServerManager.h"
 #include "Misc/MessageDialog.h"
 #include "PropertyEditor/Public/PropertyEditorModule.h"
-#include "Editor/EditorPerformanceSettings.h"
 
 #include "SpatialCommandUtils.h"
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
@@ -305,7 +305,6 @@ void FSpatialGDKEditorModule::OverrideSettingsForTesting(UWorld* World, const FS
 	GeneralProjectSettings->OverrideSettings(TmpGeneralProjectSettingsFilename, TestSettingOverridesFilename);
 	UEditorPerformanceSettings* EditorPerformanceSettings = GetMutableDefault<UEditorPerformanceSettings>();
 	EditorPerformanceSettings->OverrideSettings(TmpEditorPerformanceSettingsFilename, TestSettingOverridesFilename);
-	
 
 	if (GeneralProjectSettings->UsesSpatialNetworking())
 	{
