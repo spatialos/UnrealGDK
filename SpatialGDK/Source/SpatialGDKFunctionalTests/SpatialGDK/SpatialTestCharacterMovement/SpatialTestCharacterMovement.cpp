@@ -30,7 +30,7 @@
  */
 
 ASpatialTestCharacterMovement::ASpatialTestCharacterMovement()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Andrei";
 	Description = TEXT("Test Character Movement");

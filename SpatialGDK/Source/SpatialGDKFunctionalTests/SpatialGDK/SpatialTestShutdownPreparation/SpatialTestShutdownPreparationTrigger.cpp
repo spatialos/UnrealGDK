@@ -6,6 +6,7 @@
 #include "TestPrepareShutdownListener.h"
 
 ASpatialTestShutdownPreparationTrigger::ASpatialTestShutdownPreparationTrigger()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Tilman Schmidt";
 	Description = TEXT("Trigger shutdown preparation via worker flags and make sure callbacks get called in C++ and Blueprints");

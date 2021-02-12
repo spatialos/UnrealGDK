@@ -52,7 +52,7 @@ private:
 	uint8 bReadyToSpawnServerControllers : 1;
 
 public:
-	ASpatialFunctionalTest();
+	ASpatialFunctionalTest(const FObjectInitializer& ObjectInitializer);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -370,6 +370,8 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Spatial Functional Test")
 	FSpatialFunctionalTestStepDefinition ClearSnapshotStepDefinition;
 
+	void EndPlay(const EEndPlayReason::Type Reason) override;
+
 private:
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"), Category = "Spatial Functional Test")
 	int NumRequiredClients = 2;
@@ -425,7 +427,6 @@ private:
 	void StartServerFlowControllerSpawn();
 
 	void SetupClientPlayerRegistrationFlow();
-	void EndPlay(const EEndPlayReason::Type Reason) override;
 
 	FDelegateHandle PostLoginDelegate;
 

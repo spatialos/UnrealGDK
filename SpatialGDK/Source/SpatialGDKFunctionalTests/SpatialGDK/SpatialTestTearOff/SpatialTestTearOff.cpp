@@ -31,7 +31,7 @@
  */
 
 ASpatialTestTearOff::ASpatialTestTearOff()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Andrei";
 	Description = TEXT("Test TearOff prevents Actors from replicating");

@@ -31,8 +31,8 @@ namespace
 constexpr float FINISH_TEST_GRACE_PERIOD_DURATION = 2.0f;
 } // namespace
 
-ASpatialFunctionalTest::ASpatialFunctionalTest()
-	: Super()
+ASpatialFunctionalTest::ASpatialFunctionalTest(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 	, FlowControllerSpawner(this, ASpatialFunctionalTestFlowController::StaticClass())
 {
 	bReplicates = true;

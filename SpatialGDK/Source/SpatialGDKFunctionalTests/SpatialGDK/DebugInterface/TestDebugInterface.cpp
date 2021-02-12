@@ -16,7 +16,7 @@ Test for coverage of the USpatialGDKDebugInterface.
 */
 
 ATestDebugInterface::ATestDebugInterface()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Nicolas";
 	Description = TEXT("Test Debug interface");

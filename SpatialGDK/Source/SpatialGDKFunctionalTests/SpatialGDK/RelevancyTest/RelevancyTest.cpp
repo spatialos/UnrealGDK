@@ -23,7 +23,7 @@
 const static float StepTimeLimit = 5.0f;
 
 ARelevancyTest::ARelevancyTest()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Mike";
 	Description = TEXT("Test Actor Relevancy");

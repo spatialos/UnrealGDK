@@ -30,6 +30,7 @@ const FName AEventTracingTest::UserSendComponentPropertyEventName = "user.send_c
 const FName AEventTracingTest::UserSendRPCEventName = "user.send_rpc";
 
 AEventTracingTest::AEventTracingTest()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Matthew Sandford";
 	Description = TEXT("Base class for event tracing tests");

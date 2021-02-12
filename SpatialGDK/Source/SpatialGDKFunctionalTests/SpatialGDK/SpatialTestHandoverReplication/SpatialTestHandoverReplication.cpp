@@ -39,7 +39,9 @@
  *	- The HandoverCube is destroyed.
  */
 
-ASpatialTestHandoverReplication::ASpatialTestHandoverReplication() : Super() {
+ASpatialTestHandoverReplication::ASpatialTestHandoverReplication()
+	: Super(FObjectInitializer::Get())
+{
   Author = "Antoine Cordelle";
   Description = TEXT("Test dynamically set replication for an actor");
 

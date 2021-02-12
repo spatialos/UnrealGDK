@@ -47,7 +47,7 @@
  */
 
 ASpatialSnapshotTest::ASpatialSnapshotTest()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Nuno";
 	Description = TEXT(

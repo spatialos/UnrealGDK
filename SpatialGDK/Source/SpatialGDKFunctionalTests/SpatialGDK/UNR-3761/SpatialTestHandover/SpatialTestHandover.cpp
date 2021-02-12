@@ -31,7 +31,7 @@
  *	- The HandoverCube is destroyed.
  */
 ASpatialTestHandover::ASpatialTestHandover()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Andrei";
 	Description = TEXT("Test Actor handover");

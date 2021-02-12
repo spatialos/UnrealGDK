@@ -36,7 +36,7 @@
 const static float StepTimeLimit = 10.0f;
 
 AVisibilityTest::AVisibilityTest()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Evi";
 	Description = TEXT("Test Actor Visibility");

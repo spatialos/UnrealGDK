@@ -12,6 +12,7 @@
  * It creates an actor, transfers ownership and then calls a client RPC on that actor. Finally, it verifies that the RPC was received.
  */
 ARPCInInterfaceTest::ARPCInInterfaceTest()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Andreas";
 	Description = TEXT("Test RPCs in interfaces");

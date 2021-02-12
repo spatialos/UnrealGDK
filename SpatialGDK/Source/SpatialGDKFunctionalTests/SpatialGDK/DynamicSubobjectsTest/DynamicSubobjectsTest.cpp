@@ -36,7 +36,7 @@
 const static float StepTimeLimit = 10.0f;
 
 ADynamicSubobjectsTest::ADynamicSubobjectsTest()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Evi";
 	Description = TEXT("Test Dynamic Subobjects Duplication in Client");

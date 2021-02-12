@@ -24,6 +24,7 @@
  * You have some flexibility to change the Server1/2Position properties to test in different Load-Balancing Strategies.
  */
 ASpatialAuthorityTest::ASpatialAuthorityTest()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Nuno Afonso";
 	Description = TEXT("Test HasAuthority under multi-worker setups. It also ensures it works in Native");

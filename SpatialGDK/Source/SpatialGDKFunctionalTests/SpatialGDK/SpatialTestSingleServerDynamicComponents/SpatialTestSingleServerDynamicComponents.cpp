@@ -27,7 +27,7 @@
  *	- The TestActor is destroyed.
  */
 ASpatialTestSingleServerDynamicComponents::ASpatialTestSingleServerDynamicComponents()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Miron + Andrei";
 	Description = TEXT("Test Dynamic Component Replication in a Single Server Context");

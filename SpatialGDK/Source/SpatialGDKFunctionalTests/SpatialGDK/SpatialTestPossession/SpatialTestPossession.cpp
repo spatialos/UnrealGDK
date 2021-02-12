@@ -22,7 +22,7 @@
  */
 
 ASpatialTestPossession::ASpatialTestPossession()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Miron";
 	Description = TEXT("Test Actor Possession");

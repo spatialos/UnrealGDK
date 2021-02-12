@@ -27,7 +27,7 @@
  *  - No clean-up is required.
  */
 ASpatialTestWorldComposition::ASpatialTestWorldComposition()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Andrei";
 	Description = TEXT("Test World Composition");

@@ -29,7 +29,7 @@
  */
 
 ASpatialTestNetReference::ASpatialTestNetReference()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Andrei";
 	Description = TEXT("Test Net Reference");
