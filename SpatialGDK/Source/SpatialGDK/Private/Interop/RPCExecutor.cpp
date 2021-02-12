@@ -11,8 +11,9 @@
 
 namespace SpatialGDK
 {
-RPCExecutor::RPCExecutor(USpatialNetDriver* InNetDriver)
+RPCExecutor::RPCExecutor(USpatialNetDriver* InNetDriver, SpatialEventTracer* EventTracer)
 	: NetDriver(InNetDriver)
+	, EventTracer(EventTracer)
 {
 }
 
@@ -51,7 +52,6 @@ bool RPCExecutor::ExecuteCommand(const FCrossServerRPCParams& Params)
 
 	if (CanProcessRPC)
 	{
-		SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
 		if (EventTracer != nullptr)
 		{
 			FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateApplyCrossServerRPC(TargetObject, Function),
@@ -116,7 +116,6 @@ TOptional<FCrossServerRPCParams> RPCExecutor::TryRetrieveCrossServerRPCParams(co
 	TraceKey TraceId = InvalidTraceKey;
 #endif
 
-	SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
