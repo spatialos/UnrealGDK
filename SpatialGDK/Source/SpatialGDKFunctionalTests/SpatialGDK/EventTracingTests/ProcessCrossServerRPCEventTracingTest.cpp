@@ -34,13 +34,6 @@ void AProcessCrossServerRPCEventTracingTest::FinishEventTraceTest()
 				EventsFailed++;
 			}
 		}
-		// 		else // EventName == ReceiveRPCEventName
-		// 		{
-		// 			if (!CheckEventTraceCause(SpanIdString, { ReceiveOpEventName }, true))
-		// 			{
-		// 				EventsFailed++;
-		// 			}
-		// 		}
 	}
 
 	bool bSuccess = EventsTested > 0 && EventsFailed == 0;
