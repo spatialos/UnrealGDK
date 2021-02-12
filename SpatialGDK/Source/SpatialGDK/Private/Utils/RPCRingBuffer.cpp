@@ -53,7 +53,7 @@ Worker_ComponentId GetRingBufferAuthComponentSetId(ERPCType Type)
 
 RPCRingBufferDescriptor GetRingBufferDescriptor(ERPCType Type)
 {
-	RPCRingBufferDescriptor Descriptor;
+	RPCRingBufferDescriptor Descriptor = {};
 	Descriptor.RingBufferSize = GetRingBufferSize(Type);
 
 	const Schema_FieldId SchemaStart = 1;
