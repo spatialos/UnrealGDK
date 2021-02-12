@@ -18,7 +18,7 @@ static double CrossServerRPCGuidTimeout = 5.f;
 class CrossServerRPCHandler
 {
 public:
-	CrossServerRPCHandler(ViewCoordinator& Coordinator, TUniquePtr<RPCExecutorInterface> RPCExecutor, SpatialEventTracer* EventTracer);
+	CrossServerRPCHandler(ViewCoordinator& Coordinator, TUniquePtr<RPCExecutorInterface> RPCExecutor, SpatialEventTracer* EventTracer = nullptr);
 
 	void ProcessMessages(const TArray<Worker_Op>& WorkerMessages, float DeltaTime);
 	void ProcessPendingCrossServerRPCs();

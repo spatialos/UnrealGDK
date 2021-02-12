@@ -456,7 +456,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 			EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForProperty(EntityId, Property);
 			FSpatialGDKSpanId PropertySpan = EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreatePropertyChanged(Object, EntityId, Property->GetName(), LinearTraceId),
-				CauseSpanId.GetConstId(), 1);
+				/* Causes */CauseSpanId.GetConstId(), /* NumCauses */1);
 
 			PropertySpans.Push(PropertySpan);
 		}
@@ -799,7 +799,7 @@ void USpatialSender::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetO
 	if (EventTracer != nullptr)
 	{
 		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePushRPC(TargetObject, Function),
-										 EventTracer->GetFromStack().GetConstId(), 1);
+			/* Causes */EventTracer->GetFromStack().GetConstId(), /* NumCauses */1);
 	}
 
 	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload), SpanId);
@@ -824,7 +824,7 @@ void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_Comm
 	if (EventTracer != nullptr)
 	{
 		SpanId =
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCommandResponse(RequestId, true), CauseSpanId.GetConstId(), 1);
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCommandResponse(RequestId, true), /* Causes */CauseSpanId.GetConstId(), /* NumCauses */1);
 	}
 
 	Connection->SendCommandResponse(RequestId, &Response, SpanId);
