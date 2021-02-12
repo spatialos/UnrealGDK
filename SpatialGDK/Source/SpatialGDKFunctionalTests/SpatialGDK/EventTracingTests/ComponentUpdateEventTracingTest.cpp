@@ -15,7 +15,7 @@ void AComponentUpdateEventTracingTest::FinishEventTraceTest()
 {
 	CheckResult Test = CheckCauses(ReceiveOpEventName, ComponentUpdateEventName);
 
-	bool bSuccess = Test.NumTested > 0 && Test.NumFailed== 0;
+	bool bSuccess = Test.NumTested > 0 && Test.NumFailed == 0;
 	AssertTrue(bSuccess,
 			   FString::Printf(TEXT("Component update trace events have the expected causes. Events Tested: %d, Events Failed: %d"),
 							   Test.NumTested, Test.NumFailed));

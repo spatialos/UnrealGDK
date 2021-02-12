@@ -18,16 +18,18 @@ void AProcessRPCEventTracingTest::FinishEventTraceTest()
 
 		bool bSuccess = Test.NumTested > 0 && Test.NumFailed == 0;
 		AssertTrue(bSuccess,
-				   FString::Printf(TEXT("Process RPC (receive->apply) trace events have the expected causes. Events Tested: %d, Events Failed: %d"),
-								   Test.NumTested, Test.NumFailed));
+				   FString::Printf(
+					   TEXT("Process RPC (receive->apply) trace events have the expected causes. Events Tested: %d, Events Failed: %d"),
+					   Test.NumTested, Test.NumFailed));
 	}
 	{
 		CheckResult Test = CheckCauses(ReceiveOpEventName, ReceiveRPCEventName);
 
 		bool bSuccess = Test.NumTested > 0 && Test.NumFailed == 0;
-		AssertTrue(bSuccess,
-				   FString::Printf(TEXT("Process RPC (op->receive) trace events have the expected causes. Events Tested: %d, Events Failed: %d"),
-								   Test.NumTested, Test.NumFailed));
+		AssertTrue(
+			bSuccess,
+			FString::Printf(TEXT("Process RPC (op->receive) trace events have the expected causes. Events Tested: %d, Events Failed: %d"),
+							Test.NumTested, Test.NumFailed));
 	}
 
 	FinishStep();

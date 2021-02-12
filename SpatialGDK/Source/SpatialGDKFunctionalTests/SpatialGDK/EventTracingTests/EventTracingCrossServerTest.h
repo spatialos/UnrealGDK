@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialFunctionalTest.h"
 #include "EventTracingTest.h"
+#include "SpatialFunctionalTest.h"
 
 #include "EventTracingCrossServerTest.generated.h"
 

@@ -14,7 +14,7 @@ APropertyUpdateEventTracingTest::APropertyUpdateEventTracingTest()
 void APropertyUpdateEventTracingTest::FinishEventTraceTest()
 {
 	CheckResult Test = CheckCauses(ReceiveOpEventName, ReceivePropertyUpdateEventName);
-	
+
 	bool bSuccess = Test.NumTested > 0 && Test.NumFailed == 0;
 	AssertTrue(bSuccess,
 			   FString::Printf(TEXT("Process property update events have the expected causes. Events Tested: %d, Events Failed: %d"),

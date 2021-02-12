@@ -243,7 +243,8 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 	Stream = nullptr;
 }
 
-bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses /*= 1*/) const
+bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames,
+											 int MinimumCauses /*= 1*/) const
 {
 	const TArray<FString>* Causes = TraceSpans.Find(SpanIdString);
 	if (Causes == nullptr || Causes->Num() < MinimumCauses)
