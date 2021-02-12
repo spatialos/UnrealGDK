@@ -81,6 +81,7 @@ private:
 
 	bool bStartingDeployment;
 	bool bStoppingDeployment;
+	bool bSuccessfullyStartedRuntime;
 
 	FString ExposedRuntimeIP;
 
@@ -88,6 +89,6 @@ private:
 	bool bAutoDeploy = false;
 	bool bIsInChina = false;
 
-	//Cached version of the active runtime process.
+	// Cached version of the active runtime process.
 	FString ActiveRuntimeVersion;
 };

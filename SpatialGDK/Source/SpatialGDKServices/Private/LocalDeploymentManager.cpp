@@ -273,9 +273,10 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
 
-	bool bSuccessfullyStartedRuntime = false;
+	bSuccessfullyStartedRuntime = false;
 	RuntimeProcess->OnOutput().BindLambda([&RuntimeLogFileHandle = RuntimeLogFileHandle, &bStartingDeployment = bStartingDeployment,
-										   &bSuccessfullyStartedRuntime = bSuccessfullyStartedRuntime, SpatialOutputLog](const FString& Output) {
+										   &bSuccessfullyStartedRuntime = bSuccessfullyStartedRuntime,
+										   SpatialOutputLog](const FString& Output) {
 		if (SpatialOutputLog.IsValid())
 		{
 			// Format and output the log to the editor window `SpatialOutputLog`
@@ -297,7 +298,8 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		// Timeout detection.
 		if (bStartingDeployment && Output.Contains(TEXT("startup completed")))
 		{
-			// IMPORTANT - bSuccessfullyStartedRuntime must be set before bStartingDeployment to avoid a race later checking against bSuccessfullyStartedRuntime.
+			// IMPORTANT - bSuccessfullyStartedRuntime must be set before bStartingDeployment to avoid a race later checking against
+			// bSuccessfullyStartedRuntime.
 			bSuccessfullyStartedRuntime = true;
 			bStartingDeployment = false;
 		}
@@ -317,7 +319,9 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	if (!bSuccessfullyStartedRuntime)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to start runtime. Did not find \"startup completed\" in runtime process output. Search runtime log or Spatial Output for details."));
+		UE_LOG(LogSpatialDeploymentManager, Error,
+			   TEXT("Failed to start runtime. Did not find \"startup completed\" in runtime process output. Search runtime log or Spatial "
+					"Output for details."));
 		bStartingDeployment = false;
 		return;
 	}
@@ -372,9 +376,11 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 
 	bStoppingDeployment = true;
 
+#if PLATFORM_WINDOWS
 	// Prepare runtime process name
+
 	FString RuntimeProcessName = SpatialGDKServicesConstants::GetRuntimeExecutablePath(ActiveRuntimeVersion);
-	RuntimeProcessName = RuntimeProcessName.Replace(TEXT("/"),TEXT("\\"));
+	RuntimeProcessName = RuntimeProcessName.Replace(TEXT("/"), TEXT("\\"));
 
 	// Find runtime window
 	HWND RuntimeWindowHandle = FindWindowA(NULL, TCHAR_TO_ANSI(*RuntimeProcessName));
@@ -385,9 +391,13 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	}
 	else
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to stop local deployment but could not find runtime window. Will stop runtime non-gracefully."));
+		UE_LOG(LogSpatialDeploymentManager, Error,
+			   TEXT("Tried to stop local deployment but could not find runtime window. Will stop runtime non-gracefully."));
 		RuntimeProcess->Stop();
 	}
+#else
+	RuntimeProcess->Stop();
+#endif
 
 	double RuntimeStopTime = RuntimeProcess->GetDuration().GetTotalSeconds();
 
