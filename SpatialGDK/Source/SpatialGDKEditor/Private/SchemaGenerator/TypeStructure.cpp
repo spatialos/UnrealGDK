@@ -261,9 +261,9 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 
 	if (Class->IsChildOf<AActor>())
 	{
+		// Handle components attached to the actor; some of them may not have properties pointing to them.
 		const AActor* CDO = Cast<AActor>(Class->GetDefaultObject());
 
-		// Handle components attached to the actor that don't have a property pointing to them.
 		for (UActorComponent* Component : CDO->GetComponents())
 		{
 			if (Component->IsEditorOnly())
@@ -513,9 +513,9 @@ TArray<TSharedPtr<FUnrealProperty>> GetPropertyChain(TSharedPtr<FUnrealProperty>
 	return OutputChain;
 }
 
-FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
+FSubobjects GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
 {
-	FSubobjectMap Subobjects;
+	FSubobjects Subobjects;
 
 	TSet<UObject*> SeenComponents;
 	auto AddSubobject = [&SeenComponents, &Subobjects](TSharedPtr<FUnrealType> PropertyTypeInfo) {

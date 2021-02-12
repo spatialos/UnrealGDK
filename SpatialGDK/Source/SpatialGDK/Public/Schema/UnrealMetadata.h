@@ -12,8 +12,6 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogSpatialUnrealMetadata, Warning, All);
 
-using SubobjectToOffsetMap = TMap<UObject*, uint32>;
-
 namespace SpatialGDK
 {
 struct UnrealMetadata : AbstractMutableComponent

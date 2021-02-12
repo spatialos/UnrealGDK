@@ -204,7 +204,7 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 	}
 
 	// Check subobject name validity.
-	FSubobjectMap Subobjects = GetAllSubobjects(TypeInfo);
+	FSubobjects Subobjects = GetAllSubobjects(TypeInfo);
 	TMap<FString, TSharedPtr<FUnrealType>> SchemaSubobjectNames;
 	for (auto& It : Subobjects)
 	{

@@ -241,7 +241,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 
 	GenerateSubobjectSchemaForActorIncludes(Writer, TypeInfo);
 
-	FSubobjectMap Subobjects = GetAllSubobjects(TypeInfo);
+	FSubobjects Subobjects = GetAllSubobjects(TypeInfo);
 
 	bool bHasComponents = false;
 

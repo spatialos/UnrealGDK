@@ -406,11 +406,11 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 {
 }
 
-namespace SpatialGDK
+typedef TMap<UObject*, uint32> FSubobjectToOffsetMap;
+
+FORCEINLINE FSubobjectToOffsetMap CreateOffsetMapFromActor(Worker_EntityId EntityId, AActor* Actor, const FClassInfo& Info)
 {
-FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(Worker_EntityId EntityId, AActor* Actor, const FClassInfo& Info)
-{
-	SubobjectToOffsetMap SubobjectNameToOffset;
+	FSubobjectToOffsetMap SubobjectNameToOffset;
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
@@ -456,7 +456,6 @@ FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(Worker_EntityId Entity
 
 	return SubobjectNameToOffset;
 }
-} // namespace SpatialGDK
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId)
 {
@@ -496,7 +495,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		   *NetGUID.ToString(), EntityId);
 
 	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	const SubobjectToOffsetMap& SubobjectToOffset = SpatialGDK::CreateOffsetMapFromActor(EntityId, Actor, Info);
+	const FSubobjectToOffsetMap& SubobjectToOffset = CreateOffsetMapFromActor(EntityId, Actor, Info);
 
 	for (auto& Pair : SubobjectToOffset)
 	{
@@ -851,8 +850,18 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(UObject* Object
 			   *Cast<USpatialNetDriver>(Driver)->Connection->GetWorkerId(), *Object->GetPathName(), *NetGUID.ToString());
 	}
 
-	checkf((NetGUID.IsValid() && !NetGUID.IsDefault()) || Object == nullptr, TEXT("NetGUID: %s, Object %s"), *NetGUID.ToString(),
-		   *GetNameSafe(Object));
+#if DO_CHECK
+	if (IsValid(Object))
+	{
+		checkf(NetGUID.IsValid() && !NetGUID.IsDefault(), TEXT("NetGUID %s on valid object %s"), *NetGUID.ToString(),
+			   *GetPathNameSafe(Object));
+	}
+	else
+	{
+		check(!NetGUID.IsValid());
+	}
+#endif // DO_CHECK
+
 	return NetGUID;
 }
 
@@ -862,11 +871,11 @@ void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const FUnreal
 	FUnrealObjectRef RemappedObjectRef = ObjectRef;
 	NetworkRemapObjectRefPaths(RemappedObjectRef, false /*bIsReading*/);
 
-	checkf(!NetGUIDToUnrealObjectRef.Contains(NetGUID)
-			   || (NetGUIDToUnrealObjectRef.Contains(NetGUID) && NetGUIDToUnrealObjectRef.FindChecked(NetGUID) == RemappedObjectRef),
-		   TEXT("NetGUID to UnrealObjectRef mismatch - NetGUID: %s ObjRef in map: %s ObjRef expected: %s"), *NetGUID.ToString(),
-		   *NetGUIDToUnrealObjectRef.FindChecked(NetGUID).ToString(), *RemappedObjectRef.ToString());
-	checkf(
+	checkfSlow(!NetGUIDToUnrealObjectRef.Contains(NetGUID)
+				   || (NetGUIDToUnrealObjectRef.Contains(NetGUID) && NetGUIDToUnrealObjectRef.FindChecked(NetGUID) == RemappedObjectRef),
+			   TEXT("NetGUID to UnrealObjectRef mismatch - NetGUID: %s ObjRef in map: %s ObjRef expected: %s"), *NetGUID.ToString(),
+			   *NetGUIDToUnrealObjectRef.FindChecked(NetGUID).ToString(), *RemappedObjectRef.ToString());
+	checkfSlow(
 		!UnrealObjectRefToNetGUID.Contains(RemappedObjectRef)
 			|| (UnrealObjectRefToNetGUID.Contains(RemappedObjectRef) && UnrealObjectRefToNetGUID.FindChecked(RemappedObjectRef) == NetGUID),
 		TEXT("UnrealObjectRef to NetGUID mismatch - UnrealObjectRef: %s NetGUID in map: %s NetGUID expected: %s"), *NetGUID.ToString(),

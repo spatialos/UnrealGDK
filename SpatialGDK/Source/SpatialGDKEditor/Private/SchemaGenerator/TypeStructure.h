@@ -125,7 +125,7 @@ struct FUnrealHandoverData
 
 using FUnrealFlatRepData = TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPtr<FUnrealProperty>>>;
 using FCmdHandlePropertyMap = TMap<uint16, TSharedPtr<FUnrealProperty>>;
-using FSubobjectMap = TArray<FUnrealSubobject>;
+using FSubobjects = TArray<FUnrealSubobject>;
 
 // Get an array of all replicated property groups
 TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups();
@@ -170,4 +170,4 @@ FCmdHandlePropertyMap GetFlatHandoverData(TSharedPtr<FUnrealType> TypeInfo);
 TArray<TSharedPtr<FUnrealProperty>> GetPropertyChain(TSharedPtr<FUnrealProperty> LeafProperty);
 
 // Get all default subobjects for an actor.
-FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo);
+FSubobjects GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo);
