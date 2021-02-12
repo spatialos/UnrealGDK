@@ -27,7 +27,6 @@
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "UObject/CoreNet.h"
-#include "Windows/MinWindows.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
@@ -376,28 +375,8 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 
 	bStoppingDeployment = true;
 
-#if PLATFORM_WINDOWS
-	// Prepare runtime process name
-
-	FString RuntimeProcessName = SpatialGDKServicesConstants::GetRuntimeExecutablePath(ActiveRuntimeVersion);
-	RuntimeProcessName = RuntimeProcessName.Replace(TEXT("/"), TEXT("\\"));
-
-	// Find runtime window
-	HWND RuntimeWindowHandle = FindWindowA(NULL, TCHAR_TO_ANSI(*RuntimeProcessName));
-	if (RuntimeWindowHandle != NULL)
-	{
-		// Send message to runtime window to close gracefully.
-		SendMessage(RuntimeWindowHandle, WM_CLOSE, NULL, NULL);
-	}
-	else
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error,
-			   TEXT("Tried to stop local deployment but could not find runtime window. Will stop runtime non-gracefully."));
-		RuntimeProcess->Stop();
-	}
-#else
-	RuntimeProcess->Stop();
-#endif
+	FProcHandle Process = RuntimeProcess->GetProcessHandle();
+	FPlatformProcess::CloseProc(Process);
 
 	double RuntimeStopTime = RuntimeProcess->GetDuration().GetTotalSeconds();
 
@@ -412,6 +391,8 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 			return false;
 		}
 	}
+
+	SpatialCommandUtils::TryKillProcessWithName(SpatialGDKServicesConstants::RuntimeExe);
 
 	// Kill the log file handle.
 	RuntimeLogFileHandle.Reset();
