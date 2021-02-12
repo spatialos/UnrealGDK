@@ -276,7 +276,7 @@ void SpatialEventTracer::CommandRequest(const Worker_CommandRequestOp& Op, const
 	StoredSpanId = SpanId;
 }
 
-TArray<FSpatialGDKSpanId> SpatialEventTracer::GetAndConsumeSpansForComponent(const EntityComponentId& Id) 
+TArray<FSpatialGDKSpanId> SpatialEventTracer::GetAndConsumeSpansForComponent(const EntityComponentId& Id)
 {
 	const TArray<FSpatialGDKSpanId>* StoredSpanIds = EntityComponentSpanIds.Find(Id);
 	if (StoredSpanIds == nullptr)
