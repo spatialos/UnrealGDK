@@ -287,11 +287,11 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 	return false;
 }
 
-void FSpatialGDKEditorModule::OverrideSettingsForTesting(UWorld* World, const FString& MapName) 
+void FSpatialGDKEditorModule::OverrideSettingsForTesting(UWorld* World, const FString& MapName)
 {
 	// By default, clear that the runtime/test was loaded from a snapshot taken for a given world.
 	ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot();
-	
+
 	// Back up the existing settings so they can be reverted later
 	SaveSettings();
 	// First override the settings from the base ini file, if it exists
@@ -323,7 +323,7 @@ void FSpatialGDKEditorModule::SaveSettings() const
 	GetMutableDefault<UEditorPerformanceSettings>()->SaveConfig(0, *TmpEditorPerformanceSettingsFilename);
 }
 
-void FSpatialGDKEditorModule::LoadSettings(const FString& TestSettingOverridesFilename) 
+void FSpatialGDKEditorModule::LoadSettings(const FString& TestSettingOverridesFilename)
 {
 	// Load settings from ini file which will override current settings
 	GetMutableDefault<ULevelEditorPlaySettings>()->LoadConfig(ULevelEditorPlaySettings::StaticClass(), *TestSettingOverridesFilename);
@@ -335,7 +335,7 @@ void FSpatialGDKEditorModule::LoadSettings(const FString& TestSettingOverridesFi
 
 void FSpatialGDKEditorModule::RevertSettingsForTesting()
 {
-	// Revert settings from ini file 
+	// Revert settings from ini file
 	GetMutableDefault<ULevelEditorPlaySettings>()->RevertSettings(TmpLevelEditorPlaySettingsFilename);
 	GetMutableDefault<USpatialGDKSettings>()->RevertSettings(TmpSpatialGDKSettingsFilename);
 	GetMutableDefault<USpatialGDKEditorSettings>()->RevertSettings(TmpSpatialGDKEditorSettingsFilename);

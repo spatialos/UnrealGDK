@@ -38,7 +38,6 @@ void AEventTracingSettingsOverride::PrepareTest()
 	// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 
 	AddStep(TEXT("Check SpatialGDKSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
-
 		bool bEventTracingEnabled = GetDefault<USpatialGDKSettings>()->bEventTracingEnabled;
 		RequireTrue(bEventTracingEnabled, TEXT("Expected bEventTracingEnabled to be True"));
 
@@ -46,7 +45,6 @@ void AEventTracingSettingsOverride::PrepareTest()
 	});
 
 	AddStep(TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
-
 		int32 ExpectedNumberOfClients = 1;
 		int32 RequiredNumberOfClients = GetNumRequiredClients();
 		RequireTrue(RequiredNumberOfClients == ExpectedNumberOfClients,

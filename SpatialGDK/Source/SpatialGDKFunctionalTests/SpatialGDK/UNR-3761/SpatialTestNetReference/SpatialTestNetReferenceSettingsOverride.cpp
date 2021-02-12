@@ -27,7 +27,6 @@ void ASpatialTestNetReferenceSettingsOverride::PrepareTest()
 	// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 
 	AddStep(TEXT("Check SpatialGDKSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
-		
 		float PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
 		RequireTrue(PreviousMaximumDistanceThreshold == 0, TEXT("Expected PreviousMaximumDistanceThreshold to equal 1"));
 
@@ -35,7 +34,6 @@ void ASpatialTestNetReferenceSettingsOverride::PrepareTest()
 	});
 
 	AddStep(TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
-
 		int32 ExpectedNumberOfClients = 2;
 		int32 RequiredNumberOfClients = GetNumRequiredClients();
 		RequireTrue(RequiredNumberOfClients == ExpectedNumberOfClients,

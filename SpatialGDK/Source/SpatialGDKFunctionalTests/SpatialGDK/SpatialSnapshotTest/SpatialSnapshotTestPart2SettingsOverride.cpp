@@ -32,7 +32,6 @@ void ASpatialSnapshotTestPart2SettingsOverride::PrepareTest()
 	// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 
 	AddStep(TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
-
 		int32 ExpectedNumberOfClients = 1;
 		int32 RequiredNumberOfClients = GetNumRequiredClients();
 		RequireTrue(RequiredNumberOfClients == ExpectedNumberOfClients,
@@ -50,19 +49,16 @@ void ASpatialSnapshotTestPart2SettingsOverride::PrepareTest()
 	});
 
 	AddStep(TEXT("Check GeneralProjectSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
-
 		bool bSpatialNetworking = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 		RequireFalse(bSpatialNetworking, TEXT("Expected bSpatialNetworking to be False"));
-
 
 		FinishStep();
 	});
 
 	AddStep(TEXT("Check Editor Peformance Settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
+		bool bThrottleCPUWhenNotForeground = GetDefault<UEditorPerformanceSettings>()->bThrottleCPUWhenNotForeground;
+		RequireTrue(bThrottleCPUWhenNotForeground, TEXT("Expected bSpatialNetworking to be True"));
 
-			bool bThrottleCPUWhenNotForeground = GetDefault<UEditorPerformanceSettings>()->bThrottleCPUWhenNotForeground;
-			RequireTrue(bThrottleCPUWhenNotForeground, TEXT("Expected bSpatialNetworking to be True"));
-
-			FinishStep();
+		FinishStep();
 	});
 }
