@@ -42,7 +42,9 @@ AVisibilityTest::AVisibilityTest()
 	Description = TEXT("Test Actor Visibility");
 
 	CharacterSpawnLocation = FVector(0.0f, 120.0f, 40.0f);
-	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 50.0f);
+	// The 40.0f is actually carefully selected, the movement character is approximately 40 high, and this will make it so that the
+	// character sits nicely on the floor and isn't affected by gravity too much
+	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 40.0f);
 }
 
 int AVisibilityTest::GetNumberOfVisibilityTestActors()
