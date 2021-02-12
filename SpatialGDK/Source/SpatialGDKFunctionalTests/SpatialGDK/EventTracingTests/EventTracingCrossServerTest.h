@@ -4,17 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "EventTracingTest.h"
-#include "SpatialFunctionalTest.h"
 
 #include "EventTracingCrossServerTest.generated.h"
-
-namespace worker
-{
-namespace c
-{
-struct Trace_Item;
-} // namespace c
-} // namespace worker
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API AEventTracingCrossServerTest : public AEventTracingTest
