@@ -152,29 +152,31 @@ void AEventTracingTest::GatherData()
 
 	FPlatformProcess::Sleep(1); // Worker bug means file may not be flushed by the OS (WRK-2396)
 
+	int RequiredClients = GetRequiredClients();
+	int RequiredWorkers = GetRequiredWorkers();
 	int FoundClient = 0;
 	int FoundWorker = 0;
 	for (const FileCreationTime& FileCreation : FileCreationTimes)
 	{
-		if (FoundClient != 1 && FileCreation.FilePath.Contains("UnrealClient"))
+		if (FoundClient != RequiredClients && FileCreation.FilePath.Contains("UnrealClient"))
 		{
 			GatherDataFromFile(FileCreation.FilePath);
 			FoundClient++;
 		}
 
-		if (FoundWorker != 2 && FileCreation.FilePath.Contains("UnrealWorker"))
+		if (FoundWorker != RequiredWorkers && FileCreation.FilePath.Contains("UnrealWorker"))
 		{
 			GatherDataFromFile(FileCreation.FilePath);
 			FoundWorker++;
 		}
 
-		if (FoundClient == 1 && FoundWorker == 2)
+		if (FoundClient == RequiredClients && FoundWorker == RequiredWorkers)
 		{
 			break;
 		}
 	}
 
-	if (FoundClient != 1 || FoundWorker != 2)
+	if (FoundClient != RequiredClients || FoundWorker != RequiredWorkers)
 	{
 		UE_LOG(LogEventTracingTest, Error, TEXT("Could not find all required event tracing files"));
 		return;
@@ -241,9 +243,9 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 	Stream = nullptr;
 }
 
-bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses /*= 1*/)
+bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses /*= 1*/) const
 {
-	TArray<FString>* Causes = TraceSpans.Find(SpanIdString);
+	const TArray<FString>* Causes = TraceSpans.Find(SpanIdString);
 	if (Causes == nullptr || Causes->Num() < MinimumCauses)
 	{
 		return false;
@@ -263,4 +265,28 @@ bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const 
 	}
 
 	return true;
+}
+
+AEventTracingTest::CheckResult AEventTracingTest::CheckCauses(FName From, FName To) const
+{
+	int EventsTested = 0;
+	int EventsFailed = 0;
+	for (const auto& Pair : TraceEvents)
+	{
+		const FString& SpanIdString = Pair.Key;
+		const FName& EventName = Pair.Value;
+
+		if (EventName != To)
+		{
+			continue;
+		}
+
+		EventsTested++;
+
+		if (!CheckEventTraceCause(SpanIdString, { From }))
+		{
+			EventsFailed++;
+		}
+	}
+	return CheckResult{ EventsTested, EventsFailed };
 }

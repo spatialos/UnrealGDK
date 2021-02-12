@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EventTracingTest.h"
+#include "EventTracingCrossServerTest.h"
 
 #include "ProcessCrossServerRPCEventTracingTest.generated.h"
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API AProcessCrossServerRPCEventTracingTest : public AEventTracingTest
+class SPATIALGDKFUNCTIONALTESTS_API AProcessCrossServerRPCEventTracingTest : public AEventTracingCrossServerTest
 {
 	GENERATED_BODY()
 

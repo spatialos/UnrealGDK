@@ -13,32 +13,11 @@ AProcessCrossServerRPCEventTracingTest::AProcessCrossServerRPCEventTracingTest()
 
 void AProcessCrossServerRPCEventTracingTest::FinishEventTraceTest()
 {
-	int EventsTested = 0;
-	int EventsFailed = 0;
-	for (const auto& Pair : TraceEvents)
-	{
-		const FString& SpanIdString = Pair.Key;
-		const FName& EventName = Pair.Value;
+	CheckResult Test = CheckCauses(ReceiveCrossServerRPCName, ApplyCrossServerRPCName);
 
-		if (EventName == ReceiveCrossServerRPCName)
-		{
-			continue;
-		}
-
-		EventsTested++;
-
-		if (EventName == ApplyCrossServerRPCName)
-		{
-			if (!CheckEventTraceCause(SpanIdString, { ReceiveCrossServerRPCName }, true))
-			{
-				EventsFailed++;
-			}
-		}
-	}
-
-	bool bSuccess = EventsTested > 0 && EventsFailed == 0;
+	bool bSuccess = Test.NumTested > 0 && Test.NumFailed == 0;
 	AssertTrue(bSuccess, FString::Printf(TEXT("Process RPC trace events have the expected causes. Events Tested: %d, Events Failed: %d"),
-										 EventsTested, EventsFailed));
+										 Test.NumTested, Test.NumFailed));
 
 	FinishStep();
 }

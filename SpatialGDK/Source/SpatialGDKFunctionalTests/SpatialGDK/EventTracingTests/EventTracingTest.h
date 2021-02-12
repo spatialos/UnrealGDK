@@ -61,10 +61,19 @@ protected:
 	TMap<FString, FName> TraceEvents;
 	TMap<FString, TArray<FString>> TraceSpans;
 
-	bool CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses = 1);
+	bool CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses = 1) const;
 
 	virtual void FinishEventTraceTest();
 
+	virtual int GetRequiredClients() { return 1; }
+	virtual int GetRequiredWorkers() { return 1; }
+
+	struct CheckResult
+	{
+		int NumTested;
+		int NumFailed;
+	};
+	CheckResult CheckCauses(FName From, FName To) const;
 private:
 	FDateTime TestStartTime;
 

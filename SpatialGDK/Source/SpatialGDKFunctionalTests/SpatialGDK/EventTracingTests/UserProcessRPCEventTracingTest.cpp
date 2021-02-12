@@ -13,30 +13,12 @@ AUserProcessRPCEventTracingTest::AUserProcessRPCEventTracingTest()
 
 void AUserProcessRPCEventTracingTest::FinishEventTraceTest()
 {
-	int EventsTested = 0;
-	int EventsFailed = 0;
-	for (const auto& Pair : TraceEvents)
-	{
-		const FString& SpanIdString = Pair.Key;
-		const FName& EventName = Pair.Value;
+	CheckResult Test = CheckCauses(ApplyRPCEventName, UserProcessRPCEventName);
 
-		if (EventName != UserProcessRPCEventName)
-		{
-			continue;
-		}
-
-		EventsTested++;
-
-		if (!CheckEventTraceCause(SpanIdString, { ApplyRPCEventName }, 1))
-		{
-			EventsFailed++;
-		}
-	}
-
-	bool bSuccess = EventsTested > 0 && EventsFailed == 0;
+	bool bSuccess = Test.NumTested > 0 && Test.NumFailed == 0;
 	AssertTrue(bSuccess,
 			   FString::Printf(TEXT("User event have been caused by the expected process RPC events. Events Tested: %d, Events Failed: %d"),
-							   EventsTested, EventsFailed));
+				   Test.NumTested, Test.NumFailed));
 
 	FinishStep();
 }

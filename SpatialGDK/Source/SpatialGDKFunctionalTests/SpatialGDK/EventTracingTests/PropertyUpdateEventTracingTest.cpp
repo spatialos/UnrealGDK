@@ -13,30 +13,12 @@ APropertyUpdateEventTracingTest::APropertyUpdateEventTracingTest()
 
 void APropertyUpdateEventTracingTest::FinishEventTraceTest()
 {
-	int EventsTested = 0;
-	int EventsFailed = 0;
-	for (const auto& Pair : TraceEvents)
-	{
-		const FString& SpanIdString = Pair.Key;
-		const FName& EventName = Pair.Value;
-
-		if (EventName != ReceivePropertyUpdateEventName)
-		{
-			continue;
-		}
-
-		EventsTested++;
-
-		if (!CheckEventTraceCause(SpanIdString, { ReceiveOpEventName }))
-		{
-			EventsFailed++;
-		}
-	}
-
-	bool bSuccess = EventsTested > 0 && EventsFailed == 0;
+	CheckResult Test = CheckCauses(ReceiveOpEventName, ReceivePropertyUpdateEventName);
+	
+	bool bSuccess = Test.NumTested > 0 && Test.NumFailed == 0;
 	AssertTrue(bSuccess,
 			   FString::Printf(TEXT("Process property update events have the expected causes. Events Tested: %d, Events Failed: %d"),
-							   EventsTested, EventsFailed));
+							   Test.NumTested, Test.NumFailed));
 
 	FinishStep();
 }
