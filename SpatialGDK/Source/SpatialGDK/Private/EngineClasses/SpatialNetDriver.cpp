@@ -462,10 +462,12 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, USpatialLatencyTracer::GetTracer(GetWorld()),
 														   Connection->GetEventTracer(), this);
 
-	CrossServerRPCSender = MakeUnique<SpatialGDK::CrossServerRPCSender>(Connection->GetCoordinator(), SpatialMetrics, Connection->GetEventTracer());
+	CrossServerRPCSender =
+		MakeUnique<SpatialGDK::CrossServerRPCSender>(Connection->GetCoordinator(), SpatialMetrics, Connection->GetEventTracer());
 
-	CrossServerRPCHandler =
-		MakeUnique<SpatialGDK::CrossServerRPCHandler>(Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this, Connection->GetEventTracer()), Connection->GetEventTracer());
+	CrossServerRPCHandler = MakeUnique<SpatialGDK::CrossServerRPCHandler>(
+		Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this, Connection->GetEventTracer()),
+		Connection->GetEventTracer());
 
 	ActorSystem =
 		MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, TombstoneActorSubview, this, &TimerManager, Connection->GetEventTracer());
