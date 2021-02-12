@@ -228,9 +228,11 @@ void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) c
 
 void SpatialEventTracer::BeginOpsForFrame()
 {
-	// Reset all entries. It is assumed all entries are consumed during processing.
-	EntityComponentSpanIds.Empty(EntityComponentSpanIds.Num());
-	RequestSpanIds.Empty(RequestSpanIds.Num());
+	for (auto& ConsumedKey : EntityComponentsConsumed)
+	{
+		EntityComponentSpanIds.Remove(ConsumedKey);
+	}
+	EntityComponentsConsumed.Empty(EntityComponentsConsumed.Num());
 }
 
 void SpatialEventTracer::AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId)
@@ -274,24 +276,27 @@ void SpatialEventTracer::CommandRequest(const Worker_CommandRequestOp& Op, const
 	StoredSpanId = SpanId;
 }
 
-TArray<FSpatialGDKSpanId> SpatialEventTracer::GetSpansForComponent(const EntityComponentId& Id) const
+TArray<FSpatialGDKSpanId> SpatialEventTracer::GetAndConsumeSpansForComponent(const EntityComponentId& Id) 
 {
 	const TArray<FSpatialGDKSpanId>* StoredSpanIds = EntityComponentSpanIds.Find(Id);
 	if (StoredSpanIds == nullptr)
 	{
 		return {};
 	}
+	EntityComponentsConsumed.Push(Id); // Consume on frame boundary instead, as these can have multiple uses.
 	return *StoredSpanIds;
 }
 
-FSpatialGDKSpanId SpatialEventTracer::GetSpanForRequestId(Worker_RequestId RequestId) const
+FSpatialGDKSpanId SpatialEventTracer::GetAndConsumeSpanForRequestId(Worker_RequestId RequestId)
 {
 	const FSpatialGDKSpanId* SpanId = RequestSpanIds.Find(RequestId);
 	if (SpanId == nullptr)
 	{
 		return {};
 	}
-	return *SpanId;
+	FSpatialGDKSpanId GDKSpanId(*SpanId);
+	RequestSpanIds.Remove(RequestId);
+	return GDKSpanId;
 }
 
 void SpatialEventTracer::AddToStack(const FSpatialGDKSpanId& SpanId)

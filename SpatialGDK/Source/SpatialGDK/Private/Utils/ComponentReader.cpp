@@ -199,7 +199,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 		TArray<FSpatialGDKSpanId> CauseSpanIds;
 		if (bEventTracerEnabled)
 		{
-			CauseSpanIds = EventTracer->GetSpansForComponent(EntityComponentId(EntityId, ComponentId));
+			CauseSpanIds = EventTracer->GetAndConsumeSpansForComponent(EntityComponentId(EntityId, ComponentId));
 		}
 
 		for (uint32 FieldId : UpdatedIds)
@@ -335,9 +335,10 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 				if (bEventTracerEnabled)
 				{
 					EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property);
-					SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(
-														 &Object, EntityId, ComponentId, Cmd.Property->GetName(), LinearTraceId),
-													 reinterpret_cast<const Trace_SpanIdType*>(CauseSpanIds.GetData()), CauseSpanIds.Num());
+					SpanId =
+						EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(
+							&Object, EntityId, ComponentId, Cmd.Property->GetName(), LinearTraceId),
+							reinterpret_cast<const Trace_SpanIdType*>(CauseSpanIds.GetData()), CauseSpanIds.Num());
 				}
 
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened

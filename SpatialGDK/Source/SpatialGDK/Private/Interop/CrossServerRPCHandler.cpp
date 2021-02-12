@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/CrossServerRPCHandler.h"
 
@@ -84,7 +84,7 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 			SpanId = EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreateReceiveCrossServerRPC(
 					EventTraceUniqueId::GenerateForCrossServerRPC(CommandOp.entity_id, Params->Payload.Id.GetValue())),
-				EventTracer->GetSpanForRequestId(Op.op.command_request.request_id).GetConstId(), 1);
+				EventTracer->GetAndConsumeSpanForRequestId(Op.op.command_request.request_id).GetConstId(), 1);
 		}
 	}
 
