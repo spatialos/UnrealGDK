@@ -40,7 +40,7 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextOb
 		return {};
 	}
 
-	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(SpatialTraceEvent, /* Causes */nullptr, /* NumCauses */0);
+	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(SpatialTraceEvent, /* Causes */ nullptr, /* NumCauses */ 0);
 	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 }
 

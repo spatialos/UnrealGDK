@@ -55,7 +55,7 @@ bool RPCExecutor::ExecuteCommand(const FCrossServerRPCParams& Params)
 		if (EventTracer != nullptr)
 		{
 			FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateApplyCrossServerRPC(TargetObject, Function),
-															   /* Causes */Params.SpanId.GetConstId(), /* NumCauses*/1);
+															   /* Causes */ Params.SpanId.GetConstId(), /* NumCauses*/ 1);
 			EventTracer->AddToStack(SpanId);
 		}
 
