@@ -273,13 +273,6 @@ void USpatialGDKSettings::SetMultiWorkerEditorEnabled(bool bIsEnabled)
 }
 #endif // WITH_EDITOR
 
-void USpatialGDKSettings::OverrideSettings(const FString& FilenameToSave, const FString& FilenameForOverrides)
-{
-	// Save settings before before overriding so that they can be reverted later
-	SaveConfig(0, *FilenameToSave);
-	LoadConfig(USpatialGDKSettings::StaticClass(), *FilenameForOverrides);
-}
-
 void USpatialGDKSettings::RevertSettings(const FString& FilenameToLoad)
 {
 	// Containers (arrays/maps/sets) are not cleared when loading from config file if they originally were empty, so we need to clear them

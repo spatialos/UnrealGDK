@@ -53,8 +53,9 @@ private:
 
 	virtual bool ForEveryServerWorker(TFunction<void(const FName&, int32)> Function) const override;
 
-	virtual void OverrideSettingsForTesting(UWorld* World, const FString& MapName) const;
-	virtual void RevertSettingsForTesting() const;
+	virtual void OverrideSettingsForTesting(UWorld* World, const FString& MapName);
+
+	virtual void RevertSettingsForTesting();
 
 private:
 	void RegisterSettings();
@@ -64,6 +65,9 @@ private:
 	bool CanStartSession(FText& OutErrorMessage) const;
 	bool ShouldStartLocalServer() const;
 
+	void SaveSettings() const;
+	void LoadSettings(const FString& TestSettingOverridesFilename);
+
 private:
 	FSpatialGDKLogParser LogParser;
 
@@ -72,11 +76,13 @@ private:
 
 	FLocalReceptionistProxyServerManager* LocalReceptionistProxyServerManager;
 
-	const FString TmpSpatialGDKSettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpSpatialGDKSettings.ini"));
-	const FString TmpSpatialGDKEditorSettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpSpatialGDKEditorSettings.ini"));
-	const FString TmpLevelEditorPlaySettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpLevelEditorPlaySettings.ini"));
-	const FString TmpGeneralProjectSettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpGeneralProjectSettings.ini"));
-	const FString TmpEditorPerformanceSettingsFilename = FPaths::GeneratedConfigDir().Append(TEXT("\\TmpEditorPerformanceSettings.ini"));
-	const FString OverrideSettingsBaseFilename = FPaths::ProjectConfigDir().Append(TEXT("TestOverrides"));
-	const FString OverrideSettingsFileExtension = ".ini";
+	const FString TmpSpatialGDKSettingsFilename = FPaths::GeneratedConfigDir() + TEXT("\\TmpSpatialGDKSettings.ini");
+	const FString TmpSpatialGDKEditorSettingsFilename = FPaths::GeneratedConfigDir() + TEXT("\\TmpSpatialGDKEditorSettings.ini");
+	const FString TmpLevelEditorPlaySettingsFilename = FPaths::GeneratedConfigDir() + TEXT("\\TmpLevelEditorPlaySettings.ini");
+	const FString TmpGeneralProjectSettingsFilename = FPaths::GeneratedConfigDir() + TEXT("\\TmpGeneralProjectSettings.ini");
+	const FString TmpEditorPerformanceSettingsFilename = FPaths::GeneratedConfigDir() + TEXT("\\TmpEditorPerformanceSettings.ini");
+	const FString OverrideSettingsBaseFilename = FPaths::ProjectConfigDir() + TEXT("TestOverrides");
+	const FString OverrideSettingsFileExtension = TEXT(".ini");
+	// Base override ini file applied to all maps, if exists
+	const FString BaseOverridesFilename = OverrideSettingsBaseFilename + TEXT("Base") + (OverrideSettingsFileExtension);
 };

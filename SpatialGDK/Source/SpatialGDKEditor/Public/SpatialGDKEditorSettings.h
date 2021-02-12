@@ -675,7 +675,5 @@ public:
 	static bool IsDeploymentNameValid(const FString& Name);
 	static void TrimTMap(TMap<FString, FString>& Map);
 
-	void OverrideSettings(const FString& FilenameToSave, const FString& FilenameForOverrides);
-
 	void RevertSettings(const FString& FilenameToLoad);
 };

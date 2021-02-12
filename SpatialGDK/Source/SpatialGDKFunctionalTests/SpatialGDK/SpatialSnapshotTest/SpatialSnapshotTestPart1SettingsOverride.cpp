@@ -7,7 +7,7 @@
 #include "SpatialGDKSettings.h"
 
 /**
- * This test checks that the test settings overridden in the .ini file have been set correctly
+ * This test checks that the test settings overridden in the map .ini file have been set correctly
  *
  * Requires TestOverridesSpatialSnapshotTestPart1Map.ini in \Samples\UnrealGDKTestGyms\Game\Config directory with the following values:
  *			[/Script/UnrealEd.LevelEditorPlaySettings]
@@ -29,10 +29,9 @@ void ASpatialSnapshotTestPart1SettingsOverride::PrepareTest()
 {
 	Super::PrepareTest();
 
+	// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
+
 	AddStep(TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
-		// Check for default number of clients when setting is not overriden
-		// Override the LevelEditorPlaySettings in a copy so cannot check the original here, instead check the number of clients actually
-		// running
 		int32 ExpectedNumberOfClients = 1;
 		int32 RequiredNumberOfClients = GetNumRequiredClients();
 		RequireTrue(RequiredNumberOfClients == ExpectedNumberOfClients,
@@ -46,29 +45,19 @@ void ASpatialSnapshotTestPart1SettingsOverride::PrepareTest()
 		EditorPlaySettings->GetPlayNetMode(PlayNetMode);
 		RequireTrue(PlayNetMode == EPlayNetMode::PIE_Client, TEXT("Expected the PlayNetMode to be PIE_Client"));
 
-		// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
-		// original values
-
 		FinishStep();
 	});
 
 	AddStep(TEXT("Check GeneralProjectSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
-		// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 		bool bSpatialNetworking = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 		RequireTrue(bSpatialNetworking, TEXT("Expected bSpatialNetworking to be True"));
-
-		// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
-		// original values
 
 		FinishStep();
 	});
 
 	AddStep(TEXT("Check Editor Peformance Settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
-		// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 		bool bThrottleCPUWhenNotForeground = GetDefault<UEditorPerformanceSettings>()->bThrottleCPUWhenNotForeground;
 		RequireFalse(bThrottleCPUWhenNotForeground, TEXT("Expected bSpatialNetworking to be False"));
-		// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
-		// original values
 
 		FinishStep();
 	});

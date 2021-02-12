@@ -24,23 +24,18 @@ void ASpatialTestNetReferenceSettingsOverride::PrepareTest()
 {
 	Super::PrepareTest();
 
-	// Check the number of clients
+	// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 
 	AddStep(TEXT("Check SpatialGDKSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
-		// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
+		
 		float PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
-		RequireTrue(PreviousMaximumDistanceThreshold == 1, TEXT("Expected PreviousMaximumDistanceThreshold to equal 1"));
-
-		// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
-		// original values
+		RequireTrue(PreviousMaximumDistanceThreshold == 0, TEXT("Expected PreviousMaximumDistanceThreshold to equal 1"));
 
 		FinishStep();
 	});
 
 	AddStep(TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
-		// Check for default number of clients when setting is not overriden
-		// Override the LevelEditorPlaySettings in a copy so cannot check the original here, instead check the number of clients actually
-		// running
+
 		int32 ExpectedNumberOfClients = 2;
 		int32 RequiredNumberOfClients = GetNumRequiredClients();
 		RequireTrue(RequiredNumberOfClients == ExpectedNumberOfClients,
@@ -48,9 +43,6 @@ void ASpatialTestNetReferenceSettingsOverride::PrepareTest()
 		int32 ActualNumberOfClients = GetNumberOfClientWorkers();
 		RequireTrue(ActualNumberOfClients == ExpectedNumberOfClients,
 					FString::Printf(TEXT("Expected number of actual clients to be %i"), ExpectedNumberOfClients));
-
-		// To verify that the settings get reverted correctly need to run a test on a subsequent map to check these settings have their
-		// original values
 
 		FinishStep();
 	});

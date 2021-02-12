@@ -29,7 +29,6 @@ public class SpatialGDKFunctionalTests : ModuleRules
 
         if (Target.bBuildEditor == true)
         {
-            //PrivateDependencyModuleNames.Add("SpatialGDKEditor");
             // For spatial functional tests
             PrivateDependencyModuleNames.Add("UnrealEd");
             PrivateDependencyModuleNames.Add("EngineSettings");
