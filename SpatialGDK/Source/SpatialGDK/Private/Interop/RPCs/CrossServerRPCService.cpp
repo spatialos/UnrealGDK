@@ -44,7 +44,7 @@ EPushRPCResult CrossServerRPCService::PushCrossServerRPC(Worker_EntityId EntityI
 
 	CrossServer::WriterState& SenderState = Endpoints->SenderState;
 
-	TOptional<uint32> Slot = SenderState.Alloc.PeekFreeSlot();
+	TOptional<uint32> Slot = SenderState.Alloc.ReserveSlot();
 	if (!Slot)
 	{
 		return EPushRPCResult::DropOverflowed;
@@ -70,7 +70,6 @@ EPushRPCResult CrossServerRPCService::PushCrossServerRPC(Worker_EntityId EntityI
 	Entry.SourceSlot = SlotIdx;
 
 	SenderState.Mailbox.Add(RPCKey, Entry);
-	SenderState.Alloc.CommitSlot(SlotIdx);
 
 	return EPushRPCResult::Success;
 }
@@ -143,13 +142,13 @@ void CrossServerRPCService::ProcessChanges()
 
 void CrossServerRPCService::EntityAdded(const Worker_EntityId EntityId)
 {
-	for (const Worker_ComponentId ComponentId : SubView->GetView()[EntityId].Authority)
+	for (const ComponentData& Component : SubView->GetView()[EntityId].Components)
 	{
-		if (!IsCrossServerEndpoint(ComponentId))
+		if (!IsCrossServerEndpoint(Component.GetComponentId()))
 		{
 			continue;
 		}
-		OnEndpointAuthorityGained(EntityId, ComponentId);
+		OnEndpointAuthorityGained(EntityId, Component);
 	}
 	CrossServerEndpoints* Endpoints = CrossServerDataStore.Find(EntityId);
 	HandleRPC(EntityId, Endpoints->ReceivedRPCs.GetValue());
@@ -221,20 +220,13 @@ void CrossServerRPCService::PopulateDataStore(const Worker_EntityId EntityId)
 	NewEntry.ReceivedRPCs.Emplace(CrossServerEndpoint(ReceiverData));
 }
 
-void CrossServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+void CrossServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId EntityId, const ComponentData& Component)
 {
-	const EntityViewElement& Entity = SubView->GetView()[EntityId];
-	const ComponentData* Data = Entity.Components.FindByPredicate([&](ComponentData& Data) {
-		return Data.GetComponentId() == ComponentId;
-	});
-
-	check(Data != nullptr);
-
-	switch (ComponentId)
+	switch (Component.GetComponentId())
 	{
 	case SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID:
 	{
-		CrossServerEndpoint SenderEndpoint(Data->GetUnderlying());
+		CrossServerEndpoint SenderEndpoint(Component.GetUnderlying());
 		CrossServer::WriterState& SenderState = CrossServerDataStore.FindChecked(EntityId).SenderState;
 		SenderState.LastSentRPCId = SenderEndpoint.ReliableRPCBuffer.LastSentRPCId;
 		for (int32 SlotIdx = 0; SlotIdx < SenderEndpoint.ReliableRPCBuffer.RingBuffer.Num(); ++SlotIdx)
@@ -259,7 +251,7 @@ void CrossServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId Enti
 	}
 	case SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID:
 	{
-		CrossServerEndpointACK ReceiverACKEndpoint(Data->GetUnderlying());
+		CrossServerEndpointACK ReceiverACKEndpoint(Component.GetUnderlying());
 		CrossServer::ReaderState& ReceiverACKState = CrossServerDataStore.FindChecked(EntityId).ReceiverACKState;
 
 		uint32 numAcks = 0;
@@ -279,7 +271,6 @@ void CrossServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId Enti
 		break;
 	}
 	default:
-		checkNoEntry();
 		break;
 	}
 }

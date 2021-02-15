@@ -537,7 +537,7 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_WhiteBox_SendOneMessage)
 	Worker_EntityId Entity1 = Entities[0];
 	Worker_EntityId Entity2 = Entities[1];
 
-	RPCPayload Payload(0, 1337, {}, TArray<uint8>(), {});
+	PendingRPCPayload Payload(RPCPayload(0, 1337, {}, TArray<uint8>()), {});
 
 	SpatialGDK::CrossServerRPCService* RPCServiceBackptr = nullptr;
 
@@ -684,7 +684,7 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendSeveralMessagesToSeveralEnti
 		if (RPCs.Num() > 0)
 		{
 			RPCToSend RPC = RPCs.Last();
-			RPCPayload DummyPayload(0, RPC.PayloadId, {}, TArray<uint8>());
+			PendingRPCPayload DummyPayload(RPCPayload(0, RPC.PayloadId, {}, TArray<uint8>()), {});
 			if (RPCService.PushCrossServerRPC(RPC.Target, RPCSender(RPC.Sender, 0), DummyPayload, false) == EPushRPCResult::Success)
 			{
 				RPCs.Pop();
@@ -744,7 +744,7 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendOneMessageBetweenDeletedEnti
 			Worker_EntityId ToRemove = (Attempt % 2) == 0 ? Sender : Receiver;
 			Worker_EntityId ToCheck = (Attempt % 2) == 1 ? Sender : Receiver;
 
-			RPCPayload DummyPayload(0, 0, {}, TArray<uint8>());
+			PendingRPCPayload DummyPayload(RPCPayload(0, 0, {}, TArray<uint8>()), {});
 			RPCService.PushCrossServerRPC(Receiver, RPCSender(Sender, 0), DummyPayload, false);
 
 			uint32 Delay = 0;
@@ -845,7 +845,7 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendMoreMessagesThanRingBufferCa
 			Worker_EntityId Receiver = Entities[TargetIdx[i]];
 			for (uint32 j = 0; j < RPCPerStep; ++j)
 			{
-				RPCPayload DummyPayload(0, RPCAlloc, {}, TArray<uint8>());
+				PendingRPCPayload DummyPayload(RPCPayload(0, RPCAlloc, {}, TArray<uint8>()), {});
 				ExpectedRPCs.Add(MakeTuple((Worker_EntityId_Key)Receiver, RPCAlloc));
 				++RPCAlloc;
 				SpatialGDK::EPushRPCResult Result = RPCService.PushCrossServerRPC(Receiver, RPCSender(Sender, 0), DummyPayload, false);

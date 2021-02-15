@@ -729,8 +729,6 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 
 void WriteRoutingWorkerAuthorityComponentSet(const FString& SchemaOutputPath)
 {
-	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
-
 	FCodeWriter Writer;
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -760,7 +758,7 @@ void WriteRoutingWorkerAuthorityComponentSet(const FString& SchemaOutputPath)
 	Writer.Outdent().Print("];");
 	Writer.Outdent().Print("}");
 
-	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("ComponentSets/RoutingWorkerAuthoritativeComponentSet.schema"));
+	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("ComponentSets/RoutingWorkerAuthoritativeComponentSet.schema")));
 }
 
 void WriteClientAuthorityComponentSet(const FString& SchemaOutputPath)

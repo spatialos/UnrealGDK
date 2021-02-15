@@ -20,11 +20,15 @@ void CrossServerEndpoint::ApplyComponentUpdate(Schema_ComponentUpdate* Update)
 
 	for (auto Field : ClearedFields)
 	{
-		uint32 SlotIdx = (Field - 1);
-		if (SlotIdx % 2 == 0)
+		if (ensure(Field >= 1))
 		{
-			ReliableRPCBuffer.RingBuffer[SlotIdx / 2].Reset();
-			ReliableRPCBuffer.Counterpart[SlotIdx / 2].Reset();
+			uint32 SlotIdx = (Field - 1);
+			if (SlotIdx % 2 == 0)
+			{
+				// Bundle clearing fields together as not have to flip flop between RingBuffer and Counterpart on parity
+				ReliableRPCBuffer.RingBuffer[SlotIdx / 2].Reset();
+				ReliableRPCBuffer.Counterpart[SlotIdx / 2].Reset();
+			}
 		}
 	}
 }
@@ -49,7 +53,7 @@ void CrossServerEndpointACK::ApplyComponentUpdate(Schema_ComponentUpdate* Update
 
 	for (auto Field : ClearedFields)
 	{
-		if (Field >= 1)
+		if (ensure(Field >= 1))
 		{
 			uint32 SlotIdx = (Field - 1);
 			ACKArray[SlotIdx].Reset();

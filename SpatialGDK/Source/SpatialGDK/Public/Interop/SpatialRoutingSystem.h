@@ -14,8 +14,9 @@ class SpatialOSWorkerInterface;
 
 namespace SpatialGDK
 {
-struct SpatialRoutingSystem
+class SpatialRoutingSystem
 {
+public:
 	SpatialRoutingSystem(const FSubView& InSubView, Worker_EntityId InRoutingWorkerSystemEntityId)
 		: SubView(InSubView)
 		, RoutingWorkerSystemEntityId(InRoutingWorkerSystemEntityId)

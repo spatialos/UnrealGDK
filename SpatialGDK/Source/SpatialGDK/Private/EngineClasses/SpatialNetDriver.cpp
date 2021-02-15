@@ -2046,7 +2046,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			}
 		}
 
-		if (RoutingSystem)
+		if (RoutingSystem.IsValid())
 		{
 			RoutingSystem->Advance(Connection);
 		}
@@ -2840,7 +2840,14 @@ void USpatialNetDriver::QueryRoutingPartition()
 			}
 
 			USpatialNetDriver* NetDriver = WeakNetDriver.Get();
-			if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS
+				&& Op.status_code != WORKER_STATUS_CODE_TIMEOUT
+				&& Op.status_code != WORKER_STATUS_CODE_NOT_FOUND)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Command to find routing worker unexpectedly failed with error %i. Startup will fail, quitting"), Op.status_code);
+				NetDriver->ClassInfoManager->QuitGame();
+			}
+			else if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 			{
 				for (uint32_t i = 0; i < Op.result_count; ++i)
 				{
@@ -2851,8 +2858,8 @@ void USpatialNetDriver::QueryRoutingPartition()
 						if (ComponentData.component_id == SpatialConstants::WORKER_COMPONENT_ID)
 						{
 							Schema_Object* Fields = Schema_GetComponentDataFields(ComponentData.schema_type);
-							FString WorkerId = SpatialGDK::GetStringFromSchema(Fields, 1);
-							FString WorkerType = SpatialGDK::GetStringFromSchema(Fields, 2);
+							FString WorkerId = SpatialGDK::GetStringFromSchema(Fields, SpatialConstants::WORKER_COMPONENT_WORKER_ID_ID);
+							FString WorkerType = SpatialGDK::GetStringFromSchema(Fields, SpatialConstants::WORKER_COMPONENT_WORKER_TYPE_ID);
 							if (WorkerType == SpatialConstants::RoutingWorkerType.ToString())
 							{
 								NetDriver->RoutingWorkerId = Entity.entity_id;
@@ -2869,7 +2876,7 @@ void USpatialNetDriver::QueryRoutingPartition()
 	else if (RoutingPartition == 0)
 	{
 		Worker_ComponentConstraint ComponentConstraint{};
-		ComponentConstraint.component_id = 66;
+		ComponentConstraint.component_id = SpatialConstants::PARTITION_COMPONENT_ID;
 
 		Worker_Constraint Constraint{};
 		Constraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
@@ -2890,7 +2897,14 @@ void USpatialNetDriver::QueryRoutingPartition()
 			}
 
 			USpatialNetDriver* NetDriver = WeakNetDriver.Get();
-			if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS
+				&& Op.status_code != WORKER_STATUS_CODE_TIMEOUT
+				&& Op.status_code != WORKER_STATUS_CODE_NOT_FOUND)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Command to find routing partition unexpectedly failed with error code %i. Startup will fail, quitting"), Op.status_code);
+				NetDriver->ClassInfoManager->QuitGame();
+			}
+			else if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 			{
 				for (uint32_t i = 0; i < Op.result_count; ++i)
 				{
@@ -2898,10 +2912,10 @@ void USpatialNetDriver::QueryRoutingPartition()
 					for (uint32_t j = 0; j < Entity.component_count; ++j)
 					{
 						const Worker_ComponentData& ComponentData = Entity.components[j];
-						if (ComponentData.component_id == 66)
+						if (ComponentData.component_id == SpatialConstants::PARTITION_COMPONENT_ID)
 						{
 							Schema_Object* Fields = Schema_GetComponentDataFields(ComponentData.schema_type);
-							int64 WorkerId = Schema_GetInt64(Fields, 1);
+							int64 WorkerId = Schema_GetInt64(Fields, SpatialConstants::PARTITION_COMPONENT_WORKER_ID);
 							if (WorkerId == NetDriver->RoutingWorkerId)
 							{
 								NetDriver->RoutingPartition = Entity.entity_id;
@@ -2931,14 +2945,14 @@ void USpatialNetDriver::TryFinishStartup()
 		{
 			// RoutingWorkerId = Connection->GetWorkerId();
 
-			SpatialGDK::FSubView& newView =
+			SpatialGDK::FSubView& NewView =
 				Connection->GetCoordinator().CreateSubView(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID,
 														   [](const Worker_EntityId, const SpatialGDK::EntityViewElement&) {
 															   return true;
 														   },
 														   {});
 
-			RoutingSystem = MakeUnique<SpatialGDK::SpatialRoutingSystem>(newView, Connection->GetWorkerSystemEntityId());
+			RoutingSystem = MakeUnique<SpatialGDK::SpatialRoutingSystem>(NewView, Connection->GetWorkerSystemEntityId());
 			RoutingSystem->Init(Connection);
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();
@@ -2980,7 +2994,7 @@ void USpatialNetDriver::TryFinishStartup()
 					// Create the subview here rather than with the others as we only know if we need it or not at
 					// this point.
 					const SpatialGDK::FSubView& DebugActorSubView = Connection->GetCoordinator().CreateSubView(
-						SpatialConstants::GDK_DEBUG_COMPONENT_ID, ActorFilter, TombstoneRefreshCallbacks);
+						SpatialConstants::GDK_DEBUG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
 					USpatialNetDriverDebugContext::EnableDebugSpatialGDK(DebugActorSubView, this);
 				}
 #endif

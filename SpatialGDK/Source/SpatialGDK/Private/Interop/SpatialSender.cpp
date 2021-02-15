@@ -237,8 +237,6 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 	check(NetDriver != nullptr);
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
-	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker) {}
-
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreateComponentData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateComponentData());
@@ -721,7 +719,7 @@ bool USpatialSender::SendCrossServerRPC(UObject* TargetObject, const SpatialGDK:
 	check(Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker);
 	if (bHasValidSender)
 	{
-		return SendRingBufferedRPC(TargetObject, Sender, Function, Payload, Channel, TargetObjectRef);
+		return SendRingBufferedRPC(TargetObject, Sender, Function, Payload, Channel, TargetObjectRef, {});
 	}
 
 	return false;

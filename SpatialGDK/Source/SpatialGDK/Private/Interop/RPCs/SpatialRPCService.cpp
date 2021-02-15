@@ -83,7 +83,7 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 
 	if (Type == ERPCType::CrossServer)
 	{
-		Result = CrossServerRPCs->PushCrossServerRPC(EntityId, Sender, Payload, bCreatedEntity);
+		Result = CrossServerRPCs->PushCrossServerRPC(EntityId, Sender, PendingPayload, bCreatedEntity);
 	}
 	else
 	{

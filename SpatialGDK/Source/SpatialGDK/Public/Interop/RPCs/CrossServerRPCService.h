@@ -60,7 +60,7 @@ private:
 	void PopulateDataStore(Worker_EntityId EntityId);
 
 	// Client server RPC system responses to state changes.
-	void OnEndpointAuthorityGained(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void OnEndpointAuthorityGained(Worker_EntityId EntityId, const ComponentData& Component);
 
 	// The component with the given component ID was updated, and so there is an RPC to be handled.
 	void HandleRPC(const Worker_EntityId EntityId, const CrossServerEndpoint&);

@@ -278,6 +278,13 @@ const Schema_FieldId MIGRATION_DIAGNOSTIC_EVALUATION_ID = 6;
 const Schema_FieldId MIGRATION_DIAGNOSTIC_DESTINATION_WORKER_ID = 7;
 const Schema_FieldId MIGRATION_DIAGNOSTIC_OWNER_ID = 8;
 
+// Worker component field IDs
+const Schema_FieldId WORKER_COMPONENT_WORKER_ID_ID = 1;
+const Schema_FieldId WORKER_COMPONENT_WORKER_TYPE_ID = 2;
+
+// Partition component field IDs
+const Schema_FieldId PARTITION_COMPONENT_WORKER_ID = 1;
+
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
 

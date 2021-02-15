@@ -76,7 +76,7 @@ enum class EActorMigrationResult : uint8
 
 namespace SpatialGDK
 {
-struct SpatialRoutingSystem;
+class SpatialRoutingSystem;
 }
 
 UCLASS()
