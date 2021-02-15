@@ -979,7 +979,7 @@ USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
 
 	SchemaDatabase->ComponentSetIdToComponentIds.Reset();
 
-    // Save ring buffer sizes
+	// Save ring buffer sizes
 	for (uint8 RPCType = static_cast<uint8>(ERPCType::RingBufferTypeBegin); RPCType <= static_cast<uint8>(ERPCType::RingBufferTypeEnd);
 		 RPCType++)
 	{

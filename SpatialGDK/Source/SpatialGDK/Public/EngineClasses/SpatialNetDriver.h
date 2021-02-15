@@ -160,7 +160,7 @@ public:
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
 	void RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
-	
+
 	void CleanUpServerConnectionForPC(APlayerController* PC);
 
 	Worker_PartitionId GetRoutingPartition();

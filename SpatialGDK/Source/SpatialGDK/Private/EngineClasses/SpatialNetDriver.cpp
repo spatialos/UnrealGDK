@@ -429,7 +429,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		if (GetDefault<USpatialGDKSettings>()->bAsyncLoadNewClassesOnEntityCheckout)
 		{
 			AsyncPackageLoadFilter = NewObject<UAsyncPackageLoadFilter>();
-			AsyncPackageLoadFilter->Init(FOnPackageLoadedForEntity::CreateUObject(this, &USpatialNetDriver::OnAsyncPackageLoadFilterComplete));
+			AsyncPackageLoadFilter->Init(
+				FOnPackageLoadedForEntity::CreateUObject(this, &USpatialNetDriver::OnAsyncPackageLoadFilterComplete));
 		}
 
 		CreateAndInitializeLoadBalancingClasses();
@@ -456,10 +457,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			// If we see a player controller component on this entity and we're a server we should hold it back until we
 			// also have the partition component.
 			return !IsServer()
-				|| Element.Components.ContainsByPredicate(
-						SpatialGDK::ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID })
-						== Element.Components.ContainsByPredicate(
-							SpatialGDK::ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID });
+				   || Element.Components.ContainsByPredicate(
+						  SpatialGDK::ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID })
+						  == Element.Components.ContainsByPredicate(
+							  SpatialGDK::ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID });
 		};
 		ActorRefreshCallbacks = {
 			Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::TOMBSTONE_COMPONENT_ID),
@@ -480,7 +481,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			SpatialConstants::SYSTEM_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, USpatialLatencyTracer::GetTracer(GetWorld()),
-															Connection->GetEventTracer(), this);
+		
 		CrossServerRPCSender =
 			MakeUnique<SpatialGDK::CrossServerRPCSender>(Connection->GetCoordinator(), SpatialMetrics, Connection->GetEventTracer());
 
@@ -2840,11 +2841,12 @@ void USpatialNetDriver::QueryRoutingPartition()
 			}
 
 			USpatialNetDriver* NetDriver = WeakNetDriver.Get();
-			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS
-				&& Op.status_code != WORKER_STATUS_CODE_TIMEOUT
+			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS && Op.status_code != WORKER_STATUS_CODE_TIMEOUT
 				&& Op.status_code != WORKER_STATUS_CODE_NOT_FOUND)
 			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Command to find routing worker unexpectedly failed with error %i. Startup will fail, quitting"), Op.status_code);
+				UE_LOG(LogSpatialOSNetDriver, Error,
+					   TEXT("Command to find routing worker unexpectedly failed with error %i. Startup will fail, quitting"),
+					   Op.status_code);
 				NetDriver->ClassInfoManager->QuitGame();
 			}
 			else if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
@@ -2897,11 +2899,12 @@ void USpatialNetDriver::QueryRoutingPartition()
 			}
 
 			USpatialNetDriver* NetDriver = WeakNetDriver.Get();
-			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS
-				&& Op.status_code != WORKER_STATUS_CODE_TIMEOUT
+			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS && Op.status_code != WORKER_STATUS_CODE_TIMEOUT
 				&& Op.status_code != WORKER_STATUS_CODE_NOT_FOUND)
 			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Command to find routing partition unexpectedly failed with error code %i. Startup will fail, quitting"), Op.status_code);
+				UE_LOG(LogSpatialOSNetDriver, Error,
+					   TEXT("Command to find routing partition unexpectedly failed with error code %i. Startup will fail, quitting"),
+					   Op.status_code);
 				NetDriver->ClassInfoManager->QuitGame();
 			}
 			else if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
