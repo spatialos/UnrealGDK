@@ -431,7 +431,7 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 	// If the load balancing is updated, then we need to update the server level streaming strategy.
 	UWorld* World = GetWorld();
 	USpatialServerLevelStreamingStrategy* ServerLevelStreamingStrategy = NetDriver->ServerLevelStreamingStrategy;
-	if(World && World->WorldComposition && ServerLevelStreamingStrategy)
+	if (World && World->WorldComposition && ServerLevelStreamingStrategy)
 	{
 		ServerLevelStreamingStrategy->InitialiseStrategy(World->WorldComposition->GetTilesList(), World->OriginLocation);
 	}
