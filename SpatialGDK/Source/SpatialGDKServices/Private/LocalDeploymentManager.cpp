@@ -273,7 +273,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
 
 	RuntimeProcess->OnOutput().BindLambda([&RuntimeLogFileHandle = RuntimeLogFileHandle, &bLocalDeploymentRunning = bLocalDeploymentRunning,
-		SpatialOutputLog](const FString& Output) {
+										   SpatialOutputLog](const FString& Output) {
 		if (SpatialOutputLog.IsValid())
 		{
 			// Format and output the log to the editor window `SpatialOutputLog`
