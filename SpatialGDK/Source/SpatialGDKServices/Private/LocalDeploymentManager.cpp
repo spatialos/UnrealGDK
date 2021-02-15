@@ -272,9 +272,8 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
 
-	bSuccessfullyStartedRuntime = false;
 	RuntimeProcess->OnOutput().BindLambda([&RuntimeLogFileHandle = RuntimeLogFileHandle, &bStartingDeployment = bStartingDeployment,
-										   &bSuccessfullyStartedRuntime = bSuccessfullyStartedRuntime,
+										   &bLocalDeploymentRunning = bLocalDeploymentRunning,
 										   SpatialOutputLog](const FString& Output) {
 		if (SpatialOutputLog.IsValid())
 		{
@@ -295,18 +294,17 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		}
 
 		// Timeout detection.
-		if (bStartingDeployment && Output.Contains(TEXT("startup completed")))
+		if (!bLocalDeploymentRunning && Output.Contains(TEXT("startup completed")))
 		{
 			// IMPORTANT - bSuccessfullyStartedRuntime must be set before bStartingDeployment to avoid a race later checking against
 			// bSuccessfullyStartedRuntime.
-			bSuccessfullyStartedRuntime = true;
-			bStartingDeployment = false;
+			bLocalDeploymentRunning = true;
 		}
 	});
 
 	RuntimeProcess->Launch();
 
-	while (bStartingDeployment && RuntimeProcess->Update())
+	while (!bLocalDeploymentRunning && RuntimeProcess->Update())
 	{
 		if (RuntimeProcess->GetDuration().GetTotalSeconds() > RuntimeTimeout)
 		{
@@ -316,17 +314,14 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		}
 	}
 
-	if (!bSuccessfullyStartedRuntime)
+	bStartingDeployment = false;
+	if (!bLocalDeploymentRunning)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error,
 			   TEXT("Failed to start runtime. Did not find \"startup completed\" in runtime process output. Search runtime log or Spatial "
 					"Output for details."));
-		bStartingDeployment = false;
 		return;
 	}
-
-	bStartingDeployment = false;
-	bLocalDeploymentRunning = true;
 
 	FTimespan Span = FDateTime::Now() - RuntimeStartTime;
 	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());

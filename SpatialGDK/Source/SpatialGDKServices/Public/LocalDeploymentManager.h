@@ -81,7 +81,6 @@ private:
 
 	bool bStartingDeployment;
 	bool bStoppingDeployment;
-	bool bSuccessfullyStartedRuntime;
 
 	FString ExposedRuntimeIP;
 
