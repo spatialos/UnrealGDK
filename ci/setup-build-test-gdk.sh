@@ -72,7 +72,7 @@ pushd "$(dirname "$0")"
         "${UPROJECT_PATH}" \
         "TestResults" \
         "${TEST_REPO_MAP}" \
-        "SpatialGDK." \
+        "SpatialGDK.+/Game/Intermediate/Maps/CI_Premerge/+/Game/Intermediate/Maps/CI_Premerge_Spatial_Only/" \
         "True"
 
     if [[ -n "${SLOW_NETWORKING_TESTS}" ]]; then
@@ -83,7 +83,7 @@ pushd "$(dirname "$0")"
             "${UPROJECT_PATH}" \
             "SlowTestResults" \
             "${TEST_REPO_MAP}" \
-            "SpatialGDKSlow." \
+            "SpatialGDKSlow.+/Game/Intermediate/Maps/CI_Nightly/+/Game/Intermediate/Maps/CI_Nightly_Spatial_Only/" \
             "True"
     fi
 popd

@@ -353,7 +353,7 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 	const uint64 NewRPCId = RPCStore.LastSentRPCIds.FindRef(EntityType) + 1;
 
 	// Check capacity.
-	if (LastAckedRPCId + RPCRingBufferUtils::GetRingBufferSize(Type) >= NewRPCId)
+	if (RPCRingBufferUtils::ShouldIgnoreCapacity(Type) || LastAckedRPCId + RPCRingBufferUtils::GetRingBufferSize(Type) >= NewRPCId)
 	{
 		if (EventTracer != nullptr)
 		{
