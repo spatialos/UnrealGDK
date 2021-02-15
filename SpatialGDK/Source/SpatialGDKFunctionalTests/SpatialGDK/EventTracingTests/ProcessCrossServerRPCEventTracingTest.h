@@ -5,15 +5,15 @@
 #include "CoreMinimal.h"
 #include "EventTracingCrossServerTest.h"
 
-#include "ComponentUpdateEventTracingTest.generated.h"
+#include "ProcessCrossServerRPCEventTracingTest.generated.h"
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API AComponentUpdateEventTracingTest : public AEventTracingCrossServerTest
+class SPATIALGDKFUNCTIONALTESTS_API AProcessCrossServerRPCEventTracingTest : public AEventTracingCrossServerTest
 {
 	GENERATED_BODY()
 
 public:
-	AComponentUpdateEventTracingTest();
+	AProcessCrossServerRPCEventTracingTest();
 
 private:
 	virtual void FinishEventTraceTest() override;
