@@ -112,6 +112,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, CloudWorkerLogLevel(WorkerLogLevel)
 	, bEnableMultiWorker(true)
 	, DefaultRPCRingBufferSize(32)
+	, CrossServerRPCImplementation(ECrossServerRPCImplementation::SpatialCommand)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
 	, bTcpNoDelay(false)
 	, UdpServerDownstreamUpdateIntervalMS(1)
