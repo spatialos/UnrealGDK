@@ -481,7 +481,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			SpatialConstants::SYSTEM_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, USpatialLatencyTracer::GetTracer(GetWorld()),
-			Connection->GetEventTracer(), this);
+															   Connection->GetEventTracer(), this);
 
 		CrossServerRPCSender =
 			MakeUnique<SpatialGDK::CrossServerRPCSender>(Connection->GetCoordinator(), SpatialMetrics, Connection->GetEventTracer());
@@ -1756,6 +1756,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::SpatialCommand)
 		{
 			CrossServerRPCSender->SendCommand(MoveTemp(CallingObjectRef), CallingObject, Function, MoveTemp(Payload), Info);
+			return;
 		}
 		else
 		{
