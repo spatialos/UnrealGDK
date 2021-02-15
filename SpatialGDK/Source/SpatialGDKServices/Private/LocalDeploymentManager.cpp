@@ -295,8 +295,6 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		// Timeout detection.
 		if (!bLocalDeploymentRunning && Output.Contains(TEXT("startup completed")))
 		{
-			// IMPORTANT - bSuccessfullyStartedRuntime must be set before bStartingDeployment to avoid a race later checking against
-			// bSuccessfullyStartedRuntime.
 			bLocalDeploymentRunning = true;
 		}
 	});
