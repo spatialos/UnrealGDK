@@ -311,6 +311,8 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		}
 	}
 
+	bStartingDeployment = false;
+
 	FTimespan Span = FDateTime::Now() - RuntimeStartTime;
 	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
 
