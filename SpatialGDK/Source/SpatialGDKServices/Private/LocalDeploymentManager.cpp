@@ -301,17 +301,19 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	RuntimeProcess->Launch();
 
-	while (!bLocalDeploymentRunning && RuntimeProcess->Update())
+	// Wait for runtime to start or timeout
+	while (!bLocalDeploymentRunning &&
+		RuntimeProcess->Update() &&
+		RuntimeProcess->GetDuration().GetTotalSeconds() <= RuntimeTimeout)
 	{
-		if (RuntimeProcess->GetDuration().GetTotalSeconds() > RuntimeTimeout)
-		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to start."));
-			bStartingDeployment = false;
-			return;
-		}
 	}
 
 	bStartingDeployment = false;
+	if (!bLocalDeploymentRunning)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to start."));
+		return;
+	}
 
 	FTimespan Span = FDateTime::Now() - RuntimeStartTime;
 	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
