@@ -65,6 +65,19 @@ struct FDistanceFrequencyPair
 	float Frequency;
 };
 
+UCLASS(Blueprintable)
+class SPATIALGDK_API UEventTracingSamplingSettings : public UDataAsset
+{
+	GENERATED_BODY()
+public:
+
+	UPROPERTY(EditAnywhere, Category = "Event Tracing", meta = (ClampMin = 0.0f, ClampMax = 1.0f))
+	float SamplingProbability;
+
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	TMap<FName, double> EventSamplingModeOverrides;
+};
+
 UCLASS(config = SpatialGDKSettings, defaultconfig)
 class SPATIALGDK_API USpatialGDKSettings : public UObject
 {
@@ -403,17 +416,13 @@ public:
 	bool bEventTracingEnabled;
 
 	/*
-	 * Used to set the default sample rate if event tracing is enabled.
-	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing",
-			  meta = (EditCondition = "bEventTracingEnabled", ClampMin = 0.0f, ClampMax = 1.0f))
-	float SamplingProbability;
-
-	/*
-	 * Used to override sample rate for specific trace events.
+	 * -- EXPERIMENTAL --
+	 * Class containing various settings used to configure event trace sampling
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing", meta = (EditCondition = "bEventTracingEnabled"))
-	TMap<FName, double> EventSamplingModeOverrides;
+	TSubclassOf<UEventTracingSamplingSettings> EventTracingSamplingSettingsClass;
+
+	UEventTracingSamplingSettings* GetEventTracingSamplingSettings() const;
 
 	/*
 	 * -- EXPERIMENTAL --

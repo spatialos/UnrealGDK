@@ -78,6 +78,20 @@ void CheckCmdLineOverrideOptionalString(const TCHAR* CommandLine, const TCHAR* P
 #endif // ALLOW_SPATIAL_CMDLINE_PARSING
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, StrOutValue.IsSet() ? *(StrOutValue.GetValue()) : TEXT("not set"));
 }
+
+void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, TFunctionRef<void(const FString& Setting)> Callback)
+{
+#if ALLOW_SPATIAL_CMDLINE_PARSING
+	FString TempStr;
+	TOptional<FString> OverrideValue;
+	if (FParse::Value(CommandLine, Parameter, TempStr) && TempStr[0] == '=')
+	{
+		OverrideValue = TempStr.Right(TempStr.Len() - 1); // + 1 to skip =
+		Callback(OverrideValue.GetValue());
+	}
+#endif // ALLOW_SPATIAL_CMDLINE_PARSING
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, OverrideValue.IsSet() ? *(OverrideValue.GetValue()) : TEXT("not set"));
+}
 } // namespace
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
@@ -131,7 +145,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, StartupLogRate(5.0f)
 	, ActorMigrationLogRate(5.0f)
 	, bEventTracingEnabled(false)
-	, SamplingProbability(1.0f)
+	, EventTracingSamplingSettingsClass(UEventTracingSamplingSettings::StaticClass())
 	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
 	, bEnableAlwaysWriteRPCs(false)
 {
@@ -161,6 +175,11 @@ void USpatialGDKSettings::PostInitProperties()
 							 TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
 	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
 									   OverrideMultiWorkerSettingsClass);
+	CheckCmdLineOverrideOptionalStringWithCallback(CommandLine, TEXT("OverrideEventTracingSamplingSettingsClass"), TEXT("Override Event Tracing Sampling Class"),
+		[&EventTracingSamplingSettingsClass = EventTracingSamplingSettingsClass](const FString& Setting) {
+		FSoftClassPath EventTracingSampleSettingsSoftClassPath(Setting);
+		EventTracingSamplingSettingsClass = EventTracingSampleSettingsSoftClassPath.TryLoadClass<UEventTracingSamplingSettings>();
+	});
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 }
@@ -267,6 +286,11 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 {
 	return (IsRunningGame() || IsRunningClientOnly()) && bPreventClientCloudDeploymentAutoConnect;
 };
+
+UEventTracingSamplingSettings* USpatialGDKSettings::GetEventTracingSamplingSettings() const
+{
+	return EventTracingSamplingSettingsClass->GetDefaultObject<UEventTracingSamplingSettings>();
+}
 
 #if WITH_EDITOR
 void USpatialGDKSettings::SetMultiWorkerEditorEnabled(bool bIsEnabled)
