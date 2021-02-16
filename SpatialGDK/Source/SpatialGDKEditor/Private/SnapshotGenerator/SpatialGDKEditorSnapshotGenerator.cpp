@@ -222,6 +222,45 @@ bool CreateSnapshotPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
 }
 
+bool CreateSkeletonEntities(UWorld* World, Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvailableEntityID)
+{
+	for (ULevel* Level : World->GetLevels())
+	{
+		for (AActor* Actor : Level->Actors)
+		{
+			// TODO: Apparently you can get null actors in the above array... not exactly sure why
+			if (Actor == nullptr)
+			{
+				continue;
+			}
+
+			Worker_Entity ActorEntity;
+			ActorEntity.entity_id = NextAvailableEntityID++;
+
+			TArray<FWorkerComponentData> Components = EntityFactory::CreateSkeletonEntityComponents(Actor);
+			// If the actor cannot be saved in the snapshot (does not have persistence component), do not save it
+			if (Components.FindByPredicate([](const FWorkerComponentData& Data) {
+					return Data.component_id == SpatialConstants::PERSISTENCE_COMPONENT_ID;
+				})
+				== nullptr)
+			{
+				continue;
+			}
+
+			SetEntityData(ActorEntity, Components);
+
+			Worker_SnapshotOutputStream_WriteEntity(OutputStream, &ActorEntity);
+			bool bSuccess = Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
+			if (!bSuccess)
+			{
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
 bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 {
 	FString DirectoryPath = FPaths::GetPath(SavePath);
@@ -295,6 +334,16 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 	}
 
 	Worker_EntityId NextAvailableEntityID = SpatialConstants::FIRST_AVAILABLE_ENTITY_ID;
+	if (GetDefault<USpatialGDKSettings>()->bEnableActorsInSnapshots)
+	{
+		if (!CreateSkeletonEntities(World, OutputStream, NextAvailableEntityID))
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating skeleton entities in snapshot: %s"),
+				   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
+			return false;
+		}
+	}
+
 	if (!RunUserSnapshotGenerationOverrides(OutputStream, NextAvailableEntityID))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error running user defined snapshot generation overrides in snapshot: %s"),

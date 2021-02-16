@@ -19,6 +19,7 @@
 #include "SpatialGDKEditorPackageAssembly.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKEditorSnapshotGenerator.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialLaunchConfigCustomization.h"
 #include "SpatialRuntimeVersionCustomization.h"
@@ -51,7 +52,32 @@ void FSpatialGDKEditorModule::StartupModule()
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalReceptionistProxyServerManager = GDKServices.GetLocalReceptionistProxyServerManager();
 	UEditorLoadingAndSavingUtils::OnSaveWorldDelegate.AddLambda([](UWorld* World) {
-		UE_LOG(LogTemp, Display, TEXT("I am saving a map named %s."), *World->GetName());
+		if (GetDefault<USpatialGDKSettings>()->bEnableActorsInSnapshots)
+		{
+			double StartTime = FPlatformTime::Seconds();
+			// Maybe move to the snapshot generator?
+			FString TempSnapshotFile =
+				FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, World->GetName() + TEXT("Temp.snapshot"));
+			SpatialGDKGenerateSnapshot(World, TempSnapshotFile);
+			ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings());
+			if (WorldSettings != nullptr)
+			{
+				IFileHandle* File = FPlatformFileManager::Get().GetPlatformFile().OpenRead(*TempSnapshotFile);
+				WorldSettings->RawSnapshotData.SetNum(File->Size());
+				File->Read(WorldSettings->RawSnapshotData.GetData(), File->Size());
+				// TODO: Is there a nicer way to close the handle? Delete also sounds sketchy
+				File->~IFileHandle();
+			}
+			else
+			{
+				UE_LOG(LogSpatialGDKEditorModule, Error,
+					   TEXT("Could not save snapshot into the world settings. Make sure you are using SpatialWorldSettings."));
+			}
+			bool bSuccess = FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*TempSnapshotFile);
+			UE_CLOG(!bSuccess, LogSpatialGDKEditorModule, Error, TEXT("Failed to delete temporary snapshot file: %s."), *TempSnapshotFile);
+			UE_LOG(LogSpatialGDKEditorModule, Log, TEXT("Generating the snapshot for the saved world took %6.2fms."),
+				   1000.0f * float(FPlatformTime::Seconds() - StartTime));
+		}
 	});
 }
 

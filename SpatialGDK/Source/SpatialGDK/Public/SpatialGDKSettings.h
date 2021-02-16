@@ -432,4 +432,7 @@ public:
 
 	UPROPERTY(Config)
 	bool bEnableAlwaysWriteRPCs;
+
+	UPROPERTY(Config)
+	bool bEnableActorsInSnapshots;
 };
