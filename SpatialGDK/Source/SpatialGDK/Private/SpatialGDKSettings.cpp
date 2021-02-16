@@ -302,8 +302,9 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 
 UEventTracingSamplingSettings* USpatialGDKSettings::GetEventTracingSamplingSettings() const
 {
-	return EventTracingSamplingSettingsClass != nullptr ? EventTracingSamplingSettingsClass->GetDefaultObject<UEventTracingSamplingSettings>() :
-		UEventTracingSamplingSettings::StaticClass()->GetDefaultObject<UEventTracingSamplingSettings>();
+	return EventTracingSamplingSettingsClass != nullptr
+			   ? EventTracingSamplingSettingsClass->GetDefaultObject<UEventTracingSamplingSettings>()
+			   : UEventTracingSamplingSettings::StaticClass()->GetDefaultObject<UEventTracingSamplingSettings>();
 }
 
 #if WITH_EDITOR
