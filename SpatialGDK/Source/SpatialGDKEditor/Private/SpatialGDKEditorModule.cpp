@@ -39,6 +39,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorModule);
 
 FSpatialGDKEditorModule::FSpatialGDKEditorModule()
 	: CommandLineArgsManager(MakeUnique<FSpatialGDKEditorCommandLineArgsManager>())
+	, SpatialTestSettings(MakeUnique<FSpatialTestSettings>())
 {
 }
 
@@ -292,13 +293,7 @@ void FSpatialGDKEditorModule::OverrideSettingsForTesting(UWorld* World, const FS
 	// By default, clear that the runtime/test was loaded from a snapshot taken for a given world.
 	ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot();
 
-	// Back up the existing settings so they can be reverted later
-	SaveSettings();
-	// First override the settings from the base ini file, if it exists
-	LoadSettings(BaseOverridesFilename);
-	// Then override the settings from the map specific ini file, if it exists
-	FString MapOverridesFilename = OverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
-	LoadSettings(MapOverridesFilename);
+	SpatialTestSettings->Override(MapName);
 
 	if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 	{
@@ -313,34 +308,10 @@ void FSpatialGDKEditorModule::OverrideSettingsForTesting(UWorld* World, const FS
 	}
 }
 
-void FSpatialGDKEditorModule::SaveSettings() const
-{
-	// Save settings before before overriding so that they can be reverted later
-	GetMutableDefault<ULevelEditorPlaySettings>()->SaveConfig(0, *TmpLevelEditorPlaySettingsFilename);
-	GetMutableDefault<USpatialGDKSettings>()->SaveConfig(0, *TmpSpatialGDKSettingsFilename);
-	GetMutableDefault<USpatialGDKEditorSettings>()->SaveConfig(0, *TmpSpatialGDKEditorSettingsFilename);
-	GetMutableDefault<UGeneralProjectSettings>()->SaveConfig(0, *TmpGeneralProjectSettingsFilename);
-	GetMutableDefault<UEditorPerformanceSettings>()->SaveConfig(0, *TmpEditorPerformanceSettingsFilename);
-}
-
-void FSpatialGDKEditorModule::LoadSettings(const FString& TestSettingOverridesFilename)
-{
-	// Load settings from ini file which will override current settings
-	GetMutableDefault<ULevelEditorPlaySettings>()->LoadConfig(ULevelEditorPlaySettings::StaticClass(), *TestSettingOverridesFilename);
-	GetMutableDefault<USpatialGDKSettings>()->LoadConfig(USpatialGDKSettings::StaticClass(), *TestSettingOverridesFilename);
-	GetMutableDefault<USpatialGDKEditorSettings>()->LoadConfig(USpatialGDKEditorSettings::StaticClass(), *TestSettingOverridesFilename);
-	GetMutableDefault<UGeneralProjectSettings>()->LoadConfig(UGeneralProjectSettings::StaticClass(), *TestSettingOverridesFilename);
-	GetMutableDefault<UEditorPerformanceSettings>()->LoadConfig(UEditorPerformanceSettings::StaticClass(), *TestSettingOverridesFilename);
-}
-
 void FSpatialGDKEditorModule::RevertSettingsForTesting()
 {
 	// Revert settings from ini file
-	GetMutableDefault<ULevelEditorPlaySettings>()->RevertSettings(TmpLevelEditorPlaySettingsFilename);
-	GetMutableDefault<USpatialGDKSettings>()->RevertSettings(TmpSpatialGDKSettingsFilename);
-	GetMutableDefault<USpatialGDKEditorSettings>()->RevertSettings(TmpSpatialGDKEditorSettingsFilename);
-	GetMutableDefault<UGeneralProjectSettings>()->RevertSettings(TmpGeneralProjectSettingsFilename);
-	GetMutableDefault<UEditorPerformanceSettings>()->RevertSettings(TmpEditorPerformanceSettingsFilename);
+	SpatialTestSettings->Restore();
 }
 
 bool FSpatialGDKEditorModule::ShouldStartLocalServer() const

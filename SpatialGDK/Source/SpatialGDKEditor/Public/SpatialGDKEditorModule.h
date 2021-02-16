@@ -5,6 +5,8 @@
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Modules/ModuleManager.h"
 #include "SpatialGDKLogParser.h"
+//#include "Settings/LevelEditorPlaySettings.h"
+#include "SpatialTestSettings.h"
 
 class FSpatialGDKEditor;
 class FSpatialGDKEditorCommandLineArgsManager;
@@ -65,9 +67,6 @@ private:
 	bool CanStartSession(FText& OutErrorMessage) const;
 	bool ShouldStartLocalServer() const;
 
-	void SaveSettings() const;
-	void LoadSettings(const FString& TestSettingOverridesFilename);
-
 private:
 	FSpatialGDKLogParser LogParser;
 
@@ -76,13 +75,5 @@ private:
 
 	FLocalReceptionistProxyServerManager* LocalReceptionistProxyServerManager;
 
-	const FString TmpSpatialGDKSettingsFilename = FPaths::GeneratedConfigDir() + TEXT("\\TmpSpatialGDKSettings.ini");
-	const FString TmpSpatialGDKEditorSettingsFilename = FPaths::GeneratedConfigDir() + TEXT("\\TmpSpatialGDKEditorSettings.ini");
-	const FString TmpLevelEditorPlaySettingsFilename = FPaths::GeneratedConfigDir() + TEXT("\\TmpLevelEditorPlaySettings.ini");
-	const FString TmpGeneralProjectSettingsFilename = FPaths::GeneratedConfigDir() + TEXT("\\TmpGeneralProjectSettings.ini");
-	const FString TmpEditorPerformanceSettingsFilename = FPaths::GeneratedConfigDir() + TEXT("\\TmpEditorPerformanceSettings.ini");
-	const FString OverrideSettingsBaseFilename = FPaths::ProjectConfigDir() + TEXT("TestOverrides");
-	const FString OverrideSettingsFileExtension = TEXT(".ini");
-	// Base override ini file applied to all maps, if exists
-	const FString BaseOverridesFilename = OverrideSettingsBaseFilename + TEXT("Base") + (OverrideSettingsFileExtension);
+	TUniquePtr<FSpatialTestSettings> SpatialTestSettings;
 };
