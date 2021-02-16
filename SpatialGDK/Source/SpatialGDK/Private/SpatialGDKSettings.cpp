@@ -84,14 +84,15 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 {
 #if ALLOW_SPATIAL_CMDLINE_PARSING
 	FString TempStr;
-	TOptional<FString> OverrideValue
+	TOptional<FString> OverrideValue;
 	if (FParse::Value(CommandLine, Parameter, TempStr) && TempStr[0] == '=')
 	{
 		OverrideValue = TempStr.Right(TempStr.Len() - 1); // + 1 to skip =
 		Callback(OverrideValue.GetValue());
 	}
 #endif // ALLOW_SPATIAL_CMDLINE_PARSING
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, OverrideValue.IsSet() ? *(OverrideValue.GetValue()) : TEXT("not set"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName,
+		   OverrideValue.IsSet() ? *(OverrideValue.GetValue()) : TEXT("not set"));
 }
 } // namespace
 
