@@ -5,7 +5,6 @@
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Modules/ModuleManager.h"
 #include "SpatialGDKLogParser.h"
-//#include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialTestSettings.h"
 
 class FSpatialGDKEditor;
