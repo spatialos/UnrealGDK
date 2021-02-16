@@ -9,7 +9,6 @@ namespace SpatialGDK
 {
 namespace TestMapGeneration
 {
-
 bool GenerateTestMaps()
 {
 	UE_LOG(LogTestMapGeneration, Display, TEXT("Deleting the %s folder."), *UGeneratedTestMap::GetGeneratedMapFolder());

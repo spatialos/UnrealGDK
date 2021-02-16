@@ -10,8 +10,7 @@ namespace SpatialGDK
 {
 namespace TestMapGeneration
 {
-
 SPATIALGDKFUNCTIONALTESTS_API bool GenerateTestMaps();
 
 }
-}
+} // namespace SpatialGDK
