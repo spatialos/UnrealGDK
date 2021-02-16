@@ -8,7 +8,7 @@ public class SpatialGDKEditor : ModuleRules
 	{
 		bLegacyPublicIncludePaths = false;
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        bUseUnity = false;
+		bUseUnity = false;
 
 		PrivateDependencyModuleNames.AddRange(
 			new string[] {
@@ -17,18 +17,18 @@ public class SpatialGDKEditor : ModuleRules
 				"DesktopPlatform",
 				"EditorStyle",
 				"Engine",
- 				"EngineSettings",
-                "FunctionalTesting",
-                "IOSRuntimeSettings",
- 				"LauncherServices",
- 				"Json",
+				"EngineSettings",
+				"FunctionalTesting",
+				"IOSRuntimeSettings",
+				"LauncherServices",
+				"Json",
 				"PropertyEditor",
 				"Slate",
 				"SlateCore",
 				"SpatialGDK",
 				"SpatialGDKFunctionalTests",
 				"SpatialGDKServices",
- 				"UATHelper",
+				"UATHelper",
 				"UnrealEd",
 				"DesktopPlatform",
 				"MessageLog",

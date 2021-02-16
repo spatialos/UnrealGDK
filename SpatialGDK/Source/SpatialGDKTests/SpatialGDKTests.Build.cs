@@ -8,9 +8,9 @@ public class SpatialGDKTests : ModuleRules
 	{
 		bLegacyPublicIncludePaths = false;
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        bUseUnity = false;
+		bUseUnity = false;
 
-        PrivateDependencyModuleNames.AddRange(
+		PrivateDependencyModuleNames.AddRange(
 			new string[] {
 				"SpatialGDK",
 				"SpatialGDKEditor",

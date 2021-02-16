@@ -8,9 +8,9 @@ public class SpatialGDKServices : ModuleRules
 	{
 		bLegacyPublicIncludePaths = false;
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        bUseUnity = false;
+		bUseUnity = false;
 
-        PrivateDependencyModuleNames.AddRange(
+		PrivateDependencyModuleNames.AddRange(
 			new string[] {
 				"EditorStyle",
 				"Engine",
