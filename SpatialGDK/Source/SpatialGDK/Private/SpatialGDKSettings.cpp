@@ -112,7 +112,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, CloudWorkerLogLevel(WorkerLogLevel)
 	, bEnableMultiWorker(true)
 	, DefaultRPCRingBufferSize(32)
-	, MaxRPCRingBufferSize(32)
+	, CrossServerRPCImplementation(ECrossServerRPCImplementation::SpatialCommand)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
 	, bTcpNoDelay(false)
 	, UdpServerDownstreamUpdateIntervalMS(1)
@@ -133,8 +133,10 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEventTracingEnabled(false)
 	, SamplingProbability(1.0f)
 	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
+	, bEnableAlwaysWriteRPCs(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
+	RPCRingBufferSizeOverrides.Add(ERPCType::ServerAlwaysWrite, 1);
 }
 
 void USpatialGDKSettings::PostInitProperties()
@@ -224,7 +226,7 @@ void USpatialGDKSettings::UpdateServicesRegionFile()
 
 uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 {
-	if (const uint32* Size = RPCRingBufferSizeMap.Find(RPCType))
+	if (const uint32* Size = RPCRingBufferSizeOverrides.Find(RPCType))
 	{
 		return *Size;
 	}

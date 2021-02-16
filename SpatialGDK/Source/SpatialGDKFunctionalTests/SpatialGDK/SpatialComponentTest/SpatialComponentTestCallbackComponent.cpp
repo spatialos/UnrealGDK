@@ -40,11 +40,9 @@ void USpatialComponentTestCallbackComponent::AddAndRemoveComponents()
 {
 	// Add 2 components
 	USpatialComponentTestDummyComponent* TestComponent1 = NewObject<USpatialComponentTestDummyComponent>(this);
-	TestComponent1->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	TestComponent1->RegisterComponent();
 
 	USpatialComponentTestDummyComponent* TestComponent2 = NewObject<USpatialComponentTestDummyComponent>(this);
-	TestComponent2->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	TestComponent2->RegisterComponent();
 
 	// Remove 1 component

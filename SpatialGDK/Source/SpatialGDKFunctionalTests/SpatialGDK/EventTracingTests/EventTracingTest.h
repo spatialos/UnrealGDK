@@ -32,9 +32,9 @@ protected:
 	const static FName PropertyChangedEventName;
 	const static FName ReceivePropertyUpdateEventName;
 	const static FName PushRPCEventName;
-	const static FName ProcessRPCEventName;
+	const static FName ReceiveRPCEventName;
+	const static FName ApplyRPCEventName;
 	const static FName ComponentUpdateEventName;
-	const static FName MergeComponentUpdateEventName;
 	const static FName UserProcessRPCEventName;
 	const static FName UserReceivePropertyEventName;
 	const static FName UserReceiveComponentPropertyEventName;
@@ -42,17 +42,38 @@ protected:
 	const static FName UserSendComponentPropertyEventName;
 	const static FName UserSendRPCEventName;
 
+	const static FName SendCrossServerRPCName;
+	const static FName ReceiveCrossServerRPCName;
+
+	const static FName UserSendCrossServerRPCEventName;
+	const static FName UserReceiveCrossServerRPCEventName;
+
+	const static FName UserSendCrossServerPropertyEventName;
+	const static FName UserReceiveCrossServerPropertyEventName;
+
+	const static FName ApplyCrossServerRPCName;
+
 	FWorkerDefinition WorkerDefinition;
 	TArray<FName> FilterEventNames;
 
-	float TestTime = 20.0f;
+	float TestTime = 8.0f;
 
 	TMap<FString, FName> TraceEvents;
 	TMap<FString, TArray<FString>> TraceSpans;
 
-	bool CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses = 1);
+	bool CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses = 1) const;
 
 	virtual void FinishEventTraceTest();
+
+	virtual int GetRequiredClients() { return 1; }
+	virtual int GetRequiredWorkers() { return 1; }
+
+	struct CheckResult
+	{
+		int NumTested;
+		int NumFailed;
+	};
+	CheckResult CheckCauses(FName From, FName To) const;
 
 private:
 	FDateTime TestStartTime;

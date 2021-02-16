@@ -1,17 +1,39 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialCleanupConnectionTest.h"
+#include "GameFramework/PlayerController.h"
 
 #include "SpatialFunctionalTestFlowController.h"
+
+/**
+* This tests whether client connections get cleaned up when a pawn enters and leaves the interest of server that is not authoritative over it.
+*
+* The test includes two server workers and one client worker.
+* The client worker begins with a player controller which unpossesses its default pawn and posses a TestMovementCharacter instead.
+* The test requires interest borders to be in line with the coordinates the pawn is moved to such that -50 is within the interest of server 2 and -500 outside of it.
+* The flow is as follows:
+*  - Setup:
+*    - (Refer to above about placing instructions).
+*  - Test:
+*    - Server 1 spawns the pawn inside of server 1's interest but outside server 2's, we verify that we have all client connections present + 1 for spatial
+*    - Server 2 verifies it has all client connections - 1 + 1 for spatial
+*    - Server 1 moves the pawn to another location still in server 1 but also in server 2's interest, we verify that we have all client connections present + 1 for spatial
+*    - Server 2 verifies that it now has all client connections + 1 for spatial
+*    - Server 1 moves the pawn inside of server 1's interest but again outside server 2's, we verify that we have all client connections present + 1 for spatial
+*	  - Server 2 verifies it has all client connections - 1 + 1 for spatial
+*  - Cleanup:
+*    - The player controller reposseses the default pawn so it's reset for any subsequent test run.
+*/
 
 ASpatialCleanupConnectionTest::ASpatialCleanupConnectionTest()
 {
 	Author = "Simon Sarginson";
 	Description = TEXT("Tests if clients connections are cleaned up when leaving interest region of a non authorative server");
+	SetNumRequiredClients(1);
 
 	Server1Position = FVector(-500.0f, -500.0f, 50.0f);
 	Server1PositionAndInInterestBorderServer2 = FVector(-50.0f, -50.0f, 50.0f);
-	Server2Position = FVector(500.0f, -500.0f, 50.0f);
+	Server2Position = FVector(-500.0f, 500.0f, 50.0f);
 }
 
 void ASpatialCleanupConnectionTest::PrepareTest()

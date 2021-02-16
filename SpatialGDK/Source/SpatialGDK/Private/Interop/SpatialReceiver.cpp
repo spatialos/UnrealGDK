@@ -73,7 +73,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 		if (EventTracer != nullptr)
 		{
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), RequestId),
-									Op.span_id, 1);
+									/* Causes */ Op.span_id, /* NumCauses */ 1);
 		}
 
 		return;
@@ -87,7 +87,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 		{
 			EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId),
-				Op.span_id, 1);
+				/* Causes */ Op.span_id, /* NumCauses */ 1);
 		}
 
 		return;
@@ -123,7 +123,8 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 		if (EventTracer != nullptr)
 		{
 			EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId), Op.span_id, 1);
+				FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId),
+				/* Causes */ Op.span_id, /* NumCauses */ 1);
 		}
 
 		return;
@@ -173,22 +174,21 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 		if (EventTracer != nullptr)
 		{
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TEXT("SPAWN_PLAYER_COMMAND"), RequestId),
-									Op.span_id, 1);
+									/* Causes */ EventTracer->GetAndConsumeSpanForRequestId(CommandResponseOp.request_id).GetConstId(),
+									/* NumCauses */ 1);
 		}
 
 		return;
 	}
 	else if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
 	{
-		NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
-
 		if (EventTracer != nullptr)
 		{
 			EventTracer->TraceEvent(
 				FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId),
-				Op.span_id, 1);
+				/* Causes */ EventTracer->GetAndConsumeSpanForRequestId(CommandResponseOp.request_id).GetConstId(), 1);
 		}
-
+		NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
 		return;
 	}
 	else if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID)
@@ -246,7 +246,19 @@ void USpatialReceiver::ReceiveWorkerDisconnectResponse(const Worker_CommandRespo
 
 void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op)
 {
-	const Worker_PartitionId PartitionId = PendingPartitionAssignments.FindAndRemoveChecked(Op.request_id);
+	if (Op.request_id < 0)
+	{
+		// Invalid request id that will not be in PendingPartitionAssignments
+		return;
+	}
+
+	Worker_PartitionId PartitionId;
+	if (!PendingPartitionAssignments.RemoveAndCopyValue(Op.request_id, PartitionId))
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
+			   TEXT("Could not find request id in PendingPartitionAssignments. Request Id: %d"), Op.request_id);
+		return;
+	}
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
@@ -346,7 +358,8 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 
 		if (EventTracer != nullptr)
 		{
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntitySuccess(Channel->Actor, EntityId), Op.span_id, 1);
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntitySuccess(Channel->Actor, EntityId),
+									/* Causes */ Op.span_id, /* NumCauses */ 1);
 		}
 	}
 	else if (Channel.IsStale())
@@ -364,13 +377,14 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 
 		if (EventTracer != nullptr)
 		{
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(Message), Op.span_id, 1);
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(Message), /* Causes */ Op.span_id, /* NumCauses */ 1);
 		}
 	}
 	else if (EventTracer != nullptr)
 	{
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(TEXT("Create entity response unknown error")), Op.span_id,
-								1);
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(TEXT("Create entity response unknown error")),
+								/* Causes */ Op.span_id,
+								/* NumCauses */ 1);
 	}
 }
 

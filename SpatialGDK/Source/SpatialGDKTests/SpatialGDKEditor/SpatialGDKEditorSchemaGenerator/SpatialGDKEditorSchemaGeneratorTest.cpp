@@ -311,6 +311,7 @@ TMap<FString, FString> ExpectedContentsFilenames = {
 	{ "SpatialTypeActorWithMultipleObjectComponents", "SpatialTypeActorWithMultipleObjectComponents.schema" }
 };
 uint32 ExpectedRPCEndpointsRingBufferSize = 32;
+TMap<ERPCType, uint32> ExpectedRPCRingBufferSizeOverrides = { { ERPCType::ServerAlwaysWrite, 1 } };
 FString ExpectedRPCEndpointsSchemaFilename = TEXT("rpc_endpoints.schema");
 
 class SchemaValidator
@@ -397,24 +398,28 @@ private:
 class SchemaRPCEndpointTestFixture : public SchemaTestFixture
 {
 public:
-	SchemaRPCEndpointTestFixture() { SetMaxRPCRingBufferSize(); }
-	~SchemaRPCEndpointTestFixture() { ResetMaxRPCRingBufferSize(); }
+	SchemaRPCEndpointTestFixture() { SetRPCRingBufferSize(); }
+	~SchemaRPCEndpointTestFixture() { ResetRPCRingBufferSize(); }
 
 private:
-	void SetMaxRPCRingBufferSize()
+	void SetRPCRingBufferSize()
 	{
 		USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-		CachedMaxRPCRingBufferSize = SpatialGDKSettings->MaxRPCRingBufferSize;
-		SpatialGDKSettings->MaxRPCRingBufferSize = ExpectedRPCEndpointsRingBufferSize;
+		CachedDefaultRPCRingBufferSize = SpatialGDKSettings->DefaultRPCRingBufferSize;
+		CachedRPCRingBufferSizeOverrides = SpatialGDKSettings->RPCRingBufferSizeOverrides;
+		SpatialGDKSettings->DefaultRPCRingBufferSize = ExpectedRPCEndpointsRingBufferSize;
+		SpatialGDKSettings->RPCRingBufferSizeOverrides = ExpectedRPCRingBufferSizeOverrides;
 	}
 
-	void ResetMaxRPCRingBufferSize()
+	void ResetRPCRingBufferSize()
 	{
 		USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-		SpatialGDKSettings->MaxRPCRingBufferSize = CachedMaxRPCRingBufferSize;
+		SpatialGDKSettings->DefaultRPCRingBufferSize = CachedDefaultRPCRingBufferSize;
+		SpatialGDKSettings->RPCRingBufferSizeOverrides = CachedRPCRingBufferSizeOverrides;
 	}
 
-	uint32 CachedMaxRPCRingBufferSize;
+	uint32 CachedDefaultRPCRingBufferSize;
+	TMap<ERPCType, uint32> CachedRPCRingBufferSizeOverrides;
 };
 
 } // anonymous namespace
@@ -899,6 +904,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "migration_diagnostic.schema",
 										   "net_owning_client_worker.schema",
 										   "not_streamed.schema",
+										   "partition_shadow.schema",
 										   "query_tags.schema",
 										   "relevant.schema",
 										   "rpc_components.schema",
@@ -1047,6 +1053,174 @@ SCHEMA_GENERATOR_TEST(GIVEN_no_schema_exists_WHEN_generating_schema_for_rpc_endp
 
 	TestTrue("Generated RPC endpoints schema matches the expected schema",
 			 Validator.ValidateGeneratedSchemaAgainstExpectedSchema(FileContent, ExpectedRPCEndpointsSchemaFilename));
+
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_component_set_filled)
+{
+	SchemaTestFixture Fixture;
+
+	TSet<UClass*> Classes = { ASpatialTypeActor::StaticClass(), USchemaGenObjectStubHandOver::StaticClass(),
+							  ASpatialTypeActorWithOwnerOnly::StaticClass() };
+
+	FString SchemaFolder = FPaths::Combine(SchemaOutputFolder, TEXT("schema"));
+	FString UnrealSchemaFolder = FPaths::Combine(SchemaFolder, TEXT("unreal"));
+	FString SchemaGenerationFolder = FPaths::Combine(UnrealSchemaFolder, TEXT("generated"));
+
+	// Generate data for well known classes.
+	SpatialGDKEditor::Schema::SpatialGDKGenerateSchemaForClasses(Classes, SchemaGenerationFolder);
+	USchemaDatabase* SchemaDatabase = SpatialGDKEditor::Schema::InitialiseSchemaDatabase(DatabaseOutputFile);
+	SpatialGDKEditor::Schema::WriteComponentSetFiles(SchemaDatabase, SchemaGenerationFolder);
+
+	FString SchemaBuildFolder = FPaths::Combine(SchemaOutputFolder, TEXT("Build"));
+
+	// Add the files necessary to run the schema compiler
+	FString GDKSchemaCopyDir = FPaths::Combine(UnrealSchemaFolder, TEXT("gdk"));
+	FString CoreSDKSchemaCopyDir = FPaths::Combine(SchemaBuildFolder, TEXT("dependencies/schema/standard_library"));
+	SpatialGDKEditor::Schema::CopyWellKnownSchemaFiles(GDKSchemaCopyDir, CoreSDKSchemaCopyDir);
+	SpatialGDKEditor::Schema::GenerateSchemaForRPCEndpoints(SchemaGenerationFolder);
+	SpatialGDKEditor::Schema::GenerateSchemaForNCDs(SchemaGenerationFolder);
+
+	// Run the schema compiler
+	FString SchemaJsonPath;
+
+	TestTrue("Schema compiler run successful",
+			 SpatialGDKEditor::Schema::RunSchemaCompiler(SchemaJsonPath, SchemaFolder, SchemaBuildFolder));
+
+	TestTrue("Schema bundle file successfully read",
+			 SpatialGDKEditor::Schema::ExtractComponentSetsFromSchemaJson(SchemaJsonPath, SchemaDatabase->ComponentSetIdToComponentIds));
+
+	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 8);
+
+	TestTrue("Found spatial well known components", SchemaDatabase->ComponentSetIdToComponentIds.Contains(50));
+	if (SchemaDatabase->ComponentSetIdToComponentIds.Contains(50))
+	{
+		TestTrue("Spatial well know component is not empty", SchemaDatabase->ComponentSetIdToComponentIds[50].ComponentIDs.Num() > 0);
+	}
+
+	{
+		FComponentIDs* RoutingComponents =
+			SchemaDatabase->ComponentSetIdToComponentIds.Find(SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID);
+		TestTrue("Found routing worker components", RoutingComponents != nullptr);
+		if (RoutingComponents != nullptr)
+		{
+			TestTrue("Expected number of routing worker components",
+					 RoutingComponents->ComponentIDs.Num() == SpatialConstants::RoutingWorkerComponents.Num());
+
+			for (auto ComponentId : SpatialConstants::RoutingWorkerComponents)
+			{
+				FString DebugString = FString::Printf(TEXT("Found well known component %s"), *ComponentId.Value);
+				TestTrue(*DebugString, RoutingComponents->ComponentIDs.Find(ComponentId.Key) != INDEX_NONE);
+			}
+		}
+	}
+
+	{
+		// Check the resulting schema contains the expected Sets.
+
+		FComponentIDs* ServerComponents = SchemaDatabase->ComponentSetIdToComponentIds.Find(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
+		TestTrue("Found entry for server authority", ServerComponents != nullptr);
+		if (ServerComponents == nullptr)
+		{
+			return false;
+		}
+		TestTrue("Set is not empty", ServerComponents->ComponentIDs.Num() > 0);
+		for (auto ComponentId : SpatialConstants::ServerAuthorityWellKnownComponents)
+		{
+			FString DebugString = FString::Printf(TEXT("Found well known component %s"), *ComponentId.Value);
+			TestTrue(*DebugString, ServerComponents->ComponentIDs.Find(ComponentId.Key) != INDEX_NONE);
+		}
+
+		uint32 ServerAuthSets[3] = { SpatialConstants::DATA_COMPONENT_SET_ID, SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID,
+									 SpatialConstants::HANDOVER_COMPONENT_SET_ID };
+
+		for (uint32 ComponentType = SCHEMA_Data; ComponentType < SCHEMA_Count; ++ComponentType)
+		{
+			FComponentIDs* DataComponents = SchemaDatabase->ComponentSetIdToComponentIds.Find(ServerAuthSets[ComponentType]);
+			TestTrue("Found entry for class in data type component set", DataComponents != nullptr);
+			if (DataComponents == nullptr)
+			{
+				return false;
+			}
+			// We should have a class for each type of set
+			TestTrue("Set is not empty", DataComponents->ComponentIDs.Num() > 0);
+
+			for (auto Class : Classes)
+			{
+				if (Class->IsChildOf<AActor>())
+				{
+					FActorSchemaData* SchemaData = SchemaDatabase->ActorClassPathToSchema.Find(Class->GetPathName());
+					TestTrue("Found schema data", SchemaData != nullptr);
+					if (SchemaData == nullptr)
+					{
+						continue;
+					}
+					uint32 ComponentId = SchemaData->SchemaComponents[ComponentType];
+					if (ComponentId != 0)
+					{
+						FString DebugString = FString::Printf(TEXT("Schema data for component %i found in"), ComponentId);
+						TestTrue(DebugString + TEXT(" server auth component set"),
+								 ServerComponents->ComponentIDs.Find(ComponentId) != INDEX_NONE);
+						TestTrue(DebugString + TEXT(" data type component set"),
+								 DataComponents->ComponentIDs.Find(ComponentId) != INDEX_NONE);
+					}
+				}
+				else
+				{
+					FSubobjectSchemaData* SchemaData = SchemaDatabase->SubobjectClassPathToSchema.Find(Class->GetPathName());
+					TestTrue("Found schema data", SchemaData != nullptr);
+					if (SchemaData == nullptr)
+					{
+						continue;
+					}
+					for (auto& DynamicComponent : SchemaData->DynamicSubobjectComponents)
+					{
+						uint32 ComponentId = DynamicComponent.SchemaComponents[ComponentType];
+						if (ComponentId != 0)
+						{
+							FString DebugString = FString::Printf(TEXT("Schema data for component %i found in"), ComponentId);
+							TestTrue(DebugString + TEXT(" server auth component set"),
+									 ServerComponents->ComponentIDs.Find(ComponentId) != INDEX_NONE);
+							TestTrue(DebugString + TEXT(" data type component set"),
+									 DataComponents->ComponentIDs.Find(ComponentId) != INDEX_NONE);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	{
+		FComponentIDs* ClientComponents = SchemaDatabase->ComponentSetIdToComponentIds.Find(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+		TestTrue("Found entry for client authority", ClientComponents != nullptr);
+		if (ClientComponents == nullptr)
+		{
+			return false;
+		}
+		TestTrue("Set is not empty", ClientComponents->ComponentIDs.Num() > 0);
+		for (auto ComponentId : SpatialConstants::ClientAuthorityWellKnownComponents)
+		{
+			FString DebugString = FString::Printf(TEXT("Found well known component %s"), *ComponentId.Value);
+			TestTrue(*DebugString, ClientComponents->ComponentIDs.Find(ComponentId.Key) != INDEX_NONE);
+		}
+	}
+
+	{
+		FComponentIDs* GDKWellKnownComponents =
+			SchemaDatabase->ComponentSetIdToComponentIds.Find(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
+		TestTrue("Found entry for GDK well know entities authority", GDKWellKnownComponents != nullptr);
+		if (GDKWellKnownComponents == nullptr)
+		{
+			return false;
+		}
+		TestTrue("Set is not empty", GDKWellKnownComponents->ComponentIDs.Num() > 0);
+		for (auto ComponentId : SpatialConstants::KnownEntityAuthorityComponents)
+		{
+			FString DebugString = FString::Printf(TEXT("Found well known component %i"), ComponentId);
+			TestTrue(*DebugString, GDKWellKnownComponents->ComponentIDs.Find(ComponentId) != INDEX_NONE);
+		}
+	}
 
 	return true;
 }

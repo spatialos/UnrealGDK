@@ -115,7 +115,15 @@ ERPCType GetRPCType(UFunction* RemoteFunction)
 		}
 		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
 		{
-			return ERPCType::ServerUnreliable;
+			if (GetDefault<USpatialGDKSettings>()->bEnableAlwaysWriteRPCs
+				&& (RemoteFunction->SpatialFunctionFlags & SPATIALFUNC_AlwaysWrite))
+			{
+				return ERPCType::ServerAlwaysWrite;
+			}
+			else
+			{
+				return ERPCType::ServerUnreliable;
+			}
 		}
 	}
 
@@ -144,10 +152,31 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	TArray<UFunction*> RelevantClassFunctions = SpatialGDK::GetClassRPCFunctions(Class);
 
+	// Save AlwaysWrite RPCs to validate there's at most one per class.
+	TArray<UFunction*> AlwaysWriteRPCs;
+
+	const bool bIsActorClass = Class->IsChildOf<AActor>();
+
 	for (UFunction* RemoteFunction : RelevantClassFunctions)
 	{
 		ERPCType RPCType = GetRPCType(RemoteFunction);
 		checkf(RPCType != ERPCType::Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
+
+		if (RPCType == ERPCType::ServerAlwaysWrite)
+		{
+			if (bIsActorClass)
+			{
+				AlwaysWriteRPCs.Add(RemoteFunction);
+			}
+			else
+			{
+				UE_LOG(LogSpatialClassInfoManager, Error,
+					   TEXT("Found AlwaysWrite RPC on a subobject class. This is not supported and the RPC will be treated as Unreliable. "
+							"Please route it through the owning actor if AlwaysWrite behavior is necessary. Class: %s, function: %s"),
+					   *Class->GetPathName(), *RemoteFunction->GetName());
+				RPCType = ERPCType::ServerUnreliable;
+			}
+		}
 
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
@@ -157,6 +186,18 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 		Info->RPCs.Add(RemoteFunction);
 		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
+	}
+
+	if (AlwaysWriteRPCs.Num() > 1)
+	{
+		UE_LOG(LogSpatialClassInfoManager, Error,
+			   TEXT("Found more than 1 function with AlwaysWrite for class. This is not supported and may cause unexpected behavior. "
+					"Class: %s, functions:"),
+			   *Class->GetPathName());
+		for (UFunction* AlwaysWriteRPC : AlwaysWriteRPCs)
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("%s"), *AlwaysWriteRPC->GetName());
+		}
 	}
 
 	const bool bTrackHandoverProperties = ShouldTrackHandoverProperties();
@@ -191,7 +232,27 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	}
 
-	if (Class->IsChildOf<AActor>())
+	if (bTrackHandoverProperties)
+	{
+		uint32 Offset = 0;
+
+		for (FHandoverPropertyInfo& PropertyInfo : Info->HandoverProperties)
+		{
+			if (PropertyInfo.ArrayIdx == 0) // For static arrays, the first element will handle the whole array
+			{
+				// Make sure we conform to Unreal's alignment requirements
+				Offset = Align(Offset, PropertyInfo.Property->GetMinAlignment());
+
+				PropertyInfo.ShadowOffset = Offset;
+
+				Offset += PropertyInfo.Property->GetSize();
+			}
+		}
+
+		Info->HandoverPropertiesSize = Offset;
+	}
+
+	if (bIsActorClass)
 	{
 		FinishConstructingActorClassInfo(ClassPath, Info);
 	}
