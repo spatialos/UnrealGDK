@@ -408,7 +408,7 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 
 typedef TMap<UObject*, uint32> FSubobjectToOffsetMap;
 
-FORCEINLINE FSubobjectToOffsetMap CreateOffsetMapFromActor(Worker_EntityId EntityId, AActor* Actor, const FClassInfo& Info)
+static FSubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, const FClassInfo& Info)
 {
 	FSubobjectToOffsetMap SubobjectNameToOffset;
 
@@ -495,7 +495,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		   *NetGUID.ToString(), EntityId);
 
 	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	const FSubobjectToOffsetMap& SubobjectToOffset = CreateOffsetMapFromActor(EntityId, Actor, Info);
+	const FSubobjectToOffsetMap& SubobjectToOffset = CreateOffsetMapFromActor(Actor, Info);
 
 	for (auto& Pair : SubobjectToOffset)
 	{
