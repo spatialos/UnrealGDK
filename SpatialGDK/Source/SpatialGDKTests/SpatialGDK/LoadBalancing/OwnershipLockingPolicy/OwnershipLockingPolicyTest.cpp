@@ -12,11 +12,12 @@
 #include "GameFramework/DefaultPawn.h"
 #include "GameFramework/GameStateBase.h"
 #include "Improbable/SpatialEngineDelegates.h"
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 #include "Templates/SharedPointer.h"
 #include "Tests/AutomationCommon.h"
 #include "UObject/UObjectGlobals.h"
 
-#define OWNERSHIPLOCKINGPOLICY_TEST(TestName) GDK_TEST(Core, UOwnershipLockingPolicy, TestName)
+#define OWNERSHIPLOCKINGPOLICY_TEST(TestName) GDK_AUTOMATION_TEST(Core, UOwnershipLockingPolicy, TestName)
 
 namespace
 {
@@ -259,6 +260,15 @@ bool FAcquireLockViaDelegate::Update()
 	AActor* Actor = Data->TestActors[ActorHandle];
 
 	check(Data->AcquireLockDelegate.IsBound());
+
+	if (!bExpectedSuccess)
+	{
+		Test->AddExpectedError(
+			FString::Printf(TEXT("AcquireLockFromDelegate: A lock with identifier \"%s\" already exists for actor \"%s\"."),
+							*DelegateLockIdentifier, *GetNameSafe(Actor)),
+			EAutomationExpectedErrorFlags::Contains, 1);
+	}
+
 	const bool bAcquireLockSucceeded = Data->AcquireLockDelegate.Execute(Actor, DelegateLockIdentifier);
 
 	Test->TestFalse(TEXT("Expected AcquireLockDelegate to succeed but it failed"), bExpectedSuccess && !bAcquireLockSucceeded);
@@ -277,8 +287,10 @@ bool FReleaseLockViaDelegate::Update()
 
 	if (!bExpectedSuccess)
 	{
-		Test->AddExpectedError(TEXT("Executed ReleaseLockDelegate for unidentified delegate lock identifier."),
-							   EAutomationExpectedErrorFlags::Contains, 1);
+		Test->AddExpectedError(
+			FString::Printf(TEXT("ReleaseLockFromDelegate: Lock identifier \"%s\" has no lock associated with it for actor \"%s\"."),
+							*DelegateLockIdentifier, *GetNameSafe(Actor)),
+			EAutomationExpectedErrorFlags::Contains, 1);
 	}
 
 	const bool bReleaseLockSucceeded = Data->ReleaseLockDelegate.Execute(Actor, DelegateLockIdentifier);
@@ -308,7 +320,16 @@ bool FCleanup::Update()
 		Pair.Value->Destroy(/*bNetForce*/ true);
 	}
 	Data->TestActors.Empty();
+
+	GEditor->RequestEndPlayMap();
+
 	return true;
+}
+
+void TearDown(FAutomationTestBase* Test, TSharedPtr<TestData> Data)
+{
+	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForDeployment(Test, EDeploymentState::IsNotRunning));
 }
 
 void SpawnABCDHierarchy(FAutomationTestBase* Test, TSharedPtr<TestData> Data)
@@ -352,7 +373,7 @@ void SpawnABCDEHierarchy(FAutomationTestBase* Test, TSharedPtr<TestData> Data)
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLocked_is_called_THEN_returns_false_with_no_lock_tokens)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -360,7 +381,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLocked_is_
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -369,7 +390,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_an_actor_has_not_been_locked_WHEN_IsLocked_is_
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_is_called_THEN_it_errors_and_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -378,14 +399,14 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_is_called
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "First lock", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is_not_authoritative_THEN_AcquireLock_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -395,14 +416,14 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is
 	ADD_LATENT_AUTOMATION_COMMAND(FSetActorRole(Data, "Actor", ROLE_SimulatedProxy));
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "First lock", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is_deleted_THEN_ReleaseLock_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -415,14 +436,14 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is
 	// We cannot call IsLocked with a deleted Actor so instead we try to release the lock we held
 	// for the Actor and check that it fails.
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseAllLocks(this, Data, 1));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_twice_WHEN_the_locked_Actor_is_deleted_THEN_ReleaseLock_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -436,14 +457,14 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_twice_WHEN_the_locked_Ac
 	// We cannot call IsLocked with a deleted Actor so instead we try to release the lock we held
 	// for the Actor and check that it fails.
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseAllLocks(this, Data, 2));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -455,14 +476,14 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Is
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "First lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_twice_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -478,14 +499,14 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_twice_W
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "Second lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_ReleaseLock_is_called_again_THEN_it_errors_and_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -498,14 +519,14 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Re
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "First lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLock(this, Data, "Actor", "First lock", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
 
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_AcquireLock_is_called_again_THEN_it_succeeds)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -519,7 +540,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Ac
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "Second lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -529,7 +550,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_and_ReleaseLock_are_called_WHEN_Ac
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_leaf_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -550,7 +571,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -558,7 +579,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_path_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -579,7 +600,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -587,7 +608,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_and_ReleaseLock_are_called_on_hierarchy_root_Actor_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -608,7 +629,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -616,7 +637,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_and_ReleaseLock_are_called_on_multiple_hierarchy_Actors_WHEN_IsLocked_is_called_on_hierarchy_Actors_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -645,7 +666,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -655,7 +676,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_WHEN_explicitly_locked_Actor_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -673,7 +694,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -681,7 +702,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_WHEN_hierarchy_path_Actor_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -699,7 +720,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -707,7 +728,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_leaf_Actor_WHEN_hierarchy_root_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -725,7 +746,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -733,7 +754,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_hierarchy_root_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -751,7 +772,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -759,7 +780,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_WHEN_hierarchy_root_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -777,7 +798,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "B", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -785,7 +806,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_root_Actor_WHEN_hierarchy_path_Actor_is_destroyed_THEN_IsLocked_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -803,7 +824,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "A", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -813,7 +834,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -837,7 +858,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -845,7 +866,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_WHEN_hierarchy_path_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -867,7 +888,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -875,7 +896,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_leaf_hierarchy_Actor_WHEN_explicitly_locked_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -895,7 +916,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -903,7 +924,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_explictly_locked_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -925,7 +946,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -933,7 +954,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -957,7 +978,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -965,7 +986,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_path_Actor_WHEN_hierarchy_leaf_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -985,7 +1006,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -993,7 +1014,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_root_WHEN_hierarchy_root_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -1017,7 +1038,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -1025,7 +1046,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_is_called_on_hierarchy_root_WHEN_hierarchy_path_Actor_switches_owner_THEN_IsLocked_returns_correctly_for_all_Actors)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -1047,16 +1068,36 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "C", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "D", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "E", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
 
 // AcquireLockDelegate and ReleaseLockDelegate
 
+OWNERSHIPLOCKINGPOLICY_TEST(
+	GIVEN_AcquireLockDelegate_is_executed_WHEN_AcquireLockDelegate_is_executed_again_THEN_it_errors_and_returns_false)
+{
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+
+	TSharedPtr<TestData> Data = MakeNewTestData();
+
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld(Data));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLockViaDelegate(this, Data, "Actor", "First lock", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
+	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLockViaDelegate(this, Data, "Actor", "First lock", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
+	TearDown(this, Data);
+
+	return true;
+}
+
 OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_is_executed_THEN_it_errors_and_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -1065,7 +1106,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor(Data, "Actor"));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(this, Data, "Actor", "First lock", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -1073,7 +1114,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_Actor_is_not_locked_WHEN_ReleaseLock_delegate_
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_and_ReleaseLock_delegates_are_executed_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -1085,7 +1126,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(this, Data, "Actor", "First lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -1093,7 +1134,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLock_and_ReleaseLock_delegates_are_executed_twice_WHEN_IsLocked_is_called_THEN_returns_correctly_between_calls)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -1109,7 +1150,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(this, Data, "Actor", "Second lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }
@@ -1117,7 +1158,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 OWNERSHIPLOCKINGPOLICY_TEST(
 	GIVEN_AcquireLockDelegate_and_ReleaseLockDelegate_are_executed_WHEN_ReleaseLockDelegate_is_executed_again_THEN_it_errors_and_returns_false)
 {
-	AutomationOpenMap("/Engine/Maps/Entry");
+	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	TSharedPtr<TestData> Data = MakeNewTestData();
 
@@ -1130,7 +1171,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(this, Data, "Actor", "First lock", true));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FReleaseLockViaDelegate(this, Data, "Actor", "First lock", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FCleanup(Data));
+	TearDown(this, Data);
 
 	return true;
 }

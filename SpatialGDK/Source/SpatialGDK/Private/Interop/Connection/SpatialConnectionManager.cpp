@@ -3,18 +3,43 @@
 #include "Interop/Connection/SpatialConnectionManager.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
 
 #include "Async/Async.h"
 #include "Improbable/SpatialEngineConstants.h"
 #include "Improbable/SpatialGDKSettingsBridge.h"
+#include "Interfaces/IPluginManager.h"
 #include "Misc/Paths.h"
 #include "Modules/ModuleManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialConnectionManager);
 
 using namespace SpatialGDK;
+
+class GDKVersionLoader
+{
+public:
+	static FString GetGDKVersion()
+	{
+		if (GDKVersion.IsEmpty())
+		{
+			IPluginManager& PluginManager = IPluginManager::Get();
+			IPlugin* SpatialGDKPlugin = PluginManager.FindPlugin("SpatialGDK").Get();
+			if (SpatialGDKPlugin != nullptr)
+			{
+				GDKVersion = SpatialGDKPlugin->GetDescriptor().VersionName;
+			}
+		}
+		return GDKVersion;
+	}
+
+private:
+	static FString GDKVersion;
+};
+
+FString GDKVersionLoader::GDKVersion;
 
 struct ConfigureConnection
 {
@@ -23,6 +48,7 @@ struct ConfigureConnection
 		, Params()
 		, WorkerType(*Config.WorkerType)
 		, WorkerSDKLogFilePrefix(*FormatWorkerSDKLogFilePrefix())
+		, GDKVersion(*GDKVersionLoader::GetGDKVersion())
 	{
 		Params = Worker_DefaultConnectionParameters();
 
@@ -55,30 +81,35 @@ struct ConfigureConnection
 
 		Params.network.connection_type = Config.LinkProtocol;
 		Params.network.use_external_ip = Config.UseExternalIp;
-		Params.network.modular_tcp.multiplex_level = Config.TcpMultiplexLevel;
+		Params.network.tcp.multiplex_level = Config.TcpMultiplexLevel;
 		if (Config.TcpNoDelay)
 		{
-			Params.network.modular_tcp.downstream_tcp.flush_delay_millis = 0;
-			Params.network.modular_tcp.upstream_tcp.flush_delay_millis = 0;
+			Params.network.tcp.downstream_tcp.flush_delay_millis = 0;
+			Params.network.tcp.upstream_tcp.flush_delay_millis = 0;
 		}
 
 		// We want the bridge to worker messages to be compressed; not the worker to bridge messages.
-		Params.network.modular_kcp.upstream_compression = nullptr;
-		Params.network.modular_kcp.downstream_compression = &EnableCompressionParams;
+		Params.network.kcp.upstream_compression = nullptr;
+		Params.network.kcp.downstream_compression = &EnableCompressionParams;
 
-		Params.network.modular_kcp.upstream_kcp.flush_interval_millis = Config.UdpUpstreamIntervalMS;
-		Params.network.modular_kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
+		Params.network.kcp.upstream_kcp.flush_interval_millis = Config.UdpUpstreamIntervalMS;
+		Params.network.kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
 
 #if WITH_EDITOR
-		Params.network.modular_tcp.downstream_heartbeat = &HeartbeatParams;
-		Params.network.modular_tcp.upstream_heartbeat = &HeartbeatParams;
-		Params.network.modular_kcp.downstream_heartbeat = &HeartbeatParams;
-		Params.network.modular_kcp.upstream_heartbeat = &HeartbeatParams;
+		Params.network.tcp.downstream_heartbeat = &HeartbeatParams;
+		Params.network.tcp.upstream_heartbeat = &HeartbeatParams;
+		Params.network.kcp.downstream_heartbeat = &HeartbeatParams;
+		Params.network.kcp.upstream_heartbeat = &HeartbeatParams;
 #endif
 
 		// Use insecure connections default.
-		Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
-		Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+		Params.network.kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+		Params.network.tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
+
+		// Unreal GDK version
+		UnrealGDKVersionPair.name = "gdk_version";
+		UnrealGDKVersionPair.version = GDKVersion.Get();
+		Params.versions = &UnrealGDKVersionPair;
 
 		// Override the security type to be secure only if the user has requested it and we are not using an editor build.
 		if ((!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection)
@@ -88,12 +119,10 @@ struct ConfigureConnection
 			UE_LOG(LogSpatialWorkerConnection, Warning,
 				   TEXT("Secure connection requested but this is not supported in Editor builds. Connection will be insecure."));
 #else
-			Params.network.modular_kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
-			Params.network.modular_tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+			Params.network.kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
+			Params.network.tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
 #endif
 		}
-
-		Params.enable_dynamic_components = true;
 	}
 
 	FString FormatWorkerSDKLogFilePrefix() const
@@ -111,9 +140,11 @@ struct ConfigureConnection
 	Worker_ConnectionParameters Params;
 	FTCHARToUTF8 WorkerType;
 	FTCHARToUTF8 WorkerSDKLogFilePrefix;
+	FTCHARToUTF8 GDKVersion;
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_CompressionParameters EnableCompressionParams{};
 	Worker_LogsinkParameters Logsink{};
+	Worker_NameVersionPair UnrealGDKVersionPair{};
 
 #if WITH_EDITOR
 	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, MAX_int64 };
@@ -200,12 +231,18 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 	}
 }
 
-void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens)
+void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_LoginTokensResponse* LoginTokens)
 {
+	USpatialConnectionManager* ConnectionManager = static_cast<USpatialConnectionManager*>(UserData);
+
 	if (LoginTokens->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to get login token, StatusCode: %d, Error: %s"), LoginTokens->status.code,
 			   UTF8_TO_TCHAR(LoginTokens->status.detail));
+
+		ConnectionManager->OnConnectionFailure(LoginTokens->status.code, FString::Printf(TEXT("Failed to get login token, Error: %s"),
+																						 UTF8_TO_TCHAR(LoginTokens->status.detail)));
+
 		return;
 	}
 
@@ -213,15 +250,16 @@ void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_Alpha
 	{
 		UE_LOG(LogSpatialWorkerConnection, Warning,
 			   TEXT("No deployment found to connect to. Did you add the 'dev_login' tag to the deployment you want to connect to?"));
+
+		ConnectionManager->OnConnectionFailure(WORKER_CONNECTION_STATUS_CODE_REJECTED, TEXT("Zero login tokens received"));
 		return;
 	}
 
 	UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
-	USpatialConnectionManager* ConnectionManager = static_cast<USpatialConnectionManager*>(UserData);
 	ConnectionManager->ProcessLoginTokensResponse(LoginTokens);
 }
 
-void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens)
+void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_LoginTokensResponse* LoginTokens)
 {
 	// If LoginTokenResCallback is callable and returns true, return early.
 	if (LoginTokenResCallback && LoginTokenResCallback(LoginTokens))
@@ -266,33 +304,50 @@ void USpatialConnectionManager::ProcessLoginTokensResponse(const Worker_Alpha_Lo
 	ConnectToLocator(&DevAuthConfig);
 }
 
+void USpatialConnectionManager::SetComponentSets(const TMap<uint32, FComponentIDs>& InComponentSetMap)
+{
+	for (const auto& ComponentSet : InComponentSetMap)
+	{
+		for (const auto& Component : ComponentSet.Value.ComponentIDs)
+		{
+			ComponentSetData.ComponentSets.FindOrAdd(ComponentSet.Key).Add(Component);
+		}
+	}
+}
+
 void USpatialConnectionManager::RequestDeploymentLoginTokens()
 {
-	Worker_Alpha_LoginTokensRequest LTParams{};
+	Worker_LoginTokensRequest LTParams{};
 	FTCHARToUTF8 PlayerIdentityToken(*DevAuthConfig.PlayerIdentityToken);
 	LTParams.player_identity_token = PlayerIdentityToken.Get();
 	FTCHARToUTF8 WorkerType(*DevAuthConfig.WorkerType);
 	LTParams.worker_type = WorkerType.Get();
 	LTParams.use_insecure_connection = false;
 
-	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture =
-			Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &LTParams))
+	if (Worker_LoginTokensResponseFuture* LTFuture =
+			Worker_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &LTParams))
 	{
-		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, this, &USpatialConnectionManager::OnLoginTokens);
+		Worker_LoginTokensResponseFuture_Get(LTFuture, nullptr, this, &USpatialConnectionManager::OnLoginTokens);
 	}
 }
 
-void USpatialConnectionManager::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
+void USpatialConnectionManager::OnPlayerIdentityToken(void* UserData, const Worker_PlayerIdentityTokenResponse* PIToken)
 {
+	USpatialConnectionManager* ConnectionManager = static_cast<USpatialConnectionManager*>(UserData);
+
 	if (PIToken->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to get PlayerIdentityToken, StatusCode: %d, Error: %s"),
 			   PIToken->status.code, UTF8_TO_TCHAR(PIToken->status.detail));
+
+		ConnectionManager->OnConnectionFailure(PIToken->status.code,
+											   FString::Printf(TEXT("Failed to get PlayerIdentityToken, StatusCode: %d, Error: %s"),
+															   PIToken->status.code, UTF8_TO_TCHAR(PIToken->status.detail)));
+
 		return;
 	}
 
 	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully received PIToken: %s"), UTF8_TO_TCHAR(PIToken->player_identity_token));
-	USpatialConnectionManager* ConnectionManager = static_cast<USpatialConnectionManager*>(UserData);
 	ConnectionManager->DevAuthConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
 
 	ConnectionManager->RequestDeploymentLoginTokens();
@@ -305,17 +360,17 @@ void USpatialConnectionManager::StartDevelopmentAuth(const FString& DevAuthToken
 	FTCHARToUTF8 DisplayName(*DevAuthConfig.DisplayName);
 	FTCHARToUTF8 MetaData(*DevAuthConfig.MetaData);
 
-	Worker_Alpha_PlayerIdentityTokenRequest PITParams{};
+	Worker_PlayerIdentityTokenRequest PITParams{};
 	PITParams.development_authentication_token = DAToken.Get();
 	PITParams.player_id = PlayerId.Get();
 	PITParams.display_name = DisplayName.Get();
 	PITParams.metadata = MetaData.Get();
 	PITParams.use_insecure_connection = false;
 
-	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(
+	if (Worker_PlayerIdentityTokenResponseFuture* PITFuture = Worker_CreateDevelopmentPlayerIdentityTokenAsync(
 			TCHAR_TO_UTF8(*DevAuthConfig.LocatorHost), DevAuthConfig.LocatorPort, &PITParams))
 	{
-		Worker_Alpha_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialConnectionManager::OnPlayerIdentityToken);
+		Worker_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialConnectionManager::OnPlayerIdentityToken);
 	}
 }
 
@@ -325,11 +380,14 @@ void USpatialConnectionManager::ConnectToReceptionist(uint32 PlayInEditorID)
 
 	ConfigureConnection ConnectionConfig(ReceptionistConfig, bConnectAsClient);
 
+	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer = CreateEventTracer(ReceptionistConfig.WorkerId);
+	ConnectionConfig.Params.event_tracer = EventTracer != nullptr ? EventTracer->GetWorkerEventTracer() : nullptr;
+
 	Worker_ConnectionFuture* ConnectionFuture =
 		Worker_ConnectAsync(TCHAR_TO_UTF8(*ReceptionistConfig.GetReceptionistHost()), ReceptionistConfig.GetReceptionistPort(),
 							TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionConfig.Params);
 
-	FinishConnecting(ConnectionFuture);
+	FinishConnecting(ConnectionFuture, MoveTemp(EventTracer));
 }
 
 void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig)
@@ -337,6 +395,9 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 	if (InLocatorConfig == nullptr)
 	{
 		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Trying to connect to locator with invalid locator config"));
+
+		OnConnectionFailure(WORKER_CONNECTION_STATUS_CODE_INVALID_ARGUMENT, TEXT("Invalid locator config"));
+
 		return;
 	}
 
@@ -344,14 +405,13 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 
 	ConfigureConnection ConnectionConfig(*InLocatorConfig, bConnectAsClient);
 
+	TSharedPtr<SpatialGDK::SpatialEventTracer> EventTracer = CreateEventTracer(InLocatorConfig->WorkerId);
+	ConnectionConfig.Params.event_tracer = EventTracer != nullptr ? EventTracer->GetWorkerEventTracer() : nullptr;
+
 	FTCHARToUTF8 PlayerIdentityTokenCStr(*InLocatorConfig->PlayerIdentityToken);
 	FTCHARToUTF8 LoginTokenCStr(*InLocatorConfig->LoginToken);
 
 	Worker_LocatorParameters LocatorParams = {};
-	FString ProjectName;
-	FParse::Value(FCommandLine::Get(), TEXT("projectName"), ProjectName);
-	LocatorParams.project_name = TCHAR_TO_UTF8(*ProjectName);
-	LocatorParams.credentials_type = Worker_LocatorCredentialsTypes::WORKER_LOCATOR_PLAYER_IDENTITY_CREDENTIALS;
 	LocatorParams.player_identity.player_identity_token = PlayerIdentityTokenCStr.Get();
 	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
 
@@ -360,18 +420,21 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(WorkerLocator, &ConnectionConfig.Params);
 
-	FinishConnecting(ConnectionFuture);
+	FinishConnecting(ConnectionFuture, MoveTemp(EventTracer));
 }
 
-void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* ConnectionFuture)
+void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* ConnectionFuture,
+												 TSharedPtr<SpatialGDK::SpatialEventTracer> NewEventTracer)
 {
 	TWeakObjectPtr<USpatialConnectionManager> WeakSpatialConnectionManager(this);
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager] {
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager,
+															 EventTracing = MoveTemp(NewEventTracer)]() mutable {
 		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection] {
+		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection,
+											  EventTracing = MoveTemp(EventTracing)]() mutable {
 			if (!WeakSpatialConnectionManager.IsValid())
 			{
 				// The game instance was destroyed before the connection finished, so just clean up the connection.
@@ -381,19 +444,21 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 
 			USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
 
-			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
+			const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
+
+			if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 			{
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
-				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection);
+
+				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
+																		  SpatialConnectionManager->ComponentSetData);
 				SpatialConnectionManager->OnConnectionSuccess();
 			}
 			else
 			{
-				const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
 				const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
-
-				// TODO: Try to reconnect - UNR-576
+				Worker_Connection_Destroy(NewCAPIWorkerConnection);
 				SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
 			}
 		});
@@ -520,3 +585,14 @@ void USpatialConnectionManager::OnConnectionFailure(uint8_t ConnectionStatusCode
 
 	OnFailedToConnectCallback.ExecuteIfBound(ConnectionStatusCode, ErrorMessage);
 }
+
+TSharedPtr<SpatialGDK::SpatialEventTracer> USpatialConnectionManager::CreateEventTracer(const FString& WorkerId)
+{
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	if (Settings == nullptr || !Settings->bEventTracingEnabled)
+	{
+		return nullptr;
+	}
+
+	return MakeShared<SpatialGDK::SpatialEventTracer>(WorkerId);
+};

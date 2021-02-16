@@ -4,15 +4,12 @@
 
 #include "CoreMinimal.h"
 
-#include "Schema/Component.h"
-#include "Schema/StandardLibrary.h"
-#include "Schema/UnrealMetadata.h"
 #include "SpatialCommonTypes.h"
-#include "SpatialConstants.h"
-#include "SpatialView/OpList/OpList.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
+
+#include "EngineClasses/SpatialNetDriverDebugContext.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialView, Log, All);
 
@@ -35,7 +32,8 @@ public:
 	// Callbacks can be deregistered through passing the corresponding callback ID to the RemoveOpCallback function.
 	FCallbackId OnAddComponent(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AddComponentOp&)>& Callback);
 	FCallbackId OnRemoveComponent(Worker_ComponentId ComponentId, const TFunction<void(const Worker_RemoveComponentOp&)>& Callback);
-	FCallbackId OnAuthorityChange(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AuthorityChangeOp&)>& Callback);
+	FCallbackId OnAuthorityChange(Worker_ComponentId ComponentId,
+								  const TFunction<void(const Worker_ComponentSetAuthorityChangeOp&)>& Callback);
 	FCallbackId OnComponentUpdate(Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentUpdateOp&)>& Callback);
 	FCallbackId OnCommandRequest(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandRequestOp&)>& Callback);
 	FCallbackId OnCommandResponse(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandResponseOp&)>& Callback);
@@ -63,6 +61,7 @@ private:
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
 
 	TWeakObjectPtr<USpatialReceiver> Receiver;
+	TWeakObjectPtr<USpatialNetDriverDebugContext> DebugContext;
 	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
 	TWeakObjectPtr<USpatialMetrics> SpatialMetrics;
 

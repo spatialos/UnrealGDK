@@ -12,6 +12,14 @@ void USchemaGenObjectStub::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(USchemaGenObjectStub, BoolValue);
 }
 
+void USchemaGenObjectStubCondOwnerOnly::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(USchemaGenObjectStubCondOwnerOnly, IntValue, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(USchemaGenObjectStubCondOwnerOnly, BoolValue, COND_OwnerOnly);
+}
+
 ASpatialTypeActorWithActorComponent::ASpatialTypeActorWithActorComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -66,4 +74,16 @@ void ASpatialTypeActorWithSubobject ::GetLifetimeReplicatedProps(TArray<FLifetim
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ASpatialTypeActorWithSubobject, SpatialActorSubobject);
+}
+
+ASpatialTypeActorWithOwnerOnly::ASpatialTypeActorWithOwnerOnly(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+}
+
+void ASpatialTypeActorWithOwnerOnly::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ASpatialTypeActorWithOwnerOnly, OwnerOnlyProperty, COND_OwnerOnly);
 }

@@ -54,11 +54,6 @@ public:
 	// Sends the migration instructions and update actor authority.
 	void ProcessMigrations();
 
-protected:
-	void UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const;
-
-	uint64 GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const;
-
 	enum class EvaluateActorResult
 	{
 		None,			 // Actor not concerned by load balancing
@@ -68,12 +63,18 @@ protected:
 
 	EvaluateActorResult EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId);
 
+protected:
+	void UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const;
+
+	uint64 GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const;
+
 	template <typename ReplicationContext>
 	bool CollectActorsToMigrate(ReplicationContext& iCtx, AActor* Actor, bool bNetOwnerHasAuth)
 	{
 		if (Actor->GetIsReplicated())
 		{
-			if (!iCtx.IsActorReadyForMigration(Actor))
+			EActorMigrationResult ActorMigration = iCtx.IsActorReadyForMigration(Actor);
+			if (ActorMigration != EActorMigrationResult::Success)
 			{
 				// Prevents an Actor hierarchy from migrating if one of its actor is not ready.
 				// Child Actors are always allowed to join the owner.
@@ -81,11 +82,7 @@ protected:
 				// although it has the risk of creating an infinite lock if the child is unable to become ready.
 				if (bNetOwnerHasAuth)
 				{
-					AActor* HierarchyRoot = SpatialGDK::GetHierarchyRoot(Actor);
-					UE_LOG(LogSpatialLoadBalancingHandler, Warning,
-						   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) is not ready."),
-						   *HierarchyRoot->GetName(), *Actor->GetName(), NetDriver->PackageMap->GetEntityIdFromObject(Actor));
-
+					LogMigrationFailure(ActorMigration, Actor);
 					return false;
 				}
 			}
@@ -105,6 +102,12 @@ protected:
 
 		return true;
 	}
+
+	void LogMigrationFailure(EActorMigrationResult ActorMigrationResult, AActor* Actor);
+
+	bool EvaluateRemoteMigrationComponent(const AActor* NetOwner, const AActor* Target, VirtualWorkerId& OutWorkerId);
+
+	VirtualWorkerId GetWorkerId(const AActor* NetOwner);
 
 	USpatialNetDriver* NetDriver;
 

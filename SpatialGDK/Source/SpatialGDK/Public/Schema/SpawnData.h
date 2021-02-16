@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include "Engine/EngineTypes.h"
+#include "GameFramework/Actor.h"
+
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
@@ -11,7 +14,7 @@
 
 namespace SpatialGDK
 {
-struct SpawnData : Component
+struct SpawnData : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::SPAWN_DATA_COMPONENT_ID;
 
@@ -27,9 +30,14 @@ struct SpawnData : Component
 		Velocity = RootComponent ? Actor->GetVelocity() : FVector::ZeroVector;
 	}
 
-	SpawnData(const Worker_ComponentData& Data)
+	explicit SpawnData(const Worker_ComponentData& Data)
+		: SpawnData(Data.schema_type)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	}
+
+	explicit SpawnData(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 		Location = GetVectorFromSchema(ComponentObject, 1);
 		Rotation = GetRotatorFromSchema(ComponentObject, 2);
@@ -37,7 +45,7 @@ struct SpawnData : Component
 		Velocity = GetVectorFromSchema(ComponentObject, 4);
 	}
 
-	Worker_ComponentData CreateSpawnDataData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;

@@ -9,6 +9,8 @@
 
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetBitReader.h"
+#include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
 #include "Utils/GDKPropertyMacros.h"
@@ -87,10 +89,12 @@ bool ReferencesChanged(FObjectReferencesMap& InObjectReferencesMap, int32 Offset
 namespace SpatialGDK
 {
 ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver,
-								 FObjectReferencesMap& InObjectReferencesMap /*, TSet<FUnrealObjectRef>& InUnresolvedRefs*/)
+								 FObjectReferencesMap& InObjectReferencesMap, /*, TSet<FUnrealObjectRef>& InUnresolvedRefs*/
+								 SpatialEventTracer* InEventTracer)
 	: PackageMap(InNetDriver->PackageMap)
 	, NetDriver(InNetDriver)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
+	, EventTracer(InEventTracer)
 	, RootObjectReferencesMap(InObjectReferencesMap)
 {
 }
@@ -98,12 +102,18 @@ ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver,
 void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentData, UObject& Object, USpatialActorChannel& Channel,
 										 bool bIsHandover, bool& bOutReferencesChanged)
 {
+	ApplyComponentData(ComponentData.component_id, ComponentData.schema_type, Object, Channel, bIsHandover, bOutReferencesChanged);
+}
+
+void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object,
+										 USpatialActorChannel& Channel, bool bIsHandover, bool& bOutReferencesChanged)
+{
 	if (Object.IsPendingKill())
 	{
 		return;
 	}
 
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 	TArray<uint32> UpdatedIds;
 	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
@@ -111,23 +121,23 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentDa
 
 	if (bIsHandover)
 	{
-		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentData.component_id, bOutReferencesChanged);
+		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentId, bOutReferencesChanged);
 	}
 	else
 	{
-		ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentData.component_id, bOutReferencesChanged);
+		ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentId, bOutReferencesChanged);
 	}
 }
 
-void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& Object, USpatialActorChannel& Channel,
-										   bool bIsHandover, bool& bOutReferencesChanged)
+void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& Object,
+										   USpatialActorChannel& Channel, bool bIsHandover, bool& bOutReferencesChanged)
 {
 	if (Object.IsPendingKill())
 	{
 		return;
 	}
 
-	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate);
 
 	// Retrieve all the fields that have been updated in this component update
 	TArray<uint32> UpdatedIds;
@@ -136,8 +146,8 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 
 	// Retrieve all the fields that have been cleared (eg. list with no entries)
 	TArray<Schema_FieldId> ClearedIds;
-	ClearedIds.SetNumUninitialized(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
-	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate.schema_type, ClearedIds.GetData());
+	ClearedIds.SetNumUninitialized(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate));
+	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate, ClearedIds.GetData());
 
 	// Merge cleared fields into updated fields to ensure they will be processed (Schema_FieldId == uint32)
 	UpdatedIds.Append(ClearedIds);
@@ -146,12 +156,11 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 	{
 		if (bIsHandover)
 		{
-			ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentUpdate.component_id,
-									  bOutReferencesChanged);
+			ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged);
 		}
 		else
 		{
-			ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentUpdate.component_id, bOutReferencesChanged);
+			ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged);
 		}
 	}
 }
@@ -175,14 +184,23 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	bool bIsAuthServer = Channel.IsAuthoritativeServer();
 	bool bAutonomousProxy = Channel.IsClientAutonomousProxy();
 	bool bIsClient = NetDriver->GetNetMode() == NM_Client;
+	bool bEventTracerEnabled = EventTracer != nullptr;
 
 	FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient);
 
 	TArray<GDK_PROPERTY(Property)*> RepNotifies;
+	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
 
 	{
 		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
 		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
+
+		Worker_EntityId EntityId = Channel.GetEntityId();
+		TArray<FSpatialGDKSpanId> CauseSpanIds;
+		if (bEventTracerEnabled)
+		{
+			CauseSpanIds = EventTracer->GetAndConsumeSpansForComponent(EntityComponentId(EntityId, ComponentId));
+		}
 
 		for (uint32 FieldId : UpdatedIds)
 		{
@@ -313,11 +331,26 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					}
 				}
 
+				FSpatialGDKSpanId SpanId;
+				if (bEventTracerEnabled)
+				{
+					EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property);
+					SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(
+														 &Object, EntityId, ComponentId, Cmd.Property->GetName(), LinearTraceId),
+													 /* Causes */ reinterpret_cast<const Trace_SpanIdType*>(CauseSpanIds.GetData()),
+													 /* NumCauses */ CauseSpanIds.Num());
+				}
+
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
 				if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 				{
 					bool bIsIdentical =
 						Cmd.Property->Identical(RepState->GetReceivingRepState()->StaticBuffer.GetData() + SwappedCmd.ShadowOffset, Data);
+
+					if (bEventTracerEnabled)
+					{
+						PropertySpanIds.Add(Parent.Property, SpanId);
+					}
 
 					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
 					if (bIsInitialData)
@@ -341,7 +374,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 	Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator->RepLayout, RootObjectReferencesMap, &Object);
 
-	Channel.PostReceiveSpatialUpdate(&Object, RepNotifies);
+	Channel.PostReceiveSpatialUpdate(&Object, RepNotifies, PropertySpanIds);
 }
 
 void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel,
@@ -386,7 +419,7 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 		}
 	}
 
-	Channel.PostReceiveSpatialUpdate(&Object, TArray<GDK_PROPERTY(Property)*>());
+	Channel.PostReceiveSpatialUpdate(&Object, TArray<GDK_PROPERTY(Property)*>(), {});
 }
 
 void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap,

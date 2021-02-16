@@ -34,7 +34,7 @@ windows: &windows
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-08-03-061331-bk13849-b66f334e-d}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-11-18-224740-bk17641-0c4125be-d}"
   retry:
     automatic:
       - <<: *agent_transients
@@ -42,7 +42,7 @@ windows: &windows
       - <<: *bk_interrupted_by_signal
   timeout_in_minutes: 60
   plugins:
-    - ca-johnson/taskkill#v4.1: ~
+    - improbable-eng/taskkill#v4.4.1: ~
 
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
@@ -81,3 +81,11 @@ steps:
     if: (build.env("SLACK_NOTIFY") == "true" || build.branch == "master") && build.env("SLACK_NOTIFY") != "false" && build.env("ENGINE_NET_TEST") != "true"
     commands: "powershell ./ci/build-and-send-slack-notification.ps1"
     <<: *windows
+
+notify:
+  - slack: 
+      channels: 
+        - "#unreal-gdk-builds"
+      message: "<!subteam^SDB5161M5> Build failure! Please triage and post ticket." # SDB5161M5 is @support-unreal
+    if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge" && (build.state == "failed" || build.state == "canceled") && build.branch == "master"
+    

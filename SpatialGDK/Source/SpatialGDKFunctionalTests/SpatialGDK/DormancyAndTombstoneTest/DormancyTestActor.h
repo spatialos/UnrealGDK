@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/StaticMeshActor.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
 #include "DormancyTestActor.generated.h"
 
 /**
@@ -11,7 +11,7 @@
  * Has a TestIntProp to see if it replicates when it should/shouldn't.
  */
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API ADormancyTestActor : public AStaticMeshActor
+class SPATIALGDKFUNCTIONALTESTS_API ADormancyTestActor : public AReplicatedTestActorBase
 {
 	GENERATED_BODY()
 

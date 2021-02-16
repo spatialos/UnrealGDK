@@ -2,6 +2,7 @@
 
 #include "EngineClasses/SpatialGameInstance.h"
 
+#include "Engine/Engine.h"
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
 #include "Misc/Guid.h"
@@ -10,6 +11,8 @@
 #include "Editor/EditorEngine.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #endif
+
+#include "Kismet/GameplayStatics.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
@@ -216,9 +219,27 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 	return false;
 }
 
+namespace
+{
+constexpr uint8 SimPlayerErrorExitCode = 10;
+
+void HandleOnSimulatedPlayerNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type NetworkFailureType,
+										   const FString& Reason)
+{
+	UE_LOG(LogSpatialGameInstance, Log, TEXT("SimulatedPlayer network failure due to: %s"), *Reason);
+
+	FPlatformMisc::RequestExitWithStatus(/*bForce =*/false, SimPlayerErrorExitCode);
+}
+} // namespace
+
 void USpatialGameInstance::Init()
 {
 	Super::Init();
+
+	if (UGameplayStatics::HasLaunchOption(TEXT("FailOnNetworkFailure")))
+	{
+		GetEngine()->OnNetworkFailure().AddStatic(&HandleOnSimulatedPlayerNetworkFailure);
+	}
 
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
 
@@ -244,23 +265,20 @@ void USpatialGameInstance::HandleOnConnected(const USpatialNetDriver& NetDriver)
 
 	if (NetDriver.IsServer())
 	{
-		FOnWorkerFlagsUpdatedBP WorkerFlagDelegate;
-		WorkerFlagDelegate.BindDynamic(this, &USpatialGameInstance::HandleOnWorkerFlagsUpdated);
+		FOnWorkerFlagUpdatedBP WorkerFlagDelegate;
+		WorkerFlagDelegate.BindDynamic(this, &USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated);
 
-		NetDriver.SpatialWorkerFlags->BindToOnWorkerFlagsUpdated(WorkerFlagDelegate);
+		NetDriver.SpatialWorkerFlags->RegisterFlagUpdatedCallback(SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG, WorkerFlagDelegate);
 	}
 }
 
-void USpatialGameInstance::HandleOnWorkerFlagsUpdated(const FString& FlagName, const FString& FlagValue)
+void USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated(const FString& FlagName, const FString& FlagValue)
 {
-	if (FlagName.Equals(SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG, ESearchCase::IgnoreCase))
+	if (!bPreparingForShutdown)
 	{
-		if (!bPreparingForShutdown)
-		{
-			bPreparingForShutdown = true;
-			UE_LOG(LogSpatialGameInstance, Log, TEXT("Shutdown preparation triggered."));
-			OnPrepareShutdown.Broadcast();
-		}
+		bPreparingForShutdown = true;
+		UE_LOG(LogSpatialGameInstance, Log, TEXT("Shutdown preparation triggered."));
+		OnPrepareShutdown.Broadcast();
 	}
 }
 

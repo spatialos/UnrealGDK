@@ -1,16 +1,16 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 #include "Tests/TestDefinitions.h"
 
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialOutputDevice.h"
-#include "SpatialGDKTests/SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
 
 #include "CoreMinimal.h"
 #include "Engine/Engine.h"
 
-#define WORKERCONNECTION_TEST(TestName) GDK_TEST(Core, SpatialWorkerConnection, TestName)
+#define WORKERCONNECTION_TEST(TestName) GDK_AUTOMATION_TEST(Core, SpatialWorkerConnection, TestName)
 
 using namespace SpatialGDK;
 
@@ -138,7 +138,12 @@ bool FSendReserveEntityIdsRequest::Update()
 {
 	uint32_t NumOfEntities = 1;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendReserveEntityIdsRequest(NumOfEntities);
+	if (Connection == nullptr)
+	{
+		return false;
+	}
+
+	Connection->SendReserveEntityIdsRequest(NumOfEntities, RETRY_UNTIL_COMPLETE);
 	Connection->Flush();
 
 	return true;
@@ -150,7 +155,12 @@ bool FSendCreateEntityRequest::Update()
 	TArray<FWorkerComponentData> Components;
 	const Worker_EntityId* EntityId = nullptr;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId);
+	if (Connection == nullptr)
+	{
+		return false;
+	}
+
+	Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId, RETRY_UNTIL_COMPLETE);
 	Connection->Flush();
 
 	return true;
@@ -161,7 +171,12 @@ bool FSendDeleteEntityRequest::Update()
 {
 	const Worker_EntityId EntityId = 0;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendDeleteEntityRequest(EntityId);
+	if (Connection == nullptr)
+	{
+		return false;
+	}
+
+	Connection->SendDeleteEntityRequest(EntityId, RETRY_UNTIL_COMPLETE);
 	Connection->Flush();
 
 	return true;
@@ -173,7 +188,12 @@ bool FFindWorkerResponseOfType::Update()
 {
 	bool bFoundOpOfExpectedType = false;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->Advance();
+	if (Connection == nullptr)
+	{
+		return false;
+	}
+
+	Connection->Advance(0);
 	for (const auto& Op : Connection->GetWorkerMessages())
 	{
 		if (Op.op_type == ExpectedOpType)

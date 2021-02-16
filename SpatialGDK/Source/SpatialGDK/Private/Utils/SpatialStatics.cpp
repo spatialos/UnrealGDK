@@ -50,6 +50,37 @@ bool USpatialStatics::IsSpatialNetworkingEnabled()
 	return GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 }
 
+bool USpatialStatics::IsHandoverEnabled(const UObject* WorldContextObject)
+{
+	const UWorld* World = WorldContextObject->GetWorld();
+	if (World == nullptr)
+	{
+		return true;
+	}
+
+	if (World->IsNetMode(NM_Client))
+	{
+		return true;
+	}
+
+	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+	{
+		// Calling IsHandoverEnabled before NotifyBeginPlay has been called (when NetDriver is ready) is invalid.
+		if (!SpatialNetDriver->IsReady())
+		{
+			UE_LOG(LogSpatial, Error,
+				   TEXT("Called IsHandoverEnabled before NotifyBeginPlay has been called is invalid. Returning enabled."));
+			return true;
+		}
+
+		if (const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy))
+		{
+			return LBStrategy->RequiresHandoverData();
+		}
+	}
+	return true;
+}
+
 FName USpatialStatics::GetCurrentWorkerType(const UObject* WorldContext)
 {
 	if (const UWorld* World = WorldContext->GetWorld())
@@ -317,4 +348,72 @@ FName USpatialStatics::GetLayerName(const UObject* WorldContextObject)
 	const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy);
 	check(LBStrategy != nullptr);
 	return LBStrategy->GetLocalLayerName();
+}
+
+int64 USpatialStatics::GetMaxDynamicallyAttachedSubobjectsPerClass()
+{
+	return GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
+}
+
+void USpatialStatics::SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* WorldContextObject, FOnConfigUIClosedDelegate Delegate)
+{
+	const UWorld* World = WorldContextObject->GetWorld();
+	if (World == nullptr)
+	{
+		UE_LOG(LogSpatial, Error, TEXT("World was nullptr when calling SpatialDebuggerSetOnConfigUIClosedCallback"));
+		return;
+	}
+
+	if (World->GetNetMode() != NM_Client)
+	{
+		UE_LOG(LogSpatial, Warning,
+			   TEXT("SpatialDebuggerSetOnConfigUIClosedCallback should only be called on clients. It has no effects on servers."));
+		return;
+	}
+
+	const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	if (SpatialNetDriver == nullptr)
+	{
+		UE_LOG(LogSpatial, Error, TEXT("No spatial net driver found when calling SpatialDebuggerSetOnConfigUIClosedCallback"));
+		return;
+	}
+
+	SpatialNetDriver->SpatialDebuggerReady->Await(FOnReady::CreateLambda([SpatialNetDriver, Delegate](const FString& ErrorMessage) {
+		if (!ErrorMessage.IsEmpty())
+		{
+			UE_LOG(LogSpatial, Error, TEXT("Couldn't set config ui closed callback due to error: %s"), *ErrorMessage);
+			return;
+		}
+
+		SpatialNetDriver->SpatialDebugger->OnConfigUIClosed = Delegate;
+	}));
+}
+
+void USpatialStatics::SpatialSwitchHasAuthority(const AActor* Target, ESpatialHasAuthority& Authority)
+{
+	// A static UFunction does not have the Target parameter, here it is recreated by adding our own Target parameter
+	// that is defaulted to self and hidden so that the user does not need to set it
+	check(IsValid(Target));
+	check(Target->IsA(AActor::StaticClass()));
+	check(Target->GetNetDriver() != nullptr);
+
+	const bool bHasAuthority = Target->HasAuthority();
+	const bool bIsServer = Target->GetNetDriver()->IsServer();
+
+	if (bHasAuthority && bIsServer)
+	{
+		Authority = ESpatialHasAuthority::ServerAuth;
+	}
+	else if (!bHasAuthority && bIsServer)
+	{
+		Authority = ESpatialHasAuthority::ServerNonAuth;
+	}
+	else if (bHasAuthority && !bIsServer)
+	{
+		Authority = ESpatialHasAuthority::ClientAuth;
+	}
+	else
+	{
+		Authority = ESpatialHasAuthority::ClientNonAuth;
+	}
 }

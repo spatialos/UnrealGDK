@@ -2,9 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
-#include "Tests/TestDefinitions.h"
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 
-#define CONNECTIONMANAGER_TEST(TestName) GDK_TEST(Core, SpatialConnectionManager, TestName)
+#define CONNECTIONMANAGER_TEST(TestName) GDK_AUTOMATION_TEST(Core, SpatialConnectionManager, TestName)
 
 class FTemporaryCommandLine
 {
@@ -377,5 +377,5 @@ CONNECTIONMANAGER_TEST(SetupFromCommandLine_Empty)
 
 	// THEN
 	TestEqual("Success", bSuccess, false);
-	return  true;
+	return true;
 }

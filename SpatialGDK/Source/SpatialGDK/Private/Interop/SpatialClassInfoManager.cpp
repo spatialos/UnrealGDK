@@ -15,12 +15,15 @@
 #include "Kismet/KismetSystemLibrary.h"
 #endif
 
+#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
@@ -37,6 +40,15 @@ bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver)
 	{
 		UE_LOG(LogSpatialClassInfoManager, Error,
 			   TEXT("SchemaDatabase not found! Please generate schema or turn off SpatialOS networking."));
+		QuitGame();
+		return false;
+	}
+
+	if (SchemaDatabase->SchemaDatabaseVersion < ESchemaDatabaseVersion::LatestVersion)
+	{
+		UE_LOG(LogSpatialClassInfoManager, Error,
+			   TEXT("SchemaDatabase version old! Loaded: %d Expected: %d Please regenerate schema or turn off SpatialOS networking."),
+			   SchemaDatabase->SchemaDatabaseVersion, ESchemaDatabaseVersion::LatestVersion);
 		QuitGame();
 		return false;
 	}
@@ -103,7 +115,15 @@ ERPCType GetRPCType(UFunction* RemoteFunction)
 		}
 		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
 		{
-			return ERPCType::ServerUnreliable;
+			if (GetDefault<USpatialGDKSettings>()->bEnableAlwaysWriteRPCs
+				&& (RemoteFunction->SpatialFunctionFlags & SPATIALFUNC_AlwaysWrite))
+			{
+				return ERPCType::ServerAlwaysWrite;
+			}
+			else
+			{
+				return ERPCType::ServerUnreliable;
+			}
 		}
 	}
 
@@ -114,7 +134,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
 	// Remove PIE prefix on class if it exists to properly look up the class.
 	FString ClassPath = Class->GetPathName();
-	GEngine->NetworkRemapPath(NetDriver, ClassPath, false);
+#if ENGINE_MINOR_VERSION >= 26
+	GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), ClassPath, false /*bIsReading*/);
+#else
+	GEngine->NetworkRemapPath(NetDriver, ClassPath, false /*bIsReading*/);
+#endif
 
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
@@ -128,10 +152,31 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	TArray<UFunction*> RelevantClassFunctions = SpatialGDK::GetClassRPCFunctions(Class);
 
+	// Save AlwaysWrite RPCs to validate there's at most one per class.
+	TArray<UFunction*> AlwaysWriteRPCs;
+
+	const bool bIsActorClass = Class->IsChildOf<AActor>();
+
 	for (UFunction* RemoteFunction : RelevantClassFunctions)
 	{
 		ERPCType RPCType = GetRPCType(RemoteFunction);
 		checkf(RPCType != ERPCType::Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
+
+		if (RPCType == ERPCType::ServerAlwaysWrite)
+		{
+			if (bIsActorClass)
+			{
+				AlwaysWriteRPCs.Add(RemoteFunction);
+			}
+			else
+			{
+				UE_LOG(LogSpatialClassInfoManager, Error,
+					   TEXT("Found AlwaysWrite RPC on a subobject class. This is not supported and the RPC will be treated as Unreliable. "
+							"Please route it through the owning actor if AlwaysWrite behavior is necessary. Class: %s, function: %s"),
+					   *Class->GetPathName(), *RemoteFunction->GetName());
+				RPCType = ERPCType::ServerUnreliable;
+			}
+		}
 
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
@@ -141,6 +186,18 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 		Info->RPCs.Add(RemoteFunction);
 		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
+	}
+
+	if (AlwaysWriteRPCs.Num() > 1)
+	{
+		UE_LOG(LogSpatialClassInfoManager, Error,
+			   TEXT("Found more than 1 function with AlwaysWrite for class. This is not supported and may cause unexpected behavior. "
+					"Class: %s, functions:"),
+			   *Class->GetPathName());
+		for (UFunction* AlwaysWriteRPC : AlwaysWriteRPCs)
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("%s"), *AlwaysWriteRPC->GetName());
+		}
 	}
 
 	const bool bTrackHandoverProperties = ShouldTrackHandoverProperties();
@@ -175,7 +232,27 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	}
 
-	if (Class->IsChildOf<AActor>())
+	if (bTrackHandoverProperties)
+	{
+		uint32 Offset = 0;
+
+		for (FHandoverPropertyInfo& PropertyInfo : Info->HandoverProperties)
+		{
+			if (PropertyInfo.ArrayIdx == 0) // For static arrays, the first element will handle the whole array
+			{
+				// Make sure we conform to Unreal's alignment requirements
+				Offset = Align(Offset, PropertyInfo.Property->GetMinAlignment());
+
+				PropertyInfo.ShadowOffset = Offset;
+
+				Offset += PropertyInfo.Property->GetSize();
+			}
+		}
+
+		Info->HandoverPropertiesSize = Offset;
+	}
+
+	if (bIsActorClass)
 	{
 		FinishConstructingActorClassInfo(ClassPath, Info);
 	}
@@ -275,17 +352,14 @@ bool USpatialClassInfoManager::ShouldTrackHandoverProperties() const
 {
 	// There's currently a bug that lets handover data get sent to clients in the initial
 	// burst of data for an entity, which leads to log spam in the SpatialReceiver. By tracking handover
-	// properties on clients, we can prevent that spam.
+	// properties on clients, we can prevent that spam. Cannot be removed yet because of Kraken,
+	// UNR-4358 will remove this in a squid-only world.
 	if (!NetDriver->IsServer())
 	{
 		return true;
 	}
 
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-
-	const UAbstractLBStrategy* Strategy = NetDriver->LoadBalanceStrategy;
-	check(Strategy != nullptr);
-	return Strategy->RequiresHandoverData() || Settings->bEnableHandover;
+	return USpatialStatics::IsHandoverEnabled(NetDriver);
 }
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
@@ -378,7 +452,6 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 
 uint32 USpatialClassInfoManager::GetComponentIdForClass(const UClass& Class) const
 {
-	const FString ClassPath = Class.GetPathName();
 	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(Class.GetPathName()))
 	{
 		return ActorSchemaData->SchemaComponents[SCHEMA_Data];
@@ -496,24 +569,6 @@ const TMap<float, Worker_ComponentId>& USpatialClassInfoManager::GetNetCullDista
 	return SchemaDatabase->NetCullDistanceToComponentId;
 }
 
-const TArray<Worker_ComponentId>& USpatialClassInfoManager::GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const
-{
-	switch (ComponentType)
-	{
-	case ESchemaComponentType::SCHEMA_Data:
-		return SchemaDatabase->DataComponentIds;
-	case ESchemaComponentType::SCHEMA_OwnerOnly:
-		return SchemaDatabase->OwnerOnlyComponentIds;
-	case ESchemaComponentType::SCHEMA_Handover:
-		return SchemaDatabase->HandoverComponentIds;
-	default:
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Component type %d not recognised."), ComponentType);
-		checkNoEntry();
-		static const TArray<Worker_ComponentId> EmptyArray;
-		return EmptyArray;
-	}
-}
-
 const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId,
 																		USpatialPackageMapClient* PackageMapClient)
 {
@@ -560,14 +615,10 @@ bool USpatialClassInfoManager::IsNetCullDistanceComponent(Worker_ComponentId Com
 	return SchemaDatabase->NetCullDistanceComponentIds.Contains(ComponentId);
 }
 
-bool USpatialClassInfoManager::IsEntityCompletenessComponent(Worker_ComponentId ComponentId) const
-{
-	return ComponentId >= SpatialConstants::FIRST_EC_COMPONENT_ID && ComponentId <= SpatialConstants::LAST_EC_COMPONENT_ID;
-}
-
 bool USpatialClassInfoManager::IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const
 {
-	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId) || IsEntityCompletenessComponent(ComponentId);
+	return IsSublevelComponent(ComponentId) || IsNetCullDistanceComponent(ComponentId)
+		   || SpatialConstants::IsEntityCompletenessComponent(ComponentId);
 }
 
 void USpatialClassInfoManager::QuitGame()
@@ -594,10 +645,19 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 
 	if (ActorForRelevancy->bAlwaysRelevant)
 	{
-		return SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
+		if (ActorForRelevancy->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+		{
+			return SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID;
+		}
+		else
+		{
+			return SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
+		}
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceInterest)
+	// Don't add NCD component to player controller and server only actors as we don't want client's to gain interest in them
+	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceInterest && !Actor->IsA<APlayerController>()
+		&& !Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
 		Worker_ComponentId NCDComponentId = GetComponentIdForNetCullDistance(ActorForRelevancy->NetCullDistanceSquared);
 		if (NCDComponentId != SpatialConstants::INVALID_COMPONENT_ID)

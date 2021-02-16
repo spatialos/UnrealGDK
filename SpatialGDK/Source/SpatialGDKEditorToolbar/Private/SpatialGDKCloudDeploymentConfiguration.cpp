@@ -86,6 +86,8 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 	AssemblyNameInputErrorReporting->SetError(TEXT(""));
 	DeploymentNameInputErrorReporting = SNew(SPopupErrorText);
 	DeploymentNameInputErrorReporting->SetError(TEXT(""));
+	SimulatedPlayersDeploymentNameInputErrorReporting = SNew(SPopupErrorText);
+	SimulatedPlayersDeploymentNameInputErrorReporting->SetError(TEXT(""));
 	ChildSlot
 		[SNew(SBorder)
 			 .HAlign(HAlign_Fill)
@@ -203,7 +205,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 																		.BrowseButtonToolTip(LOCTEXT("SnapshotFilePicker_Tooltip",
 																									 "Path to the snapshot file."))
 																		.BrowseDirectory(
-																			SpatialGDKSettings->GetSpatialOSSnapshotFolderPath())
+																			SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath)
 																		.BrowseTitle(LOCTEXT("SnapshotFilePicker_Title", "File picker..."))
 																		.FilePath_UObject(SpatialGDKSettings,
 																						  &USpatialGDKEditorSettings::GetSnapshotPath)
@@ -379,6 +381,7 @@ void SSpatialGDKCloudDeploymentConfiguration::Construct(const FArguments& InArgs
 																					   &SSpatialGDKCloudDeploymentConfiguration::
 																						   OnSimulatedPlayerDeploymentNameCommited,
 																					   ETextCommit::Default)
+																		.ErrorReporting(SimulatedPlayersDeploymentNameInputErrorReporting)
 																		.IsEnabled_UObject(
 																			SpatialGDKSettings,
 																			&USpatialGDKEditorSettings::IsSimulatedPlayersEnabled)]]
@@ -663,14 +666,14 @@ void SSpatialGDKCloudDeploymentConfiguration::OnPrimaryDeploymentNameCommited(co
 void SSpatialGDKCloudDeploymentConfiguration::OnCheckedUsePinnedVersion(ECheckBoxState NewCheckedState)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetUseGDKPinnedRuntimeVersionForCloud(SpatialGDKSettings->RuntimeVariant,
+	SpatialGDKSettings->SetUseGDKPinnedRuntimeVersionForCloud(SpatialGDKSettings->GetSpatialOSRuntimeVariant(),
 															  NewCheckedState == ECheckBoxState::Checked);
 }
 
 void SSpatialGDKCloudDeploymentConfiguration::OnRuntimeCustomVersionCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetCustomCloudSpatialOSRuntimeVersion(SpatialGDKSettings->RuntimeVariant, InText.ToString());
+	SpatialGDKSettings->SetCustomCloudSpatialOSRuntimeVersion(SpatialGDKSettings->GetSpatialOSRuntimeVariant(), InText.ToString());
 }
 
 void SSpatialGDKCloudDeploymentConfiguration::OnSnapshotPathPicked(const FString& PickedPath)
@@ -779,8 +782,16 @@ void SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerDeploymentRegionC
 
 void SSpatialGDKCloudDeploymentConfiguration::OnSimulatedPlayerDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
+	const FString& InputSimulatedPlayersDeploymentName = InText.ToString();
+	if (!USpatialGDKEditorSettings::IsDeploymentNameValid(InputSimulatedPlayersDeploymentName))
+	{
+		SimulatedPlayersDeploymentNameInputErrorReporting->SetError(SpatialConstants::DeploymentPatternHint);
+		return;
+	}
+	SimulatedPlayersDeploymentNameInputErrorReporting->SetError(TEXT(""));
+
 	USpatialGDKEditorSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKEditorSettings>();
-	SpatialGDKSettings->SetSimulatedPlayerDeploymentName(InText.ToString());
+	SpatialGDKSettings->SetSimulatedPlayerDeploymentName(InputSimulatedPlayersDeploymentName);
 }
 
 void SSpatialGDKCloudDeploymentConfiguration::OnNumberOfSimulatedPlayersCommited(uint32 NewValue)

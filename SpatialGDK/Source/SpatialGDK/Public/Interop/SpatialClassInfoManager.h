@@ -42,6 +42,7 @@ struct FHandoverPropertyInfo
 {
 	uint16 Handle;
 	int32 Offset;
+	uint32 ShadowOffset;
 	int32 ArrayIdx;
 	GDK_PROPERTY(Property) * Property;
 };
@@ -62,6 +63,7 @@ struct FClassInfo
 	// Exists for all classes
 	TArray<UFunction*> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
+	uint32 HandoverPropertiesSize;
 	TArray<FHandoverPropertyInfo> HandoverProperties;
 	TArray<FInterestPropertyInfo> InterestProperties;
 
@@ -120,9 +122,6 @@ public:
 	Worker_ComponentId ComputeActorInterestComponentId(const AActor* Actor) const;
 
 	bool IsNetCullDistanceComponent(Worker_ComponentId ComponentId) const;
-	bool IsEntityCompletenessComponent(Worker_ComponentId ComponentId) const;
-
-	const TArray<Worker_ComponentId>& GetComponentIdsForComponentType(const ESchemaComponentType ComponentType) const;
 
 	// Used to check if component is used for qbi tracking only
 	bool IsGeneratedQBIMarkerComponent(Worker_ComponentId ComponentId) const;
@@ -149,7 +148,9 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
+	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>, FDefaultSetAllocator,
+		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>, false>>
+		ClassInfoMap;
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;

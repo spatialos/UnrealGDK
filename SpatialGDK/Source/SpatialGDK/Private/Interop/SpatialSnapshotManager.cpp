@@ -47,11 +47,13 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 
 	Worker_EntityQuery WorldQuery{};
 	WorldQuery.constraint = UnrealMetadataConstraint;
-	WorldQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
+	WorldQuery.snapshot_result_type_component_id_count = 0;
+	// This memory address will not be read, but needs to be non-null, so that the WorkerSDK correctly doesn't send us ANY components.
+	// Setting it to a valid component id address, just in case.
+	WorldQuery.snapshot_result_type_component_ids = &SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 
-	Worker_RequestId RequestID;
 	check(Connection.IsValid());
-	RequestID = Connection->SendEntityQueryRequest(&WorldQuery);
+	const Worker_RequestId RequestID = Connection->SendEntityQueryRequest(&WorldQuery, RETRY_UNTIL_COMPLETE);
 
 	EntityQueryDelegate WorldQueryDelegate;
 	WorldQueryDelegate.BindLambda([Connection = this->Connection, PostWorldWipeDelegate](const Worker_EntityQueryResponseOp& Op) {
@@ -85,7 +87,7 @@ void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& 
 	{
 		UE_LOG(LogSnapshotManager, Verbose, TEXT("Sending delete request for: %i"), Op.results[i].entity_id);
 		check(Connection.IsValid());
-		Connection->SendDeleteEntityRequest(Op.results[i].entity_id);
+		Connection->SendDeleteEntityRequest(Op.results[i].entity_id, RETRY_UNTIL_COMPLETE);
 	}
 }
 
@@ -194,7 +196,7 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 			}
 
 			UE_LOG(LogSnapshotManager, Log, TEXT("Sending entity create request for: %i"), ReservedEntityID);
-			Connection->SendCreateEntityRequest(MoveTemp(EntityToSpawn), &ReservedEntityID);
+			Connection->SendCreateEntityRequest(MoveTemp(EntityToSpawn), &ReservedEntityID, RETRY_UNTIL_COMPLETE);
 		}
 
 		GlobalStateManager->SetDeploymentState();
@@ -203,7 +205,7 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 	// Reserve the Entity IDs
 	check(Connection.IsValid());
-	Worker_RequestId ReserveRequestID = Connection->SendReserveEntityIdsRequest(EntitiesToSpawn.Num());
+	const Worker_RequestId ReserveRequestID = Connection->SendReserveEntityIdsRequest(EntitiesToSpawn.Num(), RETRY_UNTIL_COMPLETE);
 
 	// TODO: UNR-654
 	// References to entities that are stored within the snapshot need remapping once we know the new entity IDs.

@@ -5,8 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Improbable.Collections;
-using Improbable.Worker;
+using Improbable.Worker.CInterop;
 
 namespace Improbable.WorkerCoordinator
 {
@@ -24,10 +23,8 @@ namespace Improbable.WorkerCoordinator
         private const string DevAuthTokenWorkerFlag = "simulated_players_dev_auth_token";
         private const string TargetDeploymentWorkerFlag = "simulated_players_target_deployment";
         private const string DeploymentTotalNumSimulatedPlayersWorkerFlag = "total_num_simulated_players";
-        private const string TargetDeploymentReadyWorkerFlag = "target_deployment_ready";
 
         private const int AverageDelayMillisBetweenConnections = 1500;
-        private const int PollTargetDeploymentReadyIntervalMillis = 5000;
 
         // Argument placeholders for simulated players - these will be replaced by the coordinator by their actual values.
         private const string SimulatedPlayerWorkerNamePlaceholderArg = "<IMPROBABLE_SIM_PLAYER_WORKER_ID>";
@@ -118,20 +115,12 @@ namespace Improbable.WorkerCoordinator
         {
             var connection = CoordinatorConnection.ConnectAndKeepAlive(Logger, ReceptionistHost, ReceptionistPort, CoordinatorWorkerId, CoordinatorWorkerType);
 
-
-            Logger.WriteLog("Waiting for target deployment to become ready.");
-            var deploymentReadyTask = Task.Run(() => WaitForTargetDeploymentReady(connection));
-            if (!deploymentReadyTask.Wait(TimeSpan.FromMinutes(15)))
-            {
-                throw new TimeoutException("Timed out waiting for the deployment to be ready. Waited 15 minutes.");
-            }
-
             // Read worker flags.
-            Option<string> devAuthTokenOpt = connection.GetWorkerFlag(DevAuthTokenWorkerFlag);
-            Option<string> targetDeploymentOpt = connection.GetWorkerFlag(TargetDeploymentWorkerFlag);
+            string devAuthToken = connection.GetWorkerFlag(DevAuthTokenWorkerFlag);
+            string targetDeployment = connection.GetWorkerFlag(TargetDeploymentWorkerFlag);
             int deploymentTotalNumSimulatedPlayers = int.Parse(GetWorkerFlagOrDefault(connection, DeploymentTotalNumSimulatedPlayersWorkerFlag, "100"));
 
-            Logger.WriteLog($"Target deployment is ready. Starting {NumSimulatedPlayersToStart} simulated players.");
+            Logger.WriteLog($"Starting {NumSimulatedPlayersToStart} simulated players.");
             Thread.Sleep(InitialStartDelayMillis);
 
             var maxDelayMillis = deploymentTotalNumSimulatedPlayers * AverageDelayMillisBetweenConnections;
@@ -157,24 +146,24 @@ namespace Improbable.WorkerCoordinator
                 }
 
                 Thread.Sleep(timeToSleep);
-                StartSimulatedPlayer(clientName, devAuthTokenOpt, targetDeploymentOpt);
+                StartSimulatedPlayer(clientName, devAuthToken, targetDeployment);
             }
 
             // Wait for all clients to exit.
             WaitForPlayersToExit();
         }
 
-        private void StartSimulatedPlayer(string simulatedPlayerName, Option<string> devAuthTokenOpt, Option<string> targetDeploymentOpt)
+        private void StartSimulatedPlayer(string simulatedPlayerName, string devAuthToken, string targetDeployment)
         {
             try
             {
                 // Pass in the dev auth token and the target deployment
-                if (devAuthTokenOpt.HasValue && targetDeploymentOpt.HasValue)
+                if (!String.IsNullOrEmpty(devAuthToken) && !String.IsNullOrEmpty(targetDeployment))
                 {
                     string[] simulatedPlayerArgs = Util.ReplacePlaceholderArgs(SimulatedPlayerArgs, new Dictionary<string, string>() {
                         { SimulatedPlayerWorkerNamePlaceholderArg, simulatedPlayerName },
-                        { DevAuthTokenPlaceholderArg, devAuthTokenOpt.Value },
-                        { TargetDeploymentPlaceholderArg, targetDeploymentOpt.Value }
+                        { DevAuthTokenPlaceholderArg, devAuthToken },
+                        { TargetDeploymentPlaceholderArg, targetDeployment }
                     });
 
                     // Prepend the simulated player id as an argument to the start client script.
@@ -183,8 +172,7 @@ namespace Improbable.WorkerCoordinator
 
                     // Start the client
                     string flattenedArgs = string.Join(" ", simulatedPlayerArgs);
-                    Logger.WriteLog($"Starting simulated player {simulatedPlayerName} with args: {flattenedArgs}");
-                    CreateSimulatedPlayerProcess(SimulatedPlayerFilename, flattenedArgs); ;
+                    CreateSimulatedPlayerProcess(simulatedPlayerName, SimulatedPlayerFilename, flattenedArgs);
                 }
                 else
                 {
@@ -199,28 +187,13 @@ namespace Improbable.WorkerCoordinator
 
         private static string GetWorkerFlagOrDefault(Connection connection, string flagName, string defaultValue)
         {
-            Option<string> flagValue = connection.GetWorkerFlag(flagName);
-            if (flagValue.HasValue)
+            string flagValue = connection.GetWorkerFlag(flagName);
+            if (flagValue != null)
             {
-                return flagValue.Value;
+                return flagValue;
             }
 
             return defaultValue;
-        }
-
-        private void WaitForTargetDeploymentReady(Connection connection)
-        {
-            while (true)
-            {
-                var readyFlagOpt = connection.GetWorkerFlag(TargetDeploymentReadyWorkerFlag);
-                if (readyFlagOpt.HasValue && readyFlagOpt.Value.ToLower() == "true")
-                {
-                    // Ready.
-                    break;
-                }
-
-                Thread.Sleep(PollTargetDeploymentReadyIntervalMillis);
-            }
         }
     }
 }

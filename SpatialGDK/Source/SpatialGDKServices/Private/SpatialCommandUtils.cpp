@@ -3,6 +3,7 @@
 #include "SpatialCommandUtils.h"
 
 #include "Internationalization/Regex.h"
+#include "Misc/MonitoredProcess.h"
 #include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
@@ -418,7 +419,7 @@ bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
 	const FString KillCmd = TEXT("taskkill");
 	const FString KillArgs = FString::Printf(TEXT("/F /PID %s"), *PID);
 #elif PLATFORM_MAC
-	const FString KillCmd = FPaths::Combine(SpatialGDKServicesConstants::KillCmdFilePath, TEXT("kill"));
+	const FString KillCmd = FPaths::Combine(SpatialGDKServicesConstants::BinPath, TEXT("kill"));
 	const FString KillArgs = FString::Printf(TEXT("%s"), *PID);
 #endif
 
@@ -431,6 +432,21 @@ bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
 	}
 
 	return bSuccess;
+}
+
+void SpatialCommandUtils::TryKillProcessWithName(const FString& ProcessName)
+{
+	FPlatformProcess::FProcEnumerator ProcessIt;
+	while (ProcessIt.MoveNext())
+	{
+		if (ProcessIt.GetCurrent().GetName().Equals(ProcessName))
+		{
+			UE_LOG(LogSpatialCommandUtils, Log, TEXT("Killing process: %s with process ID : %d"), *ProcessName,
+				   ProcessIt.GetCurrent().GetPID());
+			auto Handle = FPlatformProcess::OpenProcess(ProcessIt.GetCurrent().GetPID());
+			FPlatformProcess::TerminateProc(Handle);
+		}
+	}
 }
 
 bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName)
@@ -496,4 +512,93 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 	return false;
 }
 
+bool SpatialCommandUtils::FetchRuntimeBinary(const FString& RuntimeVersion, const bool bIsRunningInChina)
+{
+	FString RuntimePath =
+		FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, SpatialGDKServicesConstants::RuntimePackageName, RuntimeVersion);
+	return FetchPackageBinaryWithRetries(RuntimeVersion, SpatialGDKServicesConstants::RuntimeExe,
+										 SpatialGDKServicesConstants::RuntimePackageName, RuntimePath, bIsRunningInChina, true);
+}
+
+bool SpatialCommandUtils::FetchInspectorBinary(const FString& InspectorVersion, const bool bIsRunningInChina)
+{
+	FString InspectorPath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, SpatialGDKServicesConstants::InspectorPackageName,
+											InspectorVersion, SpatialGDKServicesConstants::InspectorExe);
+	return FetchPackageBinaryWithRetries(InspectorVersion, SpatialGDKServicesConstants::InspectorExe,
+										 SpatialGDKServicesConstants::InspectorPackageName, InspectorPath, bIsRunningInChina, false);
+}
+
+bool SpatialCommandUtils::FetchPackageBinaryWithRetries(const FString& PackageVersion, const FString& PackageExe,
+														const FString& PackageName, const FString& SaveLocation,
+														const bool bIsRunningInChina, const bool bUnzip, const int32 NumRetries /*= 3*/)
+{
+	int32 Attempt = 0;
+	while (!FetchPackageBinary(PackageVersion, PackageExe, PackageName, SaveLocation, bIsRunningInChina, bUnzip))
+	{
+		Attempt++;
+		if (Attempt <= NumRetries)
+		{
+			UE_LOG(LogSpatialCommandUtils, Log, TEXT("Failed to fetch %s binary. Attempting retry. Retry attempt number: %d"), *PackageName,
+				   Attempt);
+		}
+		else
+		{
+			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Giving up trying to fetch %s binary after %d retries"), *PackageName, NumRetries);
+			break;
+		}
+	}
+
+	return Attempt <= NumRetries;
+}
+
+bool SpatialCommandUtils::FetchPackageBinary(const FString& PackageVersion, const FString& PackageExe, const FString& PackageName,
+											 const FString& SaveLocation, const bool bIsRunningInChina, const bool bUnzip)
+{
+	FPlatformMisc::SetEnvironmentVar(TEXT("IMPROBABLE_INTERNAL_CLI_WRAPPER_GRPC_TIMEOUT "),
+									 *FString::Printf(TEXT("%d"), ProcessTimeoutTime));
+
+	FString PackagePath = FPaths::Combine(SpatialGDKServicesConstants::GDKProgramPath, *PackageName, PackageVersion);
+
+	// Check if the binary already exists for a given version
+	if (FPaths::FileExists(FPaths::Combine(PackagePath, PackageExe)))
+	{
+		UE_LOG(LogSpatialCommandUtils, Verbose, TEXT("%s binary already exists."), *PackageName);
+		return true;
+	}
+
+	// If it does not exist then fetch the binary using `spatial worker package retrieve`
+	UE_LOG(LogSpatialCommandUtils, Log, TEXT("Trying to fetch %s version %s"), *PackageName, *PackageVersion);
+	FString Params = FString::Printf(TEXT("package retrieve %s %s %s %s"), *PackageName, *SpatialGDKServicesConstants::PlatformVersion,
+									 *PackageVersion, *SaveLocation);
+	if (bUnzip)
+	{
+		Params += TEXT(" --unzip");
+	}
+
+	if (bIsRunningInChina)
+	{
+		Params += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
+	}
+
+	TOptional<FMonitoredProcess> FetchingProcess;
+	const FString& ExePath = SpatialGDKServicesConstants::SpatialExe;
+	FetchingProcess = { ExePath, Params, true, true };
+	FetchingProcess->OnOutput().BindLambda([](const FString& Output) {
+		UE_LOG(LogSpatialCommandUtils, Display, TEXT("FetchingProcess: %s"), *Output);
+	});
+	FetchingProcess->Launch();
+
+	while (FetchingProcess->Update())
+	{
+		if (FetchingProcess->GetDuration().GetTotalSeconds() > ProcessTimeoutTime)
+		{
+			UE_LOG(LogSpatialCommandUtils, Error, TEXT("Timed out waiting for the %s process fetching to start after %ds"), *PackageName,
+				   ProcessTimeoutTime);
+
+			FetchingProcess->Exit();
+			return false;
+		}
+	}
+	return true;
+}
 #undef LOCTEXT_NAMESPACE

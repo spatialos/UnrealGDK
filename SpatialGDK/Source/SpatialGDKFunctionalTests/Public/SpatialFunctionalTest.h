@@ -97,7 +97,7 @@ public:
 	void CrossServerFinishTest(EFunctionalTestResult TestResult, const FString& Message);
 
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerNotifyStepFinished(ASpatialFunctionalTestFlowController* FlowController);
+	void CrossServerNotifyStepFinished(ASpatialFunctionalTestFlowController* FlowController, const int StepIndex);
 
 	// # FlowController related APIs.
 
@@ -172,6 +172,7 @@ public:
 	const FSpatialFunctionalTestStepDefinition GetStepDefinition(int StepIndex) const;
 
 	int GetCurrentStepIndex() { return CurrentStepIndex; }
+	void SetCurrentStepIndex(const int StepIndex) { CurrentStepIndex = StepIndex; }
 
 	// Convenience function that goes over all FlowControllers and counts how many are Servers.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
@@ -408,6 +409,12 @@ private:
 	UFUNCTION()
 	void OnReplicated_bPreparedTest();
 
+	UPROPERTY(ReplicatedUsing = OnReplicated_bFinishedTest, Transient)
+	bool bFinishedTest = false;
+
+	UFUNCTION()
+	void OnReplicated_bFinishedTest();
+
 	UPROPERTY(Replicated, Transient)
 	TArray<ASpatialFunctionalTestFlowController*> FlowControllers;
 
@@ -418,6 +425,9 @@ private:
 	void StartServerFlowControllerSpawn();
 
 	void SetupClientPlayerRegistrationFlow();
+	void EndPlay(const EEndPlayReason::Type Reason) override;
+
+	FDelegateHandle PostLoginDelegate;
 
 	// Sets the snapshot for the map loaded by this world. When launching the test maps, the AutomationManager will
 	// check if there's a snapshot for that map and if so use it instead of the default snapshot. If PathToSnapshot

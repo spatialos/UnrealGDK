@@ -25,6 +25,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSettings);
 
 namespace
 {
+constexpr int32 DefaultEventTracingFileSize = 256 * 1024 * 1024; // 256mb
+
 void CheckCmdLineOverrideBool(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, bool& bOutValue)
 {
 #if ALLOW_SPATIAL_CMDLINE_PARSING // Command-line only enabled for non-shipping or with target rule bEnableSpatialCmdlineInShipping enabled
@@ -90,7 +92,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EntityCreationRateLimit(0)
 	, bUseIsActorRelevantForConnection(false)
 	, OpsUpdateRate(1000.0f)
-	, bEnableHandover(false)
 	, MaxNetCullDistanceSquared(0.0f) // Default disabled
 	, QueuedIncomingRPCWaitTime(1.0f)
 	, QueuedIncomingRPCRetryTime(1.0f)
@@ -106,11 +107,12 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(false)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, ServicesRegion(EServicesRegion::Default)
-	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning)
+	, WorkerLogLevel(ESettingsWorkerLogVerbosity::Warning) // Deprecated - UNR-4348
+	, LocalWorkerLogLevel(WorkerLogLevel)
+	, CloudWorkerLogLevel(WorkerLogLevel)
 	, bEnableMultiWorker(true)
-	, bUseRPCRingBuffers(true)
 	, DefaultRPCRingBufferSize(32)
-	, MaxRPCRingBufferSize(32)
+	, CrossServerRPCImplementation(ECrossServerRPCImplementation::SpatialCommand)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
 	, bTcpNoDelay(false)
 	, UdpServerDownstreamUpdateIntervalMS(1)
@@ -125,8 +127,16 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureClientConnection(false)
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
+	, bEnableCrossLayerActorSpawning(true)
+	, StartupLogRate(5.0f)
+	, ActorMigrationLogRate(5.0f)
+	, bEventTracingEnabled(false)
+	, SamplingProbability(1.0f)
+	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
+	, bEnableAlwaysWriteRPCs(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
+	RPCRingBufferSizeOverrides.Add(ERPCType::ServerAlwaysWrite, 1);
 }
 
 void USpatialGDKSettings::PostInitProperties()
@@ -135,10 +145,8 @@ void USpatialGDKSettings::PostInitProperties()
 
 	// Check any command line overrides for using QBI, Offloading (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideHandover"), TEXT("Handover"), bEnableHandover);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableCrossLayerActorSpawning"), TEXT("Multiserver cross-layer Actor spawning"),
 							 bEnableCrossLayerActorSpawning);
-	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideRPCRingBuffers"), TEXT("RPC ring buffers"), bUseRPCRingBuffers);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterest"), TEXT("Net cull distance interest"),
 							 bEnableNetCullDistanceInterest);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideNetCullDistanceInterestFrequency"), TEXT("Net cull distance interest frequency"),
@@ -190,13 +198,6 @@ bool USpatialGDKSettings::CanEditChange(const GDK_PROPERTY(Property) * InPropert
 
 	const FName Name = InProperty->GetFName();
 
-	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, DefaultRPCRingBufferSize)
-		|| Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, RPCRingBufferSizeMap)
-		|| Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxRPCRingBufferSize))
-	{
-		return UseRPCRingBuffer();
-	}
-
 	return true;
 }
 
@@ -225,18 +226,12 @@ void USpatialGDKSettings::UpdateServicesRegionFile()
 
 uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 {
-	if (const uint32* Size = RPCRingBufferSizeMap.Find(RPCType))
+	if (const uint32* Size = RPCRingBufferSizeOverrides.Find(RPCType))
 	{
 		return *Size;
 	}
 
 	return DefaultRPCRingBufferSize;
-}
-
-bool USpatialGDKSettings::UseRPCRingBuffer() const
-{
-	// RPC Ring buffer are necessary in order to do RPC handover, something legacy RPC does not handle.
-	return bUseRPCRingBuffers;
 }
 
 float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) const
@@ -274,10 +269,9 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 };
 
 #if WITH_EDITOR
-void USpatialGDKSettings::SetMultiWorkerEnabled(bool bIsEnabled)
+void USpatialGDKSettings::SetMultiWorkerEditorEnabled(bool bIsEnabled)
 {
 	bEnableMultiWorker = bIsEnabled;
-	SaveConfig();
 }
 #endif // WITH_EDITOR
 

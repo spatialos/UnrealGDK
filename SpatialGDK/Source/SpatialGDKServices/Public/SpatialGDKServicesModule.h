@@ -7,6 +7,8 @@
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
 
+class SSpatialOutputLog;
+
 class SPATIALGDKSERVICES_API FSpatialGDKServicesModule : public IModuleInterface
 {
 public:
@@ -19,6 +21,7 @@ public:
 
 	FLocalDeploymentManager* GetLocalDeploymentManager();
 	FLocalReceptionistProxyServerManager* GetLocalReceptionistProxyServerManager();
+	TWeakPtr<SSpatialOutputLog> GetSpatialOutputLog();
 
 	static FString GetSpatialGDKPluginDirectory(const FString& AppendPath = TEXT(""));
 

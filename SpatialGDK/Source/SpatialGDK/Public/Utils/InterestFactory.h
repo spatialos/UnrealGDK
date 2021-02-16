@@ -46,12 +46,13 @@ public:
 	Worker_ComponentData CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 	Worker_ComponentUpdate CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
-	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy, bool bDebug);
+	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy) const;
+	Interest CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, bool bDebug) const;
+	void AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, Interest& OutInterest) const;
+	static Interest CreateRoutingWorkerInterest();
 
 	// Returns false if we could not get an owner's entityId in the Actor's owner chain.
 	bool DoOwnersHaveEntityId(const AActor* Actor) const;
-
-	void AddExtraEntityInterestOnServer(Interest& OutInterest, const TArray<Worker_EntityId_Key>& Entities) const;
 
 private:
 	// Shared constraints and result types are created at initialization and reused throughout the lifetime of the factory.
@@ -68,12 +69,10 @@ private:
 
 	// Defined Constraint AND Level Constraint
 	void AddPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
-	// Self interests require the entity ID to know which entity is "self". This would no longer be required if there was a first class self
-	// constraint. The components clients need to see on entities they are have authority over that they don't already see through
-	// authority.
-	void AddClientSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const;
+	// The components clients need to see on entities they have authority over that they don't already see through authority.
+	void AddClientSelfInterest(Interest& OutInterest) const;
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
-	void AddServerSelfInterest(Interest& OutInterest, const Worker_EntityId& EntityId) const;
+	void AddServerSelfInterest(Interest& OutInterest) const;
 	// Add interest to the actor's owner.
 	void AddOwnerInterestOnServer(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const;
 
@@ -88,13 +87,15 @@ private:
 
 	void AddNetCullDistanceQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const;
 
-	void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId,
-												  const Query& QueryToAdd) const;
+	static void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId,
+														 const Query& QueryToAdd);
 
 	// System Defined Constraints
 	bool ShouldAddNetCullDistanceInterest(const AActor* InActor) const;
 	QueryConstraint CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const;
-	QueryConstraint CreateAlwaysRelevantConstraint() const;
+	QueryConstraint CreateGDKSnapshotEntitiesConstraint() const;
+	QueryConstraint CreateClientAlwaysRelevantConstraint() const;
+	QueryConstraint CreateServerAlwaysRelevantConstraint() const;
 	QueryConstraint CreateActorVisibilityConstraint() const;
 
 	// Only checkout entities that are in loaded sub-levels

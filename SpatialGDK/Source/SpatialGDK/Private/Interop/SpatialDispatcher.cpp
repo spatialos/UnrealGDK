@@ -44,43 +44,39 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 		{
 		// Critical Section
 		case WORKER_OP_TYPE_CRITICAL_SECTION:
-			Receiver->OnCriticalSection(Op.op.critical_section.in_critical_section != 0);
 			break;
 
 		// Entity Lifetime
 		case WORKER_OP_TYPE_ADD_ENTITY:
-			Receiver->OnAddEntity(Op.op.add_entity);
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			Receiver->OnRemoveEntity(Op.op.remove_entity);
 			StaticComponentView->OnRemoveEntity(Op.op.remove_entity.entity_id);
-			Receiver->DropQueuedRemoveComponentOpsForEntity(Op.op.remove_entity.entity_id);
 			break;
 
 		// Components
 		case WORKER_OP_TYPE_ADD_COMPONENT:
 			StaticComponentView->OnAddComponent(Op.op.add_component);
-			Receiver->OnAddComponent(Op.op.add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			Receiver->OnRemoveComponent(Op.op.remove_component);
+			StaticComponentView->OnRemoveComponent(Op.op.remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			StaticComponentView->OnComponentUpdate(Op.op.component_update);
-			Receiver->OnComponentUpdate(Op.op.component_update);
 			break;
 
 		// Commands
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			Receiver->OnCommandRequest(Op.op.command_request);
+			Receiver->OnCommandRequest(Op);
 			break;
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			Receiver->OnCommandResponse(Op.op.command_response);
+			Receiver->OnCommandResponse(Op);
 			break;
 
 		// Authority Change
-		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			Receiver->OnAuthorityChange(Op.op.authority_change);
+		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
+			// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
+			// This way systems that depend on having non-stale state can function correctly.
+			StaticComponentView->OnAuthorityChange(Op.op.component_set_authority_change);
 			break;
 
 		// World Command Responses
@@ -88,7 +84,7 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			Receiver->OnReserveEntityIdsResponse(Op.op.reserve_entity_ids_response);
 			break;
 		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			Receiver->OnCreateEntityResponse(Op.op.create_entity_response);
+			Receiver->OnCreateEntityResponse(Op);
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
 			break;
@@ -97,10 +93,14 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			break;
 
 		case WORKER_OP_TYPE_FLAG_UPDATE:
-			SpatialWorkerFlags->ApplyWorkerFlagUpdate(Op.op.flag_update);
-			break;
-		case WORKER_OP_TYPE_LOG_MESSAGE:
-			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op.op.log_message.message));
+			if (Op.op.flag_update.value == nullptr)
+			{
+				SpatialWorkerFlags->RemoveWorkerFlag(UTF8_TO_TCHAR(Op.op.flag_update.name));
+			}
+			else
+			{
+				SpatialWorkerFlags->SetWorkerFlag(UTF8_TO_TCHAR(Op.op.flag_update.name), UTF8_TO_TCHAR(Op.op.flag_update.value));
+			}
 			break;
 		case WORKER_OP_TYPE_METRICS:
 #if !UE_BUILD_SHIPPING
@@ -114,9 +114,6 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			break;
 		}
 	}
-
-	Receiver->FlushRemoveComponentOps();
-	Receiver->FlushRetryRPCs();
 }
 
 bool SpatialDispatcher::IsExternalSchemaOp(const Worker_Op& Op) const
@@ -133,8 +130,8 @@ void SpatialDispatcher::ProcessExternalSchemaOp(const Worker_Op& Op)
 
 	switch (Op.op_type)
 	{
-	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		StaticComponentView->OnAuthorityChange(Op.op.authority_change);
+	case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
+		StaticComponentView->OnAuthorityChange(Op.op.component_set_authority_change);
 		// Intentional fall-through
 	case WORKER_OP_TYPE_ADD_COMPONENT:
 	case WORKER_OP_TYPE_REMOVE_COMPONENT:
@@ -167,11 +164,11 @@ SpatialDispatcher::FCallbackId SpatialDispatcher::OnRemoveComponent(Worker_Compo
 	});
 }
 
-SpatialDispatcher::FCallbackId SpatialDispatcher::OnAuthorityChange(Worker_ComponentId ComponentId,
-																	const TFunction<void(const Worker_AuthorityChangeOp&)>& Callback)
+SpatialDispatcher::FCallbackId SpatialDispatcher::OnAuthorityChange(
+	Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentSetAuthorityChangeOp&)>& Callback)
 {
-	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_AUTHORITY_CHANGE, [Callback](const Worker_Op* Op) {
-		Callback(Op->op.authority_change);
+	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE, [Callback](const Worker_Op* Op) {
+		Callback(Op->op.component_set_authority_change);
 	});
 }
 

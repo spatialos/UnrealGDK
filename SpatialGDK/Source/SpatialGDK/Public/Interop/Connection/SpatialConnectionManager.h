@@ -3,9 +3,12 @@
 #pragma once
 
 #include "Interop/Connection/ConnectionConfig.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialView/ComponentSetData.h"
+#include "Utils/SchemaDatabase.h"
 
 #include "Engine/EngineBaseTypes.h"
 
@@ -32,7 +35,8 @@ public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 
-	using LoginTokenResponseCallback = TFunction<bool(const Worker_Alpha_LoginTokensResponse*)>;
+	using LoginTokenResponseCallback = TFunction<bool(const Worker_LoginTokensResponse*)>;
+	using LogCallback = TFunction<void(const Worker_LogData*)>;
 
 	/// Register a callback using this function.
 	/// It will be triggered when receiving login tokens using the development authentication flow inside SpatialWorkerConnection.
@@ -60,13 +64,16 @@ public:
 	void SetupConnectionConfigFromURL(const FURL& URL, const FString& SpatialWorkerType);
 
 	USpatialWorkerConnection* GetWorkerConnection() { return WorkerConnection; }
+	void SetComponentSets(const TMap<uint32, FComponentIDs>& InComponentSetMap);
 
 	void RequestDeploymentLoginTokens();
+
+	static void OnLogCallback(void* UserData, const Worker_LogData* Message);
 
 private:
 	void ConnectToReceptionist(uint32 PlayInEditorID);
 	void ConnectToLocator(FLocatorConfig* InLocatorConfig);
-	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
+	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture, TSharedPtr<SpatialGDK::SpatialEventTracer> InEventTracer);
 
 	void OnConnectionSuccess();
 	void OnConnectionFailure(uint8_t ConnectionStatusCode, const FString& ErrorMessage);
@@ -74,9 +81,11 @@ private:
 	ESpatialConnectionType GetConnectionType() const;
 
 	void StartDevelopmentAuth(const FString& DevAuthToken);
-	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
-	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
-	void ProcessLoginTokensResponse(const Worker_Alpha_LoginTokensResponse* LoginTokens);
+	static void OnPlayerIdentityToken(void* UserData, const Worker_PlayerIdentityTokenResponse* PIToken);
+	static void OnLoginTokens(void* UserData, const Worker_LoginTokensResponse* LoginTokens);
+	void ProcessLoginTokensResponse(const Worker_LoginTokensResponse* LoginTokens);
+
+	TSharedPtr<SpatialGDK::SpatialEventTracer> CreateEventTracer(const FString& WorkerId);
 
 private:
 	UPROPERTY()
@@ -89,4 +98,6 @@ private:
 
 	ESpatialConnectionType ConnectionType = ESpatialConnectionType::Receptionist;
 	LoginTokenResponseCallback LoginTokenResCallback;
+	LogCallback SpatialLogCallback;
+	SpatialGDK::FComponentSetData ComponentSetData;
 };

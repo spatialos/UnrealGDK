@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/OpList/EntityComponentOpList.h"
 #include "SpatialView/OpList/ExtractedOpList.h"
@@ -36,11 +36,12 @@ public:
 
 	virtual const FString& GetWorkerId() const override { return WorkerId; }
 
-	virtual const TArray<FString>& GetWorkerAttributes() const override { return Attributes; }
+	virtual Worker_EntityId GetWorkerSystemEntityId() const override { return WorkerSystemEntityId; }
 
 private:
 	TArray<TArray<OpList>> ListsOfOpLists;
 	TArray<OpList> QueuedOpLists;
+	Worker_EntityId WorkerSystemEntityId = 1;
 	FString WorkerId = TEXT("test_worker");
 	TArray<FString> Attributes = { TEXT("test") };
 };
@@ -56,18 +57,18 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 	TArray<OpList> OpLists;
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntity(TaggedEntityId);
-	Builder.AddComponent(TaggedEntityId, ComponentData{ TagComponentId });
+	Builder.AddComponent(TaggedEntityId, ComponentData(TagComponentId));
 	Builder.AddEntity(EntityId);
-	Builder.AddComponent(EntityId, ComponentData{ ComponentId });
+	Builder.AddComponent(EntityId, ComponentData(ComponentId));
 	OpLists.Add(MoveTemp(Builder).CreateOpList());
 	ListsOfOpLists.Add(MoveTemp(OpLists));
 
 	auto Handler = MakeUnique<ConnectionHandlerStub>();
 	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
-	ViewCoordinator Coordinator{ MoveTemp(Handler) };
+	ViewCoordinator Coordinator(MoveTemp(Handler), nullptr, FComponentSetData());
 	auto& SubView = Coordinator.CreateSubView(TagComponentId, FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
 
-	Coordinator.Advance();
+	Coordinator.Advance(0.0f);
 	FSubViewDelta Delta = SubView.GetViewDelta();
 
 	// Only the tagged entity should pass through to the sub view delta.
@@ -90,28 +91,31 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 	const Worker_ComponentId ValueComponentId = 3;
 	const double CorrectValue = 1;
 	const double IncorrectValue = 2;
+	FComponentSetData ComponentSetData;
+	ComponentSetData.ComponentSets.Add(TagComponentId, { TagComponentId });
+	ComponentSetData.ComponentSets.Add(ValueComponentId, { ValueComponentId });
 
 	TArray<TArray<OpList>> ListsOfOpLists;
 	TArray<OpList> OpLists;
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntity(TaggedEntityId);
-	Builder.AddComponent(TaggedEntityId, ComponentData{ TagComponentId });
+	Builder.AddComponent(TaggedEntityId, ComponentData(TagComponentId));
 	Builder.AddComponent(TaggedEntityId, CreateTestComponentData(ValueComponentId, CorrectValue));
 	Builder.AddEntity(OtherTaggedEntityId);
-	Builder.AddComponent(OtherTaggedEntityId, ComponentData{ TagComponentId });
+	Builder.AddComponent(OtherTaggedEntityId, ComponentData(TagComponentId));
 	Builder.AddComponent(OtherTaggedEntityId, CreateTestComponentData(ValueComponentId, IncorrectValue));
 	OpLists.Add(MoveTemp(Builder).CreateOpList());
 	ListsOfOpLists.Add(MoveTemp(OpLists));
 
-	Builder = EntityComponentOpListBuilder{};
-	OpLists = TArray<OpList>{};
+	Builder = EntityComponentOpListBuilder();
+	OpLists.Empty();
 	Builder.UpdateComponent(OtherTaggedEntityId, CreateTestComponentUpdate(ValueComponentId, CorrectValue));
 	OpLists.Add(MoveTemp(Builder).CreateOpList());
 	ListsOfOpLists.Add(MoveTemp(OpLists));
 
 	auto Handler = MakeUnique<ConnectionHandlerStub>();
 	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
-	ViewCoordinator Coordinator{ MoveTemp(Handler) };
+	ViewCoordinator Coordinator(MoveTemp(Handler), nullptr, ComponentSetData);
 
 	auto& SubView = Coordinator.CreateSubView(
 		TagComponentId,
@@ -125,7 +129,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 		},
 		TArray<FDispatcherRefreshCallback>{ Coordinator.CreateComponentChangedRefreshCallback(ValueComponentId) });
 
-	Coordinator.Advance();
+	Coordinator.Advance(0.0f);
 	FSubViewDelta Delta = SubView.GetViewDelta();
 
 	// Only the tagged entity with the correct value should pass through to the sub view delta.
@@ -136,7 +140,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 	}
 	TestEqual("The entity delta is for the correct entity ID", Delta.EntityDeltas[0].EntityId, TaggedEntityId);
 
-	Coordinator.Advance();
+	Coordinator.Advance(0.0f);
 	Delta = SubView.GetViewDelta();
 
 	// The value on the other entity should have updated, so we should see an add for the second entity.
@@ -154,6 +158,8 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 {
 	const Worker_EntityId TaggedEntityId = 2;
 	const Worker_ComponentId TagComponentId = 2;
+	FComponentSetData ComponentSetData;
+	ComponentSetData.ComponentSets.Add(TagComponentId, { TagComponentId });
 
 	bool EntityComplete = false;
 	const int NumberOfSubViews = 100;
@@ -163,7 +169,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 	TArray<OpList> OpLists;
 	EntityComponentOpListBuilder Builder;
 	Builder.AddEntity(TaggedEntityId);
-	Builder.AddComponent(TaggedEntityId, ComponentData{ TagComponentId });
+	Builder.AddComponent(TaggedEntityId, ComponentData(TagComponentId));
 	OpLists.Add(MoveTemp(Builder).CreateOpList());
 	ListsOfOpLists.Add(MoveTemp(OpLists));
 
@@ -172,7 +178,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 
 	auto Handler = MakeUnique<ConnectionHandlerStub>();
 	Handler->SetListsOfOpLists(MoveTemp(ListsOfOpLists));
-	ViewCoordinator Coordinator{ MoveTemp(Handler) };
+	ViewCoordinator Coordinator(MoveTemp(Handler), nullptr, ComponentSetData);
 
 	TArray<FSubView*> SubViews;
 
@@ -186,7 +192,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 			FSubView::NoDispatcherCallbacks));
 	}
 
-	Coordinator.Advance();
+	Coordinator.Advance(0.0f);
 	FSubViewDelta Delta;
 
 	// All the subviews should have no complete entities, so their deltas should be empty.
@@ -201,7 +207,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 
 	EntityComplete = true;
 	Coordinator.RefreshEntityCompleteness(TaggedEntityId);
-	Coordinator.Advance();
+	Coordinator.Advance(0.0f);
 
 	// All the subviews' filters will have changed their truth value due to the change in local state.
 	for (int i = 0; i < NumberOfSubViews; ++i)

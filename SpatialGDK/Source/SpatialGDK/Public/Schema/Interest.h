@@ -7,7 +7,12 @@
 namespace SpatialGDK
 {
 using EdgeLength = Coordinates;
-using SchemaResultType = TArray<Worker_ComponentId>;
+
+struct SchemaResultType
+{
+	TArray<Worker_ComponentId> ComponentIds;
+	TArray<Worker_ComponentId> ComponentSetsIds;
+};
 
 struct SphereConstraint
 {
@@ -54,6 +59,7 @@ struct QueryConstraint
 	TSchemaOption<uint32> ComponentConstraint;
 	TArray<QueryConstraint> AndConstraint;
 	TArray<QueryConstraint> OrConstraint;
+	bool bSelfConstraint = false;
 
 	FORCEINLINE bool IsValid() const
 	{
@@ -102,6 +108,11 @@ struct QueryConstraint
 			return true;
 		}
 
+		if (bSelfConstraint)
+		{
+			return true;
+		}
+
 		return false;
 	}
 };
@@ -110,9 +121,16 @@ struct Query
 {
 	QueryConstraint Constraint;
 
-	// Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid.
-	TSchemaOption<bool> FullSnapshotResult; // Whether all components should be included or none.
-	SchemaResultType ResultComponentIds;	// Which components should be included.
+	// These three fields determine the set of components that are sent back to the worker interested in the
+	// query.
+	// - If FullSnapshotResult is set to false, the query in invalid;
+	// - If FullSnapshotResult is true and ResultComponentIds and ResultComponentSetIds are empty, all the
+	//   components are sent.
+	// - If FullSnapshotResult is not set, the set of components sent is the union of ResultComponentIds and
+	//   all the sets in ResultComponentSetIds (these sets are defined in the schema).
+	TSchemaOption<bool> FullSnapshotResult;			  // Whether all components should be included or none.
+	TArray<Worker_ComponentId> ResultComponentIds;	  // Which components should be included.
+	TArray<Worker_ComponentId> ResultComponentSetIds; // Which component sets should be included.
 
 	// Used for frequency-based rate limiting. Represents the maximum frequency of updates for this
 	// particular query. An empty option represents no rate-limiting (ie. updates are received
@@ -145,7 +163,7 @@ using FrequencyToConstraintsMap = TMap<float, TArray<QueryConstraint>>;
 // A common type for lists of frequency constraints to be converted into queries later
 using FrequencyConstraints = TArray<FrequencyConstraint>;
 
-struct ComponentInterest
+struct ComponentSetInterest
 {
 	TArray<Query> Queries;
 };
@@ -209,7 +227,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 	}
 
 	// option<uint32> component_constraint = 8;
-	if (Constraint.ComponentConstraint)
+	if (Constraint.ComponentConstraint.IsSet())
 	{
 		Schema_AddUint32(QueryConstraintObject, 8, *Constraint.ComponentConstraint);
 	}
@@ -231,12 +249,17 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 			AddQueryConstraintToQuerySchema(QueryConstraintObject, 10, OrConstraintEntry);
 		}
 	}
+
+	// option<SelfConstraint> self_constraint = 12;
+	if (Constraint.bSelfConstraint)
+	{
+		Schema_AddObject(QueryConstraintObject, 12);
+	}
 }
 
 inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestObject, Schema_FieldId Id, const Query& Query)
 {
-	checkf(!(Query.FullSnapshotResult.IsSet() && Query.ResultComponentIds.Num() > 0),
-		   TEXT("Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid."));
+	checkf(!(Query.FullSnapshotResult.IsSet() && !Query.FullSnapshotResult), TEXT("Invalid to set FullSnapshotResult to false"));
 
 	Schema_Object* QueryObject = Schema_AddObject(ComponentInterestObject, Id);
 
@@ -252,13 +275,18 @@ inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestOb
 		Schema_AddUint32(QueryObject, 3, ComponentId);
 	}
 
+	for (uint32 ComponentSetId : Query.ResultComponentSetIds)
+	{
+		Schema_AddUint32(QueryObject, 5, ComponentSetId);
+	}
+
 	if (Query.Frequency.IsSet())
 	{
 		Schema_AddFloat(QueryObject, 4, *Query.Frequency);
 	}
 }
 
-inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, Schema_FieldId Id, const ComponentInterest& Value)
+inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, Schema_FieldId Id, const ComponentSetInterest& Value)
 {
 	Schema_Object* ComponentInterestObject = Schema_AddObject(InterestObject, Id);
 
@@ -270,7 +298,7 @@ inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, 
 
 inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
-	QueryConstraint NewQueryConstraint;
+	QueryConstraint NewQueryConstraint{};
 
 	Schema_Object* QueryConstraintObject = Schema_IndexObject(Object, Id, Index);
 
@@ -361,6 +389,12 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 		NewQueryConstraint.OrConstraint.Add(IndexQueryConstraintFromSchema(QueryConstraintObject, 10, OrIndex));
 	}
 
+	// option<SelfConstraint> self_constraint = 12;
+	if (Schema_GetObjectCount(QueryConstraintObject, 12) > 0)
+	{
+		NewQueryConstraint.bSelfConstraint = true;
+	}
+
 	return NewQueryConstraint;
 }
 
@@ -382,7 +416,7 @@ inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint
 		NewQuery.FullSnapshotResult = GetBoolFromSchema(QueryObject, 2);
 	}
 
-	uint32 ResultComponentIdCount = Schema_GetUint32Count(QueryObject, 3);
+	const uint32 ResultComponentIdCount = Schema_GetUint32Count(QueryObject, 3);
 	NewQuery.ResultComponentIds.Reserve(ResultComponentIdCount);
 	for (uint32 ComponentIdIndex = 0; ComponentIdIndex < ResultComponentIdCount; ComponentIdIndex++)
 	{
@@ -394,12 +428,19 @@ inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint
 		NewQuery.Frequency = Schema_GetFloat(QueryObject, 4);
 	}
 
+	const uint32 ResultComponentSetIdCount = Schema_GetUint32Count(QueryObject, 5);
+	NewQuery.ResultComponentSetIds.Reserve(ResultComponentSetIdCount);
+	for (uint32 ComponentSetIdIndex = 0; ComponentSetIdIndex < ResultComponentSetIdCount; ComponentSetIdIndex++)
+	{
+		NewQuery.ResultComponentSetIds.Add(Schema_IndexUint32(QueryObject, 5, ComponentSetIdIndex));
+	}
+
 	return NewQuery;
 }
 
-inline ComponentInterest GetComponentInterestFromSchema(Schema_Object* Object, Schema_FieldId Id)
+inline ComponentSetInterest GetComponentInterestFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
-	ComponentInterest NewComponentInterest;
+	ComponentSetInterest NewComponentInterest;
 
 	Schema_Object* ComponentInterestObject = Schema_GetObject(Object, Id);
 
@@ -413,7 +454,7 @@ inline ComponentInterest GetComponentInterestFromSchema(Schema_Object* Object, S
 	return NewComponentInterest;
 }
 
-struct Interest : Component
+struct Interest : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::INTEREST_COMPONENT_ID;
 
@@ -428,7 +469,7 @@ struct Interest : Component
 		{
 			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 1, i);
 			uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-			ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+			ComponentSetInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 			ComponentInterestMap.Add(Key, Value);
 		}
@@ -449,14 +490,14 @@ struct Interest : Component
 			{
 				Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 1, i);
 				uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-				ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+				ComponentSetInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 				ComponentInterestMap.Add(Key, Value);
 			}
 		}
 	}
 
-	Worker_ComponentData CreateInterestData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -480,7 +521,7 @@ struct Interest : Component
 		return ComponentUpdate;
 	}
 
-	void FillComponentData(Schema_Object* InterestComponentObject)
+	void FillComponentData(Schema_Object* InterestComponentObject) const
 	{
 		for (const auto& KVPair : ComponentInterestMap)
 		{
@@ -490,7 +531,7 @@ struct Interest : Component
 		}
 	}
 
-	TMap<uint32, ComponentInterest> ComponentInterestMap;
+	TMap<Worker_ComponentSetId, ComponentSetInterest> ComponentInterestMap;
 };
 
 } // namespace SpatialGDK

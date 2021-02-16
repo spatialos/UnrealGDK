@@ -21,7 +21,7 @@ inline ComponentData CreateTestComponentData(const Worker_ComponentId Id, const 
 	ComponentData Data{ Id };
 	Schema_Object* Fields = Data.GetFields();
 	Schema_AddDouble(Fields, EntityComponentTestUtils::TEST_DOUBLE_FIELD_ID, Value);
-	return Data;
+	return MoveTemp(Data);
 }
 
 // Assumes the passed data has the TEST_DOUBLE_FIELD_ID field populated.
@@ -163,12 +163,12 @@ inline bool CompareComponentChanges(const ComponentChange& Lhs, const ComponentC
 
 inline bool CompareAuthorityChangeById(const AuthorityChange& Lhs, const AuthorityChange& Rhs)
 {
-	return Lhs.ComponentId < Rhs.ComponentId;
+	return Lhs.ComponentSetId < Rhs.ComponentSetId;
 }
 
 inline bool CompareAuthorityChanges(const AuthorityChange& Lhs, const AuthorityChange& Rhs)
 {
-	if (Lhs.ComponentId != Rhs.ComponentId)
+	if (Lhs.ComponentSetId != Rhs.ComponentSetId)
 	{
 		return false;
 	}

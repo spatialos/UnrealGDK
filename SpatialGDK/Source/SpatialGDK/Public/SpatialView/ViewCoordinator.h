@@ -2,18 +2,26 @@
 
 #pragma once
 
+#include "SpatialView/CommandRetryHandler.h"
+#include "SpatialView/ComponentSetData.h"
 #include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
+#include "SpatialView/CriticalSectionFilter.h"
 #include "SpatialView/Dispatcher.h"
+#include "SpatialView/ReceivedOpEventHandler.h"
+#include "SpatialView/SubView.h"
 #include "SpatialView/WorkerView.h"
-#include "SubView.h"
+
 #include "Templates/UniquePtr.h"
 
 namespace SpatialGDK
 {
+class SpatialEventTracer;
+
 class ViewCoordinator
 {
 public:
-	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler);
+	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer,
+							 FComponentSetData ComponentSetData);
 
 	~ViewCoordinator();
 
@@ -23,7 +31,7 @@ public:
 	ViewCoordinator& operator=(const ViewCoordinator&) = delete;
 	ViewCoordinator& operator=(ViewCoordinator&&) = default;
 
-	void Advance();
+	void Advance(float DeltaTimeS);
 	const ViewDelta& GetViewDelta() const;
 	const EntityView& GetView() const;
 	void FlushMessagesToSend();
@@ -42,21 +50,31 @@ public:
 	void RefreshEntityCompleteness(Worker_EntityId EntityId);
 
 	const FString& GetWorkerId() const;
-	const TArray<FString>& GetWorkerAttributes() const;
+	Worker_EntityId GetWorkerSystemEntityId() const;
 
-	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data);
-	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId);
+	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId);
+	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
 	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis = {});
 	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-											 TOptional<uint32> TimeoutMillis = {});
-	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis = {});
+											 TOptional<uint32> TimeoutMillis = {}, const FSpatialGDKSpanId& SpanId = {});
+	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis = {},
+											 const FSpatialGDKSpanId& SpanId = {});
 	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis = {});
-	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {});
-	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response);
-	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message);
+	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, TOptional<uint32> TimeoutMillis = {},
+											  const FSpatialGDKSpanId& SpanId = {});
+	void SendEntityCommandResponse(Worker_RequestId RequestId, CommandResponse Response, const FSpatialGDKSpanId& SpanId);
+	void SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const FSpatialGDKSpanId& SpanId);
 	void SendMetrics(SpatialMetrics Metrics);
 	void SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message);
+
+	Worker_RequestId SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, FRetryData RetryData);
+	Worker_RequestId SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
+											 FRetryData RetryData, const FSpatialGDKSpanId& SpanId);
+	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData, const FSpatialGDKSpanId& SpanId);
+	Worker_RequestId SendEntityQueryRequest(EntityQuery Query, FRetryData RetryData);
+	Worker_RequestId SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData,
+											  const FSpatialGDKSpanId& SpanId);
 
 	CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
 	CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
@@ -79,9 +97,21 @@ public:
 private:
 	WorkerView View;
 	TUniquePtr<AbstractConnectionHandler> ConnectionHandler;
+
+	FCriticalSectionFilter CriticalSectionFilter;
+
 	Worker_RequestId NextRequestId;
 	FDispatcher Dispatcher;
+
 	TArray<TUniquePtr<FSubView>> SubViews;
+
+	FReceivedOpEventHandler ReceivedOpEventHandler;
+
+	TCommandRetryHandler<FReserveEntityIdsRetryHandlerImpl> ReserveEntityIdRetryHandler;
+	TCommandRetryHandler<FCreateEntityRetryHandlerImpl> CreateEntityRetryHandler;
+	TCommandRetryHandler<FDeleteEntityRetryHandlerImpl> DeleteEntityRetryHandler;
+	TCommandRetryHandler<FEntityQueryRetryHandlerImpl> EntityQueryRetryHandler;
+	TCommandRetryHandler<FEntityCommandRetryHandlerImpl> EntityCommandRetryHandler;
 };
 
 } // namespace SpatialGDK

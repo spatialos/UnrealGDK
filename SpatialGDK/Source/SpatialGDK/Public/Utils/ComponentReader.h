@@ -10,15 +10,20 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialComponentReader, All, All);
 
 namespace SpatialGDK
 {
+class SpatialEventTracer;
+
 class ComponentReader
 {
 public:
-	ComponentReader(class USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap);
+	explicit ComponentReader(class USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap,
+							 SpatialEventTracer* InEventTracer);
 
 	void ApplyComponentData(const Worker_ComponentData& ComponentData, UObject& Object, USpatialActorChannel& Channel, bool bIsHandover,
 							bool& bOutReferencesChanged);
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& Object, USpatialActorChannel& Channel,
-							  bool bIsHandover, bool& bOutReferencesChanged);
+	void ApplyComponentData(Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object, USpatialActorChannel& Channel,
+							bool bIsHandover, bool& bOutReferencesChanged);
+	void ApplyComponentUpdate(Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update, UObject& Object,
+							  USpatialActorChannel& Channel, bool bIsHandover, bool& bOutReferencesChanged);
 
 private:
 	void ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
@@ -39,6 +44,7 @@ private:
 	class USpatialPackageMapClient* PackageMap;
 	class USpatialNetDriver* NetDriver;
 	class USpatialClassInfoManager* ClassInfoManager;
+	class SpatialEventTracer* EventTracer;
 	FObjectReferencesMap& RootObjectReferencesMap;
 };
 

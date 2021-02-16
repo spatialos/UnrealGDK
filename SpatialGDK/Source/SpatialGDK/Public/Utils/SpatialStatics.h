@@ -9,6 +9,7 @@
 #include "UObject/TextProperty.h"
 
 #include "SpatialGDKSettings.h"
+#include "Utils/SpatialDebugger.h"
 
 #include "SpatialStatics.generated.h"
 
@@ -26,6 +27,15 @@ struct FLockingToken
 	int64 Token;
 };
 
+UENUM(BlueprintType)
+enum class ESpatialHasAuthority : uint8
+{
+	ServerAuth,
+	ServerNonAuth,
+	ClientAuth,
+	ClientNonAuth
+};
+
 UCLASS()
 class SPATIALGDK_API USpatialStatics : public UBlueprintFunctionLibrary
 {
@@ -37,6 +47,12 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS")
 	static bool IsSpatialNetworkingEnabled();
+
+	/**
+	 * Returns whether handover is disabled in offloading scenarios.
+	 */
+	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool IsHandoverEnabled(const UObject* WorldContextObject);
 
 	/**
 	 * Returns true if spatial networking and multi worker are enabled.
@@ -163,6 +179,23 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static FName GetLayerName(const UObject* WorldContextObject);
+
+	/**
+	 * Returns the Max Dynamically Attached Subobjects Per Class as per Spatial GDK settings
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SpatialOS")
+	static int64 GetMaxDynamicallyAttachedSubobjectsPerClass();
+
+	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Spatial Debugger", meta = (WorldContext = "WorldContextObject"))
+	static void SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* WorldContextObject, FOnConfigUIClosedDelegate Delegate);
+
+	/**
+	 * Returns if an actor has authority in combination with whether it is on the client or server.
+	 * Can only be used on Blueprints that derive from Actor.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS", Meta = (ExpandEnumAsExecs = "AuthorityPins"), Meta = (DefaultToSelf = "Target"),
+			  Meta = (HidePin = "Target"))
+	static void SpatialSwitchHasAuthority(const AActor* Target, ESpatialHasAuthority& AuthorityPins);
 
 private:
 	static FName GetCurrentWorkerType(const UObject* WorldContext);

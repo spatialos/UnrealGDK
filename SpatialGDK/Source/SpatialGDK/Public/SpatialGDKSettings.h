@@ -22,7 +22,8 @@ namespace ESettingsWorkerLogVerbosity
 {
 enum Type
 {
-	Fatal = 1,
+	NoLogging = 0,
+	Fatal,
 	Error,
 	Warning,
 	Display,
@@ -39,6 +40,16 @@ enum Type
 {
 	Default,
 	CN
+};
+}
+
+UENUM()
+namespace ECrossServerRPCImplementation
+{
+enum Type
+{
+	SpatialCommand,
+	RoutingWorker,
 };
 }
 
@@ -72,7 +83,9 @@ public:
 	 * The number of entity IDs to be reserved when the entity pool is first created. Ensure that the number of entity IDs
 	 * reserved is greater than the number of Actors that you expect the server-worker instances to spawn at game deployment
 	 */
-	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (DisplayName = "Initial Entity ID Reservation Count"))
+	// TODO: UNR-4979 Allow full range of uint32 when SQD-1150 is fixed
+	UPROPERTY(EditAnywhere, config, Category = "Entity Pool",
+			  meta = (DisplayName = "Initial Entity ID Reservation Count", ClampMax = 0x7fffffff))
 	uint32 EntityPoolInitialReservationCount;
 
 	/**
@@ -142,13 +155,6 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "SpatialOS Network Update Rate"))
 	float OpsUpdateRate;
-
-	/**
-	 * Replicate handover properties between servers, required for zoned worker deployments. If Unreal Load Balancing is enabled, this will
-	 * be set based on the load balancing strategy.
-	 */
-	UPROPERTY(EditAnywhere, config, Category = "Replication")
-	bool bEnableHandover;
 
 	/**
 	 * Maximum NetCullDistanceSquared value used in Spatial networking. Not respected when using the Replication Graph.
@@ -241,21 +247,29 @@ public:
 			  meta = (ConfigRestartRequired = true, DisplayName = "Region where services are located"))
 	TEnumAsByte<EServicesRegion::Type> ServicesRegion;
 
-	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
-	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Worker Log Level"))
+	/** Deprecated!
+	Upgraded into the two settings below for local/cloud configurations.
+	Ticket for removal UNR-4348 */
+	UPROPERTY(config, meta = (DeprecatedProperty, DeprecationMessage = "Use LocalWorkerLogLevel or CloudWorkerLogLevel"))
 	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> WorkerLogLevel;
+
+	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
+	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Local Worker Log Level"))
+	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> LocalWorkerLogLevel;
+
+	/** Controls the verbosity of worker logs which are sent to SpatialOS. These logs will appear in the Spatial Output and launch.log */
+	UPROPERTY(EditAnywhere, config, Category = "Logging", meta = (DisplayName = "Cloud Worker Log Level"))
+	TEnumAsByte<ESettingsWorkerLogVerbosity::Type> CloudWorkerLogLevel;
 
 	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (MetaClass = "SpatialDebugger"))
 	TSubclassOf<ASpatialDebugger> SpatialDebugger;
 
 	/** Enables multi-worker, if false uses single worker strategy in the editor.  */
-	UPROPERTY(EditAnywhere, config, Category = "Debug", meta = (DisplayName = "Enable multi-worker in editor"))
+	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (DisplayName = "Enable multi-worker in editor"))
 	bool bEnableMultiWorker;
-	/** RPC ring buffers is enabled when either the matching setting is set, or load balancing is enabled */
-	bool UseRPCRingBuffer() const;
 
 #if WITH_EDITOR
-	void SetMultiWorkerEnabled(const bool bIsEnabled);
+	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);
 	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
 #endif // WITH_EDITOR
 
@@ -266,30 +280,27 @@ private:
 	void UpdateServicesRegionFile();
 #endif
 
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Use RPC Ring Buffers"))
-	bool bUseRPCRingBuffers;
-
+public:
+	/**
+	 * The number of RPCs that can be in flight, per type. Changing this may require schema to be regenerated and
+	 * break snapshot compatibility.
+	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Default RPC Ring Buffer Size"))
 	uint32 DefaultRPCRingBufferSize;
 
 	/** Overrides default ring buffer size. */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "RPC Ring Buffer Size Map"))
-	TMap<ERPCType, uint32> RPCRingBufferSizeMap;
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "RPC Ring Buffer Size Overrides"))
+	TMap<ERPCType, uint32> RPCRingBufferSizeOverrides;
 
-public:
 	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
 
 	float GetSecondsBeforeWarning(const ERPCResult Result) const;
 
 	bool ShouldRPCTypeAllowUnresolvedParameters(const ERPCType Type) const;
 
-	/**
-	 * The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and
-	 * break snapshot compatibility.
-	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Max RPC Ring Buffer Size"))
-	uint32 MaxRPCRingBufferSize;
-
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Cross Server RPC Implementation"))
+	TEnumAsByte<ECrossServerRPCImplementation::Type> CrossServerRPCImplementation;
+	
 	/** Only valid on Tcp connections - indicates if we should enable TCP_NODELAY - see c_worker.h */
 	UPROPERTY(Config)
 	bool bTcpNoDelay;
@@ -371,4 +382,46 @@ public:
 		meta = (DisplayName = "Whether or not to suppress a warning if an RPC of Type is being called with unresolved references. Default is false.  QueuedIncomingWaitRPC time is still respected."))
 	// clang-format on
 	TMap<ERPCType, bool> RPCTypeAllowUnresolvedParamMap;
+
+	/**
+	 * Time in seconds, controls at which frequency logs related to startup are emitted.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
+	float StartupLogRate;
+
+	/**
+	 * Time in seconds, controls at which frequency the logs related to failed actor migration are emitted.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay)
+	float ActorMigrationLogRate;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * This will enable event tracing for the Unreal client/worker.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing")
+	bool bEventTracingEnabled;
+
+	/*
+	 * Used to set the default sample rate if event tracing is enabled.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing",
+			  meta = (EditCondition = "bEventTracingEnabled", ClampMin = 0.0f, ClampMax = 1.0f))
+	float SamplingProbability;
+
+	/*
+	 * Used to override sample rate for specific trace events.
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing", meta = (EditCondition = "bEventTracingEnabled"))
+	TMap<FName, double> EventSamplingModeOverrides;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * The maximum size of the event tracing file, in bytes
+	 */
+	UPROPERTY(Config)
+	uint64 MaxEventTracingFileSizeBytes;
+
+	UPROPERTY(Config)
+	bool bEnableAlwaysWriteRPCs;
 };

@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ViewDelta.h"
+
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialView/EntityComponentTypes.h"
 
 #include "Algo/StableSort.h"
@@ -8,18 +10,12 @@
 
 namespace SpatialGDK
 {
-void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View)
+void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View, const FComponentSetData& ComponentSetData)
 {
 	Clear();
-
 	for (OpList& Ops : OpLists)
 	{
-		const uint32 Count = Ops.Count;
-		Worker_Op* OpData = Ops.Ops;
-		for (uint32 i = 0; i < Count; ++i)
-		{
-			ProcessOp(OpData[i]);
-		}
+		ProcessOpList(Ops, View, ComponentSetData);
 	}
 	OpListStorage = MoveTemp(OpLists);
 
@@ -61,10 +57,10 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 
 		// Find the intersection between complete entities and the entity IDs in the view delta, add them to this
 		// delta.
-		if (CompleteIt && DeltaIt && CompleteId == CurrentEntityId && DeltaId == CurrentEntityId)
+		if (CompleteId == CurrentEntityId && DeltaId == CurrentEntityId)
 		{
 			EntityDelta CompleteDelta = *DeltaIt;
-			if (TemporarilyIncompleteIt && *TemporarilyIncompleteIt == CurrentEntityId)
+			if (TemporarilyIncompleteId == CurrentEntityId)
 			{
 				// This is a delta for a complete entity which was also temporarily removed. Change its type to
 				// reflect that.
@@ -73,29 +69,29 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 			}
 			SubDelta.EntityDeltas.Emplace(CompleteDelta);
 		}
+		// Temporarily incomplete entities which aren't present in the projecting view delta are represented as marker
+		// temporarily removed entities with no state.
+		else if (TemporarilyIncompleteId == CurrentEntityId)
+		{
+			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::TEMPORARILY_REMOVED });
+			++TemporarilyIncompleteIt;
+		}
 		// Newly complete entities are represented as marker add entities with no state.
-		if (NewlyCompleteIt && NewlyCompleteId == CurrentEntityId)
+		else if (NewlyCompleteId == CurrentEntityId)
 		{
 			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::ADD });
 			++NewlyCompleteIt;
 		}
 		// Newly incomplete entities are represented as marker remove entities with no state.
-		if (NewlyIncompleteIt && NewlyIncompleteId == CurrentEntityId)
+		else if (NewlyIncompleteId == CurrentEntityId)
 		{
 			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::REMOVE });
 			++NewlyIncompleteIt;
 		}
-		// Temporarily incomplete entities which aren't present in the projecting view delta are represented as marker
-		// temporarily removed entities with no state.
-		if (TemporarilyIncompleteIt && TemporarilyIncompleteId == CurrentEntityId)
-		{
-			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::TEMPORARILY_REMOVED });
-			++TemporarilyIncompleteIt;
-		}
 
 		// Logic for incrementing complete and delta iterators. If either iterator is done, null the other,
 		// as there can no longer be any intersection.
-		if (CompleteIt && CompleteId == CurrentEntityId)
+		if (CompleteId == CurrentEntityId)
 		{
 			++CompleteIt;
 			if (!CompleteIt)
@@ -103,7 +99,7 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 				DeltaIt.SetToEnd();
 			}
 		}
-		if (DeltaIt && DeltaId == CurrentEntityId)
+		if (DeltaId == CurrentEntityId)
 		{
 			++DeltaIt;
 			if (!DeltaIt)
@@ -194,7 +190,7 @@ bool ViewDelta::DifferentEntity::operator()(const ReceivedComponentChange& Op) c
 	return Op.EntityId != EntityId;
 }
 
-bool ViewDelta::DifferentEntity::operator()(const Worker_AuthorityChangeOp& Op) const
+bool ViewDelta::DifferentEntity::operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const
 {
 	return Op.entity_id != EntityId;
 }
@@ -204,9 +200,9 @@ bool ViewDelta::DifferentEntityComponent::operator()(const ReceivedComponentChan
 	return Op.ComponentId != ComponentId || Op.EntityId != EntityId;
 }
 
-bool ViewDelta::DifferentEntityComponent::operator()(const Worker_AuthorityChangeOp& Op) const
+bool ViewDelta::DifferentEntityComponent::operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const
 {
-	return Op.component_id != ComponentId || Op.entity_id != EntityId;
+	return Op.component_set_id != ComponentId || Op.entity_id != EntityId;
 }
 
 bool ViewDelta::EntityComponentComparison::operator()(const ReceivedComponentChange& Lhs, const ReceivedComponentChange& Rhs) const
@@ -218,13 +214,14 @@ bool ViewDelta::EntityComponentComparison::operator()(const ReceivedComponentCha
 	return Lhs.ComponentId < Rhs.ComponentId;
 }
 
-bool ViewDelta::EntityComponentComparison::operator()(const Worker_AuthorityChangeOp& Lhs, const Worker_AuthorityChangeOp& Rhs) const
+bool ViewDelta::EntityComponentComparison::operator()(const Worker_ComponentSetAuthorityChangeOp& Lhs,
+													  const Worker_ComponentSetAuthorityChangeOp& Rhs) const
 {
 	if (Lhs.entity_id != Rhs.entity_id)
 	{
 		return Lhs.entity_id < Rhs.entity_id;
 	}
-	return Lhs.component_id < Rhs.component_id;
+	return Lhs.component_set_id < Rhs.component_set_id;
 }
 
 bool ViewDelta::EntityComparison::operator()(const ReceivedEntityChange& Lhs, const ReceivedEntityChange& Rhs) const
@@ -333,53 +330,85 @@ ComponentChange ViewDelta::CalculateUpdate(ReceivedComponentChange* Start, Recei
 	return ComponentChange(Start->ComponentId, Update);
 }
 
-void ViewDelta::ProcessOp(Worker_Op& Op)
+void ViewDelta::ProcessOpList(const OpList& Ops, const EntityView& View, const FComponentSetData& ComponentSetData)
 {
-	switch (static_cast<Worker_OpType>(Op.op_type))
+	for (uint32 i = 0; i < Ops.Count; ++i)
 	{
-	case WORKER_OP_TYPE_DISCONNECT:
-		ConnectionStatusCode = Op.op.disconnect.connection_status_code;
-		ConnectionStatusMessage = Op.op.disconnect.reason;
-		break;
-	case WORKER_OP_TYPE_LOG_MESSAGE:
-		// Log messages deprecated.
-		break;
-	case WORKER_OP_TYPE_CRITICAL_SECTION:
-		// Ignore critical sections.
-		break;
-	case WORKER_OP_TYPE_ADD_ENTITY:
-		EntityChanges.Push(ReceivedEntityChange{ Op.op.add_entity.entity_id, true });
-		break;
-	case WORKER_OP_TYPE_REMOVE_ENTITY:
-		EntityChanges.Push(ReceivedEntityChange{ Op.op.remove_entity.entity_id, false });
-		break;
-	case WORKER_OP_TYPE_METRICS:
-	case WORKER_OP_TYPE_FLAG_UPDATE:
-	case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-	case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-	case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
-	case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
-	case WORKER_OP_TYPE_COMMAND_REQUEST:
-	case WORKER_OP_TYPE_COMMAND_RESPONSE:
-		WorkerMessages.Push(Op);
-		break;
-	case WORKER_OP_TYPE_ADD_COMPONENT:
-		ComponentChanges.Emplace(Op.op.add_component);
-		break;
-	case WORKER_OP_TYPE_REMOVE_COMPONENT:
-		ComponentChanges.Emplace(Op.op.remove_component);
-		break;
-	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		if (Op.op.authority_change.authority != WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
+		const Worker_Op& Op = Ops.Ops[i];
+		switch (static_cast<Worker_OpType>(Op.op_type))
 		{
-			AuthorityChanges.Emplace(Op.op.authority_change);
+		case WORKER_OP_TYPE_DISCONNECT:
+			ConnectionStatusCode = Op.op.disconnect.connection_status_code;
+			ConnectionStatusMessage = Op.op.disconnect.reason;
+			break;
+		case WORKER_OP_TYPE_CRITICAL_SECTION:
+			// Ignore critical sections.
+			break;
+		case WORKER_OP_TYPE_ADD_ENTITY:
+			EntityChanges.Push(ReceivedEntityChange{ Op.op.add_entity.entity_id, true });
+			break;
+		case WORKER_OP_TYPE_REMOVE_ENTITY:
+			EntityChanges.Push(ReceivedEntityChange{ Op.op.remove_entity.entity_id, false });
+			break;
+		case WORKER_OP_TYPE_METRICS:
+		case WORKER_OP_TYPE_FLAG_UPDATE:
+		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
+		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
+		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
+		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
+		case WORKER_OP_TYPE_COMMAND_REQUEST:
+		case WORKER_OP_TYPE_COMMAND_RESPONSE:
+			WorkerMessages.Push(Op);
+			break;
+		case WORKER_OP_TYPE_ADD_COMPONENT:
+			ComponentChanges.Emplace(Op.op.add_component);
+			break;
+		case WORKER_OP_TYPE_REMOVE_COMPONENT:
+			ComponentChanges.Emplace(Op.op.remove_component);
+			break;
+		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
+			GenerateComponentChangesFromSetData(Op.op.component_set_authority_change, View, ComponentSetData);
+			AuthorityChanges.Emplace(Op.op.component_set_authority_change);
+			break;
+		case WORKER_OP_TYPE_COMPONENT_UPDATE:
+			ComponentChanges.Emplace(Op.op.component_update);
+			break;
+		default:
+			break;
 		}
-		break;
-	case WORKER_OP_TYPE_COMPONENT_UPDATE:
-		ComponentChanges.Emplace(Op.op.component_update);
-		break;
-	default:
-		break;
+	}
+}
+
+void ViewDelta::GenerateComponentChangesFromSetData(const Worker_ComponentSetAuthorityChangeOp& Op, const EntityView& View,
+													const FComponentSetData& ComponentSetData)
+{
+	// Generate component changes to:
+	// * Remove all components on the entity, that are in the component set.
+	// * Add all components the with data in the op.
+	// If one component is both removed and added then this is interpreted as component refresh in the view delta.
+	// Otherwise the component will be added or removed as appropriate.
+
+	const TSet<Worker_ComponentId>& Set = ComponentSetData.ComponentSets[Op.component_set_id];
+
+	// If a component on the entity is in the set then generate a remove operation.
+	if (const EntityViewElement* Entity = View.Find(Op.entity_id))
+	{
+		for (const ComponentData& Component : Entity->Components)
+		{
+			const Worker_ComponentId ComponentId = Component.GetComponentId();
+			if (Set.Contains(ComponentId))
+			{
+				Worker_RemoveComponentOp RemoveOp = { Op.entity_id, ComponentId };
+				ComponentChanges.Emplace(RemoveOp);
+			}
+		}
+	}
+
+	// If the component has data in the authority op then generate an add operation.
+	for (uint32 i = 0; i < Op.canonical_component_set_data_count; ++i)
+	{
+		Worker_AddComponentOp AddOp = { Op.entity_id, Op.canonical_component_set_data[i] };
+		ComponentChanges.Emplace(AddOp);
 	}
 }
 
@@ -402,7 +431,7 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 	// Add sentinel elements to the ends of the arrays.
 	// Prevents the need for bounds checks on the iterators.
 	ComponentChanges.Emplace(Worker_RemoveComponentOp{ SENTINEL_ENTITY_ID, 0 });
-	AuthorityChanges.Emplace(Worker_AuthorityChangeOp{ SENTINEL_ENTITY_ID, 0, 0 });
+	AuthorityChanges.Emplace(Worker_ComponentSetAuthorityChangeOp{ SENTINEL_ENTITY_ID, 0, 0 });
 	EntityChanges.Emplace(ReceivedEntityChange{ SENTINEL_ENTITY_ID, false });
 
 	auto ComponentIt = ComponentChanges.GetData();
@@ -410,7 +439,7 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 	auto EntityIt = EntityChanges.GetData();
 
 	ReceivedComponentChange* ComponentChangesEnd = ComponentIt + ComponentChanges.Num();
-	Worker_AuthorityChangeOp* AuthorityChangesEnd = AuthorityIt + AuthorityChanges.Num();
+	Worker_ComponentSetAuthorityChangeOp* AuthorityChangesEnd = AuthorityIt + AuthorityChanges.Num();
 	ReceivedEntityChange* EntityChangesEnd = EntityIt + EntityChanges.Num();
 
 	// At the beginning of each loop each iterator should point to the first element for an entity.
@@ -436,23 +465,11 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 		Delta.EntityId = CurrentEntityId;
 
 		EntityViewElement* ViewElement = View.Find(CurrentEntityId);
+		const bool bAlreadyExisted = ViewElement != nullptr;
 
-		if (EntityIt->EntityId == CurrentEntityId)
+		if (ViewElement == nullptr)
 		{
-			EntityIt = ProcessEntityExistenceChange(EntityIt, EntityChangesEnd, Delta, &ViewElement, View);
-			// If the entity isn't present we don't need to process component and authority changes.
-			if (ViewElement == nullptr)
-			{
-				ComponentIt = std::find_if(ComponentIt, ComponentChangesEnd, DifferentEntity{ CurrentEntityId });
-				AuthorityIt = std::find_if(AuthorityIt, AuthorityChangesEnd, DifferentEntity{ CurrentEntityId });
-
-				// Only add the entity delta if the entity previously existed in the view.
-				if (Delta.Type == EntityDelta::REMOVE)
-				{
-					EntityDeltas.Push(Delta);
-				}
-				continue;
-			}
+			ViewElement = &View.Add(CurrentEntityId);
 		}
 
 		if (ComponentIt->EntityId == CurrentEntityId)
@@ -463,6 +480,17 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 		if (AuthorityIt->entity_id == CurrentEntityId)
 		{
 			AuthorityIt = ProcessEntityAuthorityChanges(AuthorityIt, AuthorityChangesEnd, ViewElement->Authority, Delta);
+		}
+
+		if (EntityIt->EntityId == CurrentEntityId)
+		{
+			EntityIt = ProcessEntityExistenceChange(EntityIt, EntityChangesEnd, Delta, bAlreadyExisted, View);
+			// Did the entity flicker into view for less than a tick.
+			if (Delta.Type == EntityDelta::UPDATE && !bAlreadyExisted)
+			{
+				View.Remove(CurrentEntityId);
+				continue;
+			}
 		}
 
 		EntityDeltas.Push(Delta);
@@ -548,8 +576,10 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 	}
 }
 
-Worker_AuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_AuthorityChangeOp* It, Worker_AuthorityChangeOp* End,
-																   TArray<Worker_ComponentId>& EntityAuthority, EntityDelta& Delta)
+Worker_ComponentSetAuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_ComponentSetAuthorityChangeOp* It,
+																			   Worker_ComponentSetAuthorityChangeOp* End,
+																			   TArray<Worker_ComponentSetId>& EntityAuthority,
+																			   EntityDelta& Delta)
 {
 	int32 GainCount = 0;
 	int32 LossCount = 0;
@@ -562,28 +592,28 @@ Worker_AuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_Author
 	for (;;)
 	{
 		// Find the last element for this entity-component.
-		const Worker_ComponentId ComponentId = It->component_id;
-		It = std::find_if(It, End, DifferentEntityComponent{ EntityId, ComponentId }) - 1;
-		const int32 AuthorityIndex = EntityAuthority.Find(ComponentId);
+		const Worker_ComponentSetId ComponentSetId = It->component_set_id;
+		It = std::find_if(It, End, DifferentEntityComponent{ EntityId, ComponentSetId }) - 1;
+		const int32 AuthorityIndex = EntityAuthority.Find(ComponentSetId);
 		const bool bHasAuthority = AuthorityIndex != INDEX_NONE;
 
 		if (It->authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
 			if (bHasAuthority)
 			{
-				AuthorityLostTempForDelta.Emplace(ComponentId, AuthorityChange::AUTHORITY_LOST_TEMPORARILY);
+				AuthorityLostTempForDelta.Emplace(ComponentSetId, AuthorityChange::AUTHORITY_LOST_TEMPORARILY);
 				++LossTempCount;
 			}
 			else
 			{
-				EntityAuthority.Push(ComponentId);
-				AuthorityGainedForDelta.Emplace(ComponentId, AuthorityChange::AUTHORITY_GAINED);
+				EntityAuthority.Push(ComponentSetId);
+				AuthorityGainedForDelta.Emplace(ComponentSetId, AuthorityChange::AUTHORITY_GAINED);
 				++GainCount;
 			}
 		}
 		else if (bHasAuthority)
 		{
-			AuthorityLostForDelta.Emplace(ComponentId, AuthorityChange::AUTHORITY_LOST);
+			AuthorityLostForDelta.Emplace(ComponentSetId, AuthorityChange::AUTHORITY_LOST);
 			EntityAuthority.RemoveAtSwap(AuthorityIndex);
 			++LossCount;
 		}
@@ -603,14 +633,12 @@ Worker_AuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(Worker_Author
 }
 
 ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(ReceivedEntityChange* It, ReceivedEntityChange* End,
-																		 EntityDelta& Delta, EntityViewElement** ViewElement,
-																		 EntityView& View)
+																		 EntityDelta& Delta, bool bAlreadyInView, EntityView& View)
 {
 	// Find the last element relating to the same entity.
 	const Worker_EntityId EntityId = It->EntityId;
 	It = std::find_if(It, End, DifferentEntity{ EntityId }) - 1;
 
-	const bool bAlreadyInView = *ViewElement != nullptr;
 	const bool bEntityAdded = It->bAdded;
 
 	// If the entity's presence has not changed then it's an update.
@@ -623,32 +651,11 @@ ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(Receive
 	if (bEntityAdded)
 	{
 		Delta.Type = EntityDelta::ADD;
-		*ViewElement = &View.Emplace(EntityId, EntityViewElement{});
 	}
 	else
 	{
 		Delta.Type = EntityDelta::REMOVE;
-
-		// Remove components.
-		const auto& Components = (*ViewElement)->Components;
-		for (const auto& Component : Components)
-		{
-			ComponentsRemovedForDelta.Emplace(Component.GetComponentId());
-		}
-		Delta.ComponentsRemoved = { ComponentsRemovedForDelta.GetData() + ComponentsRemovedForDelta.Num() - Components.Num(),
-									Components.Num() };
-
-		// Remove authority.
-		const auto& Authority = (*ViewElement)->Authority;
-		for (const auto& Id : Authority)
-		{
-			AuthorityLostForDelta.Emplace(Id, AuthorityChange::AUTHORITY_LOST);
-		}
-		Delta.AuthorityLost = { AuthorityLostForDelta.GetData() + AuthorityLostForDelta.Num() - Authority.Num(), Authority.Num() };
-
-		// Remove from view.
 		View.Remove(EntityId);
-		*ViewElement = nullptr;
 	}
 
 	return It + 1;

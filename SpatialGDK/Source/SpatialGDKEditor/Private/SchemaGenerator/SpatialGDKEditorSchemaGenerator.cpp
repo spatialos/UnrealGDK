@@ -18,6 +18,9 @@
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
+#include "Runtime/Launch/Resources/Version.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "Templates/SharedPointer.h"
 #include "UObject/UObjectIterator.h"
 
@@ -30,12 +33,42 @@
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
+#include "SpatialGDKSettings.h"
 #include "TypeStructure.h"
 #include "UObject/StrongObjectPtr.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
+#include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaDatabase.h"
+
+#if ENGINE_MINOR_VERSION >= 26
+#define GDK_CREATE_PACKAGE(PackagePath) CreatePackage((PackagePath));
+#else
+#define GDK_CREATE_PACKAGE(PackagePath) CreatePackage(nullptr, (PackagePath));
+#endif
+
+// clang-format off
+#define SAFE_TRYGET(Value, Type, OutParam)                                                                                                 \
+	do                                                                                                                                     \
+	{                                                                                                                                      \
+		if (!Value->TryGet##Type(OutParam))                                                                                                \
+		{                                                                                                                                  \
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to get %s as type %s"), TEXT(#Value), TEXT(#Type));                   \
+			return false;                                                                                                                  \
+		}                                                                                                                                  \
+	} while (false)
+
+#define SAFE_TRYGETFIELD(Value, Type, FieldName, OutParam)                                                                                 \
+	do                                                                                                                                     \
+	{                                                                                                                                      \
+		if (!Value->TryGet##Type##Field(TEXT(FieldName), OutParam))                                                                        \
+		{                                                                                                                                  \
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to get field %s of type %s from %s"), TEXT(FieldName), TEXT(#Type), TEXT(#Value)); \
+			return false;                                                                                                                  \
+		}                                                                                                                                  \
+	} while (false)
+// clang-format on
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKSchemaGenerator"
@@ -86,7 +119,7 @@ void GenerateCompleteSchemaFromClass(const FString& SchemaPath, FComponentIdGene
 	}
 	else
 	{
-		GenerateSubobjectSchema(IdGenerator, Class, TypeInfo, SchemaPath + TEXT("Subobjects/"));
+		GenerateSubobjectSchema(IdGenerator, Class, TypeInfo, FPaths::Combine(SchemaPath, TEXT("Subobjects")));
 	}
 }
 
@@ -258,11 +291,59 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	return bSuccess;
 }
 
+bool ValidateAlwaysWriteRPCs(const TArray<TSharedPtr<FUnrealType>>& TypeInfos)
+{
+	bool bSuccess = true;
+
+	for (const auto& TypeInfo : TypeInfos)
+	{
+		UClass* Class = Cast<UClass>(TypeInfo->Type);
+		check(Class);
+
+		TArray<UFunction*> RPCs = SpatialGDK::GetClassRPCFunctions(Class);
+		TArray<UFunction*> AlwaysWriteRPCs;
+
+		for (UFunction* RPC : RPCs)
+		{
+			if (RPC->SpatialFunctionFlags & SPATIALFUNC_AlwaysWrite)
+			{
+				AlwaysWriteRPCs.Add(RPC);
+			}
+		}
+
+		if (!Class->IsChildOf<AActor>() && AlwaysWriteRPCs.Num() > 0)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error,
+				   TEXT("Found AlwaysWrite RPC(s) on a subobject class. This is not supported. Please route it through the owning actor if "
+						"AlwaysWrite behavior is necessary. Class: %s, function(s):"),
+				   *Class->GetPathName());
+			for (UFunction* RPC : AlwaysWriteRPCs)
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("%s"), *RPC->GetName());
+			}
+			bSuccess = false;
+		}
+		else if (AlwaysWriteRPCs.Num() > 1)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error,
+				   TEXT("Found more than 1 function with AlwaysWrite for class. This is not supported. Class: %s, functions:"),
+				   *Class->GetPathName());
+			for (UFunction* RPC : AlwaysWriteRPCs)
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("%s"), *RPC->GetName());
+			}
+			bSuccess = false;
+		}
+	}
+
+	return bSuccess;
+}
+
 void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath,
 							   FComponentIdGenerator& IdGenerator)
 {
 	// Generate the actual schema.
-	FScopedSlowTask Progress((float)TypeInfos.Num(), LOCTEXT("GenerateSchemaFromClasses", "Generating Schema..."));
+	FScopedSlowTask Progress((float)TypeInfos.Num(), LOCTEXT("GenerateSchemaFromClasses", "Generating schema..."));
 	for (const auto& TypeInfo : TypeInfos)
 	{
 		Progress.EnterProgressFrame(1.f);
@@ -272,9 +353,10 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 
 void WriteLevelComponent(FCodeWriter& Writer, const FString& LevelName, Worker_ComponentId ComponentId, const FString& ClassPath)
 {
+	FString ComponentName = UnrealNameToSchemaComponentName(LevelName);
 	Writer.PrintNewLine();
 	Writer.Printf("// {0}", *ClassPath);
-	Writer.Printf("component {0} {", *UnrealNameToSchemaComponentName(LevelName));
+	Writer.Printf("component {0} {", *ComponentName);
 	Writer.Indent();
 	Writer.Printf("id = {0};", ComponentId);
 	Writer.Outdent().Print("}");
@@ -358,7 +440,7 @@ void GenerateSchemaForSublevels(const FString& SchemaOutputPath, const TMultiMap
 
 	NextAvailableComponentId = IdGenerator.Peek();
 
-	Writer.WriteToFile(FString::Printf(TEXT("%sSublevels/sublevels.schema"), *SchemaOutputPath));
+	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("Sublevels/sublevels.schema")));
 }
 
 void GenerateSchemaForRPCEndpoints()
@@ -394,17 +476,20 @@ void GenerateSchemaForNCDs(const FString& SchemaOutputPath)
 			NCDComponent.Value = IdGenerator.Next();
 		}
 
+		FString SchemaComponentName = UnrealNameToSchemaComponentName(ComponentName);
+		Worker_ComponentId ComponentId = NCDComponent.Value;
+
 		Writer.PrintNewLine();
 		Writer.Printf("// distance {0}", NCDComponent.Key);
-		Writer.Printf("component {0} {", *UnrealNameToSchemaComponentName(ComponentName));
+		Writer.Printf("component {0} {", *SchemaComponentName);
 		Writer.Indent();
-		Writer.Printf("id = {0};", NCDComponent.Value);
+		Writer.Printf("id = {0};", ComponentId);
 		Writer.Outdent().Print("}");
 	}
 
 	NextAvailableComponentId = IdGenerator.Peek();
 
-	Writer.WriteToFile(FString::Printf(TEXT("%sNetCullDistance/ncdcomponents.schema"), *SchemaOutputPath));
+	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("NetCullDistance/ncdcomponents.schema")));
 }
 
 FString GenerateIntermediateDirectory()
@@ -450,9 +535,416 @@ TMap<Worker_ComponentId, FString> CreateComponentIdToClassPathMap()
 	return ComponentIdToClassPath;
 }
 
-bool SaveSchemaDatabase(const FString& PackagePath)
+FString GetComponentSetNameBySchemaType(ESchemaComponentType SchemaType)
 {
-	UPackage* Package = CreatePackage(nullptr, *PackagePath);
+	switch (SchemaType)
+	{
+	case SCHEMA_Data:
+		return SpatialConstants::DATA_COMPONENT_SET_NAME;
+	case SCHEMA_OwnerOnly:
+		return SpatialConstants::OWNER_ONLY_COMPONENT_SET_NAME;
+	case SCHEMA_Handover:
+		return SpatialConstants::HANDOVER_COMPONENT_SET_NAME;
+	default:
+		// For some reason these statements, if formatted cause a bug in VS where the lines reported by the compiler and debugger are wrong.
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not return component set name. Schema component type was invalid: %d"), SchemaType);
+		// clang-format on
+		return FString();
+	}
+}
+
+Worker_ComponentId GetComponentSetIdBySchemaType(ESchemaComponentType SchemaType)
+{
+	switch (SchemaType)
+	{
+	case SCHEMA_Data:
+		return SpatialConstants::DATA_COMPONENT_SET_ID;
+	case SCHEMA_OwnerOnly:
+		return SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID;
+	case SCHEMA_Handover:
+		return SpatialConstants::HANDOVER_COMPONENT_SET_ID;
+	default:
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not return component set ID. Schema component type was invalid: %d"), SchemaType);
+		// clang-format on
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
+}
+
+FString GetComponentSetOutputPathBySchemaType(const FString& BasePath, ESchemaComponentType SchemaType)
+{
+	const FString ComponentSetName = GetComponentSetNameBySchemaType(SchemaType);
+	FString FileName = FString::Printf(TEXT("%s.schema"), *ComponentSetName);
+	return FPaths::Combine(*BasePath, FPaths::Combine(TEXT("ComponentSets"), *FileName));
+}
+
+void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, const FString& SchemaOutputPath)
+{
+	FCodeWriter Writer;
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated;)""");
+	Writer.PrintNewLine();
+
+	// Write all import statements.
+	{
+		// Well-known SpatialOS and handwritten GDK schema files.
+		for (const auto& WellKnownSchemaImport : SpatialConstants::ServerAuthorityWellKnownSchemaImports)
+		{
+			Writer.Printf("import \"{0}\";", WellKnownSchemaImport);
+		}
+
+		const FString IncludePath = TEXT("unreal/generated");
+		for (const auto& GeneratedActorClass : SchemaDatabase->ActorClassPathToSchema)
+		{
+			const FString ActorClassName = UnrealNameToSchemaName(GeneratedActorClass.Value.GeneratedSchemaName);
+			Writer.Printf("import \"{0}/{1}.schema\";", IncludePath, ActorClassName);
+			if (GeneratedActorClass.Value.SubobjectData.Num() > 0)
+			{
+				Writer.Printf("import \"{0}/{1}Components.schema\";", IncludePath, ActorClassName);
+			}
+		}
+
+		for (const auto& GeneratedSubObjectClass : SchemaDatabase->SubobjectClassPathToSchema)
+		{
+			const FString SubObjectClassName = UnrealNameToSchemaName(GeneratedSubObjectClass.Value.GeneratedSchemaName);
+			Writer.Printf("import \"{0}/Subobjects/{1}.schema\";", IncludePath, SubObjectClassName);
+		}
+	}
+
+	Writer.PrintNewLine();
+	Writer.Printf("component_set {0} {", SpatialConstants::SERVER_AUTH_COMPONENT_SET_NAME).Indent();
+	Writer.Printf("id = {0};", SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
+	Writer.Printf("components = [").Indent();
+
+	// Write all components.
+	{
+		// Well-known SpatialOS and handwritten GDK components.
+		for (const auto& WellKnownComponent : SpatialConstants::ServerAuthorityWellKnownComponents)
+		{
+			Writer.Printf("{0},", WellKnownComponent.Value);
+		}
+
+		// NCDs.
+		for (auto& NCDComponent : NetCullDistanceToComponentId)
+		{
+			const FString NcdComponentName = FString::Printf(TEXT("NetCullDistanceSquared%lld"), static_cast<uint64>(NCDComponent.Key));
+			Writer.Printf("unreal.ncdcomponents.{0},", NcdComponentName);
+		}
+
+		for (const auto& GeneratedActorClass : SchemaDatabase->ActorClassPathToSchema)
+		{
+			// Actor components.
+			const FString& ActorClassName = UnrealNameToSchemaComponentName(GeneratedActorClass.Value.GeneratedSchemaName);
+			ForAllSchemaComponentTypes([&](ESchemaComponentType SchemaType) {
+				const Worker_ComponentId ComponentId = GeneratedActorClass.Value.SchemaComponents[SchemaType];
+				if (ComponentId != 0)
+				{
+					switch (SchemaType)
+					{
+					case SCHEMA_Data:
+						Writer.Printf("unreal.generated.{0}.{1},", ActorClassName.ToLower(), ActorClassName);
+						break;
+					case SCHEMA_OwnerOnly:
+						Writer.Printf("unreal.generated.{0}.{1}OwnerOnly,", ActorClassName.ToLower(), ActorClassName);
+						break;
+					case SCHEMA_Handover:
+						Writer.Printf("unreal.generated.{0}.{1}Handover,", ActorClassName.ToLower(), ActorClassName);
+						break;
+					default:
+						break;
+					}
+				}
+			});
+
+			// Actor static subobjects.
+			for (const auto& ActorSubObjectData : GeneratedActorClass.Value.SubobjectData)
+			{
+				const FString ActorSubObjectName = UnrealNameToSchemaComponentName(ActorSubObjectData.Value.Name.ToString());
+				ForAllSchemaComponentTypes([&](ESchemaComponentType SchemaType) {
+					const Worker_ComponentId& ComponentId = ActorSubObjectData.Value.SchemaComponents[SchemaType];
+					if (ComponentId != 0)
+					{
+						switch (SchemaType)
+						{
+						case SCHEMA_Data:
+							Writer.Printf("unreal.generated.{0}.subobjects.{1},", ActorClassName.ToLower(), ActorSubObjectName);
+							break;
+						case SCHEMA_OwnerOnly:
+							Writer.Printf("unreal.generated.{0}.subobjects.{1}OwnerOnly,", ActorClassName.ToLower(), ActorSubObjectName);
+							break;
+						case SCHEMA_Handover:
+							Writer.Printf("unreal.generated.{0}.subobjects.{1}Handover,", ActorClassName.ToLower(), ActorSubObjectName);
+							break;
+						default:
+							break;
+						}
+					}
+				});
+			}
+		}
+
+		// Dynamic subobjects.
+		for (const auto& GeneratedSubObjectClass : SchemaDatabase->SubobjectClassPathToSchema)
+		{
+			const FString& SubObjectClassName = UnrealNameToSchemaComponentName(GeneratedSubObjectClass.Value.GeneratedSchemaName);
+			for (auto SubObjectNumber = 0; SubObjectNumber < GeneratedSubObjectClass.Value.DynamicSubobjectComponents.Num();
+				 ++SubObjectNumber)
+			{
+				const FDynamicSubobjectSchemaData& SubObjectSchemaData =
+					GeneratedSubObjectClass.Value.DynamicSubobjectComponents[SubObjectNumber];
+				ForAllSchemaComponentTypes([&](ESchemaComponentType SchemaType) {
+					const Worker_ComponentId& ComponentId = SubObjectSchemaData.SchemaComponents[SchemaType];
+					if (ComponentId != 0)
+					{
+						switch (SchemaType)
+						{
+						case SCHEMA_Data:
+							Writer.Printf("unreal.generated.{0}Dynamic{1},", SubObjectClassName, SubObjectNumber + 1);
+							break;
+						case SCHEMA_OwnerOnly:
+							Writer.Printf("unreal.generated.{0}OwnerOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
+							break;
+						case SCHEMA_Handover:
+							Writer.Printf("unreal.generated.{0}HandoverDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
+							break;
+						default:
+							break;
+						}
+					}
+				});
+			}
+		}
+	}
+
+	Writer.RemoveTrailingComma();
+
+	Writer.Outdent().Print("];");
+	Writer.Outdent().Print("}");
+
+	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("ComponentSets/ServerAuthoritativeComponentSet.schema")));
+}
+
+void WriteRoutingWorkerAuthorityComponentSet(const FString& SchemaOutputPath)
+{
+	FCodeWriter Writer;
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated;)""");
+	Writer.PrintNewLine();
+
+	// Write all import statements.
+	for (const auto& WellKnownSchemaImport : SpatialConstants::RoutingWorkerSchemaImports)
+	{
+		Writer.Printf("import \"{0}\";", WellKnownSchemaImport);
+	}
+
+	Writer.PrintNewLine();
+	Writer.Printf("component_set {0} {", SpatialConstants::ROUTING_WORKER_COMPONENT_SET_NAME).Indent();
+	Writer.Printf("id = {0};", SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID);
+	Writer.Printf("components = [").Indent();
+
+	// Write all import components.
+	for (const auto& WellKnownComponent : SpatialConstants::RoutingWorkerComponents)
+	{
+		Writer.Printf("{0},", WellKnownComponent.Value);
+	}
+
+	Writer.RemoveTrailingComma();
+
+	Writer.Outdent().Print("];");
+	Writer.Outdent().Print("}");
+
+	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("ComponentSets/RoutingWorkerAuthoritativeComponentSet.schema")));
+}
+
+void WriteClientAuthorityComponentSet(const FString& SchemaOutputPath)
+{
+	FCodeWriter Writer;
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated;)""");
+	Writer.PrintNewLine();
+
+	// Write all import statements.
+	for (const auto& WellKnownSchemaImport : SpatialConstants::ClientAuthorityWellKnownSchemaImports)
+	{
+		Writer.Printf("import \"{0}\";", WellKnownSchemaImport);
+	}
+
+	Writer.PrintNewLine();
+	Writer.Printf("component_set {0} {", SpatialConstants::CLIENT_AUTH_COMPONENT_SET_NAME).Indent();
+	Writer.Printf("id = {0};", SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+	Writer.Printf("components = [").Indent();
+
+	// Write all import components.
+	for (const auto& WellKnownComponent : SpatialConstants::ClientAuthorityWellKnownComponents)
+	{
+		Writer.Printf("{0},", WellKnownComponent.Value);
+	}
+
+	Writer.RemoveTrailingComma();
+
+	Writer.Outdent().Print("];");
+	Writer.Outdent().Print("}");
+
+	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("ComponentSets/ClientAuthoritativeComponentSet.schema")));
+}
+
+void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchemaComponentType SchemaType, const FString& SchemaOutputPath)
+{
+	FCodeWriter Writer;
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated;)""");
+	Writer.PrintNewLine();
+
+	// Write all import statements.
+	{
+		const FString IncludePath = TEXT("unreal/generated");
+		for (const auto& GeneratedActorClass : SchemaDatabase->ActorClassPathToSchema)
+		{
+			const FString ActorClassName = UnrealNameToSchemaName(GeneratedActorClass.Value.GeneratedSchemaName);
+			if (GeneratedActorClass.Value.SchemaComponents[SchemaType] != 0)
+			{
+				Writer.Printf("import \"{0}/{1}.schema\";", IncludePath, ActorClassName);
+			}
+			for (const auto& SubObjectData : GeneratedActorClass.Value.SubobjectData)
+			{
+				if (SubObjectData.Value.SchemaComponents[SchemaType] != 0)
+				{
+					Writer.Printf("import \"{0}/{1}Components.schema\";", IncludePath, ActorClassName);
+					break;
+				}
+			}
+		}
+		for (const auto& GeneratedSubObjectClass : SchemaDatabase->SubobjectClassPathToSchema)
+		{
+			const FString SubObjectClassName = UnrealNameToSchemaName(GeneratedSubObjectClass.Value.GeneratedSchemaName);
+			for (const auto& SubObjectData : GeneratedSubObjectClass.Value.DynamicSubobjectComponents)
+			{
+				if (SubObjectData.SchemaComponents[SchemaType] != 0)
+				{
+					Writer.Printf("import \"{0}/Subobjects/{1}.schema\";", IncludePath, SubObjectClassName);
+					break;
+				}
+			}
+		}
+	}
+
+	Writer.PrintNewLine();
+	Writer.Printf("component_set {0} {", GetComponentSetNameBySchemaType(SchemaType)).Indent();
+	Writer.Printf("id = {0};", GetComponentSetIdBySchemaType(SchemaType));
+	Writer.Printf("components = [").Indent();
+
+	// Write all components.
+	{
+		for (const auto& GeneratedActorClass : SchemaDatabase->ActorClassPathToSchema)
+		{
+			// Actor components.
+			const FString& ActorClassName = UnrealNameToSchemaComponentName(GeneratedActorClass.Value.GeneratedSchemaName);
+			if (GeneratedActorClass.Value.SchemaComponents[SchemaType] != 0)
+			{
+				switch (SchemaType)
+				{
+				case SCHEMA_Data:
+					Writer.Printf("unreal.generated.{0}.{1},", ActorClassName.ToLower(), ActorClassName);
+					break;
+				case SCHEMA_OwnerOnly:
+					Writer.Printf("unreal.generated.{0}.{1}OwnerOnly,", ActorClassName.ToLower(), ActorClassName);
+					break;
+				case SCHEMA_Handover:
+					Writer.Printf("unreal.generated.{0}.{1}Handover,", ActorClassName.ToLower(), ActorClassName);
+					break;
+				default:
+					break;
+				}
+			}
+			// Actor static subobjects.
+			for (const auto& ActorSubObjectData : GeneratedActorClass.Value.SubobjectData)
+			{
+				const FString ActorSubObjectName = UnrealNameToSchemaComponentName(ActorSubObjectData.Value.Name.ToString());
+				if (ActorSubObjectData.Value.SchemaComponents[SchemaType] != 0)
+				{
+					switch (SchemaType)
+					{
+					case SCHEMA_Data:
+						Writer.Printf("unreal.generated.{0}.subobjects.{1},", ActorClassName.ToLower(), ActorSubObjectName);
+						break;
+					case SCHEMA_OwnerOnly:
+						Writer.Printf("unreal.generated.{0}.subobjects.{1}OwnerOnly,", ActorClassName.ToLower(), ActorSubObjectName);
+						break;
+					case SCHEMA_Handover:
+						Writer.Printf("unreal.generated.{0}.subobjects.{1}Handover,", ActorClassName.ToLower(), ActorSubObjectName);
+						break;
+					default:
+						break;
+					}
+				}
+			}
+		}
+		// Dynamic subobjects.
+		for (const auto& GeneratedSubObjectClass : SchemaDatabase->SubobjectClassPathToSchema)
+		{
+			const FString& SubObjectClassName = UnrealNameToSchemaComponentName(GeneratedSubObjectClass.Value.GeneratedSchemaName);
+			for (auto SubObjectNumber = 0; SubObjectNumber < GeneratedSubObjectClass.Value.DynamicSubobjectComponents.Num();
+				 ++SubObjectNumber)
+			{
+				const FDynamicSubobjectSchemaData& SubObjectSchemaData =
+					GeneratedSubObjectClass.Value.DynamicSubobjectComponents[SubObjectNumber];
+				if (SubObjectSchemaData.SchemaComponents[SchemaType] != 0)
+				{
+					switch (SchemaType)
+					{
+					case SCHEMA_Data:
+						Writer.Printf("unreal.generated.{0}Dynamic{1},", SubObjectClassName, SubObjectNumber + 1);
+						break;
+					case SCHEMA_OwnerOnly:
+						Writer.Printf("unreal.generated.{0}OwnerOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
+						break;
+					case SCHEMA_Handover:
+						Writer.Printf("unreal.generated.{0}HandoverDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
+						break;
+					default:
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	Writer.RemoveTrailingComma();
+
+	Writer.Outdent().Print("];");
+	Writer.Outdent().Print("}");
+
+	const FString OutputPath = GetComponentSetOutputPathBySchemaType(SchemaOutputPath, SchemaType);
+	Writer.WriteToFile(OutputPath);
+}
+
+void WriteComponentSetFiles(const USchemaDatabase* SchemaDatabase, FString SchemaOutputPath)
+{
+	if (SchemaOutputPath == "")
+	{
+		SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
+	}
+
+	WriteServerAuthorityComponentSet(SchemaDatabase, SchemaOutputPath);
+	WriteClientAuthorityComponentSet(SchemaOutputPath);
+	WriteRoutingWorkerAuthorityComponentSet(SchemaOutputPath);
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Data, SchemaOutputPath);
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly, SchemaOutputPath);
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover, SchemaOutputPath);
+}
+
+USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
+{
+	UPackage* Package = GDK_CREATE_PACKAGE(*PackagePath);
 
 	ActorClassPathToSchema.KeySort([](const FString& LHS, const FString& RHS) {
 		return LHS < RHS;
@@ -485,15 +977,32 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->LevelComponentIds.Reset(LevelPathToComponentId.Num());
 	LevelPathToComponentId.GenerateValueArray(SchemaDatabase->LevelComponentIds);
 
+	SchemaDatabase->ComponentSetIdToComponentIds.Reset();
+
+	// Save ring buffer sizes
+	for (uint8 RPCType = static_cast<uint8>(ERPCType::RingBufferTypeBegin); RPCType <= static_cast<uint8>(ERPCType::RingBufferTypeEnd);
+		 RPCType++)
+	{
+		SchemaDatabase->RPCRingBufferSizeMap.Add(static_cast<ERPCType>(RPCType),
+												 GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(static_cast<ERPCType>(RPCType)));
+	}
+
+	SchemaDatabase->SchemaDatabaseVersion = ESchemaDatabaseVersion::LatestVersion;
+
+	return SchemaDatabase;
+}
+
+bool SaveSchemaDatabase(USchemaDatabase* SchemaDatabase)
+{
 	FString CompiledSchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema"));
 
 	// Generate hash
 	{
-		SchemaDatabase->SchemaDescriptorHash = 0;
-		FString DescriptorPath = FPaths::Combine(CompiledSchemaDir, TEXT("schema.descriptor"));
+		SchemaDatabase->SchemaBundleHash = 0;
+		FString SchemaBundlePath = FPaths::Combine(CompiledSchemaDir, TEXT("schema.sb"));
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-		TUniquePtr<IFileHandle> FileHandle(PlatformFile.OpenRead(DescriptorPath.GetCharArray().GetData()));
+		TUniquePtr<IFileHandle> FileHandle(PlatformFile.OpenRead(SchemaBundlePath.GetCharArray().GetData()));
 		if (FileHandle)
 		{
 			// Create our byte buffer
@@ -502,20 +1011,23 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 			bool Result = FileHandle->Read(ByteArray.Get(), FileSize);
 			if (Result)
 			{
-				SchemaDatabase->SchemaDescriptorHash = CityHash32(reinterpret_cast<const char*>(ByteArray.Get()), FileSize);
-				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Generated schema hash for database %u"),
-					   SchemaDatabase->SchemaDescriptorHash);
+				SchemaDatabase->SchemaBundleHash = CityHash32(reinterpret_cast<const char*>(ByteArray.Get()), FileSize);
+				// clang-format off
+				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Generated schema bundle hash for database %u"), SchemaDatabase->SchemaBundleHash);
+				// clang-format on
 			}
 			else
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Warning,
-					   TEXT("Failed to fully read schema.descriptor. Schema not saved. Location: %s"), *DescriptorPath);
+				// clang-format off
+				UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Failed to fully read schema.sb. Schema not saved. Location: %s"), *SchemaBundlePath);
+				// clang-format on
 			}
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Warning,
-				   TEXT("Failed to open schema.descriptor generated by the schema compiler! Location: %s"), *DescriptorPath);
+			// clang-format off
+			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Failed to open schema.sb generated by the schema compiler! Location: %s"), *SchemaBundlePath);
+			// clang-format on
 		}
 	}
 
@@ -525,7 +1037,9 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 	// NOTE: UPackage::GetMetaData() has some code where it will auto-create the metadata if it's missing
 	// UPackage::SavePackage() calls UPackage::GetMetaData() at some point, and will cause an exception to get thrown
 	// if the metadata auto-creation branch needs to be taken. This is the case when generating the schema from the
-	// command line, so we just pre-empt it here.
+	// command line, so we just preempt it here.
+	UPackage* Package = SchemaDatabase->GetOutermost();
+	const FString& PackagePath = Package->GetPathName();
 	Package->GetMetaData();
 
 	FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
@@ -538,10 +1052,11 @@ bool SaveSchemaDatabase(const FString& PackagePath)
 		FString FullPath = FPaths::ConvertRelativePathToFull(FilePath);
 		FPaths::MakePlatformFilename(FullPath);
 		FMessageDialog::Debugf(FText::Format(
-			LOCTEXT("SchemaDatabaseLocked_Error", "Unable to save Schema Database to '{0}'! The file may be locked by another process."),
+			LOCTEXT("SchemaDatabaseLocked_Error", "Unable to save schema database to '{0}'! The file may be locked by another process."),
 			FText::FromString(FullPath)));
 		return false;
 	}
+
 	return true;
 }
 
@@ -549,15 +1064,17 @@ bool IsSupportedClass(const UClass* SupportedClass)
 {
 	if (!IsValid(SupportedClass))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Invalid Class not supported for schema gen."),
-			   *GetPathNameSafe(SupportedClass));
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Invalid Class not supported for schema gen."), *GetPathNameSafe(SupportedClass));
+		// clang-format on
 		return false;
 	}
 
 	if (SupportedClass->IsEditorOnly())
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Editor-only Class not supported for schema gen."),
-			   *GetPathNameSafe(SupportedClass));
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Editor-only Class not supported for schema gen."), *GetPathNameSafe(SupportedClass));
+		// clang-format on
 		return false;
 	}
 
@@ -565,13 +1082,15 @@ bool IsSupportedClass(const UClass* SupportedClass)
 	{
 		if (SupportedClass->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Has NotSpatialType flag, not supported for schema gen."),
-				   *GetPathNameSafe(SupportedClass));
+			// clang-format off
+			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Has NotSpatialType flag, not supported for schema gen."), *GetPathNameSafe(SupportedClass));
+			// clang-format on
 		}
 		else
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Has neither a SpatialType or NotSpatialType flag."),
-				   *GetPathNameSafe(SupportedClass));
+			// clang-format off
+			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Has neither a SpatialType or NotSpatialType flag."), *GetPathNameSafe(SupportedClass));
+			// clang-format on
 		}
 
 		return false;
@@ -579,7 +1098,9 @@ bool IsSupportedClass(const UClass* SupportedClass)
 
 	if (SupportedClass->HasAnyClassFlags(CLASS_LayoutChanging))
 	{
+		// clang-format off
 		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Layout changing, not supported"), *GetPathNameSafe(SupportedClass));
+		// clang-format on
 		return false;
 	}
 
@@ -592,8 +1113,9 @@ bool IsSupportedClass(const UClass* SupportedClass)
 		|| SupportedClass->GetName().StartsWith(TEXT("PLACEHOLDER-CLASS_"), ESearchCase::CaseSensitive)
 		|| SupportedClass->GetName().StartsWith(TEXT("ORPHANED_DATA_ONLY_"), ESearchCase::CaseSensitive))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Transient Class not supported for schema gen"),
-			   *GetPathNameSafe(SupportedClass));
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Transient Class not supported for schema gen"), *GetPathNameSafe(SupportedClass));
+		// clang-format on
 		return false;
 	}
 
@@ -605,12 +1127,14 @@ bool IsSupportedClass(const UClass* SupportedClass)
 			return ClassPath.StartsWith(Directory.Path);
 		}))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Inside Directory to never cook for schema gen"),
-			   *GetPathNameSafe(SupportedClass));
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Inside Directory to never cook for schema gen"), *GetPathNameSafe(SupportedClass));
+		// clang-format on
 		return false;
 	}
-
+	// clang-format off
 	UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("[%s] Supported Class"), *GetPathNameSafe(SupportedClass));
+	// clang-format on
 	return true;
 }
 
@@ -643,36 +1167,40 @@ void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyDir, const FString& Co
 	RefreshSchemaFiles(*GDKSchemaCopyDir);
 	if (!PlatformFile.CopyDirectoryTree(*GDKSchemaCopyDir, *GDKSchemaDir, true /*bOverwriteExisting*/))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not copy gdk schema to '%s'! Please make sure the directory is writeable."),
-			   *GDKSchemaCopyDir);
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not copy gdk schema to '%s'! Please make sure the directory is writeable."), *GDKSchemaCopyDir);
+		// clang-format on
 	}
 
 	RefreshSchemaFiles(*CoreSDKSchemaCopyDir);
 	if (!PlatformFile.CopyDirectoryTree(*CoreSDKSchemaCopyDir, *CoreSDKSchemaDir, true /*bOverwriteExisting*/))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error,
-			   TEXT("Could not copy standard library schema to '%s'! Please make sure the directory is writeable."), *CoreSDKSchemaCopyDir);
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not copy standard library schema to '%s'! Please make sure the directory is writeable."), *CoreSDKSchemaCopyDir);
+		// clang-format on
 	}
 }
 
-bool RefreshSchemaFiles(const FString& SchemaOutputPath)
+bool RefreshSchemaFiles(const FString& SchemaOutputPath, const bool bDeleteExistingSchema /*= true*/,
+						const bool bCreateDirectoryTree /*= true*/)
 {
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if (PlatformFile.DirectoryExists(*SchemaOutputPath))
+	if (bDeleteExistingSchema && PlatformFile.DirectoryExists(*SchemaOutputPath))
 	{
 		if (!PlatformFile.DeleteDirectoryRecursively(*SchemaOutputPath))
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error,
-				   TEXT("Could not clean the schema directory '%s'! Please make sure the directory and the files inside are writeable."),
-				   *SchemaOutputPath);
+			// clang-format off
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not clean the schema directory '%s'! Please make sure the directory and the files inside are writeable."), *SchemaOutputPath);
+			// clang-format on
 			return false;
 		}
 	}
 
-	if (!PlatformFile.CreateDirectoryTree(*SchemaOutputPath))
+	if (bCreateDirectoryTree && !PlatformFile.CreateDirectoryTree(*SchemaOutputPath))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error,
-			   TEXT("Could not create schema directory '%s'! Please make sure the parent directory is writeable."), *SchemaOutputPath);
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create schema directory '%s'! Please make sure the parent directory is writeable."), *SchemaOutputPath);
+		// clang-format on
 		return false;
 	}
 	return true;
@@ -706,9 +1234,9 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 	if (IsAssetReadOnly(FileName))
 	{
 		FString AbsoluteFilePath = FPaths::ConvertRelativePathToFull(RelativeFileName);
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error,
-			   TEXT("Schema Generation failed: Schema Database at %s is read only. Make it writable before generating schema"),
-			   *AbsoluteFilePath);
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema generation failed: Schema Database at %s is read only. Make it writable before generating schema"), *AbsoluteFilePath);
+		// clang-format on
 		return false;
 	}
 
@@ -722,9 +1250,9 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 
 		if (SchemaDatabase == nullptr)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error,
-				   TEXT("Schema Generation failed: Failed to load existing schema database. If this continues, delete the schema database "
-						"and try again."));
+			// clang-format off
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema generation failed: Failed to load existing schema database. If this continues, delete the schema database and try again."));
+			// clang-format on
 			return false;
 		}
 
@@ -788,8 +1316,9 @@ bool DeleteSchemaDatabase(const FString& PackagePath)
 	{
 		if (IsAssetReadOnly(PackagePath))
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s because it is read-only."),
-				   *DatabaseAssetPath);
+			// clang-format off
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s because it is read-only."), *DatabaseAssetPath);
+			// clang-format on
 			return false;
 		}
 
@@ -797,7 +1326,9 @@ bool DeleteSchemaDatabase(const FString& PackagePath)
 		{
 			// This should never run, since DeleteFile should only return false if the file does not exist which we have already checked
 			// for.
+			// clang-format off
 			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Unable to delete schema database at %s"), *DatabaseAssetPath);
+			// clang-format on
 			return false;
 		}
 	}
@@ -810,6 +1341,41 @@ bool GeneratedSchemaDatabaseExists()
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
 	return PlatformFile.FileExists(*RelativeSchemaDatabaseFilePath);
+}
+
+FSpatialGDKEditor::ESchemaDatabaseValidationResult ValidateSchemaDatabase()
+{
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*RelativeSchemaDatabaseFilePath);
+	if (!StatData.bIsValid)
+	{
+		return FSpatialGDKEditor::NotFound;
+	}
+
+	const FString DatabaseAssetPath = FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase"));
+	const USchemaDatabase* const SchemaDatabase = Cast<USchemaDatabase>(FSoftObjectPath(DatabaseAssetPath).TryLoad());
+
+	if (SchemaDatabase == nullptr)
+	{
+		return FSpatialGDKEditor::NotFound;
+	}
+
+	if (SchemaDatabase->SchemaDatabaseVersion < ESchemaDatabaseVersion::LatestVersion)
+	{
+		return FSpatialGDKEditor::OldVersion;
+	}
+
+	// Check ring buffer sizes
+	for (uint8 RPCType = static_cast<uint8>(ERPCType::RingBufferTypeBegin); RPCType <= static_cast<uint8>(ERPCType::RingBufferTypeEnd);
+		 RPCType++)
+	{
+		if (SchemaDatabase->RPCRingBufferSizeMap.FindRef(static_cast<ERPCType>(RPCType))
+			!= GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(static_cast<ERPCType>(RPCType)))
+		{
+			return FSpatialGDKEditor::RingBufferSizeChanged;
+		}
+	}
+
+	return FSpatialGDKEditor::Ok;
 }
 
 void ResolveClassPathToSchemaName(const FString& ClassPath, const FString& SchemaName)
@@ -848,37 +1414,43 @@ void ResetUsedNames()
 	}
 }
 
-bool RunSchemaCompiler()
+bool RunSchemaCompiler(FString& SchemaBundleJsonOutput, FString SchemaInputDir, FString BuildDir)
 {
 	FString PluginDir = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory();
 
 	// Get the schema_compiler path and arguments
 	FString SchemaCompilerExe = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe"));
 
-	FString SchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema"));
-	FString CoreSDKSchemaDir =
-		FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/dependencies/schema/standard_library"));
-	FString CompiledSchemaDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build/assembly/schema"));
+	if (SchemaInputDir == "")
+	{
+		SchemaInputDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema"));
+	}
+
+	if (BuildDir == "")
+	{
+		BuildDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("build"));
+	}
+	FString CompiledSchemaDir = FPaths::Combine(BuildDir, TEXT("assembly/schema"));
+	FString CoreSDKSchemaDir = FPaths::Combine(BuildDir, TEXT("dependencies/schema/standard_library"));
+
 	FString CompiledSchemaASTDir = FPaths::Combine(CompiledSchemaDir, TEXT("ast"));
-	FString SchemaDescriptorOutput = FPaths::Combine(CompiledSchemaDir, TEXT("schema.descriptor"));
 	FString SchemaBundleOutput = FPaths::Combine(CompiledSchemaDir, TEXT("schema.sb"));
-	FString SchemaBundleJsonOutput = FPaths::Combine(CompiledSchemaDir, TEXT("schema.json"));
+	SchemaBundleJsonOutput = FPaths::Combine(CompiledSchemaDir, TEXT("schema.json"));
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-	const FString& SchemaCompilerBaseArgs =
-		FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --bundle_out=\"%s\" "
-							 "--bundle_json_out=\"%s\" --load_all_schema_on_schema_path "),
-						*SchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput, *SchemaBundleOutput, *SchemaBundleJsonOutput);
+	// clang-format off
+	const FString& SchemaCompilerBaseArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --bundle_out=\"%s\" --bundle_json_out=\"%s\" --load_all_schema_on_schema_path "), *SchemaInputDir, *CoreSDKSchemaDir, *SchemaBundleOutput, *SchemaBundleJsonOutput);
+	// clang-format on
 
 	// If there's already a compiled schema dir, blow it away so we don't have lingering artifacts from previous generation runs.
 	if (FPaths::DirectoryExists(CompiledSchemaDir))
 	{
 		if (!PlatformFile.DeleteDirectoryRecursively(*CompiledSchemaDir))
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error,
-				   TEXT("Could not delete pre-existing compiled schema directory '%s'! Please make sure the directory is writeable."),
-				   *CompiledSchemaDir);
+			// clang-format off
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not delete pre-existing compiled schema directory '%s'! Please make sure the directory is writeable."), *CompiledSchemaDir);
+			// clang-format on
 			return false;
 		}
 	}
@@ -886,9 +1458,9 @@ bool RunSchemaCompiler()
 	// schema_compiler cannot create folders, so we need to set them up beforehand.
 	if (!PlatformFile.CreateDirectoryTree(*CompiledSchemaDir))
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error,
-			   TEXT("Could not create compiled schema directory '%s'! Please make sure the parent directory is writeable."),
-			   *CompiledSchemaDir);
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create compiled schema directory '%s'! Please make sure the parent directory is writeable."), *CompiledSchemaDir);
+		// clang-format on
 		return false;
 	}
 
@@ -909,9 +1481,9 @@ bool RunSchemaCompiler()
 		{
 			if (!PlatformFile.CreateDirectoryTree(*CompiledSchemaASTDir))
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error,
-					   TEXT("Could not create compiled schema AST directory '%s'! Please make sure the parent directory is writeable."),
-					   *CompiledSchemaASTDir);
+				// clang-format off
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create compiled schema AST directory '%s'! Please make sure the parent directory is writeable."), *CompiledSchemaASTDir);
+				// clang-format on
 				return false;
 			}
 		}
@@ -919,8 +1491,9 @@ bool RunSchemaCompiler()
 
 	FString SchemaCompilerArgs = FString::Printf(TEXT("%s %s"), *SchemaCompilerBaseArgs, *AdditionalSchemaCompilerArgs.TrimQuotes());
 
-	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Starting '%s' with `%s` arguments."), *SpatialGDKServicesConstants::SchemaCompilerExe,
-		   *SchemaCompilerArgs);
+	// clang-format off
+	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Starting '%s' with `%s` arguments."), *SpatialGDKServicesConstants::SchemaCompilerExe, *SchemaCompilerArgs);
+	// clang-format on
 
 	int32 ExitCode = 1;
 	FString SchemaCompilerOut;
@@ -930,16 +1503,131 @@ bool RunSchemaCompiler()
 
 	if (ExitCode == 0)
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("schema_compiler successfully generated compiled schema with arguments `%s`: %s"),
-			   *SchemaCompilerArgs, *SchemaCompilerOut);
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("schema_compiler successfully generated compiled schema with arguments `%s`: %s"), *SchemaCompilerArgs, *SchemaCompilerOut);
+		// clang-format on
 		return true;
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("schema_compiler failed to generate compiled schema for arguments `%s`: %s"),
-			   *SchemaCompilerArgs, *SchemaCompilerErr);
+		// clang-format off
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("schema_compiler failed to generate compiled schema for arguments `%s`: %s"), *SchemaCompilerArgs, *SchemaCompilerErr);
+		// clang-format on
 		return false;
 	}
+}
+
+bool ExtractComponentSetsFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap)
+{
+	TUniquePtr<FArchive> SchemaFile(IFileManager::Get().CreateFileReader(*SchemaJsonPath));
+	if (!SchemaFile)
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not open schema bundle file %s"), *SchemaJsonPath);
+		return false;
+	}
+
+	TSharedPtr<FJsonValue> SchemaBundleJson;
+	{
+		TSharedRef<TJsonReader<char>> JsonReader = TJsonReader<char>::Create(SchemaFile.Get());
+		FJsonSerializer::Deserialize(*JsonReader, SchemaBundleJson);
+	}
+
+	const TSharedPtr<FJsonObject>* RootObject;
+	if (!SchemaBundleJson || !SchemaBundleJson->TryGetObject(RootObject))
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("%s is not a valid Json file"), *SchemaJsonPath);
+		return false;
+	}
+
+	const TArray<TSharedPtr<FJsonValue>>* SchemaFiles;
+	SAFE_TRYGETFIELD((*RootObject), Array, "schemaFiles", SchemaFiles);
+
+	TMap<FString, uint32> ComponentMap;
+	TMap<uint32, TSet<FString>> ComponentRefSetMap;
+
+	for (const auto& FileValue : *SchemaFiles)
+	{
+		const TSharedPtr<FJsonObject>* FileObject;
+		SAFE_TRYGET(FileValue, Object, FileObject);
+
+		const TArray<TSharedPtr<FJsonValue>>* ComponentsDecl;
+		SAFE_TRYGETFIELD((*FileObject), Array, "components", ComponentsDecl);
+
+		for (const auto& CompValue : *ComponentsDecl)
+		{
+			const TSharedPtr<FJsonObject>* CompObject;
+			SAFE_TRYGET(CompValue, Object, CompObject);
+
+			FString ComponentName;
+			SAFE_TRYGETFIELD((*CompObject), String, "qualifiedName", ComponentName);
+
+			int32 ComponentId;
+			SAFE_TRYGETFIELD((*CompObject), Number, "componentId", ComponentId);
+
+			ComponentMap.Add(ComponentName, ComponentId);
+		}
+
+		const TArray<TSharedPtr<FJsonValue>>* ComponentSets;
+		SAFE_TRYGETFIELD((*FileObject), Array, "componentSets", ComponentSets);
+
+		for (const auto& CompSetValue : *ComponentSets)
+		{
+			const TSharedPtr<FJsonObject>* CompSetObject;
+			SAFE_TRYGET(CompSetValue, Object, CompSetObject);
+
+			int32 ComponentSetId;
+			SAFE_TRYGETFIELD((*CompSetObject), Number, "componentSetId", ComponentSetId);
+
+			const TSharedPtr<FJsonObject>* CompListObject;
+			SAFE_TRYGETFIELD((*CompSetObject), Object, "componentList", CompListObject);
+
+			const TArray<TSharedPtr<FJsonValue>>* RefComponents;
+			SAFE_TRYGETFIELD((*CompListObject), Array, "components", RefComponents);
+
+			TSet<FString> Components;
+
+			for (const auto& CompRefValue : *RefComponents)
+			{
+				const TSharedPtr<FJsonObject>* CompRefObject;
+				SAFE_TRYGET(CompRefValue, Object, CompRefObject);
+
+				FString ComponentName;
+				SAFE_TRYGETFIELD((*CompRefObject), String, "component", ComponentName);
+
+				Components.Add(ComponentName);
+			}
+
+			ComponentRefSetMap.Add(ComponentSetId, MoveTemp(Components));
+		}
+	}
+
+	TMap<uint32, FComponentIDs> FinalMap;
+
+	for (const auto& SetEntry : ComponentRefSetMap)
+	{
+		const TSet<FString>& ComponentRefs = SetEntry.Value;
+
+		FComponentIDs SetIds;
+		for (const auto& CompRef : ComponentRefs)
+		{
+			uint32* FoundId = ComponentMap.Find(CompRef);
+			if (FoundId == nullptr)
+			{
+				// clang-format off
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema file %s is missing a component entry for %s"), *SchemaJsonPath, *CompRef);
+				// clang-format on
+				return false;
+			}
+
+			SetIds.ComponentIDs.Add(*FoundId);
+		}
+
+		FinalMap.Add(SetEntry.Key, MoveTemp(SetIds));
+	}
+
+	OutComponentSetMap = MoveTemp(FinalMap);
+
+	return true;
 }
 
 bool SpatialGDKGenerateSchema()
@@ -950,22 +1638,33 @@ bool SpatialGDKGenerateSchema()
 
 	TArray<UObject*> AllClasses;
 	GetObjectsOfClass(UClass::StaticClass(), AllClasses);
-	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses(AllClasses),
-											GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder()))
+	if (!SpatialGDKGenerateSchemaForClasses(GetAllSupportedClasses(AllClasses)))
 	{
 		return false;
 	}
+	SpatialGDKSanitizeGeneratedSchema();
 
 	GenerateSchemaForSublevels();
 	GenerateSchemaForRPCEndpoints();
 	GenerateSchemaForNCDs();
 
-	if (!RunSchemaCompiler())
+	USchemaDatabase* SchemaDatabase = InitialiseSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH);
+
+	// Needs to happen before RunSchemaCompiler
+	WriteComponentSetFiles(SchemaDatabase);
+
+	FString SchemaJsonOutput;
+	if (!RunSchemaCompiler(SchemaJsonOutput))
 	{
 		return false;
 	}
 
-	if (!SaveSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH)) // This requires RunSchemaCompiler to run first
+	if (!ExtractComponentSetsFromSchemaJson(SchemaJsonOutput, SchemaDatabase->ComponentSetIdToComponentIds))
+	{
+		return false;
+	}
+
+	if (!SaveSchemaDatabase(SchemaDatabase)) // This requires RunSchemaCompiler to run first
 	{
 		return false;
 	}
@@ -1012,6 +1711,11 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 		return false;
 	}
 
+	if (!ValidateAlwaysWriteRPCs(TypeInfos))
+	{
+		return false;
+	}
+
 	if (SchemaOutputPath.IsEmpty())
 	{
 		SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
@@ -1033,6 +1737,51 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 	NextAvailableComponentId = IdGenerator.Peek();
 
 	return true;
+}
+
+template <class T>
+void SanitizeClassMap(TMap<FString, T>& Map, const TSet<FName>& ValidClassNames)
+{
+	for (auto Item = Map.CreateIterator(); Item; ++Item)
+	{
+		FString SanitizeName = Item->Key;
+		SanitizeName.RemoveFromEnd(TEXT("_C"));
+		if (!ValidClassNames.Contains(FName(*SanitizeName)))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Found stale class (%s), removing from schema database."), *Item->Key);
+			Item.RemoveCurrent();
+		}
+	}
+}
+
+void SpatialGDKSanitizeGeneratedSchema()
+{
+	// Sanitize schema database, removing assets that no longer exist
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
+	TArray<FAssetData> Assets;
+	AssetRegistryModule.Get().GetAllAssets(Assets, false);
+	TSet<FName> ValidClassNames;
+	for (const auto& Asset : Assets)
+	{
+		FAssetDataTagMapSharedView::FFindTagResult GeneratedClassPathResult = Asset.TagsAndValues.FindTag(TEXT("GeneratedClass"));
+		if (GeneratedClassPathResult.IsSet())
+		{
+			FString SanitizedClassPath = FPackageName::ExportTextPathToObjectPath(GeneratedClassPathResult.GetValue());
+			SanitizedClassPath.RemoveFromEnd(TEXT("_C"));
+			ValidClassNames.Add(FName(*SanitizedClassPath));
+		}
+	}
+
+	TArray<UObject*> AllClasses;
+	GetObjectsOfClass(UClass::StaticClass(), AllClasses);
+	for (const auto& SupportedClass : GetAllSupportedClasses(AllClasses))
+	{
+		ValidClassNames.Add(FName(*SupportedClass->GetPathName()));
+	}
+
+	SanitizeClassMap(ActorClassPathToSchema, ValidClassNames);
+	SanitizeClassMap(SubobjectClassPathToSchema, ValidClassNames);
 }
 
 } // namespace Schema

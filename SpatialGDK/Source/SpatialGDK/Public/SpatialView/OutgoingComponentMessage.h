@@ -25,29 +25,33 @@ public:
 	explicit OutgoingComponentMessage()
 		: EntityId(0)
 		, ComponentId(0)
+		, SpanId()
 		, Type(NONE)
 	{
 	}
 
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentData ComponentAdded)
+	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentData ComponentAdded, const FSpatialGDKSpanId& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(ComponentAdded.GetComponentId())
+		, SpanId(SpanId)
 		, ComponentAdded(MoveTemp(ComponentAdded).Release())
 		, Type(ADD)
 	{
 	}
 
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentUpdate ComponentUpdated)
+	explicit OutgoingComponentMessage(Worker_EntityId EntityId, ComponentUpdate ComponentUpdated, const FSpatialGDKSpanId& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(ComponentUpdated.GetComponentId())
+		, SpanId(SpanId)
 		, ComponentUpdated(MoveTemp(ComponentUpdated).Release())
 		, Type(UPDATE)
 	{
 	}
 
-	explicit OutgoingComponentMessage(Worker_EntityId EntityId, Worker_ComponentId RemovedComponentId)
+	explicit OutgoingComponentMessage(Worker_EntityId EntityId, Worker_ComponentId RemovedComponentId, const FSpatialGDKSpanId& SpanId)
 		: EntityId(EntityId)
 		, ComponentId(RemovedComponentId)
+		, SpanId(SpanId)
 		, Type(REMOVE)
 	{
 	}
@@ -65,6 +69,7 @@ public:
 	OutgoingComponentMessage(OutgoingComponentMessage&& Other) noexcept
 		: EntityId(Other.EntityId)
 		, ComponentId(Other.ComponentId)
+		, SpanId(Other.SpanId)
 		, Type(Other.Type)
 	{
 		switch (Other.Type)
@@ -89,6 +94,7 @@ public:
 	{
 		EntityId = Other.EntityId;
 		ComponentId = Other.ComponentId;
+		SpanId = Other.SpanId;
 
 		// As data is stored in owning raw pointers we need to make sure resources are released.
 		DeleteSchemaObjects();
@@ -133,6 +139,8 @@ public:
 
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
+
+	FSpatialGDKSpanId SpanId;
 
 private:
 	void DeleteSchemaObjects()

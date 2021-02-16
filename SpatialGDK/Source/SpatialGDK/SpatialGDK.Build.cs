@@ -13,7 +13,7 @@ public class SpatialGDK : ModuleRules
 {
     public SpatialGDK(ReadOnlyTargetRules Target) : base(Target)
     {
-		bLegacyPublicIncludePaths = false;
+        bLegacyPublicIncludePaths = false;
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 #pragma warning disable 0618
         bFasterWithoutUnity = true;             // Deprecated in 4.24, replace with bUseUnity = false; once we drop support for 4.23
@@ -41,7 +41,9 @@ public class SpatialGDK : ModuleRules
                 "OnlineSubsystemUtils",
                 "Projects",
                 "ReplicationGraph",
-                "Sockets"
+                "Sockets",
+                "Slate",
+                "UMG"
             });
 
         if (Target.bBuildDeveloperTools || (Target.Configuration != UnrealTargetConfiguration.Shipping &&
@@ -61,43 +63,33 @@ public class SpatialGDK : ModuleRules
             PublicDependencyModuleNames.Add("PerfCounters");
         }
 
-        var WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
+        var WorkerLibraryDir = Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString());
 
-        var WorkerLibraryPaths = new List<string>
-            {
-                WorkerLibraryDir,
-            };
-
-        string LibPrefix = "improbable_";
-        string ImportLibSuffix = "";
-        string SharedLibSuffix = "";
+        string LibPrefix = "libimprobable_";
+        string ImportLibSuffix = ".so";
+        string SharedLibSuffix = ".so";
         bool bAddDelayLoad = false;
 
         if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
         {
+            LibPrefix = "improbable_";
             ImportLibSuffix = ".lib";
             SharedLibSuffix = ".dll";
             bAddDelayLoad = true;
         }
         else if (Target.Platform == UnrealTargetPlatform.Mac)
         {
-            LibPrefix = "libimprobable_";
             ImportLibSuffix = SharedLibSuffix = ".dylib";
-        }
-        else if (Target.Platform == UnrealTargetPlatform.Linux)
-        {
-            LibPrefix = "libimprobable_";
-            ImportLibSuffix = SharedLibSuffix = ".so";
         }
         else if (Target.Platform == UnrealTargetPlatform.PS4)
         {
-            LibPrefix = "libimprobable_";
             ImportLibSuffix = "_stub.a";
             SharedLibSuffix = ".prx";
             bAddDelayLoad = true;
         }
         else if (Target.Platform == UnrealTargetPlatform.XboxOne)
         {
+            LibPrefix = "improbable_";
             ImportLibSuffix = ".lib";
             SharedLibSuffix = ".dll";
             // We don't set bAddDelayLoad = true here, because we get "unresolved external symbol __delayLoadHelper2".
@@ -105,23 +97,9 @@ public class SpatialGDK : ModuleRules
         }
         else if (Target.Platform == UnrealTargetPlatform.IOS)
         {
-            LibPrefix = "libimprobable_";
             ImportLibSuffix = SharedLibSuffix = "_static.a";
         }
-        else if (Target.Platform == UnrealTargetPlatform.Android)
-        {
-            LibPrefix = "improbable_";
-            WorkerLibraryPaths.AddRange(new string[]
-            {
-                Path.Combine(WorkerLibraryDir, "arm64-v8a"),
-                Path.Combine(WorkerLibraryDir, "armeabi-v7a"),
-                Path.Combine(WorkerLibraryDir, "x86_64"),
-            });
-
-            string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
-            AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(PluginPath, "SpatialGDK_APL.xml"));
-        }
-        else
+        else if(!(Target.Platform == UnrealTargetPlatform.Linux || Target.Platform == UnrealTargetPlatform.Android))
         {
             throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
         }
@@ -138,12 +116,33 @@ public class SpatialGDK : ModuleRules
             }
 
             WorkerImportLib = Path.Combine(WorkerLibraryDir, WorkerImportLib);
-        }
+            PublicRuntimeLibraryPaths.Add(WorkerLibraryDir);
 
-        PublicAdditionalLibraries.Add(WorkerImportLib);
-#pragma warning disable 0618
-        PublicLibraryPaths.AddRange(WorkerLibraryPaths); // Deprecated in 4.24, replace with PublicRuntimeLibraryPaths or move the full path into PublicAdditionalLibraries once we drop support for 4.23
-#pragma warning restore 0618
+            PublicAdditionalLibraries.Add(WorkerImportLib);
+        }
+        else
+        {
+            var WorkerLibraryPaths = new List<string>
+            {
+                Path.Combine(WorkerLibraryDir, "arm64-v8a"),
+                Path.Combine(WorkerLibraryDir, "armeabi-v7a"),
+                Path.Combine(WorkerLibraryDir, "x86_64"),
+            };
+
+            string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
+            AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(PluginPath, "SpatialGDK_APL.xml"));
+
+            PublicRuntimeLibraryPaths.AddRange(WorkerLibraryPaths);
+
+            var WorkerLibraries = new List<string>
+            {
+                Path.Combine(WorkerLibraryDir, "arm64-v8a", WorkerSharedLib),
+                Path.Combine(WorkerLibraryDir, "armeabi-v7a", WorkerSharedLib),
+                Path.Combine(WorkerLibraryDir, "x86_64", WorkerSharedLib),
+            };
+
+            PublicAdditionalLibraries.AddRange(WorkerLibraries);
+        }
 
         // Detect existence of trace library, if present add preprocessor
         string TraceStaticLibPath = "";

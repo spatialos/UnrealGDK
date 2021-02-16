@@ -151,7 +151,7 @@ void USpatialMetrics::SpatialStartRPCMetrics()
 			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
 			Request.command_index = SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID;
 			Request.schema_type = Schema_CreateCommandRequest();
-			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
+			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialGDK::RETRY_MAX_TIMES, {});
 		}
 		else
 		{
@@ -251,7 +251,7 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
 			Request.command_index = SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID;
 			Request.schema_type = Schema_CreateCommandRequest();
-			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID);
+			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialGDK::RETRY_MAX_TIMES, {});
 		}
 		else
 		{
@@ -285,7 +285,7 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::MODIFY_SETTING_PAYLOAD_NAME_ID, Name);
 			Schema_AddFloat(RequestObject, SpatialConstants::MODIFY_SETTING_PAYLOAD_VALUE_ID, Value);
 
-			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID);
+			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialGDK::RETRY_MAX_TIMES, {});
 		}
 		else
 		{

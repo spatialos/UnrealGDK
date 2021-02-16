@@ -74,6 +74,28 @@ struct FSubobjectSchemaData
 	}
 };
 
+USTRUCT()
+struct FComponentIDs
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TArray<uint32> ComponentIDs;
+};
+
+UENUM()
+enum class ESchemaDatabaseVersion : uint8
+{
+	BeforeVersionSupportAdded = 0,
+	VersionSupportAdded,
+	AlwaysWriteRPCAdded,
+
+	// Add new versions here
+
+	LatestVersionPlusOne,
+	LatestVersion = LatestVersionPlusOne - 1
+};
+
 UCLASS()
 class SPATIALGDK_API USchemaDatabase : public UDataAsset
 {
@@ -120,5 +142,14 @@ public:
 	uint32 NextAvailableComponentId;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
-	uint32 SchemaDescriptorHash;
+	uint32 SchemaBundleHash;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TMap<uint32, FComponentIDs> ComponentSetIdToComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TMap<ERPCType, uint32> RPCRingBufferSizeMap;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	ESchemaDatabaseVersion SchemaDatabaseVersion;
 };

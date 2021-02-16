@@ -81,10 +81,8 @@ void FSpatialGDKEditorModule::ShutdownModule()
 
 void FSpatialGDKEditorModule::TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken)
 {
-	bool bUseStandardRuntime =
-		GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant() == ESpatialOSRuntimeVariant::Type::Standard;
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-	GDKServices.GetLocalDeploymentManager()->TakeSnapshot(World, bUseStandardRuntime, OnSnapshotTaken);
+	GDKServices.GetLocalDeploymentManager()->TakeSnapshot(World, OnSnapshotTaken);
 }
 
 bool FSpatialGDKEditorModule::ShouldConnectToLocalDeployment() const
@@ -157,11 +155,23 @@ bool FSpatialGDKEditorModule::CanExecuteLaunch() const
 
 bool FSpatialGDKEditorModule::CanStartSession(FText& OutErrorMessage) const
 {
-	if (!SpatialGDKEditorInstance->IsSchemaGenerated())
+	FSpatialGDKEditor::ESchemaDatabaseValidationResult SchemaCheck = SpatialGDKEditorInstance->ValidateSchemaDatabase();
+	switch (SchemaCheck)
 	{
+	case FSpatialGDKEditor::NotFound:
 		OutErrorMessage = LOCTEXT("MissingSchema",
 								  "Attempted to start a local deployment but schema is not generated. You can generate it by clicking on "
 								  "the Schema button in the toolbar.");
+		return false;
+	case FSpatialGDKEditor::OldVersion:
+		OutErrorMessage = LOCTEXT("OldSchema",
+								  "Attempted to start a local deployment but schema is out of date. You can generate it by clicking on "
+								  "the Schema button in the toolbar.");
+		return false;
+	case FSpatialGDKEditor::RingBufferSizeChanged:
+		OutErrorMessage = LOCTEXT("RingBufferSizeChanged",
+								  "Attempted to start a local deployment but RPC ring buffer size(s) have changed. You need to regenerate "
+								  "schema by clicking on the Schema button in the toolbar.");
 		return false;
 	}
 
@@ -251,9 +261,9 @@ bool FSpatialGDKEditorModule::ShouldPackageMobileCommandLineArgs() const
 uint32 GetPIEServerWorkers()
 {
 	const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
-	if (EditorSettings->bGenerateDefaultLaunchConfig && !EditorSettings->LaunchConfigDesc.ServerWorkerConfig.bAutoNumEditorInstances)
+	if (EditorSettings->bGenerateDefaultLaunchConfig && !EditorSettings->LaunchConfigDesc.ServerWorkerConfiguration.bAutoNumEditorInstances)
 	{
-		return EditorSettings->LaunchConfigDesc.ServerWorkerConfig.NumEditorInstances;
+		return EditorSettings->LaunchConfigDesc.ServerWorkerConfiguration.NumEditorInstances;
 	}
 	else
 	{
@@ -272,6 +282,13 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 		{
 			Function(SpatialConstants::DefaultServerWorkerType, AdditionalServerIndex);
 			AdditionalServerIndex++;
+		}
+
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+		{
+			Function(SpatialConstants::RoutingWorkerType, AdditionalServerIndex);
+			++AdditionalServerIndex;
 		}
 
 		return true;
@@ -441,6 +458,11 @@ bool FSpatialGDKEditorModule::HandleRuntimeSettingsSaved()
 	GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
 
 	return true;
+}
+
+bool FSpatialGDKEditorModule::UsesActorInteractionSemantics() const
+{
+	return GetDefault<USpatialGDKSettings>()->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker;
 }
 
 #undef LOCTEXT_NAMESPACE

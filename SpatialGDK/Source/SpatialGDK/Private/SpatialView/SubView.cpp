@@ -2,6 +2,7 @@
 
 #include "SpatialView/SubView.h"
 
+#include "SpatialView/EntityComponentTypes.h"
 #include "Utils/ComponentFactory.h"
 
 namespace SpatialGDK
@@ -63,6 +64,26 @@ void FSubView::RefreshEntity(const Worker_EntityId EntityId)
 const EntityView& FSubView::GetView() const
 {
 	return *View;
+}
+
+bool FSubView::HasComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const
+{
+	const EntityViewElement* Entity = View->Find(EntityId);
+	if (Entity == nullptr)
+	{
+		return false;
+	}
+	return Entity->Components.ContainsByPredicate(ComponentIdEquality{ ComponentId });
+}
+
+bool FSubView::HasAuthority(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const
+{
+	const EntityViewElement* Entity = View->Find(EntityId);
+	if (Entity == nullptr)
+	{
+		return false;
+	}
+	return Entity->Authority.Contains(ComponentId);
 }
 
 FDispatcherRefreshCallback FSubView::CreateComponentExistenceRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId ComponentId,
@@ -155,7 +176,7 @@ void FSubView::OnTaggedEntityRemoved(const Worker_EntityId EntityId)
 
 void FSubView::CheckEntityAgainstFilter(const Worker_EntityId EntityId)
 {
-	if (Filter(EntityId, (*View)[EntityId]))
+	if (View->Contains(EntityId) && Filter(EntityId, (*View)[EntityId]))
 	{
 		EntityComplete(EntityId);
 		return;

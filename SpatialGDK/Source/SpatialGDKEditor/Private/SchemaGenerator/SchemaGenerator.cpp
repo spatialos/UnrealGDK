@@ -189,7 +189,8 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.PrintNewLine();
 
 		// Handover (server to server) replicated properties.
-		Writer.Printf("component {0} {", *(PropertyName + TEXT("Handover")));
+		FString ComponentName = PropertyName + TEXT("Handover");
+		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
 		Writer.Printf("data unreal.generated.{0};", *SchemaHandoverDataName(ComponentClass));
@@ -290,7 +291,8 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 
 	if (bHasComponents)
 	{
-		Writer.WriteToFile(FString::Printf(TEXT("%s%sComponents.schema"), *SchemaPath, *ClassPathToSchemaName[ActorClass->GetPathName()]));
+		FString FileName = FString::Printf(TEXT("%sComponents.schema"), *ClassPathToSchemaName[ActorClass->GetPathName()]);
+		Writer.WriteToFile(*FPaths::Combine(*SchemaPath, FileName));
 	}
 }
 
@@ -306,8 +308,12 @@ FString GetRPCFieldPrefix(ERPCType RPCType)
 		return TEXT("client_to_server_reliable");
 	case ERPCType::ServerUnreliable:
 		return TEXT("client_to_server_unreliable");
+	case ERPCType::ServerAlwaysWrite:
+		return TEXT("client_to_server_always_write");
 	case ERPCType::NetMulticast:
 		return TEXT("multicast");
+	case ERPCType::CrossServer:
+		return TEXT("cross_server");
 	default:
 		checkNoEntry();
 	}
@@ -318,25 +324,41 @@ FString GetRPCFieldPrefix(ERPCType RPCType)
 void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_ComponentId ComponentId, TArray<ERPCType> SentRPCTypes,
 						 TArray<ERPCType> AckedRPCTypes)
 {
+	FString ComponentName = TEXT("Unreal") + EndpointName;
 	Writer.PrintNewLine();
-	Writer.Printf("component Unreal{0} {", *EndpointName).Indent();
+	Writer.Printf("component {0} {", *ComponentName).Indent();
 	Writer.Printf("id = {0};", ComponentId);
 
 	Schema_FieldId FieldId = 1;
 	for (ERPCType SentRPCType : SentRPCTypes)
 	{
-		uint32 RingBufferSize = GetDefault<USpatialGDKSettings>()->MaxRPCRingBufferSize;
+		uint32 RingBufferSize = GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(SentRPCType);
 
 		for (uint32 RingBufferIndex = 0; RingBufferIndex < RingBufferSize; RingBufferIndex++)
 		{
 			Writer.Printf("option<UnrealRPCPayload> {0}_rpc_{1} = {2};", GetRPCFieldPrefix(SentRPCType), RingBufferIndex, FieldId++);
+			if (SentRPCType == ERPCType::CrossServer)
+			{
+				Writer.Printf("CrossServerRPCInfo {0}_counterpart_{1} = {2};", GetRPCFieldPrefix(SentRPCType), RingBufferIndex, FieldId++);
+			}
 		}
 		Writer.Printf("uint64 last_sent_{0}_rpc_id = {1};", GetRPCFieldPrefix(SentRPCType), FieldId++);
 	}
 
 	for (ERPCType AckedRPCType : AckedRPCTypes)
 	{
-		Writer.Printf("uint64 last_acked_{0}_rpc_id = {1};", GetRPCFieldPrefix(AckedRPCType), FieldId++);
+		uint32 RingBufferSize = GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(AckedRPCType);
+		if (AckedRPCType == ERPCType::CrossServer)
+		{
+			for (uint32 RingBufferIndex = 0; RingBufferIndex < RingBufferSize; RingBufferIndex++)
+			{
+				Writer.Printf("option<ACKItem> {0}_ack_rpc_{1} = {2};", GetRPCFieldPrefix(AckedRPCType), RingBufferIndex, FieldId++);
+			}
+		}
+		else
+		{
+			Writer.Printf("uint64 last_acked_{0}_rpc_id = {1};", GetRPCFieldPrefix(AckedRPCType), FieldId++);
+		}
 	}
 
 	if (ComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
@@ -543,7 +565,8 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		SubobjectSchemaData.DynamicSubobjectComponents.Add(MoveTemp(DynamicSubobjectComponents));
 	}
 
-	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
+	FString FileName = FString::Printf(TEXT("%s.schema"), *ClassPathToSchemaName[Class->GetPathName()]);
+	Writer.WriteToFile(FPaths::Combine(*SchemaPath, *FileName));
 	SubobjectSchemaData.GeneratedSchemaName = ClassPathToSchemaName[Class->GetPathName()];
 	SubobjectClassPathToSchema.Add(Class->GetPathName(), SubobjectSchemaData);
 }
@@ -604,7 +627,8 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 
 		Writer.PrintNewLine();
 
-		Writer.Printf("component {0} {", *SchemaReplicatedDataName(Group, Class));
+		FString ComponentName = SchemaReplicatedDataName(Group, Class);
+		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
 
@@ -636,7 +660,8 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		Writer.PrintNewLine();
 
 		// Handover (server to server) replicated properties.
-		Writer.Printf("component {0} {", *SchemaHandoverDataName(Class));
+		FString ComponentName = SchemaHandoverDataName(Class);
+		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
 
@@ -673,8 +698,8 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 			NetCullDistanceToComponentId.Add(NCD, 0);
 		}
 	}
-
-	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
+	FString FileName = FString::Printf(TEXT("%s.schema"), *ClassPathToSchemaName[Class->GetPathName()]);
+	Writer.WriteToFile(*FPaths::Combine(*SchemaPath, FileName));
 }
 
 void GenerateRPCEndpointsSchema(FString SchemaPath)
@@ -690,12 +715,22 @@ void GenerateRPCEndpointsSchema(FString SchemaPath)
 	Writer.Print("import \"unreal/gdk/rpc_payload.schema\";");
 
 	GenerateRPCEndpoint(Writer, TEXT("ClientEndpoint"), SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
-						{ ERPCType::ServerReliable, ERPCType::ServerUnreliable }, { ERPCType::ClientReliable, ERPCType::ClientUnreliable });
+						{ ERPCType::ServerReliable, ERPCType::ServerUnreliable, ERPCType::ServerAlwaysWrite },
+						{ ERPCType::ClientReliable, ERPCType::ClientUnreliable });
 	GenerateRPCEndpoint(Writer, TEXT("ServerEndpoint"), SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
-						{ ERPCType::ClientReliable, ERPCType::ClientUnreliable }, { ERPCType::ServerReliable, ERPCType::ServerUnreliable });
+						{ ERPCType::ClientReliable, ERPCType::ClientUnreliable },
+						{ ERPCType::ServerReliable, ERPCType::ServerUnreliable, ERPCType::ServerAlwaysWrite });
 	GenerateRPCEndpoint(Writer, TEXT("MulticastRPCs"), SpatialConstants::MULTICAST_RPCS_COMPONENT_ID, { ERPCType::NetMulticast }, {});
+	GenerateRPCEndpoint(Writer, TEXT("CrossServerSenderRPCs"), SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID,
+						{ ERPCType::CrossServer }, {});
+	GenerateRPCEndpoint(Writer, TEXT("CrossServerReceiverRPCs"), SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
+						{ ERPCType::CrossServer }, {});
+	GenerateRPCEndpoint(Writer, TEXT("CrossServerSenderACKRPCs"), SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, {},
+						{ ERPCType::CrossServer });
+	GenerateRPCEndpoint(Writer, TEXT("CrossServerReceiverACKRPCs"), SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, {},
+						{ ERPCType::CrossServer });
 
-	Writer.WriteToFile(FString::Printf(TEXT("%srpc_endpoints.schema"), *SchemaPath));
+	Writer.WriteToFile(*FPaths::Combine(*SchemaPath, TEXT("rpc_endpoints.schema")));
 }
 
 // Add the component ID to the passed schema components array and the set of components of that type.

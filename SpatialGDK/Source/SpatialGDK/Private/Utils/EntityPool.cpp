@@ -21,11 +21,20 @@ void UEntityPool::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerMan
 	ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolInitialReservationCount);
 }
 
-void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
+void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 {
 	UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Sending bulk entity ID Reservation Request for %d IDs"), EntitiesToReserve);
 
 	checkf(!bIsAwaitingResponse, TEXT("Trying to reserve Entity IDs while another reserve request is in flight"));
+
+	// TODO: UNR-4979 Allow full range of uint32 when SQD-1150 is fixed
+	const uint32 TempMaxEntitiesToReserve = static_cast<uint32>(MAX_int32);
+	if (EntitiesToReserve > TempMaxEntitiesToReserve)
+	{
+		UE_LOG(LogSpatialEntityPool, Log, TEXT("Clamping requested 'EntitiesToReserve' to MAX_int32 (from %u to %d)"), EntitiesToReserve,
+			   MAX_int32);
+		EntitiesToReserve = TempMaxEntitiesToReserve;
+	}
 
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate CacheEntityIDsDelegate;
@@ -86,7 +95,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 	});
 
 	// Reserve the Entity IDs
-	Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToReserve);
+	Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToReserve, RETRY_UNTIL_COMPLETE);
 	bIsAwaitingResponse = true;
 
 	// Add the spawn delegate

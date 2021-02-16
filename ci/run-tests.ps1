@@ -8,7 +8,8 @@ param(
     [string] $tests_path = "SpatialGDK",
     [string] $additional_gdk_options = "",
     [bool]   $run_with_spatial = $False,
-    [string] $additional_cmd_line_args = ""
+    [string] $additional_cmd_line_args = "",
+    [bool]   $verify_commandlet_exit_codes = $True
 )
 
 # This resolves a path to be absolute, without actually reading the filesystem.
@@ -33,10 +34,23 @@ function Parse-UnrealOptions {
 
 . "$PSScriptRoot\common.ps1"
 
+# Generate test maps
+Write-Output "Generating test maps for testing project"
+$handle = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
+    "$uproject_path", `
+    "-SkipShaderCompile", # Skip shader compilation
+    "-nopause", # Close the unreal log window automatically on exit
+    "-nosplash", # No splash screen
+    "-unattended", # Disable anything requiring user feedback
+    "-nullRHI", # Hard to find documentation for, but seems to indicate that we want something akin to a headless (i.e. no UI / windowing) editor
+    "-run=GenerateTestMapsCommandlet" # Run the commandlet
+)
+if ($handle.ExitCode -ne 0 -and $verify_commandlet_exit_codes) { throw "Generating test maps failed" }
+
 if ($run_with_spatial) {
     # Generate schema and snapshots
     Write-Output "Generating snapshot and schema for testing project"
-    Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
+    $handle = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
         "$uproject_path", `
         "-SkipShaderCompile", # Skip shader compilation
         "-nopause", # Close the unreal log window automatically on exit
@@ -47,8 +61,9 @@ if ($run_with_spatial) {
         "-cookall", # Make sure it runs for all maps (and other things)
         "-targetplatform=LinuxServer"
     )
+    if ($handle.ExitCode -ne 0 -and $verify_commandlet_exit_codes) { throw "Generating schema failed" }
     
-    Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
+    $handle = Start-Process "$unreal_editor_path" -Wait -PassThru -NoNewWindow -ArgumentList @(`
         "$uproject_path", `
         "-NoShaderCompile", # Prevent shader compilation
         "-nopause", # Close the unreal log window automatically on exit
@@ -58,6 +73,7 @@ if ($run_with_spatial) {
         "-run=GenerateSnapshot", # Run the commandlet
         "-MapPaths=`"$test_repo_map`"" # Which maps to run the commandlet for
     )
+    if ($handle.ExitCode -ne 0 -and $verify_commandlet_exit_codes) { throw "Generating snapshot failed" }
 
     # Create the default snapshot
     Copy-Item -Force `
@@ -100,6 +116,7 @@ if($additional_cmd_line_args -ne "") {
 Write-Output "Running $($ue_path_absolute) $($cmd_args_list)"
 
 $run_tests_proc = Start-Process $ue_path_absolute -PassThru -NoNewWindow -ArgumentList $cmd_args_list
+# We do not check the exit code of the UnrealEditor process, but leave the error handling to the report-tests script
 try {
     # Give the Unreal Editor 30 minutes to run the tests, otherwise kill it
     # This is so we can get some logs out of it, before we are cancelled by buildkite

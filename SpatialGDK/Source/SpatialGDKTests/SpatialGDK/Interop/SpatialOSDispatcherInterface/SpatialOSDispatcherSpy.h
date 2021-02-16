@@ -25,7 +25,7 @@ public:
 	virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) override;
 	virtual void FlushRemoveComponentOps() override;
 	virtual void DropQueuedRemoveComponentOpsForEntity(Worker_EntityId EntityId) override;
-	virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) override;
+	virtual void OnAuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op) override;
 
 	virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override;
 
@@ -33,11 +33,11 @@ public:
 	// SpatialRPCService::ExtractRPCsForEntity.
 	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) override;
 
-	virtual void OnCommandRequest(const Worker_CommandRequestOp& Op) override;
-	virtual void OnCommandResponse(const Worker_CommandResponseOp& Op) override;
+	virtual void OnCommandRequest(const Worker_Op& Op) override;
+	virtual void OnCommandResponse(const Worker_Op& Op) override;
 
 	virtual void OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op) override;
-	virtual void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op) override;
+	virtual void OnCreateEntityResponse(const Worker_Op& Op) override;
 
 	virtual void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel) override;
 	virtual void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) override;
@@ -50,7 +50,9 @@ public:
 
 	// Methods to extract information about calls made.
 	EntityQueryDelegate* GetEntityQueryDelegate(Worker_RequestId RequestId);
+	CreateEntityDelegate* GetCreateEntityDelegate(Worker_RequestId RequestId);
 
 private:
 	TMap<Worker_RequestId_Key, EntityQueryDelegate> EntityQueryDelegates;
+	TMap<Worker_RequestId_Key, CreateEntityDelegate> CreateEntityDelegates;
 };

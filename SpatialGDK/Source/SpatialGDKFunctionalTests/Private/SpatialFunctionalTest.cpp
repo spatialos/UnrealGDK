@@ -9,6 +9,7 @@
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/FileManagerGeneric.h"
 #include "HttpModule.h"
@@ -41,6 +42,10 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	bAlwaysRelevant = true;
 
 	PrimaryActorTick.TickInterval = 0.0f;
+
+	PreparationTimeLimit = 30.0f;
+	bReadyToSpawnServerControllers = false;
+	CachedTestResult = EFunctionalTestResult::Default;
 }
 
 void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -50,6 +55,7 @@ void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ASpatialFunctionalTest, FlowControllers);
 	DOREPLIFETIME(ASpatialFunctionalTest, CurrentStepIndex);
 	DOREPLIFETIME(ASpatialFunctionalTest, bPreparedTest);
+	DOREPLIFETIME(ASpatialFunctionalTest, bFinishedTest);
 }
 
 void ASpatialFunctionalTest::BeginPlay()
@@ -143,6 +149,10 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 		{
 			GetWorld()->GetTimerManager().ClearTimer(FinishTestTimerHandle);
 			Super::FinishTest(CachedTestResult, CachedTestMessage);
+
+			// This will call NotifyTestFinishedObserver on other workers.
+			bFinishedTest = true;
+
 			// Clear cached variables
 			CachedTestResult = EFunctionalTestResult::Default;
 			CachedTestMessage.Empty();
@@ -243,7 +253,7 @@ void ASpatialFunctionalTest::FinishStep()
 	ensureMsgf(AuxLocalFlowController != nullptr, TEXT("Can't Find LocalFlowController"));
 	if (AuxLocalFlowController != nullptr)
 	{
-		AuxLocalFlowController->NotifyStepFinished();
+		AuxLocalFlowController->NotifyStepFinished(CurrentStepIndex);
 	}
 }
 
@@ -400,8 +410,13 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 {
 	if (FlowController->IsLocalController())
 	{
-		// Breakpoints triggered here are usually the result of running a test while an old SpatialOS deployment is still running from a previous test.
-		checkf(LocalFlowController == nullptr, TEXT("Already had LocalFlowController, this shouldn't happen"));
+		if (LocalFlowController != nullptr)
+		{
+			checkf(LocalFlowController == FlowController,
+				   TEXT("OwningTest already had different LocalFlowController, this shouldn't happen"));
+			return;
+		}
+    
 		LocalFlowController = FlowController;
 	}
 
@@ -601,20 +616,21 @@ ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetFlowController(
 	return nullptr;
 }
 
-void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpatialFunctionalTestFlowController* FlowController)
+void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpatialFunctionalTestFlowController* FlowController,
+																		  const int StepIndex)
 {
-	if (CurrentStepIndex < 0)
+	if (CurrentStepIndex < 0 || StepIndex != CurrentStepIndex)
 	{
 		return;
 	}
 
-	const FString FLowControllerDisplayName = FlowController->GetDisplayName();
+	const FString FlowControllerDisplayName = FlowController->GetDisplayName();
 
-	UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s finished Step"), *FLowControllerDisplayName);
+	UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s finished Step"), *FlowControllerDisplayName);
 
 	if (FlowControllersExecutingStep.RemoveSwap(FlowController) == 0)
 	{
-		FString ErrorMsg = FString::Printf(TEXT("%s was not in list of workers executing"), *FLowControllerDisplayName);
+		FString ErrorMsg = FString::Printf(TEXT("%s was not in list of workers executing"), *FlowControllerDisplayName);
 		ensureMsgf(false, TEXT("%s"), *ErrorMsg);
 		FinishTest(EFunctionalTestResult::Error, ErrorMsg);
 	}
@@ -634,10 +650,6 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 			{
 				ClearTagDelegationAndInterest();
 			}
-		}
-		if (!HasAuthority()) // Authority already does this on Super::FinishTest
-		{
-			NotifyTestFinishedObserver();
 		}
 
 		DeleteActorsRegisteredForAutoDestroy();
@@ -666,6 +678,15 @@ void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
 	}
 }
 
+void ASpatialFunctionalTest::OnReplicated_bFinishedTest()
+{
+	if (!HasAuthority())
+	{
+		// The server that started this test has to call this in order for the test to properly finish.
+		NotifyTestFinishedObserver();
+	}
+}
+
 void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 {
 	if (!bReadyToSpawnServerControllers)
@@ -683,15 +704,22 @@ void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 
 void ASpatialFunctionalTest::SetupClientPlayerRegistrationFlow()
 {
-	GetWorld()->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateLambda([this](AActor* Spawned) {
-		if (APlayerController* PlayerController = Cast<APlayerController>(Spawned))
+	PostLoginDelegate = FGameModeEvents::GameModePostLoginEvent.AddLambda([this](AGameModeBase* GameMode, APlayerController* NewPlayer) {
+		// NB : the delegate is a global one, have to filter in case we are running from PIE <==> multiple worlds.
+		if (NewPlayer->GetWorld() == GetWorld() && NewPlayer->HasAuthority())
 		{
-			if (PlayerController->HasAuthority())
-			{
-				this->FlowControllerSpawner.SpawnClientFlowController(PlayerController);
-			}
+			this->FlowControllerSpawner.SpawnClientFlowController(NewPlayer);
 		}
-	}));
+	});
+}
+
+void ASpatialFunctionalTest::EndPlay(const EEndPlayReason::Type Reason)
+{
+	if (PostLoginDelegate.IsValid())
+	{
+		FGameModeEvents::GameModePostLoginEvent.Remove(PostLoginDelegate);
+		PostLoginDelegate.Reset();
+	}
 }
 
 void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
@@ -808,11 +836,12 @@ void ASpatialFunctionalTest::KeepActorOnCurrentWorker(AActor* Actor)
 
 void ASpatialFunctionalTest::AddStepSetTagDelegation(FName Tag, int32 ServerWorkerId /*= 1*/)
 {
+	// Valid ServerWorkerIDs range from 1 to NumExpectedServers, inclusive
 	if (!ensureMsgf(ServerWorkerId > 0, TEXT("Invalid Server Worker Id")))
 	{
 		return;
 	}
-	if (ServerWorkerId >= GetNumExpectedServers())
+	if (ServerWorkerId > GetNumExpectedServers())
 	{
 		ServerWorkerId = 1; // Support for single worker environments.
 	}

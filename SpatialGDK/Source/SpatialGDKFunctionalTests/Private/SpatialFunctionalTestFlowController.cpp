@@ -27,6 +27,10 @@ ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const
 #else
 	SetReplicatingMovement(false);
 #endif
+	OwningTest = nullptr;
+	bHasAckFinishedTest = true;
+	bReadyToRegisterWithTest = false;
+	bIsReadyToRunTest = false;
 }
 
 void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -40,18 +44,25 @@ void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLi
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, WorkerDefinition);
 }
 
-void ASpatialFunctionalTestFlowController::OnAuthorityGained()
+void ASpatialFunctionalTestFlowController::BeginPlay()
 {
-	// Super hack
-	FTimerHandle Handle;
-	GetWorldTimerManager().SetTimer(
-		Handle,
-		[this]() {
-			bReadyToRegisterWithTest = true;
-			OnReadyToRegisterWithTest();
-		},
-		0.5f, false);
+	Super::BeginPlay();
+
+	if (HasAuthority())
+	{
+		// Super hack
+		FTimerHandle Handle;
+		GetWorldTimerManager().SetTimer(
+			Handle,
+			[this]() {
+				bReadyToRegisterWithTest = true;
+				OnReadyToRegisterWithTest();
+			},
+			1.0f, false);
+	}
 }
+
+void ASpatialFunctionalTestFlowController::OnAuthorityGained() {}
 
 void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 {
@@ -74,6 +85,16 @@ void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation
 }
 
 void ASpatialFunctionalTestFlowController::OnReadyToRegisterWithTest()
+{
+	TryRegisterFlowControllerWithOwningTest();
+}
+
+void ASpatialFunctionalTestFlowController::OnRep_OwningTest()
+{
+	TryRegisterFlowControllerWithOwningTest();
+}
+
+void ASpatialFunctionalTestFlowController::TryRegisterFlowControllerWithOwningTest()
 {
 	if (!bReadyToRegisterWithTest || OwningTest == nullptr)
 	{
@@ -98,6 +119,7 @@ void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(i
 	// Since we're starting a step, we mark as not Ack that we've finished the test. This is needed
 	// for the cases when we run multiple times the same test without a map reload.
 	bHasAckFinishedTest = false;
+	OwningTest->SetCurrentStepIndex(StepIndex); // Just in case we do not get the replication fast enough
 	if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 	{
 		StartStepInternal(StepIndex);
@@ -108,17 +130,17 @@ void ASpatialFunctionalTestFlowController::CrossServerStartStep_Implementation(i
 	}
 }
 
-void ASpatialFunctionalTestFlowController::NotifyStepFinished()
+void ASpatialFunctionalTestFlowController::NotifyStepFinished(const int StepIndex)
 {
 	if (CurrentStep.bIsRunning)
 	{
 		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 		{
-			CrossServerNotifyStepFinished();
+			CrossServerNotifyStepFinished(StepIndex);
 		}
 		else
 		{
-			ServerNotifyStepFinished();
+			ServerNotifyStepFinished(StepIndex);
 		}
 
 		StopStepInternal();
@@ -207,6 +229,7 @@ void ASpatialFunctionalTestFlowController::SetReadyToRunTest(bool bIsReady)
 
 void ASpatialFunctionalTestFlowController::ClientStartStep_Implementation(int StepIndex)
 {
+	OwningTest->SetCurrentStepIndex(StepIndex); // Just in case we do not get the replication fast enough
 	StartStepInternal(StepIndex);
 }
 
@@ -238,12 +261,12 @@ void ASpatialFunctionalTestFlowController::ServerAckFinishedTest_Implementation(
 	bHasAckFinishedTest = true;
 }
 
-void ASpatialFunctionalTestFlowController::ServerNotifyStepFinished_Implementation()
+void ASpatialFunctionalTestFlowController::ServerNotifyStepFinished_Implementation(const int StepIndex)
 {
-	OwningTest->CrossServerNotifyStepFinished(this);
+	OwningTest->CrossServerNotifyStepFinished(this, StepIndex);
 }
 
-void ASpatialFunctionalTestFlowController::CrossServerNotifyStepFinished_Implementation()
+void ASpatialFunctionalTestFlowController::CrossServerNotifyStepFinished_Implementation(const int StepIndex)
 {
-	OwningTest->CrossServerNotifyStepFinished(this);
+	OwningTest->CrossServerNotifyStepFinished(this, StepIndex);
 }

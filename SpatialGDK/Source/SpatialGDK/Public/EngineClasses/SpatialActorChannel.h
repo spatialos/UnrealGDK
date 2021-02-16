@@ -23,6 +23,14 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialActorChannel, Log, All);
 
+// This is necessary to compile TUniquePtr<FObjectReferencesMap> on Linux with 4.26,
+// where the default deleter needs FObjectReferences to be complete, which isn't possible
+// because we're still in the middle of its definition.
+struct FObjectReferencesMapDeleter
+{
+	void operator()(FObjectReferencesMap* Ptr) const;
+};
+
 struct FObjectReferences
 {
 	FObjectReferences() = default;
@@ -94,18 +102,10 @@ struct FObjectReferences
 	TArray<uint8> Buffer;
 	int32 NumBufferBits;
 
-	TUniquePtr<FObjectReferencesMap> Array;
+	TUniquePtr<FObjectReferencesMap, FObjectReferencesMapDeleter> Array;
 	int32 ShadowOffset;
 	int32 ParentIndex;
 	GDK_PROPERTY(Property) * Property;
-};
-
-struct FPendingSubobjectAttachment
-{
-	const FClassInfo* Info;
-	TWeakObjectPtr<UObject> Subobject;
-
-	TSet<Worker_ComponentId> PendingAuthorityDelegations;
 };
 
 // Utility class to manage mapped and unresolved references.
@@ -160,7 +160,7 @@ public:
 		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			// If the entity already exists, make sure we have spatial authority before we replicate.
-			if (!bCreatingNewEntity && !NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
+			if (!bCreatingNewEntity && !NetDriver->HasServerAuthority(EntityId))
 			{
 				return false;
 			}
@@ -181,8 +181,7 @@ public:
 			return false;
 		}
 
-		return NetDriver->StaticComponentView->HasAuthority(
-			EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer()));
+		return NetDriver->HasClientAuthority(EntityId);
 	}
 
 	inline void SetClientAuthority(const bool IsAuth) { bIsAuthClient = IsAuth; }
@@ -195,12 +194,11 @@ public:
 	{
 		if (NetDriver->IsServer())
 		{
-			SetServerAuthority(NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID));
+			SetServerAuthority(NetDriver->HasServerAuthority(EntityId));
 		}
 		else
 		{
-			SetClientAuthority(NetDriver->StaticComponentView->HasAuthority(
-				EntityId, SpatialConstants::GetClientAuthorityComponent(GetDefault<USpatialGDKSettings>()->UseRPCRingBuffer())));
+			SetClientAuthority(NetDriver->HasClientAuthority(EntityId));
 		}
 	}
 
@@ -255,7 +253,8 @@ public:
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
 	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
-	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies);
+	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
+								  const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
 
 	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 
@@ -271,10 +270,9 @@ public:
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
 
-	bool IsListening() const;
-
 	// Call when a subobject is deleted to unmap its references and cleanup its cached informations.
-	void OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* Object);
+	// NB : ObjectPtr might be a dangling pointer.
+	void OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* ObjectPtr, const TWeakObjectPtr<UObject>& ObjectWeakPtr);
 
 	static void ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject);
 
@@ -308,9 +306,11 @@ public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
 	bool bCreatingNewEntity;
 
-	TSet<TWeakObjectPtr<UObject>> PendingDynamicSubobjects;
+	TSet<TWeakObjectPtr<UObject>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<UObject>, false>> PendingDynamicSubobjects;
 
-	TMap<TWeakObjectPtr<UObject>, FSpatialObjectRepState> ObjectReferenceMap;
+	TMap<TWeakObjectPtr<UObject>, FSpatialObjectRepState, FDefaultSetAllocator,
+		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UObject>, FSpatialObjectRepState, false>>
+		ObjectReferenceMap;
 
 private:
 	Worker_EntityId EntityId;
@@ -321,11 +321,6 @@ private:
 
 	// Used on the client to track gaining/losing ownership.
 	bool bNetOwned;
-
-	// Used on the server
-	// Tracks the client worker ID corresponding to the owning connection.
-	// If no owning client connection exists, this will be an empty string.
-	FString SavedConnectionOwningWorkerId;
 
 	// Used on the server
 	// Tracks the interest bucket component ID for the relevant Actor.
@@ -354,7 +349,9 @@ private:
 	// the state of those properties at the last time we sent them, and is used to detect
 	// when those properties change.
 	TArray<uint8>* ActorHandoverShadowData;
-	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>> HandoverShadowDataMap;
+	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>, FDefaultSetAllocator,
+		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>, false>>
+		HandoverShadowDataMap;
 
 	// Band-aid until we get Actor Sets.
 	// Used on server-side workers only.

@@ -24,6 +24,8 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	virtual void BeginPlay() override;
+
 	virtual void OnAuthorityGained() override;
 
 	virtual void Tick(float DeltaSeconds) override;
@@ -38,12 +40,12 @@ public:
 	void CrossServerStartStep(int StepIndex);
 
 	// Tells Test owner that the current Step is finished locally
-	void NotifyStepFinished();
+	void NotifyStepFinished(const int StepIndex);
 
 	// Tell the Test owner that we want to end the Test
 	void NotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_OwningTest)
 	ASpatialFunctionalTest* OwningTest;
 
 	// Holds WorkerType and WorkerId. Type should be only Server or Client, and Id >= 1 (after registered)
@@ -92,6 +94,11 @@ private:
 	UFUNCTION()
 	void OnReadyToRegisterWithTest();
 
+	UFUNCTION()
+	void OnRep_OwningTest();
+
+	void TryRegisterFlowControllerWithOwningTest();
+
 	UFUNCTION(Server, Reliable)
 	void ServerSetReadyToRunTest(bool bIsReady);
 
@@ -103,10 +110,10 @@ private:
 	void StopStepInternal();
 
 	UFUNCTION(Server, Reliable)
-	void ServerNotifyStepFinished();
+	void ServerNotifyStepFinished(const int StepIndex);
 
 	UFUNCTION(CrossServer, Reliable)
-	void CrossServerNotifyStepFinished();
+	void CrossServerNotifyStepFinished(const int StepIndex);
 
 	UFUNCTION(Server, Reliable)
 	void ServerNotifyFinishTest(EFunctionalTestResult TestResult, const FString& Message);
