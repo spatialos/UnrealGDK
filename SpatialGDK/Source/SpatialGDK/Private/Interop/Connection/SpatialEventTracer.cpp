@@ -84,11 +84,10 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Trace_SamplingParameters SamplingParameters = {};
 	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
 
-	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
-	TArray<std::string> AnsiStrings; // Worker requires ansi const char*
-
 	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
 
+	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
+	TArray<std::string> AnsiStrings; // Worker requires ansi const char*
 	for (const auto& Pair : SamplingSettings->EventSamplingModeOverrides)
 	{
 		int32 Index = AnsiStrings.Add((const char*)TCHAR_TO_ANSI(*Pair.Key.ToString()));
