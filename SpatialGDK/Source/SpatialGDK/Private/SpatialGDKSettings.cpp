@@ -180,13 +180,12 @@ void USpatialGDKSettings::PostInitProperties()
 									   OverrideMultiWorkerSettingsClass);
 	CheckCmdLineOverrideOptionalStringWithCallback(
 		CommandLine, TEXT("OverrideEventTracingSamplingSettingsClass"), TEXT("Override Event Tracing Sampling Class"),
-		[&EventTracingSamplingSettingsClass = EventTracingSamplingSettingsClass](const FString& OverrideValue) {
-			FSoftClassPath EventTracingSampleSettingsSoftClassPath(OverrideValue);
-			UClass* OverrideEventTracingSampleSettingsClass =
-				EventTracingSampleSettingsSoftClassPath.TryLoadClass<UEventTracingSamplingSettings>();
-			if (OverrideEventTracingSampleSettingsClass != nullptr)
+		[&SamplingSettingsClass = EventTracingSamplingSettingsClass](const FString& OverrideValue) {
+			FSoftClassPath OverrideSampleSettingsSoftClassPath(OverrideValue);
+			UClass* OverrideSampleSettingsClass = OverrideSampleSettingsSoftClassPath.TryLoadClass<UEventTracingSamplingSettings>();
+			if (OverrideSampleSettingsClass != nullptr)
 			{
-				EventTracingSamplingSettingsClass = OverrideEventTracingSampleSettingsClass;
+				SamplingSettingsClass = OverrideSampleSettingsClass;
 			}
 			else
 			{
