@@ -79,7 +79,8 @@ void CheckCmdLineOverrideOptionalString(const TCHAR* CommandLine, const TCHAR* P
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, StrOutValue.IsSet() ? *(StrOutValue.GetValue()) : TEXT("not set"));
 }
 
-void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName, TFunctionRef<void(const FString& Setting)> Callback)
+void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName,
+													TFunctionRef<void(const FString& Setting)> Callback)
 {
 #if ALLOW_SPATIAL_CMDLINE_PARSING
 	FString TempStr;
@@ -90,7 +91,8 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 		Callback(OverrideValue.GetValue());
 	}
 #endif // ALLOW_SPATIAL_CMDLINE_PARSING
-	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, OverrideValue.IsSet() ? *(OverrideValue.GetValue()) : TEXT("not set"));
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName,
+		   OverrideValue.IsSet() ? *(OverrideValue.GetValue()) : TEXT("not set"));
 }
 } // namespace
 
@@ -173,13 +175,16 @@ void USpatialGDKSettings::PostInitProperties()
 							 TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"),
 							 TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideEventTracingEnabled"), TEXT("Event tracing enabled"),
+							 bEventTracingEnabled);
 	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
 									   OverrideMultiWorkerSettingsClass);
-	CheckCmdLineOverrideOptionalStringWithCallback(CommandLine, TEXT("OverrideEventTracingSamplingSettingsClass"), TEXT("Override Event Tracing Sampling Class"),
+	CheckCmdLineOverrideOptionalStringWithCallback(
+		CommandLine, TEXT("OverrideEventTracingSamplingSettingsClass"), TEXT("Override Event Tracing Sampling Class"),
 		[&EventTracingSamplingSettingsClass = EventTracingSamplingSettingsClass](const FString& Setting) {
-		FSoftClassPath EventTracingSampleSettingsSoftClassPath(Setting);
-		EventTracingSamplingSettingsClass = EventTracingSampleSettingsSoftClassPath.TryLoadClass<UEventTracingSamplingSettings>();
-	});
+			FSoftClassPath EventTracingSampleSettingsSoftClassPath(Setting);
+			EventTracingSamplingSettingsClass = EventTracingSampleSettingsSoftClassPath.TryLoadClass<UEventTracingSamplingSettings>();
+		});
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 }

@@ -70,7 +70,6 @@ class SPATIALGDK_API UEventTracingSamplingSettings : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-
 	UPROPERTY(EditAnywhere, Category = "Event Tracing", meta = (ClampMin = 0.0f, ClampMax = 1.0f))
 	float SamplingProbability;
 
@@ -313,7 +312,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Cross Server RPC Implementation"))
 	TEnumAsByte<ECrossServerRPCImplementation::Type> CrossServerRPCImplementation;
-	
+
 	/** Only valid on Tcp connections - indicates if we should enable TCP_NODELAY - see c_worker.h */
 	UPROPERTY(Config)
 	bool bTcpNoDelay;
