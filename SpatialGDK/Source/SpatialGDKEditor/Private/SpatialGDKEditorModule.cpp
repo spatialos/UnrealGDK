@@ -3,7 +3,6 @@
 #include "SpatialGDKEditorModule.h"
 
 #include "Editor.h"
-#include "Editor/EditorPerformanceSettings.h"
 #include "GeneralProjectSettings.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"

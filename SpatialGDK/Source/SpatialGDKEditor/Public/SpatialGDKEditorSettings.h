@@ -674,6 +674,4 @@ public:
 	static bool IsAssemblyNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
 	static void TrimTMap(TMap<FString, FString>& Map);
-
-	void RevertSettings(const FString& FilenameToLoad);
 };

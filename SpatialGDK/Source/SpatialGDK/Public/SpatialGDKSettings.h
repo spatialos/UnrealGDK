@@ -261,8 +261,6 @@ public:
 	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
 #endif // WITH_EDITOR
 
-	void RevertSettings(const FString& FilenameToLoad);
-
 private:
 #if WITH_EDITOR
 	bool CanEditChange(const GDK_PROPERTY(Property) * InProperty) const override;

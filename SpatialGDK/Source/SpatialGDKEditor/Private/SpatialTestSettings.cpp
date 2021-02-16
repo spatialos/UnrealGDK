@@ -1,6 +1,4 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-#pragma optimize("", off)
-
 #include "SpatialTestSettings.h"
 
 FSpatialTestSettings::FSpatialTestSettings()
@@ -103,4 +101,3 @@ void FSpatialTestSettings::Load(const FString& TestSettingOverridesFilename)
 	GetMutableDefault<UGeneralProjectSettings>()->LoadConfig(UGeneralProjectSettings::StaticClass(), *TestSettingOverridesFilename);
 	GetMutableDefault<UEditorPerformanceSettings>()->LoadConfig(UEditorPerformanceSettings::StaticClass(), *TestSettingOverridesFilename);
 }
-#pragma optimize("", on)

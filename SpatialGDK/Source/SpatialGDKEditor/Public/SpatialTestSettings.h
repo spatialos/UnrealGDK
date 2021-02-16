@@ -19,7 +19,7 @@
  *		LevelEditorSettings
  *		EditorPerformanceSettings
  *
- * To add a new settings class, add a pointer to the class in here and update BackupSettings, LoadSettings and RestoreSettings functions.
+ * To add a new settings class, add a pointer to the class in here and update Backup, Load and Restore functions.
  */
 class FSpatialTestSettings
 {

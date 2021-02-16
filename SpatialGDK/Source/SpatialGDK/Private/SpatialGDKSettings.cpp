@@ -273,14 +273,4 @@ void USpatialGDKSettings::SetMultiWorkerEditorEnabled(bool bIsEnabled)
 }
 #endif // WITH_EDITOR
 
-void USpatialGDKSettings::RevertSettings(const FString& FilenameToLoad)
-{
-	// Containers (arrays/maps/sets) are not cleared when loading from config file if they originally were empty, so we need to clear them
-	// before loading
-	InterestRangeFrequencyPairs.Empty();
-	RPCTypeAllowUnresolvedParamMap.Empty();
-	EventSamplingModeOverrides.Empty();
-	LoadConfig(0, *FilenameToLoad);
-}
-
 #undef LOCTEXT_NAMESPACE
