@@ -357,8 +357,17 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 
 	bStoppingDeployment = true;
 
-	FProcHandle Process = RuntimeProcess->GetProcessHandle();
-	FPlatformProcess::CloseProc(Process);
+	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
+#if ENGINE_MINOR_VERSION >= 26
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = HttpModule.Get().CreateRequest();
+#else
+	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
+#endif
+
+	HttpRequest->SetURL(TEXT("http://localhost:5006/shutdown"));
+	HttpRequest->SetVerb("GET");
+
+	HttpRequest->ProcessRequest();
 
 	double RuntimeStopTime = RuntimeProcess->GetDuration().GetTotalSeconds();
 
@@ -373,8 +382,6 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 			return false;
 		}
 	}
-
-	SpatialCommandUtils::TryKillProcessWithName(SpatialGDKServicesConstants::RuntimeExe);
 
 	// Kill the log file handle.
 	RuntimeLogFileHandle.Reset();
