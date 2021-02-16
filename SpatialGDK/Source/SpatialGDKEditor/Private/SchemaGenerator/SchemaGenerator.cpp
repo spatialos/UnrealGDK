@@ -306,6 +306,8 @@ FString GetRPCFieldPrefix(ERPCType RPCType)
 		return TEXT("client_to_server_always_write");
 	case ERPCType::NetMulticast:
 		return TEXT("multicast");
+	case ERPCType::CrossServer:
+		return TEXT("cross_server");
 	default:
 		checkNoEntry();
 	}
@@ -329,13 +331,28 @@ void GenerateRPCEndpoint(FCodeWriter& Writer, FString EndpointName, Worker_Compo
 		for (uint32 RingBufferIndex = 0; RingBufferIndex < RingBufferSize; RingBufferIndex++)
 		{
 			Writer.Printf("option<UnrealRPCPayload> {0}_rpc_{1} = {2};", GetRPCFieldPrefix(SentRPCType), RingBufferIndex, FieldId++);
+			if (SentRPCType == ERPCType::CrossServer)
+			{
+				Writer.Printf("CrossServerRPCInfo {0}_counterpart_{1} = {2};", GetRPCFieldPrefix(SentRPCType), RingBufferIndex, FieldId++);
+			}
 		}
 		Writer.Printf("uint64 last_sent_{0}_rpc_id = {1};", GetRPCFieldPrefix(SentRPCType), FieldId++);
 	}
 
 	for (ERPCType AckedRPCType : AckedRPCTypes)
 	{
-		Writer.Printf("uint64 last_acked_{0}_rpc_id = {1};", GetRPCFieldPrefix(AckedRPCType), FieldId++);
+		uint32 RingBufferSize = GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(AckedRPCType);
+		if (AckedRPCType == ERPCType::CrossServer)
+		{
+			for (uint32 RingBufferIndex = 0; RingBufferIndex < RingBufferSize; RingBufferIndex++)
+			{
+				Writer.Printf("option<ACKItem> {0}_ack_rpc_{1} = {2};", GetRPCFieldPrefix(AckedRPCType), RingBufferIndex, FieldId++);
+			}
+		}
+		else
+		{
+			Writer.Printf("uint64 last_acked_{0}_rpc_id = {1};", GetRPCFieldPrefix(AckedRPCType), FieldId++);
+		}
 	}
 
 	if (ComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
@@ -698,6 +715,14 @@ void GenerateRPCEndpointsSchema(FString SchemaPath)
 						{ ERPCType::ClientReliable, ERPCType::ClientUnreliable },
 						{ ERPCType::ServerReliable, ERPCType::ServerUnreliable, ERPCType::ServerAlwaysWrite });
 	GenerateRPCEndpoint(Writer, TEXT("MulticastRPCs"), SpatialConstants::MULTICAST_RPCS_COMPONENT_ID, { ERPCType::NetMulticast }, {});
+	GenerateRPCEndpoint(Writer, TEXT("CrossServerSenderRPCs"), SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID,
+						{ ERPCType::CrossServer }, {});
+	GenerateRPCEndpoint(Writer, TEXT("CrossServerReceiverRPCs"), SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
+						{ ERPCType::CrossServer }, {});
+	GenerateRPCEndpoint(Writer, TEXT("CrossServerSenderACKRPCs"), SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, {},
+						{ ERPCType::CrossServer });
+	GenerateRPCEndpoint(Writer, TEXT("CrossServerReceiverACKRPCs"), SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, {},
+						{ ERPCType::CrossServer });
 
 	Writer.WriteToFile(*FPaths::Combine(*SchemaPath, TEXT("rpc_endpoints.schema")));
 }

@@ -19,14 +19,25 @@ struct RPCRingBuffer
 
 	ERPCType Type;
 	TArray<TOptional<RPCPayload>> RingBuffer;
+	TArray<TOptional<CrossServerRPCInfo>> Counterpart;
 	uint64 LastSentRPCId = 0;
 };
 
 struct RPCRingBufferDescriptor
 {
-	uint32 GetRingBufferElementIndex(uint64 RPCId) const { return (RPCId - 1) % RingBufferSize; }
+	uint32 GetRingBufferElementIndex(ERPCType Type, uint64 RPCId) const
+	{
+		if (Type == ERPCType::CrossServer)
+		{
+			return ((RPCId - 1) % RingBufferSize) * 2;
+		}
+		return (RPCId - 1) % RingBufferSize;
+	}
 
-	Schema_FieldId GetRingBufferElementFieldId(uint64 RPCId) const { return SchemaFieldStart + GetRingBufferElementIndex(RPCId); }
+	Schema_FieldId GetRingBufferElementFieldId(ERPCType Type, uint64 RPCId) const
+	{
+		return SchemaFieldStart + GetRingBufferElementIndex(Type, RPCId);
+	}
 
 	uint32 RingBufferSize;
 	Schema_FieldId SchemaFieldStart;

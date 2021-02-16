@@ -727,6 +727,40 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("ComponentSets/ServerAuthoritativeComponentSet.schema")));
 }
 
+void WriteRoutingWorkerAuthorityComponentSet(const FString& SchemaOutputPath)
+{
+	FCodeWriter Writer;
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated;)""");
+	Writer.PrintNewLine();
+
+	// Write all import statements.
+	for (const auto& WellKnownSchemaImport : SpatialConstants::RoutingWorkerSchemaImports)
+	{
+		Writer.Printf("import \"{0}\";", WellKnownSchemaImport);
+	}
+
+	Writer.PrintNewLine();
+	Writer.Printf("component_set {0} {", SpatialConstants::ROUTING_WORKER_COMPONENT_SET_NAME).Indent();
+	Writer.Printf("id = {0};", SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID);
+	Writer.Printf("components = [").Indent();
+
+	// Write all import components.
+	for (const auto& WellKnownComponent : SpatialConstants::RoutingWorkerComponents)
+	{
+		Writer.Printf("{0},", WellKnownComponent.Value);
+	}
+
+	Writer.RemoveTrailingComma();
+
+	Writer.Outdent().Print("];");
+	Writer.Outdent().Print("}");
+
+	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("ComponentSets/RoutingWorkerAuthoritativeComponentSet.schema")));
+}
+
 void WriteClientAuthorityComponentSet(const FString& SchemaOutputPath)
 {
 	FCodeWriter Writer;
@@ -902,6 +936,7 @@ void WriteComponentSetFiles(const USchemaDatabase* SchemaDatabase, FString Schem
 
 	WriteServerAuthorityComponentSet(SchemaDatabase, SchemaOutputPath);
 	WriteClientAuthorityComponentSet(SchemaOutputPath);
+	WriteRoutingWorkerAuthorityComponentSet(SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Data, SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly, SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover, SchemaOutputPath);
