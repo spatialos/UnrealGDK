@@ -84,16 +84,14 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 {
 #if ALLOW_SPATIAL_CMDLINE_PARSING
 	FString TempStr;
+	TOptional<FString> OverrideValue
 	if (FParse::Value(CommandLine, Parameter, TempStr) && TempStr[0] == '=')
 	{
-		FString OverrideValue = TempStr.Right(TempStr.Len() - 1); // + 1 to skip =
-		Callback(OverrideValue);
-	}
-	else
-	{
-		UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is not set."), PrettyName);
+		OverrideValue = TempStr.Right(TempStr.Len() - 1); // + 1 to skip =
+		Callback(OverrideValue.GetValue());
 	}
 #endif // ALLOW_SPATIAL_CMDLINE_PARSING
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, OverrideValue.IsSet() ? *(OverrideValue.GetValue()) : TEXT("not set"));
 }
 } // namespace
 
@@ -181,20 +179,17 @@ void USpatialGDKSettings::PostInitProperties()
 									   OverrideMultiWorkerSettingsClass);
 	CheckCmdLineOverrideOptionalStringWithCallback(
 		CommandLine, TEXT("OverrideEventTracingSamplingSettingsClass"), TEXT("Override Event Tracing Sampling Class"),
-		[&EventTracingSamplingSettingsClass = EventTracingSamplingSettingsClass](const FString& OverrideValue)
-		{
+		[&EventTracingSamplingSettingsClass = EventTracingSamplingSettingsClass](const FString& OverrideValue) {
 			FSoftClassPath EventTracingSampleSettingsSoftClassPath(OverrideValue);
-			UClass* OverrideEventTracingSampleSettingsClass = EventTracingSampleSettingsSoftClassPath.TryLoadClass<UEventTracingSamplingSettings>();
+			UClass* OverrideEventTracingSampleSettingsClass =
+				EventTracingSampleSettingsSoftClassPath.TryLoadClass<UEventTracingSamplingSettings>();
 			if (OverrideEventTracingSampleSettingsClass != nullptr)
 			{
 				EventTracingSamplingSettingsClass = OverrideEventTracingSampleSettingsClass;
-				FString ClassName = OverrideEventTracingSampleSettingsClass->GetDefaultObject<UEventTracingSamplingSettings>()->GetName();
-				UE_LOG(LogSpatialGDKSettings, Log, TEXT("Override Event Tracing Sampling Class is %s."), *ClassName);
 			}
 			else
 			{
 				UE_LOG(LogSpatialGDKSettings, Log, TEXT("Invalid event tracing sampling class specified: %s."), *OverrideValue);
-				UE_LOG(LogSpatialGDKSettings, Log, TEXT("Override Event Tracing Sampling Class is not set."));
 			}
 		});
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
