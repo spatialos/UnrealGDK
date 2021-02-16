@@ -71,7 +71,7 @@ class SPATIALGDK_API UEventTracingSamplingSettings : public UDataAsset
 	GENERATED_BODY()
 public:
 	UPROPERTY(EditAnywhere, Category = "Event Tracing", meta = (ClampMin = 0.0f, ClampMax = 1.0f))
-	float SamplingProbability;
+	float SamplingProbability = 1.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
 	TMap<FName, double> EventSamplingModeOverrides;
