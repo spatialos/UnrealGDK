@@ -51,6 +51,8 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 			   EUserInterfaceActionType::RadioButton, FInputChord());
 	UI_COMMAND(CloudDeployment, "Connect to a cloud deployment", "Automatically connect to a cloud deployment",
 			   EUserInterfaceActionType::RadioButton, FInputChord());
+	UI_COMMAND(GenerateTestMaps, "Generate test maps", "Generates maps with Spatial functional tests. These maps will be generated to 'Content/Intermediate/Maps'.",
+			   EUserInterfaceActionType::Button, FInputGesture());
 }
 
 #undef LOCTEXT_NAMESPACE
