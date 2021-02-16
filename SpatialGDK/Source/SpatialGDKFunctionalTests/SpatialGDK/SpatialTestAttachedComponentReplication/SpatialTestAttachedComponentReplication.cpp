@@ -7,6 +7,26 @@
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestStep.h"
 
+void USpatialTestAttachedComponentReplicationTestMap::CreateCustomContentForMap()
+{
+	Super::CreateCustomContentForMap();
+
+	AActor* LevelActor =
+		AddActorToLevel<ASpatialTestAttachedComponentReplicationActorForLevelPlacing>(World->GetCurrentLevel(), FTransform::Identity);
+	UActorComponent* InstanceComponent =
+		NewObject<USpatialTestAttachedComponentReplicationComponent>(LevelActor, TEXT("PlacedActorComponent"), RF_Transactional);
+	LevelActor->AddInstanceComponent(InstanceComponent);
+	InstanceComponent->OnComponentCreated();
+	InstanceComponent->RegisterComponent();
+
+	AddActorToLevel<ASpatialTestAttachedComponentReplication>(World->GetCurrentLevel(), FTransform::Identity)->AssignedTestType =
+		ESpatialTestAttachedComponentReplicationType::LevelPlaced;
+	AddActorToLevel<ASpatialTestAttachedComponentReplication>(World->GetCurrentLevel(), FTransform::Identity)->AssignedTestType =
+		ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDynamicComponent;
+	AddActorToLevel<ASpatialTestAttachedComponentReplication>(World->GetCurrentLevel(), FTransform::Identity)->AssignedTestType =
+		ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDefaultComponent;
+}
+
 ASpatialTestAttachedComponentReplicationActor::ASpatialTestAttachedComponentReplicationActor()
 {
 	bReplicates = true;
@@ -79,9 +99,7 @@ void ASpatialTestAttachedComponentReplication::PrepareTest()
 {
 	Super::PrepareTest();
 
-	GenerateTestSteps(ESpatialTestAttachedComponentReplicationType::LevelPlaced);
-	GenerateTestSteps(ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDynamicComponent);
-	GenerateTestSteps(ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDefaultComponent);
+	GenerateTestSteps(AssignedTestType);
 }
 
 void ASpatialTestAttachedComponentReplication::GenerateTestSteps(ESpatialTestAttachedComponentReplicationType TestType)

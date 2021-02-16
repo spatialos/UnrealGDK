@@ -3,7 +3,7 @@
 #pragma once
 
 #include "SpatialFunctionalTest.h"
-
+#include "TestMaps/GeneratedTestMap.h"
 #include "SpatialTestAttachedComponentReplication.generated.h"
 
 namespace SpatialTestAttachedComponentReplicationValues
@@ -11,6 +11,20 @@ namespace SpatialTestAttachedComponentReplicationValues
 constexpr int InitialValue = 0;
 constexpr int ChangedValue = 100;
 } // namespace SpatialTestAttachedComponentReplicationValues
+
+UCLASS()
+class USpatialTestAttachedComponentReplicationTestMap : public UGeneratedTestMap
+{
+	GENERATED_BODY()
+
+	USpatialTestAttachedComponentReplicationTestMap()
+		: Super(EMapCategory::CI_NIGHTLY, TEXT("SpatialTestAttachedComponentReplicationMap"))
+	{
+	}
+
+protected:
+	virtual void CreateCustomContentForMap() override;
+};
 
 UCLASS(BlueprintType)
 class ASpatialTestAttachedComponentReplicationActor : public AActor
@@ -73,6 +87,9 @@ public:
 	ASpatialTestAttachedComponentReplication();
 
 	virtual void PrepareTest() override;
+
+	UPROPERTY(VisibleAnywhere, Category = "Default")
+	ESpatialTestAttachedComponentReplicationType AssignedTestType;
 
 private:
 	void GenerateTestSteps(ESpatialTestAttachedComponentReplicationType TestType);
