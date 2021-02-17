@@ -37,6 +37,7 @@ public:
 	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; }
 	PhysicalWorkerName GetLocalPhysicalWorkerName() const { return LocalPhysicalWorkerName; }
 	Worker_PartitionId GetClaimedPartitionId() const { return LocalPartitionId; }
+	int32 GetMappingCount() const { return VirtualToPhysicalWorkerMapping.Num(); }
 
 	// Returns the name of the worker currently assigned to VirtualWorkerId id or nullptr if there is
 	// no worker assigned.
@@ -65,7 +66,6 @@ private:
 
 	// Serialization and deserialization of the mapping.
 	void ApplyMappingFromSchema(Schema_Object* Object);
-	bool IsValidMapping(Schema_Object* Object) const;
 
 	void UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName WorkerName, Worker_PartitionId PartitionEntityId,
 					   Worker_EntityId ServerWorkerEntityId);

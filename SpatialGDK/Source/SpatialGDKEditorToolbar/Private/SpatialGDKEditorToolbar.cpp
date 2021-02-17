@@ -959,9 +959,9 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 			return;
 		}
 
-		FString InspectorArgs =
-			FString::Printf(TEXT("--backend_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorBackendAddress,
-							*SpatialGDKServicesConstants::SchemaBundlePath);
+		FString InspectorArgs = FString::Printf(
+			TEXT("--grpc_addr=%s --http_addr=%s --schema_bundle=\"%s\""), *SpatialGDKServicesConstants::InspectorGRPCAddress,
+			*SpatialGDKServicesConstants::InspectorHTTPAddress, *SpatialGDKServicesConstants::SchemaBundlePath);
 
 		InspectorProcess = { *SpatialGDKServicesConstants::GetInspectorExecutablePath(InspectorVersion), *InspectorArgs,
 							 SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
@@ -975,7 +975,7 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 		});
 
 		InspectorProcess->OnCanceled().BindLambda([this] {
-			if (InspectorProcess->GetReturnCode() != SpatialGDKServicesConstants::ExitCodeSuccess)
+			if (InspectorProcess.IsSet() && InspectorProcess->GetReturnCode() != SpatialGDKServicesConstants::ExitCodeSuccess)
 			{
 				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Inspector crashed! Please check logs for more details. Exit code: %s"),
 					   *FString::FromInt(InspectorProcess->GetReturnCode()));
@@ -1350,6 +1350,13 @@ FReply FSpatialGDKEditorToolbarModule::OnStartCloudDeployment()
 	if (SpatialGDKSettings->ShouldAutoGenerateCloudLaunchConfig())
 	{
 		GenerateCloudConfigFromCurrentMap();
+	}
+
+	if (!SpatialGDKSettings->CheckManualWorkerConnectionOnLaunch())
+	{
+		OnShowFailedNotification(TEXT("Launch halted because of unexpected workers requiring manual launch."));
+
+		return FReply::Unhandled();
 	}
 
 	AddDeploymentTagIfMissing(SpatialConstants::DEV_LOGIN_TAG);
