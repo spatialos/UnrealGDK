@@ -70,11 +70,6 @@ void UGeneratedTestMap::GenerateBaseMap()
 
 	APlayerStart* PlayerStart = AddActorToLevel<APlayerStart>(CurrentLevel, FTransform(FVector(-500, 0, 100)));
 
-	// Use current settings for all these generated maps as default.
-	// This will probably change with UNR-4801.
-	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
-	WorldSettings->TestingSettings.TestingMode = EMapTestingMode::UseCurrentSettings;
-
 	// TODO: Maybe figure out how to set the default viewpoint when opening the map, so we don't start in the ground (maybe together with
 	// other viewing position issues), ticket: UNR-4975.
 }

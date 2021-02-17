@@ -30,7 +30,6 @@ ASpatialCleanupConnectionTest::ASpatialCleanupConnectionTest()
 {
 	Author = "Simon Sarginson";
 	Description = TEXT("Tests if clients connections are cleaned up when leaving interest region of a non authorative server");
-	SetNumRequiredClients(1);
 
 	Server1Position = FVector(-500.0f, -500.0f, 50.0f);
 	Server1PositionAndInInterestBorderServer2 = FVector(-50.0f, -50.0f, 50.0f);
