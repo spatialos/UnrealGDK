@@ -17,6 +17,27 @@ ULayeredLBStrategy::ULayeredLBStrategy()
 {
 }
 
+FString ULayeredLBStrategy::ToString() const
+{
+	const FName LocalLayerName = GetLocalLayerName();
+	const UAbstractLBStrategy* const* LBStrategy = LayerNameToLBStrategy.Find(LocalLayerName);
+
+	FString Description =
+		FString::Printf(TEXT("Layered, LocalLayerName = %s, LocalVirtualWorkerId = %d, LayerStrategy = %s"), *LocalLayerName.ToString(),
+						LocalVirtualWorkerId, *LBStrategy ? *(*LBStrategy)->ToString() : TEXT("NoStrategy"));
+
+	if (VirtualWorkerIdToLayerName.Num() > 0)
+	{
+		Description += TEXT(", LayerNamesPerVirtualWorkerId = {");
+		for (const auto& Entry : VirtualWorkerIdToLayerName)
+		{
+			Description += FString::Printf(TEXT("(%d/%s)"), Entry.Key, *Entry.Value.ToString());
+		}
+		Description += TEXT("}");
+	}
+	return Description;
+}
+
 void ULayeredLBStrategy::SetLayers(const TArray<FLayerInfo>& WorkerLayers)
 {
 	check(WorkerLayers.Num() != 0);
