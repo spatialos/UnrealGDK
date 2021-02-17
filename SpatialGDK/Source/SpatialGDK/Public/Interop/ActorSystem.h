@@ -1,11 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+#include "Schema/LoadBalancingStuff.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
-#include "Schema/LoadBalancingStuff.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogActorSystem, Log, All);
 
@@ -30,16 +30,21 @@ public:
 	void Advance();
 	void OnActorReplicated(AActor* Actor);
 	LoadBalancingStuff GetOrCreateLoadBalancingData(const AActor* Actor);
+
 public:
 	using LoadBalancingData = LoadBalancingStuff;
 	struct LoadBalancingActorStuff
 	{
-		LoadBalancingActorStuff() : LoadBalancingActorStuff(SpatialGDK::LoadBalancingWriter::LoadBalancingData{})
-		{}
-		
-		LoadBalancingActorStuff(const LoadBalancingData& InLoadBalancingData) : LoadBalancingData(InLoadBalancingData)
-		{}
-	
+		LoadBalancingActorStuff()
+			: LoadBalancingActorStuff(SpatialGDK::LoadBalancingWriter::LoadBalancingData{})
+		{
+		}
+
+		LoadBalancingActorStuff(const LoadBalancingData& InLoadBalancingData)
+			: LoadBalancingData(InLoadBalancingData)
+		{
+		}
+
 		LoadBalancingData LoadBalancingData;
 		TWeakObjectPtr<AActor> Actor;
 	};
@@ -50,7 +55,7 @@ public:
 	TMap<TObjectKey<AActor>, FOwnershipSetId> BaseSetId;
 	TMap<Worker_EntityId_Key, LoadBalancingActorStuff> DataStore;
 };
-	
+
 struct ActorData
 {
 	SpawnData Spawn;

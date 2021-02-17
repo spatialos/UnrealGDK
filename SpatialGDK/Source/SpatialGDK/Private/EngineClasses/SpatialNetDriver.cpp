@@ -40,10 +40,10 @@
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
+#include "Schema/LoadBalancingStuff.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
-#include "Schema/LoadBalancingStuff.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
@@ -566,13 +566,11 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	LoadBalancingWriter->NetDriver = this;
 	LoadBalancingWriter->SubView = &Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::LB_TAG_COMPONENT_ID,
-		[](const Worker_EntityId, const SpatialGDK::EntityViewElement& Entity)
-		{
-			return Entity.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{SpatialGDK::LoadBalancingStuff::ComponentId});
+		[](const Worker_EntityId, const SpatialGDK::EntityViewElement& Entity) {
+			return Entity.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialGDK::LoadBalancingStuff::ComponentId });
 		},
-		SpatialGDK::FSubView::NoDispatcherCallbacks
-	);
-	
+		SpatialGDK::FSubView::NoDispatcherCallbacks);
+
 	LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
 	LoadBalanceStrategy->Init();
 	Cast<ULayeredLBStrategy>(LoadBalanceStrategy)->SetLayers(MultiWorkerSettings->WorkerLayers);
@@ -2042,7 +2040,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			{
 				LoadBalancingWriter->Advance();
 			}
-			
+
 			if (SpatialDebuggerSystem.IsValid())
 			{
 				SpatialDebuggerSystem->Advance();

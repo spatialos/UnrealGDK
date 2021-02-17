@@ -128,6 +128,11 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 }
 
+SpatialGDK::FActorLoadBalancingGroupId UGridBasedLBStrategy::GetActorGroupId(const AActor& Actor) const
+{
+	return 0;
+}
+
 SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
 {
 	const int32 WorkerCell = VirtualWorkerIds.IndexOfByKey(VirtualWorker);

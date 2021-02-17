@@ -22,8 +22,9 @@ void ULayeredLBStrategy::SetLayers(const TArray<FLayerInfo>& WorkerLayers)
 	check(WorkerLayers.Num() != 0);
 
 	// For each Layer, add a LB Strategy for that layer.
-	for (const FLayerInfo& LayerInfo : WorkerLayers)
+	for (int LayerIndex = 0; LayerIndex < WorkerLayers.Num(); ++LayerIndex)
 	{
+		const FLayerInfo& LayerInfo = WorkerLayers[LayerIndex];
 		checkf(*LayerInfo.LoadBalanceStrategy != nullptr,
 			   TEXT("WorkerLayer %s does not specify a load balancing strategy (or it cannot be resolved)"), *LayerInfo.Name.ToString());
 
@@ -34,8 +35,10 @@ void ULayeredLBStrategy::SetLayers(const TArray<FLayerInfo>& WorkerLayers)
 		for (const TSoftClassPtr<AActor>& ClassPtr : LayerInfo.ActorClasses)
 		{
 			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr.GetAssetName());
-			ClassPathToLayer.Add(ClassPtr, LayerInfo.Name);
+			ClassPathToLayerName.Add(ClassPtr, LayerInfo.Name);
 		}
+
+		LayerData.Add(LayerInfo.Name, { LayerInfo.Name, LayerIndex });
 	}
 }
 
@@ -121,6 +124,13 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 	UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy returning virtual worker id %d for Actor %s."), ReturnedWorkerId,
 		   *AActor::GetDebugName(RootOwner));
 	return ReturnedWorkerId;
+}
+
+SpatialGDK::FActorLoadBalancingGroupId ULayeredLBStrategy::GetActorGroupId(const AActor& Actor) const
+{
+	const FName ActorLayerName = GetLayerNameForActor(Actor);
+
+	return 1 + LayerData.FindChecked(ActorLayerName).LayerIndex;
 }
 
 SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
@@ -285,12 +295,12 @@ FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) 
 
 	while (FoundClass != nullptr && FoundClass->IsChildOf(AActor::StaticClass()))
 	{
-		if (const FName* Layer = ClassPathToLayer.Find(ClassPtr))
+		if (const FName* Layer = ClassPathToLayerName.Find(ClassPtr))
 		{
 			const FName LayerHolder = *Layer;
 			if (FoundClass != Class)
 			{
-				ClassPathToLayer.Add(TSoftClassPtr<AActor>(Class), LayerHolder);
+				ClassPathToLayerName.Add(TSoftClassPtr<AActor>(Class), LayerHolder);
 			}
 			return LayerHolder;
 		}
@@ -300,7 +310,7 @@ FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) 
 	}
 
 	// No mapping found so set and return default actor group.
-	ClassPathToLayer.Add(TSoftClassPtr<AActor>(Class), SpatialConstants::DefaultLayer);
+	ClassPathToLayerName.Add(TSoftClassPtr<AActor>(Class), SpatialConstants::DefaultLayer);
 	return SpatialConstants::DefaultLayer;
 }
 

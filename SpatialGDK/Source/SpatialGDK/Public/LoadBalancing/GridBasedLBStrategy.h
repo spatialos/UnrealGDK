@@ -44,6 +44,7 @@ public:
 
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
+	virtual SpatialGDK::FActorLoadBalancingGroupId GetActorGroupId(const AActor& Actor) const override;
 
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const override;
 

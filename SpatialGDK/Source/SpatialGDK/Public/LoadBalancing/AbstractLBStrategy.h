@@ -7,6 +7,7 @@
 
 #include "CoreMinimal.h"
 #include "Schema/Interest.h"
+#include "Schema/LoadBalancingStuff.h"
 #include "UObject/NoExportTypes.h"
 
 #include "AbstractLBStrategy.generated.h"
@@ -45,6 +46,9 @@ public:
 
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const
 		PURE_VIRTUAL(UAbstractLBStrategy::WhoShouldHaveAuthority, return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;);
+
+	virtual SpatialGDK::FActorLoadBalancingGroupId GetActorGroupId(const AActor& Actor) const
+		PURE_VIRTUAL(UAbstractLBStrategy::GetActorGroupId, return 0;);
 
 	/**
 	 * Get a logical worker entity position for this strategy. For example, the centre of a grid square in a grid-based strategy.

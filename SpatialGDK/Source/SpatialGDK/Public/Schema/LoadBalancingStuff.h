@@ -9,7 +9,7 @@
 namespace SpatialGDK
 {
 typedef uint32 FActorLoadBalancingGroupId;
-	
+
 // The LoadBalancingStuff component exists to hold information which needs to be displayed by the
 // SpatialDebugger on clients but which would not normally be available to clients.
 struct LoadBalancingStuff : AbstractMutableComponent

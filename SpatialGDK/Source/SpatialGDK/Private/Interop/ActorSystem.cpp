@@ -9,9 +9,9 @@
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/Restricted.h"
 #include "SpatialConstants.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SubView.h"
 #include "Utils/ComponentReader.h"
@@ -36,11 +36,12 @@ void LoadBalancingWriter::Advance()
 		if (EntityDelta1.Type == EntityDelta::ADD)
 		{
 			const EntityViewElement& AddedEntity = SubView->GetView()[EntityDelta1.EntityId];
-			const ComponentData& LoadBalancingStuffComponent = *AddedEntity.Components.FindByPredicate(ComponentIdEquality{LoadBalancingStuff::ComponentId});
+			const ComponentData& LoadBalancingStuffComponent =
+				*AddedEntity.Components.FindByPredicate(ComponentIdEquality{ LoadBalancingStuff::ComponentId });
 			DataStore.Add(EntityDelta1.EntityId, LoadBalancingActorStuff(LoadBalancingStuffComponent.GetWorkerComponentData()));
 		}
 	}
-	
+
 	// for (const EntityDelta& EntityDelta : ViewDelta.EntityDeltas)
 	// {
 	// 	EntityDelta.
@@ -64,7 +65,7 @@ void LoadBalancingWriter::OnActorReplicated(AActor* Actor)
 	}
 
 	LoadBalancingActorStuffPtr->LoadBalancingData = GetOrCreateLoadBalancingData(Actor);
-	
+
 	FWorkerComponentUpdate LoadBalancingUpdate = LoadBalancingActorStuffPtr->LoadBalancingData.CreateLoadBalancingStuffUpdate();
 	NetDriver->Connection->SendComponentUpdate(ActorEntityId, &LoadBalancingUpdate);
 }
@@ -73,9 +74,10 @@ LoadBalancingStuff LoadBalancingWriter::GetOrCreateLoadBalancingData(const AActo
 {
 	LoadBalancingStuff Stuff;
 	Stuff.ActorGroupId = NetDriver->LoadBalanceStrategy->GetActorGroupId(*Actor);
-	
+
 	const AActor* Owner = Actor;
-	for (;IsValid(Owner->GetOwner()); Owner = Owner->GetOwner());
+	for (; IsValid(Owner->GetOwner()); Owner = Owner->GetOwner())
+		;
 	check(IsValid(Owner));
 	FOwnershipSetId* PresentOwnershipSetIdPtr = BaseSetId.Find(Owner);
 	if (PresentOwnershipSetIdPtr == nullptr)
@@ -147,7 +149,7 @@ private:
 struct FSubViewDelta;
 
 ActorSystem::ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
-                         FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer)
+						 FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer)
 	: SubView(&InSubView)
 	, TombstoneSubView(&InTombstoneSubView)
 	, NetDriver(InNetDriver)
