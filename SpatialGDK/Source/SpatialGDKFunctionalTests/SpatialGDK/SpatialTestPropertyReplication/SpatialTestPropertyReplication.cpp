@@ -5,7 +5,8 @@
 #include "ReplicatedTestActor.h"
 
 /**
- * This tests that an Actor can replicate a property across the network during play.
+ * This is an example test. It's cited in https://brevi.link/how-to-test-unrealgdk.
+ * It tests that an Actor can replicate a property across the network during play.
  * This test contains 1 Server and 2 Client workers.
  *
  * The flow is as follows:
