@@ -136,6 +136,10 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	}
 #endif // !UE_BUILD_SHIPPING
 
+	const LoadBalancingStuff LoadBalancingStuff1 = NetDriver->LoadBalancingWriter->GetOrCreateLoadBalancingData(Actor);
+
+	ComponentDatas.Add(LoadBalancingStuff1.CreateComponentData());
+
 	// Add actual load balancing components
 	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateComponentData());
 	ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());

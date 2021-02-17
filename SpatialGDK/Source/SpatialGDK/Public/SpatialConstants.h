@@ -149,6 +149,7 @@ const Worker_ComponentId SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID = 9973;
 const Worker_ComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID = 9971;
 const Worker_ComponentId MIGRATION_DIAGNOSTIC_COMPONENT_ID = 9969;
 const Worker_ComponentId PARTITION_SHADOW_COMPONENT_ID = 9967;
+const Worker_ComponentId LOAD_BALANCING_STUFF_COMPONENT_ID = 9972;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
@@ -454,6 +455,7 @@ const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
 	"unreal/gdk/relevant.schema",
 	"unreal/gdk/rpc_components.schema",
 	"unreal/gdk/spatial_debugging.schema",
+	"unreal/gdk/load_balancing_stuff.schema",
 	"unreal/gdk/spawndata.schema",
 	"unreal/gdk/tombstone.schema",
 	"unreal/gdk/unreal_metadata.schema",
@@ -475,6 +477,7 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
 	{ VISIBLE_COMPONENT_ID, "unreal.Visible" },
 	{ SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, "unreal.UnrealServerToServerCommandEndpoint" },
 	{ SPATIAL_DEBUGGING_COMPONENT_ID, "unreal.SpatialDebugging" },
+	{ LOAD_BALANCING_STUFF_COMPONENT_ID, "unreal.LoadBalancingStuff" },
 	{ SPAWN_DATA_COMPONENT_ID, "unreal.SpawnData" },
 	{ TOMBSTONE_COMPONENT_ID, "unreal.Tombstone" },
 	{ UNREAL_METADATA_COMPONENT_ID, "unreal.UnrealMetadata" },

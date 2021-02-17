@@ -11,6 +11,7 @@
 #include "Interop/SpatialSender.h"
 #include "Schema/Restricted.h"
 #include "SpatialConstants.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SubView.h"
 #include "Utils/ComponentReader.h"
@@ -26,6 +27,67 @@ DECLARE_CYCLE_STAT(TEXT("Actor System RemoveActor"), STAT_ActorSystemRemoveActor
 
 namespace SpatialGDK
 {
+void LoadBalancingWriter::Advance()
+{
+	const FSubViewDelta& ViewDelta = SubView->GetViewDelta();
+
+	for (const EntityDelta& EntityDelta1 : ViewDelta.EntityDeltas)
+	{
+		if (EntityDelta1.Type == EntityDelta::ADD)
+		{
+			const EntityViewElement& AddedEntity = SubView->GetView()[EntityDelta1.EntityId];
+			const ComponentData& LoadBalancingStuffComponent = *AddedEntity.Components.FindByPredicate(ComponentIdEquality{LoadBalancingStuff::ComponentId});
+			DataStore.Add(EntityDelta1.EntityId, LoadBalancingActorStuff(LoadBalancingStuffComponent.GetWorkerComponentData()));
+		}
+	}
+	
+	// for (const EntityDelta& EntityDelta : ViewDelta.EntityDeltas)
+	// {
+	// 	EntityDelta.
+	// }
+}
+
+void LoadBalancingWriter::OnActorReplicated(AActor* Actor)
+{
+	const Worker_EntityId ActorEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+
+	if (ActorEntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return;
+	}
+
+	LoadBalancingActorStuff* LoadBalancingActorStuffPtr = &DataStore.FindOrAdd(ActorEntityId);
+
+	if (!ensure(LoadBalancingActorStuffPtr))
+	{
+		return;
+	}
+
+	LoadBalancingActorStuffPtr->LoadBalancingData = GetOrCreateLoadBalancingData(Actor);
+	
+	FWorkerComponentUpdate LoadBalancingUpdate = LoadBalancingActorStuffPtr->LoadBalancingData.CreateLoadBalancingStuffUpdate();
+	NetDriver->Connection->SendComponentUpdate(ActorEntityId, &LoadBalancingUpdate);
+}
+
+LoadBalancingStuff LoadBalancingWriter::GetOrCreateLoadBalancingData(const AActor* Actor)
+{
+	LoadBalancingStuff Stuff;
+	Stuff.ActorGroupId = NetDriver->LoadBalanceStrategy->GetActorGroupId(*Actor);
+	
+	const AActor* Owner = Actor;
+	for (;IsValid(Owner->GetOwner()); Owner = Owner->GetOwner());
+	check(IsValid(Owner));
+	FOwnershipSetId* PresentOwnershipSetIdPtr = BaseSetId.Find(Owner);
+	if (PresentOwnershipSetIdPtr == nullptr)
+	{
+		PresentOwnershipSetIdPtr = &BaseSetId.Add(Owner, ++LocalOwnershipSetIdCounter);
+	}
+
+	Stuff.ActorSetId = *PresentOwnershipSetIdPtr;
+
+	return Stuff;
+}
+
 struct ActorSystem::RepStateUpdateHelper
 {
 	RepStateUpdateHelper(USpatialActorChannel& Channel, UObject& TargetObject)
@@ -85,7 +147,7 @@ private:
 struct FSubViewDelta;
 
 ActorSystem::ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
-						 FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer)
+                         FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer)
 	: SubView(&InSubView)
 	, TombstoneSubView(&InTombstoneSubView)
 	, NetDriver(InNetDriver)

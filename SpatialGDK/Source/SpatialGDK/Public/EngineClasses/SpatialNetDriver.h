@@ -198,6 +198,7 @@ public:
 	USpatialBasicAwaiter* SpatialDebuggerReady;
 	UPROPERTY()
 	UAbstractLBStrategy* LoadBalanceStrategy;
+	TUniquePtr<SpatialGDK::LoadBalancingWriter> LoadBalancingWriter;
 	UPROPERTY()
 	UAbstractLockingPolicy* LockingPolicy;
 	UPROPERTY()
