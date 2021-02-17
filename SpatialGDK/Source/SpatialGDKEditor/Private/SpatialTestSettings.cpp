@@ -33,9 +33,7 @@ void FSpatialTestSettings::Duplicate(T*& OriginalSettings)
 	// Duplicate original settings but use different outer - if same outer is reused the object is not duplicated and pointer is to the same
 	// Object Having the same name causes runtime exceptions
 	// Use additional object flag RF_Standalone to avoid early GC - destroy when restoring settings
-	T* DuplicateSettings =
-		NewObject<T>(GetTransientPackage(), T::StaticClass(), NAME_None,
-					 RF_NoFlags, GetMutableDefault<T>());
+	T* DuplicateSettings = NewObject<T>(GetTransientPackage(), T::StaticClass(), NAME_None, RF_NoFlags, GetMutableDefault<T>());
 	DuplicateSettings->AddToRoot();
 	OriginalSettings = GetMutableDefault<T>();
 	OriginalSettings->AddToRoot();
