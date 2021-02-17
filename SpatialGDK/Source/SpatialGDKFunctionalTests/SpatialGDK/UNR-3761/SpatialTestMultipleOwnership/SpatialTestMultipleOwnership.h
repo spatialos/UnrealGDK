@@ -17,6 +17,7 @@ public:
 
 	virtual void PrepareTest() override;
 
-	// Helper array used to avoid code duplication by storing the references to the MultipleOwnershipPawns on the test itself, instead of calling GetAllActorsOfClass multiple times.
+	// Helper array used to avoid code duplication by storing the references to the MultipleOwnershipPawns on the test itself, instead of
+	// calling GetAllActorsOfClass multiple times.
 	TArray<AMultipleOwnershipPawn*> MultipleOwnershipPawns;
 };
