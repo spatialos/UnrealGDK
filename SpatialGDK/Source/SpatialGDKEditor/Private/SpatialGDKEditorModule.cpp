@@ -310,7 +310,7 @@ void FSpatialGDKEditorModule::OverrideSettingsForTesting(UWorld* World, const FS
 void FSpatialGDKEditorModule::RevertSettingsForTesting()
 {
 	// Revert settings from ini file
-	SpatialTestSettings->Restore();
+	SpatialTestSettings->Revert();
 }
 
 bool FSpatialGDKEditorModule::ShouldStartLocalServer() const

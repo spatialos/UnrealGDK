@@ -26,15 +26,20 @@ class FSpatialTestSettings
 public:
 	FSpatialTestSettings();
 
-	// Backup up original settings in memory and then overrides them with the new settings specified in the config files
+	// Backup up the original settings in memory and then override them with the new settings specified in the config files
 	void Override(const FString& MapName);
 
 	// Restores the original settings
-	void Restore();
+	void Revert();
 
 protected:
-	// Backup the original settings so they can be restored later
-	void Backup();
+	// Duplicate an original setting
+	template <typename T>
+	void Duplicate(T*& OriginalSettings);
+
+	// Restore an original setting
+	template <typename T>
+	void Restore(T*& OriginalSettings);
 
 	// Load settings from config file which will override current settings
 	void Load(const FString& TestSettingOverridesFilename);
