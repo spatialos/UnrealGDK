@@ -47,6 +47,7 @@ int32 UGenerateTestMapsCommandlet::Main(const FString& CmdLineParams)
 		{
 			UE_LOG(LogGenerateTestMapsCommandlet, Display, TEXT("Creating the %s."), *TestMap->GetMapName());
 			TestMap->GenerateMap();
+			TestMap->GenerateCustomConfig();
 		}
 		TestMap->RemoveFromRoot();
 	}

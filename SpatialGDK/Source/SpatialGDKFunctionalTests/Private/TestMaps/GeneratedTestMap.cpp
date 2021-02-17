@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "TestMaps/GeneratedTestMap.h"
+#include "Core/Public/Misc/FileHelper.h"
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyLight.h"
 #include "Engine/StaticMeshActor.h"
@@ -42,6 +43,24 @@ void UGeneratedTestMap::GenerateMap()
 	GenerateBaseMap();
 	CreateCustomContentForMap();
 	SaveMap();
+}
+
+void UGeneratedTestMap::GenerateCustomConfig()
+{
+	if (CustomConfigString.IsEmpty())
+	{
+		// Only create a custom config file if we have something meaningful to write so we don't pollute the file system too much
+		return;
+	}
+	// TODO: Expose from FSpatialTestSettings
+
+	// Extension for config files
+	const FString OverrideSettingsFileExtension = TEXT(".ini");
+	// Map override config base filename applied to specific map, if exists
+	const FString OverrideSettingsBaseFilename = FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir() / TEXT("TestOverrides"));
+
+	const FString OverrideSettingsFilename = OverrideSettingsBaseFilename + MapName + OverrideSettingsFileExtension;
+	FFileHelper::SaveStringToFile(CustomConfigString, *OverrideSettingsFilename);
 }
 
 FString UGeneratedTestMap::GetGeneratedMapFolder()
