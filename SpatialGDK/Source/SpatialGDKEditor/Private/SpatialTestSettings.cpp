@@ -1,4 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma optimize("", on)
 #include "SpatialTestSettings.h"
 
@@ -32,9 +33,13 @@ void FSpatialTestSettings::Duplicate(T*& OriginalSettings)
 	// Duplicate original settings but use different outer - if same outer is reused the object is not duplicated and pointer is to the same
 	// Object Having the same name causes runtime exceptions
 	// Use additional object flag RF_Standalone to avoid early GC - destroy when restoring settings
-	OriginalSettings = NewObject<T>(GetTransientPackage(), T::StaticClass(), NAME_None,
-											EObjectFlags(RF_Public | RF_ClassDefaultObject | RF_ArchetypeObject | RF_Standalone),
-											  GetMutableDefault<T>());
+	T* DuplicateSettings =
+		NewObject<T>(GetTransientPackage(), T::StaticClass(), NAME_None,
+					 RF_NoFlags, GetMutableDefault<T>());
+	DuplicateSettings->AddToRoot();
+	OriginalSettings = GetMutableDefault<T>();
+	OriginalSettings->AddToRoot();
+	T::StaticClass()->ClassDefaultObject = DuplicateSettings;
 }
 
 void FSpatialTestSettings::Revert()
@@ -52,7 +57,7 @@ void FSpatialTestSettings::Restore(T*& OriginalSettings)
 	if (OriginalSettings != nullptr)
 	{
 		// Restore original settings - delete CDO first and then replace with copied settings
-		T::StaticClass()->ClassDefaultObject->ConditionalBeginDestroy();
+		T::StaticClass()->ClassDefaultObject->RemoveFromRoot();
 		T::StaticClass()->ClassDefaultObject = OriginalSettings;
 		OriginalSettings = nullptr;
 	}
