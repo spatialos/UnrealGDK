@@ -31,8 +31,10 @@ FString ULayeredLBStrategy::ToString() const
 		Description += TEXT(", LayerNamesPerVirtualWorkerId = {");
 		for (const auto& Entry : VirtualWorkerIdToLayerName)
 		{
-			Description += FString::Printf(TEXT("(%d/%s)"), Entry.Key, *Entry.Value.ToString());
+			Description += FString::Printf(TEXT("%d = %s, "), Entry.Key, *Entry.Value.ToString());
 		}
+		check(Description.Len() > 1);
+		Description.LeftChopInline(2);
 		Description += TEXT("}");
 	}
 	return Description;
