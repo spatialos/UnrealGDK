@@ -38,9 +38,15 @@ ASpatialTestMultipleOwnership::ASpatialTestMultipleOwnership()
 	Description = TEXT("Test Net Reference");
 }
 
-void ASpatialTestMultipleOwnership::BeginPlay()
+
+void ASpatialTestMultipleOwnership::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
+
+	if (HasAuthority())
+	{
+		AddExpectedLogError(TEXT("No owning connection for actor MultipleOwnershipPawn"), 3, false);
+	}
 
 	// The server spawns the 2 MultipleOwnershipPawns and registers them for auto-destroy
 	AddStep(TEXT("SpatialTestMultipleOwnershipServerSpawnPawns"), FWorkerDefinition::Server(1), nullptr, [this]()
@@ -77,26 +83,29 @@ void ASpatialTestMultipleOwnership::BeginPlay()
 					MultipleOwnershipPawns.Add(MultipleOwnershipPawn);
 				}
 			}
-
-			// Double checking that we have the correct number of MultipleOwnershipPawns, just to make sure that the casting above was successful and no issues arise from that
+			MultipleOwnershipPawns.Sort([](AMultipleOwnershipPawn& LHS, AMultipleOwnershipPawn& RHS) -> bool {
+							return LHS.GetActorLocation().Y < RHS.GetActorLocation().Y;
+						});
+						// Double checking that we have the correct number of MultipleOwnershipPawns, just to make sure that the casting above was successful and no issues arise from that
 			if (MultipleOwnershipPawns.Num() == 2)
 			{
 				FinishStep();
 			}
 		}, 5.0f);
 
-	// Step definition for Client 1 to send a Server RPC which is used multiple times during the test.
+	// Step definition for Client 1 to send a Server RPC which is used multiple times during the test. RPCs are expected to miss twice on
+	// the first pass, then once, then 0 times..
 	FSpatialFunctionalTestStepDefinition ClientSendRPCStepDefinition;
+	ClientSendRPCStepDefinition.StepName = TEXT("ClientSendRPCsTest");
 	ClientSendRPCStepDefinition.bIsNativeDefinition = true;
-	ClientSendRPCStepDefinition.NativeStartEvent.BindLambda([this]()
+	ClientSendRPCStepDefinition.NativeStartEvent.BindLambda([this]() {
+		for (AMultipleOwnershipPawn* MultipleOwnershipPawn : MultipleOwnershipPawns)
 		{
-			for (AMultipleOwnershipPawn* MultipleOwnershipPawn : MultipleOwnershipPawns)
-			{
-				MultipleOwnershipPawn->ServerSendRPC();
-			}
+			MultipleOwnershipPawn->ServerSendRPC();
+		}
 
-			FinishStep();
-		});
+		FinishStep();
+	});
 
 	// Client 1 sends an RPC from both MultipleOwnershipPawns
 	AddStepFromDefinition(ClientSendRPCStepDefinition, FWorkerDefinition::Client(1));
@@ -122,20 +131,26 @@ void ASpatialTestMultipleOwnership::BeginPlay()
 	// Client 1 sends an RPC from both MultipleOwnershipPawns
 	AddStepFromDefinition(ClientSendRPCStepDefinition, FWorkerDefinition::Client(1));
 
+	auto PossessesCorrectPawns2 = [this]() {
+		APlayerController* PlayerController =
+			Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
+		return PlayerController == nullptr || PlayerController->GetPawn() == MultipleOwnershipPawns[0];
+	};
 	// All workers check that the RPC sent from the first MultipleOwnershipPawn was correctly received, whilst the one sent from the second MultipleOwnershipPawn was ignored.
-	AddStep(TEXT("SpatialTestMultipleOwnershipAllWorkersCheckCorrectRPCs2"), FWorkerDefinition::AllWorkers, nullptr, nullptr, [this](float DeltaTime)
+	AddStep(TEXT("SpatialTestMultipleOwnershipAllWorkersCheckCorrectRPCs2"), FWorkerDefinition::AllWorkers, PossessesCorrectPawns2, nullptr, [this](float DeltaTime)
 		{
-			if (MultipleOwnershipPawns[0]->ReceivedRPCs == 1 && MultipleOwnershipPawns[1]->ReceivedRPCs == 0)
-			{
-				FinishStep();
-			}
+			RequireEqual_Int(1, MultipleOwnershipPawns[0]->ReceivedRPCs, TEXT("Pawn 0 received correct number of RPCs"));
+			RequireEqual_Int(0, MultipleOwnershipPawns[1]->ReceivedRPCs, TEXT("Pawn 1 received correct number of RPCs"));
+			FinishStep();
 		}, 10.0f);
 
 	// The server makes Client 1's PlayerController possess the second MultipleOwnershipPawn.
 	AddStep(TEXT("SpatialTestMultipleOwnershipPossessPawn2"), FWorkerDefinition::Server(1), nullptr, [this]()
 		{
-			APlayerController* PlayerController = Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
+		APlayerController* PlayerController =
+			Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
 			PlayerController->Possess(MultipleOwnershipPawns[1]);
+			MultipleOwnershipPawns[0]->SetOwner(PlayerController);
 
 			FinishStep();
 		});
@@ -143,13 +158,17 @@ void ASpatialTestMultipleOwnership::BeginPlay()
 	// Client 1 sends an RPC from both MultipleOwnershipPawns
 	AddStepFromDefinition(ClientSendRPCStepDefinition, FWorkerDefinition::Client(1));
 
+	auto PossessesCorrectPawns3 = [this]() {
+		APlayerController* PlayerController =
+			Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
+		return (PlayerController == nullptr) || (PlayerController->GetPawn() == MultipleOwnershipPawns[1] && MultipleOwnershipPawns[0]->GetOwner() == PlayerController);
+	};
 	// All workers check that the RPCs sent from both MultipleOwnershipPawns were correctly received.
-	AddStep(TEXT("SpatialTestMultipleOwnershipAllWorkersCheckCorrectRPCs3"), FWorkerDefinition::AllWorkers, nullptr, nullptr, [this](float DeltaTime)
+	AddStep(TEXT("SpatialTestMultipleOwnershipAllWorkersCheckCorrectRPCs3"), FWorkerDefinition::AllWorkers, PossessesCorrectPawns3, nullptr, [this](float DeltaTime)
 		{
-			if (MultipleOwnershipPawns[0]->ReceivedRPCs == 2 && MultipleOwnershipPawns[1]->ReceivedRPCs == 1)
-			{
-				FinishStep();
-			}
+			RequireEqual_Int(2, MultipleOwnershipPawns[0]->ReceivedRPCs, TEXT("Pawn 0 received correct number of RPCs"));
+			RequireEqual_Int(1, MultipleOwnershipPawns[1]->ReceivedRPCs, TEXT("Pawn 1 received correct number of RPCs"));
+			FinishStep();
 		}, 10.0f);
 
 	// The server makes Client 1's PlayerController unpossess the second MultipleOwnershipPawn.
@@ -157,19 +176,23 @@ void ASpatialTestMultipleOwnership::BeginPlay()
 		{
 			APlayerController* PlayerController = Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
 			PlayerController->UnPossess();
-
+			MultipleOwnershipPawns[1]->SetOwner(PlayerController);
 			FinishStep();
 		});
 
 	// Client 1 sends an RPC from both MultipleOwnershipPawns
 	AddStepFromDefinition(ClientSendRPCStepDefinition, FWorkerDefinition::Client(1));
 
+	auto PossessesCorrectPawns4 = [this]() {
+		APlayerController* PlayerController =
+			Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
+		return (PlayerController == nullptr) || (PlayerController->GetPawn() == nullptr && MultipleOwnershipPawns[1]->GetOwner() == PlayerController && MultipleOwnershipPawns[0]->GetOwner() == PlayerController);
+	};
 	// All workers check that the RPCs sent from both MultipleOwnershipPawns were correctly received.
-	AddStep(TEXT("SpatialTestMultipleOwnershipAllWorkersCheckCorrectRPCs4"), FWorkerDefinition::AllWorkers, nullptr, nullptr, [this](float DeltaTime)
+	AddStep(TEXT("SpatialTestMultipleOwnershipAllWorkersCheckCorrectRPCs4"), FWorkerDefinition::AllWorkers, PossessesCorrectPawns4, nullptr, [this](float DeltaTime)
 		{
-			if (MultipleOwnershipPawns[0]->ReceivedRPCs == 3 && MultipleOwnershipPawns[1]->ReceivedRPCs == 2)
-			{
-				FinishStep();
-			}
+			RequireEqual_Int(3, MultipleOwnershipPawns[0]->ReceivedRPCs, TEXT("Pawn 0 received correct number of RPCs"));
+			RequireEqual_Int(2, MultipleOwnershipPawns[1]->ReceivedRPCs, TEXT("Pawn 1 received correct number of RPCs"));
+			FinishStep();
 		}, 10.0f);
 }

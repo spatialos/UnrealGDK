@@ -15,7 +15,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestMultipleOwnership : public ASpat
 public:
 	ASpatialTestMultipleOwnership();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
 	// Helper array used to avoid code duplication by storing the references to the MultipleOwnershipPawns on the test itself, instead of calling GetAllActorsOfClass multiple times.
 	TArray<AMultipleOwnershipPawn*> MultipleOwnershipPawns;
