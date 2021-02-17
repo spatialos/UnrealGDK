@@ -311,6 +311,7 @@ TMap<FString, FString> ExpectedContentsFilenames = {
 	{ "SpatialTypeActorWithMultipleObjectComponents", "SpatialTypeActorWithMultipleObjectComponents.schema" }
 };
 uint32 ExpectedRPCEndpointsRingBufferSize = 32;
+TMap<ERPCType, uint32> ExpectedRPCRingBufferSizeOverrides = { { ERPCType::ServerAlwaysWrite, 1 } };
 FString ExpectedRPCEndpointsSchemaFilename = TEXT("rpc_endpoints.schema");
 
 class SchemaValidator
@@ -397,24 +398,28 @@ private:
 class SchemaRPCEndpointTestFixture : public SchemaTestFixture
 {
 public:
-	SchemaRPCEndpointTestFixture() { SetMaxRPCRingBufferSize(); }
-	~SchemaRPCEndpointTestFixture() { ResetMaxRPCRingBufferSize(); }
+	SchemaRPCEndpointTestFixture() { SetRPCRingBufferSize(); }
+	~SchemaRPCEndpointTestFixture() { ResetRPCRingBufferSize(); }
 
 private:
-	void SetMaxRPCRingBufferSize()
+	void SetRPCRingBufferSize()
 	{
 		USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-		CachedMaxRPCRingBufferSize = SpatialGDKSettings->MaxRPCRingBufferSize;
-		SpatialGDKSettings->MaxRPCRingBufferSize = ExpectedRPCEndpointsRingBufferSize;
+		CachedDefaultRPCRingBufferSize = SpatialGDKSettings->DefaultRPCRingBufferSize;
+		CachedRPCRingBufferSizeOverrides = SpatialGDKSettings->RPCRingBufferSizeOverrides;
+		SpatialGDKSettings->DefaultRPCRingBufferSize = ExpectedRPCEndpointsRingBufferSize;
+		SpatialGDKSettings->RPCRingBufferSizeOverrides = ExpectedRPCRingBufferSizeOverrides;
 	}
 
-	void ResetMaxRPCRingBufferSize()
+	void ResetRPCRingBufferSize()
 	{
 		USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-		SpatialGDKSettings->MaxRPCRingBufferSize = CachedMaxRPCRingBufferSize;
+		SpatialGDKSettings->DefaultRPCRingBufferSize = CachedDefaultRPCRingBufferSize;
+		SpatialGDKSettings->RPCRingBufferSizeOverrides = CachedRPCRingBufferSizeOverrides;
 	}
 
-	uint32 CachedMaxRPCRingBufferSize;
+	uint32 CachedDefaultRPCRingBufferSize;
+	TMap<ERPCType, uint32> CachedRPCRingBufferSizeOverrides;
 };
 
 } // anonymous namespace
@@ -1086,12 +1091,29 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	TestTrue("Schema bundle file successfully read",
 			 SpatialGDKEditor::Schema::ExtractComponentSetsFromSchemaJson(SchemaJsonPath, SchemaDatabase->ComponentSetIdToComponentIds));
 
-	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 7);
+	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 8);
 
 	TestTrue("Found spatial well known components", SchemaDatabase->ComponentSetIdToComponentIds.Contains(50));
 	if (SchemaDatabase->ComponentSetIdToComponentIds.Contains(50))
 	{
 		TestTrue("Spatial well know component is not empty", SchemaDatabase->ComponentSetIdToComponentIds[50].ComponentIDs.Num() > 0);
+	}
+
+	{
+		FComponentIDs* RoutingComponents =
+			SchemaDatabase->ComponentSetIdToComponentIds.Find(SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID);
+		TestTrue("Found routing worker components", RoutingComponents != nullptr);
+		if (RoutingComponents != nullptr)
+		{
+			TestTrue("Expected number of routing worker components",
+					 RoutingComponents->ComponentIDs.Num() == SpatialConstants::RoutingWorkerComponents.Num());
+
+			for (auto ComponentId : SpatialConstants::RoutingWorkerComponents)
+			{
+				FString DebugString = FString::Printf(TEXT("Found well known component %s"), *ComponentId.Value);
+				TestTrue(*DebugString, RoutingComponents->ComponentIDs.Find(ComponentId.Key) != INDEX_NONE);
+			}
+		}
 	}
 
 	{

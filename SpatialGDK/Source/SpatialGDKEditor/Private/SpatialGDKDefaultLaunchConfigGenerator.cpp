@@ -72,7 +72,7 @@ bool WriteWorkerSection(TSharedRef<TJsonWriter<>> Writer, const FWorkerTypeLaunc
 
 	if (WorkerConfig.NumEditorInstances > 0)
 	{
-		WriteLoadbalancingSection(Writer, SpatialConstants::DefaultServerWorkerType, WorkerConfig.NumEditorInstances,
+		WriteLoadbalancingSection(Writer, WorkerConfig.WorkerTypeName, WorkerConfig.NumEditorInstances,
 								  WorkerConfig.bManualWorkerConnectionOnly);
 	}
 
@@ -99,6 +99,7 @@ uint32 GetWorkerCountFromWorldSettings(const UWorld& World, bool bForceNonEditor
 bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchConfigDescription* InLaunchConfigDescription,
 						  bool bGenerateCloudConfig)
 {
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (InLaunchConfigDescription != nullptr)
 	{
 		const FSpatialLaunchConfigDescription& LaunchConfigDescription = *InLaunchConfigDescription;
@@ -146,6 +147,13 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		for (const FWorkerTypeLaunchSection& AdditionalWorkerConfig : LaunchConfigDescription.AdditionalWorkerConfigs)
 		{
 			WriteWorkerSection(Writer, AdditionalWorkerConfig);
+		}
+		if (SpatialGDKSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+		{
+			FWorkerTypeLaunchSection WorkerConfig;
+			WorkerConfig.WorkerTypeName = SpatialConstants::RoutingWorkerType;
+			WorkerConfig.NumEditorInstances = 0;
+			WriteWorkerSection(Writer, WorkerConfig);
 		}
 
 		Writer->WriteArrayEnd(); // Worker section end

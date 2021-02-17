@@ -70,7 +70,7 @@ struct FRPCErrorInfo
 
 struct SPATIALGDK_API FPendingRPCParams
 {
-	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, SpatialGDK::RPCPayload&& InPayload,
+	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, const SpatialGDK::RPCSender& InSenderInfo, ERPCType InType, SpatialGDK::RPCPayload&& InPayload,
 					  const FSpatialGDKSpanId& SpanId);
 
 	// Moveable, not copyable.
@@ -82,6 +82,7 @@ struct SPATIALGDK_API FPendingRPCParams
 	~FPendingRPCParams() = default;
 
 	FUnrealObjectRef ObjectRef;
+	SpatialGDK::RPCSender SenderRPCInfo;
 	SpatialGDK::RPCPayload Payload;
 
 	FDateTime Timestamp;
@@ -102,8 +103,8 @@ public:
 	~FRPCContainer() = default;
 
 	void BindProcessingFunction(const FProcessRPCDelegate& Function);
-	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, SpatialGDK::RPCPayload&& InPayload,
-						   const FSpatialGDKSpanId& SpanId);
+	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, const SpatialGDK::RPCSender& InSenderInfo, ERPCType InType, 
+						   SpatialGDK::RPCPayload&& InPayload, const FSpatialGDKSpanId& SpanId);
 	void ProcessRPCs();
 	void DropForEntity(const Worker_EntityId& EntityId);
 

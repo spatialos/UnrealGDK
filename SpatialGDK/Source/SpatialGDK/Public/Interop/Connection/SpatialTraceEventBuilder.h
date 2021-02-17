@@ -34,6 +34,10 @@ public:
 	static FSpatialTraceEvent CreatePushRPC(const UObject* Object, UFunction* Function);
 	static FSpatialTraceEvent CreateSendRPC(const EventTraceUniqueId& LinearTraceId);
 
+	static FSpatialTraceEvent CreateSendCrossServerRPC(const UObject* Object, UFunction* Function, const EventTraceUniqueId& LinearTraceId);
+	static FSpatialTraceEvent CreateReceiveCrossServerRPC(const EventTraceUniqueId& LinearTraceId);
+	static FSpatialTraceEvent CreateApplyCrossServerRPC(const UObject* Object, UFunction* Function);
+
 	static FSpatialTraceEvent CreateQueueRPC();
 	static FSpatialTraceEvent CreateRetryRPC();
 	static FSpatialTraceEvent CreatePropertyChanged(const UObject* Object, const Worker_EntityId EntityId, const FString& PropertyName,

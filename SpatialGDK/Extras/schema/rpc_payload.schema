@@ -14,3 +14,13 @@ type UnrealRPCPayload {
     option<uint64> rpc_id = 5;
 }
 
+type ACKItem {
+    EntityId sender = 1;
+    uint64 rpc_id = 2;
+    uint64 result = 3;
+}
+
+type CrossServerRPCInfo {
+    EntityId sender = 1;
+    uint64 rpc_id = 2;
+}

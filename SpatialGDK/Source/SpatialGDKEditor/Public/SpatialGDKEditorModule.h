@@ -58,6 +58,8 @@ private:
 
 	virtual void RevertSettingsForTesting();
 
+	virtual bool UsesActorInteractionSemantics() const override;
+
 private:
 	void RegisterSettings();
 	void UnregisterSettings();
