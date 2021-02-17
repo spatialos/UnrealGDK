@@ -24,7 +24,7 @@ ASpatialTestPropertyReplication::ASpatialTestPropertyReplication()
 	: Super()
 {
 	Author = "Ollie Balaam (oliverbalaam@improbable.io)";
-	Description = TEXT("This tests that an Actor can replicate a property across the network during play. It is an example test intended teach the basics of the UnrealGDK Functional Test Framework. It's accompanied by this document: https://brevi.link/how-to-test-unrealgdk");
+	Description = TEXT("This tests that an Actor can replicate a property across the network during play. It is an example test intended to teach the basics of the UnrealGDK Functional Test Framework. It's accompanied by this document: https://brevi.link/how-to-test-unrealgdk");
 }
 
 void ASpatialTestPropertyReplication::PrepareTest()
