@@ -7,7 +7,7 @@
 #include "SpatialGDKSettings.h"
 
 /**
- * This test checks that the test settings overridden in the base.ini file have been set correctly, this map specifically does not have it's
+ * This test checks that the test settings overridden in the base.ini file have been set correctly, this map specifically does not have its
  *own overrides.
  *
  * Requires TestOverridesBase.ini in \Samples\UnrealGDKTestGyms\Game\Config directory with the following values:
