@@ -53,17 +53,23 @@ Worker_EntityId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualW
 
 void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject)
 {
-	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("(%s) ApplyVirtualWorkerManagerData"), *LocalPhysicalWorkerName);
+	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("ApplyVirtualWorkerManagerData for %s:"), *LocalPhysicalWorkerName);
 
 	// The translation schema is a list of mappings, where each entry has a virtual and physical worker ID.
 	ApplyMappingFromSchema(ComponentObject);
 
-	for (const auto& Entry : VirtualToPhysicalWorkerMapping)
+#if !NO_LOGGING
+	if (LoadBalanceStrategy.IsValid() && LoadBalanceStrategy->IsReady())
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Verbose,
-			   TEXT("Translator assignment: Virtual Worker %d to %s with server worker entity: %lld"), Entry.Key, *(Entry.Value.WorkerName),
-			   Entry.Value.ServerWorkerEntityId);
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("\t-> Strategy: %s"), *LoadBalanceStrategy->ToString());
+
+		for (const auto& Entry : VirtualToPhysicalWorkerMapping)
+		{
+			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("\t-> Assignment: Virtual Worker %d to %s with server worker entity: %lld"),
+				   Entry.Key, *(Entry.Value.WorkerName), Entry.Value.ServerWorkerEntityId);
+		}
 	}
+#endif //!NO_LOGGING
 }
 
 // The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID.
@@ -86,10 +92,6 @@ void SpatialVirtualWorkerTranslator::ApplyMappingFromSchema(Schema_Object* Objec
 			SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID);
 		const Worker_EntityId ServerWorkerEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID);
 		const Worker_PartitionId PartitionEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_PARTITION_ID);
-
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log,
-			   TEXT("Translator assignment: Virtual Worker %d to %s with server worker entity: %lld"), VirtualWorkerId, *WorkerName,
-			   ServerWorkerEntityId);
 
 		// Insert each into the provided map.
 		UpdateMapping(VirtualWorkerId, WorkerName, PartitionEntityId, ServerWorkerEntityId);
@@ -114,6 +116,6 @@ void SpatialVirtualWorkerTranslator::UpdateMapping(VirtualWorkerId Id, PhysicalW
 			LoadBalanceStrategy->SetLocalVirtualWorkerId(LocalVirtualWorkerId);
 		}
 
-		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("VirtualWorkerTranslator is now ready for loadbalancing."));
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("\t-> VirtualWorkerTranslator is now ready for loadbalancing."));
 	}
 }
