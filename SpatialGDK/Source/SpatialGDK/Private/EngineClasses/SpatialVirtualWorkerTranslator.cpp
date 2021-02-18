@@ -59,7 +59,7 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 	ApplyMappingFromSchema(ComponentObject);
 
 #if !NO_LOGGING
-	if ((VirtualToPhysicalWorkerMapping.Num() > 0) && LoadBalanceStrategy.IsValid() && LoadBalanceStrategy->IsReady())
+	if (LoadBalanceStrategy.IsValid() && LoadBalanceStrategy->IsReady())
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("\t-> Strategy: %s"), *LoadBalanceStrategy->ToString());
 
