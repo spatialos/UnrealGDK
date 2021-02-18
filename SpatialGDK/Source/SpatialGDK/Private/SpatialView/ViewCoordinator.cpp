@@ -35,8 +35,7 @@ void ViewCoordinator::Advance(float DeltaTimeS)
 			Worker_Op& Op = Ops.Ops[j];
 			if (Op.op_type == WORKER_OP_TYPE_REMOVE_ENTITY)
 			{
-				UE_LOG(LogTemp, Log, TEXT("Before REMOVE_ENTITY Ops[%d] %d %lld"), j, Op.op_type,
-					   Op.op.remove_entity.entity_id);
+				UE_LOG(LogTemp, Log, TEXT("Before REMOVE_ENTITY Ops[%d] %d %lld"), j, Op.op_type, Op.op.remove_entity.entity_id);
 			}
 			if (Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE)
 			{
@@ -56,8 +55,7 @@ void ViewCoordinator::Advance(float DeltaTimeS)
 			Worker_Op& Op = Ops.Ops[j];
 			if (Op.op_type == WORKER_OP_TYPE_REMOVE_ENTITY)
 			{
-				UE_LOG(LogTemp, Log, TEXT("AddOpList REMOVE_ENTITY Ops[%d] %d %lld"), j, Op.op_type,
-					   Op.op.remove_entity.entity_id);
+				UE_LOG(LogTemp, Log, TEXT("AddOpList REMOVE_ENTITY Ops[%d] %d %lld"), j, Op.op_type, Op.op.remove_entity.entity_id);
 			}
 			if (Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE)
 			{
@@ -77,8 +75,7 @@ void ViewCoordinator::Advance(float DeltaTimeS)
 			Worker_Op& Op = Ops.Ops[j];
 			if (Op.op_type == WORKER_OP_TYPE_REMOVE_ENTITY)
 			{
-				UE_LOG(LogTemp, Log, TEXT("ProcessOpLists REMOVE_ENTITY Ops[%d] %d %lld"), j, Op.op_type,
-					   Op.op.remove_entity.entity_id);
+				UE_LOG(LogTemp, Log, TEXT("ProcessOpLists REMOVE_ENTITY Ops[%d] %d %lld"), j, Op.op_type, Op.op.remove_entity.entity_id);
 			}
 			if (Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE)
 			{

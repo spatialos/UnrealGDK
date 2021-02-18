@@ -29,9 +29,10 @@ void FCriticalSectionFilter::AddOpList(OpList Ops)
 		}
 		if (Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE)
 		{
-			UE_LOG(LogTemp, Log, TEXT("AddOpList WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE requestid %lld entityid %lld"), Op.op.delete_entity_response.request_id, Op.op.delete_entity_response.entity_id);
+			UE_LOG(LogTemp, Log, TEXT("AddOpList WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE requestid %lld entityid %lld"),
+				   Op.op.delete_entity_response.request_id, Op.op.delete_entity_response.entity_id);
 		}
-		
+
 		// There can only be one critical section open at a time.
 		// So any previous open critical section must now be closed.
 		for (OpList& OpenCriticalSection : OpenCriticalSectionOps)

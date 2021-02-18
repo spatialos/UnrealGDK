@@ -38,18 +38,19 @@ inline OpList GetOpListFromConnection(Worker_Connection* Connection)
 		Worker_Op& Op = Ops->ops[i];
 		if (Op.op_type == WORKER_OP_TYPE_REMOVE_ENTITY)
 		{
-			UE_LOG(LogTemp, Log, TEXT("GetOpListFromConnection REMOVE_ENTITY Ops[%d] %d %lld"), i, Op.op_type, Op.op.remove_entity.entity_id);
+			UE_LOG(LogTemp, Log, TEXT("GetOpListFromConnection REMOVE_ENTITY Ops[%d] %d %lld"), i, Op.op_type,
+				   Op.op.remove_entity.entity_id);
 		}
 		if (Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE)
 		{
-			UE_LOG(LogTemp, Log, TEXT("GetOpListFromConnection DELETE_ENTITY_RESPONSE Ops[%d] %d %lld"), i, Op.op_type, Op.op.delete_entity_response.entity_id);
+			UE_LOG(LogTemp, Log, TEXT("GetOpListFromConnection DELETE_ENTITY_RESPONSE Ops[%d] %d %lld"), i, Op.op_type,
+				   Op.op.delete_entity_response.entity_id);
 		}
 		if (Op.op_type == WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE)
 		{
-			UE_LOG(LogTemp, Log, TEXT("GetOpListFromConnection WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE Ops[%d] %d %lld, %d"), i, Op.op_type,
-				   Op.op.component_set_authority_change.entity_id, Op.op.component_set_authority_change.authority);
+			UE_LOG(LogTemp, Log, TEXT("GetOpListFromConnection WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE Ops[%d] %d %lld, %d"), i,
+				   Op.op_type, Op.op.component_set_authority_change.entity_id, Op.op.component_set_authority_change.authority);
 		}
-		
 	}
 	return { Ops->ops, Ops->op_count, MakeUnique<WorkerConnectionOpListData>(Ops) };
 }
