@@ -58,12 +58,10 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 	// The translation schema is a list of mappings, where each entry has a virtual and physical worker ID.
 	ApplyMappingFromSchema(ComponentObject);
 
-	if (VirtualToPhysicalWorkerMapping.Num() > 0)
+#if !NO_LOGGING
+	if ((VirtualToPhysicalWorkerMapping.Num() > 0) && LoadBalanceStrategy.IsValid() && LoadBalanceStrategy->IsReady())
 	{
-		if (LoadBalanceStrategy.IsValid() && LoadBalanceStrategy->IsReady())
-		{
-			UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("\t-> Strategy: %s"), *LoadBalanceStrategy->ToString());
-		}
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("\t-> Strategy: %s"), *LoadBalanceStrategy->ToString());
 
 		for (const auto& Entry : VirtualToPhysicalWorkerMapping)
 		{
@@ -71,6 +69,7 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 				   Entry.Key, *(Entry.Value.WorkerName), Entry.Value.ServerWorkerEntityId);
 		}
 	}
+#endif //!NO_LOGGING
 }
 
 // The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID.
