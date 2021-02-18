@@ -533,7 +533,7 @@ void USpatialSender::FlushRPCService()
 	{
 		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
-		//RPCService->PushOverflowedRPCs();
+		// RPCService->PushOverflowedRPCs();
 
 		TArray<SpatialRPCService_2::UpdateToSend> RPCs = NetDriver->RPCService->GetRPCsAndAcksToSend();
 
@@ -547,8 +547,6 @@ void USpatialSender::FlushRPCService()
 			Connection->Flush();
 		}
 	}
-
-	
 }
 
 RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
@@ -690,7 +688,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	}
 
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	//checkf(RPCService != nullptr, TEXT("RPCService is assumed to be valid."));
+	// checkf(RPCService != nullptr, TEXT("RPCService is assumed to be valid."));
 	if (RPCInfo.Type == ERPCType::CrossServer)
 	{
 		if (SendCrossServerRPC(TargetObject, Params.SenderRPCInfo, Function, Params.Payload, Channel, Params.ObjectRef))

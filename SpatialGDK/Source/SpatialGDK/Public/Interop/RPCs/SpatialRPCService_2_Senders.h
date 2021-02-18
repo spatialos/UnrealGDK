@@ -78,7 +78,10 @@ protected:
 			Payload.WriteToSchemaObject(NewField);
 			Ctx.RPCWritten(Slot);
 		}
-		void WriteRPCCount(RPCWritingContext::EntityWrite& Ctx, uint64 Count) { Schema_AddUint64(Ctx.GetFieldsToWrite(), CountFieldId, Count); }
+		void WriteRPCCount(RPCWritingContext::EntityWrite& Ctx, uint64 Count)
+		{
+			Schema_AddUint64(Ctx.GetFieldsToWrite(), CountFieldId, Count);
+		}
 		Worker_ComponentId ComponentId;
 		Schema_FieldId CountFieldId;
 		Schema_FieldId FirstRingBufferSlotFieldId;
@@ -189,7 +192,10 @@ protected:
 			Schema_Object* NewField = Schema_AddObject(Ctx.GetFieldsToWrite(), Slot + FirstRingBufferSlotFieldId);
 			Payload.WriteToSchemaObject(NewField);
 		}
-		void WriteRPCCount(RPCWritingContext::EntityWrite& Ctx, uint64 Count) { Schema_AddUint64(Ctx.GetFieldsToWrite(), CountFieldId, Count); }
+		void WriteRPCCount(RPCWritingContext::EntityWrite& Ctx, uint64 Count)
+		{
+			Schema_AddUint64(Ctx.GetFieldsToWrite(), CountFieldId, Count);
+		}
 		Worker_ComponentId ComponentId;
 		Schema_FieldId CountFieldId;
 		Schema_FieldId FirstRingBufferSlotFieldId;

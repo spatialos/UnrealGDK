@@ -10,6 +10,113 @@ DEFINE_LOG_CATEGORY(LogSpatialRPCService_2);
 
 namespace SpatialGDK
 {
+RPCWritingContext::EntityWrite::EntityWrite(EntityWrite&& Write)
+	: Ctx(Write.Ctx)
+	, EntityId(Write.EntityId)
+	, ComponentId(Write.ComponentId)
+{
+	Write.bActiveWriter = false;
+}
+
+RPCWritingContext::EntityWrite::~EntityWrite()
+{
+	if (bActiveWriter)
+	{
+		switch (Ctx.Kind)
+		{
+		case DataKind::Generic:
+			break;
+		case DataKind::Data:
+			if (Ctx.DataWrittenCallback)
+			{
+				Ctx.DataWrittenCallback(EntityId, ComponentId, Data);
+			}
+			break;
+		case DataKind::Update:
+			if (Ctx.UpdateWrittenCallback)
+			{
+				Ctx.UpdateWrittenCallback(EntityId, ComponentId, Update);
+			}
+			break;
+		case DataKind::CommandRequest:
+			if (Ctx.RequestWrittenCallback)
+			{
+				Ctx.RequestWrittenCallback(EntityId, Request);
+			}
+			break;
+		case DataKind::CommandResponse:
+			if (Ctx.ResponseWrittenCallback)
+			{
+				Ctx.ResponseWrittenCallback(EntityId, Response);
+			}
+			break;
+		}
+	}
+}
+
+Schema_ComponentUpdate* RPCWritingContext::EntityWrite::GetComponentUpdateToWrite()
+{
+	check(Ctx.Kind == DataKind::Update);
+	GetFieldsToWrite();
+	return Update;
+}
+
+Schema_Object* RPCWritingContext::EntityWrite::GetFieldsToWrite()
+{
+	if (Fields == nullptr)
+	{
+		switch (Ctx.Kind)
+		{
+		case DataKind::Generic:
+			GenData = Schema_CreateGenericData();
+			Fields = Schema_GetGenericDataObject(GenData);
+			break;
+		case DataKind::Data:
+			Data = Schema_CreateComponentData();
+			Fields = Schema_GetComponentDataFields(Data);
+			break;
+		case DataKind::Update:
+			Update = Schema_CreateComponentUpdate();
+			Fields = Schema_GetComponentUpdateFields(Update);
+			break;
+		case DataKind::CommandRequest:
+			Request = Schema_CreateCommandRequest();
+			Fields = Schema_GetCommandRequestObject(Request);
+			break;
+		case DataKind::CommandResponse:
+			Response = Schema_CreateCommandResponse();
+			Fields = Schema_GetCommandResponseObject(Response);
+			break;
+		}
+	}
+	return Fields;
+}
+
+void RPCWritingContext::EntityWrite::RPCWritten(uint32 RPCId)
+{
+	if (Ctx.RPCWrittenCallback)
+	{
+		Ctx.RPCWrittenCallback(EntityId, ComponentId, RPCId);
+	}
+}
+
+RPCWritingContext::EntityWrite::EntityWrite(RPCWritingContext& InCtx, Worker_EntityId InEntityId, Worker_ComponentId InComponentID)
+	: EntityId(InEntityId)
+	, ComponentId(InComponentID)
+	, Ctx(InCtx)
+{
+}
+
+RPCWritingContext::EntityWrite RPCWritingContext::WriteTo(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+{
+	return EntityWrite(*this, EntityId, ComponentId);
+}
+
+RPCWritingContext::RPCWritingContext(DataKind InKind)
+	: Kind(InKind)
+{
+}
+
 SpatialRPCService_2::SpatialRPCService_2(const FSubView& InRemoteSubView,
 										 const FSubView& InLocalAuthSubView
 										 /*, USpatialLatencyTracer* InSpatialLatencyTracer, SpatialEventTracer* InEventTracer*/
@@ -18,7 +125,6 @@ SpatialRPCService_2::SpatialRPCService_2(const FSubView& InRemoteSubView,
 	: RemoteSubView(&InRemoteSubView)
 	, LocalAuthSubView(&InLocalAuthSubView)
 {
-	IncomingRPCs.BindProcessingFunction(FProcessRPCDelegate::CreateRaw(this, &SpatialRPCService_2::ApplyRPC));
 }
 
 void SpatialRPCService_2::AddRPCQueue(FName QueueName, RPCQueueDescription&& Desc)
@@ -33,12 +139,10 @@ void SpatialRPCService_2::AddRPCReceiver(FName ReceiverName, RPCReceiverDescript
 
 void SpatialRPCService_2::AdvanceView()
 {
-	//const FSubViewDelta* ViewDeltas[] = { &AuthSubView->GetViewDelta(), &ActorSubView->GetViewDelta() };
+	// const FSubViewDelta* ViewDeltas[] = { &AuthSubView->GetViewDelta(), &ActorSubView->GetViewDelta() };
 
-	auto HasReceiverAuthority = [](const RPCReceiverDescription& Desc, const EntityViewElement& ViewElement)
-	{
-		return Desc.Authority == 0
-			|| ViewElement.Authority.Contains(Desc.Authority);
+	auto HasReceiverAuthority = [](const RPCReceiverDescription& Desc, const EntityViewElement& ViewElement) {
+		return Desc.Authority == 0 || ViewElement.Authority.Contains(Desc.Authority);
 	};
 
 	for (const EntityDelta& Delta : RemoteSubView->GetViewDelta().EntityDeltas)
@@ -174,7 +278,6 @@ void SpatialRPCService_2::AdvanceView()
 				{
 					QueueEntry.Value.Sender->OnUpdate(Ctx);
 				}
-
 			}
 			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
 			{
@@ -187,7 +290,6 @@ void SpatialRPCService_2::AdvanceView()
 				{
 					QueueEntry.Value.Sender->OnUpdate(Ctx);
 				}
-
 			}
 			break;
 		}
@@ -232,38 +334,12 @@ void SpatialRPCService_2::AdvanceView()
 	}
 }
 
-void SpatialRPCService_2::ProcessChanges(const float NetDriverTime) {}
-
-void SpatialRPCService_2::ProcessIncomingRPCs() {}
-
-//void SpatialRPCService_2::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload InPayload,
-//													TOptional<uint64> RPCIdForLinearEventTrace)
-//{
-//}
-
-FRPCErrorInfo SpatialRPCService_2::ApplyRPC(const FPendingRPCParams& Params)
-{
-	return FRPCErrorInfo();
-}
-
-FRPCErrorInfo SpatialRPCService_2::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams)
-{
-	return FRPCErrorInfo();
-}
-
-//void SpatialRPCService_2::PushRPC(uint32 QueueName, Worker_EntityId Entity, TArray<uint8> Data)
-//{
-//	RPCDescription& SelectedQueue = Queues.FindChecked(QueueName);
-//	SelectedQueue.Queue->Push(Entity, MoveTemp(Data));
-//}
-
 TArray<SpatialRPCService_2::UpdateToSend> SpatialRPCService_2::GetRPCsAndAcksToSend()
 {
 	TArray<UpdateToSend> Updates;
 
 	RPCWritingContext Ctx(RPCWritingContext::DataKind::Update);
-	Ctx.UpdateWrittenCallback = [&Updates](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* InUpdate)
-	{
+	Ctx.UpdateWrittenCallback = [&Updates](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* InUpdate) {
 		if (ensure(InUpdate != nullptr))
 		{
 			UpdateToSend Update;
@@ -274,9 +350,8 @@ TArray<SpatialRPCService_2::UpdateToSend> SpatialRPCService_2::GetRPCsAndAcksToS
 		}
 	};
 
-	Ctx.RPCWrittenCallback = [](Worker_EntityId Entity, Worker_ComponentId ComponentId, uint32 RPCId)
-	{
-		//if (EventTracer != nullptr)
+	Ctx.RPCWrittenCallback = [](Worker_EntityId Entity, Worker_ComponentId ComponentId, uint32 RPCId) {
+		// if (EventTracer != nullptr)
 		//{
 		//	EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForRPC(EntityId, static_cast<uint8>(Type), NewRPCId);
 		//	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(LinearTraceId),
@@ -284,7 +359,7 @@ TArray<SpatialRPCService_2::UpdateToSend> SpatialRPCService_2::GetRPCsAndAcksToS
 		//	RPCStore.AddSpanIdForComponentUpdate(EntityComponent, SpanId);
 		//}
 	};
-	
+
 	for (auto& QueueEntry : Queues)
 	{
 		RPCQueueDescription& Queue = QueueEntry.Value;
@@ -305,8 +380,7 @@ TArray<FWorkerComponentData> SpatialRPCService_2::GetRPCComponentsOnEntityCreati
 	TArray<FWorkerComponentData> CreationData;
 
 	RPCWritingContext Ctx(RPCWritingContext::DataKind::Data);
-	Ctx.DataWrittenCallback = [&CreationData](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* InData)
-	{
+	Ctx.DataWrittenCallback = [&CreationData](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* InData) {
 		if (ensure(InData != nullptr))
 		{
 			FWorkerComponentData Data;

@@ -71,12 +71,11 @@ struct RPCSender : CrossServerRPCInfo
 
 struct RPCPayload
 {
-	RPCPayload()
-	{}
-	//RPCPayload(const RPCPayload&) = default;
-	//RPCPayload(RPCPayload&&) = default;
-	//RPCPayload& operator = (const RPCPayload&) = default;
-	//RPCPayload& operator = (RPCPayload&&) = default;
+	RPCPayload() {}
+	// RPCPayload(const RPCPayload&) = default;
+	// RPCPayload(RPCPayload&&) = default;
+	// RPCPayload& operator = (const RPCPayload&) = default;
+	// RPCPayload& operator = (RPCPayload&&) = default;
 
 	RPCPayload(uint32 InOffset, uint32 InIndex, TOptional<uint64> InId, TArray<uint8>&& Data, TraceKey InTraceKey = InvalidTraceKey)
 		: Offset(InOffset)
@@ -87,10 +86,7 @@ struct RPCPayload
 	{
 	}
 
-	RPCPayload(Schema_Object* RPCObject)
-	{
-		ReadFromSchema(RPCObject);
-	}
+	RPCPayload(Schema_Object* RPCObject) { ReadFromSchema(RPCObject); }
 
 	void ReadFromSchema(Schema_Object* RPCObject)
 	{

@@ -27,7 +27,7 @@ uint32 MonotonicRingBufferSender::Write(RPCWritingContext& Ctx, Worker_EntityId 
 	uint32_t RPCsToWrite = FMath::Min(RPCs.Num(), NumberOfSlots);
 	if (RPCsToWrite > 0)
 	{
-		auto EntityWrite =  Ctx.WriteTo(EntityId, Writer.GetComponentId());
+		auto EntityWrite = Ctx.WriteTo(EntityId, Writer.GetComponentId());
 		for (uint32 i = 0; i < RPCsToWrite; ++i)
 		{
 			uint64 RPCId = ++NextSlot;

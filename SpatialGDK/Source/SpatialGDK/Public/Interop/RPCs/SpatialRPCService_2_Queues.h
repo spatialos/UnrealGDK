@@ -11,15 +11,15 @@ struct TRPCLocalOverflowQueue : public TRPCQueue<Payload>
 {
 	TRPCLocalOverflowQueue(TRPCBufferSender<Payload>& Sender)
 		: TRPCQueue(Sender)
-	{}
-	
+	{
+	}
+
 	void FlushAll(RPCWritingContext& Ctx) override;
 	void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx) override;
 	void OnAuthLost(Worker_EntityId EntityId) override;
 	void OnAuthGained_ReadComponent(RPCReadingContext& iCtx) override;
 
 protected:
-
 	bool FlushQueue(Worker_EntityId EntityId, TArray<Payload>& Queue, RPCWritingContext& Ctx);
 };
 
@@ -29,7 +29,8 @@ struct TRPCFixedCapacityQueue : public TRPCLocalOverflowQueue<Payload>
 	TRPCFixedCapacityQueue(TRPCBufferSender<Payload>& Sender, uint32 InCapacity)
 		: TRPCLocalOverflowQueue(Sender)
 		, Capacity(InCapacity)
-	{}
+	{
+	}
 
 	int32 Capacity;
 
@@ -43,7 +44,8 @@ struct TRPCMostRecentQueue : public TRPCFixedCapacityQueue<Payload>
 {
 	TRPCMostRecentQueue(TRPCBufferSender<Payload>& Sender, uint32 InCapacity)
 		: TRPCFixedCapacityQueue(Sender, InCapacity)
-	{}
+	{
+	}
 
 	void Push(Worker_EntityId EntityId, Payload&& Data) override;
 };

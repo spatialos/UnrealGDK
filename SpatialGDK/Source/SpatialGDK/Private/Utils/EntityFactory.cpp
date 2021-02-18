@@ -255,15 +255,15 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 	{
 		TArray<FWorkerComponentData> RPCComponents = RPCService->GetRPCComponentsOnEntityCreation(EntityId);
 		static TArray<Worker_ComponentId> EndpointComponentIds = { SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
-															   SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
-															   SpatialConstants::MULTICAST_RPCS_COMPONENT_ID,
-															   SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID };
-
+																   SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
+																   SpatialConstants::MULTICAST_RPCS_COMPONENT_ID,
+																   SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID };
 
 		for (Worker_ComponentId EndpointComponentId : EndpointComponentIds)
 		{
-			FWorkerComponentData* AddedComponent = RPCComponents.FindByPredicate([EndpointComponentId](FWorkerComponentData const& Data)
-			{ return Data.component_id == EndpointComponentId; });
+			FWorkerComponentData* AddedComponent = RPCComponents.FindByPredicate([EndpointComponentId](FWorkerComponentData const& Data) {
+				return Data.component_id == EndpointComponentId;
+			});
 			if (AddedComponent == nullptr)
 			{
 				FWorkerComponentData& Component = ComponentDatas.Emplace_GetRef(FWorkerComponentData{});

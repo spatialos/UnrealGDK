@@ -80,7 +80,7 @@ class SpatialRoutingSystem;
 class SpatialRPCService_2;
 struct ServerStdRPCs;
 struct ClientStdRPCs;
-}
+} // namespace SpatialGDK
 
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
@@ -216,7 +216,7 @@ public:
 
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
-	//TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
+	// TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 	SpatialGDK::SpatialRPCService_2* RPCService;
 	SpatialGDK::ClientStdRPCs* ClientRPCs = nullptr;
 	SpatialGDK::ServerStdRPCs* ServerRPCs = nullptr;
@@ -255,7 +255,7 @@ public:
 	// view of whether the SpatialNetDriver is ready to assume normal operations.
 	bool IsReady() const;
 
-	//SpatialGDK::SpatialRPCService* GetRPCService() const { return RPCService.Get(); }
+	// SpatialGDK::SpatialRPCService* GetRPCService() const { return RPCService.Get(); }
 	SpatialGDK::SpatialRPCService_2* GetRPCService() const { return RPCService; }
 
 #if ENGINE_MINOR_VERSION <= 24
