@@ -1,5 +1,6 @@
 #include "Interop/RPCs/SpatialRPCService_2_Queues.h"
 
+#if 0
 namespace SpatialGDK
 {
 void RPCLocalOverflowQueue::Init(RPCWriter* InWriter)
@@ -134,3 +135,4 @@ void RPCMostRecentQueue::Push(Worker_EntityId EntityId, TArray<uint8> Data)
 }
 
 } // namespace SpatialGDK
+#endif

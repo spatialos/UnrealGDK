@@ -18,13 +18,13 @@ class USpatialPackageMapClient;
 namespace SpatialGDK
 {
 class InterestFactory;
-class SpatialRPCService;
+class SpatialRPCService_2;
 
 class SPATIALGDK_API EntityFactory
 {
 public:
-	EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager,
-				  SpatialRPCService* InRPCService);
+	EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager
+				  , SpatialRPCService_2* InRPCService);
 
 	// The philosophy behind having this function is to have a minimal set of SpatialOS components associated with an Unreal actor.
 	// This should primarily be enough to reason about the actor's identity and possibly inform some level of load-balancing.
@@ -49,6 +49,6 @@ private:
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;
 	USpatialClassInfoManager* ClassInfoManager;
-	SpatialRPCService* RPCService;
+	SpatialRPCService_2* RPCService;
 };
 } // namespace SpatialGDK

@@ -38,6 +38,9 @@
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialStatics.h"
 
+#include "Interop/RPCs/SpatialRPCService_2.h"
+#include "Interop/RPCs/SpatialRPCService_2_StdRPCs.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialSender);
 
 using namespace SpatialGDK;
@@ -118,7 +121,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
-	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
+	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, NetDriver->GetRPCService());
 	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutBytesWritten);
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
@@ -526,15 +529,15 @@ void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId
 
 void USpatialSender::FlushRPCService()
 {
-	if (RPCService != nullptr)
+	if (NetDriver->RPCService != nullptr)
 	{
 		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
-		RPCService->PushOverflowedRPCs();
+		//RPCService->PushOverflowedRPCs();
 
-		TArray<SpatialRPCService::UpdateToSend> RPCs = RPCService->GetRPCsAndAcksToSend();
+		TArray<SpatialRPCService_2::UpdateToSend> RPCs = NetDriver->RPCService->GetRPCsAndAcksToSend();
 
-		for (SpatialRPCService::UpdateToSend& Update : RPCs)
+		for (SpatialRPCService_2::UpdateToSend& Update : RPCs)
 		{
 			Connection->SendComponentUpdate(Update.EntityId, &Update.Update, Update.SpanId);
 		}
@@ -544,6 +547,8 @@ void USpatialSender::FlushRPCService()
 			Connection->Flush();
 		}
 	}
+
+	
 }
 
 RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
@@ -685,7 +690,7 @@ FRPCErrorInfo USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	}
 
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	checkf(RPCService != nullptr, TEXT("RPCService is assumed to be valid."));
+	//checkf(RPCService != nullptr, TEXT("RPCService is assumed to be valid."));
 	if (RPCInfo.Type == ERPCType::CrossServer)
 	{
 		if (SendCrossServerRPC(TargetObject, Params.SenderRPCInfo, Function, Params.Payload, Channel, Params.ObjectRef))
@@ -730,6 +735,32 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, const SpatialGDK
 										 const FUnrealObjectRef& TargetObjectRef, const FSpatialGDKSpanId& SpanId)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
+
+	switch (RPCInfo.Type)
+	{
+	case ERPCType::ServerReliable:
+		NetDriver->ClientRPCs->ServerReliableRPCQueue->Push(TargetObjectRef.Entity, RPCPayload(Payload));
+		break;
+	case ERPCType::ServerUnreliable:
+		NetDriver->ClientRPCs->ServerUnreliableRPCQueue->Push(TargetObjectRef.Entity, RPCPayload(Payload));
+		break;
+	case ERPCType::ServerAlwaysWrite:
+		NetDriver->ClientRPCs->NetMovementRPCQueue->Push(TargetObjectRef.Entity, RPCPayload(Payload));
+		break;
+
+	case ERPCType::ClientReliable:
+		NetDriver->ServerRPCs->ClientReliableRPCQueue->Push(TargetObjectRef.Entity, RPCPayload(Payload));
+		break;
+	case ERPCType::ClientUnreliable:
+		NetDriver->ServerRPCs->ClientUnreliableRPCQueue->Push(TargetObjectRef.Entity, RPCPayload(Payload));
+		break;
+	case ERPCType::NetMulticast:
+		NetDriver->ServerRPCs->MulticastRPCQueue->Push(TargetObjectRef.Entity, RPCPayload(Payload));
+		break;
+	}
+
+	return true;
+
 	const EPushRPCResult Result =
 		RPCService->PushRPC(TargetObjectRef.Entity, Sender, RPCInfo.Type, Payload, Channel->bCreatedEntity, TargetObject, Function);
 
@@ -955,7 +986,7 @@ void USpatialSender::CreateTombstoneEntity(AActor* Actor)
 
 	const Worker_EntityId EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
 
-	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, RPCService);
+	EntityFactory DataFactory(NetDriver, PackageMap, ClassInfoManager, NetDriver->GetRPCService());
 	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
 
 	Components.Add(CreateLevelComponentData(Actor));

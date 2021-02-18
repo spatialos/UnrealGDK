@@ -71,7 +71,12 @@ struct RPCSender : CrossServerRPCInfo
 
 struct RPCPayload
 {
-	RPCPayload() = delete;
+	RPCPayload()
+	{}
+	//RPCPayload(const RPCPayload&) = default;
+	//RPCPayload(RPCPayload&&) = default;
+	//RPCPayload& operator = (const RPCPayload&) = default;
+	//RPCPayload& operator = (RPCPayload&&) = default;
 
 	RPCPayload(uint32 InOffset, uint32 InIndex, TOptional<uint64> InId, TArray<uint8>&& Data, TraceKey InTraceKey = InvalidTraceKey)
 		: Offset(InOffset)
@@ -83,6 +88,11 @@ struct RPCPayload
 	}
 
 	RPCPayload(Schema_Object* RPCObject)
+	{
+		ReadFromSchema(RPCObject);
+	}
+
+	void ReadFromSchema(Schema_Object* RPCObject)
 	{
 		Offset = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
 		Index = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID);

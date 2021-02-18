@@ -842,7 +842,7 @@ void ActorSystem::ResolvePendingOperations(UObject* Object, const FUnrealObjectR
 	}
 
 	// TODO: UNR-1650 We're trying to resolve all queues, which introduces more overhead.
-	NetDriver->RPCService->ProcessIncomingRPCs();
+	//NetDriver->RPCService->ProcessIncomingRPCs();
 }
 
 void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)

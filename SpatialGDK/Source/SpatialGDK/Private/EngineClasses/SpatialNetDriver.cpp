@@ -60,6 +60,9 @@
 #include "Utils/SpatialMetricsDisplay.h"
 #include "Utils/SpatialStatics.h"
 
+#include "Interop/RPCs/SpatialRPCService_2.h"
+#include "Interop/RPCs/SpatialRPCService_2_StdRPCs.h"
+
 #if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialGDKServicesModule.h"
@@ -480,8 +483,17 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		const SpatialGDK::FSubView& SystemEntitySubview = Connection->GetCoordinator().CreateSubView(
 			SpatialConstants::SYSTEM_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, USpatialLatencyTracer::GetTracer(GetWorld()),
-															   Connection->GetEventTracer(), this);
+		//RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, USpatialLatencyTracer::GetTracer(GetWorld()),
+		//													   Connection->GetEventTracer(), this);
+		RPCService = new SpatialGDK::SpatialRPCService_2(ActorSubview, ActorAuthSubview, this);
+		if (IsServer())
+		{
+			ServerRPCs = new SpatialGDK::ServerStdRPCs(*RPCService);
+		}
+		else
+		{
+			ClientRPCs = new SpatialGDK::ClientStdRPCs(*RPCService);
+		}
 
 		CrossServerRPCSender =
 			MakeUnique<SpatialGDK::CrossServerRPCSender>(Connection->GetCoordinator(), SpatialMetrics, Connection->GetEventTracer());
@@ -496,7 +508,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
 		Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
-		Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
+		Sender->Init(this, &TimerManager, /*RPCService.Get()*/nullptr, Connection->GetEventTracer());
 		Receiver->Init(this, Connection->GetEventTracer());
 		GlobalStateManager->Init(this);
 		SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
@@ -2026,7 +2038,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				SpatialDebuggerSystem->Advance();
 			}
 
-			if (RPCService.IsValid())
+			//if (RPCService.IsValid())
+			//{
+			//	RPCService->AdvanceView();
+			//}
+			if (RPCService)
 			{
 				RPCService->AdvanceView();
 			}
@@ -2038,9 +2054,25 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				CrossServerRPCHandler->ProcessMessages(Connection->GetWorkerMessages(), DeltaTime);
 			}
 
-			if (RPCService.IsValid())
+			//if (RPCService.IsValid())
+			//{
+			//	RPCService->ProcessChanges(GetElapsedTime());
+			//}
+			if (RPCService)
 			{
-				RPCService->ProcessChanges(GetElapsedTime());
+				//RPCService->ProcessIncomingRPCs();
+				if (ClientRPCs)
+				{
+					ExecuteIncomingRPC(this, *ClientRPCs->ClientReliableReceiver);
+					ExecuteIncomingRPC(this, *ClientRPCs->ClientUnreliableReceiver);
+					//ExecuteIncomingRPC(this, *ClientRPCs->MulticastReceiver);
+				}
+				if (ServerRPCs)
+				{
+					ExecuteIncomingRPC(this, *ServerRPCs->ServerReliableReceiver);
+					ExecuteIncomingRPC(this, *ServerRPCs->ServerUnreliableReceiver);
+					//ExecuteIncomingRPC(this, *ServerRPCs->MulticastReceiver);
+				}
 			}
 
 			if (WellKnownEntitySystem.IsValid())

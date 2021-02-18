@@ -7,7 +7,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/RPCs/SpatialRPCService.h"
+#include "Interop/RPCs/SpatialRPCService_2.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/NetOwningClientWorker.h"
@@ -35,7 +35,7 @@ DEFINE_LOG_CATEGORY(LogEntityFactory);
 namespace SpatialGDK
 {
 EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap,
-							 USpatialClassInfoManager* InClassInfoManager, SpatialRPCService* InRPCService)
+							 USpatialClassInfoManager* InClassInfoManager, SpatialRPCService_2* InRPCService)
 	: NetDriver(InNetDriver)
 	, PackageMap(InPackageMap)
 	, ClassInfoManager(InClassInfoManager)
@@ -251,7 +251,27 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
 
 	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
-	ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
+
+	{
+		TArray<FWorkerComponentData> RPCComponents = RPCService->GetRPCComponentsOnEntityCreation(EntityId);
+		static TArray<Worker_ComponentId> EndpointComponentIds = { SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID,
+															   SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
+															   SpatialConstants::MULTICAST_RPCS_COMPONENT_ID,
+															   SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID };
+
+
+		for (Worker_ComponentId EndpointComponentId : EndpointComponentIds)
+		{
+			FWorkerComponentData* AddedComponent = RPCComponents.FindByPredicate([EndpointComponentId](FWorkerComponentData const& Data)
+			{ return Data.component_id == EndpointComponentId; });
+			if (AddedComponent == nullptr)
+			{
+				FWorkerComponentData& Component = ComponentDatas.Emplace_GetRef(FWorkerComponentData{});
+				Component.component_id = EndpointComponentId;
+				Component.schema_type = Schema_CreateComponentData();
+			}
+		}
+	}
 
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
