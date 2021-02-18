@@ -6,6 +6,7 @@ param(
     [string] $unreal_engine_symlink_dir = "$build_home\UnrealEngine",
     [string] $gyms_version_path = "$gdk_home\UnrealGDKTestGymsVersion.txt"
 )
+. "$PSScriptRoot\common.ps1" # keep me as close to the top as possible
 
 class TestProjectTarget {
     [ValidateNotNullOrEmpty()][string]$test_repo_url
@@ -26,13 +27,13 @@ class TestProjectTarget {
         # envvar > same-name branch as the branch we are currently on > UnrealGDKTestGymVersion.txt > "master".
         $testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
         $test_gym_version = if (Test-Path -Path $test_gyms_version_path) {[System.IO.File]::ReadAllText($test_gyms_version_path)} else {[string]::Empty}
-        if (Test-Path $test_env_override) {
+        if (Test-Path $($test_env_override)) {
             $this.test_repo_branch = $test_env_override
         }
         elseif($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
             $this.test_repo_branch = $gdk_branch
         }
-        elseif(Test-Path $test_gym_version) {
+        elseif(Test-Path $($test_gym_version)) {
             $this.test_repo_branch = $test_gym_version
         }
         else {
@@ -99,8 +100,6 @@ else {
         $tests += [TestSuite]::new($native_test_project, "NetworkingMap", "GDKNetTestResults", "/Game/NetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
     }
 }
-
-. "$PSScriptRoot\common.ps1"
 
 # Guard against other runs not cleaning up after themselves
 Foreach ($test in $tests) {
