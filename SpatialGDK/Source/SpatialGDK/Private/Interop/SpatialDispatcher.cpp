@@ -50,6 +50,7 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 		case WORKER_OP_TYPE_ADD_ENTITY:
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
+			UE_LOG(LogSpatialView, Log, TEXT("WORKER_OP_TYPE_REMOVE_ENTITY (%llu)"), Op.op.remove_entity.entity_id);
 			StaticComponentView->OnRemoveEntity(Op.op.remove_entity.entity_id);
 			break;
 
@@ -87,6 +88,7 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			Receiver->OnCreateEntityResponse(Op);
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
+			UE_LOG(LogSpatialView, Log, TEXT("WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE (%llu)"), Op.op.remove_entity.entity_id);
 			break;
 		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
 			Receiver->OnEntityQueryResponse(Op.op.entity_query_response);

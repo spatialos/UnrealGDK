@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -106,6 +106,14 @@ protected:
 		if (!It)
 		{
 			return;
+		}
+		if (Op.op_type == WORKER_OP_TYPE_REMOVE_ENTITY)
+		{
+			UE_LOG(LogTemp, Log, TEXT("HandleResponse %d %lld %d"), Op.op_type, Op.op.remove_entity.entity_id);
+		}
+		if (Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE)
+		{
+			UE_LOG(LogTemp, Log, TEXT("HandleResponse %d %lld %d"), Op.op_type, Op.op.delete_entity_response.entity_id);
 		}
 
 		FDataInFlight& Data = It.Value();

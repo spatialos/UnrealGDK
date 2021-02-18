@@ -29,6 +29,7 @@ void FReceivedOpEventHandler::ProcessOpLists(const OpList& Ops)
 			EventTracer->AddEntity(Op.op.add_entity, FSpatialGDKSpanId(Op.span_id));
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
+			UE_LOG(LogSpatialEventTracer, Log, TEXT("WORKER_OP_TYPE_REMOVE_ENTITY (%llu)"), Op.op.remove_entity.entity_id);
 			EventTracer->RemoveEntity(Op.op.remove_entity, FSpatialGDKSpanId(Op.span_id));
 			break;
 		case WORKER_OP_TYPE_ADD_COMPONENT:

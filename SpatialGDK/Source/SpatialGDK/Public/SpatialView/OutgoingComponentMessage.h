@@ -54,6 +54,7 @@ public:
 		, SpanId(SpanId)
 		, Type(REMOVE)
 	{
+		UE_LOG(LogTemp, Log, TEXT("OutgoingComponentMessage %lld %d"), EntityId);
 	}
 
 	~OutgoingComponentMessage()

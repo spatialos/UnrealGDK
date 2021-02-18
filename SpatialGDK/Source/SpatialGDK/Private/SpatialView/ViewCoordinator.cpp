@@ -30,11 +30,41 @@ void ViewCoordinator::Advance(float DeltaTimeS)
 	for (uint32 i = 0; i < OpListCount; ++i)
 	{
 		OpList Ops = ConnectionHandler->GetNextOpList();
+		for (uint32 j = 0; j < Ops.Count; ++j)
+		{
+			Worker_Op& Op = Ops.Ops[j];
+			if (Op.op_type == WORKER_OP_TYPE_REMOVE_ENTITY)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Before REMOVE_ENTITY Ops[%d] %d %lld"), j, Op.op_type,
+					   Op.op.remove_entity.entity_id);
+			}
+			if (Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Before DELETE_ENTITY_RESPONSE Ops[%d] %d %lld"), j, Op.op_type,
+					   Op.op.delete_entity_response.entity_id);
+			}
+		}
+
 		ReserveEntityIdRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
 		CreateEntityRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
 		DeleteEntityRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
 		EntityQueryRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
 		EntityCommandRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
+
+		for (uint32 j = 0; j < Ops.Count; ++j)
+		{
+			Worker_Op& Op = Ops.Ops[j];
+			if (Op.op_type == WORKER_OP_TYPE_REMOVE_ENTITY)
+			{
+				UE_LOG(LogTemp, Log, TEXT("AddOpList REMOVE_ENTITY Ops[%d] %d %lld"), j, Op.op_type,
+					   Op.op.remove_entity.entity_id);
+			}
+			if (Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE)
+			{
+				UE_LOG(LogTemp, Log, TEXT("AddOpList DELETE_ENTITY_RESPONSE Ops[%d] %d %lld"), j, Op.op_type,
+					   Op.op.delete_entity_response.entity_id);
+			}
+		}
 		CriticalSectionFilter.AddOpList(MoveTemp(Ops));
 	}
 
@@ -42,6 +72,20 @@ void ViewCoordinator::Advance(float DeltaTimeS)
 	TArray<OpList> OpLists = CriticalSectionFilter.GetReadyOpLists();
 	for (const OpList& Ops : OpLists)
 	{
+		for (uint32 j = 0; j < Ops.Count; ++j)
+		{
+			Worker_Op& Op = Ops.Ops[j];
+			if (Op.op_type == WORKER_OP_TYPE_REMOVE_ENTITY)
+			{
+				UE_LOG(LogTemp, Log, TEXT("ProcessOpLists REMOVE_ENTITY Ops[%d] %d %lld"), j, Op.op_type,
+					   Op.op.remove_entity.entity_id);
+			}
+			if (Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE)
+			{
+				UE_LOG(LogTemp, Log, TEXT("ProcessOpLists DELETE_ENTITY_RESPONSE Ops[%d] %d %lld"), j, Op.op_type,
+					   Op.op.delete_entity_response.entity_id);
+			}
+		}
 		ReceivedOpEventHandler.ProcessOpLists(Ops);
 	}
 	View.AdvanceViewDelta(MoveTemp(OpLists));
@@ -115,6 +159,7 @@ Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> 
 Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis,
 														  const FSpatialGDKSpanId& SpanId)
 {
+	UE_LOG(LogTemp, Log, TEXT("SendDeleteEntityRequest A %lld"), EntityId);
 	View.SendDeleteEntityRequest({ NextRequestId, EntityId, TimeoutMillis, SpanId });
 	return NextRequestId++;
 }
@@ -167,6 +212,7 @@ Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> 
 
 Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData, const FSpatialGDKSpanId& SpanId)
 {
+	UE_LOG(LogTemp, Log, TEXT("SendDeleteEntityRequest B %lld"), EntityId);
 	DeleteEntityRetryHandler.SendRequest(NextRequestId, { EntityId, SpanId }, RetryData, View);
 	return NextRequestId++;
 }

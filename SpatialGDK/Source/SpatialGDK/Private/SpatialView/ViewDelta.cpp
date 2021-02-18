@@ -17,6 +17,21 @@ void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View, const FC
 	Clear();
 	for (OpList& Ops : OpLists)
 	{
+		for (uint32 i = 0; i < Ops.Count; ++i)
+		{
+			Worker_Op& Op = Ops.Ops[i];
+			if (Op.op_type == WORKER_OP_TYPE_REMOVE_ENTITY)
+			{
+				UE_LOG(LogTemp, Log, TEXT("SetFromOpList REMOVE_ENTITY Ops[%d] %d %lld"), i, Op.op_type,
+					   Op.op.remove_entity.entity_id);
+			}
+			if (Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE)
+			{
+				UE_LOG(LogTemp, Log, TEXT("SetFromOpList DELETE_ENTITY_RESPONSE Ops[%d] %d %lld"), i, Op.op_type,
+					   Op.op.delete_entity_response.entity_id);
+			}
+		}
+
 		ProcessOpList(Ops, View, ComponentSetData);
 	}
 	OpListStorage = MoveTemp(OpLists);
@@ -183,6 +198,7 @@ ViewDelta::ReceivedComponentChange::ReceivedComponentChange(const Worker_RemoveC
 	, ComponentId(Op.component_id)
 	, Type(REMOVE)
 {
+	//UE_LOG(LogTemp, Log, TEXT("ReceivedComponentChange %lld %u"), Op.entity_id, Op.component_id);
 }
 
 bool ViewDelta::DifferentEntity::operator()(const ReceivedEntityChange& E) const
@@ -353,16 +369,20 @@ void ViewDelta::ProcessOpList(const OpList& Ops, const EntityView& View, const F
 			EntityChanges.Push(ReceivedEntityChange{ Op.op.add_entity.entity_id, true });
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
+			UE_LOG(LogTemp, Log, TEXT("ViewDelta::ProcessOpList WORKER_OP_TYPE_REMOVE_ENTITY %lld"), Op.op.remove_entity.entity_id);
 			EntityChanges.Push(ReceivedEntityChange{ Op.op.remove_entity.entity_id, false });
 			break;
 		case WORKER_OP_TYPE_METRICS:
 		case WORKER_OP_TYPE_FLAG_UPDATE:
 		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
 		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
 		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
+			WorkerMessages.Push(Op);
+			break;
+		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
+			UE_LOG(LogTemp, Log, TEXT("ViewDelta::ProcessOpList WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE %lld"), Op.op.remove_entity.entity_id);
 			WorkerMessages.Push(Op);
 			break;
 		case WORKER_OP_TYPE_ADD_COMPONENT:
@@ -661,6 +681,7 @@ ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(Receive
 	{
 		Delta.Type = EntityDelta::REMOVE;
 		View.Remove(EntityId);
+		UE_LOG(LogTemp, Log, TEXT("ProcessEntityExistenceChange %lld"), EntityId);
 	}
 
 	return It + 1;

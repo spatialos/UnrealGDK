@@ -46,6 +46,7 @@ OpList SpatialOSConnectionHandler::GetNextOpList()
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
 			Id = &Op.op.delete_entity_response.request_id;
+			UE_LOG(LogTemp, Log, TEXT("GetNextOpList %lld"), Id);
 			break;
 		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
 			Id = &Op.op.entity_query_response.request_id;
@@ -129,6 +130,7 @@ void SpatialOSConnectionHandler::SendMessages(TUniquePtr<MessagesToSend> Message
 		SpatialScopedActiveSpanId SpanWrapper(EventTracer.Get(), Request.SpanId);
 		const uint32* Timeout = Request.TimeoutMillis.IsSet() ? &Request.TimeoutMillis.GetValue() : nullptr;
 		const Worker_RequestId Id = Worker_Connection_SendDeleteEntityRequest(Connection.Get(), Request.EntityId, Timeout);
+		UE_LOG(LogTemp, Log, TEXT("DeleteEntityRequests %lld"), Id);
 		InternalToUserRequestId.Emplace(Id, Request.RequestId);
 	}
 

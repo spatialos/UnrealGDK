@@ -986,6 +986,7 @@ void USpatialNetDriver::BeginDestroy()
 		{
 			for (const auto& Partition : VirtualWorkerTranslationManager->GetAllPartitions())
 			{
+				UE_LOG(LogSpatialOSNetDriver, Log, TEXT("BeginDestroy %lld"), Partition.PartitionEntityId);
 				Connection->SendDeleteEntityRequest(Partition.PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 			}
 		}
@@ -1001,6 +1002,7 @@ void USpatialNetDriver::BeginDestroy()
 		// Cleanup our corresponding worker entity if it exists.
 		if (WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("BeginDestroy WorkerEntityId: %lld"), WorkerEntityId);
 			Connection->SendDeleteEntityRequest(WorkerEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 
 			// Flush the connection and wait a moment to allow the message to propagate.
@@ -1147,6 +1149,7 @@ void USpatialNetDriver::Shutdown()
 		{
 			if (HasServerAuthority(EntityId))
 			{
+				UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Shutdown DormantEntities: %lld"), EntityId);
 				Connection->SendDeleteEntityRequest(EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 			}
 		}
@@ -1155,6 +1158,7 @@ void USpatialNetDriver::Shutdown()
 		{
 			if (HasServerAuthority(EntityId))
 			{
+				UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Shutdown TombstonedEntities: %lld"), EntityId);
 				Connection->SendDeleteEntityRequest(EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 			}
 		}
@@ -2041,12 +2045,22 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 			if (RPCService.IsValid())
 			{
-				RPCService->ProcessChanges(GetElapsedTime());
-			}
-
-			if (WellKnownEntitySystem.IsValid())
-			{
-				WellKnownEntitySystem->Advance();
+				if (EntityDelta.Type == SpatialGDK::EntityDelta::ADD)
+				{
+					SpatialDebugger->OnEntityAdded(EntityDelta.EntityId);
+				}
+				if (EntityDelta.Type == SpatialGDK::EntityDelta::REMOVE)
+				{
+					SpatialDebugger->OnEntityRemoved(EntityDelta.EntityId);
+					UE_LOG(LogSpatialOSNetDriver, Log, TEXT("USpatialNetDriver OnEntityRemoved(%lld)"), EntityDelta.EntityId);
+				}
+				for (const auto& Authority : EntityDelta.AuthorityGained)
+				{
+					if (Authority.ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+					{
+						SpatialDebugger->ActorAuthorityGained(EntityDelta.EntityId);
+					}
+				}
 			}
 		}
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/CriticalSectionFilter.h"
 
@@ -23,7 +23,15 @@ void FCriticalSectionFilter::AddOpList(OpList Ops)
 		{
 			continue;
 		}
-
+		if (Op.op_type == WORKER_OP_TYPE_REMOVE_ENTITY)
+		{
+			UE_LOG(LogTemp, Log, TEXT("AddOpList WORKER_OP_TYPE_REMOVE_ENTITY %lld"), Op.op.remove_entity.entity_id);
+		}
+		if (Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE)
+		{
+			UE_LOG(LogTemp, Log, TEXT("AddOpList WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE requestid %lld entityid %lld"), Op.op.delete_entity_response.request_id, Op.op.delete_entity_response.entity_id);
+		}
+		
 		// There can only be one critical section open at a time.
 		// So any previous open critical section must now be closed.
 		for (OpList& OpenCriticalSection : OpenCriticalSectionOps)

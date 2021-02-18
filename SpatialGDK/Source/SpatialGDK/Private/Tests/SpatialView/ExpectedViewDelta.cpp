@@ -16,6 +16,7 @@ ExpectedViewDelta& ExpectedViewDelta::AddEntityDelta(const Worker_EntityId Entit
 												   : ChangeType == ADD ? ExpectedEntityDelta::ADD
 																	   : ChangeType == REMOVE ? ExpectedEntityDelta::REMOVE
 																							  : ExpectedEntityDelta::TEMPORARILY_REMOVED });
+	UE_LOG(LogTemp, Log, TEXT("AddEntityDelta %lld %d"), EntityId, ChangeType);
 	return *this;
 }
 

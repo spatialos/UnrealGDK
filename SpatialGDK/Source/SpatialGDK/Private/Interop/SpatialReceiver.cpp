@@ -161,6 +161,9 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 
 void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 {
+	UE_LOG(LogSpatialReceiver, Log, TEXT("OnCommandResponse(%d, remove_entity:%lld delete_entity:%lld)"), Op.op_type,
+		   Op.op.remove_entity.entity_id, Op.op.delete_entity_response.entity_id);
+
 	const Worker_CommandResponseOp& CommandResponseOp = Op.op.command_response;
 	const Worker_CommandResponse& CommandResponse = CommandResponseOp.response;
 	const Worker_ComponentId ComponentId = CommandResponse.component_id;

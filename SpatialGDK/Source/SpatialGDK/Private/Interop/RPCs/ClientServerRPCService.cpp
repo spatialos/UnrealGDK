@@ -46,11 +46,13 @@ void ClientServerRPCService::AdvanceView()
 			break;
 		case EntityDelta::REMOVE:
 			ClientServerDataStore.Remove(Delta.EntityId);
+			UE_LOG(LogClientServerRPCService, Log, TEXT("AdvanceView REMOVE Entity: %lld"), Delta.EntityId);
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
 			ClientServerDataStore.Remove(Delta.EntityId);
 			PopulateDataStore(Delta.EntityId);
 			SetEntityData(Delta.EntityId);
+			UE_LOG(LogClientServerRPCService, Log, TEXT("AdvanceView TEMPORARILY_REMOVED Entity: %lld"), Delta.EntityId);
 			break;
 		default:
 			break;
@@ -77,6 +79,7 @@ void ClientServerRPCService::ProcessChanges()
 			EntityAdded(Delta.EntityId);
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
+			UE_LOG(LogClientServerRPCService, Log, TEXT("TEMPORARILY_REMOVED Entity: %lld"), Delta.EntityId);
 			EntityAdded(Delta.EntityId);
 			break;
 		default:

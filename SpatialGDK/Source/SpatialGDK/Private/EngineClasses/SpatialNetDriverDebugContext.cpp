@@ -81,10 +81,12 @@ void USpatialNetDriverDebugContext::AdvanceView()
 			break;
 		case SpatialGDK::EntityDelta::REMOVE:
 			RemoveComponent(Delta.EntityId);
+			UE_LOG(LogTemp, Log, TEXT("USpatialNetDriverDebugContext REMOVE %lld"), Delta.EntityId);
 			break;
 		case SpatialGDK::EntityDelta::TEMPORARILY_REMOVED:
 			RemoveComponent(Delta.EntityId);
 			AddComponent(Delta.EntityId);
+			UE_LOG(LogTemp, Log, TEXT("USpatialNetDriverDebugContext TEMPORARILY_REMOVED %lld"), Delta.EntityId);
 			break;
 		case SpatialGDK::EntityDelta::UPDATE:
 			for (const SpatialGDK::AuthorityChange& Change : Delta.AuthorityLostTemporarily)

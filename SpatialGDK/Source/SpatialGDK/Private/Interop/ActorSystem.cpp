@@ -108,7 +108,7 @@ void ActorSystem::Advance()
 			{
 				continue;
 			}
-			UE_LOG(LogSpatialReceiver, Log, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
+			UE_LOG(LogActorSystem, Log, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
 				   Delta.EntityId);
 			// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
 			NetDriver->PackageMap->ResolveEntityActor(EntityActor, Delta.EntityId);
@@ -127,10 +127,12 @@ void ActorSystem::Advance()
 			// tick, such as updates for components we would otherwise think we were authoritative over, and ignore.
 			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
 			{
+				UE_LOG(LogActorSystem, Log, TEXT("AuthorityLostTemporarily(%lld,%u)"), Delta.EntityId, Change.ComponentSetId);
 				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
 			}
 			for (const AuthorityChange& Change : Delta.AuthorityLost)
 			{
+				UE_LOG(LogActorSystem, Log, TEXT("AuthorityLost(%lld,%u)"), Delta.EntityId, Change.ComponentSetId);
 				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
 			}
 			for (const ComponentChange& Change : Delta.ComponentsAdded)

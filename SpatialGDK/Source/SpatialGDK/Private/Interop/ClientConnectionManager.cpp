@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/ClientConnectionManager.h"
 
@@ -32,6 +32,7 @@ void ClientConnectionManager::Advance()
 		{
 		case EntityDelta::REMOVE:
 			EntityRemoved(Delta.EntityId);
+			UE_LOG(LogTemp, Log, TEXT("ClientConnectionManager REMOVE %lld"), Delta.EntityId);
 		default:
 			break;
 		}

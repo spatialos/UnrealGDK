@@ -85,7 +85,7 @@ void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& 
 
 	for (uint32_t i = 0; i < Op.result_count; i++)
 	{
-		UE_LOG(LogSnapshotManager, Verbose, TEXT("Sending delete request for: %i"), Op.results[i].entity_id);
+		UE_LOG(LogSnapshotManager, Log, TEXT("Sending delete request for: %i"), Op.results[i].entity_id);
 		check(Connection.IsValid());
 		Connection->SendDeleteEntityRequest(Op.results[i].entity_id, RETRY_UNTIL_COMPLETE);
 	}

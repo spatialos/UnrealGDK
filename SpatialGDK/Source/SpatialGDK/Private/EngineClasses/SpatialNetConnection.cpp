@@ -42,11 +42,6 @@ void USpatialNetConnection::CleanUp()
 {
 	UE_LOG(LogSpatialNetConnection, Log, TEXT("USpatialNetConnection::CleanUp PlayerController %s entity:%lld."),
 		   *AActor::GetDebugName(PlayerController), PlayerControllerEntity);
-	if (PlayerControllerEntity != SpatialConstants::INVALID_ENTITY_ID)
-	{
-		UE_LOG(LogSpatialNetConnection, Warning, TEXT("USpatialNetConnection::CleanUp Before Disable PlayerController %s entity:%lld."),
-			   *AActor::GetDebugName(PlayerController), PlayerControllerEntity);
-	}
 	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver))
 	{
 		SpatialNetDriver->ClientConnectionManager->CleanUpClientConnection(this);

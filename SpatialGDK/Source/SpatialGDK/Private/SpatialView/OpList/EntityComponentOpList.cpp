@@ -35,8 +35,8 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveEntity(Worker_
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_REMOVE_ENTITY;
 	Op.op.remove_entity.entity_id = EntityId;
-
 	OpListData->Ops.Add(Op);
+	UE_LOG(LogTemp, Log, TEXT("RemoveEntity %lld"), EntityId);
 	return *this;
 }
 
@@ -142,6 +142,7 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddDeleteEntityComma
 	Op.op.delete_entity_response.status_code = StatusCode;
 	Op.op.delete_entity_response.message = StoreString(MoveTemp(Message));
 	OpListData->Ops.Add(Op);
+	UE_LOG(LogTemp, Log, TEXT("AddDeleteEntityCommandResponse EntityID %lld RequestId %lld"), EntityID, RequestId);
 	return *this;
 }
 

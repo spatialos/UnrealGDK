@@ -283,6 +283,7 @@ void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, Spa
 			ExtractedOpList.AddOp(Op);
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
+			UE_LOG(LogSpatialWorkerConnection, Log, TEXT("WORKER_OP_TYPE_REMOVE_ENTITY (%llu)"), Op.op.remove_entity.entity_id);
 			ExtractedOpList.AddOp(Op);
 			break;
 		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
@@ -292,6 +293,7 @@ void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, Spa
 			ExtractedOpList.AddOp(Op);
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
+			UE_LOG(LogSpatialWorkerConnection, Log, TEXT("WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE (%llu)"), Op.op.remove_entity.entity_id);
 			ExtractedOpList.AddOp(Op);
 			break;
 		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:

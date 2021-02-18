@@ -66,11 +66,13 @@ void MulticastRPCService::AdvanceView()
 		case EntityDelta::REMOVE:
 			OnRemoveMulticastRPCComponentForEntity(Delta.EntityId);
 			MulticastDataStore.Remove(Delta.EntityId);
+			UE_LOG(LogTemp, Log, TEXT("MulticastRPCService REMOVE %lld"), Delta.EntityId);
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
 			OnRemoveMulticastRPCComponentForEntity(Delta.EntityId);
 			MulticastDataStore.Remove(Delta.EntityId);
 			PopulateDataStore(Delta.EntityId);
+			UE_LOG(LogTemp, Log, TEXT("MulticastRPCService TEMPORARILY_REMOVED %lld"), Delta.EntityId);
 			break;
 		default:
 			break;

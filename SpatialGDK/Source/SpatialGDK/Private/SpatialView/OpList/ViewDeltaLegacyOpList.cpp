@@ -51,6 +51,7 @@ TArray<Worker_Op> GetOpsFromEntityDeltas(const TArray<EntityDelta>& Deltas)
 			Op.op.component_set_authority_change.component_set_id = Change.ComponentSetId;
 			Op.op.component_set_authority_change.authority = WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 			Ops.Push(Op);
+			UE_LOG(LogViewDelta, Log, TEXT("GetOpsFromEntityDeltas AuthorityLost %lld"), Entity.EntityId);
 		}
 
 		for (const AuthorityChange& Change : Entity.AuthorityLostTemporarily)
@@ -61,6 +62,7 @@ TArray<Worker_Op> GetOpsFromEntityDeltas(const TArray<EntityDelta>& Deltas)
 			Op.op.component_set_authority_change.component_set_id = Change.ComponentSetId;
 			Op.op.component_set_authority_change.authority = WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 			Ops.Push(Op);
+			UE_LOG(LogViewDelta, Log, TEXT("GetOpsFromEntityDeltas AuthorityLostTemporarily %lld"), Entity.EntityId);
 		}
 
 		for (const ComponentChange& Change : Entity.ComponentsRefreshed)
@@ -117,6 +119,7 @@ TArray<Worker_Op> GetOpsFromEntityDeltas(const TArray<EntityDelta>& Deltas)
 			Op.op_type = WORKER_OP_TYPE_REMOVE_ENTITY;
 			Op.op.remove_entity.entity_id = Entity.EntityId;
 			Ops.Push(Op);
+			UE_LOG(LogTemp, Log, TEXT("REMOVE WORKER_OP_TYPE_REMOVE_ENTITY %lld"), Entity.EntityId);
 		}
 
 		Worker_Op EndCriticalSection = {};
