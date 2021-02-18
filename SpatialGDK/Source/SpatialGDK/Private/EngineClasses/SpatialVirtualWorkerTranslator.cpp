@@ -58,7 +58,7 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 	// The translation schema is a list of mappings, where each entry has a virtual and physical worker ID.
 	ApplyMappingFromSchema(ComponentObject);
 
-	if (VirtualToPhysicalWorkerMapping.Num())
+	if (VirtualToPhysicalWorkerMapping.Num() > 0)
 	{
 		if (LoadBalanceStrategy.IsValid() && LoadBalanceStrategy->IsReady())
 		{
