@@ -195,8 +195,8 @@ void ASpatialTestAttachedComponentReplication::GenerateTestSteps(ESpatialTestAtt
 
 		if (IsValid(AttachedComponent))
 		{
-			RequireEqual_Int(AttachedComponent->ReplicatedValue, SpatialTestAttachedComponentReplicationValues::InitialValue,
-							 TEXT("Component's value is initialized correctly"));
+			AssertEqual_Int(AttachedComponent->ReplicatedValue, SpatialTestAttachedComponentReplicationValues::InitialValue,
+							TEXT("Component's value is initialized correctly"));
 		}
 
 		constexpr float ComponentPollDuration = 3.0f;
