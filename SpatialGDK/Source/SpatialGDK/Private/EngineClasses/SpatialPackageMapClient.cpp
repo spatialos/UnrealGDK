@@ -406,7 +406,7 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 {
 }
 
-typedef TMap<UObject*, uint32> FSubobjectToOffsetMap;
+using FSubobjectToOffsetMap = TMap<UObject*, uint32>;
 
 static FSubobjectToOffsetMap CreateOffsetMapFromActor(USpatialPackageMapClient* PackageMap, AActor* Actor, const FClassInfo& Info)
 {
@@ -415,7 +415,7 @@ static FSubobjectToOffsetMap CreateOffsetMapFromActor(USpatialPackageMapClient* 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
 		UObject* Subobject = StaticFindObjectFast(UObject::StaticClass(), Actor, SubobjectInfoPair.Value->SubobjectName);
-		uint32 Offset = SubobjectInfoPair.Key;
+		const uint32 Offset = SubobjectInfoPair.Key;
 
 		if (Subobject != nullptr && Subobject->IsPendingKill() == false && Subobject->IsSupportedForNetworking())
 		{
