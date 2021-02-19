@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a regression where bReplicates would not be handed over correctly when dynamically set.
 - Fixed an issue where resetting handover property to default value would be omitted during handover value replication
 - Fixed EntityPool capacity overflow issue by removing the ability from the gdk settings to request a pool size larger than int32_max.
+- Fixed an issue where components added to a scene actor would be replicated incorrectly.
 
 ## [`0.12.0`] - 2021-02-01
 
