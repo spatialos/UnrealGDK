@@ -371,6 +371,7 @@ protected:
 	FSpatialFunctionalTestStepDefinition ClearSnapshotStepDefinition;
 
 	void NotifyTestFinishedObserver() override;
+
 private:
 	bool bNotifyObserversCalled = false;
 

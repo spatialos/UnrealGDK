@@ -201,7 +201,7 @@ void ASpatialFunctionalTest::PrepareTest()
 		// Wait for this
 		GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
 			PrepareTest();
-			});
+		});
 		return;
 	}
 
