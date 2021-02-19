@@ -16,7 +16,7 @@ param(
 Write-Output "Downloading the testing project from: $($test_repo_url), branch: $($test_repo_branch)"
 git clone -b "$test_repo_branch" "$test_repo_url" "$test_repo_path" --depth 1
 if (-Not $?) {
-    Throw "Failed to clone testing project from branch: $($test_repo_branch), url: $($test_repo_url), path: $($test_repo_path)."
+    Throw "Failed to clone testing project from branch: ${test_repo_branch}, url: ${test_repo_url}, path: ${test_repo_path}."
 }
 
 # The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine
