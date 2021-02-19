@@ -8,6 +8,7 @@
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "FileHelpers.h"
 #include "GameFramework/PlayerStart.h"
+#include "SpatialGDKEditor/Public/SpatialTestSettings.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -52,14 +53,9 @@ void UGeneratedTestMap::GenerateCustomConfig()
 		// Only create a custom config file if we have something meaningful to write so we don't pollute the file system too much
 		return;
 	}
-	// TODO: Expose from FSpatialTestSettings
 
-	// Extension for config files
-	const FString OverrideSettingsFileExtension = TEXT(".ini");
-	// Map override config base filename applied to specific map, if exists
-	const FString OverrideSettingsBaseFilename = FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir() / TEXT("TestOverrides"));
-
-	const FString OverrideSettingsFilename = OverrideSettingsBaseFilename + MapName + OverrideSettingsFileExtension;
+	const FString OverrideSettingsFilename =
+		FSpatialTestSettings::GeneratedOverrideSettingsBaseFilename + MapName + FSpatialTestSettings::OverrideSettingsFileExtension;
 	FFileHelper::SaveStringToFile(CustomConfigString, *OverrideSettingsFilename);
 }
 

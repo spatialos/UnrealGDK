@@ -18,6 +18,13 @@ FSpatialTestSettings::FSpatialTestSettings()
 {
 }
 
+const FString FSpatialTestSettings::OverrideSettingsFileExtension = TEXT(".ini");
+const FString FSpatialTestSettings::OverrideSettingsFilePrefix = TEXT("MapSettingsOverrides/TestOverrides");
+const FString FSpatialTestSettings::OverrideSettingsBaseFilename = FPaths::ProjectConfigDir() + OverrideSettingsFilePrefix;
+const FString FSpatialTestSettings::BaseOverridesFilename = OverrideSettingsBaseFilename + TEXT("Base") + (OverrideSettingsFileExtension);
+const FString FSpatialTestSettings::GeneratedOverrideSettingsBaseFilename =
+	FPaths::ProjectIntermediateDir() + TEXT("Config/") + OverrideSettingsFilePrefix;
+
 void FSpatialTestSettings::Override(const FString& MapName)
 {
 	// Back up the existing settings so they can be reverted later
