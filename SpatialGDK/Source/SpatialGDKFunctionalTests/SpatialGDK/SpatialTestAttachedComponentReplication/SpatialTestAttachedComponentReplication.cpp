@@ -11,20 +11,26 @@ void USpatialTestAttachedComponentReplicationTestMap::CreateCustomContentForMap(
 {
 	Super::CreateCustomContentForMap();
 
-	AActor* LevelActor =
-		AddActorToLevel<ASpatialTestAttachedComponentReplicationActorForLevelPlacing>(World->GetCurrentLevel(), FTransform::Identity);
+	ULevel* TestLevel = World->GetCurrentLevel();
+
+	AActor* LevelActor = AddActorToLevel<ASpatialTestAttachedComponentReplicationActorForLevelPlacing>(TestLevel, FTransform::Identity);
+
+	// Adding an instance component...
 	UActorComponent* InstanceComponent =
 		NewObject<USpatialTestAttachedComponentReplicationComponent>(LevelActor, TEXT("PlacedActorComponent"), RF_Transactional);
 	LevelActor->AddInstanceComponent(InstanceComponent);
 	InstanceComponent->OnComponentCreated();
 	InstanceComponent->RegisterComponent();
 
-	AddActorToLevel<ASpatialTestAttachedComponentReplication>(World->GetCurrentLevel(), FTransform::Identity)->AssignedTestType =
-		ESpatialTestAttachedComponentReplicationType::LevelPlaced;
-	AddActorToLevel<ASpatialTestAttachedComponentReplication>(World->GetCurrentLevel(), FTransform::Identity)->AssignedTestType =
-		ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDynamicComponent;
-	AddActorToLevel<ASpatialTestAttachedComponentReplication>(World->GetCurrentLevel(), FTransform::Identity)->AssignedTestType =
-		ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDefaultComponent;
+	auto AddTest = [this, TestLevel](ESpatialTestAttachedComponentReplicationType TestType) {
+		ASpatialTestAttachedComponentReplication* Test =
+			AddActorToLevel<ASpatialTestAttachedComponentReplication>(TestLevel, FTransform::Identity);
+		Test->AssignedTestType = TestType;
+	};
+
+	AddTest(ESpatialTestAttachedComponentReplicationType::LevelPlaced);
+	AddTest(ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDynamicComponent);
+	AddTest(ESpatialTestAttachedComponentReplicationType::DynamicallySpawnedWithDefaultComponent);
 }
 
 ASpatialTestAttachedComponentReplicationActor::ASpatialTestAttachedComponentReplicationActor()
@@ -102,8 +108,19 @@ void ASpatialTestAttachedComponentReplication::PrepareTest()
 	GenerateTestSteps(AssignedTestType);
 }
 
+/*
+ * This test checks component replication behavior:
+ * * An instance component on a level-placed actor
+ * * A component that is added dynamically to a dynamically spawned actor
+ * * A default component of a dynamically spawned actor
+ * In all of these cases, the expectation is that there is a single component
+ * on both clients and servers.
+ */
 void ASpatialTestAttachedComponentReplication::GenerateTestSteps(ESpatialTestAttachedComponentReplicationType TestType)
 {
+	// A helper to add awaiting steps to the test; RequireXXX used in TickFunction
+	// must be satisfied before StepTimeLimit is over, or the step would fail.
+	// Is also controls TimeInStep so we can track time elapsed in a given step inside of TickFunction
 	auto AddWaitingStep = [this](const FString& StepDescription, const FWorkerDefinition& WorkerDefinition,
 								 TFunction<void()> TickFunction) {
 		AddStep(
@@ -172,6 +189,8 @@ void ASpatialTestAttachedComponentReplication::GenerateTestSteps(ESpatialTestAtt
 
 		constexpr float ActorPollDuration = 3.0f;
 
+		// We need to run this step for some time to catch test conditions failing at a later date,
+		// for example, two test actors appearing on clients.
 		RequireCompare_Float(TimeInStep, EComparisonMethod::Greater_Than, ActorPollDuration,
 							 FString::Printf(TEXT("Step ran for %f secs"), ActorPollDuration));
 	});
@@ -201,6 +220,8 @@ void ASpatialTestAttachedComponentReplication::GenerateTestSteps(ESpatialTestAtt
 
 		constexpr float ComponentPollDuration = 3.0f;
 
+		// We need to run this step for some time to catch test conditions failing at a later date,
+		// for example, two test components appearing on clients.
 		RequireCompare_Float(TimeInStep, EComparisonMethod::Greater_Than, ComponentPollDuration,
 							 FString::Printf(TEXT("Step ran for %f secs"), ComponentPollDuration));
 	});
