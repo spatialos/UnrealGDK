@@ -1598,6 +1598,10 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 	if (APlayerController* PC = Cast<APlayerController>(Actor))
 	{
 		// Force APlayerController::DestroyNetworkActorHandled to return false
+		if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PC->GetNetConnection()))
+		{
+			Connection->Disable();
+		}
 		PC->Player = nullptr;
 	}
 
