@@ -33,7 +33,7 @@ class TestProjectTarget {
         elseif($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
             $this.test_repo_branch = $gdk_branch
         }
-        elseif(Test-Path $test_gym_version) {
+        elseif($test_gym_version -ne [string]::Empty) {
             $this.test_repo_branch = $test_gym_version
         }
         else {
