@@ -6,6 +6,7 @@
 
 #include "SpatialCommonTypes.h"
 #include "SpatialFunctionalTest.h"
+#include "TestMaps/GeneratedTestMap.h"
 
 #include "GameFramework/GameModeBase.h"
 
@@ -61,6 +62,18 @@ public:
 
 	UPROPERTY(Replicated, Transient)
 	int ReplicatedValue = StartingValue;
+};
+
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API USpatialGameModeReplicationTest : public UGeneratedTestMap
+{
+	GENERATED_BODY()
+
+public:
+	USpatialGameModeReplicationTest();
+
+protected:
+	virtual void CreateCustomContentForMap() override;
 };
 
 UCLASS(BlueprintType)
