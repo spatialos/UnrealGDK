@@ -24,14 +24,53 @@ struct SPATIALGDK_API LoadBalancingStuff : AbstractMutableComponent
 	{
 	}
 
-	LoadBalancingStuff(const Worker_ComponentData& Data);
-	LoadBalancingStuff(Schema_ComponentData& Data);
+	LoadBalancingStuff(const Worker_ComponentData& Data)
+		: LoadBalancingStuff(*Data.schema_type)
+	{
+	}
+	LoadBalancingStuff(Schema_ComponentData& Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(&Data);
 
-	virtual Worker_ComponentData CreateComponentData() const override;
+		ActorGroupId = Schema_GetUint32(ComponentObject, 1);
 
-	Worker_ComponentUpdate CreateLoadBalancingStuffUpdate() const;
+		ActorSetId = Schema_GetUint32(ComponentObject, 2);
+	}
 
-	virtual void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override;
+	virtual Worker_ComponentData CreateComponentData() const override
+	{
+		Worker_ComponentData Data = {};
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData();
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		Schema_AddUint32(ComponentObject, 1, ActorGroupId);
+		Schema_AddUint32(ComponentObject, 2, ActorSetId);
+
+		return Data;
+	}
+
+	Worker_ComponentUpdate CreateLoadBalancingStuffUpdate() const
+	{
+		Worker_ComponentUpdate Update = {};
+		Update.component_id = ComponentId;
+		Update.schema_type = Schema_CreateComponentUpdate();
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+		Schema_AddUint32(ComponentObject, 1, ActorGroupId);
+		Schema_AddUint32(ComponentObject, 2, ActorSetId);
+
+		return Update;
+	}
+
+	virtual void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+		ActorGroupId = Schema_GetUint32(ComponentObject, 1);
+
+		ActorSetId = Schema_GetUint32(ComponentObject, 2);
+	}
 
 	FActorLoadBalancingGroupId ActorGroupId;
 
