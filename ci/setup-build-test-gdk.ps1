@@ -6,6 +6,7 @@ param(
     [string] $unreal_engine_symlink_dir = "$build_home\UnrealEngine",
     [string] $gyms_version_path = "$gdk_home\UnrealGDKTestGymsVersion.txt"
 )
+. "$PSScriptRoot\common.ps1"
 
 class TestProjectTarget {
     [ValidateNotNullOrEmpty()][string]$test_repo_url
@@ -13,7 +14,7 @@ class TestProjectTarget {
     [ValidateNotNullOrEmpty()][string]$test_repo_relative_uproject_path
     [ValidateNotNullOrEmpty()][string]$test_project_name
     
-    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name, [string]$test_gyms_version_path, [string]$test_env_override) {
+    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name, [string]$test_version_path, [string]$test_env_override) {
         $this.test_repo_url = $test_repo_url
         $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
         $this.test_project_name = $test_project_name
@@ -21,7 +22,7 @@ class TestProjectTarget {
         # Resolve the branch to run against. The order of priority is:
         # envvar > same-name branch as the branch we are currently on > UnrealGDKTestGymVersion.txt > "master".
         $testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
-        $test_gym_version = if (Test-Path -Path $test_gyms_version_path) { [System.IO.File]::ReadAllText($test_gyms_version_path) } else { [string]::Empty }
+        $test_gym_version = if (($test_version_path -ne [string]::Empty) -And (Test-Path -Path $test_version_path)) {[System.IO.File]::ReadAllText($test_version_path)} else {[string]::Empty}
         if (Test-Path $test_env_override) {
             $this.test_repo_branch = (Get-Item $test_env_override).value
         }
@@ -65,7 +66,7 @@ class TestSuite {
 [string] $test_map_path = "/Game/Intermediate/Maps/"
 
 [TestProjectTarget] $gdk_test_project = [TestProjectTarget]::new("git@github.com:spatialos/UnrealGDKTestGyms.git", $gdk_branch, "Game\GDKTestGyms.uproject", "GDKTestGyms", $gyms_version_path, "env:TEST_REPO_BRANCH")
-[TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject", $gyms_version_path, "env:NATIVE_TEST_REPO_BRANCH")
+[TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject", "", "env:NATIVE_TEST_REPO_BRANCH")
 
 $tests = @()
 
@@ -94,8 +95,6 @@ else {
         $tests += [TestSuite]::new($native_test_project, "NetworkingMap", "GDKNetTestResults", "/Game/NetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")
     }
 }
-
-. "$PSScriptRoot\common.ps1"
 
 # Guard against other runs not cleaning up after themselves
 Foreach ($test in $tests) {
