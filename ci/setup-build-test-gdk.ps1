@@ -4,7 +4,8 @@ param(
     [string] $msbuild_exe = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe",
     [string] $build_home = (Get-Item "$($PSScriptRoot)").parent.parent.FullName, ## The root of the entire build. Should ultimately resolve to "C:\b\<number>\".
     [string] $unreal_engine_symlink_dir = "$build_home\UnrealEngine",
-    [string] $gyms_version_path = "$gdk_home\UnrealGDKTestGymsVersion.txt"
+    [string] $gyms_version_path = "$gdk_home\UnrealGDKTestGymsVersion.txt",
+    [string] $engine_net_version_path = "$gdk_home\UnrealGDKEngineNetTestVersion.txt"
 )
 . "$PSScriptRoot\common.ps1"
 
@@ -66,7 +67,7 @@ class TestSuite {
 [string] $test_map_path = "/Game/Intermediate/Maps/"
 
 [TestProjectTarget] $gdk_test_project = [TestProjectTarget]::new("git@github.com:spatialos/UnrealGDKTestGyms.git", $gdk_branch, "Game\GDKTestGyms.uproject", "GDKTestGyms", $gyms_version_path, "env:TEST_REPO_BRANCH")
-[TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject", "", "env:NATIVE_TEST_REPO_BRANCH")
+[TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject", $engine_net_version_path, "env:NATIVE_TEST_REPO_BRANCH")
 
 $tests = @()
 
