@@ -13,7 +13,6 @@
 
 namespace
 {
-
 void SetupPlayerStartAndWorldSettings(UWorld* World)
 {
 	ULevel* CurrentLevel = World->GetCurrentLevel();
@@ -30,7 +29,7 @@ void SetupPlayerStartAndWorldSettings(UWorld* World)
 	WorldSettings->TestingSettings.TestingMode = EMapTestingMode::Detect;
 }
 
-}
+} // namespace
 
 UCrossServerPossessionMap::UCrossServerPossessionMap()
 	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("CrossServerPossessionMap"))
