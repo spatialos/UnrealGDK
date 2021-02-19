@@ -35,6 +35,8 @@ ANoneCrossServerPossessionTest::ANoneCrossServerPossessionTest()
 	Author = "Ken.Yu";
 	Description = TEXT("Test Local Possession via RemotePossessionComponent");
 	LocationOfPawn = FVector(-500.0f, -500.0f, 50.0f);
+
+	SetNumRequiredClients(1);
 }
 
 void ANoneCrossServerPossessionTest::PrepareTest()
