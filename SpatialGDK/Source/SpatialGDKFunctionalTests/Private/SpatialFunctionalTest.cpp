@@ -672,7 +672,9 @@ void ASpatialFunctionalTest::PrepareTestAfterBeginPlay()
 	// OnReplicated_bPreparedTest() will be called before BeginPlay().
 	if (!HasActorBegunPlay())
 	{
-		GetWorld()->GetTimerManager().SetTimerForNextTick([this]() { PrepareTestAfterBeginPlay(); });
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
+			PrepareTestAfterBeginPlay();
+		});
 		return;
 	}
 
