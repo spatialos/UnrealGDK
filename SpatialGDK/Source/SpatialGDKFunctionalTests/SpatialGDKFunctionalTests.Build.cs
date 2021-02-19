@@ -19,14 +19,8 @@ public class SpatialGDKFunctionalTests : ModuleRules
                 "Engine",
                 "FunctionalTesting",
                 "HTTP",
-                "UnrealEd"
+                "UnrealEd",
+                "EngineSettings"
             });
-
-        if (Target.bBuildEditor == true)
-        {
-            // For spatial functional tests
-            PrivateDependencyModuleNames.Add("UnrealEd");
-            PrivateDependencyModuleNames.Add("EngineSettings");
-        }
     }
 }

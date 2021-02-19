@@ -1,6 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#pragma optimize("", on)
 #include "SpatialTestSettings.h"
 
 FSpatialTestSettings::FSpatialTestSettings()
@@ -21,10 +20,17 @@ void FSpatialTestSettings::Override(const FString& MapName)
 	Duplicate<UGeneralProjectSettings>(OriginalGeneralProjectSettings);
 	Duplicate<UEditorPerformanceSettings>(OriginalEditorPerformanceSettings);
 	// First override the settings from the base config file, if it exists
-	Load(BaseOverridesFilename);
-	// Then override the settings from the map specific config file, if it exists
+	if (FPaths::FileExists(BaseOverridesFilename)) { Load(BaseOverridesFilename); }
+	// Then override the settings from the map specific config file, if it exists 
 	FString MapOverridesFilename = OverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
-	Load(MapOverridesFilename);
+	if (FPaths::FileExists(MapOverridesFilename)) { Load(MapOverridesFilename); }
+	// Then override the settings from the generated map specific config file, if it exists 
+	FString GeneratedMapOverridesFilename =
+		GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
+	if (FPaths::FileExists(GeneratedMapOverridesFilename))
+	{
+		Load(GeneratedMapOverridesFilename);
+	}
 }
 
 template <typename T>
@@ -69,4 +75,3 @@ void FSpatialTestSettings::Load(const FString& TestSettingOverridesFilename)
 	GetMutableDefault<UGeneralProjectSettings>()->LoadConfig(UGeneralProjectSettings::StaticClass(), *TestSettingOverridesFilename);
 	GetMutableDefault<UEditorPerformanceSettings>()->LoadConfig(UEditorPerformanceSettings::StaticClass(), *TestSettingOverridesFilename);
 }
-#pragma optimize("", off)
