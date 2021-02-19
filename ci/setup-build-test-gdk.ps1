@@ -13,7 +13,7 @@ class TestProjectTarget {
     [ValidateNotNullOrEmpty()][string]$test_repo_branch
     [ValidateNotNullOrEmpty()][string]$test_repo_relative_uproject_path
     [ValidateNotNullOrEmpty()][string]$test_project_name
-    [ValidateNotNullOrEmpty()][string]$test_gyms_version_path
+    [ValidateNotNull()][string]$test_gyms_version_path
     [ValidateNotNull()][string]$test_env_override
     
     TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name, [string]$test_gyms_version_path, [string]$test_env_override) {
