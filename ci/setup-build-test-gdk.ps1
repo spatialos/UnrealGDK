@@ -4,7 +4,7 @@ param(
     [string] $msbuild_exe = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe",
     [string] $build_home = (Get-Item "$($PSScriptRoot)").parent.parent.FullName, ## The root of the entire build. Should ultimately resolve to "C:\b\<number>\".
     [string] $unreal_engine_symlink_dir = "$build_home\UnrealEngine",
-    [string] $gyms_version_path = "$gdk_home\UnrealGDKTestGymsVersion.txt",
+    [string] $gyms_version_path = "$gdk_home\UnrealGDKTestGymVersion.txt",
     [string] $engine_net_version_path = "$gdk_home\UnrealGDKEngineNetTestVersion.txt"
 )
 . "$PSScriptRoot\common.ps1"
@@ -23,15 +23,15 @@ class TestProjectTarget {
         # Resolve the branch to run against. The order of priority is:
         # envvar > same-name branch as the branch we are currently on > UnrealGDKTestGymVersion.txt > "master".
         $testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
-        $test_gym_version = if (($test_version_path -ne [string]::Empty) -And (Test-Path -Path $test_version_path)) {[System.IO.File]::ReadAllText($test_version_path)} else {[string]::Empty}
+        $test_version = if ([System.IO.File]::Exists($test_version_path)) {[System.IO.File]::ReadAllText($test_version_path)} else {[string]::Empty}
         if (Test-Path $test_env_override) {
             $this.test_repo_branch = (Get-Item $test_env_override).value
         }
         elseif ($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
             $this.test_repo_branch = $gdk_branch
         }
-        elseif ($test_gym_version -ne [string]::Empty) {
-            $this.test_repo_branch = $test_gym_version
+        elseif ($test_version -ne [string]::Empty) {
+            $this.test_repo_branch = $test_version
         }
         else {
             $this.test_repo_branch = "master"
