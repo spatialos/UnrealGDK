@@ -28,7 +28,8 @@ public:
 
 	// Delegate which others (specifically the SpatialFunctionalTestsModule) can bind to, to execute their functionality for overriding
 	// settings and other things
-	TMulticastDelegate<void(UWorld* World, const FString& MapName)> OverrideSettingsForTestingDelegate;
+	DECLARE_MULTICAST_DELEGATE_TwoParams(FOverrideSettingsForTestingDelegate, UWorld* World, const FString& MapName);
+	FOverrideSettingsForTestingDelegate OverrideSettingsForTestingDelegate;
 	/* Way to force a deployment to be launched with a specific snapshot. This is meant to be override-able only
 	 * at runtime, specifically for Functional Testing purposes.
 	 */
