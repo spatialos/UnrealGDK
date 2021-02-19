@@ -6,31 +6,34 @@ param(
     [string] $unreal_engine_symlink_dir = "$build_home\UnrealEngine",
     [string] $gyms_version_path = "$gdk_home\UnrealGDKTestGymsVersion.txt"
 )
-. "$PSScriptRoot\common.ps1" # keep me as close to the top as possible
 
 class TestProjectTarget {
     [ValidateNotNullOrEmpty()][string]$test_repo_url
     [ValidateNotNullOrEmpty()][string]$test_repo_branch
     [ValidateNotNullOrEmpty()][string]$test_repo_relative_uproject_path
     [ValidateNotNullOrEmpty()][string]$test_project_name
+    [ValidateNotNullOrEmpty()][string]$test_gyms_version_path
+    [ValidateNotNull()][string]$test_env_override
     
-    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name, [string]$test_version_path, [string]$test_env_override) {
+    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name, [string]$test_gyms_version_path, [string]$test_env_override) {
         $this.test_repo_url = $test_repo_url
         $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
         $this.test_project_name = $test_project_name
+        $this.test_gyms_version_path = $test_gyms_version_path
+        $this.test_env_override = $test_env_override
         
         # Resolve the branch to run against. The order of priority is:
         # envvar > same-name branch as the branch we are currently on > UnrealGDKTestGymVersion.txt > "master".
         $testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
-        $test_version = if ([System.IO.File]::Exists($test_version_path)) {[System.IO.File]::ReadAllText($test_version_path)} else {[string]::Empty}
+        $test_gym_version = if (Test-Path -Path $test_gyms_version_path) {[System.IO.File]::ReadAllText($test_gyms_version_path)} else {[string]::Empty}
         if (Test-Path $test_env_override) {
-            $this.test_repo_branch = (Get-Item $test_env_override).value
+            $this.test_repo_branch = $test_env_override
         }
-        elseif ($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
+        elseif($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
             $this.test_repo_branch = $gdk_branch
         }
-        elseif ($test_version -ne [string]::Empty) {
-            $this.test_repo_branch = $test_version
+        elseif(Test-Path $test_gym_version) {
+            $this.test_repo_branch = $test_gym_version
         }
         else {
             $this.test_repo_branch = "master"
@@ -64,8 +67,8 @@ class TestSuite {
 [string] $user_cmd_line_args = "$env:TEST_ARGS"
 [string] $gdk_branch = "$env:BUILDKITE_BRANCH"
 
-[TestProjectTarget] $gdk_test_project = [TestProjectTarget]::new("git@github.com:spatialos/UnrealGDKTestGyms.git", $gdk_branch, "Game\GDKTestGyms.uproject", "GDKTestGyms", $gyms_version_path, "env:TEST_REPO_BRANCH")
-[TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject", "", "env:NATIVE_TEST_REPO_BRANCH")
+[TestProjectTarget] $gdk_test_project = [TestProjectTarget]::new("git@github.com:spatialos/UnrealGDKTestGyms.git", $gdk_branch, "Game\GDKTestGyms.uproject", "GDKTestGyms", $gyms_version_path, $env:TEST_REPO_BRANCH)
+[TestProjectTarget] $native_test_project = [TestProjectTarget]::new("git@github.com:improbable/UnrealGDKEngineNetTest.git", $gdk_branch, "Game\EngineNetTest.uproject", "NativeNetworkTestProject", $gyms_version_path, $env:NATIVE_TEST_REPO_BRANCH)
 
 $tests = @()
 
@@ -95,6 +98,8 @@ else {
     }
 }
 
+. "$PSScriptRoot\common.ps1"
+
 # Guard against other runs not cleaning up after themselves
 Foreach ($test in $tests) {
     $test_project_name = $test.test_project_target.test_project_name
@@ -123,6 +128,7 @@ class CachedProject {
 }
 
 $projects_cached = @()
+
 Foreach ($test in $tests) {
     $test_repo_url = $test.test_project_target.test_repo_url
     $test_repo_branch = $test.test_project_target.test_repo_branch
