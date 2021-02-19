@@ -5,8 +5,8 @@
 #include "GameFramework/PlayerStart.h"
 #include "SpatialGDKFunctionalTests/Public/Test1x2WorkerSettings.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthorityTestGameMode.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialComponentTest/SpatialComponentTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialComponentTest/SpatialComponentSettingsOverride.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialComponentTest/SpatialComponentTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialComponentTest/SpatialComponentTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialComponentTest/SpatialComponentTestReplicatedActor.h"
 

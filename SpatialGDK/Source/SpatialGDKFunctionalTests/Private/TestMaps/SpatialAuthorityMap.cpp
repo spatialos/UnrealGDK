@@ -2,8 +2,8 @@
 
 #include "TestMaps/SpatialAuthorityMap.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthorityTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthoritySettingsOverride.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthorityTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthorityTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthorityTestGameMode.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthorityTestReplicatedActor.h"

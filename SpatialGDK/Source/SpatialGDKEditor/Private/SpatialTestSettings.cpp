@@ -20,11 +20,17 @@ void FSpatialTestSettings::Override(const FString& MapName)
 	Duplicate<UGeneralProjectSettings>(OriginalGeneralProjectSettings);
 	Duplicate<UEditorPerformanceSettings>(OriginalEditorPerformanceSettings);
 	// First override the settings from the base config file, if it exists
-	if (FPaths::FileExists(BaseOverridesFilename)) { Load(BaseOverridesFilename); }
-	// Then override the settings from the map specific config file, if it exists 
+	if (FPaths::FileExists(BaseOverridesFilename))
+	{
+		Load(BaseOverridesFilename);
+	}
+	// Then override the settings from the map specific config file, if it exists
 	FString MapOverridesFilename = OverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
-	if (FPaths::FileExists(MapOverridesFilename)) { Load(MapOverridesFilename); }
-	// Then override the settings from the generated map specific config file, if it exists 
+	if (FPaths::FileExists(MapOverridesFilename))
+	{
+		Load(MapOverridesFilename);
+	}
+	// Then override the settings from the generated map specific config file, if it exists
 	FString GeneratedMapOverridesFilename =
 		GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
 	if (FPaths::FileExists(GeneratedMapOverridesFilename))

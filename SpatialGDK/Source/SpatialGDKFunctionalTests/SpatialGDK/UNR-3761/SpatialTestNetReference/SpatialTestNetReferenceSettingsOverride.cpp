@@ -8,7 +8,8 @@
 /**
  * This test checks that the test settings overridden in the .ini file have been set correctly
  *
- * Requires SpatialTestNetReferenceMap.ini in \Samples\UnrealGDKTestGyms\Game\Config\MapSettingsOverrides directory with the following values:
+ * Requires SpatialTestNetReferenceMap.ini in \Samples\UnrealGDKTestGyms\Game\Config\MapSettingsOverrides directory with the following
+ *values:
  *			[/Script/SpatialGDK.SpatialGDKSettings]
  *			PositionUpdateThresholdMaxCentimeters=1
  */

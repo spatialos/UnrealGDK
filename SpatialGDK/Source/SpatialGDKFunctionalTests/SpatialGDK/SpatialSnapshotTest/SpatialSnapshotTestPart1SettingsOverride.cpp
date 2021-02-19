@@ -9,7 +9,8 @@
 /**
  * This test checks that the test settings overridden in the map .ini file have been set correctly
  *
- * Requires TestOverridesSpatialSnapshotTestPart1Map.ini in \Samples\UnrealGDKTestGyms\Game\Config\MapSettingsOverrides directory with the following values:
+ * Requires TestOverridesSpatialSnapshotTestPart1Map.ini in \Samples\UnrealGDKTestGyms\Game\Config\MapSettingsOverrides directory with the
+ *following values:
  *			[/Script/UnrealEd.LevelEditorPlaySettings]
  *			PlayNumberOfClients=1
  *			PlayNetMode=PIE_Client

@@ -52,7 +52,7 @@ protected:
 	const FString BaseOverridesFilename = OverrideSettingsBaseFilename + TEXT("Base") + (OverrideSettingsFileExtension);
 	// Generated map override config base filename for generated maps applied to specific map, if exists
 	const FString GeneratedOverrideSettingsBaseFilename = FPaths::ProjectIntermediateDir() + TEXT("Config/") + OverrideSettingsFilePrefix;
-	
+
 	// Settings classes that can be overridden using config files
 	USpatialGDKSettings* OriginalSpatialGDKSettings;
 	ULevelEditorPlaySettings* OriginalLevelEditorPlaySettings;

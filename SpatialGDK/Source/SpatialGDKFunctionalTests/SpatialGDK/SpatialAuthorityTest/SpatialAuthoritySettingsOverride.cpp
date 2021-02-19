@@ -7,9 +7,11 @@
 #include "SpatialGDKSettings.h"
 
 /**
- * This test checks that the test settings overridden in a generated map have been set correctly, generated config files are stored in different location.
+ * This test checks that the test settings overridden in a generated map have been set correctly, generated config files are stored in
+ *different location.
  *
- * Requires TestOverridesSpatialAuthorityMap.ini in \Samples\UnrealGDKTestGyms\Game\Intermediate\Config\MapSettingsOverrides directory with the following values:
+ * Requires TestOverridesSpatialAuthorityMap.ini in \Samples\UnrealGDKTestGyms\Game\Intermediate\Config\MapSettingsOverrides directory with
+ *the following values:
  *		[/Script/UnrealEd.LevelEditorPlaySettings]
  *		PlayNumberOfClients=1
  */
