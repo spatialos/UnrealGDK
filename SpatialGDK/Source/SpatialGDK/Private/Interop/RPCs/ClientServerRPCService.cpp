@@ -46,7 +46,8 @@ void ClientServerRPCService::AdvanceView()
 			break;
 		case EntityDelta::REMOVE:
 			ClientServerDataStore.Remove(Delta.EntityId);
-			UE_LOG(LogClientServerRPCService, Log, TEXT("AdvanceView REMOVE Entity: %lld"), Delta.EntityId);
+			UE_LOG(LogClientServerRPCService, Log, TEXT("AdvanceView %lld Delta.AuthorityLost.Num()=%d"), Delta.EntityId,
+				   Delta.AuthorityLost.Num());
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
 			ClientServerDataStore.Remove(Delta.EntityId);

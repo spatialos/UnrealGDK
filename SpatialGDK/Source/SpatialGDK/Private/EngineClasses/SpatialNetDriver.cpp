@@ -2045,22 +2045,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 			if (RPCService.IsValid())
 			{
-				if (EntityDelta.Type == SpatialGDK::EntityDelta::ADD)
-				{
-					SpatialDebugger->OnEntityAdded(EntityDelta.EntityId);
-				}
-				if (EntityDelta.Type == SpatialGDK::EntityDelta::REMOVE)
-				{
-					SpatialDebugger->OnEntityRemoved(EntityDelta.EntityId);
-					UE_LOG(LogSpatialOSNetDriver, Log, TEXT("USpatialNetDriver OnEntityRemoved(%lld)"), EntityDelta.EntityId);
-				}
-				for (const auto& Authority : EntityDelta.AuthorityGained)
-				{
-					if (Authority.ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-					{
-						SpatialDebugger->ActorAuthorityGained(EntityDelta.EntityId);
-					}
-				}
+				RPCService->ProcessChanges(GetElapsedTime());
+			}
+			if (WellKnownEntitySystem.IsValid())
+			{
+				WellKnownEntitySystem->Advance();
 			}
 		}
 

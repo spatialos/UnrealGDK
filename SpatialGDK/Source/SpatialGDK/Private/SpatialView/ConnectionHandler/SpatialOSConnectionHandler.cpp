@@ -46,7 +46,6 @@ OpList SpatialOSConnectionHandler::GetNextOpList()
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
 			Id = &Op.op.delete_entity_response.request_id;
-			UE_LOG(LogTemp, Log, TEXT("GetNextOpList %lld"), Id);
 			break;
 		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
 			Id = &Op.op.entity_query_response.request_id;

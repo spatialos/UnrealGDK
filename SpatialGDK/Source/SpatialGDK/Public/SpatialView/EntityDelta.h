@@ -41,7 +41,6 @@ struct ComponentChange
 		: ComponentId(id)
 		, Type(REMOVE)
 	{
-		UE_LOG(LogTemp, Log, TEXT("ComponentChange %lld"), id);
 	}
 
 	Worker_ComponentId ComponentId;
@@ -66,7 +65,6 @@ struct AuthorityChange
 		: ComponentSetId(Id)
 		, Type(static_cast<AuthorityType>(Type))
 	{
-		UE_LOG(LogTemp, Log, TEXT("AuthorityChange %lld %d"), Id, Type);
 	}
 
 	Worker_ComponentSetId ComponentSetId;

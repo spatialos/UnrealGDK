@@ -32,7 +32,8 @@ void ClientConnectionManager::Advance()
 		{
 		case EntityDelta::REMOVE:
 			EntityRemoved(Delta.EntityId);
-			UE_LOG(LogTemp, Log, TEXT("ClientConnectionManager REMOVE %lld"), Delta.EntityId);
+			UE_LOG(LogWorkerEntitySystem, Log, TEXT("ClientConnectionManager REMOVE %lld Delta.AuthorityLost.Num()=%d"), Delta.EntityId,
+				   Delta.AuthorityLost.Num());
 		default:
 			break;
 		}

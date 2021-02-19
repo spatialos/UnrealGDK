@@ -54,6 +54,8 @@ void SpatialLoadBalanceEnforcer::Advance()
 			break;
 		case EntityDelta::REMOVE:
 			DataStore.Remove(Delta.EntityId);
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("REMOVE %lld Delta.AuthorityLost.Num()=%d"), Delta.EntityId,
+				   Delta.AuthorityLost.Num());
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
 			DataStore.Remove(Delta.EntityId);

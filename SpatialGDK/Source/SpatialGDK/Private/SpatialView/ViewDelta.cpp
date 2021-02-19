@@ -22,12 +22,17 @@ void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View, const FC
 			Worker_Op& Op = Ops.Ops[i];
 			if (Op.op_type == WORKER_OP_TYPE_REMOVE_ENTITY)
 			{
-				UE_LOG(LogTemp, Log, TEXT("SetFromOpList REMOVE_ENTITY Ops[%d] %d %lld"), i, Op.op_type, Op.op.remove_entity.entity_id);
+				UE_LOG(LogViewDelta, Log, TEXT("SetFromOpList REMOVE_ENTITY Ops[%d] %d %lld"), i, Op.op_type, Op.op.remove_entity.entity_id);
 			}
 			if (Op.op_type == WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE)
 			{
-				UE_LOG(LogTemp, Log, TEXT("SetFromOpList DELETE_ENTITY_RESPONSE Ops[%d] %d %lld"), i, Op.op_type,
+				UE_LOG(LogViewDelta, Log, TEXT("SetFromOpList DELETE_ENTITY_RESPONSE Ops[%d] %d %lld"), i, Op.op_type,
 					   Op.op.delete_entity_response.entity_id);
+			}
+			if (Op.op_type == WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE)
+			{
+				UE_LOG(LogViewDelta, Log, TEXT("SetFromOpList WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE Ops[%d] %d %lld, %d"), i,
+					   Op.op_type, Op.op.component_set_authority_change.entity_id, Op.op.component_set_authority_change.authority);
 			}
 		}
 
@@ -103,7 +108,7 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 		// Newly incomplete entities are represented as marker remove entities with no state.
 		else if (NewlyIncompleteId == CurrentEntityId)
 		{
-			UE_LOG(LogViewDelta, Log, TEXT("EntityDeltas.Emplace entity ID %lld as REMOVE"), CurrentEntityId);
+			UE_LOG(LogViewDelta, Log, TEXT("EntityDeltas.Emplace entity ID %lld as REMOVE"), CurrentEntityId);			
 			SubDelta.EntityDeltas.Emplace(EntityDelta{ CurrentEntityId, EntityDelta::REMOVE });
 			++NewlyIncompleteIt;
 		}
@@ -197,7 +202,7 @@ ViewDelta::ReceivedComponentChange::ReceivedComponentChange(const Worker_RemoveC
 	, ComponentId(Op.component_id)
 	, Type(REMOVE)
 {
-	// UE_LOG(LogTemp, Log, TEXT("ReceivedComponentChange %lld %u"), Op.entity_id, Op.component_id);
+	// UE_LOG(LogViewDelta, Log, TEXT("ReceivedComponentChange %lld %u"), Op.entity_id, Op.component_id);
 }
 
 bool ViewDelta::DifferentEntity::operator()(const ReceivedEntityChange& E) const
@@ -368,7 +373,7 @@ void ViewDelta::ProcessOpList(const OpList& Ops, const EntityView& View, const F
 			EntityChanges.Push(ReceivedEntityChange{ Op.op.add_entity.entity_id, true });
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			UE_LOG(LogTemp, Log, TEXT("ViewDelta::ProcessOpList WORKER_OP_TYPE_REMOVE_ENTITY %lld"), Op.op.remove_entity.entity_id);
+			UE_LOG(LogViewDelta, Log, TEXT("ViewDelta::ProcessOpList WORKER_OP_TYPE_REMOVE_ENTITY %lld"), Op.op.remove_entity.entity_id);
 			EntityChanges.Push(ReceivedEntityChange{ Op.op.remove_entity.entity_id, false });
 			break;
 		case WORKER_OP_TYPE_METRICS:
@@ -381,7 +386,7 @@ void ViewDelta::ProcessOpList(const OpList& Ops, const EntityView& View, const F
 			WorkerMessages.Push(Op);
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
-			UE_LOG(LogTemp, Log, TEXT("ViewDelta::ProcessOpList WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE %lld"),
+			UE_LOG(LogViewDelta, Log, TEXT("ViewDelta::ProcessOpList WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE %lld"),
 				   Op.op.remove_entity.entity_id);
 			WorkerMessages.Push(Op);
 			break;
@@ -392,6 +397,8 @@ void ViewDelta::ProcessOpList(const OpList& Ops, const EntityView& View, const F
 			ComponentChanges.Emplace(Op.op.remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
+			UE_LOG(LogViewDelta, Log, TEXT("ViewDelta::ProcessOpList WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE %lld, %d"),
+				   Op.op.component_set_authority_change.entity_id, Op.op.component_set_authority_change.authority);
 			GenerateComponentChangesFromSetData(Op.op.component_set_authority_change, View, ComponentSetData);
 			AuthorityChanges.Emplace(Op.op.component_set_authority_change);
 			break;
@@ -518,6 +525,7 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 			}
 		}
 
+		UE_LOG(LogViewDelta, Log, TEXT("EntityDeltas.Push(%lld) Type:%d AuthorityLost:%d"), CurrentEntityId, Delta.Type, Delta.AuthorityLost.Num());
 		EntityDeltas.Push(Delta);
 	}
 }
@@ -639,6 +647,7 @@ Worker_ComponentSetAuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(W
 		else if (bHasAuthority)
 		{
 			AuthorityLostForDelta.Emplace(ComponentSetId, AuthorityChange::AUTHORITY_LOST);
+			UE_LOG(LogViewDelta, Log, TEXT("ProcessEntityAuthorityChanges %lld"), EntityId);
 			EntityAuthority.RemoveAtSwap(AuthorityIndex);
 			++LossCount;
 		}
@@ -681,7 +690,7 @@ ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(Receive
 	{
 		Delta.Type = EntityDelta::REMOVE;
 		View.Remove(EntityId);
-		UE_LOG(LogTemp, Log, TEXT("ProcessEntityExistenceChange %lld"), EntityId);
+		UE_LOG(LogViewDelta, Log, TEXT("ProcessEntityExistenceChange View.Remove %lld"), EntityId);
 	}
 
 	return It + 1;

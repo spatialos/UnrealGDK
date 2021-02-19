@@ -168,12 +168,12 @@ void ActorSystem::Advance()
 			EntityAdded(Delta.EntityId);
 			break;
 		case EntityDelta::REMOVE:
-			UE_LOG(LogActorSystem, Log, TEXT("Remove REMOVE entity ID %lld"), Delta.EntityId);
+			UE_LOG(LogActorSystem, Log, TEXT("REMOVE entity ID %lld Delta.AuthorityLost.Num()=%d"), Delta.EntityId, Delta.AuthorityLost.Num());
 			EntityRemoved(Delta.EntityId);
 			ActorDataStore.Remove(Delta.EntityId);
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
-			UE_LOG(LogActorSystem, Log, TEXT("Remove TEMPORARILY_REMOVED entity ID %lld"), Delta.EntityId);
+			UE_LOG(LogActorSystem, Log, TEXT("TEMPORARILY_REMOVED entity ID %lld Delta.AuthorityLost.Num()=%d"), Delta.EntityId, Delta.AuthorityLost.Num());
 			EntityRemoved(Delta.EntityId);
 			ActorDataStore.Remove(Delta.EntityId);
 			PopulateDataStore(Delta.EntityId);
@@ -1604,6 +1604,10 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 	if (APlayerController* PC = Cast<APlayerController>(Actor))
 	{
 		// Force APlayerController::DestroyNetworkActorHandled to return false
+		if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PC->GetNetConnection()))
+		{
+			Connection->Disable();
+		}
 		PC->Player = nullptr;
 	}
 

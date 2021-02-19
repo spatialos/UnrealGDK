@@ -42,6 +42,11 @@ void ViewCoordinator::Advance(float DeltaTimeS)
 				UE_LOG(LogTemp, Log, TEXT("Before DELETE_ENTITY_RESPONSE Ops[%d] %d %lld"), j, Op.op_type,
 					   Op.op.delete_entity_response.entity_id);
 			}
+			if (Op.op_type == WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Before WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE Ops[%d] %d %lld, %d"), j,
+					   Op.op_type, Op.op.component_set_authority_change.entity_id, Op.op.component_set_authority_change.authority);
+			}
 		}
 
 		ReserveEntityIdRetryHandler.ProcessOps(DeltaTimeS, Ops, View);
@@ -62,6 +67,11 @@ void ViewCoordinator::Advance(float DeltaTimeS)
 				UE_LOG(LogTemp, Log, TEXT("AddOpList DELETE_ENTITY_RESPONSE Ops[%d] %d %lld"), j, Op.op_type,
 					   Op.op.delete_entity_response.entity_id);
 			}
+			if (Op.op_type == WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE)
+			{
+				UE_LOG(LogTemp, Log, TEXT("AddOpList WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE Ops[%d] %d %lld, %d"), j,
+					   Op.op_type, Op.op.component_set_authority_change.entity_id, Op.op.component_set_authority_change.authority);
+			}
 		}
 		CriticalSectionFilter.AddOpList(MoveTemp(Ops));
 	}
@@ -81,6 +91,11 @@ void ViewCoordinator::Advance(float DeltaTimeS)
 			{
 				UE_LOG(LogTemp, Log, TEXT("ProcessOpLists DELETE_ENTITY_RESPONSE Ops[%d] %d %lld"), j, Op.op_type,
 					   Op.op.delete_entity_response.entity_id);
+			}
+			if (Op.op_type == WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE)
+			{
+				UE_LOG(LogTemp, Log, TEXT("ProcessOpLists WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE Ops[%d] %d %lld, %d"), j, Op.op_type,
+					   Op.op.component_set_authority_change.entity_id, Op.op.component_set_authority_change.authority);
 			}
 		}
 		ReceivedOpEventHandler.ProcessOpLists(Ops);

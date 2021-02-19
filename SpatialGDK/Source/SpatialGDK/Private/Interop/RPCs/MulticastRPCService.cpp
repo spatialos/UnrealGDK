@@ -27,46 +27,48 @@ void MulticastRPCService::AdvanceView()
 		switch (Delta.Type)
 		{
 		case EntityDelta::UPDATE:
-		{
-			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
 			{
-				// We process auth lost temporarily twice. Once before updates and once after, so as not
-				// to process updates that we received while we think we are still authoritiative.
-				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
-			}
-			for (const AuthorityChange& Change : Delta.AuthorityLost)
-			{
-				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
-			}
-			for (const ComponentChange& Change : Delta.ComponentUpdates)
-			{
-				if (Change.ComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+				for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
 				{
-					ApplyComponentUpdate(Delta.EntityId, Change.Update);
+					// We process auth lost temporarily twice. Once before updates and once after, so as not
+					// to process updates that we received while we think we are still authoritiative.
+					AuthorityLost(Delta.EntityId, Change.ComponentSetId);
 				}
-				else if (Change.ComponentId > SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+				for (const AuthorityChange& Change : Delta.AuthorityLost)
 				{
-					break;
+					AuthorityLost(Delta.EntityId, Change.ComponentSetId);
+				}
+				for (const ComponentChange& Change : Delta.ComponentUpdates)
+				{
+					if (Change.ComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+					{
+						ApplyComponentUpdate(Delta.EntityId, Change.Update);
+					}
+					else if (Change.ComponentId > SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+					{
+						break;
+					}
+				}
+				for (const AuthorityChange& Change : Delta.AuthorityGained)
+				{
+					AuthorityGained(Delta.EntityId, Change.ComponentSetId);
+				}
+				for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
+				{
+					// Updates that we could have received while we weren't authoritative have now been processed.
+					// Regain authority.
+					AuthorityGained(Delta.EntityId, Change.ComponentSetId);
 				}
 			}
-			for (const AuthorityChange& Change : Delta.AuthorityGained)
-			{
-				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
-			}
-			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
-			{
-				// Updates that we could have received while we weren't authoritative have now been processed.
-				// Regain authority.
-				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
-			}
-		}
+			break;
 		case EntityDelta::ADD:
 			PopulateDataStore(Delta.EntityId);
 			break;
 		case EntityDelta::REMOVE:
 			OnRemoveMulticastRPCComponentForEntity(Delta.EntityId);
 			MulticastDataStore.Remove(Delta.EntityId);
-			UE_LOG(LogTemp, Log, TEXT("MulticastRPCService REMOVE %lld"), Delta.EntityId);
+			UE_LOG(LogTemp, Log, TEXT("MulticastRPCService REMOVE %lld Delta.AuthorityLost.Num()=%d"), Delta.EntityId,
+				   Delta.AuthorityLost.Num());
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
 			OnRemoveMulticastRPCComponentForEntity(Delta.EntityId);

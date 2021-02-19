@@ -81,7 +81,8 @@ void USpatialNetDriverDebugContext::AdvanceView()
 			break;
 		case SpatialGDK::EntityDelta::REMOVE:
 			RemoveComponent(Delta.EntityId);
-			UE_LOG(LogTemp, Log, TEXT("USpatialNetDriverDebugContext REMOVE %lld"), Delta.EntityId);
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Log, TEXT("USpatialNetDriverDebugContext REMOVE %lld Delta.AuthorityLost.Num()=%d"), Delta.EntityId,
+				   Delta.AuthorityLost.Num());
 			break;
 		case SpatialGDK::EntityDelta::TEMPORARILY_REMOVED:
 			RemoveComponent(Delta.EntityId);

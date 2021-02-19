@@ -38,10 +38,27 @@ void USpatialNetConnection::BeginDestroy()
 	Super::BeginDestroy();
 }
 
+#define GDK_LOG()
+
 void USpatialNetConnection::CleanUp()
 {
-	UE_LOG(LogSpatialNetConnection, Log, TEXT("USpatialNetConnection::CleanUp PlayerController %s entity:%lld."),
-		   *AActor::GetDebugName(PlayerController), PlayerControllerEntity);
+	FString WorkerName;
+	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver))
+	{
+		WorkerName = SpatialNetDriver->Connection->GetWorkerId();
+	}
+
+	if (PlayerControllerEntity != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogSpatialNetConnection, Error, TEXT("%s USpatialNetConnection::CleanUp PlayerController %s entity:%lld."), *WorkerName,
+			   *AActor::GetDebugName(PlayerController), PlayerControllerEntity);
+	}
+	else
+	{
+		UE_LOG(LogSpatialNetConnection, Log, TEXT("%s USpatialNetConnection::CleanUp PlayerController %s entity:%lld."), *WorkerName,
+			   *AActor::GetDebugName(PlayerController), PlayerControllerEntity);
+	}
+
 	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver))
 	{
 		SpatialNetDriver->ClientConnectionManager->CleanUpClientConnection(this);

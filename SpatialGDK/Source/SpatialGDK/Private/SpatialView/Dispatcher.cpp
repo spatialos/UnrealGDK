@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/Dispatcher.h"
 
@@ -16,14 +16,14 @@ void FDispatcher::InvokeCallbacks(const TArray<EntityDelta>& Deltas)
 {
 	for (const EntityDelta& Delta : Deltas)
 	{
+		HandleAuthorityChange(Delta.EntityId, Delta.AuthorityGained, &FAuthorityCallbacks::AuthorityGainedCallbacks);
+		HandleAuthorityChange(Delta.EntityId, Delta.AuthorityLost, &FAuthorityCallbacks::AuthorityLostCallbacks);
+		HandleAuthorityChange(Delta.EntityId, Delta.AuthorityLostTemporarily, &FAuthorityCallbacks::AuthorityLostTemporarilyCallbacks);
+
 		HandleComponentPresenceChanges(Delta.EntityId, Delta.ComponentsAdded, &FComponentCallbacks::ComponentAddedCallbacks);
 		HandleComponentPresenceChanges(Delta.EntityId, Delta.ComponentsRemoved, &FComponentCallbacks::ComponentRemovedCallbacks);
 		HandleComponentValueChanges(Delta.EntityId, Delta.ComponentUpdates);
 		HandleComponentValueChanges(Delta.EntityId, Delta.ComponentsRefreshed);
-
-		HandleAuthorityChange(Delta.EntityId, Delta.AuthorityGained, &FAuthorityCallbacks::AuthorityGainedCallbacks);
-		HandleAuthorityChange(Delta.EntityId, Delta.AuthorityLost, &FAuthorityCallbacks::AuthorityLostCallbacks);
-		HandleAuthorityChange(Delta.EntityId, Delta.AuthorityLostTemporarily, &FAuthorityCallbacks::AuthorityLostTemporarilyCallbacks);
 	}
 }
 
