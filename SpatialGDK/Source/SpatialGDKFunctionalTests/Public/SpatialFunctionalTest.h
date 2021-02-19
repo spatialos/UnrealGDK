@@ -412,6 +412,7 @@ private:
 
 	UFUNCTION()
 	void OnReplicated_bPreparedTest();
+	void PrepareTestAfterBeginPlay();
 
 	UPROPERTY(ReplicatedUsing = OnReplicated_bFinishedTest, Transient)
 	bool bFinishedTest = false;

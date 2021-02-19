@@ -666,25 +666,34 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 	}
 }
 
+void ASpatialFunctionalTest::PrepareTestAfterBeginPlay()
+{
+	// We need to delay until next BeginPlay since on non-Authority
+	// OnReplicated_bPreparedTest() will be called before BeginPlay().
+	if (!HasActorBegunPlay())
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this]() { PrepareTestAfterBeginPlay(); });
+		return;
+	}
+
+	if (!HasAuthority())
+	{
+		PrepareTest();
+	}
+
+	// Currently PrepareTest() happens before FlowControllers are registered,
+	// but that is most likely because of the bug that forces us to delay their registration.
+	if (LocalFlowController != nullptr)
+	{
+		LocalFlowController->SetReadyToRunTest(true);
+	}
+}
+
 void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
 {
 	if (bPreparedTest)
 	{
-		// We need to delay until next Tick since on non-Authority
-		// OnReplicated_bPreparedTest() will be called before BeginPlay().
-		GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
-			if (!HasAuthority())
-			{
-				PrepareTest();
-			}
-
-			// Currently PrepareTest() happens before FlowControllers are registered,
-			// but that is most likely because of the bug that forces us to delay their registration.
-			if (LocalFlowController != nullptr)
-			{
-				LocalFlowController->SetReadyToRunTest(true);
-			}
-		});
+		PrepareTestAfterBeginPlay();
 	}
 }
 
