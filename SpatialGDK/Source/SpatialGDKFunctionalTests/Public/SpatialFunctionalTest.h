@@ -370,7 +370,10 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Spatial Functional Test")
 	FSpatialFunctionalTestStepDefinition ClearSnapshotStepDefinition;
 
+	void NotifyTestFinishedObserver() override;
 private:
+	bool bNotifyObserversCalled = false;
+
 	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"), Category = "Spatial Functional Test")
 	int NumRequiredClients = 2;
 

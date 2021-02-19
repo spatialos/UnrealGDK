@@ -196,8 +196,18 @@ void ASpatialFunctionalTest::LogStep(ELogVerbosity::Type Verbosity, const FStrin
 
 void ASpatialFunctionalTest::PrepareTest()
 {
-	StepDefinitions.Empty();
+	if (bFinishedTest && !bNotifyObserversCalled) // This happens when the world is not reset.
+	{
+		// Wait for this
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
+			PrepareTest();
+			});
+		return;
+	}
 
+	bFinishedTest = false; // Reset the test state
+
+	StepDefinitions.Empty();
 	Super::PrepareTest();
 
 	if (HasAuthority())
@@ -892,6 +902,12 @@ void ASpatialFunctionalTest::ClearTagDelegationAndInterest()
 	{
 		NetDriver->DebugCtx->Reset();
 	}
+}
+
+void ASpatialFunctionalTest::NotifyTestFinishedObserver()
+{
+	Super::NotifyTestFinishedObserver();
+	bNotifyObserversCalled = true;
 }
 
 void ASpatialFunctionalTest::TakeSnapshot(const FSpatialFunctionalTestSnapshotTakenDelegate& BlueprintCallback)
