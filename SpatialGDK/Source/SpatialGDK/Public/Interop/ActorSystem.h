@@ -24,38 +24,6 @@ namespace SpatialGDK
 class SpatialEventTracer;
 class FSubView;
 
-class LoadBalancingWriter
-{
-public:
-	void Advance();
-	void OnActorReplicated(AActor* Actor);
-	LoadBalancingStuff GetOrCreateLoadBalancingData(const AActor* Actor);
-
-public:
-	using LoadBalancingData = LoadBalancingStuff;
-	struct LoadBalancingActorStuff
-	{
-		LoadBalancingActorStuff()
-			: LoadBalancingActorStuff(SpatialGDK::LoadBalancingWriter::LoadBalancingData{})
-		{
-		}
-
-		LoadBalancingActorStuff(const LoadBalancingData& InLoadBalancingData)
-			: LoadBalancingData(InLoadBalancingData)
-		{
-		}
-
-		LoadBalancingData LoadBalancingData;
-		TWeakObjectPtr<AActor> Actor;
-	};
-	const FSubView* SubView;
-	TWeakObjectPtr<USpatialNetDriver> NetDriver;
-	typedef uint32 FOwnershipSetId;
-	FOwnershipSetId LocalOwnershipSetIdCounter = 0;
-	TMap<TObjectKey<AActor>, FOwnershipSetId> BaseSetId;
-	TMap<Worker_EntityId_Key, LoadBalancingActorStuff> DataStore;
-};
-
 struct ActorData
 {
 	SpawnData Spawn;

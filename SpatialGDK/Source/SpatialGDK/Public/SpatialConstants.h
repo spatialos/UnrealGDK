@@ -417,6 +417,9 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 								// Tags: Well known entities, non-auth actors, and tombstone tags
 								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_TAG_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID,
 
+								// Strategy Worker LB components
+								LOAD_BALANCING_STUFF_COMPONENT_ID,
+
 								PLAYER_CONTROLLER_COMPONENT_ID, PARTITION_COMPONENT_ID
 	};
 
@@ -434,6 +437,9 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 
 								// Actor tags
 								ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
+
+								// Strategy Worker LB components
+								LOAD_BALANCING_STUFF_COMPONENT_ID,
 
 								PARTITION_COMPONENT_ID
 	};
