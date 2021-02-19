@@ -13,10 +13,8 @@ class TestProjectTarget {
     [ValidateNotNullOrEmpty()][string]$test_repo_branch
     [ValidateNotNullOrEmpty()][string]$test_repo_relative_uproject_path
     [ValidateNotNullOrEmpty()][string]$test_project_name
-    [ValidateNotNull()][string]$test_gyms_version_path
-    [ValidateNotNull()][string]$test_env_override
     
-    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name, [string]$test_gyms_version_path, [string]$test_env_override) {
+    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name, [string]$test_version_path, [string]$test_env_override) {
         $this.test_repo_url = $test_repo_url
         $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
         $this.test_project_name = $test_project_name
@@ -24,15 +22,15 @@ class TestProjectTarget {
         # Resolve the branch to run against. The order of priority is:
         # envvar > same-name branch as the branch we are currently on > UnrealGDKTestGymVersion.txt > "master".
         $testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
-        $test_gym_version = if (($test_gyms_version_path -ne [string]::Empty) -And (Test-Path -Path $test_gyms_version_path)) {[System.IO.File]::ReadAllText($test_gyms_version_path)} else {[string]::Empty}
+        $test_version = if ([System.IO.File]::Exists($test_version_path)) {[System.IO.File]::ReadAllText($test_version_path)} else {[string]::Empty}
         if (Test-Path $test_env_override) {
             $this.test_repo_branch = (Get-Item $test_env_override).value
         }
-        elseif($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
+        elseif ($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
             $this.test_repo_branch = $gdk_branch
         }
-        elseif($test_gym_version -ne [string]::Empty) {
-            $this.test_repo_branch = $test_gym_version
+        elseif ($test_version -ne [string]::Empty) {
+            $this.test_repo_branch = $test_version
         }
         else {
             $this.test_repo_branch = "master"
@@ -72,7 +70,6 @@ class TestSuite {
 $tests = @()
 
 if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
-    Write-Output "Native tests set"
     # We run spatial tests against Vanilla UE4
     $tests += [TestSuite]::new($gdk_test_project, "NetworkingMap", "VanillaTestResults", "/Game/Maps/FunctionalTests/CI_Fast/", "$user_gdk_settings", $False, "$user_cmd_line_args")
     
@@ -85,7 +82,6 @@ if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
     }
 }
 else {
-    Write-Output "Non native tests set"
     # We run all tests and networked functional maps
     $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResults", "SpatialGDK.+/Game/Maps/FunctionalTests/CI_Fast/+/Game/Maps/FunctionalTests/CI_Fast_Spatial_Only/", "$user_gdk_settings", $True, "$user_cmd_line_args")
 
@@ -127,7 +123,6 @@ class CachedProject {
 }
 
 $projects_cached = @()
-Write-Output "Starting tests, collected tests: $($tests)"
 Foreach ($test in $tests) {
     $test_repo_url = $test.test_project_target.test_repo_url
     $test_repo_branch = $test.test_project_target.test_repo_branch
@@ -147,9 +142,6 @@ Foreach ($test in $tests) {
         }
     }
 
-    Write-Output "Processing test: $($test)"
-
-    Write-Output "project_is_cached: $($project_is_cached)"
     if (-Not $project_is_cached) {
         # Build the testing project
         Start-Event "build-project" "command"
@@ -169,7 +161,6 @@ Foreach ($test in $tests) {
         Finish-Event "build-project" "command"
     }
 
-    Write-Output "env:BUILD_PLATFORM: $($env:BUILD_PLATFORM), env:BUILD_TARGET: $($env:BUILD_TARGET), env:BUILD_STATE: $($env:BUILD_STATE)"
     # Only run tests on Windows, as we do not have a linux agent - should not matter
     if ($env:BUILD_PLATFORM -eq "Win64" -And $env:BUILD_TARGET -eq "Editor" -And $env:BUILD_STATE -eq "Development") {
         Start-Event "test-gdk" "command"
