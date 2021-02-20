@@ -2,6 +2,7 @@
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "Schema/ServerWorker.h"
 #include "Utils/InterestFactory.h"
+#include "SpatialGDKLLM.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialRoutingSystem);
 
@@ -9,6 +10,7 @@ namespace SpatialGDK
 {
 void SpatialRoutingSystem::ProcessUpdate(Worker_EntityId Entity, const ComponentChange& Change, RoutingComponents& Components)
 {
+	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::RoutingSystem);
 	switch (Change.ComponentId)
 	{
 	case SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID:

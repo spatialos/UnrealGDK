@@ -47,6 +47,7 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKLLM.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/EntityComponentTypes.h"
@@ -1996,6 +1997,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 void USpatialNetDriver::TickDispatch(float DeltaTime)
 {
+	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::NetDriver);
 	// Not calling Super:: on purpose.
 	UNetDriver::TickDispatch(DeltaTime);
 
