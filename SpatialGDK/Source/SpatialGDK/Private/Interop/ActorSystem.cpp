@@ -15,6 +15,7 @@
 #include "SpatialView/SubView.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/RepLayoutUtils.h"
+#include "SpatialGDKLLM.h"
 
 DEFINE_LOG_CATEGORY(LogActorSystem);
 
@@ -96,6 +97,7 @@ ActorSystem::ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneS
 
 void ActorSystem::Advance()
 {
+	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::ActorSystem);
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{
 		if (Delta.Type == EntityDelta::ADD)

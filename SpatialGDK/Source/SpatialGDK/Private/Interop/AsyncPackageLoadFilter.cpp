@@ -3,6 +3,7 @@
 #include "Interop/AsyncPackageLoadFilter.h"
 
 #include "UObject/UObjectGlobals.h"
+#include "SpatialGDKLLM.h"
 
 DEFINE_LOG_CATEGORY(LogAsyncPackageLoadFilter);
 
@@ -100,6 +101,7 @@ void UAsyncPackageLoadFilter::OnAsyncPackageLoaded(const FName& PackageName, UPa
 
 void UAsyncPackageLoadFilter::ProcessActorsFromAsyncLoading()
 {
+	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::AsyncPackageLoadFilter);
 	static_assert(TContainerTraits<decltype(LoadedPackages)>::MoveWillEmptyContainer, "Moving the set won't empty it");
 	TSet<FName> PackagesToProcess = MoveTemp(LoadedPackages);
 

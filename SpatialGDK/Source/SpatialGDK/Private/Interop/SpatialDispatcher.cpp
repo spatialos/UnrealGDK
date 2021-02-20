@@ -8,6 +8,7 @@
 #include "UObject/UObjectIterator.h"
 #include "Utils/OpUtils.h"
 #include "Utils/SpatialMetrics.h"
+#include "SpatialGDKLLM.h"
 
 #include "WorkerSDK/improbable/c_worker.h"
 
@@ -29,6 +30,7 @@ void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticCompone
 
 void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 {
+	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::Dispatcher);
 	check(Receiver.IsValid());
 	check(StaticComponentView.IsValid());
 

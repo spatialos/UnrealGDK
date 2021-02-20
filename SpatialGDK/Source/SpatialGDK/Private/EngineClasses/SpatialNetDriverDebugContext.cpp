@@ -6,6 +6,7 @@
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "Utils/SpatialActorUtils.h"
+#include "SpatialGDKLLM.h"
 
 namespace
 {
@@ -71,6 +72,7 @@ void USpatialNetDriverDebugContext::Cleanup()
 
 void USpatialNetDriverDebugContext::AdvanceView()
 {
+	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::DebugCtx);
 	const SpatialGDK::FSubViewDelta& ViewDelta = SubView->GetViewDelta();
 	for (const SpatialGDK::EntityDelta& Delta : ViewDelta.EntityDeltas)
 	{

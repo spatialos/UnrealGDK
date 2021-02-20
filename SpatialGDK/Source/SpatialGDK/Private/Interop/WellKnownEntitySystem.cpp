@@ -3,6 +3,7 @@
 #include "Interop/WellKnownEntitySystem.h"
 
 #include "Interop/SpatialReceiver.h"
+#include "SpatialGDKLLM.h"
 
 DEFINE_LOG_CATEGORY(LogWellKnownEntitySystem);
 
@@ -22,6 +23,7 @@ WellKnownEntitySystem::WellKnownEntitySystem(const FSubView& SubView, USpatialRe
 
 void WellKnownEntitySystem::Advance()
 {
+	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::WellKnownEntitySystem);
 	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
 	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
 	{

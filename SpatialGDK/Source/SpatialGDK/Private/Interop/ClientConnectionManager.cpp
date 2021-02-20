@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/ClientConnectionManager.h"
 
@@ -10,6 +10,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SubView.h"
+#include "SpatialGDKLLM.h"
 
 DEFINE_LOG_CATEGORY(LogWorkerEntitySystem);
 
@@ -25,6 +26,7 @@ ClientConnectionManager::ClientConnectionManager(const FSubView& InSubView, USpa
 
 void ClientConnectionManager::Advance()
 {
+	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::ClientConnectionManager);
 	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
 	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
 	{
