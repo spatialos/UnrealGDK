@@ -22,7 +22,6 @@ enum class ELLMTagSpatialGDK : LLM_TAG_TYPE
 	SpatialMetrics,
 	AsyncPackageLoadFilter,
 
-
 	Count
 };
 

@@ -10,18 +10,18 @@ struct FLLMTagInfoSpatial
 	FName SummaryStatName; // shows in the LLM summary stat group
 };
 
-DECLARE_LLM_MEMORY_STAT(TEXT("Spatial Receiver"),	STAT_ReceiverLLM,	STATGROUP_LLMPlatform);
-DECLARE_LLM_MEMORY_STAT(TEXT("Spatial Sender"),		STAT_SenderLLM,		STATGROUP_LLMPlatform);
-DECLARE_LLM_MEMORY_STAT(TEXT("Spatial NetDriver"),	STAT_NetDriverLLM,	STATGROUP_LLMPlatform);
+DECLARE_LLM_MEMORY_STAT(TEXT("Spatial Receiver"), STAT_ReceiverLLM, STATGROUP_LLMPlatform);
+DECLARE_LLM_MEMORY_STAT(TEXT("Spatial Sender"), STAT_SenderLLM, STATGROUP_LLMPlatform);
+DECLARE_LLM_MEMORY_STAT(TEXT("Spatial NetDriver"), STAT_NetDriverLLM, STATGROUP_LLMPlatform);
 DECLARE_LLM_MEMORY_STAT(TEXT("Spatial RPCService"), STAT_RPCServiceLLM, STATGROUP_LLMPlatform);
 
 // *** order must match ELLMTagSpatialGDK enum ***
 const FLLMTagInfoSpatial ELLMTagNamesSpatial[] = {
 	// csv name						// stat name						// summary stat name
-	{ TEXT("Spatial Receiver"),		GET_STATFNAME(STAT_ReceiverLLM),	GET_STATFNAME(STAT_EngineSummaryLLM) },
-	{ TEXT("Spatial Sender"),		GET_STATFNAME(STAT_SenderLLM),		GET_STATFNAME(STAT_EngineSummaryLLM) },
-	{ TEXT("Spatial NetDriver"),	GET_STATFNAME(STAT_NetDriverLLM),	GET_STATFNAME(STAT_EngineSummaryLLM) },
-	{ TEXT("Spatial RPCService"),	GET_STATFNAME(STAT_RPCServiceLLM),	GET_STATFNAME(STAT_EngineSummaryLLM) },
+	{ TEXT("Spatial Receiver"), GET_STATFNAME(STAT_ReceiverLLM), GET_STATFNAME(STAT_EngineSummaryLLM) },
+	{ TEXT("Spatial Sender"), GET_STATFNAME(STAT_SenderLLM), GET_STATFNAME(STAT_EngineSummaryLLM) },
+	{ TEXT("Spatial NetDriver"), GET_STATFNAME(STAT_NetDriverLLM), GET_STATFNAME(STAT_EngineSummaryLLM) },
+	{ TEXT("Spatial RPCService"), GET_STATFNAME(STAT_RPCServiceLLM), GET_STATFNAME(STAT_EngineSummaryLLM) },
 };
 
 void SpatialGDKLLM::Initialise()
