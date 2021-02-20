@@ -64,9 +64,6 @@ public:
 	// the PlayerController as a partition entity for the client worker.
 	Worker_EntityId ConnectionClientWorkerSystemEntityId;
 
-	class FTimerManager* TimerManager;
-
 	// Player lifecycle
 	Worker_EntityId PlayerControllerEntity;
-	FTimerHandle HeartbeatTimer;
 };

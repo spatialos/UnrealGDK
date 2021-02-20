@@ -108,7 +108,7 @@ void ActorSystem::Advance()
 			{
 				continue;
 			}
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
+			UE_LOG(LogActorSystem, Verbose, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
 				   Delta.EntityId);
 			// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
 			NetDriver->PackageMap->ResolveEntityActor(EntityActor, Delta.EntityId);
@@ -891,7 +891,7 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 		{
 			if (AsActor->GetTearOff())
 			{
-				UE_LOG(LogSpatialActorChannel, Log,
+				UE_LOG(LogActorSystem, Log,
 					   TEXT("Actor to be resolved was torn off, so ignoring incoming operations. Object ref: %s, resolved object: %s"),
 					   *ObjectRef.ToString(), *Object->GetName());
 				DependentChannel->ObjectReferenceMap.Remove(ChannelObjectIter->Value);
@@ -902,7 +902,7 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 		{
 			if (OuterActor->GetTearOff())
 			{
-				UE_LOG(LogSpatialActorChannel, Log,
+				UE_LOG(LogActorSystem, Log,
 					   TEXT("Owning Actor of the object to be resolved was torn off, so ignoring incoming operations. Object ref: %s, "
 							"resolved object: %s"),
 					   *ObjectRef.ToString(), *Object->GetName());
@@ -1598,6 +1598,10 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 	if (APlayerController* PC = Cast<APlayerController>(Actor))
 	{
 		// Force APlayerController::DestroyNetworkActorHandled to return false
+		if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PC->GetNetConnection()))
+		{
+			Connection->Disable();
+		}
 		PC->Player = nullptr;
 	}
 

@@ -40,6 +40,12 @@ void USpatialNetConnection::BeginDestroy()
 
 void USpatialNetConnection::CleanUp()
 {
+	if (PlayerControllerEntity != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogSpatialNetConnection, Warning,
+			   TEXT("Disable is not called before CleanUp: NetConnection %s, PlayerController entity %lld"),
+			   *GetName(), PlayerControllerEntity);
+	}
 	if (USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver))
 	{
 		SpatialNetDriver->ClientConnectionManager->CleanUpClientConnection(this);
