@@ -11,9 +11,9 @@
 #include "Interop/SpatialStaticComponentView.h"
 #include "Net/NetworkProfiler.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKLLM.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialLatencyTracer.h"
-#include "SpatialGDKLLM.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 

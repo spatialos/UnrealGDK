@@ -8,9 +8,9 @@
 #include "Improbable/SpatialEngineConstants.h"
 #include "Interop/SpatialOSDispatcherInterface.h"
 #include "Interop/SpatialReceiver.h"
+#include "SpatialGDKLLM.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SubView.h"
-#include "SpatialGDKLLM.h"
 
 DEFINE_LOG_CATEGORY(LogWorkerEntitySystem);
 
