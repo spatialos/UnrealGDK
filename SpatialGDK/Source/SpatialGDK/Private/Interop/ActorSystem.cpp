@@ -1532,6 +1532,11 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 		return;
 	}
 
+	if (Actor->HasAuthority())
+	{
+		Actor->OnAuthorityLost();
+	}
+
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
 		if (NetDriver->GetWorld() != nullptr && !NetDriver->GetWorld()->IsPendingKillOrUnreachable())
