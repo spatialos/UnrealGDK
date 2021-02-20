@@ -5,8 +5,8 @@
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "SpatialGDKSettings.h"
 #include "SpatialGDKLLM.h"
+#include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogCrossServerRPCHandler);
 

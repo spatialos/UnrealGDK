@@ -12,13 +12,13 @@
 #include "Schema/Restricted.h"
 #include "Schema/Tombstone.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKLLM.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SubView.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/EntityFactory.h"
 #include "Utils/RepLayoutUtils.h"
-#include "SpatialGDKLLM.h"
 
 DEFINE_LOG_CATEGORY(LogActorSystem);
 

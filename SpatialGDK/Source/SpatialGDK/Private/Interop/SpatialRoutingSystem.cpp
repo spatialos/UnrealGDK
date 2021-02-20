@@ -1,8 +1,8 @@
 #include "Interop/SpatialRoutingSystem.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "Schema/ServerWorker.h"
-#include "Utils/InterestFactory.h"
 #include "SpatialGDKLLM.h"
+#include "Utils/InterestFactory.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialRoutingSystem);
 

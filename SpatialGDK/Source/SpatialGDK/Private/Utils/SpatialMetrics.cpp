@@ -6,9 +6,9 @@
 #include "EngineGlobals.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "SpatialGDKLLM.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/SchemaUtils.h"
-#include "SpatialGDKLLM.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialMetrics);
 
