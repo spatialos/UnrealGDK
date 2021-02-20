@@ -11,6 +11,7 @@
 #include "SpatialConstants.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialLatencyTracer.h"
+#include "SpatialGDKLLM.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 
@@ -46,6 +47,7 @@ SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const F
 
 void SpatialRPCService::AdvanceView()
 {
+	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::RPCService);
 	ClientServerRPCs.AdvanceView();
 	MulticastRPCs.AdvanceView();
 	if (CrossServerRPCs)
