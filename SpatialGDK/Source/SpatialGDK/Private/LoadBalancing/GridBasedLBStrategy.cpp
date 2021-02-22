@@ -97,7 +97,7 @@ bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 		return false;
 	}
 
-	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
+	const FVector2D Actor2DLocation = GetActorLoadBalancingPosition(Actor);
 	return IsInside(WorkerCells[LocalCellId], Actor2DLocation);
 }
 
@@ -110,7 +110,7 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
-	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
+	const FVector2D Actor2DLocation = GetActorLoadBalancingPosition(Actor);
 
 	check(VirtualWorkerIds.Num() == WorkerCells.Num());
 	for (int i = 0; i < WorkerCells.Num(); i++)
@@ -155,6 +155,11 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 	Constraint.BoxConstraint =
 		SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D), SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
 	return Constraint;
+}
+
+FVector2D UGridBasedLBStrategy::GetActorLoadBalancingPosition(const AActor& Actor) const
+{
+	return FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 }
 
 FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const

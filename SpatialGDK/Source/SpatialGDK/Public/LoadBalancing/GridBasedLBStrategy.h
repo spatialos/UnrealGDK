@@ -50,6 +50,7 @@ public:
 
 	virtual bool RequiresHandoverData() const override { return Rows * Cols > 1; }
 
+	FVector2D GetActorLoadBalancingPosition(const AActor& Actor) const;
 	virtual FVector GetWorkerEntityPosition() const override;
 
 	virtual uint32 GetMinimumRequiredWorkers() const override;
