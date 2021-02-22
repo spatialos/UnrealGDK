@@ -58,7 +58,8 @@ class ASpatialTestLoadBalancingData : public ASpatialFunctionalTest
 
 	virtual void PrepareTest() override;
 
-	TOptional<SpatialGDK::LoadBalancingData> GetLoadBalancingData(const AActor* Actor) const;
+	TOptional<SpatialGDK::ActorSetMember> GetActorSetData(const AActor* Actor) const;
+	TOptional<SpatialGDK::ActorGroupMember> GetActorGroupData(const AActor* Actor) const;
 
 	TWeakObjectPtr<ASpatialTestLoadBalancingDataActor> TargetActor;
 	TWeakObjectPtr<ASpatialTestLoadBalancingDataOffloadedActor> TargetOffloadedActor;

@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/LoadBalancingWriterSystem.h"
+
+#include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
@@ -8,86 +10,98 @@
 #include "SpatialView/SubView.h"
 namespace SpatialGDK
 {
+Worker_EntityId FLoadBalancingWriterBase::GetEntityId(AActor* Actor) const
+{
+	return NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+}
+
+bool FLoadBalancingWriterBase::IsCreatingNewEntity(Worker_EntityId EntityId) const
+{
+	return NetDriver->GetActorChannelByEntityId(EntityId)->bCreatingNewEntity;
+}
+
+const EntityViewElement& FLoadBalancingWriterBase::GetEntityView(Worker_EntityId EntityId) const
+{
+	return NetDriver->Connection->GetView()[EntityId];
+}
+
+void FLoadBalancingWriterBase::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate& ComponentUpdate)
+{
+	NetDriver->Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+}
+
+class LoadBalancingWriterActorGroup : public TLoadBalancingWriter<ActorGroupMember>
+{
+public:
+	explicit LoadBalancingWriterActorGroup(USpatialNetDriver* NetDriver)
+		: TLoadBalancingWriter<ActorGroupMember>(NetDriver)
+	{
+	}
+
+private:
+	virtual LoadBalancingData GetLoadBalancingData(AActor* Actor) const override
+	{
+		return { ActorGroupMember(NetDriver->LoadBalanceStrategy->GetActorGroupId(*Actor)) };
+	}
+};
+
+class LoadBalancingWriterActorSet : public TLoadBalancingWriter<ActorSetMember>
+{
+public:
+	explicit LoadBalancingWriterActorSet(USpatialNetDriver* NetDriver)
+		: TLoadBalancingWriter<ActorSetMember>(NetDriver)
+	{
+	}
+
+private:
+	virtual LoadBalancingData GetLoadBalancingData(AActor* Actor) const override
+	{
+		const AActor* Owner = Actor;
+		for (; IsValid(Owner->GetOwner()); Owner = Owner->GetOwner())
+			;
+		check(IsValid(Owner));
+		const Worker_EntityId OwnerEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Owner);
+		check(OwnerEntityId != SpatialConstants::INVALID_ENTITY_ID);
+		// Actor Set IDs are implemented as owner entity IDs
+		return { ActorSetMember(OwnerEntityId) };
+	}
+};
+
+LoadBalancingWriter::LoadBalancingWriter(USpatialNetDriver* InNetDriver)
+	: NetDriver(InNetDriver)
+	, ActorSetWriter(MakeUnique<LoadBalancingWriterActorSet>(InNetDriver))
+	, ActorGroupWriter(MakeUnique<LoadBalancingWriterActorGroup>(InNetDriver))
+
+{
+}
+
 void LoadBalancingWriter::Advance()
 {
-	const FSubViewDelta& ViewDelta = SubView->GetViewDelta();
-
-	for (const EntityDelta& EntityDelta1 : ViewDelta.EntityDeltas)
-	{
-		switch (EntityDelta1.Type)
-		{
-		case EntityDelta::ADD:
-		{
-			const EntityViewElement& AddedEntity = SubView->GetView()[EntityDelta1.EntityId];
-			const ComponentData& LoadBalancingStuffComponent =
-				*AddedEntity.Components.FindByPredicate(ComponentIdEquality{ LoadBalancingStuff::ComponentId });
-			LoadBalancingActorStuff LBActorStuff(LoadBalancingStuffComponent.GetWorkerComponentData());
-			TWeakObjectPtr<UObject> BoundObject = NetDriver->PackageMap->GetObjectFromEntityId(EntityDelta1.EntityId);
-			if (ensure(BoundObject.IsValid() && BoundObject->IsA<AActor>()))
-			{
-				LBActorStuff.Actor = Cast<AActor>(BoundObject.Get());
-			}
-			DataStore.Add(EntityDelta1.EntityId, LBActorStuff);
-		}
-		break;
-		case EntityDelta::REMOVE:
-			DataStore.Remove(EntityDelta1.EntityId);
-			break;
-		case EntityDelta::UPDATE:
-			for (const auto& ComponentUpdate : EntityDelta1.ComponentUpdates)
-			{
-				if (ComponentUpdate.ComponentId == LoadBalancingData::ComponentId)
-				{
-					DataStore[EntityDelta1.EntityId].LoadBalancingData = LoadBalancingData(*ComponentUpdate.Data);
-				}
-			}
-			break;
-		}
-	}
-
-	for (auto& StoredEntityData : DataStore)
-	{
-		if (SubView->HasAuthority(StoredEntityData.Key, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
-		{
-			OnActorReplicated(StoredEntityData.Value.Actor.Get());
-		}
-	}
+	ActorSetWriter->Advance(*SubView);
+	ActorGroupWriter->Advance(*SubView);
 }
 
 void LoadBalancingWriter::OnActorReplicated(AActor* Actor)
 {
-	const Worker_EntityId ActorEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
-
-	if (ActorEntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		return;
-	}
-
-	LoadBalancingActorStuff* LoadBalancingActorStuffPtr = &DataStore.FindOrAdd(ActorEntityId);
-
-	if (!ensure(LoadBalancingActorStuffPtr))
-	{
-		return;
-	}
-
-	LoadBalancingActorStuffPtr->LoadBalancingData = GetOrCreateLoadBalancingData(Actor);
-
-	FWorkerComponentUpdate LoadBalancingUpdate = LoadBalancingActorStuffPtr->LoadBalancingData.CreateLoadBalancingStuffUpdate();
-	NetDriver->Connection->SendComponentUpdate(ActorEntityId, &LoadBalancingUpdate);
+	ActorSetWriter->ReplicateActor(Actor);
+	ActorGroupWriter->ReplicateActor(Actor);
 }
 
-LoadBalancingStuff LoadBalancingWriter::GetOrCreateLoadBalancingData(const AActor* Actor)
+LoadBalancingWriter::FLoadBalancingStuff LoadBalancingWriter::GetOrCreateLoadBalancingData(const AActor* Actor)
 {
-	LoadBalancingStuff Stuff;
-	Stuff.ActorGroupId = NetDriver->LoadBalanceStrategy->GetActorGroupId(*Actor);
+	FLoadBalancingStuff Stuff;
+
+	Stuff.ActorGroup.ActorGroupId = NetDriver->LoadBalanceStrategy->GetActorGroupId(*Actor);
+
 	const AActor* Owner = Actor;
 	for (; IsValid(Owner->GetOwner()); Owner = Owner->GetOwner())
 		;
 	check(IsValid(Owner));
-	Worker_EntityId OwnerEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Owner);
+	const Worker_EntityId OwnerEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Owner);
 	check(OwnerEntityId != SpatialConstants::INVALID_ENTITY_ID);
 	// Actor Set IDs are implemented as owner entity IDs
-	Stuff.ActorSetId = OwnerEntityId;
+	Stuff.ActorSet.ActorSetId = OwnerEntityId;
+
 	return Stuff;
 }
 } // namespace SpatialGDK

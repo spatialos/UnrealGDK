@@ -1,10 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
-component LoadBalancingStuff {
-	id = 9972;
+component ActorGroupMember {
+	id = 9951;
 	
 	uint32 actor_group_id = 1;
-	
-	uint32 actor_set_id = 2;
 }

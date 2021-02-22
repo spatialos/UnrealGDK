@@ -10,73 +10,140 @@
 
 namespace SpatialGDK
 {
+template <class TComponent>
+Worker_ComponentUpdate CreateComponentUpdateHelper(const TComponent& Component)
+{
+	Worker_ComponentUpdate Update = {};
+	Update.component_id = TComponent::ComponentId;
+	Update.schema_type = Schema_CreateComponentUpdate();
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	Component.WriteSchema(ComponentObject);
+
+	return Update;
+}
+
+template <class TComponent>
+Worker_ComponentData CreateComponentDataHelper(const TComponent& Component)
+{
+	Worker_ComponentData Update = {};
+	Update.component_id = TComponent::ComponentId;
+	Update.schema_type = Schema_CreateComponentData();
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Update.schema_type);
+
+	Component.WriteSchema(ComponentObject);
+
+	return Update;
+}
+
 typedef uint32 FActorLoadBalancingGroupId;
 
-// The LoadBalancingStuff component exists to hold information which needs to be displayed by the
+// The ActorGroupMember component exists to hold information which needs to be displayed by the
 // SpatialDebugger on clients but which would not normally be available to clients.
-struct SPATIALGDK_API LoadBalancingStuff : AbstractMutableComponent
+struct SPATIALGDK_API ActorGroupMember : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::LOAD_BALANCING_STUFF_COMPONENT_ID;
+	static const Worker_ComponentId ComponentId = SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ID;
 
-	LoadBalancingStuff()
-		: ActorGroupId(0)
-		, ActorSetId(0)
+	ActorGroupMember(FActorLoadBalancingGroupId InGroupId)
+		: ActorGroupId(InGroupId)
 	{
 	}
 
-	LoadBalancingStuff(const Worker_ComponentData& Data)
-		: LoadBalancingStuff(*Data.schema_type)
+	ActorGroupMember()
+		: ActorGroupMember(FActorLoadBalancingGroupId{ 0 })
 	{
 	}
-	LoadBalancingStuff(Schema_ComponentData& Data)
+
+	ActorGroupMember(const Worker_ComponentData& Data)
+		: ActorGroupMember(Data.schema_type)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(&Data);
-
-		ActorGroupId = Schema_GetUint32(ComponentObject, 1);
-
-		ActorSetId = Schema_GetUint32(ComponentObject, 2);
 	}
 
-	virtual Worker_ComponentData CreateComponentData() const override
+	ActorGroupMember(Schema_ComponentData* Data)
 	{
-		Worker_ComponentData Data = {};
-		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData();
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
-		Schema_AddUint32(ComponentObject, 1, ActorGroupId);
-		Schema_AddUint32(ComponentObject, 2, ActorSetId);
-
-		return Data;
+		ApplySchema(ComponentObject);
 	}
 
-	Worker_ComponentUpdate CreateLoadBalancingStuffUpdate() const
-	{
-		Worker_ComponentUpdate Update = {};
-		Update.component_id = ComponentId;
-		Update.schema_type = Schema_CreateComponentUpdate();
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+	virtual Worker_ComponentData CreateComponentData() const override { return CreateComponentDataHelper(*this); }
 
-		Schema_AddUint32(ComponentObject, 1, ActorGroupId);
-		Schema_AddUint32(ComponentObject, 2, ActorSetId);
+	Worker_ComponentUpdate CreateComponentUpdate() const { return CreateActorGroupMemberUpdate(); }
 
-		return Update;
-	}
+	Worker_ComponentUpdate CreateActorGroupMemberUpdate() const { return CreateComponentUpdateHelper(*this); }
 
 	virtual void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-		ActorGroupId = Schema_GetUint32(ComponentObject, 1);
+		ApplySchema(ComponentObject);
+	}
 
-		ActorSetId = Schema_GetUint32(ComponentObject, 2);
+	void ApplySchema(Schema_Object* ComponentObject)
+	{
+		ActorGroupId = Schema_GetUint32(ComponentObject, SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ACTOR_GROUP_ID);
+	}
+
+	void WriteSchema(Schema_Object* ComponentObject) const
+	{
+		Schema_AddUint32(ComponentObject, SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ACTOR_GROUP_ID, ActorGroupId);
 	}
 
 	FActorLoadBalancingGroupId ActorGroupId;
-
-	uint32 ActorSetId;
 };
 
-using LoadBalancingData = LoadBalancingStuff;
+// The ActorSetMember component exists to hold information which needs to be displayed by the
+// SpatialDebugger on clients but which would not normally be available to clients.
+struct SPATIALGDK_API ActorSetMember : AbstractMutableComponent
+{
+	static const Worker_ComponentId ComponentId = SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID;
+
+	ActorSetMember(Worker_EntityId InLeaderEntityId)
+		: ActorSetId(InLeaderEntityId)
+	{
+	}
+
+	ActorSetMember()
+		: ActorSetMember(Worker_EntityId(SpatialConstants::INVALID_ENTITY_ID))
+	{
+	}
+
+	ActorSetMember(const Worker_ComponentData& Data)
+		: ActorSetMember(Data.schema_type)
+	{
+	}
+
+	ActorSetMember(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
+
+		ApplySchema(ComponentObject);
+	}
+
+	virtual Worker_ComponentData CreateComponentData() const override { return CreateComponentDataHelper(*this); }
+
+	Worker_ComponentUpdate CreateComponentUpdate() const { return CreateActorSetMemberUpdate(); }
+
+	Worker_ComponentUpdate CreateActorSetMemberUpdate() const { return CreateComponentUpdateHelper(*this); }
+
+	virtual void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+		ApplySchema(ComponentObject);
+	}
+
+	void ApplySchema(Schema_Object* Schema)
+	{
+		ActorSetId = Schema_GetEntityId(Schema, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID);
+	}
+
+	void WriteSchema(Schema_Object* Schema) const
+	{
+		Schema_AddUint32(Schema, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID, ActorSetId);
+	}
+
+	Worker_EntityId ActorSetId;
+};
 
 } // namespace SpatialGDK

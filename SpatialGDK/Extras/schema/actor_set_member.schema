@@ -1,0 +1,8 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+component ActorSetMember {
+	id = 9950;
+	
+	EntityId leader_entity = 1;
+}

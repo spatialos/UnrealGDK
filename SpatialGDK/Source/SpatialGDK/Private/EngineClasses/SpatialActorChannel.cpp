@@ -717,6 +717,11 @@ int64 USpatialActorChannel::ReplicateActor()
 	SendingRepState->bOpenAckedCalled = true;
 	ActorReplicator->bLastUpdateEmpty = 1;
 
+	if (!bCreatingNewEntity)
+	{
+		NetDriver->LoadBalancingWriter->OnActorReplicated(Actor);
+	}
+
 	if (bCreatingNewEntity)
 	{
 		bCreatingNewEntity = false;

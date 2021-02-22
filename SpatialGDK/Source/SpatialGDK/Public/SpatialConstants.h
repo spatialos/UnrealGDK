@@ -149,7 +149,9 @@ const Worker_ComponentId SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID = 9973;
 const Worker_ComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID = 9971;
 const Worker_ComponentId MIGRATION_DIAGNOSTIC_COMPONENT_ID = 9969;
 const Worker_ComponentId PARTITION_SHADOW_COMPONENT_ID = 9967;
-const Worker_ComponentId LOAD_BALANCING_STUFF_COMPONENT_ID = 9972;
+
+const Worker_ComponentId ACTOR_SET_MEMBER_COMPONENT_ID = 9950;
+const Worker_ComponentId ACTOR_GROUP_MEMBER_COMPONENT_ID = 9951;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
@@ -286,6 +288,12 @@ const Schema_FieldId WORKER_COMPONENT_WORKER_TYPE_ID = 2;
 // Partition component field IDs
 const Schema_FieldId PARTITION_COMPONENT_WORKER_ID = 1;
 
+// ActorSetMember field IDs
+const Schema_FieldId ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID = 1;
+
+// ActorGroupMember field IDs
+const Schema_FieldId ACTOR_GROUP_MEMBER_COMPONENT_ACTOR_GROUP_ID = 1;
+
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
 
@@ -418,7 +426,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_TAG_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID,
 
 								// Strategy Worker LB components
-								LOAD_BALANCING_STUFF_COMPONENT_ID,
+								ACTOR_SET_MEMBER_COMPONENT_ID, ACTOR_GROUP_MEMBER_COMPONENT_ID,
 
 								PLAYER_CONTROLLER_COMPONENT_ID, PARTITION_COMPONENT_ID
 	};
@@ -439,7 +447,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
 								ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
 
 								// Strategy Worker LB components
-								LOAD_BALANCING_STUFF_COMPONENT_ID,
+								ACTOR_SET_MEMBER_COMPONENT_ID, ACTOR_GROUP_MEMBER_COMPONENT_ID,
 
 								PARTITION_COMPONENT_ID
 	};
@@ -461,7 +469,8 @@ const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
 	"unreal/gdk/relevant.schema",
 	"unreal/gdk/rpc_components.schema",
 	"unreal/gdk/spatial_debugging.schema",
-	"unreal/gdk/load_balancing_stuff.schema",
+	"unreal/gdk/actor_group_member.schema",
+	"unreal/gdk/actor_set_member.schema",
 	"unreal/gdk/spawndata.schema",
 	"unreal/gdk/tombstone.schema",
 	"unreal/gdk/unreal_metadata.schema",
@@ -483,7 +492,8 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
 	{ VISIBLE_COMPONENT_ID, "unreal.Visible" },
 	{ SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, "unreal.UnrealServerToServerCommandEndpoint" },
 	{ SPATIAL_DEBUGGING_COMPONENT_ID, "unreal.SpatialDebugging" },
-	{ LOAD_BALANCING_STUFF_COMPONENT_ID, "unreal.LoadBalancingStuff" },
+	{ ACTOR_SET_MEMBER_COMPONENT_ID, "unreal.ActorSetMember" },
+	{ ACTOR_GROUP_MEMBER_COMPONENT_ID, "unreal.ActorGroupMember" },
 	{ SPAWN_DATA_COMPONENT_ID, "unreal.SpawnData" },
 	{ TOMBSTONE_COMPONENT_ID, "unreal.Tombstone" },
 	{ UNREAL_METADATA_COMPONENT_ID, "unreal.UnrealMetadata" },

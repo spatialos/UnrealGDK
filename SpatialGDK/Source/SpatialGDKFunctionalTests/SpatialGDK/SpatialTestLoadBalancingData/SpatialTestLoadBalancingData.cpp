@@ -10,6 +10,7 @@
 
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Kismet/GameplayStatics.h"
+#include "Schema/LoadBalancingStuff.h"
 
 void USpatialTestLoadBalancingDataTestMap::CreateCustomContentForMap()
 {
@@ -65,7 +66,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Create an actor on the main server"), FWorkerDefinition::Server(2), nullptr, [this] {
+	AddStep(TEXT("Create an offloed actor on the offloaded server"), FWorkerDefinition::Server(2), nullptr, [this] {
 		ASpatialTestLoadBalancingDataOffloadedActor* SpawnedActor = GetWorld()->SpawnActor<ASpatialTestLoadBalancingDataOffloadedActor>();
 		check(SpawnedActor->HasAuthority());
 		RegisterAutoDestroyActor(SpawnedActor);
@@ -91,10 +92,10 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 		TEXT("Confirm LB group IDs on the server"), FWorkerDefinition::AllServers, nullptr, nullptr,
 		[this](float) {
 			// ServerWorkers should have interest in LoadBalancingData so it should be available
-			TOptional<SpatialGDK::LoadBalancingData> LoadBalancingData = GetLoadBalancingData(TargetActor.Get());
+			TOptional<SpatialGDK::ActorGroupMember> LoadBalancingData = GetActorGroupData(TargetActor.Get());
 			RequireTrue(LoadBalancingData.IsSet(), TEXT("Main actor entity has LoadBalancingData"));
 
-			TOptional<SpatialGDK::LoadBalancingData> OffloadedLoadBalancingData = GetLoadBalancingData(TargetOffloadedActor.Get());
+			TOptional<SpatialGDK::ActorGroupMember> OffloadedLoadBalancingData = GetActorGroupData(TargetOffloadedActor.Get());
 			RequireTrue(OffloadedLoadBalancingData.IsSet(), TEXT("Offloaded actor entity has LoadBalancingData"));
 
 			const bool bIsValid = LoadBalancingData.IsSet() && OffloadedLoadBalancingData.IsSet()
@@ -116,7 +117,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 	AddStep(
 		TEXT("Wait until actor set IDs are the same"), FWorkerDefinition::AllServers, nullptr, nullptr,
 		[this](float) {
-			RequireTrue(GetLoadBalancingData(TargetActor.Get())->ActorSetId == GetLoadBalancingData(TargetOffloadedActor.Get())->ActorSetId,
+			RequireTrue(GetActorSetData(TargetActor.Get())->ActorSetId == GetActorSetData(TargetOffloadedActor.Get())->ActorSetId,
 						TEXT("Actor set IDs are the same for main and offloaded actors"));
 
 			FinishStep();
@@ -133,7 +134,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 	AddStep(
 		TEXT("Wait until actor set IDs different again"), FWorkerDefinition::AllServers, nullptr, nullptr,
 		[this](float) {
-			RequireTrue(GetLoadBalancingData(TargetActor.Get())->ActorSetId != GetLoadBalancingData(TargetOffloadedActor.Get())->ActorSetId,
+			RequireTrue(GetActorSetData(TargetActor.Get())->ActorSetId != GetActorSetData(TargetOffloadedActor.Get())->ActorSetId,
 						TEXT("Actor set IDs are different for main and offloaded actors"));
 
 			FinishStep();
@@ -141,7 +142,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 		LoadBalancingDataReceiptTimeout);
 }
 
-TOptional<SpatialGDK::LoadBalancingData> ASpatialTestLoadBalancingData::GetLoadBalancingData(const AActor* Actor) const
+TOptional<SpatialGDK::ActorSetMember> ASpatialTestLoadBalancingData::GetActorSetData(const AActor* Actor) const
 {
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 	const Worker_EntityId ActorEntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
@@ -151,11 +152,32 @@ TOptional<SpatialGDK::LoadBalancingData> ASpatialTestLoadBalancingData::GetLoadB
 		const SpatialGDK::EntityViewElement& ActorEntity = SpatialNetDriver->Connection->GetView()[ActorEntityId];
 
 		const SpatialGDK::ComponentData* ComponentData =
-			ActorEntity.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialGDK::LoadBalancingData::ComponentId });
+			ActorEntity.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialGDK::ActorSetMember::ComponentId });
 
 		if (ComponentData != nullptr)
 		{
-			return SpatialGDK::LoadBalancingData(ComponentData->GetWorkerComponentData());
+			return SpatialGDK::ActorSetMember(ComponentData->GetWorkerComponentData());
+		}
+	}
+
+	return {};
+}
+
+TOptional<SpatialGDK::ActorGroupMember> ASpatialTestLoadBalancingData::GetActorGroupData(const AActor* Actor) const
+{
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+	const Worker_EntityId ActorEntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
+
+	if (ensure(ActorEntityId != SpatialConstants::INVALID_ENTITY_ID))
+	{
+		const SpatialGDK::EntityViewElement& ActorEntity = SpatialNetDriver->Connection->GetView()[ActorEntityId];
+
+		const SpatialGDK::ComponentData* ComponentData =
+			ActorEntity.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialGDK::ActorGroupMember::ComponentId });
+
+		if (ComponentData != nullptr)
+		{
+			return SpatialGDK::ActorGroupMember(ComponentData->GetWorkerComponentData());
 		}
 	}
 
