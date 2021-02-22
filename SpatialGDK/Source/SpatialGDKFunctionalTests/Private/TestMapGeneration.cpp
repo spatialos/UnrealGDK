@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "TestMapGeneration.h"
+#include "SpatialGDKEditor/Public/SpatialTestSettings.h"
 #include "TestMaps/GeneratedTestMap.h"
 
 DEFINE_LOG_CATEGORY(LogTestMapGeneration);
@@ -11,13 +12,23 @@ namespace TestMapGeneration
 {
 bool GenerateTestMaps()
 {
-	UE_LOG(LogTestMapGeneration, Display, TEXT("Deleting the %s folder."), *UGeneratedTestMap::GetGeneratedMapFolder());
+	UE_LOG(LogTestMapGeneration, Display, TEXT("Deleting the generated test map folder %s."), *UGeneratedTestMap::GetGeneratedMapFolder());
 	if (FPaths::DirectoryExists(UGeneratedTestMap::GetGeneratedMapFolder()))
 	{
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 		const bool bSuccess = PlatformFile.DeleteDirectoryRecursively(*UGeneratedTestMap::GetGeneratedMapFolder());
 		UE_CLOG(!bSuccess, LogTestMapGeneration, Error, TEXT("Failed to delete the generated test map folder %s."),
 				*UGeneratedTestMap::GetGeneratedMapFolder());
+	}
+
+	UE_LOG(LogTestMapGeneration, Display, TEXT("Deleting the generated test config folder %s."),
+		   *FSpatialTestSettings::GeneratedOverrideSettingsDirectory);
+	if (FPaths::DirectoryExists(FSpatialTestSettings::GeneratedOverrideSettingsDirectory))
+	{
+		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+		const bool bSuccess = PlatformFile.DeleteDirectoryRecursively(*FSpatialTestSettings::GeneratedOverrideSettingsDirectory);
+		UE_CLOG(!bSuccess, LogTestMapGeneration, Error, TEXT("Failed to delete the generated test config folder %s."),
+				*FSpatialTestSettings::GeneratedOverrideSettingsDirectory);
 	}
 
 	// Have to gather the classes first and then iterate over the copy, because creating a map triggers a GC which can modify the object

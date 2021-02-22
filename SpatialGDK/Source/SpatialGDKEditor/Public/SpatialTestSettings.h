@@ -36,10 +36,13 @@ public:
 
 	static const FString OverrideSettingsFileExtension;
 	static const FString OverrideSettingsFilePrefix;
+	static const FString OverrideSettingsFileDirectoryName;
 	// Map override config base filename applied to specific map, if exists
 	static const FString OverrideSettingsBaseFilename;
 	// Base override config file applied to all maps, if exists
 	static const FString BaseOverridesFilename;
+	// The directory where the generated test configs will be placed and looked for
+	static const FString GeneratedOverrideSettingsDirectory;
 	// Generated map override config base filename for generated maps applied to specific map, if exists
 	static const FString GeneratedOverrideSettingsBaseFilename;
 
