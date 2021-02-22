@@ -114,17 +114,29 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 			});
 
 	AddStep(
-		TEXT("Wait until main and offloaded actors are owned by the main server, and until actor set ID is the same"),
-		FWorkerDefinition::AllServers, nullptr, nullptr,
+		TEXT("Wait until actor set IDs are the same"), FWorkerDefinition::AllServers, nullptr, nullptr,
 		[this](float) {
-			const bool bShouldHaveAuthority = GetLocalWorkerId() == 1;
-
-			RequireTrue(bShouldHaveAuthority == TargetActor->HasAuthority(), TEXT("Main server owns main actor"));
-
-			RequireTrue(bShouldHaveAuthority == TargetOffloadedActor->HasAuthority(), TEXT("Main server owns offloaded actor"));
-
 			RequireTrue(GetLoadBalancingData(TargetActor.Get())->ActorSetId == GetLoadBalancingData(TargetOffloadedActor.Get())->ActorSetId,
-						TEXT("Actor set IDs are the same for the main and offloaded actors"));
+						TEXT("Actor set IDs are the same for main and offloaded actors"));
+
+			FinishStep();
+		},
+		LoadBalancingDataReceiptTimeout);
+
+	AddStep(TEXT("Put main server actor and offloaded server actor into different ownership groups"), FWorkerDefinition::Server(2), nullptr,
+			[this]() {
+				AssertTrue(TargetOffloadedActor->HasAuthority(), TEXT("Offloaded actor is owned by the offloaded server"));
+				TargetOffloadedActor->SetOwner(nullptr);
+				FinishStep();
+			});
+
+	AddStep(
+		TEXT("Wait until actor set IDs different again"), FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float) {
+			RequireTrue(GetLoadBalancingData(TargetActor.Get())->ActorSetId != GetLoadBalancingData(TargetOffloadedActor.Get())->ActorSetId,
+						TEXT("Actor set IDs are different for main and offloaded actors"));
+
+			FinishStep();
 		},
 		LoadBalancingDataReceiptTimeout);
 }
