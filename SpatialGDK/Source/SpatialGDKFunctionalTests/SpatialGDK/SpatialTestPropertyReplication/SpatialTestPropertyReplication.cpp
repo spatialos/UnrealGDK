@@ -37,7 +37,7 @@ void ASpatialTestPropertyReplication::PrepareTest()
 		RegisterAutoDestroyActor(TestActor);
 
 		FinishStep();
-	});
+	}, nullptr, 5.0f);
 
 	AddStep(
 		TEXT("Both Clients check that they can see exactly 1 ReplicatedTestActor"), FWorkerDefinition::AllClients, nullptr, nullptr,
