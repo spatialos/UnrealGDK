@@ -59,6 +59,7 @@ void MulticastRPCService::AdvanceView()
 				// Regain authority.
 				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
 			}
+			break;
 		}
 		case EntityDelta::ADD:
 			PopulateDataStore(Delta.EntityId);
