@@ -68,7 +68,9 @@ void UGeneratedTestMap::GenerateBaseMap()
 	// Make the initial platform much much larger so things don't fall off for tests which use a large area (visibility test)
 	Plane->SetActorScale3D(FVector(10000, 10000, 1));
 
-	APlayerStart* PlayerStart = AddActorToLevel<APlayerStart>(CurrentLevel, FTransform(FVector(-500, 0, 100)));
+	// Default player start location is chosen so that players spawn on server 1 by default.
+	// Individual test maps can change this if necessary.
+	APlayerStart* PlayerStart = AddActorToLevel<APlayerStart>(CurrentLevel, FTransform(FVector(-100, -100, 100)));
 
 	// Use current settings for all these generated maps as default.
 	// This will probably change with UNR-4801.

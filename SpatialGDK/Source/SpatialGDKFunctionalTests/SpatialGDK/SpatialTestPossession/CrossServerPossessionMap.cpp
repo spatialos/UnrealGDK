@@ -7,22 +7,13 @@
 #include "CrossServerPossessionLockTest.h"
 #include "CrossServerPossessionTest.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "GameFramework/PlayerStart.h"
 #include "NoneCrossServerPossessionTest.h"
 #include "SpatialGDKFunctionalTests/Public/Test2x2WorkerSettings.h"
 
 namespace
 {
-void SetupPlayerStartAndWorldSettings(UWorld* World)
+void SetupWorldSettings(UWorld* World)
 {
-	ULevel* CurrentLevel = World->GetCurrentLevel();
-
-	// Move player start to server 1
-	AActor** PlayerStart = CurrentLevel->Actors.FindByPredicate([](AActor* Actor) {
-		return Actor->GetClass() == APlayerStart::StaticClass();
-	});
-	(*PlayerStart)->SetActorLocation(FVector(-300, -300, 100));
-
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2WorkerSettings::StaticClass());
 	WorldSettings->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
@@ -43,7 +34,7 @@ void UCrossServerPossessionMap::CreateCustomContentForMap()
 	// Add the test
 	AddActorToLevel<ACrossServerPossessionTest>(CurrentLevel, FTransform::Identity);
 
-	SetupPlayerStartAndWorldSettings(World);
+	SetupWorldSettings(World);
 }
 
 UCrossServerPossessionLockMap::UCrossServerPossessionLockMap()
@@ -58,7 +49,7 @@ void UCrossServerPossessionLockMap::CreateCustomContentForMap()
 	// Add the test
 	AddActorToLevel<ACrossServerPossessionLockTest>(CurrentLevel, FTransform::Identity);
 
-	SetupPlayerStartAndWorldSettings(World);
+	SetupWorldSettings(World);
 }
 
 UNoneCrossServerPossessionMap::UNoneCrossServerPossessionMap()
@@ -73,7 +64,7 @@ void UNoneCrossServerPossessionMap::CreateCustomContentForMap()
 	// Add the test
 	AddActorToLevel<ANoneCrossServerPossessionTest>(CurrentLevel, FTransform::Identity);
 
-	SetupPlayerStartAndWorldSettings(World);
+	SetupWorldSettings(World);
 }
 
 UCrossServerMultiPossessionMap::UCrossServerMultiPossessionMap()
@@ -88,5 +79,5 @@ void UCrossServerMultiPossessionMap::CreateCustomContentForMap()
 	// Add the test
 	AddActorToLevel<ACrossServerMultiPossessionTest>(CurrentLevel, FTransform::Identity);
 
-	SetupPlayerStartAndWorldSettings(World);
+	SetupWorldSettings(World);
 }
