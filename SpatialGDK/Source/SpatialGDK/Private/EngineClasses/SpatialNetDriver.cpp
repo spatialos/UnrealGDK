@@ -2006,6 +2006,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				Connection->Flush();
 			}
 
+			if (RPCService.IsValid())
+			{
+				RPCService->AdvanceView();
+			}
+
 			if (DebugCtx != nullptr)
 			{
 				DebugCtx->AdvanceView();
@@ -2024,11 +2029,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			if (SpatialDebuggerSystem.IsValid())
 			{
 				SpatialDebuggerSystem->Advance();
-			}
-
-			if (RPCService.IsValid())
-			{
-				RPCService->AdvanceView();
 			}
 
 			{
