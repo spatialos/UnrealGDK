@@ -11,6 +11,7 @@
 USpatialAuthorityMap::USpatialAuthorityMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialAuthorityMap"))
 {
+	SetCustomConfig(TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]\nPlayNumberOfClients=1"));
 }
 
 void USpatialAuthorityMap::CreateCustomContentForMap()
@@ -23,9 +24,8 @@ void USpatialAuthorityMap::CreateCustomContentForMap()
 	// Add the tests
 	ASpatialAuthorityTest* AuthTestActor =
 		AddActorToLevel<ASpatialAuthorityTest>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
-	// TODO: Add this test back when UNR-5020 provides the ability to generate config files - see test for expected config details
-	// ASpatialAuthoritySettingsOverride* SettingsOverrideTest =
-	//	AddActorToLevel<ASpatialAuthoritySettingsOverride>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
+	ASpatialAuthoritySettingsOverride* SettingsOverrideTest =
+		AddActorToLevel<ASpatialAuthoritySettingsOverride>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
 
 	// Add the helpers, as we need things placed in the level
 	AuthTestActor->LevelActor = AddActorToLevel<ASpatialAuthorityTestActor>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
