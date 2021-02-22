@@ -2,6 +2,8 @@
 
 #include "SpatialTestSettings.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialTestSettings);
+
 FSpatialTestSettings::FSpatialTestSettings()
 	: OriginalSpatialGDKSettings(nullptr)
 	, OriginalLevelEditorPlaySettings(nullptr)
@@ -24,11 +26,19 @@ void FSpatialTestSettings::Override(const FString& MapName)
 	{
 		Load(BaseOverridesFilename);
 	}
+	else
+	{
+		UE_LOG(LogSpatialTestSettings, Log, TEXT("Base config file not found %s."), *BaseOverridesFilename);
+	}
 	// Then override the settings from the map specific config file, if it exists
 	FString MapOverridesFilename = OverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
 	if (FPaths::FileExists(MapOverridesFilename))
 	{
 		Load(MapOverridesFilename);
+	}
+	else
+	{
+		UE_LOG(LogSpatialTestSettings, Log, TEXT("Map specific config file not found %s."), *MapOverridesFilename);
 	}
 	// Then override the settings from the generated map specific config file, if it exists
 	FString GeneratedMapOverridesFilename =
@@ -36,6 +46,10 @@ void FSpatialTestSettings::Override(const FString& MapName)
 	if (FPaths::FileExists(GeneratedMapOverridesFilename))
 	{
 		Load(GeneratedMapOverridesFilename);
+	}
+	else
+	{
+		UE_LOG(LogSpatialTestSettings, Log, TEXT("Generated map config file not found %s."), *GeneratedMapOverridesFilename);
 	}
 }
 
@@ -75,6 +89,7 @@ void FSpatialTestSettings::Restore(T*& OriginalSettings)
 
 void FSpatialTestSettings::Load(const FString& TestSettingOverridesFilename)
 {
+	UE_LOG(LogSpatialTestSettings, Log, TEXT("Overriding settings from file %s."), *TestSettingOverridesFilename);
 	GetMutableDefault<ULevelEditorPlaySettings>()->LoadConfig(ULevelEditorPlaySettings::StaticClass(), *TestSettingOverridesFilename);
 	GetMutableDefault<USpatialGDKSettings>()->LoadConfig(USpatialGDKSettings::StaticClass(), *TestSettingOverridesFilename);
 	GetMutableDefault<USpatialGDKEditorSettings>()->LoadConfig(USpatialGDKEditorSettings::StaticClass(), *TestSettingOverridesFilename);

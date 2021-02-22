@@ -5,9 +5,12 @@
 #include "CoreMinimal.h"
 #include "Editor/EditorPerformanceSettings.h"
 #include "GeneralProjectSettings.h"
+#include "Logging/LogMacros.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKSettings.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialTestSettings, Log, All);
 
 /**
  * Helper class for Spatial Functional Tests to allow users to override settings using config files.
