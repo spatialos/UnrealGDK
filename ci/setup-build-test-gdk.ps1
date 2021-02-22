@@ -15,7 +15,7 @@ class TestProjectTarget {
     [ValidateNotNullOrEmpty()][string]$test_repo_relative_uproject_path
     [ValidateNotNullOrEmpty()][string]$test_project_name
     
-    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name, [string]$test_version_path, [string]$test_env_override) {
+    TestProjectTarget([string]$test_repo_url, [string]$gdk_branch, [string]$test_repo_relative_uproject_path, [string]$test_project_name, [string]$text_file_version_override_path, [string]$test_env_override) {
         $this.test_repo_url = $test_repo_url
         $this.test_repo_relative_uproject_path = $test_repo_relative_uproject_path
         $this.test_project_name = $test_project_name
@@ -23,15 +23,15 @@ class TestProjectTarget {
         # Resolve the branch to run against. The order of priority is:
         # envvar > same-name branch as the branch we are currently on > UnrealGDKTestGymVersion.txt > "master".
         $testing_repo_heads = git ls-remote --heads $test_repo_url $gdk_branch
-        $test_version = if ([System.IO.File]::Exists($test_version_path)) {[System.IO.File]::ReadAllText($test_version_path)} else {[string]::Empty}
+        $text_file_version_override = if ([System.IO.File]::Exists($text_file_version_override_path)) {[System.IO.File]::ReadAllText($text_file_version_override_path)} else {[string]::Empty}
         if (Test-Path $test_env_override) {
             $this.test_repo_branch = (Get-Item $test_env_override).value
         }
         elseif ($testing_repo_heads -Match [Regex]::Escape("refs/heads/$gdk_branch")) {
             $this.test_repo_branch = $gdk_branch
         }
-        elseif ($test_version -ne [string]::Empty) {
-            $this.test_repo_branch = $test_version
+        elseif ($text_file_version_override -ne [string]::Empty) {
+            $this.test_repo_branch = $text_file_version_override
         }
         else {
             $this.test_repo_branch = "master"
