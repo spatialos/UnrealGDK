@@ -18,41 +18,42 @@ class FSubView;
 class FLoadBalancingWriterBase
 {
 public:
-	FLoadBalancingWriterBase(USpatialNetDriver* InNetDriver)
+	FLoadBalancingWriterBase(USpatialNetDriver* InNetDriver, const FSubView* InSubView)
 		: NetDriver(InNetDriver)
+		, SubView(InSubView)
 	{
 	}
 
 	Worker_EntityId GetEntityId(AActor* Actor) const;
-	bool IsCreatingNewEntity(Worker_EntityId EntityId) const;
 	const EntityViewElement& GetEntityView(Worker_EntityId EntityId) const;
 	void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate& ComponentUpdate);
 
 protected:
 	USpatialNetDriver* NetDriver;
+	const FSubView* SubView;
 };
 
 template <class TComponent>
 class TLoadBalancingWriter : public FLoadBalancingWriterBase
 {
 public:
-	TLoadBalancingWriter(USpatialNetDriver* NetDriver)
-		: FLoadBalancingWriterBase(NetDriver)
+	TLoadBalancingWriter(USpatialNetDriver* NetDriver, const FSubView* InSubView)
+		: FLoadBalancingWriterBase(NetDriver, InSubView)
 	{
 	}
 
 	virtual ~TLoadBalancingWriter() {}
 
-	void Advance(const FSubView& SubView)
+	void Advance()
 	{
-		for (const EntityDelta& EntityDelta : SubView.GetViewDelta().EntityDeltas)
+		for (const EntityDelta& EntityDelta : SubView->GetViewDelta().EntityDeltas)
 		{
 			switch (EntityDelta.Type)
 			{
 			case EntityDelta::ADD:
 			case EntityDelta::TEMPORARILY_REMOVED:
 			case EntityDelta::UPDATE:
-				DataStore.Add(EntityDelta.EntityId, GetLoadBalancingData(SubView.GetView()[EntityDelta.EntityId]));
+				DataStore.Add(EntityDelta.EntityId, GetLoadBalancingData(GetEntityView(EntityDelta.EntityId)));
 				break;
 			case EntityDelta::REMOVE:
 				DataStore.Remove(EntityDelta.EntityId);
@@ -63,17 +64,14 @@ public:
 		}
 	}
 
-	void ReplicateActor(AActor* Actor)
+	void ReplicateActor(Worker_EntityId ActorEntityId, AActor* Actor)
 	{
-		// USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Actor->GetNetDriver());
-		const Worker_EntityId EntityId = GetEntityId(Actor); // NetDriver->PackageMap->GetEntityIdFromObject(Actor);
-		if (!IsCreatingNewEntity(EntityId))
-		{
-			const TComponent& Component = DataStore.Add(EntityId, GetLoadBalancingData(Actor)).Data;
-			FWorkerComponentUpdate CreateComponentData = Component.CreateComponentUpdate();
-			SendComponentUpdate(EntityId, CreateComponentData);
-		}
+		const TComponent& Component = DataStore.Add(ActorEntityId, { GetLoadBalancingData(Actor) }).Data;
+		FWorkerComponentUpdate CreateComponentData = Component.CreateComponentUpdate();
+		SendComponentUpdate(ActorEntityId, CreateComponentData);
 	}
+
+	virtual TComponent GetLoadBalancingData(AActor* Actor) const = 0;
 
 protected:
 	struct LoadBalancingData
@@ -81,6 +79,7 @@ protected:
 		TComponent Data;
 	};
 
+private:
 	static LoadBalancingData GetLoadBalancingData(const EntityViewElement& ViewElement)
 	{
 		const ComponentData* ComponentData = ViewElement.Components.FindByPredicate(ComponentIdEquality{ TComponent::ComponentId });
@@ -88,49 +87,21 @@ protected:
 		return LoadBalancingData{ ComponentData->GetUnderlying() };
 	}
 
-	virtual LoadBalancingData GetLoadBalancingData(AActor* Actor) const = 0;
-
 	TMap<Worker_EntityId_Key, LoadBalancingData> DataStore;
 };
 
 class LoadBalancingWriter
 {
 public:
-	LoadBalancingWriter(USpatialNetDriver* InNetDriver);
+	LoadBalancingWriter(USpatialNetDriver* InNetDriver, const FSubView* InSubView);
 
 	void Advance();
-	void OnActorReplicated(AActor* Actor);
-
-	struct FLoadBalancingStuff
-	{
-		ActorGroupMember ActorGroup;
-		ActorSetMember ActorSet;
-	};
-	FLoadBalancingStuff GetOrCreateLoadBalancingData(const AActor* Actor);
-
-public:
-	struct LoadBalancingActorStuff
-	{
-		LoadBalancingActorStuff()
-			: LoadBalancingActorStuff(FLoadBalancingStuff{})
-		{
-		}
-
-		LoadBalancingActorStuff(const FLoadBalancingStuff& InLoadBalancingData)
-			: LoadBalancingData(InLoadBalancingData)
-		{
-		}
-
-		FLoadBalancingStuff LoadBalancingData;
-		TWeakObjectPtr<AActor> Actor;
-	};
+	void OnActorReplicated(Worker_EntityId ActorEntityId, AActor* Actor);
 
 	TWeakObjectPtr<USpatialNetDriver> NetDriver;
 	const FSubView* SubView;
 
 	TUniquePtr<TLoadBalancingWriter<ActorSetMember>> ActorSetWriter;
 	TUniquePtr<TLoadBalancingWriter<ActorGroupMember>> ActorGroupWriter;
-
-	TMap<Worker_EntityId_Key, LoadBalancingActorStuff> DataStore;
 };
 } // namespace SpatialGDK

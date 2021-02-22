@@ -136,15 +136,13 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	}
 #endif // !UE_BUILD_SHIPPING
 
-	const auto Components = NetDriver->LoadBalancingWriter->GetOrCreateLoadBalancingData(Actor);
-
-	ComponentDatas.Add(Components.ActorSet.CreateComponentData());
-	ComponentDatas.Add(Components.ActorGroup.CreateComponentData());
-
 	// Add actual load balancing components
 	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateComponentData());
 	ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
+
+	ComponentDatas.Add(NetDriver->LoadBalancingWriter->ActorSetWriter->GetLoadBalancingData(Actor).CreateComponentData());
+	ComponentDatas.Add(NetDriver->LoadBalancingWriter->ActorGroupWriter->GetLoadBalancingData(Actor).CreateComponentData());
 }
 
 void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,

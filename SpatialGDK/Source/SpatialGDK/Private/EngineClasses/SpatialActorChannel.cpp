@@ -719,7 +719,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	if (!bCreatingNewEntity)
 	{
-		NetDriver->LoadBalancingWriter->OnActorReplicated(Actor);
+		NetDriver->LoadBalancingWriter->OnActorReplicated(EntityId, Actor);
 	}
 
 	if (bCreatingNewEntity)

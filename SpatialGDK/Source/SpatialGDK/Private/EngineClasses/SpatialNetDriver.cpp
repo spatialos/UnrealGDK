@@ -562,8 +562,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 																	   ? *MultiWorkerSettings->LockingPolicy
 																	   : UOwnershipLockingPolicy::StaticClass();
 
-	LoadBalancingWriter = MakeUnique<SpatialGDK::LoadBalancingWriter>(this);
-	LoadBalancingWriter->SubView = &Connection->GetCoordinator().CreateSubView(
+	const SpatialGDK::FSubView* LoadBalancingWriterSubView = &Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::LB_TAG_COMPONENT_ID,
 		[](const Worker_EntityId, const SpatialGDK::EntityViewElement& Entity) {
 			return Entity.Components.ContainsByPredicate([](const SpatialGDK::ComponentData& Element) {
@@ -572,6 +571,8 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 			});
 		},
 		SpatialGDK::FSubView::NoDispatcherCallbacks);
+
+	LoadBalancingWriter = MakeUnique<SpatialGDK::LoadBalancingWriter>(this, LoadBalancingWriterSubView);
 
 	LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
 	LoadBalanceStrategy->Init();
