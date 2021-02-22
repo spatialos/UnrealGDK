@@ -603,7 +603,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 
 			if (Actor != nullptr)
 			{
-				FVector2D ScreenLocation = ProjectActorToScreen(Actor, PlayerLocation);
+				FVector2D ScreenLocation = ProjectActorToScreen(Actor, PlayerLocation, Canvas);
 				if (ScreenLocation.IsZero())
 				{
 					continue;
@@ -636,7 +636,7 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 				Canvas->DrawItem(TileItem);
 			}
 
-			TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(NewMousePosition);
+			TWeakObjectPtr<AActor> NewHoverActor = GetActorAtPosition(NewMousePosition, Canvas);
 			HighlightActorUnderCursor(NewHoverActor);
 		}
 
@@ -649,7 +649,7 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 				{
 					FVector PlayerLocation = GetLocalPawnLocation();
 
-					FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation);
+					FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation, Canvas);
 					if (!ScreenLocation.IsZero())
 					{
 						DrawTag(Canvas, ScreenLocation, *HitEntityId, SelectedActor->GetName(), true /*bCentre*/);
@@ -729,7 +729,7 @@ void ASpatialDebugger::RevertHoverMaterials()
 	}
 }
 
-TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(const FVector2D& NewMousePosition)
+TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(const FVector2D& NewMousePosition, const UCanvas* Canvas)
 {
 	if (!LocalPlayerController.IsValid())
 	{
@@ -771,7 +771,7 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(const FVector2D& New
 				{
 					FVector PlayerLocation = GetLocalPawnLocation();
 
-					FVector2D ScreenLocation = ProjectActorToScreen(HitActor, PlayerLocation);
+					FVector2D ScreenLocation = ProjectActorToScreen(HitActor, PlayerLocation, Canvas);
 					if (!ScreenLocation.IsZero())
 					{
 						HitActors.Add(HitActor);
@@ -802,7 +802,7 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetHitActor()
 	return HitActors[HoverIndex];
 }
 
-FVector2D ASpatialDebugger::ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector& PlayerLocation)
+FVector2D ASpatialDebugger::ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector& PlayerLocation, const UCanvas* Canvas)
 {
 	FVector2D ScreenLocation = FVector2D::ZeroVector;
 
@@ -821,8 +821,7 @@ FVector2D ASpatialDebugger::ProjectActorToScreen(const TWeakObjectPtr<AActor> Ac
 	if (LocalPlayerController.IsValid())
 	{
 		SCOPE_CYCLE_COUNTER(STAT_Projection);
-		UGameplayStatics::ProjectWorldToScreen(LocalPlayerController.Get(), ActorLocation + WorldSpaceActorTagOffset, ScreenLocation,
-											   false);
+		ScreenLocation = FVector2D(Canvas->Project(ActorLocation + WorldSpaceActorTagOffset));
 		return ScreenLocation;
 	}
 	return ScreenLocation;

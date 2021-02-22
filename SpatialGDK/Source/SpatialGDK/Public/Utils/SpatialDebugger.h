@@ -248,11 +248,11 @@ private:
 
 	void HighlightActorUnderCursor(TWeakObjectPtr<AActor>& NewHoverActor);
 
-	TWeakObjectPtr<AActor> GetActorAtPosition(const FVector2D& MousePosition);
+	TWeakObjectPtr<AActor> GetActorAtPosition(const FVector2D& MousePosition, const UCanvas* Canvas);
 
 	TWeakObjectPtr<AActor> GetHitActor();
 
-	FVector2D ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector& PlayerLocation);
+	FVector2D ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector& PlayerLocation, const UCanvas* Canvas);
 
 	void RevertHoverMaterials();
 
