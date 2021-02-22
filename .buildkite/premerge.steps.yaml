@@ -50,7 +50,7 @@ windows: &windows
 steps:
   - trigger: "unrealgdkbuild-ci"
     label: "run-new-ci"
-    async: true
+    async: false
     build: 
       env: 
         GDK_BRANCH: "${BUILDKITE_BRANCH}"
