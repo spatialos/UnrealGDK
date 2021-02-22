@@ -2,8 +2,10 @@
 
 #include "SpatialTestPlayerControllerHandover.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "SpatialGDKFunctionalTests/Public/Test2x2WorkerSettings.h"
 
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerState.h"
@@ -27,7 +29,7 @@ void ASpatialTestPlayerControllerHandover::GetLifetimeReplicatedProps(TArray<FLi
 /**
  * This test checks that APlayerController state is properly handed over when worker migration happens.
  *
- * We test alternating between possessing a pawn and spectating, and checking that no state is lots when migrating between workers.
+ * We test alternating between possessing a pawn and spectating, and checking that no state is lost when migrating between workers.
  *
  * - The gamemode is set to start the player as a spectator.
  * - We make the player spawn for the client, migrate to another worker, and check that the "Playing" state has been handed over.
@@ -271,4 +273,23 @@ void ASpatialTestPlayerControllerHandover::PrepareTest()
 
 	AddStepFromDefinition(ClientRespawn, FWorkerDefinition::Client(1));
 	AddStepFromDefinition(WaitPlayerSpawn, FWorkerDefinition::AllServers);
+}
+
+USpatialTestPlayerControllerHandoverMap::USpatialTestPlayerControllerHandoverMap()
+	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("SpatialTestPlayerControllerHandoverMap"))
+{
+}
+
+void USpatialTestPlayerControllerHandoverMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the test
+	// Set the position so it's on server 1
+	AddActorToLevel<ASpatialTestPlayerControllerHandover>(CurrentLevel, FTransform(FVector(-100.0f, -100.0f, 0.0f)));
+
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2WorkerSettings::StaticClass());
+	WorldSettings->DefaultGameMode = ASpatialTestPlayerControllerHandoverGameMode::StaticClass();
+	WorldSettings->bEnableDebugInterface = true;
 }
