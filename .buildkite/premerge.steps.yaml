@@ -49,46 +49,52 @@ windows: &windows
 
 steps:
   - trigger: "unrealgdkbuild-ci"
+    label: "run-new-ci"
+    async: true
+    build: 
+      env: 
+      GDK_BRANCH: "${BUILDKITE_BRANCH}"
+      BUILD_TYPE: "GDK"
+      BUILD_MODE: "iterative"
 
+  - label: "enforce-version-restrictions"
+    command: "ci/check-version-file.sh"
+    <<: *script_runner
+  # No point in running other steps if the listed versions are invalid
+  - wait: ~
 
-#   - label: "enforce-version-restrictions"
-#     command: "ci/check-version-file.sh"
-#     <<: *script_runner
-#   # No point in running other steps if the listed versions are invalid
-#   - wait: ~
+  # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
+  - trigger: "unrealgdkexampleproject-nightly"
+    label: "post-merge-example-project-build"
+    if: build.env("ENGINE_NET_TEST") != "true" && (build.branch == "master" || build.branch == "preview" || build.branch == "release")
+    async: true
+    build:
+      env:
+        NIGHTLY_BUILD: "${NIGHTLY_BUILD:-false}"
+        GDK_BRANCH: "${BUILDKITE_BRANCH}"
 
-#   # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
-#   - trigger: "unrealgdkexampleproject-nightly"
-#     label: "post-merge-example-project-build"
-#     if: build.env("ENGINE_NET_TEST") != "true" && (build.branch == "master" || build.branch == "preview" || build.branch == "release")
-#     async: true
-#     build:
-#       env:
-#         NIGHTLY_BUILD: "${NIGHTLY_BUILD:-false}"
-#         GDK_BRANCH: "${BUILDKITE_BRANCH}"
+  - label: "generate-pipeline-steps"
+    commands:
+      - "ci/generate-and-upload-build-steps.sh"
+    <<: *script_runner
 
-#   - label: "generate-pipeline-steps"
-#     commands:
-#       - "ci/generate-and-upload-build-steps.sh"
-#     <<: *script_runner
-
-#   - wait: ~
-#     continue_on_failure: true
+  - wait: ~
+    continue_on_failure: true
   
-#   - label: "upload-test-metrics"
-#     if: build.env("NIGHTLY_BUILD") == "true"
-#     command: "ci/upload-test-metrics.sh"
-#     <<: *script_runner
+  - label: "upload-test-metrics"
+    if: build.env("NIGHTLY_BUILD") == "true"
+    command: "ci/upload-test-metrics.sh"
+    <<: *script_runner
   
-#   - label: "slack-notify"
-#     if: (build.env("SLACK_NOTIFY") == "true" || build.branch == "master") && build.env("SLACK_NOTIFY") != "false" && build.env("ENGINE_NET_TEST") != "true"
-#     commands: "powershell ./ci/build-and-send-slack-notification.ps1"
-#     <<: *windows
+  - label: "slack-notify"
+    if: (build.env("SLACK_NOTIFY") == "true" || build.branch == "master") && build.env("SLACK_NOTIFY") != "false" && build.env("ENGINE_NET_TEST") != "true"
+    commands: "powershell ./ci/build-and-send-slack-notification.ps1"
+    <<: *windows
 
-# notify:
-#   - slack: 
-#       channels: 
-#         - "#unreal-gdk-builds"
-#       message: "<!subteam^SDB5161M5> Build failure! Please triage and post ticket." # SDB5161M5 is @support-unreal
-#     if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge" && (build.state == "failed" || build.state == "canceled") && build.branch == "master"
+notify:
+  - slack: 
+      channels: 
+        - "#unreal-gdk-builds"
+      message: "<!subteam^SDB5161M5> Build failure! Please triage and post ticket." # SDB5161M5 is @support-unreal
+    if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge" && (build.state == "failed" || build.state == "canceled") && build.branch == "master"
     
