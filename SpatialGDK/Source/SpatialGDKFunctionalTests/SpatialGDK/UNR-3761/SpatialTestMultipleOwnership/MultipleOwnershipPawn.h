@@ -16,7 +16,7 @@ private:
 	UStaticMeshComponent* CubeComponent;
 
 	UPROPERTY()
-	class USphereComponent* CollisionComponent;
+	class USceneComponent* SceneComponent;
 
 public:
 	AMultipleOwnershipPawn();

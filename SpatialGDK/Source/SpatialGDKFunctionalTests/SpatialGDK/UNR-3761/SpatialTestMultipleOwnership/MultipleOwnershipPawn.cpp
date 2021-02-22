@@ -1,10 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "MultipleOwnershipPawn.h"
 
-#include "Components/StaticMeshComponent.h"
 #include "Components/SphereComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Materials/Material.h"
 #include "Net/UnrealNetwork.h"
 
@@ -16,14 +15,13 @@ AMultipleOwnershipPawn::AMultipleOwnershipPawn()
 #else
 	SetReplicatingMovement(true);
 #endif
-	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionComponent"));
-	CollisionComponent->InitSphereRadius(15.0f);
-
-	RootComponent = CollisionComponent;
+	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComponent"));
+	RootComponent = SceneComponent;
 
 	CubeComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CubeComponent"));
 	CubeComponent->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'")));
-	CubeComponent->SetMaterial(0, LoadObject<UMaterial>(nullptr, TEXT("Material'/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial'")));
+	CubeComponent->SetMaterial(0,
+							   LoadObject<UMaterial>(nullptr, TEXT("Material'/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial'")));
 	CubeComponent->SetVisibility(true);
 	CubeComponent->SetupAttachment(RootComponent);
 

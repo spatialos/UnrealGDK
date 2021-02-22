@@ -41,7 +41,8 @@ ASpatialTestMultipleOwnership::ASpatialTestMultipleOwnership()
 void ASpatialTestMultipleOwnership::PrepareTest()
 {
 	Super::PrepareTest();
-
+	// We expect three RPCs to miss, two on the first send (before any ownership of pawns happens), then one on the second send (after the
+	// first pawn becomes owned), then zero for the next sends.
 	if (HasAuthority())
 	{
 		AddExpectedLogError(TEXT("No owning connection for actor MultipleOwnershipPawn"), 3, false);
@@ -84,6 +85,8 @@ void ASpatialTestMultipleOwnership::PrepareTest()
 					MultipleOwnershipPawns.Add(MultipleOwnershipPawn);
 				}
 			}
+			// We want to be sure that the pawns are in the correct order, otherwise the ReceivedRPCs number may be swapped causing the test
+			// to fail
 			MultipleOwnershipPawns.Sort([](AMultipleOwnershipPawn& LHS, AMultipleOwnershipPawn& RHS) -> bool {
 				return LHS.GetActorLocation().Y < RHS.GetActorLocation().Y;
 			});
@@ -118,10 +121,9 @@ void ASpatialTestMultipleOwnership::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestMultipleOwnershipAllWorkersCheckCorrectRPCs"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 		[this](float DeltaTime) {
-			if (MultipleOwnershipPawns[0]->ReceivedRPCs == 0 && MultipleOwnershipPawns[1]->ReceivedRPCs == 0)
-			{
-				FinishStep();
-			}
+			RequireEqual_Int(0, MultipleOwnershipPawns[0]->ReceivedRPCs, TEXT("Pawn 0 received correct number of RPCs"));
+			RequireEqual_Int(0, MultipleOwnershipPawns[1]->ReceivedRPCs, TEXT("Pawn 1 received correct number of RPCs"));
+			FinishStep();
 		},
 		10.0f);
 
