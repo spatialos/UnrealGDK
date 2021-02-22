@@ -57,7 +57,7 @@ private:
 
 	virtual bool ForEveryServerWorker(TFunction<void(const FName&, int32)> Function) const override;
 
-	virtual void OverrideSettingsForTesting(UWorld* World, const FString& MapName);
+	virtual void OverrideSettingsForTesting(UWorld* World, const FString& MapName) override;
 
 	virtual void RevertSettingsForTesting();
 
