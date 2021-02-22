@@ -14,6 +14,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 
+DECLARE_CYCLE_STAT(TEXT("SpatialRPCService SendRPC"), STAT_SpatialRPCServiceSendRPC, STATGROUP_SpatialNet);
+
 namespace SpatialGDK
 {
 SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const FSubView& InActorNonAuthSubView,
@@ -533,7 +535,7 @@ void SpatialRPCService::Flush()
 
 FRPCErrorInfo SpatialRPCService::SendRPC(const FPendingRPCParams& Params)
 {
-	// SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendRPC);
+	SCOPE_CYCLE_COUNTER(STAT_SpatialRPCServiceSendRPC);
 
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())

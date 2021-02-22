@@ -4,6 +4,8 @@
 
 #include "EngineClasses/SpatialReplicationGraph.h"
 
+using SpatialGDK::EActorMigrationResult;
+
 FSpatialReplicationGraphLoadBalancingContext::FSpatialReplicationGraphLoadBalancingContext(USpatialNetDriver* InNetDriver,
 																						   USpatialReplicationGraph* InReplicationGraph,
 																						   FPerConnectionActorInfoMap& InInfoMap,
@@ -63,16 +65,16 @@ FActorRepListRefView FSpatialReplicationGraphLoadBalancingContext::GetDependentA
 }
 #endif
 
-SpatialGDK::EActorMigrationResult FSpatialReplicationGraphLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
+EActorMigrationResult FSpatialReplicationGraphLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
 {
 	if (!Actor->HasAuthority())
 	{
-		return SpatialGDK::EActorMigrationResult::NotAuthoritative;
+		return EActorMigrationResult::NotAuthoritative;
 	}
 
 	if (!Actor->IsActorReady())
 	{
-		return SpatialGDK::EActorMigrationResult::NotReady;
+		return EActorMigrationResult::NotReady;
 	}
 
 	// The following checks are extracted from UReplicationGraph::ReplicateActorListsForConnections_Default
@@ -81,14 +83,14 @@ SpatialGDK::EActorMigrationResult FSpatialReplicationGraphLoadBalancingContext::
 
 	if (!Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType))
 	{
-		return SpatialGDK::EActorMigrationResult::NoSpatialClassFlags;
+		return EActorMigrationResult::NoSpatialClassFlags;
 	}
 
 	FConnectionReplicationActorInfo& ConnectionData = InfoMap.FindOrAdd(Actor);
 	if (ConnectionData.bDormantOnConnection)
 	{
-		return SpatialGDK::EActorMigrationResult::DormantOnConnection;
+		return EActorMigrationResult::DormantOnConnection;
 	}
 
-	return SpatialGDK::EActorMigrationResult::Success;
+	return EActorMigrationResult::Success;
 }

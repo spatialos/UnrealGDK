@@ -56,7 +56,7 @@ public:
 	// Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
 							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
-	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 	void ProcessPositionUpdates();
 	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
 	void UpdateInterestComponent(AActor* Actor);
@@ -93,6 +93,7 @@ private:
 	void AuthorityLost(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
 	void AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
 	void HandleActorAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority);
+	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 
 	void ComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 	void ComponentUpdated(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);

@@ -5,6 +5,8 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 
+using SpatialGDK::EActorMigrationResult;
+
 FSpatialNetDriverLoadBalancingContext::FSpatialNetDriverLoadBalancingContext(USpatialNetDriver* InNetDriver,
 																			 TArray<FNetworkObjectInfo*>& InOutNetworkObjects)
 	: NetDriver(InNetDriver)
@@ -29,44 +31,44 @@ void FSpatialNetDriverLoadBalancingContext::UpdateWithAdditionalActors()
 	}
 }
 
-SpatialGDK::EActorMigrationResult FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
+EActorMigrationResult FSpatialNetDriverLoadBalancingContext::IsActorReadyForMigration(AActor* Actor)
 {
 	if (!Actor->HasAuthority())
 	{
-		return SpatialGDK::EActorMigrationResult::NotAuthoritative;
+		return EActorMigrationResult::NotAuthoritative;
 	}
 
 	if (!Actor->IsActorReady())
 	{
-		return SpatialGDK::EActorMigrationResult::NotReady;
+		return EActorMigrationResult::NotReady;
 	}
 
 	// These checks are extracted from UNetDriver::ServerReplicateActors_BuildNetworkObjects
 
 	if (Actor->IsPendingKillPending())
 	{
-		return SpatialGDK::EActorMigrationResult::PendingKill;
+		return EActorMigrationResult::PendingKill;
 	}
 
 	// Verify the actor is actually initialized (it might have been intentionally spawn deferred until a later frame)
 	if (!Actor->IsActorInitialized())
 	{
-		return SpatialGDK::EActorMigrationResult::NotInitialized;
+		return EActorMigrationResult::NotInitialized;
 	}
 
 	// Don't send actors that may still be streaming in or out
 	ULevel* Level = Actor->GetLevel();
 	if (Level->HasVisibilityChangeRequestPending() || Level->bIsAssociatingLevel)
 	{
-		return SpatialGDK::EActorMigrationResult::Streaming;
+		return EActorMigrationResult::Streaming;
 	}
 
 	if (Actor->NetDormancy == DORM_Initial && Actor->IsNetStartupActor())
 	{
-		return SpatialGDK::EActorMigrationResult::NetDormant;
+		return EActorMigrationResult::NetDormant;
 	}
 
-	return SpatialGDK::EActorMigrationResult::Success;
+	return EActorMigrationResult::Success;
 }
 
 FSpatialNetDriverLoadBalancingContext::FNetworkObjectsArrayAdaptor FSpatialNetDriverLoadBalancingContext::GetActorsBeingReplicated()

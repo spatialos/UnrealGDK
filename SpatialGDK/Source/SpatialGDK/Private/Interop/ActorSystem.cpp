@@ -21,11 +21,13 @@
 
 DEFINE_LOG_CATEGORY(LogActorSystem);
 
-DECLARE_CYCLE_STAT(TEXT("Actor System RemoveEntity"), STAT_ActorSystemRemoveEntity, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Actor System ApplyData"), STAT_ActorSystemApplyData, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Actor System ApplyHandover"), STAT_ActorSystemApplyHandover, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Actor System ReceiveActor"), STAT_ActorSystemReceiveActor, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Actor System RemoveActor"), STAT_ActorSystemRemoveActor, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Actor System RemoveEntity"), STAT_ActorSystemRemoveEntity, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Actor System SendComponentUpdates"), STAT_ActorSystemSendComponentUpdates, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("Actor System UpdateInterestComponent"), STAT_ActorSystemUpdateInterestComponent, STATGROUP_SpatialNet);
 
 namespace SpatialGDK
 {
@@ -348,6 +350,13 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 
 	if (NetDriver->IsServer())
 	{
+		if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			// This worker may have been trying to send updates for an Actor it created and started simulating, but
+			// didn't have an entity for yet. Send those updates now.
+			ProcessUpdatesQueuedUntilAuthority(EntityId);
+		}
+
 		// If we became authoritative over the server auth component set, set our role to be ROLE_Authority
 		// and set our RemoteRole to be ROLE_AutonomousProxy if the actor has an owning connection.
 		// Note: Pawn, PlayerController, and PlayerState for player-owned characters can arrive in
@@ -449,6 +458,19 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 		{
 			Actor->Role = (Authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 		}
+	}
+}
+
+void ActorSystem::ProcessUpdatesQueuedUntilAuthority(const Worker_EntityId EntityId)
+{
+	if (TArray<FWorkerComponentUpdate>* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
+	{
+		for (auto It = UpdatesQueuedUntilAuthority->CreateIterator(); It; ++It)
+		{
+			NetDriver->Connection->SendComponentUpdate(EntityId, &*It);
+			It.RemoveCurrent();
+		}
+		UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
 	}
 }
 
@@ -670,7 +692,7 @@ void ActorSystem::HandleDeferredEntityDeletion(const DeferredRetire& Retire) con
 {
 	if (Retire.bNeedsTearOff)
 	{
-		NetDriver->ActorSystem->SendActorTornOffUpdate(Retire.EntityId, Retire.ActorClassId);
+		SendActorTornOffUpdate(Retire.EntityId, Retire.ActorClassId);
 		NetDriver->DelayedRetireEntity(Retire.EntityId, 1.0f, Retire.bIsNetStartupActor);
 	}
 	else
@@ -1939,8 +1961,8 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 									   const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges,
 									   uint32& OutBytesWritten)
 {
-	// SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendComponentUpdates);
-	Worker_EntityId EntityId = Channel->GetEntityId();
+	SCOPE_CYCLE_COUNTER(STAT_ActorSystemSendComponentUpdates);
+	const Worker_EntityId EntityId = Channel->GetEntityId();
 
 	UE_LOG(LogActorSystem, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
@@ -1992,22 +2014,20 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 		return;
 	}
 
-	for (int i = 0; i < ComponentUpdates.Num(); i++)
+	for (FWorkerComponentUpdate& Update : ComponentUpdates)
 	{
-		FWorkerComponentUpdate& Update = ComponentUpdates[i];
-
 		FSpatialGDKSpanId SpanId;
 		if (EventTracer != nullptr)
 		{
 			SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendPropertyUpdate(Object, EntityId, Update.component_id),
-											 (const Trace_SpanIdType*)PropertySpans.GetData(), PropertySpans.Num());
+											 reinterpret_cast<const Trace_SpanIdType*>(PropertySpans.GetData()), PropertySpans.Num());
 		}
 
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 	}
 }
 
-void ActorSystem::SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void ActorSystem::SendActorTornOffUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const
 {
 	FWorkerComponentUpdate ComponentUpdate = {};
 
@@ -2108,7 +2128,7 @@ void ActorSystem::SendInterestBucketComponentChange(const Worker_EntityId Entity
 
 void ActorSystem::UpdateInterestComponent(AActor* Actor)
 {
-	// SCOPE_CYCLE_COUNTER(STAT_SpatialSenderUpdateInterestComponent);
+	SCOPE_CYCLE_COUNTER(STAT_ActorSystemUpdateInterestComponent);
 
 	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
