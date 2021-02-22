@@ -6,8 +6,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
-#include "SpatialView/EntityComponentTypes.h"
-#include "SpatialView/SubView.h"
+
 namespace SpatialGDK
 {
 const EntityViewElement& FLoadBalancingWriterBase::GetEntityView(Worker_EntityId EntityId) const

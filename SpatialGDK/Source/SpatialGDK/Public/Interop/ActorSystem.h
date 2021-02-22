@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
-#include "Schema/LoadBalancingStuff.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"

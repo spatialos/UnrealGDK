@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include "Schema/LoadBalancingStuff.h"
+#include "Schema/ActorGroupMember.h"
+#include "Schema/ActorSetMember.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "UObject/WeakObjectPtr.h"

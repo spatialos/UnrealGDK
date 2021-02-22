@@ -10,7 +10,6 @@
 
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Kismet/GameplayStatics.h"
-#include "Schema/LoadBalancingStuff.h"
 
 void USpatialTestLoadBalancingDataTestMap::CreateCustomContentForMap()
 {
@@ -142,7 +141,8 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 		LoadBalancingDataReceiptTimeout);
 }
 
-TOptional<SpatialGDK::ActorSetMember> ASpatialTestLoadBalancingData::GetActorSetData(const AActor* Actor) const
+template <class TComponent>
+TOptional<TComponent> ASpatialTestLoadBalancingData::GetSpatialComponent(const AActor* Actor) const
 {
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 	const Worker_EntityId ActorEntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
@@ -152,34 +152,23 @@ TOptional<SpatialGDK::ActorSetMember> ASpatialTestLoadBalancingData::GetActorSet
 		const SpatialGDK::EntityViewElement& ActorEntity = SpatialNetDriver->Connection->GetView()[ActorEntityId];
 
 		const SpatialGDK::ComponentData* ComponentData =
-			ActorEntity.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialGDK::ActorSetMember::ComponentId });
+			ActorEntity.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ TComponent::ComponentId });
 
 		if (ComponentData != nullptr)
 		{
-			return SpatialGDK::ActorSetMember(ComponentData->GetWorkerComponentData());
+			return TComponent(ComponentData->GetUnderlying());
 		}
 	}
 
 	return {};
 }
 
+TOptional<SpatialGDK::ActorSetMember> ASpatialTestLoadBalancingData::GetActorSetData(const AActor* Actor) const
+{
+	return GetSpatialComponent<SpatialGDK::ActorSetMember>(Actor);
+}
+
 TOptional<SpatialGDK::ActorGroupMember> ASpatialTestLoadBalancingData::GetActorGroupData(const AActor* Actor) const
 {
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-	const Worker_EntityId ActorEntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor);
-
-	if (ensure(ActorEntityId != SpatialConstants::INVALID_ENTITY_ID))
-	{
-		const SpatialGDK::EntityViewElement& ActorEntity = SpatialNetDriver->Connection->GetView()[ActorEntityId];
-
-		const SpatialGDK::ComponentData* ComponentData =
-			ActorEntity.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialGDK::ActorGroupMember::ComponentId });
-
-		if (ComponentData != nullptr)
-		{
-			return SpatialGDK::ActorGroupMember(ComponentData->GetWorkerComponentData());
-		}
-	}
-
-	return {};
+	return GetSpatialComponent<SpatialGDK::ActorGroupMember>(Actor);
 }

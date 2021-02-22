@@ -9,7 +9,6 @@
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/Restricted.h"
 #include "SpatialConstants.h"
 #include "SpatialView/EntityDelta.h"

@@ -40,7 +40,6 @@
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
-#include "Schema/LoadBalancingStuff.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"

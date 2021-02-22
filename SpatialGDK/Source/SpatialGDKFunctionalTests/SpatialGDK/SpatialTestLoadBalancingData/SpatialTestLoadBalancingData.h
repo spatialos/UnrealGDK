@@ -6,7 +6,8 @@
 
 #include "SpatialFunctionalTest.h"
 
-#include "Schema/LoadBalancingStuff.h"
+#include "Schema/ActorGroupMember.h"
+#include "Schema/ActorSetMember.h"
 
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 
@@ -57,6 +58,9 @@ class ASpatialTestLoadBalancingData : public ASpatialFunctionalTest
 	GENERATED_BODY()
 
 	virtual void PrepareTest() override;
+
+	template <class TComponent>
+	TOptional<TComponent> GetSpatialComponent(const AActor* Actor) const;
 
 	TOptional<SpatialGDK::ActorSetMember> GetActorSetData(const AActor* Actor) const;
 	TOptional<SpatialGDK::ActorGroupMember> GetActorGroupData(const AActor* Actor) const;

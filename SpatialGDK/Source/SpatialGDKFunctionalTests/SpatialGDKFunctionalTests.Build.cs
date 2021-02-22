@@ -1,6 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-using System.IO;
 using UnrealBuildTool;
 
 public class SpatialGDKFunctionalTests : ModuleRules

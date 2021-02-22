@@ -211,4 +211,30 @@ inline FVector GetVectorFromSchema(Schema_Object* Object, Schema_FieldId Id)
 // Does not clear OutPath first.
 void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath);
 
+template <class TComponent>
+Worker_ComponentUpdate CreateComponentUpdateHelper(const TComponent& Component)
+{
+	Worker_ComponentUpdate Update = {};
+	Update.component_id = TComponent::ComponentId;
+	Update.schema_type = Schema_CreateComponentUpdate();
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	Component.WriteSchema(ComponentObject);
+
+	return Update;
+}
+
+template <class TComponent>
+Worker_ComponentData CreateComponentDataHelper(const TComponent& Component)
+{
+	Worker_ComponentData Update = {};
+	Update.component_id = TComponent::ComponentId;
+	Update.schema_type = Schema_CreateComponentData();
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Update.schema_type);
+
+	Component.WriteSchema(ComponentObject);
+
+	return Update;
+}
+
 } // namespace SpatialGDK

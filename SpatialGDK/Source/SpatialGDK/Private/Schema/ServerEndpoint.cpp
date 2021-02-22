@@ -2,8 +2,6 @@
 
 #include "Schema/ServerEndpoint.h"
 
-#include "Schema/LoadBalancingStuff.h"
-
 namespace SpatialGDK
 {
 ServerEndpoint::ServerEndpoint(Schema_ComponentData* Data)

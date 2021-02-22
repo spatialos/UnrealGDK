@@ -9,7 +9,6 @@
 #include "Containers/Map.h"
 #include "CoreMinimal.h"
 #include "Math/Vector2D.h"
-#include "Schema/LoadBalancingStuff.h"
 
 #include "DebugLBStrategy.generated.h"
 

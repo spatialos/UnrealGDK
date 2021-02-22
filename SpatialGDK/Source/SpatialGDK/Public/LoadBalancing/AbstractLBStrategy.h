@@ -6,8 +6,8 @@
 #include "SpatialConstants.h"
 
 #include "CoreMinimal.h"
+#include "Schema/ActorGroupMember.h"
 #include "Schema/Interest.h"
-#include "Schema/LoadBalancingStuff.h"
 #include "UObject/NoExportTypes.h"
 
 #include "AbstractLBStrategy.generated.h"
