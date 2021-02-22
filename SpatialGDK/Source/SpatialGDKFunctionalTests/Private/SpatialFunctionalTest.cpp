@@ -666,6 +666,14 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 	}
 }
 
+void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
+{
+	if (bPreparedTest)
+	{
+		PrepareTestAfterBeginPlay();
+	}
+}
+
 void ASpatialFunctionalTest::PrepareTestAfterBeginPlay()
 {
 	// We need to delay until next BeginPlay since on non-Authority
@@ -674,7 +682,7 @@ void ASpatialFunctionalTest::PrepareTestAfterBeginPlay()
 	{
 		GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
 			PrepareTestAfterBeginPlay();
-		});
+			});
 		return;
 	}
 
@@ -688,14 +696,6 @@ void ASpatialFunctionalTest::PrepareTestAfterBeginPlay()
 	if (LocalFlowController != nullptr)
 	{
 		LocalFlowController->SetReadyToRunTest(true);
-	}
-}
-
-void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
-{
-	if (bPreparedTest)
-	{
-		PrepareTestAfterBeginPlay();
 	}
 }
 
