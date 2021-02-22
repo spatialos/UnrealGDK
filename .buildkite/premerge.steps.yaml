@@ -53,9 +53,9 @@ steps:
     async: true
     build: 
       env: 
-      GDK_BRANCH: "${BUILDKITE_BRANCH}"
-      BUILD_TYPE: "GDK"
-      BUILD_MODE: "iterative"
+        GDK_BRANCH: "${BUILDKITE_BRANCH}"
+        BUILD_TYPE: "GDK"
+        BUILD_MODE: "iterative"
 
   - label: "enforce-version-restrictions"
     command: "ci/check-version-file.sh"
