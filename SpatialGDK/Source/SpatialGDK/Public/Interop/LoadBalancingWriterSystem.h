@@ -18,60 +18,48 @@ class FSubView;
 class FLoadBalancingWriterBase
 {
 public:
-	FLoadBalancingWriterBase(USpatialNetDriver* InNetDriver, const FSubView* InSubView)
+	FLoadBalancingWriterBase(USpatialNetDriver* InNetDriver)
 		: NetDriver(InNetDriver)
-		, SubView(InSubView)
 	{
 	}
 
-	Worker_EntityId GetEntityId(AActor* Actor) const;
 	const EntityViewElement& GetEntityView(Worker_EntityId EntityId) const;
 	void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate& ComponentUpdate);
 
 protected:
-	USpatialNetDriver* NetDriver;
-	const FSubView* SubView;
+	TWeakObjectPtr<USpatialNetDriver> NetDriver;
 };
 
 template <class TComponent>
 class TLoadBalancingWriter : public FLoadBalancingWriterBase
 {
 public:
-	TLoadBalancingWriter(USpatialNetDriver* NetDriver, const FSubView* InSubView)
-		: FLoadBalancingWriterBase(NetDriver, InSubView)
+	TLoadBalancingWriter(USpatialNetDriver* NetDriver)
+		: FLoadBalancingWriterBase(NetDriver)
 	{
 	}
 
 	virtual ~TLoadBalancingWriter() {}
 
-	void Advance()
-	{
-		for (const EntityDelta& EntityDelta : SubView->GetViewDelta().EntityDeltas)
-		{
-			switch (EntityDelta.Type)
-			{
-			case EntityDelta::ADD:
-			case EntityDelta::TEMPORARILY_REMOVED:
-			case EntityDelta::UPDATE:
-				DataStore.Add(EntityDelta.EntityId, GetLoadBalancingData(GetEntityView(EntityDelta.EntityId)));
-				break;
-			case EntityDelta::REMOVE:
-				DataStore.Remove(EntityDelta.EntityId);
-				break;
-			default:
-				break;
-			}
-		}
-	}
-
 	void ReplicateActor(Worker_EntityId ActorEntityId, AActor* Actor)
 	{
-		const TComponent& Component = DataStore.Add(ActorEntityId, { GetLoadBalancingData(Actor) }).Data;
-		FWorkerComponentUpdate CreateComponentData = Component.CreateComponentUpdate();
+		LoadBalancingData* PresentDataPtr = DataStore.Find(ActorEntityId);
+		const TComponent UpdatedData = GetLoadBalancingData(Actor);
+		if (PresentDataPtr != nullptr)
+		{
+			if (!ShouldUpdateComponent(PresentDataPtr->Data, UpdatedData))
+			{
+				return;
+			}
+		}
+		DataStore.Add(ActorEntityId, { UpdatedData });
+		FWorkerComponentUpdate CreateComponentData = UpdatedData.CreateComponentUpdate();
 		SendComponentUpdate(ActorEntityId, CreateComponentData);
 	}
 
 	virtual TComponent GetLoadBalancingData(AActor* Actor) const = 0;
+
+	virtual bool ShouldUpdateComponent(const TComponent& PresentData, const TComponent& UpdatedData) const { return true; }
 
 protected:
 	struct LoadBalancingData
@@ -80,26 +68,17 @@ protected:
 	};
 
 private:
-	static LoadBalancingData GetLoadBalancingData(const EntityViewElement& ViewElement)
-	{
-		const ComponentData* ComponentData = ViewElement.Components.FindByPredicate(ComponentIdEquality{ TComponent::ComponentId });
-		check(ComponentData != nullptr);
-		return LoadBalancingData{ ComponentData->GetUnderlying() };
-	}
-
 	TMap<Worker_EntityId_Key, LoadBalancingData> DataStore;
 };
 
 class LoadBalancingWriter
 {
 public:
-	LoadBalancingWriter(USpatialNetDriver* InNetDriver, const FSubView* InSubView);
+	LoadBalancingWriter(USpatialNetDriver* InNetDriver);
 
-	void Advance();
 	void OnActorReplicated(Worker_EntityId ActorEntityId, AActor* Actor);
 
 	TWeakObjectPtr<USpatialNetDriver> NetDriver;
-	const FSubView* SubView;
 
 	TUniquePtr<TLoadBalancingWriter<ActorSetMember>> ActorSetWriter;
 	TUniquePtr<TLoadBalancingWriter<ActorGroupMember>> ActorGroupWriter;

@@ -10,14 +10,9 @@
 #include "SpatialView/SubView.h"
 namespace SpatialGDK
 {
-Worker_EntityId FLoadBalancingWriterBase::GetEntityId(AActor* Actor) const
-{
-	return NetDriver->PackageMap->GetEntityIdFromObject(Actor);
-}
-
 const EntityViewElement& FLoadBalancingWriterBase::GetEntityView(Worker_EntityId EntityId) const
 {
-	return SubView->GetView()[EntityId];
+	return NetDriver->Connection->GetView()[EntityId];
 }
 
 void FLoadBalancingWriterBase::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate& ComponentUpdate)
@@ -25,26 +20,11 @@ void FLoadBalancingWriterBase::SendComponentUpdate(Worker_EntityId EntityId, FWo
 	NetDriver->Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 }
 
-class LoadBalancingWriterActorGroup : public TLoadBalancingWriter<ActorGroupMember>
-{
-public:
-	explicit LoadBalancingWriterActorGroup(USpatialNetDriver* NetDriver, const FSubView* InSubView)
-		: TLoadBalancingWriter<ActorGroupMember>(NetDriver, InSubView)
-	{
-	}
-
-private:
-	virtual ActorGroupMember GetLoadBalancingData(AActor* Actor) const override
-	{
-		return ActorGroupMember(NetDriver->LoadBalanceStrategy->GetActorGroupId(*Actor));
-	}
-};
-
 class LoadBalancingWriterActorSet : public TLoadBalancingWriter<ActorSetMember>
 {
 public:
-	explicit LoadBalancingWriterActorSet(USpatialNetDriver* NetDriver, const FSubView* InSubView)
-		: TLoadBalancingWriter<ActorSetMember>(NetDriver, InSubView)
+	explicit LoadBalancingWriterActorSet(USpatialNetDriver* NetDriver)
+		: TLoadBalancingWriter<ActorSetMember>(NetDriver)
 	{
 	}
 
@@ -62,19 +42,27 @@ private:
 	}
 };
 
-LoadBalancingWriter::LoadBalancingWriter(USpatialNetDriver* InNetDriver, const FSubView* InSubView)
+class LoadBalancingWriterActorGroup : public TLoadBalancingWriter<ActorGroupMember>
+{
+public:
+	explicit LoadBalancingWriterActorGroup(USpatialNetDriver* NetDriver)
+		: TLoadBalancingWriter<ActorGroupMember>(NetDriver)
+	{
+	}
+
+private:
+	virtual ActorGroupMember GetLoadBalancingData(AActor* Actor) const override
+	{
+		return ActorGroupMember(NetDriver->LoadBalanceStrategy->GetActorGroupId(*Actor));
+	}
+};
+
+LoadBalancingWriter::LoadBalancingWriter(USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
-	, SubView(InSubView)
-	, ActorSetWriter(MakeUnique<LoadBalancingWriterActorSet>(InNetDriver, InSubView))
-	, ActorGroupWriter(MakeUnique<LoadBalancingWriterActorGroup>(InNetDriver, InSubView))
+	, ActorSetWriter(MakeUnique<LoadBalancingWriterActorSet>(InNetDriver))
+	, ActorGroupWriter(MakeUnique<LoadBalancingWriterActorGroup>(InNetDriver))
 
 {
-}
-
-void LoadBalancingWriter::Advance()
-{
-	ActorSetWriter->Advance();
-	ActorGroupWriter->Advance();
 }
 
 void LoadBalancingWriter::OnActorReplicated(Worker_EntityId ActorEntityId, AActor* Actor)
