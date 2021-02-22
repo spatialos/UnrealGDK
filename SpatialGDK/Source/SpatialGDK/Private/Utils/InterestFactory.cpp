@@ -115,7 +115,8 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 
 	// Workers have interest in all system worker entities.
 	ServerQuery = Query();
-	ServerQuery.ResultComponentIds = { SpatialConstants::WORKER_COMPONENT_ID };
+	ServerQuery.ResultComponentIds = { SpatialConstants::WORKER_COMPONENT_ID,
+									   /* System component query tag */ SpatialConstants::SYSTEM_COMPONENT_ID };
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
 
@@ -178,6 +179,25 @@ void InterestFactory::AddLoadBalancingInterestQuery(const UAbstractLBStrategy* L
 	PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
 	PartitionQuery.Constraint = LBStrategy->GetWorkerInterestQueryConstraint(VirtualWorker);
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, PartitionQuery);
+}
+
+Interest InterestFactory::CreateRoutingWorkerInterest()
+{
+	Interest ServerInterest;
+	Query ServerQuery;
+
+	ServerQuery.ResultComponentIds = {
+		SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID,
+		SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
+		SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID,
+		SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID,
+		SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID,
+	};
+	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID;
+
+	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
+
+	return ServerInterest;
 }
 
 Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
@@ -507,7 +527,7 @@ void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const Que
 }
 
 void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId,
-															   const Query& QueryToAdd) const
+															   const Query& QueryToAdd)
 {
 	if (!OutInterest.ComponentInterestMap.Contains(ComponentId))
 	{

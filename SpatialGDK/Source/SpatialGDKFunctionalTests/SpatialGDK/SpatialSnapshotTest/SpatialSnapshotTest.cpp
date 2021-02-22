@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialSnapshotTest.h"
+#include "Engine/NetDriver.h"
 #include "GameFramework/GameStateBase.h"
 #include "SpatialSnapshotTestActor.h"
 #include "SpatialSnapshotTestGameMode.h"

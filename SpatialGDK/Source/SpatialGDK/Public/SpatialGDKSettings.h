@@ -43,6 +43,16 @@ enum Type
 };
 }
 
+UENUM()
+namespace ECrossServerRPCImplementation
+{
+enum Type
+{
+	SpatialCommand,
+	RoutingWorker,
+};
+}
+
 USTRUCT(BlueprintType)
 struct FDistanceFrequencyPair
 {
@@ -73,7 +83,9 @@ public:
 	 * The number of entity IDs to be reserved when the entity pool is first created. Ensure that the number of entity IDs
 	 * reserved is greater than the number of Actors that you expect the server-worker instances to spawn at game deployment
 	 */
-	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (DisplayName = "Initial Entity ID Reservation Count"))
+	// TODO: UNR-4979 Allow full range of uint32 when SQD-1150 is fixed
+	UPROPERTY(EditAnywhere, config, Category = "Entity Pool",
+			  meta = (DisplayName = "Initial Entity ID Reservation Count", ClampMax = 0x7fffffff))
 	uint32 EntityPoolInitialReservationCount;
 
 	/**
@@ -268,27 +280,27 @@ private:
 	void UpdateServicesRegionFile();
 #endif
 
+public:
+	/**
+	 * The number of RPCs that can be in flight, per type. Changing this may require schema to be regenerated and
+	 * break snapshot compatibility.
+	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Default RPC Ring Buffer Size"))
 	uint32 DefaultRPCRingBufferSize;
 
 	/** Overrides default ring buffer size. */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "RPC Ring Buffer Size Map"))
-	TMap<ERPCType, uint32> RPCRingBufferSizeMap;
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "RPC Ring Buffer Size Overrides"))
+	TMap<ERPCType, uint32> RPCRingBufferSizeOverrides;
 
-public:
 	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
 
 	float GetSecondsBeforeWarning(const ERPCResult Result) const;
 
 	bool ShouldRPCTypeAllowUnresolvedParameters(const ERPCType Type) const;
 
-	/**
-	 * The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and
-	 * break snapshot compatibility.
-	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Max RPC Ring Buffer Size"))
-	uint32 MaxRPCRingBufferSize;
-
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Cross Server RPC Implementation"))
+	TEnumAsByte<ECrossServerRPCImplementation::Type> CrossServerRPCImplementation;
+	
 	/** Only valid on Tcp connections - indicates if we should enable TCP_NODELAY - see c_worker.h */
 	UPROPERTY(Config)
 	bool bTcpNoDelay;
@@ -409,4 +421,7 @@ public:
 	 */
 	UPROPERTY(Config)
 	uint64 MaxEventTracingFileSizeBytes;
+
+	UPROPERTY(Config)
+	bool bEnableAlwaysWriteRPCs;
 };

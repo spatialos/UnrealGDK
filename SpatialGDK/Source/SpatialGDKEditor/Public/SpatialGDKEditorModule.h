@@ -4,6 +4,7 @@
 
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Modules/ModuleManager.h"
+#include "SpatialGDKLogParser.h"
 
 class FSpatialGDKEditor;
 class FSpatialGDKEditorCommandLineArgsManager;
@@ -54,6 +55,8 @@ private:
 
 	virtual FPlayInEditorSettingsOverride GetPlayInEditorSettingsOverrideForTesting(UWorld* World) const;
 
+	virtual bool UsesActorInteractionSemantics() const override;
+
 private:
 	void RegisterSettings();
 	void UnregisterSettings();
@@ -63,6 +66,8 @@ private:
 	bool ShouldStartLocalServer() const;
 
 private:
+	FSpatialGDKLogParser LogParser;
+
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 	TUniquePtr<FSpatialGDKEditorCommandLineArgsManager> CommandLineArgsManager;
 

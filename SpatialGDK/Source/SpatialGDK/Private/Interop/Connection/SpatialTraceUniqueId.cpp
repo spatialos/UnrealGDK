@@ -20,3 +20,9 @@ EventTraceUniqueId EventTraceUniqueId::GenerateForProperty(Worker_EntityId Entit
 	uint32 ComputedHash = HashCombine(GetTypeHash(static_cast<int64>(Entity)), GetTypeHash(Property->GetName()));
 	return EventTraceUniqueId(ComputedHash);
 }
+
+EventTraceUniqueId EventTraceUniqueId::GenerateForCrossServerRPC(Worker_EntityId Entity, uint64 UniqueRequestId)
+{
+	uint32 ComputedHash = HashCombine(GetTypeHash(static_cast<int64>(Entity)), GetTypeHash(static_cast<uint64>(UniqueRequestId)));
+	return EventTraceUniqueId(ComputedHash);
+}

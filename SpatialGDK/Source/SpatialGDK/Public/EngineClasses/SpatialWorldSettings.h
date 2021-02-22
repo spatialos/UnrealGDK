@@ -72,6 +72,10 @@ public:
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	static void EditorRefreshSpatialDebugger();
+
+	// This function was specifically designed to be used with the GenerateTestMapsCommandlet.
+	// Other uses are untested, and probably produce undefined behavior.
+	void SetMultiWorkerSettingsClass(TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass);
 #endif // WITH_EDITOR
 
 private:

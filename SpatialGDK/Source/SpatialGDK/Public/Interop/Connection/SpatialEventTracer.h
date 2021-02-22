@@ -28,13 +28,19 @@ public:
 	Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
 	FSpatialGDKSpanId TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes = nullptr,
-								 int32 NumCauses = 0);
+								 int32 NumCauses = 0) const;
 
-	void AddComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
-	void RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void UpdateComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
+	void BeginOpsForFrame();
+	void AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId);
+	void RemoveEntity(const Worker_RemoveEntityOp& Op, const FSpatialGDKSpanId& SpanId);
+	void AuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op, const FSpatialGDKSpanId& SpanId);
+	void AddComponent(const Worker_AddComponentOp& Op, const FSpatialGDKSpanId& SpanId);
+	void RemoveComponent(const Worker_RemoveComponentOp& Op, const FSpatialGDKSpanId& SpanId);
+	void UpdateComponent(const Worker_ComponentUpdateOp& Op, const FSpatialGDKSpanId& SpanId);
+	void CommandRequest(const Worker_CommandRequestOp& Op, const FSpatialGDKSpanId& SpanId);
 
-	FSpatialGDKSpanId GetSpanId(const EntityComponentId& Id) const;
+	TArray<FSpatialGDKSpanId> GetAndConsumeSpansForComponent(const EntityComponentId& Id);
+	FSpatialGDKSpanId GetAndConsumeSpanForRequestId(Worker_RequestId RequestId);
 
 	static FUserSpanId GDKSpanIdToUserSpanId(const FSpatialGDKSpanId& SpanId);
 	static FSpatialGDKSpanId UserSpanIdToGDKSpanId(const FUserSpanId& UserSpanId);
@@ -49,6 +55,8 @@ public:
 	void AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object, const FSpatialGDKSpanId& SpanId);
 	FSpatialGDKSpanId PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
 
+	void SetFlushOnWrite(bool bValue);
+
 private:
 	struct StreamDeleter
 	{
@@ -59,15 +67,21 @@ private:
 
 	FString FolderPath;
 
+	int32 FlushOnWriteAtomic = 0;
 	TUniquePtr<Io_Stream, StreamDeleter> Stream;
 	Trace_EventTracer* EventTracer = nullptr;
 
 	TArray<FSpatialGDKSpanId> SpanIdStack;
-	TMap<EntityComponentId, FSpatialGDKSpanId> EntityComponentSpanIds;
 	TMap<TWeakObjectPtr<UObject>, FSpatialGDKSpanId> ObjectSpanIdStacks;
 
 	uint64 BytesWrittenToStream = 0;
 	uint64 MaxFileSize = 0;
+
+	// Span IDs received from the wire, these live for a frame and are expected to continue into the stack
+	// on an ops tick.
+	TMap<EntityComponentId, TArray<FSpatialGDKSpanId>> EntityComponentSpanIds;
+	TArray<EntityComponentId> EntityComponentsConsumed;
+	TMap<int64, FSpatialGDKSpanId> RequestSpanIds;
 };
 
 // SpatialScopedActiveSpanIds are creating prior to calling worker send functions so that worker can use the input SpanId to continue

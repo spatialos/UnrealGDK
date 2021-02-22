@@ -19,15 +19,23 @@ const FName AEventTracingTest::ReceiveOpEventName = "worker.receive_op";
 const FName AEventTracingTest::PropertyChangedEventName = "unreal_gdk.property_changed";
 const FName AEventTracingTest::ReceivePropertyUpdateEventName = "unreal_gdk.receive_property_update";
 const FName AEventTracingTest::PushRPCEventName = "unreal_gdk.push_rpc";
-const FName AEventTracingTest::ProcessRPCEventName = "unreal_gdk.process_rpc";
+const FName AEventTracingTest::ReceiveRPCEventName = "unreal_gdk.receive_rpc";
+const FName AEventTracingTest::ApplyRPCEventName = "unreal_gdk.apply_rpc";
 const FName AEventTracingTest::ComponentUpdateEventName = "unreal_gdk.component_update";
-const FName AEventTracingTest::MergeComponentUpdateEventName = "unreal_gdk.merge_component_update";
 const FName AEventTracingTest::UserProcessRPCEventName = "user.process_rpc";
 const FName AEventTracingTest::UserReceivePropertyEventName = "user.receive_property";
 const FName AEventTracingTest::UserReceiveComponentPropertyEventName = "user.receive_component_property";
 const FName AEventTracingTest::UserSendPropertyEventName = "user.send_property";
 const FName AEventTracingTest::UserSendComponentPropertyEventName = "user.send_component_property";
 const FName AEventTracingTest::UserSendRPCEventName = "user.send_rpc";
+
+const FName AEventTracingTest::UserSendCrossServerPropertyEventName = "user.send_cross_server_property";
+const FName AEventTracingTest::UserSendCrossServerRPCEventName = "user.send_cross_server_rpc";
+const FName AEventTracingTest::UserReceiveCrossServerPropertyEventName = "user.receive_cross_server_property";
+const FName AEventTracingTest::UserReceiveCrossServerRPCEventName = "user.receive_cross_server_rpc";
+const FName AEventTracingTest::ApplyCrossServerRPCName = "unreal_gdk.apply_cross_server_rpc";
+const FName AEventTracingTest::SendCrossServerRPCName = "unreal_gdk.send_cross_server_rpc";
+const FName AEventTracingTest::ReceiveCrossServerRPCName = "unreal_gdk.receive_cross_server_rpc";
 
 AEventTracingTest::AEventTracingTest()
 {
@@ -45,6 +53,20 @@ void AEventTracingTest::PrepareTest()
 		TEXT("StartEventTracingTest"), WorkerDefinition, nullptr,
 		[this]() {
 			StartEventTracingTest();
+		},
+		nullptr);
+
+	AddStep(
+		TEXT("SetFlushMode"), FWorkerDefinition::AllWorkers, nullptr,
+		[this]() {
+			USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
+			USpatialConnectionManager* ConnectionManager = GameInstance->GetSpatialConnectionManager();
+			SpatialEventTracer* EventTracer = ConnectionManager->GetWorkerConnection()->GetEventTracer();
+			if (EventTracer)
+			{
+				EventTracer->SetFlushOnWrite(true);
+			}
+			FinishStep();
 		},
 		nullptr);
 
@@ -128,29 +150,33 @@ void AEventTracingTest::GatherData()
 		return A.CreationTime > B.CreationTime;
 	});
 
-	bool bFoundClient = false;
-	bool bFoundWorker = false;
+	FPlatformProcess::Sleep(1); // Worker bug means file may not be flushed by the OS (WRK-2396)
+
+	int RequiredClients = GetRequiredClients();
+	int RequiredWorkers = GetRequiredWorkers();
+	int FoundClient = 0;
+	int FoundWorker = 0;
 	for (const FileCreationTime& FileCreation : FileCreationTimes)
 	{
-		if (!bFoundClient && FileCreation.FilePath.Contains("UnrealClient"))
+		if (FoundClient != RequiredClients && FileCreation.FilePath.Contains("UnrealClient"))
 		{
 			GatherDataFromFile(FileCreation.FilePath);
-			bFoundClient = true;
+			FoundClient++;
 		}
 
-		if (!bFoundWorker && FileCreation.FilePath.Contains("UnrealWorker"))
+		if (FoundWorker != RequiredWorkers && FileCreation.FilePath.Contains("UnrealWorker"))
 		{
 			GatherDataFromFile(FileCreation.FilePath);
-			bFoundWorker = true;
+			FoundWorker++;
 		}
 
-		if (bFoundClient && bFoundWorker)
+		if (FoundClient == RequiredClients && FoundWorker == RequiredWorkers)
 		{
 			break;
 		}
 	}
 
-	if (!bFoundClient || !bFoundWorker)
+	if (FoundClient != RequiredClients || FoundWorker != RequiredWorkers)
 	{
 		UE_LOG(LogEventTracingTest, Error, TEXT("Could not find all required event tracing files"));
 		return;
@@ -204,7 +230,11 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 				for (uint64 i = 0; i < Span.cause_count; ++i)
 				{
 					const int32 ByteOffset = i * TRACE_SPAN_ID_SIZE_BYTES;
-					Causes.Add(FSpatialGDKSpanId::ToString(Span.causes + ByteOffset));
+					FSpatialGDKSpanId SpanId(Span.causes + ByteOffset);
+					if (!SpanId.IsNull())
+					{
+						Causes.Add(FSpatialGDKSpanId::ToString(SpanId.GetId()));
+					}
 				}
 			}
 		}
@@ -213,9 +243,10 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 	Stream = nullptr;
 }
 
-bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames, int MinimumCauses /*= 1*/)
+bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames,
+											 int MinimumCauses /*= 1*/) const
 {
-	TArray<FString>* Causes = TraceSpans.Find(SpanIdString);
+	const TArray<FString>* Causes = TraceSpans.Find(SpanIdString);
 	if (Causes == nullptr || Causes->Num() < MinimumCauses)
 	{
 		return false;
@@ -235,4 +266,28 @@ bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const 
 	}
 
 	return true;
+}
+
+AEventTracingTest::CheckResult AEventTracingTest::CheckCauses(FName From, FName To) const
+{
+	int EventsTested = 0;
+	int EventsFailed = 0;
+	for (const auto& Pair : TraceEvents)
+	{
+		const FString& SpanIdString = Pair.Key;
+		const FName& EventName = Pair.Value;
+
+		if (EventName != To)
+		{
+			continue;
+		}
+
+		EventsTested++;
+
+		if (!CheckEventTraceCause(SpanIdString, { From }))
+		{
+			EventsFailed++;
+		}
+	}
+	return CheckResult{ EventsTested, EventsFailed };
 }

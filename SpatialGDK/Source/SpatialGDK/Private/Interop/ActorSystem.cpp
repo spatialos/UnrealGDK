@@ -9,6 +9,7 @@
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Schema/Restricted.h"
 #include "SpatialConstants.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SubView.h"
@@ -201,7 +202,6 @@ void ActorSystem::PopulateDataStore(const Worker_EntityId EntityId)
 			break;
 		case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 			Components.Metadata = UnrealMetadata(Data.GetUnderlying());
-			Components.Metadata.GetNativeEntityClass();
 			break;
 		default:
 			break;
@@ -218,7 +218,6 @@ void ActorSystem::ApplyComponentAdd(const Worker_EntityId EntityId, const Worker
 		break;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		ActorDataStore[EntityId].Metadata = UnrealMetadata(Data);
-		ActorDataStore[EntityId].Metadata.GetNativeEntityClass();
 		break;
 	default:
 		break;
@@ -284,7 +283,17 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
-		HandlePlayerLifecycleAuthority(EntityId, ComponentSetId, Authority, PlayerController);
+		if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
+		{
+			if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+			{
+				Connection->Init(EntityId);
+			}
+			else if (Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
+			{
+				Connection->Disable();
+			}
+		}
 	}
 
 	if (NetDriver->IsServer())
@@ -312,6 +321,12 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 				{
 					Actor->Role = ROLE_Authority;
 					Actor->RemoteRole = ROLE_SimulatedProxy;
+
+					// bReplicates is not replicated, but this actor is replicated.
+					if (!Actor->GetIsReplicated())
+					{
+						Actor->SetReplicates(true);
+					}
 
 					if (Actor->IsA<APlayerController>())
 					{
@@ -434,11 +449,6 @@ void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_Co
 
 void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update)
 {
-	if (ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID)
-	{
-		OnHeartbeatComponentUpdate(EntityId, Update);
-	}
-
 	if (ComponentId < SpatialConstants::STARTING_GENERATED_COMPONENT_ID
 		|| NetDriver->ClassInfoManager->IsGeneratedQBIMarkerComponent(ComponentId))
 	{
@@ -508,9 +518,9 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 
 	if (EventTracer != nullptr)
 	{
-		FSpatialGDKSpanId CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
+		TArray<FSpatialGDKSpanId> CauseSpanIds = EventTracer->GetAndConsumeSpansForComponent(EntityComponentId(EntityId, ComponentId));
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, EntityId, ComponentId),
-								CauseSpanId.GetConstId(), 1);
+								(const Trace_SpanIdType*)CauseSpanIds.GetData(), /* NumCauses */ 1);
 	}
 
 	ESchemaComponentType Category = NetDriver->ClassInfoManager->GetCategoryByComponentId(ComponentId);
@@ -598,30 +608,6 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 	{
 		EntitiesToRetireOnAuthorityGain.RemoveAtSwap(RetiredActorIndex);
 	}
-
-	if (NetDriver->IsServer())
-	{
-		// Check to see if we are removing a system entity for a worker connection. If so clean up the ClientConnection to delete any and
-		// all actors for this connection's controller.
-		if (FString* WorkerName = WorkerConnectionEntities.Find(EntityId))
-		{
-			const TWeakObjectPtr<USpatialNetConnection> ClientConnectionPtr = NetDriver->FindClientConnectionFromWorkerEntityId(EntityId);
-			if (USpatialNetConnection* ClientConnection = ClientConnectionPtr.Get())
-			{
-				if (APlayerController* Controller = ClientConnection->GetPlayerController(/*InWorld*/ nullptr))
-				{
-					Worker_EntityId PCEntity = NetDriver->PackageMap->GetEntityIdFromObject(Controller);
-					if (AuthorityPlayerControllerConnectionMap.Find(PCEntity))
-					{
-						UE_LOG(LogActorSystem, Verbose, TEXT("Worker %s disconnected after its system identity was removed."),
-							   *(*WorkerName));
-						CloseClientConnection(ClientConnection, PCEntity);
-					}
-				}
-			}
-			WorkerConnectionEntities.Remove(EntityId);
-		}
-	}
 }
 
 bool ActorSystem::HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const
@@ -652,43 +638,6 @@ void ActorSystem::HandleDeferredEntityDeletion(const DeferredRetire& Retire) con
 	else
 	{
 		NetDriver->Sender->RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
-	}
-}
-
-void ActorSystem::HandlePlayerLifecycleAuthority(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId,
-												 const Worker_Authority Authority, APlayerController* PlayerController)
-{
-	UE_LOG(LogActorSystem, Verbose, TEXT("HandlePlayerLifecycleAuthority for PlayerController %s."),
-		   *AActor::GetDebugName(PlayerController));
-
-	// Server initializes heartbeat logic based on its authority over the server auth component set,
-	// client does the same for client auth component set
-	if ((NetDriver->IsServer() && ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-		|| (!NetDriver->IsServer() && ComponentSetId == SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID))
-	{
-		if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
-		{
-			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
-			{
-				if (NetDriver->IsServer())
-				{
-					// TODO: Do we need this map? Can just check spatial view
-					AuthorityPlayerControllerConnectionMap.Add(EntityId, Connection);
-				}
-				Connection->InitHeartbeat(TimerManager, EntityId);
-			}
-		}
-		else if (Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
-		{
-			if (NetDriver->IsServer())
-			{
-				AuthorityPlayerControllerConnectionMap.Remove(EntityId);
-			}
-			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
-			{
-				Connection->DisableHeartbeat();
-			}
-		}
 	}
 }
 
@@ -1128,55 +1077,6 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 	}
 }
 
-void ActorSystem::OnHeartbeatComponentUpdate(const Worker_EntityId EntityId, Schema_ComponentUpdate* Update)
-{
-	if (!NetDriver->IsServer())
-	{
-		// Clients can ignore Heartbeat component updates.
-		return;
-	}
-
-	TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = AuthorityPlayerControllerConnectionMap.Find(EntityId);
-	if (ConnectionPtr == nullptr)
-	{
-		// Heartbeat component update on a PlayerController that this server does not have authority over.
-		// TODO: Disable component interest for Heartbeat components this server doesn't care about - UNR-986
-		return;
-	}
-
-	if (!ConnectionPtr->IsValid())
-	{
-		UE_LOG(LogActorSystem, Warning,
-			   TEXT("Received heartbeat component update after NetConnection has been cleaned up. PlayerController entity: %lld"),
-			   EntityId);
-		AuthorityPlayerControllerConnectionMap.Remove(EntityId);
-		return;
-	}
-
-	USpatialNetConnection* NetConnection = ConnectionPtr->Get();
-
-	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update);
-	uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
-	if (EventCount > 0)
-	{
-		if (EventCount > 1)
-		{
-			UE_LOG(LogActorSystem, Verbose, TEXT("Received multiple heartbeat events in a single component update, entity %lld."),
-				   EntityId);
-		}
-
-		NetConnection->OnHeartbeat();
-	}
-
-	Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Update);
-	if (Schema_GetBoolCount(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID) > 0
-		&& GetBoolFromSchema(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID))
-	{
-		// Client has disconnected, let's clean up their connection.
-		CloseClientConnection(NetConnection, EntityId);
-	}
-}
-
 USpatialActorChannel* ActorSystem::GetOrRecreateChannelForDormantActor(AActor* Actor, const Worker_EntityId EntityID) const
 {
 	// Receive would normally create channel in ReceiveActor - this function is used to recreate the channel after waking up a dormant actor
@@ -1229,8 +1129,6 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-	// TODO: Async loading
-
 	AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
 	if (EntityActor != nullptr)
 	{
@@ -1269,7 +1167,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	EntityActor = TryGetOrCreateActor(ActorComponents);
+	EntityActor = TryGetOrCreateActor(ActorComponents, EntityId);
 
 	if (EntityActor == nullptr)
 	{
@@ -1431,7 +1329,7 @@ AActor* ActorSystem::TryGetActor(const UnrealMetadata& Metadata) const
 	return nullptr;
 }
 
-AActor* ActorSystem::TryGetOrCreateActor(ActorData& ActorComponents)
+AActor* ActorSystem::TryGetOrCreateActor(ActorData& ActorComponents, const Worker_EntityId EntityId)
 {
 	if (ActorComponents.Metadata.StablyNamedRef.IsSet())
 	{
@@ -1457,11 +1355,11 @@ AActor* ActorSystem::TryGetOrCreateActor(ActorData& ActorComponents)
 		return NetDriver->PackageMap->GetUniqueActorInstanceByClass(ActorClass);
 	}
 
-	return CreateActor(ActorComponents);
+	return CreateActor(ActorComponents, EntityId);
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
-AActor* ActorSystem::CreateActor(ActorData& ActorComponents)
+AActor* ActorSystem::CreateActor(ActorData& ActorComponents, const Worker_EntityId EntityId)
 {
 	UClass* ActorClass = ActorComponents.Metadata.GetNativeEntityClass();
 
@@ -1488,7 +1386,15 @@ AActor* ActorSystem::CreateActor(ActorData& ActorComponents)
 
 	if (NetDriver->IsServer() && bCreatingPlayerController)
 	{
-		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor));
+		// Grab the client system entity ID from the partition component in order to correctly link this
+		// connection to the client it corresponds to.
+		const Worker_EntityId ClientSystemEntityId =
+			Partition(SubView->GetView()[EntityId]
+						  .Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID })
+						  ->GetUnderlying())
+				.WorkerConnectionId;
+
+		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), ClientSystemEntityId);
 	}
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
@@ -1806,12 +1712,6 @@ FString ActorSystem::GetObjectNameFromRepState(const FSpatialObjectRepState& Rep
 		return Obj->GetName();
 	}
 	return TEXT("<unknown>");
-}
-
-void ActorSystem::CloseClientConnection(USpatialNetConnection* ClientConnection, const Worker_EntityId PlayerControllerEntityId)
-{
-	ClientConnection->CleanUp();
-	AuthorityPlayerControllerConnectionMap.Remove(PlayerControllerEntityId);
 }
 
 bool ActorSystem::EntityHasComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const

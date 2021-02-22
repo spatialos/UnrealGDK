@@ -213,16 +213,6 @@ namespace ReleaseTool
                     gitClient.Fetch();
                     gitClient.CheckoutRemoteBranch(options.ReleaseBranch);
                     FinalizeRelease(gitHubClient, gitClient, gitHubRepo, gitRepoName, repoUrl);
-                    var release = CreateRelease(gitHubClient, gitHubRepo, gitClient, repoName);
-
-                    BuildkiteAgent.Annotate(AnnotationLevel.Info, "draft-releases",
-                        string.Format(releaseAnnotationTemplate, release.HtmlUrl, repoName), true);
-
-                    Logger.Info("Release Successful!");
-                    Logger.Info("Release hash: {0}", gitClient.GetHeadCommit().Sha);
-                    Logger.Info("Draft release: {0}", release.HtmlUrl);
-
-                    CreatePRFromReleaseToSource(gitHubClient, gitHubRepo, repoUrl, repoName, gitClient);
                 }
             }
             catch (Exception e)

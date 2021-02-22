@@ -8,6 +8,17 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 
+namespace
+{
+float GetTargetDistanceOnLine(const FVector& From, const FVector& Target, const FVector& Location)
+{
+	FVector Norm = (Target - From);
+	Norm.Normalize();
+	FVector RelativePosition = Location - Target;
+	return FVector::DotProduct(Norm, RelativePosition);
+}
+} // namespace
+
 /**
  * This test moves a character backward and forward repeatedly between two workers, adding actors. Based on the SpatialTestCharacterMovement
  * test. This test requires the CharacterMovementTestGameMode, trying to run this test on a different game mode will fail.
@@ -22,22 +33,6 @@ ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
 	Author = "Victoria";
 	Description = TEXT("Test Character Migration");
 	TimeLimit = 300;
-}
-
-void ASpatialTestCharacterMigration::OnOverlapBeginDestination(AActor* OverlappedActor, AActor* OtherActor)
-{
-	if (Cast<ATestMovementCharacter>(OtherActor))
-	{
-		bCharacterReachedDestination = true;
-	}
-}
-
-void ASpatialTestCharacterMigration::OnOverlapBeginOrigin(AActor* OverlappedActor, AActor* OtherActor)
-{
-	if (Cast<ATestMovementCharacter>(OtherActor))
-	{
-		bCharacterReachedOrigin = true;
-	}
 }
 
 void ASpatialTestCharacterMigration::PrepareTest()
@@ -83,6 +78,9 @@ void ASpatialTestCharacterMigration::PrepareTest()
 
 		PlayerCharacter->AddMovementInput(FVector(1, 0, 0), 10.0f, true);
 
+		bCharacterReachedDestination =
+			GetTargetDistanceOnLine(Origin, Destination, PlayerCharacter->GetActorLocation()) > -20.0f; // 20cm overlap
+
 		if (bCharacterReachedDestination)
 		{
 			AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the autonomous proxy."));
@@ -100,6 +98,9 @@ void ASpatialTestCharacterMigration::PrepareTest()
 
 		PlayerCharacter->AddMovementInput(FVector(-1, 0, 0), 10.0f, true);
 
+		bCharacterReachedOrigin = GetTargetDistanceOnLine(Destination, Origin, PlayerCharacter->GetActorLocation()) > -20.0f;
+		; // 20cm overlap
+
 		if (bCharacterReachedOrigin)
 		{
 			AssertTrue(bCharacterReachedOrigin, TEXT("Player character has reached the origin on the autonomous proxy."));
@@ -112,31 +113,8 @@ void ASpatialTestCharacterMigration::PrepareTest()
 		bCharacterReachedDestination = false;
 		bCharacterReachedOrigin = false;
 
-		// Setup the destination trigger box
-		ATriggerBox* TriggerBoxDestination =
-			GetWorld()->SpawnActor<ATriggerBox>(FVector(132.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-		TriggerBoxDestination->Tags.Add("Destination");
-
-		if (UBoxComponent* BoxComponentDestination = Cast<UBoxComponent>(TriggerBoxDestination->GetCollisionComponent()))
-		{
-			BoxComponentDestination->SetBoxExtent(FVector(10.0f, 1.0f, 1.0f));
-		}
-
-		TriggerBoxDestination->OnActorBeginOverlap.AddDynamic(this, &ASpatialTestCharacterMigration::OnOverlapBeginDestination);
-		RegisterAutoDestroyActor(TriggerBoxDestination);
-
-		// Setup the origin trigger box
-		ATriggerBox* TriggerBoxOrigin =
-			GetWorld()->SpawnActor<ATriggerBox>(FVector(-132.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-		TriggerBoxDestination->Tags.Add("Origin");
-
-		if (UBoxComponent* BoxComponentOrigin = Cast<UBoxComponent>(TriggerBoxOrigin->GetCollisionComponent()))
-		{
-			BoxComponentOrigin->SetBoxExtent(FVector(10.0f, 1.0f, 1.0f));
-		}
-
-		TriggerBoxOrigin->OnActorBeginOverlap.AddDynamic(this, &ASpatialTestCharacterMigration::OnOverlapBeginOrigin);
-		RegisterAutoDestroyActor(TriggerBoxOrigin);
+		Destination = FVector(132.0f, 0.0f, 40.0f);
+		Origin = FVector(-132.0f, 0.0f, 40.0f);
 
 		FinishStep();
 	});

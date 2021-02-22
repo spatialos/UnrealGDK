@@ -44,6 +44,7 @@ struct FHandoverPropertyInfo
 {
 	uint16 Handle;
 	int32 Offset;
+	uint32 ShadowOffset;
 	int32 ArrayIdx;
 	GDK_PROPERTY(Property) * Property;
 };
@@ -64,6 +65,7 @@ struct FClassInfo
 	// Exists for all classes
 	TArray<UFunction*> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
+	uint32 HandoverPropertiesSize;
 	TArray<FHandoverPropertyInfo> HandoverProperties;
 	TArray<FInterestPropertyInfo> InterestProperties;
 

@@ -156,18 +156,22 @@ bool FSpatialGDKEditorModule::CanExecuteLaunch() const
 bool FSpatialGDKEditorModule::CanStartSession(FText& OutErrorMessage) const
 {
 	FSpatialGDKEditor::ESchemaDatabaseValidationResult SchemaCheck = SpatialGDKEditorInstance->ValidateSchemaDatabase();
-	if (SchemaCheck == FSpatialGDKEditor::NotFound)
+	switch (SchemaCheck)
 	{
+	case FSpatialGDKEditor::NotFound:
 		OutErrorMessage = LOCTEXT("MissingSchema",
 								  "Attempted to start a local deployment but schema is not generated. You can generate it by clicking on "
 								  "the Schema button in the toolbar.");
 		return false;
-	}
-	else if (SchemaCheck == FSpatialGDKEditor::OldVersion)
-	{
+	case FSpatialGDKEditor::OldVersion:
 		OutErrorMessage = LOCTEXT("OldSchema",
 								  "Attempted to start a local deployment but schema is out of date. You can generate it by clicking on "
 								  "the Schema button in the toolbar.");
+		return false;
+	case FSpatialGDKEditor::RingBufferSizeChanged:
+		OutErrorMessage = LOCTEXT("RingBufferSizeChanged",
+								  "Attempted to start a local deployment but RPC ring buffer size(s) have changed. You need to regenerate "
+								  "schema by clicking on the Schema button in the toolbar.");
 		return false;
 	}
 
@@ -278,6 +282,13 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 		{
 			Function(SpatialConstants::DefaultServerWorkerType, AdditionalServerIndex);
 			AdditionalServerIndex++;
+		}
+
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+		{
+			Function(SpatialConstants::RoutingWorkerType, AdditionalServerIndex);
+			++AdditionalServerIndex;
 		}
 
 		return true;
@@ -447,6 +458,11 @@ bool FSpatialGDKEditorModule::HandleRuntimeSettingsSaved()
 	GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
 
 	return true;
+}
+
+bool FSpatialGDKEditorModule::UsesActorInteractionSemantics() const
+{
+	return GetDefault<USpatialGDKSettings>()->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker;
 }
 
 #undef LOCTEXT_NAMESPACE

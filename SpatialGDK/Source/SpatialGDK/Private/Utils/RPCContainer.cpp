@@ -87,20 +87,35 @@ void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const 
 }
 } // namespace
 
-FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, RPCPayload&& InPayload,
-									 TOptional<uint64> RPCIdForLinearEventTrace)
+FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, const RPCSender& InSenderInfo, ERPCType InType, RPCPayload&& InPayload,
+									 const FSpatialGDKSpanId& SpanId)
 	: ObjectRef(InTargetObjectRef)
+	, SenderRPCInfo(InSenderInfo)
 	, Payload(MoveTemp(InPayload))
 	, Timestamp(FDateTime::Now())
 	, Type(InType)
-	, RPCIdForLinearEventTrace(RPCIdForLinearEventTrace)
+	, SpanId(SpanId)
 {
 }
 
-void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, ERPCType Type, RPCPayload&& Payload,
-									  TOptional<uint64> RPCIdForLinearEventTrace)
+void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, const RPCSender& InSenderInfo, ERPCType Type, RPCPayload&& Payload,
+									  const FSpatialGDKSpanId& SpanId = {})
 {
-	FPendingRPCParams Params{ TargetObjectRef, Type, MoveTemp(Payload), RPCIdForLinearEventTrace };
+	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Type).FindOrAdd(TargetObjectRef.Entity);
+
+	if (Type == ERPCType::CrossServer)
+	{
+		for (auto const& Entry : ArrayOfParams)
+		{
+			if (Entry.SenderRPCInfo == InSenderInfo)
+			{
+				UE_LOG(LogTemp, Error, TEXT("CrossServer RPC processed several times"))
+				return;
+			}
+		}
+	}
+
+	FPendingRPCParams Params{ TargetObjectRef, InSenderInfo, Type, MoveTemp(Payload), SpanId };
 
 	if (!ObjectHasRPCsQueuedOfType(Params.ObjectRef.Entity, Params.Type))
 	{
@@ -113,7 +128,6 @@ void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, E
 		}
 	}
 
-	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Params.Type).FindOrAdd(Params.ObjectRef.Entity);
 	ArrayOfParams.Push(MoveTemp(Params));
 }
 

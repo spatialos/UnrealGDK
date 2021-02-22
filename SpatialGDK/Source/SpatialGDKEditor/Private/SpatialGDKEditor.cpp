@@ -369,7 +369,18 @@ void FSpatialGDKEditor::StopCloudDeployment(FSimpleDelegate SuccessCallback, FSi
 
 bool FSpatialGDKEditor::FullScanRequired()
 {
-	return !Schema::GeneratedSchemaFolderExists() || (Schema::ValidateSchemaDatabase() != FSpatialGDKEditor::Ok);
+	if (!Schema::GeneratedSchemaFolderExists())
+	{
+		return true;
+	}
+
+	ESchemaDatabaseValidationResult SchemaCheckResult = Schema::ValidateSchemaDatabase();
+	if (SchemaCheckResult == ESchemaDatabaseValidationResult::NotFound || SchemaCheckResult == ESchemaDatabaseValidationResult::OldVersion)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 void FSpatialGDKEditor::SetProjectName(const FString& InProjectName)

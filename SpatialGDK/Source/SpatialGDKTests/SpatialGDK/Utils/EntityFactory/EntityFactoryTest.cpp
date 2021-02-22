@@ -38,8 +38,8 @@ ENTITYFACTORY_TEST(GIVEN_an_actor_WHEN_creating_skeleton_entity_components_THEN_
 	// This is here so that we can verify we are adding the expected tags (debatable as this is basically an interface test)
 	TestTrue("Has actor auth tag component",
 			 ComponentDatas.ContainsByPredicate(ContainsComponent{ SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID }));
-	TestTrue("Has actor non-auth tag component",
-			 ComponentDatas.ContainsByPredicate(ContainsComponent{ SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID }));
+	TestTrue("Has actor tag component",
+			 ComponentDatas.ContainsByPredicate(ContainsComponent{ SpatialConstants::ACTOR_TAG_COMPONENT_ID }));
 	TestTrue("Has LB tag component", ComponentDatas.ContainsByPredicate(ContainsComponent{ SpatialConstants::LB_TAG_COMPONENT_ID }));
 
 	return true;

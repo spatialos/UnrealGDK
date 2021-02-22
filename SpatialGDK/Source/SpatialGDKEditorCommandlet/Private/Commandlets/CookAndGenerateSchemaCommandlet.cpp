@@ -156,25 +156,18 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	USchemaDatabase* SchemaDatabase = InitialiseSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH);
 
 	// Needs to happen before RunSchemaCompiler
-	// We construct the list of all server authoritative components while writing the file.
-	TArray<Worker_ComponentId> GeneratedServerAuthoritativeComponentIds{};
-	WriteServerAuthorityComponentSet(SchemaDatabase, GeneratedServerAuthoritativeComponentIds);
-	WriteClientAuthorityComponentSet();
-	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Data);
-	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly);
-	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover);
-	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_InitialOnly);
+	WriteComponentSetFiles(SchemaDatabase);
 
-	// Finish initializing the schema database through updating the server authoritative component set.
-	for (const auto& ComponentId : GeneratedServerAuthoritativeComponentIds)
-	{
-		SchemaDatabase->ComponentSetIdToComponentIds.FindOrAdd(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-			.ComponentIDs.Push(ComponentId);
-	}
-
-	if (!RunSchemaCompiler())
+	FString SchemaJsonOutput;
+	if (!RunSchemaCompiler(SchemaJsonOutput))
 	{
 		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to run schema compiler."));
+		return 0;
+	}
+
+	if (!ExtractComponentSetsFromSchemaJson(SchemaJsonOutput, SchemaDatabase->ComponentSetIdToComponentIds))
+	{
+		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to extract component set from schema bundle."));
 		return 0;
 	}
 

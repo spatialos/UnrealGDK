@@ -83,3 +83,15 @@ void ASpatialTypeActorWithSubobject ::GetLifetimeReplicatedProps(TArray<FLifetim
 
 	DOREPLIFETIME(ASpatialTypeActorWithSubobject, SpatialActorSubobject);
 }
+
+ASpatialTypeActorWithOwnerOnly::ASpatialTypeActorWithOwnerOnly(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+}
+
+void ASpatialTypeActorWithOwnerOnly::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ASpatialTypeActorWithOwnerOnly, OwnerOnlyProperty, COND_OwnerOnly);
+}
