@@ -117,13 +117,13 @@ void AGameModeReplicationTest::PrepareTest()
 	});
 }
 
-USpatialGameModeReplicationTest::USpatialGameModeReplicationTest()
-	// Test flakes about 50% of the time
-	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("SpatialGameModeReplicationTest"))
+USpatialGameModeReplicationMap::USpatialGameModeReplicationMap()
+	// Test flakes about 20% of the time
+	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("SpatialGameModeReplicationMap"))
 {
 }
 
-void USpatialGameModeReplicationTest::CreateCustomContentForMap()
+void USpatialGameModeReplicationMap::CreateCustomContentForMap()
 {
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 

@@ -64,18 +64,6 @@ public:
 	int ReplicatedValue = StartingValue;
 };
 
-UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API USpatialGameModeReplicationTest : public UGeneratedTestMap
-{
-	GENERATED_BODY()
-
-public:
-	USpatialGameModeReplicationTest();
-
-protected:
-	virtual void CreateCustomContentForMap() override;
-};
-
 UCLASS(BlueprintType)
 class SPATIALGDKFUNCTIONALTESTS_API AGameModeReplicationTest : public ASpatialFunctionalTest
 {
@@ -94,4 +82,16 @@ public:
 	int ServerResponsesCount = 0;
 
 	float TimeWaited = 0.0f;
+};
+
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API USpatialGameModeReplicationMap : public UGeneratedTestMap
+{
+	GENERATED_BODY()
+
+public:
+	USpatialGameModeReplicationMap();
+
+protected:
+	virtual void CreateCustomContentForMap() override;
 };
