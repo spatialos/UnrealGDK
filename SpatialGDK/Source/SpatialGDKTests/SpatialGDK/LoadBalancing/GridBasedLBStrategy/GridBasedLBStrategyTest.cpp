@@ -22,7 +22,7 @@ namespace
 {
 UWorld* TestWorld;
 TMap<FName, AActor*> TestActors;
-UGridBasedLBStrategy* Strat;
+TWeakObjectPtr<UGridBasedLBStrategy> Strat;
 
 // Copied from AutomationCommon::GetAnyGameWorld()
 UWorld* GetAnyGameWorld()
@@ -44,6 +44,7 @@ UWorld* GetAnyGameWorld()
 void CreateStrategy(uint32 Rows, uint32 Cols, float WorldWidth, float WorldHeight, uint32 LocalWorkerId)
 {
 	Strat = UTestGridBasedLBStrategy::Create(Rows, Cols, WorldWidth, WorldHeight);
+	Strat->AddToRoot();
 	Strat->Init();
 	Strat->SetVirtualWorkerIds(1, Strat->GetMinimumRequiredWorkers());
 	Strat->SetLocalVirtualWorkerId(LocalWorkerId);
@@ -58,6 +59,7 @@ bool FCleanup::Update()
 		Pair.Value->Destroy(/*bNetForce*/ true);
 	}
 	TestActors.Empty();
+	Strat->RemoveFromRoot();
 	Strat = nullptr;
 
 	GEditor->RequestEndPlayMap();
@@ -121,6 +123,8 @@ DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckShouldRelinquishAuthority
 												 bExpected);
 bool FCheckShouldRelinquishAuthority::Update()
 {
+	UE_LOG(LogTemp, Log, TEXT("Strat ptr: %ulld strat name %s"), reinterpret_cast<uint64>(Strat.Get()), *GetNameSafe(Strat.Get()));
+
 	bool bActual = !Strat->ShouldHaveAuthority(*TestActors[Handle]);
 
 	Test->TestEqual(FString::Printf(TEXT("Should Relinquish Authority. Actual: %d, Expected: %d"), bActual, bExpected), bActual, bExpected);

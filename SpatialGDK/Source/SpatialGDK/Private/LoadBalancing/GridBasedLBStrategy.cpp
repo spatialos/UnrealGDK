@@ -173,9 +173,12 @@ FVector2D UGridBasedLBStrategy::GetActorLoadBalancingPosition(const AActor& Acto
 		return FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 	}
 
+	const SpatialGDK::EntityViewElement* EntityView = NetDriver->Connection->GetCoordinator().GetView().Find(ActorEntityId);
+
+	check(EntityView != nullptr);
+
 	const SpatialGDK::ComponentData* PositionComponentPtr =
-		NetDriver->Connection->GetCoordinator().GetView()[ActorEntityId].Components.FindByPredicate(
-			SpatialGDK::ComponentIdEquality{ SpatialGDK::Position::ComponentId });
+		EntityView->Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialGDK::Position::ComponentId });
 
 	checkf(PositionComponentPtr != nullptr, TEXT("LB zoned entities must have Position but %s (EntityID %lld) doesn't"), *Actor.GetName(),
 		   ActorEntityId);
