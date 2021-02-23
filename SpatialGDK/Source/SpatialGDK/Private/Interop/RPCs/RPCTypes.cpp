@@ -20,13 +20,13 @@ RPCWritingContext::EntityWrite::~EntityWrite()
 		{
 		case DataKind::Generic:
 			break;
-		case DataKind::Data:
+		case DataKind::ComponentData:
 			if (Ctx.DataWrittenCallback)
 			{
 				Ctx.DataWrittenCallback(EntityId, ComponentId, Data);
 			}
 			break;
-		case DataKind::Update:
+		case DataKind::ComponentUpdate:
 			if (Ctx.UpdateWrittenCallback)
 			{
 				Ctx.UpdateWrittenCallback(EntityId, ComponentId, Update);
@@ -50,7 +50,7 @@ RPCWritingContext::EntityWrite::~EntityWrite()
 
 Schema_ComponentUpdate* RPCWritingContext::EntityWrite::GetComponentUpdateToWrite()
 {
-	check(Ctx.Kind == DataKind::Update);
+	check(Ctx.Kind == DataKind::ComponentUpdate);
 	GetFieldsToWrite();
 	return Update;
 }
@@ -65,11 +65,11 @@ Schema_Object* RPCWritingContext::EntityWrite::GetFieldsToWrite()
 			GenData = Schema_CreateGenericData();
 			Fields = Schema_GetGenericDataObject(GenData);
 			break;
-		case DataKind::Data:
+		case DataKind::ComponentData:
 			Data = Schema_CreateComponentData();
 			Fields = Schema_GetComponentDataFields(Data);
 			break;
-		case DataKind::Update:
+		case DataKind::ComponentUpdate:
 			Update = Schema_CreateComponentUpdate();
 			Fields = Schema_GetComponentUpdateFields(Update);
 			break;

@@ -25,8 +25,8 @@ struct RPCWritingContext
 	enum class DataKind
 	{
 		Generic,
-		Data,
-		Update,
+		ComponentData,
+		ComponentUpdate,
 		CommandRequest,
 		CommandResponse
 	};
