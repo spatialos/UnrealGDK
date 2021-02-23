@@ -733,10 +733,10 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, const SpatialGDK
 	const EPushRPCResult Result =
 		RPCService->PushRPC(TargetObjectRef.Entity, Sender, RPCInfo.Type, Payload, Channel->bCreatedEntity, TargetObject, Function);
 
-	// if (Result == EPushRPCResult::Success)
-	//{
-	//	FlushRPCService();
-	//}
+	if (Result == EPushRPCResult::Success)
+	{
+		FlushRPCService();
+	}
 
 #if !UE_BUILD_SHIPPING
 	if (Result == EPushRPCResult::Success || Result == EPushRPCResult::QueueOverflowed)
