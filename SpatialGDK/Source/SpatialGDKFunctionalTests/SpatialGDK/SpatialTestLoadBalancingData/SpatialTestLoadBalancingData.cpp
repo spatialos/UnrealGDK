@@ -73,7 +73,7 @@ void GetWorldActors(UWorld* World, TArray<U>& OutActors)
 	if (DiscoveredActors.Num() == Count)
 	{
 		DiscoveredActors.Sort([](const AActor& Lhs, const AActor& Rhs) {
-			return Lhs.GetActorLocation().Y > Rhs.GetActorLocation().Y;
+			return Lhs.GetActorLocation().Y < Rhs.GetActorLocation().Y;
 		});
 		Algo::Transform(DiscoveredActors, OutActors, [](AActor* Actor) -> U {
 			return Cast<T>(Actor);
@@ -99,7 +99,8 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 		FinishStep();
 	});
 
-	const static FVector ZonedActorsPositions[]{ { 100, 100, 100 }, { 100, -100, 100 } };
+	// One to the left of the boundary, one to the right.
+	const static FVector ZonedActorsPositions[]{ { 100, -100, 100 }, { 100, 100, 100 } };
 
 	AddStep(TEXT("Create zoned actor on zoned server 1"), FWorkerDefinition::Server(3), nullptr, [this] {
 		ASpatialTestLoadBalancingDataZonedActor* SpawnedActor =
