@@ -48,15 +48,33 @@ windows: &windows
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
 
 steps:
+  # New build pipeline
+  # Trigger a 4.26 build
   - trigger: "unrealgdkbuild-ci"
-    label: "run-new-ci"
+    label: "run-new-ci-426"
     async: false
     build: 
       env: 
-        GDK_BRANCH: "${BUILDKITE_BRANCH}"
         BUILD_TYPE: "GDK"
-        BUILD_MODE: "iterative"
+        GDK_BRANCH: "${BUILDKITE_BRANCH}"
+        ENGINE_BRANCH: "4.26-SpatialOSUnrealGDK"
+        ENGINE_MAJOR: "4.26"
+        TEST_GYMS_BRANCH: "master"
 
+
+  # Trigger a 4.25 build
+  - trigger: "unrealgdkbuild-ci"
+    label: "run-new-ci-425"
+    async: false
+    build: 
+      env: 
+        BUILD_TYPE: "GDK"
+        GDK_BRANCH: "${BUILDKITE_BRANCH}"
+        ENGINE_BRANCH: "4.26-SpatialOSUnrealGDK"
+        ENGINE_MAJOR: "4.26"
+        TEST_GYMS_BRANCH: "master"
+
+  # Old build pipeline
   - label: "enforce-version-restrictions"
     command: "ci/check-version-file.sh"
     <<: *script_runner
