@@ -63,6 +63,11 @@ void UGridBasedLBStrategy::Init()
 	}
 }
 
+FString UGridBasedLBStrategy::ToString() const
+{
+	return TEXT("Grid");
+}
+
 void UGridBasedLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId)
 {
 	if (!VirtualWorkerIds.Contains(InLocalVirtualWorkerId))

@@ -10,6 +10,7 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestSingleServerDynamicComponents/SpatialTestSingleServerDynamicComponents.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3066/OwnerOnlyPropertyReplication.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3157/RPCInInterfaceTest.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3761/SpatialTestMultipleOwnership/SpatialTestMultipleOwnership.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/VisibilityTest/ReplicatedVisibilityTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/VisibilityTest/VisibilityTest.h"
 
@@ -33,6 +34,7 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	AddActorToLevel<AOwnerOnlyPropertyReplication>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADormancyAndTombstoneTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ASpatialTestSingleServerDynamicComponents>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ASpatialTestMultipleOwnership>(CurrentLevel, FTransform::Identity);
 
 	// Add test helpers
 	// Unfortunately, the nature of some tests requires them to have actors placed in the level, to trigger some Unreal behavior

@@ -16,6 +16,11 @@ void UDebugLBStrategy::InitDebugStrategy(USpatialNetDriverDebugContext* InDebugC
 	LocalVirtualWorkerId = InWrappedStrategy->GetLocalVirtualWorkerId();
 }
 
+FString UDebugLBStrategy::ToString() const
+{
+	return TEXT("Debug");
+}
+
 void UDebugLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId)
 {
 	check(WrappedStrategy);

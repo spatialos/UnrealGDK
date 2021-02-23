@@ -37,6 +37,8 @@ public:
 	/* UAbstractLBStrategy Interface */
 	virtual void Init() override{};
 
+	virtual FString ToString() const;
+
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
 
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;

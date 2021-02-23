@@ -17,4 +17,5 @@ class SPATIALGDKTESTS_API ULBStrategyStub : public UAbstractLBStrategy
 
 public:
 	VirtualWorkerId GetVirtualWorkerId() const { return LocalVirtualWorkerId; }
+	virtual FString ToString() const { return TEXT("StrategyStub"); }
 };

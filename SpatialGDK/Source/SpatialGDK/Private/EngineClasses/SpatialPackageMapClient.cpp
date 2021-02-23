@@ -406,6 +406,54 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 {
 }
 
+using FSubobjectToOffsetMap = TMap<UObject*, uint32>;
+
+static FSubobjectToOffsetMap CreateOffsetMapFromActor(USpatialPackageMapClient* PackageMap, AActor* Actor, const FClassInfo& Info)
+{
+	FSubobjectToOffsetMap SubobjectNameToOffset;
+
+	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
+	{
+		UObject* Subobject = StaticFindObjectFast(UObject::StaticClass(), Actor, SubobjectInfoPair.Value->SubobjectName);
+		const uint32 Offset = SubobjectInfoPair.Key;
+
+		if (Subobject != nullptr && Subobject->IsPendingKill() == false && Subobject->IsSupportedForNetworking())
+		{
+			SubobjectNameToOffset.Add(Subobject, Offset);
+		}
+	}
+
+	if (Actor->GetInstanceComponents().Num() > 0)
+	{
+		// Process components attached to this object; this allows us to join up
+		// server- and client-side components added in the level.
+		TArray<UActorComponent*> ActorInstanceComponents = Actor->GetInstanceComponents();
+
+		// These need to be ordered in case there are more than one component of the same type, or
+		// we may end up with wrong component instances having associations between them.
+		ActorInstanceComponents.Sort([](const UActorComponent& Lhs, const UActorComponent& Rhs) -> bool {
+			return Lhs.GetName().Compare(Rhs.GetName()) < 0;
+		});
+
+		for (UActorComponent* DynamicComponent : ActorInstanceComponents)
+		{
+			if (!DynamicComponent->IsSupportedForNetworking())
+			{
+				continue;
+			}
+
+			const FClassInfo* DynamicComponentClassInfo = PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(DynamicComponent);
+
+			if (DynamicComponentClassInfo != nullptr)
+			{
+				SubobjectNameToOffset.Add(DynamicComponent, DynamicComponentClassInfo->SchemaComponents[SCHEMA_Data]);
+			}
+		}
+	}
+
+	return SubobjectNameToOffset;
+}
+
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId)
 {
 	check(EntityId > 0);
@@ -444,7 +492,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		   *NetGUID.ToString(), EntityId);
 
 	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	const SubobjectToOffsetMap& SubobjectToOffset = SpatialGDK::CreateOffsetMapFromActor(Actor, Info);
+	const FSubobjectToOffsetMap& SubobjectToOffset = CreateOffsetMapFromActor(SpatialNetDriver->PackageMap, Actor, Info);
 
 	for (auto& Pair : SubobjectToOffset)
 	{
@@ -799,7 +847,18 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(UObject* Object
 			   *Cast<USpatialNetDriver>(Driver)->Connection->GetWorkerId(), *Object->GetPathName(), *NetGUID.ToString());
 	}
 
-	check((NetGUID.IsValid() && !NetGUID.IsDefault()) || Object == nullptr);
+#if DO_CHECK
+	if (IsValid(Object))
+	{
+		checkf(NetGUID.IsValid() && !NetGUID.IsDefault(), TEXT("NetGUID %s on valid object %s"), *NetGUID.ToString(),
+			   *GetPathNameSafe(Object));
+	}
+	else
+	{
+		check(!NetGUID.IsValid());
+	}
+#endif // DO_CHECK
+
 	return NetGUID;
 }
 
