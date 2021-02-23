@@ -15,9 +15,9 @@
 #include "Interop/SpatialSnapshotManager.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialBasicAwaiter.h"
-#include "Utils/SpatialLoadBalancingHandler.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialDebuggerSystem.h"
+#include "Utils/SpatialLoadBalancingHandler.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"

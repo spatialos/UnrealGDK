@@ -5,8 +5,8 @@
 #include "CoreMinimal.h"
 
 #include "ClientServerRPCService.h"
-#include "EngineClasses/SpatialNetBitWriter.h"
 #include "CrossServerRPCService.h"
+#include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Interop/SpatialClassInfoManager.h"
@@ -44,8 +44,8 @@ public:
 	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, const RPCSender& InSender, RPCPayload InPayload,
 								   TOptional<uint64> RPCIdForLinearEventTrace);
 
-	EPushRPCResult PushRPC(Worker_EntityId EntityId, const RPCSender& Sender, ERPCType Type, RPCPayload Payload, bool bCreatedEntity, UObject* Target = nullptr,
-						   UFunction* Function = nullptr, const FSpatialGDKSpanId& SpanId = {});
+	EPushRPCResult PushRPC(Worker_EntityId EntityId, const RPCSender& Sender, ERPCType Type, RPCPayload Payload, bool bCreatedEntity,
+						   UObject* Target = nullptr, UFunction* Function = nullptr, const FSpatialGDKSpanId& SpanId = {});
 
 	void PushOverflowedRPCs();
 
