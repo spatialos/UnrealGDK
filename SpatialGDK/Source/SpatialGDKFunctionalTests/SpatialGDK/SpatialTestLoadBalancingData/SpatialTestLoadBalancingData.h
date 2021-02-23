@@ -21,7 +21,7 @@ class USpatialTestLoadBalancingDataTestMap : public UGeneratedTestMap
 	GENERATED_BODY()
 
 	USpatialTestLoadBalancingDataTestMap()
-		: Super(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("SpatialTestLoadBalancingData"))
+		: Super(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("SpatialTestLoadBalancingData"))
 	{
 	}
 

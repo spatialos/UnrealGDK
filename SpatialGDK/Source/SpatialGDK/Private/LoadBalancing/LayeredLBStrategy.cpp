@@ -130,7 +130,7 @@ SpatialGDK::FActorLoadBalancingGroupId ULayeredLBStrategy::GetActorGroupId(const
 {
 	const FName ActorLayerName = GetLayerNameForActor(Actor);
 
-	return 1 + LayerData.FindChecked(ActorLayerName).LayerIndex;
+	return LayerData.FindChecked(ActorLayerName).LayerIndex + 1;
 }
 
 SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const

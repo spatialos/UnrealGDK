@@ -1,11 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Interop/LoadBalancingWriterSystem.h"
+#include "Interop/LoadBalancingWriter.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Utils/SpatialActorUtils.h"
 
 namespace SpatialGDK
 {
@@ -30,14 +31,13 @@ public:
 private:
 	virtual ActorSetMember GetLoadBalancingData(AActor* Actor) const override
 	{
-		const AActor* Owner = Actor;
-		for (; IsValid(Owner->GetOwner()); Owner = Owner->GetOwner())
-			;
-		check(IsValid(Owner));
-		const Worker_EntityId OwnerEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Owner);
-		check(OwnerEntityId != SpatialConstants::INVALID_ENTITY_ID);
-		// Actor Set IDs are implemented as owner entity IDs
-		return ActorSetMember(OwnerEntityId);
+		const AActor* LeaderActor = GetReplicatedHierarchyRoot(Actor);
+		check(IsValid(LeaderActor));
+
+		const Worker_EntityId LeaderEntityId = NetDriver->PackageMap->GetEntityIdFromObject(LeaderActor);
+		check(LeaderEntityId != SpatialConstants::INVALID_ENTITY_ID);
+
+		return ActorSetMember(LeaderEntityId);
 	}
 };
 

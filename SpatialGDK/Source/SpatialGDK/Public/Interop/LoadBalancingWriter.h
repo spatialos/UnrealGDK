@@ -14,8 +14,6 @@ class USpatialNetDriver;
 
 namespace SpatialGDK
 {
-class FSubView;
-
 class FLoadBalancingWriterBase
 {
 public:
