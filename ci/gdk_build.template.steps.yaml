@@ -30,7 +30,7 @@ windows: &windows
       - <<: *agent_transients
       - <<: *bk_system_error
       - <<: *bk_interrupted_by_signal
-  timeout_in_minutes: 120
+  timeout_in_minutes: 180
   plugins:
     - improbable-eng/taskkill#v4.4.1: ~
 
@@ -41,7 +41,7 @@ macos: &macos
     - "permission_set=builder"
     - "platform=macos"
     - "queue=${DARWIN_BUILDER_QUEUE:-v4-9c6ee0ef-d}"
-  timeout_in_minutes: 120
+  timeout_in_minutes: 180
   retry:
     automatic:
       - <<: *agent_transients
