@@ -53,6 +53,14 @@ public:
 };
 
 UCLASS()
+class ASpatialTestLoadBalancingDataZonedActor : public AActor
+{
+	GENERATED_BODY()
+public:
+	ASpatialTestLoadBalancingDataZonedActor();
+};
+
+UCLASS()
 class ASpatialTestLoadBalancingData : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
@@ -67,4 +75,5 @@ class ASpatialTestLoadBalancingData : public ASpatialFunctionalTest
 
 	TWeakObjectPtr<ASpatialTestLoadBalancingDataActor> TargetActor;
 	TWeakObjectPtr<ASpatialTestLoadBalancingDataOffloadedActor> TargetOffloadedActor;
+	TArray<TWeakObjectPtr<ASpatialTestLoadBalancingDataZonedActor>> TargetZonedActors;
 };
