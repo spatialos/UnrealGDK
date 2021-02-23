@@ -114,7 +114,7 @@ DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FWaitForActor, FName, Handle);
 bool FWaitForActor::Update()
 {
 	AActor* TestActor = TestActors[Handle];
-	return (IsValid(TestActor) && TestActor->IsActorInitialized() && TestActor->HasActorBegunPlay());
+	return (IsValid(TestActor) && TestActor->IsActorInitialized() && TestActor->IsActorReady() && TestActor->HasActorBegunPlay());
 }
 
 DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckShouldRelinquishAuthority, FAutomationTestBase*, Test, FName, Handle, bool,
