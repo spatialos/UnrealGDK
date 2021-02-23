@@ -46,7 +46,7 @@ void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
 
 	// Watch the worker config directory for changes.
 	StartUpWorkerConfigDirectoryWatcher();
-	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Log for build please"));
+	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Log for build please 2"));
 }
 
 void FLocalDeploymentManager::Init()
