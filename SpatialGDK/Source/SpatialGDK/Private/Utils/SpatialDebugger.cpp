@@ -603,8 +603,8 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 
 			if (Actor != nullptr)
 			{
-				FVector2D ScreenLocation = ProjectActorToScreen(Actor, PlayerLocation, Canvas);
-				if (ScreenLocation.IsZero())
+				FVector2D ScreenLocation;
+				if (!ProjectActorToScreen(Actor->GetActorLocation(), PlayerLocation, ScreenLocation, Canvas))
 				{
 					continue;
 				}
@@ -649,8 +649,8 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 				{
 					FVector PlayerLocation = GetLocalPawnLocation();
 
-					FVector2D ScreenLocation = ProjectActorToScreen(SelectedActor, PlayerLocation, Canvas);
-					if (!ScreenLocation.IsZero())
+					FVector2D ScreenLocation;
+					if (ProjectActorToScreen(SelectedActor->GetActorLocation(),PlayerLocation,ScreenLocation,Canvas))
 					{
 						DrawTag(Canvas, ScreenLocation, *HitEntityId, SelectedActor->GetName(), true /*bCentre*/);
 					}
@@ -771,8 +771,8 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(const FVector2D& New
 				{
 					FVector PlayerLocation = GetLocalPawnLocation();
 
-					FVector2D ScreenLocation = ProjectActorToScreen(HitActor, PlayerLocation, Canvas);
-					if (!ScreenLocation.IsZero())
+					FVector2D ScreenLocation;
+					if (CanProjectActorLocationToScreen(HitActor->GetActorLocation(),PlayerLocation,Canvas))
 					{
 						HitActors.Add(HitActor);
 					}
@@ -802,31 +802,22 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetHitActor()
 	return HitActors[HoverIndex];
 }
 
-FVector2D ASpatialDebugger::ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector& PlayerLocation, const UCanvas* Canvas)
+bool ASpatialDebugger::CanProjectActorLocationToScreen(const FVector& ActorLocation, const FVector& PlayerLocation, const UCanvas* Canvas)
 {
-	FVector2D ScreenLocation = FVector2D::ZeroVector;
-
-	FVector ActorLocation = Actor->GetActorLocation();
-
-	if (ActorLocation.IsZero())
-	{
-		return ScreenLocation;
-	}
-
-	if (FVector::Dist(PlayerLocation, ActorLocation) > MaxRange)
-	{
-		return ScreenLocation;
-	}
-
-	if (LocalPlayerController.IsValid())
-	{
-		SCOPE_CYCLE_COUNTER(STAT_Projection);
-		ScreenLocation = FVector2D(Canvas->Project(ActorLocation + WorldSpaceActorTagOffset));
-		return ScreenLocation;
-	}
-	return ScreenLocation;
+	return !(ActorLocation.IsZero() || FVector::Dist(PlayerLocation, ActorLocation) > MaxRange);
 }
 
+bool ASpatialDebugger::ProjectActorToScreen(const FVector& ActorLocation, const FVector& PlayerLocation, FVector2D& OutLocation,
+											const UCanvas* Canvas)
+{
+	if (CanProjectActorLocationToScreen(ActorLocation, PlayerLocation, Canvas))
+		{
+			SCOPE_CYCLE_COUNTER(STAT_Projection);
+			OutLocation = FVector2D(Canvas->Project(ActorLocation + WorldSpaceActorTagOffset));
+			return true;
+		}
+	return false;
+}
 FVector ASpatialDebugger::GetLocalPawnLocation()
 {
 	FVector PlayerLocation = FVector::ZeroVector;
