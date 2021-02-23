@@ -5,9 +5,9 @@
 namespace SpatialGDK
 {
 RPCWritingContext::EntityWrite::EntityWrite(EntityWrite&& Write)
-	: Ctx(Write.Ctx)
-	, EntityId(Write.EntityId)
+	: EntityId(Write.EntityId)
 	, ComponentId(Write.ComponentId)
+	, Ctx(Write.Ctx)
 {
 	Write.bActiveWriter = false;
 }

@@ -163,7 +163,7 @@ struct TRPCQueue : RPCQueue
 		bool bAdded = false;
 	};
 
-	TMap<Worker_EntityId, QueueData> Queues;
+	TMap<Worker_EntityId_Key, QueueData> Queues;
 	TRPCBufferSender<PayloadType>& Sender;
 };
 
