@@ -42,6 +42,9 @@ public:
 	void AddRPCReceiver(FName ReceiverName, RPCReceiverDescription&& Desc);
 
 private:
+	void AdvanceSenderQueues();
+	void AdvanceReceivers();
+
 	const FSubView* RemoteSubView;
 	const FSubView* LocalAuthSubView;
 

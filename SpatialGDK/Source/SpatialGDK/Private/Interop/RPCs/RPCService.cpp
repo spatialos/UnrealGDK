@@ -20,7 +20,84 @@ void RPCService::AddRPCReceiver(FName ReceiverName, RPCReceiverDescription&& Des
 	Receivers.Add(ReceiverName, MoveTemp(Desc));
 }
 
-void RPCService::AdvanceView()
+void RPCService::AdvanceSenderQueues()
+{
+	for (const EntityDelta& Delta : LocalAuthSubView->GetViewDelta().EntityDeltas)
+	{
+		switch (Delta.Type)
+		{
+		case EntityDelta::UPDATE:
+		{
+			for (const ComponentChange& Change : Delta.ComponentUpdates)
+			{
+				RPCReadingContext Ctx;
+				Ctx.EntityId = Delta.EntityId;
+				Ctx.ComponentId = Change.ComponentId;
+				Ctx.Update = Change.Update;
+				Ctx.Fields = Schema_GetComponentUpdateFields(Change.Update);
+
+				for (auto& QueueEntry : Queues)
+				{
+					QueueEntry.Value.Sender->OnUpdate(Ctx);
+				}
+			}
+			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
+			{
+				RPCReadingContext Ctx;
+				Ctx.EntityId = Delta.EntityId;
+				Ctx.ComponentId = Change.ComponentId;
+				Ctx.Fields = Schema_GetComponentDataFields(Change.CompleteUpdate.Data);
+
+				for (auto& QueueEntry : Queues)
+				{
+					QueueEntry.Value.Sender->OnUpdate(Ctx);
+				}
+			}
+			break;
+		}
+		case EntityDelta::ADD:
+		{
+			const EntityViewElement& ViewElement = LocalAuthSubView->GetView().FindChecked(Delta.EntityId);
+			for (auto& QueueEntry : Queues)
+			{
+				if (ViewElement.Authority.Contains(QueueEntry.Value.Authority))
+				{
+					QueueEntry.Value.Queue->OnAuthGained(Delta.EntityId, ViewElement);
+					QueueEntry.Value.Sender->OnAuthGained(Delta.EntityId, ViewElement);
+				}
+			}
+		}
+		break;
+		case EntityDelta::REMOVE:
+			for (auto& QueueEntry : Queues)
+			{
+				QueueEntry.Value.Queue->OnAuthLost(Delta.EntityId);
+				QueueEntry.Value.Sender->OnAuthLost(Delta.EntityId);
+			}
+			break;
+		case EntityDelta::TEMPORARILY_REMOVED:
+		{
+			const EntityViewElement& ViewElement = LocalAuthSubView->GetView().FindChecked(Delta.EntityId);
+			for (auto& QueueEntry : Queues)
+			{
+				QueueEntry.Value.Queue->OnAuthLost(Delta.EntityId);
+				QueueEntry.Value.Sender->OnAuthLost(Delta.EntityId);
+				if (ViewElement.Authority.Contains(QueueEntry.Value.Authority))
+				{
+					QueueEntry.Value.Queue->OnAuthGained(Delta.EntityId, ViewElement);
+					QueueEntry.Value.Sender->OnAuthGained(Delta.EntityId, ViewElement);
+				}
+			}
+		}
+		break;
+		default:
+			checkNoEntry();
+			break;
+		}
+	}
+}
+
+void RPCService::AdvanceReceivers()
 {
 	auto HasReceiverAuthority = [](const RPCReceiverDescription& Desc, const EntityViewElement& ViewElement) {
 		return Desc.Authority == 0 || ViewElement.Authority.Contains(Desc.Authority);
@@ -138,88 +215,24 @@ void RPCService::AdvanceView()
 				}
 			}
 		}
-		}
-	}
-
-	for (const EntityDelta& Delta : LocalAuthSubView->GetViewDelta().EntityDeltas)
-	{
-		switch (Delta.Type)
-		{
-		case EntityDelta::UPDATE:
-		{
-			for (const ComponentChange& Change : Delta.ComponentUpdates)
-			{
-				RPCReadingContext Ctx;
-				Ctx.EntityId = Delta.EntityId;
-				Ctx.ComponentId = Change.ComponentId;
-				Ctx.Update = Change.Update;
-				Ctx.Fields = Schema_GetComponentUpdateFields(Change.Update);
-
-				for (auto& QueueEntry : Queues)
-				{
-					QueueEntry.Value.Sender->OnUpdate(Ctx);
-				}
-			}
-			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
-			{
-				RPCReadingContext Ctx;
-				Ctx.EntityId = Delta.EntityId;
-				Ctx.ComponentId = Change.ComponentId;
-				Ctx.Fields = Schema_GetComponentDataFields(Change.CompleteUpdate.Data);
-
-				for (auto& QueueEntry : Queues)
-				{
-					QueueEntry.Value.Sender->OnUpdate(Ctx);
-				}
-			}
-			break;
-		}
-		case EntityDelta::ADD:
-		{
-			const EntityViewElement& ViewElement = LocalAuthSubView->GetView().FindChecked(Delta.EntityId);
-			for (auto& QueueEntry : Queues)
-			{
-				if (ViewElement.Authority.Contains(QueueEntry.Value.Authority))
-				{
-					QueueEntry.Value.Queue->OnAuthGained(Delta.EntityId, ViewElement);
-					QueueEntry.Value.Sender->OnAuthGained(Delta.EntityId, ViewElement);
-				}
-			}
-		}
-		break;
-		case EntityDelta::REMOVE:
-			for (auto& QueueEntry : Queues)
-			{
-				QueueEntry.Value.Queue->OnAuthLost(Delta.EntityId);
-				QueueEntry.Value.Sender->OnAuthLost(Delta.EntityId);
-			}
-			break;
-		case EntityDelta::TEMPORARILY_REMOVED:
-		{
-			const EntityViewElement& ViewElement = LocalAuthSubView->GetView().FindChecked(Delta.EntityId);
-			for (auto& QueueEntry : Queues)
-			{
-				QueueEntry.Value.Queue->OnAuthLost(Delta.EntityId);
-				QueueEntry.Value.Sender->OnAuthLost(Delta.EntityId);
-				if (ViewElement.Authority.Contains(QueueEntry.Value.Authority))
-				{
-					QueueEntry.Value.Queue->OnAuthGained(Delta.EntityId, ViewElement);
-					QueueEntry.Value.Sender->OnAuthGained(Delta.EntityId, ViewElement);
-				}
-			}
-		}
-		break;
 		default:
+			checkNoEntry();
 			break;
 		}
 	}
+}
+
+void RPCService::AdvanceView()
+{
+	AdvanceReceivers();
+	AdvanceSenderQueues();
 }
 
 TArray<RPCService::UpdateToSend> RPCService::GetRPCsAndAcksToSend()
 {
 	TArray<UpdateToSend> Updates;
 
-	RPCWritingContext Ctx(RPCWritingContext::DataKind::Update);
+	RPCWritingContext Ctx(RPCWritingContext::DataKind::ComponentUpdate);
 	Ctx.UpdateWrittenCallback = [&Updates](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* InUpdate) {
 		if (ensure(InUpdate != nullptr))
 		{
@@ -260,7 +273,7 @@ TArray<FWorkerComponentData> RPCService::GetRPCComponentsOnEntityCreation(Worker
 {
 	TArray<FWorkerComponentData> CreationData;
 
-	RPCWritingContext Ctx(RPCWritingContext::DataKind::Data);
+	RPCWritingContext Ctx(RPCWritingContext::DataKind::ComponentData);
 	Ctx.DataWrittenCallback = [&CreationData](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* InData) {
 		if (ensure(InData != nullptr))
 		{
