@@ -52,27 +52,27 @@ steps:
   # Trigger a 4.26 build
   - trigger: "unrealgdkbuild-ci"
     label: "run-new-ci-426"
-    async: false
+    async: true
     build: 
       env: 
-        BUILD_TYPE: "GDK"
+        BUILD_TYPE: "GDK" # GDK or ENGINE
         GDK_BRANCH: "${BUILDKITE_BRANCH}"
         ENGINE_BRANCH: "4.26-SpatialOSUnrealGDK"
         ENGINE_MAJOR: "4.26"
         TEST_GYMS_BRANCH: "master"
-
 
   # Trigger a 4.25 build
   - trigger: "unrealgdkbuild-ci"
     label: "run-new-ci-425"
-    async: false
+    async: true
     build: 
       env: 
-        BUILD_TYPE: "GDK"
+        BUILD_TYPE: "GDK" # GDK or ENGINE
         GDK_BRANCH: "${BUILDKITE_BRANCH}"
-        ENGINE_BRANCH: "4.26-SpatialOSUnrealGDK"
-        ENGINE_MAJOR: "4.26"
+        ENGINE_BRANCH: "4.25-SpatialOSUnrealGDK"
+        ENGINE_MAJOR: "4.25"
         TEST_GYMS_BRANCH: "master"
+
 
   # Old build pipeline
   - label: "enforce-version-restrictions"
