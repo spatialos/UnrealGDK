@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/PlayerController.h"
 #include "SpatialCommonTypes.h"
 #include "TestPossessionPlayerController.generated.h"
 
@@ -25,7 +26,7 @@ public:
 	UFUNCTION(Server, Reliable)
 	void RemotePossessOnClient(APawn* InPawn, bool bLockBefore);
 
-	bool IsMigration() const { return BeforePossessionWorkerId != AfterPossessionWorkerId; }
+	bool HasMigrated() const { return BeforePossessionWorkerId != AfterPossessionWorkerId; }
 
 	static void ResetCalledCounter();
 

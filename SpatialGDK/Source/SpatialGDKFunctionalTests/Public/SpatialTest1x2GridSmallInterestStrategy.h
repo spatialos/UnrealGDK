@@ -8,7 +8,7 @@
 
 /**
  * A 1 by 2 (rows by columns) load balancing strategy for testing zoning features.
- * Has a 150 unit interest border, a very small border to create a narrow range in which an actor is visible to both servers
+ * Has a 150 unit interest border, a very small border to create a narrow range in which an actor is visible to both server-workers.
  */
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API USpatialTest1x2GridSmallInterestStrategy : public UTest1x2GridStrategy

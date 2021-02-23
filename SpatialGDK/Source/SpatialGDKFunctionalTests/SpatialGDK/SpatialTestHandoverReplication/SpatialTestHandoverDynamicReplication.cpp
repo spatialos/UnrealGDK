@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialTestHandoverReplication.h"
+#include "SpatialTestHandoverDynamicReplication.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Kismet/GameplayStatics.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
@@ -39,7 +39,7 @@
  *	- The HandoverCube is destroyed.
  */
 
-ASpatialTestHandoverReplication::ASpatialTestHandoverReplication() : Super() {
+ASpatialTestHandoverDynamicReplication::ASpatialTestHandoverDynamicReplication() : Super() {
   Author = "Antoine Cordelle";
   Description = TEXT("Test dynamically set replication for an actor");
 
@@ -49,7 +49,7 @@ ASpatialTestHandoverReplication::ASpatialTestHandoverReplication() : Super() {
   Server4Position = FVector(500.0f, 500.0f, 50.0f);
 }
 
-void ASpatialTestHandoverReplication::PrepareTest() {
+void ASpatialTestHandoverDynamicReplication::PrepareTest() {
   Super::PrepareTest();
 
   AddStep(
@@ -192,7 +192,7 @@ void ASpatialTestHandoverReplication::PrepareTest() {
       }, StepTimeLimit);
 }
 
-void ASpatialTestHandoverReplication::RequireHandoverCubeAuthorityAndPosition(
+void ASpatialTestHandoverDynamicReplication::RequireHandoverCubeAuthorityAndPosition(
     int WorkerShouldHaveAuthority, const FVector& ExpectedPosition) {
   if (!ensureMsgf(GetLocalWorkerType() ==
                       ESpatialFunctionalTestWorkerType::Server,
@@ -212,7 +212,7 @@ void ASpatialTestHandoverReplication::RequireHandoverCubeAuthorityAndPosition(
   }
 }
 
-bool ASpatialTestHandoverReplication::MoveHandoverCube(
+bool ASpatialTestHandoverDynamicReplication::MoveHandoverCube(
     const FVector& Position) {
   if (HandoverCube->HasAuthority()) {
     HandoverCube->SetActorLocation(Position);

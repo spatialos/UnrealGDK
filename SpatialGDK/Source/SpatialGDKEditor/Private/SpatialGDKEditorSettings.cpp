@@ -351,6 +351,7 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 
 		if (!ConfigFile)
 		{
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Configuration file is missing at path %s"), *LaunchConfigPath);
 			return false;
 		}
 
@@ -368,13 +369,13 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 	}
 
 	const TSharedPtr<FJsonObject>* LoadBalancingField;
-	if (!(*LaunchConfigJsonRootObject)->TryGetObjectField("load_balancing", LoadBalancingField))
+	if (!(*LaunchConfigJsonRootObject)->TryGetObjectField("loadBalancing", LoadBalancingField))
 	{
 		return false;
 	}
 
 	const TArray<TSharedPtr<FJsonValue>>* LayerConfigurations;
-	if (!(*LoadBalancingField)->TryGetArrayField("layer_configurations", LayerConfigurations))
+	if (!(*LoadBalancingField)->TryGetArrayField("layerConfigurations", LayerConfigurations))
 	{
 		return false;
 	}
@@ -388,8 +389,7 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 
 			// Check manual_worker_connection flag, if it exists.
 			if (LayerConfiguration->TryGetObjectField("options", OptionsField)
-				&& (*OptionsField)->TryGetBoolField("manual_worker_connection_only", ManualWorkerConnectionFlag)
-				&& ManualWorkerConnectionFlag)
+				&& (*OptionsField)->TryGetBoolField("manualWorkerConnectionOnly", ManualWorkerConnectionFlag) && ManualWorkerConnectionFlag)
 			{
 				FString WorkerName;
 				if (LayerConfiguration->TryGetStringField("layer", WorkerName))
@@ -463,6 +463,11 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		}
 	}
 
+	return bValid;
+}
+
+bool USpatialGDKEditorSettings::CheckManualWorkerConnectionOnLaunch() const
+{
 	TArray<FString> WorkersManuallyLaunched;
 	if (IsManualWorkerConnectionSet(GetPrimaryLaunchConfigPath(), WorkersManuallyLaunched))
 	{
@@ -482,7 +487,7 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		}
 	}
 
-	return bValid;
+	return true;
 }
 
 void USpatialGDKEditorSettings::SetDevelopmentAuthenticationToken(const FString& Token)

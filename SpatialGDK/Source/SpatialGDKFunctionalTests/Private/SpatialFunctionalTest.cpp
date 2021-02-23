@@ -44,6 +44,8 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	PrimaryActorTick.TickInterval = 0.0f;
 
 	PreparationTimeLimit = 30.0f;
+	bReadyToSpawnServerControllers = false;
+	CachedTestResult = EFunctionalTestResult::Default;
 }
 
 void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

@@ -49,6 +49,7 @@ public:
 	void AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthChangeOp);
 
 	void SpawnPartitionEntitiesForVirtualWorkerIds();
+	void ReclaimPartitionEntities();
 	const TArray<PartitionInfo>& GetAllPartitions() const { return Partitions; };
 
 	SpatialVirtualWorkerTranslator* Translator;

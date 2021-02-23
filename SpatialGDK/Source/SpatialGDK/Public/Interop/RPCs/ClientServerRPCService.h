@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -32,7 +32,7 @@ struct ClientServerEndpoints
 class SPATIALGDK_API ClientServerRPCService
 {
 public:
-	ClientServerRPCService(const ExtractRPCDelegate InExtractRPCCallback, const FSubView& InSubView, USpatialNetDriver* InNetDriver,
+	ClientServerRPCService(const ActorCanExtractRPCDelegate, const ExtractRPCDelegate InExtractRPCCallback, const FSubView& InSubView,
 						   FRPCStore& InRPCStore);
 
 	void AdvanceView();
@@ -72,6 +72,7 @@ private:
 	const RPCRingBuffer& GetBufferFromView(Worker_EntityId EntityId, ERPCType Type);
 	static bool IsClientOrServerEndpoint(Worker_ComponentId ComponentId);
 
+	ActorCanExtractRPCDelegate CanExtractRPCDelegate;
 	ExtractRPCDelegate ExtractRPCCallback;
 	const FSubView* SubView;
 	USpatialNetDriver* NetDriver;

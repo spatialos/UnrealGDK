@@ -42,17 +42,16 @@ class SPATIALGDK_API USpatialSender : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService,
 			  SpatialGDK::SpatialEventTracer* InEventTracer);
+
+	bool SendCrossServerRPC(UObject* TargetObject, const SpatialGDK::RPCSender& Sender, UFunction* Function,
+							const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
+	bool SendRingBufferedRPC(UObject* TargetObject, const SpatialGDK::RPCSender& Sender, UFunction* Function,
+							 const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef, const FSpatialGDKSpanId& SpanId);
+
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId);
 	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
 								  const FSpatialGDKSpanId& CauseSpanId);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const FSpatialGDKSpanId& CauseSpanId);
-
-private:
-	UPROPERTY()
-	USpatialNetDriver* NetDriver;
-
-	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;

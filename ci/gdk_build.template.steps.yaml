@@ -60,6 +60,7 @@ steps:
     artifact_paths:
       - "../UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
       - "GDKTestGyms/spatial/logs/**/*"
+      - "NetworkTestProject/spatial/logs/**/*"
     env:
       BUILD_ALL_CONFIGURATIONS: "${BUILD_ALL_CONFIGURATIONS}"
       ENGINE_COMMIT_HASH: "${ENGINE_COMMIT_HASH}"

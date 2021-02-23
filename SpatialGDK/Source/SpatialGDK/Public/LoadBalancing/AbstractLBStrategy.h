@@ -38,6 +38,8 @@ public:
 	VirtualWorkerId GetLocalVirtualWorkerId() const { return LocalVirtualWorkerId; };
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId LocalVirtualWorkerId);
 
+	virtual FString ToString() const PURE_VIRTUAL(UAbstractLBStrategy::ToString, return TEXT("Abstract"););
+
 	// Deprecated: will be removed ASAP.
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const PURE_VIRTUAL(UAbstractLBStrategy::GetVirtualWorkerIds, return {};);
 
