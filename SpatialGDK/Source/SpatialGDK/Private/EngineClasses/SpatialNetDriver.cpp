@@ -1224,6 +1224,8 @@ void USpatialNetDriver::ProcessOwnershipChanges()
 	{
 		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
 		{
+			LoadBalancingWriter->OnActorReplicated(EntityId, Channel->Actor);
+
 			Channel->ServerProcessOwnershipChange();
 		}
 	}

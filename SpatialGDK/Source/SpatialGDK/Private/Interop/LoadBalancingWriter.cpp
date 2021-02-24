@@ -67,7 +67,6 @@ LoadBalancingWriter::LoadBalancingWriter(USpatialNetDriver* InNetDriver)
 void LoadBalancingWriter::OnActorReplicated(Worker_EntityId ActorEntityId, AActor* Actor)
 {
 	ActorSetWriter->ReplicateActor(ActorEntityId, Actor);
-	ActorGroupWriter->ReplicateActor(ActorEntityId, Actor);
 }
 
 } // namespace SpatialGDK
