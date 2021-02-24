@@ -166,7 +166,9 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 FVector2D UGridBasedLBStrategy::GetActorLoadBalancingPosition(const AActor& Actor) const
 {
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Actor.GetNetDriver());
-	const Worker_EntityId ActorEntityId = NetDriver->PackageMap->GetEntityIdFromObject(&Actor);
+	const Worker_EntityId ActorEntityId =
+		IsValid(NetDriver->PackageMap) ? NetDriver->PackageMap->GetEntityIdFromObject(&Actor) : SpatialConstants::INVALID_ENTITY_ID;
+	// const Worker_EntityId ActorEntityId = NetDriver->PackageMap->GetEntityIdFromObject(&Actor);
 
 	if (ActorEntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
