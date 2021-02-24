@@ -35,11 +35,9 @@ void ASpatialSnapshotTestPart1SettingsOverride::PrepareTest()
 	AddStep(TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		int32 ExpectedNumberOfClients = 1;
 		int32 RequiredNumberOfClients = GetNumRequiredClients();
-		RequireTrue(RequiredNumberOfClients == ExpectedNumberOfClients,
-					FString::Printf(TEXT("Expected number of required clients to be %i"), ExpectedNumberOfClients));
+		RequireEqual_Int(RequiredNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of required clients."));
 		int32 ActualNumberOfClients = GetNumberOfClientWorkers();
-		RequireTrue(ActualNumberOfClients == ExpectedNumberOfClients,
-					FString::Printf(TEXT("Expected number of actual clients to be %i"), ExpectedNumberOfClients));
+		RequireEqual_Int(ActualNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of actual clients."));
 
 		const ULevelEditorPlaySettings* EditorPlaySettings = GetDefault<ULevelEditorPlaySettings>();
 		EPlayNetMode PlayNetMode = EPlayNetMode::PIE_Standalone;
@@ -47,19 +45,22 @@ void ASpatialSnapshotTestPart1SettingsOverride::PrepareTest()
 		RequireTrue(PlayNetMode == EPlayNetMode::PIE_Client, TEXT("Expected the PlayNetMode to be PIE_Client"));
 
 		FinishStep();
-	});
+		},
+		nullptr, 5.0f);
 
 	AddStep(TEXT("Check GeneralProjectSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
 		bool bSpatialNetworking = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 		RequireTrue(bSpatialNetworking, TEXT("Expected bSpatialNetworking to be True"));
 
 		FinishStep();
-	});
+		},
+		nullptr, 5.0f);
 
 	AddStep(TEXT("Check Editor Peformance Settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		bool bThrottleCPUWhenNotForeground = GetDefault<UEditorPerformanceSettings>()->bThrottleCPUWhenNotForeground;
 		RequireFalse(bThrottleCPUWhenNotForeground, TEXT("Expected bSpatialNetworking to be False"));
 
 		FinishStep();
-	});
+		},
+		nullptr, 5.0f);
 }

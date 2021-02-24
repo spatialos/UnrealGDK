@@ -33,19 +33,19 @@ void ASpatialComponentSettingsOverride::PrepareTest()
 	AddStep(TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		int32 ExpectedNumberOfClients = 2;
 		int32 RequiredNumberOfClients = GetNumRequiredClients();
-		RequireTrue(RequiredNumberOfClients == ExpectedNumberOfClients,
-					FString::Printf(TEXT("Expected number of required clients to be %i"), ExpectedNumberOfClients));
+		RequireEqual_Int(RequiredNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of required clients."));
 		int32 ActualNumberOfClients = GetNumberOfClientWorkers();
-		RequireTrue(ActualNumberOfClients == ExpectedNumberOfClients,
-					FString::Printf(TEXT("Expected number of actual clients to be %i"), ExpectedNumberOfClients));
+		RequireEqual_Int(ActualNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of actual clients."));
 
 		FinishStep();
-	});
+		},
+		nullptr, 5.0f);
 
 	AddStep(TEXT("Check Editor Peformance Settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		bool bThrottleCPUWhenNotForeground = GetDefault<UEditorPerformanceSettings>()->bThrottleCPUWhenNotForeground;
 		RequireFalse(bThrottleCPUWhenNotForeground, TEXT("Expected bSpatialNetworking to be False"));
 
 		FinishStep();
-	});
+		},
+		nullptr, 5.0f);
 }

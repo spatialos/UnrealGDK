@@ -29,20 +29,20 @@ void ASpatialTestNetReferenceSettingsOverride::PrepareTest()
 
 	AddStep(TEXT("Check SpatialGDKSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
 		float PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
-		RequireTrue(PreviousMaximumDistanceThreshold == 0, TEXT("Expected PreviousMaximumDistanceThreshold to equal 1"));
+		RequireEqual_Float(PreviousMaximumDistanceThreshold, 0, TEXT("Expected PreviousMaximumDistanceThreshold to equal 1"));
 
 		FinishStep();
-	});
+		},
+		nullptr, 5.0f);
 
 	AddStep(TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		int32 ExpectedNumberOfClients = 2;
 		int32 RequiredNumberOfClients = GetNumRequiredClients();
-		RequireTrue(RequiredNumberOfClients == ExpectedNumberOfClients,
-					FString::Printf(TEXT("Expected number of required clients to be %i"), ExpectedNumberOfClients));
+		RequireEqual_Int(RequiredNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of required clients."));
 		int32 ActualNumberOfClients = GetNumberOfClientWorkers();
-		RequireTrue(ActualNumberOfClients == ExpectedNumberOfClients,
-					FString::Printf(TEXT("Expected number of actual clients to be %i"), ExpectedNumberOfClients));
+		RequireEqual_Int(ActualNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of actual clients."));
 
 		FinishStep();
-	});
+		},
+		nullptr, 5.0f);
 }
