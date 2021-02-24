@@ -9,6 +9,11 @@ class USpatialNetDriver;
 
 namespace SpatialGDK
 {
+/**
+ * The RPCService aggregates Sender and Receiver in order to route updates and events to/from the network.
+ * It does not deal directly with actor concepts and RPC data, this is pushed to the user side and individual
+ * sender/receiver specialization.
+ */
 class SPATIALGDK_API RPCService
 {
 public:
@@ -23,6 +28,7 @@ public:
 		FSpatialGDKSpanId SpanId;
 	};
 	TArray<UpdateToSend> GetRPCsAndAcksToSend();
+	TArray<UpdateToSend> FlushSenderForEntity(Worker_EntityId);
 	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
 
 	struct RPCQueueDescription
@@ -34,6 +40,7 @@ public:
 
 	struct RPCReceiverDescription
 	{
+		// Can be 0, in which case the receiver will consider every entity in the view.
 		Worker_ComponentSetId Authority;
 		TSharedPtr<RPCBufferReceiver> Receiver;
 	};
@@ -44,6 +51,9 @@ public:
 private:
 	void AdvanceSenderQueues();
 	void AdvanceReceivers();
+
+	RPCCallbacks::DataWritten MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const;
+	RPCCallbacks::UpdateWritten MakeUpdateWriteCallback(TArray<UpdateToSend>& Updates) const;
 
 	const FSubView* RemoteSubView;
 	const FSubView* LocalAuthSubView;

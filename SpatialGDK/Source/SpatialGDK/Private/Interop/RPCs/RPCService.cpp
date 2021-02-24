@@ -38,7 +38,10 @@ void RPCService::AdvanceSenderQueues()
 
 				for (auto& QueueEntry : Queues)
 				{
-					QueueEntry.Value.Sender->OnUpdate(Ctx);
+					if (QueueEntry.Value.Sender->GetComponentsToReadOnUpdate().Contains(Ctx.ComponentId))
+					{
+						QueueEntry.Value.Sender->OnUpdate(Ctx);
+					}
 				}
 			}
 			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
@@ -50,7 +53,10 @@ void RPCService::AdvanceSenderQueues()
 
 				for (auto& QueueEntry : Queues)
 				{
-					QueueEntry.Value.Sender->OnUpdate(Ctx);
+					if (QueueEntry.Value.Sender->GetComponentsToReadOnUpdate().Contains(Ctx.ComponentId))
+					{
+						QueueEntry.Value.Sender->OnUpdate(Ctx);
+					}
 				}
 			}
 			break;
@@ -120,7 +126,8 @@ void RPCService::AdvanceReceivers()
 
 				for (auto& Entry : Receivers)
 				{
-					if (HasReceiverAuthority(Entry.Value, ViewElement))
+					if (HasReceiverAuthority(Entry.Value, ViewElement)
+						&& Entry.Value.Receiver->GetComponentsToRead().Contains(Ctx.ComponentId))
 					{
 						Entry.Value.Receiver->OnUpdate(Ctx);
 					}
@@ -135,7 +142,8 @@ void RPCService::AdvanceReceivers()
 
 				for (auto& Entry : Receivers)
 				{
-					if (HasReceiverAuthority(Entry.Value, ViewElement))
+					if (HasReceiverAuthority(Entry.Value, ViewElement)
+						&& Entry.Value.Receiver->GetComponentsToRead().Contains(Ctx.ComponentId))
 					{
 						Entry.Value.Receiver->OnUpdate(Ctx);
 					}
@@ -228,21 +236,39 @@ void RPCService::AdvanceView()
 	AdvanceSenderQueues();
 }
 
-TArray<RPCService::UpdateToSend> RPCService::GetRPCsAndAcksToSend()
+RPCCallbacks::DataWritten RPCService::MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const
 {
-	TArray<UpdateToSend> Updates;
+	return [&OutArray](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* InData) {
+		if (ensure(InData != nullptr))
+		{
+			FWorkerComponentData Data;
+			Data.component_id = ComponentId;
+			Data.schema_type = InData;
+			OutArray.Add(Data);
+		}
+	};
+}
 
-	RPCWritingContext Ctx(RPCWritingContext::DataKind::ComponentUpdate);
-	Ctx.UpdateWrittenCallback = [&Updates](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* InUpdate) {
+RPCCallbacks::UpdateWritten RPCService::MakeUpdateWriteCallback(TArray<UpdateToSend>& OutUpdates) const
+{
+	return [&OutUpdates](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* InUpdate) {
 		if (ensure(InUpdate != nullptr))
 		{
 			UpdateToSend Update;
 			Update.EntityId = EntityId;
 			Update.Update.component_id = ComponentId;
 			Update.Update.schema_type = InUpdate;
-			Updates.Add(Update);
+			OutUpdates.Add(Update);
 		}
 	};
+}
+
+TArray<RPCService::UpdateToSend> RPCService::GetRPCsAndAcksToSend()
+{
+	TArray<UpdateToSend> Updates;
+
+	RPCWritingContext Ctx(RPCWritingContext::DataKind::ComponentUpdate);
+	Ctx.UpdateWrittenCallback = MakeUpdateWriteCallback(Updates);
 
 	Ctx.RPCWrittenCallback = [](Worker_EntityId Entity, Worker_ComponentId ComponentId, uint32 RPCId) {
 		// if (EventTracer != nullptr)
@@ -269,20 +295,38 @@ TArray<RPCService::UpdateToSend> RPCService::GetRPCsAndAcksToSend()
 	return Updates;
 }
 
+TArray<RPCService::UpdateToSend> RPCService::FlushSenderForEntity(Worker_EntityId EntityId)
+{
+	TArray<UpdateToSend> Updates;
+
+	RPCWritingContext Ctx(RPCWritingContext::DataKind::ComponentUpdate);
+	Ctx.UpdateWrittenCallback = MakeUpdateWriteCallback(Updates);
+
+	Ctx.RPCWrittenCallback = [](Worker_EntityId Entity, Worker_ComponentId ComponentId, uint32 RPCId) {
+		// if (EventTracer != nullptr)
+		//{
+		//	EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForRPC(EntityId, static_cast<uint8>(Type), NewRPCId);
+		//	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(LinearTraceId),
+		//		/* Causes */ Payload.SpanId.GetConstId(), /* NumCauses */ 1);
+		//	RPCStore.AddSpanIdForComponentUpdate(EntityComponent, SpanId);
+		//}
+	};
+
+	for (auto& QueueEntry : Queues)
+	{
+		RPCQueueDescription& Queue = QueueEntry.Value;
+		Queue.Queue->Flush(EntityId, Ctx);
+	}
+
+	return Updates;
+}
+
 TArray<FWorkerComponentData> RPCService::GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId)
 {
 	TArray<FWorkerComponentData> CreationData;
 
 	RPCWritingContext Ctx(RPCWritingContext::DataKind::ComponentData);
-	Ctx.DataWrittenCallback = [&CreationData](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* InData) {
-		if (ensure(InData != nullptr))
-		{
-			FWorkerComponentData Data;
-			Data.component_id = ComponentId;
-			Data.schema_type = InData;
-			CreationData.Add(Data);
-		}
-	};
+	Ctx.DataWrittenCallback = MakeDataWriteCallback(CreationData);
 
 	for (auto& QueueEntry : Queues)
 	{
