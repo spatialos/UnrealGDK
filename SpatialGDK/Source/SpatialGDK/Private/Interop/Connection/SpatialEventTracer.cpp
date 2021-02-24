@@ -84,16 +84,21 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Trace_SamplingParameters SamplingParameters = {};
 	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
 
+	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
+
+	UE_LOG(LogSpatialEventTracer, Log, TEXT("Seting event tracing sampling probability. Probability: %d."), SamplingSettings->SamplingProbability);
+
 	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
 	TArray<std::string> AnsiStrings; // Worker requires ansi const char*
-
-	for (const auto& Pair : Settings->EventSamplingModeOverrides)
+	for (const auto& Pair : SamplingSettings->EventSamplingModeOverrides)
 	{
-		int32 Index = AnsiStrings.Add((const char*)TCHAR_TO_ANSI(*Pair.Key.ToString()));
+		const FString& EventName = Pair.Key.ToString();
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Adding trace event sampling override. Event: %s Probability: %d."), *EventName, Pair.Value);
+		int32 Index = AnsiStrings.Add((const char*)TCHAR_TO_ANSI(*EventName));
 		SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
 	}
 
-	SamplingParameters.probabilistic_parameters.default_probability = Settings->SamplingProbability;
+	SamplingParameters.probabilistic_parameters.default_probability = SamplingSettings->SamplingProbability;
 	SamplingParameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
 	SamplingParameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
 
