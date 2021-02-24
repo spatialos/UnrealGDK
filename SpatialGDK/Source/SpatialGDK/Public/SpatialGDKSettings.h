@@ -66,7 +66,7 @@ struct FDistanceFrequencyPair
 };
 
 UCLASS(Blueprintable)
-class SPATIALGDK_API UEventTracingSamplingSettings : public UDataAsset
+class SPATIALGDK_API UEventTracingSamplingSettings : public UObject
 {
 	GENERATED_BODY()
 public:
