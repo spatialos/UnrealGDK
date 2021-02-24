@@ -600,17 +600,12 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 		{
 			const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
 			const Worker_EntityId EntityId = EntityActorPair.Key;
-
-			if (Actor != nullptr)
+			FVector2D ScreenLocation;
+			if (Actor != nullptr && !ProjectActorToScreen(Actor->GetActorLocation(), PlayerLocation, ScreenLocation, Canvas))
 			{
-				FVector2D ScreenLocation;
-				if (!ProjectActorToScreen(Actor->GetActorLocation(), PlayerLocation, ScreenLocation, Canvas))
-				{
-					continue;
-				}
-
-				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName(), true /*bCentre*/);
+				continue;
 			}
+			DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName(), true /*bCentre*/);
 		}
 	}
 }
@@ -650,7 +645,7 @@ void ASpatialDebugger::SelectActorsToTag(UCanvas* Canvas)
 					FVector PlayerLocation = GetLocalPawnLocation();
 
 					FVector2D ScreenLocation;
-					if (ProjectActorToScreen(SelectedActor->GetActorLocation(),PlayerLocation,ScreenLocation,Canvas))
+					if (ProjectActorToScreen(SelectedActor->GetActorLocation(), PlayerLocation, ScreenLocation, Canvas))
 					{
 						DrawTag(Canvas, ScreenLocation, *HitEntityId, SelectedActor->GetName(), true /*bCentre*/);
 					}
@@ -772,7 +767,7 @@ TWeakObjectPtr<AActor> ASpatialDebugger::GetActorAtPosition(const FVector2D& New
 					FVector PlayerLocation = GetLocalPawnLocation();
 
 					FVector2D ScreenLocation;
-					if (CanProjectActorLocationToScreen(HitActor->GetActorLocation(),PlayerLocation,Canvas))
+					if (CanProjectActorLocationToScreen(HitActor->GetActorLocation(), PlayerLocation, Canvas))
 					{
 						HitActors.Add(HitActor);
 					}
@@ -811,11 +806,11 @@ bool ASpatialDebugger::ProjectActorToScreen(const FVector& ActorLocation, const 
 											const UCanvas* Canvas)
 {
 	if (CanProjectActorLocationToScreen(ActorLocation, PlayerLocation, Canvas))
-		{
-			SCOPE_CYCLE_COUNTER(STAT_Projection);
-			OutLocation = FVector2D(Canvas->Project(ActorLocation + WorldSpaceActorTagOffset));
-			return true;
-		}
+	{
+		SCOPE_CYCLE_COUNTER(STAT_Projection);
+		OutLocation = FVector2D(Canvas->Project(ActorLocation + WorldSpaceActorTagOffset));
+		return true;
+	}
 	return false;
 }
 FVector ASpatialDebugger::GetLocalPawnLocation()

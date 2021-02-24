@@ -240,8 +240,7 @@ private:
 	// FDebugDrawDelegate
 	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
 
-	bool ProjectActorToScreen(const FVector& ActorLocation, const FVector& PlayerLocation, FVector2D& OutLocation,
-							  const UCanvas* Canvas);
+	bool ProjectActorToScreen(const FVector& ActorLocation, const FVector& PlayerLocation, FVector2D& OutLocation, const UCanvas* Canvas);
 
 	FVector GetLocalPawnLocation();
 
