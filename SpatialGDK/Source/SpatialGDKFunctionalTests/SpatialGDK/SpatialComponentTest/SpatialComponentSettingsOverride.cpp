@@ -30,22 +30,26 @@ void ASpatialComponentSettingsOverride::PrepareTest()
 	Super::PrepareTest();
 	// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 
-	AddStep(TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
-		int32 ExpectedNumberOfClients = 2;
-		int32 RequiredNumberOfClients = GetNumRequiredClients();
-		RequireEqual_Int(RequiredNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of required clients."));
-		int32 ActualNumberOfClients = GetNumberOfClientWorkers();
-		RequireEqual_Int(ActualNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of actual clients."));
+	AddStep(
+		TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr,
+		[this]() {
+			int32 ExpectedNumberOfClients = 2;
+			int32 RequiredNumberOfClients = GetNumRequiredClients();
+			RequireEqual_Int(RequiredNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of required clients."));
+			int32 ActualNumberOfClients = GetNumberOfClientWorkers();
+			RequireEqual_Int(ActualNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of actual clients."));
 
-		FinishStep();
+			FinishStep();
 		},
 		nullptr, 5.0f);
 
-	AddStep(TEXT("Check Editor Peformance Settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
-		bool bThrottleCPUWhenNotForeground = GetDefault<UEditorPerformanceSettings>()->bThrottleCPUWhenNotForeground;
-		RequireFalse(bThrottleCPUWhenNotForeground, TEXT("Expected bSpatialNetworking to be False"));
+	AddStep(
+		TEXT("Check Editor Peformance Settings"), FWorkerDefinition::AllServers, nullptr,
+		[this]() {
+			bool bThrottleCPUWhenNotForeground = GetDefault<UEditorPerformanceSettings>()->bThrottleCPUWhenNotForeground;
+			RequireFalse(bThrottleCPUWhenNotForeground, TEXT("Expected bSpatialNetworking to be False"));
 
-		FinishStep();
+			FinishStep();
 		},
 		nullptr, 5.0f);
 }

@@ -27,22 +27,26 @@ void ASpatialTestNetReferenceSettingsOverride::PrepareTest()
 
 	// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
 
-	AddStep(TEXT("Check SpatialGDKSettings override settings"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
-		float PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
-		RequireEqual_Float(PreviousMaximumDistanceThreshold, 0, TEXT("Expected PreviousMaximumDistanceThreshold to equal 1"));
+	AddStep(
+		TEXT("Check SpatialGDKSettings override settings"), FWorkerDefinition::AllWorkers, nullptr,
+		[this]() {
+			float PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
+			RequireEqual_Float(PreviousMaximumDistanceThreshold, 0, TEXT("Expected PreviousMaximumDistanceThreshold to equal 1"));
 
-		FinishStep();
+			FinishStep();
 		},
 		nullptr, 5.0f);
 
-	AddStep(TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr, [this]() {
-		int32 ExpectedNumberOfClients = 2;
-		int32 RequiredNumberOfClients = GetNumRequiredClients();
-		RequireEqual_Int(RequiredNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of required clients."));
-		int32 ActualNumberOfClients = GetNumberOfClientWorkers();
-		RequireEqual_Int(ActualNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of actual clients."));
+	AddStep(
+		TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr,
+		[this]() {
+			int32 ExpectedNumberOfClients = 2;
+			int32 RequiredNumberOfClients = GetNumRequiredClients();
+			RequireEqual_Int(RequiredNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of required clients."));
+			int32 ActualNumberOfClients = GetNumberOfClientWorkers();
+			RequireEqual_Int(ActualNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of actual clients."));
 
-		FinishStep();
+			FinishStep();
 		},
 		nullptr, 5.0f);
 }
