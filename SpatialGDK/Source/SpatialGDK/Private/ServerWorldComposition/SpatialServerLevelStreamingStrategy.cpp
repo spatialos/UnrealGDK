@@ -51,7 +51,7 @@ void USpatialServerLevelStreamingStrategy::MarkLevelLoaded(const FWorldCompositi
 	}
 
 	LoadedLevelNames[Vid].Add(Tile.PackageName);
-	UE_LOG(LogSpatialServerLevelStreamingStrategy, Log, TEXT("Virtual worker %d loaded tile: %s"), Vid, *Tile.PackageName.ToString());
+	UE_LOG(LogSpatialServerLevelStreamingStrategy, Log, TEXT("Virtual worker %d should load tile: %s"), Vid, *Tile.PackageName.ToString());
 }
 
 TSet<FName> USpatialServerLevelStreamingStrategy::GetLoadedLevelNames(VirtualWorkerId Vid) const
