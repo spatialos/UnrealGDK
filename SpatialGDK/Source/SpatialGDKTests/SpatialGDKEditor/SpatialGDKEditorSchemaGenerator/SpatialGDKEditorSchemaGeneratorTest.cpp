@@ -900,6 +900,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "debug_metrics.schema",
 										   "global_state_manager.schema",
 										   "player_controller.schema",
+										   "actor_set_member.schema",
+										   "actor_group_member.schema",
 										   "known_entity_auth_component_set.schema",
 										   "migration_diagnostic.schema",
 										   "net_owning_client_worker.schema",

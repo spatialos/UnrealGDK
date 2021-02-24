@@ -123,13 +123,9 @@ DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckShouldRelinquishAuthority
 												 bExpected);
 bool FCheckShouldRelinquishAuthority::Update()
 {
-	UE_LOG(LogTemp, Log, TEXT("Strat ptr: %ulld strat name %s"), reinterpret_cast<uint64>(Strat.Get()), *GetNameSafe(Strat.Get()));
-
 	bool bActual = !Strat->ShouldHaveAuthority(*TestActors[Handle]);
 
-	Test->TestEqual(FString::Printf(TEXT("Should Relinquish Authority. Actual: %d, Expected: %d"), bActual, bExpected), bActual, bExpected);
-
-	return true;
+	return bActual == bExpected;
 }
 
 DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckWhoShouldHaveAuthority, FAutomationTestBase*, Test, FName, Handle, uint32,
@@ -316,16 +312,15 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_r
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_authority)
 {
+	// DisableLocalDeploymentsAndOpenMap();
 	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(2, 1, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
-	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(-2.f, 0.f, 0.f)));
+	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(-200.f, 0.f, 0.f)));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForActor("Actor1"));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", false));
-	ADD_LATENT_AUTOMATION_COMMAND(FMoveActor("Actor1", FVector(0.f, 0.f, 0.f)));
-	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", true));
-	ADD_LATENT_AUTOMATION_COMMAND(FMoveActor("Actor1", FVector(2.f, 0.f, 0.f)));
+	ADD_LATENT_AUTOMATION_COMMAND(FMoveActor("Actor1", FVector(200.f, 0.f, 0.f)));
 	ADD_LATENT_AUTOMATION_COMMAND(FCheckShouldRelinquishAuthority(this, "Actor1", true));
 
 	TearDown(this);
