@@ -8,8 +8,12 @@ RPCWritingContext::EntityWrite::EntityWrite(EntityWrite&& Write)
 	: EntityId(Write.EntityId)
 	, ComponentId(Write.ComponentId)
 	, Ctx(Write.Ctx)
+	, Fields(Write.Fields)
 {
+	Data = Write.Data;
 	Write.bActiveWriter = false;
+	Write.Fields = nullptr;
+	Write.Data = nullptr;
 }
 
 RPCWritingContext::EntityWrite::~EntityWrite()
@@ -57,7 +61,7 @@ Schema_ComponentUpdate* RPCWritingContext::EntityWrite::GetComponentUpdateToWrit
 
 Schema_Object* RPCWritingContext::EntityWrite::GetFieldsToWrite()
 {
-	if (Fields == nullptr)
+	if (ensure(bActiveWriter) && Fields == nullptr)
 	{
 		switch (Ctx.Kind)
 		{
