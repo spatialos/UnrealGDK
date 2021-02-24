@@ -34,15 +34,15 @@ public:
 	struct RPCQueueDescription
 	{
 		Worker_ComponentSetId Authority;
-		TSharedPtr<RPCBufferSender> Sender;
-		TSharedPtr<RPCQueue> Queue;
+		RPCBufferSender* Sender;
+		RPCQueue* Queue;
 	};
 
 	struct RPCReceiverDescription
 	{
 		// Can be 0, in which case the receiver will consider every entity in the view.
 		Worker_ComponentSetId Authority;
-		TSharedPtr<RPCBufferReceiver> Receiver;
+		RPCBufferReceiver* Receiver;
 	};
 
 	void AddRPCQueue(FName QueueName, RPCQueueDescription&& Desc);
