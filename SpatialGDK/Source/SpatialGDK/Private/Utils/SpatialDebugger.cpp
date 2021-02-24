@@ -601,11 +601,10 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 			const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
 			const Worker_EntityId EntityId = EntityActorPair.Key;
 			FVector2D ScreenLocation;
-			if (Actor != nullptr && !ProjectActorToScreen(Actor->GetActorLocation(), PlayerLocation, ScreenLocation, Canvas))
+			if (Actor != nullptr && ProjectActorToScreen(Actor->GetActorLocation(), PlayerLocation, ScreenLocation, Canvas))
 			{
-				continue;
+				DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName(), true /*bCentre*/);
 			}
-			DrawTag(Canvas, ScreenLocation, EntityId, Actor->GetName(), true /*bCentre*/);
 		}
 	}
 }
