@@ -9,6 +9,7 @@ param(
 
     [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production/UnrealEngine"
 )
+. "$PSScriptRoot\common.ps1"
 
 Push-Location "$($gdk_home)"
 
