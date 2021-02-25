@@ -165,22 +165,7 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 
 FVector2D UGridBasedLBStrategy::GetActorLoadBalancingPosition(const AActor& Actor) const
 {
-	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Actor.GetNetDriver());
-	const Worker_EntityId ActorEntityId = NetDriver->PackageMap->GetEntityIdFromObject(&Actor);
-
-	if (ActorEntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		return FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
-	}
-
-	const SpatialGDK::ComponentData* PositionComponentPtr =
-		NetDriver->Connection->GetCoordinator().GetView()[ActorEntityId].Components.FindByPredicate(
-			SpatialGDK::ComponentIdEquality{ SpatialGDK::Position::ComponentId });
-
-	checkf(PositionComponentPtr != nullptr, TEXT("LB zoned entities must have Position but %s (EntityID %lld) doesn't"), *Actor.GetName(),
-		   ActorEntityId);
-
-	return FVector2D(SpatialGDK::Coordinates::ToFVector(SpatialGDK::Position(PositionComponentPtr->GetWorkerComponentData()).Coords));
+	return FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 }
 
 FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const
