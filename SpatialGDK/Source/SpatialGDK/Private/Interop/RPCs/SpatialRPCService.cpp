@@ -619,8 +619,19 @@ FRPCErrorInfo SpatialRPCService::SendRPC(const FPendingRPCParams& Params)
 	}
 
 	const FRPCInfo& RPCInfo = NetDriver->ClassInfoManager->GetRPCInfo(TargetObject, Function);
+	if (RPCInfo.Type == ERPCType::CrossServer)
+	{
+		if (SendCrossServerRPC(TargetObject, Params.SenderRPCInfo, Function, Params.Payload, Channel, Params.ObjectRef))
+		{
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
+		}
+		else
+		{
+			return FRPCErrorInfo{ TargetObject, Function, ERPCResult::RPCServiceFailure };
+		}
+	}
 
-	if (SendRingBufferedRPC(TargetObject, Function, Params.Payload, Channel, Params.ObjectRef, Params.SpanId))
+	if (SendRingBufferedRPC(TargetObject, RPCSender(), Function, Params.Payload, Channel, Params.ObjectRef, Params.SpanId))
 	{
 		return FRPCErrorInfo{ TargetObject, Function, ERPCResult::Success };
 	}
@@ -630,13 +641,28 @@ FRPCErrorInfo SpatialRPCService::SendRPC(const FPendingRPCParams& Params)
 	}
 }
 
-bool SpatialRPCService::SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload,
+bool SpatialRPCService::SendCrossServerRPC(UObject* TargetObject, const RPCSender& Sender, UFunction* Function, const RPCPayload& Payload,
+										   USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef)
+{
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	const bool bHasValidSender = Sender.Entity != SpatialConstants::INVALID_ENTITY_ID;
+
+	check(Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker);
+	if (bHasValidSender)
+	{
+		return SendRingBufferedRPC(TargetObject, Sender, Function, Payload, Channel, TargetObjectRef, {});
+	}
+
+	return false;
+}
+
+bool SpatialRPCService::SendRingBufferedRPC(UObject* TargetObject, const RPCSender& Sender, UFunction* Function, const RPCPayload& Payload,
 											USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef,
 											const FSpatialGDKSpanId& SpanId)
 {
 	const FRPCInfo& RPCInfo = NetDriver->ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	const EPushRPCResult Result =
-		PushRPC(TargetObjectRef.Entity, RPCInfo.Type, Payload, Channel->bCreatedEntity, TargetObject, Function, SpanId);
+		PushRPC(TargetObjectRef.Entity, Sender, RPCInfo.Type, Payload, Channel->bCreatedEntity, TargetObject, Function);
 
 	if (Result == EPushRPCResult::Success)
 	{
@@ -659,10 +685,10 @@ bool SpatialRPCService::SendRingBufferedRPC(UObject* TargetObject, UFunction* Fu
 			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return true;
 	case EPushRPCResult::DropOverflowed:
-		UE_LOG(
-			LogSpatialRPCService, Log,
-			TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, function: %s"),
-			*TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
+		UE_LOG(LogSpatialRPCService, Log,
+			   TEXT("USpatialSender::SendRingBufferedRPC: Ring buffer queue overflowed, dropping RPC. Actor: %s, entity: %lld, "
+					"function: %s"),
+			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return true;
 	case EPushRPCResult::HasAckAuthority:
 		UE_LOG(LogSpatialRPCService, Warning,
@@ -696,7 +722,8 @@ void SpatialRPCService::TrackRPC(AActor* Actor, UFunction* Function, const RPCPa
 }
 #endif
 
-void SpatialRPCService::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload&& InPayload)
+void SpatialRPCService::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, const RPCSender& InSenderInfo,
+												  RPCPayload&& InPayload)
 {
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(InTargetObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
@@ -717,7 +744,7 @@ void SpatialRPCService::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTarg
 										 EventTracer->GetFromStack().GetConstId(), 1);
 	}
 
-	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, RPCInfo.Type, MoveTemp(InPayload), SpanId);
+	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, InSenderInfo, RPCInfo.Type, MoveTemp(InPayload), SpanId);
 
 	// Try to send all pending RPCs unconditionally
 	OutgoingRPCs.ProcessRPCs();

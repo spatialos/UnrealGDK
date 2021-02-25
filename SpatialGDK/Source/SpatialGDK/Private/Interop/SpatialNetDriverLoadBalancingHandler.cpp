@@ -5,8 +5,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 
-using SpatialGDK::EActorMigrationResult;
-
 FSpatialNetDriverLoadBalancingContext::FSpatialNetDriverLoadBalancingContext(USpatialNetDriver* InNetDriver,
 																			 TArray<FNetworkObjectInfo*>& InOutNetworkObjects)
 	: NetDriver(InNetDriver)

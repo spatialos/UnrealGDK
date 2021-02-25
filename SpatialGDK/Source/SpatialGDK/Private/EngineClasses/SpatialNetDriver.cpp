@@ -490,8 +490,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this, Connection->GetEventTracer()),
 			Connection->GetEventTracer());
 
-		ActorSystem =
-			MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, TombstoneActorSubview, this, &TimerManager, Connection->GetEventTracer());
+		ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, TombstoneActorSubview, this, Connection->GetEventTracer());
 
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
@@ -511,25 +510,24 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		check(NewPackageMap == PackageMap);
 
 		PackageMap->Init(this, &TimerManager);
-		if (IsServer())
-		{
-			PackageMap->GetEntityPoolReadyDelegate().AddDynamic(Sender, &USpatialSender::CreateServerWorkerEntity);
-		}
-
-		// The interest factory depends on the package map, so is created last.
-		InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
-
 		if (!IsServer())
 		{
 			return;
 		}
 
+		LoadBalancingHandler = MakeShared<SpatialGDK::FSpatialLoadBalancingHandler>(this, ActorAuthSubview, Connection->GetEventTracer());
+
 		SpatialGDK::FSubView& WellKnownSubView =
 			Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
 													   SpatialGDK::FSubView::NoDispatcherCallbacks);
-		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Receiver, Connection,
+		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, this, Connection,
 																			  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
 																			  *VirtualWorkerTranslator, *GlobalStateManager);
+		PackageMap->GetEntityPoolReadyDelegate().AddRaw(WellKnownEntitySystem.Get(),
+														&SpatialGDK::WellKnownEntitySystem::CreateServerWorkerEntity);
+
+		// The interest factory depends on the package map, so is created last.
+		InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
 	}
 }
 
@@ -1746,7 +1744,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	}
 
 	const FRPCInfo& Info = ClassInfoManager->GetRPCInfo(CallingObject, Function);
-	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, Info.Type, Parameters);
+	RPCPayload Payload = RPCService->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, Info.Type, Parameters);
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	SpatialGDK::RPCSender SenderInfo;
@@ -1802,7 +1800,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		}
 	}
 
-	Sender->ProcessOrQueueOutgoingRPC(CallingObjectRef, SenderInfo, MoveTemp(Payload));
+	RPCService->ProcessOrQueueOutgoingRPC(CallingObjectRef, SenderInfo, MoveTemp(Payload));
 }
 
 bool USpatialNetDriver::ValidateOrExit_IsSupportedClass(const FString& PathName)
@@ -3053,7 +3051,7 @@ bool USpatialNetDriver::IsReady() const
 	return bIsReadyToStart;
 }
 
-bool USpatialNetDriver::IsLogged(Worker_EntityId ActorEntityId, SpatialGDK::EActorMigrationResult ActorMigrationFailure)
+bool USpatialNetDriver::IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure)
 {
 	// Clear the log migration store at the specified interval
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();

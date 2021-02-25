@@ -2,9 +2,8 @@
 
 #include "SpatialReplicationGraphLoadBalancingHandler.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
-
-using SpatialGDK::EActorMigrationResult;
 
 FSpatialReplicationGraphLoadBalancingContext::FSpatialReplicationGraphLoadBalancingContext(USpatialNetDriver* InNetDriver,
 																						   USpatialReplicationGraph* InReplicationGraph,

@@ -425,61 +425,6 @@ bool ASpatialDebugger::IsSelectActorEnabled() const
 	return bSelectActor;
 }
 
-void ASpatialDebugger::OnEntityRemoved(const Worker_EntityId EntityId)
-{
-	check(NetDriver != nullptr);
-	if (NetDriver->IsServer())
-	{
-		return;
-	}
-
-	EntityActorMapping.Remove(EntityId);
-}
-
-void ASpatialDebugger::ActorAuthorityGained(const Worker_EntityId EntityId) const
-{
-	if (NetDriver->VirtualWorkerTranslator == nullptr)
-	{
-		// Currently, there's nothing to display in the debugger other than load balancing information.
-		return;
-	}
-
-	const VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
-	const FColor LocalVirtualWorkerColor =
-		SpatialGDK::GetColorForWorkerName(NetDriver->VirtualWorkerTranslator->GetLocalPhysicalWorkerName());
-
-	SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId);
-	if (DebuggingInfo == nullptr)
-	{
-		// Some entities won't have debug info, so create it now.
-		SpatialDebugging NewDebuggingInfo(LocalVirtualWorkerId, LocalVirtualWorkerColor, SpatialConstants::INVALID_VIRTUAL_WORKER_ID,
-										  InvalidServerTintColor, false);
-		FWorkerComponentData DebuggingData = NewDebuggingInfo.CreateComponentData();
-		NetDriver->Connection->SendAddComponent(EntityId, &DebuggingData);
-		return;
-	}
-
-	DebuggingInfo->AuthoritativeVirtualWorkerId = LocalVirtualWorkerId;
-	DebuggingInfo->AuthoritativeColor = LocalVirtualWorkerColor;
-	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
-}
-
-void ASpatialDebugger::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
-{
-	SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId);
-	check(DebuggingInfo != nullptr);
-	DebuggingInfo->IntentVirtualWorkerId = NewIntentVirtualWorkerId;
-
-	const PhysicalWorkerName* NewAuthoritativePhysicalWorkerName =
-		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(NewIntentVirtualWorkerId);
-	check(NewAuthoritativePhysicalWorkerName != nullptr);
-
-	DebuggingInfo->IntentColor = SpatialGDK::GetColorForWorkerName(*NewAuthoritativePhysicalWorkerName);
-	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
-}
-
 void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
 							   const bool bCentre)
 {

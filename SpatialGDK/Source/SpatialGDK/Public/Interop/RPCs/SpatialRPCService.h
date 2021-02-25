@@ -62,7 +62,7 @@ public:
 
 	RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
 										  ERPCType Type, void* Params) const;
-	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, RPCPayload&& InPayload);
+	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, const RPCSender& InSenderInfo, RPCPayload&& InPayload);
 
 private:
 	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, PendingRPCPayload Payload, bool bCreatedEntity);
@@ -71,8 +71,11 @@ private:
 	// Note: It's like applying an RPC, but more secretive
 	FRPCErrorInfo ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams);
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
-	bool SendRingBufferedRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, USpatialActorChannel* Channel,
-							 const FUnrealObjectRef& TargetObjectRef, const FSpatialGDKSpanId& SpanId);
+
+	bool SendCrossServerRPC(UObject* TargetObject, const RPCSender& Sender, UFunction* Function, const RPCPayload& Payload,
+							USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
+	bool SendRingBufferedRPC(UObject* TargetObject, const RPCSender& Sender, UFunction* Function, const RPCPayload& Payload,
+							 USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef, const FSpatialGDKSpanId& SpanId);
 #if !UE_BUILD_SHIPPING
 	void TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, ERPCType RPCType);
 #endif

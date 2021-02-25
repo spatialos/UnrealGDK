@@ -53,7 +53,7 @@ struct FSpatialReplicationGraphLoadBalancingContext
 	FActorRepListRefView GetDependentActors(AActor* Actor);
 #endif
 
-	SpatialGDK::EActorMigrationResult IsActorReadyForMigration(AActor* Actor);
+	EActorMigrationResult IsActorReadyForMigration(AActor* Actor);
 
 	USpatialNetDriver* NetDriver;
 	USpatialReplicationGraph* ReplicationGraph;

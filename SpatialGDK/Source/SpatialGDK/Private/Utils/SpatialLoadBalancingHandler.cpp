@@ -215,7 +215,7 @@ void FSpatialLoadBalancingHandler::SendAuthorityIntentUpdate(const AActor& Actor
 
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
-		NetDriver->SpatialDebugger->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
+		NetDriver->SpatialDebuggerSystem->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
 	}
 }
 

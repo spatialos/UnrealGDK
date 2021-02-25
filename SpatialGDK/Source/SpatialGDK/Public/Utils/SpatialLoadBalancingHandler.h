@@ -5,6 +5,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Schema/AuthorityIntent.h"
 
+enum class EActorMigrationResult : uint8;
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalancingHandler, Log, All);
 
 class USpatialNetDriver;
@@ -13,19 +14,6 @@ namespace SpatialGDK
 {
 class SpatialEventTracer;
 class FSubView;
-
-enum class EActorMigrationResult : uint8
-{
-	Success,
-	NotAuthoritative,
-	NotReady,
-	PendingKill,
-	NotInitialized,
-	Streaming,
-	NetDormant,
-	NoSpatialClassFlags,
-	DormantOnConnection
-};
 
 class FSpatialLoadBalancingHandler
 {

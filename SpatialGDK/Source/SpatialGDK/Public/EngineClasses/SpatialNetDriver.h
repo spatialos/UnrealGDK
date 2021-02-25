@@ -257,7 +257,7 @@ public:
 #endif
 
 	// Check if we have already logged this actor / migration failure, if not update the log record
-	bool IsLogged(Worker_EntityId ActorEntityId, SpatialGDK::EActorMigrationResult ActorMigrationFailure);
+	bool IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
 
 	virtual int64 GetClientID() const override;
 
@@ -375,6 +375,6 @@ private:
 	uint64 StartupTimestamp;
 	FString StartupClientDebugString;
 
-	TMultiMap<Worker_EntityId_Key, SpatialGDK::EActorMigrationResult> MigrationFailureLogStore;
+	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
 };
