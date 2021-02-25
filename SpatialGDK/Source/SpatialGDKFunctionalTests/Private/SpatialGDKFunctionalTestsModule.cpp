@@ -27,11 +27,7 @@ void FSpatialGDKFunctionalTestsModule::StartupModule()
 		// Make sure to clear the snapshot in case something happened with Tests (or they weren't ran properly).
 		ASpatialFunctionalTest::ClearAllTakenSnapshots();
 
-#if ENGINE_MINOR_VERSION < 25
-		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->EditorWorld != nullptr)
-#else
 		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->IsPlayingSessionInEditor())
-#endif
 		{
 			GEditor->EndPlayMap();
 		}
@@ -39,13 +35,13 @@ void FSpatialGDKFunctionalTestsModule::StartupModule()
 
 	FSpatialGDKEditorModule& GDKEditorModule = FModuleManager::LoadModuleChecked<FSpatialGDKEditorModule>(TEXT("SpatialGDKEditor"));
 	GDKEditorModule.OverrideSettingsForTestingDelegate.AddLambda([](UWorld* World, const FString& MapName) {
-		FSpatialGDKFunctionalTestsModule::OverrideSettingsForTesting(World, MapName);
+		FSpatialGDKFunctionalTestsModule::ManageSnapshotsForTests(World, MapName);
 	});
 }
 
 void FSpatialGDKFunctionalTestsModule::ShutdownModule() {}
 
-void FSpatialGDKFunctionalTestsModule::OverrideSettingsForTesting(UWorld* World, const FString& MapName)
+void FSpatialGDKFunctionalTestsModule::ManageSnapshotsForTests(UWorld* World, const FString& MapName)
 {
 	// By default, clear that the runtime/test was loaded from a snapshot taken for a given world.
 	ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot();

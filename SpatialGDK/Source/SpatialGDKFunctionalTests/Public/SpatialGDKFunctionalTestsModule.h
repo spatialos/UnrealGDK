@@ -13,5 +13,5 @@ public:
 
 	virtual bool SupportsDynamicReloading() override { return true; }
 
-	static void OverrideSettingsForTesting(UWorld* World, const FString& MapName);
+	static void ManageSnapshotsForTests(UWorld* World, const FString& MapName);
 };

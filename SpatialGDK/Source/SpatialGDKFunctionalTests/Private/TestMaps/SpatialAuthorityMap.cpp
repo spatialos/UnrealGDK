@@ -11,7 +11,10 @@
 USpatialAuthorityMap::USpatialAuthorityMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialAuthorityMap"))
 {
-	SetCustomConfig(TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]\nPlayNumberOfClients=1"));
+	// clang-format off
+	SetCustomConfig(TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
+					TEXT("PlayNumberOfClients=1"));
+	// clang-format on
 }
 
 void USpatialAuthorityMap::CreateCustomContentForMap()
