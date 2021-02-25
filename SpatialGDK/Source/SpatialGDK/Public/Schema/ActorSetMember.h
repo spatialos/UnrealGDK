@@ -12,7 +12,7 @@ namespace SpatialGDK
 {
 // The ActorSetMember component exists to hold information which needs to be displayed by the
 // SpatialDebugger on clients but which would not normally be available to clients.
-struct SPATIALGDK_API ActorSetMember : AbstractMutableComponent
+struct SPATIALGDK_API ActorSetMember
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID;
 
@@ -38,13 +38,13 @@ struct SPATIALGDK_API ActorSetMember : AbstractMutableComponent
 		ApplySchema(ComponentObject);
 	}
 
-	virtual Worker_ComponentData CreateComponentData() const override { return CreateComponentDataHelper(*this); }
+	Worker_ComponentData CreateComponentData() const { return CreateComponentDataHelper(*this); }
 
 	Worker_ComponentUpdate CreateComponentUpdate() const { return CreateActorSetMemberUpdate(); }
 
 	Worker_ComponentUpdate CreateActorSetMemberUpdate() const { return CreateComponentUpdateHelper(*this); }
 
-	virtual void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 

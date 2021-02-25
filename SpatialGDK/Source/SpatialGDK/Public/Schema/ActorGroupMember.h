@@ -14,7 +14,7 @@ using FActorLoadBalancingGroupId = uint32;
 
 // The ActorGroupMember component exists to hold information which needs to be displayed by the
 // SpatialDebugger on clients but which would not normally be available to clients.
-struct SPATIALGDK_API ActorGroupMember : AbstractMutableComponent
+struct SPATIALGDK_API ActorGroupMember
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ID;
 
@@ -40,13 +40,13 @@ struct SPATIALGDK_API ActorGroupMember : AbstractMutableComponent
 		ApplySchema(ComponentObject);
 	}
 
-	virtual Worker_ComponentData CreateComponentData() const override { return CreateComponentDataHelper(*this); }
+	Worker_ComponentData CreateComponentData() const { return CreateComponentDataHelper(*this); }
 
 	Worker_ComponentUpdate CreateComponentUpdate() const { return CreateActorGroupMemberUpdate(); }
 
 	Worker_ComponentUpdate CreateActorGroupMemberUpdate() const { return CreateComponentUpdateHelper(*this); }
 
-	virtual void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) override
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
