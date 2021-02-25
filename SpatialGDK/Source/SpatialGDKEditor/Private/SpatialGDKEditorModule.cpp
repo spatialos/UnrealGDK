@@ -63,8 +63,8 @@ void FSpatialGDKEditorModule::StartupModule()
 			if (WorldSettings != nullptr)
 			{
 				IFileHandle* File = FPlatformFileManager::Get().GetPlatformFile().OpenRead(*TempSnapshotFile);
-				WorldSettings->RawSnapshotData.SetNum(File->Size());
-				File->Read(WorldSettings->RawSnapshotData.GetData(), File->Size());
+				WorldSettings->RawPersistentLevelSnapshotData.SetNum(File->Size());
+				File->Read(WorldSettings->RawPersistentLevelSnapshotData.GetData(), File->Size());
 				// TODO: Is there a nicer way to close the handle? Delete also sounds sketchy
 				File->~IFileHandle();
 			}

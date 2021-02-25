@@ -224,40 +224,103 @@ bool CreateSnapshotPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 
 bool CreateSkeletonEntities(UWorld* World, Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvailableEntityID)
 {
-	for (ULevel* Level : World->GetLevels())
+	// We only check the persistent level, as it seems similar to what e.g. FEditorFileUtils::SaveCurrentLevel does
+	for (AActor* Actor : World->PersistentLevel->Actors)
 	{
-		for (AActor* Actor : Level->Actors)
+		// TODO: Apparently you can get null actors in the above array... not exactly sure why
+		if (Actor == nullptr)
 		{
-			// TODO: Apparently you can get null actors in the above array... not exactly sure why
-			if (Actor == nullptr)
+			continue;
+		}
+
+		if (Actor->IsEditorOnly())
+		{
+			continue;
+		}
+
+		Worker_Entity ActorEntity;
+		ActorEntity.entity_id = NextAvailableEntityID++;
+
+		TArray<FWorkerComponentData> Components = EntityFactory::CreateSkeletonEntityComponents(Actor);
+		// If the actor cannot be saved in the snapshot (does not have persistence component), do not save it
+		if (Components.FindByPredicate([](const FWorkerComponentData& Data) {
+				return Data.component_id == SpatialConstants::PERSISTENCE_COMPONENT_ID;
+			})
+			== nullptr)
+		{
+			// TODO: We ingore non-persistent entities here, but we probably don't want to, and just add temporary persistence.
+			// This would be closer to parity with the previous system
+			continue;
+		}
+
+		SetEntityData(ActorEntity, Components);
+
+		Worker_SnapshotOutputStream_WriteEntity(OutputStream, &ActorEntity);
+		bool bSuccess = Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
+		if (!bSuccess)
+		{
+			return false;
+		}
+	}
+
+	// However, we now check if this level we saved was saved as part of a world using world composition
+	// This is slightly crude, as we could edit the level without opening the enclosing world
+	// TODO: Manual merge from somewhere?
+
+	return true;
+}
+
+bool MergeSnapshots(const TArray<const FString>& SnapshotPaths, const FString& OutputSnapshotPath)
+{
+	Worker_ComponentVtable DefaultVtable{};
+	Worker_SnapshotParameters Parameters{};
+	Parameters.default_component_vtable = &DefaultVtable;
+
+	Worker_SnapshotOutputStream* OutputStream = Worker_SnapshotOutputStream_Create(TCHAR_TO_UTF8(*OutputSnapshotPath), &Parameters);
+	worker::c::Schema_EntityId NextAvailableEntityId = 1;
+
+	for (const FString& Path : SnapshotPaths)
+	{
+		Worker_SnapshotInputStream* InputStream = Worker_SnapshotInputStream_Create(TCHAR_TO_UTF8(*Path), &Parameters);
+		if (Worker_SnapshotInputStream_GetState(InputStream).stream_state != WORKER_STREAM_STATE_GOOD)
+		{
+			return false;
+		}
+
+		while (Worker_SnapshotInputStream_HasNext(InputStream))
+		{
+			const worker::c::Worker_Entity* Entity = Worker_SnapshotInputStream_ReadEntity(InputStream);
+			if (Worker_SnapshotInputStream_GetState(InputStream).stream_state != WORKER_STREAM_STATE_GOOD)
 			{
-				continue;
+				return false;
+			}
+			if (Entity == nullptr)
+			{
+				// signifies error, the caller will have to call Worker_SnapshotOutputStream_GetState
+				return false;
 			}
 
-			Worker_Entity ActorEntity;
-			ActorEntity.entity_id = NextAvailableEntityID++;
-
-			TArray<FWorkerComponentData> Components = EntityFactory::CreateSkeletonEntityComponents(Actor);
-			// If the actor cannot be saved in the snapshot (does not have persistence component), do not save it
-			if (Components.FindByPredicate([](const FWorkerComponentData& Data) {
-					return Data.component_id == SpatialConstants::PERSISTENCE_COMPONENT_ID;
-				})
-				== nullptr)
+			if (Entity->entity_id >= NextAvailableEntityId)
 			{
-				continue;
+				NextAvailableEntityId = Entity->entity_id + 1;
+			}
+			else
+			{
+				UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Got an entity id lower than expected. Entity id: %lld, NextAvailable: %lld."),
+					   Entity->entity_id, NextAvailableEntityId);
 			}
 
-			SetEntityData(ActorEntity, Components);
-
-			Worker_SnapshotOutputStream_WriteEntity(OutputStream, &ActorEntity);
-			bool bSuccess = Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
-			if (!bSuccess)
+			Worker_SnapshotOutputStream_WriteEntity(OutputStream, Entity);
+			if (Worker_SnapshotOutputStream_GetState(OutputStream).stream_state != WORKER_STREAM_STATE_GOOD)
 			{
 				return false;
 			}
 		}
+
+		Worker_SnapshotInputStream_Destroy(InputStream);
 	}
 
+	Worker_SnapshotOutputStream_Destroy(OutputStream);
 	return true;
 }
 

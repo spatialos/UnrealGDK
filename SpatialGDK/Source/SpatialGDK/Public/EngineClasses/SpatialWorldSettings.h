@@ -26,7 +26,12 @@ public:
 
 	// Stores the raw byte data for the snapshot, not meant to be viewed or changed manually
 	UPROPERTY(VisibleAnywhere, AdvancedDisplay, Category = "Internal SpatialOS Data")
-	TArray<uint8> RawSnapshotData;
+	TArray<uint8> RawPersistentLevelSnapshotData;
+
+	// Stores the raw byte data for the "composed" snapshot, not meant to be viewed or changed manually
+	// This would include the merged snapshot from the individual sublevels
+	UPROPERTY(VisibleAnywhere, AdvancedDisplay, Category = "Internal SpatialOS Data")
+	TArray<uint8> RawComposedSnapshotData;
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere, Category = "Testing")
