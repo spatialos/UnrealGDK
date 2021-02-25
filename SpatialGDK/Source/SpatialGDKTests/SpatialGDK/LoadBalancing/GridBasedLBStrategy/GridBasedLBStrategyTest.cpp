@@ -58,6 +58,7 @@ bool FCleanup::Update()
 		Pair.Value->Destroy(/*bNetForce*/ true);
 	}
 	TestActors.Empty();
+	Strat->RemoveFromRoot();
 	Strat = nullptr;
 
 	GEditor->RequestEndPlayMap();

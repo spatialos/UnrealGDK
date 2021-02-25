@@ -15,5 +15,7 @@ UGridBasedLBStrategy* UTestGridBasedLBStrategy::Create(uint32 InRows, uint32 InC
 
 	Strat->InterestBorder = InterestBorder;
 
+	Strat->AddToRoot();
+
 	return Strat;
 }
