@@ -363,6 +363,11 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 				return EPushRPCResult::HasAckAuthority;
 			}
 
+			if (!AuthSubView->HasComponent(EntityId, RPCRingBufferUtils::GetAckComponentId(Type)))
+			{
+				UE_LOG(LogSpatialRPCService, Error, TEXT("This shouldnt happen"));
+				return EPushRPCResult::NoRingBufferAuthority;
+			}
 			LastAckedRPCId = ClientServerRPCs.GetAckFromView(EntityId, Type);
 		}
 	}

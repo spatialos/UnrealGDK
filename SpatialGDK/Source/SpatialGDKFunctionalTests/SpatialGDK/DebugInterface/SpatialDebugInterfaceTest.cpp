@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "TestDebugInterface.h"
+#include "SpatialDebugInterfaceTest.h"
 #include "SpatialFunctionalTestFlowController.h"
 
 #include "LoadBalancing/GridBasedLBStrategy.h"
@@ -8,18 +8,31 @@
 
 #include "Kismet/GameplayStatics.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 
 /*
-Test for coverage of the USpatialGDKDebugInterface.
-
-
+	Test for coverage of the USpatialGDKDebugInterface.
 */
 
-ATestDebugInterface::ATestDebugInterface()
+void USpatialDebugInterfaceMap::CreateCustomContentForMap() 
+{
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2WorkerNoInterestSettings::StaticClass());
+	WorldSettings->bEnableDebugInterface = true;
+
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the tests
+	AddActorToLevel<ASpatialDebugInterfaceTest>(CurrentLevel, FTransform(FVector(-50, -50, 0))); // not sure if this position is strictly needed or if we can go for 0,0,0
+}
+
+
+ASpatialDebugInterfaceTest::ASpatialDebugInterfaceTest()
 	: Super()
 {
 	Author = "Nicolas";
 	Description = TEXT("Test Debug interface");
+	SetNumRequiredClients(1);
 }
 
 namespace
@@ -31,7 +44,7 @@ FName GetTestTag()
 }
 } // namespace
 
-bool ATestDebugInterface::WaitToSeeActors(UClass* ActorClass, int32 NumActors)
+bool ASpatialDebugInterfaceTest::WaitToSeeActors(UClass* ActorClass, int32 NumActors)
 {
 	if (bIsOnDefaultLayer)
 	{
@@ -47,7 +60,7 @@ bool ATestDebugInterface::WaitToSeeActors(UClass* ActorClass, int32 NumActors)
 	return true;
 }
 
-void ATestDebugInterface::PrepareTest()
+void ASpatialDebugInterfaceTest::PrepareTest()
 {
 	Super::PrepareTest();
 
