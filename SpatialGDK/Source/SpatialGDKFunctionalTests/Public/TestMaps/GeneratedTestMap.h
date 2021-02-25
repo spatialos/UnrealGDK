@@ -17,8 +17,8 @@ class SPATIALGDKFUNCTIONALTESTS_API UGeneratedTestMap : public UObject
 
 public:
 	UGeneratedTestMap();
-	void GenerateMap();
-	void GenerateCustomConfig();
+	bool GenerateMap();
+	bool GenerateCustomConfig();
 	virtual bool ShouldGenerateMap() { return true; } // To control whether to generate a map from this class
 	FString GetMapName() { return MapName; }
 	static FString GetGeneratedMapFolder();
@@ -65,7 +65,7 @@ protected:
 private:
 	AActor* AddActorToLevel(ULevel* Level, UClass* Class, const FTransform& Transform);
 	void GenerateBaseMap();
-	void SaveMap();
+	bool SaveMap();
 	FString GetPathToSaveTheMap();
 
 	bool bIsValidForGeneration;

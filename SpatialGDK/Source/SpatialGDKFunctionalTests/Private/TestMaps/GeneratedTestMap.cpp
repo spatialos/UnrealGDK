@@ -37,26 +37,26 @@ AActor* UGeneratedTestMap::AddActorToLevel(ULevel* Level, UClass* Class, const F
 	return GEditor->AddActor(Level, Class, Transform);
 }
 
-void UGeneratedTestMap::GenerateMap()
+bool UGeneratedTestMap::GenerateMap()
 {
 	checkf(bIsValidForGeneration, TEXT("This test map object is not valid for map generation, please use the UGeneratedTestMap constructor "
 									   "with arguments when deriving from the base UGeneratedTestMap."));
 	GenerateBaseMap();
 	CreateCustomContentForMap();
-	SaveMap();
+	return SaveMap();
 }
 
-void UGeneratedTestMap::GenerateCustomConfig()
+bool UGeneratedTestMap::GenerateCustomConfig()
 {
 	if (CustomConfigString.IsEmpty())
 	{
 		// Only create a custom config file if we have something meaningful to write so we don't pollute the file system too much
-		return;
+		return true;
 	}
 
 	const FString OverrideSettingsFilename =
 		FSpatialTestSettings::GeneratedOverrideSettingsBaseFilename + MapName + FSpatialTestSettings::OverrideSettingsFileExtension;
-	FFileHelper::SaveStringToFile(CustomConfigString, *OverrideSettingsFilename);
+	return FFileHelper::SaveStringToFile(CustomConfigString, *OverrideSettingsFilename);
 }
 
 FString UGeneratedTestMap::GetGeneratedMapFolder()
@@ -89,10 +89,11 @@ void UGeneratedTestMap::GenerateBaseMap()
 	// other viewing position issues), ticket: UNR-4975.
 }
 
-void UGeneratedTestMap::SaveMap()
+bool UGeneratedTestMap::SaveMap()
 {
 	const bool bSuccess = FEditorFileUtils::SaveLevel(World->GetCurrentLevel(), GetPathToSaveTheMap());
 	UE_CLOG(!bSuccess, LogGenerateTestMapsCommandlet, Error, TEXT("Failed to save the map %s."), *GetMapName());
+	return bSuccess;
 }
 
 FString UGeneratedTestMap::GetPathToSaveTheMap()
