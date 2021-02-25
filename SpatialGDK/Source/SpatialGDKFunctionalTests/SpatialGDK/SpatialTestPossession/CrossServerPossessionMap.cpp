@@ -8,14 +8,14 @@
 #include "CrossServerPossessionTest.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "NoneCrossServerPossessionTest.h"
-#include "SpatialGDKFunctionalTests/Public/Test2x2WorkerSettings.h"
+#include "TestWorkerSettings.h"
 
 namespace
 {
 void SetupWorldSettings(UWorld* World)
 {
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
-	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2WorkerSettings::StaticClass());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
 	WorldSettings->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
 	WorldSettings->TestingSettings.TestingMode = EMapTestingMode::Detect;
 }

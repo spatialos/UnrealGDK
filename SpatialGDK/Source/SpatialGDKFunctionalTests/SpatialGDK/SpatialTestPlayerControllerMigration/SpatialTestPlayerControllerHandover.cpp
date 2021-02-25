@@ -5,7 +5,7 @@
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "SpatialGDKFunctionalTests/Public/Test2x2WorkerSettings.h"
+#include "TestWorkerSettings.h"
 
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerState.h"
@@ -289,7 +289,7 @@ void USpatialTestPlayerControllerHandoverMap::CreateCustomContentForMap()
 	AddActorToLevel<ASpatialTestPlayerControllerHandover>(CurrentLevel, FTransform(FVector(-100.0f, -100.0f, 0.0f)));
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
-	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2WorkerSettings::StaticClass());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
 	WorldSettings->DefaultGameMode = ASpatialTestPlayerControllerHandoverGameMode::StaticClass();
 	WorldSettings->bEnableDebugInterface = true;
 }
