@@ -23,6 +23,8 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialPlayerSpawner);
 
 using namespace SpatialGDK;
@@ -30,6 +32,82 @@ using namespace SpatialGDK;
 void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
+}
+
+void USpatialPlayerSpawner::Advance(const ViewDelta& ViewDelta)
+{
+	for (const Worker_Op& Op : ViewDelta.GetWorkerMessages())
+	{
+		if (Op.op_type == WORKER_OP_TYPE_COMMAND_REQUEST)
+		{
+			const Worker_CommandRequestOp& CommandRequestOp = Op.op.command_request;
+			const Worker_CommandRequest& Request = CommandRequestOp.request;
+			const Worker_EntityId EntityId = CommandRequestOp.entity_id;
+			const Worker_ComponentId ComponentId = Request.component_id;
+			const Worker_RequestId RequestId = CommandRequestOp.request_id;
+			const Schema_FieldId CommandIndex = Request.command_index;
+
+			if (ComponentId == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID
+				&& CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
+			{
+				NetDriver->PlayerSpawner->ReceivePlayerSpawnRequestOnServer(CommandRequestOp);
+
+				SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+				if (EventTracer != nullptr)
+				{
+					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), RequestId),
+											/* Causes */ Op.span_id, /* NumCauses */ 1);
+				}
+			}
+
+			if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID
+				&& CommandIndex == SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID)
+			{
+				NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(CommandRequestOp);
+
+				SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+				if (EventTracer != nullptr)
+				{
+					EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest(
+												TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId),
+											/* Causes */ Op.span_id, /* NumCauses */ 1);
+				}
+			}
+		}
+		else if (Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE)
+		{
+			const Worker_CommandResponseOp& CommandResponseOp = Op.op.command_response;
+			const Worker_CommandResponse& CommandResponse = CommandResponseOp.response;
+			const Worker_ComponentId ComponentId = CommandResponse.component_id;
+			const Worker_RequestId RequestId = CommandResponseOp.request_id;
+
+			if (ComponentId == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
+			{
+				NetDriver->PlayerSpawner->ReceivePlayerSpawnResponseOnClient(CommandResponseOp);
+
+				SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+				if (EventTracer != nullptr)
+				{
+					EventTracer->TraceEvent(
+						FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TEXT("SPAWN_PLAYER_COMMAND"), RequestId),
+						/* Causes */ EventTracer->GetAndConsumeSpanForRequestId(CommandResponseOp.request_id).GetConstId(),
+						/* NumCauses */ 1);
+				}
+			}
+			if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
+			{
+				SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+				if (EventTracer != nullptr)
+				{
+					EventTracer->TraceEvent(
+						FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"),
+																				RequestId),
+						/* Causes */ EventTracer->GetAndConsumeSpanForRequestId(CommandResponseOp.request_id).GetConstId(), 1);
+				}
+				NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
+			}
+		}
+	}
 }
 
 void USpatialPlayerSpawner::SendPlayerSpawnRequest()

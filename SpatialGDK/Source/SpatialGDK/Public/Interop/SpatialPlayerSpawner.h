@@ -19,6 +19,11 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPlayerSpawner, Log, All);
 class FTimerManager;
 class USpatialNetDriver;
 
+namespace SpatialGDK
+{
+class ViewDelta;
+}
+
 DECLARE_DELEGATE_OneParam(FOnPlayerSpawnFailed, const FString&);
 
 UCLASS()
@@ -28,6 +33,8 @@ class SPATIALGDK_API USpatialPlayerSpawner : public UObject
 
 public:
 	void Init(USpatialNetDriver* NetDriver);
+
+	void Advance(const SpatialGDK::ViewDelta& ViewDelta);
 
 	// Client
 	void SendPlayerSpawnRequest();

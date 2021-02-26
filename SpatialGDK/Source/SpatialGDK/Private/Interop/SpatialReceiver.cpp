@@ -64,36 +64,8 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 	const Worker_ComponentId ComponentId = Request.component_id;
 	const Worker_RequestId RequestId = CommandRequestOp.request_id;
 	const Schema_FieldId CommandIndex = Request.command_index;
-
-	if (ComponentId == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID
-		&& CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
-	{
-		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequestOnServer(CommandRequestOp);
-
-		if (EventTracer != nullptr)
-		{
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), RequestId),
-									/* Causes */ Op.span_id, /* NumCauses */ 1);
-		}
-
-		return;
-	}
-	else if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID
-			 && CommandIndex == SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID)
-	{
-		NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(CommandRequestOp);
-
-		if (EventTracer != nullptr)
-		{
-			EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId),
-				/* Causes */ Op.span_id, /* NumCauses */ 1);
-		}
-
-		return;
-	}
-	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID
-			 && CommandIndex == SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID)
+	if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID
+		&& CommandIndex == SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID)
 	{
 		check(NetDriver != nullptr);
 		check(NetDriver->Connection != nullptr);
@@ -167,31 +139,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 	const Worker_RequestId RequestId = CommandResponseOp.request_id;
 
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandResponse);
-	if (ComponentId == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
-	{
-		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponseOnClient(CommandResponseOp);
-
-		if (EventTracer != nullptr)
-		{
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TEXT("SPAWN_PLAYER_COMMAND"), RequestId),
-									/* Causes */ EventTracer->GetAndConsumeSpanForRequestId(CommandResponseOp.request_id).GetConstId(),
-									/* NumCauses */ 1);
-		}
-
-		return;
-	}
-	else if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
-	{
-		if (EventTracer != nullptr)
-		{
-			EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"), RequestId),
-				/* Causes */ EventTracer->GetAndConsumeSpanForRequestId(CommandResponseOp.request_id).GetConstId(), 1);
-		}
-		NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
-		return;
-	}
-	else if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID)
+	if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID)
 	{
 		OnSystemEntityCommandResponse(Op.op.command_response);
 		return;
