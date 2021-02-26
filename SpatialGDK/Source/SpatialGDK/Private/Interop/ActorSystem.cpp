@@ -14,6 +14,7 @@
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SubView.h"
 #include "Utils/ComponentReader.h"
+#include "Utils/EntityFactory.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogActorSystem);
@@ -85,11 +86,10 @@ private:
 struct FSubViewDelta;
 
 ActorSystem::ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
-						 FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer)
+						 SpatialEventTracer* InEventTracer)
 	: SubView(&InSubView)
 	, TombstoneSubView(&InTombstoneSubView)
 	, NetDriver(InNetDriver)
-	, TimerManager(InTimerManager)
 	, EventTracer(InEventTracer)
 {
 }
@@ -1607,6 +1607,29 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 	}
 
 	DestroyActor(Actor, EntityId);
+}
+
+void ActorSystem::CreateTombstoneEntity(AActor* Actor)
+{
+	check(Actor->IsNetStartupActor());
+
+	const Worker_EntityId EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
+
+	EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->GetRPCService());
+	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
+
+	Components.Add(CreateLevelComponentData(Actor));
+
+	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
+
+	UE_LOG(LogSpatialSender, Log,
+		   TEXT("Creating tombstone entity for actor. "
+				"Actor: %s. Entity ID: %d."),
+		   *Actor->GetName(), EntityId);
+
+#if WITH_EDITOR
+	NetDriver->TrackTombstone(EntityId);
+#endif
 }
 
 void ActorSystem::DestroyActor(AActor* Actor, const Worker_EntityId EntityId)

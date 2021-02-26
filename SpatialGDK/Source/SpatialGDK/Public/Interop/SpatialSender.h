@@ -40,8 +40,6 @@ class SpatialEventTracer;
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<FWorkerComponentUpdate>>;
-using FChannelsToUpdatePosition =
-	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>>;
 
 UCLASS()
 class SPATIALGDK_API USpatialSender : public UObject
@@ -62,7 +60,8 @@ public:
 	bool SendCrossServerRPC(UObject* TargetObject, const SpatialGDK::RPCSender& Sender, UFunction* Function,
 							const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef);
 	bool SendRingBufferedRPC(UObject* TargetObject, const SpatialGDK::RPCSender& Sender, UFunction* Function,
-							 const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef, const FSpatialGDKSpanId& SpanId);
+							 const SpatialGDK::RPCPayload& Payload, USpatialActorChannel* Channel, const FUnrealObjectRef& TargetObjectRef,
+							 const FSpatialGDKSpanId& SpanId);
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId);
 	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
 								  const FSpatialGDKSpanId& CauseSpanId);

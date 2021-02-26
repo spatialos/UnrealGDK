@@ -1,13 +1,14 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
-#include "Schema/NetOwningClientWorker.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
+#include "Utils/RepDataUtils.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogActorSystem, Log, All);
 
+struct FRepChangeState;
 struct FPendingSubobjectAttachment;
 class USpatialNetConnection;
 class FSpatialObjectRepState;
@@ -17,6 +18,9 @@ class USpatialNetDriver;
 
 class SpatialActorChannel;
 class USpatialNetDriver;
+
+using FChannelsToUpdatePosition =
+	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>>;
 
 namespace SpatialGDK
 {
@@ -33,7 +37,7 @@ class ActorSystem
 {
 public:
 	ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
-				FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer);
+				SpatialEventTracer* InEventTracer);
 
 	void Advance();
 
@@ -44,6 +48,26 @@ public:
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void RetireWhenAuthoritative(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
 	void RemoveActor(Worker_EntityId EntityId);
+
+	// Tombstones
+	void CreateTombstoneEntity(AActor* Actor);
+	void RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor);
+
+	// Updates
+	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
+							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
+	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	void ProcessPositionUpdates();
+	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
+	void UpdateInterestComponent(AActor* Actor);
+	void SendInterestBucketComponentChange(Worker_EntityId EntityId, Worker_ComponentId OldComponent,
+										   Worker_ComponentId NewComponent) const;
+	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo,
+									  uint32& OutBytesWritten);
+	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);
+
+	// Entity Creation
+	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 
 private:
 	// Helper struct to manage FSpatialObjectRepState update cycle.
@@ -69,6 +93,7 @@ private:
 	void AuthorityLost(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
 	void AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
 	void HandleActorAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority);
+	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 
 	void ComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 	void ComponentUpdated(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
@@ -113,16 +138,26 @@ private:
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 	static FString GetObjectNameFromRepState(const FSpatialObjectRepState& RepState);
 
-	// Helper
-	bool EntityHasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	Worker_RequestId CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten);
+	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
+	void CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> EntityComponents);
+	static TArray<FWorkerComponentData> CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents);
+	static void DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents);
+	void AddTombstoneToEntity(Worker_EntityId EntityId) const;
+
+	// Updates
+	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas) const;
+	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds) const;
 
 	const FSubView* SubView;
 	const FSubView* TombstoneSubView;
 	USpatialNetDriver* NetDriver;
-	FTimerManager* TimerManager;
 	SpatialEventTracer* EventTracer;
 
+	TMap<Worker_EntityId_Key, TArray<FWorkerComponentUpdate>> UpdatesQueuedUntilAuthorityMap;
 	TSet<TPair<Worker_EntityId_Key, Worker_ComponentId>> PendingDynamicSubobjectComponents;
+
+	FChannelsToUpdatePosition ChannelsToUpdatePosition;
 
 	TArray<Worker_ComponentId> SemanticActorComponents = { SpatialConstants::SPAWN_DATA_COMPONENT_ID,
 														   SpatialConstants::UNREAL_METADATA_COMPONENT_ID };

@@ -23,11 +23,9 @@
 #include "SpatialGDKSettings.h"
 
 #include "CoreMinimal.h"
-#include "GameFramework/OnlineReplStructs.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "Interop/ClientConnectionManager.h"
-#include "Interop/RPCExecutorInterface.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
