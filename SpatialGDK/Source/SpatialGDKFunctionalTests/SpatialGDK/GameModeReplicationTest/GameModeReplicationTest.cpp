@@ -2,9 +2,10 @@
 
 #include "GameModeReplicationTest.h"
 
-#include "Net/UnrealNetwork.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 
 #include "GameFramework/GameStateBase.h"
+#include "Net/UnrealNetwork.h"
 
 AGameModeReplicationTestGameMode::AGameModeReplicationTestGameMode()
 {
@@ -114,4 +115,22 @@ void AGameModeReplicationTest::PrepareTest()
 
 		FinishStep();
 	});
+}
+
+USpatialGameModeReplicationMap::USpatialGameModeReplicationMap()
+	// Test flakes about 20% of the time
+	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("SpatialGameModeReplicationMap"))
+{
+}
+
+void USpatialGameModeReplicationMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the test
+	AddActorToLevel<AGameModeReplicationTest>(CurrentLevel, FTransform::Identity);
+
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
+	WorldSettings->SetMultiWorkerSettingsClass(UGameModeReplicationMultiWorkerSettings::StaticClass());
+	WorldSettings->DefaultGameMode = AGameModeReplicationTestGameMode::StaticClass();
 }

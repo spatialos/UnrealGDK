@@ -240,3 +240,16 @@ void ASpatialTestNetReference::FinishTest(EFunctionalTestResult TestResult, cons
 	// PositionUpdateThresholdMaxCentimeters to be changed.
 	GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = PreviousMaximumDistanceThreshold;
 }
+
+USpatialTestNetReferenceMap::USpatialTestNetReferenceMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialTestNetReferenceMap"))
+{
+}
+
+void USpatialTestNetReferenceMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the test
+	AddActorToLevel<ASpatialTestNetReference>(CurrentLevel, FTransform::Identity);
+}

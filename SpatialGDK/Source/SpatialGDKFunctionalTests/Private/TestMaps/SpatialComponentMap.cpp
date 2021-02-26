@@ -3,11 +3,11 @@
 #include "TestMaps/SpatialComponentMap.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "GameFramework/PlayerStart.h"
-#include "SpatialGDKFunctionalTests/Public/Test1x2WorkerSettings.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthorityTestGameMode.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialComponentTest/SpatialComponentTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialComponentTest/SpatialComponentTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialComponentTest/SpatialComponentTestReplicatedActor.h"
+#include "TestWorkerSettings.h"
 
 USpatialComponentMap::USpatialComponentMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialComponentMap"))
@@ -36,6 +36,6 @@ void USpatialComponentMap::CreateCustomContentForMap()
 	(*PlayerStart)->SetActorLocation(FVector(-500, -250, 100));
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
-	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2WorkerSettings::StaticClass());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2FullInterestWorkerSettings::StaticClass());
 	WorldSettings->DefaultGameMode = ASpatialAuthorityTestGameMode::StaticClass();
 }

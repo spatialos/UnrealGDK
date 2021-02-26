@@ -35,6 +35,8 @@ ACrossServerPossessionTest::ACrossServerPossessionTest()
 {
 	Author = "Ken.Yu";
 	Description = TEXT("Test Cross-Server Possession");
+
+	SetNumRequiredClients(1);
 }
 
 void ACrossServerPossessionTest::PrepareTest()
