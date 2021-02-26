@@ -7,3 +7,5 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSnapshot, Log, All);
 
 SPATIALGDKEDITOR_API bool SpatialGDKGenerateSnapshot(class UWorld* World, FString SnapshotPath);
+
+SPATIALGDKEDITOR_API bool SpatialGDKGenerateSnapshotOnLevelSave(UWorld* World);

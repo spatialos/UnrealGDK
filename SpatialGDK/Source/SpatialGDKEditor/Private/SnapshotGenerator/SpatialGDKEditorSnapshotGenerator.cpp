@@ -3,6 +3,7 @@
 #include "SpatialGDKEditorSnapshotGenerator.h"
 
 #include "Engine/LevelScriptActor.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
 #include "Schema/SnapshotVersionComponent.h"
@@ -10,6 +11,7 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityFactory.h"
@@ -21,6 +23,8 @@
 #include "EngineUtils.h"
 #include "HAL/PlatformFile.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Runtime/Engine/Classes/Engine/World.h"
+#include "Runtime/Engine/Classes/Engine/WorldComposition.h"
 #include "UObject/UObjectIterator.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -222,6 +226,95 @@ bool CreateSnapshotPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
 }
 
+bool MergeSnapshots(const TArray<FString>& SnapshotPaths, const FString& OutputSnapshotPath)
+{
+	Worker_ComponentVtable DefaultVtable{};
+	Worker_SnapshotParameters Parameters{};
+	Parameters.default_component_vtable = &DefaultVtable;
+
+	Worker_SnapshotOutputStream* OutputStream = Worker_SnapshotOutputStream_Create(TCHAR_TO_UTF8(*OutputSnapshotPath), &Parameters);
+	if (Worker_SnapshotOutputStream_GetState(OutputStream).stream_state != WORKER_STREAM_STATE_GOOD)
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Failed beginning write into world composition output merged snapshot %s. Error: %s"),
+			   *OutputSnapshotPath, UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
+		return false;
+	}
+	Schema_EntityId NextAvailableEntityId = 1;
+
+	for (const FString& Path : SnapshotPaths)
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("DEBUGLOG: Starting read for merging a snapshot from %s to %s."), *Path,
+			   *OutputSnapshotPath);
+		Worker_SnapshotInputStream* InputStream = Worker_SnapshotInputStream_Create(TCHAR_TO_UTF8(*Path), &Parameters);
+		if (Worker_SnapshotInputStream_GetState(InputStream).stream_state != WORKER_STREAM_STATE_GOOD)
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Failed beginning read from world composition input snapshot %s. Error: %s"), *Path,
+				   UTF8_TO_TCHAR(Worker_SnapshotInputStream_GetState(InputStream).error_message));
+			return false;
+		}
+
+		while (Worker_SnapshotInputStream_HasNext(InputStream))
+		{
+			const worker::c::Worker_Entity* Entity = Worker_SnapshotInputStream_ReadEntity(InputStream);
+			if (Worker_SnapshotInputStream_GetState(InputStream).stream_state != WORKER_STREAM_STATE_GOOD)
+			{
+				UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Failed reading entity from world composition input snapshot %s. Error: %s"),
+					   *Path, UTF8_TO_TCHAR(Worker_SnapshotInputStream_GetState(InputStream).error_message));
+				return false;
+			}
+			if (Entity == nullptr)
+			{
+				// signifies error, the caller will have to call Worker_SnapshotOutputStream_GetState
+				return false;
+			}
+
+			TUniquePtr<Worker_Entity> CopiedEntity;
+			TArray<Worker_ComponentData> ComponentDatas;
+
+			if (Entity->entity_id >= NextAvailableEntityId)
+			{
+				NextAvailableEntityId = Entity->entity_id + 1;
+			}
+			else
+			{
+				// These are GDK entities, like the spawner or GSM and there should only be one of them, keep the one from the first merged
+				// snapshot, ignore the rest
+				if (Entity->entity_id < SpatialConstants::FIRST_AVAILABLE_ENTITY_ID)
+				{
+					continue;
+				}
+
+				CopiedEntity = MakeUnique<Worker_Entity>();
+				CopiedEntity->entity_id = NextAvailableEntityId++;
+				CopiedEntity->component_count = Entity->component_count;
+				for (unsigned int i = 0; i < Entity->component_count; i++)
+				{
+					Worker_ComponentData ComponentData{};
+					ComponentData.component_id = Entity->components[i].component_id;
+					ComponentData.schema_type = Schema_CopyComponentData(Entity->components[i].schema_type);
+					ComponentDatas.Add(ComponentData);
+				}
+				CopiedEntity->components = ComponentDatas.GetData();
+				Entity = CopiedEntity.Get();
+			}
+
+			Worker_SnapshotOutputStream_WriteEntity(OutputStream, Entity);
+			if (Worker_SnapshotOutputStream_GetState(OutputStream).stream_state != WORKER_STREAM_STATE_GOOD)
+			{
+				UE_LOG(LogSpatialGDKSnapshot, Error,
+					   TEXT("Failed writing entity into world composition output merged snapshot %s. Error: %s"), *OutputSnapshotPath,
+					   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
+				return false;
+			}
+		}
+
+		Worker_SnapshotInputStream_Destroy(InputStream);
+	}
+
+	Worker_SnapshotOutputStream_Destroy(OutputStream);
+	return true;
+}
+
 bool CreateSkeletonEntities(UWorld* World, Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvailableEntityID)
 {
 	// We only check the persistent level, as it seems similar to what e.g. FEditorFileUtils::SaveCurrentLevel does
@@ -263,64 +356,6 @@ bool CreateSkeletonEntities(UWorld* World, Worker_SnapshotOutputStream* OutputSt
 		}
 	}
 
-	// However, we now check if this level we saved was saved as part of a world using world composition
-	// This is slightly crude, as we could edit the level without opening the enclosing world
-	// TODO: Manual merge from somewhere?
-
-	return true;
-}
-
-bool MergeSnapshots(const TArray<const FString>& SnapshotPaths, const FString& OutputSnapshotPath)
-{
-	Worker_ComponentVtable DefaultVtable{};
-	Worker_SnapshotParameters Parameters{};
-	Parameters.default_component_vtable = &DefaultVtable;
-
-	Worker_SnapshotOutputStream* OutputStream = Worker_SnapshotOutputStream_Create(TCHAR_TO_UTF8(*OutputSnapshotPath), &Parameters);
-	worker::c::Schema_EntityId NextAvailableEntityId = 1;
-
-	for (const FString& Path : SnapshotPaths)
-	{
-		Worker_SnapshotInputStream* InputStream = Worker_SnapshotInputStream_Create(TCHAR_TO_UTF8(*Path), &Parameters);
-		if (Worker_SnapshotInputStream_GetState(InputStream).stream_state != WORKER_STREAM_STATE_GOOD)
-		{
-			return false;
-		}
-
-		while (Worker_SnapshotInputStream_HasNext(InputStream))
-		{
-			const worker::c::Worker_Entity* Entity = Worker_SnapshotInputStream_ReadEntity(InputStream);
-			if (Worker_SnapshotInputStream_GetState(InputStream).stream_state != WORKER_STREAM_STATE_GOOD)
-			{
-				return false;
-			}
-			if (Entity == nullptr)
-			{
-				// signifies error, the caller will have to call Worker_SnapshotOutputStream_GetState
-				return false;
-			}
-
-			if (Entity->entity_id >= NextAvailableEntityId)
-			{
-				NextAvailableEntityId = Entity->entity_id + 1;
-			}
-			else
-			{
-				UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Got an entity id lower than expected. Entity id: %lld, NextAvailable: %lld."),
-					   Entity->entity_id, NextAvailableEntityId);
-			}
-
-			Worker_SnapshotOutputStream_WriteEntity(OutputStream, Entity);
-			if (Worker_SnapshotOutputStream_GetState(OutputStream).stream_state != WORKER_STREAM_STATE_GOOD)
-			{
-				return false;
-			}
-		}
-
-		Worker_SnapshotInputStream_Destroy(InputStream);
-	}
-
-	Worker_SnapshotOutputStream_Destroy(OutputStream);
 	return true;
 }
 
@@ -444,5 +479,83 @@ bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotPath)
 
 	Worker_SnapshotOutputStream_Destroy(OutputStream);
 
+	if (GetDefault<USpatialGDKSettings>()->bEnableActorsInSnapshots)
+	{
+		// However, we now check if this level we saved was saved as part of a world using world composition
+		// This is slightly crude, as we could edit the level without opening the enclosing world
+		// TODO: Manual merge from somewhere?
+		if (World->GetWorldSettings() != nullptr && World->GetWorldSettings()->bEnableWorldComposition
+			&& World->WorldComposition != nullptr)
+		{
+			double StartTime = FPlatformTime::Seconds();
+			TArray<FString> SnapshotPaths;
+			// Add the root world snapshot
+			SnapshotPaths.Add(SnapshotPath);
+			// Add the sublevel snapshots
+			for (const auto& Tile : World->WorldComposition->GetTilesList())
+			{
+				// UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Found tile package name: %s."), *Tile.PackageName.ToString());
+				// TODO: Kind of copied from SpatialGDKEditorModule
+				// The things in the editor module should move here and then this path combine should be made into a function
+				FString SnapshotFile = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath,
+													   Tile.PackageName.ToString() + TEXT(".snapshot"));
+				SnapshotPaths.Add(SnapshotFile);
+			}
+			FString MergedSnapshotFile = SnapshotPath + ".merged"; // meh
+			bool bSuccessMerging = MergeSnapshots(SnapshotPaths, MergedSnapshotFile);
+			if (!bSuccessMerging)
+			{
+				bSuccess = false;
+				UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Failed merging world composition snapshots."));
+			}
+			if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+			{
+				IFileHandle* File = FPlatformFileManager::Get().GetPlatformFile().OpenRead(*MergedSnapshotFile);
+				WorldSettings->RawPersistentLevelSnapshotData.SetNum(File->Size());
+				File->Read(WorldSettings->RawPersistentLevelSnapshotData.GetData(), File->Size());
+				// TODO: Is there a nicer way to close the handle? Delete also sounds sketchy
+				File->~IFileHandle();
+			}
+			else
+			{
+				UE_LOG(LogSpatialGDKSnapshot, Error,
+					   TEXT("Could not save the merged snapshot into the world settings. Make sure you are using SpatialWorldSettings."));
+			}
+			UE_LOG(LogSpatialGDKSnapshot, Log, TEXT("Generating the merged snapshot for the saved world took %6.2fms."),
+				   1000.0f * float(FPlatformTime::Seconds() - StartTime));
+		}
+	}
+
 	return bSuccess;
+}
+
+bool SpatialGDKGenerateSnapshotOnLevelSave(UWorld* World)
+{
+	bool bSuccess = true;
+	double StartTime = FPlatformTime::Seconds();
+	FString SnapshotFile =
+		FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, World->GetPackage()->GetName() + TEXT(".snapshot"));
+	bSuccess &= SpatialGDKGenerateSnapshot(World, SnapshotFile);
+	if (!bSuccess)
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Could not generate snapshot on level save."));
+		return false;
+	}
+	if (ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
+	{
+		IFileHandle* File = FPlatformFileManager::Get().GetPlatformFile().OpenRead(*SnapshotFile);
+		WorldSettings->RawPersistentLevelSnapshotData.SetNum(File->Size());
+		bSuccess &= File->Read(WorldSettings->RawPersistentLevelSnapshotData.GetData(), File->Size());
+		// TODO: Is there a nicer way to close the handle? Delete also sounds sketchy
+		File->~IFileHandle();
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error,
+			   TEXT("Could not save snapshot into the world settings. Make sure you are using SpatialWorldSettings."));
+		return false;
+	}
+	UE_LOG(LogSpatialGDKSnapshot, Log, TEXT("Generating the snapshot for the saved world took %6.2fms."),
+		   1000.0f * float(FPlatformTime::Seconds() - StartTime));
+	return true;
 }
