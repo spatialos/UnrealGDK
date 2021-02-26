@@ -45,27 +45,3 @@ protected:
 	virtual void CreateCustomContentForMap() override;
 };
 
-/**
- * A 2 by 1 (rows by columns) load balancing strategy for testing zoning features.
- * Has a world-wide interest border, so everything should be in view.
- */
-UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API UTest1x2GridNoInterestStrategy : public UGridBasedLBStrategy
-{
-	GENERATED_BODY()
-
-public:
-	UTest1x2GridNoInterestStrategy() { Cols = 2; }
-};
-
-/**
- * Uses the Test1x2GridStrategy, otherwise has default settings.
- */
-UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API UTest1x2WorkerNoInterestSettings : public USpatialMultiWorkerSettings
-{
-	GENERATED_BODY()
-
-public:
-	UTest1x2WorkerNoInterestSettings() { WorkerLayers[0].LoadBalanceStrategy = UTest1x2GridNoInterestStrategy::StaticClass(); }
-};

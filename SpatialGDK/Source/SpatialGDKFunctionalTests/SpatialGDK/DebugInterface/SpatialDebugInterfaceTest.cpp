@@ -8,6 +8,7 @@
 
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Kismet/GameplayStatics.h"
+#include "TestWorkerSettings.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
 
 /*
@@ -17,7 +18,7 @@
 void USpatialDebugInterfaceMap::CreateCustomContentForMap()
 {
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
-	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2WorkerNoInterestSettings::StaticClass());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2NoInterestWorkerSettings::StaticClass());
 	WorldSettings->bEnableDebugInterface = true;
 
 	ULevel* CurrentLevel = World->GetCurrentLevel();
