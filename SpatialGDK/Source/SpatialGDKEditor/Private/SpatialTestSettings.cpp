@@ -10,11 +10,6 @@ FSpatialTestSettings::FSpatialTestSettings()
 	, OriginalSpatialGDKEditorSettings(nullptr)
 	, OriginalGeneralProjectSettings(nullptr)
 	, OriginalEditorPerformanceSettings(nullptr)
-	, OverrideSettingsFileExtension(TEXT(".ini"))
-	, OverrideSettingsFilePrefix(TEXT("MapSettingsOverrides/TestOverrides"))
-	, OverrideSettingsBaseFilename(FPaths::ProjectConfigDir() + OverrideSettingsFilePrefix)
-	, BaseOverridesFilename(OverrideSettingsBaseFilename + TEXT("Base") + (OverrideSettingsFileExtension))
-	, GeneratedOverrideSettingsBaseFilename(FPaths::ProjectIntermediateDir() + TEXT("Config/") + OverrideSettingsFilePrefix)
 {
 }
 

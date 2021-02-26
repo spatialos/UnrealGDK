@@ -279,9 +279,9 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 
 void FSpatialGDKEditorModule::OverrideSettingsForTesting(UWorld* World, const FString& MapName)
 {
-	OverrideSettingsForTestingDelegate.Broadcast(World, MapName);
-
 	SpatialTestSettings->Override(MapName);
+
+	OverrideSettingsForTestingDelegate.Broadcast(World, MapName);
 }
 
 void FSpatialGDKEditorModule::RevertSettingsForTesting()
