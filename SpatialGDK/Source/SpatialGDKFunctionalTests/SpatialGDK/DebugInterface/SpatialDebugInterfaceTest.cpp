@@ -6,15 +6,15 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
-#include "EngineClasses/SpatialWorldSettings.h"
 
 /*
 	Test for coverage of the USpatialGDKDebugInterface.
 */
 
-void USpatialDebugInterfaceMap::CreateCustomContentForMap() 
+void USpatialDebugInterfaceMap::CreateCustomContentForMap()
 {
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2WorkerNoInterestSettings::StaticClass());
@@ -23,9 +23,9 @@ void USpatialDebugInterfaceMap::CreateCustomContentForMap()
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 
 	// Add the tests
-	AddActorToLevel<ASpatialDebugInterfaceTest>(CurrentLevel, FTransform(FVector(-50, -50, 0))); // not sure if this position is strictly needed or if we can go for 0,0,0
+	AddActorToLevel<ASpatialDebugInterfaceTest>(
+		CurrentLevel, FTransform(FVector(-50, -50, 0))); // not sure if this position is strictly needed or if we can go for 0,0,0
 }
-
 
 ASpatialDebugInterfaceTest::ASpatialDebugInterfaceTest()
 	: Super()

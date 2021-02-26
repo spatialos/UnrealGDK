@@ -3,10 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialCommonTypes.h"
-#include "SpatialFunctionalTest.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
+#include "SpatialCommonTypes.h"
+#include "SpatialFunctionalTest.h"
 #include "TestMaps/GeneratedTestMap.h"
 #include "SpatialDebugInterfaceTest.generated.h"
 
@@ -41,7 +41,6 @@ public:
 	{
 	}
 
-
 protected:
 	virtual void CreateCustomContentForMap() override;
 };
@@ -56,12 +55,8 @@ class SPATIALGDKFUNCTIONALTESTS_API UTest1x2GridNoInterestStrategy : public UGri
 	GENERATED_BODY()
 
 public:
-	UTest1x2GridNoInterestStrategy()
-	{
-		Cols = 2;
-	}
+	UTest1x2GridNoInterestStrategy() { Cols = 2; }
 };
-
 
 /**
  * Uses the Test1x2GridStrategy, otherwise has default settings.
@@ -72,8 +67,5 @@ class SPATIALGDKFUNCTIONALTESTS_API UTest1x2WorkerNoInterestSettings : public US
 	GENERATED_BODY()
 
 public:
-	UTest1x2WorkerNoInterestSettings()
-	{
-		WorkerLayers[0].LoadBalanceStrategy = UTest1x2GridNoInterestStrategy::StaticClass();
-	}
+	UTest1x2WorkerNoInterestSettings() { WorkerLayers[0].LoadBalanceStrategy = UTest1x2GridNoInterestStrategy::StaticClass(); }
 };
