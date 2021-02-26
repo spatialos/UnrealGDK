@@ -5,18 +5,18 @@
 #include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
 #include "TestMaps/GeneratedTestMap.h"
-#include "DynamicSubobjectsTest.generated.h"
+#include "SpatialDynamicSubobjectsTest.generated.h"
 
 class ATestMovementCharacter;
 class AReplicatedGASTestActor;
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API ADynamicSubobjectsTest : public ASpatialFunctionalTest
+class SPATIALGDKFUNCTIONALTESTS_API ASpatialDynamicSubobjectsTest : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
 
 public:
-	ADynamicSubobjectsTest();
+	ASpatialDynamicSubobjectsTest();
 
 	virtual void PrepareTest() override;
 

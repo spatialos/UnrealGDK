@@ -1,12 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestCharacterMigration.h"
+
 #include "Components/BoxComponent.h"
 #include "Engine/TriggerBox.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestCharacterMovement/CharacterMovementTestGameMode.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
+#include "TestWorkerSettings.h"
 
 namespace
 {
@@ -33,6 +38,8 @@ ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
 	Author = "Victoria";
 	Description = TEXT("Test Character Migration");
 	TimeLimit = 300;
+
+	SetNumRequiredClients(1);
 }
 
 void ASpatialTestCharacterMigration::PrepareTest()
@@ -138,4 +145,22 @@ void ASpatialTestCharacterMigration::PrepareTest()
 
 		AddStepFromDefinition(ResetStepDefinition, FWorkerDefinition::AllWorkers);
 	}
+}
+
+USpatialTestCharacterMigrationMap::USpatialTestCharacterMigrationMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("SpatialTestCharacterMigrationMap"))
+{
+}
+
+void USpatialTestCharacterMigrationMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the test
+	AddActorToLevel<ASpatialTestCharacterMigration>(CurrentLevel, FTransform::Identity);
+
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest2x1FullInterestWorkerSettings::StaticClass());
+	WorldSettings->DefaultGameMode = ACharacterMovementTestGameMode::StaticClass();
+	WorldSettings->TestingSettings.TestingMode = EMapTestingMode::Detect;
 }

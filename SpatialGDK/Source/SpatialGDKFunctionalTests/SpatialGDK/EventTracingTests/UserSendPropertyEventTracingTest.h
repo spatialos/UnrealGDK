@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EventTracingTest.h"
+#include "SpatialEventTracingTest.h"
 
 #include "UserSendPropertyEventTracingTest.generated.h"
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API AUserSendPropertyEventTracingTest : public AEventTracingTest
+class SPATIALGDKFUNCTIONALTESTS_API AUserSendPropertyEventTracingTest : public ASpatialEventTracingTest
 {
 	GENERATED_BODY()
 

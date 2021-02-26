@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
+#include "TestMaps/GeneratedTestMap.h"
+
 #include "SpatialTestCrossServerRPC.generated.h"
 
 class ACrossServerRPCCube;
@@ -24,4 +26,16 @@ public:
 
 	void CheckInvalidEntityID(ACrossServerRPCCube* TestCube);
 	void CheckValidEntityID(ACrossServerRPCCube* TestCube);
+};
+
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API USpatialTestCrossServerRPCMap : public UGeneratedTestMap
+{
+	GENERATED_BODY()
+
+public:
+	USpatialTestCrossServerRPCMap();
+
+protected:
+	virtual void CreateCustomContentForMap() override;
 };
