@@ -44,4 +44,3 @@ public:
 protected:
 	virtual void CreateCustomContentForMap() override;
 };
-

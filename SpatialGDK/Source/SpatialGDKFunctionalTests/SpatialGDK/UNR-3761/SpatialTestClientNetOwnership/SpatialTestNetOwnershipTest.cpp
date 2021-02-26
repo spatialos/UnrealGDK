@@ -1,9 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialTestNetOwnership.h"
+#include "SpatialTestNetOwnershipTest.h"
 #include "NetOwnershipCube.h"
 #include "SpatialFunctionalTestFlowController.h"
-
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "TestWorkerSettings.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -34,14 +35,26 @@
  *  - The NetOwnershipCube is destroyed.
  */
 
-ASpatialTestNetOwnership::ASpatialTestNetOwnership()
+void USpatialTestNetOwnershipMap::CreateCustomContentForMap()
+{
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
+
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the tests
+	AddActorToLevel<ASpatialTestNetOwnershipTest>(CurrentLevel, FTransform());
+}
+
+
+ASpatialTestNetOwnershipTest::ASpatialTestNetOwnershipTest()
 	: Super()
 {
-	Author = "Andrei";
+	Author = TEXT("Andrei");
 	Description = TEXT("Test Net Ownership");
 }
 
-void ASpatialTestNetOwnership::PrepareTest()
+void ASpatialTestNetOwnershipTest::PrepareTest()
 {
 	Super::PrepareTest();
 

@@ -8,8 +8,8 @@
 
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Kismet/GameplayStatics.h"
-#include "TestWorkerSettings.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
+#include "TestWorkerSettings.h"
 
 /*
 	Test for coverage of the USpatialGDKDebugInterface.

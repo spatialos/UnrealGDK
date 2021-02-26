@@ -1,15 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialTestReplicatedStartupActor.h"
+#include "SpatialReplicatedStartupActorTest.h"
 
 #include "ReplicatedStartupActor.h"
 #include "ReplicatedStartupActorPlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
-
+#include "ReplicatedStartupActorGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 
 /**
+ * Currently broken: UNR-4222 
  * This test automates the ReplicatedStartupActor gym. The gym was used to support QA test case "C1944 Replicated startup actors are
  * correctly spawned on all clients". The test also covers the QA work-flow "Startup actors correctly replicate arbitrary properties".
  * NOTE: 1. This test requires a specific Map with a ReplicatedStartupActor placed on the map and in the interest of the players and a
@@ -37,21 +39,36 @@
  *  - None.
  */
 
-ASpatialTestReplicatedStartupActor::ASpatialTestReplicatedStartupActor()
+
+void USpatialTestReplicatedStartupActorMap::CreateCustomContentForMap()
+{
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
+	WorldSettings->DefaultGameMode = AReplicatedStartupActorGameMode::StaticClass();
+
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	AddActorToLevel<AReplicatedStartupActor>(CurrentLevel, FTransform(FVector(-250.0, -250.0, 50.0)));
+
+	// Add the tests
+	AddActorToLevel<ASpatialReplicatedStartupActorTest>(CurrentLevel, FTransform::Identity);
+};
+
+
+ASpatialReplicatedStartupActorTest::ASpatialReplicatedStartupActorTest()
 	: Super()
 {
 	Author = "Andrei";
 	Description = TEXT("Test Replicated Startup Actor Reference And Property Replication");
 }
 
-void ASpatialTestReplicatedStartupActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void ASpatialReplicatedStartupActorTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ASpatialTestReplicatedStartupActor, bIsValidReference);
+	DOREPLIFETIME(ASpatialReplicatedStartupActorTest, bIsValidReference);
 }
 
-void ASpatialTestReplicatedStartupActor::PrepareTest()
+void ASpatialReplicatedStartupActorTest::PrepareTest()
 {
 	Super::PrepareTest();
 
@@ -152,6 +169,7 @@ void ASpatialTestReplicatedStartupActor::PrepareTest()
 	});
 
 	// All workers check that the movement is visible.
+	// This step times out a 100% on clients UNR-4222
 	AddStep(
 		TEXT("SpatialTestReplicatedStartupActorAllWorkersCheckMovement"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 		[this](float DeltaTime) {

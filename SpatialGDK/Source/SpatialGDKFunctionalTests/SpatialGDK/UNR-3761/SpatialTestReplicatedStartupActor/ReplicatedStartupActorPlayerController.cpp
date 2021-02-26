@@ -1,9 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "ReplicatedStartupActorPlayerController.h"
-#include "SpatialTestReplicatedStartupActor.h"
+#include "SpatialReplicatedStartupActorTest.h"
 
-void AReplicatedStartupActorPlayerController::ClientToServerRPC_Implementation(ASpatialTestReplicatedStartupActor* Test,
+void AReplicatedStartupActorPlayerController::ClientToServerRPC_Implementation(ASpatialReplicatedStartupActorTest* Test,
 																			   AActor* ReplicatedActor)
 {
 	if (IsValid(ReplicatedActor))
@@ -12,7 +12,7 @@ void AReplicatedStartupActorPlayerController::ClientToServerRPC_Implementation(A
 	}
 }
 
-void AReplicatedStartupActorPlayerController::ResetBoolean_Implementation(ASpatialTestReplicatedStartupActor* Test)
+void AReplicatedStartupActorPlayerController::ResetBoolean_Implementation(ASpatialReplicatedStartupActorTest* Test)
 {
 	Test->bIsValidReference = false;
 }
