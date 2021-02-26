@@ -23,6 +23,7 @@ namespace
 UWorld* TestWorld;
 TMap<FName, AActor*> TestActors;
 UGridBasedLBStrategy* Strat;
+bool bShouldStopPIE = false;
 
 // Copied from AutomationCommon::GetAnyGameWorld()
 UWorld* GetAnyGameWorld()
@@ -39,6 +40,11 @@ UWorld* GetAnyGameWorld()
 	}
 
 	return World;
+}
+
+void LoadTestMap()
+{
+	bShouldStopPIE = AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
 }
 
 UGridBasedLBStrategy* CreateStrategyObject(uint32 Rows, uint32 Cols, float WorldWidth, float WorldHeight, float InterestBorder = 0.0f)
@@ -68,7 +74,11 @@ void Cleanup()
 	Strat->RemoveFromRoot();
 	Strat = nullptr;
 
-	GEditor->RequestEndPlayMap();
+	if (bShouldStopPIE)
+	{
+		bShouldStopPIE = false;
+		GEditor->RequestEndPlayMap();
+	}
 }
 
 DEFINE_LATENT_AUTOMATION_COMMAND(FCleanup);
@@ -300,7 +310,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_more_than_one_column_WHEN_requires_handover_data_
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_relinquish_called_THEN_returns_false)
 {
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	LoadTestMap();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 1, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
@@ -315,7 +325,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_a_single_cell_and_valid_local_id_WHEN_should_reli
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_return_different_virtual_workers)
 {
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	LoadTestMap();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(2, 2, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
@@ -336,7 +346,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_actors_in_each_cell_THEN_should_r
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_should_relinquish_authority)
 {
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	LoadTestMap();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(2, 1, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
@@ -355,7 +365,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_moving_actor_WHEN_actor_crosses_boundary_THEN_sho
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_should_belong_to_same_worker_id)
 {
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	LoadTestMap();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FCreateStrategy(1, 2, 10000.f, 10000.f, 1));
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
@@ -372,7 +382,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_actors_WHEN_actors_are_in_same_cell_THEN_shou
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_two_cells_WHEN_actor_in_one_cell_THEN_strategy_relinquishes_based_on_local_id)
 {
-	AutomationOpenMap(SpatialConstants::EMPTY_TEST_MAP_PATH);
+	LoadTestMap();
 
 	ADD_LATENT_AUTOMATION_COMMAND(FWaitForWorld());
 	ADD_LATENT_AUTOMATION_COMMAND(FSpawnActorAtLocation("Actor1", FVector(0.f, -2500.f, 0.f)));
