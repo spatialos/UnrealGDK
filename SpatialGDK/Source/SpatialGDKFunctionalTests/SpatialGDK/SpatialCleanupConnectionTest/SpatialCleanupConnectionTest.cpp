@@ -3,7 +3,6 @@
 #include "SpatialCleanupConnectionTest.h"
 #include "GameFramework/PlayerController.h"
 
-#include "GameFramework/PlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
 
 /**

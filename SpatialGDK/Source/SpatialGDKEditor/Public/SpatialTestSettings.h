@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("", off)
 #pragma once
 
 #include "CoreMinimal.h"
@@ -47,14 +46,14 @@ protected:
 	// Load settings from config file which will override current settings
 	void Load(const FString& TestSettingOverridesFilename);
 
-	const FString OverrideSettingsFileExtension = TEXT(".ini");
-	const FString OverrideSettingsFilePrefix = TEXT("MapSettingsOverrides/TestOverrides");
+	const FString OverrideSettingsFileExtension;
+	const FString OverrideSettingsFilePrefix;
 	// Map override config base filename applied to specific map, if exists
-	const FString OverrideSettingsBaseFilename = FPaths::ProjectConfigDir() + OverrideSettingsFilePrefix;
+	const FString OverrideSettingsBaseFilename;
 	// Base override config file applied to all maps, if exists
-	const FString BaseOverridesFilename = OverrideSettingsBaseFilename + TEXT("Base") + (OverrideSettingsFileExtension);
+	const FString BaseOverridesFilename;
 	// Generated map override config base filename for generated maps applied to specific map, if exists
-	const FString GeneratedOverrideSettingsBaseFilename = FPaths::ProjectIntermediateDir() + TEXT("Config/") + OverrideSettingsFilePrefix;
+	const FString GeneratedOverrideSettingsBaseFilename;
 
 	// Settings classes that can be overridden using config files
 	USpatialGDKSettings* OriginalSpatialGDKSettings;
@@ -63,4 +62,3 @@ protected:
 	UGeneralProjectSettings* OriginalGeneralProjectSettings;
 	UEditorPerformanceSettings* OriginalEditorPerformanceSettings;
 };
-#pragma optimize("", on)

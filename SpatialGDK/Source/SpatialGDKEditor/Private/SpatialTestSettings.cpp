@@ -10,17 +10,22 @@ FSpatialTestSettings::FSpatialTestSettings()
 	, OriginalSpatialGDKEditorSettings(nullptr)
 	, OriginalGeneralProjectSettings(nullptr)
 	, OriginalEditorPerformanceSettings(nullptr)
+	, OverrideSettingsFileExtension(TEXT(".ini"))
+	, OverrideSettingsFilePrefix(TEXT("MapSettingsOverrides/TestOverrides"))
+	, OverrideSettingsBaseFilename(FPaths::ProjectConfigDir() + OverrideSettingsFilePrefix)
+    , BaseOverridesFilename(OverrideSettingsBaseFilename + TEXT("Base") + (OverrideSettingsFileExtension))
+	, GeneratedOverrideSettingsBaseFilename(FPaths::ProjectIntermediateDir() + TEXT("Config/") + OverrideSettingsFilePrefix)
 {
 }
 
 void FSpatialTestSettings::Override(const FString& MapName)
 {
 	// Back up the existing settings so they can be reverted later
-	Duplicate<USpatialGDKSettings>(OriginalSpatialGDKSettings);
-	Duplicate<ULevelEditorPlaySettings>(OriginalLevelEditorPlaySettings);
-	Duplicate<USpatialGDKEditorSettings>(OriginalSpatialGDKEditorSettings);
-	Duplicate<UGeneralProjectSettings>(OriginalGeneralProjectSettings);
-	Duplicate<UEditorPerformanceSettings>(OriginalEditorPerformanceSettings);
+	Duplicate(OriginalSpatialGDKSettings);
+	Duplicate(OriginalLevelEditorPlaySettings);
+	Duplicate(OriginalSpatialGDKEditorSettings);
+	Duplicate(OriginalGeneralProjectSettings);
+	Duplicate(OriginalEditorPerformanceSettings);
 	// First override the settings from the base config file, if it exists
 	if (FPaths::FileExists(BaseOverridesFilename))
 	{
@@ -58,7 +63,7 @@ void FSpatialTestSettings::Duplicate(T*& OriginalSettings)
 {
 	// Duplicate original settings but use different outer - if same outer is reused the object is not duplicated and pointer is to the same
 	// Object Having the same name causes runtime exceptions
-	// Use additional object flag RF_Standalone to avoid early GC - destroy when restoring settings
+	// Add to root to prevent GC
 	T* DuplicateSettings = NewObject<T>(GetTransientPackage(), T::StaticClass(), NAME_None, RF_NoFlags, GetMutableDefault<T>());
 	DuplicateSettings->AddToRoot();
 	OriginalSettings = GetMutableDefault<T>();
@@ -68,11 +73,11 @@ void FSpatialTestSettings::Duplicate(T*& OriginalSettings)
 
 void FSpatialTestSettings::Revert()
 {
-	Restore<USpatialGDKSettings>(OriginalSpatialGDKSettings);
-	Restore<ULevelEditorPlaySettings>(OriginalLevelEditorPlaySettings);
-	Restore<USpatialGDKEditorSettings>(OriginalSpatialGDKEditorSettings);
-	Restore<UGeneralProjectSettings>(OriginalGeneralProjectSettings);
-	Restore<UEditorPerformanceSettings>(OriginalEditorPerformanceSettings);
+	Restore(OriginalSpatialGDKSettings);
+	Restore(OriginalLevelEditorPlaySettings);
+	Restore(OriginalSpatialGDKEditorSettings);
+	Restore(OriginalGeneralProjectSettings);
+	Restore(OriginalEditorPerformanceSettings);
 }
 
 template <typename T>
@@ -83,6 +88,7 @@ void FSpatialTestSettings::Restore(T*& OriginalSettings)
 		// Restore original settings - delete CDO first and then replace with copied settings
 		T::StaticClass()->ClassDefaultObject->RemoveFromRoot();
 		T::StaticClass()->ClassDefaultObject = OriginalSettings;
+		OriginalSettings->RemoveFromRoot();
 		OriginalSettings = nullptr;
 	}
 }
