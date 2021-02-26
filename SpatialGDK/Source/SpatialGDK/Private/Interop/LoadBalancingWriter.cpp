@@ -10,11 +10,6 @@
 
 namespace SpatialGDK
 {
-const EntityViewElement& FLoadBalancingWriterBase::GetEntityView(Worker_EntityId EntityId) const
-{
-	return NetDriver->Connection->GetView()[EntityId];
-}
-
 void FLoadBalancingWriterBase::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate& ComponentUpdate)
 {
 	NetDriver->Connection->SendComponentUpdate(EntityId, &ComponentUpdate);

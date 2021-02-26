@@ -60,6 +60,11 @@ public:
 	ASpatialTestLoadBalancingDataZonedActor();
 };
 
+/*
+ * This is a low-level test to verify that load balancing components are written correctly.
+ * It should be replaced by a higher-level test verifying that load balancing works once
+ * we get to implementing the Strategy worker.
+ */
 UCLASS()
 class ASpatialTestLoadBalancingData : public ASpatialFunctionalTest
 {

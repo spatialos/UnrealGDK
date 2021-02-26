@@ -41,16 +41,23 @@ UWorld* GetAnyGameWorld()
 	return World;
 }
 
+UGridBasedLBStrategy* CreateStrategyObject(uint32 Rows, uint32 Cols, float WorldWidth, float WorldHeight, float InterestBorder = 0.0f)
+{
+	UGridBasedLBStrategy* Strategy = UTestGridBasedLBStrategy::Create(Rows, Cols, WorldWidth, WorldHeight, InterestBorder);
+	// Add Strategy as GC root so it isn't gathered during a GC pass.
+	Strategy->AddToRoot();
+	return Strategy;
+}
+
 void CreateStrategy(uint32 Rows, uint32 Cols, float WorldWidth, float WorldHeight, uint32 LocalWorkerId)
 {
-	Strat = UTestGridBasedLBStrategy::Create(Rows, Cols, WorldWidth, WorldHeight);
+	Strat = CreateStrategyObject(Rows, Cols, WorldWidth, WorldHeight);
 	Strat->Init();
 	Strat->SetVirtualWorkerIds(1, Strat->GetMinimumRequiredWorkers());
 	Strat->SetLocalVirtualWorkerId(LocalWorkerId);
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND(FCleanup);
-bool FCleanup::Update()
+void Cleanup()
 {
 	TestWorld = nullptr;
 	for (auto Pair : TestActors)
@@ -62,7 +69,12 @@ bool FCleanup::Update()
 	Strat = nullptr;
 
 	GEditor->RequestEndPlayMap();
+}
 
+DEFINE_LATENT_AUTOMATION_COMMAND(FCleanup);
+bool FCleanup::Update()
+{
+	Cleanup();
 	return true;
 }
 
@@ -191,12 +203,14 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_2_rows_3_cols_WHEN_get_minimum_required_workers_i
 	uint32 NumVirtualWorkers = Strat->GetMinimumRequiredWorkers();
 	TestEqual("Number of Virtual Workers", NumVirtualWorkers, 6);
 
+	Cleanup();
+
 	return true;
 }
 
 GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is_set_THEN_is_ready)
 {
-	Strat = UTestGridBasedLBStrategy::Create(1, 1, 10000.f, 10000.f);
+	Strat = CreateStrategyObject(1, 1, 10000.f, 10000.f);
 	Strat->Init();
 	Strat->SetVirtualWorkerIds(1, Strat->GetMinimumRequiredWorkers());
 
@@ -206,6 +220,8 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_grid_is_not_ready_WHEN_local_virtual_worker_id_is
 
 	TestTrue("IsReady After LocalVirtualWorkerId Set", Strat->IsReady());
 
+	Cleanup();
+
 	return true;
 }
 
@@ -213,7 +229,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_interest_for_virtual_w
 {
 	// Take the top right corner, as then all our testing numbers can be positive.
 	// Create the Strategy manually so we can set an interest border.
-	Strat = UTestGridBasedLBStrategy::Create(2, 2, 10000.f, 10000.f, 1000.f);
+	Strat = CreateStrategyObject(2, 2, 10000.f, 10000.f, 1000.f);
 	Strat->Init();
 	Strat->SetVirtualWorkerIds(1, Strat->GetMinimumRequiredWorkers());
 	Strat->SetLocalVirtualWorkerId(4);
@@ -235,6 +251,8 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_interest_for_virtual_w
 	// The height of the box is "some very large number which is effectively infinite", so just sanity check it here.
 	TestTrue("Edge length in y is greater than 0", Box.EdgeLength.Y > 0);
 
+	Cleanup();
+
 	return true;
 }
 
@@ -249,6 +267,8 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_four_cells_WHEN_get_worker_entity_position_for_vi
 
 	TestEqual("Worker entity position is as expected", WorkerPosition, TestPosition);
 
+	Cleanup();
+
 	return true;
 }
 
@@ -256,6 +276,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_one_cell_WHEN_requires_handover_data_called_THEN_
 {
 	CreateStrategy(1, 1, 10000.f, 10000.f, 1);
 	TestFalse("Strategy doesn't require handover data", Strat->RequiresHandoverData());
+	Cleanup();
 	return true;
 }
 
@@ -263,6 +284,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_more_than_one_row_WHEN_requires_handover_data_cal
 {
 	CreateStrategy(2, 1, 10000.f, 10000.f, 1);
 	TestTrue("Strategy doesn't require handover data", Strat->RequiresHandoverData());
+	Cleanup();
 	return true;
 }
 
@@ -270,6 +292,7 @@ GRIDBASEDLBSTRATEGY_TEST(GIVEN_more_than_one_column_WHEN_requires_handover_data_
 {
 	CreateStrategy(1, 2, 10000.f, 10000.f, 1);
 	TestTrue("Strategy doesn't require handover data", Strat->RequiresHandoverData());
+	Cleanup();
 	return true;
 }
 

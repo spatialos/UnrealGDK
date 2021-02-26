@@ -227,14 +227,14 @@ Worker_ComponentUpdate CreateComponentUpdateHelper(const TComponent& Component)
 template <class TComponent>
 Worker_ComponentData CreateComponentDataHelper(const TComponent& Component)
 {
-	Worker_ComponentData Update = {};
-	Update.component_id = TComponent::ComponentId;
-	Update.schema_type = Schema_CreateComponentData();
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Update.schema_type);
+	Worker_ComponentData Data = {};
+	Data.component_id = TComponent::ComponentId;
+	Data.schema_type = Schema_CreateComponentData();
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 	Component.WriteSchema(ComponentObject);
 
-	return Update;
+	return Data;
 }
 
 } // namespace SpatialGDK

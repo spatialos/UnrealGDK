@@ -22,11 +22,10 @@ public:
 	{
 	}
 
-	const EntityViewElement& GetEntityView(Worker_EntityId EntityId) const;
 	void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate& ComponentUpdate);
 
 protected:
-	TWeakObjectPtr<USpatialNetDriver> NetDriver;
+	USpatialNetDriver* NetDriver;
 };
 
 template <class TComponent>

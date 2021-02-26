@@ -561,8 +561,6 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 																	   ? *MultiWorkerSettings->LockingPolicy
 																	   : UOwnershipLockingPolicy::StaticClass();
 
-	LoadBalancingWriter = MakeUnique<SpatialGDK::LoadBalancingWriter>(this);
-
 	LoadBalanceStrategy = NewObject<ULayeredLBStrategy>(this);
 	LoadBalanceStrategy->Init();
 	Cast<ULayeredLBStrategy>(LoadBalanceStrategy)->SetLayers(MultiWorkerSettings->WorkerLayers);
@@ -1220,11 +1218,12 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 
 void USpatialNetDriver::ProcessOwnershipChanges()
 {
+	SpatialGDK::LoadBalancingWriter LoadBalancingWriter(this);
 	for (Worker_EntityId EntityId : OwnershipChangedEntities)
 	{
 		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
 		{
-			LoadBalancingWriter->OnActorReplicated(EntityId, Channel->Actor);
+			LoadBalancingWriter.OnActorReplicated(EntityId, Channel->Actor);
 
 			Channel->ServerProcessOwnershipChange();
 		}

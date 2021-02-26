@@ -141,8 +141,10 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
-	ComponentDatas.Add(NetDriver->LoadBalancingWriter->ActorSetWriter->GetLoadBalancingData(Actor).CreateComponentData());
-	ComponentDatas.Add(NetDriver->LoadBalancingWriter->ActorGroupWriter->GetLoadBalancingData(Actor).CreateComponentData());
+	LoadBalancingWriter LoadBalancingWriter(NetDriver);
+
+	ComponentDatas.Add(LoadBalancingWriter.ActorSetWriter->GetLoadBalancingData(Actor).CreateComponentData());
+	ComponentDatas.Add(LoadBalancingWriter.ActorGroupWriter->GetLoadBalancingData(Actor).CreateComponentData());
 }
 
 void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,
