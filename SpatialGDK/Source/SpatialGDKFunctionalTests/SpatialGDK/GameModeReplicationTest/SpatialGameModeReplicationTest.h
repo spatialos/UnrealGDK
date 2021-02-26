@@ -12,7 +12,7 @@
 
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 
-#include "GameModeReplicationTest.generated.h"
+#include "SpatialGameModeReplicationTest.generated.h"
 
 UCLASS(BlueprintType)
 class UGameModeReplicationGridLBStrategy : public UGridBasedLBStrategy
@@ -65,12 +65,12 @@ public:
 };
 
 UCLASS(BlueprintType)
-class SPATIALGDKFUNCTIONALTESTS_API AGameModeReplicationTest : public ASpatialFunctionalTest
+class SPATIALGDKFUNCTIONALTESTS_API ASpatialGameModeReplicationTest : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
 
 public:
-	AGameModeReplicationTest();
+	ASpatialGameModeReplicationTest();
 
 	UFUNCTION(CrossServer, Reliable)
 	void MarkWorkerGameModeAuthority(bool bHasGameModeAuthority);

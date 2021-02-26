@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "GameModeReplicationTest.h"
+#include "SpatialGameModeReplicationTest.h"
 
 #include "EngineClasses/SpatialWorldSettings.h"
 
@@ -26,13 +26,13 @@ void AGameModeReplicationTestGameMode::GetLifetimeReplicatedProps(TArray<FLifeti
  * * Don't replicate to clients
  */
 
-AGameModeReplicationTest::AGameModeReplicationTest()
+ASpatialGameModeReplicationTest::ASpatialGameModeReplicationTest()
 {
 	Author = TEXT("Dmitrii");
 	Description = TEXT("Test GameMode replication");
 }
 
-void AGameModeReplicationTest::MarkWorkerGameModeAuthority_Implementation(bool bHasGameModeAuthority)
+void ASpatialGameModeReplicationTest::MarkWorkerGameModeAuthority_Implementation(bool bHasGameModeAuthority)
 {
 	ServerResponsesCount++;
 
@@ -42,7 +42,7 @@ void AGameModeReplicationTest::MarkWorkerGameModeAuthority_Implementation(bool b
 	}
 }
 
-void AGameModeReplicationTest::PrepareTest()
+void ASpatialGameModeReplicationTest::PrepareTest()
 {
 	Super::PrepareTest();
 
@@ -128,7 +128,7 @@ void USpatialGameModeReplicationMap::CreateCustomContentForMap()
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 
 	// Add the test
-	AddActorToLevel<AGameModeReplicationTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ASpatialGameModeReplicationTest>(CurrentLevel, FTransform::Identity);
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UGameModeReplicationMultiWorkerSettings::StaticClass());

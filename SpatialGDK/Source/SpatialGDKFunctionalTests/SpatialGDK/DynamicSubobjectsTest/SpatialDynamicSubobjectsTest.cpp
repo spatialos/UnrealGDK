@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "DynamicSubobjectsTest.h"
+#include "SpatialDynamicSubobjectsTest.h"
 
 #include "ReplicatedGASTestActor.h"
 #include "SpatialFunctionalTestFlowController.h"
@@ -37,7 +37,7 @@
 
 const static float StepTimeLimit = 10.0f;
 
-ADynamicSubobjectsTest::ADynamicSubobjectsTest()
+ASpatialDynamicSubobjectsTest::ASpatialDynamicSubobjectsTest()
 	: Super()
 {
 	Author = "Evi";
@@ -47,7 +47,7 @@ ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 40.0f); // Outside of the interest range of the client
 }
 
-void ADynamicSubobjectsTest::PrepareTest()
+void ASpatialDynamicSubobjectsTest::PrepareTest()
 {
 	Super::PrepareTest();
 
@@ -271,5 +271,5 @@ void USpatialDynamicSubobjectsMap::CreateCustomContentForMap()
 	// with a regular non-ability-system subobject instead.
 
 	// Add the test
-	AddActorToLevel<ADynamicSubobjectsTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ASpatialDynamicSubobjectsTest>(CurrentLevel, FTransform::Identity);
 }

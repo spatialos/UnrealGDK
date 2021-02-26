@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "EventTracingMap.h"
+#include "SpatialEventTracingMap.h"
 
 #include "ComponentUpdateEventTracingTest.h"
 #include "ProcessRPCEventTracingTest.h"
@@ -12,15 +12,15 @@
 
 #include "EngineClasses/SpatialWorldSettings.h"
 
-UEventTracingMap::UEventTracingMap()
+USpatialEventTracingMap::USpatialEventTracingMap()
 	// incomplete, TODO:
 	// - add settings overrides to enable event tracing
 	// - figure out what to do with blueprint character
-	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("EventTracingMap"))
+	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("SpatialEventTracingMap"))
 {
 }
 
-void UEventTracingMap::CreateCustomContentForMap()
+void USpatialEventTracingMap::CreateCustomContentForMap()
 {
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 

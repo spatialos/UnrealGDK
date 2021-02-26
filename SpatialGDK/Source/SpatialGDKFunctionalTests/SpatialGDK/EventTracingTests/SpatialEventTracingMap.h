@@ -3,19 +3,19 @@
 #pragma once
 
 #include "TestMaps/GeneratedTestMap.h"
-#include "EventTracingMap.generated.h"
+#include "SpatialEventTracingMap.generated.h"
 
 /**
  * Generated test maps for Event Tracing tests.
  */
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API UEventTracingMap : public UGeneratedTestMap
+class SPATIALGDKFUNCTIONALTESTS_API USpatialEventTracingMap : public UGeneratedTestMap
 {
 	GENERATED_BODY()
 
 public:
-	UEventTracingMap();
+	USpatialEventTracingMap();
 
 protected:
 	virtual void CreateCustomContentForMap() override;
