@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/PlayerController.h"
 #include "SpatialCommonTypes.h"
 #include "TestPossessionPlayerController.generated.h"
 

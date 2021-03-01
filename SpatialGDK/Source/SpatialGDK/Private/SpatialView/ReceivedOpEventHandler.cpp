@@ -43,6 +43,9 @@ void FReceivedOpEventHandler::ProcessOpLists(const OpList& Ops)
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			EventTracer->UpdateComponent(Op.op.component_update, FSpatialGDKSpanId(Op.span_id));
 			break;
+		case WORKER_OP_TYPE_COMMAND_REQUEST:
+			EventTracer->CommandRequest(Op.op.command_request, FSpatialGDKSpanId(Op.span_id));
+			break;
 		default:
 			break;
 		}

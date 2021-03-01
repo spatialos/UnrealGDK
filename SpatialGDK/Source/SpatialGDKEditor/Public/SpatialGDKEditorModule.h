@@ -55,6 +55,8 @@ private:
 
 	virtual FPlayInEditorSettingsOverride GetPlayInEditorSettingsOverrideForTesting(UWorld* World) const;
 
+	virtual bool UsesActorInteractionSemantics() const override;
+
 private:
 	void RegisterSettings();
 	void UnregisterSettings();

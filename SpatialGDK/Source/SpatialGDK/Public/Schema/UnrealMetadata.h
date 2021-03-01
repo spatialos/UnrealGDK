@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Component.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
@@ -10,15 +9,8 @@
 #include "Utils/SchemaUtils.h"
 
 #include "GameFramework/Actor.h"
-#include "UObject/Package.h"
-#include "UObject/UObjectHash.h"
-
-#include <WorkerSDK/improbable/c_schema.h>
-#include <WorkerSDK/improbable/c_worker.h>
 
 DEFINE_LOG_CATEGORY_STATIC(LogSpatialUnrealMetadata, Warning, All);
-
-using SubobjectToOffsetMap = TMap<UObject*, uint32>;
 
 namespace SpatialGDK
 {
@@ -124,23 +116,5 @@ struct UnrealMetadata : AbstractMutableComponent
 
 	TWeakObjectPtr<UClass> NativeClass;
 };
-
-FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, const FClassInfo& Info)
-{
-	SubobjectToOffsetMap SubobjectNameToOffset;
-
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
-	{
-		UObject* Subobject = StaticFindObjectFast(UObject::StaticClass(), Actor, SubobjectInfoPair.Value->SubobjectName);
-		uint32 Offset = SubobjectInfoPair.Key;
-
-		if (Subobject != nullptr && Subobject->IsPendingKill() == false && Subobject->IsSupportedForNetworking())
-		{
-			SubobjectNameToOffset.Add(Subobject, Offset);
-		}
-	}
-
-	return SubobjectNameToOffset;
-}
 
 } // namespace SpatialGDK

@@ -43,6 +43,16 @@ enum Type
 };
 }
 
+UENUM()
+namespace ECrossServerRPCImplementation
+{
+enum Type
+{
+	SpatialCommand,
+	RoutingWorker,
+};
+}
+
 USTRUCT(BlueprintType)
 struct FDistanceFrequencyPair
 {
@@ -53,6 +63,18 @@ struct FDistanceFrequencyPair
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "SpatialGDK")
 	float Frequency;
+};
+
+UCLASS(Blueprintable)
+class SPATIALGDK_API UEventTracingSamplingSettings : public UObject
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, Category = "Event Tracing", meta = (ClampMin = 0.0f, ClampMax = 1.0f))
+	float SamplingProbability = 1.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	TMap<FName, double> EventSamplingModeOverrides;
 };
 
 UCLASS(config = SpatialGDKSettings, defaultconfig)
@@ -73,7 +95,9 @@ public:
 	 * The number of entity IDs to be reserved when the entity pool is first created. Ensure that the number of entity IDs
 	 * reserved is greater than the number of Actors that you expect the server-worker instances to spawn at game deployment
 	 */
-	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (DisplayName = "Initial Entity ID Reservation Count"))
+	// TODO: UNR-4979 Allow full range of uint32 when SQD-1150 is fixed
+	UPROPERTY(EditAnywhere, config, Category = "Entity Pool",
+			  meta = (DisplayName = "Initial Entity ID Reservation Count", ClampMax = 0x7fffffff))
 	uint32 EntityPoolInitialReservationCount;
 
 	/**
@@ -268,26 +292,26 @@ private:
 	void UpdateServicesRegionFile();
 #endif
 
+public:
+	/**
+	 * The number of RPCs that can be in flight, per type. Changing this may require schema to be regenerated and
+	 * break snapshot compatibility.
+	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Default RPC Ring Buffer Size"))
 	uint32 DefaultRPCRingBufferSize;
 
 	/** Overrides default ring buffer size. */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "RPC Ring Buffer Size Map"))
-	TMap<ERPCType, uint32> RPCRingBufferSizeMap;
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "RPC Ring Buffer Size Overrides"))
+	TMap<ERPCType, uint32> RPCRingBufferSizeOverrides;
 
-public:
 	uint32 GetRPCRingBufferSize(ERPCType RPCType) const;
 
 	float GetSecondsBeforeWarning(const ERPCResult Result) const;
 
 	bool ShouldRPCTypeAllowUnresolvedParameters(const ERPCType Type) const;
 
-	/**
-	 * The number of fields that the endpoint schema components are generated with. Changing this will require schema to be regenerated and
-	 * break snapshot compatibility.
-	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Max RPC Ring Buffer Size"))
-	uint32 MaxRPCRingBufferSize;
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Cross Server RPC Implementation"))
+	TEnumAsByte<ECrossServerRPCImplementation::Type> CrossServerRPCImplementation;
 
 	/** Only valid on Tcp connections - indicates if we should enable TCP_NODELAY - see c_worker.h */
 	UPROPERTY(Config)
@@ -391,17 +415,13 @@ public:
 	bool bEventTracingEnabled;
 
 	/*
-	 * Used to set the default sample rate if event tracing is enabled.
-	 */
-	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing",
-			  meta = (EditCondition = "bEventTracingEnabled", ClampMin = 0.0f, ClampMax = 1.0f))
-	float SamplingProbability;
-
-	/*
-	 * Used to override sample rate for specific trace events.
+	 * -- EXPERIMENTAL --
+	 * Class containing various settings used to configure event trace sampling
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing", meta = (EditCondition = "bEventTracingEnabled"))
-	TMap<FName, double> EventSamplingModeOverrides;
+	TSubclassOf<UEventTracingSamplingSettings> EventTracingSamplingSettingsClass;
+
+	UEventTracingSamplingSettings* GetEventTracingSamplingSettings() const;
 
 	/*
 	 * -- EXPERIMENTAL --
@@ -409,4 +429,7 @@ public:
 	 */
 	UPROPERTY(Config)
 	uint64 MaxEventTracingFileSizeBytes;
+
+	UPROPERTY(Config)
+	bool bEnableAlwaysWriteRPCs;
 };

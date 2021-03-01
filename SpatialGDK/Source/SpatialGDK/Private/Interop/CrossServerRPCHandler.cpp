@@ -1,7 +1,9 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/CrossServerRPCHandler.h"
 
+#include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialGDKSettings.h"
 
@@ -9,9 +11,11 @@ DEFINE_LOG_CATEGORY(LogCrossServerRPCHandler);
 
 namespace SpatialGDK
 {
-CrossServerRPCHandler::CrossServerRPCHandler(ViewCoordinator& InCoordinator, TUniquePtr<RPCExecutorInterface> InRPCExecutor)
+CrossServerRPCHandler::CrossServerRPCHandler(ViewCoordinator& InCoordinator, TUniquePtr<RPCExecutorInterface> InRPCExecutor,
+											 SpatialEventTracer* InEventTracer)
 	: Coordinator(&InCoordinator)
 	, RPCExecutor(MoveTemp(InRPCExecutor))
+	, EventTracer(InEventTracer)
 {
 }
 
@@ -72,12 +76,25 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 	const Worker_CommandRequestOp& CommandOp = Op.op.command_request;
 	TOptional<FCrossServerRPCParams> Params = RPCExecutor->TryRetrieveCrossServerRPCParams(Op);
 
+	FSpatialGDKSpanId SpanId;
+	if (EventTracer)
+	{
+		if (ensureMsgf(Params->Payload.Id.IsSet(), TEXT("Cross-server RPCs are expected to have a payload ID for event tracing.")))
+		{
+			SpanId = EventTracer->TraceEvent(
+				FSpatialTraceEventBuilder::CreateReceiveCrossServerRPC(
+					EventTraceUniqueId::GenerateForCrossServerRPC(CommandOp.entity_id, Params->Payload.Id.GetValue())),
+				/* Causes */ EventTracer->GetAndConsumeSpanForRequestId(Op.op.command_request.request_id).GetConstId(), /* NumCauses */ 1);
+		}
+	}
+
 	if (!Params.IsSet())
 	{
-		Coordinator->SendEntityCommandFailure(CommandOp.request_id, TEXT("Failed to parse cross server RPC"),
-											  FSpatialGDKSpanId(Op.span_id));
+		Coordinator->SendEntityCommandFailure(CommandOp.request_id, TEXT("Failed to parse cross server RPC"), SpanId);
 		return;
 	}
+
+	Params->SpanId = SpanId;
 
 	if (RPCGuidsInFlight.Contains(Params.GetValue().Payload.Id.GetValue())
 		|| RPCsToDelete.ContainsByPredicate([&](TTuple<double, uint32> Result) {
@@ -111,16 +128,16 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 
 bool CrossServerRPCHandler::TryExecuteCrossServerRPC(const FCrossServerRPCParams& Params) const
 {
-	if (RPCExecutor->ExecuteCommand(Params))
+	bool bResult = RPCExecutor->ExecuteCommand(Params);
+	if (bResult)
 	{
 		Coordinator->SendEntityCommandResponse(Params.RequestId,
 											   CommandResponse(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID,
 															   SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID),
 											   Params.SpanId);
-		return true;
 	}
 
-	return false;
+	return bResult;
 }
 
 void CrossServerRPCHandler::DropQueueForEntity(const Worker_EntityId_Key EntityId)

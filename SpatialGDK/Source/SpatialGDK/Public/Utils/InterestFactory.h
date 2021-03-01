@@ -49,6 +49,7 @@ public:
 	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy) const;
 	Interest CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, bool bDebug) const;
 	void AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, Interest& OutInterest) const;
+	static Interest CreateRoutingWorkerInterest();
 
 	// Returns false if we could not get an owner's entityId in the Actor's owner chain.
 	bool DoOwnersHaveEntityId(const AActor* Actor) const;
@@ -86,8 +87,8 @@ private:
 
 	void AddNetCullDistanceQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const;
 
-	void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId,
-												  const Query& QueryToAdd) const;
+	static void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId,
+														 const Query& QueryToAdd);
 
 	// System Defined Constraints
 	bool ShouldAddNetCullDistanceInterest(const AActor* InActor) const;

@@ -18,6 +18,7 @@ struct ClientEndpoint
 
 	RPCRingBuffer ReliableRPCBuffer;
 	RPCRingBuffer UnreliableRPCBuffer;
+	RPCRingBuffer AlwaysWriteRPCBuffer;
 	uint64 ReliableRPCAck = 0;
 	uint64 UnreliableRPCAck = 0;
 

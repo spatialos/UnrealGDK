@@ -13,32 +13,20 @@ AUserReceivePropertyEventTracingTest::AUserReceivePropertyEventTracingTest()
 
 void AUserReceivePropertyEventTracingTest::FinishEventTraceTest()
 {
-	int EventsTested = 0;
-	int EventsFailed = 0;
-	for (const auto& Pair : TraceEvents)
 	{
-		const FString& SpanIdString = Pair.Key;
-		const FName& EventName = Pair.Value;
-
-		if (EventName != UserReceivePropertyEventName && EventName != UserReceiveComponentPropertyEventName)
-		{
-			continue;
-		}
-
-		EventsTested++;
-
-		if (!CheckEventTraceCause(SpanIdString, { ReceivePropertyUpdateEventName }, 1))
-		{
-			EventsFailed++;
-		}
+		CheckResult Test = CheckCauses(ReceivePropertyUpdateEventName, UserReceivePropertyEventName);
+		bool bSuccess = Test.NumTested > 0 && Test.NumFailed == 0;
+		AssertTrue(bSuccess, FString::Printf(TEXT("User events (receive->property) have been caused by the expected receive property "
+												  "update events. Events Tested: %d, Events Failed: %d"),
+											 Test.NumTested, Test.NumFailed));
 	}
-
-	bool bSuccess = EventsTested > 0 && EventsFailed == 0;
-	AssertTrue(
-		bSuccess,
-		FString::Printf(
-			TEXT("User events have been caused by the expected receive property update events. Events Tested: %d, Events Failed: %d"),
-			EventsTested, EventsFailed));
+	{
+		CheckResult Test = CheckCauses(ReceivePropertyUpdateEventName, UserReceiveComponentPropertyEventName);
+		bool bSuccess = Test.NumTested > 0 && Test.NumFailed == 0;
+		AssertTrue(bSuccess, FString::Printf(TEXT("User events (receive->component property) have been caused by the expected receive "
+												  "property update events. Events Tested: %d, Events Failed: %d"),
+											 Test.NumTested, Test.NumFailed));
+	}
 
 	FinishStep();
 }
