@@ -10,13 +10,18 @@ FSpatialTestSettings::FSpatialTestSettings()
 	, OriginalSpatialGDKEditorSettings(nullptr)
 	, OriginalGeneralProjectSettings(nullptr)
 	, OriginalEditorPerformanceSettings(nullptr)
-	, OverrideSettingsFileExtension(TEXT(".ini"))
-	, OverrideSettingsFilePrefix(TEXT("MapSettingsOverrides/TestOverrides"))
-	, OverrideSettingsBaseFilename(FPaths::ProjectConfigDir() + OverrideSettingsFilePrefix)
-	, BaseOverridesFilename(OverrideSettingsBaseFilename + TEXT("Base") + (OverrideSettingsFileExtension))
-	, GeneratedOverrideSettingsBaseFilename(FPaths::ProjectIntermediateDir() + TEXT("Config/") + OverrideSettingsFilePrefix)
 {
 }
+
+const FString FSpatialTestSettings::OverrideSettingsFileExtension = TEXT(".ini");
+const FString FSpatialTestSettings::OverrideSettingsFileDirectoryName = TEXT("MapSettingsOverrides");
+const FString FSpatialTestSettings::OverrideSettingsFilePrefix = TEXT("TestOverrides");
+const FString FSpatialTestSettings::OverrideSettingsBaseFilename =
+	FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir() / OverrideSettingsFileDirectoryName) / OverrideSettingsFilePrefix;
+const FString FSpatialTestSettings::BaseOverridesFilename = OverrideSettingsBaseFilename + TEXT("Base") + OverrideSettingsFileExtension;
+const FString FSpatialTestSettings::GeneratedOverrideSettingsDirectory =
+	FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir() / TEXT("Config/") / OverrideSettingsFileDirectoryName);
+const FString FSpatialTestSettings::GeneratedOverrideSettingsBaseFilename = GeneratedOverrideSettingsDirectory / OverrideSettingsFilePrefix;
 
 void FSpatialTestSettings::Override(const FString& MapName)
 {

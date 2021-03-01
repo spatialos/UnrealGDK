@@ -8,7 +8,7 @@
 
 /**
  * This test checks that the test settings overridden in the base.ini file have been set correctly, this map specifically does not have its
- *own overrides.
+ * own overrides.
  *
  * Requires TestOverridesBase.ini in \Samples\UnrealGDKTestGyms\Game\Config directory with the following values:
  *		[/Script/UnrealEd.LevelEditorPlaySettings]
@@ -47,7 +47,7 @@ void ASpatialComponentSettingsOverride::PrepareTest()
 		TEXT("Check Editor Peformance Settings"), FWorkerDefinition::AllServers, nullptr,
 		[this]() {
 			bool bThrottleCPUWhenNotForeground = GetDefault<UEditorPerformanceSettings>()->bThrottleCPUWhenNotForeground;
-			RequireFalse(bThrottleCPUWhenNotForeground, TEXT("Expected bSpatialNetworking to be False"));
+			RequireFalse(bThrottleCPUWhenNotForeground, TEXT("Expected bThrottleCPUWhenNotForeground to be False"));
 
 			FinishStep();
 		},

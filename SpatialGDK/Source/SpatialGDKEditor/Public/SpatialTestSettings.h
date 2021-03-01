@@ -23,7 +23,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialTestSettings, Log, All);
  *
  * To add a new settings class, add a pointer to the class in here and update Backup, Load and Restore functions.
  */
-class FSpatialTestSettings
+class SPATIALGDKEDITOR_API FSpatialTestSettings
 {
 public:
 	FSpatialTestSettings();
@@ -33,6 +33,18 @@ public:
 
 	// Restores the original settings
 	void Revert();
+
+	static const FString OverrideSettingsFileExtension;
+	static const FString OverrideSettingsFilePrefix;
+	static const FString OverrideSettingsFileDirectoryName;
+	// Map override config base filename applied to specific map, if exists
+	static const FString OverrideSettingsBaseFilename;
+	// Base override config file applied to all maps, if exists
+	static const FString BaseOverridesFilename;
+	// The directory where the generated test configs will be placed and looked for
+	static const FString GeneratedOverrideSettingsDirectory;
+	// Generated map override config base filename for generated maps applied to specific map, if exists
+	static const FString GeneratedOverrideSettingsBaseFilename;
 
 protected:
 	// Duplicate an original setting
@@ -45,15 +57,6 @@ protected:
 
 	// Load settings from config file which will override current settings
 	void Load(const FString& TestSettingOverridesFilename);
-
-	const FString OverrideSettingsFileExtension;
-	const FString OverrideSettingsFilePrefix;
-	// Map override config base filename applied to specific map, if exists
-	const FString OverrideSettingsBaseFilename;
-	// Base override config file applied to all maps, if exists
-	const FString BaseOverridesFilename;
-	// Generated map override config base filename for generated maps applied to specific map, if exists
-	const FString GeneratedOverrideSettingsBaseFilename;
 
 	// Settings classes that can be overridden using config files
 	USpatialGDKSettings* OriginalSpatialGDKSettings;
