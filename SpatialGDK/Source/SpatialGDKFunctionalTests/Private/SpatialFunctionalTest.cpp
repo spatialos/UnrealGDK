@@ -682,7 +682,7 @@ void ASpatialFunctionalTest::PrepareTestAfterBeginPlay()
 	{
 		GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
 			PrepareTestAfterBeginPlay();
-			});
+		});
 		return;
 	}
 
