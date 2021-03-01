@@ -373,7 +373,11 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Spatial Functional Test")
 	FSpatialFunctionalTestStepDefinition ClearSnapshotStepDefinition;
 
+	void NotifyTestFinishedObserver() override;
+
 private:
+	bool bNotifyObserversCalled = false;
+
 	// Number of servers that should be running in the world.
 	int NumExpectedServers = 0;
 
@@ -408,6 +412,7 @@ private:
 
 	UFUNCTION()
 	void OnReplicated_bPreparedTest();
+	void PrepareTestAfterBeginPlay();
 
 	UPROPERTY(ReplicatedUsing = OnReplicated_bFinishedTest, Transient)
 	bool bFinishedTest = false;

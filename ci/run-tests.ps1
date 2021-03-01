@@ -11,6 +11,7 @@ param(
     [string] $additional_cmd_line_args = "",
     [bool]   $verify_commandlet_exit_codes = $True
 )
+. "$PSScriptRoot\common.ps1"
 
 # This resolves a path to be absolute, without actually reading the filesystem.
 # This means it works even when the indicated path does not exist, as opposed to the Resolve-Path cmdlet
@@ -31,8 +32,6 @@ function Parse-UnrealOptions {
     $options_result = $options_arr -Join ","
     return $options_result
 }
-
-. "$PSScriptRoot\common.ps1"
 
 # Generate test maps
 Write-Output "Generating test maps for testing project"
