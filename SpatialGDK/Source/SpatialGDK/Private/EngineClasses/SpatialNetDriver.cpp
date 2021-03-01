@@ -18,6 +18,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
+#include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
@@ -482,6 +483,19 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, USpatialLatencyTracer::GetTracer(GetWorld()),
 															   Connection->GetEventTracer(), this);
+
+		if (IsServer())
+		{
+			ServerRPCs = NewObject<USpatialNetDriverServerRPC>();
+			ServerRPCs->Init(this, ActorAuthSubview, ActorSubview);
+			NetDriverRPCs = ServerRPCs;
+		}
+		else
+		{
+			ClientRPCs = NewObject<USpatialNetDriverClientRPC>();
+			ClientRPCs->Init(this, ActorAuthSubview, ActorSubview);
+			NetDriverRPCs = ClientRPCs;
+		}
 
 		CrossServerRPCSender =
 			MakeUnique<SpatialGDK::CrossServerRPCSender>(Connection->GetCoordinator(), SpatialMetrics, Connection->GetEventTracer());
@@ -2011,6 +2025,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				RPCService->AdvanceView();
 			}
 
+			if (NetDriverRPCs)
+			{
+				NetDriverRPCs->AdvanceView();
+			}
+
 			if (DebugCtx != nullptr)
 			{
 				DebugCtx->AdvanceView();
@@ -2041,6 +2060,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			if (RPCService.IsValid())
 			{
 				RPCService->ProcessChanges(GetElapsedTime());
+			}
+
+			if (NetDriverRPCs)
+			{
+				NetDriverRPCs->ProcessReceivedRPCs();
 			}
 
 			if (WellKnownEntitySystem.IsValid())

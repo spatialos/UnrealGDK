@@ -13,6 +13,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
+#include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
@@ -544,6 +545,8 @@ void USpatialSender::FlushRPCService()
 			Connection->Flush();
 		}
 	}
+
+	NetDriver->NetDriverRPCs->FlushRPCUpdates();
 }
 
 RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
@@ -730,6 +733,51 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, const SpatialGDK
 										 const FUnrealObjectRef& TargetObjectRef, const FSpatialGDKSpanId& SpanId)
 {
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
+
+	switch (RPCInfo.Type)
+	{
+	case ERPCType::ClientReliable:
+	{
+		FRPCPayload NewPayload;
+		NewPayload.Index = Payload.Index;
+		NewPayload.Offset = Payload.Offset;
+		NewPayload.PayloadData = Payload.PayloadData;
+		NetDriver->ServerRPCs->ClientReliableQueue->Push(TargetObjectRef.Entity, MoveTemp(NewPayload), FSpatialGDKSpanId(SpanId));
+		NetDriver->ServerRPCs->FlushRPCQueue(TargetObjectRef.Entity, *NetDriver->ServerRPCs->ClientReliableQueue);
+		return true;
+	}
+	case ERPCType::ClientUnreliable:
+	{
+		FRPCPayload NewPayload;
+		NewPayload.Index = Payload.Index;
+		NewPayload.Offset = Payload.Offset;
+		NewPayload.PayloadData = Payload.PayloadData;
+		NetDriver->ServerRPCs->ClientUnreliableQueue->Push(TargetObjectRef.Entity, MoveTemp(NewPayload), FSpatialGDKSpanId(SpanId));
+		NetDriver->ServerRPCs->FlushRPCQueue(TargetObjectRef.Entity, *NetDriver->ServerRPCs->ClientUnreliableQueue);
+		return true;
+	}
+	case ERPCType::ServerReliable:
+	{
+		FRPCPayload NewPayload;
+		NewPayload.Index = Payload.Index;
+		NewPayload.Offset = Payload.Offset;
+		NewPayload.PayloadData = Payload.PayloadData;
+		NetDriver->ClientRPCs->ServerReliableQueue->Push(TargetObjectRef.Entity, MoveTemp(NewPayload), FSpatialGDKSpanId(SpanId));
+		NetDriver->ClientRPCs->FlushRPCQueue(TargetObjectRef.Entity, *NetDriver->ClientRPCs->ServerReliableQueue);
+		return true;
+	}
+	case ERPCType::ServerUnreliable:
+	{
+		FRPCPayload NewPayload;
+		NewPayload.Index = Payload.Index;
+		NewPayload.Offset = Payload.Offset;
+		NewPayload.PayloadData = Payload.PayloadData;
+		NetDriver->ClientRPCs->ServerUnreliableQueue->Push(TargetObjectRef.Entity, MoveTemp(NewPayload), FSpatialGDKSpanId(SpanId));
+		NetDriver->ClientRPCs->FlushRPCQueue(TargetObjectRef.Entity, *NetDriver->ClientRPCs->ServerUnreliableQueue);
+		return true;
+	}
+	}
+
 	const EPushRPCResult Result =
 		RPCService->PushRPC(TargetObjectRef.Entity, Sender, RPCInfo.Type, Payload, Channel->bCreatedEntity, TargetObject, Function, SpanId);
 
