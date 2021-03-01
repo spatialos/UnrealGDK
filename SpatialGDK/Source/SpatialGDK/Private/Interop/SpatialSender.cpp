@@ -225,7 +225,9 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 	Connection->SendComponentUpdate(PartitionId, &InterestUpdate);
 
 	// Also update the position of the partition entity to the center of the load balancing region.
-	SendPositionUpdate(PartitionId, NetDriver->LoadBalanceStrategy->GetWorkerEntityPosition());
+	FWorkerComponentUpdate Update =
+		Position::CreatePositionUpdate(Coordinates::FromFVector(NetDriver->LoadBalanceStrategy->GetWorkerEntityPosition()));
+	Connection->SendComponentUpdate(PartitionId, &Update);
 }
 
 void USpatialSender::FlushRPCService()
