@@ -41,6 +41,8 @@ private:
 	USpatialNetDriver* NetDriver;
 
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
+
+	TMap<Worker_RequestId_Key, Worker_EntityId> DisconnectRequestToConnectionEntityId;
 };
 
 } // namespace SpatialGDK

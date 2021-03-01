@@ -142,7 +142,6 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 	if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID)
 	{
 		OnSystemEntityCommandResponse(Op.op.command_response);
-		return;
 	}
 	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID)
 	{
@@ -171,24 +170,6 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed because blocking actor (%llu) is not valid."),
 				   EntityId);
 		}
-
-		return;
-	}
-}
-
-void USpatialReceiver::ReceiveWorkerDisconnectResponse(const Worker_CommandResponseOp& Op)
-{
-	if (SystemEntityCommandDelegate* RequestDelegate = SystemEntityCommandDelegates.Find(Op.request_id))
-	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Executing ReceiveWorkerDisconnectResponse with delegate, request id: %d, message: %s"),
-			   Op.request_id, UTF8_TO_TCHAR(Op.message));
-		RequestDelegate->ExecuteIfBound(Op);
-	}
-	else
-	{
-		UE_LOG(LogSpatialReceiver, Warning,
-			   TEXT("Received ReceiveWorkerDisconnectResponse but with no delegate set, request id: %d, message: %s"), Op.request_id,
-			   UTF8_TO_TCHAR(Op.message));
 	}
 }
 
@@ -373,7 +354,8 @@ void USpatialReceiver::OnSystemEntityCommandResponse(const Worker_CommandRespons
 	{
 	case SpatialConstants::WORKER_DISCONNECT_COMMAND_ID:
 	{
-		ReceiveWorkerDisconnectResponse(Op);
+		// This case is handled elsewhere, but we don't want check to trigger since
+		// the worker components does receive this response.
 		return;
 	}
 	case SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID:

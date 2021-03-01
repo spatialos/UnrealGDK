@@ -64,7 +64,6 @@ public:
 private:
 	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
 
-	void ReceiveWorkerDisconnectResponse(const Worker_CommandResponseOp& Op);
 	void ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op);
 
 public:
