@@ -351,7 +351,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
 		if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
-			NetDriver->Sender->ProcessUpdatesQueuedUntilAuthority(EntityId, ComponentSetId);
+			NetDriver->ActorSystem->ProcessUpdatesQueuedUntilAuthority(EntityId);
 		}
 
 		// If we became authoritative over the server auth component set, set our role to be ROLE_Authority
@@ -426,7 +426,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						   TEXT("Received authority over actor %s, with entity id %lld, which has no channel. This means it attempted to "
 								"delete it earlier, when it had no authority. Retrying to delete now."),
 						   *Actor->GetName(), EntityId);
-					NetDriver->Sender->RetireEntity(EntityId, Actor->IsNetStartupActor());
+					RetireEntity(EntityId, Actor->IsNetStartupActor());
 				}
 			}
 			else if (Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
@@ -695,12 +695,12 @@ void ActorSystem::HandleDeferredEntityDeletion(const DeferredRetire& Retire) con
 {
 	if (Retire.bNeedsTearOff)
 	{
-		NetDriver->Sender->SendActorTornOffUpdate(Retire.EntityId, Retire.ActorClassId);
+		SendActorTornOffUpdate(Retire.EntityId, Retire.ActorClassId);
 		NetDriver->DelayedRetireEntity(Retire.EntityId, 1.0f, Retire.bIsNetStartupActor);
 	}
 	else
 	{
-		NetDriver->Sender->RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
+		RetireEntity(Retire.EntityId, Retire.bIsNetStartupActor);
 	}
 }
 
@@ -1695,7 +1695,7 @@ void ActorSystem::CreateTombstoneEntity(AActor* Actor)
 #endif
 }
 
-void ActorSystem::RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor)
+void ActorSystem::RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor) const
 {
 	if (bIsNetStartupActor)
 	{

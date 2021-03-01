@@ -490,8 +490,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this, Connection->GetEventTracer()),
 			Connection->GetEventTracer());
 
-		ActorSystem =
-			MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, TombstoneActorSubview, this, &TimerManager, Connection->GetEventTracer());
+		ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, TombstoneActorSubview, this, Connection->GetEventTracer());
 
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
@@ -1075,7 +1074,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 					   TEXT("Creating a tombstone entity for initially dormant statup actor. "
 							"Actor: %s."),
 					   *ThisActor->GetName());
-				Sender->CreateTombstoneEntity(ThisActor);
+				ActorSystem->CreateTombstoneEntity(ThisActor);
 			}
 			else if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
 			{
@@ -1086,7 +1085,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 						   TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId,
 						   *ThisActor->GetName());
 				}
-				Sender->RetireEntity(EntityId, ThisActor->IsNetStartupActor());
+				ActorSystem->RetireEntity(EntityId, ThisActor->IsNetStartupActor());
 			}
 		}
 
@@ -2205,7 +2204,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 			if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
 			{
-				Sender->ProcessPositionUpdates();
+				ActorSystem->ProcessPositionUpdates();
 			}
 		}
 #endif // WITH_SERVER_CODE
@@ -2667,22 +2666,15 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 	{
 		if (!bDormancyComponentExists)
 		{
-			Worker_AddComponentOp AddComponentOp{};
-			AddComponentOp.entity_id = EntityId;
-			AddComponentOp.data = ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID);
-			Sender->SendAddComponents(AddComponentOp.entity_id, { AddComponentOp.data });
-			StaticComponentView->OnAddComponent(AddComponentOp);
+			FWorkerComponentData Data = ComponentFactory::CreateEmptyComponentData(SpatialConstants::DORMANT_COMPONENT_ID);
+			Connection->SendAddComponent(EntityId, &Data);
 		}
 	}
 	else
 	{
 		if (bDormancyComponentExists)
 		{
-			Worker_RemoveComponentOp RemoveComponentOp{};
-			RemoveComponentOp.entity_id = EntityId;
-			RemoveComponentOp.component_id = SpatialConstants::DORMANT_COMPONENT_ID;
-			Sender->SendRemoveComponents(EntityId, { SpatialConstants::DORMANT_COMPONENT_ID });
-			StaticComponentView->OnRemoveComponent(RemoveComponentOp);
+			Connection->SendRemoveComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
 		}
 	}
 }
@@ -2713,19 +2705,12 @@ void USpatialNetDriver::RefreshActorVisibility(AActor* Actor, bool bMakeVisible)
 	// If the Actor is Visible make sure it has the Visible component
 	if (bMakeVisible && !bVisibilityComponentExists)
 	{
-		Worker_AddComponentOp AddComponentOp{};
-		AddComponentOp.entity_id = EntityId;
-		AddComponentOp.data = ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID);
-		Sender->SendAddComponents(AddComponentOp.entity_id, { AddComponentOp.data });
-		StaticComponentView->OnAddComponent(AddComponentOp);
+		FWorkerComponentData Data = ComponentFactory::CreateEmptyComponentData(SpatialConstants::VISIBLE_COMPONENT_ID);
+		Connection->SendAddComponent(EntityId, &Data);
 	}
 	else if (!bMakeVisible && bVisibilityComponentExists)
 	{
-		Worker_RemoveComponentOp RemoveComponentOp{};
-		RemoveComponentOp.entity_id = EntityId;
-		RemoveComponentOp.component_id = SpatialConstants::VISIBLE_COMPONENT_ID;
-		Sender->SendRemoveComponents(EntityId, { SpatialConstants::VISIBLE_COMPONENT_ID });
-		StaticComponentView->OnRemoveComponent(RemoveComponentOp);
+		Connection->SendRemoveComponent(EntityId, SpatialConstants::VISIBLE_COMPONENT_ID);
 	}
 }
 
@@ -2797,7 +2782,7 @@ void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Dela
 	TimerManager.SetTimer(
 		RetryTimer,
 		[this, EntityId, bIsNetStartupActor]() {
-			Sender->RetireEntity(EntityId, bIsNetStartupActor);
+			ActorSystem->RetireEntity(EntityId, bIsNetStartupActor);
 		},
 		Delay, false);
 }

@@ -51,7 +51,7 @@ public:
 
 	// Tombstones
 	void CreateTombstoneEntity(AActor* Actor);
-	void RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor);
+	void RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor) const;
 
 	// Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
