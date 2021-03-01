@@ -122,7 +122,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 		if ((GIsAutomationTesting || AutoStopLocalDeployment == EAutoStopLocalDeploymentMode::OnEndPIE)
 			&& LocalDeploymentManager->IsLocalDeploymentRunning())
 		{
-			LocalDeploymentManager->TryStopLocalDeployment();
+			LocalDeploymentManager->TryStopLocalDeploymentGracefully();
 		}
 	});
 
@@ -913,7 +913,7 @@ void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
-		if (!LocalDeploymentManager->TryStopLocalDeployment())
+		if (!LocalDeploymentManager->TryStopLocalDeploymentGracefully())
 		{
 			OnShowFailedNotification(TEXT("Failed to stop local deployment!"));
 		}

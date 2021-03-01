@@ -11,6 +11,7 @@
 #include "GeneralProjectSettings.h"
 #include "HAL/FileManagerGeneric.h"
 #include "HttpModule.h"
+#include "IAutomationControllerModule.h"
 #include "IPAddress.h"
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Interfaces/IHttpResponse.h"
@@ -318,6 +319,12 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		OnDeploymentStart.Broadcast();
 	});
 
+	IAutomationControllerModule& AutomationControllerModule =
+	FModuleManager::LoadModuleChecked<IAutomationControllerModule>(TEXT("AutomationController"));
+	IAutomationControllerManagerPtr AutomationController = AutomationControllerModule.GetAutomationController();
+	EAutomationControllerModuleState::Type TestState = AutomationController->GetTestState();
+	bTestRunnning = TestState == EAutomationControllerModuleState::Type::Running;
+
 	return;
 }
 
@@ -349,13 +356,28 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(const FString& RuntimeLogDi
 
 bool FLocalDeploymentManager::TryStopLocalDeployment()
 {
-	if (!bLocalDeploymentRunning)
+	if (!StartLocalDeploymentShutdown())
 	{
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to stop local deployment but no active deployment exists."));
 		return false;
 	}
 
-	bStoppingDeployment = true;
+	RuntimeProcess->Stop();
+
+	return FinishLocalDeploymentShutdown();
+}
+
+bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
+{
+	if (bTestRunnning)
+	{
+		bTestRunnning = false;
+		return TryStopLocalDeployment();
+	}
+
+	if (!StartLocalDeploymentShutdown())
+	{
+		return false;
+	}
 
 	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
 #if ENGINE_MINOR_VERSION >= 26
@@ -369,6 +391,23 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 
 	HttpRequest->ProcessRequest();
 
+	return FinishLocalDeploymentShutdown();
+}
+
+bool FLocalDeploymentManager::StartLocalDeploymentShutdown()
+{
+	if (!bLocalDeploymentRunning)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to stop local deployment but no active deployment exists."));
+		return false;
+	}
+
+	bStoppingDeployment = true;
+	return true;
+}
+
+bool FLocalDeploymentManager::FinishLocalDeploymentShutdown()
+{
 	double RuntimeStopTime = RuntimeProcess->GetDuration().GetTotalSeconds();
 
 	// Update returns true while the process is still running. Wait for it to finish.
