@@ -449,7 +449,7 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 			if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 			{
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
+				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>(WeakSpatialConnectionManager.Get());
 
 				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
 																		  SpatialConnectionManager->ComponentSetData);

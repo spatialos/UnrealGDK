@@ -13,6 +13,32 @@
 
 #include "SpatialWorkerConnection.generated.h"
 
+class USpatialWorkerConnection;
+
+namespace SpatialGDK
+{
+class WorkerSystemEntityCreator
+{
+public:
+	WorkerSystemEntityCreator(USpatialWorkerConnection& InConnection);
+	void ProcessOps(const TArray<Worker_Op>& Ops);
+
+private:
+	enum class WorkerSystemEntityCreatorState
+	{
+		CreatingWorkerSystemEntity,
+		ClaimingWorkerPartition,
+		Finished,
+	};
+	WorkerSystemEntityCreatorState State;
+	TOptional<Worker_RequestId> CreateEntityRequestId;
+	Worker_EntityId WorkerSystemEntityId = SpatialConstants::INVALID_ENTITY_ID;
+	TOptional<Worker_RequestId> ClaimEntityRequestId;
+
+	USpatialWorkerConnection& Connection;
+};
+} // namespace SpatialGDK
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
 UCLASS()
@@ -76,6 +102,10 @@ public:
 	void Flush();
 
 	void SetStartupComplete();
+	UFUNCTION()
+	void CreateServerWorkerEntity();
+
+	TOptional<SpatialGDK::WorkerSystemEntityCreator> Creator;
 
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnEnqueueMessage OnEnqueueMessage;
