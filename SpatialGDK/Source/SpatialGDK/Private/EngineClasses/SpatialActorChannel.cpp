@@ -1281,16 +1281,6 @@ void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId I
 {
 	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(InEntityId))
 	{
-#if !UE_BUILD_SHIPPING
-		if (!NetDriver->Connection->GetView()[EntityId].Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
-		{
-			UE_LOG(LogSpatialActorChannel, Verbose,
-				   TEXT("Trying to send Position component update but don't have authority! Update will not be sent. Entity: %lld"),
-				   EntityId);
-			return;
-		}
-#endif
-
 		FWorkerComponentUpdate Update = SpatialGDK::Position::CreatePositionUpdate(SpatialGDK::Coordinates::FromFVector(NewPosition));
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 	}
