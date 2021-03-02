@@ -414,6 +414,7 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(cons
 
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreateComponentData());
+	Components.Add(Persistence().CreateComponentData());
 	Components.Add(Metadata(FString::Format(TEXT("PartitionEntity:{0}"), { VirtualWorker })).CreateComponentData());
 	Components.Add(InterestFactory->CreatePartitionInterest(LbStrategy, VirtualWorker, bDebugContextValid).CreateComponentData());
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());

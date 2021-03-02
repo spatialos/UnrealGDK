@@ -16,7 +16,8 @@ namespace ReleaseTool
         private const string UnrealGDKVersionFile = "UnrealGDKVersion.txt";
         private const string UnrealGDKExampleProjectVersionFile = "UnrealGDKExampleProjectVersion.txt";
         private const string UnrealGDKTestGymVersionFile = "UnrealGDKTestGymsVersion.txt";
-        
+        private const string UnrealGDKEngineNetTestVersionFile = "UnrealGDKEngineNetTestVersion.txt";
+
         // Plugin file configuration.
         private const string PluginFileName = "SpatialGDK.uplugin";
         private const string VersionKey = "Version";
@@ -58,6 +59,7 @@ namespace ReleaseTool
                     madeChanges |= UpdateChangeLog(gitClient, versionRaw);
                     if (!madeChanges) logger.Info("{0} was already up-to-date.", ChangeLogFilename);
                     madeChanges |= UpdateVersionFile(gitClient, versionDecorated, UnrealGDKTestGymVersionFile, logger);
+                    madeChanges |= UpdateVersionFile(gitClient, versionDecorated, UnrealGDKEngineNetTestVersionFile, logger);    
                     if (engineVersions != "")
                     {
                         madeChanges |= UpdatePluginFile(gitClient, versionRaw, PluginFileName, logger);

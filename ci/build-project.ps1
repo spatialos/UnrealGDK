@@ -10,12 +10,13 @@ param(
     [string] $build_state,
     [string] $build_target
 )
+. "$PSScriptRoot\common.ps1"
 
 # Clone the testing project
-Write-Output "Downloading the testing project from: $($test_repo_url), branch: $($test_repo_branch)"
+Write-Output "Downloading the testing project from url: ${test_repo_url}, branch: ${test_repo_branch} to path: ${test_repo_path}."
 git clone -b "$test_repo_branch" "$test_repo_url" "$test_repo_path" --depth 1
 if (-Not $?) {
-    Throw "Failed to clone testing project from $test_repo_url."
+    Throw "Failed to clone testing project from url: ${test_repo_url}, branch: ${test_repo_branch}, to path: ${test_repo_path}."
 }
 
 # The Plugin does not get recognised as an Engine plugin, because we are using a pre-built version of the engine

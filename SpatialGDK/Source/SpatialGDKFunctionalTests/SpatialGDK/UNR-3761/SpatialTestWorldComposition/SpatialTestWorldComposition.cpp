@@ -53,8 +53,6 @@ ASpatialTestWorldComposition::ASpatialTestWorldComposition()
 	TestStepsData.Add(TPair<FVector, TArray<FExpectedActor>>(FVector(-150.0f, 400.0f, 60.0f), ExpectedConditionsAtStep2));
 	TestStepsData.Add(TPair<FVector, TArray<FExpectedActor>>(FVector(-150.0f, 1200.0f, 60.0f), ExpectedConditionsAtStep3));
 	TestStepsData.Add(TPair<FVector, TArray<FExpectedActor>>(FVector(0.0f, 0.0f, 60.0f), ExpectedConditionsAtStep4));
-
-	SetNumRequiredClients(1);
 }
 
 void ASpatialTestWorldComposition::PrepareTest()
