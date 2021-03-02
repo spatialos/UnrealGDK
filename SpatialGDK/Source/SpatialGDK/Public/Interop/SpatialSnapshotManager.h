@@ -4,6 +4,8 @@
 
 #include "Utils/SchemaUtils.h"
 
+#include "Interop/ReserveEntityIdsHandler.h"
+
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -33,4 +35,5 @@ private:
 	TWeakObjectPtr<USpatialWorkerConnection> Connection;
 	TWeakObjectPtr<UGlobalStateManager> GlobalStateManager;
 	TWeakObjectPtr<USpatialReceiver> Receiver;
+	SpatialGDK::ReserveEntityHandler ReserveEntityHandler;
 };

@@ -28,6 +28,8 @@ void USpatialPackageMapClient::Init(USpatialNetDriver* NetDriver, FTimerManager*
 	// Entity Pools should never exist on clients
 	if (bIsServer)
 	{
+		const SpatialGDK::ViewDelta& EntityPoolViewDelta = NetDriver->Connection->GetCoordinator().GetViewDelta();
+
 		EntityPool = NewObject<UEntityPool>();
 		EntityPool->Init(NetDriver, TimerManager);
 	}

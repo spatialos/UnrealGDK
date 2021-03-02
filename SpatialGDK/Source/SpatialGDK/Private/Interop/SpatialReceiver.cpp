@@ -22,6 +22,8 @@
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
 
+#include "Interop/ReserveEntityIdsHandler.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
 DECLARE_CYCLE_STAT(TEXT("PendingOpsOnChannel"), STAT_SpatialPendingOpsOnChannel, STATGROUP_SpatialNet);
@@ -45,6 +47,42 @@ DECLARE_CYCLE_STAT(TEXT("Receiver ReceiveActor"), STAT_ReceiverReceiveActor, STA
 DECLARE_CYCLE_STAT(TEXT("Receiver RemoveActor"), STAT_ReceiverRemoveActor, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_SpatialNet);
 using namespace SpatialGDK;
+
+void ReserveEntityHandler::Advance(const FSubView& SubView)
+{
+	for (const Worker_Op& Op : *SubView.GetViewDelta().WorkerMessages)
+	{
+		if (Op.op_type == WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE)
+		{
+			SCOPE_CYCLE_COUNTER(STAT_ReceiverReserveEntityIds);
+
+			const Worker_ReserveEntityIdsResponseOp& EntityIdsOp = Op.op.reserve_entity_ids_response;
+
+			if (EntityIdsOp.status_code != WORKER_STATUS_CODE_SUCCESS)
+			{
+				UE_LOG(LogSpatialReceiver, Warning, TEXT("ReserveEntityIds request failed: request id: %d, message: %s"),
+					   EntityIdsOp.request_id, UTF8_TO_TCHAR(EntityIdsOp.message));
+				return;
+			}
+
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("ReserveEntityIds request succeeded: request id: %d, message: %s"),
+				   EntityIdsOp.request_id, UTF8_TO_TCHAR(EntityIdsOp.message));
+
+			const Worker_RequestId RequestId = EntityIdsOp.request_id;
+			ReserveEntityIDsDelegate Handler = Handlers.FindAndRemoveChecked(RequestId);
+			if (ensure(Handler.IsBound()))
+			{
+				Handler.Execute(EntityIdsOp);
+			}
+		}
+	}
+}
+
+void ReserveEntityHandler::AddRequest(Worker_RequestId RequestId, ReserveEntityIDsDelegate Handler)
+{
+	check(Handler.IsBound());
+	Handlers.Add(RequestId, Handler);
+}
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, SpatialEventTracer* InEventTracer)
 {
@@ -204,36 +242,6 @@ void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandRespons
 		   Op.entity_id, PartitionId);
 }
 
-void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
-{
-	SCOPE_CYCLE_COUNTER(STAT_ReceiverReserveEntityIds);
-	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("ReserveEntityIds request failed: request id: %d, message: %s"), Op.request_id,
-			   UTF8_TO_TCHAR(Op.message));
-	}
-	else
-	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("ReserveEntityIds request succeeded: request id: %d, message: %s"), Op.request_id,
-			   UTF8_TO_TCHAR(Op.message));
-	}
-
-	if (ReserveEntityIDsDelegate* RequestDelegate = ReserveEntityIDsDelegates.Find(Op.request_id))
-	{
-		UE_LOG(LogSpatialReceiver, Log,
-			   TEXT("Executing ReserveEntityIdsResponse with delegate, request id: %d, first entity id: %lld, message: %s"), Op.request_id,
-			   Op.first_entity_id, UTF8_TO_TCHAR(Op.message));
-		RequestDelegate->ExecuteIfBound(Op);
-		ReserveEntityIDsDelegates.Remove(Op.request_id);
-	}
-	else
-	{
-		UE_LOG(LogSpatialReceiver, Warning,
-			   TEXT("Received ReserveEntityIdsResponse but with no delegate set, request id: %d, first entity id: %lld, message: %s"),
-			   Op.request_id, Op.first_entity_id, UTF8_TO_TCHAR(Op.message));
-	}
-}
-
 void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 {
 	const Worker_CreateEntityResponseOp& CreateEntityResponseOp = Op.op.create_entity_response;
@@ -381,11 +389,6 @@ void USpatialReceiver::AddPendingReliableRPC(Worker_RequestId RequestId, TShared
 void USpatialReceiver::AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
 {
 	EntityQueryDelegates.Add(RequestId, MoveTemp(Delegate));
-}
-
-void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate)
-{
-	ReserveEntityIDsDelegates.Add(RequestId, MoveTemp(Delegate));
 }
 
 void USpatialReceiver::AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)

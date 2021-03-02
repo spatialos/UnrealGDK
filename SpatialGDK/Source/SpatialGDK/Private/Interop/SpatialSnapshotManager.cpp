@@ -211,6 +211,7 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 	// References to entities that are stored within the snapshot need remapping once we know the new entity IDs.
 
 	// Add the spawn delegate
+	ReserveEntityHandler.AddRequest(ReserveRequestID, SpawnEntitiesDelegate);
 	check(Receiver.IsValid());
 	Receiver->AddReserveEntityIdsDelegate(ReserveRequestID, SpawnEntitiesDelegate);
 }
