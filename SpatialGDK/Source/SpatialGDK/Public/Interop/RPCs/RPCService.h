@@ -51,6 +51,18 @@ public:
 private:
 	void AdvanceSenderQueues();
 	void AdvanceReceivers();
+	void ProcessUpdatesToSender(Worker_EntityId EntityId, ComponentSpan<ComponentChange> Updates);
+	void ProcessUpdatesToReceivers(Worker_EntityId EntityId, const EntityViewElement& ViewElement, ComponentSpan<ComponentChange> Updates);
+	void HandleReceiverAuthorityGained(Worker_EntityId EntityId, const EntityViewElement& ViewElement,
+									   ComponentSpan<AuthorityChange> AuthChanges);
+	void HandleReceiverAuthorityLost(Worker_EntityId EntityId, ComponentSpan<AuthorityChange> AuthChanges);
+
+	// Receiver may or may not need authority to be able to receive RPCs (Client/Server vs Multicast).
+	// On the other hand, Senders always need some authority in order to write outgoing RPCs
+	// That is why there is not equivalent functions for the senders.
+	static constexpr Worker_ComponentSetId NoAuthorityNeeded = 0;
+	static bool HasReceiverAuthority(const RPCReceiverDescription& Desc, const EntityViewElement& ViewElement);
+	static bool IsReceiverAuthoritySet(const RPCReceiverDescription& Desc, Worker_ComponentSetId ComponentSet);
 
 	RPCCallbacks::DataWritten MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const;
 	RPCCallbacks::UpdateWritten MakeUpdateWriteCallback(TArray<UpdateToSend>& Updates) const;
