@@ -320,7 +320,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	});
 
 	IAutomationControllerModule& AutomationControllerModule =
-	FModuleManager::LoadModuleChecked<IAutomationControllerModule>(TEXT("AutomationController"));
+		FModuleManager::LoadModuleChecked<IAutomationControllerModule>(TEXT("AutomationController"));
 	IAutomationControllerManagerPtr AutomationController = AutomationControllerModule.GetAutomationController();
 	EAutomationControllerModuleState::Type TestState = AutomationController->GetTestState();
 	bTestRunnning = TestState == EAutomationControllerModuleState::Type::Running;
