@@ -90,12 +90,30 @@ Schema_Object* RPCWritingContext::EntityWrite::GetFieldsToWrite()
 	return Fields;
 }
 
-void RPCWritingContext::EntityWrite::RPCWritten(uint32 RPCId)
+void RPCWritingContext::EntityWrite::RPCWritten(uint32 RPCId) {}
+
+RPCWritingContext::RPCWritingContext(RPCCallbacks::DataWritten InDataWrittenCallback)
+	: DataWrittenCallback(InDataWrittenCallback)
+	, Kind(DataKind::ComponentData)
 {
-	if (Ctx.RPCWrittenCallback)
-	{
-		Ctx.RPCWrittenCallback(EntityId, ComponentId, RPCId);
-	}
+}
+
+RPCWritingContext::RPCWritingContext(RPCCallbacks::UpdateWritten InUpdateWrittenCallback)
+	: UpdateWrittenCallback(InUpdateWrittenCallback)
+	, Kind(DataKind::ComponentUpdate)
+{
+}
+
+RPCWritingContext::RPCWritingContext(RPCCallbacks::RequestWritten InRequestWrittenCallback)
+	: RequestWrittenCallback(InRequestWrittenCallback)
+	, Kind(DataKind::CommandRequest)
+{
+}
+
+RPCWritingContext::RPCWritingContext(RPCCallbacks::ResponseWritten InResponseWrittenCallback)
+	: ResponseWrittenCallback(InResponseWrittenCallback)
+	, Kind(DataKind::CommandResponse)
+{
 }
 
 RPCWritingContext::EntityWrite::EntityWrite(RPCWritingContext& InCtx, Worker_EntityId InEntityId, Worker_ComponentId InComponentID)
@@ -108,11 +126,6 @@ RPCWritingContext::EntityWrite::EntityWrite(RPCWritingContext& InCtx, Worker_Ent
 RPCWritingContext::EntityWrite RPCWritingContext::WriteTo(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	return EntityWrite(*this, EntityId, ComponentId);
-}
-
-RPCWritingContext::RPCWritingContext(DataKind InKind)
-	: Kind(InKind)
-{
 }
 
 void RPCBufferSender::OnAuthGained(Worker_EntityId EntityId, EntityViewElement const& Element)

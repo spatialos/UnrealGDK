@@ -49,6 +49,11 @@ struct RPCWritingContext
 		CommandResponse
 	};
 
+	RPCWritingContext(RPCCallbacks::DataWritten DataWrittenCallback);
+	RPCWritingContext(RPCCallbacks::UpdateWritten UpdateWrittenCallback);
+	RPCWritingContext(RPCCallbacks::RequestWritten RequestWrittenCallback);
+	RPCWritingContext(RPCCallbacks::ResponseWritten ResponseWrittenCallback);
+
 	/**
 	 * RAII object to encapsulate writes to an entity/component couple.
 	 * It makes sure that the appropriate callback is executed when the write operation is done
@@ -94,16 +99,13 @@ struct RPCWritingContext
 
 	EntityWrite WriteTo(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
-	RPCWritingContext(DataKind InKind);
-
+protected:
 	RPCCallbacks::DataWritten DataWrittenCallback;
 	RPCCallbacks::UpdateWritten UpdateWrittenCallback;
 	RPCCallbacks::RequestWritten RequestWrittenCallback;
 	RPCCallbacks::ResponseWritten ResponseWrittenCallback;
-	RPCCallbacks::RPCWritten RPCWrittenCallback;
 
-protected:
-	DataKind Kind;
+	const DataKind Kind;
 };
 
 /**
