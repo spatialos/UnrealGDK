@@ -38,8 +38,6 @@ ACrossServerMultiPossessionTest::ACrossServerMultiPossessionTest()
 {
 	Author = "Ken.Yu";
 	Description = TEXT("Test Cross-Server Multi Controllers Possess 1 Pawn");
-
-	SetNumRequiredClients(3);
 }
 
 void ACrossServerMultiPossessionTest::PrepareTest()

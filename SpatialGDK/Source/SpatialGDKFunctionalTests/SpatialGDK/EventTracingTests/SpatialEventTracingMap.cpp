@@ -29,7 +29,6 @@ void USpatialEventTracingMap::CreateCustomContentForMap()
 	// BP_EventTracerCharacter has some logic that would need to be converted. Some of it (all of it?) is actually testing the event tracing
 	// blueprint APIs. If we fully convert the tests to C++, how do we test the blueprint API? WorldSettings->DefaultGameMode =
 	// FunctionalTestBasicGameMode;
-	WorldSettings->TestingSettings.TestingMode = EMapTestingMode::Detect;
 
 	// Add the tests
 	AddActorToLevel<AComponentUpdateEventTracingTest>(CurrentLevel, FTransform::Identity);

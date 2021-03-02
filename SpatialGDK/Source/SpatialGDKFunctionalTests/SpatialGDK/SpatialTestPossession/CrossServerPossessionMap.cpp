@@ -17,14 +17,24 @@ void SetupWorldSettings(UWorld* World)
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
 	WorldSettings->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
-	WorldSettings->TestingSettings.TestingMode = EMapTestingMode::Detect;
 }
+
+FString GetConfigForNumberOfClients(int NumberOfClients)
+{
+	// clang-format off
+	return FString::Printf(TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
+						   TEXT("PlayNumberOfClients=%d"), NumberOfClients);
+	// clang-format on
+}
+
+// TODO: Set number of clients
 
 } // namespace
 
 UCrossServerPossessionMap::UCrossServerPossessionMap()
 	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("CrossServerPossessionMap"))
 {
+	SetCustomConfig(GetConfigForNumberOfClients(1));
 }
 
 void UCrossServerPossessionMap::CreateCustomContentForMap()
@@ -40,6 +50,7 @@ void UCrossServerPossessionMap::CreateCustomContentForMap()
 UCrossServerPossessionLockMap::UCrossServerPossessionLockMap()
 	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("CrossServerPossessionLockMap"))
 {
+	SetCustomConfig(GetConfigForNumberOfClients(1));
 }
 
 void UCrossServerPossessionLockMap::CreateCustomContentForMap()
@@ -55,6 +66,7 @@ void UCrossServerPossessionLockMap::CreateCustomContentForMap()
 UNoneCrossServerPossessionMap::UNoneCrossServerPossessionMap()
 	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("NoneCrossServerPossessionMap"))
 {
+	SetCustomConfig(GetConfigForNumberOfClients(1));
 }
 
 void UNoneCrossServerPossessionMap::CreateCustomContentForMap()
@@ -70,6 +82,7 @@ void UNoneCrossServerPossessionMap::CreateCustomContentForMap()
 UCrossServerMultiPossessionMap::UCrossServerMultiPossessionMap()
 	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("CrossServerMultiPossessionMap"))
 {
+	SetCustomConfig(GetConfigForNumberOfClients(3));
 }
 
 void UCrossServerMultiPossessionMap::CreateCustomContentForMap()

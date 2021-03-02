@@ -33,7 +33,6 @@ ASpatialDebugInterfaceTest::ASpatialDebugInterfaceTest()
 {
 	Author = "Nicolas";
 	Description = TEXT("Test Debug interface");
-	SetNumRequiredClients(1);
 }
 
 namespace

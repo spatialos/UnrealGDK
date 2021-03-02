@@ -38,8 +38,6 @@ ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
 	Author = "Victoria";
 	Description = TEXT("Test Character Migration");
 	TimeLimit = 300;
-
-	SetNumRequiredClients(1);
 }
 
 void ASpatialTestCharacterMigration::PrepareTest()
@@ -150,6 +148,10 @@ void ASpatialTestCharacterMigration::PrepareTest()
 USpatialTestCharacterMigrationMap::USpatialTestCharacterMigrationMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("SpatialTestCharacterMigrationMap"))
 {
+	// clang-format off
+	SetCustomConfig(TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
+					TEXT("PlayNumberOfClients=1"));
+	// clang-format on
 }
 
 void USpatialTestCharacterMigrationMap::CreateCustomContentForMap()
@@ -162,5 +164,4 @@ void USpatialTestCharacterMigrationMap::CreateCustomContentForMap()
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UTest2x1FullInterestWorkerSettings::StaticClass());
 	WorldSettings->DefaultGameMode = ACharacterMovementTestGameMode::StaticClass();
-	WorldSettings->TestingSettings.TestingMode = EMapTestingMode::Detect;
 }

@@ -34,8 +34,6 @@ ACrossServerPossessionLockTest::ACrossServerPossessionLockTest()
 {
 	Author = "Jay";
 	Description = TEXT("Test Locked Actor Cross-Server Possession");
-
-	SetNumRequiredClients(1);
 }
 
 void ACrossServerPossessionLockTest::PrepareTest()
