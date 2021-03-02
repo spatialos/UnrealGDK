@@ -834,8 +834,8 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	if (IsServer())
 	{
 		if (GlobalStateManager != nullptr && !GlobalStateManager->GetCanBeginPlay()
-			&& StaticComponentView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId,
-												 SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
+			&& Connection->GetCoordinator().HasAuthority(GlobalStateManager->GlobalStateManagerEntityId,
+														 SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
 		{
 			// ServerTravel - Increment the session id, so users don't rejoin the old game.
 			GlobalStateManager->TriggerBeginPlay();
@@ -889,8 +889,8 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	UWorld* World = GameMode->GetWorld();
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
 
-	if (!NetDriver->StaticComponentView->HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
-													  SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
+	if (!NetDriver->Connection->GetCoordinator().HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
+															  SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
 	{
 		// TODO: UNR-678 Send a command to the GSM to initiate server travel on the correct server.
 		UE_LOG(LogGameMode, Warning, TEXT("Trying to server travel on a server which is not authoritative over the GSM."));
@@ -2320,12 +2320,12 @@ bool USpatialNetDriver::CreateSpatialNetConnection(const FURL& InUrl, const FUni
 
 bool USpatialNetDriver::HasServerAuthority(Worker_EntityId EntityId) const
 {
-	return StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
+	return Connection->GetCoordinator().HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
 }
 
 bool USpatialNetDriver::HasClientAuthority(Worker_EntityId EntityId) const
 {
-	return StaticComponentView->HasAuthority(EntityId, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+	return Connection->GetCoordinator().HasAuthority(EntityId, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
 }
 
 void USpatialNetDriver::ProcessPendingDormancy()
@@ -2659,7 +2659,7 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 		return;
 	}
 
-	const bool bDormancyComponentExists = StaticComponentView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
+	const bool bDormancyComponentExists = Connection->GetCoordinator().HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID);
 
 	// If the Actor wants to go dormant, ensure the Dormant component is attached
 	if (bMakeDormant)
@@ -2700,7 +2700,7 @@ void USpatialNetDriver::RefreshActorVisibility(AActor* Actor, bool bMakeVisible)
 		return;
 	}
 
-	const bool bVisibilityComponentExists = StaticComponentView->HasComponent(EntityId, SpatialConstants::VISIBLE_COMPONENT_ID);
+	const bool bVisibilityComponentExists = Connection->GetCoordinator().HasComponent(EntityId, SpatialConstants::VISIBLE_COMPONENT_ID);
 
 	// If the Actor is Visible make sure it has the Visible component
 	if (bMakeVisible && !bVisibilityComponentExists)
@@ -2954,7 +2954,7 @@ void USpatialNetDriver::TryFinishStartup()
 			{
 				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the load balancing system to be ready."));
 			}
-			else if (!StaticComponentView->HasEntity(VirtualWorkerTranslator->GetClaimedPartitionId()))
+			else if (!Connection->GetCoordinator().HasEntity(VirtualWorkerTranslator->GetClaimedPartitionId()))
 			{
 				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the partition entity to be ready."));
 			}
