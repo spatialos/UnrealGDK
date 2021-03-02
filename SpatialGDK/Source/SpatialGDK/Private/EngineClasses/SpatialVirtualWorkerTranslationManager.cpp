@@ -101,6 +101,18 @@ void SpatialVirtualWorkerTranslationManager::ReclaimPartitionEntities()
 	QueryForServerWorkerEntities();
 }
 
+void SpatialVirtualWorkerTranslationManager::Advance(const SpatialGDK::FSubView& SubView)
+{
+	for (const Worker_Op& Op : *SubView.GetViewDelta().WorkerMessages)
+	{
+		if (Op.op_type == WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE)
+		{
+			const Worker_CreateEntityResponseOp& CreateEntityResponseOp = Op.op.create_entity_response;
+			if (CreateEntityResponseOp.status_code == WORKER_STATUS_CODE_SUCCESS) {}
+		}
+	}
+}
+
 // For each entry in the map, write a VirtualWorkerMapping type object to the Schema object.
 void SpatialVirtualWorkerTranslationManager::WriteMappingToSchema(Schema_Object* Object) const
 {

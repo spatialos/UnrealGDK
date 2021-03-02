@@ -11,6 +11,8 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "SpatialView/SubView.h"
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 
 class SpatialOSDispatcherInterface;
@@ -29,6 +31,11 @@ class SpatialOSWorkerInterface;
 // Unreal. It could be moved to an independent worker in the future in cloud deployments. It
 // lives here now for convenience and for fast iteration on local deployments.
 //
+
+namespace SpatialGDK
+{
+class FSubView;
+}
 
 class SPATIALGDK_API SpatialVirtualWorkerTranslationManager
 {
@@ -51,6 +58,8 @@ public:
 	void SpawnPartitionEntitiesForVirtualWorkerIds();
 	void ReclaimPartitionEntities();
 	const TArray<PartitionInfo>& GetAllPartitions() const { return Partitions; };
+
+	void Advance(const SpatialGDK::FSubView& SubView);
 
 	SpatialVirtualWorkerTranslator* Translator;
 
