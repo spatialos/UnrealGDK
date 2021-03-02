@@ -51,7 +51,7 @@ steps:
   # New build pipeline
   # Trigger a 4.26 build
   - trigger: "unrealgdkbuild-ci"
-    label: "run-new-ci-426"
+    label: "gdk-ci-426"
     async: true
     build: 
       env: 
@@ -63,7 +63,7 @@ steps:
 
   # Trigger a 4.25 build
   - trigger: "unrealgdkbuild-ci"
-    label: "run-new-ci-425"
+    label: "gdk-ci-425"
     async: true
     build: 
       env: 
