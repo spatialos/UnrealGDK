@@ -80,9 +80,6 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			break;
 
 		// World Command Responses
-		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-			Receiver->OnReserveEntityIdsResponse(Op.op.reserve_entity_ids_response);
-			break;
 		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
 			Receiver->OnCreateEntityResponse(Op);
 			break;

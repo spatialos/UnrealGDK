@@ -15,6 +15,11 @@ class UGlobalStateManager;
 class USpatialReceiver;
 class USpatialWorkerConnection;
 
+namespace SpatialGDK
+{
+class FSubView;
+}
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSnapshotManager, Log, All)
 
 DECLARE_DELEGATE(PostWorldWipeDelegate);
@@ -28,6 +33,8 @@ public:
 
 	void WorldWipe(const PostWorldWipeDelegate& Delegate);
 	void LoadSnapshot(const FString& SnapshotName);
+
+	void Advance(const SpatialGDK::FSubView& SubView);
 
 private:
 	static void DeleteEntities(const Worker_EntityQueryResponseOp& Op, TWeakObjectPtr<USpatialWorkerConnection> Connection);

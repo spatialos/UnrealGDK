@@ -212,6 +212,9 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 	// Add the spawn delegate
 	ReserveEntityHandler.AddRequest(ReserveRequestID, SpawnEntitiesDelegate);
-	check(Receiver.IsValid());
-	Receiver->AddReserveEntityIdsDelegate(ReserveRequestID, SpawnEntitiesDelegate);
+}
+
+void SpatialSnapshotManager::Advance(const FSubView& SubView)
+{
+	ReserveEntityHandler.Advance(SubView);
 }

@@ -108,7 +108,11 @@ void SpatialVirtualWorkerTranslationManager::Advance(const SpatialGDK::FSubView&
 		if (Op.op_type == WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE)
 		{
 			const Worker_CreateEntityResponseOp& CreateEntityResponseOp = Op.op.create_entity_response;
-			if (CreateEntityResponseOp.status_code == WORKER_STATUS_CODE_SUCCESS) {}
+			const CreateEntityDelegate Callback = RequestCallbacks.FindAndRemoveChecked(CreateEntityResponseOp.request_id);
+			if (CreateEntityResponseOp.status_code == WORKER_STATUS_CODE_SUCCESS)
+			{
+				Callback.Execute(CreateEntityResponseOp);
+			}
 		}
 	}
 }
@@ -244,7 +248,7 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 			   UTF8_TO_TCHAR(Op.message), Op.entity_id, VirtualWorkerId);
 	});
 
-	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
+	RequestCallbacks.Add(RequestId, OnCreateWorkerEntityResponse);
 }
 
 void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker)

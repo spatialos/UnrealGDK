@@ -13,6 +13,8 @@
 
 #include "SpatialView/SubView.h"
 
+#include "Interop/SpatialOSDispatcherInterface.h"
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 
 class SpatialOSDispatcherInterface;
@@ -73,6 +75,8 @@ private:
 	uint32 NumVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
+
+	TMap<Worker_RequestId_Key, CreateEntityDelegate> RequestCallbacks;
 
 	// Serialization and deserialization of the mapping.
 	void WriteMappingToSchema(Schema_Object* Object) const;
