@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+#include "Interop/CreateEntityHandler.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -153,6 +154,9 @@ private:
 	USpatialNetDriver* NetDriver;
 	SpatialEventTracer* EventTracer;
 
+	CreateEntityHandler CreateEntityHandler;
+
+	TMap<Worker_EntityId_Key, TArray<FWorkerComponentUpdate>> UpdatesQueuedUntilAuthorityMap;
 	TSet<TPair<Worker_EntityId_Key, Worker_ComponentId>> PendingDynamicSubobjectComponents;
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;

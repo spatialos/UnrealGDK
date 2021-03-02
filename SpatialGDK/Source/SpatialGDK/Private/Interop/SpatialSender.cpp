@@ -52,6 +52,8 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 						  SpatialGDK::SpatialEventTracer* InEventTracer)
 {
 	NetDriver = InNetDriver;
+	SubView = &NetDriver->Connection->GetCoordinator().CreateSubView(SpatialConstants::INVALID_QUERY_TAG, FSubView::NoFilter,
+																	 FSubView::NoDispatcherCallbacks);
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Connection = InNetDriver->Connection;
 	Receiver = InNetDriver->Receiver;
@@ -68,6 +70,11 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	{
 		PeriodicallyProcessOutgoingRPCs();
 	}
+}
+
+void USpatialSender::Advance()
+{
+	CreateEntityHandler.Advance(*SubView);
 }
 
 void USpatialSender::PeriodicallyProcessOutgoingRPCs()
@@ -173,7 +180,7 @@ void USpatialSender::RetryServerWorkerEntityCreation(Worker_EntityId EntityId, i
 				SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
 		});
 
-	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
+	CreateEntityHandler.AddRequest(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
 }
 
 void USpatialSender::ClearPendingRPCs(const Worker_EntityId EntityId)

@@ -45,19 +45,9 @@ void SpatialOSDispatcherSpy::AddEntityQueryDelegate(Worker_RequestId RequestId, 
 	EntityQueryDelegates.Add(RequestId, Delegate);
 }
 
-void SpatialOSDispatcherSpy::AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
-{
-	CreateEntityDelegates.Add(RequestId, Delegate);
-}
-
 void SpatialOSDispatcherSpy::OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) {}
 
 EntityQueryDelegate* SpatialOSDispatcherSpy::GetEntityQueryDelegate(Worker_RequestId RequestId)
 {
 	return EntityQueryDelegates.Find(RequestId);
-}
-
-CreateEntityDelegate* SpatialOSDispatcherSpy::GetCreateEntityDelegate(Worker_RequestId RequestId)
-{
-	return CreateEntityDelegates.Find(RequestId);
 }

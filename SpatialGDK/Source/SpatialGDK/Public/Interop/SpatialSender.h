@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/Connection/SpatialGDKSpanId.h"
+#include "Interop/CreateEntityHandler.h"
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/RPCPayload.h"
@@ -49,6 +50,8 @@ class SPATIALGDK_API USpatialSender : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService,
 			  SpatialGDK::SpatialEventTracer* InEventTracer);
+
+	void Advance();
 
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const;
 	FRPCErrorInfo SendRPC(const FPendingRPCParams& Params);
@@ -116,6 +119,9 @@ private:
 
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
+
+	SpatialGDK::FSubView* SubView;
+	SpatialGDK::CreateEntityHandler CreateEntityHandler;
 
 	FTimerManager* TimerManager;
 

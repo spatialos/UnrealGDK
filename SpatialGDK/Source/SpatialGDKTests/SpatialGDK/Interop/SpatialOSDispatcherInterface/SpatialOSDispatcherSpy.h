@@ -42,13 +42,11 @@ public:
 	virtual void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) override;
 
 	virtual void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate) override;
-	virtual void AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate) override;
 
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) override;
 
 	// Methods to extract information about calls made.
 	EntityQueryDelegate* GetEntityQueryDelegate(Worker_RequestId RequestId);
-	CreateEntityDelegate* GetCreateEntityDelegate(Worker_RequestId RequestId);
 
 private:
 	TMap<Worker_RequestId_Key, EntityQueryDelegate> EntityQueryDelegates;

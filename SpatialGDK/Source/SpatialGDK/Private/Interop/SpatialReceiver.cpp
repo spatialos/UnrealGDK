@@ -22,6 +22,7 @@
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetrics.h"
 
+#include "Interop/CreateEntityHandler.h"
 #include "Interop/ReserveEntityIdsHandler.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
@@ -79,6 +80,46 @@ void ReserveEntityHandler::Advance(const FSubView& SubView)
 }
 
 void ReserveEntityHandler::AddRequest(Worker_RequestId RequestId, ReserveEntityIDsDelegate Handler)
+{
+	check(Handler.IsBound());
+	Handlers.Add(RequestId, Handler);
+}
+
+void CreateEntityHandler::Advance(const FSubView& SubView)
+{
+	for (const Worker_Op& Op : *SubView.GetViewDelta().WorkerMessages)
+	{
+		if (Op.op_type == WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE)
+		{
+			SCOPE_CYCLE_COUNTER(STAT_ReceiverCreateEntityResponse);
+
+			const Worker_CreateEntityResponseOp& EntityIdsOp = Op.op.create_entity_response;
+
+			if (EntityIdsOp.status_code != WORKER_STATUS_CODE_SUCCESS)
+			{
+				UE_LOG(LogSpatialReceiver, Warning, TEXT("CreateEntity request failed: request id: %d, message: %s"),
+					   EntityIdsOp.request_id, UTF8_TO_TCHAR(EntityIdsOp.message));
+				return;
+			}
+
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("CreateEntity request succeeded: request id: %d, message: %s"), EntityIdsOp.request_id,
+				   UTF8_TO_TCHAR(EntityIdsOp.message));
+
+			const Worker_RequestId RequestId = EntityIdsOp.request_id;
+			CreateEntityDelegate* Handler = Handlers.Find(RequestId);
+			if (Handler != nullptr && ensure(Handler->IsBound()))
+			{
+				Handler->Execute(EntityIdsOp);
+			}
+			if (Handler != nullptr)
+			{
+				Handlers.Remove(RequestId);
+			}
+		}
+	}
+}
+
+void CreateEntityHandler::AddRequest(Worker_RequestId RequestId, CreateEntityDelegate Handler)
 {
 	check(Handler.IsBound());
 	Handlers.Add(RequestId, Handler);
@@ -389,11 +430,6 @@ void USpatialReceiver::AddPendingReliableRPC(Worker_RequestId RequestId, TShared
 void USpatialReceiver::AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
 {
 	EntityQueryDelegates.Add(RequestId, MoveTemp(Delegate));
-}
-
-void USpatialReceiver::AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
-{
-	CreateEntityDelegates.Add(RequestId, MoveTemp(Delegate));
 }
 
 void USpatialReceiver::AddSystemEntityCommandDelegate(Worker_RequestId RequestId, SystemEntityCommandDelegate Delegate)

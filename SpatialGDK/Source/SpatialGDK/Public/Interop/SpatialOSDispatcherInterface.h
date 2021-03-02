@@ -50,8 +50,6 @@ public:
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::AddPendingReliableRPC, return;);
 	virtual void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::AddEntityQueryDelegate, return;);
-	virtual void AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
-		PURE_VIRTUAL(SpatialOSDispatcherInterface::AddCreateEntityDelegate, return;);
 	virtual void AddSystemEntityCommandDelegate(Worker_RequestId RequestId, SystemEntityCommandDelegate Delegate)
 		PURE_VIRTUAL(SpatialOSDispatcherInterface::AddSystemEntityCommandDelegate, return;);
 };
