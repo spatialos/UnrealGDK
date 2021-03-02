@@ -42,6 +42,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
 	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
+	, bShutdownRuntimeGracefullyOnPIEExit(true)
 	, bUseGDKPinnedInspectorVersion(true)
 	, InspectorVersionOverride(TEXT(""))
 	, ExposedRuntimeIP(TEXT(""))
