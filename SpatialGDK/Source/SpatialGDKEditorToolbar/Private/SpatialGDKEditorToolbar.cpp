@@ -123,11 +123,10 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 			&& LocalDeploymentManager->IsLocalDeploymentRunning())
 		{
 			AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
-
 				const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
-				bool bRuntimeShutdown = Settings->bShutdownRuntimeGracefullyOnPIEExit ?
-					LocalDeploymentManager->TryStopLocalDeploymentGracefully() :
-					LocalDeploymentManager->TryStopLocalDeployment();
+				bool bRuntimeShutdown = Settings->bShutdownRuntimeGracefullyOnPIEExit
+											? LocalDeploymentManager->TryStopLocalDeploymentGracefully()
+											: LocalDeploymentManager->TryStopLocalDeployment();
 
 				if (!bRuntimeShutdown)
 				{
@@ -924,11 +923,9 @@ void FSpatialGDKEditorToolbarModule::StartLocalSpatialDeploymentButtonClicked()
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
-
 		const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
-		bool bRuntimeShutdown = Settings->bShutdownRuntimeGracefullyOnPIEExit ?
-			LocalDeploymentManager->TryStopLocalDeploymentGracefully() :
-			LocalDeploymentManager->TryStopLocalDeployment();
+		bool bRuntimeShutdown = Settings->bShutdownRuntimeGracefullyOnPIEExit ? LocalDeploymentManager->TryStopLocalDeploymentGracefully()
+																			  : LocalDeploymentManager->TryStopLocalDeployment();
 
 		if (!bRuntimeShutdown)
 		{
