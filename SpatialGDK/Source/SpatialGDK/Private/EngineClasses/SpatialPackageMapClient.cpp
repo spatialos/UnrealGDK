@@ -35,6 +35,14 @@ void USpatialPackageMapClient::Init(USpatialNetDriver* NetDriver, FTimerManager*
 	}
 }
 
+void USpatialPackageMapClient::Advance()
+{
+	if (IsValid(EntityPool))
+	{
+		EntityPool->Advance();
+	}
+}
+
 void GetSubobjects(UObject* ParentObject, TArray<UObject*>& InSubobjects)
 {
 	InSubobjects.Empty();

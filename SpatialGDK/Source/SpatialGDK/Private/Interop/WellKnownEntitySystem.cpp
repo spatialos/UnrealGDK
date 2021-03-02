@@ -52,7 +52,10 @@ void WellKnownEntitySystem::Advance()
 		}
 	}
 
-	VirtualWorkerTranslationManager->Advance(*SubView);
+	if (VirtualWorkerTranslationManager.IsValid())
+	{
+		VirtualWorkerTranslationManager->Advance(*SubView);
+	}
 }
 
 void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update)

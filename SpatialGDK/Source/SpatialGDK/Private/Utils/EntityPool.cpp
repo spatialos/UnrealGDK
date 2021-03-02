@@ -18,7 +18,7 @@ void UEntityPool::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerMan
 	Receiver = InNetDriver->Receiver;
 	TimerManager = InTimerManager;
 
-	SubView = &InNetDriver->Connection->GetCoordinator().CreateSubView(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, FSubView::NoFilter,
+	SubView = &InNetDriver->Connection->GetCoordinator().CreateSubView(SpatialConstants::INVALID_QUERY_TAG, FSubView::NoFilter,
 																	   FSubView::NoDispatcherCallbacks);
 
 	ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolInitialReservationCount);

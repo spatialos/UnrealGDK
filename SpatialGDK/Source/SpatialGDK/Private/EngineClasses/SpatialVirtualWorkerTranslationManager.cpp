@@ -108,10 +108,17 @@ void SpatialVirtualWorkerTranslationManager::Advance(const SpatialGDK::FSubView&
 		if (Op.op_type == WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE)
 		{
 			const Worker_CreateEntityResponseOp& CreateEntityResponseOp = Op.op.create_entity_response;
-			const CreateEntityDelegate Callback = RequestCallbacks.FindAndRemoveChecked(CreateEntityResponseOp.request_id);
+			const CreateEntityDelegate* Callback = RequestCallbacks.Find(CreateEntityResponseOp.request_id);
 			if (CreateEntityResponseOp.status_code == WORKER_STATUS_CODE_SUCCESS)
 			{
-				Callback.Execute(CreateEntityResponseOp);
+				if (Callback != nullptr && ensure(Callback->IsBound()))
+				{
+					Callback->Execute(CreateEntityResponseOp);
+				}
+			}
+			if (Callback != nullptr)
+			{
+				RequestCallbacks.Remove(CreateEntityResponseOp.request_id);
 			}
 		}
 	}
