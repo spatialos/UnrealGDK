@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a function flag `AlwaysWrite` that allows specifying an RPC to use a separate channel and allow overwriting unacked RPC calls. This is currently limited to Unreliable Server RPCs on classes inheriting from AActor, and only one such RPC can be specified per actor. This feature is disabled by default and can be enabled via `bEnableAlwaysWriteRPCs` setting.
 - Enhanced server logging to include load balancing and local worker info on startup.
 - Added 'Persistent' spatial class flag, typically used to override a non persistent base class.
+- Added a button to generate functional test maps from the editor. It can be found under **Window** > **Generate test maps**.
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
