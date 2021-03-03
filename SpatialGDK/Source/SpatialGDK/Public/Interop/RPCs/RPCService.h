@@ -10,7 +10,7 @@ class USpatialNetDriver;
 namespace SpatialGDK
 {
 /**
- * The RPCService aggregates Sender and Receiver in order to route updates and events to/from the network.
+ * The RPCService aggregates Sender and Receiver in order to route updates and events from the network.
  * It does not deal directly with actor concepts and RPC data, this is pushed to the user side and individual
  * sender/receiver specialization.
  */
@@ -20,16 +20,6 @@ public:
 	explicit RPCService(const FSubView& InRemoteSubView, const FSubView& InLocalAuthSubView);
 
 	void AdvanceView();
-
-	struct UpdateToSend
-	{
-		Worker_EntityId EntityId;
-		FWorkerComponentUpdate Update;
-		FSpatialGDKSpanId SpanId;
-	};
-	TArray<UpdateToSend> GetRPCsAndAcksToSend();
-	TArray<UpdateToSend> FlushSenderForEntity(Worker_EntityId);
-	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
 
 	struct RPCQueueDescription
 	{
@@ -48,6 +38,8 @@ public:
 	void AddRPCQueue(FName QueueName, RPCQueueDescription&& Desc);
 	void AddRPCReceiver(FName ReceiverName, RPCReceiverDescription&& Desc);
 
+	TMap<FName, RPCReceiverDescription>& GetReceivers() { return Receivers; }
+
 private:
 	void AdvanceSenderQueues();
 	void AdvanceReceivers();
@@ -63,9 +55,6 @@ private:
 	static constexpr Worker_ComponentSetId NoAuthorityNeeded = 0;
 	static bool HasReceiverAuthority(const RPCReceiverDescription& Desc, const EntityViewElement& ViewElement);
 	static bool IsReceiverAuthoritySet(const RPCReceiverDescription& Desc, Worker_ComponentSetId ComponentSet);
-
-	RPCCallbacks::DataWritten MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const;
-	RPCCallbacks::UpdateWritten MakeUpdateWriteCallback(TArray<UpdateToSend>& Updates) const;
 
 	const FSubView* RemoteSubView;
 	const FSubView* LocalAuthSubView;
