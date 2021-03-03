@@ -426,7 +426,6 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 				   TEXT("OwningTest already had different LocalFlowController, this shouldn't happen"));
 			return;
 		}
-
 		LocalFlowController = FlowController;
 	}
 
