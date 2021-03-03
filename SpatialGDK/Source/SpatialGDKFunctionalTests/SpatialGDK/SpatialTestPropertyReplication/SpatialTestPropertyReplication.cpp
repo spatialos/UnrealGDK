@@ -34,7 +34,7 @@ void ASpatialTestPropertyReplication::PrepareTest()
 AddStep(
 		TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr,
 		[this]() {
-			int32 ExpectedNumberOfClients = 2;
+			int32 ExpectedNumberOfClients = 3;
 			int32 RequiredNumberOfClients = GetNumRequiredClients();
 		RequireEqual_Int(RequiredNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of clients to be required."));
 		int32 ActualNumberOfClients = GetNumberOfClientWorkers();
