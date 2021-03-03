@@ -14,6 +14,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineUtils.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -639,6 +640,46 @@ void UGlobalStateManager::IncrementSessionID()
 {
 	DeploymentSessionId++;
 	SendSessionIdUpdate();
+}
+
+void UGlobalStateManager::Advance()
+{
+	const TArray<Worker_Op>& Ops = NetDriver->Connection->GetCoordinator().GetViewDelta().GetWorkerMessages();
+
+	ClaimHandler->ProcessOps(Ops);
+
+#if WITH_EDITOR
+	for (const Worker_Op& Op : Ops)
+	{
+		if (Op.op_type != WORKER_OP_TYPE_COMMAND_REQUEST)
+		{
+			continue;
+		}
+
+		const Worker_CommandRequestOp& CommandRequest = Op.op.command_request;
+		const Worker_ComponentId ComponentId = CommandRequest.request.component_id;
+		const Worker_CommandIndex CommandIndex = CommandRequest.request.command_index;
+		const Worker_RequestId RequestId = CommandRequest.request_id;
+
+		if (ComponentId == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID
+			&& CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
+		{
+			NetDriver->GlobalStateManager->ReceiveShutdownMultiProcessRequest();
+
+			// TODO: Grab valid event tracer, somehow
+			SpatialEventTracer* EventTracer = nullptr;
+
+			if (EventTracer != nullptr)
+			{
+				EventTracer->TraceEvent(
+					FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId),
+					/* Causes */ Op.span_id, /* NumCauses */ 1);
+			}
+
+			return;
+		}
+	}
+#endif // WITH_EDITOR
 }
 
 void UGlobalStateManager::SendSessionIdUpdate()

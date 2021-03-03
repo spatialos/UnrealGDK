@@ -50,6 +50,8 @@ public:
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void IncrementSessionID();
 
+	void Advance();
+
 	FORCEINLINE FString GetDeploymentMapURL() const { return DeploymentMapURL; }
 	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }
 	FORCEINLINE int32 GetSessionId() const { return DeploymentSessionId; }

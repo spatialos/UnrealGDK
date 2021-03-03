@@ -2017,6 +2017,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				Sender->Advance();
 			}
 
+			if (IsValid(GlobalStateManager))
+			{
+				GlobalStateManager->Advance();
+			}
+
 			for (const TPair<Worker_EntityId_Key, USpatialActorChannel*>& ActorChannelPair : EntityToActorChannel)
 			{
 				ActorChannelPair.Value->Advance(Connection->GetCoordinator().GetViewDelta());

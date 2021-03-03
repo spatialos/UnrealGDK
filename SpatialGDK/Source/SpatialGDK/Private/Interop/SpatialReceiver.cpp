@@ -167,22 +167,6 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 
 		return;
 	}
-#if WITH_EDITOR
-	else if (ComponentId == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID
-			 && CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
-	{
-		NetDriver->GlobalStateManager->ReceiveShutdownMultiProcessRequest();
-
-		if (EventTracer != nullptr)
-		{
-			EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId),
-				/* Causes */ Op.span_id, /* NumCauses */ 1);
-		}
-
-		return;
-	}
-#endif // WITH_EDITOR
 #if !UE_BUILD_SHIPPING
 	else if (ComponentId == SpatialConstants::DEBUG_METRICS_COMPONENT_ID)
 	{
