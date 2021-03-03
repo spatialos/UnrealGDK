@@ -64,8 +64,9 @@ private:
 
 	bool SetupRuntimeFileLogger(const FString& SpatialLogsSubDirectoryName);
 
-	bool StartLocalDeploymentShutdown();
-	bool FinishLocalDeploymentShutdown();
+	bool WaitForRuntimeProcessToShutDown();
+	bool StartLocalDeploymentShutDown();
+	void FinishLocalDeploymentShutDown();
 
 	TFuture<bool> AttemptSpatialAuthResult;
 

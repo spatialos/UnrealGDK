@@ -359,14 +359,17 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(const FString& RuntimeLogDi
 
 bool FLocalDeploymentManager::TryStopLocalDeployment()
 {
-	if (!StartLocalDeploymentShutdown())
+	if (!StartLocalDeploymentShutDown())
 	{
 		return false;
 	}
 
 	RuntimeProcess->Stop();
 
-	return FinishLocalDeploymentShutdown();
+	bool bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+	FinishLocalDeploymentShutDown();
+
+	return bRuntimeShutDownSuccesfully;
 }
 
 bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
@@ -377,7 +380,7 @@ bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
 		return TryStopLocalDeployment();
 	}
 
-	if (!StartLocalDeploymentShutdown())
+	if (!StartLocalDeploymentShutDown())
 	{
 		return false;
 	}
@@ -391,13 +394,29 @@ bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
 
 	HttpRequest->SetURL(TEXT("http://localhost:5006/shutdown"));
 	HttpRequest->SetVerb("GET");
+	HttpRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+		int32 ResponseCode = HttpResponse->GetResponseCode();
+		if (ResponseCode != 200)
+		{
+			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime shutdown http request failed with code: %d"), ResponseCode);
+		}
+	});
 
 	HttpRequest->ProcessRequest();
 
-	return FinishLocalDeploymentShutdown();
+	bool bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+	if (!bRuntimeShutDownSuccesfully)
+	{
+		RuntimeProcess->Stop();
+		bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+	}
+
+	FinishLocalDeploymentShutDown();
+
+	return bRuntimeShutDownSuccesfully;
 }
 
-bool FLocalDeploymentManager::StartLocalDeploymentShutdown()
+bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
 {
 	if (!bLocalDeploymentRunning)
 	{
@@ -409,7 +428,7 @@ bool FLocalDeploymentManager::StartLocalDeploymentShutdown()
 	return true;
 }
 
-bool FLocalDeploymentManager::FinishLocalDeploymentShutdown()
+bool FLocalDeploymentManager::WaitForRuntimeProcessToShutDown()
 {
 	double RuntimeStopTime = RuntimeProcess->GetDuration().GetTotalSeconds();
 
@@ -425,13 +444,16 @@ bool FLocalDeploymentManager::FinishLocalDeploymentShutdown()
 		}
 	}
 
+	return true;
+}
+
+void FLocalDeploymentManager::FinishLocalDeploymentShutDown()
+{
 	// Kill the log file handle.
 	RuntimeLogFileHandle.Reset();
 
 	bLocalDeploymentRunning = false;
 	bStoppingDeployment = false;
-
-	return true;
 }
 
 bool FLocalDeploymentManager::IsLocalDeploymentRunning() const
