@@ -7,15 +7,15 @@
 /**
  * This is an example test. It's cited in https://brevi.link/how-to-test-unrealgdk.
  * It tests that an Actor can replicate a property across the network during play.
- * This test contains 1 Server and 2 Client workers.
+ * This test contains 1 Server and 3 Client workers.
  *
  * The flow is as follows:
  * - Setup:
  *  - The Server spawns one ReplicatedTestActor.
  * - Test:
- *  - Both Clients check that they can see exactly 1 ReplicatedTestActor.
+ *  - All  Clients check that they can see exactly 1 ReplicatedTestActor.
  *  - The Server changes the ReplicatedProperty of the ReplicatedTestActor from "0" to "99".
- *  - Both Clients check that the ReplicatedProperty is now set to "99".
+ *  - All  Clients check that the ReplicatedProperty is now set to "99".
  * - Clean-up:
  *  - ReplicatedTestActor is destroyed using the RegisterAutoDestroyActor helper function.
  */
@@ -52,7 +52,7 @@ AddStep(
 	}, nullptr, 5.0f);
 
 	AddStep(
-		TEXT("Both Clients check that they can see exactly 1 ReplicatedTestActor"), FWorkerDefinition::AllClients, nullptr, nullptr,
+		TEXT("All Clients check that they can see exactly 1 ReplicatedTestActor"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
 			TArray<AActor*> FoundReplicatedTestActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActor::StaticClass(), FoundReplicatedTestActors);
@@ -81,7 +81,7 @@ AddStep(
 		});
 
 	AddStep(
-		TEXT("Both Clients check that the ReplicatedProperty is now set to 99"), FWorkerDefinition::AllClients,
+		TEXT("All Clients check that the ReplicatedProperty is now set to 99"), FWorkerDefinition::AllClients,
 		[this]() -> bool {
 			return IsValid(TestActor);
 		},
