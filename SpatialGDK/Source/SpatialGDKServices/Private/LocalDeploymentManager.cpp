@@ -29,9 +29,6 @@
 #include "SpatialGDKServicesModule.h"
 #include "UObject/CoreNet.h"
 
-#include <chrono>
-#include <thread>
-
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 #define LOCTEXT_NAMESPACE "FLocalDeploymentManager"
@@ -308,7 +305,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	// Wait for runtime to start or timeout
 	while (!bLocalDeploymentRunning && RuntimeProcess->Update() && RuntimeProcess->GetDuration().GetTotalSeconds() <= RuntimeTimeout)
 	{
-		std::this_thread::sleep_for(std::chrono::microseconds(100));
+		FPlatformProcess::Sleep(0.01f);
 	}
 
 	bStartingDeployment = false;
