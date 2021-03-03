@@ -8,8 +8,12 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestInitialOnly/SpatialTestInitialOnlyForSpawnComponents.h"
 
 USpatialInitialOnlyMap::USpatialInitialOnlyMap()
-	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("SpatialInitialOnlyMap"))
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialInitialOnlyMap"))
 {
+	// clang-format off
+	SetCustomConfig(TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR
+					TEXT("bEnableInitialOnlyReplicationCondition=True"));
+	// clang-format on
 }
 
 void USpatialInitialOnlyMap::CreateCustomContentForMap()
