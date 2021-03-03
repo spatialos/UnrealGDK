@@ -90,28 +90,30 @@ Schema_Object* RPCWritingContext::EntityWrite::GetFieldsToWrite()
 	return Fields;
 }
 
-void RPCWritingContext::EntityWrite::RPCWritten(uint32 RPCId) {}
-
-RPCWritingContext::RPCWritingContext(RPCCallbacks::DataWritten InDataWrittenCallback)
+RPCWritingContext::RPCWritingContext(FName InQueueName, RPCCallbacks::DataWritten InDataWrittenCallback)
 	: DataWrittenCallback(InDataWrittenCallback)
+	, QueueName(InQueueName)
 	, Kind(DataKind::ComponentData)
 {
 }
 
-RPCWritingContext::RPCWritingContext(RPCCallbacks::UpdateWritten InUpdateWrittenCallback)
+RPCWritingContext::RPCWritingContext(FName InQueueName, RPCCallbacks::UpdateWritten InUpdateWrittenCallback)
 	: UpdateWrittenCallback(InUpdateWrittenCallback)
+	, QueueName(InQueueName)
 	, Kind(DataKind::ComponentUpdate)
 {
 }
 
-RPCWritingContext::RPCWritingContext(RPCCallbacks::RequestWritten InRequestWrittenCallback)
+RPCWritingContext::RPCWritingContext(FName InQueueName, RPCCallbacks::RequestWritten InRequestWrittenCallback)
 	: RequestWrittenCallback(InRequestWrittenCallback)
+	, QueueName(InQueueName)
 	, Kind(DataKind::CommandRequest)
 {
 }
 
-RPCWritingContext::RPCWritingContext(RPCCallbacks::ResponseWritten InResponseWrittenCallback)
+RPCWritingContext::RPCWritingContext(FName InQueueName, RPCCallbacks::ResponseWritten InResponseWrittenCallback)
 	: ResponseWrittenCallback(InResponseWrittenCallback)
+	, QueueName(InQueueName)
 	, Kind(DataKind::CommandResponse)
 {
 }
@@ -144,9 +146,10 @@ void RPCBufferSender::OnAuthGained(Worker_EntityId EntityId, EntityViewElement c
 	}
 }
 
-void RPCBufferReceiver::OnAdded(Worker_EntityId EntityId, EntityViewElement const& Element)
+void RPCBufferReceiver::OnAdded(FName ReceiverName, Worker_EntityId EntityId, EntityViewElement const& Element)
 {
 	RPCReadingContext readCtx;
+	readCtx.ReaderName = ReceiverName;
 	readCtx.EntityId = EntityId;
 	for (const auto& Component : Element.Components)
 	{
