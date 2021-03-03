@@ -17,7 +17,8 @@ class SPATIALGDKFUNCTIONALTESTS_API UGeneratedTestMap : public UObject
 
 public:
 	UGeneratedTestMap();
-	void GenerateMap();
+	bool GenerateMap();
+	bool GenerateCustomConfig();
 	virtual bool ShouldGenerateMap() { return true; } // To control whether to generate a map from this class
 	FString GetMapName() { return MapName; }
 	static FString GetGeneratedMapFolder();
@@ -50,6 +51,10 @@ protected:
 		return CastChecked<T>(AddActorToLevel(Level, T::StaticClass(), Transform));
 	}
 
+	// Derived test maps can call this to set the string that will be printed into the .ini file to be used with this map to override
+	// settings specifically for this test map
+	void SetCustomConfig(FString String) { CustomConfigString = String; }
+
 	UPROPERTY()
 	UWorld* World;
 	UPROPERTY()
@@ -60,10 +65,11 @@ protected:
 private:
 	AActor* AddActorToLevel(ULevel* Level, UClass* Class, const FTransform& Transform);
 	void GenerateBaseMap();
-	void SaveMap();
+	bool SaveMap();
 	FString GetPathToSaveTheMap();
 
 	bool bIsValidForGeneration;
 	EMapCategory MapCategory;
 	FString MapName;
+	FString CustomConfigString;
 };
