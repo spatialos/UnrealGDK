@@ -28,6 +28,7 @@
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
+#include "Interop/MigrationDiagnosticsSystem.h"
 #include "Interop/RPCExecutor.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialNetDriverLoadBalancingHandler.h"
@@ -2030,6 +2031,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			if (SpatialDebuggerSystem.IsValid())
 			{
 				SpatialDebuggerSystem->Advance();
+			}
+
+			{
+				SpatialGDK::MigrationDiagnosticsSystem MigrationDiagnosticsSystem(*this);
+				MigrationDiagnosticsSystem.ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
 			}
 
 			{

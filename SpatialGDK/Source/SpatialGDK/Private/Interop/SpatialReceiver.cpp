@@ -15,7 +15,6 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
-#include "Schema/MigrationDiagnostic.h"
 #include "SpatialConstants.h"
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/RepLayoutUtils.h"
@@ -145,30 +144,8 @@ void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
 	const Worker_ComponentId ComponentId = Request.component_id;
 	const Worker_RequestId RequestId = CommandRequestOp.request_id;
 	const Schema_FieldId CommandIndex = Request.command_index;
-	if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID
-		&& CommandIndex == SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID)
-	{
-		check(NetDriver != nullptr);
-		check(NetDriver->Connection != nullptr);
-
-		AActor* BlockingActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
-		if (IsValid(BlockingActor))
-		{
-			Worker_CommandResponse Response = MigrationDiagnostic::CreateMigrationDiagnosticResponse(NetDriver, EntityId, BlockingActor);
-
-			Sender->SendCommandResponse(RequestId, Response, FSpatialGDKSpanId(Op.span_id));
-		}
-		else
-		{
-			UE_LOG(LogSpatialReceiver, Warning,
-				   TEXT("Migration diaganostic log failed because cannot retreive actor for entity (%llu) on authoritative worker %s"),
-				   EntityId, *NetDriver->Connection->GetWorkerId());
-		}
-
-		return;
-	}
 #if !UE_BUILD_SHIPPING
-	else if (ComponentId == SpatialConstants::DEBUG_METRICS_COMPONENT_ID)
+	if (ComponentId == SpatialConstants::DEBUG_METRICS_COMPONENT_ID)
 	{
 		switch (CommandIndex)
 		{
@@ -204,34 +181,6 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 	const Worker_RequestId RequestId = CommandResponseOp.request_id;
 
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandResponse);
-	if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID)
-	{
-		check(NetDriver != nullptr);
-		check(NetDriver->Connection != nullptr);
-
-		if (CommandResponseOp.status_code != WORKER_STATUS_CODE_SUCCESS)
-		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed, status code %i."), CommandResponseOp.status_code);
-			return;
-		}
-
-		Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponseOp.response.schema_type);
-		const Worker_EntityId EntityId = Schema_GetInt64(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_ENTITY_ID);
-		AActor* BlockingActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
-		if (IsValid(BlockingActor))
-		{
-			FString MigrationDiagnosticLog = MigrationDiagnostic::CreateMigrationDiagnosticLog(NetDriver, ResponseObject, BlockingActor);
-			if (!MigrationDiagnosticLog.IsEmpty())
-			{
-				UE_LOG(LogSpatialReceiver, Warning, TEXT("%s"), *MigrationDiagnosticLog);
-			}
-		}
-		else
-		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Migration diaganostic log failed because blocking actor (%llu) is not valid."),
-				   EntityId);
-		}
-	}
 }
 
 void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op)
