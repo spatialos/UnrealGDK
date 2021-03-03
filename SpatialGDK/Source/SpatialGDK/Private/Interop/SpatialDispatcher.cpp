@@ -64,14 +64,6 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			StaticComponentView->OnComponentUpdate(Op.op.component_update);
 			break;
 
-		// Commands
-		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			Receiver->OnCommandRequest(Op);
-			break;
-		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			Receiver->OnCommandResponse(Op);
-			break;
-
 		// Authority Change
 		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
 			// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.

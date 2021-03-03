@@ -38,10 +38,6 @@ class USpatialReceiver : public UObject, public SpatialOSDispatcherInterface
 public:
 	void Init(USpatialNetDriver* NetDriver, SpatialGDK::SpatialEventTracer* InEventTracer);
 
-	// Dispatcher Calls
-	virtual void OnCommandRequest(const Worker_Op& Op) override;
-	virtual void OnCommandResponse(const Worker_Op& Op) override;
-
 	virtual void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) override;
 
 	virtual void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate) override;

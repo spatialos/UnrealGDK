@@ -134,55 +134,6 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, SpatialEventTracer* 
 	EventTracer = InEventTracer;
 }
 
-void USpatialReceiver::OnCommandRequest(const Worker_Op& Op)
-{
-	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandRequest);
-
-	const Worker_CommandRequestOp& CommandRequestOp = Op.op.command_request;
-	const Worker_CommandRequest& Request = CommandRequestOp.request;
-	const Worker_EntityId EntityId = CommandRequestOp.entity_id;
-	const Worker_ComponentId ComponentId = Request.component_id;
-	const Worker_RequestId RequestId = CommandRequestOp.request_id;
-	const Schema_FieldId CommandIndex = Request.command_index;
-#if !UE_BUILD_SHIPPING
-	if (ComponentId == SpatialConstants::DEBUG_METRICS_COMPONENT_ID)
-	{
-		switch (CommandIndex)
-		{
-		case SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID:
-			NetDriver->SpatialMetrics->OnStartRPCMetricsCommand();
-			break;
-		case SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID:
-			NetDriver->SpatialMetrics->OnStopRPCMetricsCommand();
-			break;
-		case SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID:
-		{
-			Schema_Object* Payload = Schema_GetCommandRequestObject(CommandRequestOp.request.schema_type);
-			NetDriver->SpatialMetrics->OnModifySettingCommand(Payload);
-			break;
-		}
-		default:
-			UE_LOG(LogSpatialReceiver, Error, TEXT("Unknown command index for DebugMetrics component: %d, entity: %lld"), CommandIndex,
-				   EntityId);
-			break;
-		}
-
-		Sender->SendEmptyCommandResponse(ComponentId, CommandIndex, RequestId, FSpatialGDKSpanId(Op.span_id));
-		return;
-	}
-#endif // !UE_BUILD_SHIPPING
-}
-
-void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
-{
-	const Worker_CommandResponseOp& CommandResponseOp = Op.op.command_response;
-	const Worker_CommandResponse& CommandResponse = CommandResponseOp.response;
-	const Worker_ComponentId ComponentId = CommandResponse.component_id;
-	const Worker_RequestId RequestId = CommandResponseOp.request_id;
-
-	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandResponse);
-}
-
 void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverEntityQueryResponse);

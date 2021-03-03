@@ -33,9 +33,6 @@ public:
 	// SpatialRPCService::ExtractRPCsForEntity.
 	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) override;
 
-	virtual void OnCommandRequest(const Worker_Op& Op) override;
-	virtual void OnCommandResponse(const Worker_Op& Op) override;
-
 	virtual void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) override;
 
 	virtual void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate) override;
