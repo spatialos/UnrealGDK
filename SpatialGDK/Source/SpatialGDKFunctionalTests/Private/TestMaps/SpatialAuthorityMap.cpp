@@ -2,6 +2,7 @@
 
 #include "TestMaps/SpatialAuthorityMap.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthoritySettingsOverride.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthorityTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthorityTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthorityTestGameMode.h"
@@ -10,6 +11,10 @@
 USpatialAuthorityMap::USpatialAuthorityMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialAuthorityMap"))
 {
+	// clang-format off
+	SetCustomConfig(TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
+					TEXT("PlayNumberOfClients=1"));
+	// clang-format on
 }
 
 void USpatialAuthorityMap::CreateCustomContentForMap()
@@ -19,9 +24,11 @@ void USpatialAuthorityMap::CreateCustomContentForMap()
 	// The actors were placed in one of the quadrants of the map, even though the map does not have multiworker
 	FVector SpatialAuthorityTestActorPosition(-250, -250, 0);
 
-	// Add the test
+	// Add the tests
 	ASpatialAuthorityTest* AuthTestActor =
 		AddActorToLevel<ASpatialAuthorityTest>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
+	ASpatialAuthoritySettingsOverride* SettingsOverrideTest =
+		AddActorToLevel<ASpatialAuthoritySettingsOverride>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
 
 	// Add the helpers, as we need things placed in the level
 	AuthTestActor->LevelActor = AddActorToLevel<ASpatialAuthorityTestActor>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));

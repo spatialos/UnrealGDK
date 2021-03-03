@@ -3,8 +3,8 @@
 #pragma once
 
 #include "Improbable/SpatialGDKSettingsBridge.h"
-#include "Modules/ModuleManager.h"
 #include "SpatialGDKLogParser.h"
+#include "SpatialTestSettings.h"
 
 class FSpatialGDKEditor;
 class FSpatialGDKEditorCommandLineArgsManager;
@@ -26,6 +26,10 @@ public:
 
 	virtual void TakeSnapshot(UWorld* World, FSpatialSnapshotTakenFunc OnSnapshotTaken) override;
 
+	// Delegate which others (specifically the SpatialFunctionalTestsModule) can bind to, to execute their functionality for overriding
+	// settings and other things
+	DECLARE_MULTICAST_DELEGATE_TwoParams(FOverrideSettingsForTestingDelegate, UWorld*, const FString&);
+	FOverrideSettingsForTestingDelegate OverrideSettingsForTestingDelegate;
 	/* Way to force a deployment to be launched with a specific snapshot. This is meant to be override-able only
 	 * at runtime, specifically for Functional Testing purposes.
 	 */
@@ -53,7 +57,9 @@ private:
 
 	virtual bool ForEveryServerWorker(TFunction<void(const FName&, int32)> Function) const override;
 
-	virtual FPlayInEditorSettingsOverride GetPlayInEditorSettingsOverrideForTesting(UWorld* World) const;
+	virtual void OverrideSettingsForTesting(UWorld* World, const FString& MapName) override;
+
+	virtual void RevertSettingsForTesting();
 
 	virtual bool UsesActorInteractionSemantics() const override;
 
@@ -72,4 +78,6 @@ private:
 	TUniquePtr<FSpatialGDKEditorCommandLineArgsManager> CommandLineArgsManager;
 
 	FLocalReceptionistProxyServerManager* LocalReceptionistProxyServerManager;
+
+	TUniquePtr<FSpatialTestSettings> SpatialTestSettings;
 };

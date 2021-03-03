@@ -12,4 +12,6 @@ public:
 	virtual void ShutdownModule() override;
 
 	virtual bool SupportsDynamicReloading() override { return true; }
+
+	static void ManageSnapshotsForTests(UWorld* World, const FString& MapName);
 };

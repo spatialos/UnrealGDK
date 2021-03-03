@@ -3,5 +3,4 @@ package unreal;
 
 component PlayerController {
     id = 9991;
-    bool client_has_quit = 1;
 }
