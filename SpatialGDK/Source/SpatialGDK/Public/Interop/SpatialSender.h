@@ -83,8 +83,6 @@ public:
 
 	bool ValidateOrExit_IsSupportedClass(const FString& PathName);
 
-	void SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const;
-
 private:
 	void PeriodicallyProcessOutgoingRPCs();
 

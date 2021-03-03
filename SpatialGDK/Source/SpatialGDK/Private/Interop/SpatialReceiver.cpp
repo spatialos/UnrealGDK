@@ -220,11 +220,7 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 	const Worker_RequestId RequestId = CommandResponseOp.request_id;
 
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverCommandResponse);
-	if (Op.op.command_response.response.component_id == SpatialConstants::WORKER_COMPONENT_ID)
-	{
-		OnSystemEntityCommandResponse(Op.op.command_response);
-	}
-	else if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID)
+	if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID)
 	{
 		check(NetDriver != nullptr);
 		check(NetDriver->Connection != nullptr);
@@ -252,37 +248,6 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 				   EntityId);
 		}
 	}
-}
-
-void USpatialReceiver::ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op)
-{
-	if (Op.request_id < 0)
-	{
-		// Invalid request id that will not be in PendingPartitionAssignments
-		return;
-	}
-
-	Worker_PartitionId PartitionId;
-	if (!PendingPartitionAssignments.RemoveAndCopyValue(Op.request_id, PartitionId))
-	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
-			   TEXT("Could not find request id in PendingPartitionAssignments. Request Id: %d"), Op.request_id);
-		return;
-	}
-
-	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error,
-			   TEXT("ClaimPartition command failed for a reason other than timeout. "
-					"This is fatal. Partition entity: %lld. Reason: %s"),
-			   PartitionId, UTF8_TO_TCHAR(Op.message));
-		return;
-	}
-
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
-		   TEXT("ClaimPartition command succeeded. "
-				"Worker sytem entity: %lld. Partition entity: %lld"),
-		   Op.entity_id, PartitionId);
 }
 
 void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
@@ -389,33 +354,6 @@ void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp&
 		UE_LOG(LogSpatialReceiver, Warning,
 			   TEXT("Received EntityQueryResponse but with no delegate set, request id: %d, number of entities: %d, message: %s"),
 			   Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
-	}
-}
-
-void USpatialReceiver::OnSystemEntityCommandResponse(const Worker_CommandResponseOp& Op)
-{
-	SCOPE_CYCLE_COUNTER(STAT_ReceiverSystemEntityCommandResponse);
-	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("SystemEntityCommand failed: request id: %d, message: %s"), Op.request_id,
-			   UTF8_TO_TCHAR(Op.message));
-	}
-
-	switch (Op.response.command_index)
-	{
-	case SpatialConstants::WORKER_DISCONNECT_COMMAND_ID:
-	{
-		// This case is handled elsewhere, but we don't want check to trigger since
-		// the worker components does receive this response.
-		return;
-	}
-	case SpatialConstants::WORKER_CLAIM_PARTITION_COMMAND_ID:
-	{
-		ReceiveClaimPartitionResponse(Op);
-		return;
-	}
-	default:
-		checkNoEntry();
 	}
 }
 

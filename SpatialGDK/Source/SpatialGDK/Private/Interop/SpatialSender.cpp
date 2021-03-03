@@ -109,17 +109,6 @@ bool USpatialSender::ValidateOrExit_IsSupportedClass(const FString& PathName)
 	return ClassInfoManager->ValidateOrExit_IsSupportedClass(RemappedPathName);
 }
 
-void USpatialSender::SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const
-{
-	UE_LOG(LogSpatialSender, Log,
-		   TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId: %lld. "
-				"PartitionId: %lld"),
-		   *Connection->GetWorkerId(), SystemWorkerEntityId, PartitionId);
-	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionId);
-	const Worker_RequestId RequestId = Connection->SendCommandRequest(SystemWorkerEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
-	Receiver->PendingPartitionAssignments.Add(RequestId, PartitionId);
-}
-
 void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 {
 	check(Connection != nullptr);

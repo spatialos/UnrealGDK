@@ -19,6 +19,8 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "Interop/ReserveEntityIdsHandler.h"
+
 #include "SpatialActorChannel.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialActorChannel, Log, All);
@@ -273,6 +275,7 @@ public:
 	// Call when a subobject is deleted to unmap its references and cleanup its cached informations.
 	// NB : ObjectPtr might be a dangling pointer.
 	void OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* ObjectPtr, const TWeakObjectPtr<UObject>& ObjectWeakPtr);
+	void Advance(const SpatialGDK::ViewDelta& ViewDelta);
 
 	static void ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject);
 
@@ -334,6 +337,8 @@ private:
 
 	UPROPERTY(transient)
 	class USpatialReceiver* Receiver;
+
+	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimPartitionHandler;
 
 	FVector LastPositionSinceUpdate;
 	double TimeWhenPositionLastUpdated;

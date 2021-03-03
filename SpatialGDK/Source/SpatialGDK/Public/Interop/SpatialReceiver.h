@@ -52,19 +52,12 @@ public:
 
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) override;
 
-	virtual void OnSystemEntityCommandResponse(const Worker_CommandResponseOp& Op) override;
-
 	void OnDisconnect(uint8 StatusCode, const FString& Reason);
 
 	bool IsPendingOpsOnChannel(USpatialActorChannel& Channel);
 
 private:
 	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
-
-	void ReceiveClaimPartitionResponse(const Worker_CommandResponseOp& Op);
-
-public:
-	TMap<Worker_RequestId_Key, Worker_PartitionId> PendingPartitionAssignments;
 
 private:
 	UPROPERTY()

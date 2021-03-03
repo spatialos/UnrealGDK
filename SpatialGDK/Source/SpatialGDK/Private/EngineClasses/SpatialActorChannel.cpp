@@ -225,6 +225,8 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	check(NetDriver);
 	Sender = NetDriver->Sender;
 	Receiver = NetDriver->Receiver;
+
+	ClaimPartitionHandler = MakeUnique<SpatialGDK::ClaimPartitionHandler>(*NetDriver->Connection);
 }
 
 void USpatialActorChannel::RetireEntityIfAuthoritative()
@@ -1228,7 +1230,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		// components (such as client RPC endpoints, player controller component, etc).
 		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Cast<APlayerController>(Actor));
 		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
-		Sender->SendClaimPartitionRequest(ClientSystemEntityId, Op.entity_id);
+		ClaimPartitionHandler->ClaimPartition(ClientSystemEntityId, Op.entity_id);
 	}
 }
 
@@ -1423,6 +1425,11 @@ void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef,
 		NetDriver->ActorSystem->CleanupRepStateMap(*SubObjectRefMap);
 		ObjectReferenceMap.Remove(ObjectWeakPtr);
 	}
+}
+
+void USpatialActorChannel::Advance(const SpatialGDK::ViewDelta& ViewDelta)
+{
+	ClaimPartitionHandler->ProcessOps(ViewDelta.GetWorkerMessages());
 }
 
 void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject)
