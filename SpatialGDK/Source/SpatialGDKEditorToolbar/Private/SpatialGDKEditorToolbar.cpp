@@ -1576,7 +1576,15 @@ void FSpatialGDKEditorToolbarModule::AddDeploymentTagIfMissing(const FString& Ta
 
 void FSpatialGDKEditorToolbarModule::GenerateTestMaps()
 {
-	SpatialGDK::TestMapGeneration::GenerateTestMaps();
+	OnShowTaskStartNotification(TEXT("Generating test maps"));
+	if (SpatialGDK::TestMapGeneration::GenerateTestMaps())
+	{
+		OnShowSuccessNotification(TEXT("Successfully generated test maps!"));
+	}
+	else
+	{
+		OnShowFailedNotification(TEXT("Failed to generate test maps. See output log for details."));
+	}
 }
 
 #undef LOCTEXT_NAMESPACE
