@@ -79,10 +79,7 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			StaticComponentView->OnAuthorityChange(Op.op.component_set_authority_change);
 			break;
 
-		// World Command Responses
-		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			Receiver->OnCreateEntityResponse(Op);
-			break;
+			// World Command Responses
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
 			break;
 		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:

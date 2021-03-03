@@ -70,6 +70,8 @@ public:
 	// Entity Creation
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 
+	void OnEntityCreated(const Worker_CreateEntityResponseOp&, TWeakObjectPtr<USpatialActorChannel> BoundActorChannel);
+
 private:
 	// Helper struct to manage FSpatialObjectRepState update cycle.
 	// TODO: move into own class.

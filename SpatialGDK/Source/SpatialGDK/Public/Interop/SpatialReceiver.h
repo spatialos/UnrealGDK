@@ -42,22 +42,15 @@ public:
 	virtual void OnCommandRequest(const Worker_Op& Op) override;
 	virtual void OnCommandResponse(const Worker_Op& Op) override;
 
-	virtual void OnCreateEntityResponse(const Worker_Op& Op) override;
-
-	virtual void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel) override;
 	virtual void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) override;
 
 	virtual void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate) override;
-	virtual void AddSystemEntityCommandDelegate(Worker_RequestId RequestId, SystemEntityCommandDelegate Delegate) override;
 
 	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) override;
 
 	void OnDisconnect(uint8 StatusCode, const FString& Reason);
 
 	bool IsPendingOpsOnChannel(USpatialActorChannel& Channel);
-
-private:
-	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
 
 private:
 	UPROPERTY()
@@ -69,11 +62,8 @@ private:
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
 
-	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;
 
 	TMap<Worker_RequestId_Key, EntityQueryDelegate> EntityQueryDelegates;
-	TMap<Worker_RequestId_Key, CreateEntityDelegate> CreateEntityDelegates;
-	TMap<Worker_RequestId_Key, SystemEntityCommandDelegate> SystemEntityCommandDelegates;
 	SpatialGDK::SpatialEventTracer* EventTracer;
 };

@@ -226,6 +226,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	Sender = NetDriver->Sender;
 	Receiver = NetDriver->Receiver;
 
+	CreateEntityHandler = MakeUnique<SpatialGDK::CreateEntityHandler>();
 	ClaimPartitionHandler = MakeUnique<SpatialGDK::ClaimPartitionHandler>(*NetDriver->Connection);
 }
 

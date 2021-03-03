@@ -1875,7 +1875,56 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel* Channel, uint32&
 
 	const Worker_RequestId RequestId = CreateEntity(Channel, OutBytesWritten);
 
-	NetDriver->Receiver->AddPendingActorRequest(RequestId, Channel);
+	Channel->HackPendingCreateEntityRequestIds.Add(RequestId);
+
+	CreateEntityHandler.AddRequest(RequestId,
+								   CreateEntityDelegate::CreateRaw(this, &ActorSystem::OnEntityCreated, MakeWeakObjectPtr(Channel)));
+}
+
+void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& CreateEntityResponseOp, TWeakObjectPtr<USpatialActorChannel> Channel)
+{
+	const Worker_RequestId RequestId = CreateEntityResponseOp.request_id;
+	const Worker_EntityId EntityId = CreateEntityResponseOp.entity_id;
+	// TODO: Grab Op.span_id somehow.
+	const Trace_SpanIdType* SpanId = nullptr;
+
+	// It's possible for the ActorChannel to have been closed by the time we receive a response. Actor validity is checked within the
+	// channel.
+	if (Channel.IsValid())
+	{
+		Channel->HackPendingCreateEntityRequestIds.Remove(RequestId);
+		Channel->OnCreateEntityResponse(CreateEntityResponseOp);
+
+		if (EventTracer != nullptr)
+		{
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntitySuccess(Channel->Actor, EntityId),
+									/* Causes */ SpanId, /* NumCauses */ 1);
+		}
+	}
+	else if (Channel.IsStale())
+	{
+		UE_LOG(LogSpatialReceiver, Verbose,
+			   TEXT("Received CreateEntityResponse for actor which no longer has an actor channel: "
+					"request id: %d, entity id: %lld. This should only happen in the case where we attempt to delete the entity before we "
+					"have authority. "
+					"The entity will therefore be deleted once authority is gained."),
+			   RequestId, EntityId);
+
+		FString Message =
+			FString::Printf(TEXT("Stale Actor Channel - tried to delete entity before gaining authority. Actor - %s EntityId - %d"),
+							*Channel->Actor->GetName(), EntityId);
+
+		if (EventTracer != nullptr)
+		{
+			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(Message), /* Causes */ SpanId, /* NumCauses */ 1);
+		}
+	}
+	else if (EventTracer != nullptr)
+	{
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(TEXT("Create entity response unknown error")),
+								/* Causes */ SpanId,
+								/* NumCauses */ 1);
+	}
 }
 
 void ActorSystem::DestroyActor(AActor* Actor, const Worker_EntityId EntityId)

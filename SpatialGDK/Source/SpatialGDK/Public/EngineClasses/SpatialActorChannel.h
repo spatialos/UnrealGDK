@@ -283,6 +283,8 @@ public:
 
 	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
 
+	TSet<Worker_RequestId> HackPendingCreateEntityRequestIds;
+
 protected:
 	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
@@ -338,8 +340,10 @@ private:
 	UPROPERTY(transient)
 	class USpatialReceiver* Receiver;
 
+	TUniquePtr<SpatialGDK::CreateEntityHandler> CreateEntityHandler;
 	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimPartitionHandler;
 
+private:
 	FVector LastPositionSinceUpdate;
 	double TimeWhenPositionLastUpdated;
 

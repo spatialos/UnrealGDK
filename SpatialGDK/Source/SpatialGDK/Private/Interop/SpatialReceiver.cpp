@@ -250,89 +250,6 @@ void USpatialReceiver::OnCommandResponse(const Worker_Op& Op)
 	}
 }
 
-void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
-{
-	const Worker_CreateEntityResponseOp& CreateEntityResponseOp = Op.op.create_entity_response;
-	const Worker_EntityId EntityId = CreateEntityResponseOp.entity_id;
-	const Worker_RequestId RequestId = CreateEntityResponseOp.request_id;
-	const uint8_t StatusCode = CreateEntityResponseOp.status_code;
-
-	SCOPE_CYCLE_COUNTER(STAT_ReceiverCreateEntityResponse);
-	switch (static_cast<Worker_StatusCode>(StatusCode))
-	{
-	case WORKER_STATUS_CODE_SUCCESS:
-		UE_LOG(LogSpatialReceiver, Verbose,
-			   TEXT("Create entity request succeeded. "
-					"Request id: %d, entity id: %lld, message: %s"),
-			   RequestId, EntityId, UTF8_TO_TCHAR(CreateEntityResponseOp.message));
-		break;
-	case WORKER_STATUS_CODE_TIMEOUT:
-		UE_LOG(LogSpatialReceiver, Verbose,
-			   TEXT("Create entity request timed out. "
-					"Request id: %d, entity id: %lld, message: %s"),
-			   RequestId, EntityId, UTF8_TO_TCHAR(CreateEntityResponseOp.message));
-		break;
-	case WORKER_STATUS_CODE_APPLICATION_ERROR:
-		UE_LOG(LogSpatialReceiver, Verbose,
-			   TEXT("Create entity request failed. "
-					"Either the reservation expired, the entity already existed, or the entity was invalid. "
-					"Request id: %d, entity id: %lld, message: %s"),
-			   RequestId, EntityId, UTF8_TO_TCHAR(CreateEntityResponseOp.message));
-		break;
-	default:
-		UE_LOG(LogSpatialReceiver, Error,
-			   TEXT("Create entity request failed. This likely indicates a bug in the Unreal GDK and should be reported. "
-					"Request id: %d, entity id: %lld, message: %s"),
-			   RequestId, EntityId, UTF8_TO_TCHAR(CreateEntityResponseOp.message));
-		break;
-	}
-
-	if (CreateEntityDelegate* Delegate = CreateEntityDelegates.Find(RequestId))
-	{
-		Delegate->ExecuteIfBound(CreateEntityResponseOp);
-		CreateEntityDelegates.Remove(RequestId);
-	}
-
-	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(RequestId);
-
-	// It's possible for the ActorChannel to have been closed by the time we receive a response. Actor validity is checked within the
-	// channel.
-	if (Channel.IsValid())
-	{
-		Channel->OnCreateEntityResponse(CreateEntityResponseOp);
-
-		if (EventTracer != nullptr)
-		{
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntitySuccess(Channel->Actor, EntityId),
-									/* Causes */ Op.span_id, /* NumCauses */ 1);
-		}
-	}
-	else if (Channel.IsStale())
-	{
-		UE_LOG(LogSpatialReceiver, Verbose,
-			   TEXT("Received CreateEntityResponse for actor which no longer has an actor channel: "
-					"request id: %d, entity id: %lld. This should only happen in the case where we attempt to delete the entity before we "
-					"have authority. "
-					"The entity will therefore be deleted once authority is gained."),
-			   RequestId, EntityId);
-
-		FString Message =
-			FString::Printf(TEXT("Stale Actor Channel - tried to delete entity before gaining authority. Actor - %s EntityId - %d"),
-							*Channel->Actor->GetName(), EntityId);
-
-		if (EventTracer != nullptr)
-		{
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(Message), /* Causes */ Op.span_id, /* NumCauses */ 1);
-		}
-	}
-	else if (EventTracer != nullptr)
-	{
-		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(TEXT("Create entity response unknown error")),
-								/* Causes */ Op.span_id,
-								/* NumCauses */ 1);
-	}
-}
-
 void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ReceiverEntityQueryResponse);
@@ -357,11 +274,6 @@ void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp&
 	}
 }
 
-void USpatialReceiver::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel)
-{
-	PendingActorRequests.Add(RequestId, Channel);
-}
-
 void USpatialReceiver::AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<FReliableRPCForRetry> ReliableRPC)
 {
 	PendingReliableRPCs.Add(RequestId, ReliableRPC);
@@ -370,23 +282,6 @@ void USpatialReceiver::AddPendingReliableRPC(Worker_RequestId RequestId, TShared
 void USpatialReceiver::AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
 {
 	EntityQueryDelegates.Add(RequestId, MoveTemp(Delegate));
-}
-
-void USpatialReceiver::AddSystemEntityCommandDelegate(Worker_RequestId RequestId, SystemEntityCommandDelegate Delegate)
-{
-	SystemEntityCommandDelegates.Add(RequestId, MoveTemp(Delegate));
-}
-
-TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
-{
-	TWeakObjectPtr<USpatialActorChannel>* ChannelPtr = PendingActorRequests.Find(RequestId);
-	if (ChannelPtr == nullptr)
-	{
-		return nullptr;
-	}
-	TWeakObjectPtr<USpatialActorChannel> Channel = *ChannelPtr;
-	PendingActorRequests.Remove(RequestId);
-	return Channel;
 }
 
 void USpatialReceiver::OnDisconnect(uint8 StatusCode, const FString& Reason)
@@ -411,12 +306,9 @@ bool USpatialReceiver::IsPendingOpsOnChannel(USpatialActorChannel& Channel)
 		}
 	}
 
-	for (const auto& ActorRequest : PendingActorRequests)
+	if (Channel.HackPendingCreateEntityRequestIds.Num() > 0)
 	{
-		if (ActorRequest.Value == &Channel)
-		{
-			return true;
-		}
+		return true;
 	}
 
 	return false;
