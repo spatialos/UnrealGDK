@@ -6,7 +6,6 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "FunctionalTest.h"
-#include "Improbable/SpatialGDKSettingsBridge.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
 #include "SpatialFunctionalTestRequireHandler.h"
 #include "SpatialFunctionalTestStep.h"
@@ -69,7 +68,13 @@ public:
 
 	// # Test APIs
 
-	int GetNumRequiredClients() const { return NumRequiredClients; }
+	int32 GetNumRequiredClients() const
+	{
+		const ULevelEditorPlaySettings* EditorPlaySettings = GetDefault<ULevelEditorPlaySettings>();
+		int32 NumRequiredClients = 0;
+		EditorPlaySettings->GetPlayNumberOfClients(NumRequiredClients);
+		return NumRequiredClients;
+	}
 
 	// Called at the beginning of the test, use it to setup your steps. Contrary to AFunctionalTest, this will
 	// run on all Workers (Server and Client).
@@ -340,8 +345,6 @@ public:
 	static void ClearAllTakenSnapshots();
 
 protected:
-	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
-
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();
 
@@ -370,9 +373,10 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Spatial Functional Test")
 	FSpatialFunctionalTestStepDefinition ClearSnapshotStepDefinition;
 
+	void NotifyTestFinishedObserver() override;
+
 private:
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"), Category = "Spatial Functional Test")
-	int NumRequiredClients = 2;
+	bool bNotifyObserversCalled = false;
 
 	// Number of servers that should be running in the world.
 	int NumExpectedServers = 0;
@@ -408,6 +412,7 @@ private:
 
 	UFUNCTION()
 	void OnReplicated_bPreparedTest();
+	void PrepareTestAfterBeginPlay();
 
 	UPROPERTY(ReplicatedUsing = OnReplicated_bFinishedTest, Transient)
 	bool bFinishedTest = false;
