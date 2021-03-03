@@ -13,7 +13,7 @@
  * - Setup:
  *  - The Server spawns one ReplicatedTestActor.
  * - Test:
- *  - All  Clients check that they can see exactly 1 ReplicatedTestActor.
+ *  - All Clients check that they can see exactly 1 ReplicatedTestActor.
  *  - The Server changes the ReplicatedProperty of the ReplicatedTestActor from "0" to "99".
  *  - All  Clients check that the ReplicatedProperty is now set to "99".
  * - Clean-up:
