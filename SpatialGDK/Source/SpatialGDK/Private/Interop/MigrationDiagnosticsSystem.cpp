@@ -62,8 +62,6 @@ void MigrationDiagnosticsSystem::ProcessOps(const TArray<Worker_Op>& Ops) const
 						TEXT("Migration diaganostic log failed because cannot retreive actor for entity (%llu) on authoritative worker %s"),
 						EntityId, *NetDriver.Connection->GetWorkerId());
 				}
-
-				return;
 			}
 		}
 		else if (Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE)
@@ -82,7 +80,7 @@ void MigrationDiagnosticsSystem::ProcessOps(const TArray<Worker_Op>& Ops) const
 				{
 					UE_LOG(LogSpatialMigrationDiagnostics, Warning, TEXT("Migration diaganostic log failed, status code %i."),
 						   CommandResponseOp.status_code);
-					return;
+					continue;
 				}
 
 				USpatialPackageMapClient* PackageMap = NetDriver.PackageMap;
