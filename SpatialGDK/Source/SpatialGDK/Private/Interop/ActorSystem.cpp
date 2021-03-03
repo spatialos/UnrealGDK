@@ -951,7 +951,9 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 		if (AbsOffset >= MaxAbsOffset)
 		{
 			// If you see this error, it is possible that there has been a non-auth modification of data containing object references.
-			UE_LOG(LogActorSystem, Error, TEXT("ResolveObjectReferences: Removed unresolved reference for property %s: AbsOffset >= MaxAbsOffset: %d > %d. This could indicate non-auth modification."),
+			UE_LOG(LogActorSystem, Error,
+				   TEXT("ResolveObjectReferences: Removed unresolved reference for property %s: AbsOffset >= MaxAbsOffset: %d > %d. This "
+						"could indicate non-auth modification."),
 				   *GetNameSafe(Property), AbsOffset, MaxAbsOffset);
 			It.RemoveCurrent();
 			continue;
