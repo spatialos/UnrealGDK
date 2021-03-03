@@ -112,6 +112,8 @@ FString ComponentTypeToString(ESchemaComponentType Type)
 		return TEXT("OwnerOnly");
 	case SCHEMA_Handover:
 		return TEXT("Handover");
+	case SCHEMA_InitialOnly:
+		return TEXT("InitialOnly");
 	}
 	return TEXT("");
 }
@@ -258,6 +260,7 @@ const TArray<UObject*>& AllTestClassesArray()
 	static TArray<UObject*> TestClassesArray = { USchemaGenObjectStub::StaticClass(),
 												 USchemaGenObjectStubCondOwnerOnly::StaticClass(),
 												 USchemaGenObjectStubHandOver::StaticClass(),
+												 USchemaGenObjectStubInitialOnly::StaticClass(),
 												 USpatialTypeObjectStub::StaticClass(),
 												 UChildOfSpatialTypeObjectStub::StaticClass(),
 												 UNotSpatialTypeObjectStub::StaticClass(),
@@ -279,6 +282,7 @@ const TSet<UClass*>& AllTestClassesSet()
 	static TSet<UClass*> TestClassesSet = { USchemaGenObjectStub::StaticClass(),
 											USchemaGenObjectStubCondOwnerOnly::StaticClass(),
 											USchemaGenObjectStubHandOver::StaticClass(),
+											USchemaGenObjectStubInitialOnly::StaticClass(),
 											USpatialTypeObjectStub::StaticClass(),
 											UChildOfSpatialTypeObjectStub::StaticClass(),
 											UNotSpatialTypeObjectStub::StaticClass(),
@@ -899,6 +903,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "debug_component.schema",
 										   "debug_metrics.schema",
 										   "global_state_manager.schema",
+										   "initial_only_presence.schema",
 										   "player_controller.schema",
 										   "known_entity_auth_component_set.schema",
 										   "migration_diagnostic.schema",
@@ -1062,7 +1067,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	SchemaTestFixture Fixture;
 
 	TSet<UClass*> Classes = { ASpatialTypeActor::StaticClass(), USchemaGenObjectStubHandOver::StaticClass(),
-							  ASpatialTypeActorWithOwnerOnly::StaticClass() };
+							  ASpatialTypeActorWithOwnerOnly::StaticClass(), ASpatialTypeActorWithInitialOnly::StaticClass() };
 
 	FString SchemaFolder = FPaths::Combine(SchemaOutputFolder, TEXT("schema"));
 	FString UnrealSchemaFolder = FPaths::Combine(SchemaFolder, TEXT("unreal"));
@@ -1091,7 +1096,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	TestTrue("Schema bundle file successfully read",
 			 SpatialGDKEditor::Schema::ExtractComponentSetsFromSchemaJson(SchemaJsonPath, SchemaDatabase->ComponentSetIdToComponentIds));
 
-	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 8);
+	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 9);
 
 	TestTrue("Found spatial well known components", SchemaDatabase->ComponentSetIdToComponentIds.Contains(50));
 	if (SchemaDatabase->ComponentSetIdToComponentIds.Contains(50))
@@ -1132,10 +1137,10 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 			TestTrue(*DebugString, ServerComponents->ComponentIDs.Find(ComponentId.Key) != INDEX_NONE);
 		}
 
-		uint32 ServerAuthSets[3] = { SpatialConstants::DATA_COMPONENT_SET_ID, SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID,
-									 SpatialConstants::HANDOVER_COMPONENT_SET_ID };
+		uint32 ServerAuthSets[] = { SpatialConstants::DATA_COMPONENT_SET_ID, SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID,
+									SpatialConstants::HANDOVER_COMPONENT_SET_ID, SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID };
 
-		for (uint32 ComponentType = SCHEMA_Data; ComponentType < SCHEMA_Count; ++ComponentType)
+		for (uint32 ComponentType = SCHEMA_Begin; ComponentType < SCHEMA_Count; ++ComponentType)
 		{
 			FComponentIDs* DataComponents = SchemaDatabase->ComponentSetIdToComponentIds.Find(ServerAuthSets[ComponentType]);
 			TestTrue("Found entry for class in data type component set", DataComponents != nullptr);
