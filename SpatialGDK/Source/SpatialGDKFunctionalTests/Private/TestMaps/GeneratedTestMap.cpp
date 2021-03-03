@@ -83,7 +83,9 @@ void UGeneratedTestMap::GenerateBaseMap()
 	// Make the initial platform much much larger so things don't fall off for tests which use a large area (visibility test)
 	Plane->SetActorScale3D(FVector(10000, 10000, 1));
 
-	APlayerStart* PlayerStart = AddActorToLevel<APlayerStart>(CurrentLevel, FTransform(FVector(-500, 0, 100)));
+	// Default player start location is chosen so that players spawn on server 1 by default.
+	// Individual test maps can change this if necessary.
+	APlayerStart* PlayerStart = AddActorToLevel<APlayerStart>(CurrentLevel, FTransform(FVector(-100, -100, 100)));
 
 	// TODO: Maybe figure out how to set the default viewpoint when opening the map, so we don't start in the ground (maybe together with
 	// other viewing position issues), ticket: UNR-4975.
