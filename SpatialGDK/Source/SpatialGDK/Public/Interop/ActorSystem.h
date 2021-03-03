@@ -123,10 +123,8 @@ private:
 	FTimerManager* TimerManager;
 	SpatialEventTracer* EventTracer;
 
-	TMap<Worker_EntityId_Key, TArray<Worker_ComponentId>> PendingDynamicSubobjectComponents;
+	TMap<Worker_EntityId_Key, TSet<Worker_ComponentId>> PendingDynamicSubobjectComponents;
 
-	TArray<Worker_ComponentId> SemanticActorComponents = { SpatialConstants::SPAWN_DATA_COMPONENT_ID,
-														   SpatialConstants::UNREAL_METADATA_COMPONENT_ID };
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;
 };

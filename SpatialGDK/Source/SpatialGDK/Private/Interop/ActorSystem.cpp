@@ -711,10 +711,40 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 	}
 
 	// Otherwise this is a dynamically attached component. We need to make sure we have all related components before creation.
-	PendingDynamicSubobjectComponents.FindOrAdd(EntityId).Emplace(ComponentId);
+	TSet<Worker_ComponentId>& Components = PendingDynamicSubobjectComponents.FindOrAdd(EntityId);
+	Components.Add(ComponentId);
 
-	// We ensure that the data component is added last, so once it's in view we're ready to attach the Unreal subobject
-	if (ComponentId == Info.SchemaComponents[SCHEMA_Data])
+	// Create filter for the components we expect to have in view.
+	// Server - data/owner-only/handover
+	// Owning client - data/owner-only
+	// Non-owning client - data
+	// If initial-only disabled + initial-only to all (counter-intuitive, but initial only is sent as normal if disabled and not sent at all
+	// on dynamic components if enabled)
+	const bool bIsServer = NetDriver->IsServer();
+	const bool bIsAuthClient = NetDriver->HasClientAuthority(EntityId);
+	const bool bInitialOnlyExpected = !GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition;
+
+	Worker_ComponentId ComponentFilter[SCHEMA_Count];
+	ComponentFilter[SCHEMA_Data] = true;
+	ComponentFilter[SCHEMA_OwnerOnly] = bIsServer || bIsAuthClient;
+	ComponentFilter[SCHEMA_Handover] = bIsServer;
+	ComponentFilter[SCHEMA_InitialOnly] = bInitialOnlyExpected;
+
+	bool bComponentsComplete = true;
+	for (int i = 0; i < SCHEMA_Count; ++i)
+	{
+		if (ComponentFilter[i] && Info.SchemaComponents[i] != SpatialConstants::INVALID_COMPONENT_ID
+			&& Components.Find(Info.SchemaComponents[i]) == nullptr)
+		{
+			bComponentsComplete = false;
+			break;
+		}
+	}
+
+	UE_LOG(LogActorSystem, Log, TEXT("Processing add component, unreal component %s. Entity: %lld, Component: %d, Actor: %s"),
+		   bComponentsComplete ? TEXT("complete") : TEXT("not complete"), EntityId, ComponentId, *Actor->GetPathName());
+
+	if (bComponentsComplete)
 	{
 		AttachDynamicSubobject(Actor, EntityId, Info);
 	}

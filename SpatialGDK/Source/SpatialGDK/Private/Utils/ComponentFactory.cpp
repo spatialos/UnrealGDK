@@ -39,8 +39,6 @@ TraceKey* GetTraceKeyFromComponentObject(T& Obj)
 } // namespace
 namespace SpatialGDK
 {
-using FRepChangeVisitorCallback = TFunction<bool(const FRepLayoutCmd&, const FRepParentCmd&, const int32 Handle)>;
-
 ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* InLatencyTracer)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
@@ -363,6 +361,11 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 {
 	TArray<FWorkerComponentData> ComponentDatas;
 
+	if (Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_Data], Object, RepChangeState, SCHEMA_Data, OutBytesWritten));
+	}
+
 	if (Info.SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		ComponentDatas.Add(
@@ -391,11 +394,6 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 			bInitialOnlyDataWritten = true;
 		}
 	}
-
-	// Write the data component add last so we can use it's presence as a marker component to indicate that the rest of the components have
-	// arrived.
-	check(Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID);
-	ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_Data], Object, RepChangeState, SCHEMA_Data, OutBytesWritten));
 
 	return ComponentDatas;
 }
