@@ -89,6 +89,7 @@ private:
 	void AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId, const FClassInfo& Info);
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentId ComponentId,
 							Schema_ComponentData* Data);
+
 	bool IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset);
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState,
@@ -122,7 +123,7 @@ private:
 	FTimerManager* TimerManager;
 	SpatialEventTracer* EventTracer;
 
-	TSet<TPair<Worker_EntityId_Key, Worker_ComponentId>> PendingDynamicSubobjectComponents;
+	TMap<Worker_EntityId_Key, TArray<Worker_ComponentId>> PendingDynamicSubobjectComponents;
 
 	TArray<Worker_ComponentId> SemanticActorComponents = { SpatialConstants::SPAWN_DATA_COMPONENT_ID,
 														   SpatialConstants::UNREAL_METADATA_COMPONENT_ID };

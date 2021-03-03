@@ -16,7 +16,7 @@ public:
 		// Reconstruct replication flags on the client side.
 		FReplicationFlags RepFlags;
 		RepFlags.bReplay = 0;
-		RepFlags.bNetInitial = 1; // The server will only ever send one update for bNetInitial, so just let them through here.
+		RepFlags.bNetInitial = 1; // Interest/queries controls initial only data visibility, so if the update is there let it through
 		RepFlags.bNetSimulated = ActorChannel->Actor->Role == ROLE_SimulatedProxy;
 		RepFlags.bNetOwner = bIsClient;
 #if ENGINE_MINOR_VERSION <= 23
@@ -57,7 +57,7 @@ public:
 		ConditionMap[COND_SimulatedOrPhysics] = bIsSimulated || bIsPhysics;
 		ConditionMap[COND_SimulatedOrPhysicsNoReplay] = (bIsSimulated || bIsPhysics) && !bIsReplay;
 
-		ConditionMap[COND_InitialOrOwner] = bIsInitial || bIsOwner;
+		ConditionMap[COND_InitialOrOwner] = true; // Functionality not support - just pass through.
 		ConditionMap[COND_ReplayOrOwner] = bIsReplay || bIsOwner;
 		ConditionMap[COND_ReplayOnly] = bIsReplay;
 		ConditionMap[COND_SkipReplay] = !bIsReplay;

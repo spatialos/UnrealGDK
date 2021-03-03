@@ -14,11 +14,17 @@ EntityQuery::EntityQuery(const Worker_EntityQuery& Query)
 		SnapshotComponentIds.Reserve(Query.snapshot_result_type_component_id_count);
 		SnapshotComponentIds.Append(Query.snapshot_result_type_component_ids, Query.snapshot_result_type_component_id_count);
 	}
+	if (Query.snapshot_result_type_component_set_ids)
+	{
+		SnapshotComponentSetIds.Reserve(Query.snapshot_result_type_component_set_id_count);
+		SnapshotComponentSetIds.Append(Query.snapshot_result_type_component_set_ids, Query.snapshot_result_type_component_set_id_count);
+	}
 }
 
 Worker_EntityQuery EntityQuery::GetWorkerQuery() const
 {
-	return Worker_EntityQuery{ Constraints[0], static_cast<uint32>(SnapshotComponentIds.Num()), SnapshotComponentIds.GetData() };
+	return Worker_EntityQuery{ Constraints[0], static_cast<uint32>(SnapshotComponentIds.Num()), SnapshotComponentIds.GetData(),
+							   static_cast<uint32>(SnapshotComponentSetIds.Num()), SnapshotComponentSetIds.GetData() };
 }
 
 int32 EntityQuery::GetNestedConstraintCount(const Worker_Constraint& Constraint)

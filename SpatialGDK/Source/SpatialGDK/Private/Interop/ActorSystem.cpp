@@ -525,7 +525,7 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 
 	ESchemaComponentType Category = NetDriver->ClassInfoManager->GetCategoryByComponentId(ComponentId);
 
-	if (Category == SCHEMA_Data || Category == SCHEMA_OwnerOnly)
+	if (Category == SCHEMA_Data || Category == SCHEMA_OwnerOnly || Category == SCHEMA_InitialOnly)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_ActorSystemApplyData);
 		ApplyComponentUpdate(ComponentId, Update, *TargetObject, *Channel, /* bIsHandover */ false);
@@ -533,12 +533,7 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 	else if (Category == SCHEMA_Handover)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_ActorSystemApplyHandover);
-		if (!NetDriver->IsServer())
-		{
-			UE_LOG(LogActorSystem, Verbose, TEXT("Entity: %d Component: %d - Skipping Handover component because we're a client."),
-				   EntityId, ComponentId);
-			return;
-		}
+		check(NetDriver->IsServer());
 
 		ApplyComponentUpdate(ComponentId, Update, *TargetObject, *Channel, /* bIsHandover */ true);
 	}
@@ -598,6 +593,11 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 	SCOPE_CYCLE_COUNTER(STAT_ActorSystemRemoveEntity);
 
 	RemoveActor(EntityId);
+
+	if (NetDriver->InitialOnlyFilter != nullptr && NetDriver->InitialOnlyFilter->HasInitialOnlyData(EntityId))
+	{
+		NetDriver->InitialOnlyFilter->RemoveInitialOnlyData(EntityId);
+	}
 
 	// Stop tracking if the entity was deleted as a result of deleting the actor during creation.
 	// This assumes that authority will be gained before interest is gained and lost.
@@ -711,27 +711,10 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 	}
 
 	// Otherwise this is a dynamically attached component. We need to make sure we have all related components before creation.
-	PendingDynamicSubobjectComponents.Add(MakeTuple(static_cast<Worker_EntityId_Key>(EntityId), ComponentId));
+	PendingDynamicSubobjectComponents.FindOrAdd(EntityId).Emplace(ComponentId);
 
-	bool bReadyToCreate = true;
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-		Worker_ComponentId SchemaComponentId = Info.SchemaComponents[Type];
-
-		// TODO (UNR-4460): This should not require checking out all the subobject components, only the ones
-		// we could check out. If data is always present, we could send that last and attach subobjects only when we
-		// see data.
-		if (SchemaComponentId == SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			return;
-		}
-
-		if (!PendingDynamicSubobjectComponents.Contains(MakeTuple(static_cast<Worker_EntityId_Key>(EntityId), SchemaComponentId)))
-		{
-			bReadyToCreate = false;
-		}
-	});
-
-	if (bReadyToCreate)
+	// We ensure that the data component is added last, so once it's in view we're ready to attach the Unreal subobject
+	if (ComponentId == Info.SchemaComponents[SCHEMA_Data])
 	{
 		AttachDynamicSubobject(Actor, EntityId, Info);
 	}
@@ -756,18 +739,12 @@ void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId
 
 	Channel->CreateSubObjects.Add(Subobject);
 
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
-
-		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			return;
-		}
-
+	for (auto ComponentId : *PendingDynamicSubobjectComponents.Find(EntityId))
+	{
 		ApplyComponentData(*Channel, *Subobject, ComponentId,
 						   SubView->GetView()[EntityId].Components.FindByPredicate(ComponentIdEquality{ ComponentId })->GetUnderlying());
-		PendingDynamicSubobjectComponents.Remove(MakeTuple(static_cast<Worker_EntityId_Key>(EntityId), ComponentId));
-	});
+	}
+	PendingDynamicSubobjectComponents.Remove(EntityId);
 
 	// Resolve things like RepNotify or RPCs after applying component data.
 	ResolvePendingOperations(Subobject, SubobjectRef);
@@ -781,7 +758,7 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 
 	ESchemaComponentType ComponentType = NetDriver->ClassInfoManager->GetCategoryByComponentId(ComponentId);
 
-	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly)
+	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly || ComponentType == SCHEMA_InitialOnly)
 	{
 		if (ComponentType == SCHEMA_Data && TargetObject.IsA<UActorComponent>())
 		{
@@ -1242,6 +1219,15 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 										  ObjectsToResolvePendingOpsFor);
 	}
 
+	if (NetDriver->InitialOnlyFilter != nullptr && NetDriver->InitialOnlyFilter->HasInitialOnlyData(EntityId))
+	{
+		for (const ComponentData& Component : NetDriver->InitialOnlyFilter->GetInitialOnlyData(EntityId))
+		{
+			ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), *Channel,
+											  ObjectsToResolvePendingOpsFor);
+		}
+	}
+
 	// Resolve things like RepNotify or RPCs after applying component data.
 	for (const ObjectPtrRefPair& ObjectToResolve : ObjectsToResolvePendingOpsFor)
 	{
@@ -1504,17 +1490,10 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 	// Cleanup pending add components if any exist.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		// If we have any pending subobjects on the channel
+		// If we have any pending subobjects on the channel, remove them
 		if (ActorChannel->PendingDynamicSubobjects.Num() > 0)
 		{
-			// Then iterate through all pending subobjects and remove entries relating to this entity.
-			for (const auto& Pair : PendingDynamicSubobjectComponents)
-			{
-				if (Pair.Key == EntityId)
-				{
-					PendingDynamicSubobjectComponents.Remove(Pair);
-				}
-			}
+			PendingDynamicSubobjectComponents.Remove(EntityId);
 		}
 	}
 
@@ -1722,4 +1701,5 @@ bool ActorSystem::EntityHasComponent(const Worker_EntityId EntityId, const Worke
 	}
 	return false;
 }
+
 } // namespace SpatialGDK

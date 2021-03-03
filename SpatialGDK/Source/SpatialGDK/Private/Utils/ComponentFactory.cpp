@@ -14,6 +14,7 @@
 #include "Net/NetworkProfiler.h"
 #include "Schema/Interest.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
@@ -38,11 +39,15 @@ TraceKey* GetTraceKeyFromComponentObject(T& Obj)
 } // namespace
 namespace SpatialGDK
 {
+using FRepChangeVisitorCallback = TFunction<bool(const FRepLayoutCmd&, const FRepParentCmd&, const int32 Handle)>;
+
 ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* InLatencyTracer)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, bInterestHasChanged(bInterestDirty)
+	, bInitialOnlyDataWritten(false)
+	, bInitialOnlyReplicationEnabled(GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition)
 	, LatencyTracer(InLatencyTracer)
 {
 }
@@ -358,11 +363,6 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 {
 	TArray<FWorkerComponentData> ComponentDatas;
 
-	if (Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
-	{
-		ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_Data], Object, RepChangeState, SCHEMA_Data, OutBytesWritten));
-	}
-
 	if (Info.SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		ComponentDatas.Add(
@@ -374,6 +374,28 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 		ComponentDatas.Add(
 			CreateHandoverComponentData(Info.SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState, OutBytesWritten));
 	}
+
+	if (Info.SchemaComponents[SCHEMA_InitialOnly] != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		if (bInitialOnlyReplicationEnabled && Info.bDynamicSubobject)
+		{
+			UE_LOG(LogComponentFactory, Warning,
+				   TEXT("Dynamic component using InitialOnly data. This data will not be sent. Obj (%s) Outer (%s)."), *Object->GetName(),
+				   *GetNameSafe(Object->GetOuter()));
+		}
+		else
+		{
+			ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_InitialOnly], Object, RepChangeState, SCHEMA_InitialOnly,
+												   OutBytesWritten));
+
+			bInitialOnlyDataWritten = true;
+		}
+	}
+
+	// Write the data component add last so we can use it's presence as a marker component to indicate that the rest of the components have
+	// arrived.
+	check(Info.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID);
+	ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_Data], Object, RepChangeState, SCHEMA_Data, OutBytesWritten));
 
 	return ComponentDatas;
 }
@@ -445,6 +467,22 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			{
 				ComponentUpdates.Add(SingleClientUpdate);
 				OutBytesWritten += BytesWritten;
+			}
+		}
+
+		if (Info.SchemaComponents[SCHEMA_InitialOnly] != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			if (!Info.bDynamicSubobject || !bInitialOnlyReplicationEnabled)
+			{
+				uint32 BytesWritten = 0;
+				FWorkerComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_InitialOnly], Object,
+																				 *RepChangeState, SCHEMA_InitialOnly, BytesWritten);
+				if (BytesWritten > 0)
+				{
+					ComponentUpdates.Add(MultiClientUpdate);
+					OutBytesWritten += BytesWritten;
+					bInitialOnlyDataWritten = true;
+				}
 			}
 		}
 	}
