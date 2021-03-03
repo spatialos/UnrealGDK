@@ -57,7 +57,7 @@ public:
 		ConditionMap[COND_SimulatedOrPhysics] = bIsSimulated || bIsPhysics;
 		ConditionMap[COND_SimulatedOrPhysicsNoReplay] = (bIsSimulated || bIsPhysics) && !bIsReplay;
 
-		ConditionMap[COND_InitialOrOwner] = true; // Functionality not support - just pass through.
+		ConditionMap[COND_InitialOrOwner] = true; // Functionality not supported - just pass through.
 		ConditionMap[COND_ReplayOrOwner] = bIsReplay || bIsOwner;
 		ConditionMap[COND_ReplayOnly] = bIsReplay;
 		ConditionMap[COND_SkipReplay] = !bIsReplay;

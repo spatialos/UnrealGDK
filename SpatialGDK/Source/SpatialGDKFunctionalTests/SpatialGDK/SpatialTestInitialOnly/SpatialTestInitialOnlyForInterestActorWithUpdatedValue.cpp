@@ -38,7 +38,7 @@ void ASpatialTestInitialOnlyForInterestActorWithUpdatedValue::PrepareTest()
 
 		RegisterAutoDestroyActor(SpawnActor);
 
-		// Set the PositionUpdateThresholdMaxCentimeeters to a lower value so that the spatial position updates can be sent every time the
+		// Set the PositionUpdateThresholdMaxCentimeters to a lower value so that the spatial position updates can be sent every time the
 		// character moves, decreasing the overall duration of the test
 		PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
 		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = 0.0f;

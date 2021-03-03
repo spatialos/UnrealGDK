@@ -39,7 +39,7 @@ void ASpatialTestInitialOnlyForInterestActor::PrepareTest()
 
 		RegisterAutoDestroyActor(SpawnActor);
 
-		// Set the PositionUpdateThresholdMaxCentimeeters to a lower value so that the spatial position updates can be sent every time the
+		// Set the PositionUpdateThresholdMaxCentimeters to a lower value so that the spatial position updates can be sent every time the
 		// character moves, decreasing the overall duration of the test
 		PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
 		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = 0.0f;
@@ -120,37 +120,21 @@ void ASpatialTestInitialOnlyForInterestActor::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(
-		TEXT("Check changed value."), FWorkerDefinition::Client(1),
-		[this]() -> bool {
-			bool IsReady = false;
-			TArray<AActor*> SpawnActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpatialTestInitialOnlySpawnActor::StaticClass(), SpawnActors);
-			for (AActor* Actor : SpawnActors)
+	AddStep(TEXT("Check changed value."), FWorkerDefinition::Client(1), nullptr, [this]() {
+		TArray<AActor*> SpawnActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpatialTestInitialOnlySpawnActor::StaticClass(), SpawnActors);
+		for (AActor* Actor : SpawnActors)
+		{
+			ASpatialTestInitialOnlySpawnActor* SpawnActor = Cast<ASpatialTestInitialOnlySpawnActor>(Actor);
+			if (SpawnActor != nullptr)
 			{
-				ASpatialTestInitialOnlySpawnActor* SpawnActor = Cast<ASpatialTestInitialOnlySpawnActor>(Actor);
-				if (SpawnActor != nullptr)
-				{
-					IsReady = true;
-				}
+				AssertTrue(SpawnActor->Int_Initial == 1, TEXT("Check Actor.Int_Initial value."));
+				AssertTrue(SpawnActor->Int_Replicate == 2, TEXT("Check Actor.Int_Replicate value."));
 			}
-			return IsReady;
-		},
-		[this]() {
-			TArray<AActor*> SpawnActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpatialTestInitialOnlySpawnActor::StaticClass(), SpawnActors);
-			for (AActor* Actor : SpawnActors)
-			{
-				ASpatialTestInitialOnlySpawnActor* SpawnActor = Cast<ASpatialTestInitialOnlySpawnActor>(Actor);
-				if (SpawnActor != nullptr)
-				{
-					AssertTrue(SpawnActor->Int_Initial == 1, TEXT("Check Actor.Int_Initial value."));
-					AssertTrue(SpawnActor->Int_Replicate == 2, TEXT("Check Actor.Int_Replicate value."));
-				}
-			}
+		}
 
-			FinishStep();
-		});
+		FinishStep();
+	});
 
 	AddStep(TEXT("Cleanup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Possess the original pawn, so that other tests start from the expected, default set-up

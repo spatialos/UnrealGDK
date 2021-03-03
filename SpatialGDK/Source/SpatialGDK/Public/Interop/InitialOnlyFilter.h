@@ -9,26 +9,29 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogInitialOnlyFilter, Log, All);
 
-class USpatialNetDriver;
+class USpatialWorkerConnection;
+class USpatialReceiver;
 
 namespace SpatialGDK
 {
 class InitialOnlyFilter
 {
 public:
-	InitialOnlyFilter(USpatialNetDriver* InNetDriver);
+	InitialOnlyFilter(USpatialWorkerConnection* InConnection, USpatialReceiver* InReceiver);
 
 	bool HasInitialOnlyData(Worker_EntityId EntityId) const;
 	bool HasInitialOnlyDataOrRequest(Worker_EntityId EntityId);
 	void FlushRequests();
 	void HandleInitialOnlyResponse(const Worker_EntityQueryResponseOp& Op);
-	const TArray<ComponentData>& GetInitialOnlyData(Worker_EntityId EntityId) const;
+	const TArray<ComponentData>* GetInitialOnlyData(Worker_EntityId EntityId) const;
 	void RemoveInitialOnlyData(Worker_EntityId EntityId);
 
 private:
 	void ClearRequest(Worker_RequestId RequestId);
 
-	USpatialNetDriver* NetDriver;
+	USpatialWorkerConnection* Connection;
+	USpatialReceiver* Receiver;
+
 	TSet<Worker_EntityId_Key> PendingInitialOnlyEntities;
 	TSet<Worker_EntityId_Key> InflightInitialOnlyEntities;
 	TMap<Worker_RequestId_Key, TSet<Worker_EntityId_Key>> InflightInitialOnlyRequests;

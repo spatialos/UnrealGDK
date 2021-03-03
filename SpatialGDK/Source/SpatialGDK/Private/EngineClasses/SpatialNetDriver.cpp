@@ -435,7 +435,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		if (SpatialSettings->bEnableInitialOnlyReplicationCondition && !IsServer())
 		{
-			InitialOnlyFilter = MakeUnique<SpatialGDK::InitialOnlyFilter>(this);
+			InitialOnlyFilter = MakeUnique<SpatialGDK::InitialOnlyFilter>(Connection, Receiver);
 		}
 
 		CreateAndInitializeLoadBalancingClasses();

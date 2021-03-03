@@ -380,6 +380,10 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 
 	if (Info.SchemaComponents[SCHEMA_InitialOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
+		// Initial only data on dynamic subobjects is not currently supported.
+		// When initial only replication is enabled, don't allow updates to be sent to initial only components.
+		// When initial only replication is disabled, initial only data is replicated per normal COND_None rules, so allow the update
+		// through.
 		if (bInitialOnlyReplicationEnabled && Info.bDynamicSubobject)
 		{
 			UE_LOG(LogComponentFactory, Warning,
@@ -470,14 +474,18 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 
 		if (Info.SchemaComponents[SCHEMA_InitialOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
+			// Initial only data on dynamic subobjects is not currently supported.
+			// When initial only replication is enabled, don't allow updates to be sent to initial only components.
+			// When initial only replication is disabled, initial only data is replicated per normal COND_None rules, so allow the update
+			// through.
 			if (!Info.bDynamicSubobject || !bInitialOnlyReplicationEnabled)
 			{
 				uint32 BytesWritten = 0;
-				FWorkerComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_InitialOnly], Object,
+				FWorkerComponentUpdate InitialOnlyUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_InitialOnly], Object,
 																				 *RepChangeState, SCHEMA_InitialOnly, BytesWritten);
 				if (BytesWritten > 0)
 				{
-					ComponentUpdates.Add(MultiClientUpdate);
+					ComponentUpdates.Add(InitialOnlyUpdate);
 					OutBytesWritten += BytesWritten;
 					bInitialOnlyDataWritten = true;
 				}

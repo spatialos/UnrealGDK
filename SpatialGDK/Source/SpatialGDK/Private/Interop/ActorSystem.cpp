@@ -1249,12 +1249,15 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 										  ObjectsToResolvePendingOpsFor);
 	}
 
-	if (NetDriver->InitialOnlyFilter != nullptr && NetDriver->InitialOnlyFilter->HasInitialOnlyData(EntityId))
+	if (NetDriver->InitialOnlyFilter != nullptr)
 	{
-		for (const ComponentData& Component : NetDriver->InitialOnlyFilter->GetInitialOnlyData(EntityId))
+		if (const TArray<ComponentData>* InitialOnlyComponents = NetDriver->InitialOnlyFilter->GetInitialOnlyData(EntityId))
 		{
-			ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), *Channel,
-											  ObjectsToResolvePendingOpsFor);
+			for (const ComponentData& Component : *InitialOnlyComponents)
+			{
+				ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), *Channel,
+												  ObjectsToResolvePendingOpsFor);
+			}
 		}
 	}
 
