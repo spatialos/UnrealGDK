@@ -6,6 +6,10 @@
 USpatialPropertyReplicationMap::USpatialPropertyReplicationMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialPropertyReplicationMap"))
 {
+	// clang-format off
+	SetCustomConfig(TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
+					TEXT("PlayNumberOfClients=3"));
+	// clang-format on
 }
 
 void USpatialPropertyReplicationMap::CreateCustomContentForMap()
