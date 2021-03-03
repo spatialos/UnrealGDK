@@ -283,7 +283,7 @@ public:
 
 	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
 
-	TSet<Worker_RequestId> HackPendingCreateEntityRequestIds;
+	TSet<Worker_RequestId_Key> HackPendingCreateEntityRequestIds;
 
 protected:
 	// Begin UChannel interface
