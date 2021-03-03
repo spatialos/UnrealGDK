@@ -230,7 +230,7 @@ void ActorSystem::Advance()
 		}
 	}
 
-	CreateEntityHandler.Advance(*SubView);
+	CreateEntityHandler.ProcessOps(*SubView->GetViewDelta().WorkerMessages);
 }
 
 UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)

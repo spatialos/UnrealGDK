@@ -11,6 +11,8 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "ReserveEntityIdsHandler.h"
+
 #include "GlobalStateManager.generated.h"
 
 class USpatialNetDriver;
@@ -68,7 +70,7 @@ public:
 	void HandleActorBasedOnLoadBalancer(AActor* ActorIterator) const;
 
 	Worker_EntityId GetLocalServerWorkerEntityId() const;
-	void ClaimSnapshotPartition() const;
+	void ClaimSnapshotPartition();
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
@@ -111,8 +113,7 @@ private:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
-	UPROPERTY()
-	USpatialSender* Sender;
+	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimHandler;
 
 	UPROPERTY()
 	USpatialReceiver* Receiver;

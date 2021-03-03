@@ -34,7 +34,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
-	Sender = InNetDriver->Sender;
+	ClaimHandler = MakeUnique<ClaimPartitionHandler>(*NetDriver->Connection);
 	Receiver = InNetDriver->Receiver;
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
@@ -402,13 +402,9 @@ Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-void UGlobalStateManager::ClaimSnapshotPartition() const
+void UGlobalStateManager::ClaimSnapshotPartition()
 {
-	if (ensure(Sender != nullptr))
-	{
-		Sender->SendClaimPartitionRequest(NetDriver->Connection->GetWorkerSystemEntityId(),
-										  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-	}
+	ClaimHandler->ClaimPartition(NetDriver->Connection->GetWorkerSystemEntityId(), SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 }
 
 void UGlobalStateManager::TriggerBeginPlay()

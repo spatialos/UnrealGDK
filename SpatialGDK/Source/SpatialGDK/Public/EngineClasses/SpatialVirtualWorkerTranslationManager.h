@@ -11,7 +11,8 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-#include "SpatialView/SubView.h"
+#include "Interop/CreateEntityHandler.h"
+#include "Interop/ReserveEntityIdsHandler.h"
 
 #include "Interop/SpatialOSDispatcherInterface.h"
 
@@ -76,7 +77,8 @@ private:
 
 	bool bWorkerEntityQueryInFlight;
 
-	TMap<Worker_RequestId_Key, CreateEntityDelegate> RequestCallbacks;
+	SpatialGDK::CreateEntityHandler CreateEntityHandler;
+	SpatialGDK::ClaimPartitionHandler ClaimParitionHandler;
 
 	// Serialization and deserialization of the mapping.
 	void WriteMappingToSchema(Schema_Object* Object) const;

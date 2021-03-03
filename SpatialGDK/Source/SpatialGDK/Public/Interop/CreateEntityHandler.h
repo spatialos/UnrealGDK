@@ -16,8 +16,8 @@ class FSubView;
 class CreateEntityHandler
 {
 public:
-	void Advance(const FSubView& SubView);
 	void AddRequest(Worker_RequestId RequestId, CreateEntityDelegate Handler);
+	void ProcessOps(const TArray<Worker_Op>& Ops);
 
 private:
 	TMap<Worker_RequestId_Key, CreateEntityDelegate> Handlers;

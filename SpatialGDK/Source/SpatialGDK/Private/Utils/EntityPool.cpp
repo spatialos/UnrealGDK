@@ -106,7 +106,7 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 
 void UEntityPool::Advance()
 {
-	ReserveEntityHandler.Advance(*SubView);
+	ReserveEntityHandler.ProcessOps(*SubView->GetViewDelta().WorkerMessages);
 }
 
 void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)

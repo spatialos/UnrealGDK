@@ -20,6 +20,7 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(S
 	, Connection(InConnection)
 	, Partitions({})
 	, bWorkerEntityQueryInFlight(false)
+	, ClaimParitionHandler(*InConnection)
 {
 }
 
@@ -103,25 +104,7 @@ void SpatialVirtualWorkerTranslationManager::ReclaimPartitionEntities()
 
 void SpatialVirtualWorkerTranslationManager::Advance(const SpatialGDK::FSubView& SubView)
 {
-	for (const Worker_Op& Op : *SubView.GetViewDelta().WorkerMessages)
-	{
-		if (Op.op_type == WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE)
-		{
-			const Worker_CreateEntityResponseOp& CreateEntityResponseOp = Op.op.create_entity_response;
-			const CreateEntityDelegate* Callback = RequestCallbacks.Find(CreateEntityResponseOp.request_id);
-			if (CreateEntityResponseOp.status_code == WORKER_STATUS_CODE_SUCCESS)
-			{
-				if (Callback != nullptr && ensure(Callback->IsBound()))
-				{
-					Callback->Execute(CreateEntityResponseOp);
-				}
-			}
-			if (Callback != nullptr)
-			{
-				RequestCallbacks.Remove(CreateEntityResponseOp.request_id);
-			}
-		}
-	}
+	CreateEntityHandler.ProcessOps(*SubView.GetViewDelta().WorkerMessages);
 }
 
 // For each entry in the map, write a VirtualWorkerMapping type object to the Schema object.
@@ -255,7 +238,7 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 			   UTF8_TO_TCHAR(Op.message), Op.entity_id, VirtualWorkerId);
 	});
 
-	RequestCallbacks.Add(RequestId, OnCreateWorkerEntityResponse);
+	CreateEntityHandler.AddRequest(RequestId, OnCreateWorkerEntityResponse);
 }
 
 void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker)
@@ -368,5 +351,5 @@ void SpatialVirtualWorkerTranslationManager::AssignPartitionToWorker(const Physi
 		   TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on worker %s"), Partition.VirtualWorker,
 		   Partition.PartitionEntityId, *WorkerName);
 
-	Translator->NetDriver->Sender->SendClaimPartitionRequest(SystemEntityId, Partition.PartitionEntityId);
+	ClaimParitionHandler.ClaimPartition(SystemEntityId, Partition.PartitionEntityId);
 }

@@ -49,45 +49,15 @@ DECLARE_CYCLE_STAT(TEXT("Receiver RemoveActor"), STAT_ReceiverRemoveActor, STATG
 DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_SpatialNet);
 using namespace SpatialGDK;
 
-void ReserveEntityHandler::Advance(const FSubView& SubView)
-{
-	for (const Worker_Op& Op : *SubView.GetViewDelta().WorkerMessages)
-	{
-		if (Op.op_type == WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE)
-		{
-			SCOPE_CYCLE_COUNTER(STAT_ReceiverReserveEntityIds);
-
-			const Worker_ReserveEntityIdsResponseOp& EntityIdsOp = Op.op.reserve_entity_ids_response;
-
-			if (EntityIdsOp.status_code != WORKER_STATUS_CODE_SUCCESS)
-			{
-				UE_LOG(LogSpatialReceiver, Warning, TEXT("ReserveEntityIds request failed: request id: %d, message: %s"),
-					   EntityIdsOp.request_id, UTF8_TO_TCHAR(EntityIdsOp.message));
-				return;
-			}
-
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("ReserveEntityIds request succeeded: request id: %d, message: %s"),
-				   EntityIdsOp.request_id, UTF8_TO_TCHAR(EntityIdsOp.message));
-
-			const Worker_RequestId RequestId = EntityIdsOp.request_id;
-			ReserveEntityIDsDelegate Handler = Handlers.FindAndRemoveChecked(RequestId);
-			if (ensure(Handler.IsBound()))
-			{
-				Handler.Execute(EntityIdsOp);
-			}
-		}
-	}
-}
-
-void ReserveEntityHandler::AddRequest(Worker_RequestId RequestId, ReserveEntityIDsDelegate Handler)
+void CreateEntityHandler::AddRequest(Worker_RequestId RequestId, CreateEntityDelegate Handler)
 {
 	check(Handler.IsBound());
 	Handlers.Add(RequestId, Handler);
 }
 
-void CreateEntityHandler::Advance(const FSubView& SubView)
+void CreateEntityHandler::ProcessOps(const TArray<Worker_Op>& Ops)
 {
-	for (const Worker_Op& Op : *SubView.GetViewDelta().WorkerMessages)
+	for (const Worker_Op& Op : Ops)
 	{
 		if (Op.op_type == WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE)
 		{
@@ -119,10 +89,42 @@ void CreateEntityHandler::Advance(const FSubView& SubView)
 	}
 }
 
-void CreateEntityHandler::AddRequest(Worker_RequestId RequestId, CreateEntityDelegate Handler)
+ClaimPartitionHandler::ClaimPartitionHandler(SpatialOSWorkerInterface& InConnection)
+	: WorkerInterface(InConnection)
 {
-	check(Handler.IsBound());
-	Handlers.Add(RequestId, Handler);
+}
+
+void ClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim)
+{
+	UE_LOG(LogTemp, Log,
+		   TEXT("SendClaimPartitionRequest. Worker: %s, SystemWorkerEntityId: %lld. "
+				"PartitionId: %lld"),
+		   TEXT("UNK") /* *Connection->GetWorkerId()*/, SystemEntityId, PartitionToClaim);
+
+	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionToClaim);
+	const Worker_RequestId ClaimEntityRequestId =
+		WorkerInterface.SendCommandRequest(SystemEntityId, &CommandRequest, RETRY_UNTIL_COMPLETE, {});
+	ClaimPartitionRequestIds.Add(ClaimEntityRequestId, PartitionToClaim);
+}
+
+void ClaimPartitionHandler::ProcessOps(const TArray<Worker_Op>& Ops)
+{
+	for (const Worker_Op& Op : Ops)
+	{
+		if (Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE)
+		{
+			const Worker_CommandResponseOp& CommandResponse = Op.op.command_response;
+			Worker_PartitionId ClaimedPartitionId = SpatialConstants::INVALID_PARTITION_ID;
+			const bool bIsRequestHandled = ClaimPartitionRequestIds.RemoveAndCopyValue(CommandResponse.request_id, ClaimedPartitionId);
+			if (bIsRequestHandled)
+			{
+				ensure(CommandResponse.response.component_id == SpatialConstants::WORKER_COMPONENT_ID);
+				ensureMsgf(CommandResponse.status_code == WORKER_STATUS_CODE_SUCCESS,
+						   TEXT("Claim partition request for partition %lld finished, SDK returned code %d [%s]"), ClaimedPartitionId,
+						   (int)CommandResponse.status_code, UTF8_TO_TCHAR(CommandResponse.message));
+			}
+		}
+	}
 }
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, SpatialEventTracer* InEventTracer)

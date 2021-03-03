@@ -216,5 +216,5 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 void SpatialSnapshotManager::Advance(const FSubView& SubView)
 {
-	ReserveEntityHandler.Advance(SubView);
+	ReserveEntityHandler.ProcessOps(*SubView.GetViewDelta().WorkerMessages);
 }

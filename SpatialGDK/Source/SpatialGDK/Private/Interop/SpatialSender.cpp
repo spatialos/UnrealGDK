@@ -74,7 +74,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 
 void USpatialSender::Advance()
 {
-	CreateEntityHandler.Advance(*SubView);
+	CreateEntityHandler.ProcessOps(*SubView->GetViewDelta().WorkerMessages);
 }
 
 void USpatialSender::PeriodicallyProcessOutgoingRPCs()
