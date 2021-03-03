@@ -557,5 +557,4 @@ const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVari
 		return SpatialGDKServicesConstants::PinnedStandardRuntimeTemplate;
 	}
 }
-
 #undef LOCTEXT_NAMESPACE
