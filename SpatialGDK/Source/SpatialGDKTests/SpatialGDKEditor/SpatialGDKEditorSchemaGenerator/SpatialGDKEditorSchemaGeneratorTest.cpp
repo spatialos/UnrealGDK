@@ -12,8 +12,10 @@
 #include "CoreMinimal.h"
 #include "GeneralProjectSettings.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Misc/Crc.h"
 #include "Misc/FileHelper.h"
 #include "Misc/PackageName.h"
+#include "Utils/SnapshotVersion.h"
 
 #define LOCTEXT_NAMESPACE "SpatialGDKEDitorSchemaGeneratorTest"
 
@@ -1221,6 +1223,138 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 			TestTrue(*DebugString, GDKWellKnownComponents->ComponentIDs.Find(ComponentId) != INDEX_NONE);
 		}
 	}
+
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(GIVEN_snapshot_affecting_schema_files_WHEN_hash_of_file_contents_is_generated_THEN_hash_matches_expected_snapshot_version_hash)
+{
+	SchemaTestFixture Fixture;
+
+	// GIVEN
+	FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
+	TArray<FString> GDKSchemaFilePaths = { "global_state_manager.schema",
+										   "spawner.schema",
+										   "virtual_worker_translation.schema" };
+
+	// WHEN
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	TArray<FString> FoundSchemaFiles;
+	PlatformFile.FindFilesRecursively(FoundSchemaFiles, *GDKSchemaCopyDir, TEXT(""));
+
+	uint32 HashCrc = 0;
+	TArray<FString> SchemaStrings;
+
+	for (const auto& FilePath : GDKSchemaFilePaths)
+	{
+		const FString FileNameAndPath = FPaths::Combine(GDKSchemaCopyDir, FilePath);
+		if (!PlatformFile.FileExists(*FileNameAndPath))
+		{
+			const FString DebugString = FString::Printf(TEXT("Expected to find schema file %s"), *FilePath);
+			TestFalse(DebugString, true);
+			break;
+		}
+		else
+		{
+			TArray<FString> FilesContent;
+			FFileHelper::LoadFileToStringArray(FilesContent, *FileNameAndPath);
+
+			FString OuterName;
+
+			for (const FString& SchemaLine : FilesContent)
+			{
+				FRegexPattern InnerIdPattern(TEXT("(id)\\s*=\\s*(\\w+)\\s*;"));
+				FRegexMatcher InnerIdRegMatcher(InnerIdPattern, SchemaLine);
+
+				FRegexPattern InnerVariablePattern(TEXT("([a-zA-Z<>]+)\\s+(\\w+)\\s*=\\s*(\\w+)\\s*;"));
+				FRegexMatcher InnerVariableRegMatcher(InnerVariablePattern, SchemaLine);
+
+				FRegexPattern InnerCommandPattern(TEXT("(command)\\s+(\\w+)\\s+(\\w+)\\s*\\((\\w+)\\s*\\)\\s*;"));
+				FRegexMatcher InnerCommandRegMatcher(InnerCommandPattern, SchemaLine);
+
+				FRegexPattern InnerEventPattern(TEXT("(event)\\s+(\\w+)\\s+(\\w+)\\s*;"));
+				FRegexMatcher InnerEventRegMatcher(InnerEventPattern, SchemaLine);
+
+				FRegexPattern OuterComponentPattern(TEXT("(^component )(.+)( \\{)"));
+				FRegexMatcher OuterComponentRegMatcher(OuterComponentPattern, SchemaLine);
+
+				FRegexPattern OuterTypeNamePattern(TEXT("(^type)(.+)( \\{)"));
+				FRegexMatcher OuterTypeNameRegMatcher(OuterTypeNamePattern, SchemaLine);
+
+				auto VerifyAndAddTwoGroupInner = [this, &FileNameAndPath, &SchemaLine, &OuterName,
+												 &SchemaStrings](FRegexMatcher& InMatcher) {
+					const FString DebugString =
+						FString::Printf(TEXT("Expected to find outer name in schema file %s, line '%'"), *FileNameAndPath, *SchemaLine);
+					TestFalse(DebugString, OuterName.IsEmpty());
+					const FString NewSchemaString =
+						FString::Printf(TEXT("%s::%s::%s"), *OuterName, *InMatcher.GetCaptureGroup(1), *InMatcher.GetCaptureGroup(2));
+					SchemaStrings.Emplace(NewSchemaString);
+				};
+
+				auto VerifyAndAddThreeGroupInner = [this, &FileNameAndPath, &SchemaLine, &OuterName,
+															&SchemaStrings](FRegexMatcher& InMatcher) {
+					const FString DebugString =
+						FString::Printf(TEXT("Expected to find outer name in schema file %s, line '%'"), *FileNameAndPath, *SchemaLine);
+					TestFalse(DebugString, OuterName.IsEmpty());
+					const FString NewSchemaString = FString::Printf(TEXT("%s::%s::%s::%s"), *OuterName, *InMatcher.GetCaptureGroup(1),
+																 *InMatcher.GetCaptureGroup(2), *InMatcher.GetCaptureGroup(3));
+					SchemaStrings.Emplace(NewSchemaString);
+				};
+
+				auto VerifyAndAddFourGroupInner = [this, &FileNameAndPath, &SchemaLine, &OuterName,
+															&SchemaStrings](FRegexMatcher& InMatcher) {
+					const FString DebugString =
+						FString::Printf(TEXT("Expected to find outer name in schema file %s, line '%'"), *FileNameAndPath, *SchemaLine);
+					TestFalse(DebugString, OuterName.IsEmpty());
+					const FString NewSchemaString = FString::Printf(TEXT("%s::%s::%s::%s::%s"), *OuterName, *InMatcher.GetCaptureGroup(1),
+										*InMatcher.GetCaptureGroup(2), *InMatcher.GetCaptureGroup(3), *InMatcher.GetCaptureGroup(4));
+					SchemaStrings.Emplace(NewSchemaString);
+				};
+
+				if (OuterComponentRegMatcher.FindNext())
+				{
+					OuterName = OuterComponentRegMatcher.GetCaptureGroup(2);
+					SchemaStrings.Emplace(OuterName);
+				}
+				else if (OuterTypeNameRegMatcher.FindNext())
+				{
+					OuterName = OuterTypeNameRegMatcher.GetCaptureGroup(2);
+					SchemaStrings.Emplace(OuterName);
+				}
+				else if (InnerVariableRegMatcher.FindNext())
+				{
+					VerifyAndAddThreeGroupInner(InnerVariableRegMatcher);
+				}
+				else if (InnerIdRegMatcher.FindNext())
+				{
+					VerifyAndAddTwoGroupInner(InnerIdRegMatcher);
+				}
+				else if (InnerCommandRegMatcher.FindNext())
+				{
+					VerifyAndAddFourGroupInner(InnerCommandRegMatcher);
+				}
+				else if (InnerEventRegMatcher.FindNext())
+				{
+					VerifyAndAddThreeGroupInner(InnerEventRegMatcher);
+				}
+			}
+		}
+
+		SchemaStrings.Sort([](const FString& A, const FString& B) {
+			return (A < B);
+		});
+
+		for (const FString& SchemaString : SchemaStrings)
+		{
+			HashCrc = FCrc::StrCrc32(*SchemaString, HashCrc);
+		}
+	}
+
+	// THEN
+	const FString ErrorMessage =
+		FString::Printf(TEXT("Expected hash to be %u, but found it to be %u"), SPATIAL_SNAPSHOT_VERSION, HashCrc);
+	TestEqual(ErrorMessage, SPATIAL_SNAPSHOT_SCHEMA_HASH, HashCrc);
 
 	return true;
 }

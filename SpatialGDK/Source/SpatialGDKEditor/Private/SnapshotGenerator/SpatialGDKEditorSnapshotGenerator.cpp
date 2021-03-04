@@ -16,6 +16,7 @@
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaUtils.h"
 #include "Utils/SnapshotGenerationTemplate.h"
+#include "Utils/SnapshotVersion.h"
 
 #include "EngineUtils.h"
 #include "HAL/PlatformFile.h"
@@ -145,6 +146,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
 	Components.Add(SelfInterest.CreateComponentData());
+	Components.Add(SnapshotVersion(SPATIAL_SNAPSHOT_VERSION).CreateComponentData());
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
