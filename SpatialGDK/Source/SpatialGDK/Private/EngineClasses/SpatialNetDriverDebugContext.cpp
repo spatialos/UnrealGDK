@@ -143,7 +143,7 @@ void USpatialNetDriverDebugContext::Reset()
 				   return Data.GetComponentId() == SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 			   }))
 		{
-			NetDriver->Sender->SendRemoveComponents(Entry.Key, { SpatialConstants::GDK_DEBUG_COMPONENT_ID });
+			NetDriver->Connection->SendRemoveComponent(Entry.Key, SpatialConstants::GDK_DEBUG_COMPONENT_ID);
 		}
 	}
 
@@ -435,8 +435,8 @@ void USpatialNetDriverDebugContext::TickServer()
 				// There is a requirement of readiness before we can use SendAddComponent
 				if (IsActorReady(Actor))
 				{
-					Worker_ComponentData CompData = Data.Component.CreateDebugComponent();
-					NetDriver->Sender->SendAddComponents(Entity, { CompData });
+					FWorkerComponentData CompData = Data.Component.CreateDebugComponent();
+					NetDriver->Connection->SendAddComponent(Entity, &CompData);
 					Data.Entity = Entity;
 					Data.bAdded = true;
 				}
