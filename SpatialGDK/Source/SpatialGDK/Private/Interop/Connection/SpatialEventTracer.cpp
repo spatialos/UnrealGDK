@@ -86,7 +86,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 
 	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
 
-	UE_LOG(LogSpatialEventTracer, Log, TEXT("Seting event tracing sampling probability. Probability: %d."),
+	UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing sampling probability. Probability: %f."),
 		   SamplingSettings->SamplingProbability);
 
 	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
@@ -94,7 +94,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	for (const auto& Pair : SamplingSettings->EventSamplingModeOverrides)
 	{
 		const FString& EventName = Pair.Key.ToString();
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Adding trace event sampling override. Event: %s Probability: %d."), *EventName,
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Adding trace event sampling override. Event: %s Probability: %f."), *EventName,
 			   Pair.Value);
 		int32 Index = AnsiStrings.Add((const char*)TCHAR_TO_ANSI(*EventName));
 		SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
