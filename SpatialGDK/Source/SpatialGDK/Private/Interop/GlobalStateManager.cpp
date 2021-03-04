@@ -615,8 +615,7 @@ void UGlobalStateManager::ApplyDataFromQueryResponse(const Worker_EntityQueryRes
 		{
 			ApplyDeploymentMapData(Data.schema_type);
 		}
-
-		if (Data.component_id == SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID)
+		else if (Data.component_id == SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID)
 		{
 			ApplySnapshotVersionData(Data.schema_type);
 		}
