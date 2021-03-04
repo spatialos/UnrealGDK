@@ -1234,7 +1234,8 @@ SCHEMA_GENERATOR_TEST(
 
 	// GIVEN
 	FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
-	TArray<FString> GDKSchemaFilePaths = { TEXT("global_state_manager.schema"), TEXT("spawner.schema"), TEXT("virtual_worker_translation.schema") };
+	TArray<FString> GDKSchemaFilePaths = { TEXT("global_state_manager.schema"), TEXT("spawner.schema"),
+										   TEXT("virtual_worker_translation.schema") };
 
 	// WHEN
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
