@@ -389,7 +389,8 @@ bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
 	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
 #endif
 
-	HttpRequest->SetURL(TEXT("http://localhost:5006/shutdown"));
+	FString URL = FString::Printf(TEXT("http://localhost:%d/shutdown"), HTTPPort);
+	HttpRequest->SetURL(URL);
 	HttpRequest->SetVerb("GET");
 	HttpRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
 		int32 ResponseCode = HttpResponse->GetResponseCode();
@@ -543,7 +544,8 @@ void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World,
 			}
 		});
 
-	HttpRequest->SetURL(TEXT("http://localhost:5006/snapshot"));
+	FString URL = FString::Printf(TEXT("http://localhost:%d/snapshot"), HTTPPort);
+	HttpRequest->SetURL(URL);
 	HttpRequest->SetVerb("GET");
 
 	HttpRequest->ProcessRequest();
