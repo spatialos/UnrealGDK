@@ -5,6 +5,7 @@
 #include "Engine/LevelScriptActor.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
+#include "Schema/SnapshotVersionComponent.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
