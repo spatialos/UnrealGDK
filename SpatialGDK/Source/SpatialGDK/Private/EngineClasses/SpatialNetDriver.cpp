@@ -649,15 +649,12 @@ void USpatialNetDriver::ClientOnGSMQuerySuccess()
 {
 	StartupClientDebugString.Empty();
 
-	auto FlagNetworkFailure = [this](const FString& ErrorString)
-	{
+	auto FlagNetworkFailure = [this](const FString& ErrorString) {
 		if (USpatialGameInstance* GameInstance = GetGameInstance())
 		{
 			if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
 			{
-				GEngine->BroadcastNetworkFailure(
-					GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient,
-					ErrorString);
+				GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, ErrorString);
 			}
 		}
 	};
