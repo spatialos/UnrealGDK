@@ -1,21 +1,21 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "TestDebugInterface.h"
-#include "SpatialFunctionalTestFlowController.h"
+#include "SpatialDebugInterfaceTest.h"
 
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
+#include "SpatialFunctionalTestFlowController.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
+#include "TestWorkerSettings.h"
 
 #include "Kismet/GameplayStatics.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase.h"
 
 /*
-Test for coverage of the USpatialGDKDebugInterface.
-
-
+	Test for coverage of the USpatialGDKDebugInterface.
 */
 
-ATestDebugInterface::ATestDebugInterface()
+ASpatialDebugInterfaceTest::ASpatialDebugInterfaceTest()
 	: Super()
 {
 	Author = "Nicolas";
@@ -31,7 +31,7 @@ FName GetTestTag()
 }
 } // namespace
 
-bool ATestDebugInterface::WaitToSeeActors(UClass* ActorClass, int32 NumActors)
+bool ASpatialDebugInterfaceTest::WaitToSeeActors(UClass* ActorClass, int32 NumActors)
 {
 	if (bIsOnDefaultLayer)
 	{
@@ -47,7 +47,7 @@ bool ATestDebugInterface::WaitToSeeActors(UClass* ActorClass, int32 NumActors)
 	return true;
 }
 
-void ATestDebugInterface::PrepareTest()
+void ASpatialDebugInterfaceTest::PrepareTest()
 {
 	Super::PrepareTest();
 
@@ -394,4 +394,21 @@ void ATestDebugInterface::PrepareTest()
 			}
 		},
 		5.0f);
+}
+
+USpatialDebugInterfaceMap::USpatialDebugInterfaceMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialDebugInterfaceMap"))
+{
+}
+
+void USpatialDebugInterfaceMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the tests
+	AddActorToLevel<ASpatialDebugInterfaceTest>(CurrentLevel, FTransform::Identity);
+
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2NoInterestWorkerSettings::StaticClass());
+	WorldSettings->bEnableDebugInterface = true;
 }
