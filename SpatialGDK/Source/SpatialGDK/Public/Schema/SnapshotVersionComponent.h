@@ -7,7 +7,6 @@
 
 namespace SpatialGDK
 {
-
 struct SnapshotVersion : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID;
