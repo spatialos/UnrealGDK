@@ -207,7 +207,7 @@ void USpatialSender::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, c
 	ComponentsToRemove.Reserve(SCHEMA_Count);
 	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
 	{
-		if (SubobjectComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		if (Connection->GetView()[EntityId].Components.FindByPredicate(ComponentIdEquality{ SubobjectComponentId }) != nullptr)
 		{
 			ComponentsToRemove.Add(SubobjectComponentId);
 		}

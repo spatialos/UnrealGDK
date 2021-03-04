@@ -741,8 +741,8 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 		}
 	}
 
-	UE_LOG(LogActorSystem, Log, TEXT("Processing add component, unreal component %s. Entity: %lld, Component: %d, Actor: %s"),
-		   bComponentsComplete ? TEXT("complete") : TEXT("not complete"), EntityId, ComponentId, *Actor->GetPathName());
+	UE_LOG(LogActorSystem, Log, TEXT("Processing add component, unreal component %s. Entity: %lld, Offset: %d, Component: %d, Actor: %s"),
+		   bComponentsComplete ? TEXT("complete") : TEXT("not complete"), EntityId, Offset, ComponentId, *Actor->GetPathName());
 
 	if (bComponentsComplete)
 	{
@@ -769,12 +769,25 @@ void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId
 
 	Channel->CreateSubObjects.Add(Subobject);
 
-	for (auto ComponentId : *PendingDynamicSubobjectComponents.Find(EntityId))
-	{
+	TSet<Worker_ComponentId>& Components = PendingDynamicSubobjectComponents.FindChecked(EntityId);
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
+
+		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			return;
+		}
+
+		if (Components.Find(ComponentId) == nullptr)
+		{
+			return;
+		}
+
 		ApplyComponentData(*Channel, *Subobject, ComponentId,
 						   SubView->GetView()[EntityId].Components.FindByPredicate(ComponentIdEquality{ ComponentId })->GetUnderlying());
-	}
-	PendingDynamicSubobjectComponents.Remove(EntityId);
+
+		Components.Remove(ComponentId);
+	});
 
 	// Resolve things like RepNotify or RPCs after applying component data.
 	ResolvePendingOperations(Subobject, SubobjectRef);
