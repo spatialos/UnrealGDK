@@ -465,7 +465,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 						SpatialGDK::ComponentIdEquality{ SpatialConstants::INITIAL_ONLY_PRESENCE_COMPONENT_ID })
 					!= nullptr)
 				{
-					if (!InitialOnlyFilter->HasInitialOnlyDataOrRequest(EntityId))
+					if (!InitialOnlyFilter->HasInitialOnlyDataOrRequestIfAbsent(EntityId))
 					{
 						return false;
 					}

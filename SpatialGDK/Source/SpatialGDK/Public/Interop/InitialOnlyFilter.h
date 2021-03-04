@@ -20,7 +20,7 @@ public:
 	InitialOnlyFilter(USpatialWorkerConnection* InConnection, USpatialReceiver* InReceiver);
 
 	bool HasInitialOnlyData(Worker_EntityId EntityId) const;
-	bool HasInitialOnlyDataOrRequest(Worker_EntityId EntityId);
+	bool HasInitialOnlyDataOrRequestIfAbsent(Worker_EntityId EntityId);
 	void FlushRequests();
 	void HandleInitialOnlyResponse(const Worker_EntityQueryResponseOp& Op);
 	const TArray<ComponentData>* GetInitialOnlyData(Worker_EntityId EntityId) const;

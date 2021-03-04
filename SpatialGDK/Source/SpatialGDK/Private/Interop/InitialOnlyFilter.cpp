@@ -21,7 +21,7 @@ bool InitialOnlyFilter::HasInitialOnlyData(Worker_EntityId EntityId) const
 	return (RetrievedInitialOnlyData.Find(EntityId) != nullptr);
 }
 
-bool InitialOnlyFilter::HasInitialOnlyDataOrRequest(Worker_EntityId EntityId)
+bool InitialOnlyFilter::HasInitialOnlyDataOrRequestIfAbsent(Worker_EntityId EntityId)
 {
 	if (HasInitialOnlyData(EntityId))
 	{
