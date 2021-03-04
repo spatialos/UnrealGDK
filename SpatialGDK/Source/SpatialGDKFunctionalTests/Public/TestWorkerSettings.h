@@ -14,7 +14,7 @@
 
 /**
  * Full interest grid strategies
- * The strategies in the this group have world-wide interest border, so everything should be in view.
+ * The strategies in this group have a world-wide interest border, so everything should be in view.
  * UTest1x2FullInterestGridStrategy
  * UTest2x1FullInterestGridStrategy
  * UTest2x2FullInterestGridStrategy
