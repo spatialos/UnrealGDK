@@ -49,6 +49,7 @@
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
+#include "TestMapGeneration.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "Utils/SpatialDebugger.h"
@@ -313,6 +314,9 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ToggleMultiworkerEditor),
 								FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnIsSpatialNetworkingEnabled),
 								FIsActionChecked::CreateRaw(this, &FSpatialGDKEditorToolbarModule::IsMultiWorkerEnabled));
+
+	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().GenerateTestMaps,
+								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::GenerateTestMaps));
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -350,6 +354,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 #endif
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchema);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().GenerateTestMaps);
 	}
 	Builder.EndSection();
 }
@@ -1566,6 +1571,19 @@ void FSpatialGDKEditorToolbarModule::AddDeploymentTagIfMissing(const FString& Ta
 
 		Tags += TagToAdd;
 		SpatialGDKSettings->SetDeploymentTags(Tags);
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::GenerateTestMaps()
+{
+	OnShowTaskStartNotification(TEXT("Generating test maps"));
+	if (SpatialGDK::TestMapGeneration::GenerateTestMaps())
+	{
+		OnShowSuccessNotification(TEXT("Successfully generated test maps!"));
+	}
+	else
+	{
+		OnShowFailedNotification(TEXT("Failed to generate test maps. See output log for details."));
 	}
 }
 

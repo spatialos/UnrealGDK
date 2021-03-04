@@ -1122,15 +1122,6 @@ void USpatialNetDriver::Shutdown()
 {
 	USpatialNetDriverDebugContext::DisableDebugSpatialGDK(this);
 
-	if (!IsServer())
-	{
-		// Notify the server that we're disconnecting so it can clean up our actors.
-		if (USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(ServerConnection))
-		{
-			SpatialNetConnection->ClientNotifyClientHasQuit();
-		}
-	}
-
 	SpatialOutputDevice = nullptr;
 
 	Super::Shutdown();
