@@ -93,7 +93,6 @@ private:
 	void AuthorityLost(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
 	void AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
 	void HandleActorAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority);
-	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 
 	void ComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 	void ComponentUpdated(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
@@ -154,7 +153,6 @@ private:
 	USpatialNetDriver* NetDriver;
 	SpatialEventTracer* EventTracer;
 
-	TMap<Worker_EntityId_Key, TArray<FWorkerComponentUpdate>> UpdatesQueuedUntilAuthorityMap;
 	TSet<TPair<Worker_EntityId_Key, Worker_ComponentId>> PendingDynamicSubobjectComponents;
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;

@@ -833,16 +833,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	if (IsServer())
 	{
-		if (GlobalStateManager != nullptr && !GlobalStateManager->GetCanBeginPlay()
-			&& Connection->GetCoordinator().HasAuthority(GlobalStateManager->GlobalStateManagerEntityId,
-														 SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
-		{
-			// ServerTravel - Increment the session id, so users don't rejoin the old game.
-			GlobalStateManager->TriggerBeginPlay();
-			GlobalStateManager->SetDeploymentState();
-			GlobalStateManager->SetAcceptingPlayers(true);
-			GlobalStateManager->IncrementSessionID();
-		}
+		WellKnownEntitySystem->OnMapLoaded();
 	}
 	else
 	{

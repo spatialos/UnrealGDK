@@ -348,12 +348,6 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 
 	if (NetDriver->IsServer())
 	{
-		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
-		if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
-		{
-			NetDriver->ActorSystem->ProcessUpdatesQueuedUntilAuthority(EntityId);
-		}
-
 		// If we became authoritative over the server auth component set, set our role to be ROLE_Authority
 		// and set our RemoteRole to be ROLE_AutonomousProxy if the actor has an owning connection.
 		// Note: Pawn, PlayerController, and PlayerState for player-owned characters can arrive in
@@ -461,19 +455,6 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 		{
 			Actor->Role = (Authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 		}
-	}
-}
-
-void ActorSystem::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId)
-{
-	if (TArray<FWorkerComponentUpdate>* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
-	{
-		for (auto It = UpdatesQueuedUntilAuthority->CreateIterator(); It; ++It)
-		{
-			NetDriver->Connection->SendComponentUpdate(EntityId, &*It);
-			It.RemoveCurrent();
-		}
-		UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
 	}
 }
 
@@ -1769,19 +1750,9 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 	// It's not clear if this is ever valid for authority to not be true anymore (since component sets), but still possible if we attempt
 	// to process updates whilst an entity creation is in progress, or after the entity has been deleted or removed from view. So in the
 	// meantime we've kept the checking and queuing of updates, along with an error message.
-	const bool bHasAuthority = NetDriver->HasServerAuthority(EntityId);
-	if (!bHasAuthority)
+	if (!NetDriver->HasServerAuthority(EntityId))
 	{
-		UE_LOG(LogSpatialSender, Warning,
-			   TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. "
-					"entity: %lld"),
-			   EntityId);
-
-		// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the
-		// update, to send upon receiving authority. Note: This will break in a multi-worker context, if we try to create an entity that
-		// we don't intend to have authority over. For this reason, this fix is only temporary.
-		TArray<FWorkerComponentUpdate>& UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.FindOrAdd(EntityId);
-		UpdatesQueuedUntilAuthority.Append(ComponentUpdates);
+		UE_LOG(LogSpatialSender, Error, TEXT("Trying to send component update but don't have authority! entity: %lld"), EntityId);
 		return;
 	}
 

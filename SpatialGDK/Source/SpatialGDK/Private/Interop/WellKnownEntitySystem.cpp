@@ -1,3 +1,4 @@
+
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/WellKnownEntitySystem.h"
@@ -124,6 +125,19 @@ void WellKnownEntitySystem::ProcessEntityAdd(const Worker_EntityId EntityId)
 	for (const Worker_ComponentSetId ComponentId : Element.Authority)
 	{
 		ProcessAuthorityGain(EntityId, ComponentId);
+	}
+}
+
+void WellKnownEntitySystem::OnMapLoaded() const
+{
+	if (GlobalStateManager != nullptr && !GlobalStateManager->GetCanBeginPlay()
+		&& SubView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
+	{
+		// ServerTravel - Increment the session id, so users don't rejoin the old game.
+		GlobalStateManager->TriggerBeginPlay();
+		GlobalStateManager->SetDeploymentState();
+		GlobalStateManager->SetAcceptingPlayers(true);
+		GlobalStateManager->IncrementSessionID();
 	}
 }
 
