@@ -92,21 +92,23 @@ void InitialOnlyFilter::HandleInitialOnlyResponse(const Worker_EntityQueryRespon
 		const Worker_Entity* Entity = &Op.results[i];
 		const Worker_EntityId EntityId = Entity->entity_id;
 
-		// Ensure the entity we queried is still in view.
-		if (Connection->GetView().Find(EntityId) != nullptr)
+		if (Connection->GetView().Find(EntityId) == nullptr)
 		{
-			UE_LOG(LogInitialOnlyFilter, Verbose, TEXT("Received initial only data for entity %lld."), EntityId);
-
-			// Extract and store the initial only data.
-			TArray<ComponentData>& ComponentDatas = RetrievedInitialOnlyData.FindOrAdd(EntityId);
-			for (uint32_t j = 0; j < Entity->component_count; ++j)
-			{
-				const Worker_ComponentData* ComponentData = &Entity->components[j];
-				ComponentDatas.Emplace(ComponentData::CreateCopy(ComponentData->schema_type, ComponentData->component_id));
-			}
-
-			Connection->GetCoordinator().RefreshEntityCompleteness(Entity->entity_id);
+			UE_LOG(LogInitialOnlyFilter, Verbose, TEXT("Received initial only data for entity no longer in view. Entity: %lld."), EntityId);
+			continue;
 		}
+
+		UE_LOG(LogInitialOnlyFilter, Verbose, TEXT("Received initial only data for entity. Entity: %lld."), EntityId);
+
+		// Extract and store the initial only data.
+		TArray<ComponentData>& ComponentDatas = RetrievedInitialOnlyData.FindOrAdd(EntityId);
+		for (uint32_t j = 0; j < Entity->component_count; ++j)
+		{
+			const Worker_ComponentData* ComponentData = &Entity->components[j];
+			ComponentDatas.Emplace(ComponentData::CreateCopy(ComponentData->schema_type, ComponentData->component_id));
+		}
+
+		Connection->GetCoordinator().RefreshEntityCompleteness(Entity->entity_id);
 	}
 }
 
