@@ -1041,6 +1041,7 @@ FHandoverChangeState USpatialActorChannel::GetHandoverChangeList(TArray<uint8>& 
 void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlags Flags)
 {
 	Super::SetChannelActor(InActor, Flags);
+	check(NetDriver->GetSpatialOSNetConnection() == Connection);
 	USpatialPackageMapClient* PackageMap = NetDriver->PackageMap;
 	EntityId = PackageMap->GetEntityIdFromObject(InActor);
 
