@@ -20,7 +20,9 @@ bool GenerateTestMaps()
 		if (!PlatformFile.DeleteDirectoryRecursively(*UGeneratedTestMap::GetGeneratedMapFolder()))
 		{
 			bSuccess = false;
-			UE_LOG(LogTestMapGeneration, Error, TEXT("Failed to delete the generated test map folder %s."),
+			UE_LOG(LogTestMapGeneration, Error,
+				   TEXT("Failed to delete the generated test map folder %s. This may have been caused by a generated map being open in the "
+						"editor. If that's the case, switch to a non-generated map and try again."),
 				   *UGeneratedTestMap::GetGeneratedMapFolder());
 		}
 	}
@@ -36,6 +38,13 @@ bool GenerateTestMaps()
 			UE_LOG(LogTestMapGeneration, Error, TEXT("Failed to delete the generated test config folder %s."),
 				   *FSpatialTestSettings::GeneratedOverrideSettingsDirectory);
 		}
+	}
+
+	// Early out if we failed to delete the directory because otherwise the editor will
+	// spam popups about levels with the same name already existing.
+	if (!bSuccess)
+	{
+		return false;
 	}
 
 	// Have to gather the classes first and then iterate over the copy, because creating a map triggers a GC which can modify the object
