@@ -298,7 +298,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Runtime versions"))
 	FRuntimeVariantVersion StandardRuntimeVersion;
 
-	/** Enable to terminate the runtime after exiting from PIE. This reduces the shut down time of the runtime process. */
+	/** Disable to terminate the runtime after exiting from PIE. This reduces the shut down time of the runtime process. */
 	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Shut down runtime gracefully on PIE exit"))
 	bool bShutdownRuntimeGracefullyOnPIEExit;
 

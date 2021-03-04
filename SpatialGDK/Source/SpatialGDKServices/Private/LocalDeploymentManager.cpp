@@ -303,10 +303,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	RuntimeProcess->Launch();
 
 	// Wait for runtime to start or timeout
-	while (!bLocalDeploymentRunning && RuntimeProcess->Update() && RuntimeProcess->GetDuration().GetTotalSeconds() <= RuntimeTimeout)
-	{
-		FPlatformProcess::Sleep(0.01f);
-	}
+	while (!bLocalDeploymentRunning && RuntimeProcess->Update() && RuntimeProcess->GetDuration().GetTotalSeconds() <= RuntimeTimeout) {}
 
 	bStartingDeployment = false;
 	if (!bLocalDeploymentRunning)
