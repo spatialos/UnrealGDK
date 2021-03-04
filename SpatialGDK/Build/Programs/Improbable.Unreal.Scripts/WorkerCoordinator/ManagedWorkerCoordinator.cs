@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Improbable.Worker.CInterop;
+using System.Diagnostics;
 
 namespace Improbable.WorkerCoordinator
 {
@@ -13,7 +14,7 @@ namespace Improbable.WorkerCoordinator
     /// Worker coordinator that connects and runs simulated players.
     /// The coordinator runs as a managed worker inside a hosting deployment (i.e. the simulated player deployment).
     /// </summary>
-    internal class ManagedWorkerCoordinator : AbstractWorkerCoordinator
+    internal class ManagedWorkerCoordinator : AbstractWorkerCoordinator, ILifetimeComponentHost
     {
         // Arguments for the coordinator.
         private const string SimulatedPlayerSpawnCountArg = "simulated_player_spawn_count";
@@ -33,6 +34,9 @@ namespace Improbable.WorkerCoordinator
 
         private const string CoordinatorWorkerType = "SimulatedPlayerCoordinator";
         private const string SimulatedPlayerFilename = "StartSimulatedClient.sh";
+        private const string StopSimulatedPlayerFilename = "StopSimulatedClient.sh";
+
+        private const int MillisToTicks = 10000;
 
         private static Random Random;
 
@@ -43,6 +47,9 @@ namespace Improbable.WorkerCoordinator
         private int NumSimulatedPlayersToStart;
         private int InitialStartDelayMillis;
         private string[] SimulatedPlayerArgs;
+
+        // Coordinator use this to restart simulated player clients.
+        private LifetimeComponent LifetimeComponent;
 
         /// <summary>
         /// The arguments to start the coordinator must begin with:
@@ -90,7 +97,10 @@ namespace Improbable.WorkerCoordinator
                 numArgsToSkip++;
             }
 
-            return new ManagedWorkerCoordinator(logger)
+            LifetimeComponent lifetimeComponent = LifetimeComponent.Create(logger, args, out int numArgs);
+            numArgsToSkip += numArgs;
+
+            ManagedWorkerCoordinator coordinator = new ManagedWorkerCoordinator(logger)
             {
                 // Receptionist args.
                 ReceptionistHost = args[1],
@@ -102,8 +112,18 @@ namespace Improbable.WorkerCoordinator
                 InitialStartDelayMillis = initialStartDelayMillis,
 
                 // Remove arguments that are only for the coordinator.
-                SimulatedPlayerArgs = args.Skip(numArgsToSkip).ToArray()
+                SimulatedPlayerArgs = args.Skip(numArgsToSkip).ToArray(),
+
+                // Lifetime component is an option.
+                LifetimeComponent = lifetimeComponent
             };
+
+            if (coordinator.LifetimeComponent != null)
+            {
+                coordinator.LifetimeComponent.SetHost(coordinator);
+            }
+
+            return coordinator;
         }
 
         private ManagedWorkerCoordinator(Logger logger) : base(logger)
@@ -136,21 +156,50 @@ namespace Improbable.WorkerCoordinator
             }
 
             Array.Sort(startDelaysMillis);
-            for (int i = 0; i < NumSimulatedPlayersToStart; i++)
+
+            if (LifetimeComponent == null)
             {
-                string clientName = "SimulatedPlayer" + Guid.NewGuid();
-                var timeToSleep = startDelaysMillis[i];
-                if (i > 0)
+                for (int i = 0; i < NumSimulatedPlayersToStart; i++)
                 {
-                    timeToSleep -= startDelaysMillis[i - 1];
+                    string clientName = "SimulatedPlayer" + Guid.NewGuid();
+                    var timeToSleep = startDelaysMillis[i];
+                    if (i > 0)
+                    {
+                        timeToSleep -= startDelaysMillis[i - 1];
+                    }
+
+                    Thread.Sleep(timeToSleep);
+                    StartSimulatedPlayer(clientName, devAuthToken, targetDeployment);
                 }
 
-                Thread.Sleep(timeToSleep);
-                StartSimulatedPlayer(clientName, devAuthToken, targetDeployment);
+                // Wait for all clients to exit.
+                WaitForPlayersToExit();
             }
+            else
+            {
+                long curTicks = DateTime.Now.Ticks;
+                for (int i = 0; i < NumSimulatedPlayersToStart; i++)
+                {
+                    string clientName = "SimulatedPlayer" + Guid.NewGuid();
+                    var timeToSleep = startDelaysMillis[i];
+                    if (i > 0)
+                    {
+                        timeToSleep -= startDelaysMillis[i - 1];
+                    }
 
-            // Wait for all clients to exit.
-            WaitForPlayersToExit();
+                    ClientInfo clientInfo = new ClientInfo()
+                    {
+                        ClientName = clientName,
+                        StartTick = timeToSleep * MillisToTicks + curTicks,
+                        DevAuthToken = devAuthToken,
+                        TargetDeployment = targetDeployment
+                    };
+
+                    LifetimeComponent.AddSimulatedPlayer(clientInfo);
+                }
+
+                LifetimeComponent.Start();
+            }
         }
 
         private void StartSimulatedPlayer(string simulatedPlayerName, string devAuthToken, string targetDeployment)
@@ -194,6 +243,29 @@ namespace Improbable.WorkerCoordinator
             }
 
             return defaultValue;
+        }
+
+        private void KillProcess(string key)
+        {
+            try
+            {
+                Process process = Process.Start(StopSimulatedPlayerFilename, key);
+                process.WaitForExit();
+            }
+            catch(Exception e)
+            {
+                Logger.WriteError($"Failed to kill process with key={key}: {e.Message}");
+            }
+        }
+
+        public void StartClient(ClientInfo clientInfo)
+        {
+            StartSimulatedPlayer(clientInfo.ClientName, clientInfo.DevAuthToken, clientInfo.TargetDeployment);
+        }
+
+        public void StopClient(ClientInfo clientInfo)
+        {
+            KillProcess(clientInfo.ClientName);
         }
     }
 }

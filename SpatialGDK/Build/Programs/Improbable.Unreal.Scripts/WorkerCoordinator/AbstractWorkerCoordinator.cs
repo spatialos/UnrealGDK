@@ -92,5 +92,29 @@ namespace Improbable.WorkerCoordinator
                 Thread.Sleep(TimeSpan.FromMilliseconds(PollSimulatedPlayerProcessIntervalMillis));
             }
         }
+
+        /// <summary>
+        /// Check simulated player clients' status.
+        /// If it stopped early by accident, restart it.
+        /// If it stopped with code 137, that means we stop it with StopSimulatedClient.sh.
+        /// </summary>
+        public void CheckPlayerStatus()
+        {
+            var finishedProcesses = ActiveProcesses.Where(process => process.HasExited).ToList();
+
+            foreach (var process in finishedProcesses)
+            {
+                // StopSimulatedClient.sh will cause 137 code.
+                if (process.ExitCode != 0 && process.ExitCode != 137)
+                {
+                    Logger.WriteLog($"Restarting simulated player after it failed with exit code {process.ExitCode}");
+                    process.Start();
+                }
+                else
+                {
+                    ActiveProcesses.Remove(process);
+                }
+            }
+        }
     }
 }
