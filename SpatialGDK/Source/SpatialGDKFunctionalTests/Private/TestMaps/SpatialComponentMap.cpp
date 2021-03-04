@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "SpatialGDKFunctionalTests/Public/Test1x2WorkerSettings.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialAuthorityTest/SpatialAuthorityTestGameMode.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialComponentTest/SpatialComponentSettingsOverride.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialComponentTest/SpatialComponentTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialComponentTest/SpatialComponentTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialComponentTest/SpatialComponentTestReplicatedActor.h"
@@ -21,8 +22,10 @@ void USpatialComponentMap::CreateCustomContentForMap()
 	// The actors are placed in one quadrant of the map to make sure they are LBed together
 	FVector SpatialComponentTestActorPosition = FVector(-250, -250, 0);
 
-	// Add the test
+	// Add the tests
 	ASpatialComponentTest* CompTest = AddActorToLevel<ASpatialComponentTest>(CurrentLevel, FTransform(SpatialComponentTestActorPosition));
+	ASpatialComponentSettingsOverride* SettingsOverrideTest =
+		AddActorToLevel<ASpatialComponentSettingsOverride>(CurrentLevel, FTransform(SpatialComponentTestActorPosition));
 
 	// Add the helpers, as we need things placed in the level
 	CompTest->LevelActor = AddActorToLevel<ASpatialComponentTestActor>(CurrentLevel, FTransform(SpatialComponentTestActorPosition));

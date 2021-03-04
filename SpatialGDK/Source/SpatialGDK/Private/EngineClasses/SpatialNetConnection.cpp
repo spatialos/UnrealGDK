@@ -22,6 +22,8 @@ DECLARE_CYCLE_STAT(TEXT("UpdateLevelVisibility"), STAT_SpatialNetConnectionUpdat
 
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
+	, bReliableSpatialConnection(false)
+	, ConnectionClientWorkerSystemEntityId(SpatialConstants::INVALID_ENTITY_ID)
 	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
 {
 #if ENGINE_MINOR_VERSION <= 24
@@ -102,9 +104,8 @@ void USpatialNetConnection::UpdateLevelVisibility(const struct FUpdateLevelVisib
 
 	// We want to update our interest as fast as possible
 	// So we send an Interest update immediately.
-
-	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
-	Sender->UpdateInterestComponent(Cast<AActor>(PlayerController));
+	SpatialGDK::ActorSystem* ActorSystem = Cast<USpatialNetDriver>(Driver)->ActorSystem.Get();
+	ActorSystem->UpdateInterestComponent(Cast<AActor>(PlayerController));
 }
 
 void USpatialNetConnection::FlushDormancy(AActor* Actor)
@@ -128,33 +129,4 @@ void USpatialNetConnection::Init(const Worker_EntityId InPlayerControllerEntity)
 void USpatialNetConnection::Disable()
 {
 	PlayerControllerEntity = SpatialConstants::INVALID_ENTITY_ID;
-}
-
-void USpatialNetConnection::ClientNotifyClientHasQuit()
-{
-	if (PlayerControllerEntity != SpatialConstants::INVALID_ENTITY_ID)
-	{
-		if (!Cast<USpatialNetDriver>(Driver)->StaticComponentView->HasAuthority(PlayerControllerEntity,
-																				SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID))
-		{
-			UE_LOG(LogSpatialNetConnection, Warning,
-				   TEXT("Quit the game but no authority over Client Auth component set: NetConnection %s, PlayerController entity %lld"),
-				   *GetName(), PlayerControllerEntity);
-			return;
-		}
-
-		FWorkerComponentUpdate Update = {};
-		Update.component_id = SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID;
-		Update.schema_type = Schema_CreateComponentUpdate();
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
-
-		Schema_AddBool(ComponentObject, SpatialConstants::PLAYER_CONTROLLER_CLIENT_HAS_QUIT_ID, true);
-
-		Cast<USpatialNetDriver>(Driver)->Connection->SendComponentUpdate(PlayerControllerEntity, &Update);
-	}
-	else
-	{
-		UE_LOG(LogSpatialNetConnection, Verbose, TEXT("Quitting before Heartbeat component has been initialized: NetConnection %s"),
-			   *GetName());
-	}
 }

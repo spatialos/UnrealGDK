@@ -23,11 +23,9 @@
 #include "SpatialGDKSettings.h"
 
 #include "CoreMinimal.h"
-#include "GameFramework/OnlineReplStructs.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "Interop/ClientConnectionManager.h"
-#include "Interop/RPCExecutorInterface.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
@@ -362,7 +360,7 @@ private:
 
 	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
 	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
-	bool ClientCanSendPlayerSpawnRequests();
+	bool ClientCanSendPlayerSpawnRequests() const;
 
 	void ProcessOwnershipChanges();
 

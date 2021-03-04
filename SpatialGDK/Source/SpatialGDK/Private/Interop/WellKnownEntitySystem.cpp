@@ -130,6 +130,19 @@ void WellKnownEntitySystem::ProcessEntityAdd(const Worker_EntityId EntityId)
 	}
 }
 
+void WellKnownEntitySystem::OnMapLoaded() const
+{
+	if (GlobalStateManager != nullptr && !GlobalStateManager->GetCanBeginPlay()
+		&& SubView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
+	{
+		// ServerTravel - Increment the session id, so users don't rejoin the old game.
+		GlobalStateManager->TriggerBeginPlay();
+		GlobalStateManager->SetDeploymentState();
+		GlobalStateManager->SetAcceptingPlayers(true);
+		GlobalStateManager->IncrementSessionID();
+	}
+}
+
 // This is only called if this worker has been selected by SpatialOS to be authoritative
 // for the TranslationManager, otherwise the manager will never be instantiated.
 void WellKnownEntitySystem::InitializeVirtualWorkerTranslationManager()

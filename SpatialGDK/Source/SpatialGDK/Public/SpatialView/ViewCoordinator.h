@@ -94,6 +94,10 @@ public:
 		Worker_ComponentId ComponentId,
 		const FAuthorityChangeRefreshPredicate& RefreshPredicate = FSubView::NoAuthorityChangeRefreshPredicate);
 
+	bool HasEntity(Worker_EntityId EntityId) const;
+	bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId) const;
+
 private:
 	WorkerView View;
 	TUniquePtr<AbstractConnectionHandler> ConnectionHandler;
