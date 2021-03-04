@@ -1880,7 +1880,7 @@ void ActorSystem::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, cons
 	ComponentsToRemove.Reserve(SCHEMA_Count);
 	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
 	{
-		if (SubobjectComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		if (SubView->GetView()[EntityId].Components.FindByPredicate(ComponentIdEquality{ SubobjectComponentId }) != nullptr)
 		{
 			ComponentsToRemove.Add(SubobjectComponentId);
 		}
