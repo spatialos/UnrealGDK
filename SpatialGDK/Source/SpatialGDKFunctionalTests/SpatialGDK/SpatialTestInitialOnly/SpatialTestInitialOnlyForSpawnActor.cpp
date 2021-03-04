@@ -23,7 +23,7 @@ ASpatialTestInitialOnlyForSpawnActor::ASpatialTestInitialOnlyForSpawnActor()
 	: Super()
 {
 	Author = "Jeff Xu";
-	Description = TEXT("Spawn a actor in front of player, change initial only & replicate value at server side, check client side value.");
+	Description = TEXT("Spawn an actor in front of player, change initial only & replicate value at server side, check client side value.");
 }
 
 void ASpatialTestInitialOnlyForSpawnActor::PrepareTest()
