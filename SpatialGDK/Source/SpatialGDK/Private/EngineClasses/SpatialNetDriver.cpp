@@ -639,7 +639,7 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 		   TEXT("While trying to clean up a PlayerController, its client connection was not found and thus cleanup was not performed"));
 }
 
-bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()
+bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests() const
 {
 	return GlobalStateManager->GetAcceptingPlayers() && SessionId == GlobalStateManager->GetSessionId();
 }
@@ -880,7 +880,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	UWorld* World = GameMode->GetWorld();
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
 
-	if (!NetDriver->Connection->GetCoordinator().HasAuthority(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
+	if (!NetDriver->Connection->GetCoordinator().HasAuthority(NetDriver->GlobalStateManager->GlobalStateManagerEntityId,
 															  SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
 	{
 		// TODO: UNR-678 Send a command to the GSM to initiate server travel on the correct server.
