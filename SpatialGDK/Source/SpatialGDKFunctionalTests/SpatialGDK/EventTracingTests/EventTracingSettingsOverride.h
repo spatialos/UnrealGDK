@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EventTracingTest.h"
+#include "SpatialEventTracingTest.h"
 #include "EventTracingSettingsOverride.generated.h"
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API AEventTracingSettingsOverride : public AEventTracingTest
+class SPATIALGDKFUNCTIONALTESTS_API AEventTracingSettingsOverride : public ASpatialEventTracingTest
 {
 	GENERATED_BODY()
 

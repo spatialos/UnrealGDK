@@ -1,10 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "GameModeReplicationTest.h"
+#include "SpatialGameModeReplicationTest.h"
 
-#include "Net/UnrealNetwork.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 
 #include "GameFramework/GameStateBase.h"
+#include "Net/UnrealNetwork.h"
 
 AGameModeReplicationTestGameMode::AGameModeReplicationTestGameMode()
 {
@@ -25,13 +26,13 @@ void AGameModeReplicationTestGameMode::GetLifetimeReplicatedProps(TArray<FLifeti
  * * Don't replicate to clients
  */
 
-AGameModeReplicationTest::AGameModeReplicationTest()
+ASpatialGameModeReplicationTest::ASpatialGameModeReplicationTest()
 {
 	Author = TEXT("Dmitrii");
 	Description = TEXT("Test GameMode replication");
 }
 
-void AGameModeReplicationTest::MarkWorkerGameModeAuthority_Implementation(bool bHasGameModeAuthority)
+void ASpatialGameModeReplicationTest::MarkWorkerGameModeAuthority_Implementation(bool bHasGameModeAuthority)
 {
 	ServerResponsesCount++;
 
@@ -41,7 +42,7 @@ void AGameModeReplicationTest::MarkWorkerGameModeAuthority_Implementation(bool b
 	}
 }
 
-void AGameModeReplicationTest::PrepareTest()
+void ASpatialGameModeReplicationTest::PrepareTest()
 {
 	Super::PrepareTest();
 
@@ -114,4 +115,22 @@ void AGameModeReplicationTest::PrepareTest()
 
 		FinishStep();
 	});
+}
+
+USpatialGameModeReplicationMap::USpatialGameModeReplicationMap()
+	// Test flakes about 20% of the time
+	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("SpatialGameModeReplicationMap"))
+{
+}
+
+void USpatialGameModeReplicationMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the test
+	AddActorToLevel<ASpatialGameModeReplicationTest>(CurrentLevel, FTransform::Identity);
+
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
+	WorldSettings->SetMultiWorkerSettingsClass(UGameModeReplicationMultiWorkerSettings::StaticClass());
+	WorldSettings->DefaultGameMode = AGameModeReplicationTestGameMode::StaticClass();
 }

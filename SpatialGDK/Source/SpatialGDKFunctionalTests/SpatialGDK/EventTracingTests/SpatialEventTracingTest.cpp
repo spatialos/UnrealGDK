@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "EventTracingTest.h"
+#include "SpatialEventTracingTest.h"
 
 #include "EngineClasses/SpatialGameInstance.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
@@ -15,35 +15,35 @@ DEFINE_LOG_CATEGORY(LogEventTracingTest);
 
 using namespace SpatialGDK;
 
-const FName AEventTracingTest::ReceiveOpEventName = "worker.receive_op";
-const FName AEventTracingTest::PropertyChangedEventName = "unreal_gdk.property_changed";
-const FName AEventTracingTest::ReceivePropertyUpdateEventName = "unreal_gdk.receive_property_update";
-const FName AEventTracingTest::PushRPCEventName = "unreal_gdk.push_rpc";
-const FName AEventTracingTest::ReceiveRPCEventName = "unreal_gdk.receive_rpc";
-const FName AEventTracingTest::ApplyRPCEventName = "unreal_gdk.apply_rpc";
-const FName AEventTracingTest::ComponentUpdateEventName = "unreal_gdk.component_update";
-const FName AEventTracingTest::UserProcessRPCEventName = "user.process_rpc";
-const FName AEventTracingTest::UserReceivePropertyEventName = "user.receive_property";
-const FName AEventTracingTest::UserReceiveComponentPropertyEventName = "user.receive_component_property";
-const FName AEventTracingTest::UserSendPropertyEventName = "user.send_property";
-const FName AEventTracingTest::UserSendComponentPropertyEventName = "user.send_component_property";
-const FName AEventTracingTest::UserSendRPCEventName = "user.send_rpc";
+const FName ASpatialEventTracingTest::ReceiveOpEventName = "worker.receive_op";
+const FName ASpatialEventTracingTest::PropertyChangedEventName = "unreal_gdk.property_changed";
+const FName ASpatialEventTracingTest::ReceivePropertyUpdateEventName = "unreal_gdk.receive_property_update";
+const FName ASpatialEventTracingTest::PushRPCEventName = "unreal_gdk.push_rpc";
+const FName ASpatialEventTracingTest::ReceiveRPCEventName = "unreal_gdk.receive_rpc";
+const FName ASpatialEventTracingTest::ApplyRPCEventName = "unreal_gdk.apply_rpc";
+const FName ASpatialEventTracingTest::ComponentUpdateEventName = "unreal_gdk.component_update";
+const FName ASpatialEventTracingTest::UserProcessRPCEventName = "user.process_rpc";
+const FName ASpatialEventTracingTest::UserReceivePropertyEventName = "user.receive_property";
+const FName ASpatialEventTracingTest::UserReceiveComponentPropertyEventName = "user.receive_component_property";
+const FName ASpatialEventTracingTest::UserSendPropertyEventName = "user.send_property";
+const FName ASpatialEventTracingTest::UserSendComponentPropertyEventName = "user.send_component_property";
+const FName ASpatialEventTracingTest::UserSendRPCEventName = "user.send_rpc";
 
-const FName AEventTracingTest::UserSendCrossServerPropertyEventName = "user.send_cross_server_property";
-const FName AEventTracingTest::UserSendCrossServerRPCEventName = "user.send_cross_server_rpc";
-const FName AEventTracingTest::UserReceiveCrossServerPropertyEventName = "user.receive_cross_server_property";
-const FName AEventTracingTest::UserReceiveCrossServerRPCEventName = "user.receive_cross_server_rpc";
-const FName AEventTracingTest::ApplyCrossServerRPCName = "unreal_gdk.apply_cross_server_rpc";
-const FName AEventTracingTest::SendCrossServerRPCName = "unreal_gdk.send_cross_server_rpc";
-const FName AEventTracingTest::ReceiveCrossServerRPCName = "unreal_gdk.receive_cross_server_rpc";
+const FName ASpatialEventTracingTest::UserSendCrossServerPropertyEventName = "user.send_cross_server_property";
+const FName ASpatialEventTracingTest::UserSendCrossServerRPCEventName = "user.send_cross_server_rpc";
+const FName ASpatialEventTracingTest::UserReceiveCrossServerPropertyEventName = "user.receive_cross_server_property";
+const FName ASpatialEventTracingTest::UserReceiveCrossServerRPCEventName = "user.receive_cross_server_rpc";
+const FName ASpatialEventTracingTest::ApplyCrossServerRPCName = "unreal_gdk.apply_cross_server_rpc";
+const FName ASpatialEventTracingTest::SendCrossServerRPCName = "unreal_gdk.send_cross_server_rpc";
+const FName ASpatialEventTracingTest::ReceiveCrossServerRPCName = "unreal_gdk.receive_cross_server_rpc";
 
-AEventTracingTest::AEventTracingTest()
+ASpatialEventTracingTest::ASpatialEventTracingTest()
 {
 	Author = "Matthew Sandford";
 	Description = TEXT("Base class for event tracing tests");
 }
 
-void AEventTracingTest::PrepareTest()
+void ASpatialEventTracingTest::PrepareTest()
 {
 	Super::PrepareTest();
 
@@ -87,13 +87,13 @@ void AEventTracingTest::PrepareTest()
 		nullptr);
 }
 
-void AEventTracingTest::StartEventTracingTest()
+void ASpatialEventTracingTest::StartEventTracingTest()
 {
 	TestStartTime = FDateTime::Now();
 	FinishStep();
 }
 
-void AEventTracingTest::WaitForTestToEnd()
+void ASpatialEventTracingTest::WaitForTestToEnd()
 {
 	if (TestStartTime + FTimespan::FromSeconds(TestTime) > FDateTime::Now())
 	{
@@ -103,12 +103,12 @@ void AEventTracingTest::WaitForTestToEnd()
 	FinishStep();
 }
 
-void AEventTracingTest::FinishEventTraceTest()
+void ASpatialEventTracingTest::FinishEventTraceTest()
 {
 	FinishStep();
 }
 
-void AEventTracingTest::GatherData()
+void ASpatialEventTracingTest::GatherData()
 {
 	USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
 	USpatialConnectionManager* ConnectionManager = GameInstance->GetSpatialConnectionManager();
@@ -183,7 +183,7 @@ void AEventTracingTest::GatherData()
 	FinishStep();
 }
 
-void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
+void ASpatialEventTracingTest::GatherDataFromFile(const FString& FilePath)
 {
 	struct StreamDeleter
 	{
@@ -241,8 +241,8 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 	Stream = nullptr;
 }
 
-bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames,
-											 int MinimumCauses /*= 1*/) const
+bool ASpatialEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const TArray<FName>& CauseEventNames,
+													int MinimumCauses /*= 1*/) const
 {
 	const TArray<FString>* Causes = TraceSpans.Find(SpanIdString);
 	if (Causes == nullptr || Causes->Num() < MinimumCauses)
@@ -266,7 +266,7 @@ bool AEventTracingTest::CheckEventTraceCause(const FString& SpanIdString, const 
 	return true;
 }
 
-AEventTracingTest::CheckResult AEventTracingTest::CheckCauses(FName From, FName To) const
+ASpatialEventTracingTest::CheckResult ASpatialEventTracingTest::CheckCauses(FName From, FName To) const
 {
 	int EventsTested = 0;
 	int EventsFailed = 0;

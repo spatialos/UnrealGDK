@@ -4,10 +4,12 @@
 #include "CrossServerRPCCube.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "NonReplicatedCrossServerRPCCube.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "TestWorkerSettings.h"
 
 /**
  * This test automates the Server to server RPC gym, that was used to demonstrate that actors owned by different servers correctly send
@@ -273,4 +275,25 @@ void ASpatialTestCrossServerRPC::CheckValidEntityID(ACrossServerRPCCube* TestCub
 	RequireTrue((Entity != SpatialConstants::INVALID_ENTITY_ID), TEXT("Expected a valid entity ID"));
 	RequireTrue((Entity == TestCube->AuthEntityId), TEXT("Expected entity ID to be the same as the auth server"));
 	FinishStep();
+}
+
+USpatialTestCrossServerRPCMap::USpatialTestCrossServerRPCMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("SpatialTestCrossServerRPCMap"))
+{
+}
+
+void USpatialTestCrossServerRPCMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the test cube, positioned in server 4's authority region
+	ANonReplicatedCrossServerRPCCube* LevelCube =
+		AddActorToLevel<ANonReplicatedCrossServerRPCCube>(CurrentLevel, FTransform(FVector(250.0f, 250.0f, 50.0f)));
+
+	// Add the test
+	ASpatialTestCrossServerRPC* TestActor = AddActorToLevel<ASpatialTestCrossServerRPC>(CurrentLevel, FTransform::Identity);
+	TestActor->LevelCube = LevelCube;
+
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
 }

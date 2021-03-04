@@ -6,12 +6,13 @@
 
 #include "SpatialCommonTypes.h"
 #include "SpatialFunctionalTest.h"
+#include "TestMaps/GeneratedTestMap.h"
 
 #include "GameFramework/GameModeBase.h"
 
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 
-#include "GameModeReplicationTest.generated.h"
+#include "SpatialGameModeReplicationTest.generated.h"
 
 UCLASS(BlueprintType)
 class UGameModeReplicationGridLBStrategy : public UGridBasedLBStrategy
@@ -64,12 +65,12 @@ public:
 };
 
 UCLASS(BlueprintType)
-class SPATIALGDKFUNCTIONALTESTS_API AGameModeReplicationTest : public ASpatialFunctionalTest
+class SPATIALGDKFUNCTIONALTESTS_API ASpatialGameModeReplicationTest : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
 
 public:
-	AGameModeReplicationTest();
+	ASpatialGameModeReplicationTest();
 
 	UFUNCTION(CrossServer, Reliable)
 	void MarkWorkerGameModeAuthority(bool bHasGameModeAuthority);
@@ -81,4 +82,16 @@ public:
 	int ServerResponsesCount = 0;
 
 	float TimeWaited = 0.0f;
+};
+
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API USpatialGameModeReplicationMap : public UGeneratedTestMap
+{
+	GENERATED_BODY()
+
+public:
+	USpatialGameModeReplicationMap();
+
+protected:
+	virtual void CreateCustomContentForMap() override;
 };

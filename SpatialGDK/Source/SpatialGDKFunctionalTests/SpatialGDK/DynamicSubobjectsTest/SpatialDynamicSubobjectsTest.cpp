@@ -1,12 +1,14 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "DynamicSubobjectsTest.h"
+#include "SpatialDynamicSubobjectsTest.h"
+
 #include "ReplicatedGASTestActor.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "SpatialGDKSettings.h"
 
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 
 /**
@@ -35,7 +37,7 @@
 
 const static float StepTimeLimit = 10.0f;
 
-ADynamicSubobjectsTest::ADynamicSubobjectsTest()
+ASpatialDynamicSubobjectsTest::ASpatialDynamicSubobjectsTest()
 	: Super()
 {
 	Author = "Evi";
@@ -45,7 +47,7 @@ ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 40.0f); // Outside of the interest range of the client
 }
 
-void ADynamicSubobjectsTest::PrepareTest()
+void ASpatialDynamicSubobjectsTest::PrepareTest()
 {
 	Super::PrepareTest();
 
@@ -246,4 +248,28 @@ void ADynamicSubobjectsTest::PrepareTest()
 			}
 		});
 	}
+}
+
+USpatialDynamicSubobjectsMap::USpatialDynamicSubobjectsMap()
+	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("SpatialDynamicSubobjectsMap"))
+{
+}
+
+void USpatialDynamicSubobjectsMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Move player start to server 1
+	AActor** PlayerStart = CurrentLevel->Actors.FindByPredicate([](AActor* Actor) {
+		return Actor->GetClass() == APlayerStart::StaticClass();
+	});
+	(*PlayerStart)->SetActorLocation(FVector(-300, -300, 100));
+
+	// This test requires a test cube with an ability system that has a starting attribute set - this is what creates the dynamic subobject.
+	// We can't just create this in C++ in the GDK, because it requires a dependency on the ability system. We could potentially create this
+	// in the TestGyms. The last question is the data table - not sure if possible to create this in C++. Maybe it's better to test this
+	// with a regular non-ability-system subobject instead.
+
+	// Add the test
+	AddActorToLevel<ASpatialDynamicSubobjectsTest>(CurrentLevel, FTransform::Identity);
 }

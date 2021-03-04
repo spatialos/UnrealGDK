@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
 
-#include "EventTracingTest.generated.h"
+#include "SpatialEventTracingTest.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogEventTracingTest, Log, All);
 
@@ -18,12 +18,12 @@ struct Trace_Item;
 } // namespace worker
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API AEventTracingTest : public ASpatialFunctionalTest
+class SPATIALGDKFUNCTIONALTESTS_API ASpatialEventTracingTest : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
 
 public:
-	AEventTracingTest();
+	ASpatialEventTracingTest();
 
 	virtual void PrepareTest() override;
 

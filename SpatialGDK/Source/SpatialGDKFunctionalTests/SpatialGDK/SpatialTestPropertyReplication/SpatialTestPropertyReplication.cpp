@@ -24,32 +24,39 @@ ASpatialTestPropertyReplication::ASpatialTestPropertyReplication()
 	: Super()
 {
 	Author = "Ollie Balaam (oliverbalaam@improbable.io)";
-	Description = TEXT("This tests that an Actor can replicate a property across the network during play. It is an example test intended to teach the basics of the UnrealGDK Functional Test Framework. It's accompanied by this document: https://brevi.link/how-to-test-unrealgdk");
+	Description = TEXT(
+		"This tests that an Actor can replicate a property across the network during play. It is an example test intended to teach the "
+		"basics of the UnrealGDK Functional Test Framework. It's accompanied by this document: https://brevi.link/how-to-test-unrealgdk");
 }
 
 void ASpatialTestPropertyReplication::PrepareTest()
 {
 	Super::PrepareTest();
 
-AddStep(
+	AddStep(
 		TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr,
 		[this]() {
 			int32 ExpectedNumberOfClients = 3;
 			int32 RequiredNumberOfClients = GetNumRequiredClients();
-		RequireEqual_Int(RequiredNumberOfClients, ExpectedNumberOfClients, TEXT("Expected a certain number of clients to be required."));
-		int32 ActualNumberOfClients = GetNumberOfClientWorkers();
-		RequireEqual_Int(ActualNumberOfClients , ExpectedNumberOfClients, TEXT("Expected a certain number of clients to actually connect."));
-		FinishStep();
+			RequireEqual_Int(RequiredNumberOfClients, ExpectedNumberOfClients,
+							 TEXT("Expected a certain number of clients to be required."));
+			int32 ActualNumberOfClients = GetNumberOfClientWorkers();
+			RequireEqual_Int(ActualNumberOfClients, ExpectedNumberOfClients,
+							 TEXT("Expected a certain number of clients to actually connect."));
+			FinishStep();
 		},
 		nullptr, 5.0f);
 
-	AddStep(TEXT("The Server spawns one ReplicatedTestActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		TestActor =
-			GetWorld()->SpawnActor<AReplicatedTestActor>(FVector(0.0f, 0.0f, 50.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-		RegisterAutoDestroyActor(TestActor);
+	AddStep(
+		TEXT("The Server spawns one ReplicatedTestActor"), FWorkerDefinition::Server(1), nullptr,
+		[this]() {
+			TestActor =
+				GetWorld()->SpawnActor<AReplicatedTestActor>(FVector(0.0f, 0.0f, 50.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+			RegisterAutoDestroyActor(TestActor);
 
-		FinishStep();
-	}, nullptr, 5.0f);
+			FinishStep();
+		},
+		nullptr, 5.0f);
 
 	AddStep(
 		TEXT("All Clients check that they can see exactly 1 ReplicatedTestActor"), FWorkerDefinition::AllClients, nullptr, nullptr,
@@ -87,8 +94,7 @@ AddStep(
 		},
 		nullptr,
 		[this](float DeltaTime) {
-			RequireEqual_Int(TestActor->TestReplicatedProperty, 99,
-							 TEXT("The ReplicatedProperty should equal 99."));
+			RequireEqual_Int(TestActor->TestReplicatedProperty, 99, TEXT("The ReplicatedProperty should equal 99."));
 			FinishStep();
 		},
 		5.0f);

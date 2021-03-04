@@ -4,18 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
-#include "DynamicSubobjectsTest.generated.h"
+#include "TestMaps/GeneratedTestMap.h"
+#include "SpatialDynamicSubobjectsTest.generated.h"
 
 class ATestMovementCharacter;
 class AReplicatedGASTestActor;
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API ADynamicSubobjectsTest : public ASpatialFunctionalTest
+class SPATIALGDKFUNCTIONALTESTS_API ASpatialDynamicSubobjectsTest : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
 
 public:
-	ADynamicSubobjectsTest();
+	ASpatialDynamicSubobjectsTest();
 
 	virtual void PrepareTest() override;
 
@@ -33,4 +34,16 @@ public:
 	FVector CharacterRemoteLocation;
 
 	float StepTimer;
+};
+
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API USpatialDynamicSubobjectsMap : public UGeneratedTestMap
+{
+	GENERATED_BODY()
+
+public:
+	USpatialDynamicSubobjectsMap();
+
+protected:
+	virtual void CreateCustomContentForMap() override;
 };

@@ -6,7 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "ReplicatedStartupActorPlayerController.generated.h"
 
-class ASpatialTestReplicatedStartupActor;
+class ASpatialReplicatedStartupActorTest;
 UCLASS()
 class AReplicatedStartupActorPlayerController : public APlayerController
 {
@@ -14,8 +14,8 @@ class AReplicatedStartupActorPlayerController : public APlayerController
 
 public:
 	UFUNCTION(Server, Reliable)
-	void ClientToServerRPC(ASpatialTestReplicatedStartupActor* Test, AActor* ReplicatedActor);
+	void ClientToServerRPC(ASpatialReplicatedStartupActorTest* Test, AActor* ReplicatedActor);
 
 	UFUNCTION(Server, Reliable)
-	void ResetBoolean(ASpatialTestReplicatedStartupActor* Test);
+	void ResetBoolean(ASpatialReplicatedStartupActorTest* Test);
 };
