@@ -85,8 +85,8 @@ void UGlobalStateManager::ApplySnapshotVersionData(Schema_ComponentData* Data)
 		if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != SnapshotVersion) // Are we running with the same snapshot version?
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error,
-				   TEXT("Your servers's snapshot version does not match expected. Server version: = '%uu', Expected "
-						"version = '%uu'"),
+				   TEXT("Your servers's snapshot version does not match expected. Server version: = '%llu', Expected "
+						"version = '%llu'"),
 				   SnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
 
 			if (UWorld* CurrentWorld = NetDriver->GetWorld())
