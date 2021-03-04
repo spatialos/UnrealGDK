@@ -1186,15 +1186,6 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 
 	UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
 
-	if (NetDriver->IsServer())
-	{
-		if (APlayerController* PlayerController = Cast<APlayerController>(EntityActor))
-		{
-			// If entity is a PlayerController, create channel on the PlayerController's connection.
-			Connection = PlayerController->NetConnection;
-		}
-	}
-
 	if (Connection == nullptr)
 	{
 		UE_LOG(LogActorSystem, Error,

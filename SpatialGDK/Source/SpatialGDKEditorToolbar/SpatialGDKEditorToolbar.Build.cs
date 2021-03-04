@@ -31,6 +31,7 @@ public class SpatialGDKEditorToolbar : ModuleRules
                 "MessageLog",
                 "SpatialGDK",
                 "SpatialGDKEditor",
+                "SpatialGDKFunctionalTests",
                 "SpatialGDKServices",
                 "UnrealEd",
                 "UATHelper"
