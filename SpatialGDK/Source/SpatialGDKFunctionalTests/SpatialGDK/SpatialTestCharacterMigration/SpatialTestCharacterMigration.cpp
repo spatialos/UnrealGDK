@@ -1,12 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestCharacterMigration.h"
+
 #include "Components/BoxComponent.h"
 #include "Engine/TriggerBox.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestCharacterMovement/CharacterMovementTestGameMode.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
+#include "TestWorkerSettings.h"
 
 namespace
 {
@@ -138,4 +143,25 @@ void ASpatialTestCharacterMigration::PrepareTest()
 
 		AddStepFromDefinition(ResetStepDefinition, FWorkerDefinition::AllWorkers);
 	}
+}
+
+USpatialTestCharacterMigrationMap::USpatialTestCharacterMigrationMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("SpatialTestCharacterMigrationMap"))
+{
+	// clang-format off
+	SetCustomConfig(TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
+					TEXT("PlayNumberOfClients=1"));
+	// clang-format on
+}
+
+void USpatialTestCharacterMigrationMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the test
+	AddActorToLevel<ASpatialTestCharacterMigration>(CurrentLevel, FTransform::Identity);
+
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest2x1FullInterestWorkerSettings::StaticClass());
+	WorldSettings->DefaultGameMode = ACharacterMovementTestGameMode::StaticClass();
 }
