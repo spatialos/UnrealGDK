@@ -148,10 +148,7 @@ void ASpatialTestCharacterMigration::PrepareTest()
 USpatialTestCharacterMigrationMap::USpatialTestCharacterMigrationMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("SpatialTestCharacterMigrationMap"))
 {
-	// clang-format off
-	SetCustomConfig(TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
-					TEXT("PlayNumberOfClients=1"));
-	// clang-format on
+	SetNumberOfClients(1);
 }
 
 void USpatialTestCharacterMigrationMap::CreateCustomContentForMap()

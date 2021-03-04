@@ -48,7 +48,22 @@ bool UGeneratedTestMap::GenerateMap()
 
 bool UGeneratedTestMap::GenerateCustomConfig()
 {
-	if (CustomConfigString.IsEmpty())
+	FString CustomConfigContent = CustomConfigString;
+
+	// If specified, append the setting to set the number of clients.
+	if (NumberOfClients.IsSet())
+	{
+		if (!CustomConfigString.IsEmpty())
+		{
+			CustomConfigContent += LINE_TERMINATOR;
+		}
+		// clang-format off
+		CustomConfigContent += FString::Printf(TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
+											   TEXT("PlayNumberOfClients=%d"), NumberOfClients.GetValue());
+		// clang-format on
+	}
+
+	if (CustomConfigContent.IsEmpty())
 	{
 		// Only create a custom config file if we have something meaningful to write so we don't pollute the file system too much
 		return true;
@@ -56,7 +71,8 @@ bool UGeneratedTestMap::GenerateCustomConfig()
 
 	const FString OverrideSettingsFilename =
 		FSpatialTestSettings::GeneratedOverrideSettingsBaseFilename + MapName + FSpatialTestSettings::OverrideSettingsFileExtension;
-	return FFileHelper::SaveStringToFile(CustomConfigString, *OverrideSettingsFilename);
+
+	return FFileHelper::SaveStringToFile(CustomConfigContent, *OverrideSettingsFilename);
 }
 
 FString UGeneratedTestMap::GetGeneratedMapFolder()
