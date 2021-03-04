@@ -53,7 +53,6 @@
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
-#include "Utils/SnapshotVersion.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialLoadBalancingHandler.h"
@@ -651,12 +650,12 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 	StartupClientDebugString.Empty();
 
 	const uint64 SnapshotVersion = GlobalStateManager->GetSnapshotVersion();
-	if (SPATIAL_SNAPSHOT_VERSION != SnapshotVersion) // Are we running with the same snapshot version?
+	if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != SnapshotVersion) // Are we running with the same snapshot version?
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error,
 			   TEXT("Your client's snapshot version does not match your deployment's snapshot version. Client version: = '%uu', Server "
 					"version = '%uu'"),
-			   SnapshotVersion, SPATIAL_SNAPSHOT_VERSION);
+			   SnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
 
 		if (USpatialGameInstance* GameInstance = GetGameInstance())
 		{

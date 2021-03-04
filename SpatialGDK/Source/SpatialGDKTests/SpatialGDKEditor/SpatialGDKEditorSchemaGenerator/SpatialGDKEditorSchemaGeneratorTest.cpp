@@ -3,6 +3,7 @@
 #include "Tests/TestDefinitions.h"
 
 #include "SchemaGenObjectStub.h"
+#include "SpatialConstants.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
@@ -15,7 +16,6 @@
 #include "Misc/Crc.h"
 #include "Misc/FileHelper.h"
 #include "Misc/PackageName.h"
-#include "Utils/SnapshotVersion.h"
 
 #define LOCTEXT_NAMESPACE "SpatialGDKEDitorSchemaGeneratorTest"
 
@@ -1352,8 +1352,9 @@ SCHEMA_GENERATOR_TEST(
 	}
 
 	// THEN
-	const FString ErrorMessage = FString::Printf(TEXT("Expected hash to be %u, but found it to be %u"), SPATIAL_SNAPSHOT_VERSION, HashCrc);
-	TestEqual(ErrorMessage, SPATIAL_SNAPSHOT_SCHEMA_HASH, HashCrc);
+	const FString ErrorMessage =
+		FString::Printf(TEXT("Expected hash to be %u, but found it to be %u"), SpatialConstants::SPATIAL_SNAPSHOT_VERSION, HashCrc);
+	TestEqual(ErrorMessage, SpatialConstants::SPATIAL_SNAPSHOT_SCHEMA_HASH, HashCrc);
 
 	return true;
 }
