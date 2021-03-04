@@ -1227,15 +1227,14 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	return true;
 }
 
-SCHEMA_GENERATOR_TEST(GIVEN_snapshot_affecting_schema_files_WHEN_hash_of_file_contents_is_generated_THEN_hash_matches_expected_snapshot_version_hash)
+SCHEMA_GENERATOR_TEST(
+	GIVEN_snapshot_affecting_schema_files_WHEN_hash_of_file_contents_is_generated_THEN_hash_matches_expected_snapshot_version_hash)
 {
 	SchemaTestFixture Fixture;
 
 	// GIVEN
 	FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
-	TArray<FString> GDKSchemaFilePaths = { "global_state_manager.schema",
-										   "spawner.schema",
-										   "virtual_worker_translation.schema" };
+	TArray<FString> GDKSchemaFilePaths = { "global_state_manager.schema", "spawner.schema", "virtual_worker_translation.schema" };
 
 	// WHEN
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
@@ -1283,7 +1282,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_snapshot_affecting_schema_files_WHEN_hash_of_file_co
 				FRegexMatcher OuterTypeNameRegMatcher(OuterTypeNamePattern, SchemaLine);
 
 				auto VerifyAndAddTwoGroupInner = [this, &FileNameAndPath, &SchemaLine, &OuterName,
-												 &SchemaStrings](FRegexMatcher& InMatcher) {
+												  &SchemaStrings](FRegexMatcher& InMatcher) {
 					const FString DebugString =
 						FString::Printf(TEXT("Expected to find outer name in schema file %s, line '%'"), *FileNameAndPath, *SchemaLine);
 					TestFalse(DebugString, OuterName.IsEmpty());
@@ -1293,21 +1292,22 @@ SCHEMA_GENERATOR_TEST(GIVEN_snapshot_affecting_schema_files_WHEN_hash_of_file_co
 				};
 
 				auto VerifyAndAddThreeGroupInner = [this, &FileNameAndPath, &SchemaLine, &OuterName,
-															&SchemaStrings](FRegexMatcher& InMatcher) {
+													&SchemaStrings](FRegexMatcher& InMatcher) {
 					const FString DebugString =
 						FString::Printf(TEXT("Expected to find outer name in schema file %s, line '%'"), *FileNameAndPath, *SchemaLine);
 					TestFalse(DebugString, OuterName.IsEmpty());
 					const FString NewSchemaString = FString::Printf(TEXT("%s::%s::%s::%s"), *OuterName, *InMatcher.GetCaptureGroup(1),
-																 *InMatcher.GetCaptureGroup(2), *InMatcher.GetCaptureGroup(3));
+																	*InMatcher.GetCaptureGroup(2), *InMatcher.GetCaptureGroup(3));
 					SchemaStrings.Emplace(NewSchemaString);
 				};
 
 				auto VerifyAndAddFourGroupInner = [this, &FileNameAndPath, &SchemaLine, &OuterName,
-															&SchemaStrings](FRegexMatcher& InMatcher) {
+												   &SchemaStrings](FRegexMatcher& InMatcher) {
 					const FString DebugString =
 						FString::Printf(TEXT("Expected to find outer name in schema file %s, line '%'"), *FileNameAndPath, *SchemaLine);
 					TestFalse(DebugString, OuterName.IsEmpty());
-					const FString NewSchemaString = FString::Printf(TEXT("%s::%s::%s::%s::%s"), *OuterName, *InMatcher.GetCaptureGroup(1),
+					const FString NewSchemaString =
+						FString::Printf(TEXT("%s::%s::%s::%s::%s"), *OuterName, *InMatcher.GetCaptureGroup(1),
 										*InMatcher.GetCaptureGroup(2), *InMatcher.GetCaptureGroup(3), *InMatcher.GetCaptureGroup(4));
 					SchemaStrings.Emplace(NewSchemaString);
 				};
@@ -1352,8 +1352,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_snapshot_affecting_schema_files_WHEN_hash_of_file_co
 	}
 
 	// THEN
-	const FString ErrorMessage =
-		FString::Printf(TEXT("Expected hash to be %u, but found it to be %u"), SPATIAL_SNAPSHOT_VERSION, HashCrc);
+	const FString ErrorMessage = FString::Printf(TEXT("Expected hash to be %u, but found it to be %u"), SPATIAL_SNAPSHOT_VERSION, HashCrc);
 	TestEqual(ErrorMessage, SPATIAL_SNAPSHOT_SCHEMA_HASH, HashCrc);
 
 	return true;

@@ -399,29 +399,28 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
 
 // A list of components servers require on top of any generated data and handover components in order to handle non-authoritative actors
 // correctly.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST =
-	TArray<Worker_ComponentId>{ // Actor components
-								UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, TOMBSTONE_COMPONENT_ID, DORMANT_COMPONENT_ID,
-								NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST = TArray<Worker_ComponentId>{
+	// Actor components
+	UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, TOMBSTONE_COMPONENT_ID, DORMANT_COMPONENT_ID,
+	NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
 
-								// Multicast RPCs
-								MULTICAST_RPCS_COMPONENT_ID,
+	// Multicast RPCs
+	MULTICAST_RPCS_COMPONENT_ID,
 
-								// Global state components
-								DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID,
-								SNAPSHOT_VERSION_COMPONENT_ID,
+	// Global state components
+	DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID, SNAPSHOT_VERSION_COMPONENT_ID,
 
-								// Unreal load balancing components
-								VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
+	// Unreal load balancing components
+	VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
 
-								// Authority intent component to handle scattered hierarchies
-								AUTHORITY_INTENT_COMPONENT_ID,
+	// Authority intent component to handle scattered hierarchies
+	AUTHORITY_INTENT_COMPONENT_ID,
 
-								// Tags: Well known entities, non-auth actors, and tombstone tags
-								GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_TAG_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID,
+	// Tags: Well known entities, non-auth actors, and tombstone tags
+	GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_TAG_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID,
 
-								PLAYER_CONTROLLER_COMPONENT_ID, PARTITION_COMPONENT_ID
-	};
+	PLAYER_CONTROLLER_COMPONENT_ID, PARTITION_COMPONENT_ID
+};
 
 // A list of components servers require on entities they are authoritative over on top of the components already checked out by the interest
 // query.
