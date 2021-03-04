@@ -140,10 +140,13 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
-	LoadBalancingWriter LoadBalancingWriter(NetDriver);
+	if (GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents)
+	{
+		const LoadBalancingWriter LoadBalancingWriter(NetDriver);
 
-	ComponentDatas.Add(LoadBalancingWriter.ActorSetWriter->GetLoadBalancingData(Actor).CreateComponentData());
-	ComponentDatas.Add(LoadBalancingWriter.ActorGroupWriter->GetLoadBalancingData(Actor).CreateComponentData());
+		ComponentDatas.Add(LoadBalancingWriter.ActorSetWriter->GetLoadBalancingData(Actor).CreateComponentData());
+		ComponentDatas.Add(LoadBalancingWriter.ActorGroupWriter->GetLoadBalancingData(Actor).CreateComponentData());
+	}
 }
 
 void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,

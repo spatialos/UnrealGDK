@@ -51,8 +51,8 @@ public:
 			}
 		}
 		DataStore.Add(ActorEntityId, { UpdatedData });
-		FWorkerComponentUpdate CreateComponentData = UpdatedData.CreateComponentUpdate();
-		SendComponentUpdate(ActorEntityId, CreateComponentData);
+		FWorkerComponentUpdate ComponentUpdate = UpdatedData.CreateComponentUpdate();
+		SendComponentUpdate(ActorEntityId, ComponentUpdate);
 	}
 
 	virtual TComponent GetLoadBalancingData(AActor* Actor) const = 0;
@@ -74,7 +74,7 @@ class LoadBalancingWriter
 public:
 	LoadBalancingWriter(USpatialNetDriver* InNetDriver);
 
-	void OnActorReplicated(Worker_EntityId ActorEntityId, AActor* Actor);
+	void OnActorReplicated(Worker_EntityId ActorEntityId, AActor* Actor) const;
 
 	TWeakObjectPtr<USpatialNetDriver> NetDriver;
 

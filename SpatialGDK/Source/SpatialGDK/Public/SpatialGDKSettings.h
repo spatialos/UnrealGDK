@@ -432,4 +432,10 @@ public:
 
 	UPROPERTY(Config)
 	bool bEnableAlwaysWriteRPCs;
+
+	/*
+	 * Enables writing of ActorSetMember and ActorGroupMember components to load balancing entities
+	 */
+	UPROPERTY(Config)
+	bool bEnableStrategyLoadBalancingComponents;
 };

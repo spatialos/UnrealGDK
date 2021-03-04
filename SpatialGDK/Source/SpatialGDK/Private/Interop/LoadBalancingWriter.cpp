@@ -59,7 +59,7 @@ LoadBalancingWriter::LoadBalancingWriter(USpatialNetDriver* InNetDriver)
 {
 }
 
-void LoadBalancingWriter::OnActorReplicated(Worker_EntityId ActorEntityId, AActor* Actor)
+void LoadBalancingWriter::OnActorReplicated(Worker_EntityId ActorEntityId, AActor* Actor) const
 {
 	ActorSetWriter->ReplicateActor(ActorEntityId, Actor);
 }

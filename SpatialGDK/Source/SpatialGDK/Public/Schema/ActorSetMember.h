@@ -40,9 +40,7 @@ struct SPATIALGDK_API ActorSetMember
 
 	Worker_ComponentData CreateComponentData() const { return CreateComponentDataHelper(*this); }
 
-	Worker_ComponentUpdate CreateComponentUpdate() const { return CreateActorSetMemberUpdate(); }
-
-	Worker_ComponentUpdate CreateActorSetMemberUpdate() const { return CreateComponentUpdateHelper(*this); }
+	Worker_ComponentUpdate CreateComponentUpdate() const { return CreateComponentUpdateHelper(*this); }
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 	{
@@ -53,7 +51,10 @@ struct SPATIALGDK_API ActorSetMember
 
 	void ApplySchema(Schema_Object* Schema)
 	{
-		ActorSetId = Schema_GetEntityId(Schema, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID);
+		if (Schema_GetEntityIdCount(Schema, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID) == 1)
+		{
+			ActorSetId = Schema_GetEntityId(Schema, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID);
+		}
 	}
 
 	void WriteSchema(Schema_Object* Schema) const

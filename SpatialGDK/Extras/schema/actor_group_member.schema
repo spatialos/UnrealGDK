@@ -2,7 +2,7 @@
 package unreal;
 
 component ActorGroupMember {
-	id = 9951;
+	id = 9965;
 	
 	uint32 actor_group_id = 1;
 }

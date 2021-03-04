@@ -81,18 +81,29 @@ void GetWorldActors(UWorld* World, TArray<U>& OutActors)
 	}
 }
 
+/*
+ * The expected worker setup is as follows:
+ * * Worker 1 is the "main" worker that handles ASpatialTestLoadBalancingDataActor
+ * * Worker 2 is the "offloaded" worker that handles ASpatialTestLoadBalancingDataOffloadedActor
+ * * Workers 3 and 4 are zoned workers that handle ASpatialTestLoadBalancingDataZonedActor; these workers
+ *   are referred to as "zoned server 1" and "zoned server 2" respectively
+ */
 void ASpatialTestLoadBalancingData::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(TEXT("Create an actor on the main server"), FWorkerDefinition::Server(1), nullptr, [this] {
+	const FWorkerDefinition MainServer = FWorkerDefinition::Server(1);
+	const FWorkerDefinition OffloadedServer = FWorkerDefinition::Server(2);
+	const FWorkerDefinition ZonedServers[]{ FWorkerDefinition::Server(3), FWorkerDefinition::Server(4) };
+
+	AddStep(TEXT("Create an actor on the main server"), MainServer, nullptr, [this] {
 		ASpatialTestLoadBalancingDataActor* SpawnedActor = GetWorld()->SpawnActor<ASpatialTestLoadBalancingDataActor>();
 		check(SpawnedActor->HasAuthority());
 		RegisterAutoDestroyActor(SpawnedActor);
 		FinishStep();
 	});
 
-	AddStep(TEXT("Create an offloed actor on the offloaded server"), FWorkerDefinition::Server(2), nullptr, [this] {
+	AddStep(TEXT("Create an offloaded actor on the offloaded server"), OffloadedServer, nullptr, [this] {
 		ASpatialTestLoadBalancingDataOffloadedActor* SpawnedActor = GetWorld()->SpawnActor<ASpatialTestLoadBalancingDataOffloadedActor>();
 		check(SpawnedActor->HasAuthority());
 		RegisterAutoDestroyActor(SpawnedActor);
@@ -102,7 +113,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 	// One to the left of the boundary, one to the right.
 	const static FVector ZonedActorsPositions[]{ { 100, -100, 100 }, { 100, 100, 100 } };
 
-	AddStep(TEXT("Create zoned actor on zoned server 1"), FWorkerDefinition::Server(3), nullptr, [this] {
+	AddStep(TEXT("Create zoned actor on zoned server 1"), ZonedServers[0], nullptr, [this] {
 		ASpatialTestLoadBalancingDataZonedActor* SpawnedActor =
 			GetWorld()->SpawnActor<ASpatialTestLoadBalancingDataZonedActor>(ZonedActorsPositions[0], FRotator::ZeroRotator);
 		check(SpawnedActor->HasAuthority());
@@ -110,7 +121,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Create zoned actor on zoned server 1"), FWorkerDefinition::Server(4), nullptr, [this] {
+	AddStep(TEXT("Create zoned actor on zoned server 2"), ZonedServers[1], nullptr, [this] {
 		ASpatialTestLoadBalancingDataZonedActor* SpawnedActor =
 			GetWorld()->SpawnActor<ASpatialTestLoadBalancingDataZonedActor>(ZonedActorsPositions[1], FRotator::ZeroRotator);
 		check(SpawnedActor->HasAuthority());
@@ -155,7 +166,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 		},
 		LoadBalancingDataReceiptTimeout);
 
-	AddStep(TEXT("Put zoned actors to a single ownership group"), FWorkerDefinition::Server(3), nullptr, [this]() {
+	AddStep(TEXT("Put zoned actors to a single ownership group"), ZonedServers[0], nullptr, [this]() {
 		AssertTrue(TargetZonedActors[0]->HasAuthority(), TEXT("Zoned actor 1 is owned by the zoned server 1"));
 		TargetZonedActors[0]->SetOwner(TargetZonedActors[1].Get());
 		FinishStep();
@@ -172,12 +183,11 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 		},
 		LoadBalancingDataReceiptTimeout);
 
-	AddStep(TEXT("Put main server actor and offloaded server actor into different ownership groups"), FWorkerDefinition::Server(4), nullptr,
-			[this]() {
-				AssertTrue(TargetZonedActors[0]->HasAuthority(), TEXT("Offloaded actor is owned by the offloaded server"));
-				TargetZonedActors[0]->SetOwner(nullptr);
-				FinishStep();
-			});
+	AddStep(TEXT("Put main server actor and offloaded server actor into different ownership groups"), ZonedServers[1], nullptr, [this]() {
+		AssertTrue(TargetZonedActors[0]->HasAuthority(), TEXT("Zoned actor 1 is owned by the zoned server 2"));
+		TargetZonedActors[0]->SetOwner(nullptr);
+		FinishStep();
+	});
 
 	AddStep(
 		TEXT("Wait until actor set IDs different again"), FWorkerDefinition::AllServers, nullptr, nullptr,
