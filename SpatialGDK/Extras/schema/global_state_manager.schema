@@ -20,7 +20,7 @@ component DeploymentMap {
 
 component SnapshotVersion {
     id = 9990;
-    uint32 version_number = 1;
+    uint64 version = 1;
 }
 
 component StartupActorManager {

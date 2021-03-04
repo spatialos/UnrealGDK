@@ -1266,7 +1266,7 @@ SCHEMA_GENERATOR_TEST(
 				FRegexPattern InnerIdPattern(TEXT("(id)\\s*=\\s*(\\w+)\\s*;"));
 				FRegexMatcher InnerIdRegMatcher(InnerIdPattern, SchemaLine);
 
-				FRegexPattern InnerVariablePattern(TEXT("([a-zA-Z<>]+)\\s+(\\w+)\\s*=\\s*(\\w+)\\s*;"));
+				FRegexPattern InnerVariablePattern(TEXT("([a-zA-Z0-9<>]+)\\s+(\\w+)\\s*=\\s*(\\w+)\\s*;"));
 				FRegexMatcher InnerVariableRegMatcher(InnerVariablePattern, SchemaLine);
 
 				FRegexPattern InnerCommandPattern(TEXT("(command)\\s+(\\w+)\\s+(\\w+)\\s*\\((\\w+)\\s*\\)\\s*;"));
