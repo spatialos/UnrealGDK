@@ -645,7 +645,7 @@ bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests()
 	return GlobalStateManager->GetAcceptingPlayers() && SessionId == GlobalStateManager->GetSessionId();
 }
 
-void USpatialNetDriver::OnGSMQuerySuccess()
+void USpatialNetDriver::ClientOnGSMQuerySuccess()
 {
 	StartupClientDebugString.Empty();
 
@@ -783,7 +783,7 @@ void USpatialNetDriver::GSMQueryDelegateFunction(const Worker_EntityQueryRespons
 		return;
 	}
 
-	OnGSMQuerySuccess();
+	ClientOnGSMQuerySuccess();
 }
 
 void USpatialNetDriver::QueryGSMToLoadMap()
