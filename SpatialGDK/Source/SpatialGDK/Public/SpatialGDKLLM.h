@@ -6,7 +6,7 @@
 
 enum class ELLMTagSpatialGDK : LLM_TAG_TYPE
 {
-	Start = (LLM_TAG_TYPE)ELLMTag::PlatformTagStart + 10,
+	Start = (LLM_TAG_TYPE)ELLMTag::PlatformTagStart,
 	Receiver = Start,
 	Sender,
 	NetDriver,
