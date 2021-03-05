@@ -34,6 +34,7 @@ public:
 														FString SnapshotName, FString RuntimeIPToExpose,
 														const LocalDeploymentCallback& CallBack);
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
+	bool SPATIALGDKSERVICES_API TryStopLocalDeploymentGracefully();
 
 	bool SPATIALGDKSERVICES_API IsLocalDeploymentRunning() const;
 
@@ -52,7 +53,6 @@ public:
 
 	void WorkerBuildConfigAsync();
 
-	FSimpleMulticastDelegate OnSpatialShutdown;
 	FSimpleMulticastDelegate OnDeploymentStart;
 
 	FDelegateHandle WorkerConfigDirectoryChangedDelegateHandle;
@@ -63,6 +63,10 @@ private:
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
 	bool SetupRuntimeFileLogger(const FString& SpatialLogsSubDirectoryName);
+
+	bool WaitForRuntimeProcessToShutDown();
+	bool StartLocalDeploymentShutDown();
+	void FinishLocalDeploymentShutDown();
 
 	TFuture<bool> AttemptSpatialAuthResult;
 
@@ -82,6 +86,7 @@ private:
 
 	bool bStartingDeployment;
 	bool bStoppingDeployment;
+	bool bTestRunnning;
 
 	FString ExposedRuntimeIP;
 
