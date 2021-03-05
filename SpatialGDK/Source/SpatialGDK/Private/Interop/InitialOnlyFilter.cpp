@@ -10,7 +10,7 @@ DEFINE_LOG_CATEGORY(LogInitialOnlyFilter);
 
 namespace SpatialGDK
 {
-InitialOnlyFilter::InitialOnlyFilter(USpatialWorkerConnection* InConnection, USpatialReceiver* InReceiver)
+InitialOnlyFilter::InitialOnlyFilter(USpatialWorkerConnection& InConnection, USpatialReceiver& InReceiver)
 	: Connection(InConnection)
 	, Receiver(InReceiver)
 {
@@ -45,6 +45,7 @@ void InitialOnlyFilter::FlushRequests()
 	}
 
 	TArray<Worker_Constraint> EntityConstraintArray;
+	EntityConstraintArray.Reserve(PendingInitialOnlyEntities.Num());
 
 	for (auto EntityId : PendingInitialOnlyEntities)
 	{
@@ -67,11 +68,11 @@ void InitialOnlyFilter::FlushRequests()
 	InitialOnlyQuery.snapshot_result_type_component_set_id_count = 1;
 	InitialOnlyQuery.snapshot_result_type_component_set_ids = &SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID;
 
-	const Worker_RequestId RequestID = Connection->SendEntityQueryRequest(&InitialOnlyQuery, SpatialGDK::RETRY_UNTIL_COMPLETE);
+	const Worker_RequestId RequestID = Connection.SendEntityQueryRequest(&InitialOnlyQuery, SpatialGDK::RETRY_UNTIL_COMPLETE);
 	EntityQueryDelegate InitialOnlyQueryDelegate;
 	InitialOnlyQueryDelegate.BindRaw(this, &InitialOnlyFilter::HandleInitialOnlyResponse);
 
-	Receiver->AddEntityQueryDelegate(RequestID, InitialOnlyQueryDelegate);
+	Receiver.AddEntityQueryDelegate(RequestID, InitialOnlyQueryDelegate);
 
 	InflightInitialOnlyRequests.Add(RequestID, { MoveTemp(PendingInitialOnlyEntities) });
 }
@@ -92,7 +93,7 @@ void InitialOnlyFilter::HandleInitialOnlyResponse(const Worker_EntityQueryRespon
 		const Worker_Entity* Entity = &Op.results[i];
 		const Worker_EntityId EntityId = Entity->entity_id;
 
-		if (Connection->GetView().Find(EntityId) == nullptr)
+		if (Connection.GetView().Find(EntityId) == nullptr)
 		{
 			UE_LOG(LogInitialOnlyFilter, Verbose, TEXT("Received initial only data for entity no longer in view. Entity: %lld."), EntityId);
 			continue;
@@ -102,13 +103,14 @@ void InitialOnlyFilter::HandleInitialOnlyResponse(const Worker_EntityQueryRespon
 
 		// Extract and store the initial only data.
 		TArray<ComponentData>& ComponentDatas = RetrievedInitialOnlyData.FindOrAdd(EntityId);
+		ComponentDatas.Reserve(ComponentDatas.Num() + Entity->component_count);
 		for (uint32_t j = 0; j < Entity->component_count; ++j)
 		{
-			const Worker_ComponentData* ComponentData = &Entity->components[j];
-			ComponentDatas.Emplace(ComponentData::CreateCopy(ComponentData->schema_type, ComponentData->component_id));
+			const Worker_ComponentData& ComponentData = Entity->components[j];
+			ComponentDatas.Emplace(ComponentData::CreateCopy(ComponentData.schema_type, ComponentData.component_id));
 		}
 
-		Connection->GetCoordinator().RefreshEntityCompleteness(Entity->entity_id);
+		Connection.GetCoordinator().RefreshEntityCompleteness(Entity->entity_id);
 	}
 }
 
