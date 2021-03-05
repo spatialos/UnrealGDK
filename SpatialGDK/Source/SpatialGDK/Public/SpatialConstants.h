@@ -516,7 +516,7 @@ const TArray<Worker_ComponentId> KnownEntityAuthorityComponents = { POSITION_COM
 // which will provide the hash on failure
 //  (b) (mandatory) increment SPATIAL_SNAPSHOT_VERSION_INC
 
-constexpr uint32 SPATIAL_SNAPSHOT_SCHEMA_HASH = 944243238;
+constexpr uint32 SPATIAL_SNAPSHOT_SCHEMA_HASH = 772634354;
 constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 1;
 constexpr uint64 SPATIAL_SNAPSHOT_VERSION = ((((uint64)SPATIAL_SNAPSHOT_SCHEMA_HASH) << 32) | SPATIAL_SNAPSHOT_VERSION_INC);
 

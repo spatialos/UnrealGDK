@@ -1257,98 +1257,10 @@ SCHEMA_GENERATOR_TEST(
 		}
 		else
 		{
-			TArray<FString> FilesContent;
-			FFileHelper::LoadFileToStringArray(FilesContent, *FileNameAndPath);
+			FString FileContent;
+			FFileHelper::LoadFileToString(FileContent, *FileNameAndPath);
 
-			FString OuterName;
-
-			for (const FString& SchemaLine : FilesContent)
-			{
-				FRegexPattern InnerIdPattern(TEXT("(id)\\s*=\\s*(\\w+)\\s*;"));
-				FRegexMatcher InnerIdRegMatcher(InnerIdPattern, SchemaLine);
-
-				FRegexPattern InnerVariablePattern(TEXT("([a-zA-Z0-9<>]+)\\s+(\\w+)\\s*=\\s*(\\w+)\\s*;"));
-				FRegexMatcher InnerVariableRegMatcher(InnerVariablePattern, SchemaLine);
-
-				FRegexPattern InnerCommandPattern(TEXT("(command)\\s+(\\w+)\\s+(\\w+)\\s*\\((\\w+)\\s*\\)\\s*;"));
-				FRegexMatcher InnerCommandRegMatcher(InnerCommandPattern, SchemaLine);
-
-				FRegexPattern InnerEventPattern(TEXT("(event)\\s+(\\w+)\\s+(\\w+)\\s*;"));
-				FRegexMatcher InnerEventRegMatcher(InnerEventPattern, SchemaLine);
-
-				FRegexPattern OuterComponentPattern(TEXT("(^component )(.+)( \\{)"));
-				FRegexMatcher OuterComponentRegMatcher(OuterComponentPattern, SchemaLine);
-
-				FRegexPattern OuterTypeNamePattern(TEXT("(^type)(.+)( \\{)"));
-				FRegexMatcher OuterTypeNameRegMatcher(OuterTypeNamePattern, SchemaLine);
-
-				auto VerifyAndAddTwoGroupInner = [this, &FileNameAndPath, &SchemaLine, &OuterName,
-												  &SchemaStrings](FRegexMatcher& InMatcher) {
-					const FString DebugString =
-						FString::Printf(TEXT("Expected to find outer name in schema file %s, line '%'"), *FileNameAndPath, *SchemaLine);
-					TestFalse(DebugString, OuterName.IsEmpty());
-					const FString NewSchemaString =
-						FString::Printf(TEXT("%s::%s::%s"), *OuterName, *InMatcher.GetCaptureGroup(1), *InMatcher.GetCaptureGroup(2));
-					SchemaStrings.Emplace(NewSchemaString);
-				};
-
-				auto VerifyAndAddThreeGroupInner = [this, &FileNameAndPath, &SchemaLine, &OuterName,
-													&SchemaStrings](FRegexMatcher& InMatcher) {
-					const FString DebugString =
-						FString::Printf(TEXT("Expected to find outer name in schema file %s, line '%'"), *FileNameAndPath, *SchemaLine);
-					TestFalse(DebugString, OuterName.IsEmpty());
-					const FString NewSchemaString = FString::Printf(TEXT("%s::%s::%s::%s"), *OuterName, *InMatcher.GetCaptureGroup(1),
-																	*InMatcher.GetCaptureGroup(2), *InMatcher.GetCaptureGroup(3));
-					SchemaStrings.Emplace(NewSchemaString);
-				};
-
-				auto VerifyAndAddFourGroupInner = [this, &FileNameAndPath, &SchemaLine, &OuterName,
-												   &SchemaStrings](FRegexMatcher& InMatcher) {
-					const FString DebugString =
-						FString::Printf(TEXT("Expected to find outer name in schema file %s, line '%'"), *FileNameAndPath, *SchemaLine);
-					TestFalse(DebugString, OuterName.IsEmpty());
-					const FString NewSchemaString =
-						FString::Printf(TEXT("%s::%s::%s::%s::%s"), *OuterName, *InMatcher.GetCaptureGroup(1),
-										*InMatcher.GetCaptureGroup(2), *InMatcher.GetCaptureGroup(3), *InMatcher.GetCaptureGroup(4));
-					SchemaStrings.Emplace(NewSchemaString);
-				};
-
-				if (OuterComponentRegMatcher.FindNext())
-				{
-					OuterName = OuterComponentRegMatcher.GetCaptureGroup(2);
-					SchemaStrings.Emplace(OuterName);
-				}
-				else if (OuterTypeNameRegMatcher.FindNext())
-				{
-					OuterName = OuterTypeNameRegMatcher.GetCaptureGroup(2);
-					SchemaStrings.Emplace(OuterName);
-				}
-				else if (InnerVariableRegMatcher.FindNext())
-				{
-					VerifyAndAddThreeGroupInner(InnerVariableRegMatcher);
-				}
-				else if (InnerIdRegMatcher.FindNext())
-				{
-					VerifyAndAddTwoGroupInner(InnerIdRegMatcher);
-				}
-				else if (InnerCommandRegMatcher.FindNext())
-				{
-					VerifyAndAddFourGroupInner(InnerCommandRegMatcher);
-				}
-				else if (InnerEventRegMatcher.FindNext())
-				{
-					VerifyAndAddThreeGroupInner(InnerEventRegMatcher);
-				}
-			}
-		}
-
-		SchemaStrings.Sort([](const FString& A, const FString& B) {
-			return (A < B);
-		});
-
-		for (const FString& SchemaString : SchemaStrings)
-		{
-			HashCrc = FCrc::StrCrc32(*SchemaString, HashCrc);
+			HashCrc = FCrc::StrCrc32(*FileContent, HashCrc);
 		}
 	}
 
