@@ -1240,9 +1240,6 @@ SCHEMA_GENERATOR_TEST(
 	// WHEN
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-	TArray<FString> FoundSchemaFiles;
-	PlatformFile.FindFilesRecursively(FoundSchemaFiles, *GDKSchemaCopyDir, TEXT(""));
-
 	uint32 HashCrc = 0;
 	TArray<FString> SchemaStrings;
 

@@ -507,14 +507,22 @@ const TArray<Worker_ComponentId> KnownEntityAuthorityComponents = { POSITION_COM
 																	GSM_SHUTDOWN_COMPONENT_ID,	 VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
 																	SERVER_WORKER_COMPONENT_ID };
 
+//
 // SPATIAL_SNAPSHOT_VERSION is the current version of supported snapshots.
 //
-// If changes are made to the schema or content of snapshots then:
-//	(a) (optional) if the schema has changed, update SPATIAL_SNAPSHOT_SCHEMA_HASH,
-//			see the test
-//'GIVEN_snapshot_affecting_schema_files_WHEN_hash_of_file_contents_is_generated_THEN_hash_matches_expected_snapshot_version_hash'
-// which will provide the hash on failure
-//  (b) (mandatory) increment SPATIAL_SNAPSHOT_VERSION_INC
+// Snapshots can become invalid for multiple reasons, including but limited too:
+//	- Any schema changes that affect snapshots
+//	- New entities added to the default snapshot
+//
+// If you make any schema changes (that affect snapshots), a test will fail and provide the expected hash value that matches the new schema:
+//	- Change SPATIAL_SNAPSHOT_SCHEMA_HASH (below) to this new hash value.
+//
+// The test that will fail is:
+// 'GIVEN_snapshot_affecting_schema_files_WHEN_hash_of_file_contents_is_generated_THEN_hash_matches_expected_snapshot_version_hash'
+//
+// If you make *any* change that affects snapshots, including schema changes, adding new entities, etc:
+//	- Increment SPATIAL_SNAPSHOT_VERSION_INC (below)
+//
 
 constexpr uint32 SPATIAL_SNAPSHOT_SCHEMA_HASH = 772634354;
 constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 1;
