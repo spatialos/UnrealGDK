@@ -30,6 +30,7 @@ public:
 	void Init(USpatialNetDriver* InNetDriver);
 
 	void ApplyDeploymentMapData(Schema_ComponentData* Data);
+	void ApplySnapshotVersionData(Schema_ComponentData* Data);
 	void ApplyStartupActorManagerData(Schema_ComponentData* Data);
 
 	void ApplyDeploymentMapUpdate(Schema_ComponentUpdate* Update);
@@ -40,7 +41,7 @@ public:
 	static bool GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers,
 																 int32& OutSessionId);
 	void ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const;
-	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
+	void ApplyDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
 	void QueryTranslation();
 
@@ -52,6 +53,7 @@ public:
 	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }
 	FORCEINLINE int32 GetSessionId() const { return DeploymentSessionId; }
 	FORCEINLINE uint32 GetSchemaHash() const { return SchemaHash; }
+	FORCEINLINE uint64 GetSnapshotVersion() const { return SnapshotVersion; }
 
 	void AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthChangeOp);
 
@@ -78,6 +80,7 @@ private:
 	bool bAcceptingPlayers;
 	int32 DeploymentSessionId = 0;
 	uint32 SchemaHash;
+	uint64 SnapshotVersion = 0;
 
 	// Startup Actor Manager Component
 	bool bHasSentReadyForVirtualWorkerAssignment;

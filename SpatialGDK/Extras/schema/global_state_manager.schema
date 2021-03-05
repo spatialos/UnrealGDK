@@ -18,6 +18,11 @@ component DeploymentMap {
     uint32 schema_hash = 4;
 }
 
+component SnapshotVersion {
+    id = 9990;
+    uint64 version = 1;
+}
+
 component StartupActorManager {
     id = 9993;
     bool can_begin_play = 1;
