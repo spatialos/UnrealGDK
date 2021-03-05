@@ -12,9 +12,9 @@
 
 namespace CrossServerPossessionMapPrivate
 {
-void SetupWorldSettings(UWorld* World)
+void SetupWorldSettings(UWorld& World)
 {
-	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World.GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
 	WorldSettings->DefaultGameMode = ACrossServerPossessionGameMode::StaticClass();
 }
@@ -34,7 +34,7 @@ void UCrossServerPossessionMap::CreateCustomContentForMap()
 	// Add the test
 	AddActorToLevel<ACrossServerPossessionTest>(CurrentLevel, FTransform::Identity);
 
-	CrossServerPossessionMapPrivate::SetupWorldSettings(World);
+	CrossServerPossessionMapPrivate::SetupWorldSettings(*World);
 }
 
 UCrossServerPossessionLockMap::UCrossServerPossessionLockMap()
@@ -50,7 +50,7 @@ void UCrossServerPossessionLockMap::CreateCustomContentForMap()
 	// Add the test
 	AddActorToLevel<ACrossServerPossessionLockTest>(CurrentLevel, FTransform::Identity);
 
-	CrossServerPossessionMapPrivate::SetupWorldSettings(World);
+	CrossServerPossessionMapPrivate::SetupWorldSettings(*World);
 }
 
 UNoneCrossServerPossessionMap::UNoneCrossServerPossessionMap()
@@ -66,7 +66,7 @@ void UNoneCrossServerPossessionMap::CreateCustomContentForMap()
 	// Add the test
 	AddActorToLevel<ANoneCrossServerPossessionTest>(CurrentLevel, FTransform::Identity);
 
-	CrossServerPossessionMapPrivate::SetupWorldSettings(World);
+	CrossServerPossessionMapPrivate::SetupWorldSettings(*World);
 }
 
 UCrossServerMultiPossessionMap::UCrossServerMultiPossessionMap()
@@ -82,5 +82,5 @@ void UCrossServerMultiPossessionMap::CreateCustomContentForMap()
 	// Add the test
 	AddActorToLevel<ACrossServerMultiPossessionTest>(CurrentLevel, FTransform::Identity);
 
-	CrossServerPossessionMapPrivate::SetupWorldSettings(World);
+	CrossServerPossessionMapPrivate::SetupWorldSettings(*World);
 }
