@@ -79,7 +79,7 @@ namespace SpatialGDK
 {
 class SpatialRoutingSystem;
 class SpatialStrategySystem;
-}
+} // namespace SpatialGDK
 
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver

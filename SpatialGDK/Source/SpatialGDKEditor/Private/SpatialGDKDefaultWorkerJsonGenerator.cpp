@@ -46,7 +46,8 @@ bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired)
 
 	if (const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>())
 	{
-		const FName WorkerTypes[] = { SpatialConstants::DefaultServerWorkerType, SpatialConstants::RoutingWorkerType, SpatialConstants::StrategyWorkerType };
+		const FName WorkerTypes[] = { SpatialConstants::DefaultServerWorkerType, SpatialConstants::RoutingWorkerType,
+									  SpatialConstants::StrategyWorkerType };
 		for (auto Worker : WorkerTypes)
 		{
 			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.ToString()));

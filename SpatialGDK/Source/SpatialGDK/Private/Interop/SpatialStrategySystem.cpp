@@ -7,7 +7,6 @@ DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 
 namespace SpatialGDK
 {
-
 void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 {
 	// Messages are inspected to take care of the Worker entity creation.

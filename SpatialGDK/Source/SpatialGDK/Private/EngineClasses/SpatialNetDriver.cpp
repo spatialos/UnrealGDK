@@ -122,7 +122,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 		if (GameInstance != nullptr)
 		{
-			if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType || GameInstance->GetSpatialWorkerType() == SpatialConstants::StrategyWorkerType)
+			if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType
+				|| GameInstance->GetSpatialWorkerType() == SpatialConstants::StrategyWorkerType)
 			{
 				NetServerMaxTickRate = 120;
 			}
