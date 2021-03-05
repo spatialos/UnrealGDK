@@ -106,6 +106,18 @@ void UGlobalStateManager::ApplyStartupActorManagerData(Schema_ComponentData* Dat
 
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 
+	uint32 NumObjects = Schema_GetObjectCount(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_STARTUP_ACTOR_PATH_TO_ENTITY_ID);
+	StartupActorPathToEntityId.Empty(NumObjects);
+	for (uint32 Index = 0; Index < NumObjects; Index++)
+	{
+		Schema_Object* MapEntry =
+			Schema_IndexObject(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_STARTUP_ACTOR_PATH_TO_ENTITY_ID, Index);
+		FString Path = GetStringFromSchema(MapEntry, SCHEMA_MAP_KEY_FIELD_ID);
+		Worker_EntityId EntityId = Schema_GetEntityId(MapEntry, SCHEMA_MAP_VALUE_FIELD_ID);
+		check(!StartupActorPathToEntityId.Contains(Path));
+		StartupActorPathToEntityId.Add(Path, EntityId);
+	}
+
 	TrySendWorkerReadyToBeginPlay();
 }
 
@@ -259,6 +271,8 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(Schema_ComponentUpdate*
 	// So we apply the same logic on setting bCanSpawnWithAuthority before reading the new value of bCanBeginPlay.
 	bCanSpawnWithAuthority = !bCanBeginPlay;
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
+
+	// TODO: No update to the startup actor map thing currently implemented...... not sure what to do with it
 }
 
 void UGlobalStateManager::SetDeploymentState()
@@ -392,6 +406,7 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 		return;
 	}
 
+	// TODO: Make this refer to the new startup actor manifest
 	if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()) && !USpatialStatics::IsActorGroupOwnerForActor(Actor)
 		&& !Actor->bNetLoadOnNonAuthServer)
 	{
@@ -408,14 +423,36 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 	//  - these are workers starting as part of a fresh deployment (tracked by the bCanSpawnWithAuthority bool),
 	//  - these actors are marked as NotPersistent and we're loading from a saved snapshot (which means bCanSpawnWithAuthority is false)
 	//  - the load balancing strategy says this server should be authoritative (as opposed to some other server).
-	const bool bAuthoritative = (bCanSpawnWithAuthority || Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
-								&& NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+	bool bAuthoritative = (bCanSpawnWithAuthority || Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotPersistent))
+						  && NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*Actor);
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableActorsInSnapshots)
+	{
+		// VERY TEMPORARY THING
+		// this could also be used for bNetLoadOnNonAuthServer
+		check(StartupActorPathToEntityId.Num() > 0); // TODO: Temporary check - remove after debugging
+		const Worker_EntityId* EntityId = StartupActorPathToEntityId.Find(UWorld::RemovePIEPrefix(Actor->GetPathName()));
+		// TODO: Replace static component view with SpatialView
+		// TODO: This places all the load for creating the actors on the GSM-worker for now - rework in the future
+		const bool bAuthoritative2 =
+			EntityId != nullptr
+			&& StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
+		bAuthoritative = bAuthoritative2;
+	}
 
 	Actor->Role = bAuthoritative ? ROLE_Authority : ROLE_SimulatedProxy;
 	Actor->RemoteRole = bAuthoritative ? ROLE_SimulatedProxy : ROLE_Authority;
 
 	UE_LOG(LogGlobalStateManager, Verbose, TEXT("GSM updated actor authority: %s %s."), *Actor->GetPathName(),
 		   bAuthoritative ? TEXT("authoritative") : TEXT("not authoritative"));
+}
+
+Worker_EntityId UGlobalStateManager::GetStartupActorEntityId(AActor* Actor) const
+{
+	check(StartupActorPathToEntityId.Num() > 0); // TODO: this check is probably not the greatest, just want to make sure we have received
+												 // GSM data at the point where this is queried
+	const Worker_EntityId* EntityId = StartupActorPathToEntityId.Find(UWorld::RemovePIEPrefix(Actor->GetPathName()));
+	return EntityId == nullptr ? SpatialConstants::INVALID_ENTITY_ID : *EntityId;
 }
 
 Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const

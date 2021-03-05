@@ -26,6 +26,7 @@
 #include "Schema/NetOwningClientWorker.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/EntityFactory.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaOption.h"
@@ -671,8 +672,30 @@ int64 USpatialActorChannel::ReplicateActor()
 			// so we know what subobjects are relevant for replication when creating the entity.
 			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 
-			NetDriver->ActorSystem->SendCreateEntityRequest(this, ReplicationBytesWritten);
+			if (GetDefault<USpatialGDKSettings>()->bEnableActorsInSnapshots)
+			{
+				Worker_EntityId SkeletonEntityId = NetDriver->GlobalStateManager->GetStartupActorEntityId(Actor);
+				if (SkeletonEntityId != SpatialConstants::INVALID_ENTITY_ID)
+				{
+					// The actor already has a skeleton entity somewhere in the deployment, just flesh it out
+					SpatialGDK::EntityFactory DataFactory(
+						NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager,
+						NetDriver->RPCService.Get()); // TODO: Move this to the actor system?
+					NetDriver->ActorSystem->SendAddComponents(SkeletonEntityId, DataFactory.CreateFleshedOutEntityComponents(this, ReplicationBytesWritten));
+				}
+				else
+				{
+					ensureMsgf(!Actor->IsNetStartupActor(), TEXT("Actor should have had skeleton entity: %s."),
+							   *UWorld::RemovePIEPrefix(Actor->GetPathName())); // this should have been caught above?
+					NetDriver->ActorSystem->SendCreateEntityRequest(this, ReplicationBytesWritten);
+				}
+			}
+			else
+			{
+				NetDriver->ActorSystem->SendCreateEntityRequest(this, ReplicationBytesWritten);
+			}
 
+			// TODO: do we want this after only fleshing out an entity?
 			bCreatedEntity = true;
 
 			// We preemptively set the Actor role to SimulatedProxy if load balancing is disabled

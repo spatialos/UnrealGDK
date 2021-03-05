@@ -68,6 +68,7 @@ public:
 	bool IsReady() const;
 
 	void HandleActorBasedOnLoadBalancer(AActor* ActorIterator) const;
+	Worker_EntityId GetStartupActorEntityId(AActor* Actor) const;
 
 	Worker_EntityId GetLocalServerWorkerEntityId() const;
 	void ClaimSnapshotPartition() const;
@@ -85,6 +86,7 @@ private:
 	// Startup Actor Manager Component
 	bool bHasSentReadyForVirtualWorkerAssignment;
 	bool bCanBeginPlay;
+	TMap<FString, Worker_EntityId> StartupActorPathToEntityId;
 	bool bCanSpawnWithAuthority;
 
 public:

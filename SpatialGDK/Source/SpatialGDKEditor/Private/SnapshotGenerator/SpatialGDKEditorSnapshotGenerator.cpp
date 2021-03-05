@@ -114,7 +114,7 @@ Worker_ComponentData CreateGSMShutdownData()
 	return GSMShutdownData;
 }
 
-Worker_ComponentData CreateStartupActorManagerData()
+Worker_ComponentData CreateStartupActorManagerData(const TMap<FString, Worker_EntityId>& PathToEntityId)
 {
 	Worker_ComponentData StartupActorManagerData{};
 	StartupActorManagerData.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
@@ -122,11 +122,19 @@ Worker_ComponentData CreateStartupActorManagerData()
 	Schema_Object* StartupActorManagerObject = Schema_GetComponentDataFields(StartupActorManagerData.schema_type);
 
 	Schema_AddBool(StartupActorManagerObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, false);
+	for (const TPair<FString, Worker_EntityId>& Entry : PathToEntityId)
+	{
+		Schema_Object* StartupActorPathToEntityIdMapEntry =
+			Schema_AddObject(StartupActorManagerObject, SpatialConstants::STARTUP_ACTOR_MANAGER_STARTUP_ACTOR_PATH_TO_ENTITY_ID);
+		AddStringToSchema(StartupActorPathToEntityIdMapEntry, SCHEMA_MAP_KEY_FIELD_ID, Entry.Key);
+		Schema_AddEntityId(StartupActorPathToEntityIdMapEntry, SCHEMA_MAP_VALUE_FIELD_ID, Entry.Value);
+	}
 
 	return StartupActorManagerData;
 }
 
-bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
+bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream,
+							  const TMap<FString, Worker_EntityId>& PathToEntityId = TMap<FString, Worker_EntityId>{})
 {
 	Worker_Entity GSM;
 	GSM.entity_id = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
@@ -148,7 +156,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Persistence().CreateComponentData());
 	Components.Add(CreateDeploymentData());
 	Components.Add(CreateGSMShutdownData());
-	Components.Add(CreateStartupActorManagerData());
+	Components.Add(CreateStartupActorManagerData(PathToEntityId));
 	Components.Add(SelfInterest.CreateComponentData());
 	Components.Add(SnapshotVersion(SpatialConstants::SPATIAL_SNAPSHOT_VERSION).CreateComponentData());
 
@@ -226,6 +234,7 @@ bool CreateSnapshotPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
 }
 
+// TODO: this will have to merge the startup actor manifest as well...
 bool MergeSnapshots(const TArray<FString>& SnapshotPaths, const FString& OutputSnapshotPath)
 {
 	Worker_ComponentVtable DefaultVtable{};
@@ -315,7 +324,8 @@ bool MergeSnapshots(const TArray<FString>& SnapshotPaths, const FString& OutputS
 	return true;
 }
 
-bool CreateSkeletonEntities(UWorld* World, Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvailableEntityID)
+bool CreateSkeletonEntities(UWorld* World, Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvailableEntityID,
+							TMap<FString, Worker_EntityId>& PathToEntityId)
 {
 	// We only check the persistent level, as it seems similar to what e.g. FEditorFileUtils::SaveCurrentLevel does
 	for (AActor* Actor : World->PersistentLevel->Actors)
@@ -334,17 +344,21 @@ bool CreateSkeletonEntities(UWorld* World, Worker_SnapshotOutputStream* OutputSt
 		Worker_Entity ActorEntity;
 		ActorEntity.entity_id = NextAvailableEntityID++;
 
-		TArray<FWorkerComponentData> Components = EntityFactory::CreateSkeletonEntityComponents(Actor);
+		TArray<FWorkerComponentData> Components = EntityFactory::CreateSkeletonEntityComponentsWithAuthorityDelegation(Actor);
 		// If the actor cannot be saved in the snapshot (does not have persistence component), do not save it
 		if (Components.FindByPredicate([](const FWorkerComponentData& Data) {
 				return Data.component_id == SpatialConstants::PERSISTENCE_COMPONENT_ID;
 			})
 			== nullptr)
 		{
-			// TODO: We ingore non-persistent entities here, but we probably don't want to, and just add temporary persistence.
+			// TODO: We ignore non-persistent entities here, but we probably don't want to, and just add temporary persistence.
 			// This would be closer to parity with the previous system
 			continue;
 		}
+
+		// Hmm, this could be improved? TODO
+		check(!PathToEntityId.Contains(Actor->GetPathName()));
+		PathToEntityId.Add(Actor->GetPathName(), ActorEntity.entity_id);
 
 		SetEntityData(ActorEntity, Components);
 
@@ -410,11 +424,14 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 		return false;
 	}
 
-	if (!CreateGlobalStateManager(OutputStream))
+	if (!GetDefault<USpatialGDKSettings>()->bEnableActorsInSnapshots)
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating GlobalStateManager in snapshot: %s"),
-			   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
-		return false;
+		if (!CreateGlobalStateManager(OutputStream))
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating GlobalStateManager in snapshot: %s"),
+				   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
+			return false;
+		}
 	}
 
 	if (!CreateVirtualWorkerTranslator(OutputStream))
@@ -434,9 +451,17 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 	Worker_EntityId NextAvailableEntityID = SpatialConstants::FIRST_AVAILABLE_ENTITY_ID;
 	if (GetDefault<USpatialGDKSettings>()->bEnableActorsInSnapshots)
 	{
-		if (!CreateSkeletonEntities(World, OutputStream, NextAvailableEntityID))
+		TMap<FString, Worker_EntityId> PathToEntityId;
+		if (!CreateSkeletonEntities(World, OutputStream, NextAvailableEntityID, PathToEntityId))
 		{
 			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating skeleton entities in snapshot: %s"),
+				   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
+			return false;
+		}
+
+		if (!CreateGlobalStateManager(OutputStream, PathToEntityId))
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating GlobalStateManager in snapshot: %s"),
 				   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 			return false;
 		}
@@ -481,6 +506,11 @@ bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotPath)
 
 	if (GetDefault<USpatialGDKSettings>()->bEnableActorsInSnapshots)
 	{
+		// TODO: We probably want to rename the snapshot created above to .unmerged
+		// and save the below one without a suffix, as we would almost always want to use the merged one
+		// also if this function is called from the editor by pressing the "snapshot" button and the resultant
+		// snapshot is expected in `snapshots/default.snapshot`, we want the merged one there.
+
 		// However, we now check if this level we saved was saved as part of a world using world composition
 		// This is slightly crude, as we could edit the level without opening the enclosing world
 		// TODO: Manual merge from somewhere?
@@ -494,7 +524,6 @@ bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotPath)
 			// Add the sublevel snapshots
 			for (const auto& Tile : World->WorldComposition->GetTilesList())
 			{
-				// UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Found tile package name: %s."), *Tile.PackageName.ToString());
 				// TODO: Kind of copied from SpatialGDKEditorModule
 				// The things in the editor module should move here and then this path combine should be made into a function
 				FString SnapshotFile = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath,

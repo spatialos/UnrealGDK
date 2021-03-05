@@ -23,9 +23,15 @@ component SnapshotVersion {
     uint64 version = 1;
 }
 
+type StartupActorInfo {
+    EntityId entity_id = 1;
+    //EntityId partition_entity_id = 2; // Commented out for now, as I don't think we actually need it?
+}
+
 component StartupActorManager {
     id = 9993;
     bool can_begin_play = 1;
+    map<string, EntityId> startup_actor_path_to_entity_id = 2;
 }
 
 component GSMShutdown {

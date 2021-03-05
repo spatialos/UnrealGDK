@@ -86,12 +86,21 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 	}
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateComponentData());
 
-	// Add Actor completeness tags.
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID));
+	// Add LB completeness tags which are relevant even for skeleton entities.
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 
+	return ComponentDatas;
+}
+
+TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponentsWithAuthorityDelegation(AActor* Actor)
+{
+	TArray<FWorkerComponentData> ComponentDatas = CreateSkeletonEntityComponents(Actor);
+	AuthorityDelegationMap DelegationMap;
+	DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID,
+					  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID); // TODO: this is the hardcoded snapshot partition, will
+																			   // probably want something else
+	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 	return ComponentDatas;
 }
 
@@ -167,7 +176,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 		// This block of code is just for checking purposes and should be removed in the future
 		// TODO: UNR-4783
-#if !UE_BUILD_SHIPPING
+#if !UE_BUILD_SHIPPING && 0
 		FWorkerComponentData* UnrealMetadataPtr = ComponentDatas.FindByPredicate([](const FWorkerComponentData& Data) {
 			return Data.component_id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 		});
@@ -179,7 +188,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 		GEngine->NetworkRemapPath(NetDriver->GetSpatialOSNetConnection(), TempPath, false /*bIsReading*/);
 #else
 		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
-#endif // !UE_BUILD_SHIPPING
+#endif
 		FUnrealObjectRef Remapped = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
 		if (!Metadata.StablyNamedRef.IsSet() || *Metadata.StablyNamedRef != Remapped)
 		{
@@ -196,7 +205,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 						"unexpected and could lead to bugs further down the line. Actor: %s, EntityId: %lld"),
 				   *Actor->GetPathName(), EntityId);
 		}
-#endif
+#endif // !UE_BUILD_SHIPPING
 	}
 
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID));
@@ -321,11 +330,39 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 		ComponentDatas.Add(SubobjectHandoverData);
 	}
+
+	// Add Actor completeness tags.
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID));
 }
 
 TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten)
 {
 	TArray<FWorkerComponentData> ComponentDatas = CreateSkeletonEntityComponents(Channel->Actor);
+	WriteUnrealComponents(ComponentDatas, Channel, OutBytesWritten);
+	WriteLBComponents(ComponentDatas, Channel->Actor);
+	// This block of code is just for checking purposes and should be removed in the future
+	// TODO: UNR-4783
+#if !UE_BUILD_SHIPPING
+	TArray<Worker_ComponentId> ComponentIds;
+	ComponentIds.Reserve(ComponentDatas.Num());
+	for (FWorkerComponentData& ComponentData : ComponentDatas)
+	{
+		if (ComponentIds.Contains(ComponentData.component_id))
+		{
+			UE_LOG(LogEntityFactory, Error,
+				   TEXT("Constructed entity components for an Unreal actor channel contained a duplicate component. This is unexpected and "
+						"could cause problems later on."));
+		}
+		ComponentIds.Add(ComponentData.component_id);
+	}
+#endif // !UE_BUILD_SHIPPING
+	return ComponentDatas;
+}
+
+TArray<FWorkerComponentData> EntityFactory::CreateFleshedOutEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten)
+{
+	TArray<FWorkerComponentData> ComponentDatas;
 	WriteUnrealComponents(ComponentDatas, Channel, OutBytesWritten);
 	WriteLBComponents(ComponentDatas, Channel->Actor);
 	// This block of code is just for checking purposes and should be removed in the future
