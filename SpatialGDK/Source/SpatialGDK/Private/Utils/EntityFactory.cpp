@@ -13,7 +13,6 @@
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
-#include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
@@ -104,11 +103,23 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponentsWithAu
 	return ComponentDatas;
 }
 
+AuthorityDelegation EntityFactory::CreateAuthorityDelegationComponent(AActor* Actor)
+{
+	const Worker_PartitionId AuthoritativeServerPartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
+	const Worker_PartitionId AuthoritativeClientPartitionId = GetConnectionOwningPartitionId(Actor);
+
+	AuthorityDelegationMap DelegationMap;
+	const Worker_PartitionId RoutingPartitionId = NetDriver->GetRoutingPartition();
+	DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
+	DelegationMap.Add(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, AuthoritativeClientPartitionId);
+	DelegationMap.Add(SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID, RoutingPartitionId);
+
+	return AuthorityDelegation(DelegationMap);
+}
+
 void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDatas, AActor* Actor)
 {
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-
-	const Worker_PartitionId AuthoritativeServerPartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
 	const Worker_PartitionId AuthoritativeClientPartitionId = GetConnectionOwningPartitionId(Actor);
 
 	// Add Load Balancer Attribute. If this is a single worker deployment, this will be just be the single worker.
@@ -117,12 +128,6 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 		   TEXT("Load balancing strategy provided invalid local virtual worker ID during Actor spawn. "
 				"Actor: %s. Strategy: %s"),
 		   *Actor->GetName(), *NetDriver->LoadBalanceStrategy->GetName());
-
-	AuthorityDelegationMap DelegationMap;
-	const Worker_PartitionId RoutingPartitionId = NetDriver->GetRoutingPartition();
-	DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
-	DelegationMap.Add(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, AuthoritativeClientPartitionId);
-	DelegationMap.Add(SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID, RoutingPartitionId);
 
 	// Add debugging utilities, if we are not compiling a shipping build
 #if !UE_BUILD_SHIPPING
@@ -147,7 +152,7 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	// Add actual load balancing components
 	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateComponentData());
 	ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
-	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
+	ComponentDatas.Add(CreateAuthorityDelegationComponent(Actor).CreateComponentData());
 }
 
 void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,
@@ -365,6 +370,12 @@ TArray<FWorkerComponentData> EntityFactory::CreateFleshedOutEntityComponents(USp
 	TArray<FWorkerComponentData> ComponentDatas;
 	WriteUnrealComponents(ComponentDatas, Channel, OutBytesWritten);
 	WriteLBComponents(ComponentDatas, Channel->Actor);
+	ComponentDatas.RemoveAll([](const FWorkerComponentData& Data) {
+		return Data.component_id == SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
+	}); // TODO: Hmmm, well, first of all, can use the new component equality thing I should make
+	// Second of all, we are doing some unnecessary work here. Would be nicer if I reused the concept from earlier about abstract mutable
+	// component arrays?
+
 	// This block of code is just for checking purposes and should be removed in the future
 	// TODO: UNR-4783
 #if !UE_BUILD_SHIPPING

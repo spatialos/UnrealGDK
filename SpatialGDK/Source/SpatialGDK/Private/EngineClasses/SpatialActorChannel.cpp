@@ -678,10 +678,17 @@ int64 USpatialActorChannel::ReplicateActor()
 				if (SkeletonEntityId != SpatialConstants::INVALID_ENTITY_ID)
 				{
 					// The actor already has a skeleton entity somewhere in the deployment, just flesh it out
-					SpatialGDK::EntityFactory DataFactory(
-						NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager,
-						NetDriver->RPCService.Get()); // TODO: Move this to the actor system?
-					NetDriver->ActorSystem->SendAddComponents(SkeletonEntityId, DataFactory.CreateFleshedOutEntityComponents(this, ReplicationBytesWritten));
+					SpatialGDK::EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager,
+														  NetDriver->RPCService.Get()); // TODO: Move this to the actor system?
+					NetDriver->ActorSystem->SendAddComponents(SkeletonEntityId,
+															  DataFactory.CreateFleshedOutEntityComponents(this, ReplicationBytesWritten));
+
+					FWorkerComponentUpdate AuthDelegationUpdate(
+						DataFactory.CreateAuthorityDelegationComponent(Actor).CreateAuthorityDelegationUpdate());
+					// TODO: Span id?
+					// TODO: Safe to send the pointer to a stack variable?
+					// TODO: This currently does not seem to work for some reason............. and LB seems to be updating it? Maybe it's
+					// clashing? NetDriver->Connection->SendComponentUpdate(SkeletonEntityId, &AuthDelegationUpdate);
 				}
 				else
 				{

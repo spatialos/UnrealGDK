@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Schema/StandardLibrary.h"
 #include "SpatialCommonTypes.h"
 #include "Utils/SpatialStatics.h"
 
@@ -30,8 +31,9 @@ public:
 	// This should primarily be enough to reason about the actor's identity and possibly inform some level of load-balancing.
 	static TArray<FWorkerComponentData> CreateSkeletonEntityComponents(AActor* Actor);
 	static TArray<FWorkerComponentData> CreateSkeletonEntityComponentsWithAuthorityDelegation(AActor* Actor);
-	void WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel, uint32& OutBytesWritten);
+	AuthorityDelegation CreateAuthorityDelegationComponent(AActor* Actor);
 	void WriteLBComponents(TArray<FWorkerComponentData>& ComponentDatas, AActor* Actor);
+	void WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateFleshedOutEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor);

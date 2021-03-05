@@ -54,6 +54,7 @@ public:
 	void RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor) const;
 
 	// Updates
+	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas) const;
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
 							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
 	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
@@ -145,7 +146,6 @@ private:
 	void AddTombstoneToEntity(Worker_EntityId EntityId) const;
 
 	// Updates
-	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas) const;
 	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds) const;
 
 	const FSubView* SubView;
