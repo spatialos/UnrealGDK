@@ -8,6 +8,7 @@
 #endif
 
 #include "Engine/Classes/AI/AISystemBase.h"
+#include "Engine/LevelStreaming.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -437,9 +438,17 @@ void UGlobalStateManager::TriggerBeginPlay()
 #endif
 
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
-	for (TActorIterator<AActor> ActorIterator(NetDriver->World); ActorIterator; ++ActorIterator)
+	// We don't use TActorIterator here as it has custom code to ignore sublevel world settings actors, which we want to handle,
+	// so we just iterate over all level actors directly.
+	for (ULevel* Level : NetDriver->World->GetLevels())
 	{
-		HandleActorBasedOnLoadBalancer(*ActorIterator);
+		if (Level != nullptr)
+		{
+			for (AActor* Actor : Level->Actors)
+			{
+				HandleActorBasedOnLoadBalancer(Actor);
+			}
+		}
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
