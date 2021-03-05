@@ -197,6 +197,21 @@ Interest InterestFactory::CreateRoutingWorkerInterest()
 	return ServerInterest;
 }
 
+Interest InterestFactory::CreateStrategyWorkerInterest()
+{
+	Interest ServerInterest;
+	Query ServerQuery;
+
+	ServerQuery.ResultComponentIds = {
+		SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID
+	};
+	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID;
+
+	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
+
+	return ServerInterest;
+}
+
 Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();

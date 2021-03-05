@@ -162,6 +162,7 @@ const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
 const Worker_ComponentId TOMBSTONE_TAG_COMPONENT_ID = 2008;
 const Worker_ComponentId ROUTINGWORKER_TAG_COMPONENT_ID = 2009;
 const Worker_ComponentId LAST_EC_COMPONENT_ID = 2010;
+const Worker_ComponentId STRATEGYWORKER_TAG_COMPONENT_ID = 2011;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
@@ -297,6 +298,7 @@ const FString INVALID_WORKER_NAME = TEXT("");
 static const FName DefaultLayer = FName(TEXT("DefaultLayer"));
 
 const FName RoutingWorkerType(TEXT("RoutingWorker"));
+const FName StrategyWorkerType(TEXT("StrategyWorker"));
 
 const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");

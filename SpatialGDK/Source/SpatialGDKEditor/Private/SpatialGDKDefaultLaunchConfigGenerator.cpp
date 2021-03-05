@@ -156,6 +156,14 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 			WriteWorkerSection(Writer, WorkerConfig);
 		}
 
+		if (SpatialGDKSettings->bRunStrategyWorker)
+		{
+			FWorkerTypeLaunchSection WorkerConfig;
+			WorkerConfig.WorkerTypeName = SpatialConstants::StrategyWorkerType;
+			WorkerConfig.NumEditorInstances = 0;
+			WriteWorkerSection(Writer, WorkerConfig);
+		}
+
 		Writer->WriteArrayEnd(); // Worker section end
 
 		Writer->WriteObjectStart(TEXT("world_dimensions"));

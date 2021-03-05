@@ -50,6 +50,7 @@ public:
 	Interest CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, bool bDebug) const;
 	void AddLoadBalancingInterestQuery(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, Interest& OutInterest) const;
 	static Interest CreateRoutingWorkerInterest();
+	static Interest CreateStrategyWorkerInterest();
 
 	// Returns false if we could not get an owner's entityId in the Actor's owner chain.
 	bool DoOwnersHaveEntityId(const AActor* Actor) const;

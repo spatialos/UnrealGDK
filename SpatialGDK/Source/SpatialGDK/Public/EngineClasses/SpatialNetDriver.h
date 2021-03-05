@@ -13,6 +13,7 @@
 #include "Interop/SpatialOutputDevice.h"
 #include "Interop/SpatialRoutingSystem.h"
 #include "Interop/SpatialSnapshotManager.h"
+#include "Interop/SpatialStrategySystem.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialBasicAwaiter.h"
 #include "Utils/SpatialDebugger.h"
@@ -77,6 +78,7 @@ enum class EActorMigrationResult : uint8
 namespace SpatialGDK
 {
 class SpatialRoutingSystem;
+class SpatialStrategySystem;
 }
 
 UCLASS()
@@ -216,6 +218,7 @@ public:
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
+	TUniquePtr<SpatialGDK::SpatialStrategySystem> StrategySystem;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
@@ -283,6 +286,7 @@ private:
 
 	FString SnapshotToLoad;
 	Worker_EntityId RoutingWorkerId = 0;
+	Worker_EntityId StrategyWorkerId = 0;
 	Worker_PartitionId RoutingPartition = 0;
 	bool bRoutingWorkerQueryInFlight = false;
 
