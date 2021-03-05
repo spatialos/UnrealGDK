@@ -136,6 +136,8 @@ private:
 
 	void AddDeploymentTagIfMissing(const FString& TagToAdd);
 
+	void GenerateTestMaps();
+
 private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;
