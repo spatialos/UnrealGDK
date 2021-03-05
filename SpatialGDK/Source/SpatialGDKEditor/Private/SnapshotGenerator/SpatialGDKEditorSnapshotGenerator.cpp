@@ -5,6 +5,7 @@
 #include "Engine/LevelScriptActor.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
+#include "Schema/SnapshotVersionComponent.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
@@ -145,6 +146,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
 	Components.Add(SelfInterest.CreateComponentData());
+	Components.Add(SnapshotVersion(SpatialConstants::SPATIAL_SNAPSHOT_VERSION).CreateComponentData());
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));

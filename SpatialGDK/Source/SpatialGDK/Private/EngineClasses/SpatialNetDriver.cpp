@@ -662,9 +662,34 @@ bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests() const
 	return GlobalStateManager->GetAcceptingPlayers() && SessionId == GlobalStateManager->GetSessionId();
 }
 
-void USpatialNetDriver::OnGSMQuerySuccess()
+void USpatialNetDriver::ClientOnGSMQuerySuccess()
 {
 	StartupClientDebugString.Empty();
+
+	auto FlagNetworkFailure = [this](const FString& ErrorString) {
+		if (USpatialGameInstance* GameInstance = GetGameInstance())
+		{
+			if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+			{
+				GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, ErrorString);
+			}
+		}
+	};
+
+	const uint64 SnapshotVersion = GlobalStateManager->GetSnapshotVersion();
+	if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != SnapshotVersion) // Are we running with the same snapshot version?
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error,
+			   TEXT("Your client's snapshot version does not match your deployment's snapshot version. Client version: = '%llu', Server "
+					"version = '%llu'"),
+			   SnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
+
+		FlagNetworkFailure(
+			TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot."));
+
+		return;
+	}
+
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
 	if (bWaitingToSpawn && ClientCanSendPlayerSpawnRequests())
 	{
@@ -675,16 +700,8 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
 				   ClassInfoManager->SchemaDatabase->SchemaBundleHash, ServerHash);
 
-			if (USpatialGameInstance* GameInstance = GetGameInstance())
-			{
-				if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
-				{
-					GEngine->BroadcastNetworkFailure(
-						GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient,
-						TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
-					return;
-				}
-			}
+			FlagNetworkFailure(TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
+			return;
 		}
 
 		UWorld* CurrentWorld = GetWorld();
@@ -779,7 +796,7 @@ void USpatialNetDriver::GSMQueryDelegateFunction(const Worker_EntityQueryRespons
 		return;
 	}
 
-	OnGSMQuerySuccess();
+	ClientOnGSMQuerySuccess();
 }
 
 void USpatialNetDriver::QueryGSMToLoadMap()

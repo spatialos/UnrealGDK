@@ -129,7 +129,7 @@ public:
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
 	// When the AcceptingPlayers/SessionID state on the GSM has changed this method will be called.
-	void OnGSMQuerySuccess();
+	void ClientOnGSMQuerySuccess();
 	void RetryQueryGSM();
 	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
 

@@ -3,6 +3,7 @@
 #include "Tests/TestDefinitions.h"
 
 #include "SchemaGenObjectStub.h"
+#include "SpatialConstants.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
@@ -12,6 +13,7 @@
 #include "CoreMinimal.h"
 #include "GeneralProjectSettings.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Misc/Crc.h"
 #include "Misc/FileHelper.h"
 #include "Misc/PackageName.h"
 
@@ -1226,6 +1228,48 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 			TestTrue(*DebugString, GDKWellKnownComponents->ComponentIDs.Find(ComponentId) != INDEX_NONE);
 		}
 	}
+
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(
+	GIVEN_snapshot_affecting_schema_files_WHEN_hash_of_file_contents_is_generated_THEN_hash_matches_expected_snapshot_version_hash)
+{
+	SchemaTestFixture Fixture;
+
+	// GIVEN
+	FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
+	TArray<FString> GDKSchemaFilePaths = { TEXT("global_state_manager.schema"), TEXT("spawner.schema"),
+										   TEXT("virtual_worker_translation.schema") };
+
+	// WHEN
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	uint32 HashCrc = 0;
+	TArray<FString> SchemaStrings;
+
+	for (const auto& FilePath : GDKSchemaFilePaths)
+	{
+		const FString FileNameAndPath = FPaths::Combine(GDKSchemaCopyDir, FilePath);
+		if (!PlatformFile.FileExists(*FileNameAndPath))
+		{
+			const FString DebugString = FString::Printf(TEXT("Expected to find schema file %s"), *FilePath);
+			TestFalse(DebugString, true);
+			break;
+		}
+		else
+		{
+			FString FileContent;
+			FFileHelper::LoadFileToString(FileContent, *FileNameAndPath);
+
+			HashCrc = FCrc::StrCrc32(*FileContent, HashCrc);
+		}
+	}
+
+	// THEN
+	const FString ErrorMessage =
+		FString::Printf(TEXT("Expected hash to be %u, but found it to be %u"), SpatialConstants::SPATIAL_SNAPSHOT_VERSION, HashCrc);
+	TestEqual(ErrorMessage, SpatialConstants::SPATIAL_SNAPSHOT_SCHEMA_HASH, HashCrc);
 
 	return true;
 }
