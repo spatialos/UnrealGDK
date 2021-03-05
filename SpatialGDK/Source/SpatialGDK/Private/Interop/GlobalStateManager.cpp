@@ -8,7 +8,6 @@
 #endif
 
 #include "Engine/Classes/AI/AISystemBase.h"
-#include "Engine/LevelStreaming.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
