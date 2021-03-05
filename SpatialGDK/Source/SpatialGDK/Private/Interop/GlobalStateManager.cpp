@@ -74,6 +74,32 @@ void UGlobalStateManager::ApplyDeploymentMapData(Schema_ComponentData* Data)
 	SchemaHash = Schema_GetUint32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH);
 }
 
+void UGlobalStateManager::ApplySnapshotVersionData(Schema_ComponentData* Data)
+{
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
+
+	SnapshotVersion = Schema_GetUint64(ComponentObject, SpatialConstants::SNAPSHOT_VERSION_NUMBER_ID);
+
+	if (NetDriver != nullptr && NetDriver->IsServer())
+	{
+		if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != SnapshotVersion) // Are we running with the same snapshot version?
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error,
+				   TEXT("Your servers's snapshot version does not match expected. Server version: = '%llu', Expected "
+						"version = '%llu'"),
+				   SnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
+
+			if (UWorld* CurrentWorld = NetDriver->GetWorld())
+			{
+				GEngine->BroadcastNetworkFailure(CurrentWorld, NetDriver, ENetworkFailure::OutdatedServer,
+												 TEXT("Your snapshot version does not match expected. Please try "
+													  "updating your game snapshot."));
+				return;
+			}
+		}
+	}
+}
+
 void UGlobalStateManager::ApplyStartupActorManagerData(Schema_ComponentData* Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
@@ -514,7 +540,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 		}
 		else
 		{
-			ApplyDeploymentMapDataFromQueryResponse(Op);
+			ApplyDataFromQueryResponse(Op);
 			Callback.ExecuteIfBound(Op);
 		}
 	});
@@ -580,7 +606,7 @@ void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worke
 	}
 }
 
-void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
+void UGlobalStateManager::ApplyDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
 	{
@@ -588,6 +614,10 @@ void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_E
 		if (Data.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
 		{
 			ApplyDeploymentMapData(Data.schema_type);
+		}
+		else if (Data.component_id == SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID)
+		{
+			ApplySnapshotVersionData(Data.schema_type);
 		}
 	}
 }

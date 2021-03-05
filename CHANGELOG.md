@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced server logging to include load balancing and local worker info on startup.
 - Added 'Persistent' spatial class flag, typically used to override a non persistent base class.
 - Added a button to generate functional test maps from the editor. It can be found under **Window** > **Generate test maps**.
+- Added versioning to snapshots. Attempting to load an incompatible snapshot will fail, and output error logs that request the snapshot be regenerated.
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
