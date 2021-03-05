@@ -47,8 +47,7 @@ class SPATIALGDK_API USpatialSender : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialRPCService* InRPCService,
-			  SpatialGDK::SpatialEventTracer* InEventTracer);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialEventTracer* InEventTracer);
 
 	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const;
 	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId);
@@ -87,10 +86,6 @@ private:
 	USpatialClassInfoManager* ClassInfoManager;
 
 	FTimerManager* TimerManager;
-
-	SpatialGDK::SpatialRPCService* RPCService;
-
-	TArray<TSharedRef<FReliableRPCForRetry>> RetryRPCs;
 
 	SpatialGDK::SpatialEventTracer* EventTracer;
 };
