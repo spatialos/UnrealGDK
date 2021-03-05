@@ -822,7 +822,7 @@ void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId
 			return;
 		}
 
-		if (Components.Find(ComponentId) == nullptr)
+		if (!Components.Contains(ComponentId))
 		{
 			return;
 		}
@@ -1880,7 +1880,7 @@ void ActorSystem::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, cons
 	ComponentsToRemove.Reserve(SCHEMA_Count);
 	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
 	{
-		if (SubView->GetView()[EntityId].Components.FindByPredicate(ComponentIdEquality{ SubobjectComponentId }) != nullptr)
+		if (SubView->GetView()[EntityId].Components.ContainsByPredicate(ComponentIdEquality{ SubobjectComponentId }))
 		{
 			ComponentsToRemove.Add(SubobjectComponentId);
 		}
