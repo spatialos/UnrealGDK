@@ -353,6 +353,12 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 	USpatialGameInstance* GameInstance = GetGameInstance();
 	check(GameInstance != nullptr);
 	GameInstance->HandleOnConnected(*this);
+
+	if (GameInstance->IsDedicatedServerInstance())
+	{
+		SpatialPlatformCoordinator->StartSendingHeartbeat();
+		SpatialPlatformCoordinator->StartPollingForGameserverStatus();
+	}
 }
 
 void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage)
@@ -405,6 +411,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
 
 	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
+
+	SpatialPlatformCoordinator = NewObject<USpatialPlatformCoordinator>(this);
+	SpatialPlatformCoordinator->Init(this);
 
 	FName WorkerType = GameInstance->GetSpatialWorkerType();
 	if (WorkerType == SpatialConstants::DefaultServerWorkerType || WorkerType == SpatialConstants::DefaultClientWorkerType)

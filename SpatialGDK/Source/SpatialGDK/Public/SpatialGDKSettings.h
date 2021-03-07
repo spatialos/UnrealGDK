@@ -432,4 +432,13 @@ public:
 
 	UPROPERTY(Config)
 	bool bEnableAlwaysWriteRPCs;
+
+	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator", meta = (DisplayName = "SpatialOS platform endpoint url"))
+	FString SpatialPlatformUrl;
+
+	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator", meta = (DisplayName = "SpatialOS platform heartbeat interval"))
+	float SpatialPlatformHeartbeatInterval;
+
+	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator", meta = (DisplayName = "SpatialOS platform server status polling interval"))
+	float SpatialPlatformServerStatusPollingInterval;
 };

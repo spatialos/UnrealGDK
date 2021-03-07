@@ -13,6 +13,7 @@
 #include "Interop/SpatialOutputDevice.h"
 #include "Interop/SpatialRoutingSystem.h"
 #include "Interop/SpatialSnapshotManager.h"
+#include "Interop/SpatialPlatformCoordinator.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialBasicAwaiter.h"
 #include "Utils/SpatialDebugger.h"
@@ -204,6 +205,8 @@ public:
 	USpatialNetDriverDebugContext* DebugCtx;
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
+	UPROPERTY()
+	USpatialPlatformCoordinator* SpatialPlatformCoordinator;
 
 	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
 	FFilterPredicate ActorFilter;
