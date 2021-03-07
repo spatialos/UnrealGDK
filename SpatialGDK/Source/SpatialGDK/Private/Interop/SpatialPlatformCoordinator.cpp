@@ -42,10 +42,7 @@ DEFINE_LOG_CATEGORY(LogSpatialPlatformCoordinator);
 
 using namespace SpatialGDK;
 
-USpatialPlatformCoordinator::USpatialPlatformCoordinator()
-{
-
-}
+USpatialPlatformCoordinator::USpatialPlatformCoordinator() {}
 
 void USpatialPlatformCoordinator::Init(UNetDriver* InDriver)
 {
@@ -66,11 +63,13 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 	WorkerStatusPollingRequest->OnProcessRequestComplete().BindLambda(
 		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
 			GetWorld()->GetTimerManager().ClearTimer(HeartBeatTimerHandler);
-			GetWorld()->GetTimerManager().SetTimer(HeartBeatTimerHandler, this, &USpatialPlatformCoordinator::StartSendingHeartbeat, GetDefault<USpatialGDKSettings>()->SpatialPlatformHeartbeatInterval, false);
+			GetWorld()->GetTimerManager().SetTimer(HeartBeatTimerHandler, this, &USpatialPlatformCoordinator::StartSendingHeartbeat,
+												   GetDefault<USpatialGDKSettings>()->SpatialPlatformHeartbeatInterval, false);
 
 			if (bWasSuccessful)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s - Successful HTTP request, Response:[%s]"), *FString(__FUNCTION__), *Response->GetContentAsString());
+				UE_LOG(LogTemp, Warning, TEXT("%s - Successful HTTP request, Response:[%s]"), *FString(__FUNCTION__),
+					   *Response->GetContentAsString());
 
 				TSharedPtr<FJsonObject> RootObject;
 				FHttpResponsePtr Response = Request->GetResponse();
@@ -83,13 +82,15 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s - Failed HTTP request, Response:[%s]"), *FString(__FUNCTION__), *Response->GetContentAsString());
+				UE_LOG(LogTemp, Warning, TEXT("%s - Failed HTTP request, Response:[%s]"), *FString(__FUNCTION__),
+					   *Response->GetContentAsString());
 			}
 		});
-	
-	WorkerStatusPollingRequest->OnRequestProgress().BindLambda([this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {
+
+	WorkerStatusPollingRequest->OnRequestProgress().BindLambda(
+		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {
 			UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(__FUNCTION__));
-	});
+		});
 
 	WorkerStatusPollingRequest->OnHeaderReceived().BindLambda(
 		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {
@@ -152,11 +153,14 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 	WorkerStatusPollingRequest->OnProcessRequestComplete().BindLambda(
 		[this, SpatialWorkerFlags](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
 			GetWorld()->GetTimerManager().ClearTimer(GameserverStatusTimerHandler);
-			GetWorld()->GetTimerManager().SetTimer(GameserverStatusTimerHandler, this, &USpatialPlatformCoordinator::StartPollingForGameserverStatus, GetDefault<USpatialGDKSettings>()->SpatialPlatformServerStatusPollingInterval, false);
+			GetWorld()->GetTimerManager().SetTimer(GameserverStatusTimerHandler, this,
+												   &USpatialPlatformCoordinator::StartPollingForGameserverStatus,
+												   GetDefault<USpatialGDKSettings>()->SpatialPlatformServerStatusPollingInterval, false);
 
 			if (bWasSuccessful)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s - Successful HTTP request, Response:[%s]"), *FString(__FUNCTION__), *Response->GetContentAsString());
+				UE_LOG(LogTemp, Warning, TEXT("%s - Successful HTTP request, Response:[%s]"), *FString(__FUNCTION__),
+					   *Response->GetContentAsString());
 
 				TSharedPtr<FJsonObject> RootObject;
 				FHttpResponsePtr Response = Request->GetResponse();
@@ -223,13 +227,15 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s - Failed HTTP request, Response:[%s], ResponseCode:[%d]"), *FString(__FUNCTION__), *Response->GetContentAsString(), Response->GetResponseCode());
+				UE_LOG(LogTemp, Warning, TEXT("%s - Failed HTTP request, Response:[%s], ResponseCode:[%d]"), *FString(__FUNCTION__),
+					   *Response->GetContentAsString(), Response->GetResponseCode());
 			}
 		});
-	
-	WorkerStatusPollingRequest->OnRequestProgress().BindLambda([this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {
+
+	WorkerStatusPollingRequest->OnRequestProgress().BindLambda(
+		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {
 			UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(__FUNCTION__));
-	});
+		});
 
 	WorkerStatusPollingRequest->OnHeaderReceived().BindLambda(
 		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {
@@ -279,4 +285,3 @@ void USpatialPlatformCoordinator::StartWatchingForGameserverStatus()
 	WorkerStatusPollingRequest->SetHeader("Content-Type", TEXT("application/json"));
 	WorkerStatusPollingRequest->ProcessRequest();
 }
-

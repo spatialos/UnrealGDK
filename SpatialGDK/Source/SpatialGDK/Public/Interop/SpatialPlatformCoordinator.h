@@ -9,12 +9,12 @@
 
 #include "CoreMinimal.h"
 
-#include "TimerManager.h"
 #include "HttpModule.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "TimerManager.h"
 
 #include "SpatialPlatformCoordinator.generated.h"
 
@@ -38,9 +38,9 @@ public:
 	void StartWatchingForGameserverStatus();
 
 private:
-	USpatialNetDriver*					Driver;
-	FString								Url;
+	USpatialNetDriver* Driver;
+	FString Url;
 
-	FTimerHandle						HeartBeatTimerHandler;
-	FTimerHandle						GameserverStatusTimerHandler;
+	FTimerHandle HeartBeatTimerHandler;
+	FTimerHandle GameserverStatusTimerHandler;
 };
