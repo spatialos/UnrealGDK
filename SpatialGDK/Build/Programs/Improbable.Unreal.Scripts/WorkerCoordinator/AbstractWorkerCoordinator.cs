@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 
 namespace Improbable.WorkerCoordinator
 {
@@ -15,8 +14,6 @@ namespace Improbable.WorkerCoordinator
     /// </summary>
     internal abstract class AbstractWorkerCoordinator
     {
-        private const int PollSimulatedPlayerProcessIntervalMillis = 5000;
-
         private const string AdditionalProcessArguments = "-FailOnNetworkFailure";
 
         protected Logger Logger;
@@ -66,40 +63,14 @@ namespace Improbable.WorkerCoordinator
         }
 
         /// <summary>
-        /// Blocks until all active simulated player processes have exited.
-        /// Restarts failed simulated player processes.
-        /// Will only wait for processes started through CreateSimulatedPlayerProcess().
-        /// </summary>
-        protected void WaitForPlayersToExit()
-        {
-            while (true)
-            {
-                var finishedProcesses = ActiveProcesses.Where(process => process.HasExited).ToList();
-
-                var incorrectlyFinishedProcesses = finishedProcesses.Where(process => process.ExitCode != 0).ToList();
-
-                if (incorrectlyFinishedProcesses.Count == 0 && finishedProcesses.Count == ActiveProcesses.Count)
-                {
-                    return;
-                }
-
-                foreach (var process in incorrectlyFinishedProcesses)
-                {
-                    Logger.WriteLog($"Restarting simulated player after it failed with exit code {process.ExitCode}");
-                    process.Start();
-                }
-
-                Thread.Sleep(TimeSpan.FromMilliseconds(PollSimulatedPlayerProcessIntervalMillis));
-            }
-        }
-
-        /// <summary>
         /// Check simulated player clients' status.
         /// If it stopped early by accident, restart it.
         /// If it stopped with code 137, that means we stop it with StopSimulatedClient.sh.
         /// </summary>
-        public void CheckPlayerStatus()
+        /// <returns>return true if active processes list is empty.</returns>
+        public bool CheckPlayerStatus()
         {
+            bool haveProcessFinishedWithoutError = false;
             var finishedProcesses = ActiveProcesses.Where(process => process.HasExited).ToList();
 
             foreach (var process in finishedProcesses)
@@ -113,8 +84,12 @@ namespace Improbable.WorkerCoordinator
                 else
                 {
                     ActiveProcesses.Remove(process);
+                    haveProcessFinishedWithoutError = true;
                 }
             }
+
+            // Need haveProcessFinishedWithoutError to ignore the initial case.
+            return haveProcessFinishedWithoutError && ActiveProcesses.Count == 0;
         }
     }
 }

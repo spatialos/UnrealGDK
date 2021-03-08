@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Improbable.Worker.CInterop;
 using System.Diagnostics;
 
@@ -35,8 +34,6 @@ namespace Improbable.WorkerCoordinator
         private const string CoordinatorWorkerType = "SimulatedPlayerCoordinator";
         private const string SimulatedPlayerFilename = "StartSimulatedClient.sh";
         private const string StopSimulatedPlayerFilename = "StopSimulatedClient.sh";
-
-        private const int MillisToTicks = 10000;
 
         private static Random Random;
 
@@ -118,10 +115,7 @@ namespace Improbable.WorkerCoordinator
                 LifetimeComponent = lifetimeComponent
             };
 
-            if (coordinator.LifetimeComponent != null)
-            {
-                coordinator.LifetimeComponent.SetHost(coordinator);
-            }
+            coordinator.LifetimeComponent.SetHost(coordinator);
 
             return coordinator;
         }
@@ -157,49 +151,28 @@ namespace Improbable.WorkerCoordinator
 
             Array.Sort(startDelaysMillis);
 
-            if (LifetimeComponent == null)
+            long curTicks = DateTime.Now.Ticks;
+            for (int i = 0; i < NumSimulatedPlayersToStart; i++)
             {
-                for (int i = 0; i < NumSimulatedPlayersToStart; i++)
+                string clientName = "SimulatedPlayer" + Guid.NewGuid();
+                var timeToSleep = startDelaysMillis[i];
+                if (i > 0)
                 {
-                    string clientName = "SimulatedPlayer" + Guid.NewGuid();
-                    var timeToSleep = startDelaysMillis[i];
-                    if (i > 0)
-                    {
-                        timeToSleep -= startDelaysMillis[i - 1];
-                    }
-
-                    Thread.Sleep(timeToSleep);
-                    StartSimulatedPlayer(clientName, devAuthToken, targetDeployment);
+                    timeToSleep -= startDelaysMillis[i - 1];
                 }
 
-                // Wait for all clients to exit.
-                WaitForPlayersToExit();
-            }
-            else
-            {
-                long curTicks = DateTime.Now.Ticks;
-                for (int i = 0; i < NumSimulatedPlayersToStart; i++)
+                ClientInfo clientInfo = new ClientInfo()
                 {
-                    string clientName = "SimulatedPlayer" + Guid.NewGuid();
-                    var timeToSleep = startDelaysMillis[i];
-                    if (i > 0)
-                    {
-                        timeToSleep -= startDelaysMillis[i - 1];
-                    }
+                    ClientName = clientName,
+                    StartTick = timeToSleep * TimeSpan.TicksPerMillisecond + curTicks,
+                    DevAuthToken = devAuthToken,
+                    TargetDeployment = targetDeployment
+                };
 
-                    ClientInfo clientInfo = new ClientInfo()
-                    {
-                        ClientName = clientName,
-                        StartTick = timeToSleep * MillisToTicks + curTicks,
-                        DevAuthToken = devAuthToken,
-                        TargetDeployment = targetDeployment
-                    };
-
-                    LifetimeComponent.AddSimulatedPlayer(clientInfo);
-                }
-
-                LifetimeComponent.Start();
+                LifetimeComponent.AddSimulatedPlayer(clientInfo);
             }
+
+            LifetimeComponent.Start();
         }
 
         private void StartSimulatedPlayer(string simulatedPlayerName, string devAuthToken, string targetDeployment)

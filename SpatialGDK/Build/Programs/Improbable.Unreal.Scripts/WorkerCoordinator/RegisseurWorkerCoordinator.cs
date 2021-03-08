@@ -24,8 +24,6 @@ namespace Improbable.WorkerCoordinator
         private const string SimulatedPlayerFilename = "StartSimulatedClient.sh";
         private const string StopSimulatedPlayerFilename = "StopSimulatedClient.sh";
 
-        private const int MillisToTicks = 10000;
-
         // Coordinator options.
         private int NumSimulatedPlayersToStart;
         private int InitialStartDelayMillis;
@@ -68,10 +66,7 @@ namespace Improbable.WorkerCoordinator
                 SimulatedPlayerArgs = args.Skip(numArgsToSkip).ToArray()
             };
 
-            if (coordinator.LifetimeComponent != null)
-            {
-                coordinator.LifetimeComponent.SetHost(coordinator);
-            }
+            coordinator.LifetimeComponent.SetHost(coordinator);
 
             return coordinator;
         }
@@ -84,37 +79,21 @@ namespace Improbable.WorkerCoordinator
         {
             Thread.Sleep(InitialStartDelayMillis);
 
-            if (LifetimeComponent == null)
+            long curTicks = DateTime.Now.Ticks;
+
+            for (int i = 0; i < NumSimulatedPlayersToStart; i++)
             {
-                // Lifetime mode: off.
-                for (int i = 0; i < NumSimulatedPlayersToStart; i++)
+                // Push into wait list.
+                ClientInfo clientInfo = new ClientInfo()
                 {
-                    StartSimulatedPlayer($"SimulatedPlayer{Guid.NewGuid()}");
+                    ClientName = $"SimulatedPlayer{Guid.NewGuid()}",
+                    StartTick = curTicks + StartIntervalMillis * TimeSpan.TicksPerMillisecond
+                };
 
-                    Thread.Sleep(StartIntervalMillis);
-                }
-
-                WaitForPlayersToExit();
+                LifetimeComponent.AddSimulatedPlayer(clientInfo);
             }
-            else
-            {
-                // Lifetime mode: on.
-                long curTicks = DateTime.Now.Ticks;
 
-                for (int i = 0; i < NumSimulatedPlayersToStart; i++)
-                {
-                    // Push into wait list.
-                    ClientInfo clientInfo = new ClientInfo()
-                    {
-                        ClientName = $"SimulatedPlayer{Guid.NewGuid()}",
-                        StartTick = curTicks + StartIntervalMillis * MillisToTicks
-                    };
-
-                    LifetimeComponent.AddSimulatedPlayer(clientInfo);
-                }
-
-                LifetimeComponent?.Start();
-            }
+            LifetimeComponent.Start();
         }
 
         public void StartSimulatedPlayer(string name)

@@ -22,8 +22,7 @@ namespace Improbable.WorkerCoordinator
     {
         void StartClient(ClientInfo clientInfo);
         void StopClient(ClientInfo clientInfo);
-
-        void CheckPlayerStatus();
+        bool CheckPlayerStatus();
     }
 
     internal class LifetimeComponent
@@ -35,6 +34,7 @@ namespace Improbable.WorkerCoordinator
         public const string UseNewSimulatedPlayerArg = "use_new_simulated_player";
 
         // Lifetime management parameters.
+        private bool IsLifetimeMode;
         private ILifetimeComponentHost Host;
         private bool UseNewSimulatedPlayer;
         private int MaxLifetime;
@@ -43,14 +43,21 @@ namespace Improbable.WorkerCoordinator
         private List<ClientInfo> WaitingList;
         private List<ClientInfo> RunningList;
 
-        private int TickIntervalSeconds = 1;
+        /// <summary>
+        /// Tick interval in milliseconds
+        /// </summary>
+        private int TickInterval = 1000;
         private Logger Logger;
         private Random Random;
 
         // Temp variables to avoid allocate variable in tick method.
         private long CurTicks;
         private int Length;
+        private bool IsActiveProcessListEmpty;
         private ClientInfo SimulatedClientInfo;
+
+        private Timer TickTimer;
+        private AutoResetEvent ResetEvent;
 
         /// <summary>
         /// Create lifetime component, will return null if max lifetime argument not in args.
@@ -96,16 +103,15 @@ namespace Improbable.WorkerCoordinator
             }
 
             // Disable function by do not define max lifetime.
-            if (maxLifetime > 0)
-            {
-                return new LifetimeComponent(maxLifetime, minLifetime, restartAfterSeconds, useNewSimulatedPlayer > 0, logger);
-            }
+            // With this we do not need to change the old configuration files.
+            bool isLifetimeMode = maxLifetime > 0;
 
-            return null;
+            return new LifetimeComponent(isLifetimeMode, maxLifetime, minLifetime, restartAfterSeconds, useNewSimulatedPlayer > 0, logger);
         }
 
-        private LifetimeComponent(int maxLifetime, int minLifetime, int restartAfterSeconds, bool useNewSimulatedPlayer, Logger logger)
+        private LifetimeComponent(bool isLifetimeMode, int maxLifetime, int minLifetime, int restartAfterSeconds, bool useNewSimulatedPlayer, Logger logger)
         {
+            IsLifetimeMode = isLifetimeMode;
             UseNewSimulatedPlayer = useNewSimulatedPlayer;
             MaxLifetime = maxLifetime;
             MinLifetime = minLifetime;
@@ -116,6 +122,8 @@ namespace Improbable.WorkerCoordinator
             RunningList = new List<ClientInfo>();
 
             Random = new Random(Guid.NewGuid().GetHashCode());
+
+            ResetEvent = new AutoResetEvent(false);
         }
 
         public void SetHost(ILifetimeComponentHost host)
@@ -127,7 +135,7 @@ namespace Improbable.WorkerCoordinator
         {
             WaitingList.Add(clientInfo);
 
-            Logger.WriteLog($"[LifetimeComponent][{DateTime.Now.ToString("HH:mm:ss")}] Add client ClientName={clientInfo.ClientName}.");
+            Logger.WriteLog($"[LifetimeComponent][{DateTime.Now.ToString("HH:mm:ss")}] Add client ClientName={clientInfo.ClientName}, IsLifetimeMode={IsLifetimeMode}.");
         }
 
         private long NewLifetimeTicks()
@@ -135,26 +143,43 @@ namespace Improbable.WorkerCoordinator
             return TimeSpan.FromMinutes(Random.Next(MinLifetime, MaxLifetime)).Ticks;
         }
 
+        /// <summary>
+        /// Start will keep blocking until it is finished.
+        /// </summary>
         public void Start()
         {
-            // Loop tick.
-            while (true)
-            {
-                Tick();
+            // Start timer
+            TickTimer = new Timer(Tick, ResetEvent, 0, TickInterval);
 
-                Thread.Sleep(TimeSpan.FromSeconds(TickIntervalSeconds));
-            }
+            // Wait until Tick finish.
+            ResetEvent.WaitOne();
+            TickTimer.Dispose();
+
+            Logger.WriteLog($"[LifetimeComponent][{DateTime.Now.ToString("HH:mm:ss")}] All simulated clients are finished, IsLifetimeMode={IsLifetimeMode}.");
         }
 
-        private void Tick()
+        private void Tick(object state)
         {
+            // Check player status, restart player client if it exit early.
+            IsActiveProcessListEmpty = Host.CheckPlayerStatus();
+
+            // Non-lifetime mode, do not stop any clients.
+            if (!IsLifetimeMode)
+            {
+                // All clients are finished.
+                if (IsActiveProcessListEmpty)
+                {
+                    ResetEvent.Set();
+                }
+
+                return;
+            }
+
+            // Lifetime mode.
             CurTicks = DateTime.Now.Ticks;
 
             // Data flow is waiting list -> running list -> waiting list.
             // Checking sequence is running list -> waiting list.
-
-            // Check player status, restart player client if it exit early.
-            Host?.CheckPlayerStatus();
 
             // Running list.
             Length = RunningList.Count;
@@ -168,7 +193,7 @@ namespace Improbable.WorkerCoordinator
 
                     Logger.WriteLog($"[LifetimeComponent][{DateTime.Now.ToString("HH:mm:ss")}] Stop client ClientName={SimulatedClientInfo.ClientName}.");
 
-                    // Delay 10 seconds to restart.
+                    // Delay a few seconds to restart. Make sure the client has timed out and gone offline.
                     SimulatedClientInfo.StartTick = TimeSpan.FromSeconds(RestartAfterSeconds).Ticks + CurTicks;
 
                     // Restart with new simulated player.
