@@ -397,7 +397,8 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 }
 
 USpatialDebugInterfaceMap::USpatialDebugInterfaceMap()
-	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialDebugInterfaceMap"))
+	// disabled in CI due to a timeout flake: UNR-5141
+	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("SpatialDebugInterfaceMap"))
 {
 }
 
