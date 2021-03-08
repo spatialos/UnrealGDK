@@ -865,7 +865,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	if (IsServer() && WellKnownEntitySystem != null)
+	if (IsServer() && WellKnownEntitySystem != nullptr)
 	{
 		WellKnownEntitySystem->OnMapLoaded();
 	}
