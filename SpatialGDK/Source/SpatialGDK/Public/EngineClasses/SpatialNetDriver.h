@@ -161,6 +161,14 @@ public:
 	void RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
 
 	void CleanUpServerConnectionForPC(APlayerController* PC);
+	void SetTestEndTime(Worker_RequestId request_id);
+
+	UFUNCTION(BlueprintCallable, Category = "Silvia", meta = (WorldContext = "WorldContextObject"))
+	static void SetTotalSend(UObject* WorldContextObject, int32 TotalSendFromBP);
+
+	int32 TotalCount = 0;
+	int32 TotalSend = -1;
+	bool StartRTTest = false;
 
 	Worker_PartitionId GetRoutingPartition();
 	void QueryRoutingPartition();

@@ -380,6 +380,10 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(Message), /* Causes */ Op.span_id, /* NumCauses */ 1);
 		}
 	}
+	if (NetDriver->StartRTTest == true)
+	{
+		NetDriver->SetTestEndTime(Op.request_id);
+	}
 	else if (EventTracer != nullptr)
 	{
 		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateGenericMessage(TEXT("Create entity response unknown error")),
