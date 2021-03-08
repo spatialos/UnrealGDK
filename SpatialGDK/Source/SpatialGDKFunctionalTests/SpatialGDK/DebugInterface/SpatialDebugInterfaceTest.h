@@ -5,14 +5,16 @@
 #include "CoreMinimal.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialFunctionalTest.h"
-#include "TestDebugInterface.generated.h"
+#include "TestMaps/GeneratedTestMap.h"
+
+#include "SpatialDebugInterfaceTest.generated.h"
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API ATestDebugInterface : public ASpatialFunctionalTest
+class SPATIALGDKFUNCTIONALTESTS_API ASpatialDebugInterfaceTest : public ASpatialFunctionalTest
 {
 	GENERATED_BODY()
 public:
-	ATestDebugInterface();
+	ASpatialDebugInterfaceTest();
 
 	virtual void PrepareTest() override;
 
@@ -25,4 +27,16 @@ protected:
 	bool bIsOnDefaultLayer = false;
 	int32 DelegationStep = 0;
 	int64 TimeStampSpinning;
+};
+
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API USpatialDebugInterfaceMap : public UGeneratedTestMap
+{
+	GENERATED_BODY()
+
+public:
+	USpatialDebugInterfaceMap();
+
+protected:
+	virtual void CreateCustomContentForMap() override;
 };

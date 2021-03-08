@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "SpatialFunctionalTest.h"
-
 #include "CoreMinimal.h"
+#include "SpatialFunctionalTest.h"
+#include "TestMaps/GeneratedTestMap.h"
 
 #include "SpatialTestNetOwnership.generated.h"
 
@@ -22,4 +22,16 @@ public:
 	// Reference to the NetOwnershipCube, used to avoid using GetAllActorsOfClass() in every step to get a reference to the
 	// NetOwnershipCube.
 	ANetOwnershipCube* NetOwnershipCube;
+};
+
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API USpatialTestNetOwnershipMap : public UGeneratedTestMap
+{
+	GENERATED_BODY()
+
+public:
+	USpatialTestNetOwnershipMap();
+
+protected:
+	virtual void CreateCustomContentForMap() override;
 };

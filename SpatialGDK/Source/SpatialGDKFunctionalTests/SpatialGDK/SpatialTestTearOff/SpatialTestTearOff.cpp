@@ -222,3 +222,19 @@ void ASpatialTestTearOff::PrepareTest()
 		},
 		nullptr, 2.0f);
 }
+
+USpatialTestTearOffMap::USpatialTestTearOffMap()
+	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY, TEXT("SpatialTestTearOffMap"))
+{
+}
+
+void USpatialTestTearOffMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the test
+	AddActorToLevel<ASpatialTestTearOff>(CurrentLevel, FTransform::Identity);
+
+	// Add the test actor
+	AddActorToLevel<AReplicatedTearOffActor>(CurrentLevel, FTransform::Identity);
+}
