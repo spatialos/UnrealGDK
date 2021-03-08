@@ -1009,18 +1009,19 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 	for (auto It = ObjectReferencesMap.CreateIterator(); It; ++It)
 	{
 		int32 AbsOffset = It.Key();
+		FObjectReferences& ObjectReferences = It.Value();
+		GDK_PROPERTY(Property)* Property = ObjectReferences.Property;
 
 		if (AbsOffset >= MaxAbsOffset)
 		{
-			UE_LOG(LogActorSystem, Error, TEXT("ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset: %d"),
-				   AbsOffset);
+			// If you see this error, it is possible that there has been a non-auth modification of data containing object references.
+			UE_LOG(LogActorSystem, Error,
+				   TEXT("ResolveObjectReferences: Removed unresolved reference for property %s: AbsOffset >= MaxAbsOffset: %d > %d. This "
+						"could indicate non-auth modification."),
+				   *GetNameSafe(Property), AbsOffset, MaxAbsOffset);
 			It.RemoveCurrent();
 			continue;
 		}
-
-		FObjectReferences& ObjectReferences = It.Value();
-
-		GDK_PROPERTY(Property)* Property = ObjectReferences.Property;
 
 		// ParentIndex is -1 for handover properties
 		bool bIsHandover = ObjectReferences.ParentIndex == -1;
