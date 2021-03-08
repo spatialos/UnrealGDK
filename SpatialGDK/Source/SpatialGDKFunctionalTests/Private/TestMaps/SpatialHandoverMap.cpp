@@ -2,8 +2,8 @@
 
 #include "TestMaps/SpatialHandoverMap.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "SpatialGDKFunctionalTests/Public/Test2x2WorkerSettings.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3761/SpatialTestHandover/SpatialTestHandover.h"
+#include "TestWorkerSettings.h"
 
 USpatialHandoverMap::USpatialHandoverMap()
 	// This test and map is in CI_NIGHTLY_SPATIAL_ONLY, because I cannot run it a 100 times in a row
@@ -19,5 +19,5 @@ void USpatialHandoverMap::CreateCustomContentForMap()
 	AddActorToLevel<ASpatialTestHandover>(CurrentLevel, FTransform::Identity);
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
-	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2WorkerSettings::StaticClass());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
 }

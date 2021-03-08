@@ -2,10 +2,10 @@
 
 #include "TestMaps/Spatial2WorkerMap.h"
 #include "EngineClasses/SpatialWorldSettings.h"
-#include "SpatialGDKFunctionalTests/Public/Test1x2WorkerSettings.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/CrossServerAndClientOrchestrationTest/CrossServerAndClientOrchestrationTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RegisterAutoDestroyActorsTest/RegisterAutoDestroyActorsTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RelevancyTest/RelevancyTest.h"
+#include "TestWorkerSettings.h"
 
 USpatial2WorkerMap::USpatial2WorkerMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("Spatial2WorkerMap"))
@@ -25,5 +25,5 @@ void USpatial2WorkerMap::CreateCustomContentForMap()
 	AddActorToLevel<ARelevancyTest>(CurrentLevel, FTransform::Identity);
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
-	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2WorkerSettings::StaticClass());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2FullInterestWorkerSettings::StaticClass());
 }
