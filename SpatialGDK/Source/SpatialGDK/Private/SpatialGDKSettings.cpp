@@ -82,9 +82,9 @@ void CheckCmdLineOverrideOptionalString(const TCHAR* CommandLine, const TCHAR* P
 void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName,
 													TFunctionRef<void(const FString& Setting)> Callback)
 {
+	TOptional<FString> OverrideValue;
 #if ALLOW_SPATIAL_CMDLINE_PARSING
 	FString TempStr;
-	TOptional<FString> OverrideValue;
 	if (FParse::Value(CommandLine, Parameter, TempStr) && TempStr[0] == '=')
 	{
 		OverrideValue = TempStr.Right(TempStr.Len() - 1); // + 1 to skip =
