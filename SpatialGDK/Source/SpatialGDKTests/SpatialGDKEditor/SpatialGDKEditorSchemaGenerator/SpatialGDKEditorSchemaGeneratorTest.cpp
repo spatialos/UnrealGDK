@@ -1259,16 +1259,19 @@ SCHEMA_GENERATOR_TEST(
 		}
 		else
 		{
-			FString FileContent;
-			FFileHelper::LoadFileToString(FileContent, *FileNameAndPath);
+			TArray<FString> FileContents;
+			FFileHelper::LoadFileToStringArray(FileContents, *FileNameAndPath);
 
-			HashCrc = FCrc::StrCrc32(*FileContent, HashCrc);
+			for (const FString& LineContents : FileContents)
+			{
+				HashCrc = FCrc::StrCrc32(*LineContents, HashCrc);
+			}
 		}
 	}
 
 	// THEN
 	const FString ErrorMessage =
-		FString::Printf(TEXT("Expected hash to be %u, but found it to be %u"), SpatialConstants::SPATIAL_SNAPSHOT_VERSION, HashCrc);
+		FString::Printf(TEXT("Expected hash to be %u, but found it to be %u"), SpatialConstants::SPATIAL_SNAPSHOT_SCHEMA_HASH, HashCrc);
 	TestEqual(ErrorMessage, SpatialConstants::SPATIAL_SNAPSHOT_SCHEMA_HASH, HashCrc);
 
 	return true;
