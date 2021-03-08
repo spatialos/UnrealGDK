@@ -112,28 +112,34 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 void USpatialPlatformCoordinator::SendReadyStatus()
 {
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
+	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
+	FString NewSpatialWorkerId = SpatialWorkerId + "";
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> WorkerStatusPollingRequest = FHttpModule::Get().CreateRequest();
+
 	WorkerStatusPollingRequest->OnProcessRequestComplete().BindLambda(
 		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
 			UE_LOG(LogTemp, Warning, TEXT("%s - Response:[%s]"), *FString(__FUNCTION__), *Response->GetContentAsString());
 		});
+
 	WorkerStatusPollingRequest->OnRequestProgress().BindLambda(
 		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {
 			FHttpResponsePtr Response = Request->GetResponse();
 			FString ResponseStr = Response->GetContentAsString();
 			UE_LOG(LogTemp, Warning, TEXT("%s - Response:[%s]"), *FString(__FUNCTION__), *ResponseStr);
 		});
+
 	WorkerStatusPollingRequest->OnHeaderReceived().BindLambda(
 		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {
 			UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(__FUNCTION__));
 		});
+
 	WorkerStatusPollingRequest->OnRequestWillRetry().BindLambda(
 		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {
 			UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(__FUNCTION__));
 		});
 
-	WorkerStatusPollingRequest->SetURL(Url + TEXT("/watch/gameserver"));
+	WorkerStatusPollingRequest->SetURL(Url + TEXT("/health/") + NewSpatialWorkerId);
 	WorkerStatusPollingRequest->SetVerb("GET");
 	WorkerStatusPollingRequest->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
 	WorkerStatusPollingRequest->SetHeader("Content-Type", TEXT("application/json"));
