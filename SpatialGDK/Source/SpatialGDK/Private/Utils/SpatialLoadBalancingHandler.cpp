@@ -4,6 +4,7 @@
 
 #include "EngineClasses/Components/RemotePossessionComponent.h"
 #include "EngineClasses/SpatialActorChannel.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "Schema/AuthorityIntent.h"
@@ -12,11 +13,37 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalancingHandler);
 
-using namespace SpatialGDK;
-
-SpatialGDK::FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver)
-	: NetDriver(InNetDriver)
+namespace SpatialGDK
 {
+FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver, const FSubView& InSubView,
+														   SpatialEventTracer* InEventTracer)
+	: NetDriver(InNetDriver)
+	, SubView(&InSubView)
+	, EventTracer(InEventTracer)
+{
+}
+
+void FSpatialLoadBalancingHandler::AdvanceView()
+{
+	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
+	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
+	{
+		switch (Delta.Type)
+		{
+		case EntityDelta::ADD:
+		case EntityDelta::TEMPORARILY_REMOVED:
+			AuthIntentStore.Add(
+				Delta.EntityId,
+				AuthorityIntent(SubView->GetView()[Delta.EntityId]
+									.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID })
+									->GetUnderlying()));
+			break;
+		case EntityDelta::REMOVE:
+			AuthIntentStore.Remove(Delta.EntityId);
+		default:
+			break;
+		}
+	}
 }
 
 FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner,
@@ -82,7 +109,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 		if ((!NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*NetOwner) || !bNetOwnerHasAuth)
 			&& !NetDriver->LockingPolicy->IsLocked(Actor))
 		{
-			uint64 HierarchyAuthorityReceivedTimestamp = GetLatestAuthorityChangeFromHierarchy(NetOwner);
+			const uint64 HierarchyAuthorityReceivedTimestamp = GetLatestAuthorityChangeFromHierarchy(NetOwner);
 
 			const float TimeSinceReceivingAuthInSeconds =
 				double(FPlatformTime::Cycles64() - HierarchyAuthorityReceivedTimestamp) * FPlatformTime::GetSecondsPerCycle64();
@@ -104,7 +131,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 					// If we are separated from our owner, it could be prevented from migrating (if it has interest over the current actor),
 					// so the load balancing strategy could give us a worker different from where it should be.
 					// Instead, we read its currently assigned worker, which will eventually make us land where our owner is.
-					Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+					const Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
 					if (AuthorityIntent* OwnerAuthIntent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(OwnerId))
 					{
 						NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
@@ -149,6 +176,42 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 		Actor->OnAuthorityLost();
 	}
 	ActorsToMigrate.Empty();
+}
+
+void FSpatialLoadBalancingHandler::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId)
+{
+	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(&Actor);
+	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+
+	AuthorityIntent* AuthorityIntentComponent = AuthIntentStore.Find(EntityId);
+	check(AuthorityIntentComponent != nullptr);
+	checkf(AuthorityIntentComponent->VirtualWorkerId != NewAuthoritativeVirtualWorkerId,
+		   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
+		   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
+
+	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
+	UE_LOG(LogSpatialLoadBalancingHandler, Log,
+		   TEXT("(%s) Sending AuthorityIntent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
+		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
+
+	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
+
+	FSpatialGDKSpanId SpanId;
+	if (EventTracer != nullptr)
+	{
+		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
+	}
+
+	NetDriver->Connection->SendComponentUpdate(EntityId, &Update, SpanId);
+
+	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
+	// This should always happen with USLB.
+	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+
+	if (NetDriver->SpatialDebugger != nullptr)
+	{
+		NetDriver->SpatialDebuggerSystem->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
+	}
 }
 
 void FSpatialLoadBalancingHandler::UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const
@@ -225,7 +288,7 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 	// If a failure reason is returned log warning
 	if (!FailureReason.IsEmpty())
 	{
-		Worker_EntityId ActorEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+		const Worker_EntityId ActorEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 
 		// Check if we have recently logged this actor / reason and if so suppress the log
 		if (!NetDriver->IsLogged(ActorEntityId, ActorMigrationResult))
@@ -253,7 +316,7 @@ bool FSpatialLoadBalancingHandler::EvaluateRemoteMigrationComponent(const AActor
 	if (TargetActor != nullptr)
 	{
 		AActor* TargetNetOwner = GetReplicatedHierarchyRoot(TargetActor);
-		VirtualWorkerId TargetVirtualWorkerId = GetWorkerId(TargetNetOwner);
+		const VirtualWorkerId TargetVirtualWorkerId = GetWorkerId(TargetNetOwner);
 
 		if (TargetVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 		{
@@ -285,7 +348,7 @@ VirtualWorkerId FSpatialLoadBalancingHandler::GetWorkerId(const AActor* NetOwner
 	}
 	else
 	{
-		Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+		const Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
 		if (AuthorityIntent* OwnerAuthIntent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(OwnerId))
 		{
 			NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
@@ -293,3 +356,4 @@ VirtualWorkerId FSpatialLoadBalancingHandler::GetWorkerId(const AActor* NetOwner
 	}
 	return NewAuthVirtualWorkerId;
 }
+} // namespace SpatialGDK
