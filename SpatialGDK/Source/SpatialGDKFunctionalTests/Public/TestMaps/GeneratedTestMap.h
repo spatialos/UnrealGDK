@@ -55,6 +55,9 @@ protected:
 	// settings specifically for this test map
 	void SetCustomConfig(FString String) { CustomConfigString = String; }
 
+	// Use this to override the default number of clients when running the test map.
+	void SetNumberOfClients(int32 InNumberOfClients) { NumberOfClients = InNumberOfClients; }
+
 	UPROPERTY()
 	UWorld* World;
 	UPROPERTY()
@@ -72,4 +75,5 @@ private:
 	EMapCategory MapCategory;
 	FString MapName;
 	FString CustomConfigString;
+	TOptional<int32> NumberOfClients;
 };
