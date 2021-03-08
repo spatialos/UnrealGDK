@@ -45,17 +45,23 @@ void AGameModeReplicationTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	check(GetWorld()->GetGameState()->GameModeClass == AGameModeReplicationTestGameMode::StaticClass());
-
 	AuthorityServersCount = 0;
 
-	AddStep(TEXT("Changing replicated value on the authoritative server"), FWorkerDefinition::AllServers, nullptr, [this]() {
+	AddStep(TEXT("Check initial replicated value correct on all server"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		AGameModeReplicationTestGameMode* GameMode = Cast<AGameModeReplicationTestGameMode>(GetWorld()->GetAuthGameMode());
 
 		check(IsValid(GameMode));
 
 		AssertEqual_Int(GameMode->ReplicatedValue, AGameModeReplicationTestGameMode::StartingValue,
 						TEXT("Value on the GameMode before changing it"));
+
+		FinishStep();
+	});
+
+	AddStep(TEXT("Changing replicated value on the authoritative server"), FWorkerDefinition::AllServers, nullptr, [this]() {
+		AGameModeReplicationTestGameMode* GameMode = Cast<AGameModeReplicationTestGameMode>(GetWorld()->GetAuthGameMode());
+
+		check(IsValid(GameMode));
 
 		const bool bHasAuthorityOverGameMode = GameMode->HasAuthority();
 

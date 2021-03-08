@@ -87,8 +87,8 @@ void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const 
 }
 } // namespace
 
-FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, const RPCSender& InSenderInfo, ERPCType InType, RPCPayload&& InPayload,
-									 const FSpatialGDKSpanId& SpanId)
+FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, const RPCSender& InSenderInfo, ERPCType InType,
+									 RPCPayload&& InPayload, const FSpatialGDKSpanId& SpanId)
 	: ObjectRef(InTargetObjectRef)
 	, SenderRPCInfo(InSenderInfo)
 	, Payload(MoveTemp(InPayload))
@@ -98,8 +98,8 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 {
 }
 
-void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, const RPCSender& InSenderInfo, ERPCType Type, RPCPayload&& Payload,
-									  const FSpatialGDKSpanId& SpanId = {})
+void FRPCContainer::ProcessOrQueueRPC(const FUnrealObjectRef& TargetObjectRef, const RPCSender& InSenderInfo, ERPCType Type,
+									  RPCPayload&& Payload, const FSpatialGDKSpanId& SpanId = {})
 {
 	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Type).FindOrAdd(TargetObjectRef.Entity);
 

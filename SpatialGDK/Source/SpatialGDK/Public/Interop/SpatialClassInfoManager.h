@@ -27,6 +27,8 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 	case COND_ReplayOrOwner:
 	case COND_OwnerOnly:
 		return SCHEMA_OwnerOnly;
+	case COND_InitialOnly:
+		return SCHEMA_InitialOnly;
 	default:
 		return SCHEMA_Data;
 	}
@@ -75,6 +77,9 @@ struct FClassInfo
 
 	// Only for default Subobjects belonging to Actors
 	FName SubobjectName;
+
+	// Only true on class FClassInfos that represent a dynamic subobject
+	bool bDynamicSubobject = false;
 
 	// Only for Subobject classes
 	TArray<TSharedRef<const FClassInfo>> DynamicSubobjectInfo;

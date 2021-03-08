@@ -89,6 +89,7 @@ enum class ESchemaDatabaseVersion : uint8
 	BeforeVersionSupportAdded = 0,
 	VersionSupportAdded,
 	AlwaysWriteRPCAdded,
+	InitialOnlyDataAdded,
 
 	// Add new versions here
 
@@ -134,6 +135,9 @@ public:
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TArray<uint32> HandoverComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<uint32> InitialOnlyComponentsIds;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TArray<uint32> LevelComponentIds;
