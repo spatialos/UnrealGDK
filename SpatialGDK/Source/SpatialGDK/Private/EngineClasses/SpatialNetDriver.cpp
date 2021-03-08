@@ -1153,6 +1153,26 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 	RenamedStartupActors.Remove(ThisActor->GetFName());
 }
 
+void USpatialNetDriver::NotifyActorLevelUnloaded(AActor* Actor)
+{
+	// Intentionally does not call Super::NotifyActorLevelUnloaded.
+	// The native UNetDriver breaks the channel on the client because it can't properly close it
+	// until the server does, but we can clean it up because we don't send data through the channels.
+	// Cleaning it up also removes the references to the entity and channel from our maps.
+
+	// server
+	NotifyActorDestroyed(Actor, true);
+	// client
+	if (ServerConnection != nullptr)
+	{
+		UActorChannel* Channel = ServerConnection->FindActorChannelRef(Actor);
+		if (Channel != nullptr)
+		{
+			Channel->ConditionalCleanUp(false, EChannelCloseReason::LevelUnloaded);
+		}
+	}
+}
+
 void USpatialNetDriver::Shutdown()
 {
 	USpatialNetDriverDebugContext::DisableDebugSpatialGDK(this);
