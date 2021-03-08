@@ -126,8 +126,10 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
 	FRPCContainer RPCs(ERPCQueueType::Send);
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectStub::ProcessRPC));
 
-	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.SenderRPCInfo, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload), FSpatialGDKSpanId{});
-	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.SenderRPCInfo, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload), FSpatialGDKSpanId{});
+	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.SenderRPCInfo, ParamsUnreliable.Type,
+						   MoveTemp(ParamsUnreliable.Payload), FSpatialGDKSpanId{});
+	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.SenderRPCInfo, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload),
+						   FSpatialGDKSpanId{});
 
 	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsUnreliable.ObjectRef.Entity, AnyOtherSchemaComponentType));
 	TestTrue("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsReliable.ObjectRef.Entity, AnySchemaComponentType));
@@ -144,8 +146,10 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 	FRPCContainer RPCs(ERPCQueueType::Send);
 	RPCs.BindProcessingFunction(FProcessRPCDelegate::CreateUObject(TargetObject, &UObjectDummy::ProcessRPC));
 
-	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.SenderRPCInfo, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload), FSpatialGDKSpanId{});
-	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.SenderRPCInfo, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload), FSpatialGDKSpanId{});
+	RPCs.ProcessOrQueueRPC(ParamsUnreliable.ObjectRef, ParamsUnreliable.SenderRPCInfo, ParamsUnreliable.Type,
+						   MoveTemp(ParamsUnreliable.Payload), FSpatialGDKSpanId{});
+	RPCs.ProcessOrQueueRPC(ParamsReliable.ObjectRef, ParamsReliable.SenderRPCInfo, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload),
+						   FSpatialGDKSpanId{});
 
 	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsUnreliable.ObjectRef.Entity, AnyOtherSchemaComponentType));
 	TestFalse("Has queued RPCs", RPCs.ObjectHasRPCsQueuedOfType(ParamsReliable.ObjectRef.Entity, AnySchemaComponentType));
@@ -170,8 +174,10 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 		RPCIndices.FindOrAdd(AnyOtherSchemaComponentType).Push(ParamsUnreliable.Payload.Index);
 		RPCIndices.FindOrAdd(AnySchemaComponentType).Push(ParamsReliable.Payload.Index);
 
-		RPCs.ProcessOrQueueRPC(ObjectRef, ParamsUnreliable.SenderRPCInfo, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload), FSpatialGDKSpanId{});
-		RPCs.ProcessOrQueueRPC(ObjectRef, ParamsReliable.SenderRPCInfo, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload), FSpatialGDKSpanId{});
+		RPCs.ProcessOrQueueRPC(ObjectRef, ParamsUnreliable.SenderRPCInfo, ParamsUnreliable.Type, MoveTemp(ParamsUnreliable.Payload),
+							   FSpatialGDKSpanId{});
+		RPCs.ProcessOrQueueRPC(ObjectRef, ParamsReliable.SenderRPCInfo, ParamsReliable.Type, MoveTemp(ParamsReliable.Payload),
+							   FSpatialGDKSpanId{});
 	}
 
 	bool bProcessedInOrder = true;

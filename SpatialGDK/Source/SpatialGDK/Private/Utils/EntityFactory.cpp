@@ -231,10 +231,10 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
 
-	TArray<FWorkerComponentData> DynamicComponentDatas =
+	TArray<FWorkerComponentData> ActorDataComponents =
 		DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges, OutBytesWritten);
 
-	ComponentDatas.Append(DynamicComponentDatas);
+	ComponentDatas.Append(ActorDataComponents);
 
 	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
 
@@ -320,6 +320,11 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 			SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges, OutBytesWritten);
 
 		ComponentDatas.Add(SubobjectHandoverData);
+	}
+
+	if (DataFactory.WasInitialOnlyDataWritten())
+	{
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::INITIAL_ONLY_PRESENCE_COMPONENT_ID));
 	}
 }
 

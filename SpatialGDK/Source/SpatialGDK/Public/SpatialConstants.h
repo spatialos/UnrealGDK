@@ -39,6 +39,7 @@ enum ESchemaComponentType : int32
 	SCHEMA_Data, // Represents properties being replicated to all workers
 	SCHEMA_OwnerOnly,
 	SCHEMA_Handover,
+	SCHEMA_InitialOnly,
 
 	SCHEMA_Count,
 
@@ -111,13 +112,14 @@ const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
 const Worker_ComponentId PLAYER_CONTROLLER_COMPONENT_ID = 9991;
 const Worker_ComponentId SNAPSHOT_VERSION_COMPONENT_ID = 9990;
 
-const Worker_ComponentId SERVER_AUTH_COMPONENT_SET_ID = 9900;
-const Worker_ComponentId CLIENT_AUTH_COMPONENT_SET_ID = 9901;
-const Worker_ComponentId DATA_COMPONENT_SET_ID = 9902;
-const Worker_ComponentId OWNER_ONLY_COMPONENT_SET_ID = 9903;
-const Worker_ComponentId HANDOVER_COMPONENT_SET_ID = 9904;
-const Worker_ComponentId GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID = 9905;
-const Worker_ComponentId ROUTING_WORKER_AUTH_COMPONENT_SET_ID = 9906;
+const Worker_ComponentSetId SERVER_AUTH_COMPONENT_SET_ID = 9900;
+const Worker_ComponentSetId CLIENT_AUTH_COMPONENT_SET_ID = 9901;
+const Worker_ComponentSetId DATA_COMPONENT_SET_ID = 9902;
+const Worker_ComponentSetId OWNER_ONLY_COMPONENT_SET_ID = 9903;
+const Worker_ComponentSetId HANDOVER_COMPONENT_SET_ID = 9904;
+const Worker_ComponentSetId GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID = 9905;
+const Worker_ComponentSetId ROUTING_WORKER_AUTH_COMPONENT_SET_ID = 9906;
+const Worker_ComponentSetId INITIAL_ONLY_COMPONENT_SET_ID = 9907;
 
 const FString SERVER_AUTH_COMPONENT_SET_NAME = TEXT("ServerAuthoritativeComponentSet");
 const FString CLIENT_AUTH_COMPONENT_SET_NAME = TEXT("ClientAuthoritativeComponentSet");
@@ -125,6 +127,7 @@ const FString DATA_COMPONENT_SET_NAME = TEXT("DataComponentSet");
 const FString OWNER_ONLY_COMPONENT_SET_NAME = TEXT("OwnerOnlyComponentSet");
 const FString HANDOVER_COMPONENT_SET_NAME = TEXT("HandoverComponentSet");
 const FString ROUTING_WORKER_COMPONENT_SET_NAME = TEXT("RoutingWorkerComponentSet");
+const FString INITIAL_ONLY_COMPONENT_SET_NAME = TEXT("InitialOnlyComponentSet");
 
 const Worker_ComponentId NOT_STREAMED_COMPONENT_ID = 9986;
 const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID = 9984;
@@ -150,6 +153,7 @@ const Worker_ComponentId SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID = 9973;
 const Worker_ComponentId NET_OWNING_CLIENT_WORKER_COMPONENT_ID = 9971;
 const Worker_ComponentId MIGRATION_DIAGNOSTIC_COMPONENT_ID = 9969;
 const Worker_ComponentId PARTITION_SHADOW_COMPONENT_ID = 9967;
+const Worker_ComponentId INITIAL_ONLY_PRESENCE_COMPONENT_ID = 9966;
 
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
@@ -368,22 +372,23 @@ const FString EMPTY_TEST_MAP_PATH = TEXT("/SpatialGDK/Maps/Empty");
 const FString DEV_LOGIN_TAG = TEXT("dev_login");
 
 // A list of components clients require on top of any generated data components in order to handle non-authoritative actors correctly.
-const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST = TArray<Worker_ComponentId>{
-	// Actor components
-	UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, TOMBSTONE_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID, DORMANT_COMPONENT_ID,
+const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST =
+	TArray<Worker_ComponentId>{ // Actor components
+								UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, TOMBSTONE_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID,
+								DORMANT_COMPONENT_ID, INITIAL_ONLY_PRESENCE_COMPONENT_ID,
 
-	// Multicast RPCs
-	MULTICAST_RPCS_COMPONENT_ID,
+								// Multicast RPCs
+								MULTICAST_RPCS_COMPONENT_ID,
 
-	// Global state components
-	DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID,
+								// Global state components
+								DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID, GSM_SHUTDOWN_COMPONENT_ID,
 
-	// Debugging information
-	DEBUG_METRICS_COMPONENT_ID, SPATIAL_DEBUGGING_COMPONENT_ID,
+								// Debugging information
+								DEBUG_METRICS_COMPONENT_ID, SPATIAL_DEBUGGING_COMPONENT_ID,
 
-	// Actor tag
-	ACTOR_TAG_COMPONENT_ID
-};
+								// Actor tag
+								ACTOR_TAG_COMPONENT_ID
+	};
 
 // A list of components clients require on entities they are authoritative over on top of the components already checked out by the interest
 // query.

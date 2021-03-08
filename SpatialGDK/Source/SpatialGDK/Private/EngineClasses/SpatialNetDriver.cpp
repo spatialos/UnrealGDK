@@ -426,11 +426,16 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 		SnapshotManager = MakeUnique<SpatialSnapshotManager>();
 
-		if (GetDefault<USpatialGDKSettings>()->bAsyncLoadNewClassesOnEntityCheckout)
+		if (SpatialSettings->bAsyncLoadNewClassesOnEntityCheckout)
 		{
 			AsyncPackageLoadFilter = NewObject<UAsyncPackageLoadFilter>();
 			AsyncPackageLoadFilter->Init(
 				FOnPackageLoadedForEntity::CreateUObject(this, &USpatialNetDriver::OnAsyncPackageLoadFilterComplete));
+		}
+
+		if (SpatialSettings->bEnableInitialOnlyReplicationCondition && !IsServer())
+		{
+			InitialOnlyFilter = MakeUnique<SpatialGDK::InitialOnlyFilter>(*Connection, *Receiver);
 		}
 
 		CreateAndInitializeLoadBalancingClasses();
@@ -451,6 +456,18 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 				if (!AsyncPackageLoadFilter->IsAssetLoadedOrTriggerAsyncLoad(EntityId, Metadata.ClassPath))
 				{
 					return false;
+				}
+			}
+
+			if (InitialOnlyFilter != nullptr)
+			{
+				if (Element.Components.ContainsByPredicate(
+						SpatialGDK::ComponentIdEquality{ SpatialConstants::INITIAL_ONLY_PRESENCE_COMPONENT_ID }))
+				{
+					if (!InitialOnlyFilter->HasInitialOnlyDataOrRequestIfAbsent(EntityId))
+					{
+						return false;
+					}
 				}
 			}
 
@@ -2066,6 +2083,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			AsyncPackageLoadFilter->ProcessActorsFromAsyncLoading();
 		}
+
+		if (InitialOnlyFilter != nullptr)
+		{
+			InitialOnlyFilter->FlushRequests();
+		}
 	}
 }
 
@@ -3096,15 +3118,10 @@ void USpatialNetDriver::RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebug
 		}
 		else
 		{
-			const auto DebuggingFilter = [](const Worker_EntityId, const EntityViewElement& Element) -> bool {
-				return Element.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID });
-			};
-
-			const auto DebuggingCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-				SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID) };
-
+			// Ideally we filter for the SPATIAL_DEBUGGING_COMPONENT_ID here as well, however as filters aren't compositional currently, and
+			// it's more important for Actor correctness, for now we just rely on the existing Actor Filtering.
 			DebuggerSubViewPtr =
-				&Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, DebuggingFilter, DebuggingCallbacks);
+				&Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
 		}
 
 		check(DebuggerSubViewPtr != nullptr);

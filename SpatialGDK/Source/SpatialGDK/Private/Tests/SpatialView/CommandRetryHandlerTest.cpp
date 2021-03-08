@@ -29,7 +29,7 @@ const FComponentSetData ComponentSetData = { { { TestComponentSetId, { TestCompo
 
 EntityQuery CreateTestEntityQuery()
 {
-	Worker_EntityQuery WorkerEntityQuery;
+	Worker_EntityQuery WorkerEntityQuery{};
 	WorkerEntityQuery.constraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
 	WorkerEntityQuery.constraint.constraint.entity_id_constraint = Worker_EntityIdConstraint{ TestEntityId };
 	WorkerEntityQuery.snapshot_result_type_component_id_count = 1;
