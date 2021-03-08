@@ -382,7 +382,7 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 	}
 	if (NetDriver->StartRTTest == true)
 	{
-		NetDriver->SetTestEndTime(Op.request_id);
+		NetDriver->SetTestEndTime(CreateEntityResponseOp.request_id);
 	}
 	else if (EventTracer != nullptr)
 	{
