@@ -19,7 +19,6 @@
 #include "SpatialGDKEditorPackageAssembly.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKFunctionalTests/Public/SpatialFunctionalTest.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialLaunchConfigCustomization.h"
 #include "SpatialRuntimeVersionCustomization.h"
@@ -27,8 +26,6 @@
 #include "Engine/World.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "EngineUtils.h"
-#include "IAutomationControllerModule.h"
-#include "SpatialFunctionalTest.h"
 #include "Utils/LaunchConfigurationEditor.h"
 #include "WorkerTypeCustomization.h"
 
@@ -38,6 +35,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorModule);
 
 FSpatialGDKEditorModule::FSpatialGDKEditorModule()
 	: CommandLineArgsManager(MakeUnique<FSpatialGDKEditorCommandLineArgsManager>())
+	, SpatialTestSettings(MakeUnique<FSpatialTestSettings>())
 {
 }
 
@@ -51,24 +49,6 @@ void FSpatialGDKEditorModule::StartupModule()
 	// This is relying on the module loading phase - SpatialGDKServices module should be already loaded
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalReceptionistProxyServerManager = GDKServices.GetLocalReceptionistProxyServerManager();
-
-	// Allow Spatial Plugin to stop PIE after Automation Manager completes the tests
-	IAutomationControllerModule& AutomationControllerModule =
-		FModuleManager::LoadModuleChecked<IAutomationControllerModule>(TEXT("AutomationController"));
-	IAutomationControllerManagerPtr AutomationController = AutomationControllerModule.GetAutomationController();
-	AutomationController->OnTestsComplete().AddLambda([]() {
-		// Make sure to clear the snapshot in case something happened with Tests (or they weren't ran properly).
-		ASpatialFunctionalTest::ClearAllTakenSnapshots();
-
-#if ENGINE_MINOR_VERSION < 25
-		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->EditorWorld != nullptr)
-#else
-		if (GetDefault<USpatialGDKEditorSettings>()->bStopPIEOnTestingCompleted && GEditor->IsPlayingSessionInEditor())
-#endif
-		{
-			GEditor->EndPlayMap();
-		}
-	});
 }
 
 void FSpatialGDKEditorModule::ShutdownModule()
@@ -297,78 +277,17 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 	return false;
 }
 
-FPlayInEditorSettingsOverride FSpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(UWorld* World) const
+void FSpatialGDKEditorModule::OverrideSettingsForTesting(UWorld* World, const FString& MapName)
 {
-	// By default, clear that the runtime/test was loaded from a snapshot taken for a given world.
-	ASpatialFunctionalTest::ClearLoadedFromTakenSnapshot();
+	SpatialTestSettings->Override(MapName);
 
-	FPlayInEditorSettingsOverride PIESettingsOverride = ISpatialGDKEditorModule::GetPlayInEditorSettingsOverrideForTesting(World);
-	if (const ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
-	{
-		EMapTestingMode TestingMode = SpatialWorldSettings->TestingSettings.TestingMode;
-		if (TestingMode != EMapTestingMode::UseCurrentSettings)
-		{
-			TActorIterator<ASpatialFunctionalTest> SpatialTestIt(World);
-			if (TestingMode == EMapTestingMode::Detect)
-			{
-				if (SpatialTestIt)
-				{
-					TestingMode = EMapTestingMode::ForceSpatial;
-				}
-				else
-				{
-					TActorIterator<AFunctionalTest> NativeTestIt(World);
-					if (!NativeTestIt)
-					{
-						// if there's no AFunctionalTests assume it's a Unit Test, so use current settings
-						return PIESettingsOverride;
-					}
-					TestingMode = EMapTestingMode::ForceNativeOffline;
-				}
-			}
+	OverrideSettingsForTestingDelegate.Broadcast(World, MapName);
+}
 
-			int NumberOfClients = 1;
-
-			PIESettingsOverride.bUseSpatial = false; // turn off by default
-
-			switch (TestingMode)
-			{
-			case EMapTestingMode::ForceNativeOffline:
-				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_Standalone;
-				break;
-			case EMapTestingMode::ForceNativeAsListenServer:
-				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_ListenServer;
-				break;
-			case EMapTestingMode::ForceNativeAsClient:
-				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_Client;
-				break;
-			case EMapTestingMode::ForceSpatial:
-				PIESettingsOverride.bUseSpatial = true; // turn on for Spatial
-				PIESettingsOverride.PlayNetMode = EPlayNetMode::PIE_Client;
-				for (; SpatialTestIt; ++SpatialTestIt)
-				{
-					NumberOfClients = FMath::Max(SpatialTestIt->GetNumRequiredClients(), NumberOfClients);
-				}
-				{
-					FString SnapshotForMap = ASpatialFunctionalTest::GetTakenSnapshotPath(World);
-
-					if (!SnapshotForMap.IsEmpty())
-					{
-						PIESettingsOverride.ForceUseSnapshot = SnapshotForMap;
-						// Set that we're loading from taken snapshot.
-						ASpatialFunctionalTest::SetLoadedFromTakenSnapshot();
-					}
-				}
-				break;
-			default:
-				checkf(false, TEXT("Unsupported Testing Mode"));
-				break;
-			}
-
-			PIESettingsOverride.NumberOfClients = NumberOfClients;
-		}
-	}
-	return PIESettingsOverride;
+void FSpatialGDKEditorModule::RevertSettingsForTesting()
+{
+	// Revert settings from ini file
+	SpatialTestSettings->Revert();
 }
 
 bool FSpatialGDKEditorModule::ShouldStartLocalServer() const

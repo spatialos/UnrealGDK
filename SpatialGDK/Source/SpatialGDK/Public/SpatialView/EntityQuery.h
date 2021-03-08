@@ -33,6 +33,7 @@ private:
 	void StoreChildConstraints(const Worker_Constraint& Constraint, int32 Index);
 
 	TArray<Worker_ComponentId> SnapshotComponentIds;
+	TArray<Worker_ComponentId> SnapshotComponentSetIds;
 	TArray<Worker_Constraint> Constraints; // Stable pointer storage.
 };
 

@@ -43,4 +43,6 @@ public:
 	TSharedPtr<FUICommandInfo> CloudDeployment;
 	TSharedPtr<FUICommandInfo> ToggleSpatialDebuggerEditor;
 	TSharedPtr<FUICommandInfo> ToggleMultiWorkerEditor;
+
+	TSharedPtr<FUICommandInfo> GenerateTestMaps;
 };

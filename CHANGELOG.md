@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a function flag `AlwaysWrite` that allows specifying an RPC to use a separate channel and allow overwriting unacked RPC calls. This is currently limited to Unreliable Server RPCs on classes inheriting from AActor, and only one such RPC can be specified per actor. This feature is disabled by default and can be enabled via `bEnableAlwaysWriteRPCs` setting.
 - Enhanced server logging to include load balancing and local worker info on startup.
 - Added 'Persistent' spatial class flag, typically used to override a non persistent base class.
+- Added a button to generate functional test maps from the editor. It can be found under **Window** > **Generate test maps**.
+- Added versioning to snapshots. Attempting to load an incompatible snapshot will fail, and output error logs that request the snapshot be regenerated.
+- Add feature flag bEnableInitialOnlyReplicationCondition for COND_InitialOnly support.
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
@@ -27,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where resetting handover property to default value would be omitted during handover value replication
 - Fixed EntityPool capacity overflow issue by removing the ability from the gdk settings to request a pool size larger than int32_max.
 - Fixed an issue where components added to a scene actor would be replicated incorrectly.
+- Fixed an issue where an actor channel was added to the wrong net connection.
+- Fixed an issue where an auto generated launch config was giving the client worker too many permissions.
+- Fixed an issue where authority was not correctly delegated to sublevel world settings prior to BeginPlay being issued. This resulted in duplicate world settings entities being created.
 
 ## [`0.12.0`] - 2021-02-01
 
