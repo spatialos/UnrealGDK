@@ -18,6 +18,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
+#include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
@@ -26,6 +27,7 @@
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "Interop/ClientConnectionManager.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/RPCExecutor.h"
@@ -499,6 +501,19 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, USpatialLatencyTracer::GetTracer(GetWorld()),
 															   Connection->GetEventTracer(), this);
+
+		if (IsServer())
+		{
+			ServerRPCs = NewObject<USpatialNetDriverServerRPC>();
+			ServerRPCs->Init(this, ActorAuthSubview, ActorSubview);
+			NetDriverRPCs = ServerRPCs;
+		}
+		else
+		{
+			ClientRPCs = NewObject<USpatialNetDriverClientRPC>();
+			ClientRPCs->Init(this, ActorAuthSubview, ActorSubview);
+			NetDriverRPCs = ClientRPCs;
+		}
 
 		CrossServerRPCSender =
 			MakeUnique<SpatialGDK::CrossServerRPCSender>(Connection->GetCoordinator(), SpatialMetrics, Connection->GetEventTracer());
@@ -1820,6 +1835,80 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		}
 	}
 
+	SpatialGDK::SpatialEventTracer* EventTracer = Connection->GetEventTracer();
+
+	switch (Info.Type)
+	{
+	case ERPCType::ClientReliable:
+	{
+		FSpatialGDKSpanId SpanId;
+		if (EventTracer != nullptr)
+		{
+			SpanId = EventTracer->TraceEvent(SpatialGDK::FSpatialTraceEventBuilder::CreatePushRPC(CallingObject, Function),
+				/* Causes */ EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1);
+		}
+
+		FRPCPayload NewPayload;
+		NewPayload.Index = Payload.Index;
+		NewPayload.Offset = Payload.Offset;
+		NewPayload.PayloadData = Payload.PayloadData;
+		ServerRPCs->ClientReliableQueue->Push(CallingObjectRef.Entity, MoveTemp(NewPayload), FSpatialGDKSpanId(SpanId));
+		ServerRPCs->FlushRPCQueue(CallingObjectRef.Entity, *ServerRPCs->ClientReliableQueue);
+		return ;
+	}
+	case ERPCType::ClientUnreliable:
+	{
+		FSpatialGDKSpanId SpanId;
+		if (EventTracer != nullptr)
+		{
+			SpanId = EventTracer->TraceEvent(SpatialGDK::FSpatialTraceEventBuilder::CreatePushRPC(CallingObject, Function),
+				/* Causes */ EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1);
+		}
+
+		FRPCPayload NewPayload;
+		NewPayload.Index = Payload.Index;
+		NewPayload.Offset = Payload.Offset;
+		NewPayload.PayloadData = Payload.PayloadData;
+		ServerRPCs->ClientUnreliableQueue->Push(CallingObjectRef.Entity, MoveTemp(NewPayload), FSpatialGDKSpanId(SpanId));
+		ServerRPCs->FlushRPCQueue(CallingObjectRef.Entity, *ServerRPCs->ClientUnreliableQueue);
+		return ;
+	}
+	case ERPCType::ServerReliable:
+	{
+		FSpatialGDKSpanId SpanId;
+		if (EventTracer != nullptr)
+		{
+			SpanId = EventTracer->TraceEvent(SpatialGDK::FSpatialTraceEventBuilder::CreatePushRPC(CallingObject, Function),
+				/* Causes */ EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1);
+		}
+
+		FRPCPayload NewPayload;
+		NewPayload.Index = Payload.Index;
+		NewPayload.Offset = Payload.Offset;
+		NewPayload.PayloadData = Payload.PayloadData;
+		ClientRPCs->ServerReliableQueue->Push(CallingObjectRef.Entity, MoveTemp(NewPayload), FSpatialGDKSpanId(SpanId));
+		ClientRPCs->FlushRPCQueue(CallingObjectRef.Entity, *ClientRPCs->ServerReliableQueue);
+		return;
+	}
+	case ERPCType::ServerUnreliable:
+	{
+		FSpatialGDKSpanId SpanId;
+		if (EventTracer != nullptr)
+		{
+			SpanId = EventTracer->TraceEvent(SpatialGDK::FSpatialTraceEventBuilder::CreatePushRPC(CallingObject, Function),
+				/* Causes */ EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1);
+		}
+
+		FRPCPayload NewPayload;
+		NewPayload.Index = Payload.Index;
+		NewPayload.Offset = Payload.Offset;
+		NewPayload.PayloadData = Payload.PayloadData;
+		ClientRPCs->ServerUnreliableQueue->Push(CallingObjectRef.Entity, MoveTemp(NewPayload), FSpatialGDKSpanId(SpanId));
+		ClientRPCs->FlushRPCQueue(CallingObjectRef.Entity, *ClientRPCs->ServerUnreliableQueue);
+		return;
+	}
+	}
+
 	RPCService->ProcessOrQueueOutgoingRPC(CallingObjectRef, SenderInfo, MoveTemp(Payload));
 }
 
@@ -2029,6 +2118,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				RPCService->AdvanceView();
 			}
 
+			if (NetDriverRPCs)
+			{
+				NetDriverRPCs->AdvanceView();
+			}
+
 			if (DebugCtx != nullptr)
 			{
 				DebugCtx->AdvanceView();
@@ -2059,6 +2153,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			if (RPCService.IsValid())
 			{
 				RPCService->ProcessChanges(GetElapsedTime());
+			}
+
+			if (NetDriverRPCs)
+			{
+				NetDriverRPCs->ProcessReceivedRPCs();
 			}
 
 			if (WellKnownEntitySystem.IsValid())
@@ -2246,6 +2345,11 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	if (RPCService != nullptr)
 	{
 		RPCService->PushUpdates();
+	}
+
+	if (NetDriverRPCs)
+	{
+		NetDriverRPCs->FlushRPCUpdates();
 	}
 
 	if (IsServer())

@@ -6,7 +6,8 @@
 #include "Utils/RepLayoutUtils.h"
 
 #include "Interop/RPCs/RPCQueues.h"
-
+#include "Interop/RPCs/SpatialRPCService_2_Receivers.h"
+#include "Interop/RPCs/SpatialRPCService_2_Senders.h"
 using namespace SpatialGDK;
 
 void FRPCMetaData::ComputeSpanId(FName Name, SpatialGDK::SpatialEventTracer& Tracer, SpatialGDK::EntityComponentId EntityComponent,
@@ -91,7 +92,7 @@ void USpatialNetDriverRPC::Init(USpatialNetDriver* InNetDriver, const SpatialGDK
 {
 	NetDriver = InNetDriver;
 	LatencyTracer = USpatialLatencyTracer::GetTracer(InNetDriver->GetWorld());
-	EventTracer = InNetDriver->Connection->GetEventTracer();
+	EventTracer = /*InNetDriver->Connection->GetEventTracer()*/ nullptr;
 	RPCService = MakeUnique<SpatialGDK::RPCService>(InActorNonAuthSubView, InActorAuthSubView);
 
 	{
@@ -333,13 +334,37 @@ void USpatialNetDriverRPC::MakeRingBufferWithACKSender(FName QueueName, ERPCType
 													   TUniquePtr<RPCBufferSender>& SenderPtr,
 													   TUniquePtr<TRPCQueue<FRPCPayload, FSpatialGDKSpanId>>& QueuePtr)
 {
-	// TODO
+	auto RPCDesc = RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
+
+	RPCService::RPCQueueDescription Desc;
+	auto Sender = MakeUnique<SchemaMonotonicRingBufferWithACKSender>(
+		RPCRingBufferUtils::GetRingBufferComponentId(RPCType), RPCDesc.LastSentRPCFieldId, RPCDesc.SchemaFieldStart, RPCDesc.RingBufferSize,
+		RPCRingBufferUtils::GetAckComponentId(RPCType), RPCRingBufferUtils::GetAckFieldId(RPCType));
+	Desc.Sender = Sender.Get();
+
+	QueuePtr = MakeUnique<TRPCLocalOverflowQueue<FRPCPayload, FSpatialGDKSpanId>>(QueueName, *Sender);
+	Desc.Queue = QueuePtr.Get();
+	Desc.Authority = AuthoritySet;
+
+	RPCService->AddRPCQueue(QueueName, MoveTemp(Desc));
+	SenderPtr.Reset(Sender.Release());
 }
 
 void USpatialNetDriverRPC::MakeRingBufferWithACKReceiver(FName ReceiverName, ERPCType RPCType, Worker_ComponentSetId AuthoritySet,
 														 TUniquePtr<TRPCBufferReceiver<FRPCPayload, TimestampAndETWrapper>>& ReceiverPtr)
 {
-	// TODO
+	auto RPCDesc = RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
+
+	ReceiverPtr = MakeUnique<SchemaMonotonicRingBufferWithACKReceiver>(
+		TimestampAndETWrapper<FRPCPayload>(ReceiverName, RPCRingBufferUtils::GetRingBufferComponentId(RPCType), EventTracer),
+		RPCRingBufferUtils::GetRingBufferComponentId(RPCType), RPCDesc.LastSentRPCFieldId, RPCDesc.SchemaFieldStart, RPCDesc.RingBufferSize,
+		RPCRingBufferUtils::GetAckComponentId(RPCType), RPCRingBufferUtils::GetAckFieldId(RPCType));
+
+	RPCService::RPCReceiverDescription Desc;
+	Desc.Authority = AuthoritySet;
+	Desc.Receiver = ReceiverPtr.Get();
+
+	RPCService->AddRPCReceiver(ReceiverName, MoveTemp(Desc));
 }
 
 USpatialNetDriverServerRPC::USpatialNetDriverServerRPC() {}

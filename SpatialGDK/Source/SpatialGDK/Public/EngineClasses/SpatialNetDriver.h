@@ -53,6 +53,9 @@ class USpatialSender;
 class USpatialStaticComponentView;
 class USpatialWorkerConnection;
 class USpatialWorkerFlags;
+class USpatialNetDriverRPC;
+class USpatialNetDriverClientRPC;
+class USpatialNetDriverServerRPC;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -205,6 +208,11 @@ public:
 	USpatialNetDriverDebugContext* DebugCtx;
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
+	UPROPERTY()
+	USpatialNetDriverRPC* NetDriverRPCs;
+
+	USpatialNetDriverServerRPC* ServerRPCs = nullptr;
+	USpatialNetDriverClientRPC* ClientRPCs = nullptr;
 
 	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
 	FFilterPredicate ActorFilter;
