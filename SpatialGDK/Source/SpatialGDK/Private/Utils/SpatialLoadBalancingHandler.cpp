@@ -4,8 +4,6 @@
 
 #include "EngineClasses/Components/RemotePossessionComponent.h"
 #include "EngineClasses/SpatialActorChannel.h"
-#include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "Schema/AuthorityIntent.h"
@@ -16,7 +14,7 @@ DEFINE_LOG_CATEGORY(LogSpatialLoadBalancingHandler);
 
 using namespace SpatialGDK;
 
-FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver)
+SpatialGDK::FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 {
 }

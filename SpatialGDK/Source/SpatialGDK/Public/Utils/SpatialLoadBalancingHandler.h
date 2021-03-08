@@ -7,25 +7,29 @@
 #include "Utils/SpatialActorUtils.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalancingHandler, Log, All);
+class USpatialNetDriver;
+
+namespace SpatialGDK
+{
+class SpatialEventTracer;
+class FSubView;
 
 class FSpatialLoadBalancingHandler
 {
 public:
-	FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver);
+	FSpatialLoadBalancingHandler(USpatialNetDriver* InNetDriver, const FSubView& InSubView, SpatialEventTracer* InEventTracer);
+	void AdvanceView();
 
 	// Iterates over the list of actors to replicate, to check if they should migrate to another worker
 	// and collects additional actors to replicate if needed.
 	template <typename ReplicationContext>
 	void EvaluateActorsToMigrate(ReplicationContext& iCtx)
 	{
-		check(NetDriver->LoadBalanceStrategy != nullptr);
-		check(NetDriver->LockingPolicy != nullptr);
-
 		for (AActor* Actor : iCtx.GetActorsBeingReplicated())
 		{
 			AActor* NetOwner;
 			VirtualWorkerId NewAuthWorkerId;
-			EvaluateActorResult Result = EvaluateSingleActor(Actor, NetOwner, NewAuthWorkerId);
+			const EvaluateActorResult Result = EvaluateSingleActor(Actor, NetOwner, NewAuthWorkerId);
 			switch (Result)
 			{
 			case EvaluateActorResult::Migrate:
@@ -45,6 +49,8 @@ public:
 			case EvaluateActorResult::RemoveAdditional:
 				iCtx.RemoveAdditionalActor(Actor);
 				break;
+			default:
+				break;
 			}
 		}
 	}
@@ -53,6 +59,7 @@ public:
 
 	// Sends the migration instructions and update actor authority.
 	void ProcessMigrations();
+	void SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId);
 
 	enum class EvaluateActorResult
 	{
@@ -110,7 +117,12 @@ protected:
 	VirtualWorkerId GetWorkerId(const AActor* NetOwner);
 
 	USpatialNetDriver* NetDriver;
+	const FSubView* SubView;
+	SpatialEventTracer* EventTracer;
 
 	TMap<AActor*, VirtualWorkerId> ActorsToMigrate;
 	TSet<AActor*> TempActorsToMigrate;
+
+	TMap<Worker_EntityId_Key, AuthorityIntent> AuthIntentStore;
 };
+} // namespace SpatialGDK

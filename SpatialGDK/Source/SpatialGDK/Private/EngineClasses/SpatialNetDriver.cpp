@@ -540,6 +540,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			return;
 		}
 
+		LoadBalancingHandler = MakeShared<SpatialGDK::FSpatialLoadBalancingHandler>(this, ActorAuthSubview, Connection->GetEventTracer());
+
 		SpatialGDK::FSubView& WellKnownSubView =
 			Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
 													   SpatialGDK::FSubView::NoDispatcherCallbacks);
