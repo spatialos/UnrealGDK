@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestSingleServerDynamicComponents.h"
+
+#include "SpatialGDKSettings.h"
 #include "TestDynamicComponent.h"
 #include "TestDynamicComponentActor.h"
 
@@ -44,10 +46,20 @@ void ASpatialTestSingleServerDynamicComponents::PrepareTest()
 {
 	Super::PrepareTest();
 
+	bInitialOnlyEnabled = GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition;
+
 	// The Server spawns the TestActor and immediately after it creates and attaches the OnSpawnComponent.
 	AddStep(TEXT("SpatialTestSingleServerDynamicComponentsServerSpawnTestActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		if (bInitialOnlyEnabled)
+		{
+			AddExpectedLogError(TEXT("Dynamic component using InitialOnly data. This data will not be sent."), 5, false);
+		}
+
 		TestActor = GetWorld()->SpawnActor<ATestDynamicComponentActor>(ActorSpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
 		TestActor->OnSpawnComponent = CreateAndAttachTestDynamicComponentToActor(TestActor, TEXT("OnSpawnDynamicComponent1"));
+		TestActor->OnSpawnComponent->OwnerOnlyReplicatedVar = 101;
+		TestActor->OnSpawnComponent->InitialOnlyReplicatedVar = 102;
+		TestActor->OnSpawnComponent->HandoverReplicatedVar = 103;
 
 		FinishStep();
 	});
@@ -73,6 +85,9 @@ void ASpatialTestSingleServerDynamicComponents::PrepareTest()
 
 			// Create and attach the LateAddedComponent.
 			TestActor->LateAddedComponent = CreateAndAttachTestDynamicComponentToActor(TestActor, TEXT("LateAddedDynamicComponent1"));
+			TestActor->LateAddedComponent->OwnerOnlyReplicatedVar = 201;
+			TestActor->LateAddedComponent->InitialOnlyReplicatedVar = 202;
+			TestActor->LateAddedComponent->HandoverReplicatedVar = 203;
 
 			FinishStep();
 		});
@@ -93,6 +108,10 @@ void ASpatialTestSingleServerDynamicComponents::PrepareTest()
 					   TEXT("Reference from the on-spawn dynamic component to its parent works."));
 			AssertTrue(TestActor->OnSpawnComponent->ReferencesArray[1] == this,
 					   TEXT("Reference from the on-spawn dynamic component to the test works."));
+			AssertTrue(TestActor->OnSpawnComponent->OwnerOnlyReplicatedVar == 0, TEXT("Owner only property incorrectly replicated."));
+			AssertTrue(TestActor->OnSpawnComponent->InitialOnlyReplicatedVar == (bInitialOnlyEnabled ? 0 : 102),
+					   TEXT("Initial only property incorrectly replicated."));
+			AssertTrue(TestActor->OnSpawnComponent->HandoverReplicatedVar == 0, TEXT("Handover property incorrectly replicated."));
 
 			// Check the references for the PostInitializeComponent
 			AssertTrue(TestActor->PostInitializeComponent->ReferencesArray[0] == TestActor,
@@ -105,6 +124,10 @@ void ASpatialTestSingleServerDynamicComponents::PrepareTest()
 					   TEXT("Reference from the late-created dynamic component to its parent works."));
 			AssertTrue(TestActor->LateAddedComponent->ReferencesArray[1] == this,
 					   TEXT("Reference from the late-created dynamic component to the test works."));
+			AssertTrue(TestActor->LateAddedComponent->OwnerOnlyReplicatedVar == 0, TEXT("Owner only property incorrectly replicated."));
+			AssertTrue(TestActor->LateAddedComponent->InitialOnlyReplicatedVar == (bInitialOnlyEnabled ? 0 : 202),
+					   TEXT("Initial only property incorrectly replicated."));
+			AssertTrue(TestActor->LateAddedComponent->HandoverReplicatedVar == 0, TEXT("Handover property incorrectly replicated."));
 
 			FinishStep();
 		},
@@ -144,11 +167,17 @@ void ASpatialTestSingleServerDynamicComponents::PrepareTest()
 		TestActor->OnSpawnComponent->ReferencesArray.SetNum(4);
 		TestActor->OnSpawnComponent->ReferencesArray[2] = this;
 		TestActor->OnSpawnComponent->ReferencesArray[3] = TestActor;
+		TestActor->OnSpawnComponent->OwnerOnlyReplicatedVar = 301;
+		TestActor->OnSpawnComponent->InitialOnlyReplicatedVar = 302;
+		TestActor->OnSpawnComponent->HandoverReplicatedVar = 303;
 
 		TestActor->LateAddedComponent = CreateAndAttachTestDynamicComponentToActor(TestActor, TEXT("LateAddedDynamicComponent2"));
 		TestActor->LateAddedComponent->ReferencesArray.SetNum(4);
 		TestActor->LateAddedComponent->ReferencesArray[2] = TestActor;
 		TestActor->LateAddedComponent->ReferencesArray[3] = this;
+		TestActor->LateAddedComponent->OwnerOnlyReplicatedVar = 401;
+		TestActor->LateAddedComponent->InitialOnlyReplicatedVar = 402;
+		TestActor->LateAddedComponent->HandoverReplicatedVar = 403;
 
 		FinishStep();
 	});
@@ -165,11 +194,19 @@ void ASpatialTestSingleServerDynamicComponents::PrepareTest()
 					   TEXT("Reference from the on-spawn dynamic component to the test works after swapping."));
 			AssertTrue(TestActor->OnSpawnComponent->ReferencesArray[3] == TestActor,
 					   TEXT("Reference from the on-spawn dynamic component to its parent works after swapping."));
+			AssertTrue(TestActor->OnSpawnComponent->OwnerOnlyReplicatedVar == 0, TEXT("Owner only property incorrectly replicated."));
+			AssertTrue(TestActor->OnSpawnComponent->InitialOnlyReplicatedVar == (bInitialOnlyEnabled ? 0 : 302),
+					   TEXT("Initial only property incorrectly replicated."));
+			AssertTrue(TestActor->OnSpawnComponent->HandoverReplicatedVar == 0, TEXT("Handover property incorrectly replicated."));
 
 			AssertTrue(TestActor->LateAddedComponent->ReferencesArray[2] == TestActor,
 					   TEXT("Reference from the late-created dynamic component to its parent works."));
 			AssertTrue(TestActor->LateAddedComponent->ReferencesArray[3] == this,
 					   TEXT("Reference from the late-created dynamic component to the test works."));
+			AssertTrue(TestActor->LateAddedComponent->OwnerOnlyReplicatedVar == 0, TEXT("Owner only property incorrectly replicated."));
+			AssertTrue(TestActor->LateAddedComponent->InitialOnlyReplicatedVar == (bInitialOnlyEnabled ? 0 : 402),
+					   TEXT("Initial only property incorrectly replicated."));
+			AssertTrue(TestActor->LateAddedComponent->HandoverReplicatedVar == 0, TEXT("Handover property incorrectly replicated."));
 
 			FinishStep();
 		},

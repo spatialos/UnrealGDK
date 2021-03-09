@@ -7,7 +7,7 @@
 
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
-#include "Test1x2GridStrategy.h"
+#include "TestWorkerSettings.h"
 
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Kismet/GameplayStatics.h"
@@ -27,7 +27,8 @@ USpatialTestLoadBalancingDataMultiWorkerSettings::USpatialTestLoadBalancingDataM
 	WorkerLayers[0].ActorClasses.Add(ASpatialTestLoadBalancingDataActor::StaticClass());
 	WorkerLayers.Add(
 		{ TEXT("Offloaded"), { ASpatialTestLoadBalancingDataOffloadedActor::StaticClass() }, USingleWorkerStrategy::StaticClass() });
-	WorkerLayers.Add({ TEXT("Grid"), { ASpatialTestLoadBalancingDataZonedActor::StaticClass() }, UTest1x2GridStrategy::StaticClass() });
+	WorkerLayers.Add(
+		{ TEXT("Grid"), { ASpatialTestLoadBalancingDataZonedActor::StaticClass() }, UTest1x2FullInterestGridStrategy::StaticClass() });
 }
 
 ASpatialTestLoadBalancingDataActor::ASpatialTestLoadBalancingDataActor()

@@ -26,6 +26,7 @@
 #include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "Interop/ClientConnectionManager.h"
+#include "Interop/InitialOnlyFilter.h"
 #include "Interop/LoadBalancingWriter.h"
 #include "Interop/RPCExecutorInterface.h"
 #include "Interop/WellKnownEntitySystem.h"
@@ -130,7 +131,7 @@ public:
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
 	// When the AcceptingPlayers/SessionID state on the GSM has changed this method will be called.
-	void OnGSMQuerySuccess();
+	void ClientOnGSMQuerySuccess();
 	void RetryQueryGSM();
 	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
 
@@ -222,6 +223,7 @@ public:
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
+	TUniquePtr<SpatialGDK::InitialOnlyFilter> InitialOnlyFilter;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 

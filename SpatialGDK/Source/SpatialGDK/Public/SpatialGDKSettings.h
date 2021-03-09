@@ -433,6 +433,17 @@ public:
 	UPROPERTY(Config)
 	bool bEnableAlwaysWriteRPCs;
 
+	/**	-- EXPERIMENTAL --
+		Enables initial only replication condition. There are some caveats to this functionality that should be understood before enabling.
+		When enabled, initial only data on dynamic components will not be replicated and will result in a runtime warning.
+		When enabled, initial only data may not be consistent with the data on the rest of the actor. For instance if all data is written
+		on an actor in epoch 1, and then again in epoch 2, it's possible for an actor to receive the epoch 1 of initial only data, but
+		the epoch 2 of the rest of the actor's data.
+		When disabled, initial only data will be replicated per the COND_None condition.
+		*/
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Enable Initial Only Replication Condition"))
+	bool bEnableInitialOnlyReplicationCondition;
+
 	/*
 	 * Enables writing of ActorSetMember and ActorGroupMember components to load balancing entities
 	 */

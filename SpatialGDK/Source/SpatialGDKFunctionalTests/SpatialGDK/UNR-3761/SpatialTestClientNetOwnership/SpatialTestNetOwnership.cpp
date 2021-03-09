@@ -1,11 +1,14 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestNetOwnership.h"
-#include "NetOwnershipCube.h"
-#include "SpatialFunctionalTestFlowController.h"
 
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "NetOwnershipCube.h"
+#include "SpatialFunctionalTestFlowController.h"
+#include "TestWorkerSettings.h"
 
 /**
  * This test automates the Client Net Ownership gym which demonstrates that in a zoned environment, setting client net-ownership of an Actor
@@ -37,7 +40,7 @@
 ASpatialTestNetOwnership::ASpatialTestNetOwnership()
 	: Super()
 {
-	Author = "Andrei";
+	Author = TEXT("Andrei");
 	Description = TEXT("Test Net Ownership");
 }
 
@@ -168,4 +171,20 @@ void ASpatialTestNetOwnership::PrepareTest()
 			}
 		},
 		10.0f);
+}
+
+USpatialTestNetOwnershipMap::USpatialTestNetOwnershipMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialTestNetOwnershipMap"))
+{
+}
+
+void USpatialTestNetOwnershipMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the tests
+	AddActorToLevel<ASpatialTestNetOwnership>(CurrentLevel, FTransform::Identity);
+
+	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest2x2FullInterestWorkerSettings::StaticClass());
 }

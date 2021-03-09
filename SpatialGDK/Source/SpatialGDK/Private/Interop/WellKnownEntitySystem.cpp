@@ -85,6 +85,9 @@ void WellKnownEntitySystem::ProcessComponentAdd(const Worker_ComponentId Compone
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		GlobalStateManager->ApplyDeploymentMapData(Data);
 		break;
+	case SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID:
+		GlobalStateManager->ApplySnapshotVersionData(Data);
+		break;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Data);
 		break;

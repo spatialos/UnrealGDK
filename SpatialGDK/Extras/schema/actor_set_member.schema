@@ -2,7 +2,7 @@
 package unreal;
 
 component ActorSetMember {
-	id = 9966;
+	id = 9965;
 	
 	EntityId leader_entity = 1;
 }

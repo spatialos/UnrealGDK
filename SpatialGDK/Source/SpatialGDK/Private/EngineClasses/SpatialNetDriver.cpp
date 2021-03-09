@@ -426,11 +426,16 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 		SnapshotManager = MakeUnique<SpatialSnapshotManager>();
 
-		if (GetDefault<USpatialGDKSettings>()->bAsyncLoadNewClassesOnEntityCheckout)
+		if (SpatialSettings->bAsyncLoadNewClassesOnEntityCheckout)
 		{
 			AsyncPackageLoadFilter = NewObject<UAsyncPackageLoadFilter>();
 			AsyncPackageLoadFilter->Init(
 				FOnPackageLoadedForEntity::CreateUObject(this, &USpatialNetDriver::OnAsyncPackageLoadFilterComplete));
+		}
+
+		if (SpatialSettings->bEnableInitialOnlyReplicationCondition && !IsServer())
+		{
+			InitialOnlyFilter = MakeUnique<SpatialGDK::InitialOnlyFilter>(*Connection, *Receiver);
 		}
 
 		CreateAndInitializeLoadBalancingClasses();
@@ -451,6 +456,18 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 				if (!AsyncPackageLoadFilter->IsAssetLoadedOrTriggerAsyncLoad(EntityId, Metadata.ClassPath))
 				{
 					return false;
+				}
+			}
+
+			if (InitialOnlyFilter != nullptr)
+			{
+				if (Element.Components.ContainsByPredicate(
+						SpatialGDK::ComponentIdEquality{ SpatialConstants::INITIAL_ONLY_PRESENCE_COMPONENT_ID }))
+				{
+					if (!InitialOnlyFilter->HasInitialOnlyDataOrRequestIfAbsent(EntityId))
+					{
+						return false;
+					}
 				}
 			}
 
@@ -644,9 +661,34 @@ bool USpatialNetDriver::ClientCanSendPlayerSpawnRequests() const
 	return GlobalStateManager->GetAcceptingPlayers() && SessionId == GlobalStateManager->GetSessionId();
 }
 
-void USpatialNetDriver::OnGSMQuerySuccess()
+void USpatialNetDriver::ClientOnGSMQuerySuccess()
 {
 	StartupClientDebugString.Empty();
+
+	auto FlagNetworkFailure = [this](const FString& ErrorString) {
+		if (USpatialGameInstance* GameInstance = GetGameInstance())
+		{
+			if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+			{
+				GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, ErrorString);
+			}
+		}
+	};
+
+	const uint64 SnapshotVersion = GlobalStateManager->GetSnapshotVersion();
+	if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != SnapshotVersion) // Are we running with the same snapshot version?
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error,
+			   TEXT("Your client's snapshot version does not match your deployment's snapshot version. Client version: = '%llu', Server "
+					"version = '%llu'"),
+			   SnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
+
+		FlagNetworkFailure(
+			TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot."));
+
+		return;
+	}
+
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
 	if (bWaitingToSpawn && ClientCanSendPlayerSpawnRequests())
 	{
@@ -657,16 +699,8 @@ void USpatialNetDriver::OnGSMQuerySuccess()
 				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
 				   ClassInfoManager->SchemaDatabase->SchemaBundleHash, ServerHash);
 
-			if (USpatialGameInstance* GameInstance = GetGameInstance())
-			{
-				if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
-				{
-					GEngine->BroadcastNetworkFailure(
-						GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient,
-						TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
-					return;
-				}
-			}
+			FlagNetworkFailure(TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
+			return;
 		}
 
 		UWorld* CurrentWorld = GetWorld();
@@ -761,7 +795,7 @@ void USpatialNetDriver::GSMQueryDelegateFunction(const Worker_EntityQueryRespons
 		return;
 	}
 
-	OnGSMQuerySuccess();
+	ClientOnGSMQuerySuccess();
 }
 
 void USpatialNetDriver::QueryGSMToLoadMap()
@@ -831,7 +865,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	if (IsServer())
+	if (IsServer() && WellKnownEntitySystem.IsValid())
 	{
 		WellKnownEntitySystem->OnMapLoaded();
 	}
@@ -2062,6 +2096,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			AsyncPackageLoadFilter->ProcessActorsFromAsyncLoading();
 		}
+
+		if (InitialOnlyFilter != nullptr)
+		{
+			InitialOnlyFilter->FlushRequests();
+		}
 	}
 }
 
@@ -3092,15 +3131,10 @@ void USpatialNetDriver::RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebug
 		}
 		else
 		{
-			const auto DebuggingFilter = [](const Worker_EntityId, const EntityViewElement& Element) -> bool {
-				return Element.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID });
-			};
-
-			const auto DebuggingCallbacks = { Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-				SpatialConstants::SPATIAL_DEBUGGING_COMPONENT_ID) };
-
+			// Ideally we filter for the SPATIAL_DEBUGGING_COMPONENT_ID here as well, however as filters aren't compositional currently, and
+			// it's more important for Actor correctness, for now we just rely on the existing Actor Filtering.
 			DebuggerSubViewPtr =
-				&Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, DebuggingFilter, DebuggingCallbacks);
+				&Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
 		}
 
 		check(DebuggerSubViewPtr != nullptr);
