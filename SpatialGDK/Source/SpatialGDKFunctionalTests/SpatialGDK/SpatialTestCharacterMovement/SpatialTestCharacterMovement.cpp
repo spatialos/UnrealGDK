@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestCharacterMovement.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestCharacterMigration/SpatialTestCharacterMigration.h"
 #include "Components/BoxComponent.h"
 #include "Engine/TriggerBox.h"
 #include "GameFramework/PlayerController.h"
@@ -36,38 +37,12 @@ ASpatialTestCharacterMovement::ASpatialTestCharacterMovement()
 	Description = TEXT("Test Character Movement");
 }
 
-void ASpatialTestCharacterMovement::OnOverlapBegin(AActor* OverlappedActor, AActor* OtherActor)
-{
-	ATestMovementCharacter* OveralappingCharacter = Cast<ATestMovementCharacter>(OtherActor);
-
-	if (OveralappingCharacter)
-	{
-		bCharacterReachedDestination = true;
-	}
-}
-
 void ASpatialTestCharacterMovement::PrepareTest()
 {
 	Super::PrepareTest();
 
-	// Universal setup step to create the TriggerBox and to set the helper variable
-	AddStep(TEXT("UniversalSetupStep"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
-		bCharacterReachedDestination = false;
-
-		ATriggerBox* TriggerBox =
-			GetWorld()->SpawnActor<ATriggerBox>(FVector(232.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
-
-		UBoxComponent* BoxComponent = Cast<UBoxComponent>(TriggerBox->GetCollisionComponent());
-		if (BoxComponent)
-		{
-			BoxComponent->SetBoxExtent(FVector(10.0f, 1.0f, 1.0f));
-		}
-
-		TriggerBox->OnActorBeginOverlap.AddDynamic(this, &ASpatialTestCharacterMovement::OnOverlapBegin);
-		RegisterAutoDestroyActor(TriggerBox);
-
-		FinishStep();
-	});
+	Origin = FVector(0.0f, 0.0f, 50.0f);
+	Destination = FVector(232.0f, 0.0f, 40.0f);
 
 	// The server checks if the clients received a TestCharacterMovement and moves them to the mentioned locations
 	AddStep(TEXT("SpatialTestCharacterMovementServerSetupStep"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -87,7 +62,7 @@ void ASpatialTestCharacterMovement::PrepareTest()
 
 			if (FlowControllerId == 1)
 			{
-				PlayerCharacter->SetActorLocation(FVector(0.0f, 0.0f, 50.0f));
+				PlayerCharacter->SetActorLocation(Origin);
 			}
 			else
 			{
@@ -117,6 +92,11 @@ void ASpatialTestCharacterMovement::PrepareTest()
 
 			PlayerCharacter->AddMovementInput(FVector(1, 0, 0), 1.0f);
 
+			bCharacterReachedDestination =
+				ASpatialTestCharacterMigration::GetTargetDistanceOnLine(Origin, Destination, PlayerCharacter->GetActorLocation())
+				> -20.0f; // 20cm overlap
+
+
 			if (bCharacterReachedDestination)
 			{
 				AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the autonomous proxy."));
@@ -129,10 +109,30 @@ void ASpatialTestCharacterMovement::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestChracterMovementServerCheckMovementVisibility"), FWorkerDefinition::Server(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-			if (bCharacterReachedDestination)
+
+			
+			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
-				AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the server."));
-				FinishStep();
+				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
+				{
+					continue;
+				}
+
+				AController* PlayerController = Cast<AController>(FlowController->GetOwner());
+				ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
+
+				if (FlowController->WorkerDefinition.Id == 1)
+				{
+					bCharacterReachedDestination =
+						ASpatialTestCharacterMigration::GetTargetDistanceOnLine(Origin, Destination, PlayerCharacter->GetActorLocation())
+						> -20.0f; // 20cm overlap
+
+					if (bCharacterReachedDestination)
+					{
+						AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the server."));
+						FinishStep();
+					}
+				}
 			}
 		},
 
@@ -142,10 +142,29 @@ void ASpatialTestCharacterMovement::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestCharacterMovementClient2CheckMovementVisibility"), FWorkerDefinition::Client(2), nullptr, nullptr,
 		[this](float DeltaTime) {
-			if (bCharacterReachedDestination)
+			AController* Client2PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
+			ATestMovementCharacter* Client2PlayerCharacter = Cast<ATestMovementCharacter>(Client2PlayerController->GetPawn());
+
+			TArray<AActor*> FoundActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATestMovementCharacter::StaticClass(), FoundActors);
+
+			for (AActor* PlayerCharacter : FoundActors)
 			{
-				AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the simulated proxy"));
-				FinishStep();
+				if (PlayerCharacter == Client2PlayerCharacter)
+				{
+					// Ignore the player character that client 2 controls
+					continue;
+				}
+
+				bCharacterReachedDestination =
+					ASpatialTestCharacterMigration::GetTargetDistanceOnLine(Origin, Destination, PlayerCharacter->GetActorLocation())
+					> -20.0f; // 20cm overlap
+
+				if (bCharacterReachedDestination)
+				{
+					AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the simulated proxy"));
+					FinishStep();
+				}
 			}
 		},
 		5.0f);

@@ -16,6 +16,7 @@ class ASpatialTestCharacterMigration : public ASpatialFunctionalTest
 public:
 	ASpatialTestCharacterMigration();
 
+	static float GetTargetDistanceOnLine(const FVector& From, const FVector& Target, const FVector& Location);
 	virtual void PrepareTest() override;
 
 	FVector Origin;
