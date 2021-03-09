@@ -5,6 +5,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
+#include "Schema/ActorGroupMember.h"
 #include "Utils/LayerInfo.h"
 #include "Utils/SpatialActorUtils.h"
 
@@ -45,7 +46,7 @@ void ULayeredLBStrategy::SetLayers(const TArray<FLayerInfo>& WorkerLayers)
 	check(WorkerLayers.Num() != 0);
 
 	// For each Layer, add a LB Strategy for that layer.
-	for (int LayerIndex = 0; LayerIndex < WorkerLayers.Num(); ++LayerIndex)
+	for (int32 LayerIndex = 0; LayerIndex < WorkerLayers.Num(); ++LayerIndex)
 	{
 		const FLayerInfo& LayerInfo = WorkerLayers[LayerIndex];
 		checkf(*LayerInfo.LoadBalanceStrategy != nullptr,
@@ -58,10 +59,10 @@ void ULayeredLBStrategy::SetLayers(const TArray<FLayerInfo>& WorkerLayers)
 		for (const TSoftClassPtr<AActor>& ClassPtr : LayerInfo.ActorClasses)
 		{
 			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr.GetAssetName());
-			ClassPathToLayerName.Add(ClassPtr, LayerInfo.Name);
+			ClassPathToLayerName.Emplace(ClassPtr, LayerInfo.Name);
 		}
 
-		LayerData.Add(LayerInfo.Name, { LayerInfo.Name, LayerIndex });
+		LayerData.Emplace(LayerInfo.Name, FLayerData{ LayerInfo.Name, LayerIndex });
 	}
 }
 
@@ -153,7 +154,15 @@ SpatialGDK::FActorLoadBalancingGroupId ULayeredLBStrategy::GetActorGroupId(const
 {
 	const FName ActorLayerName = GetLayerNameForActor(Actor);
 
-	return LayerData.FindChecked(ActorLayerName).LayerIndex + 1;
+	const int32 ActorGroupIndex = LayerData.FindChecked(ActorLayerName).LayerIndex + 1;
+
+	const UAbstractLBStrategy* ChildLBStrategy = LayerNameToLBStrategy[ActorLayerName];
+
+	const SpatialGDK::FActorLoadBalancingGroupId ChildGroupId = ChildLBStrategy->GetActorGroupId(Actor);
+
+	const uint32 CombinedGroupId = HashCombine(static_cast<uint32>(ActorGroupIndex), static_cast<uint32>(ChildGroupId));
+
+	return CombinedGroupId;
 }
 
 SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
@@ -333,7 +342,7 @@ FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) 
 	}
 
 	// No mapping found so set and return default actor group.
-	ClassPathToLayerName.Add(TSoftClassPtr<AActor>(Class), SpatialConstants::DefaultLayer);
+	ClassPathToLayerName.Emplace(TSoftClassPtr<AActor>(Class), SpatialConstants::DefaultLayer);
 	return SpatialConstants::DefaultLayer;
 }
 

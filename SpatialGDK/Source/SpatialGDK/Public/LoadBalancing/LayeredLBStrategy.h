@@ -77,7 +77,7 @@ private:
 	struct FLayerData
 	{
 		FName LayerName;
-		int LayerIndex;
+		int32 LayerIndex;
 	};
 
 	TMap<FName, FLayerData> LayerData;
