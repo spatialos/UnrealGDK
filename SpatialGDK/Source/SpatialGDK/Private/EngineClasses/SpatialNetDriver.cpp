@@ -867,7 +867,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	if (IsServer())
 	{
-		if (WellKnownEntitySystem != nullptr)
+		if (WellKnownEntitySystem.IsValid())
 		{
 			WellKnownEntitySystem->OnMapLoaded();
 		}
