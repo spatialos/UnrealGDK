@@ -1,12 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestCharacterMovement.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestCharacterMigration/SpatialTestCharacterMigration.h"
 #include "Components/BoxComponent.h"
 #include "Engine/TriggerBox.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestCharacterMigration/SpatialTestCharacterMigration.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 
 /**
@@ -96,7 +96,6 @@ void ASpatialTestCharacterMovement::PrepareTest()
 				ASpatialTestCharacterMigration::GetTargetDistanceOnLine(Origin, Destination, PlayerCharacter->GetActorLocation())
 				> -20.0f; // 20cm overlap
 
-
 			if (bCharacterReachedDestination)
 			{
 				AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the autonomous proxy."));
@@ -109,8 +108,6 @@ void ASpatialTestCharacterMovement::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestChracterMovementServerCheckMovementVisibility"), FWorkerDefinition::Server(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-
-			
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
 				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)

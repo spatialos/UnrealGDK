@@ -13,9 +13,6 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "TestWorkerSettings.h"
 
-
-
-
 /**
  * This test moves a character backward and forward repeatedly between two workers, adding actors. Based on the SpatialTestCharacterMovement
  * test. This test requires the CharacterMovementTestGameMode, trying to run this test on a different game mode will fail.
