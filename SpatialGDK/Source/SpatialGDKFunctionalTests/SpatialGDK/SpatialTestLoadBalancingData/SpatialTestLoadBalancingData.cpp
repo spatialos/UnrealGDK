@@ -27,7 +27,7 @@ void USpatialTestLoadBalancingDataTestMap::CreateCustomContentForMap()
 {
 	Super::CreateCustomContentForMap();
 
-	Cast<ASpatialWorldSettings>(World->GetWorldSettings())
+	CastChecked<ASpatialWorldSettings>(World->GetWorldSettings())
 		->SetMultiWorkerSettingsClass(USpatialTestLoadBalancingDataMultiWorkerSettings::StaticClass());
 
 	AddActorToLevel<ASpatialTestLoadBalancingData>(World->GetCurrentLevel(), FTransform::Identity);
