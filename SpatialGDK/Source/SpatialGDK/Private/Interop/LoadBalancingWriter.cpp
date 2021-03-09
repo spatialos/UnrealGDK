@@ -10,58 +10,30 @@
 
 namespace SpatialGDK
 {
-void FLoadBalancingWriterBase::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate& ComponentUpdate)
+ActorSetMember LoadBalancingWriterActorSet::GetActorSetData(AActor* Actor) const
 {
-	NetDriver->Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+	const AActor* LeaderActor = GetReplicatedHierarchyRoot(Actor);
+	check(IsValid(LeaderActor));
+
+	const Worker_EntityId LeaderEntityId = PackageMap.GetEntityIdFromObject(LeaderActor);
+	check(LeaderEntityId != SpatialConstants::INVALID_ENTITY_ID);
+
+	return ActorSetMember(LeaderEntityId);
 }
 
-class LoadBalancingWriterActorSet : public TLoadBalancingWriter<ActorSetMember>
+void LoadBalancingWriterActorSet::UpdateActorSetComponent(Worker_EntityId ActorEntityId, AActor* Actor) const
 {
-public:
-	explicit LoadBalancingWriterActorSet(USpatialNetDriver* NetDriver)
-		: TLoadBalancingWriter<ActorSetMember>(NetDriver)
-	{
-	}
-
-private:
-	virtual ActorSetMember GetLoadBalancingData(AActor* Actor) const override
-	{
-		const AActor* LeaderActor = GetReplicatedHierarchyRoot(Actor);
-		check(IsValid(LeaderActor));
-
-		const Worker_EntityId LeaderEntityId = NetDriver->PackageMap->GetEntityIdFromObject(LeaderActor);
-		check(LeaderEntityId != SpatialConstants::INVALID_ENTITY_ID);
-
-		return ActorSetMember(LeaderEntityId);
-	}
-};
-
-class LoadBalancingWriterActorGroup : public TLoadBalancingWriter<ActorGroupMember>
-{
-public:
-	explicit LoadBalancingWriterActorGroup(USpatialNetDriver* NetDriver)
-		: TLoadBalancingWriter<ActorGroupMember>(NetDriver)
-	{
-	}
-
-private:
-	virtual ActorGroupMember GetLoadBalancingData(AActor* Actor) const override
-	{
-		return ActorGroupMember(NetDriver->LoadBalanceStrategy->GetActorGroupId(*Actor));
-	}
-};
-
-LoadBalancingWriter::LoadBalancingWriter(USpatialNetDriver* InNetDriver)
-	: NetDriver(InNetDriver)
-	, ActorSetWriter(MakeUnique<LoadBalancingWriterActorSet>(InNetDriver))
-	, ActorGroupWriter(MakeUnique<LoadBalancingWriterActorGroup>(InNetDriver))
-
-{
+	Schema_ComponentUpdate* ptr = Schema_CopyComponentUpdate(GetActorSetData(Actor).CreateComponentUpdate().schema_type);
+	SendComponentUpdate(ActorEntityId, ComponentUpdate(OwningComponentUpdatePtr(ptr), ActorSetMember::ComponentId));
 }
 
-void LoadBalancingWriter::OnActorReplicated(Worker_EntityId ActorEntityId, AActor* Actor) const
+void LoadBalancingWriterActorSet::SendComponentUpdate(Worker_EntityId EntityId, const ComponentUpdate& ComponentUpdate) const
 {
-	ActorSetWriter->ReplicateActor(ActorEntityId, Actor);
+	Coordinator.SendComponentUpdate(EntityId, ComponentUpdate.DeepCopy(), FSpatialGDKSpanId());
 }
 
+ActorGroupMember LoadBalancingWriterActorGroup::GetActorGroupData(AActor* Actor) const
+{
+	return ActorGroupMember(LoadBalancingStrategy.GetActorGroupId(*Actor));
+}
 } // namespace SpatialGDK

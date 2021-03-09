@@ -51,7 +51,7 @@ public:
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	TWeakObjectPtr<UObject> GetObjectFromEntityId(const Worker_EntityId EntityId);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(const UObject* Object);
-	Worker_EntityId GetEntityIdFromObject(const UObject* Object);
+	Worker_EntityId GetEntityIdFromObject(const UObject* Object) const;
 
 	AActor* GetUniqueActorInstanceByClassRef(const FUnrealObjectRef& ClassRef);
 	AActor* GetUniqueActorInstanceByClass(UClass* Class) const;

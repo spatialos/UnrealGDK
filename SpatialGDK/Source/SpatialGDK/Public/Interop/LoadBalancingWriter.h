@@ -11,74 +11,43 @@
 #include "SpatialView/SubView.h"
 
 class USpatialNetDriver;
+class UAbstractLBStrategy;
 
 namespace SpatialGDK
 {
-class FLoadBalancingWriterBase
+class ViewCoordinator;
+
+class LoadBalancingWriterActorSet
 {
 public:
-	FLoadBalancingWriterBase(USpatialNetDriver* InNetDriver)
-		: NetDriver(InNetDriver)
+	explicit LoadBalancingWriterActorSet(ViewCoordinator& InCoordinator, const USpatialPackageMapClient& InPackageMap)
+		: Coordinator(InCoordinator)
+		, PackageMap(InPackageMap)
 	{
 	}
 
-	void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate& ComponentUpdate);
+	ActorSetMember GetActorSetData(AActor* Actor) const;
 
-protected:
-	USpatialNetDriver* NetDriver;
-};
-
-template <class TComponent>
-class TLoadBalancingWriter : public FLoadBalancingWriterBase
-{
-public:
-	TLoadBalancingWriter(USpatialNetDriver* NetDriver)
-		: FLoadBalancingWriterBase(NetDriver)
-	{
-	}
-
-	virtual ~TLoadBalancingWriter() {}
-
-	void ReplicateActor(Worker_EntityId ActorEntityId, AActor* Actor)
-	{
-		LoadBalancingData* PresentDataPtr = DataStore.Find(ActorEntityId);
-		const TComponent UpdatedData = GetLoadBalancingData(Actor);
-		if (PresentDataPtr != nullptr)
-		{
-			if (!ShouldUpdateComponent(PresentDataPtr->Data, UpdatedData))
-			{
-				return;
-			}
-		}
-		DataStore.Add(ActorEntityId, { UpdatedData });
-		FWorkerComponentUpdate ComponentUpdate = UpdatedData.CreateComponentUpdate();
-		SendComponentUpdate(ActorEntityId, ComponentUpdate);
-	}
-
-	virtual TComponent GetLoadBalancingData(AActor* Actor) const = 0;
-
-	virtual bool ShouldUpdateComponent(const TComponent& PresentData, const TComponent& UpdatedData) const { return true; }
-
-protected:
-	struct LoadBalancingData
-	{
-		TComponent Data;
-	};
+	void UpdateActorSetComponent(Worker_EntityId ActorEntityId, AActor* Actor) const;
 
 private:
-	TMap<Worker_EntityId_Key, LoadBalancingData> DataStore;
+	void SendComponentUpdate(Worker_EntityId EntityId, const ComponentUpdate& ComponentUpdate) const;
+
+	ViewCoordinator& Coordinator;
+	const USpatialPackageMapClient& PackageMap;
 };
 
-class LoadBalancingWriter
+class LoadBalancingWriterActorGroup
 {
 public:
-	LoadBalancingWriter(USpatialNetDriver* InNetDriver);
+	explicit LoadBalancingWriterActorGroup(const UAbstractLBStrategy& InLoadBalancingStrategy)
+		: LoadBalancingStrategy(InLoadBalancingStrategy)
+	{
+	}
 
-	void OnActorReplicated(Worker_EntityId ActorEntityId, AActor* Actor) const;
+	ActorGroupMember GetActorGroupData(AActor* Actor) const;
 
-	TWeakObjectPtr<USpatialNetDriver> NetDriver;
-
-	TUniquePtr<TLoadBalancingWriter<ActorSetMember>> ActorSetWriter;
-	TUniquePtr<TLoadBalancingWriter<ActorGroupMember>> ActorGroupWriter;
+private:
+	const UAbstractLBStrategy& LoadBalancingStrategy;
 };
 } // namespace SpatialGDK

@@ -1200,11 +1200,11 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 void USpatialNetDriver::ProcessOwnershipChanges()
 {
 	const bool bShouldWriteLoadBalancingData = GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents;
-	TOptional<const SpatialGDK::LoadBalancingWriter> LoadBalancingWriter;
+	TOptional<const SpatialGDK::LoadBalancingWriterActorSet> LoadBalancingWriter;
 
 	if (bShouldWriteLoadBalancingData)
 	{
-		LoadBalancingWriter.Emplace(this);
+		LoadBalancingWriter.Emplace(Connection->GetCoordinator(), *PackageMap);
 	}
 
 	for (Worker_EntityId EntityId : OwnershipChangedEntities)
@@ -1213,7 +1213,7 @@ void USpatialNetDriver::ProcessOwnershipChanges()
 		{
 			if (bShouldWriteLoadBalancingData)
 			{
-				LoadBalancingWriter->OnActorReplicated(EntityId, Channel->Actor);
+				LoadBalancingWriter->UpdateActorSetComponent(EntityId, Channel->Actor);
 			}
 
 			Channel->ServerProcessOwnershipChange();
