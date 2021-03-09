@@ -125,6 +125,11 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		FWorkerTypeLaunchSection ClientWorker;
 		ClientWorker.NumEditorInstances = 0;
 		ClientWorker.WorkerTypeName = SpatialConstants::DefaultClientWorkerType;
+		ClientWorker.WorkerPermissions.bAllowEntityCreation = false;
+		ClientWorker.WorkerPermissions.bAllowEntityDeletion = false;
+		ClientWorker.WorkerPermissions.bDisconnectWorker = false;
+		ClientWorker.WorkerPermissions.bReserveEntityID = false;
+		ClientWorker.WorkerPermissions.bAllowEntityQuery = true;
 		WriteWorkerSection(Writer, ClientWorker);
 
 		// For cloud configs we always add the SimulatedPlayerCoordinator and DeploymentManager.

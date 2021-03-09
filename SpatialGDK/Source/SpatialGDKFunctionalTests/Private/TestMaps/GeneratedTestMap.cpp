@@ -48,7 +48,22 @@ bool UGeneratedTestMap::GenerateMap()
 
 bool UGeneratedTestMap::GenerateCustomConfig()
 {
-	if (CustomConfigString.IsEmpty())
+	FString CustomConfigContent = CustomConfigString;
+
+	// If specified, append the setting to set the number of clients.
+	if (NumberOfClients.IsSet())
+	{
+		if (!CustomConfigString.IsEmpty())
+		{
+			CustomConfigContent += LINE_TERMINATOR;
+		}
+		// clang-format off
+		CustomConfigContent += FString::Printf(TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
+											   TEXT("PlayNumberOfClients=%d"), NumberOfClients.GetValue());
+		// clang-format on
+	}
+
+	if (CustomConfigContent.IsEmpty())
 	{
 		// Only create a custom config file if we have something meaningful to write so we don't pollute the file system too much
 		return true;
@@ -56,7 +71,8 @@ bool UGeneratedTestMap::GenerateCustomConfig()
 
 	const FString OverrideSettingsFilename =
 		FSpatialTestSettings::GeneratedOverrideSettingsBaseFilename + MapName + FSpatialTestSettings::OverrideSettingsFileExtension;
-	return FFileHelper::SaveStringToFile(CustomConfigString, *OverrideSettingsFilename);
+
+	return FFileHelper::SaveStringToFile(CustomConfigContent, *OverrideSettingsFilename);
 }
 
 FString UGeneratedTestMap::GetGeneratedMapFolder()
@@ -83,7 +99,9 @@ void UGeneratedTestMap::GenerateBaseMap()
 	// Make the initial platform much much larger so things don't fall off for tests which use a large area (visibility test)
 	Plane->SetActorScale3D(FVector(10000, 10000, 1));
 
-	APlayerStart* PlayerStart = AddActorToLevel<APlayerStart>(CurrentLevel, FTransform(FVector(-500, 0, 100)));
+	// Default player start location is chosen so that players spawn on server 1 by default.
+	// Individual test maps can change this if necessary.
+	APlayerStart* PlayerStart = AddActorToLevel<APlayerStart>(CurrentLevel, FTransform(FVector(-100, -100, 100)));
 
 	// TODO: Maybe figure out how to set the default viewpoint when opening the map, so we don't start in the ground (maybe together with
 	// other viewing position issues), ticket: UNR-4975.

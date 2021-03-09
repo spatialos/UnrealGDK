@@ -51,6 +51,12 @@ SchemaResultType InterestFactory::CreateClientNonAuthInterestResultType()
 	// Add all data components- clients don't need to see handover or owner only components on other entities.
 	ClientNonAuthResultType.ComponentSetsIds.Push(SpatialConstants::DATA_COMPONENT_SET_ID);
 
+	// If Initial Only is disabled, add full interest in the Initial Only data
+	if (!GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition)
+	{
+		ClientNonAuthResultType.ComponentSetsIds.Push(SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID);
+	}
+
 	return ClientNonAuthResultType;
 }
 
@@ -66,6 +72,12 @@ SchemaResultType InterestFactory::CreateClientAuthInterestResultType()
 	ClientAuthResultType.ComponentSetsIds.Push(SpatialConstants::DATA_COMPONENT_SET_ID);
 	ClientAuthResultType.ComponentSetsIds.Push(SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID);
 
+	// If Initial Only is disabled, add full interest in the Initial Only data
+	if (!GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition)
+	{
+		ClientAuthResultType.ComponentSetsIds.Push(SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID);
+	}
+
 	return ClientAuthResultType;
 }
 
@@ -76,10 +88,11 @@ SchemaResultType InterestFactory::CreateServerNonAuthInterestResultType()
 	// Add the required unreal components
 	ServerNonAuthResultType.ComponentIds.Append(SpatialConstants::REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST);
 
-	// Add all data, owner only, and handover components
+	// Add all data, owner only, handover and initial only components
 	ServerNonAuthResultType.ComponentSetsIds.Push(SpatialConstants::DATA_COMPONENT_SET_ID);
 	ServerNonAuthResultType.ComponentSetsIds.Push(SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID);
 	ServerNonAuthResultType.ComponentSetsIds.Push(SpatialConstants::HANDOVER_COMPONENT_SET_ID);
+	ServerNonAuthResultType.ComponentSetsIds.Push(SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID);
 
 	return ServerNonAuthResultType;
 }

@@ -565,6 +565,9 @@ int64 USpatialActorChannel::ReplicateActor()
 	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial,
 		   RepFlags.bNetOwner);
 
+	// Always replicate initial only properties and rely on QBI to filter where necessary.
+	RepFlags.bNetInitial = true;
+
 	FMemMark MemMark(FMemStack::Get()); // The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in
 										// ::PostSendBunch. we free it below
 

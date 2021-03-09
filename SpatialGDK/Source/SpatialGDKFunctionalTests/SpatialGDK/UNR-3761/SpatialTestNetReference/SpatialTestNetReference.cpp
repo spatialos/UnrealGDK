@@ -224,3 +224,16 @@ void ASpatialTestNetReference::PrepareTest()
 		FinishStep();
 	});
 }
+
+USpatialTestNetReferenceMap::USpatialTestNetReferenceMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialTestNetReferenceMap"))
+{
+}
+
+void USpatialTestNetReferenceMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the test
+	AddActorToLevel<ASpatialTestNetReference>(CurrentLevel, FTransform::Identity);
+}

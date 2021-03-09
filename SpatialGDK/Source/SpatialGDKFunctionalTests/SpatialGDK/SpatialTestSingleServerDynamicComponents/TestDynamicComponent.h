@@ -21,4 +21,13 @@ public:
 
 	UPROPERTY(Replicated)
 	TArray<AActor*> ReferencesArray;
+
+	UPROPERTY(Replicated)
+	int32 OwnerOnlyReplicatedVar;
+
+	UPROPERTY(Replicated)
+	int32 InitialOnlyReplicatedVar;
+
+	UPROPERTY(Handover)
+	int32 HandoverReplicatedVar;
 };
