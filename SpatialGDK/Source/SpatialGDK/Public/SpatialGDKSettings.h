@@ -447,6 +447,6 @@ public:
 	/*
 	 * Enables writing of ActorSetMember and ActorGroupMember components to load balancing entities
 	 */
-	UPROPERTY(Config)
+	UPROPERTY(EditAnywhere, Config, Category = "Replication")
 	bool bEnableStrategyLoadBalancingComponents;
 };
