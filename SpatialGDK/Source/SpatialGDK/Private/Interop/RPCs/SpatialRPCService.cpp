@@ -11,7 +11,6 @@
 #include "Interop/SpatialStaticComponentView.h"
 #include "Net/NetworkProfiler.h"
 #include "SpatialConstants.h"
-#include "SpatialGDKLLM.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialLatencyTracer.h"
 
@@ -49,7 +48,7 @@ SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const F
 
 void SpatialRPCService::AdvanceView()
 {
-	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::RPCService);
+	LLM_PLATFORM_SCOPE(ELLMTag::SpatialRPCService);
 	ClientServerRPCs.AdvanceView();
 	MulticastRPCs.AdvanceView();
 	if (CrossServerRPCs)

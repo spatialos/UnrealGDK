@@ -6,7 +6,6 @@
 #include "EngineGlobals.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "SpatialGDKLLM.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/SchemaUtils.h"
 
@@ -34,7 +33,7 @@ void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetSe
 
 void USpatialMetrics::TickMetrics(float NetDriverTime)
 {
-	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::SpatialMetrics);
+	LLM_PLATFORM_SCOPE(ELLMTag::SpatialMetrics);
 	FramesSinceLastReport++;
 
 	TimeSinceLastReport = NetDriverTime - TimeOfLastReport;

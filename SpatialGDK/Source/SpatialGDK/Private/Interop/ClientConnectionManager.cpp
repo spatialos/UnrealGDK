@@ -8,7 +8,6 @@
 #include "Improbable/SpatialEngineConstants.h"
 #include "Interop/SpatialOSDispatcherInterface.h"
 #include "Interop/SpatialReceiver.h"
-#include "SpatialGDKLLM.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SubView.h"
 
@@ -26,7 +25,7 @@ ClientConnectionManager::ClientConnectionManager(const FSubView& InSubView, USpa
 
 void ClientConnectionManager::Advance()
 {
-	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::ClientConnectionManager);
+	LLM_PLATFORM_SCOPE(ELLMTag::SpatialClientConnectionManager);
 	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
 	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
 	{

@@ -13,7 +13,6 @@
 #include "Schema/Restricted.h"
 #include "Schema/Tombstone.h"
 #include "SpatialConstants.h"
-#include "SpatialGDKLLM.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SubView.h"
 #include "Utils/ComponentFactory.h"
@@ -149,7 +148,7 @@ ActorSystem::ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneS
 
 void ActorSystem::Advance()
 {
-	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::ActorSystem);
+	LLM_PLATFORM_SCOPE(ELLMTag::SpatialActorSystem);
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{
 		if (Delta.Type == EntityDelta::ADD)

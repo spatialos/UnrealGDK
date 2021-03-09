@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKModule.h"
-#include "SpatialGDKLLM.h"
 
 // clang-format off
 #include "SpatialConstants.h"
@@ -16,7 +15,7 @@ IMPLEMENT_MODULE(FSpatialGDKModule, SpatialGDK)
 
 void FSpatialGDKModule::StartupModule()
 {
-	SpatialGDKLLM::Initialise();
+
 }
 
 void FSpatialGDKModule::ShutdownModule() {}
