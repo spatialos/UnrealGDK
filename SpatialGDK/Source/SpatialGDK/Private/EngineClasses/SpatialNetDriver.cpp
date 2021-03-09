@@ -22,6 +22,7 @@
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "Interop/ClientConnectionManager.h"
@@ -1234,7 +1235,7 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 void USpatialNetDriver::ProcessOwnershipChanges()
 {
 	const bool bShouldWriteLoadBalancingData = GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents;
-	TOptional<const SpatialGDK::LoadBalancingWriterActorSet> LoadBalancingWriter;
+	TOptional<const SpatialGDK::ActorSetWriter> LoadBalancingWriter;
 
 	if (bShouldWriteLoadBalancingData)
 	{

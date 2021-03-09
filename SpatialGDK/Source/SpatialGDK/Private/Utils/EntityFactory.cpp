@@ -7,8 +7,12 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "Interop/ActorGroupWriter.h"
+#include "Interop/ActorSetWriter.h"
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Schema/ActorGroupMember.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/SpatialDebugging.h"
@@ -142,8 +146,8 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 
 	if (GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents)
 	{
-		const LoadBalancingWriterActorSet ActorSetWriter(NetDriver->Connection->GetCoordinator(), *NetDriver->PackageMap);
-		const LoadBalancingWriterActorGroup ActorGroupWriter(*NetDriver->LoadBalanceStrategy);
+		const ActorSetWriter ActorSetWriter(NetDriver->Connection->GetCoordinator(), *NetDriver->PackageMap);
+		const ActorGroupWriter ActorGroupWriter(*NetDriver->LoadBalanceStrategy);
 
 		ComponentDatas.Add(ActorSetWriter.GetActorSetData(Actor).CreateComponentData());
 		ComponentDatas.Add(ActorGroupWriter.GetActorGroupData(Actor).CreateComponentData());
