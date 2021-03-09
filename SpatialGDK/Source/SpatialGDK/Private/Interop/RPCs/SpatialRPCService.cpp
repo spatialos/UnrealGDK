@@ -78,7 +78,7 @@ void SpatialRPCService::ProcessChanges(const float NetDriverTime)
 	}
 }
 
-void SpatialRPCService::Flush()
+void SpatialRPCService::PushUpdates()
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -91,7 +91,7 @@ void SpatialRPCService::Flush()
 		NetDriver->Connection->SendComponentUpdate(Update.EntityId, &Update.Update, Update.SpanId);
 	}
 
-	if (RPCs.Num() && Settings->bWorkerFlushAfterOutgoingNetworkOp)
+	if (RPCs.Num() > 0 && Settings->bWorkerFlushAfterOutgoingNetworkOp)
 	{
 		NetDriver->Connection->Flush();
 	}
@@ -692,7 +692,7 @@ bool SpatialRPCService::SendRingBufferedRPC(UObject* TargetObject, const RPCSend
 
 	if (Result == EPushRPCResult::Success)
 	{
-		Flush();
+		PushUpdates();
 	}
 
 #if !UE_BUILD_SHIPPING

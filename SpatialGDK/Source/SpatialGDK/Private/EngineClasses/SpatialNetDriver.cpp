@@ -2242,7 +2242,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	if (RPCService != nullptr)
 	{
-		RPCService->Flush();
+		RPCService->PushUpdates();
 	}
 
 	if (IsServer())

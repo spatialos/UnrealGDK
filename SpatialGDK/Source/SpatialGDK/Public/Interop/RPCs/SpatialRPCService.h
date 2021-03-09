@@ -36,7 +36,7 @@ public:
 	void AdvanceView();
 	void ProcessChanges(const float NetDriverTime);
 
-	void Flush();
+	void PushUpdates();
 
 	void ProcessIncomingRPCs();
 	void ProcessOutgoingRPCs();
