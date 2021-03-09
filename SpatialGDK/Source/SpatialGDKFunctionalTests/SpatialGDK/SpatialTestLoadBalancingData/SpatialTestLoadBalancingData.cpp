@@ -12,6 +12,17 @@
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Kismet/GameplayStatics.h"
 
+USpatialTestLoadBalancingDataTestMap::USpatialTestLoadBalancingDataTestMap()
+	: Super(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("SpatialTestLoadBalancingData"))
+{
+	// clang-format off
+	SetCustomConfig(
+		TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR
+		TEXT("bEnableStrategyLoadBalancingComponents=True")
+		);
+	// clang-format on
+}
+
 void USpatialTestLoadBalancingDataTestMap::CreateCustomContentForMap()
 {
 	Super::CreateCustomContentForMap();

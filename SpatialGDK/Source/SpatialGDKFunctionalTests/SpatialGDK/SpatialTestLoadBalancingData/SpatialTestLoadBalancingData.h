@@ -20,10 +20,7 @@ class USpatialTestLoadBalancingDataTestMap : public UGeneratedTestMap
 {
 	GENERATED_BODY()
 
-	USpatialTestLoadBalancingDataTestMap()
-		: Super(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("SpatialTestLoadBalancingData"))
-	{
-	}
+	USpatialTestLoadBalancingDataTestMap();
 
 	virtual void CreateCustomContentForMap() override;
 };
