@@ -202,7 +202,8 @@ Interest InterestFactory::CreateStrategyWorkerInterest()
 	Interest ServerInterest;
 	Query ServerQuery;
 
-	ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID };
+	ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID,
+									   SpatialConstants::WELLKNOWNCOMPONENTSET_COMPONENT_ID };
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID;
 
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
