@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKModule.h"
-#include "SpatialGDKLLM.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKModule"
 
@@ -11,7 +10,7 @@ IMPLEMENT_MODULE(FSpatialGDKModule, SpatialGDK)
 
 void FSpatialGDKModule::StartupModule()
 {
-	SpatialGDKLLM::Initialise();
+
 }
 
 void FSpatialGDKModule::ShutdownModule() {}

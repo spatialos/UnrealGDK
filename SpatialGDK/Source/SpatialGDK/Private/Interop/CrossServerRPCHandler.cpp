@@ -5,7 +5,6 @@
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "SpatialGDKLLM.h"
 #include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogCrossServerRPCHandler);
@@ -22,7 +21,7 @@ CrossServerRPCHandler::CrossServerRPCHandler(ViewCoordinator& InCoordinator, TUn
 
 void CrossServerRPCHandler::ProcessMessages(const TArray<Worker_Op>& WorkerMessages, float DeltaTime)
 {
-	LLM_PLATFORM_SCOPE_SPATIAL(ELLMTagSpatialGDK::CrossServerRPCHandler);
+	LLM_PLATFORM_SCOPE(ELLMTag::SpatialCrossServerRPCHandler);
 	CurrentTime += DeltaTime;
 
 	for (const auto& Op : WorkerMessages)
