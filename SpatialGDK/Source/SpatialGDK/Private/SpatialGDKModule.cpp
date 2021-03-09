@@ -13,10 +13,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKModule);
 
 IMPLEMENT_MODULE(FSpatialGDKModule, SpatialGDK)
 
-void FSpatialGDKModule::StartupModule()
-{
-
-}
+void FSpatialGDKModule::StartupModule() {}
 
 void FSpatialGDKModule::ShutdownModule() {}
 
