@@ -2,6 +2,7 @@
 
 #include "SpatialReplicationGraphLoadBalancingHandler.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
 
 FSpatialReplicationGraphLoadBalancingContext::FSpatialReplicationGraphLoadBalancingContext(USpatialNetDriver* InNetDriver,

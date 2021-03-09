@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Utils/SpatialActorUtils.h"
+#include "Schema/AuthorityIntent.h"
+#include "SpatialCommonTypes.h"
 
+enum class EActorMigrationResult : uint8;
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalancingHandler, Log, All);
 class USpatialNetDriver;
 

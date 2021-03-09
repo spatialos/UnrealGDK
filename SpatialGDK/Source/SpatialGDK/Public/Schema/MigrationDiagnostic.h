@@ -3,18 +3,11 @@
 #pragma once
 
 #include "Containers/UnrealString.h"
-#include "Engine/EngineBaseTypes.h"
-#include "Engine/GameInstance.h"
-#include "GameFramework/OnlineReplStructs.h"
-#include "Kismet/GameplayStatics.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
-#include "UObject/CoreNet.h"
 #include "Utils/SchemaUtils.h"
+#include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialLoadBalancingHandler.h"
-
-#include <WorkerSDK/improbable/c_schema.h>
-#include <WorkerSDK/improbable/c_worker.h>
 
 namespace SpatialGDK
 {
@@ -56,8 +49,6 @@ struct MigrationDiagnostic : Component
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_REPLICATES_ID, BlockingActor->GetIsReplicated());
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_HAS_AUTHORITY_ID, BlockingActor->HasAuthority());
 
-		const VirtualWorkerId LocalVirtualWorkerId = NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId();
-
 		Schema_AddInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_WORKER_ID,
 						NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId());
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_LOCKED_ID, NetDriver->LockingPolicy->IsLocked(BlockingActor));
@@ -65,10 +56,9 @@ struct MigrationDiagnostic : Component
 		AActor* NetOwner;
 		VirtualWorkerId NewAuthWorkerId;
 
-		FSpatialLoadBalancingHandler MigrationHandler(NetDriver);
-		FSpatialLoadBalancingHandler::EvaluateActorResult Result =
-			MigrationHandler.EvaluateSingleActor(BlockingActor, NetOwner, NewAuthWorkerId);
-		Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+		const FSpatialLoadBalancingHandler::EvaluateActorResult Result =
+			NetDriver->LoadBalancingHandler->EvaluateSingleActor(BlockingActor, NetOwner, NewAuthWorkerId);
+		const Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
 
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_EVALUATION_ID,
 					   Result == FSpatialLoadBalancingHandler::EvaluateActorResult::Migrate);
@@ -88,7 +78,7 @@ struct MigrationDiagnostic : Component
 
 		if (ResponseObject == nullptr)
 		{
-			return FString::Printf(TEXT("Migration diaganostic log failed as response was empty."));
+			return FString::Printf(TEXT("Migration diagnostic log failed as response was empty."));
 		}
 
 		VirtualWorkerId AuthoritativeWorkerId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_WORKER_ID);

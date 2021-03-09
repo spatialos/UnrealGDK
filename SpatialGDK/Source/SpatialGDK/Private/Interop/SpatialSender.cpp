@@ -200,42 +200,6 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 	Connection->SendComponentUpdate(PartitionId, &Update);
 }
 
-void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const
-{
-	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
-	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-
-	AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
-	check(AuthorityIntentComponent != nullptr);
-	checkf(AuthorityIntentComponent->VirtualWorkerId != NewAuthoritativeVirtualWorkerId,
-		   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
-		   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
-
-	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
-	UE_LOG(LogSpatialSender, Log,
-		   TEXT("(%s) Sending AuthorityIntent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
-		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
-
-	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
-
-	FSpatialGDKSpanId SpanId;
-	if (EventTracer != nullptr)
-	{
-		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
-	}
-
-	Connection->SendComponentUpdate(EntityId, &Update, SpanId);
-
-	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
-	// This should always happen with USLB.
-	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
-
-	if (NetDriver->SpatialDebuggerSystem.IsValid())
-	{
-		NetDriver->SpatialDebuggerSystem->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
-	}
-}
-
 void USpatialSender::SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId)
 {
 	FSpatialGDKSpanId SpanId;

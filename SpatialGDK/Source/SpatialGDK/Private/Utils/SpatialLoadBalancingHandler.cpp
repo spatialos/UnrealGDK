@@ -167,7 +167,7 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 	{
 		AActor* Actor = MigrationInfo.Key;
 
-		NetDriver->Sender->SendAuthorityIntentUpdate(*Actor, MigrationInfo.Value);
+		SendAuthorityIntentUpdate(*Actor, MigrationInfo.Value);
 
 		// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy
 		Actor->Role = ROLE_SimulatedProxy;

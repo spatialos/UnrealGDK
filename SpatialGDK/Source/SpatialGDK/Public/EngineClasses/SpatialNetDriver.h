@@ -17,6 +17,7 @@
 #include "Utils/SpatialBasicAwaiter.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialDebuggerSystem.h"
+#include "Utils/SpatialLoadBalancingHandler.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
@@ -35,7 +36,6 @@
 
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
-class FSpatialLoadBalancingHandler;
 class UAbstractLBStrategy;
 class UEntityPool;
 class UGlobalStateManager;
@@ -228,6 +228,8 @@ public:
 	// If this worker is authoritative over the translation, the manager will be instantiated.
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
 
+	TSharedPtr<SpatialGDK::FSpatialLoadBalancingHandler> LoadBalancingHandler;
+
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
@@ -320,11 +322,11 @@ private:
 	// anywhere except USpatialNetDriver::ServerReplicateActors.
 	int32 ServerReplicateActors_PrepConnections(const float DeltaSeconds);
 	int32 ServerReplicateActors_PrioritizeActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers,
-												 FSpatialLoadBalancingHandler&, const TArray<FNetworkObjectInfo*> ConsiderList,
+												 SpatialGDK::FSpatialLoadBalancingHandler&, const TArray<FNetworkObjectInfo*> ConsiderList,
 												 const bool bCPUSaturated, FActorPriority*& OutPriorityList,
 												 FActorPriority**& OutPriorityActors);
 	void ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers,
-														FSpatialLoadBalancingHandler&, FActorPriority** PriorityActors,
+														SpatialGDK::FSpatialLoadBalancingHandler&, FActorPriority** PriorityActors,
 														const int32 FinalSortedCount, int32& OutUpdated);
 #endif
 
