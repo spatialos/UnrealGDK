@@ -60,7 +60,7 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FStrin
 
 	for (const auto& SchemaLine : LoadedSchema)
 	{
-		FRegexPattern IdPattern(TEXT("([\t\\s]id\\s*=\\s*)([0-9]+)(\\s*;)"));
+		FRegexPattern IdPattern(TEXT("\\s+(id\\s*=\\s*)([0-9]+)(\\s*;)"));
 		FRegexMatcher IdRegMatcher(IdPattern, SchemaLine);
 
 		FRegexPattern NamePattern(TEXT("(^component )(.+)( \\{)"));
