@@ -2410,7 +2410,7 @@ void USpatialNetDriver::ProcessPendingDormancy()
 			USpatialActorChannel* Channel = PendingDormantChannel.Get();
 			if (Channel->Actor != nullptr)
 			{
-				if (Receiver->IsPendingOpsOnChannel(*Channel))
+				if (Channel->HasPendingOps())
 				{
 					RemainingChannels.Emplace(PendingDormantChannel);
 					continue;

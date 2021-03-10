@@ -36,6 +36,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
+DECLARE_CYCLE_STAT(TEXT("PendingOpsOnChannel"), STAT_SpatialPendingOpsOnChannel, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ReplicateActor"), STAT_SpatialActorChannelReplicateActor, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdateSpatialPosition, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
@@ -964,7 +965,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, co
 bool USpatialActorChannel::ReadyForDormancy(bool bSuppressLogs /*= false*/)
 {
 	// Check Receiver doesn't have any pending operations for this channel
-	if (Receiver->IsPendingOpsOnChannel(*this))
+	if (HasPendingOps())
 	{
 		return false;
 	}
@@ -1274,6 +1275,21 @@ void USpatialActorChannel::OnEntityCreated(const Worker_CreateEntityResponseOp& 
 		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
 		ClaimPartitionHandler->ClaimPartition(ClientSystemEntityId, Op.entity_id);
 	}
+}
+
+bool USpatialActorChannel::HasPendingOps() const
+{
+	SCOPE_CYCLE_COUNTER(STAT_SpatialPendingOpsOnChannel);
+
+	for (const auto& MaybeUnresolvedRef : ObjectReferenceMap)
+	{
+		if (MaybeUnresolvedRef.Value.HasUnresolved())
+		{
+			return true;
+		}
+	}
+
+	return CreateEntityHandler.GetPendingRequestsCount() > 0;
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()

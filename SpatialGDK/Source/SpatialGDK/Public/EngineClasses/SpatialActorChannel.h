@@ -262,6 +262,8 @@ public:
 
 	void OnEntityCreated(const Worker_CreateEntityResponseOp& CreateEntityResponseOp, FSpatialGDKSpanId SpanId);
 
+	bool HasPendingOps() const;
+
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
 											 const FObjectReferencesMap& RefMap, UObject* Object);
 
