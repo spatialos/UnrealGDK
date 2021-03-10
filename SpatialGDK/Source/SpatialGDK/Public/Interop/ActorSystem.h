@@ -6,6 +6,8 @@
 #include "SpatialConstants.h"
 #include "Utils/RepDataUtils.h"
 
+#include "Interop/CreateEntityHandler.h"
+
 DECLARE_LOG_CATEGORY_EXTERN(LogActorSystem, Log, All);
 
 struct FRepChangeState;
@@ -153,6 +155,8 @@ private:
 	const FSubView* TombstoneSubView;
 	USpatialNetDriver* NetDriver;
 	SpatialEventTracer* EventTracer;
+
+	CreateEntityHandler CreateEntityHandler;
 
 	TMap<Worker_EntityId_Key, TSet<Worker_ComponentId>> PendingDynamicSubobjectComponents;
 

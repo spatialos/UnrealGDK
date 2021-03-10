@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 
-#include "EngineClasses/SpatialActorChannel.h"
 #include "Schema/RPCPayload.h"
 
 #include <WorkerSDK/improbable/c_schema.h>

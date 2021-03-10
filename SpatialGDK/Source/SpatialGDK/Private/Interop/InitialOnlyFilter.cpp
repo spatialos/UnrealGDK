@@ -39,6 +39,8 @@ bool InitialOnlyFilter::HasInitialOnlyDataOrRequestIfAbsent(Worker_EntityId Enti
 
 void InitialOnlyFilter::FlushRequests()
 {
+	QueryHandler.ProcessOps(Connection.GetCoordinator().GetViewDelta().GetWorkerMessages());
+
 	if (PendingInitialOnlyEntities.Num() == 0)
 	{
 		return;
@@ -72,7 +74,7 @@ void InitialOnlyFilter::FlushRequests()
 	EntityQueryDelegate InitialOnlyQueryDelegate;
 	InitialOnlyQueryDelegate.BindRaw(this, &InitialOnlyFilter::HandleInitialOnlyResponse);
 
-	Receiver.AddEntityQueryDelegate(RequestID, InitialOnlyQueryDelegate);
+	QueryHandler.AddRequest(RequestID, InitialOnlyQueryDelegate);
 
 	InflightInitialOnlyRequests.Add(RequestID, { MoveTemp(PendingInitialOnlyEntities) });
 }

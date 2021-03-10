@@ -50,6 +50,11 @@ void WellKnownEntitySystem::Advance()
 			break;
 		}
 	}
+
+	if (VirtualWorkerTranslationManager.IsValid())
+	{
+		VirtualWorkerTranslationManager->Advance(*SubView->GetViewDelta().WorkerMessages);
+	}
 }
 
 void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update)

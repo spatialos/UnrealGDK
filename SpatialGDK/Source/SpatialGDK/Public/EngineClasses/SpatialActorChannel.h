@@ -6,6 +6,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/ReserveEntityIdsHandler.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Runtime/Launch/Resources/Version.h"
@@ -273,6 +274,7 @@ public:
 	// Call when a subobject is deleted to unmap its references and cleanup its cached informations.
 	// NB : ObjectPtr might be a dangling pointer.
 	void OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* ObjectPtr, const TWeakObjectPtr<UObject>& ObjectWeakPtr);
+	void Advance(const SpatialGDK::ViewDelta& ViewDelta);
 
 	static void ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject);
 
@@ -334,6 +336,11 @@ private:
 
 	UPROPERTY(transient)
 	class USpatialReceiver* Receiver;
+
+	SpatialGDK::SpatialEventTracer* EventTracer;
+
+	SpatialGDK::CreateEntityHandler CreateEntityHandler;
+	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimPartitionHandler;
 
 	FVector LastPositionSinceUpdate;
 	double TimeWhenPositionLastUpdated;

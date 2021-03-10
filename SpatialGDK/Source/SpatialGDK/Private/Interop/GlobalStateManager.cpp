@@ -14,6 +14,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineUtils.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -36,6 +37,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
 	Receiver = InNetDriver->Receiver;
+	ClaimHandler = MakeUnique<ClaimPartitionHandler>(*NetDriver->Connection);
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
 #if WITH_EDITOR
@@ -428,13 +430,9 @@ Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-void UGlobalStateManager::ClaimSnapshotPartition() const
+void UGlobalStateManager::ClaimSnapshotPartition()
 {
-	if (ensure(Sender != nullptr))
-	{
-		Sender->SendClaimPartitionRequest(NetDriver->Connection->GetWorkerSystemEntityId(),
-										  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-	}
+	ClaimHandler->ClaimPartition(NetDriver->Connection->GetWorkerSystemEntityId(), SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 }
 
 void UGlobalStateManager::TriggerBeginPlay()
@@ -553,7 +551,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 		}
 	});
 
-	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
+	QueryHandler.AddRequest(RequestID, GSMQueryDelegate);
 }
 
 void UGlobalStateManager::QueryTranslation()
@@ -597,7 +595,7 @@ void UGlobalStateManager::QueryTranslation()
 		}
 		GlobalStateManager->bTranslationQueryInFlight = false;
 	});
-	Receiver->AddEntityQueryDelegate(RequestID, TranslationQueryDelegate);
+	QueryHandler.AddRequest(RequestID, TranslationQueryDelegate);
 }
 
 void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const
@@ -681,6 +679,14 @@ void UGlobalStateManager::IncrementSessionID()
 {
 	DeploymentSessionId++;
 	SendSessionIdUpdate();
+}
+
+void UGlobalStateManager::Advance()
+{
+	const TArray<Worker_Op>& Ops = NetDriver->Connection->GetCoordinator().GetViewDelta().GetWorkerMessages();
+
+	ClaimHandler->ProcessOps(Ops);
+	QueryHandler.ProcessOps(Ops);
 }
 
 void UGlobalStateManager::SendSessionIdUpdate()

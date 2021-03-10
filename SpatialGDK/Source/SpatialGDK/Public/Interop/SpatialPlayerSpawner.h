@@ -12,6 +12,8 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "EntityQueryHandler.h"
+
 #include "SpatialPlayerSpawner.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPlayerSpawner, Log, All);
@@ -28,6 +30,8 @@ class SPATIALGDK_API USpatialPlayerSpawner : public UObject
 
 public:
 	void Init(USpatialNetDriver* NetDriver);
+
+	void Advance(const TArray<Worker_Op>& Ops);
 
 	// Client
 	void SendPlayerSpawnRequest();
@@ -72,6 +76,8 @@ private:
 	USpatialNetDriver* NetDriver;
 
 	TMap<Worker_RequestId_Key, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>> OutgoingForwardPlayerSpawnRequests;
+
+	SpatialGDK::EntityQueryHandler QueryHandler;
 
 	TSet<Worker_EntityId_Key> WorkersWithPlayersSpawned;
 };

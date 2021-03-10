@@ -23,6 +23,8 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialPlayerSpawner);
 
 using namespace SpatialGDK;
@@ -30,6 +32,11 @@ using namespace SpatialGDK;
 void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
+}
+
+void USpatialPlayerSpawner::Advance(const TArray<Worker_Op>& Ops)
+{
+	QueryHandler.ProcessOps(Ops);
 }
 
 void USpatialPlayerSpawner::SendPlayerSpawnRequest()
@@ -73,7 +80,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	});
 
 	UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Sending player spawn request"));
-	NetDriver->Receiver->AddEntityQueryDelegate(RequestID, SpatialSpawnerQueryDelegate);
+	QueryHandler.AddRequest(RequestID, SpatialSpawnerQueryDelegate);
 }
 
 SpatialGDK::SpawnPlayerRequest USpatialPlayerSpawner::ObtainPlayerParams() const

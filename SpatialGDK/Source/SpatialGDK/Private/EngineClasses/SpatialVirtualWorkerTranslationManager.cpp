@@ -20,6 +20,7 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(S
 	, Connection(InConnection)
 	, Partitions({})
 	, bWorkerEntityQueryInFlight(false)
+	, ClaimParitionHandler(*InConnection)
 {
 }
 
@@ -99,6 +100,13 @@ void SpatialVirtualWorkerTranslationManager::ReclaimPartitionEntities()
 		Partitions.Emplace(PartitionInfo{ PartitionId, VirtualWorkerId, SpatialConstants::INVALID_ENTITY_ID });
 	}
 	QueryForServerWorkerEntities();
+}
+
+void SpatialVirtualWorkerTranslationManager::Advance(const TArray<Worker_Op>& Ops)
+{
+	CreateEntityHandler.ProcessOps(Ops);
+	ClaimParitionHandler.ProcessOps(Ops);
+	QueryHandler.ProcessOps(Ops);
 }
 
 // For each entry in the map, write a VirtualWorkerMapping type object to the Schema object.
@@ -232,7 +240,7 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 			   UTF8_TO_TCHAR(Op.message), Op.entity_id, VirtualWorkerId);
 	});
 
-	Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
+	CreateEntityHandler.AddRequest(RequestId, OnCreateWorkerEntityResponse);
 }
 
 void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker)
@@ -292,8 +300,7 @@ void SpatialVirtualWorkerTranslationManager::QueryForServerWorkerEntities()
 	// Register a method to handle the query response.
 	EntityQueryDelegate ServerWorkerEntityQueryDelegate;
 	ServerWorkerEntityQueryDelegate.BindRaw(this, &SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate);
-	check(Receiver != nullptr);
-	Receiver->AddEntityQueryDelegate(RequestID, ServerWorkerEntityQueryDelegate);
+	QueryHandler.AddRequest(RequestID, ServerWorkerEntityQueryDelegate);
 }
 
 // This method allows the translation manager to deal with the returned list of server worker entities when they are received.
@@ -345,5 +352,5 @@ void SpatialVirtualWorkerTranslationManager::AssignPartitionToWorker(const Physi
 		   TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on worker %s"), Partition.VirtualWorker,
 		   Partition.PartitionEntityId, *WorkerName);
 
-	Translator->NetDriver->Sender->SendClaimPartitionRequest(SystemEntityId, Partition.PartitionEntityId);
+	ClaimParitionHandler.ClaimPartition(SystemEntityId, Partition.PartitionEntityId);
 }

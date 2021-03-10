@@ -19,6 +19,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineStats.h"
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -191,6 +192,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bInterestDirty(false)
 	, bNetOwned(false)
 	, NetDriver(nullptr)
+	, EventTracer(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
 	, TimeWhenPositionLastUpdated(0.0)
 {
@@ -225,6 +227,11 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	check(NetDriver);
 	Sender = NetDriver->Sender;
 	Receiver = NetDriver->Receiver;
+
+	check(IsValid(NetDriver->Connection));
+	EventTracer = NetDriver->Connection->GetEventTracer();
+
+	ClaimPartitionHandler = MakeUnique<SpatialGDK::ClaimPartitionHandler>(*NetDriver->Connection);
 }
 
 void USpatialActorChannel::RetireEntityIfAuthoritative()
@@ -306,6 +313,11 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 		}
 		NetDriver->RemoveActorChannel(EntityId, *this);
 	}
+
+	EventTracer = nullptr;
+
+	CreateEntityHandler = {};
+	ClaimPartitionHandler.Reset();
 
 	return UActorChannel::CleanUp(bForDestroy, CloseReason);
 }
@@ -1129,9 +1141,7 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 
 	Replicator.RepState->GetReceivingRepState()->RepNotifies = RepNotifies;
 
-	SpatialGDK::SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
-
-	auto PreCallRepNotify = [EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
+	auto PreCallRepNotify = [EventTracer = EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
 		const FSpatialGDKSpanId* SpanId = PropertySpanIds.Find(Property);
 		if (SpanId != nullptr)
 		{
@@ -1139,7 +1149,7 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 		}
 	};
 
-	auto PostCallRepNotify = [EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
+	auto PostCallRepNotify = [EventTracer = EventTracer, PropertySpanIds](GDK_PROPERTY(Property) * Property) {
 		const FSpatialGDKSpanId* SpanId = PropertySpanIds.Find(Property);
 		if (SpanId != nullptr)
 		{
@@ -1230,7 +1240,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		// components (such as client RPC endpoints, player controller component, etc).
 		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Cast<APlayerController>(Actor));
 		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
-		Sender->SendClaimPartitionRequest(ClientSystemEntityId, Op.entity_id);
+		ClaimPartitionHandler->ClaimPartition(ClientSystemEntityId, Op.entity_id);
 	}
 }
 
@@ -1425,6 +1435,12 @@ void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef,
 		NetDriver->ActorSystem->CleanupRepStateMap(*SubObjectRefMap);
 		ObjectReferenceMap.Remove(ObjectWeakPtr);
 	}
+}
+
+void USpatialActorChannel::Advance(const SpatialGDK::ViewDelta& ViewDelta)
+{
+	ClaimPartitionHandler->ProcessOps(ViewDelta.GetWorkerMessages());
+	CreateEntityHandler.ProcessOps(ViewDelta.GetWorkerMessages());
 }
 
 void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject)

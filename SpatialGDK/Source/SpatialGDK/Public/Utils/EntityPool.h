@@ -7,6 +7,8 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SchemaUtils.h"
 
+#include "Interop/ReserveEntityIdsHandler.h"
+
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -40,6 +42,8 @@ public:
 
 	FORCEINLINE bool IsReady() const { return bIsReady; }
 
+	void Advance();
+
 private:
 	void OnEntityRangeExpired(uint32 ExpiringEntityRangeId);
 
@@ -58,4 +62,6 @@ private:
 	uint32 NextEntityRangeId;
 
 	FEntityPoolReadyEvent EntityPoolReadyDelegate;
+
+	SpatialGDK::ReserveEntityHandler ReserveEntityHandler;
 };

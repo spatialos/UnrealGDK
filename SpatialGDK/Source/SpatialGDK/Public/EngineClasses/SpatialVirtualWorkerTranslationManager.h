@@ -11,6 +11,13 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "Interop/ClaimPartitionHandler.h"
+#include "Interop/CreateEntityHandler.h"
+#include "Interop/EntityQueryHandler.h"
+#include "Interop/ReserveEntityIdsHandler.h"
+
+#include "Interop/SpatialOSDispatcherInterface.h"
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 
 class SpatialOSDispatcherInterface;
@@ -52,6 +59,8 @@ public:
 	void ReclaimPartitionEntities();
 	const TArray<PartitionInfo>& GetAllPartitions() const { return Partitions; };
 
+	void Advance(const TArray<Worker_Op>& Ops);
+
 	SpatialVirtualWorkerTranslator* Translator;
 
 private:
@@ -64,6 +73,10 @@ private:
 	uint32 NumVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
+
+	SpatialGDK::CreateEntityHandler CreateEntityHandler;
+	SpatialGDK::ClaimPartitionHandler ClaimParitionHandler;
+	SpatialGDK::EntityQueryHandler QueryHandler;
 
 	// Serialization and deserialization of the mapping.
 	void WriteMappingToSchema(Schema_Object* Object) const;

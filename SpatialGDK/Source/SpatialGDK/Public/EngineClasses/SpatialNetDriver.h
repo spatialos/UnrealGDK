@@ -268,6 +268,8 @@ private:
 	TUniquePtr<SpatialGDK::CrossServerRPCSender> CrossServerRPCSender;
 	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CrossServerRPCHandler;
 
+	SpatialGDK::EntityQueryHandler QueryHandler;
+
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
 	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>> PendingDormantChannels;

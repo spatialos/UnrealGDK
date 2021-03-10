@@ -46,6 +46,8 @@ DECLARE_CYCLE_STAT(TEXT("Receiver RemoveActor"), STAT_ReceiverRemoveActor, STATG
 DECLARE_CYCLE_STAT(TEXT("Receiver ApplyRPC"), STAT_ReceiverApplyRPC, STATGROUP_SpatialNet);
 using namespace SpatialGDK;
 
+DEFINE_LOG_CATEGORY_CLASS(CreateEntityHandler, LogCreateEntityHandler);
+
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, SpatialEventTracer* InEventTracer)
 {
 	NetDriver = InNetDriver;

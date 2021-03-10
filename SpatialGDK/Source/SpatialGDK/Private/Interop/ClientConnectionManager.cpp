@@ -57,7 +57,7 @@ void ClientConnectionManager::DisconnectPlayer(Worker_EntityId ClientEntityId)
 	Request.component_id = SpatialConstants::WORKER_COMPONENT_ID;
 	Request.command_index = SpatialConstants::WORKER_DISCONNECT_COMMAND_ID;
 	Request.schema_type = Schema_CreateCommandRequest();
-	Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(ClientEntityId, &Request, RETRY_UNTIL_COMPLETE, {});
+	const Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(ClientEntityId, &Request, RETRY_UNTIL_COMPLETE, {});
 
 	SystemEntityCommandDelegate CommandResponseDelegate;
 	CommandResponseDelegate.BindLambda([this, ClientEntityId](const Worker_CommandResponseOp&) {

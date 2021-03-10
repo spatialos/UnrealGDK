@@ -26,6 +26,8 @@ class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 public:
 	void Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager);
 
+	void Advance();
+
 	Worker_EntityId AllocateEntityIdAndResolveActor(AActor* Actor);
 	FNetworkGUID TryResolveObjectAsEntity(UObject* Value);
 

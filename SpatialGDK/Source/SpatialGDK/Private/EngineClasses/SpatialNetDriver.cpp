@@ -2039,9 +2039,24 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				ClientConnectionManager->Advance();
 			}
 
+			if (IsValid(PlayerSpawner))
+			{
+				PlayerSpawner->Advance(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
+			}
+
 			if (ActorSystem.IsValid())
 			{
 				ActorSystem->Advance();
+			}
+
+			if (IsValid(GlobalStateManager))
+			{
+				GlobalStateManager->Advance();
+			}
+
+			for (const TPair<Worker_EntityId_Key, USpatialActorChannel*>& ActorChannelPair : EntityToActorChannel)
+			{
+				ActorChannelPair.Value->Advance(Connection->GetCoordinator().GetViewDelta());
 			}
 
 			if (SpatialDebuggerSystem.IsValid())
@@ -2065,11 +2080,21 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			{
 				WellKnownEntitySystem->Advance();
 			}
+
+			if (SnapshotManager.IsValid())
+			{
+				SnapshotManager->Advance();
+			}
 		}
 
 		if (RoutingSystem.IsValid())
 		{
 			RoutingSystem->Advance(Connection);
+		}
+
+		if (IsValid(PackageMap))
+		{
+			PackageMap->Advance();
 		}
 
 		if (!bIsReadyToStart)
@@ -2091,6 +2116,8 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			InitialOnlyFilter->FlushRequests();
 		}
+
+		QueryHandler.ProcessOps(Connection->GetWorkerMessages());
 	}
 }
 
@@ -2884,7 +2911,7 @@ void USpatialNetDriver::QueryRoutingPartition()
 			}
 			NetDriver->bRoutingWorkerQueryInFlight = false;
 		});
-		Receiver->AddEntityQueryDelegate(RequestID, RoutingWorkerQueryDelegate);
+		QueryHandler.AddRequest(RequestID, RoutingWorkerQueryDelegate);
 	}
 	else if (RoutingPartition == 0)
 	{
@@ -2940,7 +2967,7 @@ void USpatialNetDriver::QueryRoutingPartition()
 			}
 			NetDriver->bRoutingWorkerQueryInFlight = false;
 		});
-		Receiver->AddEntityQueryDelegate(RequestID, RoutingWorkerQueryDelegate);
+		QueryHandler.AddRequest(RequestID, RoutingWorkerQueryDelegate);
 	}
 }
 

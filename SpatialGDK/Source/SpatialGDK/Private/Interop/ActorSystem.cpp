@@ -229,6 +229,8 @@ void ActorSystem::Advance()
 			break;
 		}
 	}
+
+	CreateEntityHandler.ProcessOps(*SubView->GetViewDelta().WorkerMessages);
 }
 
 UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
@@ -2073,7 +2075,7 @@ void ActorSystem::CreateEntityWithRetries(Worker_EntityId EntityId, FString Enti
 		}
 	});
 
-	NetDriver->Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(Delegate));
+	CreateEntityHandler.AddRequest(RequestId, Delegate);
 }
 
 TArray<FWorkerComponentData> ActorSystem::CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents)

@@ -11,6 +11,9 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "EntityQueryHandler.h"
+#include "Interop/ClaimPartitionHandler.h"
+
 #include "GlobalStateManager.generated.h"
 
 class USpatialNetDriver;
@@ -49,6 +52,8 @@ public:
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void IncrementSessionID();
 
+	void Advance();
+
 	FORCEINLINE FString GetDeploymentMapURL() const { return DeploymentMapURL; }
 	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }
 	FORCEINLINE int32 GetSessionId() const { return DeploymentSessionId; }
@@ -70,7 +75,7 @@ public:
 	void HandleActorBasedOnLoadBalancer(AActor* ActorIterator) const;
 
 	Worker_EntityId GetLocalServerWorkerEntityId() const;
-	void ClaimSnapshotPartition() const;
+	void ClaimSnapshotPartition();
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
@@ -119,6 +124,8 @@ private:
 
 	UPROPERTY()
 	USpatialReceiver* Receiver;
+	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimHandler;
+	SpatialGDK::EntityQueryHandler QueryHandler;
 
 	FDelegateHandle PrePIEEndedHandle;
 
