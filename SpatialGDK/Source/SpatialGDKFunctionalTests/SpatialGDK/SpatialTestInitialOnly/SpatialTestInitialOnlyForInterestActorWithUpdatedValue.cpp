@@ -77,6 +77,8 @@ void ASpatialTestInitialOnlyForInterestActorWithUpdatedValue::PrepareTest()
 			{
 				SpawnActor->Int_Initial = 2;
 				SpawnActor->Int_Replicate = 2;
+				// Seems like the update doesn't come through fast enough otherwise.
+				SpawnActor->ForceNetUpdate();
 			}
 		}
 

@@ -56,6 +56,17 @@ void ASpatialTestInitialOnlyForInterestActor::PrepareTest()
 		FinishStep();
 	});
 
+	AddStep(
+		TEXT("Client checks test actor is not present in their world."), FWorkerDefinition::Client(1), nullptr, nullptr,
+		[this](float DeltaTime) {
+			TArray<AActor*> SpawnActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpatialTestInitialOnlySpawnActor::StaticClass(), SpawnActors);
+			RequireEqual_Int(SpawnActors.Num(), 0, TEXT("There should be no SpawnActor in the world."));
+
+			FinishStep();
+		},
+		30.0f);
+
 	AddStep(TEXT("Move character to cube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
