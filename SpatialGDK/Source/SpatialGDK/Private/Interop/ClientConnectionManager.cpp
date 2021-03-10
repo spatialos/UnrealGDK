@@ -61,7 +61,7 @@ void ClientConnectionManager::Advance()
 						else
 						{
 							UE_LOG(LogWorkerEntitySystem, Error, TEXT("SystemEntityCommand failed: request id: %d, message: %s"), RequestId,
-                                   UTF8_TO_TCHAR(CommandResponseOp.message));
+								   UTF8_TO_TCHAR(CommandResponseOp.message));
 						}
 					}
 				}
@@ -89,7 +89,7 @@ void ClientConnectionManager::DisconnectPlayer(Worker_EntityId ClientEntityId)
 	Request.component_id = SpatialConstants::WORKER_COMPONENT_ID;
 	Request.command_index = SpatialConstants::WORKER_DISCONNECT_COMMAND_ID;
 	Request.schema_type = Schema_CreateCommandRequest();
-	
+
 	const Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(ClientEntityId, &Request, RETRY_UNTIL_COMPLETE, {});
 
 	DisconnectRequestToConnectionEntityId.Add(RequestId, ClientEntityId);

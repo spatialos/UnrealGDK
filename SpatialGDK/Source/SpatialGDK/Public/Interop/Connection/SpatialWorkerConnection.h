@@ -88,7 +88,7 @@ public:
 
 	UFUNCTION()
 	void CreateServerWorkerEntity();
-	
+
 	void Advance(float DeltaTimeS);
 	bool HasDisconnected() const;
 	Worker_ConnectionStatusCode GetConnectionStatus() const;
@@ -122,7 +122,7 @@ public:
 
 private:
 	TOptional<SpatialGDK::WorkerSystemEntityCreator> WorkerEntityCreator;
-	
+
 	static bool IsStartupComponent(Worker_ComponentId Id);
 	static void ExtractStartupOps(SpatialGDK::OpList& OpList, SpatialGDK::ExtractedOpListData& ExtractedOpList);
 	bool StartupComplete = false;

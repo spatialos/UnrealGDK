@@ -1,17 +1,17 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialEventTracer.h"
-#include "SpatialGDKSettings.h"
 #include "Schema/ServerWorker.h"
+#include "Schema/StandardLibrary.h"
+#include "SpatialGDKSettings.h"
 #include "SpatialView/CommandRequest.h"
 #include "SpatialView/CommandRetryHandler.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ConnectionHandler/InitialOpListConnectionHandler.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
-#include "EngineClasses/SpatialNetDriver.h"
-#include "EngineClasses/SpatialPackageMapClient.h"
 #include "Utils/ComponentFactory.h"
-#include "Schema/StandardLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
