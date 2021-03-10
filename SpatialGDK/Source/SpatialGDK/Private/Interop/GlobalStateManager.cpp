@@ -685,6 +685,38 @@ void UGlobalStateManager::Advance()
 
 	ClaimHandler->ProcessOps(Ops);
 	QueryHandler.ProcessOps(Ops);
+
+#if WITH_EDITOR
+	for (const Worker_Op& Op : Ops)
+	{
+		if (Op.op_type != WORKER_OP_TYPE_COMMAND_REQUEST)
+		{
+			continue;
+		}
+
+		const Worker_CommandRequestOp& CommandRequest = Op.op.command_request;
+		const Worker_ComponentId ComponentId = CommandRequest.request.component_id;
+		const Worker_CommandIndex CommandIndex = CommandRequest.request.command_index;
+		const Worker_RequestId RequestId = CommandRequest.request_id;
+
+		if (ComponentId == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID
+			&& CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
+		{
+			NetDriver->GlobalStateManager->ReceiveShutdownMultiProcessRequest();
+
+			SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+
+			if (EventTracer != nullptr)
+			{
+				EventTracer->TraceEvent(
+					FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId),
+					/* Causes */ Op.span_id, /* NumCauses */ 1);
+			}
+
+			return;
+		}
+	}
+#endif // WITH_EDITOR
 }
 
 void UGlobalStateManager::SendSessionIdUpdate()
