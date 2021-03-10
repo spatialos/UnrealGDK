@@ -79,6 +79,10 @@ if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
         $tests[0].tests_path += "+${test_map_path}CI_Nightly/"
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
 
+        # We run functional spatial tests against Vanilla UE4 with replication graph enabled
+        $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "VanillaTestResultsRepGraph", "${test_map_path}CI_Premerge/+${test_map_path}CI_Nightly/",
+        "$user_gdk_settings", $False, "-ini:Engine:[/Script/OnlineSubsystemUtils.IpNetDriver]:ReplicationDriverClassName=/Script/GDKTestGyms.TestGymsReplicationGraph $user_cmd_line_args")
+
         # And if slow, we run NetTest functional maps against Vanilla UE4 as well
         $tests += [TestSuite]::new($native_test_project, "NetworkingMap", "NativeNetTestResults", "/Game/NetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")
     }
@@ -91,6 +95,10 @@ else {
         # And if slow, we run GDK slow tests
         $tests[0].tests_path += "+SpatialGDKSlow.+${test_map_path}CI_Nightly/+${test_map_path}CI_Nightly_Spatial_Only/"
         $tests[0].test_results_dir = "Slow" + $tests[0].test_results_dir
+
+        # We run functional spatial tests again with replication graph enabled
+        $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "TestResultsRepGraph", "${test_map_path}CI_Premerge/+${test_map_path}CI_Premerge_Spatial_Only/+${test_map_path}CI_Nightly/+${test_map_path}CI_Nightly_Spatial_Only/",
+        "$user_gdk_settings", $True, "-ini:Engine:[/Script/OnlineSubsystemUtils.IpNetDriver]:ReplicationDriverClassName=/Script/GDKTestGyms.TestGymsReplicationGraph ${user_cmd_line_args}")
 
         # And NetTests functional maps against GDK as well
         $tests += [TestSuite]::new($native_test_project, "NetworkingMap", "GDKNetTestResults", "/Game/NetworkingMap", "$user_gdk_settings", $True, "$user_cmd_line_args")

@@ -35,7 +35,7 @@ generate_build_configuration_steps () {
         if [[ -z "${BUILD_ALL_CONFIGURATIONS+x}" ]]; then
             echo "Building for subset of supported configurations. Generating the appropriate steps..."
 
-            SLOW_NETWORKING_TESTS_LOCAL="${SLOW_NETWORKING_TESTS:-false}"
+            SLOW_NETWORKING_TESTS_LOCAL="${SLOW_NETWORKING_TESTS:-true}" # TEMPORARRYYYY, REMEMBER TO DEFAULT THIS TO FALSE BEFORE MERGING
             # if the SLOW_NETWORKING_TESTS variable is not set or empty, look at whether this is a nightly build
             if [[ -z "${SLOW_NETWORKING_TESTS+x}" ]]; then
                 if [[ "${NIGHTLY_BUILD:-false,,}" == "true" ]]; then

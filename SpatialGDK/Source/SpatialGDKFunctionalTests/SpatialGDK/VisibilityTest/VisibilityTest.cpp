@@ -5,6 +5,7 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 
+#include "Engine/NetDriver.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -61,6 +62,10 @@ int AVisibilityTest::GetNumberOfVisibilityTestActors()
 void AVisibilityTest::PrepareTest()
 {
 	Super::PrepareTest();
+
+	const auto bRunningWithReplicationGraph = [this]() {
+		return GetNetDriver()->GetReplicationDriver() != nullptr;
+	};
 
 	{ // Step 0 - The server spawn a TestMovementCharacter and makes Client 1 possess it.
 		AddStep(TEXT("VisibilityTestServerSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -176,10 +181,23 @@ void AVisibilityTest::PrepareTest()
 
 	{ // Step 8 - Clients check that the AReplicatedVisibilityTestActor is no longer replicated.
 		AddStep(TEXT("VisibilityTestClientCheckReplicatedActorsAfterSetActorHidden"), FWorkerDefinition::AllClients, nullptr, nullptr,
-				[this](float DeltaTime) {
-					if (GetNumberOfVisibilityTestActors() == 0 && !IsValid(TestActor))
+				[this, bRunningWithReplicationGraph](float DeltaTime) {
+					if (bRunningWithReplicationGraph())
 					{
-						FinishStep();
+						// Replication graph has different semantics for bHidden actors, specifically that it does NOT stop replicating them
+						// This makes this test almost worhtless for running with replication graph, but we at least keep the expectation
+						// here so that we will know if this behaviour changes in future Unreal versions.
+						if (GetNumberOfVisibilityTestActors() == 1 && IsValid(TestActor))
+						{
+							FinishStep();
+						}
+					}
+					else
+					{
+						if (GetNumberOfVisibilityTestActors() == 0 && !IsValid(TestActor))
+						{
+							FinishStep();
+						}
 					}
 				});
 	}
@@ -218,10 +236,23 @@ void AVisibilityTest::PrepareTest()
 	{ // Step 11 - Clients check that they can still not see the AReplicatedVisibilityTestActor
 		AddStep(
 			TEXT("VisibilityTestClientCheckFinalReplicatedActors"), FWorkerDefinition::AllClients, nullptr, nullptr,
-			[this](float DeltaTime) {
-				if (GetNumberOfVisibilityTestActors() == 0 && !IsValid(TestActor))
+			[this, bRunningWithReplicationGraph](float DeltaTime) {
+				if (bRunningWithReplicationGraph())
 				{
-					FinishStep();
+					// Replication graph has different semantics for bHidden actors, specifically that it does NOT stop replicating them
+					// This makes this test almost worhtless for running with replication graph, but we at least keep the expectation here
+					// so that we will know if this behaviour changes in future Unreal versions.
+					if (GetNumberOfVisibilityTestActors() == 1 && IsValid(TestActor))
+					{
+						FinishStep();
+					}
+				}
+				else
+				{
+					if (GetNumberOfVisibilityTestActors() == 0 && !IsValid(TestActor))
+					{
+						FinishStep();
+					}
 				}
 			},
 			StepTimeLimit);
