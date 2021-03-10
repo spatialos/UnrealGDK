@@ -1681,6 +1681,25 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 	DestroyActor(Actor, EntityId);
 }
 
+Worker_ComponentData ActorSystem::CreateLevelComponentData(const AActor& Actor, const UWorld& NetDriverWorld,
+														   const USpatialClassInfoManager& ClassInfoManager)
+{
+	UWorld* ActorWorld = Actor.GetTypedOuter<UWorld>();
+	if (ActorWorld != &NetDriverWorld)
+	{
+		const uint32 ComponentId = ClassInfoManager.GetComponentIdFromLevelPath(ActorWorld->GetOuter()->GetPathName());
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			return SpatialGDK::ComponentFactory::CreateEmptyComponentData(ComponentId);
+		}
+		UE_LOG(LogActorSystem, Error,
+			   TEXT("Could not find Streaming Level Component for Level %s, processing Actor %s. Have you generated schema?"),
+			   *ActorWorld->GetOuter()->GetPathName(), *Actor.GetPathName());
+	}
+
+	return SpatialGDK::ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
+}
+
 void ActorSystem::CreateTombstoneEntity(AActor* Actor)
 {
 	check(Actor->IsNetStartupActor());
@@ -1690,7 +1709,7 @@ void ActorSystem::CreateTombstoneEntity(AActor* Actor)
 	EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->GetRPCService());
 	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
 
-	Components.Add(CreateLevelComponentData(Actor));
+	Components.Add(CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
 
 	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
 
@@ -1894,16 +1913,6 @@ void ActorSystem::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, cons
 	NetDriver->PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
 }
 
-void ActorSystem::SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten)
-{
-	UE_LOG(LogActorSystem, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"),
-		   *Channel->Actor->GetName(), Channel->GetEntityId(), Channel->Actor->HasAuthority());
-
-	const Worker_RequestId RequestId = CreateEntity(Channel, OutBytesWritten);
-
-	NetDriver->Receiver->AddPendingActorRequest(RequestId, Channel);
-}
-
 void ActorSystem::DestroyActor(AActor* Actor, const Worker_EntityId EntityId)
 {
 	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
@@ -1998,46 +2007,6 @@ FString ActorSystem::GetObjectNameFromRepState(const FSpatialObjectRepState& Rep
 		return Obj->GetName();
 	}
 	return TEXT("<unknown>");
-}
-
-Worker_RequestId ActorSystem::CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten)
-{
-	EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, &*NetDriver->RPCService);
-	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutBytesWritten);
-
-	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
-	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
-
-	Worker_EntityId EntityId = Channel->GetEntityId();
-
-	FSpatialGDKSpanId SpanId;
-	if (EventTracer != nullptr)
-	{
-		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCreateEntity(Channel->Actor, EntityId));
-	}
-
-	const Worker_RequestId CreateEntityRequestId =
-		NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, RETRY_UNTIL_COMPLETE, SpanId);
-
-	return CreateEntityRequestId;
-}
-
-Worker_ComponentData ActorSystem::CreateLevelComponentData(AActor* Actor)
-{
-	UWorld* ActorWorld = Actor->GetTypedOuter<UWorld>();
-	if (ActorWorld != NetDriver->World)
-	{
-		const uint32 ComponentId = NetDriver->ClassInfoManager->GetComponentIdFromLevelPath(ActorWorld->GetOuter()->GetPathName());
-		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			return ComponentFactory::CreateEmptyComponentData(ComponentId);
-		}
-		UE_LOG(LogActorSystem, Error,
-			   TEXT("Could not find Streaming Level Component for Level %s, processing Actor %s. Have you generated schema?"),
-			   *ActorWorld->GetOuter()->GetPathName(), *Actor->GetPathName());
-	}
-
-	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
 }
 
 void ActorSystem::CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> EntityComponents)

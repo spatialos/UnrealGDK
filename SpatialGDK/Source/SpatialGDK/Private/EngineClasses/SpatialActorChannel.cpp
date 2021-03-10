@@ -27,6 +27,8 @@
 #include "Schema/NetOwningClientWorker.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/ComponentFactory.h"
+#include "Utils/EntityFactory.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaOption.h"
@@ -685,7 +687,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			// so we know what subobjects are relevant for replication when creating the entity.
 			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 
-			NetDriver->ActorSystem->SendCreateEntityRequest(this, ReplicationBytesWritten);
+			SendCreateEntityRequest(ReplicationBytesWritten);
 
 			bCreatedEntity = true;
 
@@ -1166,8 +1168,38 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	Replicator.CallRepNotifies(false);
 }
 
-void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
+void USpatialActorChannel::SendCreateEntityRequest(uint32& OutBytesWritten)
 {
+	UE_LOG(LogActorSystem, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"), *Actor->GetName(),
+		   GetEntityId(), Actor->HasAuthority());
+
+	SpatialGDK::EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
+	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(this, OutBytesWritten);
+
+	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
+	ComponentDatas.Add(SpatialGDK::ActorSystem::CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
+
+	FSpatialGDKSpanId SpanId;
+	if (EventTracer != nullptr)
+	{
+		SpanId = EventTracer->TraceEvent(SpatialGDK::FSpatialTraceEventBuilder::CreateSendCreateEntity(Actor, EntityId));
+	}
+
+	const Worker_RequestId CreateEntityRequestId =
+		NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
+
+	CreateEntityHandler.AddRequest(CreateEntityRequestId,
+								   CreateEntityDelegate::CreateUObject(this, &USpatialActorChannel::OnEntityCreated, SpanId));
+}
+
+void USpatialActorChannel::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, const FSpatialGDKSpanId SpanId)
+{
+	if (EventTracer != nullptr)
+	{
+		EventTracer->TraceEvent(SpatialGDK::FSpatialTraceEventBuilder::CreateReceiveCreateEntitySuccess(Actor, EntityId),
+								/* Causes */ SpanId.GetConstId(), /* NumCauses */ 1);
+	}
+
 	check(NetDriver->GetNetMode() < NM_Client);
 
 	if (Actor == nullptr || Actor->IsPendingKill())
@@ -1205,7 +1237,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 			// TODO: UNR-664 - Track these bytes written to use in saturation.
 			uint32 BytesWritten = 0;
-			NetDriver->ActorSystem->SendCreateEntityRequest(this, BytesWritten);
+			SendCreateEntityRequest(BytesWritten);
 		}
 		break;
 	case WORKER_STATUS_CODE_APPLICATION_ERROR:

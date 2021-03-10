@@ -356,8 +356,6 @@ void USpatialReceiver::OnCreateEntityResponse(const Worker_Op& Op)
 	// channel.
 	if (Channel.IsValid())
 	{
-		Channel->OnCreateEntityResponse(CreateEntityResponseOp);
-
 		if (EventTracer != nullptr)
 		{
 			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntitySuccess(Channel->Actor, EntityId),

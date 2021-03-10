@@ -257,7 +257,10 @@ public:
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
 								  const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
 
-	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
+	// Entity Creation
+	void SendCreateEntityRequest(uint32& OutBytesWritten);
+
+	void OnEntityCreated(const Worker_CreateEntityResponseOp& CreateEntityResponseOp, FSpatialGDKSpanId SpanId);
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
 											 const FObjectReferencesMap& RefMap, UObject* Object);
