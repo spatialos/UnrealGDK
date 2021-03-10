@@ -129,6 +129,8 @@ void ASpatialTestSingleServerDynamicComponents::PrepareTest()
 					   TEXT("Reference from the late-created dynamic component to the test works."));
 			AssertTrue(TestActor->LateAddedComponent->OwnerOnlyReplicatedVar == 0,
 					   TEXT("Owner only property should not have been replicated yet, as the owner hasn't been set."));
+			// Seems like native Unreal will NOT send the initial only property on the late added component, presumably because it does not
+			// come in an initial bunch
 			AssertTrue(TestActor->LateAddedComponent->InitialOnlyReplicatedVar == ((bInitialOnlyEnabled || !bSpatialEnabled) ? 0 : 202),
 					   TEXT("Initial only property should not have been replicated, unless running with Spatial without proper InitialOnly "
 							"support."));
@@ -202,6 +204,7 @@ void ASpatialTestSingleServerDynamicComponents::PrepareTest()
 					   TEXT("Reference from the on-spawn dynamic component to its parent works after swapping."));
 			AssertTrue(TestActor->OnSpawnComponent->OwnerOnlyReplicatedVar == 0,
 					   TEXT("Owner only property should not have been replicated yet, as the owner hasn't been set."));
+			// Native Unreal will NOT send the initial only property, since this was a component added dynamically (and late) to an actor
 			AssertTrue(TestActor->OnSpawnComponent->InitialOnlyReplicatedVar == ((bInitialOnlyEnabled || !bSpatialEnabled) ? 0 : 302),
 					   TEXT("Initial only property should not have been replicated, unless running with Spatial without proper InitialOnly "
 							"support."));
@@ -214,6 +217,7 @@ void ASpatialTestSingleServerDynamicComponents::PrepareTest()
 					   TEXT("Reference from the late-created dynamic component to the test works."));
 			AssertTrue(TestActor->LateAddedComponent->OwnerOnlyReplicatedVar == 0,
 					   TEXT("Owner only property should not have been replicated yet, as the owner hasn't been set."));
+			// Native Unreal will NOT send the initial only property, since this was a component added dynamically (and late) to an actor
 			AssertTrue(TestActor->LateAddedComponent->InitialOnlyReplicatedVar == ((bInitialOnlyEnabled || !bSpatialEnabled) ? 0 : 402),
 					   TEXT("Initial only property should not have been replicated, unless running with Spatial without proper InitialOnly "
 							"support."));
