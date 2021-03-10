@@ -4,7 +4,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 #include "SpatialGDKSettings.h"
 #include "TestClasses/SpatialTestInitialOnlySpawnActor.h"
 
@@ -37,17 +37,12 @@ void ASpatialTestInitialOnlyForSpawnActor::PrepareTest()
 
 		RegisterAutoDestroyActor(SpawnActor);
 
-		// Set the PositionUpdateThresholdMaxCentimeters to a lower value so that the spatial position updates can be sent every time the
-		// character moves, decreasing the overall duration of the test
-		PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
-		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = 0.0f;
-
 		AssertTrue(GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition, TEXT("Initial Only Enabled"));
 
-		// Spawn the TestMovementCharacter actor for Client 1 to possess.
+		// Spawn the TestPossessionPawn actor for Client 1 to possess.
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-		ATestMovementCharacter* TestCharacter =
-			GetWorld()->SpawnActor<ATestMovementCharacter>(FVector(0.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+		ATestPossessionPawn* TestCharacter =
+			GetWorld()->SpawnActor<ATestPossessionPawn>(FVector(0.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
 		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 
 		// Set a reference to the previous Pawn so that it can be processed back in the last step of the test
@@ -145,13 +140,4 @@ void ASpatialTestInitialOnlyForSpawnActor::PrepareTest()
 
 		FinishStep();
 	});
-}
-
-void ASpatialTestInitialOnlyForSpawnActor::FinishTest(EFunctionalTestResult TestResult, const FString& Message)
-{
-	Super::FinishTest(TestResult, Message);
-
-	// Restoring the PositionUpdateThresholdMaxCentimeters here catches most but not all of the cases when the test failing would cause
-	// PositionUpdateThresholdMaxCentimeters to be changed.
-	GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = PreviousMaximumDistanceThreshold;
 }
