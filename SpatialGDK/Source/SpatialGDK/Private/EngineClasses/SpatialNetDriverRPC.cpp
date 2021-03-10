@@ -92,7 +92,7 @@ void USpatialNetDriverRPC::Init(USpatialNetDriver* InNetDriver, const SpatialGDK
 {
 	NetDriver = InNetDriver;
 	LatencyTracer = USpatialLatencyTracer::GetTracer(InNetDriver->GetWorld());
-	EventTracer = /*InNetDriver->Connection->GetEventTracer()*/ nullptr;
+	EventTracer = InNetDriver->Connection->GetEventTracer();
 	RPCService = MakeUnique<SpatialGDK::RPCService>(InActorNonAuthSubView, InActorAuthSubView);
 
 	{
