@@ -264,10 +264,12 @@ bool USpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::Receiv
 	UFunction* Function = ClassInfo.RPCs[RPCData.Index];
 	if (Function == nullptr)
 	{
+		// TODO, log something
 		// return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
 		return RPCConsumed;
 	}
 
+	// NB : FMemory_Alloca is stack allocation, and cannot be done inside the RAII holder.
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 	RAIIParamsHolder ParamAlloc(Function, Parms);
 
@@ -276,9 +278,8 @@ bool USpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::Receiv
 		// Scope for the SpatialNetBitReader lifecycle (only one should exist per thread).
 		TSet<FUnrealObjectRef> MappedRefs;
 
-		TArray<uint8> DataCopy(RPCData.PayloadData.GetData(), RPCData.PayloadData.Num());
-		FSpatialNetBitReader PayloadReader(NetDriver->PackageMap, DataCopy.GetData(), RPCData.PayloadData.Num() * 8, MappedRefs,
-										   UnresolvedRefs);
+		FSpatialNetBitReader PayloadReader(NetDriver->PackageMap, const_cast<uint8*>(RPCData.PayloadData.GetData()),
+										   RPCData.PayloadData.Num() * 8, MappedRefs, UnresolvedRefs);
 
 		TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 		RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
@@ -289,44 +290,45 @@ bool USpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::Receiv
 	const float TimeQueued = (FPlatformTime::Cycles64() - MetaData.Timestamp) * FPlatformTime::GetSecondsPerCycle64();
 	const int32 UnresolvedRefCount = UnresolvedRefs.Num();
 
-	if (UnresolvedRefCount == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued)
+	if (UnresolvedRefCount != 0 && TimeQueued < SpatialSettings->QueuedIncomingRPCWaitTime)
 	{
-		// -> Use MetaData.ReceiverName to recover the RPC type.
-		if (UnresolvedRefCount > 0 /* && !SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(PendingRPCParams.Type)*/
-			&& (Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
-		{
-			const FString UnresolvedEntityIds = FString::JoinBy(UnresolvedRefs, TEXT(", "), [](const FUnrealObjectRef& Ref) {
-				return Ref.ToString();
-			});
-
-			UE_LOG(LogSpatialRPCService, Warning,
-				   TEXT("Executed RPC %s::%s with unresolved references (%s) after %.3f seconds of queueing. Owner name: %s"),
-				   *GetNameSafe(TargetObject), *GetNameSafe(Function), *UnresolvedEntityIds, TimeQueued,
-				   *GetNameSafe(TargetObject->GetOuter()));
-		}
-
-		// Get the RPC target Actor.
-		AActor* Actor = TargetObject->IsA<AActor>() ? Cast<AActor>(TargetObject) : TargetObject->GetTypedOuter<AActor>();
-
-		bool bUseEventTracer = EventTracer != nullptr;
-		if (bUseEventTracer)
-		{
-			FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateApplyRPC(TargetObject, Function),
-															   /* Causes */ MetaData.SpanId.GetConstId(), /* NumCauses */ 1);
-			EventTracer->AddToStack(SpanId);
-		}
-
-		TargetObject->ProcessEvent(Function, Parms);
-
-		if (bUseEventTracer)
-		{
-			EventTracer->PopFromStack();
-		}
-
-		return RPCConsumed;
+		return !RPCConsumed;
 	}
 
-	return !RPCConsumed;
+	if (UnresolvedRefCount > 0
+		// -> Use MetaData.ReceiverName to recover the RPC type.
+		/* && !SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(PendingRPCParams.Type)*/
+		&& (Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
+	{
+		const FString UnresolvedEntityIds = FString::JoinBy(UnresolvedRefs, TEXT(", "), [](const FUnrealObjectRef& Ref) {
+			return Ref.ToString();
+		});
+
+		UE_LOG(LogSpatialRPCService, Warning,
+			   TEXT("Executed RPC %s::%s with unresolved references (%s) after %.3f seconds of queueing. Owner name: %s"),
+			   *GetNameSafe(TargetObject), *GetNameSafe(Function), *UnresolvedEntityIds, TimeQueued,
+			   *GetNameSafe(TargetObject->GetOuter()));
+	}
+
+	// Get the RPC target Actor (was used for additional debug authority checking, but CanExtractRPC should handle that now)
+	// AActor* Actor = TargetObject->IsA<AActor>() ? Cast<AActor>(TargetObject) : TargetObject->GetTypedOuter<AActor>();
+
+	bool bUseEventTracer = EventTracer != nullptr;
+	if (bUseEventTracer)
+	{
+		FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateApplyRPC(TargetObject, Function),
+														   /* Causes */ MetaData.SpanId.GetConstId(), /* NumCauses */ 1);
+		EventTracer->AddToStack(SpanId);
+	}
+
+	TargetObject->ProcessEvent(Function, Parms);
+
+	if (bUseEventTracer)
+	{
+		EventTracer->PopFromStack();
+	}
+
+	return RPCConsumed;
 }
 
 void USpatialNetDriverRPC::MakeRingBufferWithACKSender(FName QueueName, ERPCType RPCType, Worker_ComponentSetId AuthoritySet,
