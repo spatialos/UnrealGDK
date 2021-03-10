@@ -14,8 +14,8 @@ namespace Improbable.WorkerCoordinator
         public string ClientName;
         public string DevAuthToken;
         public string TargetDeployment;
-        public long StartTick;
-        public long EndTick;
+        public DateTime StartTime;
+        public DateTime EndTime;
     }
 
     internal interface ILifetimeComponentHost
@@ -49,13 +49,6 @@ namespace Improbable.WorkerCoordinator
         private int TickInterval = 1000;
         private Logger Logger;
         private Random Random;
-
-        // Temp variables to avoid allocate variable in tick method.
-        private long CurTicks;
-        private int Length;
-        private bool IsActiveProcessListEmpty;
-        private ClientInfo SimulatedClientInfo;
-
         private Timer TickTimer;
         private AutoResetEvent ResetEvent;
 
@@ -135,14 +128,9 @@ namespace Improbable.WorkerCoordinator
         {
             WaitingList.Add(clientInfo);
 
-            Logger.WriteLog($"[LifetimeComponent][{DateTime.Now.ToString("HH:mm:ss")}] Add client ClientName={clientInfo.ClientName}, IsLifetimeMode={IsLifetimeMode}.");
+            Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] Add client ClientName={clientInfo.ClientName}, IsLifetimeMode={IsLifetimeMode}.");
         }
-
-        private long NewLifetimeTicks()
-        {
-            return TimeSpan.FromMinutes(Random.Next(MinLifetime, MaxLifetime)).Ticks;
-        }
-
+        
         /// <summary>
         /// Start will keep blocking until it is finished.
         /// </summary>
@@ -155,19 +143,19 @@ namespace Improbable.WorkerCoordinator
             ResetEvent.WaitOne();
             TickTimer.Dispose();
 
-            Logger.WriteLog($"[LifetimeComponent][{DateTime.Now.ToString("HH:mm:ss")}] All simulated clients are finished, IsLifetimeMode={IsLifetimeMode}.");
+            Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] All simulated clients are finished, IsLifetimeMode={IsLifetimeMode}.");
         }
 
         private void Tick(object state)
         {
             // Check player status, restart player client if it exit early.
-            IsActiveProcessListEmpty = Host.CheckPlayerStatus();
+            bool isActiveProcessListEmpty = Host.CheckPlayerStatus();
 
             // Non-lifetime mode, do not stop any clients.
             if (!IsLifetimeMode)
             {
                 // All clients are finished.
-                if (IsActiveProcessListEmpty)
+                if (isActiveProcessListEmpty)
                 {
                     ResetEvent.Set();
                 }
@@ -176,56 +164,54 @@ namespace Improbable.WorkerCoordinator
             }
 
             // Lifetime mode.
-            CurTicks = DateTime.Now.Ticks;
+            DateTime curTime = DateTime.Now;
 
             // Data flow is waiting list -> running list -> waiting list.
             // Checking sequence is running list -> waiting list.
 
             // Running list.
-            Length = RunningList.Count;
-            for (int i = Length - 1; i >= 0; --i)
+            for (int i = RunningList.Count - 1; i >= 0; --i)
             {
-                SimulatedClientInfo = RunningList[i];
-                if (CurTicks >= SimulatedClientInfo.EndTick)
+                var clientInfo = RunningList[i];
+                if (curTime >= clientInfo.EndTime)
                 {
                     // End client.
-                    Host?.StopClient(SimulatedClientInfo);
+                    Host?.StopClient(clientInfo);
 
-                    Logger.WriteLog($"[LifetimeComponent][{DateTime.Now.ToString("HH:mm:ss")}] Stop client ClientName={SimulatedClientInfo.ClientName}.");
+                    Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] Stop client ClientName={clientInfo.ClientName}.");
 
                     // Delay a few seconds to restart. Make sure the client has timed out and gone offline.
-                    SimulatedClientInfo.StartTick = TimeSpan.FromSeconds(RestartAfterSeconds).Ticks + CurTicks;
+                    clientInfo.StartTime = curTime.AddSeconds(RestartAfterSeconds);
 
                     // Restart with new simulated player.
                     if (UseNewSimulatedPlayer)
                     {
-                        SimulatedClientInfo.ClientName = "SimulatedPlayer" + Guid.NewGuid();
+                        clientInfo.ClientName = "SimulatedPlayer" + Guid.NewGuid();
                     }
 
                     // Move to wait list.
                     RunningList.RemoveAt(i);
-                    WaitingList.Add(SimulatedClientInfo);
+                    WaitingList.Add(clientInfo);
                 }
             }
 
             // Waiting list.
-            Length = WaitingList.Count;
-            for (int i = Length - 1; i >= 0; --i)
+            for (int i = WaitingList.Count - 1; i >= 0; --i)
             {
-                SimulatedClientInfo = WaitingList[i];
-                if (CurTicks >= SimulatedClientInfo.StartTick)
+                var clientInfo = WaitingList[i];
+                if (curTime >= clientInfo.StartTime)
                 {
                     // Start client.
-                    Host?.StartClient(SimulatedClientInfo);
+                    Host?.StartClient(clientInfo);
 
-                    Logger.WriteLog($"[LifetimeComponent][{DateTime.Now.ToString("HH:mm:ss")}] Start client ClientName ={SimulatedClientInfo.ClientName}.");
+                    Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] Start client ClientName ={clientInfo.ClientName}.");
 
                     // Update lifetime.
-                    SimulatedClientInfo.EndTick = CurTicks + NewLifetimeTicks();
+                    clientInfo.EndTime = curTime.AddMinutes(Random.Next(MinLifetime, MaxLifetime));
 
                     // Move to running list.
                     WaitingList.RemoveAt(i);
-                    RunningList.Add(SimulatedClientInfo);
+                    RunningList.Add(clientInfo);
                 }
             }
         }

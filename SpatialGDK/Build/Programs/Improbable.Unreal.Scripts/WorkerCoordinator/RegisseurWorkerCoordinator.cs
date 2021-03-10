@@ -79,7 +79,7 @@ namespace Improbable.WorkerCoordinator
         {
             Thread.Sleep(InitialStartDelayMillis);
 
-            long curTicks = DateTime.Now.Ticks;
+            DateTime curTime = DateTime.Now;
 
             for (int i = 0; i < NumSimulatedPlayersToStart; i++)
             {
@@ -87,7 +87,7 @@ namespace Improbable.WorkerCoordinator
                 ClientInfo clientInfo = new ClientInfo()
                 {
                     ClientName = $"SimulatedPlayer{Guid.NewGuid()}",
-                    StartTick = curTicks + StartIntervalMillis * TimeSpan.TicksPerMillisecond
+                    StartTime = curTime.AddMilliseconds(StartIntervalMillis * i)
                 };
 
                 LifetimeComponent.AddSimulatedPlayer(clientInfo);

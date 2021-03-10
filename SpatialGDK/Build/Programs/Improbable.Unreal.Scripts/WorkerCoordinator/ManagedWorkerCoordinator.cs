@@ -151,20 +151,13 @@ namespace Improbable.WorkerCoordinator
 
             Array.Sort(startDelaysMillis);
 
-            long curTicks = DateTime.Now.Ticks;
+            DateTime curTime = DateTime.Now;
             for (int i = 0; i < NumSimulatedPlayersToStart; i++)
             {
-                string clientName = "SimulatedPlayer" + Guid.NewGuid();
-                var timeToSleep = startDelaysMillis[i];
-                if (i > 0)
-                {
-                    timeToSleep -= startDelaysMillis[i - 1];
-                }
-
                 ClientInfo clientInfo = new ClientInfo()
                 {
-                    ClientName = clientName,
-                    StartTick = timeToSleep * TimeSpan.TicksPerMillisecond + curTicks,
+                    ClientName = $"SimulatedPlayer{Guid.NewGuid()}",
+                    StartTime = curTime.AddMilliseconds(startDelaysMillis[i]),
                     DevAuthToken = devAuthToken,
                     TargetDeployment = targetDeployment
                 };
