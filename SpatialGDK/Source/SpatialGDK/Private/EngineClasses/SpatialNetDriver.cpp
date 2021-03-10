@@ -1234,11 +1234,13 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 
 void USpatialNetDriver::ProcessOwnershipChanges()
 {
-	const bool bShouldWriteLoadBalancingData = GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents;
+	const bool bShouldWriteLoadBalancingData =
+		IsValid(Connection) && GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents;
 	TOptional<const SpatialGDK::ActorSetWriter> LoadBalancingWriter;
 
 	if (bShouldWriteLoadBalancingData)
 	{
+		check(IsValid(PackageMap));
 		LoadBalancingWriter.Emplace(Connection->GetCoordinator(), *PackageMap);
 	}
 

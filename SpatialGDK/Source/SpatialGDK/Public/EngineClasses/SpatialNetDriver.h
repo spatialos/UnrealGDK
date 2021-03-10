@@ -170,6 +170,7 @@ public:
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
+	bool bHasConnectionBeenRemoved = false;
 	UPROPERTY()
 	USpatialConnectionManager* ConnectionManager;
 	UPROPERTY()
