@@ -50,9 +50,6 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	UPROPERTY()
-	USpatialReceiver* Receiver;
-
 	FTimerManager* TimerManager;
 	TArray<EntityRange> ReservedEntityIDRanges;
 

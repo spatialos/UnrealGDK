@@ -15,18 +15,13 @@ using namespace SpatialGDK;
 SpatialSnapshotManager::SpatialSnapshotManager()
 	: Connection(nullptr)
 	, GlobalStateManager(nullptr)
-	, Receiver(nullptr)
 {
 }
 
-void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager,
-								  USpatialReceiver* InReceiver)
+void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager)
 {
 	check(InConnection != nullptr);
 	Connection = InConnection;
-
-	check(InReceiver != nullptr);
-	Receiver = InReceiver;
 
 	check(InGlobalStateManager != nullptr);
 	GlobalStateManager = InGlobalStateManager;

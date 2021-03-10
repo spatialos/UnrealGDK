@@ -119,11 +119,6 @@ private:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
-	UPROPERTY()
-	USpatialSender* Sender;
-
-	UPROPERTY()
-	USpatialReceiver* Receiver;
 	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimHandler;
 	SpatialGDK::EntityQueryHandler QueryHandler;
 

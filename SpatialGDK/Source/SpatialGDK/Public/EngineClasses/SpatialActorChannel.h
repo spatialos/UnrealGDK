@@ -339,9 +339,6 @@ private:
 	UPROPERTY(transient)
 	class USpatialSender* Sender;
 
-	UPROPERTY(transient)
-	class USpatialReceiver* Receiver;
-
 	SpatialGDK::SpatialEventTracer* EventTracer;
 
 	SpatialGDK::CreateEntityHandler CreateEntityHandler;

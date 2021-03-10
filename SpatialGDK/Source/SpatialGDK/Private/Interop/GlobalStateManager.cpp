@@ -35,8 +35,6 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
-	Sender = InNetDriver->Sender;
-	Receiver = InNetDriver->Receiver;
 	ClaimHandler = MakeUnique<ClaimPartitionHandler>(*NetDriver->Connection);
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 

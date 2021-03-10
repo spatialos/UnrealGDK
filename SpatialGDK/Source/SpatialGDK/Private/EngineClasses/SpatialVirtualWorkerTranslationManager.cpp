@@ -12,11 +12,9 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslationManager);
 
-SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(SpatialOSDispatcherInterface* InReceiver,
-																			   SpatialOSWorkerInterface* InConnection,
+SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(SpatialOSWorkerInterface* InConnection,
 																			   SpatialVirtualWorkerTranslator* InTranslator)
 	: Translator(InTranslator)
-	, Receiver(InReceiver)
 	, Connection(InConnection)
 	, Partitions({})
 	, bWorkerEntityQueryInFlight(false)

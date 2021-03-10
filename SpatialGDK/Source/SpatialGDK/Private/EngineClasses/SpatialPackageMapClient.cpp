@@ -467,7 +467,6 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 	check(EntityId > 0);
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
-	USpatialReceiver* Receiver = SpatialNetDriver->Receiver;
 
 	FNetworkGUID NetGUID;
 	FUnrealObjectRef EntityObjectRef(EntityId, 0);

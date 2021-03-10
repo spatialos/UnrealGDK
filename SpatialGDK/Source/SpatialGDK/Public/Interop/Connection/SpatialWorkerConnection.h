@@ -4,8 +4,8 @@
 
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 
-#include "Interop/CreateEntityHandler.h"
 #include "Interop/ClaimPartitionHandler.h"
+#include "Interop/CreateEntityHandler.h"
 
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"

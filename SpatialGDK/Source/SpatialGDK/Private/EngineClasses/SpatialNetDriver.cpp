@@ -437,7 +437,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		if (SpatialSettings->bEnableInitialOnlyReplicationCondition && !IsServer())
 		{
-			InitialOnlyFilter = MakeUnique<SpatialGDK::InitialOnlyFilter>(*Connection, *Receiver);
+			InitialOnlyFilter = MakeUnique<SpatialGDK::InitialOnlyFilter>(*Connection);
 		}
 
 		CreateAndInitializeLoadBalancingClasses();
@@ -513,11 +513,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
-		Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
+		Dispatcher->Init(StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
 		Sender->Init(this, &TimerManager, Connection->GetEventTracer());
 		Receiver->Init(this, Connection->GetEventTracer());
 		GlobalStateManager->Init(this);
-		SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
+		SnapshotManager->Init(Connection, GlobalStateManager);
 		PlayerSpawner->Init(this);
 		PlayerSpawner->OnPlayerSpawnFailed.BindUObject(GameInstance, &USpatialGameInstance::HandleOnPlayerSpawnFailed);
 
@@ -545,9 +545,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		SpatialGDK::FSubView& WellKnownSubView =
 			Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
 													   SpatialGDK::FSubView::NoDispatcherCallbacks);
-		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Receiver, Connection,
-																			  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
-																			  *VirtualWorkerTranslator, *GlobalStateManager);
+		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(
+			WellKnownSubView, Connection, LoadBalanceStrategy->GetMinimumRequiredWorkers(), *VirtualWorkerTranslator, *GlobalStateManager);
 	}
 }
 

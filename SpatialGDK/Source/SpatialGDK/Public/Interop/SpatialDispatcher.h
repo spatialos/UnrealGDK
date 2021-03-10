@@ -23,7 +23,7 @@ class SPATIALGDK_API SpatialDispatcher
 public:
 	using FCallbackId = uint32;
 
-	void Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics,
+	void Init(USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics,
 			  USpatialWorkerFlags* InSpatialWorkerFlags);
 	void ProcessOps(const TArray<Worker_Op>& Ops);
 
@@ -60,7 +60,6 @@ private:
 									 const TFunction<void(const Worker_Op*)>& Callback);
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
 
-	TWeakObjectPtr<USpatialReceiver> Receiver;
 	TWeakObjectPtr<USpatialNetDriverDebugContext> DebugContext;
 	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
 	TWeakObjectPtr<USpatialMetrics> SpatialMetrics;

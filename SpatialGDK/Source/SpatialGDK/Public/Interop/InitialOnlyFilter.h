@@ -18,7 +18,7 @@ namespace SpatialGDK
 class InitialOnlyFilter
 {
 public:
-	InitialOnlyFilter(USpatialWorkerConnection& InConnection, USpatialReceiver& InReceiver);
+	InitialOnlyFilter(USpatialWorkerConnection& InConnection);
 
 	bool HasInitialOnlyData(Worker_EntityId EntityId) const;
 	bool HasInitialOnlyDataOrRequestIfAbsent(Worker_EntityId EntityId);
@@ -31,7 +31,6 @@ private:
 	void ClearRequest(Worker_RequestId RequestId);
 
 	USpatialWorkerConnection& Connection;
-	USpatialReceiver& Receiver;
 
 	EntityQueryHandler QueryHandler;
 	TSet<Worker_EntityId_Key> PendingInitialOnlyEntities;

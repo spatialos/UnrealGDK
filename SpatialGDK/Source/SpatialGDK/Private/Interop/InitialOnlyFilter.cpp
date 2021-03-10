@@ -10,9 +10,8 @@ DEFINE_LOG_CATEGORY(LogInitialOnlyFilter);
 
 namespace SpatialGDK
 {
-InitialOnlyFilter::InitialOnlyFilter(USpatialWorkerConnection& InConnection, USpatialReceiver& InReceiver)
+InitialOnlyFilter::InitialOnlyFilter(USpatialWorkerConnection& InConnection)
 	: Connection(InConnection)
-	, Receiver(InReceiver)
 {
 }
 

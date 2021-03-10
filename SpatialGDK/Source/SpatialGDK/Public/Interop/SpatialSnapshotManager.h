@@ -26,7 +26,7 @@ class SPATIALGDK_API SpatialSnapshotManager
 public:
 	SpatialSnapshotManager();
 
-	void Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager, USpatialReceiver* InReceiver);
+	void Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager);
 
 	void WorldWipe(const PostWorldWipeDelegate& Delegate);
 	void LoadSnapshot(const FString& SnapshotName);
@@ -38,7 +38,6 @@ private:
 
 	TWeakObjectPtr<USpatialWorkerConnection> Connection;
 	TWeakObjectPtr<UGlobalStateManager> GlobalStateManager;
-	TWeakObjectPtr<USpatialReceiver> Receiver;
 	SpatialGDK::ReserveEntityHandler ReserveEntityHandler;
 	SpatialGDK::EntityQueryHandler QueryHandler;
 };

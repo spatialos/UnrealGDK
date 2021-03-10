@@ -15,7 +15,6 @@ using namespace SpatialGDK;
 void UEntityPool::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
-	Receiver = InNetDriver->Receiver;
 	TimerManager = InTimerManager;
 
 	ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolInitialReservationCount);
