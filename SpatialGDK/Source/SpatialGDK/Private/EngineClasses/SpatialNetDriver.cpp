@@ -2055,11 +2055,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				GlobalStateManager->Advance();
 			}
 
-			for (const TPair<Worker_EntityId_Key, USpatialActorChannel*>& ActorChannelPair : EntityToActorChannel)
-			{
-				ActorChannelPair.Value->Advance(Connection->GetCoordinator().GetViewDelta());
-			}
-
 			if (SpatialDebuggerSystem.IsValid())
 			{
 				SpatialDebuggerSystem->Advance();

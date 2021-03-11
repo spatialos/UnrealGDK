@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+#include "ClaimPartitionHandler.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -69,6 +70,11 @@ public:
 	void SendAddComponentForSubobject(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo,
 									  uint32& OutBytesWritten);
 	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);
+
+	// Creating entities for actor channels
+	void SendCreateEntityRequest(USpatialActorChannel& ActorChannel, uint32& OutBytesWritten);
+	void OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpatialGDKSpanId CreateOpSpan);
+	bool HasPendingOpsForChannel(const USpatialActorChannel& ActorChannel) const;
 
 	static Worker_ComponentData CreateLevelComponentData(const AActor& Actor, const UWorld& NetDriverWorld,
 														 const USpatialClassInfoManager& ClassInfoManager);
@@ -157,6 +163,9 @@ private:
 	SpatialEventTracer* EventTracer;
 
 	CreateEntityHandler CreateEntityHandler;
+	ClaimPartitionHandler ClaimPartitionHandler;
+
+	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> CreateEntityRequestIdToActorChannel;
 
 	TMap<Worker_EntityId_Key, TSet<Worker_ComponentId>> PendingDynamicSubobjectComponents;
 

@@ -2,6 +2,7 @@
 
 #include "Interop/ActorSystem.h"
 
+#include "Algo/AnyOf.h"
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -18,6 +19,7 @@
 #include "Utils/ComponentReader.h"
 #include "Utils/EntityFactory.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogActorSystem);
 
@@ -141,6 +143,7 @@ ActorSystem::ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneS
 	, TombstoneSubView(&InTombstoneSubView)
 	, NetDriver(InNetDriver)
 	, EventTracer(InEventTracer)
+	, ClaimPartitionHandler(*InNetDriver->Connection)
 {
 }
 
@@ -1911,6 +1914,143 @@ void ActorSystem::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, cons
 	SendRemoveComponents(EntityId, ComponentsToRemove);
 
 	NetDriver->PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
+}
+
+void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, uint32& OutBytesWritten)
+{
+	AActor* Actor = ActorChannel.Actor;
+	const Worker_EntityId EntityId = ActorChannel.GetEntityId();
+	UE_LOG(LogActorSystem, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"), *Actor->GetName(),
+		   ActorChannel.GetEntityId(), Actor->HasAuthority());
+
+	SpatialGDK::EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
+	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(&ActorChannel, OutBytesWritten);
+
+	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
+	ComponentDatas.Add(SpatialGDK::ActorSystem::CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
+
+	FSpatialGDKSpanId SpanId;
+	if (EventTracer != nullptr)
+	{
+		SpanId = EventTracer->TraceEvent(SpatialGDK::FSpatialTraceEventBuilder::CreateSendCreateEntity(Actor, EntityId));
+	}
+
+	const Worker_RequestId CreateEntityRequestId =
+		NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
+
+	CreateEntityHandler.AddRequest(CreateEntityRequestId, CreateEntityDelegate::CreateRaw(this, &ActorSystem::OnEntityCreated, SpanId));
+
+	CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
+}
+
+bool ActorSystem::HasPendingOpsForChannel(const USpatialActorChannel& ActorChannel) const
+{
+	return Algo::AnyOf(CreateEntityRequestIdToActorChannel,
+					   [&ActorChannel](const TPair<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>>& It) {
+						   return It.Value == &ActorChannel;
+					   });
+}
+
+void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpatialGDKSpanId CreateOpSpan)
+{
+	TWeakObjectPtr<USpatialActorChannel> BoundActorChannel;
+
+	if (!ensure(CreateEntityRequestIdToActorChannel.RemoveAndCopyValue(Op.request_id, BoundActorChannel)))
+	{
+		return;
+	}
+
+	if (!ensure(BoundActorChannel.IsValid()))
+	{
+		// The channel was destroyed before the response reached this worker.
+		return;
+	}
+
+	USpatialActorChannel& Channel = *BoundActorChannel.Get();
+
+	AActor* Actor = Channel.Actor;
+	const Worker_EntityId EntityId = Channel.GetEntityId();
+
+	if (EventTracer != nullptr)
+	{
+		EventTracer->TraceEvent(SpatialGDK::FSpatialTraceEventBuilder::CreateReceiveCreateEntitySuccess(Actor, EntityId),
+								/* Causes */ CreateOpSpan.GetConstId(), /* NumCauses */ 1);
+	}
+
+	check(NetDriver->GetNetMode() < NM_Client);
+
+	if (Actor == nullptr || Actor->IsPendingKill())
+	{
+		UE_LOG(LogSpatialActorChannel, Log, TEXT("Actor is invalid after trying to create entity"));
+		return;
+	}
+
+	// True if the entity is in the worker's view.
+	// If this is the case then we know the entity was created and do not need to retry if the request timed-out.
+	const bool bEntityIsInView = NetDriver->StaticComponentView->HasComponent(SpatialGDK::Position::ComponentId, EntityId);
+
+	switch (static_cast<Worker_StatusCode>(Op.status_code))
+	{
+	case WORKER_STATUS_CODE_SUCCESS:
+		UE_LOG(LogSpatialActorChannel, Verbose,
+			   TEXT("Create entity request succeeded. "
+					"Actor %s, request id: %d, entity id: %lld, message: %s"),
+			   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		break;
+	case WORKER_STATUS_CODE_TIMEOUT:
+		if (bEntityIsInView)
+		{
+			UE_LOG(LogSpatialActorChannel, Log,
+				   TEXT("Create entity request failed but the entity was already in view. "
+						"Actor %s, request id: %d, entity id: %lld, message: %s"),
+				   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Warning,
+				   TEXT("Create entity request timed out. Retrying. "
+						"Actor %s, request id: %d, entity id: %lld, message: %s"),
+				   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+
+			// TODO: UNR-664 - Track these bytes written to use in saturation.
+			uint32 BytesWritten = 0;
+			SendCreateEntityRequest(Channel, BytesWritten);
+		}
+		break;
+	case WORKER_STATUS_CODE_APPLICATION_ERROR:
+		if (bEntityIsInView)
+		{
+			UE_LOG(LogSpatialActorChannel, Log,
+				   TEXT("Create entity request failed as the entity already exists and is in view. "
+						"Actor %s, request id: %d, entity id: %lld, message: %s"),
+				   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Warning,
+				   TEXT("Create entity request failed."
+						"Either the reservation expired, the entity already existed, or the entity was invalid. "
+						"Actor %s, request id: %d, entity id: %lld, message: %s"),
+				   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		}
+		break;
+	default:
+		UE_LOG(LogSpatialActorChannel, Error,
+			   TEXT("Create entity request failed. This likely indicates a bug in the Unreal GDK and should be reported."
+					"Actor %s, request id: %d, entity id: %lld, message: %s"),
+			   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		break;
+	}
+
+	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS && Actor->IsA<APlayerController>())
+	{
+		// With USLB, we want the client worker that results in the spawning of a PlayerController to claim the
+		// PlayerController entity as a partition entity so the client can become authoritative over necessary
+		// components (such as client RPC endpoints, player controller component, etc).
+		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Cast<APlayerController>(Actor));
+		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
+		ClaimPartitionHandler.ClaimPartition(ClientSystemEntityId, Op.entity_id);
+	}
 }
 
 void ActorSystem::DestroyActor(AActor* Actor, const Worker_EntityId EntityId)

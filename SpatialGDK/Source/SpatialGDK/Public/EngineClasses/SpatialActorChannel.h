@@ -257,11 +257,6 @@ public:
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
 								  const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
 
-	// Entity Creation
-	void SendCreateEntityRequest(uint32& OutBytesWritten);
-
-	void OnEntityCreated(const Worker_CreateEntityResponseOp& CreateEntityResponseOp, FSpatialGDKSpanId SpanId);
-
 	bool HasPendingOps() const;
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
@@ -279,7 +274,6 @@ public:
 	// Call when a subobject is deleted to unmap its references and cleanup its cached informations.
 	// NB : ObjectPtr might be a dangling pointer.
 	void OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef, UObject* ObjectPtr, const TWeakObjectPtr<UObject>& ObjectWeakPtr);
-	void Advance(const SpatialGDK::ViewDelta& ViewDelta);
 
 	static void ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject);
 
@@ -340,9 +334,6 @@ private:
 	class USpatialSender* Sender;
 
 	SpatialGDK::SpatialEventTracer* EventTracer;
-
-	SpatialGDK::CreateEntityHandler CreateEntityHandler;
-	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimPartitionHandler;
 
 	FVector LastPositionSinceUpdate;
 	double TimeWhenPositionLastUpdated;
