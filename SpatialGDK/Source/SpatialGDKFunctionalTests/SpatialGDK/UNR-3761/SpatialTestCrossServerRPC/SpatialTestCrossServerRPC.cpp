@@ -170,6 +170,27 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 
 	int NumCubes = CubesLocations.Num();
 
+	// Check actors are ready on each server
+	AddStep(
+		TEXT("Dynamic actor tests: TestReadyActors"), FWorkerDefinition::AllServers,
+		[this, NumCubes]() -> bool {
+			TArray<AActor*> TestCubes;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACrossServerRPCCube::StaticClass(), TestCubes);
+
+			bool AreReady = true;
+
+			for (const AActor* Cube : TestCubes)
+			{
+				check(Cube);
+				AreReady &= Cube->IsActorReady();
+			}
+
+			return AreReady;
+		},
+		[this]() {
+			FinishStep();
+		});
+
 	// Each server sends an RPC to all cubes that it is NOT authoritive over.
 	AddStep(
 		TEXT("Dynamic actor tests: ServerSendRPCs"), FWorkerDefinition::AllServers,
