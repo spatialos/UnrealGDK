@@ -5,11 +5,13 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/CrossServerAndClientOrchestrationTest/CrossServerAndClientOrchestrationTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RegisterAutoDestroyActorsTest/RegisterAutoDestroyActorsTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RelevancyTest/RelevancyTest.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestMultiServerUnrealComponents/SpatialTestMultiServerUnrealComponents.h"
 #include "TestWorkerSettings.h"
 
 USpatial2WorkerMap::USpatial2WorkerMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("Spatial2WorkerMap"))
 {
+	SetNumberOfClients(2);
 }
 
 void USpatial2WorkerMap::CreateCustomContentForMap()
@@ -23,6 +25,7 @@ void USpatial2WorkerMap::CreateCustomContentForMap()
 	AddActorToLevel<ARegisterAutoDestroyActorsTestPart1>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ARegisterAutoDestroyActorsTestPart2>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ARelevancyTest>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ASpatialTestMultiServerUnrealComponents>(CurrentLevel, FTransform(FVector(250, -250, 0)));
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2FullInterestWorkerSettings::StaticClass());
