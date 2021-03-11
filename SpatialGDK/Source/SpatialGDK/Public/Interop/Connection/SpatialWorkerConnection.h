@@ -86,7 +86,6 @@ public:
 													const SpatialGDK::FRetryData& RetryData) override;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) override;
 
-	UFUNCTION()
 	void CreateServerWorkerEntity();
 
 	void Advance(float DeltaTimeS);

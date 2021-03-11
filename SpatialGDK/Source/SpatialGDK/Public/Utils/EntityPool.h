@@ -27,7 +27,7 @@ class FTimerManager;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEntityPool, Log, All)
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FEntityPoolReadyEvent);
+DECLARE_MULTICAST_DELEGATE(FEntityPoolReadyEvent);
 
 UCLASS()
 class SPATIALGDK_API UEntityPool : public UObject

@@ -531,7 +531,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		PackageMap->Init(this, &TimerManager);
 		if (IsServer())
 		{
-			PackageMap->GetEntityPoolReadyDelegate().AddDynamic(Connection, &USpatialWorkerConnection::CreateServerWorkerEntity);
+			PackageMap->GetEntityPoolReadyDelegate().AddUObject(Connection, &USpatialWorkerConnection::CreateServerWorkerEntity);
 		}
 
 		// The interest factory depends on the package map, so is created last.
