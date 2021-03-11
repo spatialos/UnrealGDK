@@ -6,8 +6,21 @@
 #include "Schema/AuthorityIntent.h"
 #include "SpatialCommonTypes.h"
 
-enum class EActorMigrationResult : uint8;
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialLoadBalancingHandler, Log, All);
+
+enum class EActorMigrationResult : uint8
+{
+	Success,
+	NotAuthoritative,
+	NotReady,
+	PendingKill,
+	NotInitialized,
+	Streaming,
+	NetDormant,
+	NoSpatialClassFlags,
+	DormantOnConnection
+};
+
 class USpatialNetDriver;
 
 namespace SpatialGDK
@@ -81,7 +94,7 @@ protected:
 	{
 		if (Actor->GetIsReplicated())
 		{
-			EActorMigrationResult ActorMigration = iCtx.IsActorReadyForMigration(Actor);
+			const EActorMigrationResult ActorMigration = iCtx.IsActorReadyForMigration(Actor);
 			if (ActorMigration != EActorMigrationResult::Success)
 			{
 				// Prevents an Actor hierarchy from migrating if one of its actor is not ready.
