@@ -22,7 +22,6 @@ using DataWritten = TFunction<void(Worker_EntityId, Worker_ComponentId, Schema_C
 using UpdateWritten = TFunction<void(Worker_EntityId, Worker_ComponentId, Schema_ComponentUpdate*)>;
 using RequestWritten = TFunction<void(Worker_EntityId, Schema_CommandRequest*)>;
 using ResponseWritten = TFunction<void(Worker_EntityId, Schema_CommandResponse*)>;
-// using RPCExtracted = TFunction<void(FName, Worker_EntityId, Worker_ComponentId, uint64)>;
 using RPCWritten = TFunction<void(Worker_ComponentId, uint64)>;
 
 using CanExtractRPCs = TFunction<bool(Worker_EntityId)>;
@@ -43,8 +42,6 @@ struct RPCReadingContext
 	Schema_Object* Fields = nullptr;
 
 	void OnRPCExtracted(uint64 RPCId) const;
-
-	// RPCCallbacks::RPCExtracted ExtractedCallback;
 };
 
 /**
@@ -120,6 +117,8 @@ protected:
 
 	FName QueueName;
 	const DataKind Kind;
+
+	bool bWriterOpened = false;
 };
 
 /**
@@ -157,7 +156,6 @@ public:
 	virtual void OnRemoved(Worker_EntityId EntityId) = 0;
 	virtual void OnUpdate(const RPCReadingContext& iCtx) = 0;
 	virtual void FlushUpdates(RPCWritingContext&) = 0;
-	// virtual void ExtractReceivedRPCs(const RPCCallbacks::CanExtractRPCs&, const RPCCallbacks::ProcessRPC&) = 0;
 
 	const TSet<Worker_ComponentId>& GetComponentsToRead() const { return ComponentsToRead; }
 

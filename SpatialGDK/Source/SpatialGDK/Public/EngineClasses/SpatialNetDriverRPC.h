@@ -94,15 +94,15 @@ struct TimestampAndETWrapper
 
 	WrappedData MakeWrappedData(Worker_EntityId EntityId, T&& Data, uint64 RPCId)
 	{
-		WrappedData wrapper(MoveTemp(Data));
-		wrapper.ReceiverName = RPCName;
-		wrapper.MetaData.Timestamp = FPlatformTime::Cycles64();
-		if (EventTracer)
+		WrappedData Wrapper(MoveTemp(Data));
+		Wrapper.ReceiverName = RPCName;
+		Wrapper.MetaData.Timestamp = FPlatformTime::Cycles64();
+		if (EventTracer != nullptr)
 		{
-			wrapper.MetaData.ComputeSpanId(RPCName, *EventTracer, SpatialGDK::EntityComponentId(EntityId, ComponentId), RPCId);
+			Wrapper.MetaData.ComputeSpanId(RPCName, *EventTracer, SpatialGDK::EntityComponentId(EntityId, ComponentId), RPCId);
 		}
 
-		return wrapper;
+		return Wrapper;
 	}
 
 	FName RPCName;
@@ -159,6 +159,13 @@ protected:
 	StandardQueue::SentRPCCallback MakeRPCSentCallback(TArray<UpdateToSend>& OutUpdates);
 	SpatialGDK::RPCCallbacks::DataWritten MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const;
 	SpatialGDK::RPCCallbacks::UpdateWritten MakeUpdateWriteCallback(TArray<UpdateToSend>& OutUpdates) const;
+
+	static void OnRPCSent(SpatialGDK::SpatialEventTracer* EventTracer, TArray<UpdateToSend>& OutUpdates, FName Name,
+						  Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId, const FSpatialGDKSpanId& SpanId);
+	static void OnDataWritten(TArray<FWorkerComponentData>& OutArray, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+							  Schema_ComponentData* InData);
+	static void OnUpdateWritten(TArray<UpdateToSend>& OutUpdates, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+								Schema_ComponentUpdate* InUpdate);
 
 	void FlushUpdates(TArray<UpdateToSend>&);
 	bool CanExtractRPC(Worker_EntityId);

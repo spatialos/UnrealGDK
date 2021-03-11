@@ -97,8 +97,8 @@ bool TRPCLocalOverflowQueue<Payload, AdditionalSendingData>::FlushQueue(
 	Worker_EntityId EntityId, typename TRPCQueue<Payload, AdditionalSendingData>::QueueData& Queue, RPCWritingContext& Ctx,
 	const typename TWrappedRPCQueue<AdditionalSendingData>::SentRPCCallback& SentCallback)
 {
-	uint32_t QueuedRPCs = Queue.RPCs.Num();
-	uint32_t WrittenRPCs = 0;
+	uint32 QueuedRPCs = Queue.RPCs.Num();
+	uint32 WrittenRPCs = 0;
 	auto WrittenCallback = [this, &Queue, EntityId, &SentCallback, &WrittenRPCs](Worker_ComponentId ComponentId, uint64 RPCId) {
 		if (SentCallback)
 		{
@@ -107,7 +107,9 @@ bool TRPCLocalOverflowQueue<Payload, AdditionalSendingData>::FlushQueue(
 		++WrittenRPCs;
 	};
 
-	this->Sender.Write(Ctx, EntityId, Queue.RPCs, WrittenCallback);
+	const uint32 WrittenRPCsReported = this->Sender.Write(Ctx, EntityId, Queue.RPCs, WrittenCallback);
+
+	check(WrittenRPCs == WrittenRPCsReported);
 
 	if (WrittenRPCs == QueuedRPCs)
 	{

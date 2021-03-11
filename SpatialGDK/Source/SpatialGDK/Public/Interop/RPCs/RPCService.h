@@ -38,7 +38,7 @@ public:
 	void AddRPCQueue(FName QueueName, RPCQueueDescription&& Desc);
 	void AddRPCReceiver(FName ReceiverName, RPCReceiverDescription&& Desc);
 
-	TMap<FName, RPCReceiverDescription>& GetReceivers() { return Receivers; }
+	const TMap<FName, RPCReceiverDescription>& GetReceivers() { return Receivers; }
 
 private:
 	void AdvanceSenderQueues();

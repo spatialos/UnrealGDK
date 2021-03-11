@@ -36,53 +36,73 @@ void FRPCPayload::WriteToSchema(Schema_Object* RPCObject) const
 
 USpatialNetDriverRPC::USpatialNetDriverRPC() {}
 
+void USpatialNetDriverRPC::OnRPCSent(SpatialGDK::SpatialEventTracer* EventTracer, TArray<UpdateToSend>& OutUpdates, FName Name,
+									 Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId,
+									 const FSpatialGDKSpanId& SpanId)
+{
+	EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForNamedRPC(EntityId, Name, RPCId);
+	FSpatialGDKSpanId NewSpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(LinearTraceId),
+														  /* Causes */ SpanId.GetConstId(), /* NumCauses */ 1);
+
+	if (OutUpdates.Num() == 0 || OutUpdates.Last().EntityId != EntityId || OutUpdates.Last().Update.component_id != ComponentId)
+	{
+		OutUpdates.AddDefaulted();
+		OutUpdates.Last().EntityId = EntityId;
+		OutUpdates.Last().Update.component_id = ComponentId;
+	}
+	OutUpdates.Last().Spans.Add(NewSpanId);
+}
+
+void USpatialNetDriverRPC::OnDataWritten(TArray<FWorkerComponentData>& OutArray, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+										 Schema_ComponentData* InData)
+{
+	if (ensure(InData != nullptr))
+	{
+		FWorkerComponentData Data;
+		Data.component_id = ComponentId;
+		Data.schema_type = InData;
+		OutArray.Add(Data);
+	}
+}
+
+void USpatialNetDriverRPC::OnUpdateWritten(TArray<UpdateToSend>& OutUpdates, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+										   Schema_ComponentUpdate* InUpdate)
+{
+	if (ensure(InUpdate != nullptr))
+	{
+		if (OutUpdates.Num() == 0 || OutUpdates.Last().EntityId != EntityId || OutUpdates.Last().Update.component_id != ComponentId)
+		{
+			OutUpdates.AddDefaulted();
+			OutUpdates.Last().EntityId = EntityId;
+			OutUpdates.Last().Update.component_id = ComponentId;
+		}
+		OutUpdates.Last().Update.schema_type = InUpdate;
+	}
+}
+
 USpatialNetDriverRPC::StandardQueue::SentRPCCallback USpatialNetDriverRPC::MakeRPCSentCallback(TArray<UpdateToSend>& OutUpdates)
 {
-	return [&OutUpdates, this](FName Name, Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId,
-							   const FSpatialGDKSpanId& SpanId) {
-		if (EventTracer != nullptr)
-		{
-			EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForNamedRPC(EntityId, Name, RPCId);
-			FSpatialGDKSpanId NewSpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(LinearTraceId),
-																  /* Causes */ SpanId.GetConstId(), /* NumCauses */ 1);
-
-			if (OutUpdates.Num() == 0 || OutUpdates.Last().EntityId != EntityId || OutUpdates.Last().Update.component_id != ComponentId)
-			{
-				OutUpdates.AddDefaulted();
-				OutUpdates.Last().EntityId = EntityId;
-				OutUpdates.Last().Update.component_id = ComponentId;
-			}
-			OutUpdates.Last().Spans.Add(NewSpanId);
-		}
-	};
+	if (EventTracer != nullptr)
+	{
+		return [&OutUpdates, this](FName Name, Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId,
+								   const FSpatialGDKSpanId& SpanId) {
+			return OnRPCSent(EventTracer, OutUpdates, Name, EntityId, ComponentId, RPCId, SpanId);
+		};
+	}
+	return StandardQueue::SentRPCCallback();
 }
 
 RPCCallbacks::DataWritten USpatialNetDriverRPC::MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const
 {
 	return [&OutArray](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* InData) {
-		if (ensure(InData != nullptr))
-		{
-			FWorkerComponentData Data;
-			Data.component_id = ComponentId;
-			Data.schema_type = InData;
-			OutArray.Add(Data);
-		}
+		return OnDataWritten(OutArray, EntityId, ComponentId, InData);
 	};
 }
 
 RPCCallbacks::UpdateWritten USpatialNetDriverRPC::MakeUpdateWriteCallback(TArray<UpdateToSend>& OutUpdates) const
 {
 	return [&OutUpdates](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* InUpdate) {
-		if (ensure(InUpdate != nullptr))
-		{
-			if (OutUpdates.Num() == 0 || OutUpdates.Last().EntityId != EntityId || OutUpdates.Last().Update.component_id != ComponentId)
-			{
-				OutUpdates.AddDefaulted();
-				OutUpdates.Last().EntityId = EntityId;
-				OutUpdates.Last().Update.component_id = ComponentId;
-			}
-			OutUpdates.Last().Update.schema_type = InUpdate;
-		}
+		return OnUpdateWritten(OutUpdates, EntityId, ComponentId, InUpdate);
 	};
 }
 
@@ -142,9 +162,9 @@ void USpatialNetDriverRPC::GetRPCComponentsOnEntityCreation(const Worker_EntityI
 
 void USpatialNetDriverRPC::FlushRPCUpdates()
 {
-	TMap<FName, RPCService::RPCReceiverDescription>& Receivers = RPCService->GetReceivers();
+	const TMap<FName, RPCService::RPCReceiverDescription>& Receivers = RPCService->GetReceivers();
 	TArray<UpdateToSend> Updates;
-	for (auto Receiver : Receivers)
+	for (const auto& Receiver : Receivers)
 	{
 		RPCWritingContext Ctx(Receiver.Key, MakeUpdateWriteCallback(Updates));
 		Receiver.Value.Receiver->FlushUpdates(Ctx);

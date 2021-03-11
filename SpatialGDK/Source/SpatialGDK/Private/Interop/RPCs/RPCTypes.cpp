@@ -49,6 +49,8 @@ RPCWritingContext::EntityWrite::~EntityWrite()
 			}
 			break;
 		}
+
+		Ctx.bWriterOpened = false;
 	}
 }
 
@@ -127,6 +129,8 @@ RPCWritingContext::EntityWrite::EntityWrite(RPCWritingContext& InCtx, Worker_Ent
 
 RPCWritingContext::EntityWrite RPCWritingContext::WriteTo(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
+	check(!bWriterOpened);
+	bWriterOpened = true;
 	return EntityWrite(*this, EntityId, ComponentId);
 }
 
