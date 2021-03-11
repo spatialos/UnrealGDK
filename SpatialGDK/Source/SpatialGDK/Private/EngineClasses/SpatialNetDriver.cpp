@@ -512,7 +512,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
 		Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
-		Sender->Init(this, &TimerManager, RPCService.Get(), Connection->GetEventTracer());
+		Sender->Init(this, &TimerManager, Connection->GetEventTracer());
 		Receiver->Init(this, Connection->GetEventTracer());
 		GlobalStateManager->Init(this);
 		SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
@@ -865,9 +865,12 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	if (IsServer() && WellKnownEntitySystem.IsValid())
+	if (IsServer())
 	{
-		WellKnownEntitySystem->OnMapLoaded();
+		if (WellKnownEntitySystem.IsValid())
+		{
+			WellKnownEntitySystem->OnMapLoaded();
+		}
 	}
 	else
 	{
@@ -1761,7 +1764,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	}
 
 	const FRPCInfo& Info = ClassInfoManager->GetRPCInfo(CallingObject, Function);
-	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, Info.Type, Parameters);
+	RPCPayload Payload = RPCService->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, Info.Type, Parameters);
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	SpatialGDK::RPCSender SenderInfo;
@@ -1817,7 +1820,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		}
 	}
 
-	Sender->ProcessOrQueueOutgoingRPC(CallingObjectRef, SenderInfo, MoveTemp(Payload));
+	RPCService->ProcessOrQueueOutgoingRPC(CallingObjectRef, SenderInfo, MoveTemp(Payload));
 }
 
 // SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
@@ -2240,9 +2243,9 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
-	if (Sender != nullptr)
+	if (RPCService != nullptr)
 	{
-		Sender->FlushRPCService();
+		RPCService->PushUpdates();
 	}
 
 	if (IsServer())
