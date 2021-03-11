@@ -8,6 +8,7 @@
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestCharacterMigration/SpatialTestCharacterMigration.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
+#include "Math/Plane.h"
 
 /**
  * This test tests if the movement of a character from a starting point to a Destination, performed on a client, is correctly replicated on
@@ -37,12 +38,23 @@ ASpatialTestCharacterMovement::ASpatialTestCharacterMovement()
 	Description = TEXT("Test Character Movement");
 }
 
+bool ASpatialTestCharacterMovement::HasCharacterReachedDestination(ATestMovementCharacter* PlayerCharacter, const FPlane& DestinationPlane) const
+{
+	// Checks if the character has passed the plane
+	return DestinationPlane.PlaneDot(PlayerCharacter->GetActorLocation()) > 0;
+}
+
 void ASpatialTestCharacterMovement::PrepareTest()
 {
 	Super::PrepareTest();
 
-	Origin = FVector(0.0f, 0.0f, 50.0f);
-	Destination = FVector(232.0f, 0.0f, 40.0f);
+	FVector Origin = FVector(0.0f, 0.0f, 50.0f);
+	FVector Destination = FVector(232.0f, 0.0f, 50.0f);
+
+	// Create a plane at the destination for testing against
+	FVector Direction = Destination - Origin;
+	Direction.Normalize();
+	FPlane DestinationPlane(Destination, Direction);
 
 	// The server checks if the clients received a TestCharacterMovement and moves them to the mentioned locations
 	AddStep(TEXT("SpatialTestCharacterMovementServerSetupStep"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -62,7 +74,7 @@ void ASpatialTestCharacterMovement::PrepareTest()
 
 			if (FlowControllerId == 1)
 			{
-				PlayerCharacter->SetActorLocation(Origin);
+				PlayerCharacter->SetActorLocation(FVector(0.0f, 0.0f, 50.0f));
 			}
 			else
 			{
@@ -86,28 +98,22 @@ void ASpatialTestCharacterMovement::PrepareTest()
 			return IsValid(PlayerCharacter) && FMath::IsNearlyEqual(PlayerCharacter->GetActorLocation().Z, 40.0f, 2.0f);
 		},
 		nullptr,
-		[this](float DeltaTime) {
+		[this, DestinationPlane](float DeltaTime) {
 			AController* PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 			ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
 
 			PlayerCharacter->AddMovementInput(FVector(1, 0, 0), 1.0f);
 
-			bCharacterReachedDestination =
-				ASpatialTestCharacterMigration::GetTargetDistanceOnLine(Origin, Destination, PlayerCharacter->GetActorLocation())
-				> -20.0f; // 20cm overlap
-
-			if (bCharacterReachedDestination)
-			{
-				AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the autonomous proxy."));
-				FinishStep();
-			}
+			RequireTrue(HasCharacterReachedDestination(PlayerCharacter, DestinationPlane),TEXT("Player character has reached the destination on the autonomous proxy."));
+			FinishStep();
+			
 		},
 		10.0f);
 
 	// Server asserts that the character of client 1 has reached the Destination.
 	AddStep(
 		TEXT("SpatialTestChracterMovementServerCheckMovementVisibility"), FWorkerDefinition::Server(1), nullptr, nullptr,
-		[this](float DeltaTime) {
+		[this, DestinationPlane](float DeltaTime) {
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
 				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
@@ -120,15 +126,9 @@ void ASpatialTestCharacterMovement::PrepareTest()
 
 				if (FlowController->WorkerDefinition.Id == 1)
 				{
-					bCharacterReachedDestination =
-						ASpatialTestCharacterMigration::GetTargetDistanceOnLine(Origin, Destination, PlayerCharacter->GetActorLocation())
-						> -20.0f; // 20cm overlap
-
-					if (bCharacterReachedDestination)
-					{
-						AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the server."));
-						FinishStep();
-					}
+					RequireTrue(HasCharacterReachedDestination(PlayerCharacter, DestinationPlane),
+									TEXT("Player character has reached the destination on the server."));
+					FinishStep();
 				}
 			}
 		},
@@ -138,7 +138,7 @@ void ASpatialTestCharacterMovement::PrepareTest()
 	// Client 2 asserts that the character of client 1 has reached the Destination.
 	AddStep(
 		TEXT("SpatialTestCharacterMovementClient2CheckMovementVisibility"), FWorkerDefinition::Client(2), nullptr, nullptr,
-		[this](float DeltaTime) {
+		[this, DestinationPlane](float DeltaTime) {
 			AController* Client2PlayerController = Cast<AController>(GetLocalFlowController()->GetOwner());
 			ATestMovementCharacter* Client2PlayerCharacter = Cast<ATestMovementCharacter>(Client2PlayerController->GetPawn());
 
@@ -153,15 +153,9 @@ void ASpatialTestCharacterMovement::PrepareTest()
 					continue;
 				}
 
-				bCharacterReachedDestination =
-					ASpatialTestCharacterMigration::GetTargetDistanceOnLine(Origin, Destination, PlayerCharacter->GetActorLocation())
-					> -20.0f; // 20cm overlap
-
-				if (bCharacterReachedDestination)
-				{
-					AssertTrue(bCharacterReachedDestination, TEXT("Player character has reached the destination on the simulated proxy"));
-					FinishStep();
-				}
+				RequireTrue(HasCharacterReachedDestination(Cast<ATestMovementCharacter>(PlayerCharacter), DestinationPlane),
+							TEXT("Player character has reached the destination on the simulated proxy"));
+				FinishStep();
 			}
 		},
 		5.0f);

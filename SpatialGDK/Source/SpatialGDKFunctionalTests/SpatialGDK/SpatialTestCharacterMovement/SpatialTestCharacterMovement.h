@@ -6,6 +6,8 @@
 #include "SpatialFunctionalTest.h"
 #include "SpatialTestCharacterMovement.generated.h"
 
+class ATestMovementCharacter;
+
 UCLASS()
 class ASpatialTestCharacterMovement : public ASpatialFunctionalTest
 {
@@ -16,8 +18,5 @@ public:
 
 	virtual void PrepareTest() override;
 
-	FVector Origin;
-	FVector Destination;
-
-	bool bCharacterReachedDestination;
+	bool HasCharacterReachedDestination(ATestMovementCharacter* PlayerCharacter, const FPlane& DestinationPlane) const;
 };
