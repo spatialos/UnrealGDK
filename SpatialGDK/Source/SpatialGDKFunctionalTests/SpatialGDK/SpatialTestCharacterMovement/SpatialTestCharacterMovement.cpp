@@ -10,7 +10,8 @@
 
 /**
  * This test tests if the movement of a character from a starting point to a Destination, performed on a client, is correctly replicated on
- *the server and on all other clients. This test requires the CharacterMovementTestGameMode, trying to run this test on a different game mode will fail.
+ *the server and on all other clients. This test requires the CharacterMovementTestGameMode, trying to run this test on a different game
+ *mode will fail.
  *
  * The test includes a single server and two client workers. The client workers begin with a PlayerController and a TestCharacterMovement
  *
