@@ -55,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CoordinatorConnection.cs" />
+    <Compile Include="LifetimeComponent.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="RegisseurWorkerCoordinator.cs" />
