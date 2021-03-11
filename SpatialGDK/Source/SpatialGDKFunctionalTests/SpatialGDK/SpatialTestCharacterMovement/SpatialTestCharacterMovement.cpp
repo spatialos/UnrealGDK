@@ -2,7 +2,6 @@
 
 #include "SpatialTestCharacterMovement.h"
 #include "Components/BoxComponent.h"
-#include "Engine/TriggerBox.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Math/Plane.h"
@@ -11,14 +10,12 @@
 
 /**
  * This test tests if the movement of a character from a starting point to a Destination, performed on a client, is correctly replicated on
- *the server and on all other clients. Note: The Destination is a TriggerBox spawned locally on each connected worker, either client or
- *server. This test requires the CharacterMovementTestGameMode, trying to run this test on a different game mode will fail.
+ *the server and on all other clients. This test requires the CharacterMovementTestGameMode, trying to run this test on a different game mode will fail.
  *
  * The test includes a single server and two client workers. The client workers begin with a PlayerController and a TestCharacterMovement
  *
  * The flow is as follows:
  * - Setup:
- *    - The server and each client create a TriggerBox locally.
  *    - The server checks if the clients received a TestCharacterMovement and sets their position to (0.0f, 0.0f, 50.0f) for the first
  *client and (100.0f, 300.0f, 50.0f) for the second.
  *    - The client with ID 1 moves its character as an autonomous proxy towards the Destination.
@@ -26,8 +23,6 @@
  *     - The owning client asserts that his character has reached the Destination.
  *     - The server asserts that client's 1 character has reached the Destination on the server.
  *     - The second client checks that client's 1 character has reached the Destination.
- *  - Cleanup:
- *     - The trigger box is destroyed from all clients and servers
  */
 
 ASpatialTestCharacterMovement::ASpatialTestCharacterMovement()
