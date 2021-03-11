@@ -53,15 +53,25 @@ void ASpatialTestMultiServerUnrealComponents::PrepareTest()
 			AddExpectedLogError(TEXT("Dynamic component using InitialOnly data. This data will not be sent."), 1, false);
 		}
 
-		AssertTrue(HasAuthority(), TEXT("Server requires auth"));
+		AssertTrue(HasAuthority(), TEXT("Server 1 requires authority over the test actor"));
 		TestActor = GetWorld()->SpawnActor<ATestUnrealComponentsActor>(ActorSpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
+		if (!AssertTrue(TestActor != nullptr, TEXT("Failed to spawn test actor")))
+		{
+			return;
+		}
+
 		TestActor->SpawnDynamicComponents();
 
 		const bool bWrite = true;
 		ProcessActorProperties(bWrite);
 
 		AController* PlayerController = Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
-		AssertTrue(PlayerController->HasAuthority(), TEXT("Server requires authority over controller"));
+		if (!AssertTrue(PlayerController != nullptr, TEXT("Failed to retrieve player controller")))
+		{
+			return;
+		}
+
+		AssertTrue(PlayerController->HasAuthority(), TEXT("Server 1 requires authority over controller"));
 		TestActor->SetOwner(PlayerController);
 
 		RegisterAutoDestroyActor(TestActor);
@@ -77,6 +87,7 @@ void ASpatialTestMultiServerUnrealComponents::PrepareTest()
 		},
 		[this]() {
 			AssertFalse(TestActor->HasAuthority(), TEXT("This client shouldn't have authority"));
+			AssertTrue(TestActor->IsOwnedBy(GetLocalFlowController()->GetOwner()), TEXT("This client should own the actor"));
 			if (AssertTrue(TestActor->AreAllDynamicComponentsValid(), TEXT("All dynamic components should have arrived")))
 			{
 				const bool bWrite = false;
@@ -117,6 +128,7 @@ void ASpatialTestMultiServerUnrealComponents::PrepareTest()
 		},
 		[this]() {
 			AssertFalse(TestActor->HasAuthority(), TEXT("This client shouldn't have authority"));
+			AssertFalse(TestActor->IsOwnedBy(GetLocalFlowController()->GetOwner()), TEXT("This client should not own the actor"));
 			if (AssertTrue(TestActor->AreAllDynamicComponentsValid(), TEXT("All dynamic components should have arrived")))
 			{
 				const bool bWrite = false;
@@ -133,6 +145,11 @@ void ASpatialTestMultiServerUnrealComponents::PrepareTest()
 void ASpatialTestMultiServerUnrealComponents::ProcessActorProperties(bool bWrite, bool bOwnerOnlyExpected, bool bHandoverExpected,
 																	 bool bInitialOnlyExpected)
 {
+	// This function encapsulates the logic for both writing to, and reading from (and asserting) the properties of TestActor.
+	// When bWrite is true, the Action lambda just writes the expected property values to the Actor.
+	// When bWrite is false, the Action lambda asserts that the each property has the expectant value.
+	// As not all properties are replicated to all workers, we need to also know which property types to expect.
+
 	auto Action = [&](int32& Source, int32 Expected) {
 		if (bWrite)
 		{
@@ -164,6 +181,10 @@ void ASpatialTestMultiServerUnrealComponents::ProcessActorProperties(bool bWrite
 	Action(TestActor->StaticDataAndInitialOnlyComponent->InitialOnlyReplicatedVar, (!bWrite && !bInitialOnlyExpected) ? 0 : 71);
 
 	Action(TestActor->DynamicDataAndInitialOnlyComponent->DataReplicatedVar, 80);
+
+	// Counter-intuitively, initial only data is only expected if initial only is disabled.
+	// When initial only is enabled, dynamic components aren't supported so no initial only properties will be replicated.
+	// When initial only is disabled, the initial only replication condition is ignored and replicated always.
 	Action(TestActor->DynamicDataAndInitialOnlyComponent->InitialOnlyReplicatedVar,
 		   (!bWrite && (!bInitialOnlyExpected || bInitialOnlyEnabled)) ? 0 : 81);
 }
