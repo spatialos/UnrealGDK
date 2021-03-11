@@ -5,10 +5,10 @@
 #include "Engine/TriggerBox.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Math/Plane.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestCharacterMigration/SpatialTestCharacterMigration.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
-#include "Math/Plane.h"
 
 /**
  * This test tests if the movement of a character from a starting point to a Destination, performed on a client, is correctly replicated on
@@ -38,7 +38,8 @@ ASpatialTestCharacterMovement::ASpatialTestCharacterMovement()
 	Description = TEXT("Test Character Movement");
 }
 
-bool ASpatialTestCharacterMovement::HasCharacterReachedDestination(ATestMovementCharacter* PlayerCharacter, const FPlane& DestinationPlane) const
+bool ASpatialTestCharacterMovement::HasCharacterReachedDestination(ATestMovementCharacter* PlayerCharacter,
+																   const FPlane& DestinationPlane) const
 {
 	// Checks if the character has passed the plane
 	return DestinationPlane.PlaneDot(PlayerCharacter->GetActorLocation()) > 0;
@@ -104,9 +105,9 @@ void ASpatialTestCharacterMovement::PrepareTest()
 
 			PlayerCharacter->AddMovementInput(FVector(1, 0, 0), 1.0f);
 
-			RequireTrue(HasCharacterReachedDestination(PlayerCharacter, DestinationPlane),TEXT("Player character has reached the destination on the autonomous proxy."));
+			RequireTrue(HasCharacterReachedDestination(PlayerCharacter, DestinationPlane),
+						TEXT("Player character has reached the destination on the autonomous proxy."));
 			FinishStep();
-			
 		},
 		10.0f);
 
@@ -127,7 +128,7 @@ void ASpatialTestCharacterMovement::PrepareTest()
 				if (FlowController->WorkerDefinition.Id == 1)
 				{
 					RequireTrue(HasCharacterReachedDestination(PlayerCharacter, DestinationPlane),
-									TEXT("Player character has reached the destination on the server."));
+								TEXT("Player character has reached the destination on the server."));
 					FinishStep();
 				}
 			}
