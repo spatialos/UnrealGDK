@@ -185,6 +185,8 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 			int LocalWorkerId = GetLocalWorkerId();
 			int NumCubesWithAuthority = 0;
 			int NumCubesShouldHaveAuthority = 0;
+			int NumCubesReady = 0;
+
 			for (AActor* Cube : TestCubes)
 			{
 				if (Cube->HasAuthority())
@@ -195,10 +197,15 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 				{
 					NumCubesShouldHaveAuthority += 1;
 				}
+				if (Cube->IsActorReady())
+				{
+					NumCubesReady += 1;
+				}
 			}
 
 			// So only when we have all cubes present and we only have authority over the one we should we can progress.
-			return TestCubes.Num() == NumCubes && NumCubesWithAuthority == 1 && NumCubesShouldHaveAuthority == 1;
+			return TestCubes.Num() == NumCubes && NumCubesWithAuthority == 1 && NumCubesShouldHaveAuthority == 1
+				   && NumCubesReady == NumCubes;
 		},
 		[this]() {
 			TArray<AActor*> TestCubes;
