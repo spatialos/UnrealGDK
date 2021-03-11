@@ -13,6 +13,17 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "TestWorkerSettings.h"
 
+namespace
+{
+float GetTargetDistanceOnLine(const FVector& From, const FVector& Target, const FVector& Location)
+{
+	FVector Norm = (Target - From);
+	Norm.Normalize();
+	FVector RelativePosition = Location - Target;
+	return FVector::DotProduct(Norm, RelativePosition);
+}
+} // namespace
+
 /**
  * This test moves a character backward and forward repeatedly between two workers, adding actors. Based on the SpatialTestCharacterMovement
  * test. This test requires the CharacterMovementTestGameMode, trying to run this test on a different game mode will fail.
@@ -27,14 +38,6 @@ ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
 	Author = "Victoria";
 	Description = TEXT("Test Character Migration");
 	TimeLimit = 300;
-}
-
-float ASpatialTestCharacterMigration::GetTargetDistanceOnLine(const FVector& From, const FVector& Target, const FVector& Location)
-{
-	FVector Norm = (Target - From);
-	Norm.Normalize();
-	FVector RelativePosition = Location - Target;
-	return FVector::DotProduct(Norm, RelativePosition);
 }
 
 void ASpatialTestCharacterMigration::PrepareTest()
