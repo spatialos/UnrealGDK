@@ -41,7 +41,7 @@ void ASpatialTestPlayerControllerHandover::GetLifetimeReplicatedProps(TArray<FLi
  */
 
 ASpatialTestPlayerControllerHandover::ASpatialTestPlayerControllerHandover()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Nicolas";
 	Description = TEXT("Test player controller handover");

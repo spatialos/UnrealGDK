@@ -22,7 +22,7 @@
  */
 
 ASpatialTestRepNotify::ASpatialTestRepNotify()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Miron + Andrei";
 	Description = TEXT("Test RepNotify replication and shadow data");

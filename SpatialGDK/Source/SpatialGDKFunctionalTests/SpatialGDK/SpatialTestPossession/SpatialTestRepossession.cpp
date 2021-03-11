@@ -17,7 +17,7 @@ void ASpatialTestRepossession::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 }
 
 ASpatialTestRepossession::ASpatialTestRepossession()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Improbable";
 	Description = TEXT("Test Actor Repossession");

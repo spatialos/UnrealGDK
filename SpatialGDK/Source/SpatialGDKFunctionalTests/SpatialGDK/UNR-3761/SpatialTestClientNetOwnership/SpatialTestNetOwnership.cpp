@@ -38,7 +38,7 @@
  */
 
 ASpatialTestNetOwnership::ASpatialTestNetOwnership()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = TEXT("Andrei");
 	Description = TEXT("Test Net Ownership");

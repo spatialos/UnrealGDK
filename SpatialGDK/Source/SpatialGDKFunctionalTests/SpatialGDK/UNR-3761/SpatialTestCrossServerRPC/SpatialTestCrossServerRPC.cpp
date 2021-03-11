@@ -37,7 +37,7 @@
  */
 
 ASpatialTestCrossServerRPC::ASpatialTestCrossServerRPC()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Andrei / Victoria";
 	Description = TEXT("Test CrossServer RPCs");

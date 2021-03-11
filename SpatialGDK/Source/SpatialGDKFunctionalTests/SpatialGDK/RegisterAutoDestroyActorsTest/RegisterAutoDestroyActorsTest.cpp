@@ -7,6 +7,7 @@
 #include "SpatialFunctionalTestFlowController.h"
 
 ARegisterAutoDestroyActorsTestPart1::ARegisterAutoDestroyActorsTestPart1()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Nuno";
 	Description = TEXT("Part1: Verify that server spawned a character and that is is visible to the clients");
@@ -92,6 +93,7 @@ void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 }
 
 ARegisterAutoDestroyActorsTestPart2::ARegisterAutoDestroyActorsTestPart2()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Nuno";
 	Description = TEXT("Part2: Verify that the actors have been destroyed across all workers");

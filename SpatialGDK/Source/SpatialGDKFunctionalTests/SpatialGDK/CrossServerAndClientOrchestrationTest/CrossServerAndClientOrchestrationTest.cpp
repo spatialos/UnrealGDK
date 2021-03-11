@@ -19,6 +19,7 @@
  *    - Each server and client, individually, verifies they can read all values set by the other workers
  */
 ACrossServerAndClientOrchestrationTest::ACrossServerAndClientOrchestrationTest()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Jose";
 	Description = TEXT("Test the test flow in a zoned environment");

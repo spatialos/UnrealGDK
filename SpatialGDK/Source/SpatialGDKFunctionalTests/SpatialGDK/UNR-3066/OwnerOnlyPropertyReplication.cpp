@@ -36,6 +36,7 @@ FString AssertStep(const FSpatialFunctionalTestStepDefinition& StepDefinition, c
  *    - No cleanup required, as the actor is deleted as part of the test.
  */
 AOwnerOnlyPropertyReplication::AOwnerOnlyPropertyReplication()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Andreas";
 	Description = TEXT("UNR-3066 OwnerOnly replication test");

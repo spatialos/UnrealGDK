@@ -9,7 +9,7 @@
  */
 
 ASpatialSnapshotDummyTest::ASpatialSnapshotDummyTest()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Nuno";
 	Description = TEXT("Dummy Test that just passes");

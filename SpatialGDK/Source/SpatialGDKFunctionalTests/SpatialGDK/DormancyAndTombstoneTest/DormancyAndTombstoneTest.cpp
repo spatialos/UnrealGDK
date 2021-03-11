@@ -23,6 +23,7 @@
  *    - Note that this test cannot be rerun, as it relies on an actor placed in the level being deleted as part of the test.
  */
 ADormancyAndTombstoneTest::ADormancyAndTombstoneTest()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Miron";
 	Description = TEXT("Test Actor Dormancy and Tombstones");

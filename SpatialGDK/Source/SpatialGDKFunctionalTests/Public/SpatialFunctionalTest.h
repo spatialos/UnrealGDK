@@ -51,7 +51,7 @@ private:
 	uint8 bReadyToSpawnServerControllers : 1;
 
 public:
-	ASpatialFunctionalTest();
+	ASpatialFunctionalTest(const FObjectInitializer& ObjectInitializer);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -375,6 +375,8 @@ protected:
 
 	void NotifyTestFinishedObserver() override;
 
+	void EndPlay(const EEndPlayReason::Type Reason) override;
+
 private:
 	bool bNotifyObserversCalled = false;
 
@@ -430,7 +432,6 @@ private:
 	void StartServerFlowControllerSpawn();
 
 	void SetupClientPlayerRegistrationFlow();
-	void EndPlay(const EEndPlayReason::Type Reason) override;
 
 	FDelegateHandle PostLoginDelegate;
 

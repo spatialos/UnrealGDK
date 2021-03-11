@@ -38,6 +38,7 @@ const FName AEventTracingTest::SendCrossServerRPCName = "unreal_gdk.send_cross_s
 const FName AEventTracingTest::ReceiveCrossServerRPCName = "unreal_gdk.receive_cross_server_rpc";
 
 AEventTracingTest::AEventTracingTest()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Matthew Sandford";
 	Description = TEXT("Base class for event tracing tests");

@@ -16,7 +16,7 @@
 */
 
 ASpatialDebugInterfaceTest::ASpatialDebugInterfaceTest()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Nicolas";
 	Description = TEXT("Test Debug interface");

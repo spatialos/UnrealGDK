@@ -38,7 +38,7 @@
  */
 
 ASpatialTestReplicatedStartupActor::ASpatialTestReplicatedStartupActor()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Andrei";
 	Description = TEXT("Test Replicated Startup Actor Reference And Property Replication");

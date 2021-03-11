@@ -33,7 +33,7 @@ float GetTargetDistanceOnLine(const FVector& From, const FVector& Target, const 
  */
 
 ASpatialTestCharacterMigration::ASpatialTestCharacterMigration()
-	: Super()
+	: Super(FObjectInitializer::Get())
 {
 	Author = "Victoria";
 	Description = TEXT("Test Character Migration");
