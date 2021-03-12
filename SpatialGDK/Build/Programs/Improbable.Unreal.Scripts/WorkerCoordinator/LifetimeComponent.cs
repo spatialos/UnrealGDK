@@ -146,10 +146,33 @@ namespace Improbable.WorkerCoordinator
             Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] All simulated clients are finished, IsLifetimeMode={IsLifetimeMode}.");
         }
 
+        private void StartWaitingClient()
+        {
+            DateTime curTime = DateTime.Now;
+            for (int i = WaitingList.Count - 1; i >= 0; --i)
+            {
+                var clientInfo = WaitingList[i];
+                if (curTime >= clientInfo.StartTime)
+                {
+                    Host?.StartClient(clientInfo);
+                    Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] Start client ClientName ={clientInfo.ClientName}.");
+
+                    // Update lifetime.
+                    clientInfo.EndTime = curTime.AddMinutes(Random.Next(MinLifetime, MaxLifetime));
+
+                    // Move to running list.
+                    WaitingList.RemoveAt(i);
+                    RunningList.Add(clientInfo);
+                }
+            }
+        }
+
         private void Tick(object state)
         {
             // Check player status, restart player client if it exit early.
             bool isActiveProcessListEmpty = Host.CheckPlayerStatus();
+
+            DateTime curTime = DateTime.Now;
 
             // Non-lifetime mode, do not stop any clients.
             if (!IsLifetimeMode)
@@ -160,11 +183,12 @@ namespace Improbable.WorkerCoordinator
                     ResetEvent.Set();
                 }
 
+                StartWaitingClient();
+
                 return;
             }
 
             // Lifetime mode.
-            DateTime curTime = DateTime.Now;
 
             // Data flow is waiting list -> running list -> waiting list.
             // Checking sequence is running list -> waiting list.
@@ -195,25 +219,7 @@ namespace Improbable.WorkerCoordinator
                 }
             }
 
-            // Waiting list.
-            for (int i = WaitingList.Count - 1; i >= 0; --i)
-            {
-                var clientInfo = WaitingList[i];
-                if (curTime >= clientInfo.StartTime)
-                {
-                    // Start client.
-                    Host?.StartClient(clientInfo);
-
-                    Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] Start client ClientName ={clientInfo.ClientName}.");
-
-                    // Update lifetime.
-                    clientInfo.EndTime = curTime.AddMinutes(Random.Next(MinLifetime, MaxLifetime));
-
-                    // Move to running list.
-                    WaitingList.RemoveAt(i);
-                    RunningList.Add(clientInfo);
-                }
-            }
+            StartWaitingClient();
         }
     }
 }
