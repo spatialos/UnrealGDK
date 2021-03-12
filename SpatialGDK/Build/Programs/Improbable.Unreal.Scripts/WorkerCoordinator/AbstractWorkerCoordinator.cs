@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 
 namespace Improbable.WorkerCoordinator
 {
@@ -14,6 +15,8 @@ namespace Improbable.WorkerCoordinator
     /// </summary>
     internal abstract class AbstractWorkerCoordinator
     {
+        private const int PollSimulatedPlayerProcessIntervalMillis = 5000;
+
         private const string AdditionalProcessArguments = "-FailOnNetworkFailure";
 
         protected Logger Logger;
@@ -63,33 +66,31 @@ namespace Improbable.WorkerCoordinator
         }
 
         /// <summary>
-        /// Check simulated player clients' status.
-        /// If it stopped early by accident, restart it.
-        /// If it stopped with code 137, that means we stop it with StopSimulatedClient.sh.
+        /// Blocks until all active simulated player processes have exited.
+        /// Restarts failed simulated player processes.
+        /// Will only wait for processes started through CreateSimulatedPlayerProcess().
         /// </summary>
-        /// <returns>return true if active processes list is empty.</returns>
-        public bool CheckPlayerStatus()
+        protected void WaitForPlayersToExit()
         {
-            bool haveProcessFinishedWithoutError = false;
-            var finishedProcesses = ActiveProcesses.Where(process => process.HasExited).ToList();
-
-            foreach (var process in finishedProcesses)
+            while (true)
             {
-                // StopSimulatedClient.sh will cause 137 code.
-                if (process.ExitCode != 0 && process.ExitCode != 137)
+                var finishedProcesses = ActiveProcesses.Where(process => process.HasExited).ToList();
+
+                var incorrectlyFinishedProcesses = finishedProcesses.Where(process => process.ExitCode != 0).ToList();
+
+                if (incorrectlyFinishedProcesses.Count == 0 && finishedProcesses.Count == ActiveProcesses.Count)
+                {
+                    return;
+                }
+
+                foreach (var process in incorrectlyFinishedProcesses)
                 {
                     Logger.WriteLog($"Restarting simulated player after it failed with exit code {process.ExitCode}");
                     process.Start();
                 }
-                else
-                {
-                    ActiveProcesses.Remove(process);
-                    haveProcessFinishedWithoutError = true;
-                }
-            }
 
-            // Need haveProcessFinishedWithoutError to ignore the initial case.
-            return haveProcessFinishedWithoutError && ActiveProcesses.Count == 0;
+                Thread.Sleep(TimeSpan.FromMilliseconds(PollSimulatedPlayerProcessIntervalMillis));
+            }
         }
     }
 }
