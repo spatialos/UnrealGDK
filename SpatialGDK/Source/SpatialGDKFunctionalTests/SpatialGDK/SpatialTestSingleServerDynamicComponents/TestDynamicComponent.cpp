@@ -14,5 +14,7 @@ void UTestDynamicComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(UTestDynamicComponent, ReferencesArray);
+	DOREPLIFETIME(ThisClass, ReferencesArray);
+	DOREPLIFETIME_CONDITION(ThisClass, OwnerOnlyReplicatedVar, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ThisClass, InitialOnlyReplicatedVar, COND_InitialOnly);
 }

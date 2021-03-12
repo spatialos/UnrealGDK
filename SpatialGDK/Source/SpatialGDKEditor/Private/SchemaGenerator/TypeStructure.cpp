@@ -12,13 +12,23 @@ using namespace SpatialGDKEditor::Schema;
 
 TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
 {
-	static TArray<EReplicatedPropertyGroup> Groups = { REP_MultiClient, REP_SingleClient };
-	return Groups;
+	return { REP_MultiClient, REP_SingleClient, REP_InitialOnly };
 }
 
 FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 {
-	return Group == REP_SingleClient ? TEXT("OwnerOnly") : TEXT("");
+	if (Group == REP_SingleClient)
+	{
+		return TEXT("OwnerOnly");
+	}
+	else if (Group == REP_InitialOnly)
+	{
+		return TEXT("InitialOnly");
+	}
+	else
+	{
+		return TEXT("");
+	}
 }
 
 void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor)
@@ -444,8 +454,9 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 	FUnrealFlatRepData RepData;
 	RepData.Add(REP_MultiClient);
 	RepData.Add(REP_SingleClient);
+	RepData.Add(REP_InitialOnly);
 
-	VisitAllProperties(TypeInfo, [&RepData](TSharedPtr<FUnrealProperty> PropertyInfo) {
+	VisitAllProperties(TypeInfo, [&RepData, &TypeInfo](TSharedPtr<FUnrealProperty> PropertyInfo) {
 		if (PropertyInfo->ReplicationData.IsValid())
 		{
 			EReplicatedPropertyGroup Group = REP_MultiClient;
@@ -455,6 +466,14 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 			case COND_ReplayOrOwner:
 			case COND_OwnerOnly:
 				Group = REP_SingleClient;
+				break;
+			case COND_InitialOnly:
+				Group = REP_InitialOnly;
+				break;
+			case COND_InitialOrOwner:
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error,
+					   TEXT("COND_InitialOrOwner not supported. COND_None will be used instead. %s::%s"), *TypeInfo->Type->GetName(),
+					   *PropertyInfo->Property->GetName());
 				break;
 			}
 			RepData[Group].Add(PropertyInfo->ReplicationData->Handle, PropertyInfo);
@@ -467,6 +486,9 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 		return A < B;
 	});
 	RepData[REP_SingleClient].KeySort([](uint16 A, uint16 B) {
+		return A < B;
+	});
+	RepData[REP_InitialOnly].KeySort([](uint16 A, uint16 B) {
 		return A < B;
 	});
 	return RepData;
