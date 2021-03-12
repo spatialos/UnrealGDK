@@ -9,7 +9,7 @@
 #include "GameMapsSettings.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
-#include "TestPossessionPawn.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 #include "TestPossessionPlayerController.h"
 #include "Utils/SpatialStatics.h"
 
