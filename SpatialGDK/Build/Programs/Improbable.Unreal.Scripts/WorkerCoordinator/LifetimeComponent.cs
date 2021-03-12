@@ -207,12 +207,15 @@ namespace Improbable.WorkerCoordinator
                 }
             }
 
+            // Waiting list.
             for (int i = WaitingList.Count - 1; i >= 0; --i)
             {
                 var clientInfo = WaitingList[i];
                 if (curTime >= clientInfo.StartTime)
                 {
+                    // Start client.
                     Host?.StartClient(clientInfo);
+
                     Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] Start client ClientName ={clientInfo.ClientName}.");
 
                     // Update lifetime.
