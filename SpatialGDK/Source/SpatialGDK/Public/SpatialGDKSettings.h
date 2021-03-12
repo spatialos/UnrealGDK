@@ -394,7 +394,7 @@ public:
 	 * QueuedIncomingWaitRPC time is still respected.
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay,
-			  meta = (DisplayName = "RPCTypes to allow unresolved parameters for"))
+			  meta = (DisplayName = "RPCTypes that allow unresolved parameters"))
 	TMap<ERPCType, bool> RPCTypeAllowUnresolvedParamMap;
 
 	/**
