@@ -52,6 +52,11 @@ void USpatialPlatformCoordinator::Init(UNetDriver* InDriver)
 
 void USpatialPlatformCoordinator::StartSendingHeartbeat()
 {
+	if (!GetDefault<USpatialGDKSettings>()->bEnableSpatialPlatformCoordinator)
+	{
+		return;
+	}
+
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
 	FString NewSpatialWorkerId = SpatialWorkerId + "";
@@ -111,6 +116,11 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 
 void USpatialPlatformCoordinator::SendReadyStatus()
 {
+	if (!GetDefault<USpatialGDKSettings>()->bEnableSpatialPlatformCoordinator)
+	{
+		return;
+	}
+
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
 	FString NewSpatialWorkerId = SpatialWorkerId + "";
@@ -148,6 +158,11 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 
 void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 {
+	if (!GetDefault<USpatialGDKSettings>()->bEnableSpatialPlatformCoordinator)
+	{
+		return;
+	}
+
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
 	FString NewSpatialWorkerId = SpatialWorkerId + "";
@@ -263,6 +278,11 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 
 void USpatialPlatformCoordinator::StartWatchingForGameserverStatus()
 {
+	if (!GetDefault<USpatialGDKSettings>()->bEnableSpatialPlatformCoordinator)
+	{
+		return;
+	}
+
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> WorkerStatusPollingRequest = FHttpModule::Get().CreateRequest();

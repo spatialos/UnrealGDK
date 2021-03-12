@@ -57,7 +57,7 @@ public:
 	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId) override;
 	/* End UAbstractLBStrategy Interface */
 
-	LBStrategyRegions GetLBStrategyRegions() const;
+	virtual LBStrategyRegions GetLBStrategyRegions() const;
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

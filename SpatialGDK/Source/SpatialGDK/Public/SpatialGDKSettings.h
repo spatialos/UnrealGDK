@@ -433,6 +433,9 @@ public:
 	UPROPERTY(Config)
 	bool bEnableAlwaysWriteRPCs;
 
+	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator", meta = (DisplayName = "Enable SpatialOS platform coordinator"))
+	bool bEnableSpatialPlatformCoordinator;
+
 	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator", meta = (DisplayName = "SpatialOS platform endpoint url"))
 	FString SpatialPlatformUrl;
 
