@@ -3,7 +3,7 @@
 #include "SpatialTestRemotePossession.h"
 
 #include "Kismet/GameplayStatics.h"
-#include "TestPossessionPawn.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 #include "TestPossessionPlayerController.h"
 
 const float ASpatialTestRemotePossession::MaxWaitTime = 2.0f;
