@@ -172,8 +172,6 @@ namespace Improbable.WorkerCoordinator
             // Check player status, restart player client if it exit early.
             bool isActiveProcessListEmpty = Host.CheckPlayerStatus();
 
-            DateTime curTime = DateTime.Now;
-
             // Non-lifetime mode, do not stop any clients.
             if (!IsLifetimeMode)
             {
@@ -189,6 +187,7 @@ namespace Improbable.WorkerCoordinator
             }
 
             // Lifetime mode.
+            DateTime curTime = DateTime.Now;
 
             // Data flow is waiting list -> running list -> waiting list.
             // Checking sequence is running list -> waiting list.
