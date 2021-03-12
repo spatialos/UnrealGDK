@@ -93,16 +93,13 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 		});
 
 	WorkerStatusPollingRequest->OnRequestProgress().BindLambda(
-		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {
-		});
+		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {});
 
 	WorkerStatusPollingRequest->OnHeaderReceived().BindLambda(
-		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {
-		});
+		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {});
 
 	WorkerStatusPollingRequest->OnRequestWillRetry().BindLambda(
-		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {
-		});
+		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {});
 
 	WorkerStatusPollingRequest->SetURL(Url + TEXT("/health/") + NewSpatialWorkerId);
 	WorkerStatusPollingRequest->SetVerb("POST");
@@ -141,16 +138,13 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 		});
 
 	WorkerStatusPollingRequest->OnRequestProgress().BindLambda(
-		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {
-		});
+		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {});
 
 	WorkerStatusPollingRequest->OnHeaderReceived().BindLambda(
-		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {
-		});
+		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {});
 
 	WorkerStatusPollingRequest->OnRequestWillRetry().BindLambda(
-		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {
-		});
+		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {});
 
 	WorkerStatusPollingRequest->SetURL(Url + TEXT("/ready/") + NewSpatialWorkerId);
 	WorkerStatusPollingRequest->SetVerb("POST");
@@ -187,8 +181,8 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 				TSharedRef<TJsonReader<> > JsonReader = TJsonReaderFactory<>::Create(ResponseStr);
 				if (!FJsonSerializer::Deserialize(JsonReader, RootObject))
 				{
-					UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - failed to parse json, Response:[%s]"),
-						   *FString(__FUNCTION__), *Response->GetContentAsString());
+					UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - failed to parse json, Response:[%s]"), *FString(__FUNCTION__),
+						   *Response->GetContentAsString());
 					return;
 				}
 
@@ -229,8 +223,8 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 				TSharedPtr<FJsonObject> StatusJson = RootObject->GetObjectField("status");
 				if (!StatusJson.IsValid())
 				{
-					UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Missing field status, Response:[%s]"),
-						   *FString(__FUNCTION__), *Response->GetContentAsString());
+					UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Missing field status, Response:[%s]"), *FString(__FUNCTION__),
+						   *Response->GetContentAsString());
 					return;
 				}
 
@@ -252,27 +246,24 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 					}
 				}
 
-				UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - successful http request, Response:[%s]"),
-						   *FString(__FUNCTION__), *Response->GetContentAsString());
+				UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - successful http request, Response:[%s]"), *FString(__FUNCTION__),
+					   *Response->GetContentAsString());
 			}
 			else
 			{
-				UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Failed HTTP request, Response:[%s], ResponseCode:[%d]"), *FString(__FUNCTION__),
-					   *Response->GetContentAsString(), Response->GetResponseCode());
+				UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Failed HTTP request, Response:[%s], ResponseCode:[%d]"),
+					   *FString(__FUNCTION__), *Response->GetContentAsString(), Response->GetResponseCode());
 			}
 		});
 
 	WorkerStatusPollingRequest->OnRequestProgress().BindLambda(
-		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {
-		});
+		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {});
 
 	WorkerStatusPollingRequest->OnHeaderReceived().BindLambda(
-		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {
-		});
+		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {});
 
 	WorkerStatusPollingRequest->OnRequestWillRetry().BindLambda(
-		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {
-		});
+		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {});
 
 	WorkerStatusPollingRequest->SetURL(Url + TEXT("/gameserver"));
 	WorkerStatusPollingRequest->SetVerb("GET");
@@ -292,19 +283,16 @@ void USpatialPlatformCoordinator::StartWatchingForGameserverStatus()
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> WorkerStatusPollingRequest = FHttpModule::Get().CreateRequest();
 	WorkerStatusPollingRequest->OnProcessRequestComplete().BindLambda(
-		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
-		});
+		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {});
 	WorkerStatusPollingRequest->OnRequestProgress().BindLambda(
 		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {
 			FHttpResponsePtr Response = Request->GetResponse();
 			FString ResponseStr = Response->GetContentAsString();
 		});
 	WorkerStatusPollingRequest->OnHeaderReceived().BindLambda(
-		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {
-		});
+		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {});
 	WorkerStatusPollingRequest->OnRequestWillRetry().BindLambda(
-		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {
-		});
+		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {});
 
 	WorkerStatusPollingRequest->SetURL(Url + TEXT("/watch/gameserver"));
 	WorkerStatusPollingRequest->SetVerb("GET");
