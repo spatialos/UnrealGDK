@@ -19,6 +19,8 @@ public:
 
 	virtual void PrepareTest() override;
 
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	int GetNumberOfVisibilityTestActors();
 
 	// A reference to the Default Pawn of Client 1 to allow for repossession in the final step of the test.
@@ -33,4 +35,9 @@ public:
 
 	// A remote location where Client 1's Pawn will be moved in order to not see the AReplicatedVisibilityTestActor.
 	FVector CharacterRemoteLocation;
+
+	UPROPERTY(Replicated)
+	bool bRunningWithReplicationGraph = false;
+
+	float HelperTimer = 0.0f;
 };

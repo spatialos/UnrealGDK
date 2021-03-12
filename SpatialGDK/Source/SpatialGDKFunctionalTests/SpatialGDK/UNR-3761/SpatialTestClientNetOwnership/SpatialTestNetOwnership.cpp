@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
+#include "Engine/NetDriver.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "NetOwnershipCube.h"
 #include "SpatialFunctionalTestFlowController.h"
@@ -48,7 +49,9 @@ void ASpatialTestNetOwnership::PrepareTest()
 {
 	Super::PrepareTest();
 
-	if (HasAuthority())
+	// This expected warning is not produced when running with the replication graph in native. TODO: UNR-???
+	if (HasAuthority()
+		&& (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() || GetNetDriver()->GetReplicationDriver() == nullptr))
 	{
 		AddExpectedLogError(TEXT("No owning connection for actor NetOwnershipCube"), 1, false);
 	}
