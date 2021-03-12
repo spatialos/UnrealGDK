@@ -146,7 +146,7 @@ namespace Improbable.WorkerCoordinator
             Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] All simulated clients are finished, IsLifetimeMode={IsLifetimeMode}.");
         }
 
-        private void StartWaitingClient()
+        private void StartWaitingClients()
         {
             DateTime curTime = DateTime.Now;
             for (int i = WaitingList.Count - 1; i >= 0; --i)
@@ -181,7 +181,7 @@ namespace Improbable.WorkerCoordinator
                     ResetEvent.Set();
                 }
 
-                StartWaitingClient();
+                StartWaitingClients();
 
                 return;
             }
@@ -218,7 +218,7 @@ namespace Improbable.WorkerCoordinator
                 }
             }
 
-            StartWaitingClient();
+            StartWaitingClients();
         }
     }
 }
