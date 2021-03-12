@@ -11,9 +11,14 @@ namespace SpatialGDK
 {
 struct ReceivedRPC
 {
-	uint32 Offset;
-	uint32 Index;
-	TArrayView<const uint8> PayloadData;
+	ReceivedRPC(uint32 InOffset, uint32 InIndex, TArrayView<const uint8> InPayloadData)
+		: Offset(InOffset)
+		, Index(InIndex)
+		, PayloadData(InPayloadData)
+	{}
+	const uint32 Offset;
+	const uint32 Index;
+	const TArrayView<const uint8> PayloadData;
 };
 
 namespace RPCCallbacks

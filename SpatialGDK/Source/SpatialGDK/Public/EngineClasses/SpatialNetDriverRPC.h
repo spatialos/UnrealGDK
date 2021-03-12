@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "Interop/RPCs/RPCService.h"
 #include "SpatialView/EntityComponentId.h"
-#include "SpatialNetDriverRPC.generated.h"
 
 namespace SpatialGDK
 {
@@ -23,7 +22,7 @@ struct FRPCPayload
 	uint32 Index;
 	TArray<uint8> PayloadData;
 
-	void ReadFromSchema(Schema_Object* RPCObject);
+	void ReadFromSchema(const Schema_Object* RPCObject);
 	void WriteToSchema(Schema_Object* RPCObject) const;
 };
 
@@ -119,17 +118,14 @@ class USpatialLatencyTracer;
  * The base class only contains a receiver for NetMulticast RPCs.
  * Derived class will contain additional RPC components
  */
-UCLASS()
 class SPATIALGDK_API USpatialNetDriverRPC : public UObject
 {
-	GENERATED_BODY()
 public:
 	// Definition for a "standard queue", that is, all queued RPC for sending could have an accompanying SpanId.
 	// Makes it easier to define a standard callback for when an outgoing RPC is written to the network.
 	using StandardQueue = SpatialGDK::TWrappedRPCQueue<FSpatialGDKSpanId>;
 
-	USpatialNetDriverRPC();
-	virtual void Init(USpatialNetDriver* InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
+	USpatialNetDriverRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
 					  const SpatialGDK::FSubView& InActorNonAuthSubView);
 
 	void AdvanceView();
@@ -160,7 +156,7 @@ protected:
 	SpatialGDK::RPCCallbacks::DataWritten MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const;
 	SpatialGDK::RPCCallbacks::UpdateWritten MakeUpdateWriteCallback(TArray<UpdateToSend>& OutUpdates) const;
 
-	static void OnRPCSent(SpatialGDK::SpatialEventTracer* EventTracer, TArray<UpdateToSend>& OutUpdates, FName Name,
+	static void OnRPCSent(SpatialGDK::SpatialEventTracer& EventTracer, TArray<UpdateToSend>& OutUpdates, FName Name,
 						  Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId, const FSpatialGDKSpanId& SpanId);
 	static void OnDataWritten(TArray<FWorkerComponentData>& OutArray, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
 							  Schema_ComponentData* InData);
@@ -172,12 +168,11 @@ protected:
 	bool CanExtractRPCOnServer(Worker_EntityId);
 	bool ApplyRPC(Worker_EntityId, SpatialGDK::ReceivedRPC, const FRPCMetaData& MetaData);
 
-	USpatialNetDriver* NetDriver;
-
-	USpatialLatencyTracer* LatencyTracer;
-	SpatialGDK::SpatialEventTracer* EventTracer;
+	USpatialNetDriver* NetDriver = nullptr;
+	SpatialGDK::SpatialEventTracer* EventTracer = nullptr;
 
 	TUniquePtr<SpatialGDK::RPCService> RPCService;
+	// TODO UNR-5038
 	// TUniquePtr<SpatialGDK::TRPCBufferReceiver<FRPCPayload, TimestampAndETWrapper>> NetMulticastReceiver;
 };
 
@@ -187,14 +182,11 @@ protected:
  * Contains server and cross server receivers
  * Able to collect initial RPC data for entities to create
  */
-UCLASS()
 class SPATIALGDK_API USpatialNetDriverServerRPC : public USpatialNetDriverRPC
 {
-	GENERATED_BODY()
 public:
-	USpatialNetDriverServerRPC();
-	void Init(USpatialNetDriver* InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
-			  const SpatialGDK::FSubView& InActorNonAuthSubView) override;
+	USpatialNetDriverServerRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
+			  const SpatialGDK::FSubView& InActorNonAuthSubView);
 
 	void ProcessReceivedRPCs() override;
 	void FlushRPCUpdates() override;
@@ -216,14 +208,11 @@ protected:
  * Client side of the RPC component.
  * It contains server senders, and client receivers.
  */
-UCLASS()
 class SPATIALGDK_API USpatialNetDriverClientRPC : public USpatialNetDriverRPC
 {
-	GENERATED_BODY()
 public:
-	USpatialNetDriverClientRPC();
-	void Init(USpatialNetDriver* InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
-			  const SpatialGDK::FSubView& InActorNonAuthSubView) override;
+	USpatialNetDriverClientRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
+		const SpatialGDK::FSubView& InActorNonAuthSubView);
 
 	void ProcessReceivedRPCs() override;
 	void FlushRPCUpdates() override;
