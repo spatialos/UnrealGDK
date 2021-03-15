@@ -6,6 +6,7 @@
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "Schema/MulticastRPCs.h"
 #include "SpatialConstants.h"
+#include "SpatialView/EntityComponentTypes.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogMulticastRPCService);
