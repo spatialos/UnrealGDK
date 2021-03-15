@@ -25,9 +25,10 @@ FString RPCTypeToString(ERPCType RPCType)
         return TEXT("Multicast");
     case ERPCType::CrossServer:
         return TEXT("CrossServer");
+    default:
+        checkNoEntry();
     }
 
-    checkNoEntry();
     return FString();
 }
 
