@@ -12,21 +12,5 @@ namespace SpatialGDK
 {
 class ViewCoordinator;
 
-class ActorSetWriter
-{
-public:
-	explicit ActorSetWriter(ViewCoordinator& InCoordinator, const USpatialPackageMapClient& InPackageMap)
-		: Coordinator(InCoordinator)
-		, PackageMap(InPackageMap)
-	{
-	}
-
-	ActorSetMember GetActorSetData(AActor* Actor) const;
-
-	void UpdateActorSetComponent(Worker_EntityId ActorEntityId, AActor* Actor) const;
-
-private:
-	ViewCoordinator& Coordinator;
-	const USpatialPackageMapClient& PackageMap;
-};
+ActorSetMember GetActorSetData(const USpatialPackageMapClient& PackageMap, AActor* Actor);
 } // namespace SpatialGDK

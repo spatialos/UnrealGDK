@@ -10,17 +10,5 @@ class UAbstractLBStrategy;
 
 namespace SpatialGDK
 {
-class ActorGroupWriter
-{
-public:
-	explicit ActorGroupWriter(const UAbstractLBStrategy& InLoadBalancingStrategy)
-		: LoadBalancingStrategy(InLoadBalancingStrategy)
-	{
-	}
-
-	ActorGroupMember GetActorGroupData(AActor* Actor) const;
-
-private:
-	const UAbstractLBStrategy& LoadBalancingStrategy;
-};
+ActorGroupMember GetActorGroupData(const UAbstractLBStrategy& LoadBalancingStrategy, AActor* Actor);
 } // namespace SpatialGDK

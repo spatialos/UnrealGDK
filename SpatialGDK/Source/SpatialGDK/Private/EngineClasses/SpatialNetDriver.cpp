@@ -41,6 +41,7 @@
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -1236,13 +1237,6 @@ void USpatialNetDriver::ProcessOwnershipChanges()
 {
 	const bool bShouldWriteLoadBalancingData =
 		IsValid(Connection) && GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents;
-	TOptional<const SpatialGDK::ActorSetWriter> LoadBalancingWriter;
-
-	if (bShouldWriteLoadBalancingData)
-	{
-		check(IsValid(PackageMap));
-		LoadBalancingWriter.Emplace(Connection->GetCoordinator(), *PackageMap);
-	}
 
 	for (Worker_EntityId EntityId : OwnershipChangedEntities)
 	{
@@ -1250,7 +1244,8 @@ void USpatialNetDriver::ProcessOwnershipChanges()
 		{
 			if (bShouldWriteLoadBalancingData)
 			{
-				LoadBalancingWriter->UpdateActorSetComponent(EntityId, Channel->Actor);
+				const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, Channel->Actor);
+				Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
 			}
 
 			Channel->ServerProcessOwnershipChange();

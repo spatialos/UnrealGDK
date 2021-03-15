@@ -6,7 +6,7 @@
 
 namespace SpatialGDK
 {
-ActorGroupMember ActorGroupWriter::GetActorGroupData(AActor* Actor) const
+ActorGroupMember GetActorGroupData(const UAbstractLBStrategy& LoadBalancingStrategy, AActor* Actor)
 {
 	return ActorGroupMember(LoadBalancingStrategy.GetActorGroupId(*Actor));
 }

@@ -7,7 +7,7 @@
 
 namespace SpatialGDK
 {
-ActorSetMember ActorSetWriter::GetActorSetData(AActor* Actor) const
+ActorSetMember GetActorSetData(const USpatialPackageMapClient& PackageMap, AActor* Actor)
 {
 	const AActor* LeaderActor = GetReplicatedHierarchyRoot(Actor);
 	check(IsValid(LeaderActor));
@@ -16,16 +16,5 @@ ActorSetMember ActorSetWriter::GetActorSetData(AActor* Actor) const
 	check(LeaderEntityId != SpatialConstants::INVALID_ENTITY_ID);
 
 	return ActorSetMember(LeaderEntityId);
-}
-
-void ActorSetWriter::UpdateActorSetComponent(Worker_EntityId ActorEntityId, AActor* Actor) const
-{
-	const ActorSetMember ActorSetData = GetActorSetData(Actor);
-
-	ComponentUpdate ComponentUpdate(ActorSetData.ComponentId);
-	Schema_Object* ComponentUpdateFields = ComponentUpdate.GetFields();
-	ActorSetData.WriteSchema(ComponentUpdateFields);
-
-	Coordinator.SendComponentUpdate(ActorEntityId, MoveTemp(ComponentUpdate), {});
 }
 } // namespace SpatialGDK
