@@ -81,7 +81,7 @@ if ((Test-Path env:TEST_CONFIG) -And ($env:TEST_CONFIG -eq "Native")) {
 
         # We run functional spatial tests against Vanilla UE4 with replication graph enabled
         $tests += [TestSuite]::new($gdk_test_project, "SpatialNetworkingMap", "VanillaTestResultsRepGraph", "${test_map_path}CI_Premerge/+${test_map_path}CI_Nightly/",
-        "$user_gdk_settings", $False, "-ini:Engine:[/Script/OnlineSubsystemUtils.IpNetDriver]:ReplicationDriverClassName=/Script/GDKTestGyms.TestGymsReplicationGraph $user_cmd_line_args")
+        "$user_gdk_settings", $False, "-ini:Engine:[/Script/OnlineSubsystemUtils.IpNetDriver]:ReplicationDriverClassName=/Script/GDKTestGyms.TestGymsReplicationGraph ${user_cmd_line_args}")
 
         # And if slow, we run NetTest functional maps against Vanilla UE4 as well
         $tests += [TestSuite]::new($native_test_project, "NetworkingMap", "NativeNetTestResults", "/Game/NetworkingMap", "$user_gdk_settings", $False, "$user_cmd_line_args")

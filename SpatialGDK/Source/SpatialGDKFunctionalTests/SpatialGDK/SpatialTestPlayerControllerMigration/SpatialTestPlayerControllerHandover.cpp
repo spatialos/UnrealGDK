@@ -100,16 +100,18 @@ void ASpatialTestPlayerControllerHandover::PrepareTest()
 		if (LocalWorker == DestinationWorker)
 		{
 			APlayerController* PlayerController = GetPlayerController();
-			if (PlayerController && PlayerController->HasAuthority())
+			if (IsValid(PlayerController))
 			{
-				FinishStep();
+				RequireTrue(PlayerController->HasAuthority(), TEXT("PlayerController should have authority."));
 			}
+			FinishStep();
 		}
 		else
 		{
 			FinishStep();
 		}
 	});
+	WaitAuth.TimeLimit = 10.0f;
 
 	auto AddStepChangePlayerControllerAuthWorker = [&] {
 		AddStepFromDefinition(NextDestination, FWorkerDefinition::AllServers);
@@ -278,6 +280,7 @@ void ASpatialTestPlayerControllerHandover::PrepareTest()
 USpatialTestPlayerControllerHandoverMap::USpatialTestPlayerControllerHandoverMap()
 	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("SpatialTestPlayerControllerHandoverMap"))
 {
+	SetNumberOfClients(1);
 }
 
 void USpatialTestPlayerControllerHandoverMap::CreateCustomContentForMap()
