@@ -11,6 +11,9 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "SpatialView/ComponentData.h"
+#include "SpatialView/ComponentUpdate.h"
+
 using StringToEntityMap = TMap<FString, Worker_EntityId>;
 
 namespace SpatialGDK
@@ -212,25 +215,19 @@ inline FVector GetVectorFromSchema(Schema_Object* Object, Schema_FieldId Id)
 void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath);
 
 template <class TComponent>
-Worker_ComponentUpdate CreateComponentUpdateHelper(const TComponent& Component)
+ComponentUpdate CreateComponentUpdateHelper(const TComponent& Component)
 {
-	Worker_ComponentUpdate Update = {};
-	Update.component_id = TComponent::ComponentId;
-	Update.schema_type = Schema_CreateComponentUpdate();
-	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
-
+	ComponentUpdate Update(TComponent::ComponentId);
+	Schema_Object* ComponentObject = Update.GetFields();
 	Component.WriteSchema(ComponentObject);
-
 	return Update;
 }
 
 template <class TComponent>
-Worker_ComponentData CreateComponentDataHelper(const TComponent& Component)
+ComponentData CreateComponentDataHelper(const TComponent& Component)
 {
-	Worker_ComponentData Data = {};
-	Data.component_id = TComponent::ComponentId;
-	Data.schema_type = Schema_CreateComponentData();
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	ComponentData Data(TComponent::ComponentId);
+	Schema_Object* ComponentObject = Data.GetFields();
 
 	Component.WriteSchema(ComponentObject);
 

@@ -146,11 +146,11 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 
 	if (GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents)
 	{
-		const ActorSetWriter ActorSetWriter(NetDriver->Connection->GetCoordinator(), *NetDriver->PackageMap);
-		const ActorGroupWriter ActorGroupWriter(*NetDriver->LoadBalanceStrategy);
+		const ActorSetWriter SetWriter(NetDriver->Connection->GetCoordinator(), *NetDriver->PackageMap);
+		const ActorGroupWriter GroupWriter(*NetDriver->LoadBalanceStrategy);
 
-		ComponentDatas.Add(ActorSetWriter.GetActorSetData(Actor).CreateComponentData());
-		ComponentDatas.Add(ActorGroupWriter.GetActorGroupData(Actor).CreateComponentData());
+		ComponentDatas.Add(SetWriter.GetActorSetData(Actor).CreateComponentData().ReleaseWorkerComponentData());
+		ComponentDatas.Add(GroupWriter.GetActorGroupData(Actor).CreateComponentData().ReleaseWorkerComponentData());
 	}
 }
 

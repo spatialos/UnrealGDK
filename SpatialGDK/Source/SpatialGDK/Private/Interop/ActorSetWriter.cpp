@@ -23,7 +23,7 @@ void ActorSetWriter::UpdateActorSetComponent(Worker_EntityId ActorEntityId, AAct
 	const ActorSetMember ActorSetData = GetActorSetData(Actor);
 
 	ComponentUpdate ComponentUpdate(ActorSetData.ComponentId);
-	Schema_Object* ComponentUpdateFields = Schema_GetComponentUpdateFields(ComponentUpdate.GetUnderlying());
+	Schema_Object* ComponentUpdateFields = ComponentUpdate.GetFields();
 	ActorSetData.WriteSchema(ComponentUpdateFields);
 
 	Coordinator.SendComponentUpdate(ActorEntityId, MoveTemp(ComponentUpdate), {});

@@ -26,28 +26,13 @@ struct SPATIALGDK_API ActorSetMember
 	{
 	}
 
-	ActorSetMember(const Worker_ComponentData& Data)
-		: ActorSetMember(Data.schema_type)
-	{
-	}
+	ActorSetMember(const ComponentData& Data) { ApplySchema(Data.GetFields()); }
 
-	ActorSetMember(Schema_ComponentData* Data)
-	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
+	ComponentData CreateComponentData() const { return CreateComponentDataHelper(*this); }
 
-		ApplySchema(ComponentObject);
-	}
+	ComponentUpdate CreateComponentUpdate() const { return CreateComponentUpdateHelper(*this); }
 
-	Worker_ComponentData CreateComponentData() const { return CreateComponentDataHelper(*this); }
-
-	Worker_ComponentUpdate CreateComponentUpdate() const { return CreateComponentUpdateHelper(*this); }
-
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
-	{
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
-
-		ApplySchema(ComponentObject);
-	}
+	void ApplyComponentUpdate(const ComponentUpdate& Update) { ApplySchema(Update.GetFields()); }
 
 	void ApplySchema(Schema_Object* Schema)
 	{

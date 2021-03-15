@@ -227,7 +227,7 @@ TOptional<TComponent> ASpatialTestLoadBalancingData::GetSpatialComponent(const A
 
 		if (ComponentData != nullptr)
 		{
-			return TComponent(ComponentData->GetUnderlying());
+			return TComponent(*ComponentData);
 		}
 	}
 

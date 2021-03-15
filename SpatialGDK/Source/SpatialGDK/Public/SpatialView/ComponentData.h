@@ -58,6 +58,9 @@ public:
 	Schema_ComponentData* GetUnderlying() const;
 	Worker_ComponentData GetWorkerComponentData() const;
 
+	// Releases ownership of the component data
+	Worker_ComponentData ReleaseWorkerComponentData() &&;
+
 	Worker_ComponentId GetComponentId() const;
 
 private:
