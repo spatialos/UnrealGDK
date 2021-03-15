@@ -11,6 +11,8 @@
 #include "SpatialGDKEditor/Public/SpatialTestSettings.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "UObject/ConstructorHelpers.h"
+#include <Runtime/Engine/Classes/Kismet/KismetMathLibrary.h>
+
 
 UGeneratedTestMap::UGeneratedTestMap()
 	: bIsValidForGeneration(false)
@@ -36,6 +38,7 @@ AActor* UGeneratedTestMap::AddActorToLevel(ULevel* Level, UClass* Class, const F
 {
 	return GEditor->AddActor(Level, Class, Transform);
 }
+
 
 bool UGeneratedTestMap::GenerateMap()
 {
@@ -101,10 +104,12 @@ void UGeneratedTestMap::GenerateBaseMap()
 
 	// Default player start location is chosen so that players spawn on server 1 by default.
 	// Individual test maps can change this if necessary.
-	APlayerStart* PlayerStart = AddActorToLevel<APlayerStart>(CurrentLevel, FTransform(FVector(-100, -100, 100)));
-
-	// TODO: Maybe figure out how to set the default viewpoint when opening the map, so we don't start in the ground (maybe together with
-	// other viewing position issues), ticket: UNR-4975.
+	FTransform PlayerTransform;
+	FVector PlayerTranslation = FVector(-500, -500, 200);
+ 	PlayerTransform.SetTranslation(PlayerTranslation);
+	FRotator RotatorToOrigin = UKismetMathLibrary::MakeRotFromX(-PlayerTranslation);
+	PlayerTransform.SetRotation(RotatorToOrigin.Quaternion());
+	APlayerStart* PlayerStart = AddActorToLevel<APlayerStart>(CurrentLevel, PlayerTransform);
 }
 
 bool UGeneratedTestMap::SaveMap()
