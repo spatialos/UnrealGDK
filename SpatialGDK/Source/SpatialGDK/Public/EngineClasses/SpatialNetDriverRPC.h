@@ -6,6 +6,8 @@
 #include "Interop/RPCs/RPCService.h"
 #include "SpatialView/EntityComponentId.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetDriverRPC, Log, All);
+
 namespace SpatialGDK
 {
 class SpatialEventTracer;
@@ -54,10 +56,11 @@ struct FRPCCrossServerPayload : FRPCPayload
  */
 struct FRPCMetaData
 {
+	FName RPCName;
 	uint64 Timestamp;
 	FSpatialGDKSpanId SpanId;
 
-	void ComputeSpanId(FName Name, SpatialGDK::SpatialEventTracer& Tracer, SpatialGDK::EntityComponentId EntityComponent, uint64 RPCId);
+	void ComputeSpanId(SpatialGDK::SpatialEventTracer& Tracer, SpatialGDK::EntityComponentId EntityComponent, uint64 RPCId);
 };
 
 /**
@@ -77,9 +80,11 @@ struct TimestampAndETWrapper
 	struct WrappedData
 	{
 		WrappedData() = default;
-		WrappedData(T&& InData)
+		WrappedData(T&& InData, FName RPCName)
 			: Data(MoveTemp(InData))
 		{
+			MetaData.RPCName = RPCName;
+			MetaData.Timestamp = FPlatformTime::Cycles64();
 		}
 
 		const T& GetData() const { return Data; }
@@ -87,15 +92,12 @@ struct TimestampAndETWrapper
 		const FRPCMetaData& GetAdditionalData() const { return MetaData; }
 
 		T Data;
-		FName ReceiverName;
 		FRPCMetaData MetaData;
 	};
 
 	WrappedData MakeWrappedData(Worker_EntityId EntityId, T&& Data, uint64 RPCId)
 	{
-		WrappedData Wrapper(MoveTemp(Data));
-		Wrapper.ReceiverName = RPCName;
-		Wrapper.MetaData.Timestamp = FPlatformTime::Cycles64();
+		WrappedData Wrapper(MoveTemp(Data), RPCName);
 		if (EventTracer != nullptr)
 		{
 			Wrapper.MetaData.ComputeSpanId(RPCName, *EventTracer, SpatialGDK::EntityComponentId(EntityId, ComponentId), RPCId);
@@ -109,8 +111,6 @@ struct TimestampAndETWrapper
 	SpatialGDK::SpatialEventTracer* EventTracer = nullptr;
 };
 
-class USpatialLatencyTracer;
-
 /**
  * RPC component for the SpatialNetDriver.
  * It contains the glue between the RPC primitives (queue, sender, receiver) and Unreal Actors,
@@ -118,34 +118,34 @@ class USpatialLatencyTracer;
  * The base class only contains a receiver for NetMulticast RPCs.
  * Derived class will contain additional RPC components
  */
-class SPATIALGDK_API USpatialNetDriverRPC : public UObject
+class SPATIALGDK_API FSpatialNetDriverRPC : public UObject
 {
 public:
 	// Definition for a "standard queue", that is, all queued RPC for sending could have an accompanying SpanId.
 	// Makes it easier to define a standard callback for when an outgoing RPC is written to the network.
 	using StandardQueue = SpatialGDK::TWrappedRPCQueue<FSpatialGDKSpanId>;
 
-	USpatialNetDriverRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
-					  const SpatialGDK::FSubView& InActorNonAuthSubView);
+	FSpatialNetDriverRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
+						 const SpatialGDK::FSubView& InActorNonAuthSubView);
 
 	void AdvanceView();
 	virtual void ProcessReceivedRPCs();
 	virtual void FlushRPCUpdates();
 	void FlushRPCQueue(StandardQueue& Queue);
-	void FlushRPCQueue(Worker_EntityId, StandardQueue& Queue);
+	void FlushRPCQueueForEntity(Worker_EntityId, StandardQueue& Queue);
 	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId);
 
 protected:
-	void MakeRingBufferWithACKSender(FName QueueName, ERPCType RPCType, Worker_ComponentSetId AuthoritySet,
+	void MakeRingBufferWithACKSender(ERPCType RPCType, Worker_ComponentSetId AuthoritySet,
 									 TUniquePtr<SpatialGDK::RPCBufferSender>& SenderPtr,
 									 TUniquePtr<SpatialGDK::TRPCQueue<FRPCPayload, FSpatialGDKSpanId>>& QueuePtr);
 
-	void MakeRingBufferWithACKReceiver(FName QueueName, ERPCType RPCType, Worker_ComponentSetId AuthoritySet,
+	void MakeRingBufferWithACKReceiver(ERPCType RPCType, Worker_ComponentSetId AuthoritySet,
 									   TUniquePtr<SpatialGDK::TRPCBufferReceiver<FRPCPayload, TimestampAndETWrapper>>& ReceiverPtr);
 
 	virtual void GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId, TArray<FWorkerComponentData>& OutData);
 
-	struct UpdateToSend
+	struct UpdateToSend : FNoHeapAllocation
 	{
 		Worker_EntityId EntityId;
 		FWorkerComponentUpdate Update;
@@ -168,7 +168,7 @@ protected:
 	bool CanExtractRPCOnServer(Worker_EntityId);
 	bool ApplyRPC(Worker_EntityId, SpatialGDK::ReceivedRPC, const FRPCMetaData& MetaData);
 
-	USpatialNetDriver* NetDriver = nullptr;
+	USpatialNetDriver& NetDriver;
 	SpatialGDK::SpatialEventTracer* EventTracer = nullptr;
 
 	TUniquePtr<SpatialGDK::RPCService> RPCService;
@@ -182,11 +182,11 @@ protected:
  * Contains server and cross server receivers
  * Able to collect initial RPC data for entities to create
  */
-class SPATIALGDK_API USpatialNetDriverServerRPC : public USpatialNetDriverRPC
+class SPATIALGDK_API FSpatialNetDriverServerRPC : public FSpatialNetDriverRPC
 {
 public:
-	USpatialNetDriverServerRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
-			  const SpatialGDK::FSubView& InActorNonAuthSubView);
+	FSpatialNetDriverServerRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
+							   const SpatialGDK::FSubView& InActorNonAuthSubView);
 
 	void ProcessReceivedRPCs() override;
 	void FlushRPCUpdates() override;
@@ -208,11 +208,11 @@ protected:
  * Client side of the RPC component.
  * It contains server senders, and client receivers.
  */
-class SPATIALGDK_API USpatialNetDriverClientRPC : public USpatialNetDriverRPC
+class SPATIALGDK_API FSpatialNetDriverClientRPC : public FSpatialNetDriverRPC
 {
 public:
-	USpatialNetDriverClientRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
-		const SpatialGDK::FSubView& InActorNonAuthSubView);
+	FSpatialNetDriverClientRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
+							   const SpatialGDK::FSubView& InActorNonAuthSubView);
 
 	void ProcessReceivedRPCs() override;
 	void FlushRPCUpdates() override;

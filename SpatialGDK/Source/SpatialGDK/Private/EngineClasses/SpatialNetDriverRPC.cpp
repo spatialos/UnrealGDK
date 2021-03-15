@@ -1,23 +1,26 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
-#include "Utils/RepLayoutUtils.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Utils/RPCRingBuffer.h"
+#include "Utils/RepLayoutUtils.h"
 
 #include "Interop/RPCs/RPCQueues.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialNetDriverRPC);
+
 using namespace SpatialGDK;
 
-void FRPCMetaData::ComputeSpanId(FName Name, SpatialGDK::SpatialEventTracer& Tracer, SpatialGDK::EntityComponentId EntityComponent,
-								 uint64 RPCId)
+void FRPCMetaData::ComputeSpanId(SpatialGDK::SpatialEventTracer& Tracer, SpatialGDK::EntityComponentId EntityComponent, uint64 RPCId)
 {
 	TArray<FSpatialGDKSpanId> ComponentUpdateSpans = Tracer.GetAndConsumeSpansForComponent(EntityComponent);
 
 	SpanId = Tracer.TraceEvent(
-		FSpatialTraceEventBuilder::CreateReceiveRPC(EventTraceUniqueId::GenerateForNamedRPC(EntityComponent.EntityId, Name, RPCId)),
+		FSpatialTraceEventBuilder::CreateReceiveRPC(EventTraceUniqueId::GenerateForNamedRPC(EntityComponent.EntityId, RPCName, RPCId)),
 		/* Causes */ reinterpret_cast<const Trace_SpanIdType*>(ComponentUpdateSpans.GetData()),
 		/* NumCauses */ ComponentUpdateSpans.Num());
 }
@@ -36,15 +39,13 @@ void FRPCPayload::WriteToSchema(Schema_Object* RPCObject) const
 	AddBytesToSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, PayloadData.GetData(), PayloadData.Num());
 }
 
-USpatialNetDriverRPC::USpatialNetDriverRPC() = default;
-
-void USpatialNetDriverRPC::OnRPCSent(SpatialGDK::SpatialEventTracer& EventTracer, TArray<UpdateToSend>& OutUpdates, FName Name,
+void FSpatialNetDriverRPC::OnRPCSent(SpatialGDK::SpatialEventTracer& EventTracer, TArray<UpdateToSend>& OutUpdates, FName Name,
 									 Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId,
 									 const FSpatialGDKSpanId& SpanId)
 {
 	const EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForNamedRPC(EntityId, Name, RPCId);
 	const FSpatialGDKSpanId NewSpanId = EventTracer.TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(LinearTraceId),
-														  /* Causes */ SpanId.GetConstId(), /* NumCauses */ 1);
+															   /* Causes */ SpanId.GetConstId(), /* NumCauses */ 1);
 
 	if (OutUpdates.Num() == 0 || OutUpdates.Last().EntityId != EntityId || OutUpdates.Last().Update.component_id != ComponentId)
 	{
@@ -55,7 +56,7 @@ void USpatialNetDriverRPC::OnRPCSent(SpatialGDK::SpatialEventTracer& EventTracer
 	OutUpdates.Last().Spans.Add(NewSpanId);
 }
 
-void USpatialNetDriverRPC::OnDataWritten(TArray<FWorkerComponentData>& OutArray, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+void FSpatialNetDriverRPC::OnDataWritten(TArray<FWorkerComponentData>& OutArray, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
 										 Schema_ComponentData* InData)
 {
 	if (ensure(InData != nullptr))
@@ -67,7 +68,7 @@ void USpatialNetDriverRPC::OnDataWritten(TArray<FWorkerComponentData>& OutArray,
 	}
 }
 
-void USpatialNetDriverRPC::OnUpdateWritten(TArray<UpdateToSend>& OutUpdates, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+void FSpatialNetDriverRPC::OnUpdateWritten(TArray<UpdateToSend>& OutUpdates, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
 										   Schema_ComponentUpdate* InUpdate)
 {
 	if (ensure(InUpdate != nullptr))
@@ -82,37 +83,37 @@ void USpatialNetDriverRPC::OnUpdateWritten(TArray<UpdateToSend>& OutUpdates, Wor
 	}
 }
 
-USpatialNetDriverRPC::StandardQueue::SentRPCCallback USpatialNetDriverRPC::MakeRPCSentCallback(TArray<UpdateToSend>& OutUpdates)
+FSpatialNetDriverRPC::StandardQueue::SentRPCCallback FSpatialNetDriverRPC::MakeRPCSentCallback(TArray<UpdateToSend>& OutUpdates)
 {
 	if (EventTracer != nullptr)
 	{
-		return [&OutUpdates, this](FName Name, Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId,
+		return [&OutUpdates, this](FName RPCName, Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId,
 								   const FSpatialGDKSpanId& SpanId) {
-			return OnRPCSent(*EventTracer, OutUpdates, Name, EntityId, ComponentId, RPCId, SpanId);
+			return OnRPCSent(*EventTracer, OutUpdates, RPCName, EntityId, ComponentId, RPCId, SpanId);
 		};
 	}
 	return StandardQueue::SentRPCCallback();
 }
 
-RPCCallbacks::DataWritten USpatialNetDriverRPC::MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const
+RPCCallbacks::DataWritten FSpatialNetDriverRPC::MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const
 {
 	return [&OutArray](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* InData) {
 		return OnDataWritten(OutArray, EntityId, ComponentId, InData);
 	};
 }
 
-RPCCallbacks::UpdateWritten USpatialNetDriverRPC::MakeUpdateWriteCallback(TArray<UpdateToSend>& OutUpdates) const
+RPCCallbacks::UpdateWritten FSpatialNetDriverRPC::MakeUpdateWriteCallback(TArray<UpdateToSend>& OutUpdates) const
 {
 	return [&OutUpdates](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* InUpdate) {
 		return OnUpdateWritten(OutUpdates, EntityId, ComponentId, InUpdate);
 	};
 }
 
-void USpatialNetDriverRPC::Init(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
-								const SpatialGDK::FSubView& InActorNonAuthSubView)
+FSpatialNetDriverRPC::FSpatialNetDriverRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
+										   const SpatialGDK::FSubView& InActorNonAuthSubView)
+	: NetDriver(InNetDriver)
 {
-	NetDriver = &InNetDriver;
-	EventTracer = NetDriver->Connection->GetEventTracer();
+	EventTracer = NetDriver.Connection->GetEventTracer();
 	RPCService = MakeUnique<SpatialGDK::RPCService>(InActorNonAuthSubView, InActorAuthSubView);
 
 	{
@@ -121,18 +122,18 @@ void USpatialNetDriverRPC::Init(USpatialNetDriver& InNetDriver, const SpatialGDK
 	}
 }
 
-void USpatialNetDriverRPC::AdvanceView()
+void FSpatialNetDriverRPC::AdvanceView()
 {
 	RPCService->AdvanceView();
 }
 
-void USpatialNetDriverRPC::ProcessReceivedRPCs()
+void FSpatialNetDriverRPC::ProcessReceivedRPCs()
 {
 	// TODO UNR-5038
 	// MulticastReceiver->
 }
 
-TArray<FWorkerComponentData> USpatialNetDriverRPC::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId)
+TArray<FWorkerComponentData> FSpatialNetDriverRPC::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId)
 {
 	static TArray<Worker_ComponentId> EndpointComponentIds = {
 		SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID, SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID,
@@ -160,12 +161,12 @@ TArray<FWorkerComponentData> USpatialNetDriverRPC::GetRPCComponentsOnEntityCreat
 	return Components;
 }
 
-void USpatialNetDriverRPC::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId, TArray<FWorkerComponentData>& OutData)
+void FSpatialNetDriverRPC::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId, TArray<FWorkerComponentData>& OutData)
 {
 	// TODO UNR-5038
 }
 
-void USpatialNetDriverRPC::FlushRPCUpdates()
+void FSpatialNetDriverRPC::FlushRPCUpdates()
 {
 	const TMap<FName, RPCService::RPCReceiverDescription>& Receivers = RPCService->GetReceivers();
 	TArray<UpdateToSend> Updates;
@@ -178,7 +179,7 @@ void USpatialNetDriverRPC::FlushRPCUpdates()
 	FlushUpdates(Updates);
 }
 
-void USpatialNetDriverRPC::FlushRPCQueue(StandardQueue& Queue)
+void FSpatialNetDriverRPC::FlushRPCQueue(StandardQueue& Queue)
 {
 	TArray<UpdateToSend> Updates;
 	RPCWritingContext Ctx(Queue.Name, MakeUpdateWriteCallback(Updates));
@@ -187,7 +188,7 @@ void USpatialNetDriverRPC::FlushRPCQueue(StandardQueue& Queue)
 	FlushUpdates(Updates);
 }
 
-void USpatialNetDriverRPC::FlushRPCQueue(Worker_EntityId EntityId, StandardQueue& Queue)
+void FSpatialNetDriverRPC::FlushRPCQueueForEntity(Worker_EntityId EntityId, StandardQueue& Queue)
 {
 	TArray<UpdateToSend> Updates;
 	RPCWritingContext Ctx(Queue.Name, MakeUpdateWriteCallback(Updates));
@@ -196,7 +197,7 @@ void USpatialNetDriverRPC::FlushRPCQueue(Worker_EntityId EntityId, StandardQueue
 	FlushUpdates(Updates);
 }
 
-void USpatialNetDriverRPC::FlushUpdates(TArray<UpdateToSend>& Updates)
+void FSpatialNetDriverRPC::FlushUpdates(TArray<UpdateToSend>& Updates)
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -208,39 +209,39 @@ void USpatialNetDriverRPC::FlushUpdates(TArray<UpdateToSend>& Updates)
 			SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateMergeSendRPCs(Update.EntityId, Update.Update.component_id),
 											 /* Causes */ Update.Spans.GetData()->GetConstId(), /* NumCauses */ Update.Spans.Num());
 		}
-		NetDriver->Connection->SendComponentUpdate(Update.EntityId, &Update.Update, SpanId);
+		NetDriver.Connection->SendComponentUpdate(Update.EntityId, &Update.Update, SpanId);
 	}
 
 	if (Updates.Num() > 0 && Settings->bWorkerFlushAfterOutgoingNetworkOp)
 	{
-		NetDriver->Connection->Flush();
+		NetDriver.Connection->Flush();
 	}
 }
 
-bool USpatialNetDriverRPC::CanExtractRPC(Worker_EntityId EntityId)
+bool FSpatialNetDriverRPC::CanExtractRPC(Worker_EntityId EntityId)
 {
-	const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver->PackageMap->GetObjectFromEntityId(EntityId);
+	const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver.PackageMap->GetObjectFromEntityId(EntityId);
 	if (!ActorReceivingRPC.IsValid())
 	{
-		//UE_LOG(LogSpatialRPCService, Log,
-		//	   TEXT("Entity receiving ring buffer RPC does not exist in PackageMap, possibly due to corresponding actor getting "
-		//			"destroyed. Entity: %lld"),
-		//	   EntityId);
+		UE_LOG(LogSpatialNetDriverRPC, Log,
+			   TEXT("Entity receiving ring buffer RPC does not exist in PackageMap, possibly due to corresponding actor getting "
+					"destroyed. Entity: %lld"),
+			   EntityId);
 		return false;
 	}
 	return true;
 }
 
-bool USpatialNetDriverRPC::CanExtractRPCOnServer(Worker_EntityId EntityId)
+bool FSpatialNetDriverRPC::CanExtractRPCOnServer(Worker_EntityId EntityId)
 {
-	const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver->PackageMap->GetObjectFromEntityId(EntityId);
+	const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver.PackageMap->GetObjectFromEntityId(EntityId);
 	UObject* ReceivingObject = ActorReceivingRPC.Get();
 	if (ReceivingObject == nullptr)
 	{
-		//UE_LOG(LogSpatialRPCService, Log,
-		//	   TEXT("Entity receiving ring buffer RPC does not exist in PackageMap, possibly due to corresponding actor getting "
-		//			"destroyed. Entity: %lld"),
-		//	   EntityId);
+		UE_LOG(LogSpatialNetDriverRPC, Log,
+			   TEXT("Entity receiving ring buffer RPC does not exist in PackageMap, possibly due to corresponding actor getting "
+					"destroyed. Entity: %lld"),
+			   EntityId);
 		return false;
 	}
 
@@ -248,9 +249,9 @@ bool USpatialNetDriverRPC::CanExtractRPCOnServer(Worker_EntityId EntityId)
 	const bool bActorRoleIsSimulatedProxy = ReceivingActor->Role == ROLE_SimulatedProxy;
 	if (bActorRoleIsSimulatedProxy)
 	{
-		//UE_LOG(LogSpatialRPCService, Verbose,
-		//	   TEXT("Will not process server RPC, Actor role changed to SimulatedProxy. This happens on migration. Entity: %lld"),
-		//	   EntityId);
+		UE_LOG(LogSpatialNetDriverRPC, Verbose,
+			   TEXT("Will not process server RPC, Actor role changed to SimulatedProxy. This happens on migration. Entity: %lld"),
+			   EntityId);
 		return false;
 	}
 	return true;
@@ -279,20 +280,21 @@ struct RAIIParamsHolder
 	uint8* Parms;
 };
 
-bool USpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::ReceivedRPC RPCData, const FRPCMetaData& MetaData)
+bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::ReceivedRPC RPCData, const FRPCMetaData& MetaData)
 {
 	constexpr bool RPCConsumed = true;
 
 	FUnrealObjectRef ObjectRef(EntityId, RPCData.Offset);
-	TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef);
+	TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver.PackageMap->GetObjectFromUnrealObjectRef(ObjectRef);
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
+	check(TargetObject != nullptr);
 
-	const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
+	const FClassInfo& ClassInfo = NetDriver.ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
 	UFunction* Function = ClassInfo.RPCs[RPCData.Index];
 	if (Function == nullptr)
 	{
-		// TODO, log something
-		// return FRPCErrorInfo{ TargetObject, nullptr, ERPCResult::MissingFunctionInfo, ERPCQueueProcessResult::ContinueProcessing };
+		UE_LOG(LogSpatialNetDriverRPC, Error, TEXT("Failed to execute RPC on Actor %s, (Entity %llu), function missing for index %i"),
+			   *TargetObject->GetName(), EntityId, RPCData.Index);
 		return RPCConsumed;
 	}
 
@@ -305,10 +307,11 @@ bool USpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::Receiv
 		// Scope for the SpatialNetBitReader lifecycle (only one should exist per thread).
 		TSet<FUnrealObjectRef> MappedRefs;
 
-		FSpatialNetBitReader PayloadReader(NetDriver->PackageMap, const_cast<uint8*>(RPCData.PayloadData.GetData()),
+		FSpatialNetBitReader PayloadReader(NetDriver.PackageMap, const_cast<uint8*>(RPCData.PayloadData.GetData()),
 										   RPCData.PayloadData.Num() * 8, MappedRefs, UnresolvedRefs);
 
-		TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
+		TSharedPtr<FRepLayout> RepLayout = NetDriver.GetFunctionRepLayout(Function);
+		check(RepLayout.IsValid());
 		RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
 	}
 
@@ -322,23 +325,20 @@ bool USpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::Receiv
 		return !RPCConsumed;
 	}
 
-	if (UnresolvedRefCount > 0
-		// -> Use MetaData.ReceiverName to recover the RPC type.
-		/* && !SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(PendingRPCParams.Type)*/
+	TOptional<ERPCType> RPCType = SpatialConstants::RPCStringToType(MetaData.RPCName.ToString());
+
+	if (UnresolvedRefCount > 0 && RPCType.IsSet() && !SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(RPCType.GetValue())
 		&& (Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
 	{
 		const FString UnresolvedEntityIds = FString::JoinBy(UnresolvedRefs, TEXT(", "), [](const FUnrealObjectRef& Ref) {
 			return Ref.ToString();
 		});
 
-		//UE_LOG(LogSpatialRPCService, Warning,
-		//	   TEXT("Executed RPC %s::%s with unresolved references (%s) after %.3f seconds of queueing. Owner name: %s"),
-		//	   *GetNameSafe(TargetObject), *GetNameSafe(Function), *UnresolvedEntityIds, TimeQueued,
-		//	   *GetNameSafe(TargetObject->GetOuter()));
+		UE_LOG(LogSpatialNetDriverRPC, Warning,
+			   TEXT("Executed RPC %s::%s with unresolved references (%s) after %.3f seconds of queueing. Owner name: %s"),
+			   *GetNameSafe(TargetObject), *GetNameSafe(Function), *UnresolvedEntityIds, TimeQueued,
+			   *GetNameSafe(TargetObject->GetOuter()));
 	}
-
-	// Get the RPC target Actor (was used for additional debug authority checking, but CanExtractRPC should handle that now)
-	// AActor* Actor = TargetObject->IsA<AActor>() ? Cast<AActor>(TargetObject) : TargetObject->GetTypedOuter<AActor>();
 
 	const bool bUseEventTracer = EventTracer != nullptr;
 	if (bUseEventTracer)
@@ -358,31 +358,51 @@ bool USpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::Receiv
 	return RPCConsumed;
 }
 
-void USpatialNetDriverRPC::MakeRingBufferWithACKSender(FName QueueName, ERPCType RPCType, Worker_ComponentSetId AuthoritySet,
+void FSpatialNetDriverRPC::MakeRingBufferWithACKSender(ERPCType RPCType, Worker_ComponentSetId AuthoritySet,
 													   TUniquePtr<RPCBufferSender>& SenderPtr,
 													   TUniquePtr<TRPCQueue<FRPCPayload, FSpatialGDKSpanId>>& QueuePtr)
 {
 	// TODO UNR-5037
 }
 
-void USpatialNetDriverRPC::MakeRingBufferWithACKReceiver(FName ReceiverName, ERPCType RPCType, Worker_ComponentSetId AuthoritySet,
+void FSpatialNetDriverRPC::MakeRingBufferWithACKReceiver(ERPCType RPCType, Worker_ComponentSetId AuthoritySet,
 														 TUniquePtr<TRPCBufferReceiver<FRPCPayload, TimestampAndETWrapper>>& ReceiverPtr)
 {
 	// TODO UNR-5037
 }
 
-USpatialNetDriverServerRPC::USpatialNetDriverServerRPC() {}
-
-void USpatialNetDriverServerRPC::FlushRPCUpdates()
+FSpatialNetDriverServerRPC::FSpatialNetDriverServerRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
+													   const SpatialGDK::FSubView& InActorNonAuthSubView)
+	: FSpatialNetDriverRPC(InNetDriver, InActorAuthSubView, InActorNonAuthSubView)
 {
-	USpatialNetDriverRPC::FlushRPCUpdates();
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
+	auto constexpr RequiredAuth = SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID;
+
+	MakeRingBufferWithACKSender(ERPCType::ClientReliable, RequiredAuth, ClientReliableSender, ClientReliableQueue);
+	MakeRingBufferWithACKSender(ERPCType::ClientUnreliable, RequiredAuth, ClientUnreliableSender, ClientUnreliableQueue);
+
+	MakeRingBufferWithACKReceiver(ERPCType::ServerReliable, RequiredAuth, ServerReliableReceiver);
+	MakeRingBufferWithACKReceiver(ERPCType::ServerUnreliable, RequiredAuth, ServerUnreliableReceiver);
+
+	{
+		auto RPCType = ERPCType::NetMulticast;
+		auto RPCDesc = RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
+
+		// TODO UNR-5038
+	}
+}
+
+void FSpatialNetDriverServerRPC::FlushRPCUpdates()
+{
+	FSpatialNetDriverRPC::FlushRPCUpdates();
 	FlushRPCQueue(*ClientReliableQueue);
 	FlushRPCQueue(*ClientUnreliableQueue);
 }
 
-void USpatialNetDriverServerRPC::ProcessReceivedRPCs()
+void FSpatialNetDriverServerRPC::ProcessReceivedRPCs()
 {
-	USpatialNetDriverRPC::ProcessReceivedRPCs();
+	FSpatialNetDriverRPC::ProcessReceivedRPCs();
 
 	auto CanExtractRPCs = [this](Worker_EntityId EntityId) {
 		return CanExtractRPCOnServer(EntityId);
@@ -395,9 +415,9 @@ void USpatialNetDriverServerRPC::ProcessReceivedRPCs()
 	ServerUnreliableReceiver->ExtractReceivedRPCs(CanExtractRPCs, ProcessRPC);
 }
 
-void USpatialNetDriverServerRPC::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId, TArray<FWorkerComponentData>& OutData)
+void FSpatialNetDriverServerRPC::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId, TArray<FWorkerComponentData>& OutData)
 {
-	USpatialNetDriverRPC::GetRPCComponentsOnEntityCreation(EntityId, OutData);
+	FSpatialNetDriverRPC::GetRPCComponentsOnEntityCreation(EntityId, OutData);
 
 	{
 		RPCWritingContext Ctx(ClientReliableQueue->Name, MakeDataWriteCallback(OutData));
@@ -409,41 +429,29 @@ void USpatialNetDriverServerRPC::GetRPCComponentsOnEntityCreation(const Worker_E
 	}
 }
 
-void USpatialNetDriverServerRPC::Init(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
-									  const SpatialGDK::FSubView& InActorNonAuthSubView)
+FSpatialNetDriverClientRPC::FSpatialNetDriverClientRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
+													   const SpatialGDK::FSubView& InActorNonAuthSubView)
+	: FSpatialNetDriverRPC(InNetDriver, InActorAuthSubView, InActorNonAuthSubView)
 {
-	USpatialNetDriverRPC::Init(InNetDriver, InActorAuthSubView, InActorNonAuthSubView);
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+	auto constexpr RequiredAuth = SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
 
-	auto constexpr RequiredAuth = SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID;
+	MakeRingBufferWithACKSender(ERPCType::ServerReliable, RequiredAuth, ServerReliableSender, ServerReliableQueue);
+	MakeRingBufferWithACKSender(ERPCType::ServerUnreliable, RequiredAuth, ServerUnreliableSender, ServerUnreliableQueue);
 
-	MakeRingBufferWithACKSender("ClientReliable", ERPCType::ClientReliable, RequiredAuth, ClientReliableSender, ClientReliableQueue);
-	MakeRingBufferWithACKSender("ClientUnreliable", ERPCType::ClientUnreliable, RequiredAuth, ClientUnreliableSender,
-								ClientUnreliableQueue);
-
-	MakeRingBufferWithACKReceiver("ServerReliable", ERPCType::ServerReliable, RequiredAuth, ServerReliableReceiver);
-	MakeRingBufferWithACKReceiver("ServerUnreliable", ERPCType::ServerUnreliable, RequiredAuth, ServerUnreliableReceiver);
-
-	{
-		auto RPCType = ERPCType::NetMulticast;
-		auto RPCDesc = RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
-
-		// TODO
-	}
+	MakeRingBufferWithACKReceiver(ERPCType::ClientReliable, RequiredAuth, ClientReliableReceiver);
+	MakeRingBufferWithACKReceiver(ERPCType::ClientUnreliable, RequiredAuth, ClientUnreliableReceiver);
 }
 
-USpatialNetDriverClientRPC::USpatialNetDriverClientRPC() {}
-
-void USpatialNetDriverClientRPC::FlushRPCUpdates()
+void FSpatialNetDriverClientRPC::FlushRPCUpdates()
 {
-	USpatialNetDriverRPC::FlushRPCUpdates();
+	FSpatialNetDriverRPC::FlushRPCUpdates();
 	FlushRPCQueue(*ServerReliableQueue);
 	FlushRPCQueue(*ServerUnreliableQueue);
 }
 
-void USpatialNetDriverClientRPC::ProcessReceivedRPCs()
+void FSpatialNetDriverClientRPC::ProcessReceivedRPCs()
 {
-	USpatialNetDriverRPC::ProcessReceivedRPCs();
+	FSpatialNetDriverRPC::ProcessReceivedRPCs();
 
 	auto CanExtractRPCs = [this](Worker_EntityId EntityId) {
 		return CanExtractRPC(EntityId);
@@ -456,23 +464,8 @@ void USpatialNetDriverClientRPC::ProcessReceivedRPCs()
 	ClientUnreliableReceiver->ExtractReceivedRPCs(CanExtractRPCs, ProcessRPC);
 }
 
-void USpatialNetDriverClientRPC::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId, TArray<FWorkerComponentData>& OutData)
+void FSpatialNetDriverClientRPC::GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId, TArray<FWorkerComponentData>& OutData)
 {
-	// Clients should not flush anything....
+	// Clients should not create entities
 	checkNoEntry();
-}
-
-void USpatialNetDriverClientRPC::Init(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
-									  const SpatialGDK::FSubView& InActorNonAuthSubView)
-{
-	USpatialNetDriverRPC::Init(InNetDriver, InActorAuthSubView, InActorNonAuthSubView);
-
-	auto constexpr RequiredAuth = SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
-
-	MakeRingBufferWithACKSender("ServerReliable", ERPCType::ServerReliable, RequiredAuth, ServerReliableSender, ServerReliableQueue);
-	MakeRingBufferWithACKSender("ServerUnreliable", ERPCType::ServerUnreliable, RequiredAuth, ServerUnreliableSender,
-								ServerUnreliableQueue);
-
-	MakeRingBufferWithACKReceiver("ClientReliable", ERPCType::ClientReliable, RequiredAuth, ClientReliableReceiver);
-	MakeRingBufferWithACKReceiver("ClientUnreliable", ERPCType::ClientUnreliable, RequiredAuth, ClientUnreliableReceiver);
 }

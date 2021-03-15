@@ -6,16 +6,18 @@
 #include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Schema/RPCPayload.h"
 #include "SpatialView/EntityView.h"
+#include "Utils/ObjectAllocUtils.h"
 
 namespace SpatialGDK
 {
-struct ReceivedRPC
+struct ReceivedRPC : FNoHeapAllocation
 {
 	ReceivedRPC(uint32 InOffset, uint32 InIndex, TArrayView<const uint8> InPayloadData)
 		: Offset(InOffset)
 		, Index(InIndex)
 		, PayloadData(InPayloadData)
-	{}
+	{
+	}
 	const uint32 Offset;
 	const uint32 Index;
 	const TArrayView<const uint8> PayloadData;
@@ -35,7 +37,7 @@ using CanExtractRPCs = TFunction<bool(Worker_EntityId)>;
 /**
  * Structure encapsulating a read operation
  */
-struct RPCReadingContext
+struct RPCReadingContext : FStackOnly
 {
 	FName ReaderName;
 	Worker_EntityId EntityId;
@@ -45,15 +47,13 @@ struct RPCReadingContext
 
 	Schema_ComponentUpdate* Update = nullptr;
 	Schema_Object* Fields = nullptr;
-
-	void OnRPCExtracted(uint64 RPCId) const;
 };
 
 /**
  * Structure encapsulating a write operation.
  * It serves as a factory for EntityWrites which encapsulate writes to a given entity/component pair
  */
-struct RPCWritingContext
+struct RPCWritingContext : FStackOnly
 {
 	enum class DataKind
 	{
@@ -168,14 +168,14 @@ protected:
 	TSet<Worker_ComponentId> ComponentsToRead;
 };
 
-struct EmptyData
+struct RPCEmptyData
 {
 };
 
 template <typename T>
 struct NullReceiveWrapper
 {
-	using AdditionalData = EmptyData;
+	using AdditionalData = RPCEmptyData;
 	struct WrappedData
 	{
 		WrappedData(T&& InData)
@@ -270,7 +270,7 @@ struct TWrappedRPCQueue : public RPCQueue
  * Specialization of a sender queue for a given payload type
  * It is paired with a matching sender.
  */
-template <typename PayloadType, typename AdditionalSendingData = EmptyData>
+template <typename PayloadType, typename AdditionalSendingData = RPCEmptyData>
 struct TRPCQueue : TWrappedRPCQueue<AdditionalSendingData>
 {
 	TRPCQueue(FName InName, TRPCBufferSender<PayloadType>& InSender)
