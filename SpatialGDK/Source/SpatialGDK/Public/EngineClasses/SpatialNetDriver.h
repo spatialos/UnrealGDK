@@ -19,6 +19,9 @@
 
 #include "SpatialNetDriver.generated.h"
 
+class ULevel;
+class UWorld;
+
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
 class FSpatialLoadBalancingHandler;
@@ -381,4 +384,12 @@ private:
 
 	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
+
+public:
+	bool bPauseConnection = false;
+	int FramesToWait = 0;
+
+protected:
+	virtual void OnLevelAddedToWorld(ULevel* Level, UWorld* World) override;
+	virtual void OnLevelRemovedFromWorld(ULevel* Level, UWorld* World) override;
 };

@@ -2003,7 +2003,19 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-		Connection->Advance(DeltaTime);
+		if (!bPauseConnection)
+		{
+			Connection->Advance(DeltaTime);
+		}
+		else if (FramesToWait > 0)
+		{
+			FramesToWait--;
+			if (FramesToWait == 0)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Log, TEXT("!!! Resuming connection!"));
+				bPauseConnection = false;
+			}
+		}
 
 		if (Connection->HasDisconnected())
 		{
@@ -3183,4 +3195,35 @@ void USpatialNetDriver::PopCrossServerRPCSender(AActor* SenderActor)
 	check(GSenderStack.Num() > 0);
 	check(GSenderStack.Last() == SenderActor);
 	GSenderStack.Pop();
+}
+
+void USpatialNetDriver::OnLevelAddedToWorld(ULevel* Level, UWorld* InWorld)
+{
+	Super::OnLevelAddedToWorld(Level, InWorld);
+
+	if (IsServer())
+		return;
+
+	if (Level && Level->GetPathName().Contains(TEXT("NetLoadOnClientLevel")) && bPauseConnection)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("!!! Level reloaded, resuming connection after delay!"));
+
+		FramesToWait = 60;
+	}
+}
+
+void USpatialNetDriver::OnLevelRemovedFromWorld(ULevel* Level, UWorld* InWorld)
+{
+	Super::OnLevelRemovedFromWorld(Level, InWorld);
+
+	if (IsServer())
+		return;
+
+	if (Level && Level->GetPathName().Contains(TEXT("NetLoadOnClientLevel")))
+	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("!!! Level removed, pausing connection!"));
+
+		bPauseConnection = true;
+		FramesToWait = 0;
+	}
 }
