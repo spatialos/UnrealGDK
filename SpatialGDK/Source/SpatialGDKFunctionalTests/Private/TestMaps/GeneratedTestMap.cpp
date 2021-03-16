@@ -11,8 +11,6 @@
 #include "SpatialGDKEditor/Public/SpatialTestSettings.h"
 #include "Tests/AutomationEditorCommon.h"
 #include "UObject/ConstructorHelpers.h"
-#include <Runtime/Engine/Classes/Kismet/KismetMathLibrary.h>
-
 
 UGeneratedTestMap::UGeneratedTestMap()
 	: bIsValidForGeneration(false)
@@ -38,7 +36,6 @@ AActor* UGeneratedTestMap::AddActorToLevel(ULevel* Level, UClass* Class, const F
 {
 	return GEditor->AddActor(Level, Class, Transform);
 }
-
 
 bool UGeneratedTestMap::GenerateMap()
 {
@@ -104,12 +101,13 @@ void UGeneratedTestMap::GenerateBaseMap()
 
 	// Default player start location is chosen so that players spawn on server 1 by default.
 	// Individual test maps can change this if necessary.
+	// We want the player to look towards the origin from afar as all spawned entities are relatively close to the origin.
 	FTransform PlayerTransform;
 	FVector PlayerTranslation = FVector(-500, -500, 200);
- 	PlayerTransform.SetTranslation(PlayerTranslation);
-	FRotator RotatorToOrigin = UKismetMathLibrary::MakeRotFromX(-PlayerTranslation);
+	PlayerTransform.SetTranslation(PlayerTranslation);
+	FRotator RotatorToOrigin = FRotationMatrix::MakeFromX(-PlayerTranslation).Rotator();
 	PlayerTransform.SetRotation(RotatorToOrigin.Quaternion());
-	APlayerStart* PlayerStart = AddActorToLevel<APlayerStart>(CurrentLevel, PlayerTransform);
+	AddActorToLevel<APlayerStart>(CurrentLevel, PlayerTransform);
 }
 
 bool UGeneratedTestMap::SaveMap()
