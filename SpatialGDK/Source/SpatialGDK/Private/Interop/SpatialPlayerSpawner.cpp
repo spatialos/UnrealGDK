@@ -52,7 +52,7 @@ void USpatialPlayerSpawner::Advance(const TArray<Worker_Op>& Ops)
 			if (ComponentId == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID
 				&& CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
 			{
-				NetDriver->PlayerSpawner->ReceivePlayerSpawnRequestOnServer(CommandRequestOp);
+				ReceivePlayerSpawnRequestOnServer(CommandRequestOp);
 
 				SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
 				if (EventTracer != nullptr)
@@ -65,7 +65,7 @@ void USpatialPlayerSpawner::Advance(const TArray<Worker_Op>& Ops)
 			if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID
 				&& CommandIndex == SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID)
 			{
-				NetDriver->PlayerSpawner->ReceiveForwardedPlayerSpawnRequest(CommandRequestOp);
+				ReceiveForwardedPlayerSpawnRequest(CommandRequestOp);
 
 				SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
 				if (EventTracer != nullptr)
@@ -85,7 +85,7 @@ void USpatialPlayerSpawner::Advance(const TArray<Worker_Op>& Ops)
 
 			if (ComponentId == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
 			{
-				NetDriver->PlayerSpawner->ReceivePlayerSpawnResponseOnClient(CommandResponseOp);
+				ReceivePlayerSpawnResponseOnClient(CommandResponseOp);
 
 				SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
 				if (EventTracer != nullptr)
@@ -106,7 +106,7 @@ void USpatialPlayerSpawner::Advance(const TArray<Worker_Op>& Ops)
 																				RequestId),
 						/* Causes */ EventTracer->GetAndConsumeSpanForRequestId(CommandResponseOp.request_id).GetConstId(), 1);
 				}
-				NetDriver->PlayerSpawner->ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
+				ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
 			}
 		}
 	}

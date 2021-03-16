@@ -21,10 +21,10 @@ class USpatialWorkerConnection;
 
 namespace SpatialGDK
 {
-class WorkerSystemEntityCreator
+class ServerWorkerEntityCreator
 {
 public:
-	WorkerSystemEntityCreator(USpatialNetDriver& InNetDriver, USpatialWorkerConnection& InConnection);
+	ServerWorkerEntityCreator(USpatialNetDriver& InNetDriver, USpatialWorkerConnection& InConnection);
 	void CreateWorkerEntity();
 	void ProcessOps(const TArray<Worker_Op>& Ops);
 
@@ -120,7 +120,7 @@ public:
 	SpatialGDK::SpatialEventTracer* GetEventTracer() const { return EventTracer; }
 
 private:
-	TOptional<SpatialGDK::WorkerSystemEntityCreator> WorkerEntityCreator;
+	TOptional<SpatialGDK::ServerWorkerEntityCreator> WorkerEntityCreator;
 
 	static bool IsStartupComponent(Worker_ComponentId Id);
 	static void ExtractStartupOps(SpatialGDK::OpList& OpList, SpatialGDK::ExtractedOpListData& ExtractedOpList);

@@ -31,7 +31,7 @@ SpatialGDK::ComponentUpdate ToComponentUpdate(FWorkerComponentUpdate* Update)
 
 namespace SpatialGDK
 {
-WorkerSystemEntityCreator::WorkerSystemEntityCreator(USpatialNetDriver& InNetDriver, USpatialWorkerConnection& InConnection)
+ServerWorkerEntityCreator::ServerWorkerEntityCreator(USpatialNetDriver& InNetDriver, USpatialWorkerConnection& InConnection)
 	: NetDriver(InNetDriver)
 	, Connection(InConnection)
 	, ClaimPartitionHandler(InConnection)
@@ -41,7 +41,7 @@ WorkerSystemEntityCreator::WorkerSystemEntityCreator(USpatialNetDriver& InNetDri
 	CreateWorkerEntity();
 }
 
-void WorkerSystemEntityCreator::CreateWorkerEntity()
+void ServerWorkerEntityCreator::CreateWorkerEntity()
 {
 	const Worker_EntityId EntityId = NetDriver.PackageMap->AllocateEntityId();
 
@@ -73,10 +73,10 @@ void WorkerSystemEntityCreator::CreateWorkerEntity()
 		Connection.SendCreateEntityRequest(MoveTemp(Components), &EntityId, RETRY_UNTIL_COMPLETE);
 
 	CreateEntityHandler.AddRequest(CreateEntityRequestId,
-								   CreateEntityDelegate::CreateRaw(this, &WorkerSystemEntityCreator::OnEntityCreated));
+								   CreateEntityDelegate::CreateRaw(this, &ServerWorkerEntityCreator::OnEntityCreated));
 }
 
-void WorkerSystemEntityCreator::OnEntityCreated(const Worker_CreateEntityResponseOp& CreateEntityResponse)
+void ServerWorkerEntityCreator::OnEntityCreated(const Worker_CreateEntityResponseOp& CreateEntityResponse)
 {
 	ensureMsgf(CreateEntityResponse.status_code == WORKER_STATUS_CODE_SUCCESS,
 			   TEXT("Worker system entity created, SDK returned code %d [%s]"), (int)CreateEntityResponse.status_code,
@@ -91,7 +91,7 @@ void WorkerSystemEntityCreator::OnEntityCreated(const Worker_CreateEntityRespons
 	ClaimPartitionHandler.ClaimPartition(Connection.GetWorkerSystemEntityId(), PartitionId);
 }
 
-void WorkerSystemEntityCreator::ProcessOps(const TArray<Worker_Op>& Ops)
+void ServerWorkerEntityCreator::ProcessOps(const TArray<Worker_Op>& Ops)
 {
 	CreateEntityHandler.ProcessOps(Ops);
 	ClaimPartitionHandler.ProcessOps(Ops);

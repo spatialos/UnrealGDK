@@ -234,6 +234,7 @@ void ActorSystem::Advance()
 	}
 
 	CreateEntityHandler.ProcessOps(*SubView->GetViewDelta().WorkerMessages);
+	ClaimPartitionHandler.ProcessOps(*SubView->GetViewDelta().WorkerMessages);
 }
 
 UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
@@ -1945,10 +1946,22 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 
 bool ActorSystem::HasPendingOpsForChannel(const USpatialActorChannel& ActorChannel) const
 {
-	return Algo::AnyOf(CreateEntityRequestIdToActorChannel,
-					   [&ActorChannel](const TPair<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>>& It) {
-						   return It.Value == &ActorChannel;
-					   });
+	const bool bHasUnresolvedObjects = Algo::AnyOf(
+		ActorChannel.ObjectReferenceMap, [&ActorChannel](const TPair<TWeakObjectPtr<UObject>, FSpatialObjectRepState>& ObjectReference) {
+			return ObjectReference.Value.HasUnresolved();
+		});
+
+	if (bHasUnresolvedObjects)
+	{
+		return true;
+	}
+
+	const bool bHasPendingCreateEntityRequests = Algo::AnyOf(
+		CreateEntityRequestIdToActorChannel, [&ActorChannel](const TPair<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>>& It) {
+			return It.Value == &ActorChannel;
+		});
+
+	return bHasPendingCreateEntityRequests;
 }
 
 void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpatialGDKSpanId CreateOpSpan)
@@ -2184,7 +2197,7 @@ void ActorSystem::CreateEntityWithRetries(Worker_EntityId EntityId, FString Enti
 		}
 	});
 
-	CreateEntityHandler.AddRequest(RequestId, Delegate);
+	CreateEntityHandler.AddRequest(RequestId, MoveTemp(Delegate));
 }
 
 TArray<FWorkerComponentData> ActorSystem::CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents)

@@ -3,6 +3,9 @@
 #pragma once
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "Interop/ClaimPartitionHandler.h"
+#include "Interop/CreateEntityHandler.h"
+#include "Interop/EntityQueryHandler.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
@@ -10,13 +13,6 @@
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
-
-#include "Interop/ClaimPartitionHandler.h"
-#include "Interop/CreateEntityHandler.h"
-#include "Interop/EntityQueryHandler.h"
-#include "Interop/ReserveEntityIdsHandler.h"
-
-#include "Interop/SpatialOSDispatcherInterface.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 

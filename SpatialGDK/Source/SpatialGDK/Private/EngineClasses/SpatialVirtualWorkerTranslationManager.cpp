@@ -238,7 +238,7 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 			   UTF8_TO_TCHAR(Op.message), Op.entity_id, VirtualWorkerId);
 	});
 
-	CreateEntityHandler.AddRequest(RequestId, OnCreateWorkerEntityResponse);
+	CreateEntityHandler.AddRequest(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
 }
 
 void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker)

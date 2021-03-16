@@ -14,6 +14,7 @@
 #include "UObject/UObjectIterator.h"
 #include "UObject/WeakObjectPtrTemplates.h"
 
+#include "Algo/AnyOf.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -2040,34 +2041,9 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				ClientConnectionManager->Advance();
 			}
 
-			if (IsValid(PlayerSpawner))
-			{
-				PlayerSpawner->Advance(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
-			}
-
 			if (ActorSystem.IsValid())
 			{
 				ActorSystem->Advance();
-			}
-
-			if (IsValid(GlobalStateManager))
-			{
-				GlobalStateManager->Advance();
-			}
-
-			if (SpatialDebuggerSystem.IsValid())
-			{
-				SpatialDebuggerSystem->Advance();
-			}
-
-			{
-				SpatialGDK::MigrationDiagnosticsSystem MigrationDiagnosticsSystem(*this);
-				MigrationDiagnosticsSystem.ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
-			}
-
-			{
-				SpatialGDK::DebugMetricsSystem DebugMetricsSystem(*this);
-				DebugMetricsSystem.ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
 			}
 
 			{
@@ -2087,9 +2063,34 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				WellKnownEntitySystem->Advance();
 			}
 
+			if (IsValid(PlayerSpawner))
+			{
+				PlayerSpawner->Advance(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
+			}
+
+			if (IsValid(GlobalStateManager))
+			{
+				GlobalStateManager->Advance();
+			}
+
 			if (SnapshotManager.IsValid())
 			{
 				SnapshotManager->Advance();
+			}
+
+			if (SpatialDebuggerSystem.IsValid())
+			{
+				SpatialDebuggerSystem->Advance();
+			}
+
+			{
+				SpatialGDK::MigrationDiagnosticsSystem MigrationDiagnosticsSystem(*this);
+				MigrationDiagnosticsSystem.ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
+			}
+
+			{
+				SpatialGDK::DebugMetricsSystem DebugMetricsSystem(*this);
+				DebugMetricsSystem.ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
 			}
 		}
 
@@ -2399,12 +2400,13 @@ void USpatialNetDriver::ProcessPendingDormancy()
 	decltype(PendingDormantChannels) RemainingChannels;
 	for (auto& PendingDormantChannel : PendingDormantChannels)
 	{
-		if (PendingDormantChannel.IsValid())
+		USpatialActorChannel* Channel = PendingDormantChannel.Get();
+
+		if (IsValid(Channel))
 		{
-			USpatialActorChannel* Channel = PendingDormantChannel.Get();
 			if (Channel->Actor != nullptr)
 			{
-				if (Channel->HasPendingOps())
+				if (ActorSystem->HasPendingOpsForChannel(*Channel))
 				{
 					RemainingChannels.Emplace(PendingDormantChannel);
 					continue;

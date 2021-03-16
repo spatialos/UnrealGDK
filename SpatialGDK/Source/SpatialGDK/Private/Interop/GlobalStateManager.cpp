@@ -702,7 +702,7 @@ void UGlobalStateManager::Advance()
 		if (ComponentId == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID
 			&& CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
 		{
-			NetDriver->GlobalStateManager->ReceiveShutdownMultiProcessRequest();
+			ReceiveShutdownMultiProcessRequest();
 
 			SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
 

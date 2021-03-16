@@ -19,11 +19,12 @@ class CreateEntityHandler
 	DECLARE_LOG_CATEGORY_CLASS(LogCreateEntityHandler, Log, All);
 
 public:
-	void AddRequest(Worker_RequestId RequestId, CreateEntityDelegate Handler)
+	void AddRequest(Worker_RequestId RequestId, CreateEntityDelegate&& Handler)
 	{
 		check(Handler.IsBound());
-		Handlers.Add(RequestId, Handler);
+		Handlers.Emplace(RequestId, MoveTemp(Handler));
 	}
+
 	void ProcessOps(const TArray<Worker_Op>& Ops)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_CreateEntityHandler);
@@ -57,6 +58,7 @@ public:
 			}
 		}
 	}
+
 	int GetPendingRequestsCount() const { return Handlers.Num(); }
 
 private:

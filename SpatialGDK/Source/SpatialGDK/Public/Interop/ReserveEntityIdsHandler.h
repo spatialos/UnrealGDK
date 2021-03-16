@@ -15,7 +15,7 @@ DECLARE_CYCLE_STAT(TEXT("ReserveEntityHandler"), STAT_ReserveEntityHandler, STAT
 
 namespace SpatialGDK
 {
-class ReserveEntityHandler
+class ReserveEntityIdsHandler
 {
 public:
 	void ProcessOps(const TArray<Worker_Op>& Ops)

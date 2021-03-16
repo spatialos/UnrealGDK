@@ -54,6 +54,5 @@ private:
 
 	FReliableRPCMap PendingReliableRPCs;
 
-	TMap<Worker_RequestId_Key, EntityQueryDelegate> EntityQueryDelegates;
 	SpatialGDK::SpatialEventTracer* EventTracer;
 };
