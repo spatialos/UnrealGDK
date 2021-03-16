@@ -14,17 +14,14 @@ namespace SpatialGDK
 // SpatialDebugger on clients but which would not normally be available to clients.
 struct CustomPersistence : AbstractMutableComponent
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::CUSTOM_PERSISTENCE_ID;
+	static const Worker_ComponentId ComponentId = SpatialConstants::CUSTOM_PERSISTENCE_COMPONENT_ID;
 
 	CustomPersistence()
 		: Depleted(false)
 	{
 	}
 
-	CustomPersistence(const bool DepletedIn)
-	{
-		Depleted = DepletedIn;
-	}
+	CustomPersistence(const bool DepletedIn) { Depleted = DepletedIn; }
 
 	CustomPersistence(const Worker_ComponentData& Data)
 	{
@@ -45,7 +42,7 @@ struct CustomPersistence : AbstractMutableComponent
 		return Data;
 	}
 
-	Worker_ComponentUpdate CreateSpatialDebuggingUpdate()
+	Worker_ComponentUpdate CreateCustomPersistenceUpdate()
 	{
 		Worker_ComponentUpdate Update = {};
 		Update.component_id = ComponentId;
