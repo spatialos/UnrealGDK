@@ -23,6 +23,8 @@
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
 
+#include "Schema/CustomPersistence.h"
+
 #include "Engine/Engine.h"
 #include "Engine/LevelScriptActor.h"
 #include "GameFramework/GameModeBase.h"
@@ -235,6 +237,11 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 		DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges, OutBytesWritten);
 
 	ComponentDatas.Append(ActorDataComponents);
+
+	if (Class->GetName() == TEXT("SimpleResourceNode_C"))
+	{
+		ComponentDatas.Add(CustomPersistence().CreateComponentData());
+	}
 
 	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
 
