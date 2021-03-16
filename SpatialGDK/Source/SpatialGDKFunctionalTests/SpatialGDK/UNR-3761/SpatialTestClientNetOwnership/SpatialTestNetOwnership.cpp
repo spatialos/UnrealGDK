@@ -141,10 +141,8 @@ void ASpatialTestNetOwnership::PrepareTest()
 		AddStep(
 			TEXT("SpatialTestNetOwnershipAllWorkersTestCount"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this, i](float DeltaTime) {
-				if (NetOwnershipCube->ReceivedRPCs == i)
-				{
-					FinishStep();
-				}
+				RequireEqual_Int(NetOwnershipCube->ReceivedRPCs, i, TEXT("Expected to receive a certain number of RPCs."));
+				FinishStep();
 			},
 			10.0f);
 	}
@@ -166,12 +164,20 @@ void ASpatialTestNetOwnership::PrepareTest()
 
 	//  All workers check that the number of RPCs received by the authoritative server is correct.
 	AddStep(
-		TEXT("SpatialTestNetOwnershipAllWorkersTestCount2"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
+		TEXT("SpatialTestNetOwnershipAllWorkersTestCount2"), FWorkerDefinition::AllWorkers,
+		[this]() -> bool {
+			return NetOwnershipCube->GetOwner() == nullptr;
+		},
+		[this]() {
+			TimeInStepHelper = 0.0f;
+		},
 		[this, TestLocations](float DeltaTime) {
-			if (NetOwnershipCube->ReceivedRPCs == TestLocations.Num())
-			{
-				FinishStep();
-			}
+			TimeInStepHelper += DeltaTime;
+			RequireCompare_Float(TimeInStepHelper, EComparisonMethod::Greater_Than_Or_Equal_To, 1.0f,
+								 TEXT("Have to wait 1 second to make sure the RPC doesn't arrive."));
+			RequireEqual_Int(NetOwnershipCube->ReceivedRPCs, TestLocations.Num(),
+							 TEXT("RPC sent while not owning the cube should not have been received."));
+			FinishStep();
 		},
 		10.0f);
 }

@@ -22,6 +22,8 @@ public:
 	// Reference to the NetOwnershipCube, used to avoid using GetAllActorsOfClass() in every step to get a reference to the
 	// NetOwnershipCube.
 	ANetOwnershipCube* NetOwnershipCube;
+
+	float TimeInStepHelper;
 };
 
 UCLASS()
