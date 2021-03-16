@@ -209,10 +209,11 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	check(AuthorityIntentComponent != nullptr);
 	if (AuthorityIntentComponent->VirtualWorkerId == NewAuthoritativeVirtualWorkerId)
 	{
-		/* It's possible for RepGraph to behave incorrectly and trigger an authority change more than once. Please see SpatialReplicationGraph for reference. */
+		/* It's possible for RepGraph to behave incorrectly and trigger an authority change more than once. Please see
+		 * SpatialReplicationGraph for reference. */
 		UE_LOG(LogSpatialSender, Error,
 			   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
-			*GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
+			   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
 	}
 
 	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
