@@ -152,15 +152,35 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 
 SpatialGDK::FActorLoadBalancingGroupId ULayeredLBStrategy::GetActorGroupId(const AActor& Actor) const
 {
+	struct FLayerIndexToActorGroupConversions
+	{
+		static_assert(sizeof(int32) == sizeof(SpatialGDK::FActorLoadBalancingGroupId),
+					  "int32 LayerIndex should have the same size as FActorLoadBalancingGroupId");
+
+		static SpatialGDK::FActorLoadBalancingGroupId ToGroupId(const int32 LayerIndex)
+		{
+			return static_cast<SpatialGDK::FActorLoadBalancingGroupId>(LayerIndex);
+		}
+
+		static SpatialGDK::FActorLoadBalancingGroupId CombineActorGroupIds(const SpatialGDK::FActorLoadBalancingGroupId Parent,
+																		   const SpatialGDK::FActorLoadBalancingGroupId Child)
+		{
+			return HashCombine(Parent, Child);
+		}
+	};
+
 	const FName ActorLayerName = GetLayerNameForActor(Actor);
 
-	const int32 ActorGroupIndex = LayerData.FindChecked(ActorLayerName).LayerIndex + 1;
+	const int32 ActorLayerIndex = LayerData.FindChecked(ActorLayerName).LayerIndex + 1;
+
+	const SpatialGDK::FActorLoadBalancingGroupId ParentActorGroupId = FLayerIndexToActorGroupConversions::ToGroupId(ActorLayerIndex);
 
 	const UAbstractLBStrategy* ChildLBStrategy = LayerNameToLBStrategy[ActorLayerName];
 
 	const SpatialGDK::FActorLoadBalancingGroupId ChildGroupId = ChildLBStrategy->GetActorGroupId(Actor);
 
-	const uint32 CombinedGroupId = HashCombine(static_cast<uint32>(ActorGroupIndex), static_cast<uint32>(ChildGroupId));
+	const SpatialGDK::FActorLoadBalancingGroupId CombinedGroupId =
+		FLayerIndexToActorGroupConversions::CombineActorGroupIds(ParentActorGroupId, ChildGroupId);
 
 	return CombinedGroupId;
 }
