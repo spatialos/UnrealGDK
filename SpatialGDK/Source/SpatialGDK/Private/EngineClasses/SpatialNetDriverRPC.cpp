@@ -88,10 +88,10 @@ FSpatialNetDriverRPC::StandardQueue::SentRPCCallback FSpatialNetDriverRPC::MakeR
 	check(bUpdateCacheInUse.load());
 	if (EventTracer != nullptr)
 	{
-		return [this](FName RPCName, Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId,
-								   const FSpatialGDKSpanId& SpanId) {
-			return OnRPCSent(*EventTracer, UpdateToSend_Cache, RPCName, EntityId, ComponentId, RPCId, SpanId);
-		};
+		return
+			[this](FName RPCName, Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId, const FSpatialGDKSpanId& SpanId) {
+				return OnRPCSent(*EventTracer, UpdateToSend_Cache, RPCName, EntityId, ComponentId, RPCId, SpanId);
+			};
 	}
 	return StandardQueue::SentRPCCallback();
 }
@@ -191,7 +191,8 @@ struct FSpatialNetDriverRPC::RAIIUpdateContext : FStackOnly
 			FSpatialGDKSpanId SpanId;
 			if (RPCSystem.EventTracer != nullptr)
 			{
-				SpanId = RPCSystem.EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateMergeSendRPCs(Update.EntityId, Update.Update.component_id),
+				SpanId = RPCSystem.EventTracer->TraceEvent(
+					FSpatialTraceEventBuilder::CreateMergeSendRPCs(Update.EntityId, Update.Update.component_id),
 					/* Causes */ Update.Spans.GetData()->GetConstId(), /* NumCauses */ Update.Spans.Num());
 			}
 			RPCSystem.NetDriver.Connection->SendComponentUpdate(Update.EntityId, &Update.Update, SpanId);
@@ -239,7 +240,6 @@ void FSpatialNetDriverRPC::FlushRPCQueueForEntity(Worker_EntityId EntityId, Stan
 	RPCWritingContext Ctx(Queue.Name, MakeUpdateWriteCallback());
 	Queue.Flush(EntityId, Ctx, MakeRPCSentCallback());
 }
-
 
 bool FSpatialNetDriverRPC::CanExtractRPC(Worker_EntityId EntityId) const
 {
@@ -316,8 +316,9 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::Receiv
 		const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver.PackageMap->GetObjectFromEntityId(EntityId);
 		AActor* Actor = CastChecked<AActor>(ActorReceivingRPC.Get());
 		checkf(Actor != nullptr, TEXT("Receiving actor should have been checked in CanReceiveRPC"));
-		UE_LOG(LogSpatialNetDriverRPC, Error, TEXT("Failed to execute RPC on Actor %s (Entity %llu)'s Subobject %i because the Subobject is null"),
-			*Actor->GetName(), EntityId, RPCData.Offset);
+		UE_LOG(LogSpatialNetDriverRPC, Error,
+			   TEXT("Failed to execute RPC on Actor %s (Entity %llu)'s Subobject %i because the Subobject is null"), *Actor->GetName(),
+			   EntityId, RPCData.Offset);
 
 		return RPCConsumed;
 	}

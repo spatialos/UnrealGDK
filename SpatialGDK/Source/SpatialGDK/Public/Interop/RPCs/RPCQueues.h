@@ -6,7 +6,6 @@
 
 namespace SpatialGDK
 {
-
 /**
  * Unbounded queue.
  * Will try to flush everything each frame, and keep the Items that could not be flushed for later

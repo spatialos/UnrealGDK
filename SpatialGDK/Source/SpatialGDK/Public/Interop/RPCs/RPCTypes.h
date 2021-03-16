@@ -185,7 +185,7 @@ struct NullReceiveWrapper
 
 		const AdditionalData& GetAdditionalData() const
 		{
-			static EmptyData s_Dummy;
+			static RPCEmptyData s_Dummy;
 			return s_Dummy;
 		}
 
@@ -258,7 +258,7 @@ struct TWrappedRPCQueue : public RPCQueue
 {
 	using SentRPCCallback = TFunction<void(FName, Worker_EntityId, Worker_ComponentId, uint64, const AdditionalSendingData&)>;
 
-	virtual void FlushAll(RPCWritingContext& Ctx, const SentRPCCallback&SentCallback) = 0;
+	virtual void FlushAll(RPCWritingContext& Ctx, const SentRPCCallback& SentCallback) = 0;
 	virtual void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx, const SentRPCCallback&, bool bIgnoreAdded = false) = 0;
 
 protected:

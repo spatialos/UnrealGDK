@@ -172,7 +172,7 @@ protected:
 	USpatialNetDriver& NetDriver;
 	SpatialGDK::SpatialEventTracer* EventTracer = nullptr;
 	TUniquePtr<SpatialGDK::RPCService> RPCService;
-	
+
 	// Caching the array of updates to send, to avoid a reallocation each frame.
 	TArray<UpdateToSend> UpdateToSend_Cache;
 	std::atomic<bool> bUpdateCacheInUse;
