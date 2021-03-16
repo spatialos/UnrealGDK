@@ -2,6 +2,11 @@
 
 #include "SpatialGDKEditorModule.h"
 
+// clang-format off
+#include "SpatialConstants.h"
+#include "SpatialConstants.cxx"
+// clang-format on
+
 #include "Editor.h"
 #include "GeneralProjectSettings.h"
 #include "ISettingsContainer.h"

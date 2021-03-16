@@ -7,6 +7,7 @@
 #include "Schema/ClientEndpoint.h"
 #include "Schema/ServerEndpoint.h"
 #include "SpatialConstants.h"
+#include "SpatialView/EntityComponentTypes.h"
 
 DEFINE_LOG_CATEGORY(LogClientServerRPCService);
 
