@@ -2,14 +2,19 @@
 
 #pragma once
 
-#include "Interop/RPCs/RPCService.h"
+#include "Interop/RPCs/RPCTypes.h"
 
 namespace SpatialGDK
 {
-template <typename Payload, typename AdditionalSendingData = EmptyData>
-struct TRPCLocalOverflowQueue : public TRPCQueue<Payload, AdditionalSendingData>
+
+/**
+ * Unbounded queue.
+ * Will try to flush everything each frame, and keep the Items that could not be flushed for later
+ */
+template <typename Payload, typename AdditionalSendingData = RPCEmptyData>
+struct TRPCUnboundedQueue : public TRPCQueue<Payload, AdditionalSendingData>
 {
-	TRPCLocalOverflowQueue(FName InName, TRPCBufferSender<Payload>& Sender)
+	TRPCUnboundedQueue(FName InName, TRPCBufferSender<Payload>& Sender)
 		: TRPCQueue<Payload, AdditionalSendingData>(InName, Sender)
 	{
 	}
@@ -25,11 +30,16 @@ protected:
 					const typename TWrappedRPCQueue<AdditionalSendingData>::SentRPCCallback&);
 };
 
-template <typename Payload, typename AdditionalSendingData>
-struct TRPCFixedCapacityQueue : public TRPCLocalOverflowQueue<Payload, AdditionalSendingData>
+/**
+ * Queue with a fixed capacity.
+ * It will queue up to the specified capacity and drop additional RPCs
+ * It will drop all Items that were not sent when flushing.
+ */
+template <typename Payload, typename AdditionalSendingData = RPCEmptyData>
+struct TRPCFixedCapacityQueue : public TRPCUnboundedQueue<Payload, AdditionalSendingData>
 {
 	TRPCFixedCapacityQueue(FName InName, TRPCBufferSender<Payload>& Sender, uint32 InCapacity)
-		: TRPCLocalOverflowQueue<Payload, AdditionalSendingData>(InName, Sender)
+		: TRPCUnboundedQueue<Payload, AdditionalSendingData>(InName, Sender)
 		, Capacity(InCapacity)
 	{
 	}
@@ -42,7 +52,11 @@ struct TRPCFixedCapacityQueue : public TRPCLocalOverflowQueue<Payload, Additiona
 			   bool bIgnoreAdded = false) override;
 };
 
-template <typename Payload, typename AdditionalSendingData = EmptyData>
+/**
+ * Queue with a fixed capacity that will replace older elements with newer.
+ * Behaves like the fixed capacity queue otherwise.
+ */
+template <typename Payload, typename AdditionalSendingData = RPCEmptyData>
 struct TRPCMostRecentQueue : public TRPCFixedCapacityQueue<Payload, AdditionalSendingData>
 {
 	TRPCMostRecentQueue(FName InName, TRPCBufferSender<Payload>& Sender, uint32 InCapacity)
@@ -54,7 +68,7 @@ struct TRPCMostRecentQueue : public TRPCFixedCapacityQueue<Payload, AdditionalSe
 };
 
 template <typename Payload, typename AdditionalSendingData>
-void TRPCLocalOverflowQueue<Payload, AdditionalSendingData>::FlushAll(
+void TRPCUnboundedQueue<Payload, AdditionalSendingData>::FlushAll(
 	RPCWritingContext& Ctx, const typename TWrappedRPCQueue<AdditionalSendingData>::SentRPCCallback& SentCallback)
 {
 	for (auto Iterator = this->Queues.CreateIterator(); Iterator; ++Iterator)
@@ -68,7 +82,7 @@ void TRPCLocalOverflowQueue<Payload, AdditionalSendingData>::FlushAll(
 }
 
 template <typename Payload, typename AdditionalSendingData>
-void TRPCLocalOverflowQueue<Payload, AdditionalSendingData>::Flush(
+void TRPCUnboundedQueue<Payload, AdditionalSendingData>::Flush(
 	Worker_EntityId EntityId, RPCWritingContext& Ctx, const typename TWrappedRPCQueue<AdditionalSendingData>::SentRPCCallback& SentCallback,
 	bool bIgnoreAdded)
 {
@@ -82,18 +96,18 @@ void TRPCLocalOverflowQueue<Payload, AdditionalSendingData>::Flush(
 }
 
 template <typename Payload, typename AdditionalSendingData>
-void TRPCLocalOverflowQueue<Payload, AdditionalSendingData>::OnAuthGained_ReadComponent(const RPCReadingContext& iCtx)
+void TRPCUnboundedQueue<Payload, AdditionalSendingData>::OnAuthGained_ReadComponent(const RPCReadingContext& iCtx)
 {
 }
 
 template <typename Payload, typename AdditionalSendingData>
-void TRPCLocalOverflowQueue<Payload, AdditionalSendingData>::OnAuthLost(Worker_EntityId EntityId)
+void TRPCUnboundedQueue<Payload, AdditionalSendingData>::OnAuthLost(Worker_EntityId EntityId)
 {
 	this->Queues.Remove(EntityId);
 }
 
 template <typename Payload, typename AdditionalSendingData>
-bool TRPCLocalOverflowQueue<Payload, AdditionalSendingData>::FlushQueue(
+bool TRPCUnboundedQueue<Payload, AdditionalSendingData>::FlushQueue(
 	Worker_EntityId EntityId, typename TRPCQueue<Payload, AdditionalSendingData>::QueueData& Queue, RPCWritingContext& Ctx,
 	const typename TWrappedRPCQueue<AdditionalSendingData>::SentRPCCallback& SentCallback)
 {
@@ -109,6 +123,7 @@ bool TRPCLocalOverflowQueue<Payload, AdditionalSendingData>::FlushQueue(
 
 	const uint32 WrittenRPCsReported = this->Sender.Write(Ctx, EntityId, Queue.RPCs, WrittenCallback);
 
+	// Basic check that the written callback was called for every individual RPC.
 	check(WrittenRPCs == WrittenRPCsReported);
 
 	if (WrittenRPCs == QueuedRPCs)

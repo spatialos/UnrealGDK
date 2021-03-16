@@ -83,13 +83,14 @@ void FSpatialNetDriverRPC::OnUpdateWritten(TArray<UpdateToSend>& OutUpdates, Wor
 	}
 }
 
-FSpatialNetDriverRPC::StandardQueue::SentRPCCallback FSpatialNetDriverRPC::MakeRPCSentCallback(TArray<UpdateToSend>& OutUpdates)
+FSpatialNetDriverRPC::StandardQueue::SentRPCCallback FSpatialNetDriverRPC::MakeRPCSentCallback()
 {
+	check(bUpdateCacheInUse.load());
 	if (EventTracer != nullptr)
 	{
-		return [&OutUpdates, this](FName RPCName, Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId,
+		return [this](FName RPCName, Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId,
 								   const FSpatialGDKSpanId& SpanId) {
-			return OnRPCSent(*EventTracer, OutUpdates, RPCName, EntityId, ComponentId, RPCId, SpanId);
+			return OnRPCSent(*EventTracer, UpdateToSend_Cache, RPCName, EntityId, ComponentId, RPCId, SpanId);
 		};
 	}
 	return StandardQueue::SentRPCCallback();
@@ -102,10 +103,11 @@ RPCCallbacks::DataWritten FSpatialNetDriverRPC::MakeDataWriteCallback(TArray<FWo
 	};
 }
 
-RPCCallbacks::UpdateWritten FSpatialNetDriverRPC::MakeUpdateWriteCallback(TArray<UpdateToSend>& OutUpdates) const
+RPCCallbacks::UpdateWritten FSpatialNetDriverRPC::MakeUpdateWriteCallback()
 {
-	return [&OutUpdates](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* InUpdate) {
-		return OnUpdateWritten(OutUpdates, EntityId, ComponentId, InUpdate);
+	check(bUpdateCacheInUse.load());
+	return [this](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* InUpdate) {
+		return OnUpdateWritten(UpdateToSend_Cache, EntityId, ComponentId, InUpdate);
 	};
 }
 
@@ -166,59 +168,80 @@ void FSpatialNetDriverRPC::GetRPCComponentsOnEntityCreation(const Worker_EntityI
 	// TODO UNR-5038
 }
 
-void FSpatialNetDriverRPC::FlushRPCUpdates()
+/**
+ * Update context object.
+ * Responsible for managing the update cache array, and flush updates once the operation is done.
+ */
+struct FSpatialNetDriverRPC::RAIIUpdateContext : FStackOnly
 {
-	const TMap<FName, RPCService::RPCReceiverDescription>& Receivers = RPCService->GetReceivers();
-	TArray<UpdateToSend> Updates;
-	for (const auto& Receiver : Receivers)
+	RAIIUpdateContext(FSpatialNetDriverRPC& RPC)
+		: RPCSystem(RPC)
 	{
-		RPCWritingContext Ctx(Receiver.Key, MakeUpdateWriteCallback(Updates));
-		Receiver.Value.Receiver->FlushUpdates(Ctx);
+		bool bExpectedValue = false;
+		const bool bCacheAvailable = RPCSystem.bUpdateCacheInUse.compare_exchange_strong(bExpectedValue, true);
+		check(bCacheAvailable);
 	}
 
-	FlushUpdates(Updates);
+	~RAIIUpdateContext()
+	{
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
+		for (auto& Update : RPCSystem.UpdateToSend_Cache)
+		{
+			FSpatialGDKSpanId SpanId;
+			if (RPCSystem.EventTracer != nullptr)
+			{
+				SpanId = RPCSystem.EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateMergeSendRPCs(Update.EntityId, Update.Update.component_id),
+					/* Causes */ Update.Spans.GetData()->GetConstId(), /* NumCauses */ Update.Spans.Num());
+			}
+			RPCSystem.NetDriver.Connection->SendComponentUpdate(Update.EntityId, &Update.Update, SpanId);
+		}
+
+		if (RPCSystem.UpdateToSend_Cache.Num() > 0 && Settings->bWorkerFlushAfterOutgoingNetworkOp)
+		{
+			RPCSystem.NetDriver.Connection->Flush();
+		}
+
+		// Keep storage around for future frames.
+		RPCSystem.UpdateToSend_Cache.SetNum(0, /*bAllowShrinking*/ false);
+		RPCSystem.bUpdateCacheInUse.store(false);
+	}
+
+	FSpatialNetDriverRPC& RPCSystem;
+};
+
+void FSpatialNetDriverRPC::FlushRPCUpdates()
+{
+	RAIIUpdateContext UpdateCtx(*this);
+
+	const TMap<FName, RPCService::RPCReceiverDescription>& Receivers = RPCService->GetReceivers();
+	for (const auto& Receiver : Receivers)
+	{
+		RPCWritingContext Ctx(Receiver.Key, MakeUpdateWriteCallback());
+		Receiver.Value.Receiver->FlushUpdates(Ctx);
+	}
 }
 
 void FSpatialNetDriverRPC::FlushRPCQueue(StandardQueue& Queue)
 {
-	TArray<UpdateToSend> Updates;
-	RPCWritingContext Ctx(Queue.Name, MakeUpdateWriteCallback(Updates));
-	Queue.FlushAll(Ctx, MakeRPCSentCallback(Updates));
+	RAIIUpdateContext UpdateCtx(*this);
 
-	FlushUpdates(Updates);
+	TArray<UpdateToSend> Updates;
+	RPCWritingContext Ctx(Queue.Name, MakeUpdateWriteCallback());
+	Queue.FlushAll(Ctx, MakeRPCSentCallback());
 }
 
 void FSpatialNetDriverRPC::FlushRPCQueueForEntity(Worker_EntityId EntityId, StandardQueue& Queue)
 {
+	RAIIUpdateContext UpdateCtx(*this);
+
 	TArray<UpdateToSend> Updates;
-	RPCWritingContext Ctx(Queue.Name, MakeUpdateWriteCallback(Updates));
-	Queue.Flush(EntityId, Ctx, MakeRPCSentCallback(Updates));
-
-	FlushUpdates(Updates);
+	RPCWritingContext Ctx(Queue.Name, MakeUpdateWriteCallback());
+	Queue.Flush(EntityId, Ctx, MakeRPCSentCallback());
 }
 
-void FSpatialNetDriverRPC::FlushUpdates(TArray<UpdateToSend>& Updates)
-{
-	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
-	for (auto& Update : Updates)
-	{
-		FSpatialGDKSpanId SpanId;
-		if (EventTracer != nullptr)
-		{
-			SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateMergeSendRPCs(Update.EntityId, Update.Update.component_id),
-											 /* Causes */ Update.Spans.GetData()->GetConstId(), /* NumCauses */ Update.Spans.Num());
-		}
-		NetDriver.Connection->SendComponentUpdate(Update.EntityId, &Update.Update, SpanId);
-	}
-
-	if (Updates.Num() > 0 && Settings->bWorkerFlushAfterOutgoingNetworkOp)
-	{
-		NetDriver.Connection->Flush();
-	}
-}
-
-bool FSpatialNetDriverRPC::CanExtractRPC(Worker_EntityId EntityId)
+bool FSpatialNetDriverRPC::CanExtractRPC(Worker_EntityId EntityId) const
 {
 	const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver.PackageMap->GetObjectFromEntityId(EntityId);
 	if (!ActorReceivingRPC.IsValid())
@@ -232,7 +255,7 @@ bool FSpatialNetDriverRPC::CanExtractRPC(Worker_EntityId EntityId)
 	return true;
 }
 
-bool FSpatialNetDriverRPC::CanExtractRPCOnServer(Worker_EntityId EntityId)
+bool FSpatialNetDriverRPC::CanExtractRPCOnServer(Worker_EntityId EntityId) const
 {
 	const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver.PackageMap->GetObjectFromEntityId(EntityId);
 	UObject* ReceivingObject = ActorReceivingRPC.Get();
@@ -257,7 +280,7 @@ bool FSpatialNetDriverRPC::CanExtractRPCOnServer(Worker_EntityId EntityId)
 	return true;
 }
 
-struct RAIIParamsHolder
+struct RAIIParamsHolder : FStackOnly
 {
 	RAIIParamsHolder(UFunction& InFunction, uint8* Memory)
 		: Function(InFunction)
@@ -280,14 +303,24 @@ struct RAIIParamsHolder
 	uint8* Parms;
 };
 
-bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::ReceivedRPC RPCData, const FRPCMetaData& MetaData)
+bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::ReceivedRPC RPCData, const FRPCMetaData& MetaData) const
 {
 	constexpr bool RPCConsumed = true;
 
 	FUnrealObjectRef ObjectRef(EntityId, RPCData.Offset);
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver.PackageMap->GetObjectFromUnrealObjectRef(ObjectRef);
 	UObject* TargetObject = TargetObjectWeakPtr.Get();
-	check(TargetObject != nullptr);
+
+	if (TargetObject == nullptr)
+	{
+		const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver.PackageMap->GetObjectFromEntityId(EntityId);
+		AActor* Actor = CastChecked<AActor>(ActorReceivingRPC.Get());
+		checkf(Actor != nullptr, TEXT("Receiving actor should have been checked in CanReceiveRPC"));
+		UE_LOG(LogSpatialNetDriverRPC, Error, TEXT("Failed to execute RPC on Actor %s (Entity %llu)'s Subobject %i because the Subobject is null"),
+			*Actor->GetName(), EntityId, RPCData.Offset);
+
+		return RPCConsumed;
+	}
 
 	const FClassInfo& ClassInfo = NetDriver.ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
 	UFunction* Function = ClassInfo.RPCs[RPCData.Index];
@@ -306,9 +339,10 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::Receiv
 	{
 		// Scope for the SpatialNetBitReader lifecycle (only one should exist per thread).
 		TSet<FUnrealObjectRef> MappedRefs;
+		constexpr uint32 BitsPerByte = 8;
 
 		FSpatialNetBitReader PayloadReader(NetDriver.PackageMap, const_cast<uint8*>(RPCData.PayloadData.GetData()),
-										   RPCData.PayloadData.Num() * 8, MappedRefs, UnresolvedRefs);
+										   RPCData.PayloadData.Num() * BitsPerByte, MappedRefs, UnresolvedRefs);
 
 		TSharedPtr<FRepLayout> RepLayout = NetDriver.GetFunctionRepLayout(Function);
 		check(RepLayout.IsValid());

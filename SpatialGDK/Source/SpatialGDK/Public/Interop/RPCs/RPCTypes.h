@@ -73,7 +73,7 @@ struct RPCWritingContext : FStackOnly
 	 * RAII object to encapsulate writes to an entity/component couple.
 	 * It makes sure that the appropriate callback is executed when the write operation is done
 	 */
-	class EntityWrite
+	class EntityWrite : FStackOnly
 	{
 	public:
 		EntityWrite(const EntityWrite&) = delete;
@@ -138,7 +138,7 @@ public:
 	virtual void OnUpdate(const RPCReadingContext& iCtx) = 0;
 	virtual void OnAuthGained(Worker_EntityId EntityId, EntityViewElement const& Element);
 	virtual void OnAuthGained_ReadComponent(const RPCReadingContext& iCtx) = 0;
-	virtual void OnAuthLost(Worker_EntityId) = 0;
+	virtual void OnAuthLost(Worker_EntityId EntityId) = 0;
 
 	const TSet<Worker_ComponentId>& GetComponentsToReadOnUpdate() const { return ComponentsToReadOnUpdate; }
 
@@ -157,10 +157,10 @@ public:
 	virtual ~RPCBufferReceiver() = default;
 
 	virtual void OnAdded(FName ReceiverName, Worker_EntityId EntityId, EntityViewElement const& Element);
-	virtual void OnAdded_ReadComponent(const RPCReadingContext& iCtx) = 0;
+	virtual void OnAdded_ReadComponent(const RPCReadingContext& Ctx) = 0;
 	virtual void OnRemoved(Worker_EntityId EntityId) = 0;
 	virtual void OnUpdate(const RPCReadingContext& iCtx) = 0;
-	virtual void FlushUpdates(RPCWritingContext&) = 0;
+	virtual void FlushUpdates(RPCWritingContext& Ctx) = 0;
 
 	const TSet<Worker_ComponentId>& GetComponentsToRead() const { return ComponentsToRead; }
 
@@ -227,18 +227,18 @@ protected:
  */
 struct RPCQueue
 {
-	RPCQueue(FName InName)
-		: Name(InName)
-	{
-	}
 	virtual ~RPCQueue() = default;
 	virtual void OnAuthGained(Worker_EntityId EntityId, const EntityViewElement& Element);
-	virtual void OnAuthGained_ReadComponent(const RPCReadingContext& iCtx) = 0;
-	virtual void OnAuthLost(Worker_EntityId) = 0;
+	virtual void OnAuthGained_ReadComponent(const RPCReadingContext& Ctx) = 0;
+	virtual void OnAuthLost(Worker_EntityId EntityId) = 0;
 
 	const FName Name;
 
 protected:
+	RPCQueue(FName InName)
+		: Name(InName)
+	{
+	}
 	TSet<Worker_ComponentId> ComponentsToReadOnAuthGained;
 };
 
@@ -258,12 +258,14 @@ struct TWrappedRPCQueue : public RPCQueue
 {
 	using SentRPCCallback = TFunction<void(FName, Worker_EntityId, Worker_ComponentId, uint64, const AdditionalSendingData&)>;
 
+	virtual void FlushAll(RPCWritingContext& Ctx, const SentRPCCallback&SentCallback) = 0;
+	virtual void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx, const SentRPCCallback&, bool bIgnoreAdded = false) = 0;
+
+protected:
 	TWrappedRPCQueue(FName InName)
 		: RPCQueue(InName)
 	{
 	}
-	virtual void FlushAll(RPCWritingContext& Ctx, const SentRPCCallback&) = 0;
-	virtual void Flush(Worker_EntityId, RPCWritingContext& Ctx, const SentRPCCallback&, bool bIgnoreAdded = false) = 0;
 };
 
 /**

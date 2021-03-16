@@ -6,6 +6,8 @@
 #include "Interop/RPCs/RPCService.h"
 #include "SpatialView/EntityComponentId.h"
 
+#include <atomic>
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetDriverRPC, Log, All);
 
 namespace SpatialGDK
@@ -152,9 +154,9 @@ protected:
 		TArray<FSpatialGDKSpanId> Spans;
 	};
 
-	StandardQueue::SentRPCCallback MakeRPCSentCallback(TArray<UpdateToSend>& OutUpdates);
+	StandardQueue::SentRPCCallback MakeRPCSentCallback();
 	SpatialGDK::RPCCallbacks::DataWritten MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const;
-	SpatialGDK::RPCCallbacks::UpdateWritten MakeUpdateWriteCallback(TArray<UpdateToSend>& OutUpdates) const;
+	SpatialGDK::RPCCallbacks::UpdateWritten MakeUpdateWriteCallback();
 
 	static void OnRPCSent(SpatialGDK::SpatialEventTracer& EventTracer, TArray<UpdateToSend>& OutUpdates, FName Name,
 						  Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId, const FSpatialGDKSpanId& SpanId);
@@ -163,15 +165,19 @@ protected:
 	static void OnUpdateWritten(TArray<UpdateToSend>& OutUpdates, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
 								Schema_ComponentUpdate* InUpdate);
 
-	void FlushUpdates(TArray<UpdateToSend>&);
-	bool CanExtractRPC(Worker_EntityId);
-	bool CanExtractRPCOnServer(Worker_EntityId);
-	bool ApplyRPC(Worker_EntityId, SpatialGDK::ReceivedRPC, const FRPCMetaData& MetaData);
+	bool CanExtractRPC(Worker_EntityId EntityId) const;
+	bool CanExtractRPCOnServer(Worker_EntityId EntityId) const;
+	bool ApplyRPC(Worker_EntityId EntityId, SpatialGDK::ReceivedRPC ReceivedCallback, const FRPCMetaData& MetaData) const;
 
 	USpatialNetDriver& NetDriver;
 	SpatialGDK::SpatialEventTracer* EventTracer = nullptr;
-
 	TUniquePtr<SpatialGDK::RPCService> RPCService;
+	
+	// Caching the array of updates to send, to avoid a reallocation each frame.
+	TArray<UpdateToSend> UpdateToSend_Cache;
+	std::atomic<bool> bUpdateCacheInUse;
+	struct RAIIUpdateContext;
+
 	// TODO UNR-5038
 	// TUniquePtr<SpatialGDK::TRPCBufferReceiver<FRPCPayload, TimestampAndETWrapper>> NetMulticastReceiver;
 };
