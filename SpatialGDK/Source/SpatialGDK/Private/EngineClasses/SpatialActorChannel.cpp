@@ -277,8 +277,20 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 	}
 }
 
+void USpatialActorChannel::ValidateChannelNotBroken()
+{
+	// In native Unreal, channels can be broken in certain circumstances (e.g. when unloading streaming levels or failing to process a
+	// bunch). This shouldn't happen in Spatial and would likely lead to unexpected behavior.
+	if (Broken)
+	{
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("Channel broken when cleaning up/closing channel. Entity id: %lld"), EntityId);
+	}
+}
+
 bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason)
 {
+	ValidateChannelNotBroken();
+
 	if (NetDriver != nullptr)
 	{
 #if WITH_EDITOR
@@ -314,6 +326,8 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 
 int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 {
+	ValidateChannelNotBroken();
+
 	if (Reason == EChannelCloseReason::Dormancy)
 	{
 		// Closed for dormancy reasons, ensure we update the component state of this entity.
