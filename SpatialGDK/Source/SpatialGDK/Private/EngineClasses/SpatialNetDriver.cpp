@@ -131,8 +131,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 		if (GameInstance != nullptr)
 		{
-			if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType
-				|| GameInstance->GetSpatialWorkerType() == SpatialConstants::StrategyWorkerType)
+			if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType)
 			{
 				NetServerMaxTickRate = 120;
 			}
@@ -1030,6 +1029,14 @@ void USpatialNetDriver::BeginDestroy()
 		if (RoutingSystem)
 		{
 			RoutingSystem->Destroy(Connection);
+
+			Connection->Flush();
+			FPlatformProcess::Sleep(0.1f);
+		}
+
+		if (StrategySystem)
+		{
+			StrategySystem->Destroy(Connection);
 
 			Connection->Flush();
 			FPlatformProcess::Sleep(0.1f);
@@ -2895,11 +2902,6 @@ void USpatialNetDriver::QueryRoutingPartition()
 							if (WorkerType == SpatialConstants::RoutingWorkerType.ToString())
 							{
 								NetDriver->RoutingWorkerId = Entity.entity_id;
-								NetDriver->QueryRoutingPartition();
-							}
-							else if (WorkerType == SpatialConstants::StrategyWorkerType.ToString())
-							{
-								NetDriver->StrategyWorkerId = Entity.entity_id;
 								NetDriver->QueryRoutingPartition();
 							}
 						}

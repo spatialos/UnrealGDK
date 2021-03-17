@@ -32,7 +32,7 @@ private:
 	const FSubView& SubView;
 
 	void CreateStrategyPartition(SpatialOSWorkerInterface* Connection);
-	Worker_RequestId StrategyWorkerRequest;
+	TOptional<Worker_RequestId> StrategyWorkerRequest;
 	Worker_EntityId StrategyPartition;
 	Worker_EntityId StrategyWorkerSystemEntityId;
 };

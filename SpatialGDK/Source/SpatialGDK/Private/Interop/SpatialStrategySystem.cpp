@@ -23,7 +23,7 @@ void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 				if (Op.first_entity_id == SpatialConstants::INVALID_ENTITY_ID)
 				{
 					UE_LOG(LogSpatialStrategySystem, Error, TEXT("Reserve entity failed : %s"), UTF8_TO_TCHAR(Op.message));
-					StrategyWorkerRequest = 0;
+					StrategyWorkerRequest.Reset();
 				}
 				else
 				{
@@ -42,7 +42,7 @@ void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 				{
 					UE_LOG(LogSpatialStrategySystem, Error, TEXT("Create entity failed : %s"), UTF8_TO_TCHAR(Op.message));
 				}
-				StrategyWorkerRequest = 0;
+				StrategyWorkerRequest.Reset();
 
 				Worker_CommandRequest ClaimRequest = Worker::CreateClaimPartitionRequest(StrategyPartition);
 				StrategyWorkerRequest =
@@ -59,7 +59,7 @@ void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 				{
 					UE_LOG(LogSpatialStrategySystem, Error, TEXT("Claim partition failed : %s"), UTF8_TO_TCHAR(Op.message));
 				}
-				StrategyWorkerRequest = 0;
+				StrategyWorkerRequest.Reset();
 			}
 		}
 		break;
