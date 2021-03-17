@@ -10,6 +10,7 @@
 #include "Engine/Classes/AI/AISystemBase.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -478,6 +479,11 @@ void UGlobalStateManager::TriggerBeginPlay()
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
+
+	// Notify about persistence data right before BeginPlay.
+	USpatialGameInstance* GameInstance = Cast<USpatialGameInstance>(NetDriver->World->GetGameInstance());
+	GameInstance->OnPersistenceDataAvailable.Broadcast();
+
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
 
 	// Hmm - this seems necessary because unless we call this after NotifyBeginPlay has been triggered, it won't actually
