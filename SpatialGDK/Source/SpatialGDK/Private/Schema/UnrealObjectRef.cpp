@@ -8,6 +8,7 @@
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialMetricsDisplay.h"
 
+#include "Engine/World.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
 
@@ -230,4 +231,18 @@ FUnrealObjectRef FUnrealObjectRef::GetRefFromObjectClassPath(UObject* Object, US
 		ClassObjectRef.bUseClassPathToLoadObject = true;
 	}
 	return ClassObjectRef;
+}
+
+FUnrealObjectRef FUnrealObjectRef::GetStablyNamedObjectRef(UObject* Object)
+{
+	if (Object == nullptr)
+	{
+		return FUnrealObjectRef::NULL_OBJECT_REF;
+	}
+
+	// No path in SpatialOS should contain a PIE prefix.
+	FString TempPath = Object->GetFName().ToString();
+	TempPath = UWorld::RemovePIEPrefix(TempPath);
+
+	return FUnrealObjectRef(0, 0, TempPath, GetStablyNamedObjectRef(Object->GetOuter()), true);
 }

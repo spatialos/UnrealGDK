@@ -42,20 +42,6 @@ EntityFactory::EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapC
 {
 }
 
-FUnrealObjectRef GetStablyNamedObjectRef(UObject* Object)
-{
-	if (Object == nullptr)
-	{
-		return FUnrealObjectRef::NULL_OBJECT_REF;
-	}
-
-	// No path in SpatialOS should contain a PIE prefix.
-	FString TempPath = Object->GetFName().ToString();
-	TempPath = UWorld::RemovePIEPrefix(TempPath);
-
-	return FUnrealObjectRef(0, 0, TempPath, GetStablyNamedObjectRef(Object->GetOuter()), true);
-}
-
 TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActor* Actor)
 {
 	UClass* Class = Actor->GetClass();
@@ -81,7 +67,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 	if ((Actor->GetWorld() != nullptr && !Actor->GetWorld()->IsGameWorld()) || Actor->HasAnyFlags(RF_WasLoaded)
 		|| Actor->IsNetStartupActor())
 	{
-		StablyNamedObjectRef = GetStablyNamedObjectRef(Actor);
+		StablyNamedObjectRef = FUnrealObjectRef::GetStablyNamedObjectRef(Actor);
 		bNetStartup = Actor->IsNetStartupActor();
 	}
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, Class->GetPathName(), bNetStartup).CreateComponentData());
