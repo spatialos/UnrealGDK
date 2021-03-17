@@ -294,6 +294,11 @@ struct TRPCQueue : TWrappedRPCQueue<AdditionalSendingData>
 		Queues.FindOrAdd(EntityId).bAdded = true;
 	}
 
+	void OnAuthLost(Worker_EntityId EntityId) { Queues.Remove(EntityId); }
+
+	void OnAuthGained_ReadComponent(const RPCReadingContext& iCtx) override {}
+
+protected:
 	struct QueueData
 	{
 		// Most RPCs are flushed right after queuing them,
@@ -302,6 +307,44 @@ struct TRPCQueue : TWrappedRPCQueue<AdditionalSendingData>
 		TArray<AdditionalSendingData, TInlineAllocator<1>> AddData;
 		bool bAdded = false;
 	};
+
+	bool FlushQueue(Worker_EntityId EntityId, QueueData& Queue, RPCWritingContext& Ctx,
+					const typename TWrappedRPCQueue<AdditionalSendingData>::SentRPCCallback& SentCallback)
+	{
+		uint32 QueuedRPCs = Queue.RPCs.Num();
+		uint32 WrittenRPCs = 0;
+		auto WrittenCallback = [this, &Queue, EntityId, &SentCallback, &WrittenRPCs](Worker_ComponentId ComponentId, uint64 RPCId) {
+			if (SentCallback)
+			{
+				SentCallback(this->Name, EntityId, ComponentId, RPCId, Queue.AddData[WrittenRPCs]);
+			}
+			++WrittenRPCs;
+		};
+
+		const uint32 WrittenRPCsReported = this->Sender.Write(Ctx, EntityId, Queue.RPCs, WrittenCallback);
+
+		// Basic check that the written callback was called for every individual RPC.
+		check(WrittenRPCs == WrittenRPCsReported);
+
+		if (WrittenRPCs == QueuedRPCs)
+		{
+			Queue.RPCs.Empty();
+			Queue.AddData.Empty();
+			return true;
+		}
+		else
+		{
+			for (uint32 i = 0; i < WrittenRPCs; ++i)
+			{
+				Queue.RPCs[i] = MoveTemp(Queue.RPCs[i + WrittenRPCs]);
+				Queue.AddData[i] = MoveTemp(Queue.AddData[i + WrittenRPCs]);
+			}
+			Queue.RPCs.SetNum(QueuedRPCs - WrittenRPCs);
+			Queue.AddData.SetNum(QueuedRPCs - WrittenRPCs);
+		}
+
+		return false;
+	}
 
 	TMap<Worker_EntityId_Key, QueueData> Queues;
 	TRPCBufferSender<PayloadType>& Sender;
