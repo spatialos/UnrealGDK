@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 
 #include "Utils/SchemaOption.h"
-#include <WorkerSDK/Improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 class USpatialPackageMapClient;
 

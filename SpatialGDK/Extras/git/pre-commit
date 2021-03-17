@@ -3,10 +3,13 @@
 set -e -u -o pipefail
 [[ -n "${DEBUG:-}" ]] && set -x
 
-if [[ "$(uname -s)" != "Darwin" ]]; then
-    clang_command="SpatialGDK/Extras/clang-format/win/clang-format"
-else
+if [[ "$(uname -s)" == "Darwin" ]]; then
     clang_command="SpatialGDK/Extras/clang-format/mac/clang-format"
+elif [[ "$(uname -s)" == "Linux" ]]; then
+	# yolo
+    clang_command="wine SpatialGDK/Extras/clang-format/win/clang-format.exe"
+else
+    clang_command="SpatialGDK/Extras/clang-format/win/clang-format"
 fi
 
 # Hit 'em with that clang-format

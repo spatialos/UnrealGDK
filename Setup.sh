@@ -3,8 +3,8 @@
 set -e -u -o pipefail
 [[ -n "${DEBUG:-}" ]] && set -x
 
-if [[ "$(uname -s)" != "Darwin" ]]; then
-    echo "This script should only be used on OS X. If you are using Windows, please run Setup.bat."
+if [[ "$(uname -s)" != "Darwin" && "$(uname -s)" != "Linux" ]]; then
+    echo "This script should only be used on OS X or Linux. If you are using Windows, please run Setup.bat."
     exit 1
 fi
 
@@ -42,7 +42,11 @@ if [[ -e .git/hooks ]]; then
     cp -R "$(pwd)/SpatialGDK/Extras/git/." "$(pwd)/.git/hooks"
 
     # We pass Setup.sh args, such as --mobile, to the post-merge hook to run Setup.sh with the same args in future.
-    sed -i "" -e "s/SETUP_ARGS/$*/g" .git/hooks/post-merge
+    if [[ "$(uname -s)" == "Linux" ]]; then
+        sed -i -e "s/SETUP_ARGS/$*/g" .git/hooks/post-merge
+    else
+        sed -i "" -e "s/SETUP_ARGS/$*/g" .git/hooks/post-merge
+    fi
 
     # This needs to be runnable.
     chmod +x .git/hooks/pre-commit
@@ -91,11 +95,21 @@ if [[ -d "${SPATIAL_DIR}" ]]; then
     mkdir -p "${SCHEMA_COPY_DIR}"
 fi
 
+if [[ "$(uname -s)" == "Linux" ]]; then
+	SCHEMAC_OS_SUFFIX="x86_64-linux"
+	WORKER_SDK_OS_SUFFIX="x86_64-clang1000-linux"
+	BINARY_OS_DIR="Linux"
+else
+	SCHEMAC_OS_SUFFIX="x86_64-macos"
+	WORKER_SDK_OS_SUFFIX="x86_64-macos"
+	BINARY_OS_DIR="Mac"
+fi
+
 echo "Retrieve dependencies"
-spatial package retrieve tools       schema_compiler-x86_64-macos            "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip
-spatial package retrieve schema      standard_library                        "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/schema/standard_library.zip
-spatial package retrieve worker_sdk  c_headers                               "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip
-spatial package retrieve worker_sdk  c-dynamic-x86_64-clang-macos            "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip
+spatial package retrieve tools       "schema_compiler-${SCHEMAC_OS_SUFFIX}" "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/tools/schema_compiler.zip
+spatial package retrieve schema      standard_library                       "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/schema/standard_library.zip
+spatial package retrieve worker_sdk  c_headers                              "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip
+spatial package retrieve worker_sdk  "c-dynamic-${WORKER_SDK_OS_SUFFIX}"    "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/c-dynamic.zip
 
 if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then
@@ -107,10 +121,10 @@ fi
 spatial package retrieve worker_sdk  csharp_cinterop                         "${PINNED_CORE_SDK_VERSION}"   ${DOMAIN_ENVIRONMENT_VAR:-}   "${CORE_SDK_DIR}"/worker_sdk/csharp_cinterop.zip
 
 echo "Unpack dependencies"
-unzip -oq "${CORE_SDK_DIR}"/tools/schema_compiler-x86_64-macos.zip                 -d "${BINARIES_DIR}"/Programs/
-unzip -oq "${CORE_SDK_DIR}"/schema/standard_library.zip                            -d "${BINARIES_DIR}"/Programs/schema/
-unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip                               -d "${BINARIES_DIR}"/Headers/
-unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic-x86_64-clang-macos.zip            -d "${BINARIES_DIR}"/Mac/
+unzip -oq "${CORE_SDK_DIR}"/tools/schema_compiler.zip           -d "${BINARIES_DIR}"/Programs/
+unzip -oq "${CORE_SDK_DIR}"/schema/standard_library.zip         -d "${BINARIES_DIR}"/Programs/schema/
+unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c_headers.zip            -d "${BINARIES_DIR}"/Headers/
+unzip -oq "${CORE_SDK_DIR}"/worker_sdk/c-dynamic.zip            -d "${BINARIES_DIR}/${BINARY_OS_DIR}/"
 
 if [[ -n "${DOWNLOAD_MOBILE}" ]];
 then
@@ -121,7 +135,7 @@ then
 fi
 
 unzip -oq "${CORE_SDK_DIR}"/worker_sdk/csharp_cinterop.zip                                  -d "${BINARIES_DIR}"/Programs/worker_sdk/csharp_cinterop/
-cp -R "${BINARIES_DIR}"/Headers/include/ "${WORKER_SDK_DIR}"
+cp -R "${BINARIES_DIR}"/Headers/include/improbable "${WORKER_SDK_DIR}"
 
 if [[ -d "${SPATIAL_DIR}" ]]; then
     echo "Copying standard library schemas to ${SCHEMA_STD_COPY_DIR}"

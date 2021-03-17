@@ -111,7 +111,7 @@ void UAbstractSpatialMultiWorkerSettings::ValidateNoActorClassesDuplicatedAmongL
 
 	for (FLayerInfo& Layer : WorkerLayers)
 	{
-		for (const TSoftClassPtr<AActor> LayerClass : Layer.ActorClasses)
+		for (const TSoftClassPtr<AActor>& LayerClass : Layer.ActorClasses)
 		{
 			if (FoundActorClasses.Contains(LayerClass))
 			{
@@ -120,7 +120,7 @@ void UAbstractSpatialMultiWorkerSettings::ValidateNoActorClassesDuplicatedAmongL
 			FoundActorClasses.Add(LayerClass);
 		}
 
-		for (const TSoftClassPtr<AActor> DuplicatedClass : DuplicatedActorClasses)
+		for (const TSoftClassPtr<AActor>& DuplicatedClass : DuplicatedActorClasses)
 		{
 			Layer.ActorClasses.Remove(DuplicatedClass);
 		}
@@ -129,7 +129,7 @@ void UAbstractSpatialMultiWorkerSettings::ValidateNoActorClassesDuplicatedAmongL
 	if (DuplicatedActorClasses.Num() > 0)
 	{
 		FString DuplicatedActorsList = TEXT("");
-		for (const TSoftClassPtr<AActor> DuplicatedClass : DuplicatedActorClasses)
+		for (const TSoftClassPtr<AActor>& DuplicatedClass : DuplicatedActorClasses)
 		{
 			DuplicatedActorsList.Append(FString::Printf(TEXT("%s, "), *DuplicatedClass.GetAssetName()));
 		}

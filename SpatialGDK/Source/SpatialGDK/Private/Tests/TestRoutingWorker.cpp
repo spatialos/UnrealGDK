@@ -570,8 +570,14 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_WhiteBox_SendOneMessage)
 	{
 		Components Entity2Comps(Entity2, TestFixture.ServerWorker.Coordinator.GetView());
 
-		TestTrue(TEXT("SentRPC"), Entity2Comps.Receiver->ReliableRPCBuffer.Counterpart.Num() > 0);
-		TestTrue(TEXT("SentRPC"), Entity2Comps.Receiver->ReliableRPCBuffer.Counterpart[0].IsSet());
+		if (!TestTrue(TEXT("SentRPC"), Entity2Comps.Receiver->ReliableRPCBuffer.Counterpart.Num() > 0))
+		{
+			return false;
+		}
+		if (!TestTrue(TEXT("SentRPC"), Entity2Comps.Receiver->ReliableRPCBuffer.Counterpart[0].IsSet()))
+		{
+			return false;
+		}
 		const CrossServerRPCInfo& SenderBackRef = Entity2Comps.Receiver->ReliableRPCBuffer.Counterpart[0].GetValue();
 		TestTrue(TEXT("SentRPC"), SenderBackRef.Entity == Entity1);
 	}
@@ -586,8 +592,14 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_WhiteBox_SendOneMessage)
 	{
 		Components Entity1Comps(Entity1, TestFixture.ServerWorker.Coordinator.GetView());
 
-		TestTrue(TEXT("ACKWritten"), Entity1Comps.SenderACK->ACKArray.Num() > 0);
-		TestTrue(TEXT("ACKWritten"), Entity1Comps.SenderACK->ACKArray[0].IsSet());
+		if (!TestTrue(TEXT("ACKWritten"), Entity1Comps.SenderACK->ACKArray.Num() > 0))
+		{
+			return false;
+		}
+		if (!TestTrue(TEXT("ACKWritten"), Entity1Comps.SenderACK->ACKArray[0].IsSet()))
+		{
+			return false;
+		}
 		const ACKItem& ACK = Entity1Comps.SenderACK->ACKArray[0].GetValue();
 		TestTrue(TEXT("ACKWritten"), ACK.Sender == Entity1);
 	}

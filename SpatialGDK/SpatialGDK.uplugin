@@ -35,6 +35,7 @@
       "LoadingPhase": "Default",
       "WhitelistPlatforms": [
         "Win64",
+        "Linux",
         "Mac"
       ]
     },
@@ -44,6 +45,7 @@
       "LoadingPhase": "Default",
       "WhitelistPlatforms": [
         "Win64",
+        "Linux",
         "Mac"
       ]
     },
@@ -53,6 +55,7 @@
       "LoadingPhase": "Default",
       "WhitelistPlatforms": [
         "Win64",
+        "Linux",
         "Mac"
       ]
     },
@@ -62,6 +65,7 @@
       "LoadingPhase": "PreDefault",
       "WhitelistPlatforms": [
         "Win64",
+        "Linux",
         "Mac"
       ]
     },
@@ -71,6 +75,7 @@
       "LoadingPhase": "PreLoadingScreen",
       "WhitelistPlatforms": [
         "Win64",
+        "Linux",
         "Mac"
       ]
     },
@@ -80,6 +85,7 @@
       "LoadingPhase": "Default",
       "WhitelistPlatforms": [
         "Win64",
+        "Linux",
         "Mac"
       ]
     }

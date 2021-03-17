@@ -377,10 +377,10 @@ void SpatialCommandUtils::StopLocalReceptionistProxyServer(FProcHandle& ProcHand
 
 bool SpatialCommandUtils::GetProcessName(const FString& PID, FString& OutProcessName)
 {
-#if PLATFORM_MAC
+#if PLATFORM_MAC || PLATFORM_LINUX
 	UE_LOG(LogSpatialCommandUtils, Warning,
-		   TEXT("Failed to get the name of the process that is blocking the required port. To get the name of the process in MacOS you "
-				"need to use SpatialCommandUtils::GetProcessInfoFromPort."));
+		   TEXT("Failed to get the name of the process that is blocking the required port. To get the name of the process in MacOS or "
+				"Linux you need to use SpatialCommandUtils::GetProcessInfoFromPort."));
 	return false;
 #else
 	bool bSuccess = false;
@@ -418,7 +418,7 @@ bool SpatialCommandUtils::TryKillProcessWithPID(const FString& PID)
 #if PLATFORM_WINDOWS
 	const FString KillCmd = TEXT("taskkill");
 	const FString KillArgs = FString::Printf(TEXT("/F /PID %s"), *PID);
-#elif PLATFORM_MAC
+#elif PLATFORM_MAC || PLATFORM_LINUX
 	const FString KillCmd = FPaths::Combine(SpatialGDKServicesConstants::BinPath, TEXT("kill"));
 	const FString KillArgs = FString::Printf(TEXT("%s"), *PID);
 #endif
@@ -455,7 +455,7 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 	const FString Command = FString::Printf(TEXT("netstat"));
 	// -a display active tcp/udp connections, -o include PID for each connection, -n don't resolve hostnames
 	const FString Args = TEXT("-n -o -a");
-#elif PLATFORM_MAC
+#elif PLATFORM_MAC || PLATFORM_LINUX
 	const FString Command = FPaths::Combine(SpatialGDKServicesConstants::LsofCmdFilePath, TEXT("lsof"));
 	// -i:Port list the processes that are running on Port
 	const FString Args = FString::Printf(TEXT("-i:%i"), Port);
@@ -472,7 +472,7 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 #if PLATFORM_WINDOWS
 		// Get the line of the netstat output that contains the port we're looking for.
 		FRegexPattern PidMatcherPattern(FString::Printf(TEXT("(.*?:%i.)(.*)( [0-9]+)"), Port));
-#elif PLATFORM_MAC
+#elif PLATFORM_MAC || PLATFORM_LINUX
 		// Get the line that contains the name, pid and state of the process.
 		FRegexPattern PidMatcherPattern(TEXT("(\\S+)( *\\d+).*(\\(\\S+\\))"));
 #endif
@@ -486,7 +486,7 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 			{
 				OutProcessName = TEXT("Unknown");
 			}
-#elif PLATFORM_MAC
+#elif PLATFORM_MAC || PLATFORM_LINUX
 			OutProcessName = PidMatcher.GetCaptureGroup(1 /* Get the Name of the process, which is the first group. */);
 			OutPid = PidMatcher.GetCaptureGroup(2 /* Get the PID, which is the second group. */);
 			OutState = PidMatcher.GetCaptureGroup(3 /* Get the State of the process, which is the third group. */);
@@ -500,7 +500,7 @@ bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FS
 #endif
 	}
 
-#if PLATFORM_MAC
+#if PLATFORM_MAC || PLATFORM_LINUX
 	if (bSuccess && ExitCode == 1 && StdErr.IsEmpty())
 	{
 		UE_LOG(LogSpatialCommandUtils, Log, TEXT("The required port %i is not blocked!"), Port);

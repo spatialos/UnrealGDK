@@ -216,7 +216,7 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 			const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
 				USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
 
-			for (const FLayerInfo WorkerLayer : MultiWorkerSettings->WorkerLayers)
+			for (const FLayerInfo& WorkerLayer : MultiWorkerSettings->WorkerLayers)
 			{
 				if (WorkerLayer.Name == SpatialConstants::DefaultLayer)
 				{

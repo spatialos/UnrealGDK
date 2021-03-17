@@ -11,6 +11,13 @@ namespace SpatialGDKServicesConstants
 const FString SpatialPath = TEXT("");
 const FString Extension = TEXT("exe");
 const FString PlatformVersion = TEXT("x86_64-win32");
+#elif PLATFORM_LINUX
+// UNR-2518: This is currently hardcoded and we expect users to have spatial either installed or symlinked to this path.
+// If they haven't, it is necessary to symlink it to /usr/local/bin. At some point we should expose this via
+// the Unreal UI, however right now the SpatialGDKServices module is unable to see these.
+const FString SpatialPath = TEXT("/usr/local/bin");
+const FString Extension = TEXT("");
+const FString PlatformVersion = TEXT("x86_64-linux");
 #elif PLATFORM_MAC
 // UNR-2518: This is currently hardcoded and we expect users to have spatial either installed or symlinked to this path.
 // If they haven't, it is necessary to symlink it to /usr/local/bin. At some point we should expose this via
@@ -74,7 +81,10 @@ const FString UseChinaServicesRegionFilename = TEXT("UseChinaServicesRegion");
 const FString ProxyFileDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectIntermediateDir(), TEXT("Improbable")));
 const FString ProxyInfoFilePath = FPaths::Combine(ProxyFileDirectory, TEXT("ServerReceptionistProxyInfo.json"));
 
-#if PLATFORM_MAC
+#if PLATFORM_LINUX
+const FString LsofCmdFilePath = TEXT("/usr/bin/");
+const FString BinPath = TEXT("/bin/");
+#elif PLATFORM_MAC
 const FString LsofCmdFilePath = TEXT("/usr/sbin/");
 const FString BinPath = TEXT("/bin/");
 #endif

@@ -31,7 +31,7 @@
 #include "Widgets/Layout/SUniformGridPanel.h"
 #include "Widgets/Layout/SWrapBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
-#include "Widgets/Notifications/SPopupErrorText.h"
+#include "Widgets/Notifications/SPopUpErrorText.h"
 #include "Widgets/Text/STextBlock.h"
 
 #include "SpatialCommandUtils.h"
