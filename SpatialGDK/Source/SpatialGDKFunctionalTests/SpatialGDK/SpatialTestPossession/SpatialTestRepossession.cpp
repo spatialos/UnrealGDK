@@ -5,8 +5,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 #include "SpatialTestPossession.h"
-#include "TestPossessionPawn.h"
 
 void ASpatialTestRepossession::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

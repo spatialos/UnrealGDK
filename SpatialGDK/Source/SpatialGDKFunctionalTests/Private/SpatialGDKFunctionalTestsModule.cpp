@@ -2,6 +2,11 @@
 
 #include "SpatialGDKFunctionalTestsModule.h"
 
+// clang-format off
+#include "SpatialConstants.h"
+#include "SpatialConstants.cxx"
+// clang-format on
+
 #include "IAutomationControllerModule.h"
 
 #include "LogSpatialFunctionalTest.h"

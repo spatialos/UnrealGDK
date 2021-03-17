@@ -6,7 +6,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/PlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "TestPossessionPawn.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 #include "TestPossessionPlayerController.h"
 
 /**
