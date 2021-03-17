@@ -161,28 +161,15 @@ SpatialGDK::FActorLoadBalancingGroupId ULayeredLBStrategy::GetActorGroupId(const
 		{
 			return static_cast<SpatialGDK::FActorLoadBalancingGroupId>(LayerIndex);
 		}
-
-		static SpatialGDK::FActorLoadBalancingGroupId CombineActorGroupIds(const SpatialGDK::FActorLoadBalancingGroupId Parent,
-																		   const SpatialGDK::FActorLoadBalancingGroupId Child)
-		{
-			return HashCombine(Parent, Child);
-		}
 	};
 
 	const FName ActorLayerName = GetLayerNameForActor(Actor);
 
 	const int32 ActorLayerIndex = LayerData.FindChecked(ActorLayerName).LayerIndex + 1;
 
-	const SpatialGDK::FActorLoadBalancingGroupId ParentActorGroupId = FLayerIndexToActorGroupConversions::ToGroupId(ActorLayerIndex);
-
-	const UAbstractLBStrategy* ChildLBStrategy = LayerNameToLBStrategy[ActorLayerName];
-
-	const SpatialGDK::FActorLoadBalancingGroupId ChildGroupId = ChildLBStrategy->GetActorGroupId(Actor);
-
-	const SpatialGDK::FActorLoadBalancingGroupId CombinedGroupId =
-		FLayerIndexToActorGroupConversions::CombineActorGroupIds(ParentActorGroupId, ChildGroupId);
-
-	return CombinedGroupId;
+	// We're not going deeper inside nested strategies intentionally; LBStrategy, or nesting thereof,
+	// won't exist when the Strategy Worker is finished, and GroupIDs are only necessary for it to work
+	return FLayerIndexToActorGroupConversions::ToGroupId(ActorLayerIndex);
 }
 
 SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
