@@ -137,7 +137,14 @@ namespace Improbable.WorkerCoordinator
         public void Start()
         {
             // Start timer
-            TickTimer = new Timer(Tick, ResetEvent, 0, TickInterval);
+            if (IsLifetimeMode)
+            {
+                TickTimer = new Timer(Tick_LifetimeMode, ResetEvent, 0, TickInterval);
+            }
+            else
+            {
+                TickTimer = new Timer(Tick_NormalMode, ResetEvent, 0, TickInterval);
+            }
 
             // Wait until Tick finish.
             ResetEvent.WaitOne();
@@ -146,92 +153,101 @@ namespace Improbable.WorkerCoordinator
             Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] All simulated clients are finished, IsLifetimeMode={IsLifetimeMode}.");
         }
 
-        private void Tick(object state)
+        /// <summary>
+        /// Non lifetime mode, start all clients and do not stop them.
+        /// </summary>
+        /// <param name="state"></param>
+        private void Tick_NormalMode(object state)
         {
             // Check player status, restart player client if it exit early.
-            bool isActiveProcessListEmpty = Host.CheckPlayerStatus();
+            var isActiveProcessListEmpty = Host.CheckPlayerStatus();
 
-            DateTime curTime = DateTime.Now;
-
-            // Non-lifetime mode, do not stop any clients.
-            if (!IsLifetimeMode)
+            // Launch clients first.
+            if (WaitingList.Count > 0)
             {
-                // Launch clients first.
-                if (WaitingList.Count > 0)
+                var curTime = DateTime.Now;
+
+                for (var i = WaitingList.Count - 1; i >= 0; --i)
                 {
-                    for (int i = WaitingList.Count - 1; i >= 0; --i)
-                    {
-                        var clientInfo = WaitingList[i];
-                        if (curTime >= clientInfo.StartTime)
-                        {
-                            // Start client.
-                            Host?.StartClient(clientInfo);
+                    var clientInfo = WaitingList[i];
 
-                            Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] Start client ClientName ={clientInfo.ClientName}.");
+                    if (curTime < clientInfo.StartTime) continue;
 
-                            // Move to running list.
-                            WaitingList.RemoveAt(i);
-                            RunningList.Add(clientInfo);
-                        }
-                    }
-                }
-                // All clients are finished.
-                else if (isActiveProcessListEmpty)
-                {
-                    ResetEvent.Set();
-                }
-
-                return;
-            }
-
-            // Lifetime mode.
-            // Data flow is waiting list -> running list -> waiting list.
-            // Checking sequence is running list -> waiting list.
-
-            // Running list.
-            for (int i = RunningList.Count - 1; i >= 0; --i)
-            {
-                var clientInfo = RunningList[i];
-                if (curTime >= clientInfo.EndTime)
-                {
-                    // End client.
-                    Host?.StopClient(clientInfo);
-
-                    Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] Stop client ClientName={clientInfo.ClientName}.");
-
-                    // Delay a few seconds to restart. Make sure the client has timed out and gone offline.
-                    clientInfo.StartTime = curTime.AddSeconds(RestartAfterSeconds);
-
-                    // Restart with new simulated player.
-                    if (UseNewSimulatedPlayer)
-                    {
-                        clientInfo.ClientName = "SimulatedPlayer" + Guid.NewGuid();
-                    }
-
-                    // Move to wait list.
-                    RunningList.RemoveAt(i);
-                    WaitingList.Add(clientInfo);
-                }
-            }
-
-            // Waiting list.
-            for (int i = WaitingList.Count - 1; i >= 0; --i)
-            {
-                var clientInfo = WaitingList[i];
-                if (curTime >= clientInfo.StartTime)
-                {
                     // Start client.
                     Host?.StartClient(clientInfo);
 
                     Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] Start client ClientName ={clientInfo.ClientName}.");
 
-                    // Update lifetime.
-                    clientInfo.EndTime = curTime.AddMinutes(Random.Next(MinLifetime, MaxLifetime));
-
                     // Move to running list.
                     WaitingList.RemoveAt(i);
                     RunningList.Add(clientInfo);
                 }
+            }
+            // All clients are finished.
+            else if (isActiveProcessListEmpty)
+            {
+                ResetEvent.Set();
+            }
+        }
+
+        /// <summary>
+        /// Lifetime mode, `start - stop - restart` clients.
+        /// </summary>
+        /// <param name="state"></param>
+        private void Tick_LifetimeMode(object state)
+        {
+            // Check player status, restart player client if it exit early.
+            Host.CheckPlayerStatus();
+
+            var curTime = DateTime.Now;
+
+            // Data flow is waiting list -> running list -> waiting list.
+            // Checking sequence is running list -> waiting list.
+
+            // Running list.
+            for (var i = RunningList.Count - 1; i >= 0; --i)
+            {
+                var clientInfo = RunningList[i];
+
+                if (curTime < clientInfo.EndTime) continue;
+
+                // End client.
+                Host?.StopClient(clientInfo);
+
+                Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] Stop client ClientName={clientInfo.ClientName}.");
+
+                // Delay a few seconds to restart. Make sure the client has timed out and gone offline.
+                clientInfo.StartTime = curTime.AddSeconds(RestartAfterSeconds);
+
+                // Restart with new simulated player.
+                if (UseNewSimulatedPlayer)
+                {
+                    clientInfo.ClientName = "SimulatedPlayer" + Guid.NewGuid();
+                }
+
+                // Move to wait list.
+                RunningList.RemoveAt(i);
+                WaitingList.Add(clientInfo);
+            }
+
+            // Waiting list.
+            for (var i = WaitingList.Count - 1; i >= 0; --i)
+            {
+                var clientInfo = WaitingList[i];
+
+                if (curTime < clientInfo.StartTime) continue;
+
+                // Start client.
+                Host?.StartClient(clientInfo);
+
+                Logger.WriteLog($"[LifetimeComponent][{DateTime.Now:HH:mm:ss}] Start client ClientName ={clientInfo.ClientName}.");
+
+                // Update lifetime.
+                clientInfo.EndTime = curTime.AddMinutes(Random.Next(MinLifetime, MaxLifetime));
+
+                // Move to running list.
+                WaitingList.RemoveAt(i);
+                RunningList.Add(clientInfo);
             }
         }
     }
