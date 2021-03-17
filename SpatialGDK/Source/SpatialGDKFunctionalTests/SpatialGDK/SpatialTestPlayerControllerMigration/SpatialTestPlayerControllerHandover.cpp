@@ -100,7 +100,7 @@ void ASpatialTestPlayerControllerHandover::PrepareTest()
 		if (LocalWorker == DestinationWorker)
 		{
 			APlayerController* PlayerController = GetPlayerController();
-			if (IsValid(PlayerController))
+			if (AssertIsValid(PlayerController, TEXT("PlayerController should be valid.")))
 			{
 				RequireTrue(PlayerController->HasAuthority(), TEXT("PlayerController should have authority."));
 			}

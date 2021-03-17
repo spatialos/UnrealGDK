@@ -54,11 +54,11 @@ void ASpatialTestNetOwnership::PrepareTest()
 	// Additionally, too many RPCs can be sent, seemingly due to issues with double-receiving crossServerRPCs in the test framework.
 	// Additionally, additionally, I think the fix for the warning not being reported may be to uncomment the owner-checking step down
 	// below, but that pushes the failure rate up way too high.
-	// TODO: UNR-??? test fix
-	// TODO: UNR-??? cross-server rpc fix
+	// TODO: UNR-5183 test fix
+	// TODO: UNR-2529 this epic should solve the cross server rpc double-receive bug
 	if (GetNetDriver()->GetReplicationDriver() != nullptr)
 	{
-		AddStep(TEXT("VacuoslyTrueStep"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
+		AddStep(TEXT("VacuouslyTrueStep"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
 			FinishStep();
 		});
 		return;
@@ -123,7 +123,7 @@ void ASpatialTestNetOwnership::PrepareTest()
 	});
 
 	/* This step is currently commented out, because while it seemingly improves the reliability of the test, when it's uncommented, it
-	actually causes the test to fail approx. 10-20% of the time due to the aforemenetioned CrossServerRPC bug. (UNR-????)
+	actually causes the test to fail approx. 10-20% of the time due to the aforemenetioned CrossServerRPC bug. (solved by UNR-2529 maybe)
 	// Add a client step to make sure the client observes the owner update
 	AddStep(TEXT("SpatialTestNetOwnershipServerMoveCube"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](float DeltaTime) {
 		RequireTrue(NetOwnershipCube->GetOwner() == GetLocalFlowController()->GetOwner(), TEXT("Client should receive the updated owner."));

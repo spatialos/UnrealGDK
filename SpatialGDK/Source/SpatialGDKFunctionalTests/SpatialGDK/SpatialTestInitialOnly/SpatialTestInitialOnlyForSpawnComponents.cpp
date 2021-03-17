@@ -113,23 +113,27 @@ void ASpatialTestInitialOnlyForSpawnComponents::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Client check value"), FWorkerDefinition::Client(1), nullptr, nullptr, [this](float DeltaTime) {
-		TArray<AActor*> SpawnActors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpatialTestInitialOnlySpawnActorWithComponent::StaticClass(), SpawnActors);
-		AssertEqual_Int(SpawnActors.Num(), 1, TEXT("There should be exactly one InitialOnly actor in the world."));
-		for (AActor* Actor : SpawnActors)
-		{
-			ASpatialTestInitialOnlySpawnActorWithComponent* SpawnActor = Cast<ASpatialTestInitialOnlySpawnActorWithComponent>(Actor);
-			if (AssertIsValid(SpawnActor, TEXT("SpawnActor should be valid.")))
+	AddStep(
+		TEXT("Client check value"), FWorkerDefinition::Client(1), nullptr, nullptr,
+		[this](float DeltaTime) {
+			TArray<AActor*> SpawnActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpatialTestInitialOnlySpawnActorWithComponent::StaticClass(), SpawnActors);
+			AssertEqual_Int(SpawnActors.Num(), 1, TEXT("There should be exactly one InitialOnly actor in the world."));
+			for (AActor* Actor : SpawnActors)
 			{
-				RequireEqual_Int(SpawnActor->InitialOnlyComponent->Int_Initial, 1, TEXT("Check InitialOnlyComponent.Int_Initial value."));
-				RequireEqual_Int(SpawnActor->InitialOnlyComponent->Int_Replicate, 2,
-								 TEXT("Check InitialOnlyComponent.Int_Replicate value."));
+				ASpatialTestInitialOnlySpawnActorWithComponent* SpawnActor = Cast<ASpatialTestInitialOnlySpawnActorWithComponent>(Actor);
+				if (AssertIsValid(SpawnActor, TEXT("SpawnActor should be valid.")))
+				{
+					RequireEqual_Int(SpawnActor->InitialOnlyComponent->Int_Initial, 1,
+									 TEXT("Check InitialOnlyComponent.Int_Initial value."));
+					RequireEqual_Int(SpawnActor->InitialOnlyComponent->Int_Replicate, 2,
+									 TEXT("Check InitialOnlyComponent.Int_Replicate value."));
+				}
 			}
-		}
 
-		FinishStep();
-	});
+			FinishStep();
+		},
+		10.0f);
 
 	AddStep(TEXT("Cleanup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Possess the original pawn, so that other tests start from the expected, default set-up

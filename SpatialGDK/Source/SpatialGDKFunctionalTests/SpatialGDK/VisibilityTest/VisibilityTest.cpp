@@ -69,6 +69,11 @@ void AVisibilityTest::PrepareTest()
 			ASpatialFunctionalTestFlowController* ClientOneFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 			APlayerController* PlayerController = Cast<APlayerController>(ClientOneFlowController->GetOwner());
 
+			if (AssertTrue(HasAuthority(), TEXT("We should have authority over the test actor.")))
+			{
+				bRunningWithReplicationGraph = GetNetDriver()->GetReplicationDriver() != nullptr;
+			}
+
 			if (IsValid(PlayerController))
 			{
 				ClientOneSpawnedPawn =
@@ -80,11 +85,6 @@ void AVisibilityTest::PrepareTest()
 				PlayerController->Possess(ClientOneSpawnedPawn);
 
 				FinishStep();
-			}
-
-			if (AssertTrue(HasAuthority(), TEXT("We should have authority over the test actor.")))
-			{
-				bRunningWithReplicationGraph = GetNetDriver()->GetReplicationDriver() != nullptr;
 			}
 		});
 	}
