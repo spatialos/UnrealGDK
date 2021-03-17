@@ -29,7 +29,6 @@ void ARPCInInterfaceTest::PrepareTest()
 			AssertIsValid(TestActor, "Actor exists", this);
 			if (TestActor)
 			{
-				TestActor->SetReplicates(true);
 				TestActor->SetOwner(Client1FlowController->GetOwner());
 			}
 
