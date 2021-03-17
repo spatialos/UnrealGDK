@@ -69,6 +69,8 @@ public:
 	// Entity Creation
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 
+	void RestoreStablyNamedActor(const FUnrealObjectRef& ObjectRef, AActor* Actor);
+
 private:
 	// Helper struct to manage FSpatialObjectRepState update cycle.
 	// TODO: move into own class.
@@ -100,6 +102,9 @@ private:
 
 	void EntityAdded(Worker_EntityId EntityId);
 	void EntityRemoved(Worker_EntityId EntityId);
+
+	void RegisterStablePathEntity(Worker_EntityId EntityId);
+	void UnregisterStablePathEntity(Worker_EntityId EntityId);
 
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
@@ -134,6 +139,8 @@ private:
 	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 
+	USpatialActorChannel* SetUpActorChannel(AActor* Actor, Worker_EntityId EntityId);
+
 	// Entity remove
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 	static FString GetObjectNameFromRepState(const FSpatialObjectRepState& RepState);
@@ -160,6 +167,9 @@ private:
 
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;
+
+	// Holds EntityIds for stably named actors in the view.
+	TMap<FUnrealObjectRef, Worker_EntityId> StablePathToEntityIdMap;
 };
 
 } // namespace SpatialGDK

@@ -3221,6 +3221,21 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* Level, UWorld* InWorld)
 {
 	Super::OnLevelAddedToWorld(Level, InWorld);
 
+	if (!IsServer() && Level != nullptr && ActorSystem.IsValid())
+	{
+		FUnrealObjectRef LevelObjectRef = FUnrealObjectRef::GetStablyNamedObjectRef(Level);
+
+		for (AActor* Actor : Level->Actors)
+		{
+			if (Actor != nullptr && Actor->IsNetStartupActor())
+			{
+				FString ActorName = UWorld::RemovePIEPrefix(Actor->GetFName().ToString());
+
+				ActorSystem->RestoreStablyNamedActor(FUnrealObjectRef(0, 0, ActorName, LevelObjectRef, true), Actor);
+			}
+		}
+	}
+
 	if (IsServer())
 		return;
 
