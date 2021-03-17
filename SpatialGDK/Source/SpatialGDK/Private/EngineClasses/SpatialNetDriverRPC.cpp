@@ -227,7 +227,6 @@ void FSpatialNetDriverRPC::FlushRPCQueue(StandardQueue& Queue)
 {
 	RAIIUpdateContext UpdateCtx(*this);
 
-	TArray<UpdateToSend> Updates;
 	RPCWritingContext Ctx(Queue.Name, MakeUpdateWriteCallback());
 	Queue.FlushAll(Ctx, MakeRPCSentCallback());
 }
@@ -236,7 +235,6 @@ void FSpatialNetDriverRPC::FlushRPCQueueForEntity(Worker_EntityId EntityId, Stan
 {
 	RAIIUpdateContext UpdateCtx(*this);
 
-	TArray<UpdateToSend> Updates;
 	RPCWritingContext Ctx(Queue.Name, MakeUpdateWriteCallback());
 	Queue.Flush(EntityId, Ctx, MakeRPCSentCallback());
 }
