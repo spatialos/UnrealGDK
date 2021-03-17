@@ -4,6 +4,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSpatialDebugMetrics, Log, All);
 

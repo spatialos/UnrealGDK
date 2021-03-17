@@ -2,10 +2,10 @@
 
 #include "Interop/MigrationDiagnosticsSystem.h"
 
-#include "Schema/MigrationDiagnostic.h"
-
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Schema/MigrationDiagnostic.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSpatialMigrationDiagnostics, Log, All);
 

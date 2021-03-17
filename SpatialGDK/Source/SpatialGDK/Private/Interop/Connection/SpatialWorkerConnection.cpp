@@ -12,6 +12,7 @@
 #include "SpatialView/ConnectionHandler/InitialOpListConnectionHandler.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
 #include "Utils/ComponentFactory.h"
+#include "Utils/InterestFactory.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
