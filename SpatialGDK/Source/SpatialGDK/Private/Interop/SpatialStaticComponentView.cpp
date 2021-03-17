@@ -87,11 +87,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::PARTITION_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::Partition>(Op.data);
 		break;
-
-	case SpatialConstants::CUSTOM_PERSISTENCE_COMPONENT_ID:
-		Data = MakeUnique<SpatialGDK::CustomPersistence>(Op.data);
-		break;
-
 	default:
 		// Component is not hand written, but we still want to know the existence of it on this entity.
 		Data = nullptr;
@@ -137,11 +132,6 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 	case SpatialConstants::PARTITION_COMPONENT_ID:
 		Component = GetComponentData<SpatialGDK::Partition>(Op.entity_id);
 		break;
-
-	case SpatialConstants::CUSTOM_PERSISTENCE_COMPONENT_ID:
-		Component = GetComponentData<SpatialGDK::CustomPersistence>(Op.entity_id);
-		break;
-	
 	default:
 		return;
 	}
