@@ -13,10 +13,11 @@ namespace SpatialGDK
 {
 CrossServerRPCService::CrossServerRPCService(const ActorCanExtractRPCDelegate InCanExtractRPCDelegate,
 											 const ExtractRPCDelegate InExtractRPCCallback, const FSubView& InSubView,
-											 FRPCStore& InRPCStore)
+											 const FSubView& InWorkerEntitySubView, FRPCStore& InRPCStore)
 	: CanExtractRPCDelegate(InCanExtractRPCDelegate)
 	, ExtractRPCCallback(InExtractRPCCallback)
 	, SubView(&InSubView)
+	, WorkerEntitySubView(&InWorkerEntitySubView)
 	, RPCStore(&InRPCStore)
 {
 }
@@ -77,67 +78,83 @@ EPushRPCResult CrossServerRPCService::PushCrossServerRPC(Worker_EntityId EntityI
 
 void CrossServerRPCService::AdvanceView()
 {
-	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
-	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
+	const FSubViewDelta* SubViewDeltas[] = { &SubView->GetViewDelta(), &WorkerEntitySubView->GetViewDelta() };
+	for (auto SubViewDelta : SubViewDeltas)
 	{
-		switch (Delta.Type)
+		for (const EntityDelta& Delta : SubViewDelta->EntityDeltas)
 		{
-		case EntityDelta::UPDATE:
-		{
-			for (const ComponentChange& Change : Delta.ComponentUpdates)
-			{
-				ComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update);
-			}
-			break;
+			AdvanceViewForEntityDelta(Delta);
 		}
-		case EntityDelta::ADD:
+	}
+}
+
+void CrossServerRPCService::AdvanceViewForEntityDelta(const EntityDelta& Delta)
+{
+	switch (Delta.Type)
+	{
+	case EntityDelta::UPDATE:
+	{
+		for (const ComponentChange& Change : Delta.ComponentUpdates)
+		{
+			ComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update);
+		}
+		break;
+	}
+	case EntityDelta::ADD:
+		PopulateDataStore(Delta.EntityId);
+		break;
+	case EntityDelta::REMOVE:
+	case EntityDelta::TEMPORARILY_REMOVED:
+		CrossServerDataStore.Remove(Delta.EntityId);
+		RPCStore->PendingComponentUpdatesToSend.Remove(
+			EntityComponentId(Delta.EntityId, SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID));
+		RPCStore->PendingComponentUpdatesToSend.Remove(
+			EntityComponentId(Delta.EntityId, SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID));
+		if (Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
+		{
 			PopulateDataStore(Delta.EntityId);
-			break;
-		case EntityDelta::REMOVE:
-		case EntityDelta::TEMPORARILY_REMOVED:
-			CrossServerDataStore.Remove(Delta.EntityId);
-			RPCStore->PendingComponentUpdatesToSend.Remove(
-				EntityComponentId(Delta.EntityId, SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID));
-			RPCStore->PendingComponentUpdatesToSend.Remove(
-				EntityComponentId(Delta.EntityId, SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID));
-			if (Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
-			{
-				PopulateDataStore(Delta.EntityId);
-			}
-			break;
-		default:
-			break;
 		}
+		break;
+	default:
+		break;
 	}
 }
 
 void CrossServerRPCService::ProcessChanges()
 {
-	const FSubViewDelta& SubViewDelta = SubView->GetViewDelta();
-	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
+	const FSubViewDelta* SubViewDeltas[] = { &SubView->GetViewDelta(), &WorkerEntitySubView->GetViewDelta() };
+	for (auto SubViewDelta : SubViewDeltas)
 	{
-		switch (Delta.Type)
+		for (const EntityDelta& Delta : SubViewDelta->EntityDeltas)
 		{
-		case EntityDelta::UPDATE:
-		{
-			for (const ComponentChange& Change : Delta.ComponentUpdates)
-			{
-				ProcessComponentChange(Delta.EntityId, Change.ComponentId);
-			}
-			break;
+			ProcessChangesForEntityDelta(Delta);
 		}
-		case EntityDelta::ADD:
-			EntityAdded(Delta.EntityId);
-			break;
-		case EntityDelta::REMOVE:
+	}
+}
 
-			break;
-		case EntityDelta::TEMPORARILY_REMOVED:
-			EntityAdded(Delta.EntityId);
-			break;
-		default:
-			break;
+void CrossServerRPCService::ProcessChangesForEntityDelta(const EntityDelta& Delta)
+{
+	switch (Delta.Type)
+	{
+	case EntityDelta::UPDATE:
+	{
+		for (const ComponentChange& Change : Delta.ComponentUpdates)
+		{
+			ProcessComponentChange(Delta.EntityId, Change.ComponentId);
 		}
+		break;
+	}
+	case EntityDelta::ADD:
+		EntityAdded(Delta.EntityId);
+		break;
+	case EntityDelta::REMOVE:
+
+		break;
+	case EntityDelta::TEMPORARILY_REMOVED:
+		EntityAdded(Delta.EntityId);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -152,7 +169,10 @@ void CrossServerRPCService::EntityAdded(const Worker_EntityId EntityId)
 		OnEndpointAuthorityGained(EntityId, Component);
 	}
 	CrossServerEndpoints* Endpoints = CrossServerDataStore.Find(EntityId);
-	HandleRPC(EntityId, Endpoints->ReceivedRPCs.GetValue());
+	if (Endpoints->ReceivedRPCs.IsSet())
+	{
+		HandleRPC(EntityId, Endpoints->ReceivedRPCs.GetValue());
+	}
 	UpdateSentRPCsACKs(EntityId, Endpoints->ACKedRPCs.GetValue());
 }
 
@@ -212,13 +232,19 @@ void CrossServerRPCService::PopulateDataStore(const Worker_EntityId EntityId)
 	Schema_ComponentData* SenderACKData =
 		Entity.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID })
 			->GetUnderlying();
-	Schema_ComponentData* ReceiverData =
-		Entity.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID })
-			->GetUnderlying();
+
+	const ComponentData* ReceiverData =
+		Entity.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID });
 
 	CrossServerEndpoints& NewEntry = CrossServerDataStore.FindOrAdd(EntityId);
 	NewEntry.ACKedRPCs.Emplace(CrossServerEndpointACK(SenderACKData));
-	NewEntry.ReceivedRPCs.Emplace(CrossServerEndpoint(ReceiverData));
+
+	// The worker entity won't have a receiver
+	// Could still add for for simplicity though...
+	if (ReceiverData)
+	{
+		NewEntry.ReceivedRPCs.Emplace(CrossServerEndpoint(ReceiverData->GetUnderlying()));
+	}
 }
 
 void CrossServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId EntityId, const ComponentData& Component)

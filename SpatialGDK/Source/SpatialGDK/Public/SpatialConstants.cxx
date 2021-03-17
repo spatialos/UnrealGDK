@@ -256,6 +256,17 @@ const TArray<Worker_ComponentId> KnownEntityAuthorityComponents = { POSITION_COM
                                                                     DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID,
                                                                     GSM_SHUTDOWN_COMPONENT_ID,	 VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID};
 
+const TMap<Worker_ComponentId, FString> WorkerEntityAuthorityComponents = {
+    { POSITION_COMPONENT_ID, "improbable.Position" },
+    { INTEREST_COMPONENT_ID, "improbable.Interest" },
+    { SERVER_WORKER_COMPONENT_ID, "unreal.ServerWorker"},
+    { AUTHORITY_DELEGATION_COMPONENT_ID, "improbable.AuthorityDelegation" },
+    { CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderRPCs" },
+    { CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
+};
+
+const TArray<FString> WorkerEntitySchemaImports = { "unreal/gdk/rpc_components.schema", "unreal/generated/rpc_endpoints.schema" };
+
 }
 
 #undef LOCTEXT_NAMESPACE

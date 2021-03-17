@@ -125,6 +125,11 @@ public:
 
 	virtual void PushCrossServerRPCSender(AActor* Sender) override;
 	virtual void PopCrossServerRPCSender(AActor* Sender) override;
+	virtual void PushDependentActor(AActor* Dependent) override;
+	virtual void PopDependentActor(AActor* Dependent) override;
+	virtual void PushNetWriteFenceResolution();
+	virtual void PopNetWriteFenceResolution();
+	virtual bool NeedWriteFence(AActor* Target, UFunction* Function) override;
 	// End UNetDriver interface.
 
 	void OnConnectionToSpatialOSSucceeded();
