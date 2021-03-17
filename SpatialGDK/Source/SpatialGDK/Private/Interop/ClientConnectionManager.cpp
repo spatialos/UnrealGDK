@@ -21,6 +21,8 @@ ClientConnectionManager::ClientConnectionManager(const FSubView& InSubView, USpa
 	: SubView(&InSubView)
 	, NetDriver(InNetDriver)
 {
+	ResponseHandler.AddResponseHandler(SpatialConstants::WORKER_COMPONENT_ID, SpatialConstants::WORKER_DISCONNECT_COMMAND_ID,
+									   FOnCommandResponseWithOp::FDelegate::CreateRaw(this, &ClientConnectionManager::OnRequestReceived));
 }
 
 void ClientConnectionManager::Advance()
@@ -37,33 +39,31 @@ void ClientConnectionManager::Advance()
 		}
 	}
 
-	for (const Worker_Op& Op : *SubViewDelta.WorkerMessages)
+	ResponseHandler.ProcessOps(*SubViewDelta.WorkerMessages);
+}
+
+void ClientConnectionManager::OnRequestReceived(const Worker_Op&, const Worker_CommandResponseOp& CommandResponseOp)
+{
+	if (CommandResponseOp.response.component_id == SpatialConstants::WORKER_COMPONENT_ID)
 	{
-		if (Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE)
+		if (CommandResponseOp.response.command_index == SpatialConstants::WORKER_DISCONNECT_COMMAND_ID)
 		{
-			const Worker_CommandResponseOp& CommandResponseOp = Op.op.command_response;
-			if (CommandResponseOp.response.component_id == SpatialConstants::WORKER_COMPONENT_ID)
+			const Worker_RequestId RequestId = CommandResponseOp.request_id;
+			Worker_EntityId ClientEntityId;
+			if (DisconnectRequestToConnectionEntityId.RemoveAndCopyValue(RequestId, ClientEntityId))
 			{
-				if (CommandResponseOp.response.command_index == SpatialConstants::WORKER_DISCONNECT_COMMAND_ID)
+				if (CommandResponseOp.status_code == WORKER_STATUS_CODE_SUCCESS)
 				{
-					const Worker_RequestId RequestId = CommandResponseOp.request_id;
-					Worker_EntityId ClientEntityId;
-					if (DisconnectRequestToConnectionEntityId.RemoveAndCopyValue(RequestId, ClientEntityId))
+					TWeakObjectPtr<USpatialNetConnection> ClientConnection = FindClientConnectionFromWorkerEntityId(ClientEntityId);
+					if (ClientConnection.IsValid())
 					{
-						if (Op.op.command_response.status_code == WORKER_STATUS_CODE_SUCCESS)
-						{
-							TWeakObjectPtr<USpatialNetConnection> ClientConnection = FindClientConnectionFromWorkerEntityId(ClientEntityId);
-							if (ClientConnection.IsValid())
-							{
-								ClientConnection->CleanUp();
-							};
-						}
-						else
-						{
-							UE_LOG(LogWorkerEntitySystem, Error, TEXT("SystemEntityCommand failed: request id: %d, message: %s"), RequestId,
-								   UTF8_TO_TCHAR(CommandResponseOp.message));
-						}
-					}
+						ClientConnection->CleanUp();
+					};
+				}
+				else
+				{
+					UE_LOG(LogWorkerEntitySystem, Error, TEXT("SystemEntityCommand failed: request id: %d, message: %s"), RequestId,
+						   UTF8_TO_TCHAR(CommandResponseOp.message));
 				}
 			}
 		}

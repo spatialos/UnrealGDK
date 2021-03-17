@@ -37,6 +37,9 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
 	ClaimHandler = MakeUnique<ClaimPartitionHandler>(*NetDriver->Connection);
+	RequestHandler.AddRequestHandler(
+		SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID,
+		FOnCommandRequestWithOp::FDelegate::CreateUObject(this, &UGlobalStateManager::OnReceiveShutdownCommand));
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
 #if WITH_EDITOR
@@ -207,7 +210,20 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 	}
 }
 
-#if WITH_EDITOR
+void UGlobalStateManager::OnReceiveShutdownCommand(const Worker_Op& Op, const Worker_CommandRequestOp& CommandRequestOp)
+{
+	ReceiveShutdownMultiProcessRequest();
+
+	SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+
+	if (EventTracer != nullptr)
+	{
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"),
+																					   Op.op.command_request.request_id),
+								/* Causes */ Op.span_id, /* NumCauses */ 1);
+	}
+}
+
 void UGlobalStateManager::OnShutdownComponentUpdate(Schema_ComponentUpdate* Update)
 {
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update);
@@ -217,7 +233,6 @@ void UGlobalStateManager::OnShutdownComponentUpdate(Schema_ComponentUpdate* Upda
 		ReceiveShutdownAdditionalServersEvent();
 	}
 }
-#endif // WITH_EDITOR
 
 void UGlobalStateManager::ReceiveShutdownAdditionalServersEvent()
 {
@@ -688,35 +703,7 @@ void UGlobalStateManager::Advance()
 	QueryHandler.ProcessOps(Ops);
 
 #if WITH_EDITOR
-	for (const Worker_Op& Op : Ops)
-	{
-		if (Op.op_type != WORKER_OP_TYPE_COMMAND_REQUEST)
-		{
-			continue;
-		}
-
-		const Worker_CommandRequestOp& CommandRequest = Op.op.command_request;
-		const Worker_ComponentId ComponentId = CommandRequest.request.component_id;
-		const Worker_CommandIndex CommandIndex = CommandRequest.request.command_index;
-		const Worker_RequestId RequestId = CommandRequest.request_id;
-
-		if (ComponentId == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID
-			&& CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
-		{
-			ReceiveShutdownMultiProcessRequest();
-
-			SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
-
-			if (EventTracer != nullptr)
-			{
-				EventTracer->TraceEvent(
-					FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"), RequestId),
-					/* Causes */ Op.span_id, /* NumCauses */ 1);
-			}
-
-			return;
-		}
-	}
+	RequestHandler.ProcessOps(Ops);
 #endif // WITH_EDITOR
 }
 

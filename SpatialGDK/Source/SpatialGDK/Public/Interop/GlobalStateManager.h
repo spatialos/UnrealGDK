@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "Utils/SchemaUtils.h"
-
 #include "CoreMinimal.h"
 #include "EngineUtils.h"
 #include "UObject/NoExportTypes.h"
@@ -13,6 +11,8 @@
 
 #include "EntityQueryHandler.h"
 #include "Interop/ClaimPartitionHandler.h"
+#include "Interop/EntityCommandHandler.h"
+#include "Utils/SchemaUtils.h"
 
 #include "GlobalStateManager.generated.h"
 
@@ -97,6 +97,8 @@ public:
 	void OnPrePIEEnded(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
 
+	void OnReceiveShutdownCommand(const Worker_Op& Op, const Worker_CommandRequestOp& CommandRequestOp);
+
 	void OnShutdownComponentUpdate(Schema_ComponentUpdate* Update);
 	void ReceiveShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
@@ -122,7 +124,11 @@ private:
 	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimHandler;
 	SpatialGDK::EntityQueryHandler QueryHandler;
 
+#if WITH_EDITOR
+	SpatialGDK::EntityCommandRequestHandler RequestHandler;
+
 	FDelegateHandle PrePIEEndedHandle;
+#endif // WITH_EDITOR
 
 	bool bTranslationQueryInFlight;
 };

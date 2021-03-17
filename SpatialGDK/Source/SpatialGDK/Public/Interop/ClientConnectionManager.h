@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+
 #include "EngineClasses/SpatialNetConnection.h"
+#include "Interop/EntityCommandHandler.h"
 #include "SpatialCommonTypes.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogWorkerEntitySystem, Log, All)
@@ -25,6 +27,7 @@ public:
 	ClientConnectionManager(const FSubView& InSubView, USpatialNetDriver* InNetDriver);
 
 	void Advance();
+	void OnRequestReceived(const Worker_Op&, const Worker_CommandResponseOp& CommandResponseOp);
 
 	void RegisterClientConnection(Worker_EntityId InWorkerEntityId, USpatialNetConnection* ClientConnection);
 	void CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp);
@@ -39,6 +42,8 @@ private:
 
 	const FSubView* SubView;
 	USpatialNetDriver* NetDriver;
+
+	EntityCommandResponseHandler ResponseHandler;
 
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 
