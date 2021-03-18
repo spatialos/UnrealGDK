@@ -15,28 +15,35 @@ namespace SpatialGDK
 class WellKnownEntitySystem
 {
 public:
-	WellKnownEntitySystem(const FSubView& SubView, USpatialWorkerConnection* InConnection, int InNumberOfWorkers,
+	WellKnownEntitySystem(const FSubView& SubView, const FSubView& SystemEntitySubView, USpatialWorkerConnection* InConnection, int InNumberOfWorkers,
 						  SpatialVirtualWorkerTranslator& InVirtualWorkerTranslator, UGlobalStateManager& InGlobalStateManager);
 	void Advance();
 
 	void OnMapLoaded() const;
 
 private:
-	void ProcessComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
-	void ProcessComponentAdd(const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
+	void ProcessComponentUpdate(const Worker_ComponentId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
+	void ProcessComponentAdd(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 	void ProcessAuthorityGain(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
 	void ProcessEntityAdd(const Worker_EntityId EntityId);
 
 	void InitializeVirtualWorkerTranslationManager();
+	void SaveSnapshotPartitionAuthServerSystemEntity();
 	void MaybeClaimSnapshotPartition();
 
-	const FSubView* SubView;
+	TArray<Worker_EntityId> GetAllServerSystemEntities() const;
+
+	const FSubView* GDKSubView;
+	const FSubView* SystemEntitySubView;
 
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
 	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 	UGlobalStateManager* GlobalStateManager;
 	USpatialWorkerConnection* Connection;
 	int NumberOfWorkers;
+
+	Worker_EntityId SnapshotPartitionServerSystemEntity;
+	bool SnapshotPartitionAuthServerCrashed;
 };
 
 } // namespace SpatialGDK

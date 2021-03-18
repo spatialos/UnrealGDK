@@ -6,11 +6,12 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
-#include "Containers/Queue.h"
 #include "CoreMinimal.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
+
+#include "Schema/VirtualWorkerTranslation.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslator, Log, All)
 
@@ -19,13 +20,6 @@ class UAbstractLBStrategy;
 class SPATIALGDK_API SpatialVirtualWorkerTranslator
 {
 public:
-	struct WorkerInformation
-	{
-		PhysicalWorkerName WorkerName;
-		Worker_EntityId ServerWorkerEntityId;
-		Worker_PartitionId PartitionEntityId;
-	};
-
 	SpatialVirtualWorkerTranslator() = delete;
 	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, USpatialNetDriver* InNetDriver,
 								   PhysicalWorkerName InLocalPhysicalWorkerName);
@@ -48,14 +42,16 @@ public:
 	Worker_EntityId GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const;
 
 	// On receiving a version of the translation state, apply that to the internal mapping.
-	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
+	void ApplyVirtualWorkerManagerData(const SpatialGDK::VirtualWorkerTranslation& Translation);
 
 	USpatialNetDriver* NetDriver;
 
 	TWeakObjectPtr<UAbstractLBStrategy> LoadBalanceStrategy;
 
 private:
-	TMap<VirtualWorkerId, WorkerInformation> VirtualToPhysicalWorkerMapping;
+	friend class SpatialVirtualWorkerTranslationManager;
+
+	TMap<VirtualWorkerId, SpatialGDK::VirtualWorkerInfo> VirtualToPhysicalWorkerMapping;
 
 	bool bIsReady;
 
@@ -64,9 +60,6 @@ private:
 	VirtualWorkerId LocalVirtualWorkerId;
 	Worker_PartitionId LocalPartitionId;
 
-	// Serialization and deserialization of the mapping.
-	void ApplyMappingFromSchema(Schema_Object* Object);
-
-	void UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName WorkerName, Worker_PartitionId PartitionEntityId,
-					   Worker_EntityId ServerWorkerEntityId);
+	// Deserializing component data to local state.
+	void UpdateMapping(const SpatialGDK::VirtualWorkerInfo& VirtualWorkerInfo);
 };

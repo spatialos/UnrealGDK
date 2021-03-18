@@ -602,7 +602,21 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const AActor* 
 	return AlwaysInterestedConstraint;
 }
 
-QueryConstraint CreateOrConstraint(const TArray<Worker_ComponentId>& ComponentIds)
+QueryConstraint CreateEntityOrConstraint(const TArray<Worker_EntityId>& EntityIds)
+{
+	QueryConstraint EntityOrConstraint;
+
+	for (Worker_EntityId EntityId : EntityIds)
+	{
+		QueryConstraint Constraint;
+		Constraint.EntityIdConstraint = EntityId;
+		EntityOrConstraint.OrConstraint.Add(Constraint);
+	}
+
+	return EntityOrConstraint;
+}
+
+QueryConstraint CreateComponentOrConstraint(const TArray<Worker_ComponentId>& ComponentIds)
 {
 	QueryConstraint ComponentOrConstraint;
 
@@ -618,18 +632,17 @@ QueryConstraint CreateOrConstraint(const TArray<Worker_ComponentId>& ComponentId
 
 QueryConstraint InterestFactory::CreateGDKSnapshotEntitiesConstraint() const
 {
-	return CreateOrConstraint({ SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID,
-								SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID });
+	return CreateEntityOrConstraint({ SpatialConstants::INITIAL_SPAWNER_ENTITY_ID, SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID });
 }
 
 QueryConstraint InterestFactory::CreateClientAlwaysRelevantConstraint() const
 {
-	return CreateOrConstraint({ SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID });
+	return CreateComponentOrConstraint({ SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID });
 }
 
 QueryConstraint InterestFactory::CreateServerAlwaysRelevantConstraint() const
 {
-	return CreateOrConstraint(
+	return CreateComponentOrConstraint(
 		{ SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID });
 }
 

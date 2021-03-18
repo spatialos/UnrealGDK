@@ -154,6 +154,10 @@ const Worker_ComponentId GDK_DEBUG_TAG_COMPONENT_ID = 2011;
 // Add component ids above here, this should always be last and be equal to the previous component id
 const Worker_ComponentId LAST_EC_COMPONENT_ID = 2011;
 
+const Schema_FieldId SYSTEM_WORKER_ID_FIELD = 1;
+const Schema_FieldId SYSTEM_WORKER_TYPE_FIELD = 2;
+const Schema_FieldId SYSTEM_WORKER_CONNECTION_FIELD = 3;
+
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
 const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID = 3;
@@ -212,6 +216,7 @@ const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID = 1;
 const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME_ID = 2;
 const Schema_FieldId MAPPING_SERVER_WORKER_ENTITY_ID = 3;
 const Schema_FieldId MAPPING_PARTITION_ID = 4;
+const Schema_FieldId MAPPING_SYSTEM_WORKER_ENTITY_ID = 5;
 extern const PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME;
 
 // WorkerEntity Field IDs.

@@ -16,7 +16,8 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(S
 																			   SpatialVirtualWorkerTranslator* InTranslator)
 	: Translator(InTranslator)
 	, Connection(InConnection)
-	, Partitions({})
+	, VirtualToPhysicalWorkerMapping({})
+	, NumVirtualWorkers(0)
 	, bWorkerEntityQueryInFlight(false)
 	, ClaimPartitionHandler(*InConnection)
 {
@@ -47,25 +48,38 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Compo
 
 	if (!bAuthoritative)
 	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error,
-			   TEXT("Lost authority over the translation mapping. This is not supported."));
+		// A healthy server should never lose auth (we supported worker recovery, but that only happens for disconnected servers).
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("Lost authority over the translation mapping. This should never happen."));
 		return;
 	}
 
 	const int32 ExistingTranslatorMappingCount = Translator->GetMappingCount();
+	// Fresh deployment. We need to create partition entities before we start assigning virtual workers.
 	if (ExistingTranslatorMappingCount == 0)
 	{
-		// Fresh deployment, we need to create partition entities before we start assigning virtual workers.
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
 			   TEXT("Gained authority over the VirtualWorker translation, spawning partition entities."));
 		SpawnPartitionEntitiesForVirtualWorkerIds();
 	}
+	// Previously snapshot partition auth server crashed. Need to find that server's entry in the translator mapping
+	// so we're ready to reassign the virtual worker when the replacement server starts.
+	else if (Translator->IsReady())
+	{
+		// Because we've this server has just gained authority, the local VTM state will be empty, so we copy over
+		// from the translator.
+		VirtualToPhysicalWorkerMapping = Translator->VirtualToPhysicalWorkerMapping;
+
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("Newly elected VTM server received authority. Cleaning up translator map."));
+		CleanupTranslatorMappingAfterAuthorityChange();
+	}
+	// Restarting from snapshot: reusing partition entities but have a whole new set of partition entities.
 	else if (ExistingTranslatorMappingCount == NumVirtualWorkers)
 	{
 		// Partitions already exist, reclaim them with latest server worker entities
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
-			   TEXT("Gained authority over the VirtualWorker translation, reclaiming partition entities."));
-		ReclaimPartitionEntities();
+			   TEXT("Gained authority over the VirtualWorker translation after snapshot restart. Resetting virtual worker mapping."));
+		ResetVirtualWorkerMappingAfterSnapshotReset();
+		QueryForServerWorkerEntities();
 	}
 	else
 	{
@@ -76,29 +90,93 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Compo
 	}
 }
 
+void SpatialVirtualWorkerTranslationManager::SetKnownServerSystemEntities(TArray<Worker_EntityId> ServerSystemEntities)
+{
+	KnownServerSystemEntities = ServerSystemEntities;
+}
+
+void SpatialVirtualWorkerTranslationManager::OnWorkerDisconnected(const Worker_EntityId DisconnectedSystemEntityId)
+{
+	// If we finish this loop without hitting anything, we assume it's a client that disconnected.
+	for (auto& VirtualWorkerInfo : VirtualToPhysicalWorkerMapping)
+	{
+		if (VirtualWorkerInfo.Value.ServerSystemWorkerEntity == DisconnectedSystemEntityId)
+		{
+			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("VTM identified disconnected server %s"), *VirtualWorkerInfo.Value.PhysicalWorkerName);
+			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT(" - virtual worker %ld"), VirtualWorkerInfo.Key);
+			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT(" - partition %lld"), VirtualWorkerInfo.Value.PartitionId);
+			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT(" - system entity %lld"), VirtualWorkerInfo.Value.ServerSystemWorkerEntity);
+
+			ReclaimCrashedVirtualWorker(VirtualWorkerInfo.Key);
+		}
+	}
+}
+
+void SpatialVirtualWorkerTranslationManager::CleanupTranslatorMappingAfterAuthorityChange()
+{
+	TArray<VirtualWorkerId> CrashedVirtualWorkers;
+
+	for (auto& VirtualWorkerInfo : VirtualToPhysicalWorkerMapping)
+	{
+		if (!KnownServerSystemEntities.Contains(VirtualWorkerInfo.Value.ServerSystemWorkerEntity))
+		{
+			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT(" - detected crashed virtual worker %ld"), VirtualWorkerInfo.Key);
+			CrashedVirtualWorkers.Add(VirtualWorkerInfo.Key);
+		}
+	}
+
+	// In a different loop in case multiple servers crashed that we're trying to clean up, and we don't want to mess with
+	for (const auto& VirtualWorkerId : CrashedVirtualWorkers)
+	{
+		ReclaimCrashedVirtualWorker(VirtualWorkerId);
+	}
+}
+
+void SpatialVirtualWorkerTranslationManager::ReclaimCrashedVirtualWorker(const VirtualWorkerId VirtualWorker)
+{
+	// Get the current translator mapping for the relevant virtual worker.
+	SpatialGDK::VirtualWorkerInfo* VirtualWorkerMappingInfo = VirtualToPhysicalWorkerMapping.Find(VirtualWorker);
+	if (VirtualWorkerMappingInfo == nullptr)
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("Failed to unset virtual worker %ld translator mapping after server crash. Could not find mapping."), VirtualWorker);
+		return;
+	}
+
+	// Delete the server worker entity for the crashed server.
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT(" - deleting crashed server worker entity: %lld"), VirtualWorkerMappingInfo->ServerWorkerEntity);
+	Translator->NetDriver->Connection->SendDeleteEntityRequest(VirtualWorkerMappingInfo->ServerWorkerEntity, SpatialGDK::RETRY_UNTIL_COMPLETE);
+
+	// Just tidying up internal state keeping.
+	// We could consider using this to broadcast to other servers that this virtual worker has crashed.
+	VirtualWorkerMappingInfo->PhysicalWorkerName = FString();
+	VirtualWorkerMappingInfo->ServerWorkerEntity = SpatialConstants::INVALID_ENTITY_ID;
+
+	// Add the corresponding virtual worker ID for the crashed server back into the unassigned list.
+	VirtualWorkersToAssign.Emplace(VirtualWorker);
+}
+
 void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntitiesForVirtualWorkerIds()
 {
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("Spawning partition entities for %d virtual workers"),
 		   VirtualWorkersToAssign.Num());
 	for (const VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
 	{
-		const Worker_EntityId PartitionEntityId = Translator->NetDriver->PackageMap->AllocateNewEntityId();
+		const Worker_EntityId PartitionId = Translator->NetDriver->PackageMap->AllocateNewEntityId();
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("- Virtual Worker: %d. Entity: %lld. "), VirtualWorkerId,
-			   PartitionEntityId);
-		SpawnPartitionEntity(PartitionEntityId, VirtualWorkerId);
+			   PartitionId);
+		SpawnPartitionEntity(PartitionId, VirtualWorkerId);
 	}
 }
 
-void SpatialVirtualWorkerTranslationManager::ReclaimPartitionEntities()
+void SpatialVirtualWorkerTranslationManager::ResetVirtualWorkerMappingAfterSnapshotReset()
 {
-	Partitions.Empty();
-	for (const VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
+	VirtualToPhysicalWorkerMapping.Empty();
+	for (const VirtualWorkerId VirtualWorker : VirtualWorkersToAssign)
 	{
-		const Worker_PartitionId PartitionId = Translator->GetPartitionEntityForVirtualWorker(VirtualWorkerId);
+		const Worker_PartitionId PartitionId = Translator->GetPartitionEntityForVirtualWorker(VirtualWorker);
 		check(PartitionId != SpatialConstants::INVALID_ENTITY_ID);
-		Partitions.Emplace(PartitionInfo{ PartitionId, VirtualWorkerId, SpatialConstants::INVALID_ENTITY_ID });
+		VirtualToPhysicalWorkerMapping.Add(VirtualWorker, SpatialGDK::VirtualWorkerInfo{ VirtualWorker, FString(), SpatialConstants::INVALID_ENTITY_ID, PartitionId, SpatialConstants::INVALID_ENTITY_ID });
 	}
-	QueryForServerWorkerEntities();
 }
 
 void SpatialVirtualWorkerTranslationManager::Advance(const TArray<Worker_Op>& Ops)
@@ -108,17 +186,15 @@ void SpatialVirtualWorkerTranslationManager::Advance(const TArray<Worker_Op>& Op
 	QueryHandler.ProcessOps(Ops);
 }
 
-// For each entry in the map, write a VirtualWorkerMapping type object to the Schema object.
-void SpatialVirtualWorkerTranslationManager::WriteMappingToSchema(Schema_Object* Object) const
+TArray<Worker_PartitionId> SpatialVirtualWorkerTranslationManager::GetAllPartitions() const
 {
-	for (const auto& Entry : VirtualToPhysicalWorkerMapping)
+	TArray<Worker_PartitionId> Partitions;
+	Partitions.SetNum(VirtualToPhysicalWorkerMapping.Num());
+	for (const auto& WorkerInfo : VirtualToPhysicalWorkerMapping)
 	{
-		Schema_Object* EntryObject = Schema_AddObject(Object, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID);
-		Schema_AddUint32(EntryObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID, Entry.Key);
-		SpatialGDK::AddStringToSchema(EntryObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID, Entry.Value.WorkerName);
-		Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID, Entry.Value.ServerWorkerEntityId);
-		Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_PARTITION_ID, Entry.Value.PartitionEntityId);
+		Partitions.Emplace(WorkerInfo.Value.PartitionId);
 	}
+	return Partitions;
 }
 
 // This method is called on the worker who is authoritative over the translation mapping. Based on the results of the
@@ -160,6 +236,40 @@ bool SpatialVirtualWorkerTranslationManager::AllServerWorkersAreReady(const Work
 // system entity query, assign the VirtualWorkerIds to the workers represented by the system entities.
 void SpatialVirtualWorkerTranslationManager::AssignPartitionsToEachServerWorkerFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
+	TArray<TTuple<Worker_EntityId, SpatialGDK::ServerWorker>> ServerWorkers = ExtractServerWorkerDataFromQueryResponse(Op);
+
+	int ServerNum = 0;
+	for (auto& VirtualWorkerInfo : VirtualToPhysicalWorkerMapping)
+	{
+		VirtualWorkerId VirtualWorker = VirtualWorkerInfo.Key;
+		Worker_PartitionId PartitionId = VirtualWorkerInfo.Value.PartitionId;
+
+		// Get data from the server worker we're assign
+		const TTuple<Worker_EntityId, SpatialGDK::ServerWorker>& ServerWorkerToAssign = ServerWorkers[ServerNum];
+		const FString& WorkerName = ServerWorkerToAssign.Value.WorkerName;
+		const Worker_EntityId& ServerSystemWorkerEntity = ServerWorkerToAssign.Value.SystemEntityId;
+
+		// Locally assign the relevant server details.
+		// This is used for lookup if ClaimPartition commands fail.
+		VirtualWorkerInfo.Value.PhysicalWorkerName = WorkerName;
+		VirtualWorkerInfo.Value.ServerSystemWorkerEntity = ServerSystemWorkerEntity;
+		VirtualWorkerInfo.Value.ServerWorkerEntity = ServerWorkerToAssign.Key;
+
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning,
+               TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on server %s"), VirtualWorker,
+               PartitionId, *WorkerName);
+
+		ClaimPartitionHandler.ClaimPartition(ServerSystemWorkerEntity, PartitionId);
+
+		ServerNum++;
+	}
+}
+
+TArray<TTuple<Worker_EntityId, SpatialGDK::ServerWorker>> SpatialVirtualWorkerTranslationManager::ExtractServerWorkerDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
+{
+	TArray<TTuple<Worker_EntityId, SpatialGDK::ServerWorker>> ServerWorkers;
+	ServerWorkers.SetNum(Op.result_count);
+
 	// The query response is an array of entities. Each of these represents a worker.
 	for (uint32_t i = 0; i < Op.result_count; ++i)
 	{
@@ -172,54 +282,41 @@ void SpatialVirtualWorkerTranslationManager::AssignPartitionsToEachServerWorkerF
 			// which is the string we use to refer to them as a physical worker ID.
 			if (Data.component_id == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
 			{
-				const Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-				PartitionInfo& Partition = Partitions[i];
-
-				// TODO(zoning): Currently, this only works if server workers never die. Once we want to support replacing
-				// workers, this will need to process UnassignWorker before processing AssignWorker.
-				PhysicalWorkerName WorkerName = SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
-
-				Worker_EntityId SystemEntityId = Schema_GetEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
-
-				// We store this so we can lookup when ClaimPartition commands fail.
-				Partition.SimulatingWorkerSystemEntityId = SystemEntityId;
-
-				AssignPartitionToWorker(WorkerName, Entity.entity_id, SystemEntityId, Partition);
+				ServerWorkers[i] = MakeTuple(Entity.entity_id, SpatialGDK::ServerWorker(Data));
 			}
 		}
 	}
+
+	return ServerWorkers;
 }
 
 // This will be called on the worker authoritative for the translation mapping to push the new version of the map
 // to the SpatialOS storage.
 void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate() const
 {
-	// Construct the mapping update based on the local virtual worker to physical worker mapping.
-	FWorkerComponentUpdate Update = {};
-	Update.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate();
-	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
+	// Serialize data internal state to component data
+	TArray<SpatialGDK::VirtualWorkerInfo> VirtualWorkerMappingList;
+	VirtualToPhysicalWorkerMapping.GenerateValueArray(VirtualWorkerMappingList);
+	const SpatialGDK::VirtualWorkerTranslation ComponentData = SpatialGDK::VirtualWorkerTranslation(VirtualWorkerMappingList);
 
-	WriteMappingToSchema(UpdateObject);
-
-	// The Translator on the worker which hosts the manager won't get the component update notification,
-	// so send it across directly.
+	// Loopback the component data to the local translator.
 	check(Translator != nullptr);
-	Translator->ApplyVirtualWorkerManagerData(UpdateObject);
+	Translator->ApplyVirtualWorkerManagerData(ComponentData);
 
+	// Send to the Runtime.
 	check(Connection != nullptr);
+	FWorkerComponentUpdate Update = ComponentData.CreateVirtualWorkerTranslationUpdate();
 	Connection->SendComponentUpdate(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, &Update);
 }
 
-void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorkerId)
+void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityId PartitionId, VirtualWorkerId VirtualWorkerId)
 {
 	TArray<FWorkerComponentData> Components = SpatialGDK::EntityFactory::CreatePartitionEntityComponents(
-		PartitionEntityId, Translator->NetDriver->InterestFactory.Get(), Translator->LoadBalanceStrategy.Get(), VirtualWorkerId,
+		PartitionId, Translator->NetDriver->InterestFactory.Get(), Translator->LoadBalanceStrategy.Get(), VirtualWorkerId,
 		Translator->NetDriver->DebugCtx != nullptr);
 
 	const Worker_RequestId RequestId =
-		Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
+		Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionId, SpatialGDK::RETRY_UNTIL_COMPLETE);
 
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
 	OnCreateWorkerEntityResponse.BindLambda([this, VirtualWorkerId](const Worker_CreateEntityResponseOp& Op) {
@@ -242,14 +339,14 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 	CreateEntityHandler.AddRequest(RequestId, MoveTemp(OnCreateWorkerEntityResponse));
 }
 
-void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker)
+void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_EntityId PartitionId, VirtualWorkerId VirtualWorker)
 {
-	Partitions.Emplace(PartitionInfo{ PartitionEntityId, VirtualWorker, SpatialConstants::INVALID_ENTITY_ID });
+	VirtualToPhysicalWorkerMapping.Add(VirtualWorker, SpatialGDK::VirtualWorkerInfo{ VirtualWorker, FString(), SpatialConstants::INVALID_ENTITY_ID, PartitionId, SpatialConstants::INVALID_ENTITY_ID });
 
 	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
-		   TEXT("Adding translation manager mapping. Virtual worker %d -> Partition entity %lld"), VirtualWorker, PartitionEntityId);
+		   TEXT("Adding translation manager mapping. Virtual worker %d -> Partition entity %lld"), VirtualWorker, PartitionId);
 
-	if (Partitions.Num() == VirtualWorkersToAssign.Num())
+	if (VirtualToPhysicalWorkerMapping.Num() == VirtualWorkersToAssign.Num())
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
 			   TEXT("Found all %d required partitions, querying for server worker entities"), VirtualWorkersToAssign.Num());
@@ -259,11 +356,11 @@ void SpatialVirtualWorkerTranslationManager::OnPartitionEntityCreation(Worker_En
 	{
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Verbose,
 			   TEXT("Didn't find all %d required partitions, only found %d, currently have:"), VirtualWorkersToAssign.Num(),
-			   Partitions.Num());
-		for (const PartitionInfo& Partition : Partitions)
+			   VirtualToPhysicalWorkerMapping.Num());
+		for (const auto& VirtualWorkerInfo : VirtualToPhysicalWorkerMapping)
 		{
 			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Verbose, TEXT(" - virtual worker %d -> partition entity %lld"),
-				   Partition.VirtualWorker, Partition.PartitionEntityId);
+				   VirtualWorkerInfo.Key, VirtualWorkerInfo.Value.PartitionId);
 		}
 	}
 }
@@ -341,15 +438,54 @@ void SpatialVirtualWorkerTranslationManager::ServerWorkerEntityQueryDelegate(con
 	SendVirtualWorkerMappingUpdate();
 }
 
-void SpatialVirtualWorkerTranslationManager::AssignPartitionToWorker(const PhysicalWorkerName& WorkerName,
-																	 const Worker_EntityId& ServerWorkerEntityId,
-																	 const Worker_EntityId& SystemEntityId, const PartitionInfo& Partition)
+void SpatialVirtualWorkerTranslationManager::TryClaimPartitionForRecoveredWorker(const Worker_EntityId ServerWorkerEntity,
+	Schema_ComponentData* ServerWorkerComponentData)
 {
-	VirtualToPhysicalWorkerMapping.Add(Partition.VirtualWorker, SpatialVirtualWorkerTranslator::WorkerInformation{
-																	WorkerName, ServerWorkerEntityId, Partition.PartitionEntityId });
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log,
-		   TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on worker %s"), Partition.VirtualWorker,
-		   Partition.PartitionEntityId, *WorkerName);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ServerWorkerComponentData);
+	const FString WorkerName = SpatialGDK::GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
+	const Worker_EntityId SystemEntityId = Schema_GetEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
 
-	ClaimPartitionHandler.ClaimPartition(SystemEntityId, Partition.PartitionEntityId);
+	if (VirtualWorkersToAssign.Num() == 0)
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("Server %s restarted detected but no virtual workers available to be reassigned"), *WorkerName);
+		return;
+	}
+
+	const VirtualWorkerId VirtualWorkerToAssign = VirtualWorkersToAssign.Pop();
+
+	SpatialGDK::VirtualWorkerInfo* VirtualWorkerMappingInfo = VirtualToPhysicalWorkerMapping.Find(VirtualWorkerToAssign);
+	if (VirtualWorkerMappingInfo == nullptr)
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error, TEXT("Failed to assign restarted worker %s to virtual worker %ld. Couldn't find any existing mapping in the translator."), *WorkerName, VirtualWorkerToAssign);
+
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("\t-> Strategy: %s"));
+
+		for (const auto& Entry : VirtualToPhysicalWorkerMapping)
+		{
+			UE_LOG(LogSpatialVirtualWorkerTranslator, Warning, TEXT("\t-> Assignment: Virtual Worker %d to %s with server worker entity: %lld"),
+                   Entry.Key, *(Entry.Value.PhysicalWorkerName), Entry.Value.ServerWorkerEntity);
+		}
+		return;
+	}
+
+	const Worker_PartitionId PartitionToAssign = VirtualWorkerMappingInfo->PartitionId;
+
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT("VTM TryClaimPartitionForRecoveredWorker: %s"), *WorkerName);
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT(" - virtual worker to assign: %ld"), VirtualWorkerToAssign);
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT(" - partition to assign: %lld"), PartitionToAssign);
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT(" - restarted server worker entity: %lld"), ServerWorkerEntity);
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT(" - restarted system entity: %lld"), SystemEntityId);
+
+	VirtualWorkerMappingInfo->ServerWorkerEntity = ServerWorkerEntity;
+	VirtualWorkerMappingInfo->ServerSystemWorkerEntity = SystemEntityId;
+	VirtualWorkerMappingInfo->PhysicalWorkerName = WorkerName;
+
+	SendVirtualWorkerMappingUpdate();
+
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning,
+       TEXT("Reassigned VirtualWorker %d with partition ID %lld to simulate on worker %s"), VirtualWorkerToAssign,
+       PartitionToAssign, *WorkerName);
+
+	ClaimPartitionHandler.ClaimPartition(SystemEntityId, PartitionToAssign);
 }
+

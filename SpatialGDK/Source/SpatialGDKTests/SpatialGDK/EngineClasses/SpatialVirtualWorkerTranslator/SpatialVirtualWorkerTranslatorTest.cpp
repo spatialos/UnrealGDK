@@ -3,7 +3,6 @@
 #include "SpatialGDKTests/SpatialGDK/LoadBalancing/AbstractLBStrategy/LBStrategyStub.h"
 
 #include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
-#include "Tests/TestingSchemaHelpers.h"
 
 #include "Tests/TestDefinitions.h"
 
@@ -75,12 +74,11 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_receiving_empty_mapping_THEN_
 	TUniquePtr<SpatialVirtualWorkerTranslator> Translator =
 		MakeUnique<SpatialVirtualWorkerTranslator>(LBStrategyStub, nullptr, SpatialConstants::TRANSLATOR_UNSET_PHYSICAL_NAME);
 
-	// Create an empty mapping.
-	Schema_Object* DataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
+	const SpatialGDK::VirtualWorkerTranslation TranslationData = SpatialGDK::VirtualWorkerTranslation();
 
 	// Now apply the mapping to the translator and test the result. Because the mapping is empty,
 	// it should ignore the mapping and continue to report an empty mapping.
-	Translator->ApplyVirtualWorkerManagerData(DataObject);
+	Translator->ApplyVirtualWorkerManagerData(TranslationData);
 
 	TestEqual<VirtualWorkerId>("Local virtual worker ID is not known.", Translator->GetLocalVirtualWorkerId(),
 							   SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
@@ -97,15 +95,14 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_a_valid_mapping_is_received_T
 	TUniquePtr<SpatialVirtualWorkerTranslator> Translator =
 		MakeUnique<SpatialVirtualWorkerTranslator>(LBStrategyStub, nullptr, ValidWorkerOne);
 
-	// Create a base mapping.
-	Schema_Object* DataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
+	const SpatialGDK::VirtualWorkerInfo VirtualWorkerOne = SpatialGDK::VirtualWorkerInfo{1, ValidWorkerOne, SpatialConstants::INVALID_ENTITY_ID, WorkerOneId, SpatialConstants::INVALID_ENTITY_ID};
+	const SpatialGDK::VirtualWorkerInfo VirtualWorkerTwo = SpatialGDK::VirtualWorkerInfo{2, ValidWorkerTwo, SpatialConstants::INVALID_ENTITY_ID, WorkerTwoId, SpatialConstants::INVALID_ENTITY_ID};
 
-	// The mapping only has the following entries:
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, 1, ValidWorkerOne, WorkerOneId);
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(DataObject, 2, ValidWorkerTwo, WorkerTwoId);
+	const TArray<SpatialGDK::VirtualWorkerInfo> VirtualWorkerList{VirtualWorkerOne, VirtualWorkerTwo};
+	const SpatialGDK::VirtualWorkerTranslation TranslationData = SpatialGDK::VirtualWorkerTranslation(VirtualWorkerList);
 
 	// Now apply the mapping to the translator and test the result.
-	Translator->ApplyVirtualWorkerManagerData(DataObject);
+	Translator->ApplyVirtualWorkerManagerData(TranslationData);
 
 	const PhysicalWorkerName* VirtualWorker1PhysicalName = Translator->GetPhysicalWorkerForVirtualWorker(1);
 	TestNotNull("There is a mapping for virtual worker 1", VirtualWorker1PhysicalName);
@@ -131,25 +128,21 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_another_valid_mappi
 	TUniquePtr<SpatialVirtualWorkerTranslator> Translator =
 		MakeUnique<SpatialVirtualWorkerTranslator>(LBStrategyStub, nullptr, ValidWorkerOne);
 
-	// Create a valid initial mapping.
-	Schema_Object* FirstValidDataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
+	const SpatialGDK::VirtualWorkerInfo VirtualWorkerOne = SpatialGDK::VirtualWorkerInfo{1, ValidWorkerOne, SpatialConstants::INVALID_ENTITY_ID, WorkerOneId, SpatialConstants::INVALID_ENTITY_ID};
+	const SpatialGDK::VirtualWorkerInfo VirtualWorkerTwo = SpatialGDK::VirtualWorkerInfo{2, ValidWorkerTwo, SpatialConstants::INVALID_ENTITY_ID, WorkerTwoId, SpatialConstants::INVALID_ENTITY_ID};
 
-	// The mapping only has the following entries:
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(FirstValidDataObject, 1, ValidWorkerOne, WorkerOneId);
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(FirstValidDataObject, 2, ValidWorkerTwo, WorkerTwoId);
-
-	// Apply valid mapping to the translator.
-	Translator->ApplyVirtualWorkerManagerData(FirstValidDataObject);
-
-	// Create a second mapping.
-	Schema_Object* SecondValidDataObject = TestingSchemaHelpers::CreateTranslationComponentDataFields();
-
-	// The mapping only has the following entries:
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(SecondValidDataObject, 1, ValidWorkerOne, WorkerOneId);
-	TestingSchemaHelpers::AddTranslationComponentDataMapping(SecondValidDataObject, 2, ValidWorkerThree, WorkerThreeId);
+	const TArray<SpatialGDK::VirtualWorkerInfo> VirtualWorkerList{VirtualWorkerOne, VirtualWorkerTwo};
+	const SpatialGDK::VirtualWorkerTranslation TranslationData = SpatialGDK::VirtualWorkerTranslation(VirtualWorkerList);
 
 	// Apply valid mapping to the translator.
-	Translator->ApplyVirtualWorkerManagerData(SecondValidDataObject);
+	Translator->ApplyVirtualWorkerManagerData(TranslationData);
+	const SpatialGDK::VirtualWorkerInfo OtherVirtualWorkerOne = SpatialGDK::VirtualWorkerInfo{1, ValidWorkerOne, SpatialConstants::INVALID_ENTITY_ID, WorkerOneId, SpatialConstants::INVALID_ENTITY_ID};
+	const SpatialGDK::VirtualWorkerInfo OtherVirtualWorkerThree = SpatialGDK::VirtualWorkerInfo{2, ValidWorkerThree, SpatialConstants::INVALID_ENTITY_ID, WorkerThreeId, SpatialConstants::INVALID_ENTITY_ID};
+
+	const TArray<SpatialGDK::VirtualWorkerInfo> OtherVirtualWorkerList{OtherVirtualWorkerOne, OtherVirtualWorkerThree};
+
+	// Apply valid mapping to the translator.
+	Translator->ApplyVirtualWorkerManagerData(OtherVirtualWorkerList);
 
 	// Translator should return the values from the new mapping
 	const PhysicalWorkerName* VirtualWorker1PhysicalName = Translator->GetPhysicalWorkerForVirtualWorker(1);

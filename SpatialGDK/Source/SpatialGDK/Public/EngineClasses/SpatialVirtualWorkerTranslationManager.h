@@ -10,9 +10,12 @@
 #include "SpatialConstants.h"
 
 #include "CoreMinimal.h"
+#include "Templates/Tuple.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
+
+#include "Schema/ServerWorker.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 
@@ -36,13 +39,6 @@ class SpatialOSWorkerInterface;
 class SPATIALGDK_API SpatialVirtualWorkerTranslationManager
 {
 public:
-	struct PartitionInfo
-	{
-		Worker_EntityId PartitionEntityId;
-		VirtualWorkerId VirtualWorker;
-		Worker_EntityId SimulatingWorkerSystemEntityId;
-	};
-
 	SpatialVirtualWorkerTranslationManager(SpatialOSWorkerInterface* InConnection, SpatialVirtualWorkerTranslator* InTranslator);
 
 	void SetNumberOfVirtualWorkers(const uint32 NumVirtualWorkers);
@@ -50,9 +46,13 @@ public:
 	// The translation manager only cares about changes to the authority of the translation mapping.
 	void AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthChangeOp);
 
+	// Worker recovery.
+	void SetKnownServerSystemEntities(TArray<Worker_EntityId> ServerSystemEntities);
+	void OnWorkerDisconnected(const Worker_EntityId DisconnectedSystemEntityId);
+	void TryClaimPartitionForRecoveredWorker(const Worker_EntityId EntityId, Schema_ComponentData* ServerWorkerComponentData);
+
 	void SpawnPartitionEntitiesForVirtualWorkerIds();
-	void ReclaimPartitionEntities();
-	const TArray<PartitionInfo>& GetAllPartitions() const { return Partitions; };
+	TArray<Worker_PartitionId> GetAllPartitions() const;
 
 	void Advance(const TArray<Worker_Op>& Ops);
 
@@ -62,8 +62,7 @@ private:
 	SpatialOSWorkerInterface* Connection;
 
 	TArray<VirtualWorkerId> VirtualWorkersToAssign;
-	TArray<PartitionInfo> Partitions;
-	TMap<VirtualWorkerId, SpatialVirtualWorkerTranslator::WorkerInformation> VirtualToPhysicalWorkerMapping;
+	TMap<VirtualWorkerId, SpatialGDK::VirtualWorkerInfo> VirtualToPhysicalWorkerMapping;
 	uint32 NumVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
@@ -75,16 +74,23 @@ private:
 	// Serialization and deserialization of the mapping.
 	void WriteMappingToSchema(Schema_Object* Object) const;
 
+	// Used when VTM authority is reassigned following server crashed to cleanup translator mapping.
+	TArray<Worker_EntityId> KnownServerSystemEntities;
+
+	void ResetVirtualWorkerMappingAfterSnapshotReset();
+
+	void CleanupTranslatorMappingAfterAuthorityChange();
+	void ReclaimCrashedVirtualWorker(const VirtualWorkerId VirtualWorker);
+
+	static bool AllServerWorkersAreReady(const Worker_EntityQueryResponseOp& Op, uint32& ServerWorkersNotReady);
+	static TArray<TTuple<Worker_EntityId, SpatialGDK::ServerWorker>> ExtractServerWorkerDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
+
 	// The following methods are used to query the Runtime for all worker entities and update the mapping
 	// based on the response.
 	void QueryForServerWorkerEntities();
 	void ServerWorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op);
-	bool AllServerWorkersAreReady(const Worker_EntityQueryResponseOp& Op, uint32& ServerWorkersNotReady);
 	void AssignPartitionsToEachServerWorkerFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SendVirtualWorkerMappingUpdate() const;
-
-	void AssignPartitionToWorker(const PhysicalWorkerName& WorkerName, const Worker_EntityId& ServerWorkerEntityId,
-								 const Worker_EntityId& SystemEntityId, const PartitionInfo& Partition);
 
 	void SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker);
 	void OnPartitionEntityCreation(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorker);

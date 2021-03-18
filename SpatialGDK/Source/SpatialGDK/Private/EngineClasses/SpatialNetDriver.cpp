@@ -562,8 +562,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		SpatialGDK::FSubView& WellKnownSubView =
 			Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
 													   SpatialGDK::FSubView::NoDispatcherCallbacks);
+
 		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(
-			WellKnownSubView, Connection, LoadBalanceStrategy->GetMinimumRequiredWorkers(), *VirtualWorkerTranslator, *GlobalStateManager);
+			WellKnownSubView, SystemEntitySubview, Connection, LoadBalanceStrategy->GetMinimumRequiredWorkers(), *VirtualWorkerTranslator, *GlobalStateManager);
 	}
 }
 
@@ -1031,7 +1032,7 @@ void USpatialNetDriver::BeginDestroy()
 		{
 			for (const auto& Partition : VirtualWorkerTranslationManager->GetAllPartitions())
 			{
-				Connection->SendDeleteEntityRequest(Partition.PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
+				Connection->SendDeleteEntityRequest(Partition, SpatialGDK::RETRY_UNTIL_COMPLETE);
 			}
 		}
 

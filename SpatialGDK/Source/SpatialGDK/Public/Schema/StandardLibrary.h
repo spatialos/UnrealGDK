@@ -207,13 +207,16 @@ struct Worker : Component
 	static const Worker_ComponentId ComponentId = SpatialConstants::WORKER_COMPONENT_ID;
 
 	Worker() = default;
-	Worker(const Worker_ComponentData& Data)
-	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		WorkerId = GetStringFromSchema(ComponentObject, 1);
-		WorkerType = GetStringFromSchema(ComponentObject, 2);
-		Connection.ReadConnectionData(Schema_GetObject(ComponentObject, 3));
+	Worker(const Worker_ComponentData& Data) : Worker(Data.schema_type) {}
+
+	Worker(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
+
+		WorkerId = GetStringFromSchema(ComponentObject, SpatialConstants::SYSTEM_WORKER_ID_FIELD);
+		WorkerType = GetStringFromSchema(ComponentObject, SpatialConstants::SYSTEM_WORKER_TYPE_FIELD);
+		Connection.ReadConnectionData(Schema_GetObject(ComponentObject, SpatialConstants::SYSTEM_WORKER_CONNECTION_FIELD));
 	}
 
 	FString WorkerId;

@@ -623,8 +623,8 @@ void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worke
 		Worker_ComponentData Data = Op.results[0].components[i];
 		if (Data.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
 		{
-			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+			VirtualWorkerTranslation Translation = VirtualWorkerTranslation(Data);
+			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(Translation);
 		}
 	}
 }
