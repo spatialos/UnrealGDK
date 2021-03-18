@@ -1255,7 +1255,8 @@ void USpatialNetDriver::ProcessOwnershipChanges()
 		{
 			if (bShouldWriteLoadBalancingData)
 			{
-				const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, Channel->Actor);
+				check(IsValid(Channel->Actor));
+				const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, *Channel->Actor);
 				Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
 			}
 

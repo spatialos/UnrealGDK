@@ -7,9 +7,9 @@
 
 namespace SpatialGDK
 {
-ActorSetMember GetActorSetData(const USpatialPackageMapClient& PackageMap, AActor* Actor)
+ActorSetMember GetActorSetData(const USpatialPackageMapClient& PackageMap, const AActor& Actor)
 {
-	const AActor* LeaderActor = GetReplicatedHierarchyRoot(Actor);
+	const AActor* LeaderActor = GetReplicatedHierarchyRoot(&Actor);
 	check(IsValid(LeaderActor));
 
 	const Worker_EntityId LeaderEntityId = PackageMap.GetEntityIdFromObject(LeaderActor);

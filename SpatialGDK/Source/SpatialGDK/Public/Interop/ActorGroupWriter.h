@@ -10,5 +10,5 @@ class UAbstractLBStrategy;
 
 namespace SpatialGDK
 {
-ActorGroupMember GetActorGroupData(const UAbstractLBStrategy& LoadBalancingStrategy, AActor* Actor);
+ActorGroupMember GetActorGroupData(const UAbstractLBStrategy& LoadBalancingStrategy, const AActor& Actor);
 } // namespace SpatialGDK
