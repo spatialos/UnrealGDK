@@ -37,12 +37,13 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
 	ClaimHandler = MakeUnique<ClaimPartitionHandler>(*NetDriver->Connection);
-	RequestHandler.AddRequestHandler(
-		SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID,
-		FOnCommandRequestWithOp::FDelegate::CreateUObject(this, &UGlobalStateManager::OnReceiveShutdownCommand));
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
 #if WITH_EDITOR
+	RequestHandler.AddRequestHandler(
+		SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID,
+		FOnCommandRequestWithOp::FDelegate::CreateUObject(this, &UGlobalStateManager::OnReceiveShutdownCommand));
+
 	const ULevelEditorPlaySettings* const PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
 
 	// Only the client should ever send this request.
