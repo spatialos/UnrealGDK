@@ -17,13 +17,8 @@ namespace SpatialGDK
 class SpatialStrategySystem
 {
 public:
-	SpatialStrategySystem(const FSubView& InSubView, Worker_EntityId InStrategyWorkerSystemEntityId)
-		: SubView(InSubView)
-		, StrategyWorkerSystemEntityId(InStrategyWorkerSystemEntityId)
-	{
-	}
+	SpatialStrategySystem(const FSubView& InSubView, Worker_EntityId InStrategyWorkerSystemEntityId, SpatialOSWorkerInterface* Connection);
 
-	void Init(SpatialOSWorkerInterface* Connection);
 	void Advance(SpatialOSWorkerInterface* Connection);
 	void Flush(SpatialOSWorkerInterface* Connection);
 	void Destroy(SpatialOSWorkerInterface* Connection);

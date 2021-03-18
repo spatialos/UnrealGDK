@@ -7,10 +7,18 @@ DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 
 namespace SpatialGDK
 {
+
+SpatialStrategySystem::SpatialStrategySystem(const FSubView& InSubView, Worker_EntityId InStrategyWorkerSystemEntityId, SpatialOSWorkerInterface* Connection)
+		: SubView(InSubView)
+		, StrategyWorkerSystemEntityId(InStrategyWorkerSystemEntityId)
+{
+	StrategyWorkerRequest = Connection->SendReserveEntityIdsRequest(1, SpatialGDK::RETRY_UNTIL_COMPLETE);
+}
+
 void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 {
 	// Messages are inspected to take care of the Worker entity creation.
-	const TArray<Worker_Op>& Messages = Connection->GetWorkerMessages();
+	const TArray<Worker_Op>& Messages = *SubView.GetViewDelta().WorkerMessages;
 	for (const auto& Message : Messages)
 	{
 		switch (Message.op_type)
@@ -96,12 +104,7 @@ void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 void SpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
 {
 	// TODO
-}
-
-void SpatialStrategySystem::Init(SpatialOSWorkerInterface* Connection)
-{
-	StrategyWorkerRequest = Connection->SendReserveEntityIdsRequest(1, SpatialGDK::RETRY_UNTIL_COMPLETE);
-}
+}	
 
 void SpatialStrategySystem::CreateStrategyPartition(SpatialOSWorkerInterface* Connection)
 {

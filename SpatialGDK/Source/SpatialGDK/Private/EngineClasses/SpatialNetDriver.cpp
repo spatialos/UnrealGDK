@@ -3007,8 +3007,7 @@ void USpatialNetDriver::TryFinishStartup()
 														   },
 														   {});
 
-			StrategySystem = MakeUnique<SpatialGDK::SpatialStrategySystem>(NewView, Connection->GetWorkerSystemEntityId());
-			StrategySystem->Init(Connection);
+			StrategySystem = MakeUnique<SpatialGDK::SpatialStrategySystem>(NewView, Connection->GetWorkerSystemEntityId(),Connection);
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();
 		}
