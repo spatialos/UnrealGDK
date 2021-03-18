@@ -101,10 +101,13 @@ void UGeneratedTestMap::GenerateBaseMap()
 
 	// Default player start location is chosen so that players spawn on server 1 by default.
 	// Individual test maps can change this if necessary.
-	APlayerStart* PlayerStart = AddActorToLevel<APlayerStart>(CurrentLevel, FTransform(FVector(-100, -100, 100)));
-
-	// TODO: Maybe figure out how to set the default viewpoint when opening the map, so we don't start in the ground (maybe together with
-	// other viewing position issues), ticket: UNR-4975.
+	// We want the player to look towards the origin from afar as all spawned entities are relatively close to the origin.
+	FTransform PlayerTransform;
+	FVector PlayerTranslation = FVector(-500, -500, 200);
+	PlayerTransform.SetTranslation(PlayerTranslation);
+	FRotator RotatorToOrigin = FRotationMatrix::MakeFromX(-PlayerTranslation).Rotator();
+	PlayerTransform.SetRotation(RotatorToOrigin.Quaternion());
+	AddActorToLevel<APlayerStart>(CurrentLevel, PlayerTransform);
 }
 
 bool UGeneratedTestMap::SaveMap()

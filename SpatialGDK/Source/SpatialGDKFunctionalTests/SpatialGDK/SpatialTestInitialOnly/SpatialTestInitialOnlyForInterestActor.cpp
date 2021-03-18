@@ -4,7 +4,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 #include "SpatialGDKSettings.h"
 #include "TestClasses/SpatialTestInitialOnlySpawnActor.h"
 
@@ -35,21 +35,16 @@ void ASpatialTestInitialOnlyForInterestActor::PrepareTest()
 	AddStep(TEXT("Init test environment"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Spawn cube
 		ASpatialTestInitialOnlySpawnActor* SpawnActor = GetWorld()->SpawnActor<ASpatialTestInitialOnlySpawnActor>(
-			FVector(-400.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+			FVector(-1500.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
 
 		RegisterAutoDestroyActor(SpawnActor);
 
-		// Set the PositionUpdateThresholdMaxCentimeters to a lower value so that the spatial position updates can be sent every time the
-		// character moves, decreasing the overall duration of the test
-		PreviousMaximumDistanceThreshold = GetDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters;
-		GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = 0.0f;
-
 		AssertTrue(GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition, TEXT("Initial Only Enabled"));
 
-		// Spawn the TestMovementCharacter actor for Client 1 to possess.
+		// Spawn the TestPossessionPawn actor for Client 1 to possess.
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-		ATestMovementCharacter* TestCharacter =
-			GetWorld()->SpawnActor<ATestMovementCharacter>(FVector(400.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
+		ATestPossessionPawn* TestCharacter =
+			GetWorld()->SpawnActor<ATestPossessionPawn>(FVector(1500.0f, 0.0f, 40.0f), FRotator::ZeroRotator, FActorSpawnParameters());
 		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
 
 		// Set a reference to the previous Pawn so that it can be processed back in the last step of the test
@@ -61,13 +56,26 @@ void ASpatialTestInitialOnlyForInterestActor::PrepareTest()
 		FinishStep();
 	});
 
+	AddStep(
+		TEXT("Client checks test actor is not present in their world."), FWorkerDefinition::Client(1), nullptr, nullptr,
+		[this](float DeltaTime) {
+			TArray<AActor*> SpawnActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpatialTestInitialOnlySpawnActor::StaticClass(), SpawnActors);
+			RequireEqual_Int(SpawnActors.Num(), 0, TEXT("There should be no SpawnActor in the world."));
+
+			FinishStep();
+		},
+		30.0f);
+
 	AddStep(TEXT("Move character to cube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-		ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
+		ATestPossessionPawn* PlayerCharacter = Cast<ATestPossessionPawn>(PlayerController->GetPawn());
 
 		// Move the character to the correct location
-		PlayerCharacter->SetActorLocation(FVector(-350.0f, 0.0f, 40.0f));
+		// Now, beware that native unreal determines the position for net relevancy from the perspective of the client's CAMERA rather than
+		// the character position, so this may be offset by as much as 300 units with our current camera offsets.
+		PlayerCharacter->SetActorLocation(FVector(-1450.0f, 0.0f, 40.0f));
 
 		FinishStep();
 	});
@@ -142,13 +150,4 @@ void ASpatialTestInitialOnlyForInterestActor::PrepareTest()
 
 		FinishStep();
 	});
-}
-
-void ASpatialTestInitialOnlyForInterestActor::FinishTest(EFunctionalTestResult TestResult, const FString& Message)
-{
-	Super::FinishTest(TestResult, Message);
-
-	// Restoring the PositionUpdateThresholdMaxCentimeters here catches most but not all of the cases when the test failing would cause
-	// PositionUpdateThresholdMaxCentimeters to be changed.
-	GetMutableDefault<USpatialGDKSettings>()->PositionUpdateThresholdMaxCentimeters = PreviousMaximumDistanceThreshold;
 }

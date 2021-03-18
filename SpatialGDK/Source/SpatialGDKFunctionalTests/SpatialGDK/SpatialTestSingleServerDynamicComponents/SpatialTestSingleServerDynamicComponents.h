@@ -28,4 +28,5 @@ public:
 
 	const FVector ActorSpawnPosition = FVector(0.0f, 0.0f, 50.0f);
 	bool bInitialOnlyEnabled;
+	bool bSpatialEnabled;
 };

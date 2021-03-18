@@ -227,6 +227,7 @@ exit /b !ERRORLEVEL!";
                 ForceSpatialNetworkingUnlessPakSpecified(additionalUATArgs, linuxSimulatedPlayerPath, baseGameName);
 
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerWorkerShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartSimulatedClient.sh"));
+                LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetStopSimulatedPlayerWorkerShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StopSimulatedClient.sh"));
                 LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetSimulatedPlayerCoordinatorShellScript(baseGameName), Path.Combine(linuxSimulatedPlayerPath, "StartCoordinator.sh"));
 
                 // Coordinator files are located in      ./UnrealGDK/SpatialGDK/Binaries/ThirdParty/Improbable/Programs/WorkerCoordinator/.
