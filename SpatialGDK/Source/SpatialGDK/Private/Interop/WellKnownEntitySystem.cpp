@@ -84,7 +84,8 @@ void WellKnownEntitySystem::Advance()
 	}
 }
 
-void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update)
+void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId EntityId, const Worker_ComponentId ComponentId,
+												   Schema_ComponentUpdate* Update)
 {
 	switch (ComponentId)
 	{
@@ -117,13 +118,15 @@ void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId Enti
 
 void WellKnownEntitySystem::SaveSnapshotPartitionAuthServerSystemEntity()
 {
-	const ComponentData* SnapshotPartitionData = GDKSubView->GetView()[SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID].Components.FindByPredicate([](const auto& CompData)
-	{
-	    return CompData.GetComponentId() == SpatialConstants::PARTITION_COMPONENT_ID;
-	});
+	const ComponentData* SnapshotPartitionData =
+		GDKSubView->GetView()[SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID].Components.FindByPredicate([](const auto& CompData) {
+			return CompData.GetComponentId() == SpatialConstants::PARTITION_COMPONENT_ID;
+		});
 
 	if (SnapshotPartitionData == nullptr)
-	{		UE_LOG(LogWellKnownEntitySystem, Error, TEXT("Failed to store snapshot partition auth server. If that server crashes, we won't be able to restart it."));
+	{
+		UE_LOG(LogWellKnownEntitySystem, Error,
+			   TEXT("Failed to store snapshot partition auth server. If that server crashes, we won't be able to restart it."));
 		return;
 	}
 
@@ -131,7 +134,8 @@ void WellKnownEntitySystem::SaveSnapshotPartitionAuthServerSystemEntity()
 	SnapshotPartitionAuthServerCrashed = false;
 }
 
-void WellKnownEntitySystem::ProcessComponentAdd(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data)
+void WellKnownEntitySystem::ProcessComponentAdd(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+												Schema_ComponentData* Data)
 {
 	switch (ComponentId)
 	{
@@ -143,7 +147,7 @@ void WellKnownEntitySystem::ProcessComponentAdd(const Worker_EntityId EntityId, 
 		break;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
 		UE_LOG(LogWellKnownEntitySystem, Log, TEXT("VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID received %lld"), EntityId);
-		VirtualWorkerTranslator->ApplyVirtualWorkerManagerData( VirtualWorkerTranslation(Data));
+		VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(VirtualWorkerTranslation(Data));
 		break;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		GlobalStateManager->ApplyDeploymentMapData(Data);
@@ -205,10 +209,9 @@ TArray<Worker_EntityId> WellKnownEntitySystem::GetAllServerSystemEntities() cons
 		const SpatialGDK::EntityViewElement& Element = Iter.Value;
 
 		// Get all worker system entities.
-		const ComponentData* ServerSystemWorkerData = Element.Components.FindByPredicate([](const auto& CompData)
-        {
-            return CompData.GetComponentId() == SpatialConstants::WORKER_COMPONENT_ID;
-        });
+		const ComponentData* ServerSystemWorkerData = Element.Components.FindByPredicate([](const auto& CompData) {
+			return CompData.GetComponentId() == SpatialConstants::WORKER_COMPONENT_ID;
+		});
 
 		if (ServerSystemWorkerData == nullptr)
 		{
@@ -280,15 +283,15 @@ void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 		const Worker_EntityId EntityId = Iter.Key;
 		const SpatialGDK::EntityViewElement& Element = Iter.Value;
 
-		const ComponentData* ServerWorkerEntityData = Element.Components.FindByPredicate([](const auto& CompData)
-		{
+		const ComponentData* ServerWorkerEntityData = Element.Components.FindByPredicate([](const auto& CompData) {
 			return CompData.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID;
 		});
 
 		if (ServerWorkerEntityData != nullptr)
 		{
 			Schema_Object* ServerWorkerComponentFields = Schema_GetComponentDataFields(ServerWorkerEntityData->GetUnderlying());
-			const Worker_EntityId SystemEntityID = Schema_GetEntityId(ServerWorkerComponentFields, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
+			const Worker_EntityId SystemEntityID =
+				Schema_GetEntityId(ServerWorkerComponentFields, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
 
 			// This logic is for handling what happens if the snapshot partition auth server crashes.
 			// If a different server crashes, the VTM auth (snapshot partition auth) server will delete the crashed
@@ -322,8 +325,9 @@ void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 		else if (ServerCount > NumberOfWorkers)
 		{
 			UE_LOG(LogWellKnownEntitySystem, Warning,
-                           TEXT("MaybeClaimSnapshotPartition found too many server worker entities, expected %d got %d. Did you launch too many servers?"), NumberOfWorkers,
-                           ServerCount);
+				   TEXT("MaybeClaimSnapshotPartition found too many server worker entities, expected %d got %d. Did you launch too many "
+						"servers?"),
+				   NumberOfWorkers, ServerCount);
 		}
 
 		GlobalStateManager->ClaimSnapshotPartition();

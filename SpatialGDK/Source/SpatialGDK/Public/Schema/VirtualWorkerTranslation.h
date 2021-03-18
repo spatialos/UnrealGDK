@@ -12,7 +12,8 @@
 
 namespace SpatialGDK
 {
-struct VirtualWorkerInfo {
+struct VirtualWorkerInfo
+{
 	VirtualWorkerId VirtualWorkerId;
 	FString PhysicalWorkerName;
 	Worker_EntityId ServerWorkerEntity;
@@ -31,12 +32,12 @@ struct VirtualWorkerTranslation : AbstractMutableComponent
 	{
 	}
 
-	VirtualWorkerTranslation(const TArray<VirtualWorkerInfo>& InVirtualWorkerMapping)
-	{
-		VirtualWorkerMapping = InVirtualWorkerMapping;
-	}
+	VirtualWorkerTranslation(const TArray<VirtualWorkerInfo>& InVirtualWorkerMapping) { VirtualWorkerMapping = InVirtualWorkerMapping; }
 
-	VirtualWorkerTranslation(const Worker_ComponentData& Data) : VirtualWorkerTranslation(Data.schema_type) {}
+	VirtualWorkerTranslation(const Worker_ComponentData& Data)
+		: VirtualWorkerTranslation(Data.schema_type)
+	{
+	}
 
 	VirtualWorkerTranslation(Schema_ComponentData* Data)
 	{
@@ -52,21 +53,26 @@ struct VirtualWorkerTranslation : AbstractMutableComponent
 			Schema_Object* MappingObject = Schema_IndexObject(ComponentObject, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID, i);
 			const VirtualWorkerId VirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
 			const PhysicalWorkerName WorkerName =
-                SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID);
-			const Worker_EntityId ServerWorkerEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID);
+				SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID);
+			const Worker_EntityId ServerWorkerEntityId =
+				Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID);
 			const Worker_PartitionId PartitionEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_PARTITION_ID);
-			const Worker_EntityId SystemWorkerEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SYSTEM_WORKER_ENTITY_ID);
+			const Worker_EntityId SystemWorkerEntityId =
+				Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SYSTEM_WORKER_ENTITY_ID);
 
-			VirtualWorkerMapping.Emplace(VirtualWorkerInfo{VirtualWorkerId, WorkerName, ServerWorkerEntityId, PartitionEntityId, SystemWorkerEntityId});
+			VirtualWorkerMapping.Emplace(
+				VirtualWorkerInfo{ VirtualWorkerId, WorkerName, ServerWorkerEntityId, PartitionEntityId, SystemWorkerEntityId });
 		}
 	}
 
-	VirtualWorkerTranslation(const Worker_ComponentUpdate& Update) : VirtualWorkerTranslation()
+	VirtualWorkerTranslation(const Worker_ComponentUpdate& Update)
+		: VirtualWorkerTranslation()
 	{
 		ApplyComponentUpdate(Update);
 	}
 
-	VirtualWorkerTranslation(Schema_ComponentUpdate* Update) : VirtualWorkerTranslation()
+	VirtualWorkerTranslation(Schema_ComponentUpdate* Update)
+		: VirtualWorkerTranslation()
 	{
 		ApplyComponentUpdate(Update);
 	}
@@ -111,10 +117,7 @@ struct VirtualWorkerTranslation : AbstractMutableComponent
 		return Update;
 	}
 
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
-	{
-		ApplyComponentUpdate(Update.schema_type);
-	}
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) { ApplyComponentUpdate(Update.schema_type); }
 
 	void ApplyComponentUpdate(Schema_ComponentUpdate* Update)
 	{
@@ -130,12 +133,15 @@ struct VirtualWorkerTranslation : AbstractMutableComponent
 			Schema_Object* MappingObject = Schema_IndexObject(ComponentObject, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_MAPPING_ID, i);
 			const VirtualWorkerId VirtualWorkerId = Schema_GetUint32(MappingObject, SpatialConstants::MAPPING_VIRTUAL_WORKER_ID);
 			const PhysicalWorkerName WorkerName =
-                SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID);
-			const Worker_EntityId ServerWorkerEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID);
+				SpatialGDK::GetStringFromSchema(MappingObject, SpatialConstants::MAPPING_PHYSICAL_WORKER_NAME_ID);
+			const Worker_EntityId ServerWorkerEntityId =
+				Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SERVER_WORKER_ENTITY_ID);
 			const Worker_PartitionId PartitionEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_PARTITION_ID);
-			const Worker_EntityId SystemWorkerEntityId = Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SYSTEM_WORKER_ENTITY_ID);
+			const Worker_EntityId SystemWorkerEntityId =
+				Schema_GetEntityId(MappingObject, SpatialConstants::MAPPING_SYSTEM_WORKER_ENTITY_ID);
 
-			VirtualWorkerMapping.Emplace(VirtualWorkerInfo{VirtualWorkerId, WorkerName, ServerWorkerEntityId, PartitionEntityId, SystemWorkerEntityId});
+			VirtualWorkerMapping.Emplace(
+				VirtualWorkerInfo{ VirtualWorkerId, WorkerName, ServerWorkerEntityId, PartitionEntityId, SystemWorkerEntityId });
 		}
 	}
 

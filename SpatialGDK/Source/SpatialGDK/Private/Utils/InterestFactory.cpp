@@ -632,7 +632,9 @@ QueryConstraint CreateComponentOrConstraint(const TArray<Worker_ComponentId>& Co
 
 QueryConstraint InterestFactory::CreateGDKSnapshotEntitiesConstraint() const
 {
-	return CreateEntityOrConstraint({ SpatialConstants::INITIAL_SPAWNER_ENTITY_ID, SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID, SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID });
+	return CreateEntityOrConstraint({ SpatialConstants::INITIAL_SPAWNER_ENTITY_ID, SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
+									  SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID,
+									  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID });
 }
 
 QueryConstraint InterestFactory::CreateClientAlwaysRelevantConstraint() const

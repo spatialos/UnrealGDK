@@ -83,7 +83,8 @@ private:
 	void ReclaimCrashedVirtualWorker(const VirtualWorkerId VirtualWorker);
 
 	static bool AllServerWorkersAreReady(const Worker_EntityQueryResponseOp& Op, uint32& ServerWorkersNotReady);
-	static TArray<TTuple<Worker_EntityId, SpatialGDK::ServerWorker>> ExtractServerWorkerDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
+	static TArray<TTuple<Worker_EntityId, SpatialGDK::ServerWorker>> ExtractServerWorkerDataFromQueryResponse(
+		const Worker_EntityQueryResponseOp& Op);
 
 	// The following methods are used to query the Runtime for all worker entities and update the mapping
 	// based on the response.

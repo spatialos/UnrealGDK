@@ -95,10 +95,14 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_a_valid_mapping_is_received_T
 	TUniquePtr<SpatialVirtualWorkerTranslator> Translator =
 		MakeUnique<SpatialVirtualWorkerTranslator>(LBStrategyStub, nullptr, ValidWorkerOne);
 
-	const SpatialGDK::VirtualWorkerInfo VirtualWorkerOne = SpatialGDK::VirtualWorkerInfo{1, ValidWorkerOne, SpatialConstants::INVALID_ENTITY_ID, WorkerOneId, SpatialConstants::INVALID_ENTITY_ID};
-	const SpatialGDK::VirtualWorkerInfo VirtualWorkerTwo = SpatialGDK::VirtualWorkerInfo{2, ValidWorkerTwo, SpatialConstants::INVALID_ENTITY_ID, WorkerTwoId, SpatialConstants::INVALID_ENTITY_ID};
+	const SpatialGDK::VirtualWorkerInfo VirtualWorkerOne =
+		SpatialGDK::VirtualWorkerInfo{ 1, ValidWorkerOne, SpatialConstants::INVALID_ENTITY_ID, WorkerOneId,
+									   SpatialConstants::INVALID_ENTITY_ID };
+	const SpatialGDK::VirtualWorkerInfo VirtualWorkerTwo =
+		SpatialGDK::VirtualWorkerInfo{ 2, ValidWorkerTwo, SpatialConstants::INVALID_ENTITY_ID, WorkerTwoId,
+									   SpatialConstants::INVALID_ENTITY_ID };
 
-	const TArray<SpatialGDK::VirtualWorkerInfo> VirtualWorkerList{VirtualWorkerOne, VirtualWorkerTwo};
+	const TArray<SpatialGDK::VirtualWorkerInfo> VirtualWorkerList{ VirtualWorkerOne, VirtualWorkerTwo };
 	const SpatialGDK::VirtualWorkerTranslation TranslationData = SpatialGDK::VirtualWorkerTranslation(VirtualWorkerList);
 
 	// Now apply the mapping to the translator and test the result.
@@ -128,18 +132,26 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_another_valid_mappi
 	TUniquePtr<SpatialVirtualWorkerTranslator> Translator =
 		MakeUnique<SpatialVirtualWorkerTranslator>(LBStrategyStub, nullptr, ValidWorkerOne);
 
-	const SpatialGDK::VirtualWorkerInfo VirtualWorkerOne = SpatialGDK::VirtualWorkerInfo{1, ValidWorkerOne, SpatialConstants::INVALID_ENTITY_ID, WorkerOneId, SpatialConstants::INVALID_ENTITY_ID};
-	const SpatialGDK::VirtualWorkerInfo VirtualWorkerTwo = SpatialGDK::VirtualWorkerInfo{2, ValidWorkerTwo, SpatialConstants::INVALID_ENTITY_ID, WorkerTwoId, SpatialConstants::INVALID_ENTITY_ID};
+	const SpatialGDK::VirtualWorkerInfo VirtualWorkerOne =
+		SpatialGDK::VirtualWorkerInfo{ 1, ValidWorkerOne, SpatialConstants::INVALID_ENTITY_ID, WorkerOneId,
+									   SpatialConstants::INVALID_ENTITY_ID };
+	const SpatialGDK::VirtualWorkerInfo VirtualWorkerTwo =
+		SpatialGDK::VirtualWorkerInfo{ 2, ValidWorkerTwo, SpatialConstants::INVALID_ENTITY_ID, WorkerTwoId,
+									   SpatialConstants::INVALID_ENTITY_ID };
 
-	const TArray<SpatialGDK::VirtualWorkerInfo> VirtualWorkerList{VirtualWorkerOne, VirtualWorkerTwo};
+	const TArray<SpatialGDK::VirtualWorkerInfo> VirtualWorkerList{ VirtualWorkerOne, VirtualWorkerTwo };
 	const SpatialGDK::VirtualWorkerTranslation TranslationData = SpatialGDK::VirtualWorkerTranslation(VirtualWorkerList);
 
 	// Apply valid mapping to the translator.
 	Translator->ApplyVirtualWorkerManagerData(TranslationData);
-	const SpatialGDK::VirtualWorkerInfo OtherVirtualWorkerOne = SpatialGDK::VirtualWorkerInfo{1, ValidWorkerOne, SpatialConstants::INVALID_ENTITY_ID, WorkerOneId, SpatialConstants::INVALID_ENTITY_ID};
-	const SpatialGDK::VirtualWorkerInfo OtherVirtualWorkerThree = SpatialGDK::VirtualWorkerInfo{2, ValidWorkerThree, SpatialConstants::INVALID_ENTITY_ID, WorkerThreeId, SpatialConstants::INVALID_ENTITY_ID};
+	const SpatialGDK::VirtualWorkerInfo OtherVirtualWorkerOne =
+		SpatialGDK::VirtualWorkerInfo{ 1, ValidWorkerOne, SpatialConstants::INVALID_ENTITY_ID, WorkerOneId,
+									   SpatialConstants::INVALID_ENTITY_ID };
+	const SpatialGDK::VirtualWorkerInfo OtherVirtualWorkerThree =
+		SpatialGDK::VirtualWorkerInfo{ 2, ValidWorkerThree, SpatialConstants::INVALID_ENTITY_ID, WorkerThreeId,
+									   SpatialConstants::INVALID_ENTITY_ID };
 
-	const TArray<SpatialGDK::VirtualWorkerInfo> OtherVirtualWorkerList{OtherVirtualWorkerOne, OtherVirtualWorkerThree};
+	const TArray<SpatialGDK::VirtualWorkerInfo> OtherVirtualWorkerList{ OtherVirtualWorkerOne, OtherVirtualWorkerThree };
 
 	// Apply valid mapping to the translator.
 	Translator->ApplyVirtualWorkerManagerData(OtherVirtualWorkerList);

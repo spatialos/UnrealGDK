@@ -72,14 +72,15 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(const Spatial
 				   Entry.Key, *(Entry.Value.PhysicalWorkerName), Entry.Value.ServerWorkerEntity);
 		}
 	}
-#endif //!NO_LOGGING
+#endif //! NO_LOGGING
 }
 
 void SpatialVirtualWorkerTranslator::UpdateMapping(const SpatialGDK::VirtualWorkerInfo& VirtualWorkerInfo)
 {
 	VirtualToPhysicalWorkerMapping.Add(VirtualWorkerInfo.VirtualWorkerId, VirtualWorkerInfo);
 
-	if (LocalVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID && VirtualWorkerInfo.PhysicalWorkerName == LocalPhysicalWorkerName)
+	if (LocalVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID
+		&& VirtualWorkerInfo.PhysicalWorkerName == LocalPhysicalWorkerName)
 	{
 		LocalVirtualWorkerId = VirtualWorkerInfo.VirtualWorkerId;
 		LocalPartitionId = VirtualWorkerInfo.PartitionId;

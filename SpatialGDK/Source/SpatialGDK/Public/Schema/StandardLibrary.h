@@ -208,7 +208,10 @@ struct Worker : Component
 
 	Worker() = default;
 
-	Worker(const Worker_ComponentData& Data) : Worker(Data.schema_type) {}
+	Worker(const Worker_ComponentData& Data)
+		: Worker(Data.schema_type)
+	{
+	}
 
 	Worker(Schema_ComponentData* Data)
 	{

@@ -44,10 +44,14 @@ TUniquePtr<SpatialVirtualWorkerTranslator> CreateVirtualWorkerTranslator()
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator =
 		MakeUnique<SpatialVirtualWorkerTranslator>(nullptr, nullptr, ThisWorker);
 
-	const SpatialGDK::VirtualWorkerInfo VirtualWorkerOne = SpatialGDK::VirtualWorkerInfo{ThisVirtualWorker, ThisWorker, SpatialConstants::INVALID_ENTITY_ID, ThisWorkerId, SpatialConstants::INVALID_ENTITY_ID};
-	const SpatialGDK::VirtualWorkerInfo VirtualWorkerTwo = SpatialGDK::VirtualWorkerInfo{OtherVirtualWorker, OtherWorker, SpatialConstants::INVALID_ENTITY_ID, OtherWorkerId, SpatialConstants::INVALID_ENTITY_ID};
+	const SpatialGDK::VirtualWorkerInfo VirtualWorkerOne =
+		SpatialGDK::VirtualWorkerInfo{ ThisVirtualWorker, ThisWorker, SpatialConstants::INVALID_ENTITY_ID, ThisWorkerId,
+									   SpatialConstants::INVALID_ENTITY_ID };
+	const SpatialGDK::VirtualWorkerInfo VirtualWorkerTwo =
+		SpatialGDK::VirtualWorkerInfo{ OtherVirtualWorker, OtherWorker, SpatialConstants::INVALID_ENTITY_ID, OtherWorkerId,
+									   SpatialConstants::INVALID_ENTITY_ID };
 
-	const TArray<SpatialGDK::VirtualWorkerInfo> VirtualWorkerList{VirtualWorkerOne, VirtualWorkerTwo};
+	const TArray<SpatialGDK::VirtualWorkerInfo> VirtualWorkerList{ VirtualWorkerOne, VirtualWorkerTwo };
 	const SpatialGDK::VirtualWorkerTranslation TranslationData = SpatialGDK::VirtualWorkerTranslation(VirtualWorkerList);
 
 	VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(TranslationData);
