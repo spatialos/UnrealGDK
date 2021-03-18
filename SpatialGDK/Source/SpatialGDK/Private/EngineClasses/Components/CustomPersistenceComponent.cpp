@@ -13,6 +13,8 @@ UCustomPersistenceComponent::UCustomPersistenceComponent()
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 
 	bWantsInitializeComponent = true;
+
+	SetIsReplicatedByDefault(true);
 }
 
 void UCustomPersistenceComponent::InitializeComponent()

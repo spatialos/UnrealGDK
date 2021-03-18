@@ -241,9 +241,12 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 	if (UCustomPersistenceComponent* Component = Actor->FindComponentByClass<UCustomPersistenceComponent>())
 	{
-		ComponentData Data(Component->GetComponentId());
-		Component->GetAddComponentData(Data);
-		ComponentDatas.Add(Data.GetWorkerComponentData());
+			// This causes a crash further on. I think because the "ComponentData" type owns the underlying data, so it deallocs it too early (on exiting this scope?)
+		// ComponentData Data(Component->GetComponentId());
+		// Component->GetAddComponentData(Data);
+		// ComponentDatas.Add(Data.GetWorkerComponentData());
+
+		ComponentDatas.Add(CustomPersistence().CreateComponentData());
 	}
 
 	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
