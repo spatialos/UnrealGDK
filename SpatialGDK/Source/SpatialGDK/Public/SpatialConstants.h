@@ -146,8 +146,7 @@ const Worker_ComponentId TOMBSTONE_TAG_COMPONENT_ID = 2008;
 const Worker_ComponentId ROUTINGWORKER_TAG_COMPONENT_ID = 2009;
 const Worker_ComponentId STRATEGYWORKER_TAG_COMPONENT_ID = 2010;
 // Add component ids above here, this should always be last and be equal to the previous component id
-const Worker_ComponentId LAST_EC_COMPONENT_ID = 2010;	
-
+const Worker_ComponentId LAST_EC_COMPONENT_ID = 2010;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
