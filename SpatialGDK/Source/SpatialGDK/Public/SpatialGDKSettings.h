@@ -389,10 +389,12 @@ public:
 	UPROPERTY(Config)
 	bool bEnableCrossLayerActorSpawning;
 
-	// clang-format off
+	/**
+	 * Whether or not to suppress a warning if an RPC of Type is being called with unresolved references. Default is false.
+	 * QueuedIncomingWaitRPC time is still respected.
+	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Logging", AdvancedDisplay,
-		meta = (DisplayName = "Whether or not to suppress a warning if an RPC of Type is being called with unresolved references. Default is false.  QueuedIncomingWaitRPC time is still respected."))
-	// clang-format on
+			  meta = (DisplayName = "RPCTypes that allow unresolved parameters"))
 	TMap<ERPCType, bool> RPCTypeAllowUnresolvedParamMap;
 
 	/**

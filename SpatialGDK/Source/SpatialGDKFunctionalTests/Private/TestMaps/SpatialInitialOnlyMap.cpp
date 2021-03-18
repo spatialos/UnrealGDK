@@ -12,7 +12,8 @@ USpatialInitialOnlyMap::USpatialInitialOnlyMap()
 {
 	// clang-format off
 	SetCustomConfig(TEXT("[/Script/SpatialGDK.SpatialGDKSettings]") LINE_TERMINATOR
-					TEXT("bEnableInitialOnlyReplicationCondition=True"));
+					TEXT("bEnableInitialOnlyReplicationCondition=True") LINE_TERMINATOR
+					TEXT("PositionUpdateThresholdMaxCentimeters=0"));
 	// clang-format on
 }
 

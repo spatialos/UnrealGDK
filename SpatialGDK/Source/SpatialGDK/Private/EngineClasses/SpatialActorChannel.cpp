@@ -18,6 +18,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineStats.h"
+#include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
@@ -27,6 +28,7 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
+#include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaOption.h"
 #include "Utils/SpatialActorUtils.h"
@@ -303,7 +305,6 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 		if (CloseReason == EChannelCloseReason::Destroyed || CloseReason == EChannelCloseReason::LevelUnloaded)
 		{
 			NetDriver->GetRPCService()->ClearPendingRPCs(EntityId);
-			Sender->ClearPendingRPCs(EntityId);
 		}
 		NetDriver->RemoveActorChannel(EntityId, *this);
 	}

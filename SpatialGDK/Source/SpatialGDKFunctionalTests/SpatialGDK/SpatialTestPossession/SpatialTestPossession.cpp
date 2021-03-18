@@ -4,7 +4,7 @@
 #include "Containers/Array.h"
 #include "GameFramework/PlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "TestPossessionPawn.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
 
 /**
  * This test tests client possession over pawns.

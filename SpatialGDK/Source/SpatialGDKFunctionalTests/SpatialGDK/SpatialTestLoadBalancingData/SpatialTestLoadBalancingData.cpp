@@ -4,12 +4,12 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-
+#include "EngineClasses/SpatialWorldSettings.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialCommonTypes.h"
-#include "SpatialConstants.h"
+#include "SpatialView/EntityComponentTypes.h"
 #include "TestWorkerSettings.h"
 
-#include "EngineClasses/SpatialWorldSettings.h"
 #include "Kismet/GameplayStatics.h"
 
 USpatialTestLoadBalancingDataTestMap::USpatialTestLoadBalancingDataTestMap()
