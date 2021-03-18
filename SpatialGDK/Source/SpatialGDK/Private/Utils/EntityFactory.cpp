@@ -2,6 +2,7 @@
 
 #include "Utils/EntityFactory.h"
 
+#include "EngineClasses/Components/CustomPersistenceComponent.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -15,7 +16,6 @@
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
-#include "EngineClasses/Components/CustomPersistenceComponent.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentFactory.h"
@@ -239,9 +239,11 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 	ComponentDatas.Append(ActorDataComponents);
 
-	if (Actor->FindComponentByClass<UCustomPersistenceComponent>() != nullptr)
+	if (UCustomPersistenceComponent* Component = Actor->FindComponentByClass<UCustomPersistenceComponent>())
 	{
-		ComponentDatas.Add(CustomPersistence().CreateComponentData());
+		ComponentData Data(Component->GetComponentId());
+		Component->GetAddComponentData(Data);
+		ComponentDatas.Add(Data.GetWorkerComponentData());
 	}
 
 	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
