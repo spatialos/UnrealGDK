@@ -84,13 +84,12 @@ FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpa
 #if WITH_EDITOR
 bool USpatialGDKEditorSettings::CanEditChange(const FProperty* InProperty) const
 {
-	const bool ParentVal =
-		Super::CanEditChange(InProperty);
+	const bool bParentVal = Super::CanEditChange(InProperty);
 	if (InProperty->GetFName() == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bDeleteDynamicEntities))
 	{
-		return ParentVal && AutoStopLocalDeployment != EAutoStopLocalDeploymentMode::OnEndPIE;
+		return bParentVal && AutoStopLocalDeployment != EAutoStopLocalDeploymentMode::OnEndPIE;
 	}
-	return ParentVal;
+	return bParentVal;
 }
 #endif
 

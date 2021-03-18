@@ -276,7 +276,6 @@ public:
 	virtual void PostInitProperties() override;
 
 public:
-
 	/** Select the check box for the GDK to auto-generate a launch configuration file for your game when you launch a deployment session. If
 	 * NOT selected, you must specify a launch configuration `.json` file. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-generate launch configuration file"))
@@ -349,9 +348,9 @@ public:
 	 * leaving the last map PIE running. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Stop play in editor on Testing completed"))
 	bool bStopPIEOnTestingCompleted;
-	#if WITH_EDITOR
+#if WITH_EDITOR
 	virtual bool CanEditChange(const FProperty* InProperty) const override;
-	#endif
+#endif
 
 private:
 	/** Name of your SpatialOS snapshot file that will be generated. */
