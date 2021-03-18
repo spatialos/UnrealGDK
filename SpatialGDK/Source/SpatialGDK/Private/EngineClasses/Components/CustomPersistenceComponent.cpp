@@ -16,8 +16,8 @@ UCustomPersistenceComponent::UCustomPersistenceComponent(const FObjectInitialize
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 
 #if ENGINE_MINOR_VERSION <= 23
-	bReplicates = true;
+	bReplicates = false;
 #else
-	SetIsReplicatedByDefault(true);
+	SetIsReplicatedByDefault(false);
 #endif
 }

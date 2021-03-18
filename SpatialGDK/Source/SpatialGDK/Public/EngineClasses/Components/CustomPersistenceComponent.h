@@ -6,9 +6,6 @@
 #include "CoreMinimal.h"
 #include "CustomPersistenceComponent.generated.h"
 
-
-
-
 /*
  Offers a configurable means of persisting variables.
  This component should be attached to an actor.
