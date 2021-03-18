@@ -47,7 +47,7 @@
     <Reference Include="System.Xml" />
     <Reference Include="Improbable.Worker.CInterop">
       <HintPath>..\..\..\..\Binaries\ThirdParty\Improbable\Programs\worker_sdk\csharp_cinterop\Improbable.Worker.CInterop.dll</HintPath>
-    </Reference>	
+    </Reference>
     <Content Include="..\..\..\..\Binaries\ThirdParty\Improbable\Linux\libimprobable_worker.so">
       <Link>libimprobable_worker.so</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -56,6 +56,7 @@
   <ItemGroup>
     <Compile Include="CoordinatorConnection.cs" />
     <Compile Include="LifetimeComponent.cs" />
+    <Compile Include="LifetimeComponentTest.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="RegisseurWorkerCoordinator.cs" />
