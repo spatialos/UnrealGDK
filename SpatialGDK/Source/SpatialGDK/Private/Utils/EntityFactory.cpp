@@ -15,6 +15,7 @@
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/Tombstone.h"
+#include "EngineClasses/Components/CustomPersistenceComponent.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentFactory.h"
@@ -238,7 +239,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 	ComponentDatas.Append(ActorDataComponents);
 
-	if (Class->GetName() == TEXT("SimpleResourceNode_C"))
+	if (Actor->FindComponentByClass<UCustomPersistenceComponent>() != nullptr)
 	{
 		ComponentDatas.Add(CustomPersistence().CreateComponentData());
 	}
