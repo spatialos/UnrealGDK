@@ -64,15 +64,16 @@ void AVisibilityTest::PrepareTest()
 {
 	Super::PrepareTest();
 
+	auto bRunningWithReplicationGraph = [this]() -> bool {
+		return !GetNetDriver()->ReplicationDriverClassName.IsEmpty();
+	};
+
 	{ // Step 0 - The server spawn a TestMovementCharacter and makes Client 1 possess it.
 		AddStep(TEXT("VisibilityTestServerSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			ASpatialFunctionalTestFlowController* ClientOneFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 			APlayerController* PlayerController = Cast<APlayerController>(ClientOneFlowController->GetOwner());
 
-			if (AssertTrue(HasAuthority(), TEXT("We should have authority over the test actor.")))
-			{
-				bRunningWithReplicationGraph = GetNetDriver()->GetReplicationDriver() != nullptr;
-			}
+			AssertTrue(HasAuthority(), TEXT("We should have authority over the test actor."));
 
 			if (IsValid(PlayerController))
 			{
@@ -187,8 +188,8 @@ void AVisibilityTest::PrepareTest()
 			[this]() {
 				HelperTimer = 0.0f;
 			},
-			[this](float DeltaTime) {
-				if (bRunningWithReplicationGraph
+			[this, bRunningWithReplicationGraph](float DeltaTime) {
+				if (bRunningWithReplicationGraph()
 					&& GetLocalFlowController() != GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)
 					&& !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 				{
@@ -249,8 +250,8 @@ void AVisibilityTest::PrepareTest()
 	{ // Step 11 - Clients check that they can still not see the AReplicatedVisibilityTestActor
 		AddStep(
 			TEXT("VisibilityTestClientCheckFinalReplicatedActors"), FWorkerDefinition::AllClients, nullptr, nullptr,
-			[this](float DeltaTime) {
-				if (bRunningWithReplicationGraph && !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+			[this, bRunningWithReplicationGraph](float DeltaTime) {
+				if (bRunningWithReplicationGraph() && !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
 				{
 					// Replication graph in native has different semantics for bHidden actors, specifically that it does NOT stop
 					// replicating them. This makes this test almost worthless for running with replication graph in native, but we at least
@@ -311,11 +312,4 @@ void AVisibilityTest::PrepareTest()
 			}
 		});
 	}
-}
-
-void AVisibilityTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ThisClass, bRunningWithReplicationGraph);
 }
