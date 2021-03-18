@@ -83,7 +83,7 @@ public:
 
 	void HandleOp(const Worker_Op& Op) const
 	{
-		if (Op.op_type == WORKER_OP_TYPE_COMMAND_REQUEST)
+		if (Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE)
 		{
 			const Worker_CommandResponseOp& CommandRequestOp = Op.op.command_response;
 			const FOnCommandResponseWithOp* RequestHandlerPtr =
