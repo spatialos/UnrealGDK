@@ -11,7 +11,6 @@
 class USpatialLatencyTracer;
 class USpatialConnectionManager;
 class UGlobalStateManager;
-class USpatialStaticComponentView;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
@@ -53,7 +52,6 @@ public:
 	FORCEINLINE USpatialConnectionManager* GetSpatialConnectionManager() { return SpatialConnectionManager; }
 	FORCEINLINE USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
 	FORCEINLINE UGlobalStateManager* GetGlobalStateManager() { return GlobalStateManager; };
-	FORCEINLINE USpatialStaticComponentView* GetStaticComponentView() { return StaticComponentView; };
 
 	void HandleOnConnected(const USpatialNetDriver& NetDriver);
 	void HandleOnConnectionFailed(const FString& Reason);
@@ -101,10 +99,6 @@ private:
 	// GlobalStateManager must persist when server traveling
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
-
-	// StaticComponentView must persist when server traveling
-	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
 
 	// A set of the levels which were loaded before the SpatialOS connection.
 	UPROPERTY()

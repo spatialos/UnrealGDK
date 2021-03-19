@@ -119,9 +119,6 @@ private:
 	SpatialGDK::ViewCoordinator* ViewCoordinator;
 
 	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
-
-	UPROPERTY()
 	USpatialSender* Sender;
 
 	UPROPERTY()

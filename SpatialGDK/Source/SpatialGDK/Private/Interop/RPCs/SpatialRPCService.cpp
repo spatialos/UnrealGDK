@@ -8,7 +8,6 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Net/NetworkProfiler.h"
 #include "SpatialConstants.h"
 #include "Utils/RepLayoutUtils.h"

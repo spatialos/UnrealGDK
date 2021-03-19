@@ -27,7 +27,6 @@ class SpatialDispatcher;
 class USpatialNetDriver;
 class USpatialPackageMapClient;
 class USpatialReceiver;
-class USpatialStaticComponentView;
 class USpatialClassInfoManager;
 class USpatialWorkerConnection;
 
@@ -69,9 +68,6 @@ public:
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
-
-	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;

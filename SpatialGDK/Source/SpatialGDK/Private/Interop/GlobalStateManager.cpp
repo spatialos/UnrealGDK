@@ -34,7 +34,6 @@ using namespace SpatialGDK;
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
 	Receiver = InNetDriver->Receiver;
 	ViewCoordinator = &InNetDriver->Connection->GetCoordinator();

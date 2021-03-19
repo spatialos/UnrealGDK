@@ -3,7 +3,6 @@
 #include "Interop/SpatialDispatcher.h"
 
 #include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "UObject/UObjectIterator.h"
 #include "Utils/OpUtils.h"
@@ -13,14 +12,10 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
-void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView,
-							 USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags)
+void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags)
 {
 	check(InReceiver != nullptr);
 	Receiver = InReceiver;
-
-	check(InStaticComponentView != nullptr);
-	StaticComponentView = InStaticComponentView;
 
 	check(InSpatialMetrics != nullptr);
 	SpatialMetrics = InSpatialMetrics;
@@ -30,7 +25,6 @@ void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticCompone
 void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 {
 	check(Receiver.IsValid());
-	check(StaticComponentView.IsValid());
 
 	for (const Worker_Op& Op : Ops)
 	{
@@ -46,24 +40,6 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 		case WORKER_OP_TYPE_CRITICAL_SECTION:
 			break;
 
-		// Entity Lifetime
-		case WORKER_OP_TYPE_ADD_ENTITY:
-			break;
-		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			StaticComponentView->OnRemoveEntity(Op.op.remove_entity.entity_id);
-			break;
-
-		// Components
-		case WORKER_OP_TYPE_ADD_COMPONENT:
-			StaticComponentView->OnAddComponent(Op.op.add_component);
-			break;
-		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			StaticComponentView->OnRemoveComponent(Op.op.remove_component);
-			break;
-		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			StaticComponentView->OnComponentUpdate(Op.op.component_update);
-			break;
-
 		// Commands
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
 			Receiver->OnCommandRequest(Op);
@@ -71,14 +47,6 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
 			Receiver->OnCommandResponse(Op);
 			break;
-
-		// Authority Change
-		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
-			// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
-			// This way systems that depend on having non-stale state can function correctly.
-			StaticComponentView->OnAuthorityChange(Op.op.component_set_authority_change);
-			break;
-
 		// World Command Responses
 		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
 			Receiver->OnReserveEntityIdsResponse(Op.op.reserve_entity_ids_response);
@@ -126,13 +94,10 @@ void SpatialDispatcher::ProcessExternalSchemaOp(const Worker_Op& Op)
 {
 	Worker_ComponentId ComponentId = SpatialGDK::GetComponentId(Op);
 	check(ComponentId != SpatialConstants::INVALID_COMPONENT_ID);
-	check(StaticComponentView.IsValid());
 
 	switch (Op.op_type)
 	{
 	case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
-		StaticComponentView->OnAuthorityChange(Op.op.component_set_authority_change);
-		// Intentional fall-through
 	case WORKER_OP_TYPE_ADD_COMPONENT:
 	case WORKER_OP_TYPE_REMOVE_COMPONENT:
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:

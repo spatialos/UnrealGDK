@@ -15,7 +15,6 @@
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialRoutingSystem.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Schema/CrossServerEndpoint.h"
 #include "SpatialView/OpList/EntityComponentOpList.h"
 #include "SpatialView/ViewCoordinator.h"

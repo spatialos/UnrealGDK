@@ -52,7 +52,6 @@ DECLARE_CYCLE_STAT(TEXT("Sender UpdateInterestComponent"), STAT_SpatialSenderUpd
 void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialEventTracer* InEventTracer)
 {
 	NetDriver = InNetDriver;
-	StaticComponentView = InNetDriver->StaticComponentView;
 	Connection = InNetDriver->Connection;
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
