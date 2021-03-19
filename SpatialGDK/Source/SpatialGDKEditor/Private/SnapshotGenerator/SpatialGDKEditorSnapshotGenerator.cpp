@@ -240,7 +240,6 @@ bool CreateStrategyPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	ServerInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
 	ServerInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(ServerQuery);
 
-	
 	Components.Add(Position(DeploymentOrigin).CreateComponentData());
 	Components.Add(Metadata(TEXT("StrategyPartitionEntity")).CreateComponentData());
 	Components.Add(Persistence().CreateComponentData());
@@ -252,7 +251,6 @@ bool CreateStrategyPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &StrategyPartitionEntity);
 	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
 }
-
 
 bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 {

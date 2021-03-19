@@ -8,10 +8,10 @@ DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 namespace SpatialGDK
 {
 SpatialStrategySystem::SpatialStrategySystem(const FSubView& InSubView, Worker_EntityId InStrategyWorkerEntityId)
-	: SubView(InSubView),
-	StrategyWorkerEntityId(InStrategyWorkerEntityId),
-	StrategyPartitionEntityId(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID)
-{	
+	: SubView(InSubView)
+	, StrategyWorkerEntityId(InStrategyWorkerEntityId)
+	, StrategyPartitionEntityId(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID)
+{
 }
 
 void SpatialStrategySystem::Advance()
@@ -48,8 +48,6 @@ void SpatialStrategySystem::Flush()
 	// TODO
 }
 
-void SpatialStrategySystem::Destroy()
-{
-}
+void SpatialStrategySystem::Destroy() {}
 
 } // namespace SpatialGDK
