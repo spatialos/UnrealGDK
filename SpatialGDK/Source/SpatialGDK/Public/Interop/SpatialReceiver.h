@@ -112,6 +112,9 @@ public:
 	void RetireWhenAuthoritive(Worker_EntityId EntityId, Worker_ComponentId ActorClassId, bool bIsNetStartup, bool bNeedsTearOff);
 
 	void ProcessActorsFromAsyncLoading();
+
+	void RestoreStablyNamedActor(const FUnrealObjectRef& ObjectRef, AActor* Actor);
+
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
@@ -123,6 +126,9 @@ private:
 								SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerData);
 	AActor* CreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData,
 						SpatialGDK::NetOwningClientWorker* NetOwningClientWorkerData);
+
+	void RegisterStablePathEntity(Worker_EntityId EntityId);
+	void UnregisterStablePathEntity(Worker_EntityId EntityId);
 
 	USpatialActorChannel* GetOrRecreateChannelForDomantActor(AActor* Actor, Worker_EntityId EntityID);
 	void ProcessRemoveComponent(const Worker_RemoveComponentOp& Op);
@@ -279,4 +285,7 @@ private:
 	bool IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset);
 
 	SpatialGDK::SpatialEventTracer* EventTracer;
+
+	// Holds EntityIds for stably named actors in the view.
+	TMap<FUnrealObjectRef, Worker_EntityId> StablePathToEntityIdMap;
 };

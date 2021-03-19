@@ -8,6 +8,7 @@
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/NetworkObjectList.h"
+#include "Engine/World.h"
 #include "EngineGlobals.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
@@ -78,6 +79,7 @@ DECLARE_CYCLE_STAT(TEXT("ProcessPrioritizedActors"), STAT_SpatialProcessPrioriti
 DECLARE_CYCLE_STAT(TEXT("PrioritizeActors"), STAT_SpatialPrioritizeActors, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ProcessOps"), STAT_SpatialProcessOps, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("UpdateAuthority"), STAT_SpatialUpdateAuthority, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("OnLevelAddedToWorld"), STAT_OnLevelAddedToWorld, STATGROUP_SpatialNet);
 DEFINE_STAT(STAT_SpatialConsiderList);
 DEFINE_STAT(STAT_SpatialActorsRelevant);
 DEFINE_STAT(STAT_SpatialActorsChanged);
@@ -1026,6 +1028,25 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 	// Remove from renamed list if destroyed
 	RenamedStartupActors.Remove(ThisActor->GetFName());
+}
+
+void USpatialNetDriver::NotifyActorLevelUnloaded(AActor* Actor)
+{
+	// Intentionally does not call Super::NotifyActorLevelUnloaded.
+	// The native UNetDriver breaks the channel on the client because it can't properly close it
+	// until the server does, but we can clean it up because we don't send data through the channels.
+	// Cleaning it up also removes the references to the entity and channel from our maps.
+
+	NotifyActorDestroyed(Actor, true);
+
+	if (ServerConnection != nullptr)
+	{
+		UActorChannel* Channel = ServerConnection->FindActorChannelRef(Actor);
+		if (Channel != nullptr)
+		{
+			Channel->ConditionalCleanUp(false, EChannelCloseReason::LevelUnloaded);
+		}
+	}
 }
 
 void USpatialNetDriver::Shutdown()
@@ -2802,4 +2823,54 @@ FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 		}
 	}
 	return FUnrealObjectRef::NULL_OBJECT_REF;
+}
+
+FUnrealObjectRef GetStablyNamedObjectRef(const UObject* Object)
+{
+	if (Object == nullptr)
+	{
+		return FUnrealObjectRef::NULL_OBJECT_REF;
+	}
+
+	// No path in SpatialOS should contain a PIE prefix.
+	FString TempPath = Object->GetFName().ToString();
+	TempPath = UWorld::RemovePIEPrefix(TempPath);
+
+	return FUnrealObjectRef(0, 0, TempPath, GetStablyNamedObjectRef(Object->GetOuter()), true);
+}
+
+void USpatialNetDriver::OnLevelAddedToWorld(ULevel* Level, UWorld* InWorld)
+{
+	Super::OnLevelAddedToWorld(Level, InWorld);
+
+	SCOPE_CYCLE_COUNTER(STAT_OnLevelAddedToWorld);
+
+	// When a sublevel gets reloaded soon after it was unloaded, the entities in that level might still be in the view.
+	// In that case, we need to tell the ActorSystem to restore channels/references for those actors.
+	if (!IsServer() && Level != nullptr && Receiver != nullptr)
+	{
+		FUnrealObjectRef LevelObjectRef = GetStablyNamedObjectRef(Level);
+
+		for (AActor* Actor : Level->Actors)
+		{
+			if (Actor == nullptr || !Actor->IsNetStartupActor())
+			{
+				continue;
+			}
+
+			FUnrealObjectRef ActorRef;
+			// Usually actors in a level will have the level as their outer
+			if (Actor->GetOuter() == Level)
+			{
+				FString ActorName = UWorld::RemovePIEPrefix(Actor->GetFName().ToString());
+				ActorRef = FUnrealObjectRef(0, 0, ActorName, LevelObjectRef, true);
+			}
+			else
+			{
+				ActorRef = GetStablyNamedObjectRef(Actor);
+			}
+
+			Receiver->RestoreStablyNamedActor(ActorRef, Actor);
+		}
+	}
 }

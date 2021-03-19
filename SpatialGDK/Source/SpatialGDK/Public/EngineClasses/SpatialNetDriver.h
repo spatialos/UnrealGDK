@@ -26,6 +26,9 @@
 
 #include "SpatialNetDriver.generated.h"
 
+class ULevel;
+class UWorld;
+
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
 class FSpatialLoadBalancingHandler;
@@ -93,6 +96,7 @@ public:
 	virtual void TickFlush(float DeltaTime) override;
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
+	virtual void NotifyActorLevelUnloaded(AActor* Actor) override;
 	virtual void Shutdown() override;
 	virtual void NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection) override;
 	virtual void OnOwnerUpdated(AActor* Actor, AActor* OldOwner) override;
@@ -231,6 +235,9 @@ public:
 	bool IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
 
 	virtual int64 GetClientID() const override;
+
+protected:
+	virtual void OnLevelAddedToWorld(ULevel* Level, UWorld* World) override;
 
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;

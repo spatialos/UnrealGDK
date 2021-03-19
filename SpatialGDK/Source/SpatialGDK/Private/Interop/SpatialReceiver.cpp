@@ -116,6 +116,8 @@ void USpatialReceiver::LeaveCriticalSection()
 
 	for (Worker_EntityId& PendingAddEntity : PendingAddActors)
 	{
+		RegisterStablePathEntity(PendingAddEntity);
+
 		ReceiveActor(PendingAddEntity);
 		if (!IsEntityWaitingForAsyncLoad(PendingAddEntity))
 		{
@@ -417,6 +419,8 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 				PendingAddActors.Remove(Op.entity_id);
 			}
 			RemoveActor(Op.entity_id);
+
+			UnregisterStablePathEntity(Op.entity_id);
 		}
 	}
 
@@ -783,6 +787,84 @@ bool USpatialReceiver::IsReceivedEntityTornOff(Worker_EntityId EntityId)
 	}
 
 	return false;
+}
+
+void USpatialReceiver::RegisterStablePathEntity(const Worker_EntityId EntityId)
+{
+	if (const UnrealMetadata* Metadata = StaticComponentView->GetComponentData<UnrealMetadata>(EntityId))
+	{
+		if (Metadata->StablyNamedRef.IsSet())
+		{
+			StablePathToEntityIdMap.Add(Metadata->StablyNamedRef.GetValue(), EntityId);
+		}
+	}
+}
+
+void USpatialReceiver::UnregisterStablePathEntity(const Worker_EntityId EntityId)
+{
+	if (const UnrealMetadata* Metadata = StaticComponentView->GetComponentData<UnrealMetadata>(EntityId))
+	{
+		if (Metadata->StablyNamedRef.IsSet())
+		{
+			StablePathToEntityIdMap.Remove(Metadata->StablyNamedRef.GetValue());
+		}
+	}
+}
+
+void USpatialReceiver::RestoreStablyNamedActor(const FUnrealObjectRef& ObjectRef, AActor* Actor)
+{
+	// This is called for startup actors in sublevels when they're loaded.
+	// In case the corresponding entities are still in our view (which can happen
+	// if the level is unloaded and immediately reloaded), we need to resolve the
+	// entities and create the actor channels.
+
+	if (const Worker_EntityId* EntityId = StablePathToEntityIdMap.Find(ObjectRef))
+	{
+		if (!NetDriver->PackageMap->ResolveEntityActor(Actor, *EntityId))
+		{
+			UE_LOG(LogSpatialReceiver, Warning,
+				   TEXT("Failed to resolve entity actor when loading stably named actor from level. Entity: %lld, actor: %s"), *EntityId,
+				   *Actor->GetPathName());
+			return;
+		}
+
+		if (NetDriver->StaticComponentView->HasComponent(*EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
+		{
+			UE_LOG(LogSpatialReceiver, Log,
+				   TEXT("Reloaded stably named actor that was tombstoned, will remove the actor. Entity: %lld, actor: %s"), *EntityId,
+				   *Actor->GetPathName());
+			RemoveActor(*EntityId);
+			return;
+		}
+
+		UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
+		if (Connection == nullptr)
+		{
+			UE_LOG(LogSpatialReceiver, Error,
+				   TEXT("Unable to find SpatialOSNetConnection! Has this worker been disconnected from SpatialOS due to a timeout?"));
+			return;
+		}
+
+		// Set up actor channel.
+		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(*EntityId);
+		if (Channel == nullptr)
+		{
+			Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::None));
+		}
+
+		if (Channel == nullptr)
+		{
+			UE_LOG(LogSpatialReceiver, Warning,
+				   TEXT("Failed to create an actor channel when loading stably named actor from level. Entity: %lld, actor: %s"), *EntityId,
+				   *Actor->GetPathName());
+			return;
+		}
+
+		if (Channel->Actor == nullptr)
+		{
+			Channel->SetChannelActor(Actor, ESetChannelActorFlags::None);
+		}
+	}
 }
 
 void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
