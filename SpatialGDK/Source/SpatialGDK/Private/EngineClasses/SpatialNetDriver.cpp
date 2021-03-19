@@ -1036,7 +1036,7 @@ void USpatialNetDriver::BeginDestroy()
 
 		if (StrategySystem)
 		{
-			StrategySystem->Destroy(Connection);
+			StrategySystem->Destroy();
 
 			Connection->Flush();
 			FPlatformProcess::Sleep(0.1f);
@@ -2091,7 +2091,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (StrategySystem.IsValid())
 		{
-			StrategySystem->Advance(Connection);
+			StrategySystem->Advance();
 		}
 
 		if (!bIsReadyToStart)
@@ -2247,7 +2247,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		}
 		else if (GameInstance->GetSpatialWorkerType() == SpatialConstants::StrategyWorkerType)
 		{
-			StrategySystem->Flush(Connection);
+			StrategySystem->Flush();
 		}
 		else
 		{
@@ -3007,7 +3007,7 @@ void USpatialNetDriver::TryFinishStartup()
 														   },
 														   {});
 
-			StrategySystem = MakeUnique<SpatialGDK::SpatialStrategySystem>(NewView, Connection->GetWorkerSystemEntityId(), Connection);
+			StrategySystem = MakeUnique<SpatialGDK::SpatialStrategySystem>(NewView, Connection->GetWorkerSystemEntityId());
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();
 		}

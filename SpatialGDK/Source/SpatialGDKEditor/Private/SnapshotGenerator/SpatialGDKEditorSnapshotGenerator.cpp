@@ -222,6 +222,38 @@ bool CreateSnapshotPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
 }
 
+bool CreateStrategyPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
+{
+	Worker_Entity StrategyPartitionEntity;
+	StrategyPartitionEntity.entity_id = SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID;
+
+	TArray<FWorkerComponentData> Components;
+
+	AuthorityDelegationMap DelegationMap;
+	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+
+	Interest ServerInterest;
+	Query ServerQuery = {};
+	ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID, SpatialConstants::LB_TAG_COMPONENT_ID,
+									   SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_COMPONENT_ID };
+	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID;
+	ServerInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
+	ServerInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(ServerQuery);
+
+	
+	Components.Add(Position(DeploymentOrigin).CreateComponentData());
+	Components.Add(Metadata(TEXT("StrategyPartitionEntity")).CreateComponentData());
+	Components.Add(Persistence().CreateComponentData());
+	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
+	Components.Add(ServerInterest.CreateComponentData());
+
+	SetEntityData(StrategyPartitionEntity, Components);
+
+	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &StrategyPartitionEntity);
+	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
+}
+
+
 bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 {
 	FString DirectoryPath = FPaths::GetPath(SavePath);
@@ -290,6 +322,13 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 	if (!CreateSnapshotPartitionEntity(OutputStream))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating SnapshotPartitionEntity in snapshot: %s"),
+			   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
+		return false;
+	}
+
+	if (!CreateStrategyPartitionEntity(OutputStream))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating StrategyWorker in snapshot: %s"),
 			   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 		return false;
 	}
