@@ -207,8 +207,8 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
-	AuthorityIntent* AuthorityIntentComponent = StaticComponentView->GetComponentData<AuthorityIntent>(EntityId);
-	check(AuthorityIntentComponent != nullptr);
+	TOptional<AuthorityIntent> AuthorityIntentComponent = NetDriver->Connection->GetCoordinator().GetComponent<AuthorityIntent>(EntityId);
+	check(AuthorityIntentComponent.IsSet());
 	checkf(AuthorityIntentComponent->VirtualWorkerId != NewAuthoritativeVirtualWorkerId,
 		   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
 		   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);

@@ -44,7 +44,9 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 		return EvaluateActorResult::RemoveAdditional;
 	}
 
-	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
+	const ViewCoordinator& ViewCoordinator = NetDriver->Connection->GetCoordinator();
+
+	if (ViewCoordinator.HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
 	{
 		AActor* NetOwner = GetReplicatedHierarchyRoot(Actor);
 
@@ -107,7 +109,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 					// so the load balancing strategy could give us a worker different from where it should be.
 					// Instead, we read its currently assigned worker, which will eventually make us land where our owner is.
 					Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
-					if (AuthorityIntent* OwnerAuthIntent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(OwnerId))
+					if (const TOptional<AuthorityIntent> OwnerAuthIntent = ViewCoordinator.GetComponent<AuthorityIntent>(OwnerId))
 					{
 						NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
 					}
@@ -155,7 +157,7 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 
 void FSpatialLoadBalancingHandler::UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const
 {
-	if (SpatialDebugging* DebuggingInfo = NetDriver->StaticComponentView->GetComponentData<SpatialDebugging>(EntityId))
+	if (TOptional<SpatialDebugging> DebuggingInfo = NetDriver->Connection->GetCoordinator().GetComponent<SpatialDebugging>(EntityId))
 	{
 		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
 		if (DebuggingInfo->IsLocked != bIsLocked)
@@ -288,7 +290,7 @@ VirtualWorkerId FSpatialLoadBalancingHandler::GetWorkerId(const AActor* NetOwner
 	else
 	{
 		Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
-		if (AuthorityIntent* OwnerAuthIntent = NetDriver->StaticComponentView->GetComponentData<AuthorityIntent>(OwnerId))
+		if (TOptional<AuthorityIntent> OwnerAuthIntent = NetDriver->Connection->GetCoordinator().GetComponent<AuthorityIntent>(OwnerId))
 		{
 			NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
 		}

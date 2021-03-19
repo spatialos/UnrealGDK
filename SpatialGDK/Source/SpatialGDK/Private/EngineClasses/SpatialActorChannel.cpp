@@ -1170,7 +1170,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 	// True if the entity is in the worker's view.
 	// If this is the case then we know the entity was created and do not need to retry if the request timed-out.
-	const bool bEntityIsInView = NetDriver->StaticComponentView->HasComponent(SpatialGDK::Position::ComponentId, GetEntityId());
+	const bool bEntityIsInView = NetDriver->Connection->GetCoordinator().HasComponent(SpatialGDK::Position::ComponentId, GetEntityId());
 
 	switch (static_cast<Worker_StatusCode>(Op.status_code))
 	{
@@ -1345,8 +1345,8 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
 	check(NetDriver->HasServerAuthority(EntityId));
-	SpatialGDK::NetOwningClientWorker* CurrentNetOwningClientData =
-		NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
+	TOptional<SpatialGDK::NetOwningClientWorker> CurrentNetOwningClientData =
+		NetDriver->Connection->GetCoordinator().GetComponent<SpatialGDK::NetOwningClientWorker>(EntityId);
 	const Worker_PartitionId CurrentClientPartitionId = CurrentNetOwningClientData->ClientPartitionId.IsSet()
 															? CurrentNetOwningClientData->ClientPartitionId.GetValue()
 															: SpatialConstants::INVALID_ENTITY_ID;

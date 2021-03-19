@@ -19,6 +19,11 @@ class USpatialStaticComponentView;
 class USpatialSender;
 class USpatialReceiver;
 
+namespace SpatialGDK
+{
+class ViewCoordinator;
+}
+
 DECLARE_LOG_CATEGORY_EXTERN(LogGlobalStateManager, Log, All)
 
 UCLASS()
@@ -110,6 +115,8 @@ private:
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
+
+	SpatialGDK::ViewCoordinator* ViewCoordinator;
 
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
