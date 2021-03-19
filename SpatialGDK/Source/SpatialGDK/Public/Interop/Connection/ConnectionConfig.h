@@ -155,8 +155,8 @@ public:
 	uint8 TcpNoDelay;
 	uint8 UdpUpstreamIntervalMS;
 	uint8 UdpDownstreamIntervalMS;
-	uint16 DownstreamWindowSize;
-	uint16 UpstreamWindowSize;
+	uint32 DownstreamWindowSize;
+	uint32 UpstreamWindowSize;
 };
 
 class FLocatorConfig : public FConnectionConfig
