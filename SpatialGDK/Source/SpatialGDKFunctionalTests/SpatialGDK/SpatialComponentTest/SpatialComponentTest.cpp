@@ -24,7 +24,7 @@ ASpatialComponentTest::ASpatialComponentTest()
 	Description = TEXT("Test GDK component callbacks");
 
 	Server1Position = FVector(-250.0f, -250.0f, 0.0f);
-	Server2Position = FVector(250.0f, -250.0f, 0.0f);
+	Server2Position = FVector(-250.0f, 250.0f, 0.0f);
 }
 
 void ASpatialComponentTest::PrepareTest()

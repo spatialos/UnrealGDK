@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
+#include "TestMaps/GeneratedTestMap.h"
+
 #include "SpatialTestNetReference.generated.h"
 
 UCLASS()
@@ -13,8 +15,6 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestNetReference : public ASpatialFu
 
 public:
 	ASpatialTestNetReference();
-
-	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
 
 	virtual void PrepareTest() override;
 
@@ -33,4 +33,16 @@ public:
 	TPair<AController*, APawn*> OriginalPawn;
 
 	float PreviousMaximumDistanceThreshold;
+};
+
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API USpatialTestNetReferenceMap : public UGeneratedTestMap
+{
+	GENERATED_BODY()
+
+public:
+	USpatialTestNetReferenceMap();
+
+protected:
+	virtual void CreateCustomContentForMap() override;
 };

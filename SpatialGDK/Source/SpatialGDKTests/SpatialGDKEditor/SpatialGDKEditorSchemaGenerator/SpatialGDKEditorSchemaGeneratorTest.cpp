@@ -3,6 +3,7 @@
 #include "Tests/TestDefinitions.h"
 
 #include "SchemaGenObjectStub.h"
+#include "SpatialConstants.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
@@ -12,6 +13,7 @@
 #include "CoreMinimal.h"
 #include "GeneralProjectSettings.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Misc/Crc.h"
 #include "Misc/FileHelper.h"
 #include "Misc/PackageName.h"
 
@@ -58,7 +60,7 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FStrin
 
 	for (const auto& SchemaLine : LoadedSchema)
 	{
-		FRegexPattern IdPattern(TEXT("(\tid = )([0-9]+)(;)"));
+		FRegexPattern IdPattern(TEXT("\\s+(id\\s*=\\s*)([0-9]+)(\\s*;)"));
 		FRegexMatcher IdRegMatcher(IdPattern, SchemaLine);
 
 		FRegexPattern NamePattern(TEXT("(^component )(.+)( \\{)"));
@@ -112,6 +114,8 @@ FString ComponentTypeToString(ESchemaComponentType Type)
 		return TEXT("OwnerOnly");
 	case SCHEMA_Handover:
 		return TEXT("Handover");
+	case SCHEMA_InitialOnly:
+		return TEXT("InitialOnly");
 	}
 	return TEXT("");
 }
@@ -258,6 +262,7 @@ const TArray<UObject*>& AllTestClassesArray()
 	static TArray<UObject*> TestClassesArray = { USchemaGenObjectStub::StaticClass(),
 												 USchemaGenObjectStubCondOwnerOnly::StaticClass(),
 												 USchemaGenObjectStubHandOver::StaticClass(),
+												 USchemaGenObjectStubInitialOnly::StaticClass(),
 												 USpatialTypeObjectStub::StaticClass(),
 												 UChildOfSpatialTypeObjectStub::StaticClass(),
 												 UNotSpatialTypeObjectStub::StaticClass(),
@@ -279,6 +284,7 @@ const TSet<UClass*>& AllTestClassesSet()
 	static TSet<UClass*> TestClassesSet = { USchemaGenObjectStub::StaticClass(),
 											USchemaGenObjectStubCondOwnerOnly::StaticClass(),
 											USchemaGenObjectStubHandOver::StaticClass(),
+											USchemaGenObjectStubInitialOnly::StaticClass(),
 											USpatialTypeObjectStub::StaticClass(),
 											UChildOfSpatialTypeObjectStub::StaticClass(),
 											UNotSpatialTypeObjectStub::StaticClass(),
@@ -311,6 +317,7 @@ TMap<FString, FString> ExpectedContentsFilenames = {
 	{ "SpatialTypeActorWithMultipleObjectComponents", "SpatialTypeActorWithMultipleObjectComponents.schema" }
 };
 uint32 ExpectedRPCEndpointsRingBufferSize = 32;
+TMap<ERPCType, uint32> ExpectedRPCRingBufferSizeOverrides = { { ERPCType::ServerAlwaysWrite, 1 } };
 FString ExpectedRPCEndpointsSchemaFilename = TEXT("rpc_endpoints.schema");
 
 class SchemaValidator
@@ -397,24 +404,28 @@ private:
 class SchemaRPCEndpointTestFixture : public SchemaTestFixture
 {
 public:
-	SchemaRPCEndpointTestFixture() { SetMaxRPCRingBufferSize(); }
-	~SchemaRPCEndpointTestFixture() { ResetMaxRPCRingBufferSize(); }
+	SchemaRPCEndpointTestFixture() { SetRPCRingBufferSize(); }
+	~SchemaRPCEndpointTestFixture() { ResetRPCRingBufferSize(); }
 
 private:
-	void SetMaxRPCRingBufferSize()
+	void SetRPCRingBufferSize()
 	{
 		USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-		CachedMaxRPCRingBufferSize = SpatialGDKSettings->MaxRPCRingBufferSize;
-		SpatialGDKSettings->MaxRPCRingBufferSize = ExpectedRPCEndpointsRingBufferSize;
+		CachedDefaultRPCRingBufferSize = SpatialGDKSettings->DefaultRPCRingBufferSize;
+		CachedRPCRingBufferSizeOverrides = SpatialGDKSettings->RPCRingBufferSizeOverrides;
+		SpatialGDKSettings->DefaultRPCRingBufferSize = ExpectedRPCEndpointsRingBufferSize;
+		SpatialGDKSettings->RPCRingBufferSizeOverrides = ExpectedRPCRingBufferSizeOverrides;
 	}
 
-	void ResetMaxRPCRingBufferSize()
+	void ResetRPCRingBufferSize()
 	{
 		USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-		SpatialGDKSettings->MaxRPCRingBufferSize = CachedMaxRPCRingBufferSize;
+		SpatialGDKSettings->DefaultRPCRingBufferSize = CachedDefaultRPCRingBufferSize;
+		SpatialGDKSettings->RPCRingBufferSizeOverrides = CachedRPCRingBufferSizeOverrides;
 	}
 
-	uint32 CachedMaxRPCRingBufferSize;
+	uint32 CachedDefaultRPCRingBufferSize;
+	TMap<ERPCType, uint32> CachedRPCRingBufferSizeOverrides;
 };
 
 } // anonymous namespace
@@ -894,6 +905,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "debug_component.schema",
 										   "debug_metrics.schema",
 										   "global_state_manager.schema",
+										   "initial_only_presence.schema",
 										   "player_controller.schema",
 										   "known_entity_auth_component_set.schema",
 										   "migration_diagnostic.schema",
@@ -1057,7 +1069,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	SchemaTestFixture Fixture;
 
 	TSet<UClass*> Classes = { ASpatialTypeActor::StaticClass(), USchemaGenObjectStubHandOver::StaticClass(),
-							  ASpatialTypeActorWithOwnerOnly::StaticClass() };
+							  ASpatialTypeActorWithOwnerOnly::StaticClass(), ASpatialTypeActorWithInitialOnly::StaticClass() };
 
 	FString SchemaFolder = FPaths::Combine(SchemaOutputFolder, TEXT("schema"));
 	FString UnrealSchemaFolder = FPaths::Combine(SchemaFolder, TEXT("unreal"));
@@ -1086,12 +1098,29 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	TestTrue("Schema bundle file successfully read",
 			 SpatialGDKEditor::Schema::ExtractComponentSetsFromSchemaJson(SchemaJsonPath, SchemaDatabase->ComponentSetIdToComponentIds));
 
-	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 7);
+	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 9);
 
 	TestTrue("Found spatial well known components", SchemaDatabase->ComponentSetIdToComponentIds.Contains(50));
 	if (SchemaDatabase->ComponentSetIdToComponentIds.Contains(50))
 	{
 		TestTrue("Spatial well know component is not empty", SchemaDatabase->ComponentSetIdToComponentIds[50].ComponentIDs.Num() > 0);
+	}
+
+	{
+		FComponentIDs* RoutingComponents =
+			SchemaDatabase->ComponentSetIdToComponentIds.Find(SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID);
+		TestTrue("Found routing worker components", RoutingComponents != nullptr);
+		if (RoutingComponents != nullptr)
+		{
+			TestTrue("Expected number of routing worker components",
+					 RoutingComponents->ComponentIDs.Num() == SpatialConstants::RoutingWorkerComponents.Num());
+
+			for (auto ComponentId : SpatialConstants::RoutingWorkerComponents)
+			{
+				FString DebugString = FString::Printf(TEXT("Found well known component %s"), *ComponentId.Value);
+				TestTrue(*DebugString, RoutingComponents->ComponentIDs.Find(ComponentId.Key) != INDEX_NONE);
+			}
+		}
 	}
 
 	{
@@ -1110,10 +1139,10 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 			TestTrue(*DebugString, ServerComponents->ComponentIDs.Find(ComponentId.Key) != INDEX_NONE);
 		}
 
-		uint32 ServerAuthSets[3] = { SpatialConstants::DATA_COMPONENT_SET_ID, SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID,
-									 SpatialConstants::HANDOVER_COMPONENT_SET_ID };
+		uint32 ServerAuthSets[] = { SpatialConstants::DATA_COMPONENT_SET_ID, SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID,
+									SpatialConstants::HANDOVER_COMPONENT_SET_ID, SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID };
 
-		for (uint32 ComponentType = SCHEMA_Data; ComponentType < SCHEMA_Count; ++ComponentType)
+		for (uint32 ComponentType = SCHEMA_Begin; ComponentType < SCHEMA_Count; ++ComponentType)
 		{
 			FComponentIDs* DataComponents = SchemaDatabase->ComponentSetIdToComponentIds.Find(ServerAuthSets[ComponentType]);
 			TestTrue("Found entry for class in data type component set", DataComponents != nullptr);
@@ -1199,6 +1228,51 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 			TestTrue(*DebugString, GDKWellKnownComponents->ComponentIDs.Find(ComponentId) != INDEX_NONE);
 		}
 	}
+
+	return true;
+}
+
+SCHEMA_GENERATOR_TEST(
+	GIVEN_snapshot_affecting_schema_files_WHEN_hash_of_file_contents_is_generated_THEN_hash_matches_expected_snapshot_version_hash)
+{
+	SchemaTestFixture Fixture;
+
+	// GIVEN
+	FString GDKSchemaCopyDir = FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/gdk"));
+	TArray<FString> GDKSchemaFilePaths = { TEXT("global_state_manager.schema"), TEXT("spawner.schema"),
+										   TEXT("virtual_worker_translation.schema") };
+
+	// WHEN
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	uint32 HashCrc = 0;
+	TArray<FString> SchemaStrings;
+
+	for (const auto& FilePath : GDKSchemaFilePaths)
+	{
+		const FString FileNameAndPath = FPaths::Combine(GDKSchemaCopyDir, FilePath);
+		if (!PlatformFile.FileExists(*FileNameAndPath))
+		{
+			const FString DebugString = FString::Printf(TEXT("Expected to find schema file %s"), *FilePath);
+			TestFalse(DebugString, true);
+			break;
+		}
+		else
+		{
+			TArray<FString> FileContents;
+			FFileHelper::LoadFileToStringArray(FileContents, *FileNameAndPath);
+
+			for (const FString& LineContents : FileContents)
+			{
+				HashCrc = FCrc::StrCrc32(*LineContents, HashCrc);
+			}
+		}
+	}
+
+	// THEN
+	const FString ErrorMessage =
+		FString::Printf(TEXT("Expected hash to be %u, but found it to be %u"), SpatialConstants::SPATIAL_SNAPSHOT_SCHEMA_HASH, HashCrc);
+	TestEqual(ErrorMessage, SpatialConstants::SPATIAL_SNAPSHOT_SCHEMA_HASH, HashCrc);
 
 	return true;
 }

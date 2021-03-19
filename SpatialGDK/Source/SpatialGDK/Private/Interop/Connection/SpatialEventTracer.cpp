@@ -31,7 +31,17 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
 		if (Code != 1)
 		{
-			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s"), Code, Trace_GetLastError());
+			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s)"), Code, Trace_GetLastError());
+		}
+
+		if (FPlatformAtomics::AtomicRead_Relaxed(&EventTracer->FlushOnWriteAtomic))
+		{
+			int64_t Flushresult = Io_Stream_Flush(Stream);
+			if (Flushresult == -1)
+			{
+				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %d (%s)"), Code,
+					   Io_Stream_GetLastError(Stream));
+			}
 		}
 	}
 	else
@@ -74,16 +84,23 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Trace_SamplingParameters SamplingParameters = {};
 	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
 
+	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
+
+	UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing sampling probability. Probability: %f."),
+		   SamplingSettings->SamplingProbability);
+
 	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
 	TArray<std::string> AnsiStrings; // Worker requires ansi const char*
-
-	for (const auto& Pair : Settings->EventSamplingModeOverrides)
+	for (const auto& Pair : SamplingSettings->EventSamplingModeOverrides)
 	{
-		int32 Index = AnsiStrings.Add((const char*)TCHAR_TO_ANSI(*Pair.Key.ToString()));
+		const FString& EventName = Pair.Key.ToString();
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Adding trace event sampling override. Event: %s Probability: %f."), *EventName,
+			   Pair.Value);
+		int32 Index = AnsiStrings.Add((const char*)TCHAR_TO_ANSI(*EventName));
 		SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
 	}
 
-	SamplingParameters.probabilistic_parameters.default_probability = Settings->SamplingProbability;
+	SamplingParameters.probabilistic_parameters.default_probability = SamplingSettings->SamplingProbability;
 	SamplingParameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
 	SamplingParameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
 
@@ -218,25 +235,28 @@ void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) c
 
 void SpatialEventTracer::BeginOpsForFrame()
 {
-	EntityComponentSpanIds.Empty(
-		EntityComponentSpanIds.Num()); // Reset all entries. It is assumed all entries are consumed during processing.
+	for (auto& ConsumedKey : EntityComponentsConsumed)
+	{
+		EntityComponentSpanIds.Remove(ConsumedKey);
+	}
+	EntityComponentsConsumed.Empty(EntityComponentsConsumed.Num());
 }
 
 void SpatialEventTracer::AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntity(Op.entity_id), SpanId.GetConstId(), 1);
+	TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntity(Op.entity_id), /* Causes */ SpanId.GetConstId(), /* NumCauses */ 1);
 }
 
 void SpatialEventTracer::RemoveEntity(const Worker_RemoveEntityOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	TraceEvent(FSpatialTraceEventBuilder::CreateReceiveRemoveEntity(Op.entity_id), SpanId.GetConstId(), 1);
+	TraceEvent(FSpatialTraceEventBuilder::CreateReceiveRemoveEntity(Op.entity_id), /* Causes */ SpanId.GetConstId(), /* NumCauses */ 1);
 }
 
 void SpatialEventTracer::AuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op, const FSpatialGDKSpanId& SpanId)
 {
 	TraceEvent(
 		FSpatialTraceEventBuilder::CreateAuthorityChange(Op.entity_id, Op.component_set_id, static_cast<Worker_Authority>(Op.authority)),
-		SpanId.GetConstId(), 1);
+		/* Causes */ SpanId.GetConstId(), /* NumCauses */ 1);
 }
 
 void SpatialEventTracer::AddComponent(const Worker_AddComponentOp& Op, const FSpatialGDKSpanId& SpanId)
@@ -256,14 +276,34 @@ void SpatialEventTracer::UpdateComponent(const Worker_ComponentUpdateOp& Op, con
 	StoredSpanIds.Push(SpanId);
 }
 
-TArray<FSpatialGDKSpanId> SpatialEventTracer::GetSpansForComponent(const EntityComponentId& Id) const
+void SpatialEventTracer::CommandRequest(const Worker_CommandRequestOp& Op, const FSpatialGDKSpanId& SpanId)
+{
+	FSpatialGDKSpanId& StoredSpanId = RequestSpanIds.FindOrAdd({ Op.request_id });
+	checkf(StoredSpanId.IsNull(), TEXT("CommandResponse received multiple times for request id %lld"), Op.request_id);
+	StoredSpanId = SpanId;
+}
+
+TArray<FSpatialGDKSpanId> SpatialEventTracer::GetAndConsumeSpansForComponent(const EntityComponentId& Id)
 {
 	const TArray<FSpatialGDKSpanId>* StoredSpanIds = EntityComponentSpanIds.Find(Id);
 	if (StoredSpanIds == nullptr)
 	{
 		return {};
 	}
+	EntityComponentsConsumed.Push(Id); // Consume on frame boundary instead, as these can have multiple uses.
 	return *StoredSpanIds;
+}
+
+FSpatialGDKSpanId SpatialEventTracer::GetAndConsumeSpanForRequestId(Worker_RequestId RequestId)
+{
+	const FSpatialGDKSpanId* SpanId = RequestSpanIds.Find(RequestId);
+	if (SpanId == nullptr)
+	{
+		return {};
+	}
+	FSpatialGDKSpanId GDKSpanId(*SpanId);
+	RequestSpanIds.Remove(RequestId);
+	return GDKSpanId;
 }
 
 void SpatialEventTracer::AddToStack(const FSpatialGDKSpanId& SpanId)
@@ -306,7 +346,7 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 	{
 		FSpatialGDKSpanId CauseSpanIds[2] = { SpanId, *ExistingSpanId };
 		*ExistingSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(Object.Get()),
-									 reinterpret_cast<uint8_t*>(&CauseSpanIds), 2);
+									 /* Causes */ reinterpret_cast<uint8_t*>(&CauseSpanIds), /* NumCauses */ 2);
 	}
 }
 
@@ -322,6 +362,11 @@ FSpatialGDKSpanId SpatialEventTracer::PopLatentPropertyUpdateSpanId(const TWeakO
 	ObjectSpanIdStacks.Remove(Object);
 
 	return TempSpanId;
+}
+
+void SpatialEventTracer::SetFlushOnWrite(bool bValue)
+{
+	FPlatformAtomics::AtomicStore_Relaxed(&FlushOnWriteAtomic, bValue ? 1 : 0);
 }
 
 } // namespace SpatialGDK

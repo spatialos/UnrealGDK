@@ -39,6 +39,7 @@
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
+#include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaDatabase.h"
 
 #if ENGINE_MINOR_VERSION >= 26
@@ -91,8 +92,16 @@ TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 // QBI
 TMap<float, Worker_ComponentId> NetCullDistanceToComponentId;
 
-const FString RelativeSchemaDatabaseFilePath = FPaths::SetExtension(
-	FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH), FPackageName::GetAssetPackageExtension());
+namespace
+{
+const FString& GetRelativeSchemaDatabaseFilePath()
+{
+	static const FString s_RelativeFilePath = FPaths::SetExtension(
+		FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH), FPackageName::GetAssetPackageExtension());
+
+	return s_RelativeFilePath;
+}
+}
 
 namespace SpatialGDKEditor
 {
@@ -203,11 +212,11 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 	}
 
 	// Check subobject name validity.
-	FSubobjectMap Subobjects = GetAllSubobjects(TypeInfo);
+	FSubobjects Subobjects = GetAllSubobjects(TypeInfo);
 	TMap<FString, TSharedPtr<FUnrealType>> SchemaSubobjectNames;
 	for (auto& It : Subobjects)
 	{
-		TSharedPtr<FUnrealType>& SubobjectTypeInfo = It.Value;
+		const TSharedPtr<FUnrealType>& SubobjectTypeInfo = It.Type;
 		FString NextSchemaSubobjectName = UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString());
 
 		if (!CheckSchemaNameValidity(NextSchemaSubobjectName, SubobjectTypeInfo->Object->GetPathName(), TEXT("Subobject")))
@@ -285,6 +294,54 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	for (auto& TypeInfo : TypeInfos)
 	{
 		CheckIdentifierNameValidity(TypeInfo, bSuccess);
+	}
+
+	return bSuccess;
+}
+
+bool ValidateAlwaysWriteRPCs(const TArray<TSharedPtr<FUnrealType>>& TypeInfos)
+{
+	bool bSuccess = true;
+
+	for (const auto& TypeInfo : TypeInfos)
+	{
+		UClass* Class = Cast<UClass>(TypeInfo->Type);
+		check(Class);
+
+		TArray<UFunction*> RPCs = SpatialGDK::GetClassRPCFunctions(Class);
+		TArray<UFunction*> AlwaysWriteRPCs;
+
+		for (UFunction* RPC : RPCs)
+		{
+			if (RPC->SpatialFunctionFlags & SPATIALFUNC_AlwaysWrite)
+			{
+				AlwaysWriteRPCs.Add(RPC);
+			}
+		}
+
+		if (!Class->IsChildOf<AActor>() && AlwaysWriteRPCs.Num() > 0)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error,
+				   TEXT("Found AlwaysWrite RPC(s) on a subobject class. This is not supported. Please route it through the owning actor if "
+						"AlwaysWrite behavior is necessary. Class: %s, function(s):"),
+				   *Class->GetPathName());
+			for (UFunction* RPC : AlwaysWriteRPCs)
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("%s"), *RPC->GetName());
+			}
+			bSuccess = false;
+		}
+		else if (AlwaysWriteRPCs.Num() > 1)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error,
+				   TEXT("Found more than 1 function with AlwaysWrite for class. This is not supported. Class: %s, functions:"),
+				   *Class->GetPathName());
+			for (UFunction* RPC : AlwaysWriteRPCs)
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("%s"), *RPC->GetName());
+			}
+			bSuccess = false;
+		}
 	}
 
 	return bSuccess;
@@ -496,6 +553,8 @@ FString GetComponentSetNameBySchemaType(ESchemaComponentType SchemaType)
 		return SpatialConstants::OWNER_ONLY_COMPONENT_SET_NAME;
 	case SCHEMA_Handover:
 		return SpatialConstants::HANDOVER_COMPONENT_SET_NAME;
+	case SCHEMA_InitialOnly:
+		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_NAME;
 	default:
 		// For some reason these statements, if formatted cause a bug in VS where the lines reported by the compiler and debugger are wrong.
 		// clang-format off
@@ -515,6 +574,8 @@ Worker_ComponentId GetComponentSetIdBySchemaType(ESchemaComponentType SchemaType
 		return SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID;
 	case SCHEMA_Handover:
 		return SpatialConstants::HANDOVER_COMPONENT_SET_ID;
+	case SCHEMA_InitialOnly:
+		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID;
 	default:
 		// clang-format off
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not return component set ID. Schema component type was invalid: %d"), SchemaType);
@@ -604,6 +665,9 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 					case SCHEMA_Handover:
 						Writer.Printf("unreal.generated.{0}.{1}Handover,", ActorClassName.ToLower(), ActorClassName);
 						break;
+					case SCHEMA_InitialOnly:
+						Writer.Printf("unreal.generated.{0}.{1}InitialOnly,", ActorClassName.ToLower(), ActorClassName);
+						break;
 					default:
 						break;
 					}
@@ -628,6 +692,9 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 							break;
 						case SCHEMA_Handover:
 							Writer.Printf("unreal.generated.{0}.subobjects.{1}Handover,", ActorClassName.ToLower(), ActorSubObjectName);
+							break;
+						case SCHEMA_InitialOnly:
+							Writer.Printf("unreal.generated.{0}.subobjects.{1}InitialOnly,", ActorClassName.ToLower(), ActorSubObjectName);
 							break;
 						default:
 							break;
@@ -661,6 +728,9 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 						case SCHEMA_Handover:
 							Writer.Printf("unreal.generated.{0}HandoverDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
 							break;
+						case SCHEMA_InitialOnly:
+							Writer.Printf("unreal.generated.{0}InitialOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
+							break;
 						default:
 							break;
 						}
@@ -676,6 +746,40 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 	Writer.Outdent().Print("}");
 
 	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("ComponentSets/ServerAuthoritativeComponentSet.schema")));
+}
+
+void WriteRoutingWorkerAuthorityComponentSet(const FString& SchemaOutputPath)
+{
+	FCodeWriter Writer;
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated;)""");
+	Writer.PrintNewLine();
+
+	// Write all import statements.
+	for (const auto& WellKnownSchemaImport : SpatialConstants::RoutingWorkerSchemaImports)
+	{
+		Writer.Printf("import \"{0}\";", WellKnownSchemaImport);
+	}
+
+	Writer.PrintNewLine();
+	Writer.Printf("component_set {0} {", SpatialConstants::ROUTING_WORKER_COMPONENT_SET_NAME).Indent();
+	Writer.Printf("id = {0};", SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID);
+	Writer.Printf("components = [").Indent();
+
+	// Write all import components.
+	for (const auto& WellKnownComponent : SpatialConstants::RoutingWorkerComponents)
+	{
+		Writer.Printf("{0},", WellKnownComponent.Value);
+	}
+
+	Writer.RemoveTrailingComma();
+
+	Writer.Outdent().Print("];");
+	Writer.Outdent().Print("}");
+
+	Writer.WriteToFile(FPaths::Combine(*SchemaOutputPath, TEXT("ComponentSets/RoutingWorkerAuthoritativeComponentSet.schema")));
 }
 
 void WriteClientAuthorityComponentSet(const FString& SchemaOutputPath)
@@ -778,6 +882,9 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 				case SCHEMA_Handover:
 					Writer.Printf("unreal.generated.{0}.{1}Handover,", ActorClassName.ToLower(), ActorClassName);
 					break;
+				case SCHEMA_InitialOnly:
+					Writer.Printf("unreal.generated.{0}.{1}InitialOnly,", ActorClassName.ToLower(), ActorClassName);
+					break;
 				default:
 					break;
 				}
@@ -798,6 +905,9 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 						break;
 					case SCHEMA_Handover:
 						Writer.Printf("unreal.generated.{0}.subobjects.{1}Handover,", ActorClassName.ToLower(), ActorSubObjectName);
+						break;
+					case SCHEMA_InitialOnly:
+						Writer.Printf("unreal.generated.{0}.subobjects.{1}InitialOnly,", ActorClassName.ToLower(), ActorSubObjectName);
 						break;
 					default:
 						break;
@@ -827,6 +937,9 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 					case SCHEMA_Handover:
 						Writer.Printf("unreal.generated.{0}HandoverDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
 						break;
+					case SCHEMA_InitialOnly:
+						Writer.Printf("unreal.generated.{0}InitialOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
+						break;
 					default:
 						break;
 					}
@@ -853,9 +966,11 @@ void WriteComponentSetFiles(const USchemaDatabase* SchemaDatabase, FString Schem
 
 	WriteServerAuthorityComponentSet(SchemaDatabase, SchemaOutputPath);
 	WriteClientAuthorityComponentSet(SchemaOutputPath);
+	WriteRoutingWorkerAuthorityComponentSet(SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Data, SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly, SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover, SchemaOutputPath);
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_InitialOnly, SchemaOutputPath);
 }
 
 USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
@@ -883,6 +998,7 @@ USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->DataComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Data].Array();
 	SchemaDatabase->OwnerOnlyComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_OwnerOnly].Array();
 	SchemaDatabase->HandoverComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Handover].Array();
+	SchemaDatabase->InitialOnlyComponentsIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_InitialOnly].Array();
 
 	SchemaDatabase->NetCullDistanceComponentIds.Reset();
 	TArray<Worker_ComponentId> NetCullDistanceComponentIds;
@@ -894,6 +1010,14 @@ USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
 	LevelPathToComponentId.GenerateValueArray(SchemaDatabase->LevelComponentIds);
 
 	SchemaDatabase->ComponentSetIdToComponentIds.Reset();
+
+	// Save ring buffer sizes
+	for (uint8 RPCType = static_cast<uint8>(ERPCType::RingBufferTypeBegin); RPCType <= static_cast<uint8>(ERPCType::RingBufferTypeEnd);
+		 RPCType++)
+	{
+		SchemaDatabase->RPCRingBufferSizeMap.Add(static_cast<ERPCType>(RPCType),
+												 GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(static_cast<ERPCType>(RPCType)));
+	}
 
 	SchemaDatabase->SchemaDatabaseVersion = ESchemaDatabaseVersion::LatestVersion;
 
@@ -1172,6 +1296,8 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 											TSet<Worker_ComponentId>(SchemaDatabase->OwnerOnlyComponentIds));
 		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_Handover,
 											TSet<Worker_ComponentId>(SchemaDatabase->HandoverComponentIds));
+		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_InitialOnly,
+											TSet<Worker_ComponentId>(SchemaDatabase->InitialOnlyComponentsIds));
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 		NetCullDistanceToComponentId = SchemaDatabase->NetCullDistanceToComponentId;
@@ -1248,12 +1374,12 @@ bool GeneratedSchemaDatabaseExists()
 {
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-	return PlatformFile.FileExists(*RelativeSchemaDatabaseFilePath);
+	return PlatformFile.FileExists(*GetRelativeSchemaDatabaseFilePath());
 }
 
 FSpatialGDKEditor::ESchemaDatabaseValidationResult ValidateSchemaDatabase()
 {
-	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*RelativeSchemaDatabaseFilePath);
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*GetRelativeSchemaDatabaseFilePath());
 	if (!StatData.bIsValid)
 	{
 		return FSpatialGDKEditor::NotFound;
@@ -1270,6 +1396,17 @@ FSpatialGDKEditor::ESchemaDatabaseValidationResult ValidateSchemaDatabase()
 	if (SchemaDatabase->SchemaDatabaseVersion < ESchemaDatabaseVersion::LatestVersion)
 	{
 		return FSpatialGDKEditor::OldVersion;
+	}
+
+	// Check ring buffer sizes
+	for (uint8 RPCType = static_cast<uint8>(ERPCType::RingBufferTypeBegin); RPCType <= static_cast<uint8>(ERPCType::RingBufferTypeEnd);
+		 RPCType++)
+	{
+		if (SchemaDatabase->RPCRingBufferSizeMap.FindRef(static_cast<ERPCType>(RPCType))
+			!= GetDefault<USpatialGDKSettings>()->GetRPCRingBufferSize(static_cast<ERPCType>(RPCType)))
+		{
+			return FSpatialGDKEditor::RingBufferSizeChanged;
+		}
 	}
 
 	return FSpatialGDKEditor::Ok;
@@ -1604,6 +1741,11 @@ bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOut
 	}
 
 	if (!ValidateIdentifierNames(TypeInfos))
+	{
+		return false;
+	}
+
+	if (!ValidateAlwaysWriteRPCs(TypeInfos))
 	{
 		return false;
 	}

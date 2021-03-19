@@ -6,6 +6,7 @@
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "Schema/MulticastRPCs.h"
 #include "SpatialConstants.h"
+#include "SpatialView/EntityComponentTypes.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogMulticastRPCService);
@@ -59,6 +60,7 @@ void MulticastRPCService::AdvanceView()
 				// Regain authority.
 				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
 			}
+			break;
 		}
 		case EntityDelta::ADD:
 			PopulateDataStore(Delta.EntityId);
@@ -231,7 +233,7 @@ void MulticastRPCService::ExtractRPCs(const Worker_EntityId EntityId)
 			const TOptional<RPCPayload>& Element = Buffer.GetRingBufferElement(RPCId);
 			if (Element.IsSet())
 			{
-				ExtractRPCCallback.Execute(FUnrealObjectRef(EntityId, Element.GetValue().Offset), Element.GetValue(), RPCId);
+				ExtractRPCCallback.Execute(FUnrealObjectRef(EntityId, Element.GetValue().Offset), RPCSender(), Element.GetValue(), RPCId);
 				LastProcessedRPCId = RPCId;
 			}
 			else
