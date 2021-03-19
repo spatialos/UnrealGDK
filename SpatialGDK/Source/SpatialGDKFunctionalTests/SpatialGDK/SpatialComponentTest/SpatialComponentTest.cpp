@@ -62,6 +62,17 @@ void ASpatialComponentTest::PrepareTest()
 			FinishStep();
 		});
 
+		if (false)
+		{
+			AddStep(
+				TEXT("Wait until Dynamic Actor is received by all Workers"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
+				[this](float DeltaTime) {
+					RequireTrue(IsValid(DynamicReplicatedActor), TEXT("Received Dynamic Actor"));
+					FinishStep();
+				},
+				5.0f);
+		}
+
 		AddStep(
 			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
