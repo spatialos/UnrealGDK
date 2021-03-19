@@ -8,9 +8,14 @@ package unreal;
 
 type VirtualWorkerMapping {
      uint32 virtual_worker_id = 1;
+     // Physical worker name because it's used by servers to know their virtual worker & the spatial debugger.
      string physical_worker_name = 2;
+     // Server worker entity ID because it's used to forward player spawn requests to the strategized server.
      EntityId server_worker_entity = 3;
+     // Partition ID because entity authority delegation is managed used partitions.
      EntityId partition_id = 4;
+     // System worker entity ID because it makes handling worker crashing and recovery
+     EntityId server_system_worker_entity = 5;
 }
 
 component VirtualWorkerTranslation {
