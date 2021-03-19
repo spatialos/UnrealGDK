@@ -14,22 +14,33 @@ UCustomPersistenceComponent::UCustomPersistenceComponent()
 
 	bWantsInitializeComponent = true;
 
+	bHasProvidedPersistenceData = false;
+
+	// Needed for now, both to replicate the bHasProvidedPersistenceData bool, and to get PreReplication callbacks, during which we pull in
+	// the data from the actor. The latter is not a hard requirement (the actor could also be required to push its data to us)
 	SetIsReplicatedByDefault(true);
 }
 
-void UCustomPersistenceComponent::InitializeComponent()
+void UCustomPersistenceComponent::BeginPlay()
 {
-	Super::InitializeComponent();
+	Super::BeginPlay();
 
-	USpatialGameInstance* GameInstance = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance());
-	if (GameInstance != nullptr)
-	{
-		GameInstance->OnPersistenceDataAvailable.AddDynamic(this, &UCustomPersistenceComponent::InternalOnPersistenceDataAvailable);
-	}
+	UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, %s, bHasProvidedPersistenceData during BeginPlay: %d"), *GetName(),
+		   bHasProvidedPersistenceData);
 }
 
-void UCustomPersistenceComponent::InternalOnPersistenceDataAvailable()
+void UCustomPersistenceComponent::OnAuthorityGained()
 {
+	UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, %s, OnAuthorityGained, bHasProvidedPersistenceData %d"), *GetName(),
+		   bHasProvidedPersistenceData);
+
+	if (bHasProvidedPersistenceData)
+	{
+		UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, OnAuthorityGained, but already provided persistence data previously"));
+		return;
+	}
+	bHasProvidedPersistenceData = true;
+
 	AActor* Owner = GetOwner();
 	if (Owner == nullptr)
 	{
@@ -39,20 +50,21 @@ void UCustomPersistenceComponent::InternalOnPersistenceDataAvailable()
 
 	if (!Owner->HasAuthority())
 	{
+		UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, owner doesn't have authority"));
 		return;
 	}
 
 	const uint64 EntityID = USpatialStatics::GetActorEntityId(Owner);
 	if (EntityID == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Don't have an entity ID in persistence callback."));
+		UE_LOG(LogTemp, Warning, TEXT("UCustomPersistenceComponent, Don't have an entity ID in persistence callback."));
 		return;
 	}
 
 	const USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
 	if (NetDriver == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Got persistence data callback but can't find a spatial net driver."));
+		UE_LOG(LogTemp, Error, TEXT("UCustomPersistenceComponent, Got persistence data callback but can't find a spatial net driver."));
 		return;
 	}
 
@@ -60,7 +72,8 @@ void UCustomPersistenceComponent::InternalOnPersistenceDataAvailable()
 
 	if (!Coordinator.HasEntity(EntityID))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("View coordinator doesn't have entity %llu during persistence callback."), EntityID);
+		UE_LOG(LogTemp, Warning,
+			   TEXT("UCustomPersistenceComponent, View coordinator doesn't have entity %llu during persistence callback."), EntityID);
 		return;
 	}
 
@@ -68,15 +81,18 @@ void UCustomPersistenceComponent::InternalOnPersistenceDataAvailable()
 	const SpatialGDK::EntityViewElement* ViewData = View.Find(EntityID);
 	if (ViewData == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Found no persistence data for entity %llu"), EntityID);
+		UE_LOG(LogTemp, Error, TEXT("UCustomPersistenceComponent, Found no persistence data for entity %llu"), EntityID);
 		return;
 	}
 
 	bool bFoundComponent = false;
 	for (const auto& ComponentData : ViewData->Components)
 	{
+		UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, saw component data for ID %u"), ComponentData.GetComponentId());
 		if (ComponentData.GetComponentId() == GetComponentId())
 		{
+			UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, calling user-facing callback. Server: %d, NetDriver: %s"), GIsServer,
+				   *NetDriver->GetName());
 			OnPersistenceDataAvailable(ComponentData);
 			bFoundComponent = true;
 			break;
@@ -85,7 +101,7 @@ void UCustomPersistenceComponent::InternalOnPersistenceDataAvailable()
 
 	if (!bFoundComponent)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Couldn't find the persistence component for entity %llu"), EntityID);
+		UE_LOG(LogTemp, Error, TEXT("UCustomPersistenceComponent, Couldn't find the persistence component for entity %llu"), EntityID);
 	}
 }
 
@@ -94,6 +110,7 @@ void UCustomPersistenceComponent::PreReplication(IRepChangedPropertyTracker& Cha
 	// Work with spatial turned off
 	if (!USpatialStatics::IsSpatialNetworkingEnabled())
 	{
+		UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, not using spatial networking"));
 		return;
 	}
 
@@ -120,7 +137,7 @@ void UCustomPersistenceComponent::PreReplication(IRepChangedPropertyTracker& Cha
 
 	if (!NetDriver->Connection->GetCoordinator().HasEntity(EntityID))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("View coordinator doesn't have entity %llu yet."), EntityID);
+		UE_LOG(LogTemp, Warning, TEXT("UCustomPersistenceComponent, View coordinator doesn't have entity %llu yet."), EntityID);
 		return;
 	}
 

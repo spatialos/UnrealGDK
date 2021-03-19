@@ -19,7 +19,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedEvent);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnConnectionFailedEvent, const FString&, Reason);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerSpawnFailedEvent, const FString&, Reason);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPrepareShutdownEvent);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPersistenceDataAvailableEvent);
 
 UCLASS(config = Engine)
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
@@ -77,9 +76,6 @@ public:
 	// Invoked when the deployment will be shut down soon, and the world should be brought to a consistent state for snapshotting.
 	UPROPERTY(BlueprintAssignable)
 	FOnPrepareShutdownEvent OnPrepareShutdown;
-
-	UPROPERTY(BlueprintAssignable)
-	FOnPersistenceDataAvailableEvent OnPersistenceDataAvailable;
 
 	void DisableShouldConnectUsingCommandLineArgs() { bShouldConnectUsingCommandLineArgs = false; }
 	bool GetShouldConnectUsingCommandLineArgs() const { return bShouldConnectUsingCommandLineArgs; }
