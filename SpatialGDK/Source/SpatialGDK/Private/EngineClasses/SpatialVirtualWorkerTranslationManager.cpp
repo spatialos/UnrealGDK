@@ -18,7 +18,7 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(S
 	, Connection(InConnection)
 	, Partitions({})
 	, bWorkerEntityQueryInFlight(false)
-	, ClaimParitionHandler(*InConnection)
+	, ClaimPartitionHandler(*InConnection)
 {
 }
 
@@ -103,7 +103,7 @@ void SpatialVirtualWorkerTranslationManager::ReclaimPartitionEntities()
 void SpatialVirtualWorkerTranslationManager::Advance(const TArray<Worker_Op>& Ops)
 {
 	CreateEntityHandler.ProcessOps(Ops);
-	ClaimParitionHandler.ProcessOps(Ops);
+	ClaimPartitionHandler.ProcessOps(Ops);
 	QueryHandler.ProcessOps(Ops);
 }
 
@@ -350,5 +350,5 @@ void SpatialVirtualWorkerTranslationManager::AssignPartitionToWorker(const Physi
 		   TEXT("Assigned VirtualWorker %d with partition ID %lld to simulate on worker %s"), Partition.VirtualWorker,
 		   Partition.PartitionEntityId, *WorkerName);
 
-	ClaimParitionHandler.ClaimPartition(SystemEntityId, Partition.PartitionEntityId);
+	ClaimPartitionHandler.ClaimPartition(SystemEntityId, Partition.PartitionEntityId);
 }

@@ -69,7 +69,7 @@ private:
 	bool bWorkerEntityQueryInFlight;
 
 	SpatialGDK::CreateEntityHandler CreateEntityHandler;
-	SpatialGDK::ClaimPartitionHandler ClaimParitionHandler;
+	SpatialGDK::ClaimPartitionHandler ClaimPartitionHandler;
 	SpatialGDK::EntityQueryHandler QueryHandler;
 
 	// Serialization and deserialization of the mapping.

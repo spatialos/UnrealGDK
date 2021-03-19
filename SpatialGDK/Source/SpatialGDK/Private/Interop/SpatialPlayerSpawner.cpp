@@ -33,7 +33,6 @@ using namespace SpatialGDK;
 void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-
 	RequestHandler.AddRequestHandler(
 		SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID,
 		FOnCommandRequestWithOp::FDelegate::CreateUObject(this, &USpatialPlayerSpawner::OnPlayerSpawnCommandReceived));
