@@ -79,7 +79,7 @@ struct FConnectionConfig
 											SpatialGDKSettings->ServerDownstreamWindowSizeBytes };
 		uint32 UpstreamWindowSizes[2] = { SpatialGDKSettings->ClientUpstreamWindowSizeBytes,
 										  SpatialGDKSettings->ServerUpstreamWindowSizeBytes };
-		static_assert(EWorkerType::Client == 0 && EWorkerType::Server == 1, "Assuming indexes of enum");
+		static_assert(EWorkerType::Client == 0 && EWorkerType::Server == 1, "Assuming indexes of enum for client and server");
 
 		DownstreamWindowSize = DownstreamWindowSizes[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
 		UpstreamWindowSize = UpstreamWindowSizes[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
