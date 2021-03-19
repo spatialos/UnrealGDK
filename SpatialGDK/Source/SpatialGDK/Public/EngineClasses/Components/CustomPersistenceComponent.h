@@ -23,6 +23,8 @@ public:
 	virtual void BeginPlay() override; // TODO remove, only here for some debugging atm
 	virtual void PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker) override;
 
+	void UpdateDeepCopy();
+
 	virtual void GetAddComponentData(SpatialGDK::ComponentData& Data);
 	virtual void GetComponentUpdate(SpatialGDK::ComponentUpdate& Update);
 
