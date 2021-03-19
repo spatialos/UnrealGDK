@@ -126,7 +126,7 @@ void ASpatialTestTearOff::PrepareTest()
 		}
 	});
 
-	// Spawn a replicated Actor that does not call TearOff on BeginPlay().
+	// Spawn a replicated Actor that does not call TearOff.
 	AddStep(TEXT("SpatialTestTearOffServerSpawnReplicatedActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		SpawnedReplicatedActorBase = GetWorld()->SpawnActor<AReplicatedTestActorBase>(ReplicatedTestActorBaseInitialLocation,
 																					  FRotator::ZeroRotator, FActorSpawnParameters());

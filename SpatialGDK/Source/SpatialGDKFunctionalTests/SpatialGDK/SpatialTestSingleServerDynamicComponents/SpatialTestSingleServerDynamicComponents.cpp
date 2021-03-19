@@ -51,7 +51,7 @@ void ASpatialTestSingleServerDynamicComponents::PrepareTest()
 
 	// The Server spawns the TestActor and immediately after it creates and attaches the OnSpawnComponent.
 	AddStep(TEXT("SpatialTestSingleServerDynamicComponentsServerSpawnTestActor"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		if (bInitialOnlyEnabled)
+		if (bInitialOnlyEnabled && bSpatialEnabled)
 		{
 			AddExpectedLogError(TEXT("Dynamic component using InitialOnly data. This data will not be sent."), 5, false);
 		}
