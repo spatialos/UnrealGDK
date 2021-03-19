@@ -60,13 +60,6 @@ Worker_ComponentData ComponentData::GetWorkerComponentData() const
 	return { nullptr, ComponentId, Data.Get(), nullptr };
 }
 
-Worker_ComponentData ComponentData::ReleaseWorkerComponentData() &&
-{
-	const Worker_ComponentData WorkerComponentData = GetWorkerComponentData();
-	Data.Release();
-	return WorkerComponentData;
-}
-
 Worker_ComponentId ComponentData::GetComponentId() const
 {
 	return ComponentId;
