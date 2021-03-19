@@ -205,12 +205,12 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 	// References to entities that are stored within the snapshot need remapping once we know the new entity IDs.
 
 	// Add the spawn delegate
-	ReserveEntityHandler.AddRequest(ReserveRequestID, SpawnEntitiesDelegate);
+	ReserveEntityIdsHandler.AddRequest(ReserveRequestID, SpawnEntitiesDelegate);
 }
 
 void SpatialSnapshotManager::Advance()
 {
 	const TArray<Worker_Op>& Ops = Connection->GetCoordinator().GetViewDelta().GetWorkerMessages();
-	ReserveEntityHandler.ProcessOps(Ops);
+	ReserveEntityIdsHandler.ProcessOps(Ops);
 	QueryHandler.ProcessOps(Ops);
 }

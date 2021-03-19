@@ -83,32 +83,5 @@ void MigrationDiagnosticsSystem::ProcessOps(const TArray<Worker_Op>& Ops) const
 {
 	RequestHandler.ProcessOps(Ops);
 	ResponseHandler.ProcessOps(Ops);
-
-	for (const Worker_Op& Op : Ops)
-	{
-		if (Op.op_type == WORKER_OP_TYPE_COMMAND_REQUEST)
-		{
-			const Worker_CommandRequestOp& CommandRequest = Op.op.command_request;
-
-			const Worker_RequestId RequestId = CommandRequest.request_id;
-			const Worker_ComponentId ComponentId = CommandRequest.request.component_id;
-			const Worker_CommandIndex CommandIndex = CommandRequest.request.command_index;
-			const Worker_EntityId EntityId = CommandRequest.entity_id;
-
-			if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID
-				&& CommandIndex == SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID)
-			{
-				OnMigrationDiagnosticRequest(Op, CommandRequest);
-			}
-		}
-		else if (Op.op_type == WORKER_OP_TYPE_COMMAND_RESPONSE)
-		{
-			const Worker_CommandResponseOp& CommandResponseOp = Op.op.command_response;
-
-			const Worker_ComponentId ComponentId = CommandResponseOp.response.component_id;
-
-			if (ComponentId == SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID) {}
-		}
-	}
 }
 } // namespace SpatialGDK

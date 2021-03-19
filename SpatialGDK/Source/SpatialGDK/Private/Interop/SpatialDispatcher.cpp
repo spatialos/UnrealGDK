@@ -13,14 +13,11 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
-void SpatialDispatcher::Init(USpatialStaticComponentView* InStaticComponentView, USpatialMetrics* InSpatialMetrics,
-							 USpatialWorkerFlags* InSpatialWorkerFlags)
+void SpatialDispatcher::Init(USpatialStaticComponentView* InStaticComponentView, USpatialWorkerFlags* InSpatialWorkerFlags)
 {
 	check(InStaticComponentView != nullptr);
 	StaticComponentView = InStaticComponentView;
 
-	check(InSpatialMetrics != nullptr);
-	SpatialMetrics = InSpatialMetrics;
 	SpatialWorkerFlags = InSpatialWorkerFlags;
 }
 

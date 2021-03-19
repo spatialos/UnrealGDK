@@ -963,7 +963,7 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 		{
 			if (AsActor->GetTearOff())
 			{
-				UE_LOG(LogSpatialActorChannel, Log,
+				UE_LOG(LogActorSystem, Log,
 					   TEXT("Actor to be resolved was torn off, so ignoring incoming operations. Object ref: %s, resolved object: %s"),
 					   *ObjectRef.ToString(), *Object->GetName());
 				DependentChannel->ObjectReferenceMap.Remove(ChannelObjectIter->Value);
@@ -974,7 +974,7 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 		{
 			if (OuterActor->GetTearOff())
 			{
-				UE_LOG(LogSpatialActorChannel, Log,
+				UE_LOG(LogActorSystem, Log,
 					   TEXT("Owning Actor of the object to be resolved was torn off, so ignoring incoming operations. Object ref: %s, "
 							"resolved object: %s"),
 					   *ObjectRef.ToString(), *Object->GetName());
@@ -1996,7 +1996,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 
 	if (Actor == nullptr || Actor->IsPendingKill())
 	{
-		UE_LOG(LogSpatialActorChannel, Log, TEXT("Actor is invalid after trying to create entity"));
+		UE_LOG(LogActorSystem, Log, TEXT("Actor is invalid after trying to create entity"));
 		return;
 	}
 
@@ -2007,7 +2007,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 	switch (static_cast<Worker_StatusCode>(Op.status_code))
 	{
 	case WORKER_STATUS_CODE_SUCCESS:
-		UE_LOG(LogSpatialActorChannel, Verbose,
+		UE_LOG(LogActorSystem, Verbose,
 			   TEXT("Create entity request succeeded. "
 					"Actor %s, request id: %d, entity id: %lld, message: %s"),
 			   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
@@ -2015,14 +2015,14 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 	case WORKER_STATUS_CODE_TIMEOUT:
 		if (bEntityIsInView)
 		{
-			UE_LOG(LogSpatialActorChannel, Log,
+			UE_LOG(LogActorSystem, Log,
 				   TEXT("Create entity request failed but the entity was already in view. "
 						"Actor %s, request id: %d, entity id: %lld, message: %s"),
 				   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		}
 		else
 		{
-			UE_LOG(LogSpatialActorChannel, Warning,
+			UE_LOG(LogActorSystem, Warning,
 				   TEXT("Create entity request timed out. Retrying. "
 						"Actor %s, request id: %d, entity id: %lld, message: %s"),
 				   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
@@ -2035,14 +2035,14 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 	case WORKER_STATUS_CODE_APPLICATION_ERROR:
 		if (bEntityIsInView)
 		{
-			UE_LOG(LogSpatialActorChannel, Log,
+			UE_LOG(LogActorSystem, Log,
 				   TEXT("Create entity request failed as the entity already exists and is in view. "
 						"Actor %s, request id: %d, entity id: %lld, message: %s"),
 				   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 		}
 		else
 		{
-			UE_LOG(LogSpatialActorChannel, Warning,
+			UE_LOG(LogActorSystem, Warning,
 				   TEXT("Create entity request failed."
 						"Either the reservation expired, the entity already existed, or the entity was invalid. "
 						"Actor %s, request id: %d, entity id: %lld, message: %s"),
@@ -2050,7 +2050,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 		}
 		break;
 	default:
-		UE_LOG(LogSpatialActorChannel, Error,
+		UE_LOG(LogActorSystem, Error,
 			   TEXT("Create entity request failed. This likely indicates a bug in the Unreal GDK and should be reported."
 					"Actor %s, request id: %d, entity id: %lld, message: %s"),
 			   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));

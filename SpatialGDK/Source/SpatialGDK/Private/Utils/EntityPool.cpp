@@ -97,12 +97,12 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 	const Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToReserve, RETRY_UNTIL_COMPLETE);
 	bIsAwaitingResponse = true;
 	// Add the spawn delegate
-	ReserveEntityHandler.AddRequest(ReserveRequestID, CacheEntityIDsDelegate);
+	ReserveEntityIdsHandler.AddRequest(ReserveRequestID, CacheEntityIDsDelegate);
 }
 
 void UEntityPool::Advance()
 {
-	ReserveEntityHandler.ProcessOps(NetDriver->Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
+	ReserveEntityIdsHandler.ProcessOps(NetDriver->Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
 }
 
 void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)

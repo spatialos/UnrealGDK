@@ -522,7 +522,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
-		Dispatcher->Init(StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
+		Dispatcher->Init(StaticComponentView, SpatialWorkerFlags);
 		Sender->Init(this, &TimerManager, Connection->GetEventTracer());
 		Receiver->Init(this, Connection->GetEventTracer());
 		GlobalStateManager->Init(this);
@@ -2092,12 +2092,12 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			}
 
 			{
-				SpatialGDK::MigrationDiagnosticsSystem MigrationDiagnosticsSystem(*this);
+				const SpatialGDK::MigrationDiagnosticsSystem MigrationDiagnosticsSystem(*this);
 				MigrationDiagnosticsSystem.ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
 			}
 
 			{
-				SpatialGDK::DebugMetricsSystem DebugMetricsSystem(*this);
+				const SpatialGDK::DebugMetricsSystem DebugMetricsSystem(*this);
 				DebugMetricsSystem.ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
 			}
 		}
