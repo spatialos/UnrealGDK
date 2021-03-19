@@ -91,6 +91,11 @@ void UCustomPersistenceComponent::InternalOnPersistenceDataAvailable()
 
 void UCustomPersistenceComponent::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
 {
+	UpdateDeepCopy();
+}
+
+void UCustomPersistenceComponent::UpdateDeepCopy()
+{
 	// Work with spatial turned off
 	if (!USpatialStatics::IsSpatialNetworkingEnabled())
 	{
@@ -101,6 +106,12 @@ void UCustomPersistenceComponent::PreReplication(IRepChangedPropertyTracker& Cha
 	if (Owner == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("UCustomPersistenceComponent, didn't have an owner actor during PreReplication"));
+		return;
+	}
+
+	if (!IsValid(Owner))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UCustomPersistenceComponent, Owner is not yet valid, data loading may fail"));
 		return;
 	}
 
