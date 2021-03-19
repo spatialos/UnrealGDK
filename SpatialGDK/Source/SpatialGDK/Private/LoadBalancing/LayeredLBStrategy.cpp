@@ -152,24 +152,13 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 
 SpatialGDK::FActorLoadBalancingGroupId ULayeredLBStrategy::GetActorGroupId(const AActor& Actor) const
 {
-	struct FLayerIndexToActorGroupConversions
-	{
-		static_assert(sizeof(int32) == sizeof(SpatialGDK::FActorLoadBalancingGroupId),
-					  "int32 LayerIndex should have the same size as FActorLoadBalancingGroupId");
-
-		static SpatialGDK::FActorLoadBalancingGroupId ToGroupId(const int32 LayerIndex)
-		{
-			return static_cast<SpatialGDK::FActorLoadBalancingGroupId>(LayerIndex);
-		}
-	};
-
 	const FName ActorLayerName = GetLayerNameForActor(Actor);
 
 	const int32 ActorLayerIndex = LayerData.FindChecked(ActorLayerName).LayerIndex + 1;
 
 	// We're not going deeper inside nested strategies intentionally; LBStrategy, or nesting thereof,
-	// won't exist when the Strategy Worker is finished, and GroupIDs are only necessary for it to work
-	return FLayerIndexToActorGroupConversions::ToGroupId(ActorLayerIndex);
+	// won't exist when the Strategy Worker is finished, and GroupIDs are only necessary for it to work.
+	return ActorLayerIndex;
 }
 
 SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
