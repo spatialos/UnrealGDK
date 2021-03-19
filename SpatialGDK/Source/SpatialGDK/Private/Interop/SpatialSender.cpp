@@ -208,9 +208,14 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 
 	TOptional<AuthorityIntent> AuthorityIntentComponent = NetDriver->Connection->GetCoordinator().GetComponent<AuthorityIntent>(EntityId);
 	check(AuthorityIntentComponent.IsSet());
-	checkf(AuthorityIntentComponent->VirtualWorkerId != NewAuthoritativeVirtualWorkerId,
-		   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
-		   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
+	if (AuthorityIntentComponent->VirtualWorkerId == NewAuthoritativeVirtualWorkerId)
+	{
+		/* This seems to occur when using the replication graph, however we're still unsure the cause. */
+		UE_LOG(LogSpatialSender, Error,
+			   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
+			   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
+		return;
+	}
 
 	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
 	UE_LOG(LogSpatialSender, Log,
