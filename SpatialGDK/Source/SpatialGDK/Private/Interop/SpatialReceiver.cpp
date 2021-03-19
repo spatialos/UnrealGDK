@@ -820,20 +820,21 @@ void USpatialReceiver::RestoreStablyNamedActor(const FUnrealObjectRef& ObjectRef
 
 	if (const Worker_EntityId* EntityId = StablePathToEntityIdMap.Find(ObjectRef))
 	{
-		if (!NetDriver->PackageMap->ResolveEntityActor(Actor, *EntityId))
-		{
-			UE_LOG(LogSpatialReceiver, Warning,
-				   TEXT("Failed to resolve entity actor when loading stably named actor from level. Entity: %lld, actor: %s"), *EntityId,
-				   *Actor->GetPathName());
-			return;
-		}
-
 		if (NetDriver->StaticComponentView->HasComponent(*EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 		{
 			UE_LOG(LogSpatialReceiver, Log,
 				   TEXT("Reloaded stably named actor that was tombstoned, will remove the actor. Entity: %lld, actor: %s"), *EntityId,
 				   *Actor->GetPathName());
-			RemoveActor(*EntityId);
+
+			DestroyActor(Actor, *EntityId);
+			return;
+		}
+
+		if (!NetDriver->PackageMap->ResolveEntityActor(Actor, *EntityId))
+		{
+			UE_LOG(LogSpatialReceiver, Warning,
+				   TEXT("Failed to resolve entity actor when loading stably named actor from level. Entity: %lld, actor: %s"), *EntityId,
+				   *Actor->GetPathName());
 			return;
 		}
 
