@@ -75,8 +75,10 @@ struct FConnectionConfig
 		LinkProtocol = ConnectionTypeMap[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
 		static_assert(EWorkerType::Client == 0 && EWorkerType::Server == 1, "Assuming indexes of enum for client and server");
 
-		uint32 DownstreamWindowSizes[2] = { SpatialGDKSettings->ClientDownstreamWindowSizeBytes, SpatialGDKSettings->ServerDownstreamWindowSizeBytes };
-		uint32 UpstreamWindowSizes[2] = { SpatialGDKSettings->ClientUpstreamWindowSizeBytes, SpatialGDKSettings->ServerUpstreamWindowSizeBytes };
+		uint32 DownstreamWindowSizes[2] = { SpatialGDKSettings->ClientDownstreamWindowSizeBytes,
+											SpatialGDKSettings->ServerDownstreamWindowSizeBytes };
+		uint32 UpstreamWindowSizes[2] = { SpatialGDKSettings->ClientUpstreamWindowSizeBytes,
+										  SpatialGDKSettings->ServerUpstreamWindowSizeBytes };
 		static_assert(EWorkerType::Client == 0 && EWorkerType::Server == 1, "Assuming indexes of enum");
 
 		DownstreamWindowSize = DownstreamWindowSizes[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
@@ -106,7 +108,8 @@ private:
 		}
 		else if (!LogLevelString.IsEmpty())
 		{
-			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
+			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."),
+				   *LogLevelString);
 		}
 	}
 
