@@ -30,7 +30,7 @@ windows: &windows
       - <<: *agent_transients
       - <<: *bk_system_error
       - <<: *bk_interrupted_by_signal
-  timeout_in_minutes: 180
+  timeout_in_minutes: 240
   plugins:
     - improbable-eng/taskkill#v4.4.1: ~
 
