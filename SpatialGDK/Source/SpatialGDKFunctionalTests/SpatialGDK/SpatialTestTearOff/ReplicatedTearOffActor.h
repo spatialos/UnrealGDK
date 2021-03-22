@@ -20,9 +20,13 @@ public:
 	AReplicatedTearOffActor();
 
 	void BeginPlay() override;
+	void Tick(float DeltaSeconds) override;
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(Replicated)
 	int TestInteger;
+
+private:
+	bool bFirstTick;
 };

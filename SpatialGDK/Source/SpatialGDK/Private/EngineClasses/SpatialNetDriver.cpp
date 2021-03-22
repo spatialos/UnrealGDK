@@ -1860,6 +1860,11 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	}
 	check(SpatialConnection->bReliableSpatialConnection);
 
+	if (DebugCtx != nullptr)
+	{
+		DebugCtx->TickServer();
+	}
+
 	if (UReplicationDriver* RepDriver = GetReplicationDriver())
 	{
 		return RepDriver->ServerReplicateActors(DeltaSeconds);
@@ -1879,11 +1884,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	{
 		// No connections are ready this frame
 		return 0;
-	}
-
-	if (DebugCtx != nullptr)
-	{
-		DebugCtx->TickServer();
 	}
 
 	AWorldSettings* WorldSettings = World->GetWorldSettings();
