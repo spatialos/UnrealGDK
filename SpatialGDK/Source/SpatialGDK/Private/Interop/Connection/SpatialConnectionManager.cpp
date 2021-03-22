@@ -124,8 +124,8 @@ struct ConfigureConnection
 #endif
 		}
 
-		WorkerFowControlParameters.downstream_window_size_bytes = Config.DownstreamWindowSize;
-		WorkerFowControlParameters.upstream_window_size_bytes = Config.UpstreamWindowSize;
+		WorkerFowControlParameters.downstream_window_size_bytes = Config.DownstreamWindowSizeBytes;
+		WorkerFowControlParameters.upstream_window_size_bytes = Config.UpstreamWindowSizeBytes;
 
 		Params.network.kcp.flow_control = &WorkerFowControlParameters; // Both tcp and udp use same window concepts.
 		Params.network.tcp.flow_control = &WorkerFowControlParameters;
