@@ -394,7 +394,7 @@ extern const TArray<Worker_ComponentId> KnownEntityAuthorityComponents;
 //
 
 constexpr uint32 SPATIAL_SNAPSHOT_SCHEMA_HASH = 679237978;
-constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 1;
+constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 2;
 constexpr uint64 SPATIAL_SNAPSHOT_VERSION = ((((uint64)SPATIAL_SNAPSHOT_SCHEMA_HASH) << 32) | SPATIAL_SNAPSHOT_VERSION_INC);
 
 } // namespace SpatialConstants
