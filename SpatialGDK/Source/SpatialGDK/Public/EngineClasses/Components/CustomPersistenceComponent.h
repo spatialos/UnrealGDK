@@ -9,7 +9,7 @@
 
 #include "CustomPersistenceComponent.generated.h"
 
-UCLASS(ClassGroup = (SpatialGDK), meta = (BlueprintSpawnableComponent), SpatialType = NotPersistent)
+UCLASS(ClassGroup = (SpatialGDK), meta = (BlueprintSpawnableComponent))
 class SPATIALGDK_API UCustomPersistenceComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -20,19 +20,18 @@ public:
 
 	virtual Worker_ComponentId GetComponentId() const { return (Worker_ComponentId)0; } // todo use invalid component id constant
 
-	virtual void BeginPlay() override; // TODO remove, only here for some debugging atm
+protected:
+	// Internal handling of adding/updating/applying the persistence component data
 	virtual void PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker) override;
-
-	void UpdateDeepCopy();
-
-	virtual void GetAddComponentData(SpatialGDK::ComponentData& Data);
-	virtual void GetComponentUpdate(SpatialGDK::ComponentUpdate& Update);
-
 	virtual void OnAuthorityGained() override;
 
+	// User callbacks to provide data
+	virtual void GetAddComponentData(SpatialGDK::ComponentData& Data);
+	virtual void GetComponentUpdate(SpatialGDK::ComponentUpdate& Update);
 	virtual void OnPersistenceDataAvailable(const SpatialGDK::ComponentData& Data);
 
 private:
+	// This exists so that during OnAuthorityGained, we can know if we gained authority for the first time in this deployment
 	UPROPERTY(Handover)
 	bool bHasProvidedPersistenceData;
 };

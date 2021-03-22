@@ -239,13 +239,6 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 	ComponentDatas.Append(ActorDataComponents);
 
-	if (UCustomPersistenceComponent* Component = Actor->FindComponentByClass<UCustomPersistenceComponent>())
-	{
-		ComponentData Data(Component->GetComponentId());
-		Component->GetAddComponentData(Data);
-		ComponentDatas.Add(Data.CopyIntoWorkerComponentData());
-	}
-
 	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
 
 	Channel->SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));

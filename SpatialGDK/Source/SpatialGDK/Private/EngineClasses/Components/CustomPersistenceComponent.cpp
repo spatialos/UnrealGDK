@@ -21,25 +21,25 @@ UCustomPersistenceComponent::UCustomPersistenceComponent()
 	SetIsReplicatedByDefault(true);
 }
 
-void UCustomPersistenceComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, %s, bHasProvidedPersistenceData during BeginPlay: %d"), *GetName(),
-		   bHasProvidedPersistenceData);
-}
-
+// Once we gain authority, we know we have all the data for an entity, and authority to modify it.
+// If we can find data for the actor's persistence spatial component, pass it to the user implementation via OnPersistenceDataAvailable
+// If we don't have any data for the component, add it to the entity. This usually happens when the actor is loaded for the first time in a
+// fresh deployment, or spawned dynamically.
 void UCustomPersistenceComponent::OnAuthorityGained()
 {
 	UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, %s, OnAuthorityGained, bHasProvidedPersistenceData %d"), *GetName(),
 		   bHasProvidedPersistenceData);
 
-	if (bHasProvidedPersistenceData)
-	{
-		UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, OnAuthorityGained, but already provided persistence data previously"));
-		return;
-	}
+	// This doesn't work upon snapshot reload until this flag gets scrubbed from the snapshot
+	// Commenting it out means that we'll re-apply persistence data on every server migration, but for testing purposes that should be okay.
+	// if (bHasProvidedPersistenceData)
+	// {
+	// 	UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, OnAuthorityGained, but already provided persistence data previously"));
+	// 	return;
+	// }
+
 	bHasProvidedPersistenceData = true;
+	UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, OnAuthorityGained, Setting bHasProvidedPersistenceData to true"));
 
 	AActor* Owner = GetOwner();
 	if (Owner == nullptr)
@@ -48,6 +48,7 @@ void UCustomPersistenceComponent::OnAuthorityGained()
 		return;
 	}
 
+	// TODO this shouldn't be needed, keeping it for now to avoid any surprises
 	if (!Owner->HasAuthority())
 	{
 		UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, owner doesn't have authority"));
@@ -88,11 +89,8 @@ void UCustomPersistenceComponent::OnAuthorityGained()
 	bool bFoundComponent = false;
 	for (const auto& ComponentData : ViewData->Components)
 	{
-		UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, saw component data for ID %u"), ComponentData.GetComponentId());
 		if (ComponentData.GetComponentId() == GetComponentId())
 		{
-			UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, calling user-facing callback. Server: %d, NetDriver: %s"), GIsServer,
-				   *NetDriver->GetName());
 			OnPersistenceDataAvailable(ComponentData);
 			bFoundComponent = true;
 			break;
@@ -101,16 +99,14 @@ void UCustomPersistenceComponent::OnAuthorityGained()
 
 	if (!bFoundComponent)
 	{
-		UE_LOG(LogTemp, Error, TEXT("UCustomPersistenceComponent, Couldn't find the persistence component for entity %llu"), EntityID);
+		SpatialGDK::ComponentData Data(GetComponentId());
+		GetAddComponentData(Data);
+		Coordinator.SendAddComponent(EntityID, MoveTemp(Data), {});
+		UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, added component %u to entity %llu"), GetComponentId(), EntityID);
 	}
 }
 
 void UCustomPersistenceComponent::PreReplication(IRepChangedPropertyTracker& ChangedPropertyTracker)
-{
-	UpdateDeepCopy();
-}
-
-void UCustomPersistenceComponent::UpdateDeepCopy()
 {
 	// Work with spatial turned off
 	if (!USpatialStatics::IsSpatialNetworkingEnabled())
@@ -152,11 +148,10 @@ void UCustomPersistenceComponent::UpdateDeepCopy()
 		return;
 	}
 
-	// Will have to see if this ComponentUpdate type makes sense to be user-facing.
+	// Will have to see if the ComponentUpdate type makes sense to be user-facing.
 	SpatialGDK::ComponentUpdate Update(GetComponentId());
 	GetComponentUpdate(Update);
-	NetDriver->Connection->GetCoordinator().SendComponentUpdate(
-		EntityID, Update.DeepCopy(), {}); // This deep copy is probably not the right way to do this. Works for now though.
+	NetDriver->Connection->GetCoordinator().SendComponentUpdate(EntityID, MoveTemp(Update), {});
 }
 
 void UCustomPersistenceComponent::GetAddComponentData(SpatialGDK::ComponentData& Data) {}
