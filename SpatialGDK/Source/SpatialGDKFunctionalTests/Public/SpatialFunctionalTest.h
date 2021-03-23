@@ -59,6 +59,7 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
+	virtual void OnAuthorityLost() override;
 	virtual void OnAuthorityGained() override;
 
 	// Should be called from the server with authority over this actor.
@@ -128,6 +129,10 @@ public:
 	// Helper to get the local Worker Id.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	int GetLocalWorkerId();
+
+	// Helper to get the local Worker String.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	FString GetLocalWorkerString();
 
 	// # Step APIs.
 
