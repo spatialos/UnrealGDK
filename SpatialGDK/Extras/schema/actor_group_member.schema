@@ -1,6 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
+// Indicates entity's actor group membership; in Offloading scenarios,
+// Actor Groups are based off of class hierarchy.
+// Intended use is for the Strategy Worker.
 component ActorGroupMember {
 	id = 9964;
 	

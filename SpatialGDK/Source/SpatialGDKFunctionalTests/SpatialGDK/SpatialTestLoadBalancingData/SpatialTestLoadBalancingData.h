@@ -69,7 +69,7 @@ class ASpatialTestLoadBalancingData : public ASpatialFunctionalTest
 
 	virtual void PrepareTest() override;
 
-	template <class TComponent>
+	template <typename TComponent>
 	TOptional<TComponent> GetSpatialComponent(const AActor* Actor) const;
 
 	TOptional<SpatialGDK::ActorSetMember> GetActorSetData(const AActor* Actor) const;

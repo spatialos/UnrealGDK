@@ -146,7 +146,7 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 
 	if (GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents)
 	{
-		const auto AddComponentData = [&ComponentDatas](ComponentData&& Data) {
+		const auto AddComponentData = [&ComponentDatas](ComponentData Data) {
 			Worker_ComponentData ComponentData;
 			ComponentData.reserved = nullptr;
 			ComponentData.component_id = Data.GetComponentId();

@@ -214,7 +214,7 @@ inline FVector GetVectorFromSchema(Schema_Object* Object, Schema_FieldId Id)
 // Does not clear OutPath first.
 void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath);
 
-template <class TComponent>
+template <typename TComponent>
 ComponentUpdate CreateComponentUpdateHelper(const TComponent& Component)
 {
 	ComponentUpdate Update(TComponent::ComponentId);
@@ -223,7 +223,7 @@ ComponentUpdate CreateComponentUpdateHelper(const TComponent& Component)
 	return Update;
 }
 
-template <class TComponent>
+template <typename TComponent>
 ComponentData CreateComponentDataHelper(const TComponent& Component)
 {
 	ComponentData Data(TComponent::ComponentId);

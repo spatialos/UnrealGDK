@@ -10,7 +10,5 @@ class USpatialPackageMapClient;
 
 namespace SpatialGDK
 {
-class ViewCoordinator;
-
 ActorSetMember GetActorSetData(const USpatialPackageMapClient& PackageMap, const AActor& Actor);
 } // namespace SpatialGDK

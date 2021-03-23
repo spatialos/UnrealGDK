@@ -212,7 +212,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 		LoadBalancingDataReceiptTimeout);
 }
 
-template <class TComponent>
+template <typename TComponent>
 TOptional<TComponent> ASpatialTestLoadBalancingData::GetSpatialComponent(const AActor* Actor) const
 {
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
