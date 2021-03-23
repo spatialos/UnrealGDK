@@ -266,7 +266,7 @@ TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const Wo
 	return GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, 0));
 }
 
-FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(const UObject* Object)
+FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(const UObject* Object) const
 {
 	if (Object == nullptr)
 	{
@@ -278,7 +278,7 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(const UO
 	return GetUnrealObjectRefFromNetGUID(NetGUID);
 }
 
-Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* Object)
+Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* Object) const
 {
 	if (Object == nullptr)
 	{

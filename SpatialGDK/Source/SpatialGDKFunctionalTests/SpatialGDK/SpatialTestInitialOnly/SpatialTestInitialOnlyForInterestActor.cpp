@@ -104,8 +104,8 @@ void ASpatialTestInitialOnlyForInterestActor::PrepareTest()
 				ASpatialTestInitialOnlySpawnActor* SpawnActor = Cast<ASpatialTestInitialOnlySpawnActor>(Actor);
 				if (SpawnActor != nullptr)
 				{
-					AssertTrue(SpawnActor->Int_Initial == 1, TEXT("Check Actor.Int_Initial value."));
-					AssertTrue(SpawnActor->Int_Replicate == 1, TEXT("Check Actor.Int_Replicate value."));
+					AssertEqual_Int(SpawnActor->Int_Initial, 1, TEXT("Check Actor.Int_Initial value."));
+					AssertEqual_Int(SpawnActor->Int_Replicate, 1, TEXT("Check Actor.Int_Replicate value."));
 				}
 			}
 
@@ -115,10 +115,11 @@ void ASpatialTestInitialOnlyForInterestActor::PrepareTest()
 	AddStep(TEXT("Server change value."), FWorkerDefinition::Server(1), nullptr, [this]() {
 		TArray<AActor*> SpawnActors;
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpatialTestInitialOnlySpawnActor::StaticClass(), SpawnActors);
+		AssertEqual_Int(SpawnActors.Num(), 1, TEXT("There should be exactly one InitialOnly actor in the world."));
 		for (AActor* Actor : SpawnActors)
 		{
 			ASpatialTestInitialOnlySpawnActor* SpawnActor = Cast<ASpatialTestInitialOnlySpawnActor>(Actor);
-			if (SpawnActor != nullptr)
+			if (AssertIsValid(SpawnActor, TEXT("SpawnActor should be valid.")))
 			{
 				SpawnActor->Int_Initial = 2;
 				SpawnActor->Int_Replicate = 2;
@@ -128,21 +129,25 @@ void ASpatialTestInitialOnlyForInterestActor::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Check changed value."), FWorkerDefinition::Client(1), nullptr, [this]() {
-		TArray<AActor*> SpawnActors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpatialTestInitialOnlySpawnActor::StaticClass(), SpawnActors);
-		for (AActor* Actor : SpawnActors)
-		{
-			ASpatialTestInitialOnlySpawnActor* SpawnActor = Cast<ASpatialTestInitialOnlySpawnActor>(Actor);
-			if (SpawnActor != nullptr)
+	AddStep(
+		TEXT("Check changed value."), FWorkerDefinition::Client(1), nullptr, nullptr,
+		[this](float DeltaTime) {
+			TArray<AActor*> SpawnActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpatialTestInitialOnlySpawnActor::StaticClass(), SpawnActors);
+			AssertEqual_Int(SpawnActors.Num(), 1, TEXT("There should be exactly one InitialOnly actor in the world."));
+			for (AActor* Actor : SpawnActors)
 			{
-				AssertTrue(SpawnActor->Int_Initial == 1, TEXT("Check Actor.Int_Initial value."));
-				AssertTrue(SpawnActor->Int_Replicate == 2, TEXT("Check Actor.Int_Replicate value."));
+				ASpatialTestInitialOnlySpawnActor* SpawnActor = Cast<ASpatialTestInitialOnlySpawnActor>(Actor);
+				if (AssertIsValid(SpawnActor, TEXT("SpawnActor should be valid.")))
+				{
+					RequireEqual_Int(SpawnActor->Int_Initial, 1, TEXT("Check Actor.Int_Initial value."));
+					RequireEqual_Int(SpawnActor->Int_Replicate, 2, TEXT("Check Actor.Int_Replicate value."));
+				}
 			}
-		}
 
-		FinishStep();
-	});
+			FinishStep();
+		},
+		10.0f);
 
 	AddStep(TEXT("Cleanup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Possess the original pawn, so that other tests start from the expected, default set-up
