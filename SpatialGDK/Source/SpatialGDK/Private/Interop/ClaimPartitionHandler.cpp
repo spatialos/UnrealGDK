@@ -42,9 +42,9 @@ void ClaimPartitionHandler::ProcessOps(const TArray<Worker_Op>& Ops)
 			if (bIsRequestHandled)
 			{
 				ensure(CommandResponse.response.component_id == SpatialConstants::WORKER_COMPONENT_ID);
-				ensureMsgf(CommandResponse.status_code == WORKER_STATUS_CODE_SUCCESS,
-						   TEXT("Claim partition request for partition %lld finished, SDK returned code %d [%s]"), ClaimedPartitionId,
-						   (int)CommandResponse.status_code, UTF8_TO_TCHAR(CommandResponse.message));
+				UE_CLOG(CommandResponse.status_code != WORKER_STATUS_CODE_SUCCESS, LogClaimPartitionHandler, Error,
+						TEXT("Claim partition request for partition %lld finished, SDK returned code %d [%s]"), ClaimedPartitionId,
+						(int)CommandResponse.status_code, UTF8_TO_TCHAR(CommandResponse.message));
 			}
 		}
 	}

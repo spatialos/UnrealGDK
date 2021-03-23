@@ -79,9 +79,9 @@ void ServerWorkerEntityCreator::CreateWorkerEntity()
 
 void ServerWorkerEntityCreator::OnEntityCreated(const Worker_CreateEntityResponseOp& CreateEntityResponse)
 {
-	ensureMsgf(CreateEntityResponse.status_code == WORKER_STATUS_CODE_SUCCESS,
-			   TEXT("Worker system entity created, SDK returned code %d [%s]"), (int)CreateEntityResponse.status_code,
-			   UTF8_TO_TCHAR(CreateEntityResponse.message));
+	UE_CLOG(CreateEntityResponse.status_code != WORKER_STATUS_CODE_SUCCESS, LogSpatialWorkerConnection, Error,
+			TEXT("Worker system entity creation failed, SDK returned code %d [%s]"), (int)CreateEntityResponse.status_code,
+			UTF8_TO_TCHAR(CreateEntityResponse.message));
 
 	NetDriver.WorkerEntityId = CreateEntityResponse.entity_id;
 
