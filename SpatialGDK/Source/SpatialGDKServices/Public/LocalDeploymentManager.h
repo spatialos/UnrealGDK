@@ -30,9 +30,10 @@ public:
 
 	using LocalDeploymentCallback = TFunction<void(bool)>;
 
-	void SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs,
-														FString SnapshotName, FString RuntimeIPToExpose,
+	void SPATIALGDKSERVICES_API TryStartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
+														const FString& SnapshotName, const FString& RuntimeIPToExpose,
 														const LocalDeploymentCallback& CallBack);
+
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 	bool SPATIALGDKSERVICES_API TryStopLocalDeploymentGracefully();
 
@@ -67,6 +68,19 @@ private:
 	bool WaitForRuntimeProcessToShutDown();
 	bool StartLocalDeploymentShutDown();
 	void FinishLocalDeploymentShutDown();
+
+
+	enum class ERuntimeStartResponse
+	{
+		AlreadyRunning,
+		PreRunChecksFailed,
+		Timeout,
+		Success
+	};
+
+	ERuntimeStartResponse StartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
+											   const FString& SnapshotName, const FString& RuntimeIPToExpose,
+											   const LocalDeploymentCallback& CallBack);
 
 	TFuture<bool> AttemptSpatialAuthResult;
 
