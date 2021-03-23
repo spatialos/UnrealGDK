@@ -23,6 +23,7 @@
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "Interop/ClientConnectionManager.h"
@@ -48,6 +49,7 @@
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -1246,10 +1248,20 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 
 void USpatialNetDriver::ProcessOwnershipChanges()
 {
+	const bool bShouldWriteLoadBalancingData =
+		IsValid(Connection) && GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents;
+
 	for (Worker_EntityId EntityId : OwnershipChangedEntities)
 	{
 		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
 		{
+			if (bShouldWriteLoadBalancingData)
+			{
+				check(IsValid(Channel->Actor));
+				const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, *Channel->Actor);
+				Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
+			}
+
 			Channel->ServerProcessOwnershipChange();
 		}
 	}
@@ -1853,6 +1865,11 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	}
 	check(SpatialConnection->bReliableSpatialConnection);
 
+	if (DebugCtx != nullptr)
+	{
+		DebugCtx->TickServer();
+	}
+
 	if (UReplicationDriver* RepDriver = GetReplicationDriver())
 	{
 		return RepDriver->ServerReplicateActors(DeltaSeconds);
@@ -1872,11 +1889,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	{
 		// No connections are ready this frame
 		return 0;
-	}
-
-	if (DebugCtx != nullptr)
-	{
-		DebugCtx->TickServer();
 	}
 
 	AWorldSettings* WorldSettings = World->GetWorldSettings();
