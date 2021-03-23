@@ -403,13 +403,8 @@ extern const TArray<Worker_ComponentId> KnownEntityAuthorityComponents;
 //	- Increment SPATIAL_SNAPSHOT_VERSION_INC (below)
 //
 
-<<<<<<< HEAD
 constexpr uint32 SPATIAL_SNAPSHOT_SCHEMA_HASH = 679237978;
-constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 2;
-=======
-constexpr uint32 SPATIAL_SNAPSHOT_SCHEMA_HASH = 679237978; //<< SHOULD CHANGE
 constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 3;
->>>>>>> Put routing worker partition in the initial snapshot
 constexpr uint64 SPATIAL_SNAPSHOT_VERSION = ((((uint64)SPATIAL_SNAPSHOT_SCHEMA_HASH) << 32) | SPATIAL_SNAPSHOT_VERSION_INC);
 
 } // namespace SpatialConstants
