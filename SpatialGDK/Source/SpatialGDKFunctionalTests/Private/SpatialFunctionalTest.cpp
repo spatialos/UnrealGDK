@@ -165,11 +165,6 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 	}
 }
 
-void ASpatialFunctionalTest::OnAuthorityLost()
-{
-	__debugbreak();
-}
-
 void ASpatialFunctionalTest::OnAuthorityGained()
 {
 	bReadyToSpawnServerControllers = true;

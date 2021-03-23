@@ -34,7 +34,7 @@ ASpatialTestReplicationConditions::ASpatialTestReplicationConditions()
 {
 	Author = "Mike";
 	Description = TEXT("Test Unreal Replication Conditions in a MultiServer Context");
-	static_assert(COND_Max == 16, TEXT("New replication condition added - add more tests!"))
+	static_assert(COND_Max == 16, TEXT("New replication condition added - add more tests!"));
 }
 
 void ASpatialTestReplicationConditions::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

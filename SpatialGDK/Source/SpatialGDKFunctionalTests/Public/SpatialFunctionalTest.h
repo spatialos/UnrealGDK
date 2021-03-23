@@ -59,7 +59,6 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
-	virtual void OnAuthorityLost() override;
 	virtual void OnAuthorityGained() override;
 
 	// Should be called from the server with authority over this actor.
