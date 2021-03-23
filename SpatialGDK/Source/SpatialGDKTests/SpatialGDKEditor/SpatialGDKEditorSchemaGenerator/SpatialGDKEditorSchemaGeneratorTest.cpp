@@ -918,6 +918,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "rpc_payload.schema",
 										   "server_worker.schema",
 										   "spatial_debugging.schema",
+										   "actor_group_member.schema",
+										   "actor_set_member.schema",
 										   "spawndata.schema",
 										   "spawner.schema",
 										   "tombstone.schema",

@@ -1,0 +1,11 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+// Defines an entity's actor set membership. Actor Sets are defined by specifying
+// a leader entity; the Strategy Worker keeps all entities with the same leader entity
+// in the same partition.
+component ActorSetMember {
+	id = 9965;
+	
+	EntityId leader_entity = 1;
+}
