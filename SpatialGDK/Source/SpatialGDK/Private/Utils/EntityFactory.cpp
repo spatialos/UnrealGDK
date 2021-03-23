@@ -114,10 +114,9 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 		   *Actor->GetName(), *NetDriver->LoadBalanceStrategy->GetName());
 
 	AuthorityDelegationMap DelegationMap;
-	const Worker_PartitionId RoutingPartitionId = NetDriver->GetRoutingPartition();
 	DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
 	DelegationMap.Add(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, AuthoritativeClientPartitionId);
-	DelegationMap.Add(SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID, RoutingPartitionId);
+	DelegationMap.Add(SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_ROUTING_PARTITION_ENTITY_ID);
 
 	// Add debugging utilities, if we are not compiling a shipping build
 #if !UE_BUILD_SHIPPING
@@ -434,6 +433,7 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(cons
 																			VirtualWorkerId VirtualWorker, bool bDebugContextValid)
 {
 	AuthorityDelegationMap DelegationMap;
+	DelegationMap.Add(SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID, EntityId);
 	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, EntityId);
 
 	TArray<FWorkerComponentData> Components;

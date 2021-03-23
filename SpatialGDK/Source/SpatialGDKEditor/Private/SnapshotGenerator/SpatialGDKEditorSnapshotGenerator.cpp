@@ -13,6 +13,7 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityFactory.h"
+#include "Utils/InterestFactory.h"
 #include "Utils/RepDataUtils.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaUtils.h"
@@ -245,6 +246,22 @@ bool CreateStrategyPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Persistence().CreateComponentData());
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 	Components.Add(ServerInterest.CreateComponentData());
+}
+
+bool CreateRoutingWorkerPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
+{
+	Worker_Entity StrategyPartitionEntity;
+	StrategyPartitionEntity.entity_id = SpatialConstants::INITIAL_ROUTING_PARTITION_ENTITY_ID;
+
+	AuthorityDelegationMap DelegationMap;
+	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_ROUTING_PARTITION_ENTITY_ID);
+
+	TArray<FWorkerComponentData> Components;
+	Components.Add(Position().CreateComponentData());
+	Components.Add(Metadata(FString(TEXT("RoutingPartition"))).CreateComponentData());
+	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
+	Components.Add(InterestFactory::CreateRoutingWorkerInterest().CreateComponentData());
+	Components.Add(Persistence().CreateComponentData());
 
 	SetEntityData(StrategyPartitionEntity, Components);
 
@@ -327,6 +344,13 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 	if (!CreateStrategyPartitionEntity(OutputStream))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating StrategyWorker in snapshot: %s"),
+			   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
+		return false;
+	}
+	
+	if (!CreateRoutingWorkerPartitionEntity(OutputStream))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating RoutingPartitionEntity in snapshot: %s"),
 			   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 		return false;
 	}

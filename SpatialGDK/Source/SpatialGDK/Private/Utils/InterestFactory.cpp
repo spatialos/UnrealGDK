@@ -143,6 +143,14 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	ServerQuery.Constraint = CreateGDKSnapshotEntitiesConstraint();
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
 
+	// SelfInterest for Sender component.
+	ServerQuery = Query();
+	ServerQuery.ResultComponentIds = { SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID,
+									   SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID,
+									   SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID };
+	ServerQuery.Constraint.bSelfConstraint = true;
+	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
+
 	return ServerInterest;
 }
 
