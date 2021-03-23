@@ -10,26 +10,31 @@
 #include "Net/UnrealNetwork.h"
 
 /**
- * This tests that Unreal replication conditions
+ * This tests that Unreal replication conditions.
+ * This includes test for all replication conditions as defined in by ELifetimeCondition expect -
+ * COND_InitialOnly - tested in SpatialTestInitialOnly
+ * COND_InitialOrOwner - not supported in Spatial
+ * COND_ReplayOnly - not relevant to Spatial
  *
  * The test includes 2 Server and 2 Clients.
  * The flow is as follows:
  * - Setup:
  *  - The test actors are spawned with both static and dynamic components.
- *  - The components are initialized with unique starting values.
- *  - The TestActor is possessed by Client1
+ *  - The test actors are possessed by Client1
  * - Test:
- *	- The owner client checks it can see the actor, components, and the values are correct.
- *  - The non-auth server checks it can see the actor, components, and the values are correct.
- *  - The non-owning client checks it can see the actor, components, and the values are correct.
+ *  - The test actors are their properties initialized with unique starting values.
+ *  - The non-auth server, owning client and non-owning client checks it can see the actors, components, and the values are correct.
+ *  - The test actors have their properties updated to new unique values.
+ *  - The non-auth server, owning client and non-owning client checks it can see the actors, components, and the values are correct.
  * - Clean-up:
- *	- The TestActor is destroyed.
+ *	- The test actors are destroyed.
  */
 ASpatialTestReplicationConditions::ASpatialTestReplicationConditions()
 	: Super()
 {
 	Author = "Mike";
 	Description = TEXT("Test Unreal Replication Conditions in a MultiServer Context");
+	static_assert(COND_Max == 16, TEXT("New replication condition added - add more tests!"))
 }
 
 void ASpatialTestReplicationConditions::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
