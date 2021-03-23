@@ -3,6 +3,6 @@ package unreal;
 
 component CustomPersistence {
      id = 9950;
-     
+
      bool depleted = 1;
 }

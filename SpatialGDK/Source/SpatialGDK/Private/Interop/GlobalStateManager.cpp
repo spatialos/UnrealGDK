@@ -10,7 +10,6 @@
 #include "Engine/Classes/AI/AISystemBase.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialActorChannel.h"
-#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"

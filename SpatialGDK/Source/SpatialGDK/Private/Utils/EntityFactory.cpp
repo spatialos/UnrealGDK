@@ -2,7 +2,6 @@
 
 #include "Utils/EntityFactory.h"
 
-#include "EngineClasses/Components/CustomPersistenceComponent.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -23,8 +22,6 @@
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialDebugger.h"
-
-#include "Schema/CustomPersistence.h"
 
 #include "Engine/Engine.h"
 #include "Engine/LevelScriptActor.h"
