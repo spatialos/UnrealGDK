@@ -2,12 +2,15 @@
 
 #pragma once
 
-#include "Containers/UnrealString.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialLoadBalancingHandler.h"
+
+#include "Containers/UnrealString.h"
+#include "Kismet/GameplayStatics.h"
 
 namespace SpatialGDK
 {

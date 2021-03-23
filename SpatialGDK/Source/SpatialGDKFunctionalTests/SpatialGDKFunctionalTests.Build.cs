@@ -10,6 +10,8 @@ public class SpatialGDKFunctionalTests : ModuleRules
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         bUseUnity = false;
 
+        PrivateIncludePaths.Add(ModuleDirectory);
+        
         PrivateDependencyModuleNames.AddRange(
             new string[] {
                 "SpatialGDK",

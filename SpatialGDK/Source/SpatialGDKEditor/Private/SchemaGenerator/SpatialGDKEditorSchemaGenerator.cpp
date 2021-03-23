@@ -92,8 +92,17 @@ TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 // QBI
 TMap<float, Worker_ComponentId> NetCullDistanceToComponentId;
 
-const FString RelativeSchemaDatabaseFilePath = FPaths::SetExtension(
-	FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH), FPackageName::GetAssetPackageExtension());
+namespace
+{
+const FString& GetRelativeSchemaDatabaseFilePath()
+{
+	static const FString s_RelativeFilePath =
+		FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH),
+							 FPackageName::GetAssetPackageExtension());
+
+	return s_RelativeFilePath;
+}
+} // namespace
 
 namespace SpatialGDKEditor
 {
@@ -1366,12 +1375,12 @@ bool GeneratedSchemaDatabaseExists()
 {
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-	return PlatformFile.FileExists(*RelativeSchemaDatabaseFilePath);
+	return PlatformFile.FileExists(*GetRelativeSchemaDatabaseFilePath());
 }
 
 FSpatialGDKEditor::ESchemaDatabaseValidationResult ValidateSchemaDatabase()
 {
-	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*RelativeSchemaDatabaseFilePath);
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*GetRelativeSchemaDatabaseFilePath());
 	if (!StatData.bIsValid)
 	{
 		return FSpatialGDKEditor::NotFound;

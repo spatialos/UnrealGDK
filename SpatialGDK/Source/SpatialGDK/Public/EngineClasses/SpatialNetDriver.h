@@ -3,17 +3,8 @@
 #pragma once
 
 #include "Interop/CrossServerRPCHandler.h"
-#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
-#include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
-#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/CrossServerRPCSender.h"
-#include "Interop/RPCs/SpatialRPCService.h"
-#include "Interop/SpatialDispatcher.h"
-#include "Interop/SpatialOutputDevice.h"
-#include "Interop/SpatialRoutingSystem.h"
-#include "Interop/SpatialSnapshotManager.h"
-#include "Utils/InterestFactory.h"
 #include "Utils/SpatialBasicAwaiter.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialDebuggerSystem.h"
@@ -24,11 +15,7 @@
 #include "SpatialGDKSettings.h"
 
 #include "CoreMinimal.h"
-#include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
-#include "Interop/ClientConnectionManager.h"
-#include "Interop/InitialOnlyFilter.h"
-#include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
 
@@ -36,6 +23,12 @@
 
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
+class FSpatialLoadBalancingHandler;
+class FSpatialOutputDevice;
+class SpatialDispatcher;
+class SpatialSnapshotManager;
+class SpatialVirtualWorkerTranslator;
+class SpatialVirtualWorkerTranslationManager;
 class UAbstractLBStrategy;
 class UEntityPool;
 class UGlobalStateManager;
@@ -54,6 +47,8 @@ class USpatialStaticComponentView;
 class USpatialWorkerConnection;
 class USpatialWorkerFlags;
 
+DECLARE_DELEGATE(PostWorldWipeDelegate);
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialConsiderList, STATGROUP_SpatialNet, );
@@ -63,7 +58,19 @@ DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Changed Relevant Actors"), STAT_
 namespace SpatialGDK
 {
 class SpatialRoutingSystem;
-}
+
+class SpatialDebuggerSystem;
+class ActorSystem;
+class SpatialRPCService;
+class SpatialRoutingSystem;
+class SpatialLoadBalanceEnforcer;
+class InterestFactory;
+class WellKnownEntitySystem;
+class ClientConnectionManager;
+class InitialOnlyFilter;
+class CrossServerRPCSender;
+class CrossServerRPCHandler;
+} // namespace SpatialGDK
 
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
@@ -72,6 +79,7 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 
 public:
 	USpatialNetDriver(const FObjectInitializer& ObjectInitializer);
+	USpatialNetDriver(FVTableHelper& Helper);
 	~USpatialNetDriver();
 
 	// Begin UObject Interface

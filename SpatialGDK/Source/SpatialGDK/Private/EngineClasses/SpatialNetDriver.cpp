@@ -22,24 +22,31 @@
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "Interop/ActorSetWriter.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "Interop/ClientConnectionManager.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
+#include "Interop/InitialOnlyFilter.h"
 #include "Interop/RPCExecutor.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialNetDriverLoadBalancingHandler.h"
+#include "Interop/SpatialOutputDevice.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialRoutingSystem.h"
 #include "Interop/SpatialSender.h"
+#include "Interop/SpatialSnapshotManager.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -54,6 +61,7 @@
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialDebuggerSystem.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialLoadBalancingHandler.h"
 #include "Utils/SpatialMetrics.h"
@@ -80,6 +88,8 @@ DECLARE_CYCLE_STAT(TEXT("UpdateAuthority"), STAT_SpatialUpdateAuthority, STATGRO
 DEFINE_STAT(STAT_SpatialConsiderList);
 DEFINE_STAT(STAT_SpatialActorsRelevant);
 DEFINE_STAT(STAT_SpatialActorsChanged);
+
+DEFINE_VTABLE_PTR_HELPER_CTOR(USpatialNetDriver);
 
 USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -865,9 +875,12 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	if (IsServer() && WellKnownEntitySystem.IsValid())
+	if (IsServer())
 	{
-		WellKnownEntitySystem->OnMapLoaded();
+		if (WellKnownEntitySystem.IsValid())
+		{
+			WellKnownEntitySystem->OnMapLoaded();
+		}
 	}
 	else
 	{
@@ -1233,10 +1246,20 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 
 void USpatialNetDriver::ProcessOwnershipChanges()
 {
+	const bool bShouldWriteLoadBalancingData =
+		IsValid(Connection) && GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents;
+
 	for (Worker_EntityId EntityId : OwnershipChangedEntities)
 	{
 		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
 		{
+			if (bShouldWriteLoadBalancingData)
+			{
+				check(IsValid(Channel->Actor));
+				const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, *Channel->Actor);
+				Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
+			}
+
 			Channel->ServerProcessOwnershipChange();
 		}
 	}
@@ -1840,6 +1863,11 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	}
 	check(SpatialConnection->bReliableSpatialConnection);
 
+	if (DebugCtx != nullptr)
+	{
+		DebugCtx->TickServer();
+	}
+
 	if (UReplicationDriver* RepDriver = GetReplicationDriver())
 	{
 		return RepDriver->ServerReplicateActors(DeltaSeconds);
@@ -1859,11 +1887,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	{
 		// No connections are ready this frame
 		return 0;
-	}
-
-	if (DebugCtx != nullptr)
-	{
-		DebugCtx->TickServer();
 	}
 
 	AWorldSettings* WorldSettings = World->GetWorldSettings();

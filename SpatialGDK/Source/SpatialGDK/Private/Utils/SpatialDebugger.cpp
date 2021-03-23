@@ -3,6 +3,7 @@
 #include "Utils/SpatialDebugger.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
@@ -14,6 +15,7 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 #include "Utils/InspectionColors.h"
+#include "Utils/SpatialDebuggerSystem.h"
 
 #include "Debug/DebugDrawService.h"
 #include "Engine/Engine.h"

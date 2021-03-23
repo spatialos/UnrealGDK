@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -265,7 +266,7 @@ TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const Wo
 	return GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, 0));
 }
 
-FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(const UObject* Object)
+FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(const UObject* Object) const
 {
 	if (Object == nullptr)
 	{
@@ -277,7 +278,7 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(const UO
 	return GetUnrealObjectRefFromNetGUID(NetGUID);
 }
 
-Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* Object)
+Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* Object) const
 {
 	if (Object == nullptr)
 	{

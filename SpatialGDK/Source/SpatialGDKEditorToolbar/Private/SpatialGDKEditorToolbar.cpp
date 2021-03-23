@@ -2,6 +2,9 @@
 
 #include "SpatialGDKEditorToolbar.h"
 
+#include "SpatialConstants.cxx"
+#include "SpatialConstants.h"
+
 #include "AssetRegistryModule.h"
 #include "Async/Async.h"
 #include "Editor.h"
