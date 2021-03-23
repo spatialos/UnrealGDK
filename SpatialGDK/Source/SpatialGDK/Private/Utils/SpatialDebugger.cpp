@@ -120,6 +120,31 @@ void ASpatialDebugger::Tick(float DeltaSeconds)
 	}
 }
 
+void ASpatialDebugger::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (NetDriver != nullptr && NetDriver->Receiver != nullptr)
+	{
+		if (OnEntityAddedHandle.IsValid())
+		{
+			NetDriver->Receiver->OnEntityAddedDelegate.Remove(OnEntityAddedHandle);
+		}
+
+		if (OnEntityRemovedHandle.IsValid())
+		{
+			NetDriver->Receiver->OnEntityRemovedDelegate.Remove(OnEntityRemovedHandle);
+		}
+	}
+
+	if (DrawDebugDelegateHandle.IsValid())
+	{
+		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
+	}
+
+	DestroyWorkerRegions();
+
+	Super::EndPlay(EndPlayReason);
+}
+
 void ASpatialDebugger::BeginPlay()
 {
 	Super::BeginPlay();
@@ -257,26 +282,6 @@ void ASpatialDebugger::OnRep_SetWorkerRegions()
 
 void ASpatialDebugger::Destroyed()
 {
-	if (NetDriver != nullptr && NetDriver->Receiver != nullptr)
-	{
-		if (OnEntityAddedHandle.IsValid())
-		{
-			NetDriver->Receiver->OnEntityAddedDelegate.Remove(OnEntityAddedHandle);
-		}
-
-		if (OnEntityRemovedHandle.IsValid())
-		{
-			NetDriver->Receiver->OnEntityRemovedDelegate.Remove(OnEntityRemovedHandle);
-		}
-	}
-
-	if (DrawDebugDelegateHandle.IsValid())
-	{
-		UDebugDrawService::Unregister(DrawDebugDelegateHandle);
-	}
-
-	DestroyWorkerRegions();
-
 	Super::Destroyed();
 }
 

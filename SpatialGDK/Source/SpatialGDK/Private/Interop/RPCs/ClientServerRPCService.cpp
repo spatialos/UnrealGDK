@@ -44,6 +44,7 @@ void ClientServerRPCService::AdvanceView()
 			SetEntityData(Delta.EntityId);
 			break;
 		case EntityDelta::REMOVE:
+			UE_LOG(LogTemp, Log, TEXT("Removing ClientServerDataStore for %lld"), Delta.EntityId);
 			ClientServerDataStore.Remove(Delta.EntityId);
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
