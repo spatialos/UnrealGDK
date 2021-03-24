@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added versioning to snapshots. Attempting to load an incompatible snapshot will fail, and output error logs that request the snapshot be regenerated.
 - Add feature flag bEnableInitialOnlyReplicationCondition for COND_InitialOnly support.
 - Added a function that allows the worker coordinator to periodically restart the simulated player clients with a bunch of parameters. This feature is disabled by default and can be enabled via `max_lifetime` setting.
+- Exposing worker upstream/downstream window sizes as GDK options for both clients and servers, (`ClientDownstreamWindowSizeBytes`, `ClientUpstreamWindowSizeBytes`) and (`ServerDownstreamWindowSizeBytes` and `ServerUpstreamWindowSizeBytes`).
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.

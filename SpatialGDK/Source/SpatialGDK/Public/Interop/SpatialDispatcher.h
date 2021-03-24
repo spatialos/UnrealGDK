@@ -22,7 +22,7 @@ class SPATIALGDK_API SpatialDispatcher
 public:
 	using FCallbackId = uint32;
 
-	void Init(USpatialReceiver* InReceiver, USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags);
+	void Init(USpatialWorkerFlags* InSpatialWorkerFlags);
 	void ProcessOps(const TArray<Worker_Op>& Ops);
 
 	// Each callback method returns a callback ID which is incremented for each registration.
@@ -58,9 +58,7 @@ private:
 									 const TFunction<void(const Worker_Op*)>& Callback);
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
 
-	TWeakObjectPtr<USpatialReceiver> Receiver;
 	TWeakObjectPtr<USpatialNetDriverDebugContext> DebugContext;
-	TWeakObjectPtr<USpatialMetrics> SpatialMetrics;
 
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;

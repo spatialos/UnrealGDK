@@ -12,20 +12,13 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
-void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags)
+void SpatialDispatcher::Init(USpatialWorkerFlags* InSpatialWorkerFlags)
 {
-	check(InReceiver != nullptr);
-	Receiver = InReceiver;
-
-	check(InSpatialMetrics != nullptr);
-	SpatialMetrics = InSpatialMetrics;
 	SpatialWorkerFlags = InSpatialWorkerFlags;
 }
 
 void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 {
-	check(Receiver.IsValid());
-
 	for (const Worker_Op& Op : Ops)
 	{
 		if (IsExternalSchemaOp(Op))
@@ -40,26 +33,7 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 		case WORKER_OP_TYPE_CRITICAL_SECTION:
 			break;
 
-		// Commands
-		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			Receiver->OnCommandRequest(Op);
-			break;
-		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			Receiver->OnCommandResponse(Op);
-			break;
 		// World Command Responses
-		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-			Receiver->OnReserveEntityIdsResponse(Op.op.reserve_entity_ids_response);
-			break;
-		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			Receiver->OnCreateEntityResponse(Op);
-			break;
-		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
-			break;
-		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
-			Receiver->OnEntityQueryResponse(Op.op.entity_query_response);
-			break;
-
 		case WORKER_OP_TYPE_FLAG_UPDATE:
 			if (Op.op.flag_update.value == nullptr)
 			{
@@ -69,14 +43,6 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			{
 				SpatialWorkerFlags->SetWorkerFlag(UTF8_TO_TCHAR(Op.op.flag_update.name), UTF8_TO_TCHAR(Op.op.flag_update.value));
 			}
-			break;
-		case WORKER_OP_TYPE_METRICS:
-#if !UE_BUILD_SHIPPING
-			check(SpatialMetrics.IsValid());
-			SpatialMetrics->HandleWorkerMetrics(Op);
-#endif
-			break;
-		case WORKER_OP_TYPE_DISCONNECT:
 			break;
 		default:
 			break;

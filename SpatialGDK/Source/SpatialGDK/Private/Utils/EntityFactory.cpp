@@ -7,8 +7,12 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "Interop/ActorGroupWriter.h"
+#include "Interop/ActorSetWriter.h"
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Schema/ActorGroupMember.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/SpatialDebugging.h"
@@ -139,6 +143,22 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateComponentData());
 	ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents)
+	{
+		const auto AddComponentData = [&ComponentDatas](ComponentData Data) {
+			Worker_ComponentData ComponentData;
+			ComponentData.reserved = nullptr;
+			ComponentData.component_id = Data.GetComponentId();
+			ComponentData.schema_type = MoveTemp(Data).Release();
+			ComponentData.user_handle = nullptr;
+
+			ComponentDatas.Add(ComponentData);
+		};
+
+		AddComponentData(GetActorSetData(*NetDriver->PackageMap, *Actor).CreateComponentData());
+		AddComponentData(GetActorGroupData(*NetDriver->LoadBalanceStrategy, *Actor).CreateComponentData());
+	}
 }
 
 void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,

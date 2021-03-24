@@ -15,6 +15,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "EngineUtils.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -34,12 +35,15 @@ using namespace SpatialGDK;
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-	Sender = InNetDriver->Sender;
-	Receiver = InNetDriver->Receiver;
+	ClaimHandler = MakeUnique<ClaimPartitionHandler>(*NetDriver->Connection);
 	ViewCoordinator = &InNetDriver->Connection->GetCoordinator();
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
 #if WITH_EDITOR
+	RequestHandler.AddRequestHandler(
+		SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID,
+		FOnCommandRequestWithOp::FDelegate::CreateUObject(this, &UGlobalStateManager::OnReceiveShutdownCommand));
+
 	const ULevelEditorPlaySettings* const PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
 
 	// Only the client should ever send this request.
@@ -207,7 +211,20 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 	}
 }
 
-#if WITH_EDITOR
+void UGlobalStateManager::OnReceiveShutdownCommand(const Worker_Op& Op, const Worker_CommandRequestOp& CommandRequestOp)
+{
+	ReceiveShutdownMultiProcessRequest();
+
+	SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+
+	if (EventTracer != nullptr)
+	{
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"),
+																					   Op.op.command_request.request_id),
+								/* Causes */ Op.span_id, /* NumCauses */ 1);
+	}
+}
+
 void UGlobalStateManager::OnShutdownComponentUpdate(Schema_ComponentUpdate* Update)
 {
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update);
@@ -217,7 +234,6 @@ void UGlobalStateManager::OnShutdownComponentUpdate(Schema_ComponentUpdate* Upda
 		ReceiveShutdownAdditionalServersEvent();
 	}
 }
-#endif // WITH_EDITOR
 
 void UGlobalStateManager::ReceiveShutdownAdditionalServersEvent()
 {
@@ -428,13 +444,9 @@ Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-void UGlobalStateManager::ClaimSnapshotPartition() const
+void UGlobalStateManager::ClaimSnapshotPartition()
 {
-	if (ensure(Sender != nullptr))
-	{
-		Sender->SendClaimPartitionRequest(NetDriver->Connection->GetWorkerSystemEntityId(),
-										  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-	}
+	ClaimHandler->ClaimPartition(NetDriver->Connection->GetWorkerSystemEntityId(), SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 }
 
 void UGlobalStateManager::TriggerBeginPlay()
@@ -553,7 +565,7 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 		}
 	});
 
-	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
+	QueryHandler.AddRequest(RequestID, GSMQueryDelegate);
 }
 
 void UGlobalStateManager::QueryTranslation()
@@ -597,7 +609,7 @@ void UGlobalStateManager::QueryTranslation()
 		}
 		GlobalStateManager->bTranslationQueryInFlight = false;
 	});
-	Receiver->AddEntityQueryDelegate(RequestID, TranslationQueryDelegate);
+	QueryHandler.AddRequest(RequestID, TranslationQueryDelegate);
 }
 
 void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const
@@ -681,6 +693,18 @@ void UGlobalStateManager::IncrementSessionID()
 {
 	DeploymentSessionId++;
 	SendSessionIdUpdate();
+}
+
+void UGlobalStateManager::Advance()
+{
+	const TArray<Worker_Op>& Ops = NetDriver->Connection->GetCoordinator().GetViewDelta().GetWorkerMessages();
+
+	ClaimHandler->ProcessOps(Ops);
+	QueryHandler.ProcessOps(Ops);
+
+#if WITH_EDITOR
+	RequestHandler.ProcessOps(Ops);
+#endif // WITH_EDITOR
 }
 
 void UGlobalStateManager::SendSessionIdUpdate()
