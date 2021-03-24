@@ -30,9 +30,9 @@ public:
 
 	using LocalDeploymentCallback = TFunction<void(bool)>;
 
-	void SPATIALGDKSERVICES_API TryStartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
-														const FString& SnapshotName, const FString& RuntimeIPToExpose,
-														const LocalDeploymentCallback& CallBack);
+	void SPATIALGDKSERVICES_API TryStartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion,
+														const FString& LaunchArgs, const FString& SnapshotName,
+														const FString& RuntimeIPToExpose, const LocalDeploymentCallback& CallBack);
 
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
 	bool SPATIALGDKSERVICES_API TryStopLocalDeploymentGracefully();
@@ -69,7 +69,6 @@ private:
 	bool StartLocalDeploymentShutDown();
 	void FinishLocalDeploymentShutDown();
 
-
 	enum class ERuntimeStartResponse
 	{
 		AlreadyRunning,
@@ -93,7 +92,7 @@ private:
 	static const int32 HTTPPort = 5006;
 
 	static constexpr double RuntimeTimeout = 10.0;
-	static constexpr int RuntimeStartRetries = 3;
+	static constexpr int32 RuntimeStartRetries = 3;
 
 	bool bLocalDeploymentManagerEnabled = true;
 

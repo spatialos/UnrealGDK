@@ -214,17 +214,28 @@ void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfi
 	while (NumRetries > 0)
 	{
 		NumRetries--;
-		ERuntimeStartResponse Response = StartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose, CallBack);
+		ERuntimeStartResponse Response =
+			StartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose, CallBack);
 		if (Response != ERuntimeStartResponse::Timeout)
 		{
 			break;
 		}
+
+		if (NumRetries == 0)
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Runtime startup timed out too many times. Giving up."));
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime startup timed out. Will attempt rety. Retries remaing: %d"), NumRetries);
+		}
+
 	}
 }
 
-FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
-																							 const FString& SnapshotName, const FString& RuntimeIPToExpose,
-																							 const LocalDeploymentCallback& CallBack)
+FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLocalDeployment(
+	const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs, const FString& SnapshotName,
+	const FString& RuntimeIPToExpose, const LocalDeploymentCallback& CallBack)
 {
 	RuntimeStartTime = FDateTime::Now();
 	bRedeployRequired = false;
@@ -324,7 +335,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	bStartingDeployment = false;
 	if (!bLocalDeploymentRunning)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to start."));
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Timed out waiting for the Runtime to start."));
 		return ERuntimeStartResponse::Timeout;
 	}
 
