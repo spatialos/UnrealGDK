@@ -55,11 +55,16 @@ steps:
     async: true
     build: 
       env: 
-        BUILD_TYPE: "GDK" # GDK or ENGINE
+        BUILD_TYPE: "GDK"
         GDK_BRANCH: "${BUILDKITE_BRANCH}"
         ENGINE_BRANCH: "4.26-SpatialOSUnrealGDK"
         ENGINE_MAJOR: "4.26"
         TEST_GYMS_BRANCH: "master"
+        USE_FASTBUILD: "True"
+        IS_BUILDKITE_BUILD: "True"
+        BUILD_ANDROID: "False"
+        SKIP_TESTS: "False"
+        CLEAN_BUILD: "False"
 
   # Trigger a 4.25 build
   - trigger: "unrealgdkbuild-ci"
@@ -72,47 +77,52 @@ steps:
         ENGINE_BRANCH: "4.25-SpatialOSUnrealGDK"
         ENGINE_MAJOR: "4.25"
         TEST_GYMS_BRANCH: "master"
+        USE_FASTBUILD: "True"
+        IS_BUILDKITE_BUILD: "True"
+        BUILD_ANDROID: "False"
+        SKIP_TESTS: "False"
+        CLEAN_BUILD: "False"
 
 
-#   # Old build pipeline
-#   - label: "enforce-version-restrictions"
-#     command: "ci/check-version-file.sh"
-#     <<: *script_runner
-#   # No point in running other steps if the listed versions are invalid
-#   - wait: ~
+  # Old build pipeline
+  - label: "enforce-version-restrictions"
+    command: "ci/check-version-file.sh"
+    <<: *script_runner
+  # No point in running other steps if the listed versions are invalid
+  - wait: ~
 
-#   # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
-#   - trigger: "unrealgdkexampleproject-nightly"
-#     label: "post-merge-example-project-build"
-#     if: build.env("ENGINE_NET_TEST") != "true" && (build.branch == "master" || build.branch == "preview" || build.branch == "release")
-#     async: true
-#     build:
-#       env:
-#         NIGHTLY_BUILD: "${NIGHTLY_BUILD:-false}"
-#         GDK_BRANCH: "${BUILDKITE_BRANCH}"
+  # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
+  - trigger: "unrealgdkexampleproject-nightly"
+    label: "post-merge-example-project-build"
+    if: build.env("ENGINE_NET_TEST") != "true" && (build.branch == "master" || build.branch == "preview" || build.branch == "release")
+    async: true
+    build:
+      env:
+        NIGHTLY_BUILD: "${NIGHTLY_BUILD:-false}"
+        GDK_BRANCH: "${BUILDKITE_BRANCH}"
 
-#   - label: "generate-pipeline-steps"
-#     commands:
-#       - "ci/generate-and-upload-build-steps.sh"
-#     <<: *script_runner
+  - label: "generate-pipeline-steps"
+    commands:
+      - "ci/generate-and-upload-build-steps.sh"
+    <<: *script_runner
 
-#   - wait: ~
-#     continue_on_failure: true
+  - wait: ~
+    continue_on_failure: true
   
-#   - label: "upload-test-metrics"
-#     if: build.env("NIGHTLY_BUILD") == "true"
-#     command: "ci/upload-test-metrics.sh"
-#     <<: *script_runner
+  - label: "upload-test-metrics"
+    if: build.env("NIGHTLY_BUILD") == "true"
+    command: "ci/upload-test-metrics.sh"
+    <<: *script_runner
   
-#   - label: "slack-notify"
-#     if: (build.env("SLACK_NOTIFY") == "true" || build.branch == "master") && build.env("SLACK_NOTIFY") != "false" && build.env("ENGINE_NET_TEST") != "true"
-#     commands: "powershell ./ci/build-and-send-slack-notification.ps1"
-#     <<: *windows
+  - label: "slack-notify"
+    if: (build.env("SLACK_NOTIFY") == "true" || build.branch == "master") && build.env("SLACK_NOTIFY") != "false" && build.env("ENGINE_NET_TEST") != "true"
+    commands: "powershell ./ci/build-and-send-slack-notification.ps1"
+    <<: *windows
 
-# notify:
-#   - slack: 
-#       channels: 
-#         - "#unreal-gdk-builds"
-#       message: "<!subteam^SDB5161M5> Build failure! Please triage and post ticket." # SDB5161M5 is @support-unreal
-#     if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge" && (build.state == "failed" || build.state == "canceled") && build.branch == "master"
+notify:
+  - slack: 
+      channels: 
+        - "#unreal-gdk-builds"
+      message: "<!subteam^SDB5161M5> Build failure! Please triage and post ticket." # SDB5161M5 is @support-unreal
+    if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge" && (build.state == "failed" || build.state == "canceled") && build.branch == "master"
     
