@@ -157,6 +157,7 @@ void UTestReplicationConditionsComponent_AutonomousOnly::GetLifetimeReplicatedPr
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(ThisClass, CondAutonomousOnly_Var, COND_AutonomousOnly);
+	DOREPLIFETIME_CONDITION(ThisClass, CondSimulatedOnly_Var, COND_SimulatedOnly);
 }
 
 ATestReplicationConditionsActor_AutonomousOnly::ATestReplicationConditionsActor_AutonomousOnly()
@@ -172,6 +173,7 @@ void ATestReplicationConditionsActor_AutonomousOnly::GetLifetimeReplicatedProps(
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(ThisClass, CondAutonomousOnly_Var, COND_AutonomousOnly);
+	DOREPLIFETIME_CONDITION(ThisClass, CondSimulatedOnly_Var, COND_SimulatedOnly);
 	DOREPLIFETIME(ThisClass, StaticComponent);
 	DOREPLIFETIME(ThisClass, DynamicComponent);
 }

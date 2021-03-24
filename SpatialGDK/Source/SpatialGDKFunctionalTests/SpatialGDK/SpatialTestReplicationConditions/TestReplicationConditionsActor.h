@@ -188,6 +188,9 @@ public:
 
 	UPROPERTY(Replicated)
 	int32 CondAutonomousOnly_Var;
+
+	UPROPERTY(Replicated)
+	int32 CondSimulatedOnly_Var;
 };
 
 UCLASS()
@@ -204,6 +207,9 @@ public:
 
 	UPROPERTY(Replicated)
 	int32 CondAutonomousOnly_Var;
+
+	UPROPERTY(Replicated)
+	int32 CondSimulatedOnly_Var;
 
 	UPROPERTY(Replicated)
 	UTestReplicationConditionsComponent_AutonomousOnly* StaticComponent;

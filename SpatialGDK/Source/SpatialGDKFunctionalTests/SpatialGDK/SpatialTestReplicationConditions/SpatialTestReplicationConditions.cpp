@@ -104,7 +104,8 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		{
 			const bool bWrite = false;
 			const bool bAutonomousExpected = true;
-			ProcessAutonomousOnlyActorProperties(bWrite, bAutonomousExpected);
+			const bool bSimulatedExpected = true;
+			ProcessAutonomousOnlyActorProperties(bWrite, bAutonomousExpected, bSimulatedExpected);
 		}
 
 		if (AssertTrue(TestActor_PhysicsEnabled->AreAllDynamicComponentsValid(),
@@ -183,7 +184,8 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			{
 				const bool bWrite = false;
 				const bool bAutonomousExpected = true;
-				ProcessAutonomousOnlyActorProperties(bWrite, bAutonomousExpected);
+				const bool bSimulatedExpected = false;
+				ProcessAutonomousOnlyActorProperties(bWrite, bAutonomousExpected, bSimulatedExpected);
 			}
 		}
 
@@ -268,7 +270,8 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		{
 			const bool bWrite = false;
 			const bool bAutonomousExpected = false;
-			ProcessAutonomousOnlyActorProperties(bWrite, bAutonomousExpected);
+			const bool bSimulatedExpected = true;
+			ProcessAutonomousOnlyActorProperties(bWrite, bAutonomousExpected, bSimulatedExpected);
 		}
 
 		if (AssertTrue(TestActor_PhysicsEnabled->AreAllDynamicComponentsValid(),
@@ -358,7 +361,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		ProcessCustomActorProperties(TestActor_CustomEnabled, bWrite, /*bCustomEnabled*/ true);
 		ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, /*bCustomEnabled*/ false);
 
-		ProcessAutonomousOnlyActorProperties(bWrite, /*bAutonomousExpected*/ false);
+		ProcessAutonomousOnlyActorProperties(bWrite, /*bAutonomousExpected*/ false, /*bSimulatedExpected*/ false);
 
 		ProcessPhysicsActorProperties(TestActor_PhysicsEnabled, bWrite, /*bPhysicsEnabled*/ true, /*bPhysicsExpected*/ true);
 		ProcessPhysicsActorProperties(TestActor_PhysicsDisabled, bWrite, /*bPhysicsEnabled*/ false, /*bPhysicsExpected*/ false);
@@ -421,7 +424,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 				ProcessCustomActorProperties(TestActor_CustomEnabled, bWrite, /*bCustomEnabled*/ true);
 				ProcessCustomActorProperties(TestActor_CustomDisabled, bWrite, /*bCustomEnabled*/ false);
 
-				ProcessAutonomousOnlyActorProperties(bWrite, /*bAutonomousExpected*/ false);
+				ProcessAutonomousOnlyActorProperties(bWrite, /*bAutonomousExpected*/ false, /*bSimulatedExpected*/ false);
 
 				ProcessPhysicsActorProperties(TestActor_PhysicsEnabled, bWrite, /*bPhysicsEnabled*/ true, /*bPhysicsExpected*/ true);
 				ProcessPhysicsActorProperties(TestActor_PhysicsDisabled, bWrite, /*bPhysicsEnabled*/ false, /*bPhysicsExpected*/ false);
@@ -541,14 +544,14 @@ void ASpatialTestReplicationConditions::ProcessCustomActorProperties(ATestReplic
 	Action(Actor->DynamicComponent->CondCustom_Var, bCustomEnabled ? 1030 : 2030);
 }
 
-void ASpatialTestReplicationConditions::ProcessAutonomousOnlyActorProperties(bool bWrite, bool bAutonomousExpected)
+void ASpatialTestReplicationConditions::ProcessAutonomousOnlyActorProperties(bool bWrite, bool bAutonomousExpected, bool bSimulatedExpected)
 {
-	auto Action = [&](int32& Source, int32 Expected) {
+	auto Action = [&](int32& Source, bool bExpected, int32 Expected) {
 		if (bWrite)
 		{
 			Source = Expected + PropertyOffset;
 		}
-		else if (bAutonomousExpected)
+		else if (bExpected)
 		{
 			AssertEqual_Int(Source, Expected + PropertyOffset,
 							*FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
@@ -559,9 +562,12 @@ void ASpatialTestReplicationConditions::ProcessAutonomousOnlyActorProperties(boo
 		}
 	};
 
-	Action(TestActor_AutonomousOnly->CondAutonomousOnly_Var, 3010);
-	Action(TestActor_AutonomousOnly->StaticComponent->CondAutonomousOnly_Var, 3020);
-	Action(TestActor_AutonomousOnly->DynamicComponent->CondAutonomousOnly_Var, 3030);
+	Action(TestActor_AutonomousOnly->CondAutonomousOnly_Var, bAutonomousExpected, 3010);
+	Action(TestActor_AutonomousOnly->CondSimulatedOnly_Var, bSimulatedExpected, 3020);
+	Action(TestActor_AutonomousOnly->StaticComponent->CondAutonomousOnly_Var, bAutonomousExpected, 3030);
+	Action(TestActor_AutonomousOnly->StaticComponent->CondSimulatedOnly_Var, bSimulatedExpected, 3040);
+	Action(TestActor_AutonomousOnly->DynamicComponent->CondAutonomousOnly_Var, bAutonomousExpected, 3050);
+	Action(TestActor_AutonomousOnly->DynamicComponent->CondSimulatedOnly_Var, bSimulatedExpected, 3060);
 }
 
 void ASpatialTestReplicationConditions::ProcessPhysicsActorProperties(ATestReplicationConditionsActor_Physics* Actor, bool bWrite,

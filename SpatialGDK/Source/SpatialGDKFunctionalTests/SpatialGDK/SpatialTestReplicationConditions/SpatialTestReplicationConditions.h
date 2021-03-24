@@ -29,7 +29,7 @@ public:
 
 	void ProcessCustomActorProperties(ATestReplicationConditionsActor_Custom* Actor, bool bWrite, bool bCustomEnabled);
 
-	void ProcessAutonomousOnlyActorProperties(bool bWrite, bool bAutonomousExpected);
+	void ProcessAutonomousOnlyActorProperties(bool bWrite, bool bAutonomousExpected, bool bSimulatedExpected);
 
 	void ProcessPhysicsActorProperties(ATestReplicationConditionsActor_Physics* Actor, bool bWrite, bool bPhysicsEnabled,
 									   bool bPhysicsExpected);
