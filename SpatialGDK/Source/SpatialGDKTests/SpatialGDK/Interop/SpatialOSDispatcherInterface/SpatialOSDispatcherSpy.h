@@ -33,26 +33,5 @@ public:
 	// SpatialRPCService::ExtractRPCsForEntity.
 	virtual bool OnExtractIncomingRPC(Worker_EntityId EntityId, ERPCType RPCType, const SpatialGDK::RPCPayload& Payload) override;
 
-	virtual void OnCommandRequest(const Worker_Op& Op) override;
-	virtual void OnCommandResponse(const Worker_Op& Op) override;
-
-	virtual void OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op) override;
-	virtual void OnCreateEntityResponse(const Worker_Op& Op) override;
-
-	virtual void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel) override;
 	virtual void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) override;
-
-	virtual void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate) override;
-	virtual void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate) override;
-	virtual void AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate) override;
-
-	virtual void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) override;
-
-	// Methods to extract information about calls made.
-	EntityQueryDelegate* GetEntityQueryDelegate(Worker_RequestId RequestId);
-	CreateEntityDelegate* GetCreateEntityDelegate(Worker_RequestId RequestId);
-
-private:
-	TMap<Worker_RequestId_Key, EntityQueryDelegate> EntityQueryDelegates;
-	TMap<Worker_RequestId_Key, CreateEntityDelegate> CreateEntityDelegates;
 };
