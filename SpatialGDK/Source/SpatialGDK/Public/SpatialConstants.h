@@ -64,7 +64,7 @@ const Worker_PartitionId INVALID_PARTITION_ID = INVALID_ENTITY_ID;
 
 const Worker_ComponentId INVALID_COMPONENT_ID = 0;
 
-const Worker_ComponentId SPATIALOS_WELLKNOWN_COMPONENTSET_COMPONENT_ID = 50;
+const Worker_ComponentSetId SPATIALOS_WELLKNOWN_COMPONENTSET_ID = 50;
 const Worker_ComponentId METADATA_COMPONENT_ID = 53;
 const Worker_ComponentId POSITION_COMPONENT_ID = 54;
 const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
