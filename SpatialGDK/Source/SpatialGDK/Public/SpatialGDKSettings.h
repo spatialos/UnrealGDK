@@ -461,4 +461,10 @@ public:
 		*/
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Enable Initial Only Replication Condition"))
 	bool bEnableInitialOnlyReplicationCondition;
+
+	/*
+	 * Enables writing of ActorSetMember and ActorGroupMember components to load balancing entities
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Replication")
+	bool bEnableStrategyLoadBalancingComponents;
 };

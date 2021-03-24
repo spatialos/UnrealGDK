@@ -3,6 +3,7 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialStatics.h"
@@ -102,7 +103,7 @@ bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 		return false;
 	}
 
-	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
+	const FVector2D Actor2DLocation = GetActorLoadBalancingPosition(Actor);
 	return IsInside(WorkerCells[LocalCellId], Actor2DLocation);
 }
 
@@ -115,7 +116,7 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
-	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
+	const FVector2D Actor2DLocation = GetActorLoadBalancingPosition(Actor);
 
 	check(VirtualWorkerIds.Num() == WorkerCells.Num());
 	for (int i = 0; i < WorkerCells.Num(); i++)
@@ -131,6 +132,11 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 	UE_LOG(LogGridBasedLBStrategy, Error, TEXT("GridBasedLBStrategy couldn't determine virtual worker for Actor %s at position %s"),
 		   *AActor::GetDebugName(&Actor), *Actor2DLocation.ToString());
 	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+}
+
+SpatialGDK::FActorLoadBalancingGroupId UGridBasedLBStrategy::GetActorGroupId(const AActor& Actor) const
+{
+	return 0;
 }
 
 SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
@@ -155,6 +161,11 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 	Constraint.BoxConstraint =
 		SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D), SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
 	return Constraint;
+}
+
+FVector2D UGridBasedLBStrategy::GetActorLoadBalancingPosition(const AActor& Actor) const
+{
+	return FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 }
 
 FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const
