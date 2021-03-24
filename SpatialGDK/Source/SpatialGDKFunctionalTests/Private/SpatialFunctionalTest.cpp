@@ -97,6 +97,11 @@ void ASpatialFunctionalTest::BeginPlay()
 		NumExpectedServers = LBStrategy != nullptr ? LBStrategy->GetMinimumRequiredWorkers() : 1;
 	}
 
+	if (FlowControllerActorClass.Get() != nullptr)
+	{
+		FlowControllerSpawner.ModifyFlowControllerClassToSpawn(FlowControllerActorClass);
+	}
+
 	if (GetWorld()->IsServer())
 	{
 		SetupClientPlayerRegistrationFlow();
@@ -426,7 +431,6 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 				   TEXT("OwningTest already had different LocalFlowController, this shouldn't happen"));
 			return;
 		}
-
 		LocalFlowController = FlowController;
 	}
 
@@ -713,11 +717,6 @@ void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 	if (!bReadyToSpawnServerControllers)
 	{
 		return;
-	}
-
-	if (FlowControllerActorClass.Get() != nullptr)
-	{
-		FlowControllerSpawner.ModifyFlowControllerClassToSpawn(FlowControllerActorClass);
 	}
 
 	FlowControllerSpawner.SpawnServerFlowController();

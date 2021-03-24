@@ -63,7 +63,11 @@ void ASpatialComponentTest::PrepareTest()
 		});
 
 		AddStep(
-			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
+			TEXT("Replicated Dynamic Actor Spawned On Same Server - Verify components"), FWorkerDefinition::AllWorkers,
+			[this]() -> bool {
+				return IsValid(DynamicReplicatedActor);
+			},
+			nullptr,
 			[this](float DeltaTime) {
 				CheckComponents(DynamicReplicatedActor, 1, 0, 0);
 			},

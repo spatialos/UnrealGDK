@@ -39,15 +39,16 @@ const FString& FRuntimeVariantVersion::GetVersionForCloud() const
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
 	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
+	, bShutdownRuntimeGracefullyOnPIEExit(true)
 	, bUseGDKPinnedInspectorVersion(true)
 	, InspectorVersionOverride(TEXT(""))
 	, ExposedRuntimeIP(TEXT(""))
 	, bAutoStartLocalDeployment(true)
 	, bSpatialDebuggerEditorEnabled(false)
 	, AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::OnEndPIE)
+	, bDeleteDynamicEntities(false)
 	, bStopPIEOnTestingCompleted(true)
 	, CookAndGeneratePlatform("")
 	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
@@ -79,6 +80,18 @@ FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpa
 {
 	return StandardRuntimeVersion;
 }
+
+#if WITH_EDITOR
+bool USpatialGDKEditorSettings::CanEditChange(const FProperty* InProperty) const
+{
+	const bool bParentVal = Super::CanEditChange(InProperty);
+	if (InProperty->GetFName() == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bDeleteDynamicEntities))
+	{
+		return bParentVal && AutoStopLocalDeployment != EAutoStopLocalDeploymentMode::OnEndPIE;
+	}
+	return bParentVal;
+}
+#endif
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {

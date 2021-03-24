@@ -26,6 +26,8 @@ class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 public:
 	void Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager);
 
+	void Advance();
+
 	Worker_EntityId AllocateEntityIdAndResolveActor(AActor* Actor);
 	FNetworkGUID TryResolveObjectAsEntity(UObject* Value);
 
@@ -50,8 +52,8 @@ public:
 
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	TWeakObjectPtr<UObject> GetObjectFromEntityId(const Worker_EntityId EntityId);
-	FUnrealObjectRef GetUnrealObjectRefFromObject(const UObject* Object);
-	Worker_EntityId GetEntityIdFromObject(const UObject* Object);
+	FUnrealObjectRef GetUnrealObjectRefFromObject(const UObject* Object) const;
+	Worker_EntityId GetEntityIdFromObject(const UObject* Object) const;
 
 	AActor* GetUniqueActorInstanceByClassRef(const FUnrealObjectRef& ClassRef);
 	AActor* GetUniqueActorInstanceByClass(UClass* Class) const;

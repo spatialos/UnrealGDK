@@ -2,16 +2,18 @@
 
 #pragma once
 
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "Schema/Component.h"
+#include "SpatialConstants.h"
+#include "Utils/SchemaUtils.h"
+#include "Utils/SpatialLoadBalancingHandler.h"
+
 #include "Containers/UnrealString.h"
 #include "Engine/EngineBaseTypes.h"
 #include "Engine/GameInstance.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "Kismet/GameplayStatics.h"
-#include "Schema/Component.h"
-#include "SpatialConstants.h"
 #include "UObject/CoreNet.h"
-#include "Utils/SchemaUtils.h"
-#include "Utils/SpatialLoadBalancingHandler.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>

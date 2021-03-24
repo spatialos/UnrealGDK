@@ -14,6 +14,7 @@
 #include "Net/NetworkProfiler.h"
 #include "Schema/Interest.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
@@ -43,6 +44,8 @@ ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNet
 	, PackageMap(InNetDriver->PackageMap)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, bInterestHasChanged(bInterestDirty)
+	, bInitialOnlyDataWritten(false)
+	, bInitialOnlyReplicationEnabled(GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition)
 	, LatencyTracer(InLatencyTracer)
 {
 }
@@ -375,6 +378,27 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 			CreateHandoverComponentData(Info.SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState, OutBytesWritten));
 	}
 
+	if (Info.SchemaComponents[SCHEMA_InitialOnly] != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		// Initial only data on dynamic subobjects is not currently supported.
+		// When initial only replication is enabled, don't allow updates to be sent to initial only components.
+		// When initial only replication is disabled, initial only data is replicated per normal COND_None rules, so allow the update
+		// through.
+		if (bInitialOnlyReplicationEnabled && Info.bDynamicSubobject)
+		{
+			UE_LOG(LogComponentFactory, Warning,
+				   TEXT("Dynamic component using InitialOnly data. This data will not be sent. Obj (%s) Outer (%s)."), *Object->GetName(),
+				   *GetNameSafe(Object->GetOuter()));
+		}
+		else
+		{
+			ComponentDatas.Add(CreateComponentData(Info.SchemaComponents[SCHEMA_InitialOnly], Object, RepChangeState, SCHEMA_InitialOnly,
+												   OutBytesWritten));
+
+			bInitialOnlyDataWritten = true;
+		}
+	}
+
 	return ComponentDatas;
 }
 
@@ -445,6 +469,26 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			{
 				ComponentUpdates.Add(SingleClientUpdate);
 				OutBytesWritten += BytesWritten;
+			}
+		}
+
+		if (Info.SchemaComponents[SCHEMA_InitialOnly] != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			// Initial only data on dynamic subobjects is not currently supported.
+			// When initial only replication is enabled, don't allow updates to be sent to initial only components.
+			// When initial only replication is disabled, initial only data is replicated per normal COND_None rules, so allow the update
+			// through.
+			if (!Info.bDynamicSubobject || !bInitialOnlyReplicationEnabled)
+			{
+				uint32 BytesWritten = 0;
+				FWorkerComponentUpdate InitialOnlyUpdate = CreateComponentUpdate(Info.SchemaComponents[SCHEMA_InitialOnly], Object,
+																				 *RepChangeState, SCHEMA_InitialOnly, BytesWritten);
+				if (BytesWritten > 0)
+				{
+					ComponentUpdates.Add(InitialOnlyUpdate);
+					OutBytesWritten += BytesWritten;
+					bInitialOnlyDataWritten = true;
+				}
 			}
 		}
 	}

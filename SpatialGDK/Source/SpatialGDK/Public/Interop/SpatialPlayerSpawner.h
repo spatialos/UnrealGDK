@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "Interop/EntityCommandHandler.h"
+#include "Interop/EntityQueryHandler.h"
 #include "Schema/PlayerSpawner.h"
 #include "SpatialCommonTypes.h"
 
@@ -28,6 +30,12 @@ class SPATIALGDK_API USpatialPlayerSpawner : public UObject
 
 public:
 	void Init(USpatialNetDriver* NetDriver);
+
+	void Advance(const TArray<Worker_Op>& Ops);
+	void OnPlayerSpawnCommandReceived(const Worker_Op& Op, const Worker_CommandRequestOp& CommandRequestOp);
+	void OnPlayerSpawnResponseReceived(const Worker_Op& Op, const Worker_CommandResponseOp& CommandResponseOp);
+	void OnForwardedPlayerSpawnCommandReceived(const Worker_Op& Op, const Worker_CommandRequestOp& CommandRequestOp);
+	void OnForwardedPlayerSpawnResponseReceived(const Worker_Op& Op, const Worker_CommandResponseOp& CommandResponseOp);
 
 	// Client
 	void SendPlayerSpawnRequest();
@@ -72,6 +80,10 @@ private:
 	USpatialNetDriver* NetDriver;
 
 	TMap<Worker_RequestId_Key, TUniquePtr<Schema_CommandRequest, ForwardSpawnRequestDeleter>> OutgoingForwardPlayerSpawnRequests;
+
+	SpatialGDK::EntityQueryHandler QueryHandler;
+	SpatialGDK::EntityCommandRequestHandler RequestHandler;
+	SpatialGDK::EntityCommandResponseHandler ResponseHandler;
 
 	TSet<Worker_EntityId_Key> WorkersWithPlayersSpawned;
 };

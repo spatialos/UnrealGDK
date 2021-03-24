@@ -123,6 +123,12 @@ struct ConfigureConnection
 			Params.network.tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
 #endif
 		}
+
+		WorkerFowControlParameters.downstream_window_size_bytes = Config.DownstreamWindowSizeBytes;
+		WorkerFowControlParameters.upstream_window_size_bytes = Config.UpstreamWindowSizeBytes;
+
+		Params.network.kcp.flow_control = &WorkerFowControlParameters; // Both tcp and udp use same window concepts.
+		Params.network.tcp.flow_control = &WorkerFowControlParameters;
 	}
 
 	FString FormatWorkerSDKLogFilePrefix() const
@@ -145,6 +151,7 @@ struct ConfigureConnection
 	Worker_CompressionParameters EnableCompressionParams{};
 	Worker_LogsinkParameters Logsink{};
 	Worker_NameVersionPair UnrealGDKVersionPair{};
+	Worker_FlowControlParameters WorkerFowControlParameters{};
 
 #if WITH_EDITOR
 	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, MAX_int64 };
@@ -449,7 +456,7 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 			if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 			{
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
+				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>(WeakSpatialConnectionManager.Get());
 
 				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
 																		  SpatialConnectionManager->ComponentSetData);

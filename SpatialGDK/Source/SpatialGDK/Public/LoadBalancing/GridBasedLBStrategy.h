@@ -46,11 +46,13 @@ public:
 
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
+	virtual SpatialGDK::FActorLoadBalancingGroupId GetActorGroupId(const AActor& Actor) const override;
 
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const override;
 
 	virtual bool RequiresHandoverData() const override { return Rows * Cols > 1; }
 
+	FVector2D GetActorLoadBalancingPosition(const AActor& Actor) const;
 	virtual FVector GetWorkerEntityPosition() const override;
 
 	virtual uint32 GetMinimumRequiredWorkers() const override;

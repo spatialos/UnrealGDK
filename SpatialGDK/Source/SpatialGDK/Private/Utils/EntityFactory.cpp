@@ -7,11 +7,14 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "Interop/ActorGroupWriter.h"
+#include "Interop/ActorSetWriter.h"
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Schema/ActorGroupMember.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/NetOwningClientWorker.h"
-#include "Schema/PlayerController.h"
 #include "Schema/SpatialDebugging.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
@@ -140,6 +143,22 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateComponentData());
 	ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents)
+	{
+		const auto AddComponentData = [&ComponentDatas](ComponentData Data) {
+			Worker_ComponentData ComponentData;
+			ComponentData.reserved = nullptr;
+			ComponentData.component_id = Data.GetComponentId();
+			ComponentData.schema_type = MoveTemp(Data).Release();
+			ComponentData.user_handle = nullptr;
+
+			ComponentDatas.Add(ComponentData);
+		};
+
+		AddComponentData(GetActorSetData(*NetDriver->PackageMap, *Actor).CreateComponentData());
+		AddComponentData(GetActorGroupData(*NetDriver->LoadBalanceStrategy, *Actor).CreateComponentData());
+	}
 }
 
 void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,
@@ -222,7 +241,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 #if !UE_BUILD_SHIPPING
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DEBUG_METRICS_COMPONENT_ID));
 #endif // !UE_BUILD_SHIPPING
-		ComponentDatas.Add(PlayerController().CreateComponentData());
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID));
 	}
 
 	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Actor);
@@ -232,10 +251,10 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
 
-	TArray<FWorkerComponentData> DynamicComponentDatas =
+	TArray<FWorkerComponentData> ActorDataComponents =
 		DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges, OutBytesWritten);
 
-	ComponentDatas.Append(DynamicComponentDatas);
+	ComponentDatas.Append(ActorDataComponents);
 
 	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
 
@@ -321,6 +340,11 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 			SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges, OutBytesWritten);
 
 		ComponentDatas.Add(SubobjectHandoverData);
+	}
+
+	if (DataFactory.WasInitialOnlyDataWritten())
+	{
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::INITIAL_ONLY_PRESENCE_COMPONENT_ID));
 	}
 }
 

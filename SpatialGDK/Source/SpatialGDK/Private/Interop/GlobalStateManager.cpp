@@ -13,7 +13,9 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "EngineUtils.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -34,11 +36,14 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
-	Sender = InNetDriver->Sender;
-	Receiver = InNetDriver->Receiver;
+	ClaimHandler = MakeUnique<ClaimPartitionHandler>(*NetDriver->Connection);
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
 #if WITH_EDITOR
+	RequestHandler.AddRequestHandler(
+		SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID,
+		FOnCommandRequestWithOp::FDelegate::CreateUObject(this, &UGlobalStateManager::OnReceiveShutdownCommand));
+
 	const ULevelEditorPlaySettings* const PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
 
 	// Only the client should ever send this request.
@@ -72,6 +77,32 @@ void UGlobalStateManager::ApplyDeploymentMapData(Schema_ComponentData* Data)
 	DeploymentSessionId = Schema_GetInt32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SESSION_ID);
 
 	SchemaHash = Schema_GetUint32(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_SCHEMA_HASH);
+}
+
+void UGlobalStateManager::ApplySnapshotVersionData(Schema_ComponentData* Data)
+{
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
+
+	SnapshotVersion = Schema_GetUint64(ComponentObject, SpatialConstants::SNAPSHOT_VERSION_NUMBER_ID);
+
+	if (NetDriver != nullptr && NetDriver->IsServer())
+	{
+		if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != SnapshotVersion) // Are we running with the same snapshot version?
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error,
+				   TEXT("Your servers's snapshot version does not match expected. Server version: = '%llu', Expected "
+						"version = '%llu'"),
+				   SnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
+
+			if (UWorld* CurrentWorld = NetDriver->GetWorld())
+			{
+				GEngine->BroadcastNetworkFailure(CurrentWorld, NetDriver, ENetworkFailure::OutdatedServer,
+												 TEXT("Your snapshot version does not match expected. Please try "
+													  "updating your game snapshot."));
+				return;
+			}
+		}
+	}
 }
 
 void UGlobalStateManager::ApplyStartupActorManagerData(Schema_ComponentData* Data)
@@ -180,7 +211,20 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 	}
 }
 
-#if WITH_EDITOR
+void UGlobalStateManager::OnReceiveShutdownCommand(const Worker_Op& Op, const Worker_CommandRequestOp& CommandRequestOp)
+{
+	ReceiveShutdownMultiProcessRequest();
+
+	SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+
+	if (EventTracer != nullptr)
+	{
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"),
+																					   Op.op.command_request.request_id),
+								/* Causes */ Op.span_id, /* NumCauses */ 1);
+	}
+}
+
 void UGlobalStateManager::OnShutdownComponentUpdate(Schema_ComponentUpdate* Update)
 {
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update);
@@ -190,7 +234,6 @@ void UGlobalStateManager::OnShutdownComponentUpdate(Schema_ComponentUpdate* Upda
 		ReceiveShutdownAdditionalServersEvent();
 	}
 }
-#endif // WITH_EDITOR
 
 void UGlobalStateManager::ReceiveShutdownAdditionalServersEvent()
 {
@@ -402,13 +445,9 @@ Worker_EntityId UGlobalStateManager::GetLocalServerWorkerEntityId() const
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-void UGlobalStateManager::ClaimSnapshotPartition() const
+void UGlobalStateManager::ClaimSnapshotPartition()
 {
-	if (ensure(Sender != nullptr))
-	{
-		Sender->SendClaimPartitionRequest(NetDriver->Connection->GetWorkerSystemEntityId(),
-										  SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
-	}
+	ClaimHandler->ClaimPartition(NetDriver->Connection->GetWorkerSystemEntityId(), SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 }
 
 void UGlobalStateManager::TriggerBeginPlay()
@@ -437,9 +476,17 @@ void UGlobalStateManager::TriggerBeginPlay()
 #endif
 
 	// If we're loading from a snapshot, we shouldn't try and call BeginPlay with authority.
-	for (TActorIterator<AActor> ActorIterator(NetDriver->World); ActorIterator; ++ActorIterator)
+	// We don't use TActorIterator here as it has custom code to ignore sublevel world settings actors, which we want to handle,
+	// so we just iterate over all level actors directly.
+	for (ULevel* Level : NetDriver->World->GetLevels())
 	{
-		HandleActorBasedOnLoadBalancer(*ActorIterator);
+		if (Level != nullptr)
+		{
+			for (AActor* Actor : Level->Actors)
+			{
+				HandleActorBasedOnLoadBalancer(Actor);
+			}
+		}
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
@@ -514,12 +561,12 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 		}
 		else
 		{
-			ApplyDeploymentMapDataFromQueryResponse(Op);
+			ApplyDataFromQueryResponse(Op);
 			Callback.ExecuteIfBound(Op);
 		}
 	});
 
-	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
+	QueryHandler.AddRequest(RequestID, GSMQueryDelegate);
 }
 
 void UGlobalStateManager::QueryTranslation()
@@ -563,7 +610,7 @@ void UGlobalStateManager::QueryTranslation()
 		}
 		GlobalStateManager->bTranslationQueryInFlight = false;
 	});
-	Receiver->AddEntityQueryDelegate(RequestID, TranslationQueryDelegate);
+	QueryHandler.AddRequest(RequestID, TranslationQueryDelegate);
 }
 
 void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const
@@ -580,7 +627,7 @@ void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worke
 	}
 }
 
-void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
+void UGlobalStateManager::ApplyDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
 	{
@@ -588,6 +635,10 @@ void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_E
 		if (Data.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
 		{
 			ApplyDeploymentMapData(Data.schema_type);
+		}
+		else if (Data.component_id == SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID)
+		{
+			ApplySnapshotVersionData(Data.schema_type);
 		}
 	}
 }
@@ -643,6 +694,18 @@ void UGlobalStateManager::IncrementSessionID()
 {
 	DeploymentSessionId++;
 	SendSessionIdUpdate();
+}
+
+void UGlobalStateManager::Advance()
+{
+	const TArray<Worker_Op>& Ops = NetDriver->Connection->GetCoordinator().GetViewDelta().GetWorkerMessages();
+
+	ClaimHandler->ProcessOps(Ops);
+	QueryHandler.ProcessOps(Ops);
+
+#if WITH_EDITOR
+	RequestHandler.ProcessOps(Ops);
+#endif // WITH_EDITOR
 }
 
 void UGlobalStateManager::SendSessionIdUpdate()

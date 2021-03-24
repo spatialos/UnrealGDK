@@ -276,11 +276,6 @@ public:
 	virtual void PostInitProperties() override;
 
 public:
-	/** Select to delete all a server-worker instance’s dynamically-spawned entities when the server-worker instance shuts down. If NOT
-	 * selected, a new server-worker instance has all of these entities from the former server-worker instance’s session. */
-	UPROPERTY(EditAnywhere, config, Category = "Play in editor settings", meta = (DisplayName = "Delete dynamically spawned entities"))
-	bool bDeleteDynamicEntities;
-
 	/** Select the check box for the GDK to auto-generate a launch configuration file for your game when you launch a deployment session. If
 	 * NOT selected, you must specify a launch configuration `.json` file. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-generate launch configuration file"))
@@ -297,6 +292,10 @@ public:
 
 	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Runtime versions"))
 	FRuntimeVariantVersion StandardRuntimeVersion;
+
+	/** Disable to terminate the runtime after exiting from PIE. This reduces the shut down time of the runtime process. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Shut down runtime gracefully on PIE exit"))
+	bool bShutdownRuntimeGracefullyOnPIEExit;
 
 	/** Whether to use the GDK-associated SpatialOS Inspector version for local deployments, or to use the one specified in the
 	 * InspectorVersion field. */
@@ -340,11 +339,18 @@ public:
 	/** Allows the local SpatialOS deployment to be automatically stopped. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Auto-stop local deployment"))
 	EAutoStopLocalDeploymentMode AutoStopLocalDeployment;
+	/** Select to delete all a server-worker instance’s dynamically-spawned entities when the server-worker instance shuts down. If NOT
+	 * selected, a new server-worker instance has all of these entities from the former server-worker instance’s session. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Delete dynamically spawned entities"))
+	bool bDeleteDynamicEntities;
 
 	/** Stop play in editor when Automation Manager finishes running Tests. If false, the native Unreal Engine behaviour maintains of
 	 * leaving the last map PIE running. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Stop play in editor on Testing completed"))
 	bool bStopPIEOnTestingCompleted;
+#if WITH_EDITOR
+	virtual bool CanEditChange(const FProperty* InProperty) const override;
+#endif
 
 private:
 	/** Name of your SpatialOS snapshot file that will be generated. */

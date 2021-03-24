@@ -1,0 +1,7 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+// Marker component to indicate InitialOnly data is present on this entity
+component InitialOnlyPresence {
+    id = 9966;
+}

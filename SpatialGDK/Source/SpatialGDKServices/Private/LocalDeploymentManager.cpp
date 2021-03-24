@@ -11,6 +11,7 @@
 #include "GeneralProjectSettings.h"
 #include "HAL/FileManagerGeneric.h"
 #include "HttpModule.h"
+#include "IAutomationControllerModule.h"
 #include "IPAddress.h"
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Interfaces/IHttpResponse.h"
@@ -273,7 +274,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	TWeakPtr<SSpatialOutputLog> SpatialOutputLog = GDKServices.GetSpatialOutputLog();
 
-	RuntimeProcess->OnOutput().BindLambda([&RuntimeLogFileHandle = RuntimeLogFileHandle, &bStartingDeployment = bStartingDeployment,
+	RuntimeProcess->OnOutput().BindLambda([&RuntimeLogFileHandle = RuntimeLogFileHandle, &bLocalDeploymentRunning = bLocalDeploymentRunning,
 										   SpatialOutputLog](const FString& Output) {
 		if (SpatialOutputLog.IsValid())
 		{
@@ -294,26 +295,23 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		}
 
 		// Timeout detection.
-		if (bStartingDeployment && Output.Contains(TEXT("startup completed")))
+		if (!bLocalDeploymentRunning && Output.Contains(TEXT("startup completed")))
 		{
-			bStartingDeployment = false;
+			bLocalDeploymentRunning = true;
 		}
 	});
 
 	RuntimeProcess->Launch();
 
-	while (bStartingDeployment && RuntimeProcess->Update())
-	{
-		if (RuntimeProcess->GetDuration().GetTotalSeconds() > RuntimeTimeout)
-		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to start."));
-			bStartingDeployment = false;
-			break;
-		}
-	}
+	// Wait for runtime to start or timeout
+	while (!bLocalDeploymentRunning && RuntimeProcess->Update() && RuntimeProcess->GetDuration().GetTotalSeconds() <= RuntimeTimeout) {}
 
 	bStartingDeployment = false;
-	bLocalDeploymentRunning = true;
+	if (!bLocalDeploymentRunning)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to start."));
+		return;
+	}
 
 	FTimespan Span = FDateTime::Now() - RuntimeStartTime;
 	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
@@ -321,6 +319,12 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	AsyncTask(ENamedThreads::GameThread, [this] {
 		OnDeploymentStart.Broadcast();
 	});
+
+	IAutomationControllerModule& AutomationControllerModule =
+		FModuleManager::LoadModuleChecked<IAutomationControllerModule>(TEXT("AutomationController"));
+	IAutomationControllerManagerPtr AutomationController = AutomationControllerModule.GetAutomationController();
+	EAutomationControllerModuleState::Type TestState = AutomationController->GetTestState();
+	bTestRunnning = TestState == EAutomationControllerModuleState::Type::Running;
 
 	return;
 }
@@ -353,6 +357,66 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(const FString& RuntimeLogDi
 
 bool FLocalDeploymentManager::TryStopLocalDeployment()
 {
+	if (!StartLocalDeploymentShutDown())
+	{
+		return false;
+	}
+
+	RuntimeProcess->Stop();
+
+	bool bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+	FinishLocalDeploymentShutDown();
+
+	return bRuntimeShutDownSuccesfully;
+}
+
+bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
+{
+	if (bTestRunnning)
+	{
+		bTestRunnning = false;
+		return TryStopLocalDeployment();
+	}
+
+	if (!StartLocalDeploymentShutDown())
+	{
+		return false;
+	}
+
+	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
+#if ENGINE_MINOR_VERSION >= 26
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = HttpModule.Get().CreateRequest();
+#else
+	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
+#endif
+
+	FString URL = FString::Printf(TEXT("http://localhost:%d/shutdown"), HTTPPort);
+	HttpRequest->SetURL(URL);
+	HttpRequest->SetVerb("GET");
+	HttpRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+		int32 ResponseCode = HttpResponse->GetResponseCode();
+		if (ResponseCode != 200)
+		{
+			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime shutdown http request failed with code: %d"), ResponseCode);
+		}
+	});
+
+	HttpRequest->ProcessRequest();
+
+	bool bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+	if (!bRuntimeShutDownSuccesfully)
+	{
+		RuntimeProcess->Stop();
+		bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+	}
+
+	FinishLocalDeploymentShutDown();
+
+	return bRuntimeShutDownSuccesfully;
+}
+
+bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
+{
 	if (!bLocalDeploymentRunning)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to stop local deployment but no active deployment exists."));
@@ -360,8 +424,11 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	}
 
 	bStoppingDeployment = true;
-	RuntimeProcess->Stop();
+	return true;
+}
 
+bool FLocalDeploymentManager::WaitForRuntimeProcessToShutDown()
+{
 	double RuntimeStopTime = RuntimeProcess->GetDuration().GetTotalSeconds();
 
 	// Update returns true while the process is still running. Wait for it to finish.
@@ -376,13 +443,16 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 		}
 	}
 
+	return true;
+}
+
+void FLocalDeploymentManager::FinishLocalDeploymentShutDown()
+{
 	// Kill the log file handle.
 	RuntimeLogFileHandle.Reset();
 
 	bLocalDeploymentRunning = false;
 	bStoppingDeployment = false;
-
-	return true;
 }
 
 bool FLocalDeploymentManager::IsLocalDeploymentRunning() const
@@ -475,7 +545,8 @@ void SPATIALGDKSERVICES_API FLocalDeploymentManager::TakeSnapshot(UWorld* World,
 			}
 		});
 
-	HttpRequest->SetURL(TEXT("http://localhost:5006/snapshot"));
+	FString URL = FString::Printf(TEXT("http://localhost:%d/snapshot"), HTTPPort);
+	HttpRequest->SetURL(URL);
 	HttpRequest->SetVerb("GET");
 
 	HttpRequest->ProcessRequest();

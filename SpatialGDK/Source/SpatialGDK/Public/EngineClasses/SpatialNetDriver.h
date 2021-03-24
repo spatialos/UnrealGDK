@@ -3,32 +3,18 @@
 #pragma once
 
 #include "Interop/CrossServerRPCHandler.h"
-#include "EngineClasses/SpatialLoadBalanceEnforcer.h"
-#include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
-#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/CrossServerRPCSender.h"
-#include "Interop/RPCs/SpatialRPCService.h"
-#include "Interop/SpatialDispatcher.h"
-#include "Interop/SpatialOutputDevice.h"
-#include "Interop/SpatialRoutingSystem.h"
-#include "Interop/SpatialSnapshotManager.h"
-#include "Utils/InterestFactory.h"
+#include "Interop/EntityQueryHandler.h"
 #include "Utils/SpatialBasicAwaiter.h"
 #include "Utils/SpatialDebugger.h"
-#include "Utils/SpatialDebuggerSystem.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
 #include "CoreMinimal.h"
-#include "GameFramework/OnlineReplStructs.h"
-#include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
-#include "Interop/ClientConnectionManager.h"
-#include "Interop/RPCExecutorInterface.h"
-#include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
 
@@ -37,6 +23,11 @@
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
 class FSpatialLoadBalancingHandler;
+class FSpatialOutputDevice;
+class SpatialDispatcher;
+class SpatialSnapshotManager;
+class SpatialVirtualWorkerTranslator;
+class SpatialVirtualWorkerTranslationManager;
 class UAbstractLBStrategy;
 class UEntityPool;
 class UGlobalStateManager;
@@ -54,6 +45,8 @@ class USpatialSender;
 class USpatialStaticComponentView;
 class USpatialWorkerConnection;
 class USpatialWorkerFlags;
+
+DECLARE_DELEGATE(PostWorldWipeDelegate);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -77,7 +70,19 @@ enum class EActorMigrationResult : uint8
 namespace SpatialGDK
 {
 class SpatialRoutingSystem;
-}
+
+class SpatialDebuggerSystem;
+class ActorSystem;
+class SpatialRPCService;
+class SpatialRoutingSystem;
+class SpatialLoadBalanceEnforcer;
+class InterestFactory;
+class WellKnownEntitySystem;
+class ClientConnectionManager;
+class InitialOnlyFilter;
+class CrossServerRPCSender;
+class CrossServerRPCHandler;
+} // namespace SpatialGDK
 
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
@@ -86,6 +91,7 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 
 public:
 	USpatialNetDriver(const FObjectInitializer& ObjectInitializer);
+	USpatialNetDriver(FVTableHelper& Helper);
 	~USpatialNetDriver();
 
 	// Begin UObject Interface
@@ -130,7 +136,7 @@ public:
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
 	// When the AcceptingPlayers/SessionID state on the GSM has changed this method will be called.
-	void OnGSMQuerySuccess();
+	void ClientOnGSMQuerySuccess();
 	void RetryQueryGSM();
 	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
 
@@ -222,6 +228,7 @@ public:
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
 	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
+	TUniquePtr<SpatialGDK::InitialOnlyFilter> InitialOnlyFilter;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
@@ -267,6 +274,8 @@ private:
 
 	TUniquePtr<SpatialGDK::CrossServerRPCSender> CrossServerRPCSender;
 	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CrossServerRPCHandler;
+
+	SpatialGDK::EntityQueryHandler QueryHandler;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
@@ -362,7 +371,7 @@ private:
 
 	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
 	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
-	bool ClientCanSendPlayerSpawnRequests();
+	bool ClientCanSendPlayerSpawnRequests() const;
 
 	void ProcessOwnershipChanges();
 
