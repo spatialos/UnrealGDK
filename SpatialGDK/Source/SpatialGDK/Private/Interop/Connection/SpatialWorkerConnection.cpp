@@ -1,12 +1,18 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Schema/ServerWorker.h"
+#include "Schema/StandardLibrary.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialView/CommandRequest.h"
 #include "SpatialView/CommandRetryHandler.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ConnectionHandler/InitialOpListConnectionHandler.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
+#include "Utils/ComponentFactory.h"
+#include "Utils/InterestFactory.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
@@ -23,6 +29,75 @@ SpatialGDK::ComponentUpdate ToComponentUpdate(FWorkerComponentUpdate* Update)
 }
 
 } // anonymous namespace
+
+namespace SpatialGDK
+{
+ServerWorkerEntityCreator::ServerWorkerEntityCreator(USpatialNetDriver& InNetDriver, USpatialWorkerConnection& InConnection)
+	: NetDriver(InNetDriver)
+	, Connection(InConnection)
+	, ClaimPartitionHandler(InConnection)
+{
+	State = WorkerSystemEntityCreatorState::CreatingWorkerSystemEntity;
+
+	CreateWorkerEntity();
+}
+
+void ServerWorkerEntityCreator::CreateWorkerEntity()
+{
+	const Worker_EntityId EntityId = NetDriver.PackageMap->AllocateEntityId();
+
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
+	TArray<FWorkerComponentData> Components;
+	Components.Add(Position().CreateComponentData());
+	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection.GetWorkerId() })).CreateComponentData());
+	Components.Add(ServerWorker(Connection.GetWorkerId(), false, Connection.GetWorkerSystemEntityId()).CreateServerWorkerData());
+
+	AuthorityDelegationMap DelegationMap;
+	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, EntityId);
+	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
+
+	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
+	{
+		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID));
+		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID));
+	}
+
+	// The load balance strategy won't be set up at this point, but we call this function again later when it is ready in
+	// order to set the interest of the server worker according to the strategy.
+	Components.Add(NetDriver.InterestFactory->CreateServerWorkerInterest(NetDriver.LoadBalanceStrategy).CreateComponentData());
+
+	// GDK known entities completeness tags.
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
+
+	const Worker_RequestId CreateEntityRequestId =
+		Connection.SendCreateEntityRequest(MoveTemp(Components), &EntityId, RETRY_UNTIL_COMPLETE);
+
+	CreateEntityHandler.AddRequest(CreateEntityRequestId,
+								   CreateEntityDelegate::CreateRaw(this, &ServerWorkerEntityCreator::OnEntityCreated));
+}
+
+void ServerWorkerEntityCreator::OnEntityCreated(const Worker_CreateEntityResponseOp& CreateEntityResponse)
+{
+	UE_CLOG(CreateEntityResponse.status_code != WORKER_STATUS_CODE_SUCCESS, LogSpatialWorkerConnection, Error,
+			TEXT("Worker system entity creation failed, SDK returned code %d [%s]"), (int)CreateEntityResponse.status_code,
+			UTF8_TO_TCHAR(CreateEntityResponse.message));
+
+	NetDriver.WorkerEntityId = CreateEntityResponse.entity_id;
+
+	const Worker_PartitionId PartitionId = static_cast<Worker_PartitionId>(CreateEntityResponse.entity_id);
+
+	State = WorkerSystemEntityCreatorState::ClaimingWorkerPartition;
+
+	ClaimPartitionHandler.ClaimPartition(Connection.GetWorkerSystemEntityId(), PartitionId);
+}
+
+void ServerWorkerEntityCreator::ProcessOps(const TArray<Worker_Op>& Ops)
+{
+	CreateEntityHandler.ProcessOps(Ops);
+	ClaimPartitionHandler.ProcessOps(Ops);
+}
+} // namespace SpatialGDK
 
 void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnectionIn,
 											 TSharedPtr<SpatialGDK::SpatialEventTracer> SharedEventTracer,
@@ -165,6 +240,11 @@ void USpatialWorkerConnection::Advance(float DeltaTimeS)
 {
 	check(Coordinator.IsValid());
 	Coordinator->Advance(DeltaTimeS);
+
+	if (WorkerEntityCreator.IsSet())
+	{
+		WorkerEntityCreator->ProcessOps(Coordinator->GetViewDelta().GetWorkerMessages());
+	}
 }
 
 bool USpatialWorkerConnection::HasDisconnected() const
@@ -264,6 +344,15 @@ void USpatialWorkerConnection::Flush()
 void USpatialWorkerConnection::SetStartupComplete()
 {
 	StartupComplete = true;
+}
+
+void USpatialWorkerConnection::CreateServerWorkerEntity()
+{
+	if (ensure(!WorkerEntityCreator.IsSet()))
+	{
+		USpatialNetDriver* SpatialNetDriver = CastChecked<USpatialNetDriver>(GetWorld()->GetNetDriver());
+		WorkerEntityCreator.Emplace(*SpatialNetDriver, *this);
+	}
 }
 
 bool USpatialWorkerConnection::IsStartupComponent(Worker_ComponentId Id)

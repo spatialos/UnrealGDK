@@ -7,6 +7,8 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SchemaUtils.h"
 
+#include "Interop/ReserveEntityIdsHandler.h"
+
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -25,7 +27,7 @@ class FTimerManager;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEntityPool, Log, All)
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FEntityPoolReadyEvent);
+DECLARE_MULTICAST_DELEGATE(FEntityPoolReadyEvent);
 
 UCLASS()
 class SPATIALGDK_API UEntityPool : public UObject
@@ -40,14 +42,13 @@ public:
 
 	FORCEINLINE bool IsReady() const { return bIsReady; }
 
+	void Advance();
+
 private:
 	void OnEntityRangeExpired(uint32 ExpiringEntityRangeId);
 
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
-
-	UPROPERTY()
-	USpatialReceiver* Receiver;
 
 	FTimerManager* TimerManager;
 	TArray<EntityRange> ReservedEntityIDRanges;
@@ -58,4 +59,6 @@ private:
 	uint32 NextEntityRangeId;
 
 	FEntityPoolReadyEvent EntityPoolReadyDelegate;
+
+	SpatialGDK::ReserveEntityIdsHandler ReserveEntityIdsHandler;
 };

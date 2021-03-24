@@ -15,7 +15,6 @@ using namespace SpatialGDK;
 void UEntityPool::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
-	Receiver = InNetDriver->Receiver;
 	TimerManager = InTimerManager;
 
 	ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolInitialReservationCount);
@@ -95,11 +94,15 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 	});
 
 	// Reserve the Entity IDs
-	Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToReserve, RETRY_UNTIL_COMPLETE);
+	const Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToReserve, RETRY_UNTIL_COMPLETE);
 	bIsAwaitingResponse = true;
-
 	// Add the spawn delegate
-	Receiver->AddReserveEntityIdsDelegate(ReserveRequestID, CacheEntityIDsDelegate);
+	ReserveEntityIdsHandler.AddRequest(ReserveRequestID, CacheEntityIDsDelegate);
+}
+
+void UEntityPool::Advance()
+{
+	ReserveEntityIdsHandler.ProcessOps(NetDriver->Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
 }
 
 void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)

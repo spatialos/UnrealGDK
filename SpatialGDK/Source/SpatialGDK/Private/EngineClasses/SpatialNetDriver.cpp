@@ -14,6 +14,7 @@
 #include "UObject/UObjectIterator.h"
 #include "UObject/WeakObjectPtrTemplates.h"
 
+#include "Algo/AnyOf.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -28,8 +29,10 @@
 #include "Interop/ClientConnectionManager.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/DebugMetricsSystem.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/InitialOnlyFilter.h"
+#include "Interop/MigrationDiagnosticsSystem.h"
 #include "Interop/RPCExecutor.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialDispatcher.h"
@@ -445,7 +448,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		if (SpatialSettings->bEnableInitialOnlyReplicationCondition && !IsServer())
 		{
-			InitialOnlyFilter = MakeUnique<SpatialGDK::InitialOnlyFilter>(*Connection, *Receiver);
+			InitialOnlyFilter = MakeUnique<SpatialGDK::InitialOnlyFilter>(*Connection);
 		}
 
 		CreateAndInitializeLoadBalancingClasses();
@@ -521,11 +524,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
-		Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
+		Dispatcher->Init(StaticComponentView, SpatialWorkerFlags);
 		Sender->Init(this, &TimerManager, Connection->GetEventTracer());
 		Receiver->Init(this, Connection->GetEventTracer());
 		GlobalStateManager->Init(this);
-		SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
+		SnapshotManager->Init(Connection, GlobalStateManager);
 		PlayerSpawner->Init(this);
 		PlayerSpawner->OnPlayerSpawnFailed.BindUObject(GameInstance, &USpatialGameInstance::HandleOnPlayerSpawnFailed);
 
@@ -539,7 +542,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		PackageMap->Init(this, &TimerManager);
 		if (IsServer())
 		{
-			PackageMap->GetEntityPoolReadyDelegate().AddDynamic(Sender, &USpatialSender::CreateServerWorkerEntity);
+			PackageMap->GetEntityPoolReadyDelegate().AddUObject(Connection, &USpatialWorkerConnection::CreateServerWorkerEntity);
 		}
 
 		// The interest factory depends on the package map, so is created last.
@@ -553,9 +556,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		SpatialGDK::FSubView& WellKnownSubView =
 			Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
 													   SpatialGDK::FSubView::NoDispatcherCallbacks);
-		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Receiver, Connection,
-																			  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
-																			  *VirtualWorkerTranslator, *GlobalStateManager);
+		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(
+			WellKnownSubView, Connection, LoadBalanceStrategy->GetMinimumRequiredWorkers(), *VirtualWorkerTranslator, *GlobalStateManager);
 	}
 }
 
@@ -2064,11 +2066,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				ActorSystem->Advance();
 			}
 
-			if (SpatialDebuggerSystem.IsValid())
-			{
-				SpatialDebuggerSystem->Advance();
-			}
-
 			{
 				SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 				Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
@@ -2085,11 +2082,46 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			{
 				WellKnownEntitySystem->Advance();
 			}
+
+			if (IsValid(PlayerSpawner))
+			{
+				PlayerSpawner->Advance(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
+			}
+
+			if (IsValid(GlobalStateManager))
+			{
+				GlobalStateManager->Advance();
+			}
+
+			if (SnapshotManager.IsValid())
+			{
+				SnapshotManager->Advance();
+			}
+
+			if (SpatialDebuggerSystem.IsValid())
+			{
+				SpatialDebuggerSystem->Advance();
+			}
+
+			{
+				const SpatialGDK::MigrationDiagnosticsSystem MigrationDiagnosticsSystem(*this);
+				MigrationDiagnosticsSystem.ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
+			}
+
+			{
+				const SpatialGDK::DebugMetricsSystem DebugMetricsSystem(*this);
+				DebugMetricsSystem.ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
+			}
 		}
 
 		if (RoutingSystem.IsValid())
 		{
 			RoutingSystem->Advance(Connection);
+		}
+
+		if (IsValid(PackageMap))
+		{
+			PackageMap->Advance();
 		}
 
 		if (!bIsReadyToStart)
@@ -2111,6 +2143,8 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			InitialOnlyFilter->FlushRequests();
 		}
+
+		QueryHandler.ProcessOps(Connection->GetWorkerMessages());
 	}
 }
 
@@ -2386,12 +2420,13 @@ void USpatialNetDriver::ProcessPendingDormancy()
 	decltype(PendingDormantChannels) RemainingChannels;
 	for (auto& PendingDormantChannel : PendingDormantChannels)
 	{
-		if (PendingDormantChannel.IsValid())
+		USpatialActorChannel* Channel = PendingDormantChannel.Get();
+
+		if (IsValid(Channel))
 		{
-			USpatialActorChannel* Channel = PendingDormantChannel.Get();
 			if (Channel->Actor != nullptr)
 			{
-				if (Receiver->IsPendingOpsOnChannel(*Channel))
+				if (ActorSystem->HasPendingOpsForChannel(*Channel))
 				{
 					RemainingChannels.Emplace(PendingDormantChannel);
 					continue;
@@ -2904,7 +2939,7 @@ void USpatialNetDriver::QueryRoutingPartition()
 			}
 			NetDriver->bRoutingWorkerQueryInFlight = false;
 		});
-		Receiver->AddEntityQueryDelegate(RequestID, RoutingWorkerQueryDelegate);
+		QueryHandler.AddRequest(RequestID, RoutingWorkerQueryDelegate);
 	}
 	else if (RoutingPartition == 0)
 	{
@@ -2960,7 +2995,7 @@ void USpatialNetDriver::QueryRoutingPartition()
 			}
 			NetDriver->bRoutingWorkerQueryInFlight = false;
 		});
-		Receiver->AddEntityQueryDelegate(RequestID, RoutingWorkerQueryDelegate);
+		QueryHandler.AddRequest(RequestID, RoutingWorkerQueryDelegate);
 	}
 }
 
