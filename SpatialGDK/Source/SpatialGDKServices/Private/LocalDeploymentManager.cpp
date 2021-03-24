@@ -229,7 +229,6 @@ void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfi
 		{
 			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime startup timed out. Will attempt rety. Retries remaing: %d"), NumRetries);
 		}
-
 	}
 }
 
