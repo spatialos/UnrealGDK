@@ -148,6 +148,12 @@ void SpatialRPCService::PushOverflowedRPCs()
 					   EntityId, *SpatialConstants::RPCTypeToString(Type));
 				bShouldDrop = true;
 				break;
+			case EPushRPCResult::GenericRpcFailure:
+				UE_LOG(LogSpatialRPCService, Warning,
+					   TEXT("SpatialRPCService::PushOverflowedRPCs: Generic failure. Entity: %lld, RPC type: %s"), EntityId,
+					   *SpatialConstants::RPCTypeToString(Type));
+				bShouldDrop = true;
+				break;
 			default:
 				checkNoEntry();
 			}
@@ -313,8 +319,6 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 			return EPushRPCResult::NoRingBufferAuthority;
 		}
 
-		EndpointObject = Schema_GetComponentUpdateFields(RPCStore.GetOrCreateComponentUpdate(EntityComponent, Payload.SpanId));
-
 		if (Type == ERPCType::NetMulticast)
 		{
 			// Assume all multicast RPCs are auto-acked.
@@ -322,14 +326,56 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 		}
 		else
 		{
+			bool bPassesDiagnostics = true;
+
+			{
+				const bool bHasAckComponent = AuthSubView->HasComponent(EntityId, RPCRingBufferUtils::GetAckComponentId(Type));
+
+				bPassesDiagnostics &= bHasAckComponent;
+
+				UE_CLOG(!bHasAckComponent, LogSpatialRPCService, Error,
+						TEXT("Ack component doesn't exist on Entity %lld (component ID %lld)"), EntityId,
+						RPCRingBufferUtils::GetAckComponentId(Type));
+			}
+
 			// We shouldn't have authority over the component that has the acks.
 			if (AuthSubView->HasAuthority(EntityId, RPCRingBufferUtils::GetAckAuthComponentSetId(Type)))
 			{
 				return EPushRPCResult::HasAckAuthority;
 			}
 
-			LastAckedRPCId = ClientServerRPCs.GetAckFromView(EntityId, Type);
+			{
+				// check for tombstone component
+				const bool bWasEntityTombstoned = AuthSubView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID);
+
+				bPassesDiagnostics &= !bWasEntityTombstoned;
+
+				UE_CLOG(bWasEntityTombstoned, LogSpatialRPCService, Error, TEXT("Trying to call an RPC on a tombstoned entity %lld"),
+						EntityId);
+			}
+
+			{
+				const bool bHasStoredData = ClientServerRPCs.HasStoredData(EntityId);
+
+				bPassesDiagnostics &= bHasStoredData;
+
+				if (bHasStoredData)
+				{
+					LastAckedRPCId = ClientServerRPCs.GetAckFromView(EntityId, Type);
+				}
+				else
+				{
+					UE_LOG(LogSpatialRPCService, Error, TEXT("No ClientServerRPC Data for Entity %lld"), EntityId);
+				}
+			}
+
+			if (!bPassesDiagnostics)
+			{
+				return EPushRPCResult::GenericRpcFailure;
+			}
 		}
+
+		EndpointObject = Schema_GetComponentUpdateFields(RPCStore.GetOrCreateComponentUpdate(EntityComponent, Payload.SpanId));
 	}
 	else
 	{

@@ -790,6 +790,12 @@ bool USpatialSender::SendRingBufferedRPC(UObject* TargetObject, UFunction* Funct
 					"queued. Actor: %s, entity: %lld, function: %s"),
 			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName());
 		return false;
+	case EPushRPCResult::GenericRpcFailure:
+		UE_LOG(LogSpatialSender, Log,
+			   TEXT("USpatialSender::SendRingBufferedRPC: Generic RPC failure. Actor: %s, entity: %lld, "
+					"function: %s"),
+			   *TargetObject->GetPathName(), TargetObjectRef.Entity, *Function->GetName())
+		return false;
 	default:
 		return true;
 	}

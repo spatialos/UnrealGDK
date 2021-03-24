@@ -45,6 +45,7 @@ public:
 	void AddOverflowedRPC(EntityRPCType EntityType, PendingRPCPayload&& Payload);
 	void IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType Type);
 	uint64 GetAckFromView(Worker_EntityId EntityId, ERPCType Type);
+	bool HasStoredData(Worker_EntityId EntityId) const;
 
 private:
 	void SetEntityData(Worker_EntityId EntityId);

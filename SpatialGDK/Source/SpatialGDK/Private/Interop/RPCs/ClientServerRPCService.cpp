@@ -138,6 +138,11 @@ uint64 ClientServerRPCService::GetAckFromView(const Worker_EntityId EntityId, co
 	}
 }
 
+bool ClientServerRPCService::HasStoredData(Worker_EntityId EntityId) const
+{
+	return ClientServerDataStore.Contains(EntityId);
+}
+
 void ClientServerRPCService::SetEntityData(Worker_EntityId EntityId)
 {
 	for (const Worker_ComponentId ComponentId : SubView->GetView()[EntityId].Authority)

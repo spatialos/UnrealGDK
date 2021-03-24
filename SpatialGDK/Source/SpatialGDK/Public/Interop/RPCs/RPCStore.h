@@ -41,7 +41,8 @@ enum class EPushRPCResult : uint8
 	DropOverflowed,
 	HasAckAuthority,
 	NoRingBufferAuthority,
-	EntityBeingCreated
+	EntityBeingCreated,
+	GenericRpcFailure,
 };
 
 struct PendingUpdate
