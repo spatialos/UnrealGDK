@@ -210,7 +210,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfi
 													  const FString& SnapshotName, const FString& RuntimeIPToExpose,
 													  const LocalDeploymentCallback& CallBack)
 {
-	int NumRetries = 3;
+	int NumRetries = RuntimeStartRetries;
 	while (NumRetries > 0)
 	{
 		NumRetries--;

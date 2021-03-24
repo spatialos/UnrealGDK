@@ -93,6 +93,7 @@ private:
 	static const int32 HTTPPort = 5006;
 
 	static constexpr double RuntimeTimeout = 10.0;
+	static constexpr int RuntimeStartRetries = 3;
 
 	bool bLocalDeploymentManagerEnabled = true;
 
