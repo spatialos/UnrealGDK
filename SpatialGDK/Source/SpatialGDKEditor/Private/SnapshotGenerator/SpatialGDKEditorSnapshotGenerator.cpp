@@ -246,6 +246,11 @@ bool CreateStrategyPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Persistence().CreateComponentData());
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 	Components.Add(ServerInterest.CreateComponentData());
+
+	SetEntityData(StrategyPartitionEntity, Components);
+
+	Worker_SnapshotOutputStream_WriteEntity(OutputStream, &StrategyPartitionEntity);
+	return Worker_SnapshotOutputStream_GetState(OutputStream).stream_state == WORKER_STREAM_STATE_GOOD;
 }
 
 bool CreateRoutingWorkerPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
