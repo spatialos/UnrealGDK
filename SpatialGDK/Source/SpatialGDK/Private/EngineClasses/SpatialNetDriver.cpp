@@ -1032,6 +1032,9 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 void USpatialNetDriver::NotifyActorLevelUnloaded(AActor* Actor)
 {
+	Super::NotifyActorLevelUnloaded(Actor);
+	return;
+
 	// Intentionally does not call Super::NotifyActorLevelUnloaded.
 	// The native UNetDriver breaks the channel on the client because it can't properly close it
 	// until the server does, but we can clean it up because we don't send data through the channels.
@@ -1836,7 +1839,19 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
-		Connection->Advance(DeltaTime);
+		if (!bPauseConnection)
+		{
+			Connection->Advance(DeltaTime);
+		}
+		else if (FramesToWait > 0)
+		{
+			FramesToWait--;
+			if (FramesToWait == 0)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Log, TEXT("!!! Resuming connection!"));
+				bPauseConnection = false;
+			}
+		}
 
 		if (Connection->HasDisconnected())
 		{
@@ -2847,13 +2862,13 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* Level, UWorld* InWorld)
 
 	// When a sublevel gets reloaded soon after it was unloaded, the entities in that level might still be in the view.
 	// In that case, we need to tell the ActorSystem to restore channels/references for those actors.
-	if (!IsServer() && Level != nullptr && Receiver != nullptr)
+	if (false) //! IsServer() && Level != nullptr && Receiver != nullptr)
 	{
 		FUnrealObjectRef LevelObjectRef = GetStablyNamedObjectRef(Level);
 
 		for (AActor* Actor : Level->Actors)
 		{
-			if (Actor == nullptr || !Actor->IsNetStartupActor())
+			if (Actor == nullptr || !Actor->GetIsReplicated())
 			{
 				continue;
 			}
@@ -2870,7 +2885,36 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* Level, UWorld* InWorld)
 				ActorRef = GetStablyNamedObjectRef(Actor);
 			}
 
-			Receiver->RestoreStablyNamedActor(ActorRef, Actor);
+			// Receiver->RestoreStablyNamedActor(ActorRef, Actor);
 		}
+	}
+
+	if (!Level || IsServer())
+		return;
+
+	if (Level->GetPathName() == HackLevelName && bPauseConnection)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("!!! Level reloaded, resuming connection after delay!"));
+
+		FramesToWait = 60;
+	}
+}
+
+void USpatialNetDriver::OnLevelRemovedFromWorld(ULevel* Level, UWorld* InWorld)
+{
+	Super::OnLevelRemovedFromWorld(Level, InWorld);
+
+	if (!Level || IsServer())
+		return;
+
+	if (bHackArmed)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("!!! Level removed: %s, pausing connection until it's loaded again!"),
+			   *Level->GetPathName());
+
+		bPauseConnection = true;
+		FramesToWait = 0;
+		bHackArmed = false;
+		HackLevelName = Level->GetPathName();
 	}
 }

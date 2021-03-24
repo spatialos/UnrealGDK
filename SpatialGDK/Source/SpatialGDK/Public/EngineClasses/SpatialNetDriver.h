@@ -236,8 +236,16 @@ public:
 
 	virtual int64 GetClientID() const override;
 
+	void ArmHack() { bHackArmed = true; }
+
 protected:
 	virtual void OnLevelAddedToWorld(ULevel* Level, UWorld* World) override;
+	virtual void OnLevelRemovedFromWorld(ULevel* Level, UWorld* World) override;
+
+	bool bPauseConnection = false;
+	int FramesToWait = 0;
+	bool bHackArmed = false;
+	FString HackLevelName;
 
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;

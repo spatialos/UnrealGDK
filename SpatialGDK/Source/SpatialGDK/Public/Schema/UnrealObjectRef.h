@@ -71,6 +71,8 @@ struct SPATIALGDK_API FUnrealObjectRef
 	static bool ShouldLoadObjectFromClassPath(UObject* Object);
 	static bool IsUniqueActorClass(UClass* Class);
 
+	static FUnrealObjectRef GetStablyNamedObjectRef(const UObject* Object);
+
 	static const FUnrealObjectRef NULL_OBJECT_REF;
 	static const FUnrealObjectRef UNRESOLVED_OBJECT_REF;
 

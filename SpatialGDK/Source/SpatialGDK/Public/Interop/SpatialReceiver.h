@@ -113,7 +113,7 @@ public:
 
 	void ProcessActorsFromAsyncLoading();
 
-	void RestoreStablyNamedActor(const FUnrealObjectRef& ObjectRef, AActor* Actor);
+	void RestoreStablyNamedActor(Worker_EntityId EntityId);
 
 private:
 	void EnterCriticalSection();

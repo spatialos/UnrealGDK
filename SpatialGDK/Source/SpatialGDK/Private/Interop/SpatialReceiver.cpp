@@ -811,29 +811,51 @@ void USpatialReceiver::UnregisterStablePathEntity(const Worker_EntityId EntityId
 	}
 }
 
-void USpatialReceiver::RestoreStablyNamedActor(const FUnrealObjectRef& ObjectRef, AActor* Actor)
+void USpatialReceiver::RestoreStablyNamedActor(const Worker_EntityId EntityId)
 {
 	// This is called for startup actors in sublevels when they're loaded.
 	// In case the corresponding entities are still in our view (which can happen
 	// if the level is unloaded and immediately reloaded), we need to resolve the
 	// entities and create the actor channels.
 
-	if (const Worker_EntityId* EntityId = StablePathToEntityIdMap.Find(ObjectRef))
+	if (const UnrealMetadata* Metadata = StaticComponentView->GetComponentData<UnrealMetadata>(EntityId))
 	{
-		if (NetDriver->StaticComponentView->HasComponent(*EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
+		if (!(Metadata->StablyNamedRef.IsSet() && Metadata->bNetStartup.IsSet() && Metadata->bNetStartup.GetValue()))
 		{
 			UE_LOG(LogSpatialReceiver, Log,
-				   TEXT("Reloaded stably named actor that was tombstoned, will remove the actor. Entity: %lld, actor: %s"), *EntityId,
-				   *Actor->GetPathName());
-
-			DestroyActor(Actor, *EntityId);
+				   TEXT("!!! Tried to restore actor channel but entity is not for a stably named net startup actor. This could happen if "
+						"client manually deleted the actor. Entity: %lld"),
+				   EntityId);
 			return;
 		}
 
-		if (!NetDriver->PackageMap->ResolveEntityActor(Actor, *EntityId))
+		const FUnrealObjectRef& StablyNamedRef = Metadata->StablyNamedRef.GetValue();
+		AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromUnrealObjectRef(StablyNamedRef));
+
+		if (Actor == nullptr)
+		{
+			UE_LOG(LogSpatialReceiver, Log,
+				   TEXT("!!! Tried to restore actor channel but actor not found. This could happen if client manually deleted the actor. "
+						"Entity: %lld"),
+				   EntityId);
+			return;
+		}
+
+		if (NetDriver->StaticComponentView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
+		{
+			UE_LOG(LogSpatialReceiver, Log,
+				   TEXT("Reloaded stably named actor that was tombstoned, will remove the actor. Entity: %lld, actor: %s"), EntityId,
+				   *Actor->GetPathName());
+
+			DestroyActor(Actor, EntityId);
+			PackageMap->UnregisterActorObjectRefOnly(StablyNamedRef);
+			return;
+		}
+
+		if (!NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId))
 		{
 			UE_LOG(LogSpatialReceiver, Warning,
-				   TEXT("Failed to resolve entity actor when loading stably named actor from level. Entity: %lld, actor: %s"), *EntityId,
+				   TEXT("Failed to resolve entity actor when loading stably named actor from level. Entity: %lld, actor: %s"), EntityId,
 				   *Actor->GetPathName());
 			return;
 		}
@@ -847,7 +869,7 @@ void USpatialReceiver::RestoreStablyNamedActor(const FUnrealObjectRef& ObjectRef
 		}
 
 		// Set up actor channel.
-		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(*EntityId);
+		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
 		if (Channel == nullptr)
 		{
 			Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::None));
@@ -856,7 +878,7 @@ void USpatialReceiver::RestoreStablyNamedActor(const FUnrealObjectRef& ObjectRef
 		if (Channel == nullptr)
 		{
 			UE_LOG(LogSpatialReceiver, Warning,
-				   TEXT("Failed to create an actor channel when loading stably named actor from level. Entity: %lld, actor: %s"), *EntityId,
+				   TEXT("Failed to create an actor channel when loading stably named actor from level. Entity: %lld, actor: %s"), EntityId,
 				   *Actor->GetPathName());
 			return;
 		}
@@ -1442,6 +1464,15 @@ void USpatialReceiver::HandleIndividualAddComponent(Worker_EntityId EntityId, Wo
 					" (EntityId %lld, ComponentId %d)"),
 			   EntityId, ComponentId);
 		return;
+	}
+
+	if (NetDriver->GetActorChannelByEntityId(EntityId) == nullptr)
+	{
+		UE_LOG(LogSpatialReceiver, Log,
+			   TEXT("!!! Actor channel not found in HandleIndividualAddComponent! This could happen after a sublevel reloading, will try "
+					"to restore the channel if actor is present. Entity: %lld"),
+			   EntityId);
+		RestoreStablyNamedActor(EntityId);
 	}
 
 	// Object already exists, we can apply data directly.
