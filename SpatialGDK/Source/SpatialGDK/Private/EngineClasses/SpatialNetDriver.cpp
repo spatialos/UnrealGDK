@@ -43,6 +43,7 @@
 #include "Interop/SpatialRoutingSystem.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialSnapshotManager.h"
+#include "Interop/SpatialStrategySystem.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
@@ -1032,6 +1033,14 @@ void USpatialNetDriver::BeginDestroy()
 		if (RoutingSystem)
 		{
 			RoutingSystem->Destroy(Connection);
+
+			Connection->Flush();
+			FPlatformProcess::Sleep(0.1f);
+		}
+
+		if (StrategySystem)
+		{
+			StrategySystem->Destroy(Connection);
 
 			Connection->Flush();
 			FPlatformProcess::Sleep(0.1f);
@@ -2119,6 +2128,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			RoutingSystem->Advance(Connection);
 		}
 
+		if (StrategySystem.IsValid())
+		{
+			StrategySystem->Advance(Connection);
+		}
+
 		if (IsValid(PackageMap))
 		{
 			PackageMap->Advance();
@@ -2276,6 +2290,10 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType)
 		{
 			RoutingSystem->Flush(Connection);
+		}
+		else if (GameInstance->GetSpatialWorkerType() == SpatialConstants::StrategyWorkerType)
+		{
+			StrategySystem->Flush(Connection);
 		}
 		else
 		{
@@ -3023,6 +3041,20 @@ void USpatialNetDriver::TryFinishStartup()
 
 			RoutingSystem = MakeUnique<SpatialGDK::SpatialRoutingSystem>(NewView, Connection->GetWorkerSystemEntityId());
 			RoutingSystem->Init(Connection);
+			bIsReadyToStart = true;
+			Connection->SetStartupComplete();
+		}
+
+		if (WorkerType == SpatialConstants::StrategyWorkerType)
+		{
+			SpatialGDK::FSubView& NewView =
+				Connection->GetCoordinator().CreateSubView(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
+														   [](const Worker_EntityId, const SpatialGDK::EntityViewElement&) {
+															   return true;
+														   },
+														   {});
+
+			StrategySystem = MakeUnique<SpatialGDK::SpatialStrategySystem>(NewView, Connection->GetWorkerSystemEntityId(), Connection);
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();
 		}

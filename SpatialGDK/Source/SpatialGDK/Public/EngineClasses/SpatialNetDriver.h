@@ -70,7 +70,6 @@ enum class EActorMigrationResult : uint8
 namespace SpatialGDK
 {
 class SpatialRoutingSystem;
-
 class SpatialDebuggerSystem;
 class ActorSystem;
 class SpatialRPCService;
@@ -82,6 +81,7 @@ class ClientConnectionManager;
 class InitialOnlyFilter;
 class CrossServerRPCSender;
 class CrossServerRPCHandler;
+class SpatialStrategySystem;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -222,6 +222,7 @@ public:
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
+	TUniquePtr<SpatialGDK::SpatialStrategySystem> StrategySystem;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
@@ -292,6 +293,7 @@ private:
 
 	FString SnapshotToLoad;
 	Worker_EntityId RoutingWorkerId = 0;
+	Worker_EntityId StrategyWorkerId = 0;
 	Worker_PartitionId RoutingPartition = 0;
 	bool bRoutingWorkerQueryInFlight = false;
 
