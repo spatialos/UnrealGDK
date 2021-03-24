@@ -13,7 +13,6 @@ SpatialStrategySystem::SpatialStrategySystem(const FSubView& InSubView, Worker_E
 	, StrategyWorkerEntityId(InStrategyWorkerEntityId)
 	, StrategyPartitionEntityId(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID)
 {
-
 	Worker_CommandRequest ClaimRequest = Worker::CreateClaimPartitionRequest(StrategyPartitionEntityId);
 	StrategyWorkerRequest = Connection->SendCommandRequest(StrategyWorkerEntityId, &ClaimRequest, SpatialGDK::RETRY_UNTIL_COMPLETE, {});
 }
