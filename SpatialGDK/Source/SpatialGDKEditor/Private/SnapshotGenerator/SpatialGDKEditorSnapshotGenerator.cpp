@@ -230,7 +230,7 @@ bool CreateStrategyPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	TArray<FWorkerComponentData> Components;
 
 	AuthorityDelegationMap DelegationMap;
-	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
+	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, StrategyPartitionEntity.entity_id);
 
 	Interest ServerInterest;
 	Query ServerQuery = {};
