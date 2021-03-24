@@ -329,6 +329,22 @@ public:
 	UPROPERTY(Config)
 	uint32 UdpClientDownstreamUpdateIntervalMS;
 
+	/** Specifies the client downstream window size - see c_worker.h */
+	UPROPERTY(Config)
+	uint32 ClientDownstreamWindowSizeBytes;
+
+	/** Specifies the client upstream window size - see c_worker.h */
+	UPROPERTY(Config)
+	uint32 ClientUpstreamWindowSizeBytes;
+
+	/** Specifies the client downstream window size - see c_worker.h */
+	UPROPERTY(Config)
+	uint32 ServerDownstreamWindowSizeBytes;
+
+	/** Specifies the client upstream window size - see c_worker.h */
+	UPROPERTY(Config)
+	uint32 ServerUpstreamWindowSizeBytes;
+
 	/** Will flush worker messages immediately after every RPC. Higher bandwidth but lower latency on RPC calls. */
 	UPROPERTY(Config)
 	bool bWorkerFlushAfterOutgoingNetworkOp;
@@ -449,4 +465,10 @@ public:
 		*/
 	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Enable Initial Only Replication Condition"))
 	bool bEnableInitialOnlyReplicationCondition;
+
+	/*
+	 * Enables writing of ActorSetMember and ActorGroupMember components to load balancing entities
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "Replication")
+	bool bEnableStrategyLoadBalancingComponents;
 };

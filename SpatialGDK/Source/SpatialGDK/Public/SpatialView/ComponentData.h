@@ -24,7 +24,7 @@ struct ComponentDataDeleter
 using OwningComponentDataPtr = TUniquePtr<Schema_ComponentData, ComponentDataDeleter>;
 
 // An RAII wrapper for component data.
-class ComponentData
+class SPATIALGDK_API ComponentData
 {
 public:
 	// Creates a new component data.

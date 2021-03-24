@@ -2,14 +2,17 @@
 
 #pragma once
 
-#include "Utils/SchemaUtils.h"
-
 #include "CoreMinimal.h"
 #include "EngineUtils.h"
 #include "UObject/NoExportTypes.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
+
+#include "EntityQueryHandler.h"
+#include "Interop/ClaimPartitionHandler.h"
+#include "Interop/EntityCommandHandler.h"
+#include "Utils/SchemaUtils.h"
 
 #include "GlobalStateManager.generated.h"
 
@@ -49,6 +52,8 @@ public:
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void IncrementSessionID();
 
+	void Advance();
+
 	FORCEINLINE FString GetDeploymentMapURL() const { return DeploymentMapURL; }
 	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }
 	FORCEINLINE int32 GetSessionId() const { return DeploymentSessionId; }
@@ -70,7 +75,7 @@ public:
 	void HandleActorBasedOnLoadBalancer(AActor* ActorIterator) const;
 
 	Worker_EntityId GetLocalServerWorkerEntityId() const;
-	void ClaimSnapshotPartition() const;
+	void ClaimSnapshotPartition();
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
@@ -91,6 +96,8 @@ public:
 #if WITH_EDITOR
 	void OnPrePIEEnded(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
+
+	void OnReceiveShutdownCommand(const Worker_Op& Op, const Worker_CommandRequestOp& CommandRequestOp);
 
 	void OnShutdownComponentUpdate(Schema_ComponentUpdate* Update);
 	void ReceiveShutdownAdditionalServersEvent();
@@ -114,13 +121,14 @@ private:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
-	UPROPERTY()
-	USpatialSender* Sender;
+	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimHandler;
+	SpatialGDK::EntityQueryHandler QueryHandler;
 
-	UPROPERTY()
-	USpatialReceiver* Receiver;
+#if WITH_EDITOR
+	SpatialGDK::EntityCommandRequestHandler RequestHandler;
 
 	FDelegateHandle PrePIEEndedHandle;
+#endif // WITH_EDITOR
 
 	bool bTranslationQueryInFlight;
 };

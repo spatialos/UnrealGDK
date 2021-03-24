@@ -34,6 +34,14 @@ void USpatialPackageMapClient::Init(USpatialNetDriver* NetDriver, FTimerManager*
 	}
 }
 
+void USpatialPackageMapClient::Advance()
+{
+	if (IsValid(EntityPool))
+	{
+		EntityPool->Advance();
+	}
+}
+
 void GetSubobjects(UObject* ParentObject, TArray<UObject*>& InSubobjects)
 {
 	InSubobjects.Empty();
@@ -266,7 +274,7 @@ TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const Wo
 	return GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, 0));
 }
 
-FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(const UObject* Object)
+FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(const UObject* Object) const
 {
 	if (Object == nullptr)
 	{
@@ -278,7 +286,7 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(const UO
 	return GetUnrealObjectRefFromNetGUID(NetGUID);
 }
 
-Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* Object)
+Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* Object) const
 {
 	if (Object == nullptr)
 	{
@@ -460,7 +468,6 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 	check(EntityId > 0);
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
-	USpatialReceiver* Receiver = SpatialNetDriver->Receiver;
 
 	FNetworkGUID NetGUID;
 	FUnrealObjectRef EntityObjectRef(EntityId, 0);

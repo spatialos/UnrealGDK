@@ -132,6 +132,9 @@ TArray<Worker_ComponentId>{ // Actor components
                             // Debugging information
                             DEBUG_METRICS_COMPONENT_ID, SPATIAL_DEBUGGING_COMPONENT_ID,
 
+                            // Strategy Worker LB components
+                            ACTOR_SET_MEMBER_COMPONENT_ID, ACTOR_GROUP_MEMBER_COMPONENT_ID,
+
                             // Actor tag
                             ACTOR_TAG_COMPONENT_ID
 };
@@ -163,6 +166,9 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 
     // Tags: Well known entities, non-auth actors, and tombstone tags
     GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_TAG_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID,
+
+    // Strategy Worker LB components
+    ACTOR_SET_MEMBER_COMPONENT_ID, ACTOR_GROUP_MEMBER_COMPONENT_ID,
 
     PLAYER_CONTROLLER_COMPONENT_ID, PARTITION_COMPONENT_ID
 };
@@ -197,6 +203,8 @@ const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
     "unreal/gdk/spawndata.schema",
     "unreal/gdk/tombstone.schema",
     "unreal/gdk/unreal_metadata.schema",
+    "unreal/gdk/actor_group_member.schema",
+    "unreal/gdk/actor_set_member.schema",
     "unreal/generated/rpc_endpoints.schema",
     "unreal/generated/NetCullDistance/ncdcomponents.schema",
 };
@@ -218,6 +226,8 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
     { SPAWN_DATA_COMPONENT_ID, "unreal.SpawnData" },
     { TOMBSTONE_COMPONENT_ID, "unreal.Tombstone" },
     { UNREAL_METADATA_COMPONENT_ID, "unreal.UnrealMetadata" },
+    { ACTOR_GROUP_MEMBER_COMPONENT_ID, "unreal.ActorGroupMember" },
+    { ACTOR_SET_MEMBER_COMPONENT_ID, "unreal.ActorSetMember" },
     { SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },
     { MULTICAST_RPCS_COMPONENT_ID, "unreal.generated.UnrealMulticastRPCs" },
     { SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },

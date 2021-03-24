@@ -11,6 +11,9 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "SpatialView/ComponentData.h"
+#include "SpatialView/ComponentUpdate.h"
+
 using StringToEntityMap = TMap<FString, Worker_EntityId>;
 
 namespace SpatialGDK
@@ -210,5 +213,25 @@ inline FVector GetVectorFromSchema(Schema_Object* Object, Schema_FieldId Id)
 // Generates the full path from an ObjectRef, if it has paths. Writes the result to OutPath.
 // Does not clear OutPath first.
 void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath);
+
+template <typename TComponent>
+ComponentUpdate CreateComponentUpdateHelper(const TComponent& Component)
+{
+	ComponentUpdate Update(TComponent::ComponentId);
+	Schema_Object* ComponentObject = Update.GetFields();
+	Component.WriteSchema(ComponentObject);
+	return Update;
+}
+
+template <typename TComponent>
+ComponentData CreateComponentDataHelper(const TComponent& Component)
+{
+	ComponentData Data(TComponent::ComponentId);
+	Schema_Object* ComponentObject = Data.GetFields();
+
+	Component.WriteSchema(ComponentObject);
+
+	return Data;
+}
 
 } // namespace SpatialGDK
