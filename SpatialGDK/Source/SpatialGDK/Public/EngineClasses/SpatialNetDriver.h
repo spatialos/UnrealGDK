@@ -169,9 +169,6 @@ public:
 
 	void CleanUpServerConnectionForPC(APlayerController* PC);
 
-	Worker_PartitionId GetRoutingPartition();
-	void QueryRoutingPartition();
-
 	bool HasServerAuthority(Worker_EntityId EntityId) const;
 	bool HasClientAuthority(Worker_EntityId EntityId) const;
 
@@ -292,11 +289,7 @@ private:
 	bool bMapLoaded;
 
 	FString SnapshotToLoad;
-	Worker_EntityId RoutingWorkerId = 0;
-	Worker_EntityId StrategyWorkerId = 0;
-	Worker_PartitionId RoutingPartition = 0;
-	bool bRoutingWorkerQueryInFlight = false;
-
+	
 	// Client variable which stores the SessionId given to us by the server in the URL options.
 	// Used to compare against the GSM SessionId to ensure the the server is ready to spawn players.
 	int32 SessionId;
