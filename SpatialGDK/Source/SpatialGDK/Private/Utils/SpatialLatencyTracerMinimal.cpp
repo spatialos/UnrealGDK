@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "Utils/SpatialLatencyTracerMinimal.h"
 #include "SpatialConstants.h"
 #include "Utils/SpatialLatencyTracer.h"
