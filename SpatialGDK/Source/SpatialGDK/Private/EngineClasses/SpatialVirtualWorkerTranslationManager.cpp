@@ -49,13 +49,14 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Compo
 
 	if (!bAuthoritative)
 	{
-		// A healthy server should never lose auth (we supported worker recovery, but that only happens for disconnected servers).
+		// A healthy server should never lose auth (if a server lost auth from crashing, this callback wouldn't be hit).
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error,
 			   TEXT("Lost authority over the translation mapping. This should never happen."));
 		return;
 	}
 
 	const int32 ExistingTranslatorMappingCount = Translator->GetMappingCount();
+
 	// Fresh deployment. We need to create partition entities before we start assigning virtual workers.
 	if (ExistingTranslatorMappingCount == 0)
 	{
