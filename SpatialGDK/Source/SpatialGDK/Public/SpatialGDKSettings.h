@@ -460,5 +460,4 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator",
 			  meta = (DisplayName = "SpatialOS platform worker flags polling interval"))
 	float SpatialPlatformWorkerFlagsPollingInterval;
-
 };
