@@ -289,7 +289,8 @@ void USpatialActorChannel::ValidateChannelNotBroken()
 	// bunch). This shouldn't happen in Spatial and would likely lead to unexpected behavior.
 	if (Broken)
 	{
-		UE_LOG(LogSpatialActorChannel, Error, TEXT("Channel broken when cleaning up/closing channel. Entity id: %lld"), EntityId);
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("Channel broken when cleaning up/closing channel. Entity id: %lld, actor: %s"), EntityId,
+			   *GetNameSafe(Actor));
 	}
 }
 
