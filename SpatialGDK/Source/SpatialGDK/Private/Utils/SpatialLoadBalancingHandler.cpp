@@ -35,8 +35,6 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 		return EvaluateActorResult::None;
 	}
 
-	UpdateSpatialDebugInfo(Actor, EntityId);
-
 	// If this object is in the list of actors to migrate, we have already processed its hierarchy.
 	// Remove it from the additional actors to process, and continue.
 	if (ActorsToMigrate.Contains(Actor))
@@ -109,9 +107,10 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 					// so the load balancing strategy could give us a worker different from where it should be.
 					// Instead, we read its currently assigned worker, which will eventually make us land where our owner is.
 					Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
-					if (const TOptional<AuthorityIntent> OwnerAuthIntent = ViewCoordinator.GetComponent<AuthorityIntent>(OwnerId))
+					const LBComponents* OwnerComponents = NetDriver->LoadBalanceEnforcer->GetLoadBalancingComponents(OwnerId);
+					if (OwnerComponents != nullptr)
 					{
-						NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
+						NewAuthVirtualWorkerId = OwnerComponents->Intent.VirtualWorkerId;
 					}
 					else
 					{
@@ -153,20 +152,6 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 		Actor->OnAuthorityLost();
 	}
 	ActorsToMigrate.Empty();
-}
-
-void FSpatialLoadBalancingHandler::UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const
-{
-	if (TOptional<SpatialDebugging> DebuggingInfo = NetDriver->Connection->GetCoordinator().GetComponent<SpatialDebugging>(EntityId))
-	{
-		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
-		if (DebuggingInfo->IsLocked != bIsLocked)
-		{
-			DebuggingInfo->IsLocked = bIsLocked;
-			FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
-			NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
-		}
-	}
 }
 
 uint64 FSpatialLoadBalancingHandler::GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const
@@ -289,10 +274,11 @@ VirtualWorkerId FSpatialLoadBalancingHandler::GetWorkerId(const AActor* NetOwner
 	}
 	else
 	{
-		Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
-		if (TOptional<AuthorityIntent> OwnerAuthIntent = NetDriver->Connection->GetCoordinator().GetComponent<AuthorityIntent>(OwnerId))
+		const Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+		const LBComponents* OwnerComponents = NetDriver->LoadBalanceEnforcer->GetLoadBalancingComponents(OwnerId);
+		if (OwnerComponents != nullptr)
 		{
-			NewAuthVirtualWorkerId = OwnerAuthIntent->VirtualWorkerId;
+			NewAuthVirtualWorkerId = OwnerComponents->Intent.VirtualWorkerId;
 		}
 	}
 	return NewAuthVirtualWorkerId;

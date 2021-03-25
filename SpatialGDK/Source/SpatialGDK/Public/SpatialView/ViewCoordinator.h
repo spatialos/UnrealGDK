@@ -52,17 +52,6 @@ public:
 	const FString& GetWorkerId() const;
 	Worker_EntityId GetWorkerSystemEntityId() const;
 
-	template <class T>
-	TOptional<T> GetComponent(Worker_EntityId EntityId) const
-	{
-		const ComponentData* Data = GetComponent(EntityId, T::ComponentId);
-		if (Data != nullptr)
-		{
-			return T(Data->GetWorkerComponentData());
-		}
-		return {};
-	}
-
 	const ComponentData* GetComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
 	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId);
@@ -130,5 +119,16 @@ private:
 	TCommandRetryHandler<FEntityQueryRetryHandlerImpl> EntityQueryRetryHandler;
 	TCommandRetryHandler<FEntityCommandRetryHandlerImpl> EntityCommandRetryHandler;
 };
+
+template <class T>
+TOptional<T> DeserializeComponent(const ViewCoordinator& Coordinator, Worker_EntityId EntityId)
+{
+	const ComponentData* Data = Coordinator.GetComponent(EntityId, T::ComponentId);
+	if (Data != nullptr)
+	{
+		return T(Data->GetWorkerComponentData());
+	}
+	return {};
+}
 
 } // namespace SpatialGDK
