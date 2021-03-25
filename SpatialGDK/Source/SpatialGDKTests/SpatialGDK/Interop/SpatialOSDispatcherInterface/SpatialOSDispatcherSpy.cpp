@@ -30,38 +30,4 @@ bool SpatialOSDispatcherSpy::OnExtractIncomingRPC(Worker_EntityId EntityId, ERPC
 	return false;
 }
 
-void SpatialOSDispatcherSpy::OnCommandRequest(const Worker_Op& Op) {}
-
-void SpatialOSDispatcherSpy::OnCommandResponse(const Worker_Op& Op) {}
-
-void SpatialOSDispatcherSpy::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op) {}
-
-void SpatialOSDispatcherSpy::OnCreateEntityResponse(const Worker_Op& Op) {}
-
-void SpatialOSDispatcherSpy::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel) {}
-
 void SpatialOSDispatcherSpy::AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC) {}
-
-void SpatialOSDispatcherSpy::AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
-{
-	EntityQueryDelegates.Add(RequestId, Delegate);
-}
-
-void SpatialOSDispatcherSpy::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate) {}
-
-void SpatialOSDispatcherSpy::AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
-{
-	CreateEntityDelegates.Add(RequestId, Delegate);
-}
-
-void SpatialOSDispatcherSpy::OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op) {}
-
-EntityQueryDelegate* SpatialOSDispatcherSpy::GetEntityQueryDelegate(Worker_RequestId RequestId)
-{
-	return EntityQueryDelegates.Find(RequestId);
-}
-
-CreateEntityDelegate* SpatialOSDispatcherSpy::GetCreateEntityDelegate(Worker_RequestId RequestId)
-{
-	return CreateEntityDelegates.Find(RequestId);
-}

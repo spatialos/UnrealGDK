@@ -5,6 +5,7 @@
 #include "Interop/CrossServerRPCHandler.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/CrossServerRPCSender.h"
+#include "Interop/EntityQueryHandler.h"
 #include "Utils/SpatialBasicAwaiter.h"
 #include "Utils/SpatialDebugger.h"
 
@@ -69,7 +70,6 @@ enum class EActorMigrationResult : uint8
 namespace SpatialGDK
 {
 class SpatialRoutingSystem;
-
 class SpatialDebuggerSystem;
 class ActorSystem;
 class SpatialRPCService;
@@ -81,6 +81,7 @@ class ClientConnectionManager;
 class InitialOnlyFilter;
 class CrossServerRPCSender;
 class CrossServerRPCHandler;
+class SpatialStrategySystem;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -168,9 +169,6 @@ public:
 
 	void CleanUpServerConnectionForPC(APlayerController* PC);
 
-	Worker_PartitionId GetRoutingPartition();
-	void QueryRoutingPartition();
-
 	bool HasServerAuthority(Worker_EntityId EntityId) const;
 	bool HasClientAuthority(Worker_EntityId EntityId) const;
 
@@ -221,6 +219,7 @@ public:
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
+	TUniquePtr<SpatialGDK::SpatialStrategySystem> StrategySystem;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
@@ -274,6 +273,8 @@ private:
 	TUniquePtr<SpatialGDK::CrossServerRPCSender> CrossServerRPCSender;
 	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CrossServerRPCHandler;
 
+	SpatialGDK::EntityQueryHandler QueryHandler;
+
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
 	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>> PendingDormantChannels;
@@ -288,10 +289,7 @@ private:
 	bool bMapLoaded;
 
 	FString SnapshotToLoad;
-	Worker_EntityId RoutingWorkerId = 0;
-	Worker_PartitionId RoutingPartition = 0;
-	bool bRoutingWorkerQueryInFlight = false;
-
+	
 	// Client variable which stores the SessionId given to us by the server in the URL options.
 	// Used to compare against the GSM SessionId to ensure the the server is ready to spawn players.
 	int32 SessionId;
