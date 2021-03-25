@@ -93,6 +93,7 @@ private:
 	uint64 SnapshotVersion = 0;
 
 	// Startup Actor Manager Component
+	bool bHasReceivedStartupActorData;
 	bool bHasSentReadyForVirtualWorkerAssignment;
 	bool bCanBeginPlay;
 	bool bCanSpawnWithAuthority;

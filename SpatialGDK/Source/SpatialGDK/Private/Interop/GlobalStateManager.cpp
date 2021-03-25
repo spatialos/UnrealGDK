@@ -60,6 +60,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 #endif // WITH_EDITOR
 
 	bAcceptingPlayers = false;
+	bHasReceivedStartupActorData = false;
 	bHasSentReadyForVirtualWorkerAssignment = false;
 	bCanBeginPlay = false;
 	bCanSpawnWithAuthority = false;
@@ -111,6 +112,8 @@ void UGlobalStateManager::ApplyStartupActorManagerData(Schema_ComponentData* Dat
 
 	bCanBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 
+	bHasReceivedStartupActorData = true;
+
 	TrySendWorkerReadyToBeginPlay();
 }
 
@@ -122,8 +125,6 @@ void UGlobalStateManager::TrySendWorkerReadyToBeginPlay()
 	// from when canBeginPlay=true was loaded from the snapshot and was received as an
 	// AddComponent. This is important for handling startup Actors correctly in a zoned
 	// environment.
-	const bool bHasReceivedStartupActorData =
-		ViewCoordinator->HasComponent(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 	const bool bWorkerEntityReady =
 		NetDriver->WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID
 		&& ViewCoordinator->HasAuthority(NetDriver->WorkerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
