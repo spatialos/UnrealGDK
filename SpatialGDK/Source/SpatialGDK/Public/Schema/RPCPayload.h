@@ -5,7 +5,9 @@
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
+#if TRACE_LIB_ACTIVE
 #include "Utils/SpatialLatencyTracer.h"
+#endif
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
