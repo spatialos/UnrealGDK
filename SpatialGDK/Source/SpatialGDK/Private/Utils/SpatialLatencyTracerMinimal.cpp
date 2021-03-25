@@ -22,8 +22,7 @@ void FSpatialLatencyTracerMinimal::WriteTraceToSchemaObject(int32 Key, worker::c
 #if TRACE_LIB_ACTIVE
 	if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
 	{
-		Tracer->WriteTraceToSchemaObject(static_cast<TraceKey>(Key), Obj,
-										 (Schema_FieldId)SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
+		Tracer->WriteTraceToSchemaObject(static_cast<TraceKey>(Key), Obj, (Schema_FieldId)SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
 	}
 #endif
 }
