@@ -11,7 +11,7 @@ int32 FSpatialLatencyTracerMinimal::ReadTraceFromSchemaObject(worker::c::Schema_
 #if TRACE_LIB_ACTIVE
 	if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
 	{
-		return Tracer->ReadTraceFromSchemaObject(Obj, (Schema_FieldId)FieldId);
+		return Tracer->ReadTraceFromSchemaObject(Obj, static_cast<Schema_FieldId>(FieldId));
 	}
 #endif
 	return static_cast<int32>(InvalidTraceKey);
@@ -22,7 +22,7 @@ void FSpatialLatencyTracerMinimal::WriteTraceToSchemaObject(int32 Key, worker::c
 #if TRACE_LIB_ACTIVE
 	if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
 	{
-		Tracer->WriteTraceToSchemaObject(static_cast<TraceKey>(Key), Obj, (Schema_FieldId)SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
+		Tracer->WriteTraceToSchemaObject(static_cast<TraceKey>(Key), Obj, static_cast<Schema_FieldId>(SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID));
 	}
 #endif
 }
