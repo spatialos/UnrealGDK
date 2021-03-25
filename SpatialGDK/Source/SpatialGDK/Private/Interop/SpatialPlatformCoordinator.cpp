@@ -44,6 +44,17 @@ using namespace SpatialGDK;
 
 USpatialPlatformCoordinator::USpatialPlatformCoordinator() {}
 
+USpatialPlatformCoordinator::~USpatialPlatformCoordinator()
+{
+	for (auto Request : CachedRequests)
+	{
+		Request.Value->OnProcessRequestComplete().Unbind();
+		Request.Value->OnHeaderReceived().Unbind();
+		Request.Value->OnRequestProgress().Unbind();
+		Request.Value->OnRequestWillRetry().Unbind();
+	}
+}
+
 void USpatialPlatformCoordinator::Init(UNetDriver* InDriver)
 {
 	Driver = Cast<USpatialNetDriver>(InDriver);
@@ -61,23 +72,19 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
 	FString NewSpatialWorkerId = SpatialWorkerId + "";
 
-	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> WorkerStatusPollingRequest = FHttpModule::Get().CreateRequest();
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HeartbeatRequest = FHttpModule::Get().CreateRequest();
 
-	WorkerStatusPollingRequest->OnProcessRequestComplete().BindLambda(
+	HeartbeatRequest->OnProcessRequestComplete().BindLambda(
 		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
+			CachedRequests.Remove(HeartBeatRequestKey);
+
 			GetWorld()->GetTimerManager().ClearTimer(HeartBeatTimerHandler);
 			GetWorld()->GetTimerManager().SetTimer(HeartBeatTimerHandler, this, &USpatialPlatformCoordinator::StartSendingHeartbeat,
 												   GetDefault<USpatialGDKSettings>()->SpatialPlatformHeartbeatInterval, false);
 
 			if (bWasSuccessful)
 			{
-				/*
-				UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Successful HTTP request, Response:[%s]"), *FString(__FUNCTION__),
-					   *Response->GetContentAsString());
-				*/
-
 				TSharedPtr<FJsonObject> RootObject;
-				FHttpResponsePtr Response = Request->GetResponse();
 				FString ResponseStr = Response->GetContentAsString();
 				TSharedRef<TJsonReader<> > JsonReader = TJsonReaderFactory<>::Create(ResponseStr);
 				if (!FJsonSerializer::Deserialize(JsonReader, RootObject))
@@ -92,20 +99,21 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 			}
 		});
 
-	WorkerStatusPollingRequest->OnRequestProgress().BindLambda(
+	HeartbeatRequest->OnRequestProgress().BindLambda(
 		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {});
 
-	WorkerStatusPollingRequest->OnHeaderReceived().BindLambda(
+	HeartbeatRequest->OnHeaderReceived().BindLambda(
 		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {});
 
-	WorkerStatusPollingRequest->OnRequestWillRetry().BindLambda(
-		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {});
+	HeartbeatRequest->OnRequestWillRetry().BindLambda([this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {});
 
-	WorkerStatusPollingRequest->SetURL(Url + TEXT("/health/") + NewSpatialWorkerId);
-	WorkerStatusPollingRequest->SetVerb("POST");
-	WorkerStatusPollingRequest->SetHeader(TEXT("User-Agent"), "UnrealEngine-GDK-Agent");
-	WorkerStatusPollingRequest->SetHeader("Content-Type", TEXT("application/json"));
-	WorkerStatusPollingRequest->ProcessRequest();
+	HeartbeatRequest->SetURL(Url + TEXT("/health/") + NewSpatialWorkerId);
+	HeartbeatRequest->SetVerb("POST");
+	HeartbeatRequest->SetHeader(TEXT("User-Agent"), "UnrealEngine-GDK-Agent");
+	HeartbeatRequest->SetHeader("Content-Type", TEXT("application/json"));
+	HeartbeatRequest->ProcessRequest();
+
+	CachedRequests.Add(HeartBeatRequestKey, HeartbeatRequest);
 }
 
 void USpatialPlatformCoordinator::SendReadyStatus()
@@ -119,17 +127,13 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
 	FString NewSpatialWorkerId = SpatialWorkerId + "";
 
-	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> WorkerStatusPollingRequest = FHttpModule::Get().CreateRequest();
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> ReadyStatusRequest = FHttpModule::Get().CreateRequest();
 
-	WorkerStatusPollingRequest->OnProcessRequestComplete().BindLambda(
+	ReadyStatusRequest->OnProcessRequestComplete().BindLambda(
 		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
-			if (bWasSuccessful)
-			{
-				/*
-				UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Response:[%s]"), *FString(__FUNCTION__),
-					   *Response->GetContentAsString());
-				*/
-			}
+			CachedRequests.Remove(ReadyRequestKey);
+
+			if (bWasSuccessful) {}
 			else
 			{
 				UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Failed HTTP request, Response:[%s]"), *FString(__FUNCTION__),
@@ -137,20 +141,22 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 			}
 		});
 
-	WorkerStatusPollingRequest->OnRequestProgress().BindLambda(
+	ReadyStatusRequest->OnRequestProgress().BindLambda(
 		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {});
 
-	WorkerStatusPollingRequest->OnHeaderReceived().BindLambda(
+	ReadyStatusRequest->OnHeaderReceived().BindLambda(
 		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {});
 
-	WorkerStatusPollingRequest->OnRequestWillRetry().BindLambda(
+	ReadyStatusRequest->OnRequestWillRetry().BindLambda(
 		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {});
 
-	WorkerStatusPollingRequest->SetURL(Url + TEXT("/ready/") + NewSpatialWorkerId);
-	WorkerStatusPollingRequest->SetVerb("POST");
-	WorkerStatusPollingRequest->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
-	WorkerStatusPollingRequest->SetHeader("Content-Type", TEXT("application/json"));
-	WorkerStatusPollingRequest->ProcessRequest();
+	ReadyStatusRequest->SetURL(Url + TEXT("/ready/") + NewSpatialWorkerId);
+	ReadyStatusRequest->SetVerb("POST");
+	ReadyStatusRequest->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
+	ReadyStatusRequest->SetHeader("Content-Type", TEXT("application/json"));
+	ReadyStatusRequest->ProcessRequest();
+
+	CachedRequests.Add(ReadyRequestKey, ReadyStatusRequest);
 }
 
 void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
@@ -168,6 +174,8 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 
 	WorkerStatusPollingRequest->OnProcessRequestComplete().BindLambda(
 		[this, SpatialWorkerFlags](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
+			CachedRequests.Remove(GameserverRequestKey);
+
 			GetWorld()->GetTimerManager().ClearTimer(GameserverStatusTimerHandler);
 			GetWorld()->GetTimerManager().SetTimer(GameserverStatusTimerHandler, this,
 												   &USpatialPlatformCoordinator::StartPollingForGameserverStatus,
@@ -176,7 +184,6 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 			if (bWasSuccessful)
 			{
 				TSharedPtr<FJsonObject> RootObject;
-				FHttpResponsePtr Response = Request->GetResponse();
 				FString ResponseStr = Response->GetContentAsString();
 				TSharedRef<TJsonReader<> > JsonReader = TJsonReaderFactory<>::Create(ResponseStr);
 				if (!FJsonSerializer::Deserialize(JsonReader, RootObject))
@@ -184,40 +191,6 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 					UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - failed to parse json, Response:[%s]"), *FString(__FUNCTION__),
 						   *Response->GetContentAsString());
 					return;
-				}
-
-				TSharedPtr<FJsonObject> ObjectMetaJson = RootObject->GetObjectField("object_meta");
-				if (!ObjectMetaJson.IsValid())
-				{
-					UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Missing field object_meta, Response:[%s]"),
-						   *FString(__FUNCTION__), *Response->GetContentAsString());
-					return;
-				}
-
-				TSharedPtr<FJsonObject> AnnotationsJson = ObjectMetaJson->GetObjectField("annotations");
-				if (!AnnotationsJson.IsValid())
-				{
-					UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Missing field annotations, Response:[%s]"),
-						   *FString(__FUNCTION__), *Response->GetContentAsString());
-					return;
-				}
-
-				for (auto JsonValue : AnnotationsJson->Values)
-				{
-					if (JsonValue.Value->Type != EJson::Number && JsonValue.Value->Type != EJson::String)
-					{
-						continue;
-					}
-
-					FString JsonFieldValueString = JsonValue.Value->AsString();
-
-					FString OutFieldValue;
-					SpatialWorkerFlags->GetWorkerFlag(JsonValue.Key, OutFieldValue);
-
-					if (JsonFieldValueString != OutFieldValue)
-					{
-						SpatialWorkerFlags->SetWorkerFlag(JsonValue.Key, JsonFieldValueString);
-					}
 				}
 
 				TSharedPtr<FJsonObject> StatusJson = RootObject->GetObjectField("status");
@@ -245,9 +218,6 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 						SpatialWorkerFlags->SetWorkerFlag(JsonValue.Key, JsonFieldValueString);
 					}
 				}
-
-				UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - successful http request, Response:[%s]"), *FString(__FUNCTION__),
-					   *Response->GetContentAsString());
 			}
 			else
 			{
@@ -270,6 +240,8 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 	WorkerStatusPollingRequest->SetHeader(TEXT("User-Agent"), "UnrealEngine-GDK-Agent");
 	WorkerStatusPollingRequest->SetHeader("Content-Type", TEXT("application/json"));
 	WorkerStatusPollingRequest->ProcessRequest();
+
+	CachedRequests.Add(GameserverRequestKey, WorkerStatusPollingRequest);
 }
 
 void USpatialPlatformCoordinator::StartWatchingForGameserverStatus()
@@ -281,22 +253,106 @@ void USpatialPlatformCoordinator::StartWatchingForGameserverStatus()
 
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 
-	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> WorkerStatusPollingRequest = FHttpModule::Get().CreateRequest();
-	WorkerStatusPollingRequest->OnProcessRequestComplete().BindLambda(
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> WatcherStatusPollingRequest = FHttpModule::Get().CreateRequest();
+	WatcherStatusPollingRequest->OnProcessRequestComplete().BindLambda(
 		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {});
-	WorkerStatusPollingRequest->OnRequestProgress().BindLambda(
+	WatcherStatusPollingRequest->OnRequestProgress().BindLambda(
 		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {
 			FHttpResponsePtr Response = Request->GetResponse();
 			FString ResponseStr = Response->GetContentAsString();
 		});
-	WorkerStatusPollingRequest->OnHeaderReceived().BindLambda(
+	WatcherStatusPollingRequest->OnHeaderReceived().BindLambda(
 		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {});
-	WorkerStatusPollingRequest->OnRequestWillRetry().BindLambda(
+	WatcherStatusPollingRequest->OnRequestWillRetry().BindLambda(
 		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {});
 
-	WorkerStatusPollingRequest->SetURL(Url + TEXT("/watch/gameserver"));
-	WorkerStatusPollingRequest->SetVerb("GET");
-	WorkerStatusPollingRequest->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
-	WorkerStatusPollingRequest->SetHeader("Content-Type", TEXT("application/json"));
-	WorkerStatusPollingRequest->ProcessRequest();
+	WatcherStatusPollingRequest->SetURL(Url + TEXT("/watch/gameserver"));
+	WatcherStatusPollingRequest->SetVerb("GET");
+	WatcherStatusPollingRequest->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
+	WatcherStatusPollingRequest->SetHeader("Content-Type", TEXT("application/json"));
+	WatcherStatusPollingRequest->ProcessRequest();
+}
+
+void USpatialPlatformCoordinator::StartPollingForWorkerFlags()
+{
+	if (!GetDefault<USpatialGDKSettings>()->bEnableSpatialPlatformCoordinator)
+	{
+		return;
+	}
+
+	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
+	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
+	FString NewSpatialWorkerId = SpatialWorkerId + "";
+
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> WorkerFlagsPollingRequest = FHttpModule::Get().CreateRequest();
+
+	WorkerFlagsPollingRequest->OnProcessRequestComplete().BindLambda(
+		[this, SpatialWorkerFlags](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
+			CachedRequests.Remove(WorkerflagsRequestKey);
+
+			GetWorld()->GetTimerManager().ClearTimer(WorkerFlagsTimerHandler);
+			GetWorld()->GetTimerManager().SetTimer(WorkerFlagsTimerHandler, this, &USpatialPlatformCoordinator::StartPollingForWorkerFlags,
+												   GetDefault<USpatialGDKSettings>()->SpatialPlatformWorkerFlagsPollingInterval, false);
+
+			if (bWasSuccessful)
+			{
+				TSharedPtr<FJsonObject> RootObject;
+				FString ResponseStr = Response->GetContentAsString();
+				TSharedRef<TJsonReader<> > JsonReader = TJsonReaderFactory<>::Create(ResponseStr);
+				if (!FJsonSerializer::Deserialize(JsonReader, RootObject))
+				{
+					UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - failed to parse json, Response:[%s]"), *FString(__FUNCTION__),
+						   *Response->GetContentAsString());
+					return;
+				}
+
+				TSharedPtr<FJsonObject> WorkerFlagsJson = RootObject->GetObjectField("worker_flags");
+				if (!WorkerFlagsJson.IsValid())
+				{
+					UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Missing field object_meta, Response:[%s]"),
+						   *FString(__FUNCTION__), *Response->GetContentAsString());
+					return;
+				}
+
+				for (auto JsonValue : WorkerFlagsJson->Values)
+				{
+					if (JsonValue.Value->Type != EJson::Number && JsonValue.Value->Type != EJson::String)
+					{
+						continue;
+					}
+
+					FString JsonFieldValueString = JsonValue.Value->AsString();
+
+					FString OutFieldValue;
+					SpatialWorkerFlags->GetWorkerFlag(JsonValue.Key, OutFieldValue);
+
+					if (JsonFieldValueString != OutFieldValue)
+					{
+						SpatialWorkerFlags->SetWorkerFlag(JsonValue.Key, JsonFieldValueString);
+					}
+				}
+			}
+			else
+			{
+				UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Failed HTTP request, Response:[%s], ResponseCode:[%d]"),
+					   *FString(__FUNCTION__), *Response->GetContentAsString(), Response->GetResponseCode());
+			}
+		});
+
+	WorkerFlagsPollingRequest->OnRequestProgress().BindLambda(
+		[this, SpatialWorkerFlags](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {});
+
+	WorkerFlagsPollingRequest->OnHeaderReceived().BindLambda(
+		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {});
+
+	WorkerFlagsPollingRequest->OnRequestWillRetry().BindLambda(
+		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {});
+
+	WorkerFlagsPollingRequest->SetURL(Url + TEXT("/workerflags"));
+	WorkerFlagsPollingRequest->SetVerb("GET");
+	WorkerFlagsPollingRequest->SetHeader(TEXT("User-Agent"), "UnrealEngine-GDK-Agent");
+	WorkerFlagsPollingRequest->SetHeader("Content-Type", TEXT("application/json"));
+	WorkerFlagsPollingRequest->ProcessRequest();
+
+	CachedRequests.Add(WorkerflagsRequestKey, WorkerFlagsPollingRequest);
 }

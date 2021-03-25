@@ -29,6 +29,7 @@ class SPATIALGDK_API USpatialPlatformCoordinator : public UObject
 
 public:
 	USpatialPlatformCoordinator();
+	virtual ~USpatialPlatformCoordinator();
 
 	virtual void Init(UNetDriver* InDriver);
 
@@ -36,6 +37,7 @@ public:
 	void SendReadyStatus();
 	void StartPollingForGameserverStatus();
 	void StartWatchingForGameserverStatus();
+	void StartPollingForWorkerFlags();
 
 private:
 	USpatialNetDriver* Driver;
@@ -43,4 +45,12 @@ private:
 
 	FTimerHandle HeartBeatTimerHandler;
 	FTimerHandle GameserverStatusTimerHandler;
+	FTimerHandle WorkerFlagsTimerHandler;
+
+	TMap<FString, TSharedRef<IHttpRequest, ESPMode::ThreadSafe>>					CachedRequests;
+
+	FString HeartBeatRequestKey = "HeartBeatRequestKey";
+	FString ReadyRequestKey = "ReadyRequestKey";
+	FString GameserverRequestKey = "GameserverRequestKey";
+	FString WorkerflagsRequestKey = "WorkerflagsRequestKey";
 };

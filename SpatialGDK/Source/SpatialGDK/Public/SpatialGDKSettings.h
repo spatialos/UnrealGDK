@@ -456,4 +456,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator",
 			  meta = (DisplayName = "SpatialOS platform server status polling interval"))
 	float SpatialPlatformServerStatusPollingInterval;
+
+	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator",
+			  meta = (DisplayName = "SpatialOS platform worker flags polling interval"))
+	float SpatialPlatformWorkerFlagsPollingInterval;
+
 };
