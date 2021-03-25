@@ -13,6 +13,8 @@ SpatialVirtualWorkerTranslator::SpatialVirtualWorkerTranslator(UAbstractLBStrate
 															   PhysicalWorkerName InLocalPhysicalWorkerName)
 	: NetDriver(InNetDriver)
 	, LoadBalanceStrategy(InLoadBalanceStrategy)
+	, VirtualToPhysicalWorkerMapping({})
+	, TotalServerCrashCount(0)
 	, bIsReady(false)
 	, LocalPhysicalWorkerName(InLocalPhysicalWorkerName)
 	, LocalVirtualWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
@@ -67,11 +69,11 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerTranslation(const Spatial
 		UpdateMapping(VirtualWorkerInfo);
 	}
 
-	if (Translation.TotalServerCrashCount > 0)
+	if (Translation.TotalServerCrashCount > TotalServerCrashCount)
 	{
+		TotalServerCrashCount = Translation.TotalServerCrashCount;
 		UE_LOG(LogSpatialVirtualWorkerTranslator, Error,
-			   TEXT("Translation update indicates at least %d servers have crashed during this deployment."),
-			   Translation.TotalServerCrashCount);
+			   TEXT("Translation update indicates at least %d servers have crashed during this deployment."), TotalServerCrashCount);
 	}
 
 #if !NO_LOGGING

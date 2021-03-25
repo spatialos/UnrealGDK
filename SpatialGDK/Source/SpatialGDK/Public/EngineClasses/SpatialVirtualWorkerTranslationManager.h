@@ -46,11 +46,12 @@ public:
 	void AuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthChangeOp);
 
 	// Worker recovery.
-	void SetKnownServerSystemEntities(TArray<Worker_EntityId> ServerSystemEntities);
+	void SetKnownServerSystemEntities(const TArray<Worker_EntityId>& ServerSystemEntities);
 	void OnSystemEntityRemoved(const Worker_EntityId DisconnectedSystemEntityId);
 	void TryClaimPartitionForRecoveredWorker(const Worker_EntityId EntityId, Schema_ComponentData* ServerWorkerComponentData);
 
 	void SpawnPartitionEntitiesForVirtualWorkerIds();
+	void ResetVirtualWorkerMappingAfterSnapshotReset();
 	TArray<Worker_PartitionId> GetAllPartitions() const;
 
 	void Advance(const TArray<Worker_Op>& Ops);
@@ -77,12 +78,9 @@ private:
 	// Used when VTM authority is reassigned following server crashed to cleanup translator mapping.
 	TArray<Worker_EntityId> KnownServerSystemEntities;
 
-	void ResetVirtualWorkerMappingAfterSnapshotReset();
-
 	void CleanupTranslatorMappingAfterAuthorityChange();
 	void CleanupUnhandledVirtualWorker(const VirtualWorkerId VirtualWorker);
 
-	static bool AllServerWorkersAreReady(const Worker_EntityQueryResponseOp& Op, uint32& ServerWorkersNotReady);
 	static TArray<TTuple<Worker_EntityId, SpatialGDK::ServerWorker>> ExtractServerWorkerDataFromQueryResponse(
 		const Worker_EntityQueryResponseOp& Op);
 
@@ -90,6 +88,7 @@ private:
 	// based on the response.
 	void QueryForServerWorkerEntities();
 	void ServerWorkerEntityQueryDelegate(const Worker_EntityQueryResponseOp& Op);
+	static bool AllServerWorkersAreReady(const Worker_EntityQueryResponseOp& Op, uint32& ServerWorkersNotReady);
 	void AssignPartitionsToEachServerWorkerFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SendVirtualWorkerMappingUpdate() const;
 

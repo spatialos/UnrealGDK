@@ -67,20 +67,10 @@ void ServerCrashHandler::Advance()
 	{
 		switch (Delta.Type)
 		{
-		case EntityDelta::ADD:
-			UE_LOG(LogTemp, Error, TEXT("Well known entity %lld was added"), Delta.EntityId);
-			break;
-		case EntityDelta::UPDATE:
-			UE_LOG(LogTemp, Error, TEXT("Well known entity %lld was updated"), Delta.EntityId);
-			break;
-		case EntityDelta::TEMPORARILY_REMOVED:
-			UE_LOG(LogTemp, Error, TEXT("Well known entity %lld was TEMPORARILY_REMOVED"), Delta.EntityId);
-			break;
 		case EntityDelta::REMOVE:
-			UE_LOG(LogTemp, Error, TEXT("Well known entity %lld was deleted"), Delta.EntityId);
 			if (Delta.EntityId == AuthServerWorkerEntityId)
 			{
-				UE_LOG(LogTemp, Error, TEXT("Client's authoritative server worker entity %lld was deleted"), Delta.EntityId);
+				UE_LOG(LogServerCrashHandler, Error, TEXT("Client's authoritative server worker entity %lld was deleted"), Delta.EntityId);
 			}
 		default:
 			break;

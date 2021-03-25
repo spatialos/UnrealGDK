@@ -48,6 +48,7 @@ private:
 	friend class SpatialVirtualWorkerTranslationManager;
 
 	TMap<VirtualWorkerId, SpatialGDK::VirtualWorkerInfo> VirtualToPhysicalWorkerMapping;
+	uint32 TotalServerCrashCount;
 
 	bool bIsReady;
 

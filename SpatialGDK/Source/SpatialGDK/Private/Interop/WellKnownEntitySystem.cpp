@@ -85,6 +85,38 @@ void WellKnownEntitySystem::Advance()
 	}
 }
 
+void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+												   Schema_ComponentUpdate* Update)
+{
+	switch (ComponentId)
+	{
+	case SpatialConstants::PARTITION_COMPONENT_ID:
+		// Whenever we change snapshot partition auth server, every server stores the information which is used in
+		// the event of the snapshot partition auth server crashing.
+		if (EntityId == SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID)
+		{
+			SaveSnapshotPartitionAuthServerSystemEntity();
+		}
+		break;
+	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
+		VirtualWorkerTranslator->ApplyVirtualWorkerTranslation(Update);
+		break;
+	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+		GlobalStateManager->ApplyDeploymentMapUpdate(Update);
+		break;
+	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+		GlobalStateManager->ApplyStartupActorManagerUpdate(Update);
+		break;
+	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
+#if WITH_EDITOR
+		GlobalStateManager->OnShutdownComponentUpdate(Update);
+#endif // WITH_EDITOR
+		break;
+	default:
+		break;
+	}
+}
+
 void WellKnownEntitySystem::ProcessComponentAdd(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
 												Schema_ComponentData* Data)
 {
@@ -124,38 +156,6 @@ void WellKnownEntitySystem::ProcessComponentAdd(const Worker_EntityId EntityId, 
 		{
 			VirtualWorkerTranslationManager->TryClaimPartitionForRecoveredWorker(EntityId, Data);
 		}
-		break;
-	default:
-		break;
-	}
-}
-
-void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-												   Schema_ComponentUpdate* Update)
-{
-	switch (ComponentId)
-	{
-	case SpatialConstants::PARTITION_COMPONENT_ID:
-		// Whenever we change snapshot partition auth server, every server stores the information which is used in
-		// the event of the snapshot partition auth server crashing.
-		if (EntityId == SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID)
-		{
-			SaveSnapshotPartitionAuthServerSystemEntity();
-		}
-		break;
-	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		VirtualWorkerTranslator->ApplyVirtualWorkerTranslation(Update);
-		break;
-	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-		GlobalStateManager->ApplyDeploymentMapUpdate(Update);
-		break;
-	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplyStartupActorManagerUpdate(Update);
-		break;
-	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
-#if WITH_EDITOR
-		GlobalStateManager->OnShutdownComponentUpdate(Update);
-#endif // WITH_EDITOR
 		break;
 	default:
 		break;

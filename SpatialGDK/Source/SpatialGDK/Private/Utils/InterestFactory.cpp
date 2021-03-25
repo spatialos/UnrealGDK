@@ -384,7 +384,7 @@ void InterestFactory::AddClientServerWorkerEntityInterest(Interest& OutInterest)
 {
 	Query UserQuery;
 	UserQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
-	UserQuery.ResultComponentIds = { SpatialConstants::SERVER_WORKER_COMPONENT_ID };
+	UserQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
 
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, UserQuery);
 }

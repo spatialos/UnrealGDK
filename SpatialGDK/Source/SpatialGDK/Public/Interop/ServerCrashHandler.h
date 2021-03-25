@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+
 #include "EngineClasses/SpatialNetConnection.h"
 #include "SpatialCommonTypes.h"
 
