@@ -40,6 +40,7 @@ public:
 	void ApplyDeploymentMapData(Schema_ComponentData* Data);
 	void ApplySnapshotVersionData(Schema_ComponentData* Data);
 	void ApplyStartupActorManagerData(Schema_ComponentData* Data);
+	void WorkerEntityReady();
 
 	void ApplyDeploymentMapUpdate(Schema_ComponentUpdate* Update);
 	void ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update);
@@ -94,6 +95,7 @@ private:
 
 	// Startup Actor Manager Component
 	bool bHasReceivedStartupActorData;
+	bool bWorkerEntityReady;
 	bool bHasSentReadyForVirtualWorkerAssignment;
 	bool bCanBeginPlay;
 	bool bCanSpawnWithAuthority;
