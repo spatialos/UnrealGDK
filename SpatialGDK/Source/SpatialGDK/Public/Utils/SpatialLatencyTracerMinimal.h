@@ -10,7 +10,7 @@ namespace c
 {
 struct Schema_Object;
 }
-}
+} // namespace worker
 
 class FSpatialLatencyTracerMinimal
 {
