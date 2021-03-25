@@ -18,7 +18,8 @@ WellKnownEntitySystem::WellKnownEntitySystem(const FSubView& InGDKSubView, const
 	, GlobalStateManager(&InGlobalStateManager)
 	, Connection(InConnection)
 	, NumberOfWorkers(InNumberOfWorkers)
-	, SnapshotPartitionAuthServerCrashed(false)
+	, SnapshotPartitionServerSystemEntity(SpatialConstants::INVALID_ENTITY_ID)
+	, bSnapshotPartitionAuthServerCrashInProgress(false)
 {
 }
 
@@ -29,6 +30,9 @@ void WellKnownEntitySystem::Advance()
 	{
 		switch (Delta.Type)
 		{
+		case EntityDelta::ADD:
+			ProcessEntityAdd(Delta.EntityId);
+			break;
 		case EntityDelta::UPDATE:
 		{
 			for (const ComponentChange& Change : Delta.ComponentUpdates)
@@ -45,9 +49,6 @@ void WellKnownEntitySystem::Advance()
 			}
 			break;
 		}
-		case EntityDelta::ADD:
-			ProcessEntityAdd(Delta.EntityId);
-			break;
 		default:
 			break;
 		}
@@ -69,14 +70,14 @@ void WellKnownEntitySystem::Advance()
 			if (SnapshotPartitionServerSystemEntity == Delta.EntityId)
 			{
 				UE_LOG(LogWellKnownEntitySystem, Warning, TEXT("Server detected that snapshot partition auth server crashed."));
-				SnapshotPartitionAuthServerCrashed = true;
+				bSnapshotPartitionAuthServerCrashInProgress = true;
 				MaybeClaimSnapshotPartition();
 			}
 			// If we're the VTM auth server, and some other worker disconnected, we should check if it's a server
 			// worker, and if so, update the translation accordingly (so we're ready for the server to restart).
 			else if (VirtualWorkerTranslationManager != nullptr)
 			{
-				VirtualWorkerTranslationManager->OnWorkerDisconnected(Delta.EntityId);
+				VirtualWorkerTranslationManager->OnSystemEntityRemoved(Delta.EntityId);
 			}
 		default:
 			break;
@@ -84,7 +85,52 @@ void WellKnownEntitySystem::Advance()
 	}
 }
 
-void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId EntityId, const Worker_ComponentId ComponentId,
+void WellKnownEntitySystem::ProcessComponentAdd(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+												Schema_ComponentData* Data)
+{
+	switch (ComponentId)
+	{
+	case SpatialConstants::PARTITION_COMPONENT_ID:
+		if (EntityId == SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID)
+		{
+			SaveSnapshotPartitionAuthServerSystemEntity();
+		}
+		break;
+	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
+		UE_LOG(LogWellKnownEntitySystem, Log, TEXT("VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID received %lld"), EntityId);
+		VirtualWorkerTranslator->ApplyVirtualWorkerTranslation(VirtualWorkerTranslation(Data));
+		break;
+	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+		GlobalStateManager->ApplyDeploymentMapData(Data);
+		break;
+	case SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID:
+		GlobalStateManager->ApplySnapshotVersionData(Data);
+		break;
+	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+		GlobalStateManager->ApplyStartupActorManagerData(Data);
+		break;
+	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
+		// We only want servers to consider claiming the new partition when a new server spawns at the start of
+		// a deployment. If the snapshot partition authoritative server crashes, we reassign the snapshot partition
+		// auth as soon as the crash is detected (rather than waiting for the replacement server to start).
+		if (!VirtualWorkerTranslator->IsReady())
+		{
+			MaybeClaimSnapshotPartition();
+		}
+
+		// If the translator is ready, this server worker component is a restarted server.
+		// If we're authoritative over the translation manager, we need to claim the partition for the restarted worker.
+		if (VirtualWorkerTranslationManager.IsValid() && VirtualWorkerTranslator->IsReady())
+		{
+			VirtualWorkerTranslationManager->TryClaimPartitionForRecoveredWorker(EntityId, Data);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
 												   Schema_ComponentUpdate* Update)
 {
 	switch (ComponentId)
@@ -98,7 +144,7 @@ void WellKnownEntitySystem::ProcessComponentUpdate(const Worker_ComponentId Enti
 		}
 		break;
 	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(VirtualWorkerTranslation(Update));
+		VirtualWorkerTranslator->ApplyVirtualWorkerTranslation(Update);
 		break;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		GlobalStateManager->ApplyDeploymentMapUpdate(Update);
@@ -130,53 +176,9 @@ void WellKnownEntitySystem::SaveSnapshotPartitionAuthServerSystemEntity()
 		return;
 	}
 
-	SnapshotPartitionServerSystemEntity = Schema_GetEntityId(Schema_GetComponentDataFields(SnapshotPartitionData->GetUnderlying()), 1);
-	SnapshotPartitionAuthServerCrashed = false;
-}
-
-void WellKnownEntitySystem::ProcessComponentAdd(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-												Schema_ComponentData* Data)
-{
-	switch (ComponentId)
-	{
-	case SpatialConstants::PARTITION_COMPONENT_ID:
-		if (EntityId == SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID)
-		{
-			SaveSnapshotPartitionAuthServerSystemEntity();
-		}
-		break;
-	case SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID:
-		UE_LOG(LogWellKnownEntitySystem, Log, TEXT("VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID received %lld"), EntityId);
-		VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(VirtualWorkerTranslation(Data));
-		break;
-	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-		GlobalStateManager->ApplyDeploymentMapData(Data);
-		break;
-	case SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID:
-		GlobalStateManager->ApplySnapshotVersionData(Data);
-		break;
-	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplyStartupActorManagerData(Data);
-		break;
-	case SpatialConstants::SERVER_WORKER_COMPONENT_ID:
-		// We want only want servers to consider claiming the new partition when a new server spawns at the start of
-		// a deployment. If the snapshot partition authoritative server crashes, we reassign the snapshot partition
-		// auth as soon as the crash is detected (rather than waiting for the replacement server to start).
-		if (!VirtualWorkerTranslator->IsReady())
-		{
-			MaybeClaimSnapshotPartition();
-		}
-
-		// If the translator is ready, this server worker component is a restarted server.
-		// If we're authoritative over the translation manager, we need to claim the partition for the restarted worker.
-		if (VirtualWorkerTranslationManager.IsValid() && VirtualWorkerTranslator->IsReady())
-		{
-			VirtualWorkerTranslationManager->TryClaimPartitionForRecoveredWorker(EntityId, Data);
-		}
-		break;
-	default:
-		break;
-	}
+	SnapshotPartitionServerSystemEntity = Schema_GetEntityId(Schema_GetComponentDataFields(SnapshotPartitionData->GetUnderlying()),
+															 SpatialConstants::PARTITION_SYSTEM_ENTITY_ID_FIELD);
+	bSnapshotPartitionAuthServerCrashInProgress = false;
 }
 
 void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
@@ -202,6 +204,7 @@ void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId,
 TArray<Worker_EntityId> WellKnownEntitySystem::GetAllServerSystemEntities() const
 {
 	TArray<Worker_EntityId> ServerSystemEntities;
+	ServerSystemEntities.Reserve(SystemEntitySubView->GetView().Num());
 
 	for (const auto& Iter : SystemEntitySubView->GetView())
 	{
@@ -244,7 +247,8 @@ void WellKnownEntitySystem::ProcessEntityAdd(const Worker_EntityId EntityId)
 void WellKnownEntitySystem::OnMapLoaded() const
 {
 	if (GlobalStateManager != nullptr && !GlobalStateManager->GetCanBeginPlay()
-		&& GDKSubView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
+		&& GDKSubView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId,
+									SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
 	{
 		// ServerTravel - Increment the session id, so users don't rejoin the old game.
 		GlobalStateManager->TriggerBeginPlay();
@@ -267,15 +271,10 @@ void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 	// Perform a naive leader election where we wait for the correct number of server workers to be present in the deployment, and then
 	// whichever server has the lowest server worker entity ID becomes the leader and claims the snapshot partition.
 	const Worker_EntityId LocalServerWorkerEntityId = GlobalStateManager->GetLocalServerWorkerEntityId();
-
-	if (LocalServerWorkerEntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		UE_LOG(LogWellKnownEntitySystem, Warning, TEXT("MaybeClaimSnapshotPartition aborted due to lack of local server worker entity"));
-		return;
-	}
+	checkf(LocalServerWorkerEntityId != SpatialConstants::INVALID_ENTITY_ID,
+		   TEXT("MaybeClaimSnapshotPartition aborted due to lack of local server worker entity"));
 
 	Worker_EntityId LowestEntityId = LocalServerWorkerEntityId;
-	Worker_EntityId SnapshotPartitionServerWorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	int ServerCount = 0;
 	for (const auto& Iter : GDKSubView->GetView())
@@ -283,7 +282,7 @@ void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 		const Worker_EntityId EntityId = Iter.Key;
 		const SpatialGDK::EntityViewElement& Element = Iter.Value;
 
-		const ComponentData* ServerWorkerEntityData = Element.Components.FindByPredicate([](const auto& CompData) {
+		const ComponentData* ServerWorkerEntityData = Element.Components.FindByPredicate([](const ComponentData& CompData) {
 			return CompData.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID;
 		});
 
@@ -300,9 +299,8 @@ void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 			// 1) the crashed server worker entity to be deleted - which we find here
 			// 2) choose a new server to claim the snapshot partition - which we do here by doing a continue; which
 			//    ignores the crashed VTM auth server entity ID in the lowest check.
-			if (SnapshotPartitionAuthServerCrashed && SystemEntityID == SnapshotPartitionServerSystemEntity)
+			if (bSnapshotPartitionAuthServerCrashInProgress && SystemEntityID == SnapshotPartitionServerSystemEntity)
 			{
-				SnapshotPartitionServerWorkerEntityId = EntityId;
 				continue;
 			}
 
@@ -318,9 +316,14 @@ void WellKnownEntitySystem::MaybeClaimSnapshotPartition()
 	// If we're the new snapshot partition auth server
 	if (LocalServerWorkerEntityId == LowestEntityId)
 	{
-		if (SnapshotPartitionAuthServerCrashed)
+		if (bSnapshotPartitionAuthServerCrashInProgress)
 		{
 			UE_LOG(LogWellKnownEntitySystem, Warning, TEXT("Server reclaiming snapshot partition auth from crashed server"));
+		}
+		else if (ServerCount < NumberOfWorkers)
+		{
+			// We're starting up a fresh deployment but not all servers have started yet.
+			return;
 		}
 		else if (ServerCount > NumberOfWorkers)
 		{

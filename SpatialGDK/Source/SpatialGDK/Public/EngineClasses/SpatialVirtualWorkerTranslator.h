@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Interop/SpatialSender.h"
+#include "Schema/VirtualWorkerTranslation.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
@@ -10,8 +11,6 @@
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
-
-#include "Schema/VirtualWorkerTranslation.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslator, Log, All)
 
@@ -33,16 +32,13 @@ public:
 	Worker_PartitionId GetClaimedPartitionId() const { return LocalPartitionId; }
 	int32 GetMappingCount() const { return VirtualToPhysicalWorkerMapping.Num(); }
 
-	// Returns the name of the worker currently assigned to VirtualWorkerId id or nullptr if there is
-	// no worker assigned.
-	// TODO(harkness): Do we want to copy this data? Otherwise it's only guaranteed to be valid until
-	// the next mapping update.
 	const PhysicalWorkerName* GetPhysicalWorkerForVirtualWorker(VirtualWorkerId Id) const;
 	Worker_PartitionId GetPartitionEntityForVirtualWorker(VirtualWorkerId Id) const;
 	Worker_EntityId GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const;
 
 	// On receiving a version of the translation state, apply that to the internal mapping.
-	void ApplyVirtualWorkerManagerData(const SpatialGDK::VirtualWorkerTranslation& Translation);
+	void ApplyVirtualWorkerTranslation(Schema_ComponentUpdate* Update);
+	void ApplyVirtualWorkerTranslation(const SpatialGDK::VirtualWorkerTranslation& Translation);
 
 	USpatialNetDriver* NetDriver;
 

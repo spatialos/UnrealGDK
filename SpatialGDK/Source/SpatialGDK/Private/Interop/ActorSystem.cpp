@@ -11,6 +11,7 @@
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Schema/PlayerControllerServer.h"
 #include "Schema/Restricted.h"
 #include "Schema/Tombstone.h"
 #include "SpatialConstants.h"
@@ -383,6 +384,13 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 					if (Actor->IsA<APlayerController>())
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
+
+						// Update the PlayerController to know its authoritative server system entity ID.
+						// This is for handling server crashes.
+						PlayerControllerServer PlayerControllerServerData = PlayerControllerServer(NetDriver->WorkerEntityId);
+						const Worker_ComponentUpdate Update = PlayerControllerServerData.CreateComponentUpdate();
+						NetDriver->Connection->GetCoordinator().SendComponentUpdate(
+							EntityId, ComponentUpdate(OwningComponentUpdatePtr(Update.schema_type), Update.component_id), {});
 					}
 					else if (APawn* Pawn = Cast<APawn>(Actor))
 					{

@@ -90,6 +90,7 @@ const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID = 9994;
 const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
 const Worker_ComponentId PLAYER_CONTROLLER_COMPONENT_ID = 9991;
+const Worker_ComponentId PLAYER_CONTROLLER_SERVER_COMPONENT_ID = 9989;
 const Worker_ComponentId SNAPSHOT_VERSION_COMPONENT_ID = 9990;
 
 const Worker_ComponentSetId SERVER_AUTH_COMPONENT_SET_ID = 9900;
@@ -154,6 +155,8 @@ const Worker_ComponentId GDK_DEBUG_TAG_COMPONENT_ID = 2011;
 // Add component ids above here, this should always be last and be equal to the previous component id
 const Worker_ComponentId LAST_EC_COMPONENT_ID = 2011;
 
+const Schema_FieldId PARTITION_SYSTEM_ENTITY_ID_FIELD = 1;
+
 const Schema_FieldId SYSTEM_WORKER_ID_FIELD = 1;
 const Schema_FieldId SYSTEM_WORKER_TYPE_FIELD = 2;
 const Schema_FieldId SYSTEM_WORKER_CONNECTION_FIELD = 3;
@@ -212,6 +215,7 @@ const Schema_FieldId AUTHORITY_INTENT_VIRTUAL_WORKER_ID = 1;
 
 // VirtualWorkerTranslation Field IDs.
 const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_MAPPING_ID = 1;
+const Schema_FieldId VIRTUAL_WORKER_TRANSLATION_CRASH_COUNT_ID = 2;
 const Schema_FieldId MAPPING_VIRTUAL_WORKER_ID = 1;
 const Schema_FieldId MAPPING_PHYSICAL_WORKER_NAME_ID = 2;
 const Schema_FieldId MAPPING_SERVER_WORKER_ENTITY_ID = 3;

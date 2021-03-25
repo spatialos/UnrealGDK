@@ -85,6 +85,8 @@ private:
 	void GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints,
 											 bool bRecurseChildren) const;
 
+	static void AddClientServerWorkerEntityInterest(Interest& OutInterest);
+
 	void AddNetCullDistanceQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const;
 
 	static void AddComponentQueryPairToInterestComponent(Interest& OutInterest, const Worker_ComponentId ComponentId,

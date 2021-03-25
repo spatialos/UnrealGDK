@@ -516,6 +516,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		const SpatialGDK::FSubView& SystemEntitySubview = Connection->GetCoordinator().CreateSubView(
 			SpatialConstants::SYSTEM_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
+		SpatialGDK::FSubView& WellKnownSubView =
+            Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
+                                                       SpatialGDK::FSubView::NoDispatcherCallbacks);
+
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, USpatialLatencyTracer::GetTracer(GetWorld()),
 															   Connection->GetEventTracer(), this);
 
@@ -531,6 +535,15 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
 		Dispatcher->Init(SpatialWorkerFlags);
+
+		if (!IsServer())
+		{
+			const SpatialGDK::FSubView& PlayerControllerSubview =
+				Connection->GetCoordinator().CreateSubView(SpatialConstants::PLAYER_CONTROLLER_SERVER_COMPONENT_ID,
+														   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+			ServerCrashHandler = MakeUnique<SpatialGDK::ServerCrashHandler>(WellKnownSubView, PlayerControllerSubview, this);
+		}
+
 		Sender->Init(this, &TimerManager, Connection->GetEventTracer());
 		Receiver->Init(this, Connection->GetEventTracer());
 		GlobalStateManager->Init(this);
@@ -558,10 +571,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		{
 			return;
 		}
-
-		SpatialGDK::FSubView& WellKnownSubView =
-			Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
-													   SpatialGDK::FSubView::NoDispatcherCallbacks);
 
 		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(
 			WellKnownSubView, SystemEntitySubview, Connection, LoadBalanceStrategy->GetMinimumRequiredWorkers(), *VirtualWorkerTranslator, *GlobalStateManager);
@@ -2116,6 +2125,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			if (ClientConnectionManager.IsValid())
 			{
 				ClientConnectionManager->Advance();
+			}
+
+			if (ServerCrashHandler.IsValid())
+			{
+				ServerCrashHandler->Advance();
 			}
 
 			if (ActorSystem.IsValid())

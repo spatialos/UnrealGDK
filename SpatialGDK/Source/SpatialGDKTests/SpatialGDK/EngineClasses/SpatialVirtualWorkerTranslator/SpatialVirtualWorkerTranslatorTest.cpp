@@ -78,7 +78,7 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_receiving_empty_mapping_THEN_
 
 	// Now apply the mapping to the translator and test the result. Because the mapping is empty,
 	// it should ignore the mapping and continue to report an empty mapping.
-	Translator->ApplyVirtualWorkerManagerData(TranslationData);
+	Translator->ApplyVirtualWorkerTranslation(TranslationData);
 
 	TestEqual<VirtualWorkerId>("Local virtual worker ID is not known.", Translator->GetLocalVirtualWorkerId(),
 							   SpatialConstants::INVALID_VIRTUAL_WORKER_ID);
@@ -103,10 +103,10 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_no_mapping_WHEN_a_valid_mapping_is_received_T
 									   SpatialConstants::INVALID_ENTITY_ID };
 
 	const TArray<SpatialGDK::VirtualWorkerInfo> VirtualWorkerList{ VirtualWorkerOne, VirtualWorkerTwo };
-	const SpatialGDK::VirtualWorkerTranslation TranslationData = SpatialGDK::VirtualWorkerTranslation(VirtualWorkerList);
+	const SpatialGDK::VirtualWorkerTranslation TranslationData(VirtualWorkerList, 0);
 
 	// Now apply the mapping to the translator and test the result.
-	Translator->ApplyVirtualWorkerManagerData(TranslationData);
+	Translator->ApplyVirtualWorkerTranslation(TranslationData);
 
 	const PhysicalWorkerName* VirtualWorker1PhysicalName = Translator->GetPhysicalWorkerForVirtualWorker(1);
 	TestNotNull("There is a mapping for virtual worker 1", VirtualWorker1PhysicalName);
@@ -140,10 +140,10 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_another_valid_mappi
 									   SpatialConstants::INVALID_ENTITY_ID };
 
 	const TArray<SpatialGDK::VirtualWorkerInfo> VirtualWorkerList{ VirtualWorkerOne, VirtualWorkerTwo };
-	const SpatialGDK::VirtualWorkerTranslation TranslationData = SpatialGDK::VirtualWorkerTranslation(VirtualWorkerList);
+	const SpatialGDK::VirtualWorkerTranslation TranslationData(VirtualWorkerList, 0);
 
 	// Apply valid mapping to the translator.
-	Translator->ApplyVirtualWorkerManagerData(TranslationData);
+	Translator->ApplyVirtualWorkerTranslation(TranslationData);
 	const SpatialGDK::VirtualWorkerInfo OtherVirtualWorkerOne =
 		SpatialGDK::VirtualWorkerInfo{ 1, ValidWorkerOne, SpatialConstants::INVALID_ENTITY_ID, WorkerOneId,
 									   SpatialConstants::INVALID_ENTITY_ID };
@@ -152,9 +152,10 @@ VIRTUALWORKERTRANSLATOR_TEST(GIVEN_have_a_valid_mapping_WHEN_another_valid_mappi
 									   SpatialConstants::INVALID_ENTITY_ID };
 
 	const TArray<SpatialGDK::VirtualWorkerInfo> OtherVirtualWorkerList{ OtherVirtualWorkerOne, OtherVirtualWorkerThree };
+	const SpatialGDK::VirtualWorkerTranslation OtherTranslationData(OtherVirtualWorkerList, 0);
 
 	// Apply valid mapping to the translator.
-	Translator->ApplyVirtualWorkerManagerData(OtherVirtualWorkerList);
+	Translator->ApplyVirtualWorkerTranslation(OtherTranslationData);
 
 	// Translator should return the values from the new mapping
 	const PhysicalWorkerName* VirtualWorker1PhysicalName = Translator->GetPhysicalWorkerForVirtualWorker(1);

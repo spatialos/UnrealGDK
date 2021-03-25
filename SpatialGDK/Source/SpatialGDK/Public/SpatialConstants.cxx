@@ -144,7 +144,13 @@ TArray<Worker_ComponentId>{ // RPCs from the server
                             SERVER_ENDPOINT_COMPONENT_ID,
 
                             // Actor tags
-                            ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID
+                            ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
+
+                            // Knowing authoritative server system entity ID
+                            PLAYER_CONTROLLER_SERVER_COMPONENT_ID,
+
+                            // Checking when the client's authoritative server might have disconnected.
+                            SERVER_WORKER_COMPONENT_ID
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST = TArray<Worker_ComponentId>{
@@ -196,6 +202,7 @@ const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
     "unreal/gdk/debug_metrics.schema",
     "unreal/gdk/net_owning_client_worker.schema",
     "unreal/gdk/not_streamed.schema",
+    "unreal/gdk/player_controller.schema",
     "unreal/gdk/query_tags.schema",
     "unreal/gdk/relevant.schema",
     "unreal/gdk/rpc_components.schema",
@@ -228,6 +235,7 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
     { UNREAL_METADATA_COMPONENT_ID, "unreal.UnrealMetadata" },
     { ACTOR_GROUP_MEMBER_COMPONENT_ID, "unreal.ActorGroupMember" },
     { ACTOR_SET_MEMBER_COMPONENT_ID, "unreal.ActorSetMember" },
+    { PLAYER_CONTROLLER_SERVER_COMPONENT_ID, "unreal.PlayerControllerServer" },
     { SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },
     { MULTICAST_RPCS_COMPONENT_ID, "unreal.generated.UnrealMulticastRPCs" },
     { SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },

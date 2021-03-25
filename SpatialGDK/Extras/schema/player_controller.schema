@@ -4,3 +4,8 @@ package unreal;
 component PlayerController {
     id = 9991;
 }
+
+component PlayerControllerServer {
+    id = 9989;
+    EntityId auth_server_worker_entity_id = 1;
+}

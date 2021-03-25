@@ -17,6 +17,7 @@ SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(S
 	: Translator(InTranslator)
 	, Connection(InConnection)
 	, VirtualToPhysicalWorkerMapping({})
+	, TotalServerCrashCount(0)
 	, NumVirtualWorkers(0)
 	, bWorkerEntityQueryInFlight(false)
 	, ClaimPartitionHandler(*InConnection)
@@ -66,7 +67,7 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Compo
 	// so we're ready to reassign the virtual worker when the replacement server starts.
 	else if (Translator->IsReady())
 	{
-		// Because we've this server has just gained authority, the local VTM state will be empty, so we copy over
+		// Because this server has just gained authority, the local VTM state will be empty, so we copy over
 		// from the translator.
 		VirtualToPhysicalWorkerMapping = Translator->VirtualToPhysicalWorkerMapping;
 
@@ -92,13 +93,15 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Compo
 	}
 }
 
-void SpatialVirtualWorkerTranslationManager::SetKnownServerSystemEntities(TArray<Worker_EntityId> ServerSystemEntities)
+void SpatialVirtualWorkerTranslationManager::SetKnownServerSystemEntities(const TArray<Worker_EntityId>& ServerSystemEntities)
 {
 	KnownServerSystemEntities = ServerSystemEntities;
 }
 
-void SpatialVirtualWorkerTranslationManager::OnWorkerDisconnected(const Worker_EntityId DisconnectedSystemEntityId)
+void SpatialVirtualWorkerTranslationManager::OnSystemEntityRemoved(const Worker_EntityId DisconnectedSystemEntityId)
 {
+	uint32 DisconnectedServers = 0;
+
 	// If we finish this loop without hitting anything, we assume it's a client that disconnected.
 	for (auto& VirtualWorkerInfo : VirtualToPhysicalWorkerMapping)
 	{
@@ -111,55 +114,64 @@ void SpatialVirtualWorkerTranslationManager::OnWorkerDisconnected(const Worker_E
 			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT(" - system entity %lld"),
 				   VirtualWorkerInfo.Value.ServerSystemWorkerEntity);
 
-			ReclaimCrashedVirtualWorker(VirtualWorkerInfo.Key);
+			CleanupUnhandledVirtualWorker(VirtualWorkerInfo.Key);
+
+			DisconnectedServers++;
 		}
 	}
+
+	TotalServerCrashCount += DisconnectedServers;
+
+	SendVirtualWorkerMappingUpdate();
 }
 
 void SpatialVirtualWorkerTranslationManager::CleanupTranslatorMappingAfterAuthorityChange()
 {
-	TArray<VirtualWorkerId> CrashedVirtualWorkers;
+	TArray<VirtualWorkerId> MissingVirtualWorkers;
 
 	for (auto& VirtualWorkerInfo : VirtualToPhysicalWorkerMapping)
 	{
 		if (!KnownServerSystemEntities.Contains(VirtualWorkerInfo.Value.ServerSystemWorkerEntity))
 		{
-			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT(" - detected crashed virtual worker %ld"),
-				   VirtualWorkerInfo.Key);
-			CrashedVirtualWorkers.Add(VirtualWorkerInfo.Key);
+			UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning,
+				   TEXT(" - detected virtual worker %ld with missing auth server system entity ID"), VirtualWorkerInfo.Key);
+			MissingVirtualWorkers.Add(VirtualWorkerInfo.Key);
 		}
 	}
 
-	// In a different loop in case multiple servers crashed that we're trying to clean up, and we don't want to mess with
-	for (const auto& VirtualWorkerId : CrashedVirtualWorkers)
+	// This is a different loop in case multiple partitions are now missing auth server system entities, and we don't
+	// want to mess with deleting from collections while iterating through them.
+	for (const auto& VirtualWorkerId : MissingVirtualWorkers)
 	{
-		ReclaimCrashedVirtualWorker(VirtualWorkerId);
+		CleanupUnhandledVirtualWorker(VirtualWorkerId);
 	}
+
+	TotalServerCrashCount += MissingVirtualWorkers.Num();
+
+	SendVirtualWorkerMappingUpdate();
 }
 
-void SpatialVirtualWorkerTranslationManager::ReclaimCrashedVirtualWorker(const VirtualWorkerId VirtualWorker)
+void SpatialVirtualWorkerTranslationManager::CleanupUnhandledVirtualWorker(const VirtualWorkerId VirtualWorker)
 {
 	// Get the current translator mapping for the relevant virtual worker.
 	SpatialGDK::VirtualWorkerInfo* VirtualWorkerMappingInfo = VirtualToPhysicalWorkerMapping.Find(VirtualWorker);
-	if (VirtualWorkerMappingInfo == nullptr)
-	{
-		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Error,
-			   TEXT("Failed to unset virtual worker %ld translator mapping after server crash. Could not find mapping."), VirtualWorker);
-		return;
-	}
+	checkf(VirtualWorkerMappingInfo != nullptr,
+		   TEXT("Failed to unset virtual worker %ld translator mapping after auth server system entity detected missing. Could not find "
+				"mapping."),
+		   VirtualWorker);
 
 	// Delete the server worker entity for the crashed server.
-	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT(" - deleting crashed server worker entity: %lld"),
+	UE_LOG(LogSpatialVirtualWorkerTranslationManager, Warning, TEXT(" - deleting corresponding server worker entity: %lld"),
 		   VirtualWorkerMappingInfo->ServerWorkerEntity);
 	Translator->NetDriver->Connection->SendDeleteEntityRequest(VirtualWorkerMappingInfo->ServerWorkerEntity,
 															   SpatialGDK::RETRY_UNTIL_COMPLETE);
 
 	// Just tidying up internal state keeping.
-	// We could consider using this to broadcast to other servers that this virtual worker has crashed.
+	// In future, we could consider using this to broadcast to other servers that this virtual worker is now unhandled.
 	VirtualWorkerMappingInfo->PhysicalWorkerName = FString();
 	VirtualWorkerMappingInfo->ServerWorkerEntity = SpatialConstants::INVALID_ENTITY_ID;
 
-	// Add the corresponding virtual worker ID for the crashed server back into the unassigned list.
+	// Add the corresponding virtual worker ID for the missing server back into the unassigned list.
 	VirtualWorkersToAssign.Emplace(VirtualWorker);
 }
 
@@ -186,6 +198,8 @@ void SpatialVirtualWorkerTranslationManager::ResetVirtualWorkerMappingAfterSnaps
 			VirtualWorker, SpatialGDK::VirtualWorkerInfo{ VirtualWorker, FString(), SpatialConstants::INVALID_ENTITY_ID, PartitionId,
 														  SpatialConstants::INVALID_ENTITY_ID });
 	}
+
+	TotalServerCrashCount = 0;
 }
 
 void SpatialVirtualWorkerTranslationManager::Advance(const TArray<Worker_Op>& Ops)
@@ -245,7 +259,7 @@ bool SpatialVirtualWorkerTranslationManager::AllServerWorkersAreReady(const Work
 // system entity query, assign the VirtualWorkerIds to the workers represented by the system entities.
 void SpatialVirtualWorkerTranslationManager::AssignPartitionsToEachServerWorkerFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
-	TArray<TTuple<Worker_EntityId, SpatialGDK::ServerWorker>> ServerWorkers = ExtractServerWorkerDataFromQueryResponse(Op);
+	const TArray<TTuple<Worker_EntityId, SpatialGDK::ServerWorker>> ServerWorkers = ExtractServerWorkerDataFromQueryResponse(Op);
 
 	int ServerNum = 0;
 	for (auto& VirtualWorkerInfo : VirtualToPhysicalWorkerMapping)
@@ -306,11 +320,12 @@ void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate() co
 	// Serialize data internal state to component data
 	TArray<SpatialGDK::VirtualWorkerInfo> VirtualWorkerMappingList;
 	VirtualToPhysicalWorkerMapping.GenerateValueArray(VirtualWorkerMappingList);
-	const SpatialGDK::VirtualWorkerTranslation ComponentData = SpatialGDK::VirtualWorkerTranslation(VirtualWorkerMappingList);
+
+	const SpatialGDK::VirtualWorkerTranslation ComponentData(VirtualWorkerMappingList, TotalServerCrashCount);
 
 	// Loopback the component data to the local translator.
 	check(Translator != nullptr);
-	Translator->ApplyVirtualWorkerManagerData(ComponentData);
+	Translator->ApplyVirtualWorkerTranslation(ComponentData);
 
 	// Send to the Runtime.
 	check(Connection != nullptr);

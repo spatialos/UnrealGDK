@@ -85,9 +85,9 @@ void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAuthorityDelegation(con
 
 void SpatialLoadBalanceEnforcer::RefreshAuthority(const Worker_EntityId EntityId)
 {
-	const Worker_ComponentUpdate Update = CreateAuthorityDelegationUpdate(EntityId);
-
-	UpdateSender(EntityComponentUpdate{ EntityId, ComponentUpdate(OwningComponentUpdatePtr(Update.schema_type), Update.component_id) });
+	const Worker_ComponentUpdate DelegationUpdate = CreateAuthorityDelegationUpdate(EntityId);
+	UpdateSender(EntityComponentUpdate{
+		EntityId, ComponentUpdate(OwningComponentUpdatePtr(DelegationUpdate.schema_type), DelegationUpdate.component_id) });
 }
 
 Worker_ComponentUpdate SpatialLoadBalanceEnforcer::CreateAuthorityDelegationUpdate(const Worker_EntityId EntityId)

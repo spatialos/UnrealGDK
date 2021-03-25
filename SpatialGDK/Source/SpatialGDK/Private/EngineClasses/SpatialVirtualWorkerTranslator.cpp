@@ -6,7 +6,6 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialConstants.h"
-#include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslator);
 
@@ -51,7 +50,14 @@ Worker_EntityId SpatialVirtualWorkerTranslator::GetServerWorkerEntityForVirtualW
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(const SpatialGDK::VirtualWorkerTranslation& Translation)
+void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerTranslation(Schema_ComponentUpdate* Update)
+{
+	SpatialGDK::VirtualWorkerTranslation TranslationUpdate = SpatialGDK::VirtualWorkerTranslation();
+	TranslationUpdate.ApplyComponentUpdate(Update);
+	ApplyVirtualWorkerTranslation(TranslationUpdate);
+}
+
+void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerTranslation(const SpatialGDK::VirtualWorkerTranslation& Translation)
 {
 	UE_LOG(LogSpatialVirtualWorkerTranslator, Log, TEXT("ApplyVirtualWorkerManagerData for %s:"), *LocalPhysicalWorkerName);
 
@@ -59,6 +65,13 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(const Spatial
 	for (auto& VirtualWorkerInfo : Translation.VirtualWorkerMapping)
 	{
 		UpdateMapping(VirtualWorkerInfo);
+	}
+
+	if (Translation.TotalServerCrashCount > 0)
+	{
+		UE_LOG(LogSpatialVirtualWorkerTranslator, Error,
+			   TEXT("Translation update indicates at least %d servers have crashed during this deployment."),
+			   Translation.TotalServerCrashCount);
 	}
 
 #if !NO_LOGGING

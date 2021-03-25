@@ -8,8 +8,6 @@
 
 #include <WorkerSDK/improbable/c_schema.h>
 
-#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-
 namespace SpatialGDK
 {
 struct VirtualWorkerInfo
@@ -21,18 +19,21 @@ struct VirtualWorkerInfo
 	Worker_EntityId ServerSystemWorkerEntity;
 };
 
-// The SpatialDebugging component exists to hold information which needs to be displayed by the
-// SpatialDebugger on clients but which would not normally be available to clients.
 struct VirtualWorkerTranslation : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
 
 	VirtualWorkerTranslation()
 		: VirtualWorkerMapping({})
+		, TotalServerCrashCount(0)
 	{
 	}
 
-	VirtualWorkerTranslation(const TArray<VirtualWorkerInfo>& InVirtualWorkerMapping) { VirtualWorkerMapping = InVirtualWorkerMapping; }
+	VirtualWorkerTranslation(const TArray<VirtualWorkerInfo>& InVirtualWorkerMapping, uint32 InServerCrashCount)
+	{
+		VirtualWorkerMapping = InVirtualWorkerMapping;
+		TotalServerCrashCount = InServerCrashCount;
+	}
 
 	VirtualWorkerTranslation(const Worker_ComponentData& Data)
 		: VirtualWorkerTranslation(Data.schema_type)
@@ -63,18 +64,8 @@ struct VirtualWorkerTranslation : AbstractMutableComponent
 			VirtualWorkerMapping.Emplace(
 				VirtualWorkerInfo{ VirtualWorkerId, WorkerName, ServerWorkerEntityId, PartitionEntityId, SystemWorkerEntityId });
 		}
-	}
 
-	VirtualWorkerTranslation(const Worker_ComponentUpdate& Update)
-		: VirtualWorkerTranslation()
-	{
-		ApplyComponentUpdate(Update);
-	}
-
-	VirtualWorkerTranslation(Schema_ComponentUpdate* Update)
-		: VirtualWorkerTranslation()
-	{
-		ApplyComponentUpdate(Update);
+		TotalServerCrashCount = Schema_GetUint32(ComponentObject, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_CRASH_COUNT_ID);
 	}
 
 	Worker_ComponentData CreateComponentData() const
@@ -93,6 +84,8 @@ struct VirtualWorkerTranslation : AbstractMutableComponent
 			Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_PARTITION_ID, Entry.PartitionId);
 			Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_SYSTEM_WORKER_ENTITY_ID, Entry.ServerSystemWorkerEntity);
 		}
+
+		Schema_AddUint32(ComponentObject, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_CRASH_COUNT_ID, TotalServerCrashCount);
 
 		return Data;
 	}
@@ -113,6 +106,8 @@ struct VirtualWorkerTranslation : AbstractMutableComponent
 			Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_PARTITION_ID, Entry.PartitionId);
 			Schema_AddEntityId(EntryObject, SpatialConstants::MAPPING_SYSTEM_WORKER_ENTITY_ID, Entry.ServerSystemWorkerEntity);
 		}
+
+		Schema_AddUint32(ComponentObject, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_CRASH_COUNT_ID, TotalServerCrashCount);
 
 		return Update;
 	}
@@ -143,9 +138,12 @@ struct VirtualWorkerTranslation : AbstractMutableComponent
 			VirtualWorkerMapping.Emplace(
 				VirtualWorkerInfo{ VirtualWorkerId, WorkerName, ServerWorkerEntityId, PartitionEntityId, SystemWorkerEntityId });
 		}
+
+		TotalServerCrashCount = Schema_GetUint32(ComponentObject, SpatialConstants::VIRTUAL_WORKER_TRANSLATION_CRASH_COUNT_ID);
 	}
 
 	TArray<VirtualWorkerInfo> VirtualWorkerMapping;
+	uint32 TotalServerCrashCount;
 };
 
 } // namespace SpatialGDK

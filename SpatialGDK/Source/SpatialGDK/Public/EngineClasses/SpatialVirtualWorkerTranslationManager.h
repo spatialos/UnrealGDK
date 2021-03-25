@@ -6,6 +6,7 @@
 #include "Interop/ClaimPartitionHandler.h"
 #include "Interop/CreateEntityHandler.h"
 #include "Interop/EntityQueryHandler.h"
+#include "Schema/ServerWorker.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
@@ -14,8 +15,6 @@
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
-
-#include "Schema/ServerWorker.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialVirtualWorkerTranslationManager, Log, All)
 
@@ -48,7 +47,7 @@ public:
 
 	// Worker recovery.
 	void SetKnownServerSystemEntities(TArray<Worker_EntityId> ServerSystemEntities);
-	void OnWorkerDisconnected(const Worker_EntityId DisconnectedSystemEntityId);
+	void OnSystemEntityRemoved(const Worker_EntityId DisconnectedSystemEntityId);
 	void TryClaimPartitionForRecoveredWorker(const Worker_EntityId EntityId, Schema_ComponentData* ServerWorkerComponentData);
 
 	void SpawnPartitionEntitiesForVirtualWorkerIds();
@@ -63,6 +62,7 @@ private:
 
 	TArray<VirtualWorkerId> VirtualWorkersToAssign;
 	TMap<VirtualWorkerId, SpatialGDK::VirtualWorkerInfo> VirtualToPhysicalWorkerMapping;
+	uint32 TotalServerCrashCount;
 	uint32 NumVirtualWorkers;
 
 	bool bWorkerEntityQueryInFlight;
@@ -80,7 +80,7 @@ private:
 	void ResetVirtualWorkerMappingAfterSnapshotReset();
 
 	void CleanupTranslatorMappingAfterAuthorityChange();
-	void ReclaimCrashedVirtualWorker(const VirtualWorkerId VirtualWorker);
+	void CleanupUnhandledVirtualWorker(const VirtualWorkerId VirtualWorker);
 
 	static bool AllServerWorkersAreReady(const Worker_EntityQueryResponseOp& Op, uint32& ServerWorkersNotReady);
 	static TArray<TTuple<Worker_EntityId, SpatialGDK::ServerWorker>> ExtractServerWorkerDataFromQueryResponse(
