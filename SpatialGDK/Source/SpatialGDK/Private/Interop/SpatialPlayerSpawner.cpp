@@ -24,6 +24,8 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialPlayerSpawner);
 
 using namespace SpatialGDK;
@@ -31,6 +33,78 @@ using namespace SpatialGDK;
 void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
+	RequestHandler.AddRequestHandler(
+		SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID,
+		FOnCommandRequestWithOp::FDelegate::CreateUObject(this, &USpatialPlayerSpawner::OnPlayerSpawnCommandReceived));
+	RequestHandler.AddRequestHandler(
+		SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID,
+		FOnCommandRequestWithOp::FDelegate::CreateUObject(this, &USpatialPlayerSpawner::OnForwardedPlayerSpawnCommandReceived));
+
+	ResponseHandler.AddResponseHandler(
+		SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID,
+		FOnCommandResponseWithOp::FDelegate::CreateUObject(this, &USpatialPlayerSpawner::OnPlayerSpawnResponseReceived));
+	ResponseHandler.AddResponseHandler(
+		SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialConstants::SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID,
+		FOnCommandResponseWithOp::FDelegate::CreateUObject(this, &USpatialPlayerSpawner::OnForwardedPlayerSpawnResponseReceived));
+}
+
+void USpatialPlayerSpawner::Advance(const TArray<Worker_Op>& Ops)
+{
+	QueryHandler.ProcessOps(Ops);
+	RequestHandler.ProcessOps(Ops);
+	ResponseHandler.ProcessOps(Ops);
+}
+
+void USpatialPlayerSpawner::OnPlayerSpawnCommandReceived(const Worker_Op& Op, const Worker_CommandRequestOp& CommandRequestOp)
+{
+	ReceivePlayerSpawnRequestOnServer(CommandRequestOp);
+
+	SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+	if (EventTracer != nullptr)
+	{
+		EventTracer->TraceEvent(
+			FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SPAWN_PLAYER_COMMAND"), CommandRequestOp.request_id),
+			/* Causes */ Op.span_id, /* NumCauses */ 1);
+	}
+}
+
+void USpatialPlayerSpawner::OnPlayerSpawnResponseReceived(const Worker_Op& Op, const Worker_CommandResponseOp& CommandResponseOp)
+{
+	ReceivePlayerSpawnResponseOnClient(CommandResponseOp);
+
+	SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+	if (EventTracer != nullptr)
+	{
+		EventTracer->TraceEvent(
+			FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TEXT("SPAWN_PLAYER_COMMAND"), CommandResponseOp.request_id),
+			/* Causes */ EventTracer->GetAndConsumeSpanForRequestId(CommandResponseOp.request_id).GetConstId(),
+			/* NumCauses */ 1);
+	}
+}
+
+void USpatialPlayerSpawner::OnForwardedPlayerSpawnCommandReceived(const Worker_Op& Op, const Worker_CommandRequestOp& CommandRequestOp)
+{
+	ReceiveForwardedPlayerSpawnRequest(CommandRequestOp);
+
+	SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+	if (EventTracer != nullptr)
+	{
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"),
+																					   CommandRequestOp.request_id),
+								/* Causes */ Op.span_id, /* NumCauses */ 1);
+	}
+}
+
+void USpatialPlayerSpawner::OnForwardedPlayerSpawnResponseReceived(const Worker_Op& Op, const Worker_CommandResponseOp& CommandResponseOp)
+{
+	SpatialEventTracer* EventTracer = NetDriver->Connection->GetEventTracer();
+	if (EventTracer != nullptr)
+	{
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandResponse(TEXT("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND"),
+																						CommandResponseOp.request_id),
+								/* Causes */ EventTracer->GetAndConsumeSpanForRequestId(CommandResponseOp.request_id).GetConstId(), 1);
+	}
+	ReceiveForwardPlayerSpawnResponse(CommandResponseOp);
 }
 
 void USpatialPlayerSpawner::SendPlayerSpawnRequest()
@@ -74,7 +148,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	});
 
 	UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Sending player spawn request"));
-	NetDriver->Receiver->AddEntityQueryDelegate(RequestID, SpatialSpawnerQueryDelegate);
+	QueryHandler.AddRequest(RequestID, SpatialSpawnerQueryDelegate);
 }
 
 SpatialGDK::SpawnPlayerRequest USpatialPlayerSpawner::ObtainPlayerParams() const

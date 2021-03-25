@@ -49,21 +49,9 @@ class SPATIALGDK_API USpatialSender : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager, SpatialGDK::SpatialEventTracer* InEventTracer);
 
-	void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse& Response, const FSpatialGDKSpanId& CauseSpanId);
-	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId,
-								  const FSpatialGDKSpanId& CauseSpanId);
-	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message, const FSpatialGDKSpanId& CauseSpanId);
-
-	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
-	UFUNCTION()
-	void CreateServerWorkerEntity();
-	void RetryServerWorkerEntityCreation(Worker_EntityId EntityId, int AttemptCounter);
-
 	void UpdatePartitionEntityInterestAndPosition();
 
 	bool ValidateOrExit_IsSupportedClass(const FString& PathName);
-
-	void SendClaimPartitionRequest(Worker_EntityId SystemWorkerEntityId, Worker_PartitionId PartitionId) const;
 
 private:
 	UPROPERTY()
@@ -74,9 +62,6 @@ private:
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
-
-	UPROPERTY()
-	USpatialReceiver* Receiver;
 
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;

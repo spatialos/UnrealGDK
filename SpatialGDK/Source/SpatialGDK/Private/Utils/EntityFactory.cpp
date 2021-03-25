@@ -32,6 +32,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
 #include "Runtime/Launch/Resources/Version.h"
+#include "Schema/UnrealMetadata.h"
 
 DEFINE_LOG_CATEGORY(LogEntityFactory);
 

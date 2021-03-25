@@ -13,23 +13,16 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
-void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView,
-							 USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags)
+void SpatialDispatcher::Init(USpatialStaticComponentView* InStaticComponentView, USpatialWorkerFlags* InSpatialWorkerFlags)
 {
-	check(InReceiver != nullptr);
-	Receiver = InReceiver;
-
 	check(InStaticComponentView != nullptr);
 	StaticComponentView = InStaticComponentView;
 
-	check(InSpatialMetrics != nullptr);
-	SpatialMetrics = InSpatialMetrics;
 	SpatialWorkerFlags = InSpatialWorkerFlags;
 }
 
 void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 {
-	check(Receiver.IsValid());
 	check(StaticComponentView.IsValid());
 
 	for (const Worker_Op& Op : Ops)
@@ -64,14 +57,6 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			StaticComponentView->OnComponentUpdate(Op.op.component_update);
 			break;
 
-		// Commands
-		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			Receiver->OnCommandRequest(Op);
-			break;
-		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			Receiver->OnCommandResponse(Op);
-			break;
-
 		// Authority Change
 		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
 			// Update this worker's view of authority. We do this here as this is when the worker is first notified of the authority change.
@@ -80,18 +65,6 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			break;
 
 		// World Command Responses
-		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-			Receiver->OnReserveEntityIdsResponse(Op.op.reserve_entity_ids_response);
-			break;
-		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			Receiver->OnCreateEntityResponse(Op);
-			break;
-		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
-			break;
-		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
-			Receiver->OnEntityQueryResponse(Op.op.entity_query_response);
-			break;
-
 		case WORKER_OP_TYPE_FLAG_UPDATE:
 			if (Op.op.flag_update.value == nullptr)
 			{
@@ -101,14 +74,6 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 			{
 				SpatialWorkerFlags->SetWorkerFlag(UTF8_TO_TCHAR(Op.op.flag_update.name), UTF8_TO_TCHAR(Op.op.flag_update.value));
 			}
-			break;
-		case WORKER_OP_TYPE_METRICS:
-#if !UE_BUILD_SHIPPING
-			check(SpatialMetrics.IsValid());
-			SpatialMetrics->HandleWorkerMetrics(Op);
-#endif
-			break;
-		case WORKER_OP_TYPE_DISCONNECT:
 			break;
 		default:
 			break;

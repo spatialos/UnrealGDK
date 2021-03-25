@@ -1,12 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
+#include "ClaimPartitionHandler.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/RepDataUtils.h"
 
+#include "Interop/CreateEntityHandler.h"
+
 DECLARE_LOG_CATEGORY_EXTERN(LogActorSystem, Log, All);
+
+class USpatialClassInfoManager;
 
 struct FRepChangeState;
 struct FPendingSubobjectAttachment;
@@ -66,8 +71,13 @@ public:
 									  uint32& OutBytesWritten);
 	void SendRemoveComponentForClassInfo(Worker_EntityId EntityId, const FClassInfo& Info);
 
-	// Entity Creation
-	void SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten);
+	// Creating entities for actor channels
+	void SendCreateEntityRequest(USpatialActorChannel& ActorChannel, uint32& OutBytesWritten);
+	void OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpatialGDKSpanId CreateOpSpan);
+	bool HasPendingOpsForChannel(const USpatialActorChannel& ActorChannel) const;
+
+	static Worker_ComponentData CreateLevelComponentData(const AActor& Actor, const UWorld& NetDriverWorld,
+														 const USpatialClassInfoManager& ClassInfoManager);
 
 private:
 	// Helper struct to manage FSpatialObjectRepState update cycle.
@@ -138,8 +148,6 @@ private:
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 	static FString GetObjectNameFromRepState(const FSpatialObjectRepState& RepState);
 
-	Worker_RequestId CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten);
-	Worker_ComponentData CreateLevelComponentData(AActor* Actor);
 	void CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> EntityComponents);
 	static TArray<FWorkerComponentData> CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents);
 	static void DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents);
@@ -153,6 +161,11 @@ private:
 	const FSubView* TombstoneSubView;
 	USpatialNetDriver* NetDriver;
 	SpatialEventTracer* EventTracer;
+
+	CreateEntityHandler CreateEntityHandler;
+	ClaimPartitionHandler ClaimPartitionHandler;
+
+	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> CreateEntityRequestIdToActorChannel;
 
 	TMap<Worker_EntityId_Key, TSet<Worker_ComponentId>> PendingDynamicSubobjectComponents;
 

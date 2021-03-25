@@ -21,6 +21,8 @@ ClientConnectionManager::ClientConnectionManager(const FSubView& InSubView, USpa
 	: SubView(&InSubView)
 	, NetDriver(InNetDriver)
 {
+	ResponseHandler.AddResponseHandler(SpatialConstants::WORKER_COMPONENT_ID, SpatialConstants::WORKER_DISCONNECT_COMMAND_ID,
+									   FOnCommandResponseWithOp::FDelegate::CreateRaw(this, &ClientConnectionManager::OnRequestReceived));
 }
 
 void ClientConnectionManager::Advance()
@@ -34,6 +36,36 @@ void ClientConnectionManager::Advance()
 			EntityRemoved(Delta.EntityId);
 		default:
 			break;
+		}
+	}
+
+	ResponseHandler.ProcessOps(*SubViewDelta.WorkerMessages);
+}
+
+void ClientConnectionManager::OnRequestReceived(const Worker_Op&, const Worker_CommandResponseOp& CommandResponseOp)
+{
+	if (CommandResponseOp.response.component_id == SpatialConstants::WORKER_COMPONENT_ID)
+	{
+		if (CommandResponseOp.response.command_index == SpatialConstants::WORKER_DISCONNECT_COMMAND_ID)
+		{
+			const Worker_RequestId RequestId = CommandResponseOp.request_id;
+			Worker_EntityId ClientEntityId;
+			if (DisconnectRequestToConnectionEntityId.RemoveAndCopyValue(RequestId, ClientEntityId))
+			{
+				if (CommandResponseOp.status_code == WORKER_STATUS_CODE_SUCCESS)
+				{
+					TWeakObjectPtr<USpatialNetConnection> ClientConnection = FindClientConnectionFromWorkerEntityId(ClientEntityId);
+					if (ClientConnection.IsValid())
+					{
+						ClientConnection->CleanUp();
+					};
+				}
+				else
+				{
+					UE_LOG(LogWorkerEntitySystem, Error, TEXT("SystemEntityCommand failed: request id: %d, message: %s"), RequestId,
+						   UTF8_TO_TCHAR(CommandResponseOp.message));
+				}
+			}
 		}
 	}
 }
@@ -57,18 +89,10 @@ void ClientConnectionManager::DisconnectPlayer(Worker_EntityId ClientEntityId)
 	Request.component_id = SpatialConstants::WORKER_COMPONENT_ID;
 	Request.command_index = SpatialConstants::WORKER_DISCONNECT_COMMAND_ID;
 	Request.schema_type = Schema_CreateCommandRequest();
-	Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(ClientEntityId, &Request, RETRY_UNTIL_COMPLETE, {});
 
-	SystemEntityCommandDelegate CommandResponseDelegate;
-	CommandResponseDelegate.BindLambda([this, ClientEntityId](const Worker_CommandResponseOp&) {
-		TWeakObjectPtr<USpatialNetConnection> ClientConnection = FindClientConnectionFromWorkerEntityId(ClientEntityId);
-		if (ClientConnection.IsValid())
-		{
-			ClientConnection->CleanUp();
-		}
-	});
+	const Worker_RequestId RequestId = NetDriver->Connection->SendCommandRequest(ClientEntityId, &Request, RETRY_UNTIL_COMPLETE, {});
 
-	NetDriver->Receiver->AddSystemEntityCommandDelegate(RequestId, CommandResponseDelegate);
+	DisconnectRequestToConnectionEntityId.Add(RequestId, ClientEntityId);
 }
 
 void ClientConnectionManager::EntityRemoved(const Worker_EntityId EntityId)
