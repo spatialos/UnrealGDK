@@ -88,11 +88,13 @@ void ViewCoordinator::RefreshEntityCompleteness(Worker_EntityId EntityId)
 const ComponentData* ViewCoordinator::GetComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
 {
 	const EntityViewElement* EntityDataPtr = GetView().Find(EntityId);
+
 	if (EntityDataPtr != nullptr)
 	{
 		return EntityDataPtr->Components.FindByPredicate(ComponentIdEquality{ ComponentId });
 	}
-	return {};
+
+	return nullptr;
 }
 
 void ViewCoordinator::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId)
