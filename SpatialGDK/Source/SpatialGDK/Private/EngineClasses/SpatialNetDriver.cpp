@@ -14,6 +14,7 @@
 #include "UObject/UObjectIterator.h"
 #include "UObject/WeakObjectPtrTemplates.h"
 
+#include "Algo/AnyOf.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -28,8 +29,10 @@
 #include "Interop/ClientConnectionManager.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/DebugMetricsSystem.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/InitialOnlyFilter.h"
+#include "Interop/MigrationDiagnosticsSystem.h"
 #include "Interop/RPCExecutor.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialDispatcher.h"
@@ -40,6 +43,7 @@
 #include "Interop/SpatialRoutingSystem.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialSnapshotManager.h"
+#include "Interop/SpatialStrategySystem.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
@@ -445,7 +449,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		if (SpatialSettings->bEnableInitialOnlyReplicationCondition && !IsServer())
 		{
-			InitialOnlyFilter = MakeUnique<SpatialGDK::InitialOnlyFilter>(*Connection, *Receiver);
+			InitialOnlyFilter = MakeUnique<SpatialGDK::InitialOnlyFilter>(*Connection);
 		}
 
 		CreateAndInitializeLoadBalancingClasses();
@@ -521,11 +525,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
-		Dispatcher->Init(Receiver, StaticComponentView, SpatialMetrics, SpatialWorkerFlags);
+		Dispatcher->Init(StaticComponentView, SpatialWorkerFlags);
 		Sender->Init(this, &TimerManager, Connection->GetEventTracer());
 		Receiver->Init(this, Connection->GetEventTracer());
 		GlobalStateManager->Init(this);
-		SnapshotManager->Init(Connection, GlobalStateManager, Receiver);
+		SnapshotManager->Init(Connection, GlobalStateManager);
 		PlayerSpawner->Init(this);
 		PlayerSpawner->OnPlayerSpawnFailed.BindUObject(GameInstance, &USpatialGameInstance::HandleOnPlayerSpawnFailed);
 
@@ -539,7 +543,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		PackageMap->Init(this, &TimerManager);
 		if (IsServer())
 		{
-			PackageMap->GetEntityPoolReadyDelegate().AddDynamic(Sender, &USpatialSender::CreateServerWorkerEntity);
+			PackageMap->GetEntityPoolReadyDelegate().AddUObject(Connection, &USpatialWorkerConnection::CreateServerWorkerEntity);
 		}
 
 		// The interest factory depends on the package map, so is created last.
@@ -553,9 +557,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		SpatialGDK::FSubView& WellKnownSubView =
 			Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
 													   SpatialGDK::FSubView::NoDispatcherCallbacks);
-		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, Receiver, Connection,
-																			  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
-																			  *VirtualWorkerTranslator, *GlobalStateManager);
+		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(
+			WellKnownSubView, Connection, LoadBalanceStrategy->GetMinimumRequiredWorkers(), *VirtualWorkerTranslator, *GlobalStateManager);
 	}
 }
 
@@ -1030,6 +1033,14 @@ void USpatialNetDriver::BeginDestroy()
 		if (RoutingSystem)
 		{
 			RoutingSystem->Destroy(Connection);
+
+			Connection->Flush();
+			FPlatformProcess::Sleep(0.1f);
+		}
+
+		if (StrategySystem)
+		{
+			StrategySystem->Destroy(Connection);
 
 			Connection->Flush();
 			FPlatformProcess::Sleep(0.1f);
@@ -2064,11 +2075,6 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				ActorSystem->Advance();
 			}
 
-			if (SpatialDebuggerSystem.IsValid())
-			{
-				SpatialDebuggerSystem->Advance();
-			}
-
 			{
 				SCOPE_CYCLE_COUNTER(STAT_SpatialProcessOps);
 				Dispatcher->ProcessOps(GetOpsFromEntityDeltas(Connection->GetEntityDeltas()));
@@ -2085,11 +2091,51 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			{
 				WellKnownEntitySystem->Advance();
 			}
+
+			if (IsValid(PlayerSpawner))
+			{
+				PlayerSpawner->Advance(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
+			}
+
+			if (IsValid(GlobalStateManager))
+			{
+				GlobalStateManager->Advance();
+			}
+
+			if (SnapshotManager.IsValid())
+			{
+				SnapshotManager->Advance();
+			}
+
+			if (SpatialDebuggerSystem.IsValid())
+			{
+				SpatialDebuggerSystem->Advance();
+			}
+
+			{
+				const SpatialGDK::MigrationDiagnosticsSystem MigrationDiagnosticsSystem(*this);
+				MigrationDiagnosticsSystem.ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
+			}
+
+			{
+				const SpatialGDK::DebugMetricsSystem DebugMetricsSystem(*this);
+				DebugMetricsSystem.ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
+			}
 		}
 
 		if (RoutingSystem.IsValid())
 		{
 			RoutingSystem->Advance(Connection);
+		}
+
+		if (StrategySystem.IsValid())
+		{
+			StrategySystem->Advance(Connection);
+		}
+
+		if (IsValid(PackageMap))
+		{
+			PackageMap->Advance();
 		}
 
 		if (!bIsReadyToStart)
@@ -2111,6 +2157,8 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			InitialOnlyFilter->FlushRequests();
 		}
+
+		QueryHandler.ProcessOps(Connection->GetWorkerMessages());
 	}
 }
 
@@ -2242,6 +2290,10 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		if (GameInstance->GetSpatialWorkerType() == SpatialConstants::RoutingWorkerType)
 		{
 			RoutingSystem->Flush(Connection);
+		}
+		else if (GameInstance->GetSpatialWorkerType() == SpatialConstants::StrategyWorkerType)
+		{
+			StrategySystem->Flush(Connection);
 		}
 		else
 		{
@@ -2386,12 +2438,13 @@ void USpatialNetDriver::ProcessPendingDormancy()
 	decltype(PendingDormantChannels) RemainingChannels;
 	for (auto& PendingDormantChannel : PendingDormantChannels)
 	{
-		if (PendingDormantChannel.IsValid())
+		USpatialActorChannel* Channel = PendingDormantChannel.Get();
+
+		if (IsValid(Channel))
 		{
-			USpatialActorChannel* Channel = PendingDormantChannel.Get();
 			if (Channel->Actor != nullptr)
 			{
-				if (Receiver->IsPendingOpsOnChannel(*Channel))
+				if (ActorSystem->HasPendingOpsForChannel(*Channel))
 				{
 					RemainingChannels.Emplace(PendingDormantChannel);
 					continue;
@@ -2840,130 +2893,6 @@ void USpatialNetDriver::DelayedRetireEntity(Worker_EntityId EntityId, float Dela
 		Delay, false);
 }
 
-void USpatialNetDriver::QueryRoutingPartition()
-{
-	if (bRoutingWorkerQueryInFlight)
-	{
-		// Only allow one in flight query. Retries will be handled by the SpatialNetDriver.
-		return;
-	}
-
-	if (RoutingWorkerId == 0)
-	{
-		Worker_ComponentConstraint ComponentConstraint{};
-		ComponentConstraint.component_id = SpatialConstants::WORKER_COMPONENT_ID;
-
-		Worker_Constraint Constraint{};
-		Constraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
-		Constraint.constraint.component_constraint = ComponentConstraint;
-
-		Worker_EntityQuery Query{};
-		Query.constraint = Constraint;
-
-		Worker_RequestId RequestID = Connection->SendEntityQueryRequest(&Query, SpatialGDK::RETRY_UNTIL_COMPLETE);
-		bRoutingWorkerQueryInFlight = true;
-
-		TWeakObjectPtr<USpatialNetDriver> WeakNetDriver(this);
-		EntityQueryDelegate RoutingWorkerQueryDelegate;
-		RoutingWorkerQueryDelegate.BindLambda([WeakNetDriver](const Worker_EntityQueryResponseOp& Op) {
-			if (!WeakNetDriver.IsValid())
-			{
-				return;
-			}
-
-			USpatialNetDriver* NetDriver = WeakNetDriver.Get();
-			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS && Op.status_code != WORKER_STATUS_CODE_TIMEOUT
-				&& Op.status_code != WORKER_STATUS_CODE_NOT_FOUND)
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error,
-					   TEXT("Command to find routing worker unexpectedly failed with error %i. Startup will fail, quitting"),
-					   Op.status_code);
-				NetDriver->ClassInfoManager->QuitGame();
-			}
-			else if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
-			{
-				for (uint32_t i = 0; i < Op.result_count; ++i)
-				{
-					const Worker_Entity& Entity = Op.results[i];
-					for (uint32_t j = 0; j < Entity.component_count; ++j)
-					{
-						const Worker_ComponentData& ComponentData = Entity.components[j];
-						if (ComponentData.component_id == SpatialConstants::WORKER_COMPONENT_ID)
-						{
-							Schema_Object* Fields = Schema_GetComponentDataFields(ComponentData.schema_type);
-							FString WorkerId = SpatialGDK::GetStringFromSchema(Fields, SpatialConstants::WORKER_COMPONENT_WORKER_ID_ID);
-							FString WorkerType = SpatialGDK::GetStringFromSchema(Fields, SpatialConstants::WORKER_COMPONENT_WORKER_TYPE_ID);
-							if (WorkerType == SpatialConstants::RoutingWorkerType.ToString())
-							{
-								NetDriver->RoutingWorkerId = Entity.entity_id;
-								NetDriver->QueryRoutingPartition();
-							}
-						}
-					}
-				}
-			}
-			NetDriver->bRoutingWorkerQueryInFlight = false;
-		});
-		Receiver->AddEntityQueryDelegate(RequestID, RoutingWorkerQueryDelegate);
-	}
-	else if (RoutingPartition == 0)
-	{
-		Worker_ComponentConstraint ComponentConstraint{};
-		ComponentConstraint.component_id = SpatialConstants::PARTITION_COMPONENT_ID;
-
-		Worker_Constraint Constraint{};
-		Constraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
-		Constraint.constraint.component_constraint = ComponentConstraint;
-
-		Worker_EntityQuery Query{};
-		Query.constraint = Constraint;
-
-		Worker_RequestId RequestID = Connection->SendEntityQueryRequest(&Query, SpatialGDK::RETRY_UNTIL_COMPLETE);
-		bRoutingWorkerQueryInFlight = true;
-
-		TWeakObjectPtr<USpatialNetDriver> WeakNetDriver(this);
-		EntityQueryDelegate RoutingWorkerQueryDelegate;
-		RoutingWorkerQueryDelegate.BindLambda([WeakNetDriver](const Worker_EntityQueryResponseOp& Op) {
-			if (!WeakNetDriver.IsValid())
-			{
-				return;
-			}
-
-			USpatialNetDriver* NetDriver = WeakNetDriver.Get();
-			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS && Op.status_code != WORKER_STATUS_CODE_TIMEOUT
-				&& Op.status_code != WORKER_STATUS_CODE_NOT_FOUND)
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error,
-					   TEXT("Command to find routing partition unexpectedly failed with error code %i. Startup will fail, quitting"),
-					   Op.status_code);
-				NetDriver->ClassInfoManager->QuitGame();
-			}
-			else if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
-			{
-				for (uint32_t i = 0; i < Op.result_count; ++i)
-				{
-					const Worker_Entity& Entity = Op.results[i];
-					for (uint32_t j = 0; j < Entity.component_count; ++j)
-					{
-						const Worker_ComponentData& ComponentData = Entity.components[j];
-						if (ComponentData.component_id == SpatialConstants::PARTITION_COMPONENT_ID)
-						{
-							Schema_Object* Fields = Schema_GetComponentDataFields(ComponentData.schema_type);
-							int64 WorkerId = Schema_GetInt64(Fields, SpatialConstants::PARTITION_COMPONENT_WORKER_ID);
-							if (WorkerId == NetDriver->RoutingWorkerId)
-							{
-								NetDriver->RoutingPartition = Entity.entity_id;
-							}
-						}
-					}
-				}
-			}
-			NetDriver->bRoutingWorkerQueryInFlight = false;
-		});
-		Receiver->AddEntityQueryDelegate(RequestID, RoutingWorkerQueryDelegate);
-	}
-}
-
 void USpatialNetDriver::TryFinishStartup()
 {
 	// Limit Log frequency.
@@ -2992,6 +2921,20 @@ void USpatialNetDriver::TryFinishStartup()
 			Connection->SetStartupComplete();
 		}
 
+		if (WorkerType == SpatialConstants::StrategyWorkerType)
+		{
+			SpatialGDK::FSubView& NewView =
+				Connection->GetCoordinator().CreateSubView(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
+														   [](const Worker_EntityId, const SpatialGDK::EntityViewElement&) {
+															   return true;
+														   },
+														   {});
+
+			StrategySystem = MakeUnique<SpatialGDK::SpatialStrategySystem>(NewView, Connection->GetWorkerSystemEntityId(), Connection);
+			bIsReadyToStart = true;
+			Connection->SetStartupComplete();
+		}
+
 		if (WorkerType == SpatialConstants::DefaultServerWorkerType)
 		{
 			if (!PackageMap->IsEntityPoolReady())
@@ -3010,10 +2953,6 @@ void USpatialNetDriver::TryFinishStartup()
 			else if (!Connection->GetCoordinator().HasEntity(VirtualWorkerTranslator->GetClaimedPartitionId()))
 			{
 				UE_CLOG(bShouldLogStartup, LogSpatialOSNetDriver, Log, TEXT("Waiting for the partition entity to be ready."));
-			}
-			else if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker && RoutingPartition == 0)
-			{
-				QueryRoutingPartition();
 			}
 			else
 			{
@@ -3178,11 +3117,6 @@ FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 		}
 	}
 	return FUnrealObjectRef::NULL_OBJECT_REF;
-}
-
-Worker_PartitionId USpatialNetDriver::GetRoutingPartition()
-{
-	return RoutingPartition;
 }
 
 void USpatialNetDriver::PushCrossServerRPCSender(AActor* SenderActor)

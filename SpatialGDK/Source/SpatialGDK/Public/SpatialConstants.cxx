@@ -70,6 +70,7 @@ const PhysicalWorkerName TRANSLATOR_UNSET_PHYSICAL_NAME = FString("UnsetWorkerNa
 const FName DefaultLayer = FName(TEXT("DefaultLayer"));
 
 const FName RoutingWorkerType(TEXT("RoutingWorker"));
+const FName StrategyWorkerType(TEXT("StrategyWorker"));
 
 const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 const FString SpatialSessionIdURLOption = TEXT("spatialSessionId=");
