@@ -53,7 +53,6 @@ public:
 
 	void Advance();
 	void ShortCircuitMaybeRefreshAuthorityDelegation(const Worker_EntityId EntityId);
-	const LBComponents* GetLoadBalancingComponents(const Worker_EntityId EntityId) const;
 
 private:
 	void PopulateDataStore(const Worker_EntityId EntityId);

@@ -102,10 +102,10 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
-	const LBComponents* LoadBalancingComponents = NetDriver->LoadBalanceEnforcer->GetLoadBalancingComponents(EntityId);
-	check(LoadBalancingComponents != nullptr);
-	AuthorityIntent AuthorityIntentComponent = LoadBalancingComponents->Intent;
-	if (AuthorityIntentComponent.VirtualWorkerId == NewAuthoritativeVirtualWorkerId)
+	TOptional<AuthorityIntent> AuthorityIntentComponent =
+		DeserializeComponent<AuthorityIntent>(NetDriver->Connection->GetCoordinator(), EntityId);
+	check(AuthorityIntentComponent.IsSet());
+	if (AuthorityIntentComponent->VirtualWorkerId == NewAuthoritativeVirtualWorkerId)
 	{
 		/* This seems to occur when using the replication graph, however we're still unsure the cause. */
 		UE_LOG(LogSpatialSender, Error,
@@ -114,12 +114,12 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 		return;
 	}
 
-	AuthorityIntentComponent.VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
+	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
 	UE_LOG(LogSpatialSender, Log,
 		   TEXT("(%s) Sending AuthorityIntent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
 		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
 
-	FWorkerComponentUpdate Update = AuthorityIntentComponent.CreateAuthorityIntentUpdate();
+	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)

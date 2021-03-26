@@ -83,11 +83,6 @@ void SpatialLoadBalanceEnforcer::ShortCircuitMaybeRefreshAuthorityDelegation(con
 	}
 }
 
-const LBComponents* SpatialLoadBalanceEnforcer::GetLoadBalancingComponents(const Worker_EntityId EntityId) const
-{
-	return DataStore.Find(EntityId);
-}
-
 void SpatialLoadBalanceEnforcer::RefreshAuthority(const Worker_EntityId EntityId)
 {
 	const Worker_ComponentUpdate Update = CreateAuthorityDelegationUpdate(EntityId);

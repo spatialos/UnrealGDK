@@ -106,11 +106,12 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 					// If we are separated from our owner, it could be prevented from migrating (if it has interest over the current actor),
 					// so the load balancing strategy could give us a worker different from where it should be.
 					// Instead, we read its currently assigned worker, which will eventually make us land where our owner is.
-					Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
-					const LBComponents* OwnerComponents = NetDriver->LoadBalanceEnforcer->GetLoadBalancingComponents(OwnerId);
-					if (OwnerComponents != nullptr)
+					const Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+					const TOptional<AuthorityIntent> OwnerAuthorityIntent =
+						DeserializeComponent<AuthorityIntent>(NetDriver->Connection->GetCoordinator(), OwnerId);
+					if (OwnerAuthorityIntent.IsSet())
 					{
-						NewAuthVirtualWorkerId = OwnerComponents->Intent.VirtualWorkerId;
+						NewAuthVirtualWorkerId = OwnerAuthorityIntent->VirtualWorkerId;
 					}
 					else
 					{
@@ -275,10 +276,11 @@ VirtualWorkerId FSpatialLoadBalancingHandler::GetWorkerId(const AActor* NetOwner
 	else
 	{
 		const Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
-		const LBComponents* OwnerComponents = NetDriver->LoadBalanceEnforcer->GetLoadBalancingComponents(OwnerId);
-		if (OwnerComponents != nullptr)
+		const TOptional<AuthorityIntent> OwnerAuthorityIntent =
+			DeserializeComponent<AuthorityIntent>(NetDriver->Connection->GetCoordinator(), OwnerId);
+		if (OwnerAuthorityIntent.IsSet())
 		{
-			NewAuthVirtualWorkerId = OwnerComponents->Intent.VirtualWorkerId;
+			NewAuthVirtualWorkerId = OwnerAuthorityIntent->VirtualWorkerId;
 		}
 	}
 	return NewAuthVirtualWorkerId;
