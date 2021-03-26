@@ -53,10 +53,6 @@ void ASpatialTestReplicationConditions::PrepareTest()
 {
 	Super::PrepareTest();
 
-	bSpatialEnabled = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
-	ReplicationStage = STAGE_InitialReplication;
-	PropertyOffset = 0;
-
 	// Reusable steps
 	FSpatialFunctionalTestStepDefinition CheckOnNonAuthServerStepDefinition(/*bIsNativeDefinition*/ true);
 	CheckOnNonAuthServerStepDefinition.StepName = TEXT("ASpatialTestReplicationConditions Validate Test Actors On Non-Auth Server");
@@ -291,6 +287,16 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			const bool bPhysicsExpected = true; // Gets replicated through simulated status
 			ProcessPhysicsActorProperties(TestActor_PhysicsDisabled, bWrite, bPhysicsEnabled, bPhysicsExpected);
 		}
+
+		FinishStep();
+	});
+
+	// Setup initial test variables
+	AddStep(TEXT("ASpatialTestReplicationConditions Initial Test Setup"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
+
+		bSpatialEnabled = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+		ReplicationStage = STAGE_InitialReplication;
+		PropertyOffset = 0;
 
 		FinishStep();
 	});

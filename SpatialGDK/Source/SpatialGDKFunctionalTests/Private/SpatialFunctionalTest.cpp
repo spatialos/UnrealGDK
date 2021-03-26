@@ -482,6 +482,7 @@ FString ASpatialFunctionalTest::GetLocalWorkerString()
 		WorkerTypeName = TEXT("All");
 		break;
 	default:
+		UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("GetLocalWorkerString called on Invalid worker type on test %s"), *GetName());
 		WorkerTypeName = TEXT("Invalid");
 		break;
 	}
