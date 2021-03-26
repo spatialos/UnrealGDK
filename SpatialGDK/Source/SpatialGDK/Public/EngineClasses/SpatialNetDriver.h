@@ -42,7 +42,6 @@ class USpatialPackageMapClient;
 class USpatialPlayerSpawner;
 class USpatialReceiver;
 class USpatialSender;
-class USpatialStaticComponentView;
 class USpatialWorkerConnection;
 class USpatialWorkerFlags;
 
@@ -191,8 +190,6 @@ public:
 	USpatialPlayerSpawner* PlayerSpawner;
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
-	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
 	UPROPERTY()
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()

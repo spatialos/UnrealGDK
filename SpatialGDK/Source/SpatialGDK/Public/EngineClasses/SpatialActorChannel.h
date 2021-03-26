@@ -8,7 +8,6 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/ReserveEntityIdsHandler.h"
 #include "Interop/SpatialClassInfoManager.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/StandardLibrary.h"
