@@ -3,6 +3,7 @@ package unreal;
 
 import "unreal/gdk/core_types.schema";
 import "unreal/gdk/spawner.schema";
+import "unreal/generated/rpc_endpoints.schema";
 
 type ForwardSpawnPlayerRequest {
     SpawnPlayerRequest spawn_player_request = 1;
@@ -20,4 +21,15 @@ component ServerWorker {
     bool ready_to_begin_play = 2;
     EntityId server_system_entity_id = 3;
     command ForwardSpawnPlayerResponse forward_spawn_player(ForwardSpawnPlayerRequest);
+}
+
+component_set ServerWorkerAuthComponentSet {
+  id = 9908;
+  components = [
+	improbable.Position,
+	improbable.Metadata,
+	improbable.Interest,
+	unreal.ServerWorker,
+    unreal.generated.UnrealCrossServerSenderRPCs
+  ];
 }
