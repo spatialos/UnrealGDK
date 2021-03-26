@@ -116,6 +116,9 @@ public:
 	virtual void NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection) override;
 	virtual void OnOwnerUpdated(AActor* Actor, AActor* OldOwner) override;
 
+	virtual void NotifyActorLevelUnloaded(AActor* Actor) override;
+	virtual void NotifyStreamingLevelUnload(class ULevel* Level) override;
+
 	virtual void PushCrossServerRPCSender(AActor* Sender) override;
 	virtual void PopCrossServerRPCSender(AActor* Sender) override;
 	// End UNetDriver interface.
@@ -286,7 +289,7 @@ private:
 	bool bMapLoaded;
 
 	FString SnapshotToLoad;
-	
+
 	// Client variable which stores the SessionId given to us by the server in the URL options.
 	// Used to compare against the GSM SessionId to ensure the the server is ready to spawn players.
 	int32 SessionId;

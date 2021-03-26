@@ -4,6 +4,7 @@
 
 #include "Engine/ActorChannel.h"
 #include "Engine/Engine.h"
+#include "Engine/LevelScriptActor.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/NetworkObjectList.h"
 #include "EngineGlobals.h"
@@ -1250,6 +1251,48 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 	Channel->MarkInterestDirty();
 
 	OwnershipChangedEntities.Add(EntityId);
+}
+
+void USpatialNetDriver::NotifyActorLevelUnloaded(AActor* Actor)
+{
+	// Intentionally does not call Super::NotifyActorLevelUnloaded.
+	// The native UNetDriver breaks the channel on the client because it can't properly close it
+	// until the server does, but we can clean it up because we don't send data through the channels.
+	// Cleaning it up also removes the references to the entity and channel from our maps.
+
+	NotifyActorDestroyed(Actor, true);
+
+	if (ServerConnection != nullptr)
+	{
+		UActorChannel* Channel = ServerConnection->FindActorChannelRef(Actor);
+		if (Channel != nullptr)
+		{
+			Channel->ConditionalCleanUp(false, EChannelCloseReason::LevelUnloaded);
+		}
+	}
+}
+
+void USpatialNetDriver::NotifyStreamingLevelUnload(class ULevel* Level)
+{
+	// Native Unreal has a very specific bit of code in NotifyStreamingLevelUnload
+	// that will break the channel of the level script actor when garbage collecting
+	// a streaming level. Normally, the level script actor would be handled together
+	// with other actors and go through NotifyActorLevelUnloaded, but just in case
+	// that doesn't happen for whatever reason, we clean up the channel here before
+	// calling Super:: so we don't end up with a broken channel.
+	if (ServerConnection != nullptr)
+	{
+		if (Level->LevelScriptActor != nullptr)
+		{
+			UActorChannel* Channel = ServerConnection->FindActorChannelRef(Level->LevelScriptActor);
+			if (Channel != nullptr)
+			{
+				Channel->ConditionalCleanUp(false, EChannelCloseReason::LevelUnloaded);
+			}
+		}
+	}
+
+	Super::NotifyStreamingLevelUnload(Level);
 }
 
 void USpatialNetDriver::ProcessOwnershipChanges()

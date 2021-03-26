@@ -45,7 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where authority was not correctly delegated to sublevel world settings prior to BeginPlay being issued. This resulted in duplicate world settings entities being created.
 - Fixed an issue in the SpatialTestCharacterMovement test where trigger boxes sometimes wouldn't trigger.
 - Fixed an issue where dynamic components without handover or owneronly data weren't created on receiving workers.
-- Downgraded a check to an error in SpatialSender::SendAuthorityIntentUpdate with sending the same intent twice. 
+- Downgraded a check to an error in SpatialSender::SendAuthorityIntentUpdate when sending the same intent twice.
+- Fixed a client crash that sometimes occurred when quickly unloading and reloading sublevels.
 
 ## [`0.12.0`] - 2021-02-01
 
