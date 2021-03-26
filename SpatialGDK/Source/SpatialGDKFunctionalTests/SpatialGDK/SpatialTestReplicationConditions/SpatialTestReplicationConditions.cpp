@@ -10,8 +10,8 @@
 #include "Net/UnrealNetwork.h"
 
 /**
- * This tests that Unreal replication conditions.
- * This includes test for all replication conditions as defined in by ELifetimeCondition expect -
+ * This test tests Unreal replication conditions.
+ * This includes tests for all replication conditions as defined by ELifetimeCondition, except:
  * COND_InitialOnly - tested in SpatialTestInitialOnly
  * COND_InitialOrOwner - not supported in Spatial
  * COND_ReplayOnly - not relevant to Spatial
@@ -22,7 +22,7 @@
  *  - The test actors are spawned with both static and dynamic components.
  *  - The test actors are possessed by Client1
  * - Test:
- *  - The test actors are their properties initialized with unique starting values.
+ *  - The test actors have their properties initialized with unique starting values.
  *  - The non-auth server, owning client and non-owning client checks it can see the actors, components, and the values are correct.
  *  - The test actors have their properties updated to new unique values.
  *  - The non-auth server, owning client and non-owning client checks it can see the actors, components, and the values are correct.
