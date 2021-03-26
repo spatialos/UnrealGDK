@@ -1100,12 +1100,25 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	TestTrue("Schema bundle file successfully read",
 			 SpatialGDKEditor::Schema::ExtractComponentSetsFromSchemaJson(SchemaJsonPath, SchemaDatabase->ComponentSetIdToComponentIds));
 
-	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 9);
+	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 10);
 
-	TestTrue("Found spatial well known components", SchemaDatabase->ComponentSetIdToComponentIds.Contains(50));
-	if (SchemaDatabase->ComponentSetIdToComponentIds.Contains(50))
+	TestTrue("Found spatial well known components",
+			 SchemaDatabase->ComponentSetIdToComponentIds.Contains(SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID));
+	if (SchemaDatabase->ComponentSetIdToComponentIds.Contains(SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID))
 	{
-		TestTrue("Spatial well know component is not empty", SchemaDatabase->ComponentSetIdToComponentIds[50].ComponentIDs.Num() > 0);
+		TestTrue(
+			"Spatial well know component is not empty",
+			SchemaDatabase->ComponentSetIdToComponentIds[SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID].ComponentIDs.Num() > 0);
+	}
+
+	TestTrue("Found Server worker components components",
+			 SchemaDatabase->ComponentSetIdToComponentIds.Contains(SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID));
+	if (SchemaDatabase->ComponentSetIdToComponentIds.Contains(SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID))
+	{
+		TestTrue(
+			"Spatial well know component is not empty",
+			SchemaDatabase->ComponentSetIdToComponentIds[SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID].ComponentIDs.Num()
+				> 0);
 	}
 
 	{
