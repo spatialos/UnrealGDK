@@ -63,7 +63,9 @@ void USpatialPlatformCoordinator::Init(UNetDriver* InDriver)
 
 void USpatialPlatformCoordinator::StartSendingHeartbeat()
 {
-	if (!GetDefault<USpatialGDKSettings>()->bEnableSpatialPlatformCoordinator)
+	FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator"));
+	bool bSwitch = strSwitch.ToLower().TrimStartAndEnd() == "true" ? true : false;
+	if (!bSwitch)
 	{
 		return;
 	}
@@ -118,7 +120,9 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 
 void USpatialPlatformCoordinator::SendReadyStatus()
 {
-	if (!GetDefault<USpatialGDKSettings>()->bEnableSpatialPlatformCoordinator)
+	FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator"));
+	bool bSwitch = strSwitch.ToLower().TrimStartAndEnd() == "true" ? true : false;
+	if (!bSwitch)
 	{
 		return;
 	}
@@ -161,7 +165,9 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 
 void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 {
-	if (!GetDefault<USpatialGDKSettings>()->bEnableSpatialPlatformCoordinator)
+	FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator"));
+	bool bSwitch = strSwitch.ToLower().TrimStartAndEnd() == "true" ? true : false;
+	if (!bSwitch)
 	{
 		return;
 	}
@@ -246,7 +252,9 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 
 void USpatialPlatformCoordinator::StartWatchingForGameserverStatus()
 {
-	if (!GetDefault<USpatialGDKSettings>()->bEnableSpatialPlatformCoordinator)
+	FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator"));
+	bool bSwitch = strSwitch.ToLower().TrimStartAndEnd() == "true" ? true : false;
+	if (!bSwitch)
 	{
 		return;
 	}
@@ -275,7 +283,9 @@ void USpatialPlatformCoordinator::StartWatchingForGameserverStatus()
 
 void USpatialPlatformCoordinator::StartPollingForWorkerFlags()
 {
-	if (!GetDefault<USpatialGDKSettings>()->bEnableSpatialPlatformCoordinator)
+	FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator"));
+	bool bSwitch = strSwitch.ToLower().TrimStartAndEnd() == "true" ? true : false;
+	if (!bSwitch)
 	{
 		return;
 	}
