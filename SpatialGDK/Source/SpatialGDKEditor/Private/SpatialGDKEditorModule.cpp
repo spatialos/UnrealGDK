@@ -276,6 +276,12 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 			++AdditionalServerIndex;
 		}
 
+		if (Settings->bRunStrategyWorker)
+		{
+			Function(SpatialConstants::StrategyWorkerType, AdditionalServerIndex);
+			++AdditionalServerIndex;
+		}
+
 		return true;
 	}
 

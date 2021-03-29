@@ -144,6 +144,9 @@ private:
 	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 
+	USpatialActorChannel* SetUpActorChannel(AActor* Actor, Worker_EntityId EntityId);
+	USpatialActorChannel* TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, Worker_EntityId EntityId);
+
 	// Entity remove
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 	static FString GetObjectNameFromRepState(const FSpatialObjectRepState& RepState);

@@ -481,6 +481,17 @@ void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_Co
 	}
 
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	if (!NetDriver->IsServer() && Channel == nullptr)
+	{
+		// Try to restore the channel if this is a stably named actor. This can happen if a sublevel
+		// gets reloaded quickly and results in the entity components getting refreshed instead of
+		// the entity getting removed and added again.
+		if (AActor* StablyNamedActor = TryGetActor(ActorDataStore[EntityId].Metadata))
+		{
+			Channel = TryRestoreActorChannelForStablyNamedActor(StablyNamedActor, EntityId);
+		}
+	}
+
 	if (Channel == nullptr)
 	{
 		UE_LOG(LogActorSystem, Error,
@@ -489,6 +500,7 @@ void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_Co
 			   EntityId, ComponentId);
 		return;
 	}
+
 	if (Channel->bCreatedEntity)
 	{
 		// Allows servers to change state if they are going to be authoritative, without us overwriting it with old data.
@@ -1250,44 +1262,23 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
-
-	if (Connection == nullptr)
-	{
-		UE_LOG(LogActorSystem, Error,
-			   TEXT("Unable to find SpatialOSNetConnection! Has this worker been disconnected from SpatialOS due to a timeout?"));
-		return;
-	}
-
 	if (!NetDriver->PackageMap->ResolveEntityActor(EntityActor, EntityId))
 	{
 		UE_LOG(LogActorSystem, Warning,
-			   TEXT("Failed to resolve entity actor when receiving entity %lld. The actor (%s) will not be spawned."), EntityId,
-			   *EntityActor->GetName());
+			   TEXT("Failed to resolve entity actor when receiving entity. Actor will not be spawned. Entity: %lld, actor: %s"), EntityId,
+			   *EntityActor->GetPathName());
 		EntityActor->Destroy(true);
 		return;
 	}
 
-	// Set up actor channel.
-	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
-	if (Channel == nullptr)
-	{
-		Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(
-			NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
-	}
-
+	USpatialActorChannel* Channel = SetUpActorChannel(EntityActor, EntityId);
 	if (Channel == nullptr)
 	{
 		UE_LOG(LogActorSystem, Warning,
-			   TEXT("Failed to create an actor channel when receiving entity %lld. The actor (%s) will not be spawned."), EntityId,
-			   *EntityActor->GetName());
+			   TEXT("Failed to create an actor channel when receiving entity. Actor will not be spawned. Entity: %lld, actor: %s"),
+			   EntityId, *EntityActor->GetPathName());
 		EntityActor->Destroy(true);
 		return;
-	}
-
-	if (Channel->Actor == nullptr)
-	{
-		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
 	}
 
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
@@ -1557,6 +1548,54 @@ void ActorSystem::ApplyComponentDataOnActorCreation(const Worker_EntityId Entity
 		UE_LOG(LogActorSystem, Warning, TEXT("Actor subobject got invalidated after applying component data! Subobject: %s"),
 			   *TargetObjectPath);
 	}
+}
+
+USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, const Worker_EntityId EntityId)
+{
+	UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
+
+	if (Connection == nullptr)
+	{
+		UE_LOG(LogActorSystem, Error,
+			   TEXT("Unable to find SpatialOSNetConnection! Has this worker been disconnected from SpatialOS due to a timeout?"));
+		return nullptr;
+	}
+
+	// Set up actor channel.
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	if (Channel == nullptr)
+	{
+		Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(
+			NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
+	}
+
+	if (Channel != nullptr && Channel->Actor == nullptr)
+	{
+		Channel->SetChannelActor(Actor, ESetChannelActorFlags::None);
+	}
+
+	return Channel;
+}
+
+USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, const Worker_EntityId EntityId)
+{
+	if (!NetDriver->PackageMap->ResolveEntityActor(StablyNamedActor, EntityId))
+	{
+		UE_LOG(LogActorSystem, Warning,
+			   TEXT("Failed to restore actor channel for stably named actor: failed to resolve actor. Entity: %lld, actor: %s"), EntityId,
+			   *StablyNamedActor->GetPathName());
+		return nullptr;
+	}
+
+	USpatialActorChannel* Channel = SetUpActorChannel(StablyNamedActor, EntityId);
+	if (Channel == nullptr)
+	{
+		UE_LOG(LogActorSystem, Warning,
+			   TEXT("Failed to restore actor channel for stably named actor: failed to create channel. Entity: %lld, actor: %s"), EntityId,
+			   *StablyNamedActor->GetPathName());
+	}
+
+	return Channel;
 }
 
 void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
@@ -2002,7 +2041,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 
 	// True if the entity is in the worker's view.
 	// If this is the case then we know the entity was created and do not need to retry if the request timed-out.
-	const bool bEntityIsInView = NetDriver->StaticComponentView->HasComponent(SpatialGDK::Position::ComponentId, EntityId);
+	const bool bEntityIsInView = SubView->HasEntity(EntityId);
 
 	switch (static_cast<Worker_StatusCode>(Op.status_code))
 	{

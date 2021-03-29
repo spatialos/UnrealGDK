@@ -280,6 +280,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Load Balancing", meta = (DisplayName = "Enable multi-worker in editor"))
 	bool bEnableMultiWorker;
 
+	/** Run the strategy worker, worker itself is under development */
+	UPROPERTY(EditAnywhere, Config, Category = "Load Balancing", meta = (DisplayName = "EXPERIMENTAL Run the strategy worker"))
+	bool bRunStrategyWorker;
+
 #if WITH_EDITOR
 	void SetMultiWorkerEditorEnabled(const bool bIsEnabled);
 	FORCEINLINE bool IsMultiWorkerEditorEnabled() const { return bEnableMultiWorker; }
