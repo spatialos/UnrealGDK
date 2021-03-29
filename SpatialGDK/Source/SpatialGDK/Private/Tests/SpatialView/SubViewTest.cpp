@@ -152,8 +152,7 @@ SUBVIEW_TEST(GIVEN_Tagged_Incomplete_Entity_Which_Should_Be_Complete_WHEN_Refres
 	return true;
 }
 
-SUBVIEW_TEST(
-	GIVEN_SubView_With_Tagged_Entities_WHEN_SubView_Destroyed_THEN_Dispatcher_Callbacks_Are_Removed)
+SUBVIEW_TEST(GIVEN_SubView_With_Tagged_Entities_WHEN_SubView_Destroyed_THEN_Dispatcher_Callbacks_Are_Removed)
 {
 	const Worker_EntityId TaggedEntityId = 1;
 	const Worker_ComponentId TagComponentId = 1;

@@ -157,9 +157,10 @@ void FSubView::RegisterTagCallbacks(FDispatcher& Dispatcher)
 		*View);
 	ScopedDispatcherCallbacks.Add(MakeUnique<FScopedDispatcherCallback>(Dispatcher, AddedCallbackId));
 
-	CallbackId RemovedCallbackId = Dispatcher.RegisterComponentRemovedCallback(TagComponentId, [this](const FEntityComponentChange& Change) {
-		OnTaggedEntityRemoved(Change.EntityId);
-	});
+	CallbackId RemovedCallbackId =
+		Dispatcher.RegisterComponentRemovedCallback(TagComponentId, [this](const FEntityComponentChange& Change) {
+			OnTaggedEntityRemoved(Change.EntityId);
+		});
 	ScopedDispatcherCallbacks.Add(MakeUnique<FScopedDispatcherCallback>(Dispatcher, RemovedCallbackId));
 }
 

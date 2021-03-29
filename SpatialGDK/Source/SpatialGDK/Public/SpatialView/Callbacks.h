@@ -84,10 +84,7 @@ public:
 	}
 
 #if WITH_DEV_AUTOMATION_TESTS
-	int32 GetNumCallbacks() const
-	{
-		return Callbacks.Num() + CallbacksToAdd.Num() + CallbacksToRemove.Num();
-	}
+	int32 GetNumCallbacks() const { return Callbacks.Num() + CallbacksToAdd.Num() + CallbacksToRemove.Num(); }
 #endif
 
 private:
