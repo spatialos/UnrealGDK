@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Containers/Array.h"
 #include "Templates/Function.h"
@@ -56,8 +56,14 @@ public:
 		check(!bCurrentlyInvokingCallbacks);
 
 		bCurrentlyInvokingCallbacks = true;
+
 		for (const CallbackAndId& Callback : Callbacks)
 		{
+			if (CallbacksToRemove.Contains(Callback.Id))
+			{
+				continue;
+			}
+
 			Callback.Callback(Value);
 		}
 		bCurrentlyInvokingCallbacks = false;
@@ -76,6 +82,13 @@ public:
 			CallbacksToRemove.Empty();
 		}
 	}
+
+#if WITH_DEV_AUTOMATION_TESTS
+	int32 GetNumCallbacks() const
+	{
+		return Callbacks.Num() + CallbacksToAdd.Num() + CallbacksToRemove.Num();
+	}
+#endif
 
 private:
 	struct CallbackAndId

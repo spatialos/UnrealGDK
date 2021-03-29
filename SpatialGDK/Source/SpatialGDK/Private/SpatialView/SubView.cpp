@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/SubView.h"
 
@@ -23,9 +23,10 @@ FSubView::FSubView(const Worker_ComponentId InTagComponentId, FFilterPredicate I
 	: TagComponentId(InTagComponentId)
 	, Filter(MoveTemp(InFilter))
 	, View(InView)
+	, ScopedDispatcherCallbacks()
 {
 	RegisterTagCallbacks(Dispatcher);
-	RegisterRefreshCallbacks(DispatcherRefreshCallbacks);
+	RegisterRefreshCallbacks(Dispatcher, DispatcherRefreshCallbacks);
 }
 
 void FSubView::Advance(const ViewDelta& Delta)
@@ -90,18 +91,22 @@ FDispatcherRefreshCallback FSubView::CreateComponentExistenceRefreshCallback(FDi
 																			 const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
-		Dispatcher.RegisterComponentAddedCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange& Change) {
-			if (RefreshPredicate(Change))
-			{
-				Callback(Change.EntityId);
-			}
-		});
-		Dispatcher.RegisterComponentRemovedCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange& Change) {
-			if (RefreshPredicate(Change))
-			{
-				Callback(Change.EntityId);
-			}
-		});
+		const CallbackId AddedCallbackId =
+			Dispatcher.RegisterComponentAddedCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange& Change) {
+				if (RefreshPredicate(Change))
+				{
+					Callback(Change.EntityId);
+				}
+			});
+
+		const CallbackId RemovedCallbackId =
+			Dispatcher.RegisterComponentRemovedCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange& Change) {
+				if (RefreshPredicate(Change))
+				{
+					Callback(Change.EntityId);
+				}
+			});
+		return TArray<CallbackId>({ AddedCallbackId, RemovedCallbackId });
 	};
 }
 
@@ -109,12 +114,14 @@ FDispatcherRefreshCallback FSubView::CreateComponentChangedRefreshCallback(FDisp
 																		   const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
-		Dispatcher.RegisterComponentValueCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange& Change) {
-			if (RefreshPredicate(Change))
-			{
-				Callback(Change.EntityId);
-			}
-		});
+		const CallbackId ValueCallbackId =
+			Dispatcher.RegisterComponentValueCallback(ComponentId, [RefreshPredicate, Callback](const FEntityComponentChange& Change) {
+				if (RefreshPredicate(Change))
+				{
+					Callback(Change.EntityId);
+				}
+			});
+		return TArray<CallbackId>({ ValueCallbackId });
 	};
 }
 
@@ -122,43 +129,52 @@ FDispatcherRefreshCallback FSubView::CreateAuthorityChangeRefreshCallback(FDispa
 																		  const FAuthorityChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
-		Dispatcher.RegisterAuthorityGainedCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id) {
-			if (RefreshPredicate(Id))
-			{
-				Callback(Id);
-			}
-		});
-		Dispatcher.RegisterAuthorityLostCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id) {
-			if (RefreshPredicate(Id))
-			{
-				Callback(Id);
-			}
-		});
+		const CallbackId GainedCallbackId =
+			Dispatcher.RegisterAuthorityGainedCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id) {
+				if (RefreshPredicate(Id))
+				{
+					Callback(Id);
+				}
+			});
+		const CallbackId LostCallbackId =
+			Dispatcher.RegisterAuthorityLostCallback(ComponentId, [RefreshPredicate, Callback](const Worker_EntityId Id) {
+				if (RefreshPredicate(Id))
+				{
+					Callback(Id);
+				}
+			});
+		return TArray<CallbackId>({ GainedCallbackId, LostCallbackId });
 	};
 }
 
 void FSubView::RegisterTagCallbacks(FDispatcher& Dispatcher)
 {
-	Dispatcher.RegisterAndInvokeComponentAddedCallback(
+	CallbackId AddedCallbackId = Dispatcher.RegisterAndInvokeComponentAddedCallback(
 		TagComponentId,
 		[this](const FEntityComponentChange& Change) {
 			OnTaggedEntityAdded(Change.EntityId);
 		},
 		*View);
+	ScopedDispatcherCallbacks.Add(MakeUnique<FScopedDispatcherCallback>(Dispatcher, AddedCallbackId));
 
-	Dispatcher.RegisterComponentRemovedCallback(TagComponentId, [this](const FEntityComponentChange& Change) {
+	CallbackId RemovedCallbackId = Dispatcher.RegisterComponentRemovedCallback(TagComponentId, [this](const FEntityComponentChange& Change) {
 		OnTaggedEntityRemoved(Change.EntityId);
 	});
+	ScopedDispatcherCallbacks.Add(MakeUnique<FScopedDispatcherCallback>(Dispatcher, RemovedCallbackId));
 }
 
-void FSubView::RegisterRefreshCallbacks(const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
+void FSubView::RegisterRefreshCallbacks(FDispatcher& Dispatcher, const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 {
 	const FRefreshCallback RefreshEntityCallback = [this](const Worker_EntityId EntityId) {
 		RefreshEntity(EntityId);
 	};
 	for (FDispatcherRefreshCallback Callback : DispatcherRefreshCallbacks)
 	{
-		Callback(RefreshEntityCallback);
+		TArray<CallbackId> RegisteredCallbackIds = Callback(RefreshEntityCallback);
+		for (const CallbackId RegisteredCallbackId : RegisteredCallbackIds)
+		{
+			ScopedDispatcherCallbacks.Add(MakeUnique<FScopedDispatcherCallback>(Dispatcher, RegisteredCallbackId));
+		}
 	}
 }
 

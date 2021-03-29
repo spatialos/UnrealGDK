@@ -1,14 +1,15 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
-#include "Dispatcher.h"
 #include "EntityView.h"
+#include "SpatialView/Dispatcher.h"
 #include "Templates/Function.h"
+#include "Templates/SharedPointer.h"
 
 using FFilterPredicate = TFunction<bool(const Worker_EntityId, const SpatialGDK::EntityViewElement&)>;
 using FRefreshCallback = TFunction<void(const Worker_EntityId)>;
-using FDispatcherRefreshCallback = TFunction<void(const FRefreshCallback)>;
+using FDispatcherRefreshCallback = TFunction<TArray<SpatialGDK::CallbackId>(const FRefreshCallback)>;
 using FComponentChangeRefreshPredicate = TFunction<bool(SpatialGDK::FEntityComponentChange)>;
 using FAuthorityChangeRefreshPredicate = TFunction<bool(Worker_EntityId)>;
 
@@ -58,7 +59,7 @@ public:
 
 private:
 	void RegisterTagCallbacks(FDispatcher& Dispatcher);
-	void RegisterRefreshCallbacks(const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
+	void RegisterRefreshCallbacks(FDispatcher& Dispatcher, const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
 	void OnTaggedEntityAdded(const Worker_EntityId EntityId);
 	void OnTaggedEntityRemoved(const Worker_EntityId EntityId);
 	void CheckEntityAgainstFilter(const Worker_EntityId EntityId);
@@ -68,6 +69,8 @@ private:
 	Worker_ComponentId TagComponentId;
 	FFilterPredicate Filter;
 	const EntityView* View;
+
+	TArray<TUniquePtr<FScopedDispatcherCallback>> ScopedDispatcherCallbacks;
 
 	FSubViewDelta SubViewDelta;
 

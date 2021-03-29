@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "SpatialView/Callbacks.h"
 #include "SpatialView/ViewDelta.h"
@@ -41,6 +41,10 @@ public:
 	CallbackId RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
 
 	void RemoveCallback(CallbackId Id);
+
+#if WITH_DEV_AUTOMATION_TESTS
+	int32 GetNumCallbacks() const;
+#endif // WITH_DEV_AUTOMATION_TESTS
 
 private:
 	struct FComponentCallbacks
@@ -96,4 +100,26 @@ private:
 	TArray<FAuthorityCallbacks> AuthorityCallbacks;
 	CallbackId NextCallbackId;
 };
+
+class FScopedDispatcherCallback final
+{
+public:
+	FScopedDispatcherCallback(FDispatcher& InDispatcher, const CallbackId InCallbackId)
+		: Dispatcher(&InDispatcher)
+		, ScopedCallbackId(InCallbackId)
+	{
+		check(Dispatcher);
+	}
+
+	~FScopedDispatcherCallback()
+	{
+		check(Dispatcher);
+		Dispatcher->RemoveCallback(ScopedCallbackId);
+	}
+
+private:
+	FDispatcher* Dispatcher;
+	CallbackId ScopedCallbackId;
+};
+
 } // namespace SpatialGDK

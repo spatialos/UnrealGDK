@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/Dispatcher.h"
 
@@ -152,6 +152,7 @@ void FDispatcher::RemoveCallback(CallbackId Id)
 	{
 		Callback.ComponentAddedCallbacks.Remove(Id);
 		Callback.ComponentRemovedCallbacks.Remove(Id);
+		Callback.ComponentValueCallbacks.Remove(Id);
 	}
 
 	for (FAuthorityCallbacks& Callback : AuthorityCallbacks)
@@ -161,6 +162,29 @@ void FDispatcher::RemoveCallback(CallbackId Id)
 		Callback.AuthorityLostTemporarilyCallbacks.Remove(Id);
 	}
 }
+
+#if WITH_DEV_AUTOMATION_TESTS
+int32 FDispatcher::GetNumCallbacks() const
+{
+	int32 NumCallbacks = 0;
+
+	for (const FComponentCallbacks& Callback : ComponentCallbacks)
+	{
+		NumCallbacks += Callback.ComponentAddedCallbacks.GetNumCallbacks();
+		NumCallbacks += Callback.ComponentRemovedCallbacks.GetNumCallbacks();
+		NumCallbacks += Callback.ComponentValueCallbacks.GetNumCallbacks();
+	}
+
+	for (const FAuthorityCallbacks& Callback : AuthorityCallbacks)
+	{
+		NumCallbacks += Callback.AuthorityGainedCallbacks.GetNumCallbacks();
+		NumCallbacks += Callback.AuthorityLostCallbacks.GetNumCallbacks();
+		NumCallbacks += Callback.AuthorityLostTemporarilyCallbacks.GetNumCallbacks();
+	}
+
+	return NumCallbacks;
+}
+#endif // WITH_DEV_AUTOMATION_TESTS
 
 void FDispatcher::InvokeWithExistingValues(Worker_ComponentId ComponentId, const FComponentValueCallback& Callback, const EntityView& View)
 {
