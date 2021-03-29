@@ -5,7 +5,8 @@
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
-#include "Utils/SpatialLatencyTracer.h"
+
+#include "Utils/SpatialLatencyTracerMinimal.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -95,12 +96,7 @@ struct RPCPayload
 
 		PayloadData = GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
 
-#if TRACE_LIB_ACTIVE
-		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
-		{
-			Trace = Tracer->ReadTraceFromSchemaObject(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
-		}
-#endif
+		Trace = FSpatialLatencyTracerMinimal::ReadTraceFromSchemaObject(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
 	}
 
 	int64 CountDataBits() const { return PayloadData.Num() * 8; }
@@ -109,12 +105,7 @@ struct RPCPayload
 	{
 		WriteToSchemaObject(RPCObject, Offset, Index, Id, PayloadData.GetData(), PayloadData.Num());
 
-#if TRACE_LIB_ACTIVE
-		if (USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(nullptr))
-		{
-			Tracer->WriteTraceToSchemaObject(Trace, RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
-		}
-#endif
+		FSpatialLatencyTracerMinimal::WriteTraceToSchemaObject(Trace, RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
 	}
 
 	static void WriteToSchemaObject(Schema_Object* RPCObject, uint32 Offset, uint32 Index, TOptional<uint64> UniqueId, const uint8* Data,

@@ -19,7 +19,6 @@
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "SpatialConstants.h"
 #include "Utils/SpatialDebugger.h"
@@ -95,7 +94,6 @@ void USpatialGameInstance::CreateNewSpatialConnectionManager()
 	SpatialConnectionManager = NewObject<USpatialConnectionManager>(this);
 
 	GlobalStateManager = NewObject<UGlobalStateManager>();
-	StaticComponentView = NewObject<USpatialStaticComponentView>();
 }
 
 void USpatialGameInstance::DestroySpatialConnectionManager()
@@ -110,12 +108,6 @@ void USpatialGameInstance::DestroySpatialConnectionManager()
 	{
 		GlobalStateManager->ConditionalBeginDestroy();
 		GlobalStateManager = nullptr;
-	}
-
-	if (StaticComponentView != nullptr)
-	{
-		StaticComponentView->ConditionalBeginDestroy();
-		StaticComponentView = nullptr;
 	}
 }
 

@@ -110,6 +110,7 @@ void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId,
 	if (SubView->GetView()[EntityId].Components.ContainsByPredicate(
 			SpatialGDK::ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID }))
 	{
+		GlobalStateManager->WorkerEntityReady();
 		GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 	}
 
