@@ -58,6 +58,11 @@ public:
 		bCurrentlyInvokingCallbacks = true;
 		for (const CallbackAndId& Callback : Callbacks)
 		{
+			if (CallbacksToRemove.Contains(Callback.Id))
+			{
+				continue;
+			}
+
 			Callback.Callback(Value);
 		}
 		bCurrentlyInvokingCallbacks = false;
