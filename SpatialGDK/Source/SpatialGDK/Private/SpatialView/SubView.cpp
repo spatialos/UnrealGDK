@@ -66,6 +66,12 @@ const EntityView& FSubView::GetView() const
 	return *View;
 }
 
+bool FSubView::HasEntity(const Worker_EntityId EntityId) const
+{
+	const EntityViewElement* Entity = View->Find(EntityId);
+	return Entity != nullptr;
+}
+
 bool FSubView::HasComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const
 {
 	const EntityViewElement* Entity = View->Find(EntityId);

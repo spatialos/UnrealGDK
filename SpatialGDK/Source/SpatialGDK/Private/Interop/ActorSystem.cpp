@@ -2041,7 +2041,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 
 	// True if the entity is in the worker's view.
 	// If this is the case then we know the entity was created and do not need to retry if the request timed-out.
-	const bool bEntityIsInView = NetDriver->StaticComponentView->HasComponent(SpatialGDK::Position::ComponentId, EntityId);
+	const bool bEntityIsInView = SubView->HasEntity(EntityId);
 
 	switch (static_cast<Worker_StatusCode>(Op.status_code))
 	{

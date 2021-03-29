@@ -3,7 +3,6 @@
 #include "Interop/RPCs/ClientServerRPCService.h"
 
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Schema/ClientEndpoint.h"
 #include "Schema/ServerEndpoint.h"
 #include "SpatialConstants.h"

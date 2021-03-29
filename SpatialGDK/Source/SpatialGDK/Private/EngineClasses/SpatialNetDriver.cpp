@@ -435,9 +435,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		GlobalStateManager = GameInstance->GetGlobalStateManager();
 		check(GlobalStateManager != nullptr);
 
-		StaticComponentView = GameInstance->GetStaticComponentView();
-		check(StaticComponentView != nullptr);
-
 		PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 		SnapshotManager = MakeUnique<SpatialSnapshotManager>();
 
@@ -526,7 +523,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
-		Dispatcher->Init(StaticComponentView, SpatialWorkerFlags);
+		Dispatcher->Init(SpatialWorkerFlags);
 		Sender->Init(this, &TimerManager, Connection->GetEventTracer());
 		Receiver->Init(this, Connection->GetEventTracer());
 		GlobalStateManager->Init(this);

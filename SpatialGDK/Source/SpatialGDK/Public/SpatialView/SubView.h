@@ -43,6 +43,7 @@ public:
 	void RefreshEntity(const Worker_EntityId EntityId);
 
 	const EntityView& GetView() const;
+	bool HasEntity(const Worker_EntityId EntityId) const;
 	bool HasComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const;
 	bool HasAuthority(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const;
 
