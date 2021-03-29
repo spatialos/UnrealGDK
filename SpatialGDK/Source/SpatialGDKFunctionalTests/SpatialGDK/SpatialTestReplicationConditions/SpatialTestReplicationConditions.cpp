@@ -16,6 +16,14 @@
  * COND_InitialOrOwner - not supported in Spatial
  * COND_ReplayOnly - not relevant to Spatial
  *
+ * There are 6 test actors used in this test.
+ * TestActor_Common, non-autonomous, physics disabled, used for all common replication conditions.
+ * TestActor_CustomEnabled, non-autonomous, physics disabled, used for COND_Custom.
+ * TestActor_CustomDisabled, non-autonomous, physics disabled, used for COND_Custom.
+ * TestActor_AutonomousOnly, autonomous, physics disabled, used for autonomous related conditions.
+ * TestActor_PhysicsEnabled, non-autonomous, physics enabled, used for physics related conditions.
+ * TestActor_PhysicsDisabled, non-autonomous, physics disabled, used for physics related conditions.
+ *
  * The test includes 2 Server and 2 Clients.
  * The flow is as follows:
  * - Setup:
@@ -53,6 +61,8 @@ void ASpatialTestReplicationConditions::PrepareTest()
 {
 	Super::PrepareTest();
 
+	bSpatialEnabled = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+
 	// Reusable steps
 	FSpatialFunctionalTestStepDefinition CheckOnNonAuthServerStepDefinition(/*bIsNativeDefinition*/ true);
 	CheckOnNonAuthServerStepDefinition.StepName = TEXT("ASpatialTestReplicationConditions Validate Test Actors On Non-Auth Server");
@@ -60,7 +70,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 	CheckOnNonAuthServerStepDefinition.NativeIsReadyEvent.BindLambda([this]() -> bool {
 		return ActorsReady();
 	});
-	CheckOnNonAuthServerStepDefinition.NativeStartEvent.BindLambda([this]() {
+	CheckOnNonAuthServerStepDefinition.NativeTickEvent.BindLambda([this](float /*DeltaTime*/) {
 		AssertFalse(TestActor_Common->HasAuthority(), TEXT("This server shouldn't have authority"));
 		AssertFalse(TestActor_CustomEnabled->HasAuthority(), TEXT("This server shouldn't have authority"));
 		AssertFalse(TestActor_CustomDisabled->HasAuthority(), TEXT("This server shouldn't have authority"));
@@ -131,7 +141,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 	CheckOnOwningClientStepDefinition.NativeIsReadyEvent.BindLambda([this]() -> bool {
 		return ActorsReady();
 	});
-	CheckOnOwningClientStepDefinition.NativeStartEvent.BindLambda([this]() {
+	CheckOnOwningClientStepDefinition.NativeTickEvent.BindLambda([this](float /*DeltaTime*/) {
 		AssertFalse(TestActor_Common->HasAuthority(), TEXT("This client shouldn't have authority"));
 		AssertFalse(TestActor_CustomEnabled->HasAuthority(), TEXT("This client shouldn't have authority"));
 		AssertFalse(TestActor_CustomDisabled->HasAuthority(), TEXT("This client shouldn't have authority"));
@@ -215,7 +225,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 	CheckOnNonOwningClientStepDefinition.NativeIsReadyEvent.BindLambda([this]() -> bool {
 		return ActorsReady();
 	});
-	CheckOnNonOwningClientStepDefinition.NativeStartEvent.BindLambda([this]() {
+	CheckOnNonOwningClientStepDefinition.NativeTickEvent.BindLambda([this](float /*DeltaTime*/) {
 		AssertFalse(TestActor_Common->HasAuthority(), TEXT("This client shouldn't have authority"));
 		AssertFalse(TestActor_CustomEnabled->HasAuthority(), TEXT("This client shouldn't have authority"));
 		AssertFalse(TestActor_CustomDisabled->HasAuthority(), TEXT("This client shouldn't have authority"));
@@ -293,8 +303,6 @@ void ASpatialTestReplicationConditions::PrepareTest()
 
 	// Setup initial test variables
 	AddStep(TEXT("ASpatialTestReplicationConditions Initial Test Setup"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
-
-		bSpatialEnabled = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
 		ReplicationStage = STAGE_InitialReplication;
 		PropertyOffset = 0;
 
@@ -307,42 +315,42 @@ void ASpatialTestReplicationConditions::PrepareTest()
 
 		TestActor_Common = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Common>(ActorSpawnPosition, FRotator::ZeroRotator,
 																						  FActorSpawnParameters());
-		if (!AssertTrue(TestActor_Common != nullptr, TEXT("Failed to spawn TestActor_Common")))
+		if (!AssertTrue(IsValid(TestActor_Common), TEXT("Failed to spawn TestActor_Common")))
 		{
 			return;
 		}
 
 		TestActor_CustomEnabled = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Custom>(ActorSpawnPosition, FRotator::ZeroRotator,
 																								 FActorSpawnParameters());
-		if (!AssertTrue(TestActor_CustomEnabled != nullptr, TEXT("Failed to spawn TestActor_CustomEnabled")))
+		if (!AssertTrue(IsValid(TestActor_CustomEnabled), TEXT("Failed to spawn TestActor_CustomEnabled")))
 		{
 			return;
 		}
 
 		TestActor_CustomDisabled = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Custom>(ActorSpawnPosition, FRotator::ZeroRotator,
 																								  FActorSpawnParameters());
-		if (!AssertTrue(TestActor_CustomDisabled != nullptr, TEXT("Failed to spawn TestActor_CustomDisabled")))
+		if (!AssertTrue(IsValid(TestActor_CustomDisabled), TEXT("Failed to spawn TestActor_CustomDisabled")))
 		{
 			return;
 		}
 
 		TestActor_AutonomousOnly = GetWorld()->SpawnActor<ATestReplicationConditionsActor_AutonomousOnly>(
 			ActorSpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
-		if (!AssertTrue(TestActor_AutonomousOnly != nullptr, TEXT("Failed to spawn TestActor_AutonomousOnly")))
+		if (!AssertTrue(IsValid(TestActor_AutonomousOnly), TEXT("Failed to spawn TestActor_AutonomousOnly")))
 		{
 			return;
 		}
 
 		TestActor_PhysicsEnabled = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Physics>(
 			ActorSpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
-		if (!AssertTrue(TestActor_PhysicsEnabled != nullptr, TEXT("Failed to spawn TestActor_PhysicsEnabled")))
+		if (!AssertTrue(IsValid(TestActor_PhysicsEnabled), TEXT("Failed to spawn TestActor_PhysicsEnabled")))
 		{
 			return;
 		}
 
 		TestActor_PhysicsDisabled = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Physics>(
 			ActorSpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
-		if (!AssertTrue(TestActor_PhysicsDisabled != nullptr, TEXT("Failed to spawn TestActor_PhysicsDisabled")))
+		if (!AssertTrue(IsValid(TestActor_PhysicsDisabled), TEXT("Failed to spawn TestActor_PhysicsDisabled")))
 		{
 			return;
 		}
@@ -373,7 +381,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		ProcessPhysicsActorProperties(TestActor_PhysicsDisabled, bWrite, /*bPhysicsEnabled*/ false, /*bPhysicsExpected*/ false);
 
 		AController* PlayerController = Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
-		if (!AssertTrue(PlayerController != nullptr, TEXT("Failed to retrieve player controller")))
+		if (!AssertTrue(IsValid(PlayerController), TEXT("Failed to retrieve player controller")))
 		{
 			return;
 		}
@@ -455,12 +463,12 @@ bool ASpatialTestReplicationConditions::ActorsReady() const
 {
 	bool bReady = true;
 
-	bReady &= TestActor_Common != nullptr && TestActor_Common->AreAllDynamicComponentsValid();
-	bReady &= TestActor_CustomEnabled != nullptr && TestActor_CustomEnabled->AreAllDynamicComponentsValid();
-	bReady &= TestActor_CustomDisabled != nullptr && TestActor_CustomDisabled->AreAllDynamicComponentsValid();
-	bReady &= TestActor_AutonomousOnly != nullptr && TestActor_AutonomousOnly->AreAllDynamicComponentsValid();
-	bReady &= TestActor_PhysicsEnabled != nullptr && TestActor_PhysicsEnabled->AreAllDynamicComponentsValid();
-	bReady &= TestActor_PhysicsDisabled != nullptr && TestActor_PhysicsDisabled->AreAllDynamicComponentsValid();
+	bReady &= IsValid(TestActor_Common) && TestActor_Common->AreAllDynamicComponentsValid();
+	bReady &= IsValid(TestActor_CustomEnabled) && TestActor_CustomEnabled->AreAllDynamicComponentsValid();
+	bReady &= IsValid(TestActor_CustomDisabled) && TestActor_CustomDisabled->AreAllDynamicComponentsValid();
+	bReady &= IsValid(TestActor_AutonomousOnly) && TestActor_AutonomousOnly->AreAllDynamicComponentsValid();
+	bReady &= IsValid(TestActor_PhysicsEnabled) && TestActor_PhysicsEnabled->AreAllDynamicComponentsValid();
+	bReady &= IsValid(TestActor_PhysicsDisabled) && TestActor_PhysicsDisabled->AreAllDynamicComponentsValid();
 
 	return bReady;
 }
@@ -483,11 +491,11 @@ void ASpatialTestReplicationConditions::ProcessCommonActorProperties(bool bWrite
 		}
 		else if (bCondIgnore[Cond])
 		{
-			AssertEqual_Int(Source, 0, *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
+			RequireEqual_Int(Source, 0, *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 		else
 		{
-			AssertEqual_Int(Source, Expected + PropertyOffset,
+			RequireEqual_Int(Source, Expected + PropertyOffset,
 							*FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 	};
@@ -536,12 +544,12 @@ void ASpatialTestReplicationConditions::ProcessCustomActorProperties(ATestReplic
 		}
 		else if (bCustomEnabled)
 		{
-			AssertEqual_Int(Source, Expected + PropertyOffset,
+			RequireEqual_Int(Source, Expected + PropertyOffset,
 							*FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 		else
 		{
-			AssertEqual_Int(Source, 0, *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
+			RequireEqual_Int(Source, 0, *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 	};
 
@@ -559,12 +567,12 @@ void ASpatialTestReplicationConditions::ProcessAutonomousOnlyActorProperties(boo
 		}
 		else if (bExpected)
 		{
-			AssertEqual_Int(Source, Expected + PropertyOffset,
+			RequireEqual_Int(Source, Expected + PropertyOffset,
 							*FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 		else
 		{
-			AssertEqual_Int(Source, 0, *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
+			RequireEqual_Int(Source, 0, *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 	};
 
@@ -586,12 +594,12 @@ void ASpatialTestReplicationConditions::ProcessPhysicsActorProperties(ATestRepli
 		}
 		else if (bPhysicsExpected)
 		{
-			AssertEqual_Int(Source, Expected + PropertyOffset,
+			RequireEqual_Int(Source, Expected + PropertyOffset,
 							*FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 		else
 		{
-			AssertEqual_Int(Source, 0, *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
+			RequireEqual_Int(Source, 0, *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 	};
 
