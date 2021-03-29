@@ -63,12 +63,7 @@ void USpatialPlatformCoordinator::Init(UNetDriver* InDriver)
 
 void USpatialPlatformCoordinator::StartSendingHeartbeat()
 {
-	FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator"));
-	bool bSwitch = strSwitch.ToLower().TrimStartAndEnd() == "true" ? true : false;
-	if (!bSwitch)
-	{
-		return;
-	}
+	CHECK_PLATFORM_SWITCH(true);
 
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
@@ -120,13 +115,8 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 
 void USpatialPlatformCoordinator::SendReadyStatus()
 {
-	FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator"));
-	bool bSwitch = strSwitch.ToLower().TrimStartAndEnd() == "true" ? true : false;
-	if (!bSwitch)
-	{
-		return;
-	}
-
+	CHECK_PLATFORM_SWITCH(false);
+	
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
 	FString NewSpatialWorkerId = SpatialWorkerId + "";
@@ -165,12 +155,7 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 
 void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 {
-	FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator"));
-	bool bSwitch = strSwitch.ToLower().TrimStartAndEnd() == "true" ? true : false;
-	if (!bSwitch)
-	{
-		return;
-	}
+	CHECK_PLATFORM_SWITCH(false);
 
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
@@ -252,12 +237,7 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 
 void USpatialPlatformCoordinator::StartWatchingForGameserverStatus()
 {
-	FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator"));
-	bool bSwitch = strSwitch.ToLower().TrimStartAndEnd() == "true" ? true : false;
-	if (!bSwitch)
-	{
-		return;
-	}
+	CHECK_PLATFORM_SWITCH(false);
 
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 
@@ -283,12 +263,7 @@ void USpatialPlatformCoordinator::StartWatchingForGameserverStatus()
 
 void USpatialPlatformCoordinator::StartPollingForWorkerFlags()
 {
-	FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator"));
-	bool bSwitch = strSwitch.ToLower().TrimStartAndEnd() == "true" ? true : false;
-	if (!bSwitch)
-	{
-		return;
-	}
+	CHECK_PLATFORM_SWITCH(false);
 
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
