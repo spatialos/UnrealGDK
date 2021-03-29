@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/Dispatcher.h"
 
@@ -152,6 +152,7 @@ void FDispatcher::RemoveCallback(CallbackId Id)
 	{
 		Callback.ComponentAddedCallbacks.Remove(Id);
 		Callback.ComponentRemovedCallbacks.Remove(Id);
+		Callback.ComponentValueCallbacks.Remove(Id);
 	}
 
 	for (FAuthorityCallbacks& Callback : AuthorityCallbacks)
