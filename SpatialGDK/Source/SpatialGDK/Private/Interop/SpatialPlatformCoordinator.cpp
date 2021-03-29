@@ -116,7 +116,7 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 void USpatialPlatformCoordinator::SendReadyStatus()
 {
 	CHECK_PLATFORM_SWITCH(false);
-	
+
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
 	FString NewSpatialWorkerId = SpatialWorkerId + "";
