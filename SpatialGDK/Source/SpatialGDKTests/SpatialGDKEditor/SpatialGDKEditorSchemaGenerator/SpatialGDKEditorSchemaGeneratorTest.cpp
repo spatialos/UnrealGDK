@@ -1116,7 +1116,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	if (SchemaDatabase->ComponentSetIdToComponentIds.Contains(SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID))
 	{
 		TestTrue(
-			"Spatial well know component is not empty",
+			"Spatial well known component is not empty",
 			SchemaDatabase->ComponentSetIdToComponentIds[SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID].ComponentIDs.Num()
 				> 0);
 	}

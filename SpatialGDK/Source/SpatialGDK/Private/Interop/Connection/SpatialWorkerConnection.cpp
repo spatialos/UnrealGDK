@@ -60,7 +60,6 @@ void ServerWorkerEntityCreator::CreateWorkerEntity()
 	{
 		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID));
 		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID));
-		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 		DelegationMap.Add(SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_ROUTING_PARTITION_ENTITY_ID);
 	}
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());

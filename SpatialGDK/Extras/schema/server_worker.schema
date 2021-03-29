@@ -30,6 +30,6 @@ component_set ServerWorkerAuthComponentSet {
 	improbable.Metadata,
 	improbable.Interest,
 	unreal.ServerWorker,
-    unreal.generated.UnrealCrossServerSenderRPCs
+	unreal.generated.UnrealCrossServerSenderRPCs
   ];
 }
