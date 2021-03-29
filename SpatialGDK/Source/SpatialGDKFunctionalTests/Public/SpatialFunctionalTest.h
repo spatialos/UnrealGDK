@@ -61,6 +61,8 @@ public:
 
 	virtual void OnAuthorityGained() override;
 
+	virtual void CleanablePossess(AController* Controller, APawn* Pawn);
+
 	// Should be called from the server with authority over this actor.
 	virtual void RegisterAutoDestroyActor(AActor* ActorToAutoDestroy) override;
 
@@ -347,6 +349,7 @@ public:
 protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();
+	void RevertPossession();
 
 	// Force Actors having the given tag to migrate and gain authority on the given worker. All server workers must declare
 	// the same delegation at the same time, so we highly recommend that you use the AddStepSetTagDelegation() instead.
@@ -445,4 +448,6 @@ private:
 	// Holds the paths of all the snapshots taken during tests. Test maps before running in the AutomationManager will
 	// will check if there's a snapshot for them, and if so launch with it instead of the default snapshot.
 	static TMap<FString, FString> TakenSnapshots;
+
+	TMap<TWeakObjectPtr<AController>, TWeakObjectPtr<APawn>> OriginalPawnsToPossessOnFinishTest;
 };

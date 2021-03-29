@@ -171,6 +171,24 @@ void ASpatialFunctionalTest::OnAuthorityGained()
 	StartServerFlowControllerSpawn();
 }
 
+void ASpatialFunctionalTest::CleanablePossess(AController* Controller, APawn* Pawn)
+{
+	checkf(Controller, TEXT("Can't do possession with a null Controller."));
+	for (const auto& Pair : OriginalPawnsToPossessOnFinishTest)
+	{
+		AController* MapController = Pair.Key.Get();
+		if (MapController == Controller)
+		{
+			// We do not want to revert the possession if we already have something in the map.
+			Controller->Possess(Pawn);
+			return;
+		}
+	}
+
+	OriginalPawnsToPossessOnFinishTest.Add(MakeWeakObjectPtr(Controller), MakeWeakObjectPtr(Controller->GetPawn()));
+	Controller->Possess(Pawn);
+}
+
 void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy)
 {
 	if (ActorToAutoDestroy != nullptr && ActorToAutoDestroy->HasAuthority())
@@ -667,6 +685,7 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 		}
 
 		DeleteActorsRegisteredForAutoDestroy();
+		RevertPossession();
 	}
 }
 
@@ -753,6 +772,17 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 		{
 			// will be removed next frame
 			FoundActor->SetLifeSpan(0.01f);
+		}
+	}
+}
+
+void ASpatialFunctionalTest::RevertPossession()
+{
+	for (const auto& Pair : OriginalPawnsToPossessOnFinishTest)
+	{
+		if (Pair.Key.IsValid())
+		{
+			Pair.Key.Get()->Possess(Pair.Value.Get());
 		}
 	}
 }

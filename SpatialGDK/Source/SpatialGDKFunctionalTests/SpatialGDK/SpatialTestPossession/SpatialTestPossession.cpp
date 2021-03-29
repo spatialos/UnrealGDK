@@ -51,11 +51,9 @@ void ASpatialTestPossession::PrepareTest()
 
 			AController* PlayerController = Cast<AController>(FlowController->GetOwner());
 
-			// Save old one to put it back in the final step
-			OriginalPawns.Add(TPair<AController*, APawn*>(PlayerController, PlayerController->GetPawn()));
-
-			// Actually do the possession of the test pawn
-			PlayerController->Possess(TestPawn);
+			// This is a reversible version of the normal possess that will automatically revert the possession back to the original pawns
+			// at the end of the test.
+			CleanablePossess(PlayerController, TestPawn);
 		}
 
 		FinishStep();
@@ -78,12 +76,4 @@ void ASpatialTestPossession::PrepareTest()
 
 			FinishStep();
 		});
-
-	AddStep(TEXT("SpatialTestPossessionServerPossessOldPawns"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
-		for (const auto& OriginalPawnPair : OriginalPawns)
-		{
-			OriginalPawnPair.Key->Possess(OriginalPawnPair.Value);
-		}
-		FinishStep();
-	});
 }

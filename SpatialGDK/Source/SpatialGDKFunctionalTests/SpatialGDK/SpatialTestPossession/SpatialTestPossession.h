@@ -14,7 +14,4 @@ public:
 	ASpatialTestPossession();
 
 	virtual void PrepareTest() override;
-
-	// To save original Pawns and possess them back at the end
-	TArray<TPair<AController*, APawn*>> OriginalPawns;
 };
