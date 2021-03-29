@@ -283,8 +283,21 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 	}
 }
 
+void USpatialActorChannel::ValidateChannelNotBroken()
+{
+	// In native Unreal, channels can be broken in certain circumstances (e.g. when unloading streaming levels or failing to process a
+	// bunch). This shouldn't happen in Spatial and would likely lead to unexpected behavior.
+	if (Broken)
+	{
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("Channel broken when cleaning up/closing channel. Entity id: %lld, actor: %s"), EntityId,
+			   *GetNameSafe(Actor));
+	}
+}
+
 bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason)
 {
+	ValidateChannelNotBroken();
+
 	if (NetDriver != nullptr)
 	{
 #if WITH_EDITOR
@@ -322,6 +335,8 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 
 int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 {
+	ValidateChannelNotBroken();
+
 	if (Reason == EChannelCloseReason::Dormancy)
 	{
 		// Closed for dormancy reasons, ensure we update the component state of this entity.
@@ -1273,8 +1288,8 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
 	check(NetDriver->HasServerAuthority(EntityId));
-	SpatialGDK::NetOwningClientWorker* CurrentNetOwningClientData =
-		NetDriver->StaticComponentView->GetComponentData<SpatialGDK::NetOwningClientWorker>(EntityId);
+	TOptional<SpatialGDK::NetOwningClientWorker> CurrentNetOwningClientData =
+		SpatialGDK::DeserializeComponent<SpatialGDK::NetOwningClientWorker>(NetDriver->Connection->GetCoordinator(), EntityId);
 	const Worker_PartitionId CurrentClientPartitionId = CurrentNetOwningClientData->ClientPartitionId.IsSet()
 															? CurrentNetOwningClientData->ClientPartitionId.GetValue()
 															: SpatialConstants::INVALID_ENTITY_ID;

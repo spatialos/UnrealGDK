@@ -15,7 +15,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialView, Log, All);
 
 class USpatialMetrics;
 class USpatialReceiver;
-class USpatialStaticComponentView;
 class USpatialWorkerFlags;
 
 class SPATIALGDK_API SpatialDispatcher
@@ -23,7 +22,7 @@ class SPATIALGDK_API SpatialDispatcher
 public:
 	using FCallbackId = uint32;
 
-	void Init(USpatialStaticComponentView* InStaticComponentView, USpatialWorkerFlags* InSpatialWorkerFlags);
+	void Init(USpatialWorkerFlags* InSpatialWorkerFlags);
 	void ProcessOps(const TArray<Worker_Op>& Ops);
 
 	// Each callback method returns a callback ID which is incremented for each registration.
@@ -60,7 +59,6 @@ private:
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
 
 	TWeakObjectPtr<USpatialNetDriverDebugContext> DebugContext;
-	TWeakObjectPtr<USpatialStaticComponentView> StaticComponentView;
 
 	UPROPERTY()
 	USpatialWorkerFlags* SpatialWorkerFlags;
