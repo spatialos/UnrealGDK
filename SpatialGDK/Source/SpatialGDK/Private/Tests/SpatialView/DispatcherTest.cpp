@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/Callbacks.h"
 #include "SpatialView/ComponentData.h"
@@ -72,7 +72,7 @@ DISPATCHER_TEST(GIVEN_Dispatcher_WHEN_Callback_Added_Then_Invoked_THEN_Callback_
 	return true;
 }
 
-DISPATCHER_TEST(GIVEN_Dispatcher_With_Callback_WHEN_Callback_Removed_THEN_Callback_Not_Invoked)
+DISPATCHER_TEST(GIVEN_Dispatcher_With_Added_Callback_WHEN_Callback_Removed_THEN_Callback_Not_Invoked)
 {
 	bool Invoked = false;
 	FDispatcher Dispatcher;
@@ -84,6 +84,61 @@ DISPATCHER_TEST(GIVEN_Dispatcher_With_Callback_WHEN_Callback_Removed_THEN_Callba
 	};
 
 	const CallbackId Id = Dispatcher.RegisterComponentAddedCallback(COMPONENT_ID, Callback);
+	AddEntityToView(View, ENTITY_ID);
+	PopulateViewDeltaWithComponentAdded(Delta, View, ENTITY_ID, CreateTestComponentData(COMPONENT_ID, COMPONENT_VALUE));
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
+
+	TestTrue("Callback was invoked", Invoked);
+
+	Invoked = false;
+	Dispatcher.RemoveCallback(Id);
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
+
+	TestFalse("Callback was not invoked again", Invoked);
+
+	return true;
+}
+
+DISPATCHER_TEST(GIVEN_Dispatcher_With_Removed_Callback_WHEN_Callback_Removed_THEN_Callback_Not_Invoked)
+{
+	bool Invoked = false;
+	FDispatcher Dispatcher;
+	EntityView View;
+	ViewDelta Delta;
+
+	const FComponentValueCallback Callback = [&Invoked](const FEntityComponentChange&) {
+		Invoked = true;
+	};
+
+	const CallbackId Id = Dispatcher.RegisterComponentRemovedCallback(COMPONENT_ID, Callback);
+	AddEntityToView(View, ENTITY_ID);
+	AddComponentToView(View, ENTITY_ID, ComponentData{ COMPONENT_ID });
+	PopulateViewDeltaWithComponentRemoved(Delta, View, ENTITY_ID, COMPONENT_ID);
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
+
+	TestTrue("Callback was invoked", Invoked);
+
+	Invoked = false;
+	Dispatcher.RemoveCallback(Id);
+	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
+
+	TestFalse("Callback was not invoked again", Invoked);
+
+	return true;
+}
+
+DISPATCHER_TEST(GIVEN_Dispatcher_With_Value_Callback_WHEN_Callback_Removed_THEN_Callback_Not_Invoked)
+{
+	bool Invoked = false;
+	FDispatcher Dispatcher;
+	EntityView View;
+	ViewDelta Delta;
+
+	const FComponentValueCallback Callback = [&Invoked](const FEntityComponentChange&) {
+		Invoked = true;
+	};
+
+	const CallbackId Id = Dispatcher.RegisterComponentValueCallback(COMPONENT_ID, Callback);
 	AddEntityToView(View, ENTITY_ID);
 	PopulateViewDeltaWithComponentAdded(Delta, View, ENTITY_ID, CreateTestComponentData(COMPONENT_ID, COMPONENT_VALUE));
 	Dispatcher.InvokeCallbacks(Delta.GetEntityDeltas());
