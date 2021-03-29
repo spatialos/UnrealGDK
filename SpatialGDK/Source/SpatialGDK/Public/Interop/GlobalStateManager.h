@@ -2,14 +2,17 @@
 
 #pragma once
 
-#include "Utils/SchemaUtils.h"
-
 #include "CoreMinimal.h"
 #include "EngineUtils.h"
 #include "UObject/NoExportTypes.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
+
+#include "EntityQueryHandler.h"
+#include "Interop/ClaimPartitionHandler.h"
+#include "Interop/EntityCommandHandler.h"
+#include "Utils/SchemaUtils.h"
 
 #include "GlobalStateManager.generated.h"
 
@@ -18,6 +21,11 @@ class USpatialActorChannel;
 class USpatialStaticComponentView;
 class USpatialSender;
 class USpatialReceiver;
+
+namespace SpatialGDK
+{
+class ViewCoordinator;
+}
 
 DECLARE_LOG_CATEGORY_EXTERN(LogGlobalStateManager, Log, All)
 
@@ -32,6 +40,7 @@ public:
 	void ApplyDeploymentMapData(Schema_ComponentData* Data);
 	void ApplySnapshotVersionData(Schema_ComponentData* Data);
 	void ApplyStartupActorManagerData(Schema_ComponentData* Data);
+	void WorkerEntityReady();
 
 	void ApplyDeploymentMapUpdate(Schema_ComponentUpdate* Update);
 	void ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update);
@@ -48,6 +57,8 @@ public:
 	void SetDeploymentState();
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void IncrementSessionID();
+
+	void Advance();
 
 	FORCEINLINE FString GetDeploymentMapURL() const { return DeploymentMapURL; }
 	FORCEINLINE bool GetAcceptingPlayers() const { return bAcceptingPlayers; }
@@ -70,7 +81,7 @@ public:
 	void HandleActorBasedOnLoadBalancer(AActor* ActorIterator) const;
 
 	Worker_EntityId GetLocalServerWorkerEntityId() const;
-	void ClaimSnapshotPartition() const;
+	void ClaimSnapshotPartition();
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
@@ -83,6 +94,8 @@ private:
 	uint64 SnapshotVersion = 0;
 
 	// Startup Actor Manager Component
+	bool bHasReceivedStartupActorData;
+	bool bWorkerEntityReady;
 	bool bHasSentReadyForVirtualWorkerAssignment;
 	bool bCanBeginPlay;
 	bool bCanSpawnWithAuthority;
@@ -91,6 +104,8 @@ public:
 #if WITH_EDITOR
 	void OnPrePIEEnded(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
+
+	void OnReceiveShutdownCommand(const Worker_Op& Op, const Worker_CommandRequestOp& CommandRequestOp);
 
 	void OnShutdownComponentUpdate(Schema_ComponentUpdate* Update);
 	void ReceiveShutdownAdditionalServersEvent();
@@ -111,16 +126,16 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
+	SpatialGDK::ViewCoordinator* ViewCoordinator;
 
-	UPROPERTY()
-	USpatialSender* Sender;
+	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimHandler;
+	SpatialGDK::EntityQueryHandler QueryHandler;
 
-	UPROPERTY()
-	USpatialReceiver* Receiver;
+#if WITH_EDITOR
+	SpatialGDK::EntityCommandRequestHandler RequestHandler;
 
 	FDelegateHandle PrePIEEndedHandle;
+#endif // WITH_EDITOR
 
 	bool bTranslationQueryInFlight;
 };

@@ -4,9 +4,10 @@
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitReader.h"
+#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
-#include "Interop/SpatialStaticComponentView.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Net/NetworkProfiler.h"
 #include "SpatialConstants.h"
 #include "Utils/RepLayoutUtils.h"

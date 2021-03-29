@@ -8,11 +8,10 @@ DEFINE_LOG_CATEGORY(LogWellKnownEntitySystem);
 
 namespace SpatialGDK
 {
-WellKnownEntitySystem::WellKnownEntitySystem(const FSubView& SubView, USpatialReceiver* InReceiver, USpatialWorkerConnection* InConnection,
-											 const int InNumberOfWorkers, SpatialVirtualWorkerTranslator& InVirtualWorkerTranslator,
+WellKnownEntitySystem::WellKnownEntitySystem(const FSubView& SubView, USpatialWorkerConnection* InConnection, const int InNumberOfWorkers,
+											 SpatialVirtualWorkerTranslator& InVirtualWorkerTranslator,
 											 UGlobalStateManager& InGlobalStateManager)
 	: SubView(&SubView)
-	, Receiver(InReceiver)
 	, VirtualWorkerTranslator(&InVirtualWorkerTranslator)
 	, GlobalStateManager(&InGlobalStateManager)
 	, Connection(InConnection)
@@ -49,6 +48,11 @@ void WellKnownEntitySystem::Advance()
 		default:
 			break;
 		}
+	}
+
+	if (VirtualWorkerTranslationManager.IsValid())
+	{
+		VirtualWorkerTranslationManager->Advance(*SubView->GetViewDelta().WorkerMessages);
 	}
 }
 
@@ -106,6 +110,7 @@ void WellKnownEntitySystem::ProcessAuthorityGain(const Worker_EntityId EntityId,
 	if (SubView->GetView()[EntityId].Components.ContainsByPredicate(
 			SpatialGDK::ComponentIdEquality{ SpatialConstants::SERVER_WORKER_COMPONENT_ID }))
 	{
+		GlobalStateManager->WorkerEntityReady();
 		GlobalStateManager->TrySendWorkerReadyToBeginPlay();
 	}
 
@@ -147,7 +152,7 @@ void WellKnownEntitySystem::OnMapLoaded() const
 // for the TranslationManager, otherwise the manager will never be instantiated.
 void WellKnownEntitySystem::InitializeVirtualWorkerTranslationManager()
 {
-	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Receiver, Connection, VirtualWorkerTranslator);
+	VirtualWorkerTranslationManager = MakeUnique<SpatialVirtualWorkerTranslationManager>(Connection, VirtualWorkerTranslator);
 	VirtualWorkerTranslationManager->SetNumberOfVirtualWorkers(NumberOfWorkers);
 }
 

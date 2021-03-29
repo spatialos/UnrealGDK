@@ -14,11 +14,7 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestInitialOnlyForSpawnActor : publi
 public:
 	ASpatialTestInitialOnlyForSpawnActor();
 
-	virtual void FinishTest(EFunctionalTestResult TestResult, const FString& Message) override;
-
 	virtual void PrepareTest() override;
 
 	TPair<AController*, APawn*> OriginalPawn;
-
-	float PreviousMaximumDistanceThreshold;
 };

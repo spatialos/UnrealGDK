@@ -6,8 +6,7 @@
 
 ASpatialTestInitialOnlySpawnActor::ASpatialTestInitialOnlySpawnActor()
 {
-	bReplicates = true;
-	NetCullDistanceSquared = 10000.0f;
+	NetCullDistanceSquared = 1000000.0f;
 }
 
 void ASpatialTestInitialOnlySpawnActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

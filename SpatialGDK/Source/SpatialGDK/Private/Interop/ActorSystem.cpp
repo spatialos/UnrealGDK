@@ -2,11 +2,13 @@
 
 #include "Interop/ActorSystem.h"
 
+#include "Algo/AnyOf.h"
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/PlayerState.h"
 #include "Interop/Connection/SpatialTraceEventBuilder.h"
+#include "Interop/InitialOnlyFilter.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/Restricted.h"
@@ -17,7 +19,9 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/EntityFactory.h"
+#include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogActorSystem);
 
@@ -141,6 +145,7 @@ ActorSystem::ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneS
 	, TombstoneSubView(&InTombstoneSubView)
 	, NetDriver(InNetDriver)
 	, EventTracer(InEventTracer)
+	, ClaimPartitionHandler(*InNetDriver->Connection)
 {
 }
 
@@ -229,6 +234,9 @@ void ActorSystem::Advance()
 			break;
 		}
 	}
+
+	CreateEntityHandler.ProcessOps(*SubView->GetViewDelta().WorkerMessages);
+	ClaimPartitionHandler.ProcessOps(*SubView->GetViewDelta().WorkerMessages);
 }
 
 UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
@@ -473,6 +481,17 @@ void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_Co
 	}
 
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	if (!NetDriver->IsServer() && Channel == nullptr)
+	{
+		// Try to restore the channel if this is a stably named actor. This can happen if a sublevel
+		// gets reloaded quickly and results in the entity components getting refreshed instead of
+		// the entity getting removed and added again.
+		if (AActor* StablyNamedActor = TryGetActor(ActorDataStore[EntityId].Metadata))
+		{
+			Channel = TryRestoreActorChannelForStablyNamedActor(StablyNamedActor, EntityId);
+		}
+	}
+
 	if (Channel == nullptr)
 	{
 		UE_LOG(LogActorSystem, Error,
@@ -481,6 +500,7 @@ void ActorSystem::ComponentAdded(const Worker_EntityId EntityId, const Worker_Co
 			   EntityId, ComponentId);
 		return;
 	}
+
 	if (Channel->bCreatedEntity)
 	{
 		// Allows servers to change state if they are going to be authoritative, without us overwriting it with old data.
@@ -955,7 +975,7 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 		{
 			if (AsActor->GetTearOff())
 			{
-				UE_LOG(LogSpatialActorChannel, Log,
+				UE_LOG(LogActorSystem, Log,
 					   TEXT("Actor to be resolved was torn off, so ignoring incoming operations. Object ref: %s, resolved object: %s"),
 					   *ObjectRef.ToString(), *Object->GetName());
 				DependentChannel->ObjectReferenceMap.Remove(ChannelObjectIter->Value);
@@ -966,7 +986,7 @@ void ActorSystem::ResolveIncomingOperations(UObject* Object, const FUnrealObject
 		{
 			if (OuterActor->GetTearOff())
 			{
-				UE_LOG(LogSpatialActorChannel, Log,
+				UE_LOG(LogActorSystem, Log,
 					   TEXT("Owning Actor of the object to be resolved was torn off, so ignoring incoming operations. Object ref: %s, "
 							"resolved object: %s"),
 					   *ObjectRef.ToString(), *Object->GetName());
@@ -1242,44 +1262,23 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
-
-	if (Connection == nullptr)
-	{
-		UE_LOG(LogActorSystem, Error,
-			   TEXT("Unable to find SpatialOSNetConnection! Has this worker been disconnected from SpatialOS due to a timeout?"));
-		return;
-	}
-
 	if (!NetDriver->PackageMap->ResolveEntityActor(EntityActor, EntityId))
 	{
 		UE_LOG(LogActorSystem, Warning,
-			   TEXT("Failed to resolve entity actor when receiving entity %lld. The actor (%s) will not be spawned."), EntityId,
-			   *EntityActor->GetName());
+			   TEXT("Failed to resolve entity actor when receiving entity. Actor will not be spawned. Entity: %lld, actor: %s"), EntityId,
+			   *EntityActor->GetPathName());
 		EntityActor->Destroy(true);
 		return;
 	}
 
-	// Set up actor channel.
-	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
-	if (Channel == nullptr)
-	{
-		Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(
-			NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
-	}
-
+	USpatialActorChannel* Channel = SetUpActorChannel(EntityActor, EntityId);
 	if (Channel == nullptr)
 	{
 		UE_LOG(LogActorSystem, Warning,
-			   TEXT("Failed to create an actor channel when receiving entity %lld. The actor (%s) will not be spawned."), EntityId,
-			   *EntityActor->GetName());
+			   TEXT("Failed to create an actor channel when receiving entity. Actor will not be spawned. Entity: %lld, actor: %s"),
+			   EntityId, *EntityActor->GetPathName());
 		EntityActor->Destroy(true);
 		return;
-	}
-
-	if (Channel->Actor == nullptr)
-	{
-		Channel->SetChannelActor(EntityActor, ESetChannelActorFlags::None);
 	}
 
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
@@ -1551,6 +1550,54 @@ void ActorSystem::ApplyComponentDataOnActorCreation(const Worker_EntityId Entity
 	}
 }
 
+USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, const Worker_EntityId EntityId)
+{
+	UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
+
+	if (Connection == nullptr)
+	{
+		UE_LOG(LogActorSystem, Error,
+			   TEXT("Unable to find SpatialOSNetConnection! Has this worker been disconnected from SpatialOS due to a timeout?"));
+		return nullptr;
+	}
+
+	// Set up actor channel.
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	if (Channel == nullptr)
+	{
+		Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(
+			NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
+	}
+
+	if (Channel != nullptr && Channel->Actor == nullptr)
+	{
+		Channel->SetChannelActor(Actor, ESetChannelActorFlags::None);
+	}
+
+	return Channel;
+}
+
+USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, const Worker_EntityId EntityId)
+{
+	if (!NetDriver->PackageMap->ResolveEntityActor(StablyNamedActor, EntityId))
+	{
+		UE_LOG(LogActorSystem, Warning,
+			   TEXT("Failed to restore actor channel for stably named actor: failed to resolve actor. Entity: %lld, actor: %s"), EntityId,
+			   *StablyNamedActor->GetPathName());
+		return nullptr;
+	}
+
+	USpatialActorChannel* Channel = SetUpActorChannel(StablyNamedActor, EntityId);
+	if (Channel == nullptr)
+	{
+		UE_LOG(LogActorSystem, Warning,
+			   TEXT("Failed to restore actor channel for stably named actor: failed to create channel. Entity: %lld, actor: %s"), EntityId,
+			   *StablyNamedActor->GetPathName());
+	}
+
+	return Channel;
+}
+
 void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ActorSystemRemoveActor);
@@ -1679,6 +1726,25 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 	DestroyActor(Actor, EntityId);
 }
 
+Worker_ComponentData ActorSystem::CreateLevelComponentData(const AActor& Actor, const UWorld& NetDriverWorld,
+														   const USpatialClassInfoManager& ClassInfoManager)
+{
+	UWorld* ActorWorld = Actor.GetTypedOuter<UWorld>();
+	if (ActorWorld != &NetDriverWorld)
+	{
+		const uint32 ComponentId = ClassInfoManager.GetComponentIdFromLevelPath(ActorWorld->GetOuter()->GetPathName());
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			return SpatialGDK::ComponentFactory::CreateEmptyComponentData(ComponentId);
+		}
+		UE_LOG(LogActorSystem, Error,
+			   TEXT("Could not find Streaming Level Component for Level %s, processing Actor %s. Have you generated schema?"),
+			   *ActorWorld->GetOuter()->GetPathName(), *Actor.GetPathName());
+	}
+
+	return SpatialGDK::ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
+}
+
 void ActorSystem::CreateTombstoneEntity(AActor* Actor)
 {
 	check(Actor->IsNetStartupActor());
@@ -1688,7 +1754,7 @@ void ActorSystem::CreateTombstoneEntity(AActor* Actor)
 	EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->GetRPCService());
 	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
 
-	Components.Add(CreateLevelComponentData(Actor));
+	Components.Add(CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
 
 	CreateEntityWithRetries(EntityId, Actor->GetName(), MoveTemp(Components));
 
@@ -1892,14 +1958,153 @@ void ActorSystem::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, cons
 	NetDriver->PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
 }
 
-void ActorSystem::SendCreateEntityRequest(USpatialActorChannel* Channel, uint32& OutBytesWritten)
+void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, uint32& OutBytesWritten)
 {
-	UE_LOG(LogActorSystem, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"),
-		   *Channel->Actor->GetName(), Channel->GetEntityId(), Channel->Actor->HasAuthority());
+	AActor* Actor = ActorChannel.Actor;
+	const Worker_EntityId EntityId = ActorChannel.GetEntityId();
+	UE_LOG(LogActorSystem, Log, TEXT("Sending create entity request for %s with EntityId %lld, HasAuthority: %d"), *Actor->GetName(),
+		   ActorChannel.GetEntityId(), Actor->HasAuthority());
 
-	const Worker_RequestId RequestId = CreateEntity(Channel, OutBytesWritten);
+	SpatialGDK::EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->RPCService.Get());
+	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(&ActorChannel, OutBytesWritten);
 
-	NetDriver->Receiver->AddPendingActorRequest(RequestId, Channel);
+	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
+	ComponentDatas.Add(SpatialGDK::ActorSystem::CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
+
+	FSpatialGDKSpanId SpanId;
+	if (EventTracer != nullptr)
+	{
+		SpanId = EventTracer->TraceEvent(SpatialGDK::FSpatialTraceEventBuilder::CreateSendCreateEntity(Actor, EntityId));
+	}
+
+	const Worker_RequestId CreateEntityRequestId =
+		NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, SpatialGDK::RETRY_UNTIL_COMPLETE, SpanId);
+
+	CreateEntityHandler.AddRequest(CreateEntityRequestId, CreateEntityDelegate::CreateRaw(this, &ActorSystem::OnEntityCreated, SpanId));
+
+	CreateEntityRequestIdToActorChannel.Emplace(CreateEntityRequestId, MakeWeakObjectPtr(&ActorChannel));
+}
+
+bool ActorSystem::HasPendingOpsForChannel(const USpatialActorChannel& ActorChannel) const
+{
+	const bool bHasUnresolvedObjects = Algo::AnyOf(
+		ActorChannel.ObjectReferenceMap, [&ActorChannel](const TPair<TWeakObjectPtr<UObject>, FSpatialObjectRepState>& ObjectReference) {
+			return ObjectReference.Value.HasUnresolved();
+		});
+
+	if (bHasUnresolvedObjects)
+	{
+		return true;
+	}
+
+	const bool bHasPendingCreateEntityRequests = Algo::AnyOf(
+		CreateEntityRequestIdToActorChannel, [&ActorChannel](const TPair<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>>& It) {
+			return It.Value == &ActorChannel;
+		});
+
+	return bHasPendingCreateEntityRequests;
+}
+
+void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpatialGDKSpanId CreateOpSpan)
+{
+	TWeakObjectPtr<USpatialActorChannel> BoundActorChannel;
+
+	if (!ensure(CreateEntityRequestIdToActorChannel.RemoveAndCopyValue(Op.request_id, BoundActorChannel)))
+	{
+		return;
+	}
+
+	if (!ensure(BoundActorChannel.IsValid()))
+	{
+		// The channel was destroyed before the response reached this worker.
+		return;
+	}
+
+	USpatialActorChannel& Channel = *BoundActorChannel.Get();
+
+	AActor* Actor = Channel.Actor;
+	const Worker_EntityId EntityId = Channel.GetEntityId();
+
+	if (EventTracer != nullptr)
+	{
+		EventTracer->TraceEvent(SpatialGDK::FSpatialTraceEventBuilder::CreateReceiveCreateEntitySuccess(Actor, EntityId),
+								/* Causes */ CreateOpSpan.GetConstId(), /* NumCauses */ 1);
+	}
+
+	check(NetDriver->GetNetMode() < NM_Client);
+
+	if (Actor == nullptr || Actor->IsPendingKill())
+	{
+		UE_LOG(LogActorSystem, Log, TEXT("Actor is invalid after trying to create entity"));
+		return;
+	}
+
+	// True if the entity is in the worker's view.
+	// If this is the case then we know the entity was created and do not need to retry if the request timed-out.
+	const bool bEntityIsInView = SubView->HasEntity(EntityId);
+
+	switch (static_cast<Worker_StatusCode>(Op.status_code))
+	{
+	case WORKER_STATUS_CODE_SUCCESS:
+		UE_LOG(LogActorSystem, Verbose,
+			   TEXT("Create entity request succeeded. "
+					"Actor %s, request id: %d, entity id: %lld, message: %s"),
+			   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		break;
+	case WORKER_STATUS_CODE_TIMEOUT:
+		if (bEntityIsInView)
+		{
+			UE_LOG(LogActorSystem, Log,
+				   TEXT("Create entity request failed but the entity was already in view. "
+						"Actor %s, request id: %d, entity id: %lld, message: %s"),
+				   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		}
+		else
+		{
+			UE_LOG(LogActorSystem, Warning,
+				   TEXT("Create entity request timed out. Retrying. "
+						"Actor %s, request id: %d, entity id: %lld, message: %s"),
+				   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+
+			// TODO: UNR-664 - Track these bytes written to use in saturation.
+			uint32 BytesWritten = 0;
+			SendCreateEntityRequest(Channel, BytesWritten);
+		}
+		break;
+	case WORKER_STATUS_CODE_APPLICATION_ERROR:
+		if (bEntityIsInView)
+		{
+			UE_LOG(LogActorSystem, Log,
+				   TEXT("Create entity request failed as the entity already exists and is in view. "
+						"Actor %s, request id: %d, entity id: %lld, message: %s"),
+				   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		}
+		else
+		{
+			UE_LOG(LogActorSystem, Warning,
+				   TEXT("Create entity request failed."
+						"Either the reservation expired, the entity already existed, or the entity was invalid. "
+						"Actor %s, request id: %d, entity id: %lld, message: %s"),
+				   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		}
+		break;
+	default:
+		UE_LOG(LogActorSystem, Error,
+			   TEXT("Create entity request failed. This likely indicates a bug in the Unreal GDK and should be reported."
+					"Actor %s, request id: %d, entity id: %lld, message: %s"),
+			   *Actor->GetName(), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		break;
+	}
+
+	if (static_cast<Worker_StatusCode>(Op.status_code) == WORKER_STATUS_CODE_SUCCESS && Actor->IsA<APlayerController>())
+	{
+		// With USLB, we want the client worker that results in the spawning of a PlayerController to claim the
+		// PlayerController entity as a partition entity so the client can become authoritative over necessary
+		// components (such as client RPC endpoints, player controller component, etc).
+		const Worker_EntityId ClientSystemEntityId = SpatialGDK::GetConnectionOwningClientSystemEntityId(Cast<APlayerController>(Actor));
+		check(ClientSystemEntityId != SpatialConstants::INVALID_ENTITY_ID);
+		ClaimPartitionHandler.ClaimPartition(ClientSystemEntityId, Op.entity_id);
+	}
 }
 
 void ActorSystem::DestroyActor(AActor* Actor, const Worker_EntityId EntityId)
@@ -1998,46 +2203,6 @@ FString ActorSystem::GetObjectNameFromRepState(const FSpatialObjectRepState& Rep
 	return TEXT("<unknown>");
 }
 
-Worker_RequestId ActorSystem::CreateEntity(USpatialActorChannel* Channel, uint32& OutBytesWritten)
-{
-	EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, &*NetDriver->RPCService);
-	TArray<FWorkerComponentData> ComponentDatas = DataFactory.CreateEntityComponents(Channel, OutBytesWritten);
-
-	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
-	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
-
-	Worker_EntityId EntityId = Channel->GetEntityId();
-
-	FSpatialGDKSpanId SpanId;
-	if (EventTracer != nullptr)
-	{
-		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCreateEntity(Channel->Actor, EntityId));
-	}
-
-	const Worker_RequestId CreateEntityRequestId =
-		NetDriver->Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId, RETRY_UNTIL_COMPLETE, SpanId);
-
-	return CreateEntityRequestId;
-}
-
-Worker_ComponentData ActorSystem::CreateLevelComponentData(AActor* Actor)
-{
-	UWorld* ActorWorld = Actor->GetTypedOuter<UWorld>();
-	if (ActorWorld != NetDriver->World)
-	{
-		const uint32 ComponentId = NetDriver->ClassInfoManager->GetComponentIdFromLevelPath(ActorWorld->GetOuter()->GetPathName());
-		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			return ComponentFactory::CreateEmptyComponentData(ComponentId);
-		}
-		UE_LOG(LogActorSystem, Error,
-			   TEXT("Could not find Streaming Level Component for Level %s, processing Actor %s. Have you generated schema?"),
-			   *ActorWorld->GetOuter()->GetPathName(), *Actor->GetPathName());
-	}
-
-	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
-}
-
 void ActorSystem::CreateEntityWithRetries(Worker_EntityId EntityId, FString EntityName, TArray<FWorkerComponentData> EntityComponents)
 {
 	const Worker_RequestId RequestId =
@@ -2073,7 +2238,7 @@ void ActorSystem::CreateEntityWithRetries(Worker_EntityId EntityId, FString Enti
 		}
 	});
 
-	NetDriver->Receiver->AddCreateEntityDelegate(RequestId, MoveTemp(Delegate));
+	CreateEntityHandler.AddRequest(RequestId, MoveTemp(Delegate));
 }
 
 TArray<FWorkerComponentData> ActorSystem::CopyEntityComponentData(const TArray<FWorkerComponentData>& EntityComponents)

@@ -20,7 +20,6 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialRPCService, Log, All);
 
 class USpatialLatencyTracer;
-class USpatialStaticComponentView;
 class USpatialNetDriver;
 struct RPCRingBuffer;
 

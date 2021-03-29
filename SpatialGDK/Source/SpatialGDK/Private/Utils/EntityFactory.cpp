@@ -7,8 +7,12 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
+#include "Interop/ActorGroupWriter.h"
+#include "Interop/ActorSetWriter.h"
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Schema/ActorGroupMember.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/SpatialDebugging.h"
@@ -110,10 +114,9 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 		   *Actor->GetName(), *NetDriver->LoadBalanceStrategy->GetName());
 
 	AuthorityDelegationMap DelegationMap;
-	const Worker_PartitionId RoutingPartitionId = NetDriver->GetRoutingPartition();
 	DelegationMap.Add(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AuthoritativeServerPartitionId);
 	DelegationMap.Add(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, AuthoritativeClientPartitionId);
-	DelegationMap.Add(SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID, RoutingPartitionId);
+	DelegationMap.Add(SpatialConstants::ROUTING_WORKER_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_ROUTING_PARTITION_ENTITY_ID);
 
 	// Add debugging utilities, if we are not compiling a shipping build
 #if !UE_BUILD_SHIPPING
@@ -139,6 +142,22 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	ComponentDatas.Add(NetOwningClientWorker(AuthoritativeClientPartitionId).CreateComponentData());
 	ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
 	ComponentDatas.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
+
+	if (GetDefault<USpatialGDKSettings>()->bEnableStrategyLoadBalancingComponents)
+	{
+		const auto AddComponentData = [&ComponentDatas](ComponentData Data) {
+			Worker_ComponentData ComponentData;
+			ComponentData.reserved = nullptr;
+			ComponentData.component_id = Data.GetComponentId();
+			ComponentData.schema_type = MoveTemp(Data).Release();
+			ComponentData.user_handle = nullptr;
+
+			ComponentDatas.Add(ComponentData);
+		};
+
+		AddComponentData(GetActorSetData(*NetDriver->PackageMap, *Actor).CreateComponentData());
+		AddComponentData(GetActorGroupData(*NetDriver->LoadBalanceStrategy, *Actor).CreateComponentData());
+	}
 }
 
 void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel,
