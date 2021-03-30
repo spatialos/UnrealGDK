@@ -61,8 +61,6 @@ public:
 
 	virtual void OnAuthorityGained() override;
 
-	virtual void CleanablePossess(AController* Controller, APawn* Pawn);
-
 	// Should be called from the server with authority over this actor.
 	virtual void RegisterAutoDestroyActor(AActor* ActorToAutoDestroy) override;
 
@@ -346,6 +344,10 @@ public:
 	// Clears all the snapshots taken, not meant to be used directly.
 	static void ClearAllTakenSnapshots();
 
+	void RegisterAutoPossess(AController* Controller, APawn* Pawn);
+	void RegisterAutoPossess(AController* Controller);
+	void CleanablePossess(AController* Controller, APawn* Pawn);
+
 protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();
@@ -449,5 +451,6 @@ private:
 	// will check if there's a snapshot for them, and if so launch with it instead of the default snapshot.
 	static TMap<FString, FString> TakenSnapshots;
 
+	UPROPERTY(Replicated, Transient)
 	TMap<TWeakObjectPtr<AController>, TWeakObjectPtr<APawn>> OriginalPawnsToPossessOnFinishTest;
 };

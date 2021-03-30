@@ -171,24 +171,6 @@ void ASpatialFunctionalTest::OnAuthorityGained()
 	StartServerFlowControllerSpawn();
 }
 
-void ASpatialFunctionalTest::CleanablePossess(AController* Controller, APawn* Pawn)
-{
-	checkf(Controller, TEXT("Can't do possession with a null Controller."));
-	for (const auto& Pair : OriginalPawnsToPossessOnFinishTest)
-	{
-		AController* MapController = Pair.Key.Get();
-		if (MapController == Controller)
-		{
-			// We do not want to revert the possession if we already have something in the map.
-			Controller->Possess(Pawn);
-			return;
-		}
-	}
-
-	OriginalPawnsToPossessOnFinishTest.Add(MakeWeakObjectPtr(Controller), MakeWeakObjectPtr(Controller->GetPawn()));
-	Controller->Possess(Pawn);
-}
-
 void ASpatialFunctionalTest::RegisterAutoDestroyActor(AActor* ActorToAutoDestroy)
 {
 	if (ActorToAutoDestroy != nullptr && ActorToAutoDestroy->HasAuthority())
@@ -229,6 +211,7 @@ void ASpatialFunctionalTest::PrepareTest()
 	}
 
 	bFinishedTest = false; // Reset the test state
+	OriginalPawnsToPossessOnFinishTest.Empty();
 
 	StepDefinitions.Empty();
 	Super::PrepareTest();
@@ -1055,4 +1038,44 @@ void ASpatialFunctionalTest::ClearAllTakenSnapshots()
 {
 	bWasLoadedFromTakenSnapshot = false;
 	TakenSnapshots.Empty();
+}
+
+void ASpatialFunctionalTest::RegisterAutoPossess(AController* Controller, APawn* Pawn)
+{
+	if (Controller == nullptr)
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("Can't do possession with a null Controller."));
+		return;
+	}
+	if (!HasAuthority())
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Error,
+			   TEXT("Do not have authority over the test actor when calling RegisterAutoPossess, this is not the correct usage."));
+		return;
+	}
+	for (const auto& Pair : OriginalPawnsToPossessOnFinishTest)
+	{
+		AController* MapController = Pair.Key.Get();
+		if (MapController == Controller)
+		{
+			// We do not want to register the possession if we already have something in the map.
+			UE_LOG(
+				LogSpatialGDKFunctionalTests, Warning,
+				TEXT("Tried to register a controller for auto-possession, but the controller was already registered before this point."));
+			return;
+		}
+	}
+
+	OriginalPawnsToPossessOnFinishTest.Add(MakeWeakObjectPtr(Controller), MakeWeakObjectPtr(Pawn));
+}
+
+void ASpatialFunctionalTest::RegisterAutoPossess(AController* Controller)
+{
+	RegisterAutoPossess(Controller, Controller->GetPawn());
+}
+
+void ASpatialFunctionalTest::CleanablePossess(AController* Controller, APawn* Pawn)
+{
+	RegisterAutoPossess(Controller);
+	Controller->Possess(Pawn);
 }
