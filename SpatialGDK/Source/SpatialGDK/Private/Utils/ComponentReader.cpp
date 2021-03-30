@@ -125,13 +125,15 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 	Schema_GetUniqueFieldIds(ComponentObject, ReceivedIds.GetData());
 
 	auto CheckSubsetLambda = [](const TArray<Schema_FieldId>& Subset, const TArray<Schema_FieldId>& Superset) {
-		for (Schema_FieldId Field : Subset) {
-			if (!Superset.Contains(Field)) return false;
+		for (Schema_FieldId Field : Subset)
+		{
+			if (!Superset.Contains(Field))
+				return false;
 		}
 		return true;
 	};
-	checkfSlow(CheckSubsetLambda(ReceivedIds, InitialIds),
-		TEXT("The list of received IDs is not a subset of the entire list of field IDs associated with the component, this should not happen."));
+	checkfSlow(CheckSubsetLambda(ReceivedIds, InitialIds), TEXT("The list of received IDs is not a subset of the entire list of field IDs "
+																"associated with the component, this should not happen."));
 #endif
 
 	if (bIsHandover)

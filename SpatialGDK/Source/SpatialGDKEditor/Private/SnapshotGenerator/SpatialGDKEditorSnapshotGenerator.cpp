@@ -352,7 +352,7 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 			   UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetState(OutputStream).error_message));
 		return false;
 	}
-	
+
 	if (!CreateRoutingWorkerPartitionEntity(OutputStream))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating RoutingPartitionEntity in snapshot: %s"),

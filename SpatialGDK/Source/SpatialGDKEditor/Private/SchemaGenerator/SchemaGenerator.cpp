@@ -574,7 +574,8 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, Class));
 			Writer.Outdent().Print("}");
 
-			ComponentIdToFieldIds.FindOrAdd(ComponentId).FieldIds = FieldIdsForComponentClassAndGroup.FindOrAdd(Class).FindOrAdd(Group).Array();
+			ComponentIdToFieldIds.FindOrAdd(ComponentId).FieldIds =
+				FieldIdsForComponentClassAndGroup.FindOrAdd(Class).FindOrAdd(Group).Array();
 			AddComponentId(ComponentId, DynamicSubobjectComponents.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
 		}
 

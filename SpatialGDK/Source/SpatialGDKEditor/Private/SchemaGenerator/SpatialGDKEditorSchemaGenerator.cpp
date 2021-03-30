@@ -103,12 +103,13 @@ namespace
 {
 const FString& GetRelativeSchemaDatabaseFilePath()
 {
-	static const FString s_RelativeFilePath = FPaths::SetExtension(
-		FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH), FPackageName::GetAssetPackageExtension());
+	static const FString s_RelativeFilePath =
+		FPaths::SetExtension(FPaths::Combine(FPaths::ProjectContentDir(), SpatialConstants::SCHEMA_DATABASE_FILE_PATH),
+							 FPackageName::GetAssetPackageExtension());
 
 	return s_RelativeFilePath;
 }
-}
+} // namespace
 
 namespace SpatialGDKEditor
 {
