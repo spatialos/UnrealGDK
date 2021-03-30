@@ -22,6 +22,11 @@ class USpatialStaticComponentView;
 class USpatialSender;
 class USpatialReceiver;
 
+namespace SpatialGDK
+{
+class ViewCoordinator;
+}
+
 DECLARE_LOG_CATEGORY_EXTERN(LogGlobalStateManager, Log, All)
 
 UCLASS()
@@ -35,6 +40,7 @@ public:
 	void ApplyDeploymentMapData(Schema_ComponentData* Data);
 	void ApplySnapshotVersionData(Schema_ComponentData* Data);
 	void ApplyStartupActorManagerData(Schema_ComponentData* Data);
+	void WorkerEntityReady();
 
 	void ApplyDeploymentMapUpdate(Schema_ComponentUpdate* Update);
 	void ApplyStartupActorManagerUpdate(Schema_ComponentUpdate* Update);
@@ -88,6 +94,8 @@ private:
 	uint64 SnapshotVersion = 0;
 
 	// Startup Actor Manager Component
+	bool bHasReceivedStartupActorData;
+	bool bWorkerEntityReady;
 	bool bHasSentReadyForVirtualWorkerAssignment;
 	bool bCanBeginPlay;
 	bool bCanSpawnWithAuthority;
@@ -118,8 +126,7 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	UPROPERTY()
-	USpatialStaticComponentView* StaticComponentView;
+	SpatialGDK::ViewCoordinator* ViewCoordinator;
 
 	TUniquePtr<SpatialGDK::ClaimPartitionHandler> ClaimHandler;
 	SpatialGDK::EntityQueryHandler QueryHandler;
