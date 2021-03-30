@@ -1,4 +1,6 @@
-﻿#include "SpatialView/CommandResponse.h"
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+#include "SpatialView/CommandResponse.h"
 
 namespace SpatialGDK
 {

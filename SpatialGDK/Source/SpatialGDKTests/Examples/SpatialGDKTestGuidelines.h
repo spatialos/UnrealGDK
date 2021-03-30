@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 /*
 1. How to run tests:
 	- Tests can be run via Session Frontend in UE4 Editor

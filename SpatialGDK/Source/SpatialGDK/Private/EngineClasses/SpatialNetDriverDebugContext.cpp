@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
