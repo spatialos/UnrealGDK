@@ -17,7 +17,6 @@ component_set KnownEntityAuthComponentSet {
 	unreal.DeploymentMap,
 	unreal.StartupActorManager,
 	unreal.GSMShutdown,	 
-	unreal.VirtualWorkerTranslation,
-	unreal.ServerWorker
+	unreal.VirtualWorkerTranslation
   ];
 }
