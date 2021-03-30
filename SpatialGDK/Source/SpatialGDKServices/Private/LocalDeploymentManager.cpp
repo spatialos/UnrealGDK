@@ -206,9 +206,36 @@ bool FLocalDeploymentManager::LocalDeploymentPreRunChecks()
 	return bSuccess;
 }
 
-void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs,
-													  FString SnapshotName, FString RuntimeIPToExpose,
+void FLocalDeploymentManager::TryStartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
+													  const FString& SnapshotName, const FString& RuntimeIPToExpose,
 													  const LocalDeploymentCallback& CallBack)
+{
+	int NumRetries = RuntimeStartRetries;
+	while (NumRetries > 0)
+	{
+		NumRetries--;
+		ERuntimeStartResponse Response =
+			StartLocalDeployment(LaunchConfig, RuntimeVersion, LaunchArgs, SnapshotName, RuntimeIPToExpose, CallBack);
+		if (Response != ERuntimeStartResponse::Timeout)
+		{
+			break;
+		}
+
+		if (NumRetries == 0)
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Runtime startup timed out too many times. Giving up."));
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime startup timed out. Will attempt to retry. Retries remaining: %d"),
+				   NumRetries);
+		}
+	}
+}
+
+FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLocalDeployment(
+	const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs, const FString& SnapshotName,
+	const FString& RuntimeIPToExpose, const LocalDeploymentCallback& CallBack)
 {
 	RuntimeStartTime = FDateTime::Now();
 	bRedeployRequired = false;
@@ -220,7 +247,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		{
 			CallBack(false);
 		}
-		return;
+		return ERuntimeStartResponse::AlreadyRunning;
 	}
 
 	if (!LocalDeploymentPreRunChecks())
@@ -231,7 +258,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		{
 			CallBack(false);
 		}
-		return;
+		return ERuntimeStartResponse::PreRunChecksFailed;
 	}
 
 	bStartingDeployment = true;
@@ -308,8 +335,8 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	bStartingDeployment = false;
 	if (!bLocalDeploymentRunning)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to start."));
-		return;
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Timed out waiting for the Runtime to start."));
+		return ERuntimeStartResponse::Timeout;
 	}
 
 	FTimespan Span = FDateTime::Now() - RuntimeStartTime;
@@ -325,7 +352,7 @@ void FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	EAutomationControllerModuleState::Type TestState = AutomationController->GetTestState();
 	bTestRunnning = TestState == EAutomationControllerModuleState::Type::Running;
 
-	return;
+	return ERuntimeStartResponse::Success;
 }
 
 bool FLocalDeploymentManager::SetupRuntimeFileLogger(const FString& RuntimeLogDir)

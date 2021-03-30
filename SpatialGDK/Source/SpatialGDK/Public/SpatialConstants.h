@@ -56,13 +56,16 @@ enum EntityIds
 	INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
 	INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID = 3,
 	INITIAL_SNAPSHOT_PARTITION_ENTITY_ID = 4,
-	FIRST_AVAILABLE_ENTITY_ID = 5,
+	INITIAL_STRATEGY_PARTITION_ENTITY_ID = 5,
+	INITIAL_ROUTING_PARTITION_ENTITY_ID = 6,
+	FIRST_AVAILABLE_ENTITY_ID = 7,
 };
 
 const Worker_PartitionId INVALID_PARTITION_ID = INVALID_ENTITY_ID;
 
 const Worker_ComponentId INVALID_COMPONENT_ID = 0;
 
+const Worker_ComponentSetId SPATIALOS_WELLKNOWN_COMPONENTSET_ID = 50;
 const Worker_ComponentId METADATA_COMPONENT_ID = 53;
 const Worker_ComponentId POSITION_COMPONENT_ID = 54;
 const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
@@ -97,6 +100,7 @@ const Worker_ComponentSetId HANDOVER_COMPONENT_SET_ID = 9904;
 const Worker_ComponentSetId GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID = 9905;
 const Worker_ComponentSetId ROUTING_WORKER_AUTH_COMPONENT_SET_ID = 9906;
 const Worker_ComponentSetId INITIAL_ONLY_COMPONENT_SET_ID = 9907;
+const Worker_ComponentSetId SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID = 9908;
 
 extern const FString SERVER_AUTH_COMPONENT_SET_NAME;
 extern const FString CLIENT_AUTH_COMPONENT_SET_NAME;
@@ -146,6 +150,8 @@ const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
 const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
 const Worker_ComponentId TOMBSTONE_TAG_COMPONENT_ID = 2008;
 const Worker_ComponentId ROUTINGWORKER_TAG_COMPONENT_ID = 2009;
+const Worker_ComponentId STRATEGYWORKER_TAG_COMPONENT_ID = 2010;
+// Add component ids above here, this should always be last and be equal to the previous component id
 const Worker_ComponentId LAST_EC_COMPONENT_ID = 2010;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
@@ -289,6 +295,7 @@ const FString INVALID_WORKER_NAME;
 
 extern const FName DefaultLayer;
 
+extern const FName StrategyWorkerType;
 extern const FName RoutingWorkerType;
 
 extern const FString ClientsStayConnectedURLOption;
@@ -398,7 +405,7 @@ extern const TArray<Worker_ComponentId> KnownEntityAuthorityComponents;
 //
 
 constexpr uint32 SPATIAL_SNAPSHOT_SCHEMA_HASH = 679237978;
-constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 1;
+constexpr uint32 SPATIAL_SNAPSHOT_VERSION_INC = 3;
 constexpr uint64 SPATIAL_SNAPSHOT_VERSION = ((((uint64)SPATIAL_SNAPSHOT_SCHEMA_HASH) << 32) | SPATIAL_SNAPSHOT_VERSION_INC);
 
 } // namespace SpatialConstants
