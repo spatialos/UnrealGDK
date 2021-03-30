@@ -227,7 +227,7 @@ void ActorSystem::Advance()
 			{
 				continue;
 			}
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
+			UE_LOG(LogActorSystem, Verbose, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
 				   Delta.EntityId);
 			// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
 			NetDriver->PackageMap->ResolveEntityActor(EntityActor, Delta.EntityId);
