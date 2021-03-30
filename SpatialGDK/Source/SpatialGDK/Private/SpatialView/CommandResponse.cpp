@@ -2,7 +2,6 @@
 
 namespace SpatialGDK
 {
-
 CommandResponse::CommandResponse(Worker_ComponentId ComponentId, Worker_CommandIndex CommandIndex)
 	: ComponentId(ComponentId)
 	, CommandIndex(CommandIndex)
@@ -17,7 +16,8 @@ CommandResponse::CommandResponse(OwningCommandResponsePtr Data, Worker_Component
 {
 }
 
-CommandResponse CommandResponse::CreateCopy(const Schema_CommandResponse* Data, Worker_ComponentId ComponentId, Worker_CommandIndex CommandIndex)
+CommandResponse CommandResponse::CreateCopy(const Schema_CommandResponse* Data, Worker_ComponentId ComponentId,
+											Worker_CommandIndex CommandIndex)
 {
 	return CommandResponse(OwningCommandResponsePtr(Schema_CopyCommandResponse(Data)), ComponentId, CommandIndex);
 }
@@ -56,4 +56,4 @@ Worker_CommandIndex CommandResponse::GetCommandIndex() const
 	return CommandIndex;
 }
 
-}  // SpatialGDK
+} // namespace SpatialGDK

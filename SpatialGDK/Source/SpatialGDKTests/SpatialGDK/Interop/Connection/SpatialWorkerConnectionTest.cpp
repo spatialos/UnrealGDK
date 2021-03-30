@@ -1,16 +1,16 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#include "SpatialGDKTests/Public/GDKAutomationTestBase.h"
 #include "Tests/TestDefinitions.h"
 
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialOutputDevice.h"
-#include "SpatialGDKTests/SpatialGDKServices/LocalDeploymentManager/LocalDeploymentManagerUtilities.h"
 
 #include "CoreMinimal.h"
+#include "Engine/Engine.h"
 
-#define WORKERCONNECTION_TEST(TestName) \
-	GDK_TEST(Core, SpatialWorkerConnection, TestName)
+#define WORKERCONNECTION_TEST(TestName) GDK_AUTOMATION_TEST(Core, SpatialWorkerConnection, TestName)
 
 using namespace SpatialGDK;
 
@@ -47,7 +47,8 @@ void StartSetupConnectionConfigFromURL(USpatialConnectionManager* ConnectionMana
 	}
 }
 
-void FinishSetupConnectionConfig(USpatialConnectionManager* ConnectionManager, const FString& WorkerType, const FURL& URL, bool bUseReceptionist)
+void FinishSetupConnectionConfig(USpatialConnectionManager* ConnectionManager, const FString& WorkerType, const FURL& URL,
+								 bool bUseReceptionist)
 {
 	// Finish setup for the config objects regardless of loading from command line or URL
 	if (bUseReceptionist)
@@ -84,20 +85,20 @@ bool FWaitForSeconds::Update()
 	}
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FSetupWorkerConnection, USpatialConnectionManager*, ConnectionManager, bool, bConnectAsClient);
+DEFINE_LATENT_AUTOMATION_COMMAND_TWO_PARAMETER(FSetupWorkerConnection, USpatialConnectionManager*, ConnectionManager, bool,
+											   bConnectAsClient);
 bool FSetupWorkerConnection::Update()
 {
 	const FURL TestURL = {};
 	FString WorkerType = "AutomationWorker";
 
-	ConnectionManager->OnConnectedCallback.BindLambda([bConnectAsClient = this->bConnectAsClient]()
-	{
+	ConnectionManager->OnConnectedCallback.BindLambda([bConnectAsClient = this->bConnectAsClient]() {
 		ConnectionProcessed(bConnectAsClient);
 	});
-	ConnectionManager->OnFailedToConnectCallback.BindLambda([bConnectAsClient = this->bConnectAsClient](uint8_t ErrorCode, const FString& ErrorMessage)
-	{
-		ConnectionProcessed(bConnectAsClient);
-	});
+	ConnectionManager->OnFailedToConnectCallback.BindLambda(
+		[bConnectAsClient = this->bConnectAsClient](uint8_t ErrorCode, const FString& ErrorMessage) {
+			ConnectionProcessed(bConnectAsClient);
+		});
 	bool bUseReceptionist = false;
 	StartSetupConnectionConfigFromURL(ConnectionManager, TestURL, bUseReceptionist);
 	FinishSetupConnectionConfig(ConnectionManager, WorkerType, TestURL, bUseReceptionist);
@@ -124,7 +125,8 @@ bool FResetConnectionProcessed::Update()
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckConnectionStatus, FAutomationTestBase*, Test, USpatialConnectionManager*, ConnectionManager, bool, bExpectedIsConnected);
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FCheckConnectionStatus, FAutomationTestBase*, Test, USpatialConnectionManager*,
+												 ConnectionManager, bool, bExpectedIsConnected);
 bool FCheckConnectionStatus::Update()
 {
 	Test->TestTrue(TEXT("Worker connection status is valid"), ConnectionManager->IsConnected() == bExpectedIsConnected);
@@ -136,7 +138,13 @@ bool FSendReserveEntityIdsRequest::Update()
 {
 	uint32_t NumOfEntities = 1;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendReserveEntityIdsRequest(NumOfEntities);
+	if (Connection == nullptr)
+	{
+		return false;
+	}
+
+	Connection->SendReserveEntityIdsRequest(NumOfEntities, RETRY_UNTIL_COMPLETE);
+	Connection->Flush();
 
 	return true;
 }
@@ -147,7 +155,13 @@ bool FSendCreateEntityRequest::Update()
 	TArray<FWorkerComponentData> Components;
 	const Worker_EntityId* EntityId = nullptr;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId);
+	if (Connection == nullptr)
+	{
+		return false;
+	}
+
+	Connection->SendCreateEntityRequest(MoveTemp(Components), EntityId, RETRY_UNTIL_COMPLETE);
+	Connection->Flush();
 
 	return true;
 }
@@ -157,25 +171,35 @@ bool FSendDeleteEntityRequest::Update()
 {
 	const Worker_EntityId EntityId = 0;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	Connection->SendDeleteEntityRequest(EntityId);
+	if (Connection == nullptr)
+	{
+		return false;
+	}
+
+	Connection->SendDeleteEntityRequest(EntityId, RETRY_UNTIL_COMPLETE);
+	Connection->Flush();
 
 	return true;
 }
 
-DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FFindWorkerResponseOfType, FAutomationTestBase*, Test, USpatialConnectionManager*, ConnectionManager, uint8_t, ExpectedOpType);
+DEFINE_LATENT_AUTOMATION_COMMAND_THREE_PARAMETER(FFindWorkerResponseOfType, FAutomationTestBase*, Test, USpatialConnectionManager*,
+												 ConnectionManager, uint8_t, ExpectedOpType);
 bool FFindWorkerResponseOfType::Update()
 {
 	bool bFoundOpOfExpectedType = false;
 	USpatialWorkerConnection* Connection = ConnectionManager->GetWorkerConnection();
-	for (const auto& OpList : Connection->GetOpList())
+	if (Connection == nullptr)
 	{
-		for (uint32_t i = 0; i < OpList->op_count; i++)
+		return false;
+	}
+
+	Connection->Advance(0);
+	for (const auto& Op : Connection->GetWorkerMessages())
+	{
+		if (Op.op_type == ExpectedOpType)
 		{
-			if (OpList->ops[i].op_type == ExpectedOpType)
-			{
-				bFoundOpOfExpectedType = true;
-				break;
-			}
+			bFoundOpOfExpectedType = true;
+			break;
 		}
 	}
 

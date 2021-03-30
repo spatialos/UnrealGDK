@@ -16,26 +16,26 @@ DECLARE_DYNAMIC_DELEGATE(FStepStartDelegate);
 DECLARE_DYNAMIC_DELEGATE_OneParam(FStepTickDelegate, float, DeltaTime);
 
 // C++ Delegates
-DECLARE_DELEGATE_RetVal_OneParam(bool, FNativeStepIsReadyDelegate, ASpatialFunctionalTest*);
-DECLARE_DELEGATE_OneParam(FNativeStepStartDelegate, ASpatialFunctionalTest*);
-DECLARE_DELEGATE_TwoParams(FNativeStepTickDelegate, ASpatialFunctionalTest*, float /*DeltaTime*/);
+DECLARE_DELEGATE_RetVal(bool, FNativeStepIsReadyDelegate);
+DECLARE_DELEGATE(FNativeStepStartDelegate);
+DECLARE_DELEGATE_OneParam(FNativeStepTickDelegate, float /*DeltaTime*/);
 
 UENUM()
 enum class ESpatialFunctionalTestWorkerType : uint8
 {
 	Server,
 	Client,
-	All		// Special type that allows you to reference all the Servers and Clients
+	All, // Special type that allows you to reference all the Servers and Clients
+	Invalid = 0xff UMETA(Hidden)
 };
 
-
 USTRUCT(BlueprintType)
-struct FWorkerDefinition
+struct SPATIALGDKFUNCTIONALTESTS_API FWorkerDefinition
 {
 	GENERATED_BODY()
 
 	// Type of Worker, usually Server or Client.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Spatial Functional Test")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spatial Functional Test")
 	ESpatialFunctionalTestWorkerType Type = ESpatialFunctionalTestWorkerType::Server;
 
 	// Ids of Workers start from 1.
@@ -60,30 +60,28 @@ struct FWorkerDefinition
 	// Helper for Client Worker Definition
 	static FWorkerDefinition Client(int ClientId);
 
-	bool operator == (const FWorkerDefinition& Other)
-	{
-		return Type == Other.Type && Id == Other.Id;
-	};
+	bool operator==(const FWorkerDefinition& Other) { return Type == Other.Type && Id == Other.Id; };
 
-	bool operator != (const FWorkerDefinition& Other)
-	{
-		return Type != Other.Type || Id != Other.Id;
-	};
+	bool operator!=(const FWorkerDefinition& Other) { return Type != Other.Type || Id != Other.Id; };
 };
 
-USTRUCT(BlueprintType)
+USTRUCT(BlueprintType, meta = (HasNativeMake = ""))
 struct FSpatialFunctionalTestStepDefinition
 {
 	GENERATED_BODY()
 
-	FSpatialFunctionalTestStepDefinition()
-		: bIsNativeDefinition(false)
+	/**
+	 * bIsNative defines that this StepDefinition is meant to be used in C++, so when
+	 * defining native StepDefinitions make sure you pass True.
+	 */
+	FSpatialFunctionalTestStepDefinition(bool bIsNative = false)
+		: bIsNativeDefinition(bIsNative)
 		, TimeLimit(0.0f)
 	{
 	}
 
 	// Description so that in the logs you can clearly identify Test Steps
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
 	FString StepName;
 
 	// Given that we support different delegate types for C++ and BP
@@ -91,11 +89,11 @@ struct FSpatialFunctionalTestStepDefinition
 	bool bIsNativeDefinition;
 
 	// BP Delegates
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
 	FStepIsReadyDelegate IsReadyEvent;
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
 	FStepStartDelegate StartEvent;
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
 	FStepTickDelegate TickEvent;
 
 	// C++ Delegates
@@ -103,15 +101,14 @@ struct FSpatialFunctionalTestStepDefinition
 	FNativeStepStartDelegate NativeStartEvent;
 	FNativeStepTickDelegate NativeTickEvent;
 
-	// Workers the Test Step should run on
-	UPROPERTY()
+	// Workers the Step should run on
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
 	TArray<FWorkerDefinition> Workers;
 
 	// Maximum time it can take to finish this Step; if <= 0 it falls back to the time limit of the whole Test
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, Category = "Spatial Functional Test")
 	float TimeLimit;
 };
-
 
 class SpatialFunctionalTestStep
 {
@@ -126,9 +123,8 @@ public:
 
 	bool HasReadyEvent();
 
-	ASpatialFunctionalTest* Owner;
 	bool bIsRunning;
 	bool bIsReady;
-	
+
 	FSpatialFunctionalTestStepDefinition StepDefinition;
 };

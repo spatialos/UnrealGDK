@@ -4,14 +4,14 @@
 
 namespace SpatialGDK
 {
-
 void FEntityQueryRequest::TraverseConstraint(Worker_Constraint* Constraint)
 {
 	switch (Constraint->constraint_type)
 	{
 	case WORKER_CONSTRAINT_TYPE_AND:
 	{
-		TUniquePtr<Worker_Constraint[]> NewConstraints = MakeUnique<Worker_Constraint[]>(Constraint->constraint.and_constraint.constraint_count);
+		TUniquePtr<Worker_Constraint[]> NewConstraints =
+			MakeUnique<Worker_Constraint[]>(Constraint->constraint.and_constraint.constraint_count);
 
 		for (unsigned int i = 0; i < Constraint->constraint.and_constraint.constraint_count; i++)
 		{
@@ -25,7 +25,8 @@ void FEntityQueryRequest::TraverseConstraint(Worker_Constraint* Constraint)
 	}
 	case WORKER_CONSTRAINT_TYPE_OR:
 	{
-		TUniquePtr<Worker_Constraint[]> NewConstraints = MakeUnique<Worker_Constraint[]>(Constraint->constraint.or_constraint.constraint_count);
+		TUniquePtr<Worker_Constraint[]> NewConstraints =
+			MakeUnique<Worker_Constraint[]>(Constraint->constraint.or_constraint.constraint_count);
 
 		for (unsigned int i = 0; i < Constraint->constraint.or_constraint.constraint_count; i++)
 		{

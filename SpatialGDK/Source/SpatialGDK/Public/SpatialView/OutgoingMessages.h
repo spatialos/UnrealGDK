@@ -2,19 +2,17 @@
 
 #pragma once
 
-#include "SpatialView/ComponentData.h"
-#include "SpatialView/CommandResponse.h"
-#include "SpatialView/CommandRequest.h"
-#include "SpatialView/EntityQuery.h"
 #include "Containers/UnrealString.h"
 #include "Misc/Optional.h"
+#include "SpatialView/CommandRequest.h"
+#include "SpatialView/CommandResponse.h"
+#include "SpatialView/ComponentData.h"
+#include "SpatialView/EntityQuery.h"
 #include "UObject/NameTypes.h"
 #include <improbable/c_worker.h>
 
-
 namespace SpatialGDK
 {
-
 struct ReserveEntityIdsRequest
 {
 	Worker_RequestId RequestId;
@@ -28,6 +26,7 @@ struct CreateEntityRequest
 	TArray<ComponentData> EntityComponents;
 	TOptional<Worker_EntityId> EntityId;
 	TOptional<uint32> TimeoutMillis;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct DeleteEntityRequest
@@ -35,6 +34,7 @@ struct DeleteEntityRequest
 	Worker_RequestId RequestId;
 	Worker_EntityId EntityId;
 	TOptional<uint32> TimeoutMillis;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct EntityQueryRequest
@@ -50,18 +50,21 @@ struct EntityCommandRequest
 	Worker_RequestId RequestId;
 	CommandRequest Request;
 	TOptional<uint32> TimeoutMillis;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct EntityCommandResponse
 {
 	Worker_RequestId RequestId;
 	CommandResponse Response;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct EntityCommandFailure
 {
 	Worker_RequestId RequestId;
 	FString Message;
+	FSpatialGDKSpanId SpanId;
 };
 
 struct LogMessage
@@ -71,4 +74,4 @@ struct LogMessage
 	FString Message;
 };
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "CoreMinimal.h"
 #include "Templates/SubclassOf.h"
 
 #include "SpatialInterestConstraints.generated.h"
@@ -63,7 +63,8 @@ public:
 	UAbstractQueryConstraint() = default;
 	virtual ~UAbstractQueryConstraint() = default;
 
-	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const PURE_VIRTUAL(UAbstractQueryConstraint::CreateConstraint, );
+	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
+		PURE_VIRTUAL(UAbstractQueryConstraint::CreateConstraint, );
 };
 
 /**
@@ -77,11 +78,12 @@ public:
 	UOrConstraint() = default;
 	~UOrConstraint() = default;
 
-	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const override;
+	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+								  SpatialGDK::QueryConstraint& OutConstraint) const override;
 
 	/** Entities captured by any subconstraints will be included in interest results. */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Instanced, Category = "Or Constraint")
-	TArray<UAbstractQueryConstraint *> Constraints;
+	TArray<UAbstractQueryConstraint*> Constraints;
 };
 
 /**
@@ -95,11 +97,12 @@ public:
 	UAndConstraint() = default;
 	~UAndConstraint() = default;
 
-	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const override;
+	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+								  SpatialGDK::QueryConstraint& OutConstraint) const override;
 
 	/** Entities captured by all subconstraints will be included in interest results. */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Instanced, Category = "And Constraint")
-	TArray<UAbstractQueryConstraint *> Constraints;
+	TArray<UAbstractQueryConstraint*> Constraints;
 };
 
 /**
@@ -113,7 +116,8 @@ public:
 	USphereConstraint() = default;
 	~USphereConstraint() = default;
 
-	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const override;
+	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+								  SpatialGDK::QueryConstraint& OutConstraint) const override;
 
 	/** The location in the world that this constraint is relative to. */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Sphere Constraint")
@@ -135,7 +139,8 @@ public:
 	UCylinderConstraint() = default;
 	~UCylinderConstraint() = default;
 
-	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const override;
+	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+								  SpatialGDK::QueryConstraint& OutConstraint) const override;
 
 	/** The location in the world that this constraint is relative to. */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Cylinder Constraint")
@@ -157,7 +162,8 @@ public:
 	UBoxConstraint() = default;
 	~UBoxConstraint() = default;
 
-	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const override;
+	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+								  SpatialGDK::QueryConstraint& OutConstraint) const override;
 
 	/** The location in the world that this constraint is relative to. */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Box Constraint")
@@ -179,7 +185,8 @@ public:
 	URelativeSphereConstraint() = default;
 	~URelativeSphereConstraint() = default;
 
-	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const override;
+	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+								  SpatialGDK::QueryConstraint& OutConstraint) const override;
 
 	/** The size of the sphere represented by this constraint in centimeters. */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Meta = (ClampMin = 0.0), Category = "Relative Sphere Constraint")
@@ -197,7 +204,8 @@ public:
 	URelativeCylinderConstraint() = default;
 	~URelativeCylinderConstraint() = default;
 
-	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const override;
+	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+								  SpatialGDK::QueryConstraint& OutConstraint) const override;
 
 	/** The size of the cylinder represented by this constraint in centimeters. */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Meta = (ClampMin = 0.0), Category = "Relative Cylinder Constraint")
@@ -215,7 +223,8 @@ public:
 	URelativeBoxConstraint() = default;
 	~URelativeBoxConstraint() = default;
 
-	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const override;
+	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+								  SpatialGDK::QueryConstraint& OutConstraint) const override;
 
 	/** The size of the box represented by this constraint. */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Meta = (ClampMin = 0.0), Category = "Relative Box Constraint")
@@ -233,7 +242,8 @@ public:
 	UCheckoutRadiusConstraint() = default;
 	~UCheckoutRadiusConstraint() = default;
 
-	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const override;
+	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+								  SpatialGDK::QueryConstraint& OutConstraint) const override;
 
 	/** The base type of actor that this constraint will capture. */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Checkout Radius Constraint")
@@ -255,7 +265,8 @@ public:
 	UActorClassConstraint() = default;
 	~UActorClassConstraint() = default;
 
-	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const override;
+	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+								  SpatialGDK::QueryConstraint& OutConstraint) const override;
 
 	/** The base type of actor that this constraint will capture. */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Actor Class Constraint")
@@ -277,7 +288,8 @@ public:
 	UComponentClassConstraint() = default;
 	~UComponentClassConstraint() = default;
 
-	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const override;
+	virtual void CreateConstraint(const USpatialClassInfoManager& ClassInfoManager,
+								  SpatialGDK::QueryConstraint& OutConstraint) const override;
 
 	/** The base type of component that this constraint will capture. */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Component Class Constraint")

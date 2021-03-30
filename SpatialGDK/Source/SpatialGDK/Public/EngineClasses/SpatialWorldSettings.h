@@ -2,58 +2,51 @@
 
 #pragma once
 
-#include "LoadBalancing/LayeredLBStrategy.h"
+#include "LoadBalancing/SpatialMultiWorkerSettings.h"
 
-#include "CoreMinimal.h"
 #include "GameFramework/WorldSettings.h"
-#include "SpatialGDKSettings.h"
-#include "Utils/LayerInfo.h"
+#include "Templates/SubclassOf.h"
 
 #include "SpatialWorldSettings.generated.h"
-
-class UAbstractLBStrategy;
-class UAbstractLockingPolicy;
 
 UCLASS()
 class SPATIALGDK_API ASpatialWorldSettings : public AWorldSettings
 {
-	GENERATED_BODY()
+	GENERATED_UCLASS_BODY()
+	friend class USpatialStatics;
 
 public:
-	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
-	TSubclassOf<UAbstractLBStrategy> DefaultLayerLoadBalanceStrategy;
+	/** If command line override -OverrideMultiWorkerSettingsClass is set then return the specified class from the command line.
+	 * Else if bForceNonEditorSettings is set, return the MultiWorkerSettingsClass.
+	 * Else if the EditorMultiWorkerSettingsOverride is set and we are in the Editor, return the EditorMultiWorkerSettings.
+	 * Else if multi-worker is disabled in the editor, return the single worker settings class
+	 * Else if the MultiWorkerSettingsClass is set return it.
+	 * Otherwise return the single worker settings class.  */
+	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceNonEditorSettings = false);
 
-	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
-	TSubclassOf<UAbstractLockingPolicy> DefaultLayerLockingPolicy;
+#if WITH_EDITORONLY_DATA
+	UPROPERTY(EditAnywhere, Category = "Testing")
+	bool bEnableDebugInterface = false;
+#endif
 
-	/**
-	  * Any classes not specified on another layer will be handled by the default layer, but this also gives a way
-	  * to force classes to be on the default layer.
-	  */
-	UPROPERTY(EditAnywhere, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
-	TSet<TSoftClassPtr<AActor>> ExplicitDefaultActorClasses;
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	static void EditorRefreshSpatialDebugger();
 
-	/** Layer configuration. */
-	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker", meta = (EditCondition = "bEnableMultiWorker"))
-	TMap<FName, FLayerInfo> WorkerLayers;
-
-	bool IsMultiWorkerEnabled() const
-	{
-		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-		if (SpatialGDKSettings->bOverrideMultiWorker.IsSet())
-		{
-			return SpatialGDKSettings->bOverrideMultiWorker.GetValue();
-		}
-		return bEnableMultiWorker;
-	}
-
-	void SetMultiWorkerEnabled(bool IsEnabled)
-	{
-		bEnableMultiWorker = IsEnabled;
-	}
+	// This function was specifically designed to be used with the GenerateTestMapsCommandlet.
+	// Other uses are untested, and probably produce undefined behavior.
+	void SetMultiWorkerSettingsClass(TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass);
+#endif // WITH_EDITOR
 
 private:
-	/** Enable running different server worker types to split the simulation. */
-	UPROPERTY(EditAnywhere, Config, Category = "Multi-Worker")
-	bool bEnableMultiWorker;
+	/** Specify the load balancing strategy to be used for multiple workers */
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	TSubclassOf<USpatialMultiWorkerSettings> MultiWorkerSettingsClass;
+
+	/** Editor override to specify a different load balancing strategy to run in-editor */
+	UPROPERTY(EditAnywhere, Category = "Multi-Worker")
+	TSubclassOf<USpatialMultiWorkerSettings> EditorMultiWorkerSettingsOverride;
+
+	/** Gets MultiWorkerSettingsClass if set, otherwise returns a single worker behaviour. */
+	TSubclassOf<USpatialMultiWorkerSettings> GetValidWorkerSettings() const;
 };

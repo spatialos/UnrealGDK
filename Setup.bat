@@ -9,7 +9,10 @@ pushd "%~dp0"
 call :MarkStartOfBlock "%~0"
 
 call :MarkStartOfBlock "Setup the git hooks"
-    if not exist .git\hooks goto SkipGitHooks
+    if not exist .git\hooks (
+      echo ".git\hooks not found: skipping git hook setup"
+      goto SkipGitHooks
+    )
 
     rem Remove the old post-checkout hook.
     if exist .git\hooks\post-checkout del .git\hooks\post-checkout
@@ -17,13 +20,15 @@ call :MarkStartOfBlock "Setup the git hooks"
     rem Remove the old post-merge hook.
     if exist .git\hooks\post-merge del .git\hooks\post-merge
 
-    rem Add git hook to run Setup.bat when RequireSetup file has been updated.
-    echo #!/usr/bin/env bash>.git\hooks\post-merge
-    echo changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)">>.git\hooks\post-merge
-    echo check_run() {>>.git\hooks\post-merge
-    echo echo "$changed_files" ^| grep --quiet "$1" ^&^& exec $2>>.git\hooks\post-merge
-    echo }>>.git\hooks\post-merge
-    echo check_run RequireSetup "cmd.exe /c Setup.bat %*">>.git\hooks\post-merge
+    rem Remove the old pre-commit hook.
+    if exist .git\hooks\pre-commit del .git\hooks\pre-commit
+
+    rem Copy git hooks to .git directory.
+    xcopy /s /i /q "%~dp0\SpatialGDK\Extras\git" "%~dp0\.git\hooks"
+
+    rem We pass Setup.bat args, such as --mobile, to the post-merge hook to run Setup.bat with the same args in future.
+    set POST_MERGE_HOOK="%~dp0\.git\hooks\post-merge"
+    powershell -Command "(Get-Content -Path %POST_MERGE_HOOK%) -replace \"SETUP_ARGS\", \"%*\" | Set-Content -Path %POST_MERGE_HOOK%"
 
     :SkipGitHooks
 call :MarkEndOfBlock "Setup the git hooks"
@@ -48,7 +53,6 @@ call :MarkEndOfBlock "Check dependencies"
 
 call :MarkStartOfBlock "Setup variables"
     set /p PINNED_CORE_SDK_VERSION=<.\SpatialGDK\Extras\core-sdk.version
-    set /p PINNED_SPOT_VERSION=<.\SpatialGDK\Extras\spot.version
     set BUILD_DIR=%~dp0SpatialGDK\Build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
     set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\SpatialGDK\Public\WorkerSDK
@@ -109,36 +113,34 @@ call :MarkStartOfBlock "Create folders"
 call :MarkEndOfBlock "Create folders"
 
 call :MarkStartOfBlock "Retrieve dependencies"
-    spatial package retrieve tools           schema_compiler-x86_64-win32               %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
-    spatial package retrieve schema          standard_library                           %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\schema\standard_library.zip"
-    spatial package retrieve worker_sdk      c_headers                                  %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c_headers.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86-vc141_md-win32               %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-vc141_md-win32.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-vc141_md-win32            %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc141_md-win32.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc510-linux              %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc510-linux.zip"
+    call :ExecuteAndCheck spatial package retrieve tools         schema_compiler-x86_64-win32               %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
+    call :ExecuteAndCheck spatial package retrieve schema        standard_library                           %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\schema\standard_library.zip"
+    call :ExecuteAndCheck spatial package retrieve worker_sdk    c_headers                                  %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c_headers.zip"
+    call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-x86_64-vc141_md-win32            %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc141_md-win32.zip"
+    call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-x86_64-clang1000-linux           %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang1000-linux.zip"
 if defined DOWNLOAD_MOBILE (
-    spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang-ios         %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip"
-    spatial package retrieve worker_sdk      c-dynamic-arm64v8a-clang_ndk21-android    %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_clang_ndk21-android.zip"
-    spatial package retrieve worker_sdk      c-dynamic-armv7a-clang_ndk21-android      %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-armv7a-clang_clang_ndk21-android.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-clang_ndk21-android      %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_clang_ndk21-android.zip"
+    call :ExecuteAndCheck spatial package retrieve worker_sdk    c-static-fullylinked-arm-clang-ios         %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip"
+    call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-arm64v8a-clang_ndk21d-android    %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_clang_ndk21-android.zip"
+    call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-armv7a-clang_ndk21d-android      %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-armv7a-clang_clang_ndk21-android.zip"
+    call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-x86_64-clang_ndk21d-android      %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_clang_ndk21-android.zip"
 )
-    spatial package retrieve worker_sdk      csharp                                     %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\csharp.zip"
-    spatial package retrieve spot            spot-win64                                 %PINNED_SPOT_VERSION%       %DOMAIN_ENVIRONMENT_VAR%   "%BINARIES_DIR%\Programs\spot.exe"
+    call :ExecuteAndCheck spatial package retrieve worker_sdk    csharp_cinterop                            %PINNED_CORE_SDK_VERSION%   %DOMAIN_ENVIRONMENT_VAR%   "%CORE_SDK_DIR%\worker_sdk\csharp_cinterop.zip"
 call :MarkEndOfBlock "Retrieve dependencies"
 
 REM There is a race condition between retrieve and unzip, add version call to stall briefly
-call spatial version 
+call spatial version
+if ERRORLEVEL 1 pause && exit /b %ERRORLEVEL%
 
 call :MarkStartOfBlock "Unpack dependencies"
-    powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c_headers.zip\"                                  -DestinationPath \"%BINARIES_DIR%\Headers\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-vc141_md-win32.zip\"               -DestinationPath \"%BINARIES_DIR%\Win32\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc141_md-win32.zip\"            -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc510-linux.zip\"              -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\csharp.zip\"                                     -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\csharp\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"                    -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                               -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
+    powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c_headers.zip\"                           -DestinationPath \"%BINARIES_DIR%\Headers\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc141_md-win32.zip\"     -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang1000-linux.zip\"    -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\csharp_cinterop.zip\"                     -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\csharp_cinterop\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"             -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                        -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
 
     if defined DOWNLOAD_MOBILE (
-        powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip\"         -DestinationPath \"%BINARIES_DIR%\IOS\" -Force;"^
+        powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang-ios.zip\"              -DestinationPath \"%BINARIES_DIR%\IOS\" -Force;"^
                             "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64v8a-clang_clang_ndk21-android.zip\"    -DestinationPath \"%BINARIES_DIR%\Android\arm64-v8a\" -Force; "^
                             "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-armv7a-clang_clang_ndk21-android.zip\"      -DestinationPath \"%BINARIES_DIR%\Android\armeabi-v7a\" -Force; "^
                             "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang_clang_ndk21-android.zip\"      -DestinationPath \"%BINARIES_DIR%\Android\x86_64\" -Force; "^
@@ -159,7 +161,7 @@ if exist "%SPATIAL_DIR%" (
 )
 
 call :MarkStartOfBlock "Build C# utilities"
-    %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
+    call :ExecuteAndCheck %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
 call :MarkEndOfBlock "Build C# utilities"
 
 call :MarkEndOfBlock "%~0"
@@ -180,4 +182,13 @@ exit /b 0
 
 :MarkEndOfBlock
 echo Finished: %~1
+exit /b 0
+
+:ExecuteAndCheck
+%*
+if ERRORLEVEL 1 (
+    echo ERROR: Command '%*' did not complete successfully. Aborting...
+    pause
+    exit 1
+)
 exit /b 0

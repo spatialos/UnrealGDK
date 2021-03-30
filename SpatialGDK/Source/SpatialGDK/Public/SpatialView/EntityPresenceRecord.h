@@ -7,7 +7,6 @@
 
 namespace SpatialGDK
 {
-
 // An entity can be recorded as at most one of
 //	added
 //	removed

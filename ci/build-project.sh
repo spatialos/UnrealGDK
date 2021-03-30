@@ -17,7 +17,7 @@ pushd "$(dirname "$0")"
     BUILD_TARGET="${9?Please enter the build target for your Unreal build.}"
 
     # Clone the testing project
-    echo "Cloning the testing project from ${TEST_REPO_URL}"
+    echo "Cloning the testing project from: ${TEST_REPO_URL}, branch: ${TEST_REPO_BRANCH}"
     git clone \
         --branch "${TEST_REPO_BRANCH}" \
         "${TEST_REPO_URL}" \
@@ -29,6 +29,9 @@ pushd "$(dirname "$0")"
     # copying the plugin into the project's folder bypasses the issue
     mkdir -p "${TEST_REPO_PATH}/Game/Plugins"
     cp -R "${GDK_HOME}" "${TEST_REPO_PATH}/Game/Plugins/UnrealGDK"
+
+    # Unreal likes to save some settings outside of the project folders. Let's clean this up to make sure it doesn't cause issues when running the tests.
+    rm -rf ~/Library/Preferences/Unreal\ Engine/
 
     # Disable tutorials, otherwise the closing of the window will crash the editor due to some graphic context reason
     echo "\r\n[/Script/IntroTutorials.TutorialStateSettings]\r\nTutorialsProgress=(Tutorial=/Engine/Tutorial/Basics/LevelEditorAttract.LevelEditorAttract_C,CurrentStage=0,bUserDismissed=True)\r\n" >> "${UNREAL_PATH}/Engine/Config/BaseEditorSettings.ini"

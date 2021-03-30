@@ -34,7 +34,7 @@ windows: &windows
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-03-26-102432-bk9951-8afe0ffb}"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-11-18-224740-bk17641-0c4125be-d}"
   retry:
     automatic:
       - <<: *agent_transients
@@ -42,12 +42,49 @@ windows: &windows
       - <<: *bk_interrupted_by_signal
   timeout_in_minutes: 60
   plugins:
-    - ca-johnson/taskkill#v4.1: ~
+    - improbable-eng/taskkill#v4.4.1: ~
 
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
 
 steps:
+  # New build pipeline
+  # Trigger a 4.26 build
+  - trigger: "unrealgdkbuild-ci"
+    label: "gdk-ci-426 ${BUILDKITE_MESSAGE}"
+    async: true
+    build: 
+      env: 
+        BUILD_TYPE: "GDK"
+        GDK_BRANCH: "${BUILDKITE_BRANCH}"
+        ENGINE_BRANCH: "4.26-SpatialOSUnrealGDK"
+        ENGINE_MAJOR: "4.26"
+        TEST_GYMS_BRANCH: "master"
+        USE_FASTBUILD: "True"
+        IS_BUILDKITE_BUILD: "True"
+        BUILD_ANDROID: "False"
+        SKIP_TESTS: "False"
+        CLEAN_BUILD: "False"
+
+  # Trigger a 4.25 build
+  - trigger: "unrealgdkbuild-ci"
+    label: "gdk-ci-425 ${BUILDKITE_MESSAGE}"
+    async: true
+    build: 
+      env: 
+        BUILD_TYPE: "GDK" # GDK or ENGINE
+        GDK_BRANCH: "${BUILDKITE_BRANCH}"
+        ENGINE_BRANCH: "4.25-SpatialOSUnrealGDK"
+        ENGINE_MAJOR: "4.25"
+        TEST_GYMS_BRANCH: "master"
+        USE_FASTBUILD: "True"
+        IS_BUILDKITE_BUILD: "True"
+        BUILD_ANDROID: "False"
+        SKIP_TESTS: "False"
+        CLEAN_BUILD: "False"
+
+
+  # Old build pipeline
   - label: "enforce-version-restrictions"
     command: "ci/check-version-file.sh"
     <<: *script_runner
@@ -81,3 +118,11 @@ steps:
     if: (build.env("SLACK_NOTIFY") == "true" || build.branch == "master") && build.env("SLACK_NOTIFY") != "false" && build.env("ENGINE_NET_TEST") != "true"
     commands: "powershell ./ci/build-and-send-slack-notification.ps1"
     <<: *windows
+
+notify:
+  - slack: 
+      channels: 
+        - "#unreal-gdk-builds"
+      message: "<!subteam^SDB5161M5> Build failure! Please triage and post ticket." # SDB5161M5 is @support-unreal
+    if: build.env("BUILDKITE_TRIGGERED_FROM_BUILD_PIPELINE_SLUG") != "unrealgdktestgyms-premerge" && (build.state == "failed" || build.state == "canceled") && build.branch == "master"
+    

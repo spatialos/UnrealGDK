@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Containers/Queue.h"
+#include "CoreMinimal.h"
 #include "GameFramework/Info.h"
 
 #include "SpatialMetricsDisplay.generated.h"
@@ -24,20 +24,15 @@ struct FWorkerStats
 	UPROPERTY()
 	uint32 ServerReplicationLimit;
 
-	bool operator==(const FWorkerStats& other) const
-	{
-		return (WorkerName.Equals(other.WorkerName));
-	}
+	bool operator==(const FWorkerStats& other) const { return (WorkerName.Equals(other.WorkerName)); }
 };
 
 UCLASS(SpatialType)
-class SPATIALGDK_API ASpatialMetricsDisplay :
-	public AInfo
+class SPATIALGDK_API ASpatialMetricsDisplay : public AInfo
 {
 	GENERATED_UCLASS_BODY()
 
 public:
-
 	virtual void Tick(float DeltaSeconds) override;
 
 	virtual void BeginPlay() override;
@@ -47,7 +42,6 @@ public:
 	void SpatialToggleStatDisplay();
 
 private:
-
 	FDelegateHandle DrawDebugDelegateHandle;
 
 	UPROPERTY(Replicated)

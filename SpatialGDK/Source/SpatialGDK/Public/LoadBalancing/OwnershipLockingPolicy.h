@@ -19,13 +19,11 @@ class SPATIALGDK_API UOwnershipLockingPolicy : public UAbstractLockingPolicy
 	GENERATED_BODY()
 
 public:
-	virtual ActorLockToken AcquireLock(AActor* Actor, FString DebugString = "") override;
-
+	virtual ActorLockToken AcquireLock(AActor* Actor, FString DebugString) override;
 	// This should only be called during the lifetime of the locked Actor
 	virtual bool ReleaseLock(const ActorLockToken Token) override;
-
 	virtual bool IsLocked(const AActor* Actor) const override;
-
+	virtual int32 GetActorLockCount(const AActor* Actor) const override;
 	virtual void OnOwnerUpdated(const AActor* Actor, const AActor* OldOwner) override;
 
 private:
@@ -41,7 +39,7 @@ private:
 		AActor* Actor;
 	};
 
-	bool CanAcquireLock(const AActor* Actor) const;
+	static bool CanAcquireLock(const AActor* Actor);
 	bool IsExplicitlyLocked(const AActor* Actor) const;
 	bool IsLockedHierarchyRoot(const AActor* Actor) const;
 
@@ -51,7 +49,7 @@ private:
 	UFUNCTION()
 	void OnHierarchyRootActorDeleted(AActor* DestroyedActorRoot);
 
-	virtual bool AcquireLockFromDelegate(AActor* ActorToLock,    const FString& DelegateLockIdentifier) override;
+	virtual bool AcquireLockFromDelegate(AActor* ActorToLock, const FString& DelegateLockIdentifier) override;
 	virtual bool ReleaseLockFromDelegate(AActor* ActorToRelease, const FString& DelegateLockIdentifier) override;
 
 	void RecalculateAllExplicitlyLockedActorsInThisHierarchy(const AActor* HierarchyRoot);

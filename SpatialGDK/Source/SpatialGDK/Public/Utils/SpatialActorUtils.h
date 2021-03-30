@@ -3,30 +3,34 @@
 #pragma once
 
 #include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriver.h"
 
 #include "Components/SceneComponent.h"
-#include "Containers/Array.h"
 #include "Containers/UnrealString.h"
 #include "Engine/EngineTypes.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/GameMode.h"
 #include "GameFramework/PlayerController.h"
 #include "Math/Vector.h"
 
+#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+#include "GameplayDebuggerCategoryReplicator.h"
+#endif
+
 namespace SpatialGDK
 {
-
-inline AActor* GetHierarchyRoot(const AActor* Actor)
+inline AActor* GetTopmostReplicatedOwner(const AActor* Actor)
 {
 	check(Actor != nullptr);
 
 	AActor* Owner = Actor->GetOwner();
-	if (Owner == nullptr || Owner->IsPendingKillPending())
+	if (Owner == nullptr || Owner->IsPendingKillPending() || !Owner->GetIsReplicated())
 	{
 		return nullptr;
 	}
 
-	while (Owner->GetOwner() != nullptr && !Owner->GetOwner()->IsPendingKillPending())
+	while (Owner->GetOwner() != nullptr && !Owner->GetOwner()->IsPendingKillPending() && Owner->GetIsReplicated())
 	{
 		Owner = Owner->GetOwner();
 	}
@@ -34,14 +38,29 @@ inline AActor* GetHierarchyRoot(const AActor* Actor)
 	return Owner;
 }
 
-inline FString GetConnectionOwningWorkerId(const AActor* Actor)
+inline AActor* GetReplicatedHierarchyRoot(const AActor* Actor)
+{
+	AActor* TopmostOwner = GetTopmostReplicatedOwner(Actor);
+	return TopmostOwner != nullptr ? TopmostOwner : const_cast<AActor*>(Actor);
+}
+
+// Effectively, if this Actor is in a player hierarchy, get the PlayerController entity ID.
+inline Worker_PartitionId GetConnectionOwningPartitionId(const AActor* Actor)
 {
 	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
 	{
-		return NetConnection->ConnectionOwningWorkerId;
+		return NetConnection->PlayerControllerEntity;
 	}
 
-	return FString();
+	return SpatialConstants::INVALID_ENTITY_ID;
+}
+
+inline Worker_EntityId GetConnectionOwningClientSystemEntityId(const APlayerController* PC)
+{
+	const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PC->GetNetConnection());
+	checkf(NetConnection != nullptr, TEXT("PlayerController did not have NetConnection when trying to find client system entity ID."));
+
+	return NetConnection->ConnectionClientWorkerSystemEntityId;
 }
 
 inline FVector GetActorSpatialPosition(const AActor* InActor)
@@ -81,6 +100,31 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 
 	// Rebase location onto zero origin so actor is positioned correctly in SpatialOS.
 	return FRepMovement::RebaseOntoZeroOrigin(Location, InActor);
+}
+
+inline bool DoesActorClassIgnoreVisibilityCheck(AActor* InActor)
+{
+	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameModeBase::StaticClass())
+#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+		|| InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
+#endif
+	)
+
+	{
+		return true;
+	}
+
+	return false;
+}
+
+inline bool ShouldActorHaveVisibleComponent(AActor* InActor)
+{
+	if (InActor->bAlwaysRelevant || !InActor->IsHidden() || DoesActorClassIgnoreVisibilityCheck(InActor))
+	{
+		return true;
+	}
+
+	return false;
 }
 
 } // namespace SpatialGDK

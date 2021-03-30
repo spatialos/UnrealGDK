@@ -11,35 +11,24 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorCloudLauncher);
 
 namespace
 {
-	const FString LauncherExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher/DeploymentLauncher.exe"));
+const FString LauncherExe = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(
+	TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher/DeploymentLauncher.exe"));
 }
 
 bool SpatialGDKCloudLaunch(const FCloudDeploymentConfiguration& Configuration)
 {
-	FString LauncherCreateArguments = FString::Printf(
-		TEXT("create %s %s %s %s \"%s\" \"%s\" %s \"%s\" \"%s\""),
-		*FSpatialGDKServicesModule::GetProjectName(),
-		*Configuration.AssemblyName,
-		*Configuration.RuntimeVersion,
-		*Configuration.PrimaryDeploymentName,
-		*Configuration.PrimaryLaunchConfigPath,
-		*Configuration.SnapshotPath,
-		*Configuration.PrimaryRegionCode,
-		*Configuration.MainDeploymentCluster,
-		*Configuration.DeploymentTags
-	);
+	FString LauncherCreateArguments =
+		FString::Printf(TEXT("create %s %s %s %s \"%s\" \"%s\" %s \"%s\" \"%s\""), *FSpatialGDKServicesModule::GetProjectName(),
+						*Configuration.AssemblyName, *Configuration.RuntimeVersion, *Configuration.PrimaryDeploymentName,
+						*Configuration.PrimaryLaunchConfigPath, *Configuration.SnapshotPath, *Configuration.PrimaryRegionCode,
+						*Configuration.MainDeploymentCluster, *Configuration.DeploymentTags);
 
 	if (Configuration.bSimulatedPlayersEnabled)
 	{
-		LauncherCreateArguments = FString::Printf(
-			TEXT("%s %s \"%s\" %s \"%s\" %u"),
-			*LauncherCreateArguments,
-			*Configuration.SimulatedPlayerDeploymentName,
-			*Configuration.SimulatedPlayerLaunchConfigPath,
-			*Configuration.SimulatedPlayerRegionCode,
-			*Configuration.SimulatedPlayerCluster,
-			Configuration.NumberOfSimulatedPlayers
-		);
+		LauncherCreateArguments =
+			FString::Printf(TEXT("%s %s \"%s\" %s \"%s\" %u"), *LauncherCreateArguments, *Configuration.SimulatedPlayerDeploymentName,
+							*Configuration.SimulatedPlayerLaunchConfigPath, *Configuration.SimulatedPlayerRegionCode,
+							*Configuration.SimulatedPlayerCluster, Configuration.NumberOfSimulatedPlayers);
 	}
 
 	if (Configuration.bUseChinaPlatform)
@@ -64,7 +53,7 @@ bool SpatialGDKCloudLaunch(const FCloudDeploymentConfiguration& Configuration)
 
 	return bSuccess;
 }
- 
+
 bool SpatialGDKCloudStop()
 {
 	UE_LOG(LogSpatialGDKEditorCloudLauncher, Error, TEXT("Function not available"));

@@ -3,12 +3,11 @@
 #pragma once
 
 #include "Templates/UniquePtr.h"
-#include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
+#include <improbable/c_worker.h>
 
 namespace SpatialGDK
 {
-
 struct CommandResponseDeleter
 {
 	void operator()(Schema_CommandResponse* CommandResponse) const noexcept

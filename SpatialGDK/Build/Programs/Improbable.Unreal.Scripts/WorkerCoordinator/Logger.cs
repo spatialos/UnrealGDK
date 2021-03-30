@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 using System.IO;
-using Improbable.Worker;
+using Improbable.Worker.CInterop;
 
 namespace Improbable.WorkerCoordinator
 {
@@ -27,7 +27,7 @@ namespace Improbable.WorkerCoordinator
             File.WriteAllText(LogPath, string.Empty);
         }
 
-        public void WriteLog(string logMessage, bool logToConnectionIfExists = true)
+        public virtual void WriteLog(string logMessage, bool logToConnectionIfExists = true)
         {
             WriteLogToFile(logMessage);
             if (logToConnectionIfExists && Connection != null)
@@ -36,7 +36,7 @@ namespace Improbable.WorkerCoordinator
             }
         }
 
-        public void WriteWarning(string logMessage, bool logToConnectionIfExists = true)
+        public virtual void WriteWarning(string logMessage, bool logToConnectionIfExists = true)
         {
             WriteLogToFile("Warning: " + logMessage);
             if (logToConnectionIfExists && Connection != null)
@@ -45,7 +45,7 @@ namespace Improbable.WorkerCoordinator
             }
         }
 
-        public void WriteError(string logMessage, bool logToConnectionIfExists = true)
+        public virtual void WriteError(string logMessage, bool logToConnectionIfExists = true)
         {
             WriteLogToFile("Error: " + logMessage);
             if (logToConnectionIfExists && Connection != null)

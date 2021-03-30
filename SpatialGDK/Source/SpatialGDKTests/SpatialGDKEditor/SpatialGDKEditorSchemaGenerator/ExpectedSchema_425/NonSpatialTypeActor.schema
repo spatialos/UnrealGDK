@@ -1,0 +1,24 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Note that this file has been generated automatically
+package unreal.generated.nonspatialtypeactor;
+
+import "unreal/gdk/core_types.schema";
+
+component NonSpatialTypeActor {
+	id = {{id}};
+	bool breplicatemovement = 1;
+	bool bhidden = 2;
+	bool btearoff = 3;
+	bool bcanbedamaged = 4;
+	uint32 remoterole = 5;
+	bytes replicatedmovement = 6;
+	UnrealObjectRef attachmentreplication_attachparent = 7;
+	bytes attachmentreplication_locationoffset = 8;
+	bytes attachmentreplication_relativescale3d = 9;
+	bytes attachmentreplication_rotationoffset = 10;
+	string attachmentreplication_attachsocket = 11;
+	UnrealObjectRef attachmentreplication_attachcomponent = 12;
+	UnrealObjectRef owner = 13;
+	uint32 role = 14;
+	UnrealObjectRef instigator = 15;
+}

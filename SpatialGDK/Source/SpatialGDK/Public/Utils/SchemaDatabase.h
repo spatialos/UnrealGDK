@@ -85,14 +85,39 @@ struct FComponentSchemaData
 	TArray<uint32> FieldIds;
 };
 
+USTRUCT()
+struct FComponentIDs
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TArray<uint32> ComponentIDs;
+};
+
+UENUM()
+enum class ESchemaDatabaseVersion : uint8
+{
+	BeforeVersionSupportAdded = 0,
+	VersionSupportAdded,
+	AlwaysWriteRPCAdded,
+	InitialOnlyDataAdded,
+
+	// Add new versions here
+
+	LatestVersionPlusOne,
+	LatestVersion = LatestVersionPlusOne - 1
+};
+
 UCLASS()
 class SPATIALGDK_API USchemaDatabase : public UDataAsset
 {
 	GENERATED_BODY()
 
 public:
-
-	USchemaDatabase() : NextAvailableComponentId(SpatialConstants::STARTING_GENERATED_COMPONENT_ID) {}
+	USchemaDatabase()
+		: NextAvailableComponentId(SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
+	{
+	}
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<FString, FActorSchemaData> ActorClassPathToSchema;
@@ -123,15 +148,26 @@ public:
 	TArray<uint32> HandoverComponentIds;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<uint32> InitialOnlyComponentsIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TArray<uint32> LevelComponentIds;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 NextAvailableComponentId;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
-	uint32 SchemaDescriptorHash;
+	uint32 SchemaBundleHash;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FComponentSchemaData> ComponentIdToFieldIds;
-};
 
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TMap<uint32, FComponentIDs> ComponentSetIdToComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TMap<ERPCType, uint32> RPCRingBufferSizeMap;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	ESchemaDatabaseVersion SchemaDatabaseVersion;
+};

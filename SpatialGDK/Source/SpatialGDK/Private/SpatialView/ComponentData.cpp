@@ -5,7 +5,6 @@
 
 namespace SpatialGDK
 {
-
 ComponentData::ComponentData(Worker_ComponentId Id)
 	: ComponentId(Id)
 	, Data(Schema_CreateComponentData())
@@ -58,7 +57,7 @@ Schema_ComponentData* ComponentData::GetUnderlying() const
 Worker_ComponentData ComponentData::GetWorkerComponentData() const
 {
 	check(Data.IsValid());
-	return {nullptr, ComponentId, Data.Get(), nullptr};
+	return { nullptr, ComponentId, Data.Get(), nullptr };
 }
 
 Worker_ComponentId ComponentData::GetComponentId() const

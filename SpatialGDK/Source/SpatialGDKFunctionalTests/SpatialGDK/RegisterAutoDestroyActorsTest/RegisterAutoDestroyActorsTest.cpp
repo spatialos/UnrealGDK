@@ -1,9 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-
 #include "RegisterAutoDestroyActorsTest.h"
-#include "GameFramework/Character.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "GameFramework/Character.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialFunctionalTestFlowController.h"
 
@@ -13,13 +12,13 @@ ARegisterAutoDestroyActorsTestPart1::ARegisterAutoDestroyActorsTestPart1()
 	Description = TEXT("Part1: Verify that server spawned a character and that is is visible to the clients");
 }
 
-void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
+void ARegisterAutoDestroyActorsTestPart1::PrepareTest()
 {
-	Super::BeginPlay();
-	{ // Step 1 - Spawn Actor On Auth 
-		AddStep(TEXT("SERVER_1_Spawn"), FWorkerDefinition::Server(1), nullptr, [](ASpatialFunctionalTest* NetTest){
-			UWorld* World = NetTest->GetWorld();
-			int NumVirtualWorkers = NetTest->GetNumberOfServerWorkers();
+	Super::PrepareTest();
+	{ // Step 1 - Spawn Actor On Auth
+		AddStep(TEXT("SERVER_1_Spawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
+			UWorld* World = GetWorld();
+			int NumVirtualWorkers = GetNumberOfServerWorkers();
 
 			// spawn 1 per server worker
 			// since the information about positioning of the virtual workers is currently hidden, will assume they are all around zero
@@ -29,61 +28,66 @@ void ARegisterAutoDestroyActorsTestPart1::BeginPlay()
 			for (int i = 0; i != NumVirtualWorkers; ++i)
 			{
 				ACharacter* Character = World->SpawnActor<ACharacter>(SpawnPosition, FRotator::ZeroRotator);
-				NetTest->AssertTrue(IsValid(Character), FString::Printf(TEXT("Spawned ACharacter %s in worker %s"), *GetNameSafe(Character), *NetTest->GetFlowController(ESpatialFunctionalTestWorkerType::Server, i + 1)->GetDisplayName()));
+				AssertTrue(IsValid(Character),
+						   FString::Printf(TEXT("Spawned ACharacter %s in worker %s"), *GetNameSafe(Character),
+										   *GetFlowController(ESpatialFunctionalTestWorkerType::Server, i + 1)->GetDisplayName()));
 				SpawnPosition = SpawnPositionRotator.RotateVector(SpawnPosition);
 			}
-			
 
-			NetTest->FinishStep();
+			FinishStep();
 		});
-
-		
 	}
 
 	{ // Step 2 - Check If Clients have it
-		AddStep(TEXT("CLIENT_ALL_CheckActorsSpawned"), FWorkerDefinition::AllClients, nullptr, nullptr, [](ASpatialFunctionalTest* NetTest, float DeltaTime){
+		AddStep(
+			TEXT("CLIENT_ALL_CheckActorsSpawned"), FWorkerDefinition::AllClients, nullptr, nullptr,
+			[this](float DeltaTime) {
 				int NumCharactersFound = 0;
-				int NumCharactersExpected = NetTest->GetNumberOfServerWorkers();
-				UWorld* World = NetTest->GetWorld();
+				int NumCharactersExpected = GetNumberOfServerWorkers();
+				UWorld* World = GetWorld();
 				for (TActorIterator<ACharacter> It(World); It; ++It)
 				{
 					++NumCharactersFound;
 				}
 
-				if(NumCharactersFound == NumCharactersExpected)
+				if (NumCharactersFound == NumCharactersExpected)
 				{
-					NetTest->FinishStep();
+					FinishStep();
 				}
-		}, 5.0f);
+			},
+			5.0f);
 	}
 
 	{ // Step 3 - Destroy by all servers that have authority
-		AddStep(TEXT("SERVER_ALL_RegisterAutoDestroyActors"), FWorkerDefinition::AllServers, [](ASpatialFunctionalTest* NetTest) -> bool {
-			int NumCharactersFound = 0;
-			int NumCharactersExpected = 1;
-			UWorld* World = NetTest->GetWorld();
-			for (TActorIterator<ACharacter> It(World, ACharacter::StaticClass()); It; ++It)
-			{
-				if (It->HasAuthority())
+		AddStep(
+			TEXT("SERVER_ALL_RegisterAutoDestroyActors"), FWorkerDefinition::AllServers,
+			[this]() -> bool {
+				int NumCharactersFound = 0;
+				int NumCharactersExpected = 1;
+				UWorld* World = GetWorld();
+				for (TActorIterator<ACharacter> It(World, ACharacter::StaticClass()); It; ++It)
 				{
-					++NumCharactersFound;
+					if (It->HasAuthority())
+					{
+						++NumCharactersFound;
+					}
 				}
-			}
 
-			return NumCharactersFound == NumCharactersExpected;
-		}, 
-		[](ASpatialFunctionalTest* NetTest) {
-			UWorld* World = NetTest->GetWorld();
-			for (TActorIterator<ACharacter> It(World); It; ++It)
-			{
-				if (It->HasAuthority())
+				return NumCharactersFound == NumCharactersExpected;
+			},
+			[this]() {
+				UWorld* World = GetWorld();
+				for (TActorIterator<ACharacter> It(World); It; ++It)
 				{
-					NetTest->AssertTrue(IsValid(*It), FString::Printf(TEXT("Registering ACharacter for destruction: %s"), *GetNameSafe(*It)));
-					NetTest->RegisterAutoDestroyActor(*It);
+					if (It->HasAuthority())
+					{
+						AssertTrue(IsValid(*It), FString::Printf(TEXT("Registering ACharacter for destruction: %s"), *GetNameSafe(*It)));
+						RegisterAutoDestroyActor(*It);
+					}
 				}
-			}
-			NetTest->FinishStep();
-		}, nullptr, 5.0f);
+				FinishStep();
+			},
+			nullptr, 5.0f);
 	}
 }
 
@@ -93,24 +97,23 @@ ARegisterAutoDestroyActorsTestPart2::ARegisterAutoDestroyActorsTestPart2()
 	Description = TEXT("Part2: Verify that the actors have been destroyed across all workers");
 }
 
-void ARegisterAutoDestroyActorsTestPart2::BeginPlay()
+void ARegisterAutoDestroyActorsTestPart2::PrepareTest()
 {
-	Super::BeginPlay();
+	Super::PrepareTest();
 	{
 		// Check nobody has characters
-		FSpatialFunctionalTestStepDefinition StepDefinition;
-		StepDefinition.bIsNativeDefinition = true;
+		FSpatialFunctionalTestStepDefinition StepDefinition(/*bIsNativeDefinition*/ true);
+		StepDefinition.StepName = TEXT("Check No Worker Has Characters");
 		StepDefinition.TimeLimit = 0.0f;
-		StepDefinition.Workers.Add(FWorkerDefinition::AllServers);
-		StepDefinition.Workers.Add(FWorkerDefinition::AllClients);
-		StepDefinition.NativeStartEvent.BindLambda([](ASpatialFunctionalTest* NetTest) {
-			UWorld* World = NetTest->GetWorld();
+		StepDefinition.NativeStartEvent.BindLambda([this]() {
+			UWorld* World = GetWorld();
 			TActorIterator<ACharacter> It(World);
 			bool bHasCharacter = static_cast<bool>(It);
-			NetTest->AssertFalse(bHasCharacter, FString::Printf(TEXT("Cleanup of ACharacter successful, no ACharacter found by %s"), *NetTest->GetLocalFlowController()->GetDisplayName()));
-			NetTest->FinishStep();
+			AssertFalse(bHasCharacter, FString::Printf(TEXT("Cleanup of ACharacter successful, no ACharacter found by %s"),
+													   *GetLocalFlowController()->GetDisplayName()));
+			FinishStep();
 		});
 
-		AddGenericStep(StepDefinition);
+		AddStepFromDefinition(StepDefinition, FWorkerDefinition::AllWorkers);
 	}
 }

@@ -39,7 +39,7 @@
 		SpatialGDKTests module should be excluded in shipping builds.
 
 3. Test definitions (check TestDefinitions.h for more info)
-    - We have defined 3 types of Macro to be used when writing tests:
+	- We have defined 3 types of Macro to be used when writing tests:
 	(https://docs.unrealengine.com/en-US/Programming/Automation/TechnicalGuide/index.html has more information)
 	GDK_TEST - a simple test, that should be used if it's one of a kind (i.e. it's body can't be reused, otherwise use GDK_COMPLEX_TEST),
 	and if doesn't rely on background threads doing the computation (otherwise use LATENT_COMMANDs).
@@ -52,10 +52,12 @@
 		are passed around but never actually used. Usually they are just used to fill parameter lists.
 
 	Fake objects
-		actually have working implementations, but usually take some shortcut which makes them not suitable for production (an InMemoryTestDatabase is a good example).
+		actually have working implementations, but usually take some shortcut which makes them not suitable for production (an
+InMemoryTestDatabase is a good example).
 
 	Stubs
-		provide canned answers to calls made during the test, usually not responding at all to anything outside what's programmed in for the test.
+		provide canned answers to calls made during the test, usually not responding at all to anything outside what's programmed in for the
+test.
 
 	Spies
 		are stubs that also record some information based on how they were called.
@@ -63,7 +65,8 @@
 
 	Mocks
 		are pre-programmed with expectations which form a specification of the calls they are expected to receive.
-		They can throw an exception if they receive a call they don't expect and are checked during verification to ensure they got all the calls they were expecting.
+		They can throw an exception if they receive a call they don't expect and are checked during verification to ensure they got all the
+calls they were expecting.
 
 4. Test naming convention
 	- `GIVEN_WHEN_THEN` should be used.

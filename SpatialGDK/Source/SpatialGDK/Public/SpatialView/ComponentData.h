@@ -3,12 +3,11 @@
 #pragma once
 
 #include "Templates/UniquePtr.h"
-#include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
+#include <improbable/c_worker.h>
 
 namespace SpatialGDK
 {
-
 class ComponentUpdate;
 
 struct ComponentDataDeleter
@@ -25,7 +24,7 @@ struct ComponentDataDeleter
 using OwningComponentDataPtr = TUniquePtr<Schema_ComponentData, ComponentDataDeleter>;
 
 // An RAII wrapper for component data.
-class ComponentData
+class SPATIALGDK_API ComponentData
 {
 public:
 	// Creates a new component data.

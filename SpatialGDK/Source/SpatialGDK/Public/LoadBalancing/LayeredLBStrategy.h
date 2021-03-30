@@ -4,35 +4,19 @@
 
 #include "LoadBalancing/AbstractLBStrategy.h"
 
+#include "Utils/LayerInfo.h"
+
+#include "Containers/Map.h"
 #include "CoreMinimal.h"
-#include "Math/Box2D.h"
 #include "Math/Vector2D.h"
 
 #include "LayeredLBStrategy.generated.h"
 
 class SpatialVirtualWorkerTranslator;
 class UAbstractLockingPolicy;
+class UAbstractSpatialMultiWorkerSettings;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogLayeredLBStrategy, Log, All)
-
-USTRUCT()
-struct FLBLayerInfo
-{
-	GENERATED_BODY()
-
-	FLBLayerInfo() : Name(NAME_None)
-	{
-	}
-
-	UPROPERTY()
-	FName Name;
-
-	UPROPERTY(EditAnywhere, Category = "Load Balancing")
-	TSubclassOf<UAbstractLBStrategy> LoadBalanceStrategy;
-
-	UPROPERTY(EditAnywhere, Category = "Load Balancing")
-	TSubclassOf<UAbstractLockingPolicy> LockingPolicy;
-};
 
 /**
  * A load balancing strategy that wraps multiple LBStrategies. The user can define "Layers" of work, which are
@@ -40,7 +24,7 @@ struct FLBLayerInfo
  * to each Layer/Strategy and keep track of which Actors belong in which layer and should be load balanced
  * by the corresponding Strategy.
  */
-UCLASS()
+UCLASS(HideDropdown, NotBlueprintable)
 class SPATIALGDK_API ULayeredLBStrategy : public UAbstractLBStrategy
 {
 	GENERATED_BODY()
@@ -48,8 +32,12 @@ class SPATIALGDK_API ULayeredLBStrategy : public UAbstractLBStrategy
 public:
 	ULayeredLBStrategy();
 
+	void SetLayers(const TArray<FLayerInfo>& WorkerLayers);
+
 	/* UAbstractLBStrategy Interface */
-	virtual void Init() override;
+	virtual void Init() override{};
+
+	virtual FString ToString() const;
 
 	virtual void SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId) override;
 
@@ -57,34 +45,47 @@ public:
 
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
+	virtual SpatialGDK::FActorLoadBalancingGroupId GetActorGroupId(const AActor& Actor) const override;
 
-	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint() const override;
+	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const override;
 
-	virtual bool RequiresHandoverData() const override { return GetMinimumRequiredWorkers() > 1; }
+	virtual bool RequiresHandoverData() const override;
 
 	virtual FVector GetWorkerEntityPosition() const override;
 
 	virtual uint32 GetMinimumRequiredWorkers() const override;
 	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId) override;
-	/* End UAbstractLBStrategy Interface */
-
-	// This is provided to support the offloading interface in SpatialStatics. It should be removed once users
-	// switch to Load Balancing. 
-	bool CouldHaveAuthority(TSubclassOf<AActor> Class) const;
 
 	// This returns the LBStrategy which should be rendered in the SpatialDebugger.
 	// Currently, this is just the default strategy.
-	UAbstractLBStrategy* GetLBStrategyForVisualRendering() const;
+	UAbstractLBStrategy* GetLBStrategyForVisualRendering() const override;
+	/* End UAbstractLBStrategy Interface */
+
+	// This is provided to support the offloading interface in SpatialStatics. It should be removed once users
+	// switch to Load Balancing.
+	bool CouldHaveAuthority(TSubclassOf<AActor> Class) const;
+
+	UAbstractLBStrategy* GetLBStrategyForLayer(FName) const;
+
+	FName GetLocalLayerName() const;
 
 private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
 
-	mutable TMap<TSoftClassPtr<AActor>, FName> ClassPathToLayer;
+	mutable TMap<TSoftClassPtr<AActor>, FName> ClassPathToLayerName;
+
+	struct FLayerData
+	{
+		FName LayerName;
+		int32 LayerIndex;
+	};
+
+	TMap<FName, FLayerData> LayerData;
 
 	TMap<VirtualWorkerId, FName> VirtualWorkerIdToLayerName;
 
 	UPROPERTY()
-	TMap<FName, UAbstractLBStrategy* > LayerNameToLBStrategy;
+	TMap<FName, UAbstractLBStrategy*> LayerNameToLBStrategy;
 
 	// Returns the name of the first Layer that contains this, or a parent of this class,
 	// or the default actor group, if no mapping is found.
