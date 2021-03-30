@@ -374,7 +374,6 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 		SpatialPlatformCoordinator->StartSendingHeartbeat();
 		SpatialPlatformCoordinator->StartPollingForGameserverStatus();
 		SpatialPlatformCoordinator->StartPollingForWorkerFlags();
-		// SpatialPlatformCoordinator->SendReadyStatus();
 	}
 }
 
