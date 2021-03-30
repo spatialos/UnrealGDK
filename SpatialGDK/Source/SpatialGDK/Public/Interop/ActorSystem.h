@@ -41,7 +41,7 @@ struct ActorData
 class ActorSystem
 {
 public:
-	ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
+	ActorSystem(const FSubView& InActorSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
 				SpatialEventTracer* InEventTracer);
 
 	void Advance();
@@ -160,7 +160,7 @@ private:
 	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas) const;
 	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds) const;
 
-	const FSubView* SubView;
+	const FSubView* ActorSubView;
 	const FSubView* TombstoneSubView;
 	USpatialNetDriver* NetDriver;
 	SpatialEventTracer* EventTracer;

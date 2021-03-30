@@ -139,9 +139,9 @@ private:
 
 struct FSubViewDelta;
 
-ActorSystem::ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
+ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
 						 SpatialEventTracer* InEventTracer)
-	: SubView(&InSubView)
+	: ActorSubView(&InActorSubView)
 	, TombstoneSubView(&InTombstoneSubView)
 	, NetDriver(InNetDriver)
 	, EventTracer(InEventTracer)
@@ -151,27 +151,7 @@ ActorSystem::ActorSystem(const FSubView& InSubView, const FSubView& InTombstoneS
 
 void ActorSystem::Advance()
 {
-	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
-	{
-		if (Delta.Type == EntityDelta::ADD)
-		{
-			AActor* EntityActor = TryGetActor(
-				UnrealMetadata(SubView->GetView()[Delta.EntityId]
-								   .Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::UNREAL_METADATA_COMPONENT_ID })
-								   ->GetUnderlying()));
-			if (EntityActor == nullptr)
-			{
-				continue;
-			}
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
-				   Delta.EntityId);
-			// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
-			NetDriver->PackageMap->ResolveEntityActor(EntityActor, Delta.EntityId);
-			RemoveActor(Delta.EntityId);
-		}
-	}
-
-	for (const EntityDelta& Delta : SubView->GetViewDelta().EntityDeltas)
+	for (const EntityDelta& Delta : ActorSubView->GetViewDelta().EntityDeltas)
 	{
 		switch (Delta.Type)
 		{
@@ -179,7 +159,7 @@ void ActorSystem::Advance()
 		{
 			// We process authority lost temporarily twice. Once at the start, to lose authority, and again at the end
 			// to regain it. Why? Because if we temporarily lost authority, we may see surprising updates during the
-			// tick, such as updates for components we would otherwise think we were authoritative over, and ignore.
+			// tick, such as updates for components we would otherwise think we were authoritative over and ignore them.
 			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
 			{
 				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
@@ -235,8 +215,28 @@ void ActorSystem::Advance()
 		}
 	}
 
-	CreateEntityHandler.ProcessOps(*SubView->GetViewDelta().WorkerMessages);
-	ClaimPartitionHandler.ProcessOps(*SubView->GetViewDelta().WorkerMessages);
+	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
+	{
+		if (Delta.Type == EntityDelta::ADD || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
+		{
+			AActor* EntityActor = TryGetActor(
+				UnrealMetadata(ActorSubView->GetView()[Delta.EntityId]
+								   .Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::UNREAL_METADATA_COMPONENT_ID })
+								   ->GetUnderlying()));
+			if (EntityActor == nullptr)
+			{
+				continue;
+			}
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
+				   Delta.EntityId);
+			// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
+			NetDriver->PackageMap->ResolveEntityActor(EntityActor, Delta.EntityId);
+			RemoveActor(Delta.EntityId);
+		}
+	}
+
+	CreateEntityHandler.ProcessOps(*ActorSubView->GetViewDelta().WorkerMessages);
+	ClaimPartitionHandler.ProcessOps(*ActorSubView->GetViewDelta().WorkerMessages);
 }
 
 UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
@@ -251,7 +251,7 @@ UnrealMetadata* ActorSystem::GetUnrealMetadata(const Worker_EntityId EntityId)
 void ActorSystem::PopulateDataStore(const Worker_EntityId EntityId)
 {
 	ActorData& Components = ActorDataStore.Emplace(EntityId, ActorData{});
-	for (const ComponentData& Data : SubView->GetView()[EntityId].Components)
+	for (const ComponentData& Data : ActorSubView->GetView()[EntityId].Components)
 	{
 		switch (Data.GetComponentId())
 		{
@@ -523,7 +523,7 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 	if (Channel == nullptr)
 	{
 		// If there is no actor channel as a result of the actor being dormant, then assume the actor is about to become active.
-		if (SubView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
+		if (ActorSubView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
 		{
 			if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId)))
 			{
@@ -646,7 +646,7 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 {
 	ReceiveActor(EntityId);
-	for (const auto& AuthoritativeComponentSet : SubView->GetView()[EntityId].Authority)
+	for (const auto& AuthoritativeComponentSet : ActorSubView->GetView()[EntityId].Authority)
 	{
 		AuthorityGained(EntityId, AuthoritativeComponentSet);
 	}
@@ -847,8 +847,9 @@ void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId
 			return;
 		}
 
-		ApplyComponentData(*Channel, *Subobject, ComponentId,
-						   SubView->GetView()[EntityId].Components.FindByPredicate(ComponentIdEquality{ ComponentId })->GetUnderlying());
+		ApplyComponentData(
+			*Channel, *Subobject, ComponentId,
+			ActorSubView->GetView()[EntityId].Components.FindByPredicate(ComponentIdEquality{ ComponentId })->GetUnderlying());
 
 		Components.Remove(ComponentId);
 	});
@@ -1286,7 +1287,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 	// Apply initial replicated properties.
 	// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
 	// Potentially we could split out the initial actor state and the initial component state
-	for (const ComponentData& Component : SubView->GetView()[EntityId].Components)
+	for (const ComponentData& Component : ActorSubView->GetView()[EntityId].Components)
 	{
 		if (NetDriver->ClassInfoManager->IsGeneratedQBIMarkerComponent(Component.GetComponentId())
 			|| Component.GetComponentId() < SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
@@ -1346,7 +1347,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 
 	EntityActor->UpdateOverlaps();
 
-	if (SubView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
+	if (ActorSubView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
 	{
 		NetDriver->AddPendingDormantChannel(Channel);
 	}
@@ -1355,7 +1356,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 bool ActorSystem::IsReceivedEntityTornOff(const Worker_EntityId EntityId) const
 {
 	// Check the pending add components, to find the root component for the received entity.
-	for (const ComponentData& Data : SubView->GetView()[EntityId].Components)
+	for (const ComponentData& Data : ActorSubView->GetView()[EntityId].Components)
 	{
 		if (NetDriver->ClassInfoManager->GetCategoryByComponentId(Data.GetComponentId()) != SCHEMA_Data)
 		{
@@ -1456,7 +1457,7 @@ AActor* ActorSystem::CreateActor(ActorData& ActorComponents, const Worker_Entity
 		// Grab the client system entity ID from the partition component in order to correctly link this
 		// connection to the client it corresponds to.
 		const Worker_EntityId ClientSystemEntityId =
-			Partition(SubView->GetView()[EntityId]
+			Partition(ActorSubView->GetView()[EntityId]
 						  .Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID })
 						  ->GetUnderlying())
 				.WorkerConnectionId;
@@ -1678,7 +1679,7 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 
 	// Actor is a startup actor that is a part of the level. If it's not Tombstone'd, then it
 	// has just fallen out of our view and we should only remove the entity.
-	if (Actor->IsFullNameStableForNetworking() && !SubView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
+	if (Actor->IsFullNameStableForNetworking() && !ActorSubView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 	{
 		NetDriver->PackageMap->ClearRemovedDynamicSubobjectObjectRefs(EntityId);
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
@@ -1774,7 +1775,7 @@ void ActorSystem::RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor
 	{
 		NetDriver->ActorSystem->RemoveActor(EntityId);
 		// In the case that this is a startup actor, we won't actually delete the entity in SpatialOS.  Instead we'll Tombstone it.
-		if (!SubView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
+		if (!ActorSubView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 		{
 			UE_LOG(LogActorSystem, Log, TEXT("Adding tombstone to entity: %lld"), EntityId);
 			AddTombstoneToEntity(EntityId);
@@ -1947,7 +1948,7 @@ void ActorSystem::SendRemoveComponentForClassInfo(Worker_EntityId EntityId, cons
 	ComponentsToRemove.Reserve(SCHEMA_Count);
 	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
 	{
-		if (SubView->GetView()[EntityId].Components.ContainsByPredicate(ComponentIdEquality{ SubobjectComponentId }))
+		if (ActorSubView->GetView()[EntityId].Components.ContainsByPredicate(ComponentIdEquality{ SubobjectComponentId }))
 		{
 			ComponentsToRemove.Add(SubobjectComponentId);
 		}
@@ -2041,7 +2042,7 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 
 	// True if the entity is in the worker's view.
 	// If this is the case then we know the entity was created and do not need to retry if the request timed-out.
-	const bool bEntityIsInView = SubView->HasEntity(EntityId);
+	const bool bEntityIsInView = ActorSubView->HasEntity(EntityId);
 
 	switch (static_cast<Worker_StatusCode>(Op.status_code))
 	{
@@ -2266,7 +2267,7 @@ void ActorSystem::DeleteEntityComponentData(TArray<FWorkerComponentData>& Entity
 
 void ActorSystem::AddTombstoneToEntity(Worker_EntityId EntityId) const
 {
-	check(SubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID));
+	check(ActorSubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID));
 
 	FWorkerComponentData TombstoneData = Tombstone().CreateComponentData();
 	NetDriver->Connection->SendAddComponent(EntityId, &TombstoneData);
