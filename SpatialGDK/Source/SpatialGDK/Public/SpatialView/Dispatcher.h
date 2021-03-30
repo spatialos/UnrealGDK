@@ -1,6 +1,9 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 
 #include "SpatialView/Callbacks.h"
+#include "SpatialView/ScopedDispatcherCallback.h"
 #include "SpatialView/ViewDelta.h"
 
 #include "Containers/Array.h"
@@ -100,26 +103,4 @@ private:
 	TArray<FAuthorityCallbacks> AuthorityCallbacks;
 	CallbackId NextCallbackId;
 };
-
-class FScopedDispatcherCallback final
-{
-public:
-	FScopedDispatcherCallback(FDispatcher& InDispatcher, const CallbackId InCallbackId)
-		: Dispatcher(&InDispatcher)
-		, ScopedCallbackId(InCallbackId)
-	{
-		check(Dispatcher);
-	}
-
-	~FScopedDispatcherCallback()
-	{
-		check(Dispatcher);
-		Dispatcher->RemoveCallback(ScopedCallbackId);
-	}
-
-private:
-	FDispatcher* Dispatcher;
-	CallbackId ScopedCallbackId;
-};
-
 } // namespace SpatialGDK

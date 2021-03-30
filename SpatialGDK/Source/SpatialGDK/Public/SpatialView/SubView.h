@@ -71,7 +71,7 @@ private:
 	FFilterPredicate Filter;
 	const EntityView* View;
 
-	TArray<TUniquePtr<FScopedDispatcherCallback>> ScopedDispatcherCallbacks;
+	TArray<FScopedDispatcherCallback> ScopedDispatcherCallbacks;
 
 	FSubViewDelta SubViewDelta;
 

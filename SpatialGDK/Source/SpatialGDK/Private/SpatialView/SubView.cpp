@@ -161,13 +161,13 @@ void FSubView::RegisterTagCallbacks(FDispatcher& Dispatcher)
 			OnTaggedEntityAdded(Change.EntityId);
 		},
 		*View);
-	ScopedDispatcherCallbacks.Add(MakeUnique<FScopedDispatcherCallback>(Dispatcher, AddedCallbackId));
+	ScopedDispatcherCallbacks.Emplace(Dispatcher, AddedCallbackId);
 
 	CallbackId RemovedCallbackId =
 		Dispatcher.RegisterComponentRemovedCallback(TagComponentId, [this](const FEntityComponentChange& Change) {
 			OnTaggedEntityRemoved(Change.EntityId);
 		});
-	ScopedDispatcherCallbacks.Add(MakeUnique<FScopedDispatcherCallback>(Dispatcher, RemovedCallbackId));
+	ScopedDispatcherCallbacks.Emplace(Dispatcher, RemovedCallbackId);
 }
 
 void FSubView::RegisterRefreshCallbacks(FDispatcher& Dispatcher, const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
@@ -177,10 +177,10 @@ void FSubView::RegisterRefreshCallbacks(FDispatcher& Dispatcher, const TArray<FD
 	};
 	for (FDispatcherRefreshCallback Callback : DispatcherRefreshCallbacks)
 	{
-		TArray<CallbackId> RegisteredCallbackIds = Callback(RefreshEntityCallback);
-		for (const CallbackId RegisteredCallbackId : RegisteredCallbackIds)
+		const TArray<CallbackId> RegisteredCallbackIds = Callback(RefreshEntityCallback);
+		for (const CallbackId& RegisteredCallbackId : RegisteredCallbackIds)
 		{
-			ScopedDispatcherCallbacks.Add(MakeUnique<FScopedDispatcherCallback>(Dispatcher, RegisteredCallbackId));
+			ScopedDispatcherCallbacks.Emplace(Dispatcher, RegisteredCallbackId);
 		}
 	}
 }
