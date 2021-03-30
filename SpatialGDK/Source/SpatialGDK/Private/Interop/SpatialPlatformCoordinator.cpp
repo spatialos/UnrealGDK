@@ -46,7 +46,7 @@ USpatialPlatformCoordinator::USpatialPlatformCoordinator() {}
 
 USpatialPlatformCoordinator::~USpatialPlatformCoordinator()
 {
-	for (auto Request : CachedRequests)
+	for (auto Request : UncompletedRequests)
 	{
 		Request.Value->OnProcessRequestComplete().Unbind();
 		Request.Value->OnHeaderReceived().Unbind();
@@ -73,23 +73,13 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 
 	HeartbeatRequest->OnProcessRequestComplete().BindLambda(
 		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
-			CachedRequests.Remove(HeartBeatRequestKey);
+			UncompletedRequests.Remove(HeartBeatRequestKey);
 
 			GetWorld()->GetTimerManager().ClearTimer(HeartBeatTimerHandler);
 			GetWorld()->GetTimerManager().SetTimer(HeartBeatTimerHandler, this, &USpatialPlatformCoordinator::StartSendingHeartbeat,
 												   GetDefault<USpatialGDKSettings>()->SpatialPlatformHeartbeatInterval, false);
 
-			if (bWasSuccessful)
-			{
-				TSharedPtr<FJsonObject> RootObject;
-				FString ResponseStr = Response->GetContentAsString();
-				TSharedRef<TJsonReader<> > JsonReader = TJsonReaderFactory<>::Create(ResponseStr);
-				if (!FJsonSerializer::Deserialize(JsonReader, RootObject))
-				{
-					return;
-				}
-			}
-			else
+			if (!bWasSuccessful)
 			{
 				UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Failed HTTP request, Response:[%s]"), *FString(__FUNCTION__),
 					   *Response->GetContentAsString());
@@ -110,7 +100,7 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 	HeartbeatRequest->SetHeader("Content-Type", TEXT("application/json"));
 	HeartbeatRequest->ProcessRequest();
 
-	CachedRequests.Add(HeartBeatRequestKey, HeartbeatRequest);
+	UncompletedRequests.Add(HeartBeatRequestKey, HeartbeatRequest);
 }
 
 void USpatialPlatformCoordinator::SendReadyStatus()
@@ -125,10 +115,9 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 
 	ReadyStatusRequest->OnProcessRequestComplete().BindLambda(
 		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
-			CachedRequests.Remove(ReadyRequestKey);
+			UncompletedRequests.Remove(ReadyRequestKey);
 
-			if (bWasSuccessful) {}
-			else
+			if (!bWasSuccessful)
 			{
 				UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Failed HTTP request, Response:[%s]"), *FString(__FUNCTION__),
 					   *Response->GetContentAsString());
@@ -150,7 +139,7 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 	ReadyStatusRequest->SetHeader("Content-Type", TEXT("application/json"));
 	ReadyStatusRequest->ProcessRequest();
 
-	CachedRequests.Add(ReadyRequestKey, ReadyStatusRequest);
+	UncompletedRequests.Add(ReadyRequestKey, ReadyStatusRequest);
 }
 
 void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
@@ -165,7 +154,7 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 
 	WorkerStatusPollingRequest->OnProcessRequestComplete().BindLambda(
 		[this, SpatialWorkerFlags](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
-			CachedRequests.Remove(GameserverRequestKey);
+			UncompletedRequests.Remove(GameserverRequestKey);
 
 			GetWorld()->GetTimerManager().ClearTimer(GameserverStatusTimerHandler);
 			GetWorld()->GetTimerManager().SetTimer(GameserverStatusTimerHandler, this,
@@ -232,7 +221,7 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 	WorkerStatusPollingRequest->SetHeader("Content-Type", TEXT("application/json"));
 	WorkerStatusPollingRequest->ProcessRequest();
 
-	CachedRequests.Add(GameserverRequestKey, WorkerStatusPollingRequest);
+	UncompletedRequests.Add(GameserverRequestKey, WorkerStatusPollingRequest);
 }
 
 void USpatialPlatformCoordinator::StartWatchingForGameserverStatus()
@@ -273,7 +262,7 @@ void USpatialPlatformCoordinator::StartPollingForWorkerFlags()
 
 	WorkerFlagsPollingRequest->OnProcessRequestComplete().BindLambda(
 		[this, SpatialWorkerFlags](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
-			CachedRequests.Remove(WorkerflagsRequestKey);
+			UncompletedRequests.Remove(WorkerflagsRequestKey);
 
 			GetWorld()->GetTimerManager().ClearTimer(WorkerFlagsTimerHandler);
 			GetWorld()->GetTimerManager().SetTimer(WorkerFlagsTimerHandler, this, &USpatialPlatformCoordinator::StartPollingForWorkerFlags,
@@ -339,5 +328,5 @@ void USpatialPlatformCoordinator::StartPollingForWorkerFlags()
 	WorkerFlagsPollingRequest->SetHeader("Content-Type", TEXT("application/json"));
 	WorkerFlagsPollingRequest->ProcessRequest();
 
-	CachedRequests.Add(WorkerflagsRequestKey, WorkerFlagsPollingRequest);
+	UncompletedRequests.Add(WorkerflagsRequestKey, WorkerFlagsPollingRequest);
 }

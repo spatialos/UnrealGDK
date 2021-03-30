@@ -58,7 +58,7 @@ private:
 	FTimerHandle GameserverStatusTimerHandler;
 	FTimerHandle WorkerFlagsTimerHandler;
 
-	TMap<FString, TSharedRef<IHttpRequest, ESPMode::ThreadSafe>> CachedRequests;
+	TMap<FString, TSharedRef<IHttpRequest, ESPMode::ThreadSafe>> UncompletedRequests;
 
 	FString HeartBeatRequestKey = "HeartBeatRequestKey";
 	FString ReadyRequestKey = "ReadyRequestKey";
