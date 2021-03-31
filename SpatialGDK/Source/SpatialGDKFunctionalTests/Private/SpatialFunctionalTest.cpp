@@ -763,9 +763,9 @@ void ASpatialFunctionalTest::RevertPossession()
 {
 	for (const auto& Pair : OriginalPawnsToPossessOnFinishTest)
 	{
-		if (Pair.Key.IsValid())
+		if (Pair.Controller.IsValid())
 		{
-			Pair.Key.Get()->Possess(Pair.Value.Get());
+			Pair.Controller.Get()->Possess(Pair.Pawn.Get());
 		}
 	}
 }
@@ -1040,7 +1040,7 @@ void ASpatialFunctionalTest::ClearAllTakenSnapshots()
 	TakenSnapshots.Empty();
 }
 
-void ASpatialFunctionalTest::RegisterAutoPossess(AController* Controller, APawn* Pawn)
+void ASpatialFunctionalTest::RegisterAutoPossess_Implementation(AController* Controller, APawn* Pawn)
 {
 	if (Controller == nullptr)
 	{
@@ -1055,7 +1055,7 @@ void ASpatialFunctionalTest::RegisterAutoPossess(AController* Controller, APawn*
 	}
 	for (const auto& Pair : OriginalPawnsToPossessOnFinishTest)
 	{
-		AController* MapController = Pair.Key.Get();
+		AController* MapController = Pair.Controller.Get();
 		if (MapController == Controller)
 		{
 			// We do not want to register the possession if we already have something in the map.
@@ -1065,8 +1065,8 @@ void ASpatialFunctionalTest::RegisterAutoPossess(AController* Controller, APawn*
 			return;
 		}
 	}
-
-	OriginalPawnsToPossessOnFinishTest.Add(MakeWeakObjectPtr(Controller), MakeWeakObjectPtr(Pawn));
+	FControllerPawnPair ControllerPawnPair{ MakeWeakObjectPtr(Controller), MakeWeakObjectPtr(Pawn) };
+	OriginalPawnsToPossessOnFinishTest.Add(ControllerPawnPair);
 }
 
 void ASpatialFunctionalTest::RegisterAutoPossess(AController* Controller)

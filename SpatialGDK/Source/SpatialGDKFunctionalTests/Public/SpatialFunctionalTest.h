@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Containers/Map.h"
 #include "CoreMinimal.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -30,6 +31,14 @@ constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// Represents test already 
 } // namespace
 
 class ULayeredLBStrategy;
+USTRUCT()
+struct FControllerPawnPair
+{
+	GENERATED_BODY()
+
+	TWeakObjectPtr<AController> Controller;
+	TWeakObjectPtr<APawn> Pawn;
+};
 
 /*
  * A Spatial Functional NetTest allows you to define a series of steps, and control which server/client context they execute on
@@ -344,6 +353,7 @@ public:
 	// Clears all the snapshots taken, not meant to be used directly.
 	static void ClearAllTakenSnapshots();
 
+	UFUNCTION(CrossServer, Reliable)
 	void RegisterAutoPossess(AController* Controller, APawn* Pawn);
 	void RegisterAutoPossess(AController* Controller);
 	void CleanablePossess(AController* Controller, APawn* Pawn);
@@ -452,5 +462,5 @@ private:
 	static TMap<FString, FString> TakenSnapshots;
 
 	UPROPERTY(Replicated, Transient)
-	TMap<TWeakObjectPtr<AController>, TWeakObjectPtr<APawn>> OriginalPawnsToPossessOnFinishTest;
+	TArray<FControllerPawnPair> OriginalPawnsToPossessOnFinishTest;
 };

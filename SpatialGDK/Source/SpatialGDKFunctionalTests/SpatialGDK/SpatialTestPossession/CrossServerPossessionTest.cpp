@@ -53,6 +53,7 @@ void ACrossServerPossessionTest::PrepareTest()
 				{
 					AssertTrue(PlayerController->HasAuthority(), TEXT("PlayerController should HasAuthority"), PlayerController);
 					AssertFalse(Pawn->HasAuthority(), TEXT("Pawn shouldn't HasAuthority"), Pawn);
+					RegisterAutoPossess(PlayerController);
 					PlayerController->UnPossess();
 					PlayerController->RemotePossessOnServer(Pawn);
 				}
