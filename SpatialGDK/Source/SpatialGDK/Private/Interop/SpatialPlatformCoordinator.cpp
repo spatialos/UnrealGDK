@@ -317,7 +317,6 @@ void USpatialPlatformCoordinator::StartPollingForWorkerFlags()
 	UncompletedRequests.Add(WorkerflagsRequestKey, WorkerFlagsPollingRequest);
 }
 
-
 bool USpatialPlatformCoordinator::CheckPlatformSwitch(bool bHeartBeat)
 {
 	FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator")).ToLower().TrimStartAndEnd();
@@ -332,4 +331,3 @@ bool USpatialPlatformCoordinator::CheckPlatformSwitch(bool bHeartBeat)
 
 	return true;
 }
-
