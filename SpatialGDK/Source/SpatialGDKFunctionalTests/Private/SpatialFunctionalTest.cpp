@@ -467,6 +467,28 @@ int ASpatialFunctionalTest::GetLocalWorkerId()
 	return AuxFlowController != nullptr ? AuxFlowController->WorkerDefinition.Id : INVALID_FLOW_CONTROLLER_ID;
 }
 
+FString ASpatialFunctionalTest::GetLocalWorkerString()
+{
+	FString WorkerTypeName;
+	switch (GetLocalWorkerType())
+	{
+	case ESpatialFunctionalTestWorkerType::Server:
+		WorkerTypeName = TEXT("Server");
+		break;
+	case ESpatialFunctionalTestWorkerType::Client:
+		WorkerTypeName = TEXT("Client");
+		break;
+	case ESpatialFunctionalTestWorkerType::All:
+		WorkerTypeName = TEXT("All");
+		break;
+	default:
+		UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("GetLocalWorkerString called on Invalid worker type on test %s"), *GetName());
+		WorkerTypeName = TEXT("Invalid");
+		break;
+	}
+	return FString::Printf(TEXT("%s:%d"), *WorkerTypeName, GetLocalWorkerId());
+}
+
 // Add Steps for Blueprints
 
 void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, const FWorkerDefinition& Worker,

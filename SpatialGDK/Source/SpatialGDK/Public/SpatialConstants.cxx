@@ -253,8 +253,7 @@ const TArray<FString> RoutingWorkerSchemaImports = { "unreal/gdk/rpc_components.
 const TArray<Worker_ComponentId> KnownEntityAuthorityComponents = { POSITION_COMPONENT_ID,		 METADATA_COMPONENT_ID,
                                                                     INTEREST_COMPONENT_ID,		 PLAYER_SPAWNER_COMPONENT_ID,
                                                                     DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID,
-                                                                    GSM_SHUTDOWN_COMPONENT_ID,	 VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
-                                                                    SERVER_WORKER_COMPONENT_ID };
+                                                                    GSM_SHUTDOWN_COMPONENT_ID,	 VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID};
 
 }
 

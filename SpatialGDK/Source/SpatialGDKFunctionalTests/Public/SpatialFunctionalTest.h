@@ -129,6 +129,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	int GetLocalWorkerId();
 
+	// Helper to get the local Worker String.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	FString GetLocalWorkerString();
+
 	// # Step APIs.
 
 	// Add Steps for Blueprints.
