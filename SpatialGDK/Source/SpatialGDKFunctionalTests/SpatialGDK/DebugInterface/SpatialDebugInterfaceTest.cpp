@@ -138,7 +138,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 
 			FinishStep();
 		},
-		nullptr, 5.0f);
+		nullptr, 50.0f);
 
 	AddStep(
 		TEXT("Force actor delegation"), FWorkerDefinition::AllServers, nullptr, nullptr,
@@ -175,16 +175,22 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 
 			if (DelegationStep >= Workers.Num() * 2)
 			{
-				UWorld* World = GetWorld();
-
-				AReplicatedTestActorBase* Actor = World->SpawnActor<AReplicatedTestActorBase>(WorkerEntityPosition, FRotator());
-				AddDebugTag(Actor, GetTestTag());
-				RegisterAutoDestroyActor(Actor);
-
 				FinishStep();
 			}
 		},
-		5.0f);
+		50.0f);
+
+	AddStep(
+		TEXT("Create new actors"), FWorkerDefinition::AllServers, nullptr,
+		[this] {
+			UWorld* World = GetWorld();
+
+			AReplicatedTestActorBase* Actor = World->SpawnActor<AReplicatedTestActorBase>(WorkerEntityPosition, FRotator());
+			AddDebugTag(Actor, GetTestTag());
+			RegisterAutoDestroyActor(Actor);
+			FinishStep();
+		},
+		nullptr, 50.0f);
 
 	AddStep(
 		TEXT("Check new actors interest and delegation"), FWorkerDefinition::AllServers,
@@ -214,7 +220,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				FinishStep();
 			}
 		},
-		5.0f);
+		50.0f);
 
 	AddStep(
 		TEXT("Remove extra interest"), FWorkerDefinition::AllServers, nullptr,
@@ -239,7 +245,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 		[this] {
 			FinishStep();
 		},
-		nullptr, 5.0f);
+		nullptr, 50.0f);
 
 	AddStep(
 		TEXT("Add extra interest again"), FWorkerDefinition::AllServers, nullptr,
@@ -251,13 +257,20 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			AddInterestOnTag(GetTestTag());
 			FinishStep();
 		},
-		nullptr, 5.0f);
+		nullptr, 50.0f);
 
 	AddStep(
-		TEXT("Remove actor tags"), FWorkerDefinition::AllServers,
+		TEXT("Wait for extra interest to come back"), FWorkerDefinition::AllServers,
 		[this] {
 			return WaitToSeeActors(AReplicatedTestActorBase::StaticClass(), Workers.Num() * 2);
 		},
+		[this] {
+			FinishStep();
+		},
+		nullptr, 50.0f);
+
+	AddStep(
+		TEXT("Remove actor tags"), FWorkerDefinition::AllServers, nullptr,
 		[this] {
 			if (!bIsOnDefaultLayer)
 			{
@@ -276,7 +289,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 
 			FinishStep();
 		},
-		nullptr, 5.0f);
+		nullptr, 50.0f);
 
 	AddStep(
 		TEXT("Check state after tags removed"), FWorkerDefinition::AllServers,
@@ -304,7 +317,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				FinishStep();
 			}
 		},
-		5.0f);
+		50.0f);
 
 	AddStep(
 		TEXT("Add tag and remove delegation"), FWorkerDefinition::AllServers, nullptr,
@@ -328,7 +341,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			ClearTagDelegation(GetTestTag());
 			FinishStep();
 		},
-		nullptr, 5.0f);
+		nullptr, 50.0f);
 
 	AddStep(
 		TEXT("Check state after delegation removal"), FWorkerDefinition::AllServers,
@@ -354,7 +367,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				FinishStep();
 			}
 		},
-		nullptr, 5.0f);
+		nullptr, 50.0f);
 
 	AddStep(
 		TEXT("Shutdown debugging"), FWorkerDefinition::AllServers, nullptr,
@@ -365,7 +378,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				FinishStep();
 			}
 		},
-		nullptr, 5.0f);
+		nullptr, 50.0f);
 
 	AddStep(
 		TEXT("Check state after debug reset"), FWorkerDefinition::AllServers,
@@ -393,12 +406,12 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				FinishStep();
 			}
 		},
-		5.0f);
+		50.0f);
 }
 
 USpatialDebugInterfaceMap::USpatialDebugInterfaceMap()
 	// disabled in CI due to a timeout flake: UNR-5141
-	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("SpatialDebugInterfaceMap"))
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("SpatialDebugInterfaceMap"))
 {
 }
 
