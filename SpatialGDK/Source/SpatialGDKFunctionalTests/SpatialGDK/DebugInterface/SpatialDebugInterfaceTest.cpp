@@ -138,7 +138,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 
 			FinishStep();
 		},
-		nullptr, 50.0f);
+		nullptr, 5.0f);
 
 	AddStep(
 		TEXT("Force actor delegation"), FWorkerDefinition::AllServers, nullptr, nullptr,
@@ -178,7 +178,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				FinishStep();
 			}
 		},
-		50.0f);
+		5.0f);
 
 	AddStep(
 		TEXT("Create new actors"), FWorkerDefinition::AllServers, nullptr,
@@ -190,7 +190,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			RegisterAutoDestroyActor(Actor);
 			FinishStep();
 		},
-		nullptr, 50.0f);
+		nullptr, 5.0f);
 
 	AddStep(
 		TEXT("Check new actors interest and delegation"), FWorkerDefinition::AllServers,
@@ -220,7 +220,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				FinishStep();
 			}
 		},
-		50.0f);
+		5.0f);
 
 	AddStep(
 		TEXT("Remove extra interest"), FWorkerDefinition::AllServers, nullptr,
@@ -245,7 +245,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 		[this] {
 			FinishStep();
 		},
-		nullptr, 50.0f);
+		nullptr, 5.0f);
 
 	AddStep(
 		TEXT("Add extra interest again"), FWorkerDefinition::AllServers, nullptr,
@@ -257,7 +257,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			AddInterestOnTag(GetTestTag());
 			FinishStep();
 		},
-		nullptr, 50.0f);
+		nullptr, 5.0f);
 
 	AddStep(
 		TEXT("Wait for extra interest to come back"), FWorkerDefinition::AllServers,
@@ -267,7 +267,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 		[this] {
 			FinishStep();
 		},
-		nullptr, 50.0f);
+		nullptr, 5.0f);
 
 	AddStep(
 		TEXT("Remove actor tags"), FWorkerDefinition::AllServers, nullptr,
@@ -289,7 +289,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 
 			FinishStep();
 		},
-		nullptr, 50.0f);
+		nullptr, 5.0f);
 
 	AddStep(
 		TEXT("Check state after tags removed"), FWorkerDefinition::AllServers,
@@ -317,7 +317,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				FinishStep();
 			}
 		},
-		50.0f);
+		5.0f);
 
 	AddStep(
 		TEXT("Add tag and remove delegation"), FWorkerDefinition::AllServers, nullptr,
@@ -341,7 +341,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			ClearTagDelegation(GetTestTag());
 			FinishStep();
 		},
-		nullptr, 50.0f);
+		nullptr, 5.0f);
 
 	AddStep(
 		TEXT("Check state after delegation removal"), FWorkerDefinition::AllServers,
@@ -367,7 +367,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				FinishStep();
 			}
 		},
-		nullptr, 50.0f);
+		nullptr, 5.0f);
 
 	AddStep(
 		TEXT("Shutdown debugging"), FWorkerDefinition::AllServers, nullptr,
@@ -378,7 +378,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				FinishStep();
 			}
 		},
-		nullptr, 50.0f);
+		nullptr, 5.0f);
 
 	AddStep(
 		TEXT("Check state after debug reset"), FWorkerDefinition::AllServers,
@@ -406,7 +406,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				FinishStep();
 			}
 		},
-		50.0f);
+		5.0f);
 }
 
 USpatialDebugInterfaceMap::USpatialDebugInterfaceMap()
