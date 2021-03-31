@@ -220,7 +220,7 @@ void ActorSystem::Advance()
 		if (Delta.Type == EntityDelta::ADD || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
 		{
 			AActor* EntityActor = TryGetActor(
-				UnrealMetadata(ActorSubView->GetView()[Delta.EntityId]
+				UnrealMetadata(TombstoneSubView->GetView()[Delta.EntityId]
 								   .Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::UNREAL_METADATA_COMPONENT_ID })
 								   ->GetUnderlying()));
 			if (EntityActor == nullptr)
