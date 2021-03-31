@@ -398,8 +398,9 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 
 	Schema_Object* EndpointObject;
 	uint64 LastAckedRPCId;
-	if (AuthSubView->HasComponent(EntityId, RingBufferComponentId))
+	if (AuthSubView->IsEntityComplete(EntityId))
 	{
+		check(AuthSubView->HasComponent(EntityId, RingBufferComponentId));
 		if (!AuthSubView->HasAuthority(EntityId, RingBufferAuthComponentSetId))
 		{
 			if (bCreatedEntity)
