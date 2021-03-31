@@ -371,9 +371,16 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 
 	if (GameInstance->IsDedicatedServerInstance())
 	{
-		SpatialPlatformCoordinator->StartSendingHeartbeat();
-		SpatialPlatformCoordinator->StartPollingForGameserverStatus();
-		SpatialPlatformCoordinator->StartPollingForWorkerFlags();
+		if (USpatialPlatformCoordinator::CheckPlatformSwitch(false))
+		{
+			SpatialPlatformCoordinator->StartPollingForGameserverStatus();
+			SpatialPlatformCoordinator->StartPollingForWorkerFlags();
+		}
+
+		if (USpatialPlatformCoordinator::CheckPlatformSwitch(true))
+		{
+			SpatialPlatformCoordinator->StartSendingHeartbeat();
+		}
 	}
 }
 

@@ -18,17 +18,6 @@
 
 #include "SpatialPlatformCoordinator.generated.h"
 
-#define CHECK_PLATFORM_SWITCH(is_heartbeat)                                                                                                \
-	FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator")).ToLower().TrimStartAndEnd();      \
-	if (strSwitch.IsEmpty())                                                                                                               \
-	{                                                                                                                                      \
-		return;                                                                                                                            \
-	}                                                                                                                                      \
-	if (is_heartbeat == true && strSwitch != "true")                                                                                       \
-	{                                                                                                                                      \
-		return;                                                                                                                            \
-	}
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPlatformCoordinator, Log, All)
 
 class USpatialNetDriver;
@@ -49,6 +38,8 @@ public:
 	void StartPollingForGameserverStatus();
 	void StartWatchingForGameserverStatus();
 	void StartPollingForWorkerFlags();
+
+	static bool CheckPlatformSwitch(bool bHeartBeat);
 
 private:
 	USpatialNetDriver* Driver;

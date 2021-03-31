@@ -63,11 +63,8 @@ void USpatialPlatformCoordinator::Init(UNetDriver* InDriver)
 
 void USpatialPlatformCoordinator::StartSendingHeartbeat()
 {
-	CHECK_PLATFORM_SWITCH(true);
-
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
-	FString NewSpatialWorkerId = SpatialWorkerId + "";
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HeartbeatRequest = FHttpModule::Get().CreateRequest();
 
@@ -94,7 +91,7 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 
 	HeartbeatRequest->OnRequestWillRetry().BindLambda([this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {});
 
-	HeartbeatRequest->SetURL(Url + TEXT("/health/") + NewSpatialWorkerId);
+	HeartbeatRequest->SetURL(Url + TEXT("/health/") + SpatialWorkerId);
 	HeartbeatRequest->SetVerb("POST");
 	HeartbeatRequest->SetHeader(TEXT("User-Agent"), "UnrealEngine-GDK-Agent");
 	HeartbeatRequest->SetHeader("Content-Type", TEXT("application/json"));
@@ -105,11 +102,8 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 
 void USpatialPlatformCoordinator::SendReadyStatus()
 {
-	CHECK_PLATFORM_SWITCH(false);
-
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
-	FString NewSpatialWorkerId = SpatialWorkerId + "";
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> ReadyStatusRequest = FHttpModule::Get().CreateRequest();
 
@@ -133,7 +127,7 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 	ReadyStatusRequest->OnRequestWillRetry().BindLambda(
 		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {});
 
-	ReadyStatusRequest->SetURL(Url + TEXT("/ready/") + NewSpatialWorkerId);
+	ReadyStatusRequest->SetURL(Url + TEXT("/ready/") + SpatialWorkerId);
 	ReadyStatusRequest->SetVerb("POST");
 	ReadyStatusRequest->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
 	ReadyStatusRequest->SetHeader("Content-Type", TEXT("application/json"));
@@ -144,11 +138,8 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 
 void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 {
-	CHECK_PLATFORM_SWITCH(false);
-
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
-	FString NewSpatialWorkerId = SpatialWorkerId + "";
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> WorkerStatusPollingRequest = FHttpModule::Get().CreateRequest();
 
@@ -226,8 +217,6 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 
 void USpatialPlatformCoordinator::StartWatchingForGameserverStatus()
 {
-	CHECK_PLATFORM_SWITCH(false);
-
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> WatcherStatusPollingRequest = FHttpModule::Get().CreateRequest();
@@ -252,11 +241,8 @@ void USpatialPlatformCoordinator::StartWatchingForGameserverStatus()
 
 void USpatialPlatformCoordinator::StartPollingForWorkerFlags()
 {
-	CHECK_PLATFORM_SWITCH(false);
-
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
-	FString NewSpatialWorkerId = SpatialWorkerId + "";
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> WorkerFlagsPollingRequest = FHttpModule::Get().CreateRequest();
 
@@ -330,3 +316,20 @@ void USpatialPlatformCoordinator::StartPollingForWorkerFlags()
 
 	UncompletedRequests.Add(WorkerflagsRequestKey, WorkerFlagsPollingRequest);
 }
+
+
+bool USpatialPlatformCoordinator::CheckPlatformSwitch(bool bHeartBeat)
+{
+	FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator")).ToLower().TrimStartAndEnd();
+	if (strSwitch.IsEmpty())
+	{
+		return false;
+	}
+	if (bHeartBeat == true && strSwitch != "true")
+	{
+		return false;
+	}
+
+	return true;
+}
+
