@@ -1260,6 +1260,10 @@ void ResetSchemaGeneratorState()
 	SchemaGeneratedClasses.Empty();
 	NetCullDistanceToComponentId.Empty();
 	ComponentIdToFieldIds.Empty();
+	ComponentIdsWaitingForSubobjects.Empty();
+	ComponentIdsWaitingForHandoverSubobjects.Empty();
+	FieldIdsForComponentClassAndGroup.Empty();
+	FieldIdsForHandoverComponentClass.Empty();
 }
 
 void ResetSchemaGeneratorStateAndCleanupFolders()
@@ -1447,11 +1451,6 @@ void ResetUsedNames()
 	ClassPathToSchemaName.Empty();
 	SchemaNameToClassPath.Empty();
 	PotentialSchemaNameCollisions.Empty();
-
-	FieldIdsForComponentClassAndGroup.Empty();
-	FieldIdsForHandoverComponentClass.Empty();
-	ComponentIdsWaitingForSubobjects.Empty();
-	ComponentIdsWaitingForHandoverSubobjects.Empty();
 
 	for (const TPair<FString, FActorSchemaData>& Entry : ActorClassPathToSchema)
 	{
@@ -1832,6 +1831,11 @@ void SpatialGDKSanitizeGeneratedSchema()
 
 	SanitizeClassMap(ActorClassPathToSchema, ValidClassNames);
 	SanitizeClassMap(SubobjectClassPathToSchema, ValidClassNames);
+
+	checkf(ComponentIdsWaitingForSubobjects.Num() == 0,
+		   TEXT("There should be no normal subobjects still waiting for processing at this point in schema generation."));
+	checkf(ComponentIdsWaitingForHandoverSubobjects.Num() == 0,
+		   TEXT("There should be no handover subobjects still waiting for processing at this point in schema generation."));
 }
 
 } // namespace Schema

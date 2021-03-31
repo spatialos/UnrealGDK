@@ -81,14 +81,14 @@ struct FComponentSchemaData
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	UPROPERTY()
 	TArray<uint32> FieldIds;
 };
 
 USTRUCT()
 struct FComponentIDs
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY()
 	TArray<uint32> ComponentIDs;

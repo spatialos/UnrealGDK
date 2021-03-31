@@ -128,7 +128,9 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 		for (Schema_FieldId Field : Subset)
 		{
 			if (!Superset.Contains(Field))
+			{
 				return false;
+			}
 		}
 		return true;
 	};
