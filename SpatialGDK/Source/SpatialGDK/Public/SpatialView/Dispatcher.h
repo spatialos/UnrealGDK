@@ -1,4 +1,6 @@
-﻿#pragma once
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+#pragma once
 
 #include "SpatialView/Callbacks.h"
 #include "SpatialView/ViewDelta.h"
