@@ -160,15 +160,11 @@ SUBVIEW_TEST(GIVEN_SubView_With_Tagged_Entities_WHEN_SubView_Destroyed_THEN_Disp
 
 	FDispatcher Dispatcher;
 	EntityView View;
-	ViewDelta Delta;
 
 	auto RefreshCallbacks = TArray<FDispatcherRefreshCallback>{ FSubView::CreateComponentChangedRefreshCallback(
 		Dispatcher, ValueComponentId, FSubView::NoComponentChangeRefreshPredicate) };
 
 	TUniquePtr<FSubView> SubView = MakeUnique<FSubView>(TagComponentId, FSubView::NoFilter, &View, Dispatcher, RefreshCallbacks);
-
-	AddEntityToView(View, TaggedEntityId);
-	PopulateViewDeltaWithComponentAdded(Delta, View, TaggedEntityId, ComponentData{ TagComponentId });
 
 	TestTrue("Callbacks registered before subview is destroyed", Dispatcher.GetNumCallbacks() > 0);
 
