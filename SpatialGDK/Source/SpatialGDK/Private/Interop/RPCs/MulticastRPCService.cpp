@@ -32,11 +32,11 @@ void MulticastRPCService::AdvanceView()
 			{
 				// We process auth lost temporarily twice. Once before updates and once after, so as not
 				// to process updates that we received while we think we are still authoritiative.
-				AuthorityLost(Delta.EntityId, Change.ComponentId);
+				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
 			}
 			for (const AuthorityChange& Change : Delta.AuthorityLost)
 			{
-				AuthorityLost(Delta.EntityId, Change.ComponentId);
+				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
 			}
 			for (const ComponentChange& Change : Delta.ComponentUpdates)
 			{
@@ -51,14 +51,15 @@ void MulticastRPCService::AdvanceView()
 			}
 			for (const AuthorityChange& Change : Delta.AuthorityGained)
 			{
-				AuthorityGained(Delta.EntityId, Change.ComponentId);
+				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
 			}
 			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
 			{
 				// Updates that we could have received while we weren't authoritative have now been processed.
 				// Regain authority.
-				AuthorityGained(Delta.EntityId, Change.ComponentId);
+				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
 			}
+			break;
 		}
 		case EntityDelta::ADD:
 			PopulateDataStore(Delta.EntityId);
@@ -231,7 +232,7 @@ void MulticastRPCService::ExtractRPCs(const Worker_EntityId EntityId)
 			const TOptional<RPCPayload>& Element = Buffer.GetRingBufferElement(RPCId);
 			if (Element.IsSet())
 			{
-				ExtractRPCCallback.Execute(FUnrealObjectRef(EntityId, Element.GetValue().Offset), Element.GetValue(), RPCId);
+				ExtractRPCCallback.Execute(FUnrealObjectRef(EntityId, Element.GetValue().Offset), RPCSender(), Element.GetValue(), RPCId);
 				LastProcessedRPCId = RPCId;
 			}
 			else

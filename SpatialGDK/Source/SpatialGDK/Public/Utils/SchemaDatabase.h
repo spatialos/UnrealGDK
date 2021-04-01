@@ -88,6 +88,8 @@ enum class ESchemaDatabaseVersion : uint8
 {
 	BeforeVersionSupportAdded = 0,
 	VersionSupportAdded,
+	AlwaysWriteRPCAdded,
+	InitialOnlyDataAdded,
 
 	// Add new versions here
 
@@ -135,6 +137,9 @@ public:
 	TArray<uint32> HandoverComponentIds;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<uint32> InitialOnlyComponentsIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TArray<uint32> LevelComponentIds;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
@@ -145,6 +150,9 @@ public:
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FComponentIDs> ComponentSetIdToComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TMap<ERPCType, uint32> RPCRingBufferSizeMap;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	ESchemaDatabaseVersion SchemaDatabaseVersion;

@@ -298,6 +298,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Runtime versions"))
 	FRuntimeVariantVersion StandardRuntimeVersion;
 
+	/** Disable to terminate the runtime after exiting from PIE. This reduces the shut down time of the runtime process. */
+	UPROPERTY(EditAnywhere, config, Category = "Runtime", meta = (DisplayName = "Shut down runtime gracefully on PIE exit"))
+	bool bShutdownRuntimeGracefullyOnPIEExit;
+
 	/** Whether to use the GDK-associated SpatialOS Inspector version for local deployments, or to use the one specified in the
 	 * InspectorVersion field. */
 	UPROPERTY(EditAnywhere, config, Category = "Inspector", meta = (DisplayName = "Use GDK pinned Inspector version"))
@@ -363,9 +367,9 @@ private:
 			  meta = (Tooltip = "Additional arguments passed to Cook And Generate Schema"))
 	FString CookAndGenerateAdditionalArguments;
 
-	/** Add flags to the `spatial local launch` command; they alter the deployment’s behavior. Select the trash icon to remove all the
+	/** Add flags to the local runtime deployment; they alter the deployment’s behavior. Select the trash icon to remove all the
 	 * flags.*/
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Command line flags for local launch"))
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (DisplayName = "Command line flags for local runtime"))
 	TArray<FString> SpatialOSCommandLineLaunchFlags;
 
 private:

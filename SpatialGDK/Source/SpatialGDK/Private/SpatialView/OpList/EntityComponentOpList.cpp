@@ -12,6 +12,14 @@ EntityComponentOpListBuilder::EntityComponentOpListBuilder()
 {
 }
 
+EntityComponentOpListBuilder EntityComponentOpListBuilder::Move()
+{
+	EntityComponentOpListBuilder MovedBuilder;
+	Swap(OpListData, MovedBuilder.OpListData);
+
+	return MoveTemp(MovedBuilder);
+}
+
 EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntity(Worker_EntityId EntityId)
 {
 	Worker_Op Op = {};
@@ -149,6 +157,20 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityQueryComman
 	Op.op.entity_query_response.request_id = RequestId;
 	Op.op.entity_query_response.status_code = StatusCode;
 	Op.op.entity_query_response.message = StoreString(MoveTemp(Message));
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityCommandRequest(Worker_EntityId EntityID, Worker_RequestId RequestId,
+																					CommandRequest CommandRequest)
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_COMMAND_REQUEST;
+	Op.op.command_request.entity_id = EntityID;
+	Op.op.command_response.request_id = RequestId;
+	Op.op.command_request.request.command_index = CommandRequest.GetCommandIndex();
+	Op.op.command_request.request.component_id = CommandRequest.GetComponentId();
+	Op.op.command_request.request.schema_type = CommandRequest.GetUnderlying();
 	OpListData->Ops.Add(Op);
 	return *this;
 }

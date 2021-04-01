@@ -8,6 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
+### Breaking changes:
+- Removed support for UE 4.24.
+- `MaxRPCRingBufferSize` setting has been removed. This was previously used to specify the RPC ring buffer size when generating schema. Now, `DefaultRPCRingBufferSize` is used, and can be overridden per RPC type using `RPCRingBufferSizeOverrides`.
+- `RPCRingBufferSizeMap` setting has been renamed to `RPCRingBufferSizeOverrides`.
+
+### Features:
+- Added a message box notification when game is closed due to missing generated schema.
+- Adapted SpatialDebugger to use SubViews.
+- Added a function flag `AlwaysWrite` that allows specifying an RPC to use a separate channel and allow overwriting unacked RPC calls. This is currently limited to Unreliable Server RPCs on classes inheriting from AActor, and only one such RPC can be specified per actor. This feature is disabled by default and can be enabled via `bEnableAlwaysWriteRPCs` setting.
+- Enhanced server logging to include load balancing and local worker info on startup.
+- Added 'Persistent' spatial class flag, typically used to override a non persistent base class.
+- Added a button to generate functional test maps from the editor. It can be found under **Window** > **Generate test maps**.
+- Added versioning to snapshots. Attempting to load an incompatible snapshot will fail, and output error logs that request the snapshot be regenerated.
+- Add feature flag bEnableInitialOnlyReplicationCondition for COND_InitialOnly support.
+
+### Bug fixes:
+- Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
+- Fixed incorrect allocation of entity ID from a non-authoritative server sending a cross-server RPC to a replicated level actor that hasn't been received from runtime.
+- Fixed a regression where bReplicates would not be handed over correctly when dynamically set.
+- Fixed an issue where resetting handover property to default value would be omitted during handover value replication
+- Fixed EntityPool capacity overflow issue by removing the ability from the gdk settings to request a pool size larger than int32_max.
+- Fixed an issue where components added to a scene actor would be replicated incorrectly.
+- Fixed an issue where an actor channel was added to the wrong net connection.
+- Fixed an issue where an auto generated launch config was giving the client worker too many permissions.
+- Fixed an issue where authority was not correctly delegated to sublevel world settings prior to BeginPlay being issued. This resulted in duplicate world settings entities being created.
 
 ## [`0.12.0`] - 2021-02-01
 
@@ -41,7 +66,7 @@ These functions and structs can be referenced in both code and blueprints and it
   1. The time elapsed since the last sent Spatial position update is greater than or equal to `PositionUpdateThresholdMaxSeconds` AND the Actor has moved a non-zero amount.
   1. The distance travelled since the last Spatial position update was sent is greater than or equal to `PositionUpdateThresholdMaxCentimeters`.
 - New setting "Auto-stop local SpatialOS deployment" allows you to specify Never (doesn't automatically stop), OnEndPIE (when a PIE session is ended) and OnExitEditor (only when the editor is shutdown). The default is OnExitEditor.
-- Added `OnActorReady` bindable callback triggered when SpatialOS entity data is first received after creating an entity corresponding to an Actor. This event indicates you can safely refer to the entity without risk of inconsistent state after worker crashes or snapshot restarts.
+- Added `OnActorReady` bindable callback triggered when SpatialOS entity data is first received after creating an entity corresponding to an Actor. This event indicates you can safely refer to the entity without risk of inconsistent state after worker crashes or snapshot restarts. The callback contains the active actor's authority.
 - Added support for the main build target having `TargetType.Client` (`<ProjectName>.Target.cs`). This target is automatically built with arguments `-client -noserver` passed to UAT when building from the editor. If you use the GDK build script or executable manually, you need to pass `-client -noserver` when building this target (for example, `BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject -client -noserver`).
 - Added ability to specify `USpatialMultiWorkerSettings` class from command line. Specify a `SoftClassPath` via `-OverrideMultiWorkerSettingsClass=MultiWorkerSettingsClassName`.
 - You can override the load balancing strategy in-editor so that it is different from the cloud. Set `Editor Multi Worker Settings Class` in the `World Settings` to specify the in-editor load balancing strategy. If it is not specified, the existing `Multi Worker Settings Class` defines both the local and cloud load balancing strategy.
@@ -88,6 +113,16 @@ These functions and structs can be referenced in both code and blueprints and it
 - Unreal Engine version 4.26.0 is supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
 - Running with an out-of-date schema database reports a version warning when attempting to launch in editor.
 - Reworked schema generation (incremental and full) pop-ups to be clearer. 
+- Unreal Engine version 4.26.0 is now supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
+- Added cross-server variants of ability activation functions on the Ability System Component.
+- Added `SpatialSwitchHasAuthority` function to differentiate authoritative server, non-authoritative server, and clients. This can be called in code or used in blueprints that derive from actor.
+- Added blueprint callable function `GetMaxDynamicallyAttachedSubobjectsPerClass` to `USpatialStatics` that gets the maximum dynamically attached subobjects per class as set in `SpatialGDKSettings`
+- Running with an out-of-date schema database will now report a version warning when attempting to launch in editor.
+- Simulated Player deployments no longer depend on DeploymentLauncher for readiness. You can now restart them via the Console and expect them to reconnect to your main deployment. DeploymentLauncher will also restart any crashed or incorrectly finished simulated players applications.
+- Added a `-FailOnNetworkFailure` flag that makes a Spatial-enabled game fail on any NetworkFailure.
+- Reworked schema generation (incremental + full) pop-ups to be clearer.
+- Added a `-FailOnNetworkFailure` flag that makes a Spatial-enabled game fail on any NetworkFailure
+- Added `URemotePossessionComponent` to deal with Cross-Server Possession. Add this componenet to an AController, it will possess the Target Pawn after OnAuthorityGained. It can be implemented in C++ and Blueprint.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
@@ -122,12 +157,16 @@ These functions and structs can be referenced in both code and blueprints and it
 - Fixed client connection not being cleaned up when moving out of interest of a server.
 - Fixed an assertion being triggered on async loaded entities due to queuing some component addition.
 - Fixed a bug where consecutive invocations of CookAndGenerateSchemaCommandlet for different levels could fail when running the schema compiler.
+- Fixed an issue where GameMode values won't be replicated between server workers if it's outside their Interest.
+- Fixed gameplay cues receiving OnActive/WhileActive events twice on the predicting client in a multi-worker single-process PIE environment.
+- Fixed an issue where a NetworkFailure won't be reported when connecting to a deployment that doesn't support dev_login with a developer token, and in some other configuration-dependent cases.
 - Fixed a crash that occured when opening the session frontend with VS 16.8.0 using the bundled dbghelp.dll.
 - Spatial Debugger no longer consumes input.
+- Fixed an issue where we would always create a folder for a snapshots for a deployment even when we made no snapshots
 - Fixed an issue in the SpatialTestCharacterMigration test where trigger boxes sometimes wouldn't trigger at low framerates.
 - Spatial bundles no longer requested at startup if `UGeneralProjectSettings::bSpatialNetworking` is disabled.
-- Fixed an issue where heartbeats could be ran on a controller after its destruction
-- Fixed an issue that led to the launch config being left in non-classic style with certain engine and project path configurations
+- Fixed an issue where heartbeats could be ran on a controller after its destruction.
+- Fixed an issue that led to the launch config being left in non-classic style with certain engine and project path configurations.
 
 ## [`0.11.0`] - 2020-09-03
 

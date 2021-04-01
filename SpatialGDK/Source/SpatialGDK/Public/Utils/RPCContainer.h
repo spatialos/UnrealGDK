@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
@@ -69,8 +70,8 @@ struct FRPCErrorInfo
 
 struct SPATIALGDK_API FPendingRPCParams
 {
-	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, SpatialGDK::RPCPayload&& InPayload,
-					  TOptional<uint64> RPCIdForLinearEventTrace);
+	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, const SpatialGDK::RPCSender& InSenderInfo, ERPCType InType,
+					  SpatialGDK::RPCPayload&& InPayload, const FSpatialGDKSpanId& SpanId);
 
 	// Moveable, not copyable.
 	FPendingRPCParams() = delete;
@@ -81,12 +82,12 @@ struct SPATIALGDK_API FPendingRPCParams
 	~FPendingRPCParams() = default;
 
 	FUnrealObjectRef ObjectRef;
+	SpatialGDK::RPCSender SenderRPCInfo;
 	SpatialGDK::RPCPayload Payload;
 
 	FDateTime Timestamp;
 	ERPCType Type;
-
-	TOptional<uint64> RPCIdForLinearEventTrace;
+	FSpatialGDKSpanId SpanId;
 };
 
 class SPATIALGDK_API FRPCContainer
@@ -102,8 +103,8 @@ public:
 	~FRPCContainer() = default;
 
 	void BindProcessingFunction(const FProcessRPCDelegate& Function);
-	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, ERPCType InType, SpatialGDK::RPCPayload&& InPayload,
-						   TOptional<uint64> RPCIdForLinearEventTrace);
+	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, const SpatialGDK::RPCSender& InSenderInfo, ERPCType InType,
+						   SpatialGDK::RPCPayload&& InPayload, const FSpatialGDKSpanId& SpanId);
 	void ProcessRPCs();
 	void DropForEntity(const Worker_EntityId& EntityId);
 

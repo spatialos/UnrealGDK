@@ -150,13 +150,22 @@ void ASpatialTestRepNotify::PrepareTest()
 				return;
 			}
 
-			// We consciously differ from native UE here
-			if (GetNetDriver()->IsA(USpatialNetDriver::StaticClass()))
+		// We consciously differ from native UE here
+		// Also, the native behaviour changed when going from 4.25 to 4.26.
+		// On older versions, we expect the old array to have 3 elements, but on Spatial and on native starting from 4.26, we expect 2
+		// elements.
+#if ENGINE_MINOR_VERSION >= 26
+			bool bOldArrayShouldHaveTwoElements = true;
+#else
+			bool bOldArrayShouldHaveTwoElements = false;
+#endif
+			bOldArrayShouldHaveTwoElements = bOldArrayShouldHaveTwoElements || GetNetDriver()->IsA(USpatialNetDriver::StaticClass());
+			if (bOldArrayShouldHaveTwoElements)
 			{
 				if (OldTestArray.Num() != 2)
 				{
-					FinishTest(EFunctionalTestResult::Failed,
-							   TEXT("OnRepTestArray should have been called with 2 entries in the old Array on Spatial"));
+					FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepTestArray should have been called with 2 entries in the old Array "
+																   "on Spatial or in Native on 4.26 and above"));
 					return;
 				}
 			}
@@ -165,14 +174,14 @@ void ASpatialTestRepNotify::PrepareTest()
 				if (OldTestArray.Num() != 3)
 				{
 					FinishTest(EFunctionalTestResult::Failed,
-							   TEXT("OnRepTestArray should have been called with 3 entries in the old Array on Native"));
+							   TEXT("OnRepTestArray should have been called with 3 entries in the old Array on Native in 4.25 and below"));
 					return;
 				}
 
 				if (OldTestArray[2] != 0)
 				{
-					FinishTest(EFunctionalTestResult::Failed,
-							   TEXT("OnRepTestArray should have been called with 0 as its third entry in the old Array on Native"));
+					FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepTestArray should have been called with 0 as its third entry in "
+																   "the old Array on Native in 4.25 and below"));
 					return;
 				}
 			}
@@ -208,21 +217,29 @@ void ASpatialTestRepNotify::PrepareTest()
 			return TestArray.Num() == 2;
 		},
 		[this]() {
-			// At this point, we have received the update for the TestArray, so it makes sense to check RepNotify beahviour.
+	// At this point, we have received the update for the TestArray, so it makes sense to check RepNotify beahviour.
 
-			// We consciously differ from native UE here
-			if (GetNetDriver()->IsA(USpatialNetDriver::StaticClass()))
+	// We consciously differ from native UE here
+	// Also, the native behaviour changed when going from 4.25 to 4.26.
+	// On older versions, we expect the old array to have 2 elements, but on Spatial and on native starting from 4.26, we expect 3 elements.
+#if ENGINE_MINOR_VERSION >= 26
+			bool bOldArrayShouldHaveThreeElements = true;
+#else
+			bool bOldArrayShouldHaveThreeElements = false;
+#endif
+			bOldArrayShouldHaveThreeElements = bOldArrayShouldHaveThreeElements || GetNetDriver()->IsA(USpatialNetDriver::StaticClass());
+			if (bOldArrayShouldHaveThreeElements)
 			{
 				if (OldTestArray.Num() != 3)
 				{
-					FinishTest(EFunctionalTestResult::Failed,
-							   TEXT("OnRepTestArray should have been called with 3 elements after shrinking on Spatial"));
+					FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepTestArray should have been called with 3 elements after shrinking "
+																   "on Spatial or in Native on 4.26 and above"));
 					return;
 				}
 				if (OldTestArray[2] != 30)
 				{
-					FinishTest(EFunctionalTestResult::Failed,
-							   TEXT("OnRepTestArray should have been called with 30 as its third entry after shrinking on Spatial"));
+					FinishTest(EFunctionalTestResult::Failed, TEXT("OnRepTestArray should have been called with 30 as its third entry "
+																   "after shrinking on Spatial or in Native on 4.26 and above"));
 					return;
 				}
 			}
@@ -231,7 +248,7 @@ void ASpatialTestRepNotify::PrepareTest()
 				if (OldTestArray.Num() != 2)
 				{
 					FinishTest(EFunctionalTestResult::Failed,
-							   TEXT("OnRepTestArray should have been called with 2 elements after shrinking on Native"));
+							   TEXT("OnRepTestArray should have been called with 2 elements after shrinking on Native on 4.25 and below"));
 					return;
 				}
 			}

@@ -2,25 +2,31 @@
 
 #pragma once
 
+#include "Interop/CrossServerRPCHandler.h"
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslationManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/ConnectionConfig.h"
+#include "Interop/CrossServerRPCSender.h"
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialOutputDevice.h"
-#include "Interop/SpatialPlatformCoordinator.h"
+#include "Interop/SpatialRoutingSystem.h"
 #include "Interop/SpatialSnapshotManager.h"
-#include "SpatialView/OpList/OpList.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialBasicAwaiter.h"
+#include "Utils/SpatialDebugger.h"
+#include "Utils/SpatialDebuggerSystem.h"
 
 #include "LoadBalancing/AbstractLockingPolicy.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 
 #include "CoreMinimal.h"
-#include "GameFramework/OnlineReplStructs.h"
+#include "Interop/ActorSystem.h"
+#include "Interop/AsyncPackageLoadFilter.h"
+#include "Interop/ClientConnectionManager.h"
+#include "Interop/InitialOnlyFilter.h"
 #include "Interop/WellKnownEntitySystem.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
@@ -67,6 +73,11 @@ enum class EActorMigrationResult : uint8
 	DormantOnConnection
 };
 
+namespace SpatialGDK
+{
+class SpatialRoutingSystem;
+}
+
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 {
@@ -74,6 +85,7 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 
 public:
 	USpatialNetDriver(const FObjectInitializer& ObjectInitializer);
+	~USpatialNetDriver();
 
 	// Begin UObject Interface
 	virtual void BeginDestroy() override;
@@ -97,6 +109,9 @@ public:
 	virtual void Shutdown() override;
 	virtual void NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection) override;
 	virtual void OnOwnerUpdated(AActor* Actor, AActor* OldOwner) override;
+
+	virtual void PushCrossServerRPCSender(AActor* Sender) override;
+	virtual void PopCrossServerRPCSender(AActor* Sender) override;
 	// End UNetDriver interface.
 
 	void OnConnectionToSpatialOSSucceeded();
@@ -114,16 +129,14 @@ public:
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
 	// When the AcceptingPlayers/SessionID state on the GSM has changed this method will be called.
-	void OnGSMQuerySuccess();
+	void ClientOnGSMQuerySuccess();
 	void RetryQueryGSM();
 	void GSMQueryDelegateFunction(const Worker_EntityQueryResponseOp& Op);
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	void AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRepl& UniqueId, const FName& OnlinePlatformName,
 						 const Worker_EntityId& ClientSystemEntityId);
-	void PostSpawnPlayerController(APlayerController* PlayerController);
-
-	void DisconnectPlayer(Worker_EntityId ClientEntityId);
+	void PostSpawnPlayerController(APlayerController* PlayerController, const Worker_EntityId ClientSystemEntityId);
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId, USpatialActorChannel& Channel);
@@ -145,11 +158,12 @@ public:
 	void WipeWorld(const PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
 	void SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay);
-	void SetSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
-	void RegisterClientConnection(const Worker_EntityId WorkerEntityId, USpatialNetConnection* ClientConnection);
-	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerEntityId(const Worker_EntityId InWorkerEntityId);
-	void CleanUpClientConnection(USpatialNetConnection* ClientConnection);
+	void RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebugger);
+
 	void CleanUpServerConnectionForPC(APlayerController* PC);
+
+	Worker_PartitionId GetRoutingPartition();
+	void QueryRoutingPartition();
 
 	bool HasServerAuthority(Worker_EntityId EntityId) const;
 	bool HasClientAuthority(Worker_EntityId EntityId) const;
@@ -190,13 +204,24 @@ public:
 	UPROPERTY()
 	USpatialNetDriverDebugContext* DebugCtx;
 	UPROPERTY()
-	USpatialPlatformCoordinator* SpatialPlatformCoordinator;
+	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
 
+	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
+	FFilterPredicate ActorFilter;
+	TArray<FDispatcherRefreshCallback> ActorRefreshCallbacks;
+
+	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
+	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
+	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
+
+	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;
+	TUniquePtr<SpatialGDK::ClientConnectionManager> ClientConnectionManager;
+	TUniquePtr<SpatialGDK::InitialOnlyFilter> InitialOnlyFilter;
 
 	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
@@ -240,13 +265,12 @@ private:
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
-	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
+	TUniquePtr<SpatialGDK::CrossServerRPCSender> CrossServerRPCSender;
+	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CrossServerRPCHandler;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
 	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>> PendingDormantChannels;
-
-	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 
 	FTimerManager TimerManager;
 
@@ -258,6 +282,9 @@ private:
 	bool bMapLoaded;
 
 	FString SnapshotToLoad;
+	Worker_EntityId RoutingWorkerId = 0;
+	Worker_PartitionId RoutingPartition = 0;
+	bool bRoutingWorkerQueryInFlight = false;
 
 	// Client variable which stores the SessionId given to us by the server in the URL options.
 	// Used to compare against the GSM SessionId to ensure the the server is ready to spawn players.
@@ -280,6 +307,8 @@ private:
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
+
+	void OnAsyncPackageLoadFilterComplete(Worker_EntityId EntityId);
 
 	void OnActorSpawned(AActor* Actor) const;
 
@@ -333,7 +362,7 @@ private:
 
 	// Checks the GSM is acceptingPlayers and that the SessionId on the GSM matches the SessionId on the net-driver.
 	// The SessionId on the net-driver is set by looking at the sessionId option in the URL sent to the client for ServerTravel.
-	bool ClientCanSendPlayerSpawnRequests();
+	bool ClientCanSendPlayerSpawnRequests() const;
 
 	void ProcessOwnershipChanges();
 

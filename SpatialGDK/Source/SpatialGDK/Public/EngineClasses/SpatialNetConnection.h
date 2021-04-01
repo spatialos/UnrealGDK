@@ -50,18 +50,9 @@ public:
 	///////
 	// End NetConnection Interface
 
-	void InitHeartbeat(class FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity);
-	void SetHeartbeatTimeoutTimer();
-	void SetHeartbeatEventTimer();
+	void Init(Worker_EntityId InPlayerControllerEntity);
 
-	void DisableHeartbeat();
-
-	void OnHeartbeat();
-
-	void ClientNotifyClientHasQuit();
-
-	UFUNCTION()
-	void OnControllerDestroyed(AActor* DestroyedActor);
+	void Disable();
 
 	UPROPERTY()
 	bool bReliableSpatialConnection;
@@ -71,9 +62,6 @@ public:
 	// the PlayerController as a partition entity for the client worker.
 	Worker_EntityId ConnectionClientWorkerSystemEntityId;
 
-	class FTimerManager* TimerManager;
-
 	// Player lifecycle
 	Worker_EntityId PlayerControllerEntity;
-	FTimerHandle HeartbeatTimer;
 };

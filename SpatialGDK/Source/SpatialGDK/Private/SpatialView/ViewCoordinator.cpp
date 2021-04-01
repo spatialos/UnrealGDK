@@ -2,6 +2,7 @@
 
 #include "SpatialView/ViewCoordinator.h"
 
+#include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 
 namespace SpatialGDK
@@ -235,6 +236,29 @@ FDispatcherRefreshCallback ViewCoordinator::CreateAuthorityChangeRefreshCallback
 																				 const FAuthorityChangeRefreshPredicate& RefreshPredicate)
 {
 	return FSubView::CreateAuthorityChangeRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
+}
+
+bool ViewCoordinator::HasEntity(Worker_EntityId EntityId) const
+{
+	return View.GetView().Contains(EntityId);
+}
+
+bool ViewCoordinator::HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
+{
+	if (const EntityViewElement* Element = View.GetView().Find(EntityId))
+	{
+		return Element->Components.ContainsByPredicate(ComponentIdEquality{ ComponentId });
+	}
+	return false;
+}
+
+bool ViewCoordinator::HasAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId) const
+{
+	if (const EntityViewElement* Element = View.GetView().Find(EntityId))
+	{
+		return Element->Authority.Contains(ComponentSetId);
+	}
+	return false;
 }
 
 const FString& ViewCoordinator::GetWorkerId() const

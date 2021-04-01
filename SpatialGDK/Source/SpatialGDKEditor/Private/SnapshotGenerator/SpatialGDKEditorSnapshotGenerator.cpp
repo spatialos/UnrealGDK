@@ -5,6 +5,7 @@
 #include "Engine/LevelScriptActor.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
+#include "Schema/SnapshotVersionComponent.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
@@ -70,15 +71,15 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 
-	Components.Add(Position(DeploymentOrigin).CreatePositionData());
-	Components.Add(Metadata(TEXT("SpatialSpawner")).CreateMetadataData());
-	Components.Add(Persistence().CreatePersistenceData());
+	Components.Add(Position(DeploymentOrigin).CreateComponentData());
+	Components.Add(Metadata(TEXT("SpatialSpawner")).CreateComponentData());
+	Components.Add(Persistence().CreateComponentData());
 	Components.Add(PlayerSpawnerData);
-	Components.Add(SelfInterest.CreateInterestData());
+	Components.Add(SelfInterest.CreateComponentData());
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
-	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
+	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
 	SetEntityData(SpawnerEntity, Components);
 
@@ -138,18 +139,19 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 
-	Components.Add(Position(DeploymentOrigin).CreatePositionData());
-	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
-	Components.Add(Persistence().CreatePersistenceData());
+	Components.Add(Position(DeploymentOrigin).CreateComponentData());
+	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateComponentData());
+	Components.Add(Persistence().CreateComponentData());
 	Components.Add(CreateDeploymentData());
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
-	Components.Add(SelfInterest.CreateInterestData());
+	Components.Add(SelfInterest.CreateComponentData());
+	Components.Add(SnapshotVersion(SpatialConstants::SPATIAL_SNAPSHOT_VERSION).CreateComponentData());
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
 
-	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
+	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
 	SetEntityData(GSM, Components);
 
@@ -182,16 +184,16 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 
-	Components.Add(Position(DeploymentOrigin).CreatePositionData());
-	Components.Add(Metadata(TEXT("VirtualWorkerTranslator")).CreateMetadataData());
-	Components.Add(Persistence().CreatePersistenceData());
+	Components.Add(Position(DeploymentOrigin).CreateComponentData());
+	Components.Add(Metadata(TEXT("VirtualWorkerTranslator")).CreateComponentData());
+	Components.Add(Persistence().CreateComponentData());
 	Components.Add(CreateVirtualWorkerTranslatorData());
-	Components.Add(SelfInterest.CreateInterestData());
+	Components.Add(SelfInterest.CreateComponentData());
 
 	// GDK known entities completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
 
-	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
+	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
 	SetEntityData(VirtualWorkerTranslator, Components);
 
@@ -209,11 +211,10 @@ bool CreateSnapshotPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 
-	Components.Add(Position(DeploymentOrigin).CreatePositionData());
-	Components.Add(Metadata(TEXT("SnapshotPartitionEntity")).CreateMetadataData());
-	Components.Add(Persistence().CreatePersistenceData());
-	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_SHADOW_COMPONENT_ID));
-	Components.Add(AuthorityDelegation(DelegationMap).CreateAuthorityDelegationData());
+	Components.Add(Position(DeploymentOrigin).CreateComponentData());
+	Components.Add(Metadata(TEXT("SnapshotPartitionEntity")).CreateComponentData());
+	Components.Add(Persistence().CreateComponentData());
+	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
 	SetEntityData(SnapshotPartitionEntity, Components);
 

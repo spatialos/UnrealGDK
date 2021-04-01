@@ -17,6 +17,42 @@ public:
 	bool BoolValue;
 };
 
+UCLASS()
+class USchemaGenObjectStubCondOwnerOnly : public UObject
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(Replicated)
+	int IntValue;
+
+	UPROPERTY(Replicated)
+	bool BoolValue;
+};
+
+UCLASS()
+class USchemaGenObjectStubHandOver : public UObject
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(Handover)
+	int IntValue;
+
+	UPROPERTY(Handover)
+	bool BoolValue;
+};
+
+UCLASS()
+class USchemaGenObjectStubInitialOnly : public UObject
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(Replicated)
+	int IntValue;
+
+	UPROPERTY(Replicated)
+	bool BoolValue;
+};
+
 UCLASS(SpatialType)
 class USpatialTypeObjectStub : public UObject
 {
@@ -111,4 +147,22 @@ class ASpatialTypeActorWithSubobject : public AActor
 
 	UPROPERTY(Replicated)
 	USpatialTypeObjectStub* SpatialActorSubobject;
+};
+
+UCLASS(SpatialType)
+class ASpatialTypeActorWithOwnerOnly : public AActor
+{
+	GENERATED_UCLASS_BODY()
+
+	UPROPERTY(Replicated)
+	float OwnerOnlyProperty;
+};
+
+UCLASS(SpatialType)
+class ASpatialTypeActorWithInitialOnly : public AActor
+{
+	GENERATED_UCLASS_BODY()
+
+	UPROPERTY(Replicated)
+	float InitialOnlyProperty;
 };

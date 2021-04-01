@@ -2,7 +2,7 @@ param(
     [string] $test_result_dir,
     [string] $target_platform
 )
-
+. "$PSScriptRoot\common.ps1"
 # Artifact path used by Buildkite (drop the initial C:\)
 $formatted_test_result_dir = (Split-Path -Path "$test_result_dir" -NoQualifier).Substring(1)
 

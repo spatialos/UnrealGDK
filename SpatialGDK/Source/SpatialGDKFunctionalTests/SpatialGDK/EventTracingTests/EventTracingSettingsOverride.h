@@ -4,16 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "EventTracingTest.h"
-
-#include "MergeComponentEventTracingTest.generated.h"
+#include "EventTracingSettingsOverride.generated.h"
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API AMergeComponentEventTracingTest : public AEventTracingTest
+class SPATIALGDKFUNCTIONALTESTS_API AEventTracingSettingsOverride : public AEventTracingTest
 {
 	GENERATED_BODY()
 
 public:
-	AMergeComponentEventTracingTest();
+	AEventTracingSettingsOverride();
+
+	virtual void PrepareTest() override;
 
 private:
 	virtual void FinishEventTraceTest() override;

@@ -39,7 +39,7 @@ void WellKnownEntitySystem::Advance()
 			}
 			for (const AuthorityChange& Change : Delta.AuthorityGained)
 			{
-				ProcessAuthorityGain(Delta.EntityId, Change.ComponentId);
+				ProcessAuthorityGain(Delta.EntityId, Change.ComponentSetId);
 			}
 			break;
 		}
@@ -85,6 +85,9 @@ void WellKnownEntitySystem::ProcessComponentAdd(const Worker_ComponentId Compone
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		GlobalStateManager->ApplyDeploymentMapData(Data);
 		break;
+	case SpatialConstants::SNAPSHOT_VERSION_COMPONENT_ID:
+		GlobalStateManager->ApplySnapshotVersionData(Data);
+		break;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Data);
 		break;
@@ -124,6 +127,19 @@ void WellKnownEntitySystem::ProcessEntityAdd(const Worker_EntityId EntityId)
 	for (const Worker_ComponentSetId ComponentId : Element.Authority)
 	{
 		ProcessAuthorityGain(EntityId, ComponentId);
+	}
+}
+
+void WellKnownEntitySystem::OnMapLoaded() const
+{
+	if (GlobalStateManager != nullptr && !GlobalStateManager->GetCanBeginPlay()
+		&& SubView->HasAuthority(GlobalStateManager->GlobalStateManagerEntityId, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID))
+	{
+		// ServerTravel - Increment the session id, so users don't rejoin the old game.
+		GlobalStateManager->TriggerBeginPlay();
+		GlobalStateManager->SetDeploymentState();
+		GlobalStateManager->SetAcceptingPlayers(true);
+		GlobalStateManager->IncrementSessionID();
 	}
 }
 

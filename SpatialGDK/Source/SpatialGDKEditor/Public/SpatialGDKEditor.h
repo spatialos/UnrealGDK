@@ -30,6 +30,7 @@ public:
 		Ok,
 		NotFound,
 		OldVersion,
+		RingBufferSizeChanged,
 	};
 
 	void GenerateSchema(ESchemaGenerationMethod Method, TFunction<void(bool)> ResultCallback);

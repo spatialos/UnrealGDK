@@ -18,8 +18,13 @@ struct Partition : Component
 	Partition() = default;
 
 	Partition(const Worker_ComponentData& Data)
+		: Partition(Data.schema_type)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	}
+
+	Partition(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 		WorkerConnectionId = Schema_GetUint64(ComponentObject, 1);
 	}
