@@ -120,7 +120,7 @@ const FString DEV_LOGIN_TAG = TEXT("dev_login");
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_CLIENT_INTEREST =
 TArray<Worker_ComponentId>{ // Actor components
-                            UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, TOMBSTONE_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID,
+                            UNREAL_METADATA_COMPONENT_ID, SPAWN_DATA_COMPONENT_ID, TOMBSTONE_COMPONENT_ID,
                             DORMANT_COMPONENT_ID, INITIAL_ONLY_PRESENCE_COMPONENT_ID,
 
                             // Multicast RPCs
@@ -165,7 +165,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
     AUTHORITY_INTENT_COMPONENT_ID,
 
     // Tags: Well known entities, non-auth actors, and tombstone tags
-    GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_TAG_COMPONENT_ID, TOMBSTONE_TAG_COMPONENT_ID,
+    GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_TAG_COMPONENT_ID,
 
     // Strategy Worker LB components
     ACTOR_SET_MEMBER_COMPONENT_ID, ACTOR_GROUP_MEMBER_COMPONENT_ID,
@@ -253,8 +253,7 @@ const TArray<FString> RoutingWorkerSchemaImports = { "unreal/gdk/rpc_components.
 const TArray<Worker_ComponentId> KnownEntityAuthorityComponents = { POSITION_COMPONENT_ID,		 METADATA_COMPONENT_ID,
                                                                     INTEREST_COMPONENT_ID,		 PLAYER_SPAWNER_COMPONENT_ID,
                                                                     DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID,
-                                                                    GSM_SHUTDOWN_COMPONENT_ID,	 VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID,
-                                                                    SERVER_WORKER_COMPONENT_ID };
+                                                                    GSM_SHUTDOWN_COMPONENT_ID,	 VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID};
 
 }
 

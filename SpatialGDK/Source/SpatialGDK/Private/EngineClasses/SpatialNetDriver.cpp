@@ -503,8 +503,15 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		const SpatialGDK::FSubView& ActorSubview =
 			Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
 
+		const FFilterPredicate TombstoneActorFilter = [this](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
+			return Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
+		};
+		const TArray<FDispatcherRefreshCallback> TombstoneActorRefreshCallbacks = {
+			Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::TOMBSTONE_COMPONENT_ID)
+		};
+
 		const SpatialGDK::FSubView& TombstoneActorSubview = Connection->GetCoordinator().CreateSubView(
-			SpatialConstants::TOMBSTONE_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+			SpatialConstants::ACTOR_TAG_COMPONENT_ID, TombstoneActorFilter, TombstoneActorRefreshCallbacks);
 
 		const SpatialGDK::FSubView& SystemEntitySubview = Connection->GetCoordinator().CreateSubView(
 			SpatialConstants::SYSTEM_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);

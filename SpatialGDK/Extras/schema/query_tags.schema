@@ -19,10 +19,6 @@ component GDKKnownEntityTag {
     id = 2007;
 }
 
-component TombstoneTag {
-    id = 2008;
-}
-
 component RoutingWorkerEntityTag {
     id = 2009;
 }

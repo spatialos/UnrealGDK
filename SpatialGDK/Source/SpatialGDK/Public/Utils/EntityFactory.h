@@ -32,7 +32,7 @@ public:
 	void WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	void WriteLBComponents(TArray<FWorkerComponentData>& ComponentDatas, AActor* Actor);
 	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten);
-	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor);
+	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor) const;
 
 	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const Worker_EntityId EntityId,
 																		const InterestFactory* InterestFactory,

@@ -100,6 +100,7 @@ const Worker_ComponentSetId HANDOVER_COMPONENT_SET_ID = 9904;
 const Worker_ComponentSetId GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID = 9905;
 const Worker_ComponentSetId ROUTING_WORKER_AUTH_COMPONENT_SET_ID = 9906;
 const Worker_ComponentSetId INITIAL_ONLY_COMPONENT_SET_ID = 9907;
+const Worker_ComponentSetId SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID = 9908;
 
 extern const FString SERVER_AUTH_COMPONENT_SET_NAME;
 extern const FString CLIENT_AUTH_COMPONENT_SET_NAME;
@@ -147,7 +148,6 @@ const Worker_ComponentId ACTOR_TAG_COMPONENT_ID = 2002;
 const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
 
 const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
-const Worker_ComponentId TOMBSTONE_TAG_COMPONENT_ID = 2008;
 const Worker_ComponentId ROUTINGWORKER_TAG_COMPONENT_ID = 2009;
 const Worker_ComponentId STRATEGYWORKER_TAG_COMPONENT_ID = 2010;
 // Add component ids above here, this should always be last and be equal to the previous component id
