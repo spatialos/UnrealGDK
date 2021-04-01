@@ -39,7 +39,10 @@ bool ComponentData::ApplyUpdate(const ComponentUpdate& Update)
 	check(Update.GetComponentId() == GetComponentId());
 	check(Update.GetUnderlying() != nullptr);
 
-	return Schema_ApplyComponentUpdateToData(Update.GetUnderlying(), Data.Get()) != 0;
+	const bool bUpdateResult = Schema_ApplyComponentUpdateToData(Update.GetUnderlying(), Data.Get()) != 0;
+	// Copy the component to prevent unbounded memory growth from appending the update to it.
+	Data = OwningComponentDataPtr(Schema_CopyComponentData(Data.Get()));
+	return bUpdateResult;
 }
 
 Schema_Object* ComponentData::GetFields() const
