@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "Interop/SpatialRoutingSystem.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "Schema/ServerWorker.h"
@@ -278,41 +280,6 @@ void SpatialRoutingSystem::Advance(SpatialOSWorkerInterface* Connection)
 	{
 		switch (Message.op_type)
 		{
-		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-		{
-			const Worker_ReserveEntityIdsResponseOp& Op = Message.op.reserve_entity_ids_response;
-			if (Op.request_id == RoutingWorkerRequest)
-			{
-				if (Op.first_entity_id == SpatialConstants::INVALID_ENTITY_ID)
-				{
-					UE_LOG(LogSpatialRoutingSystem, Error, TEXT("Reserve entity failed : %s"), UTF8_TO_TCHAR(Op.message));
-					RoutingWorkerRequest = 0;
-				}
-				else
-				{
-					RoutingPartition = Message.op.reserve_entity_ids_response.first_entity_id;
-					CreateRoutingPartition(Connection);
-				}
-			}
-			break;
-		}
-		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-		{
-			const Worker_CreateEntityResponseOp& Op = Message.op.create_entity_response;
-			if (Op.request_id == RoutingWorkerRequest)
-			{
-				if (Op.entity_id == SpatialConstants::INVALID_ENTITY_ID)
-				{
-					UE_LOG(LogSpatialRoutingSystem, Error, TEXT("Create entity failed : %s"), UTF8_TO_TCHAR(Op.message));
-				}
-				RoutingWorkerRequest = 0;
-
-				Worker_CommandRequest ClaimRequest = Worker::CreateClaimPartitionRequest(RoutingPartition);
-				RoutingWorkerRequest =
-					Connection->SendCommandRequest(RoutingWorkerSystemEntityId, &ClaimRequest, SpatialGDK::RETRY_UNTIL_COMPLETE, {});
-			}
-			break;
-		}
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
 		{
 			const Worker_CommandResponseOp& Op = Message.op.command_response;
@@ -505,26 +472,10 @@ void SpatialRoutingSystem::Flush(SpatialOSWorkerInterface* Connection)
 
 void SpatialRoutingSystem::Init(SpatialOSWorkerInterface* Connection)
 {
-	RoutingWorkerRequest = Connection->SendReserveEntityIdsRequest(1, SpatialGDK::RETRY_UNTIL_COMPLETE);
+	Worker_CommandRequest ClaimRequest = Worker::CreateClaimPartitionRequest(SpatialConstants::INITIAL_ROUTING_PARTITION_ENTITY_ID);
+	RoutingWorkerRequest = Connection->SendCommandRequest(RoutingWorkerSystemEntityId, &ClaimRequest, SpatialGDK::RETRY_UNTIL_COMPLETE, {});
 }
 
-void SpatialRoutingSystem::CreateRoutingPartition(SpatialOSWorkerInterface* Connection)
-{
-	AuthorityDelegationMap Map;
-	Map.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, RoutingPartition);
-
-	TArray<FWorkerComponentData> Components;
-	Components.Add(Position().CreateComponentData());
-	Components.Add(Metadata(FString(TEXT("RoutingPartition"))).CreateComponentData());
-	Components.Add(AuthorityDelegation(Map).CreateComponentData());
-	Components.Add(InterestFactory::CreateRoutingWorkerInterest().CreateComponentData());
-
-	RoutingWorkerRequest = Connection->SendCreateEntityRequest(Components, &RoutingPartition, SpatialGDK::RETRY_UNTIL_COMPLETE);
-}
-
-void SpatialRoutingSystem::Destroy(SpatialOSWorkerInterface* Connection)
-{
-	Connection->SendDeleteEntityRequest(RoutingPartition, SpatialGDK::RETRY_UNTIL_COMPLETE);
-}
+void SpatialRoutingSystem::Destroy(SpatialOSWorkerInterface* Connection) {}
 
 } // namespace SpatialGDK

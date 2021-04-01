@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #pragma once
 #include "Math/Transform.h"
 #include "Templates/SubclassOf.h"

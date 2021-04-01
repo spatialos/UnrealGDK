@@ -8,7 +8,7 @@
 #include "ComponentUpdateEventTracingTest.generated.h"
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API AComponentUpdateEventTracingTest : public AEventTracingCrossServerTest
+class SPATIALGDKFUNCTIONALTESTS_API AComponentUpdateEventTracingTest : public AEventTracingTest
 {
 	GENERATED_BODY()
 

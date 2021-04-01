@@ -2,6 +2,11 @@
 
 #include "SpatialGDKModule.h"
 
+// clang-format off
+#include "SpatialConstants.h"
+#include "SpatialConstants.cxx"
+// clang-format on
+
 #define LOCTEXT_NAMESPACE "FSpatialGDKModule"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKModule);

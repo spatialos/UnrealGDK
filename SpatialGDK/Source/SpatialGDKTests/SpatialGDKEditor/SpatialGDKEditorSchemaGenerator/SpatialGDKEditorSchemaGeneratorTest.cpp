@@ -60,7 +60,7 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FStrin
 
 	for (const auto& SchemaLine : LoadedSchema)
 	{
-		FRegexPattern IdPattern(TEXT("(\tid = )([0-9]+)(;)"));
+		FRegexPattern IdPattern(TEXT("\\s+(id\\s*=\\s*)([0-9]+)(\\s*;)"));
 		FRegexMatcher IdRegMatcher(IdPattern, SchemaLine);
 
 		FRegexPattern NamePattern(TEXT("(^component )(.+)( \\{)"));
@@ -918,6 +918,8 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "rpc_payload.schema",
 										   "server_worker.schema",
 										   "spatial_debugging.schema",
+										   "actor_group_member.schema",
+										   "actor_set_member.schema",
 										   "spawndata.schema",
 										   "spawner.schema",
 										   "tombstone.schema",
@@ -1098,12 +1100,25 @@ SCHEMA_GENERATOR_TEST(GIVEN_actor_class_WHEN_generating_schema_THEN_expected_com
 	TestTrue("Schema bundle file successfully read",
 			 SpatialGDKEditor::Schema::ExtractComponentSetsFromSchemaJson(SchemaJsonPath, SchemaDatabase->ComponentSetIdToComponentIds));
 
-	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 9);
+	TestTrue("Expected number of component set", SchemaDatabase->ComponentSetIdToComponentIds.Num() == 10);
 
-	TestTrue("Found spatial well known components", SchemaDatabase->ComponentSetIdToComponentIds.Contains(50));
-	if (SchemaDatabase->ComponentSetIdToComponentIds.Contains(50))
+	TestTrue("Found spatial well known components",
+			 SchemaDatabase->ComponentSetIdToComponentIds.Contains(SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID));
+	if (SchemaDatabase->ComponentSetIdToComponentIds.Contains(SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID))
 	{
-		TestTrue("Spatial well know component is not empty", SchemaDatabase->ComponentSetIdToComponentIds[50].ComponentIDs.Num() > 0);
+		TestTrue(
+			"Spatial well know component is not empty",
+			SchemaDatabase->ComponentSetIdToComponentIds[SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID].ComponentIDs.Num() > 0);
+	}
+
+	TestTrue("Found Server worker components components",
+			 SchemaDatabase->ComponentSetIdToComponentIds.Contains(SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID));
+	if (SchemaDatabase->ComponentSetIdToComponentIds.Contains(SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID))
+	{
+		TestTrue(
+			"Spatial well known component is not empty",
+			SchemaDatabase->ComponentSetIdToComponentIds[SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID].ComponentIDs.Num()
+				> 0);
 	}
 
 	{
@@ -1259,16 +1274,19 @@ SCHEMA_GENERATOR_TEST(
 		}
 		else
 		{
-			FString FileContent;
-			FFileHelper::LoadFileToString(FileContent, *FileNameAndPath);
+			TArray<FString> FileContents;
+			FFileHelper::LoadFileToStringArray(FileContents, *FileNameAndPath);
 
-			HashCrc = FCrc::StrCrc32(*FileContent, HashCrc);
+			for (const FString& LineContents : FileContents)
+			{
+				HashCrc = FCrc::StrCrc32(*LineContents, HashCrc);
+			}
 		}
 	}
 
 	// THEN
 	const FString ErrorMessage =
-		FString::Printf(TEXT("Expected hash to be %u, but found it to be %u"), SpatialConstants::SPATIAL_SNAPSHOT_VERSION, HashCrc);
+		FString::Printf(TEXT("Expected hash to be %u, but found it to be %u"), SpatialConstants::SPATIAL_SNAPSHOT_SCHEMA_HASH, HashCrc);
 	TestEqual(ErrorMessage, SpatialConstants::SPATIAL_SNAPSHOT_SCHEMA_HASH, HashCrc);
 
 	return true;

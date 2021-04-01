@@ -4,7 +4,9 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 
 #include "Schema/SpatialDebugging.h"
 #include "SpatialCommonTypes.h"
@@ -36,6 +38,16 @@ void SpatialDebuggerSystem::Advance()
 		}
 	}
 
+	if (IsValid(NetDriver->LockingPolicy))
+	{
+		for (const TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : EntityActorMapping)
+		{
+			// All actors are valid at this point since we've removed every invalid one
+			// in the previous step, so we can dereference it safely.
+			UpdateSpatialDebuggingData(EntityActorPair.Key, *EntityActorPair.Value);
+		}
+	}
+
 	for (const EntityDelta& EntityDelta : SubView->GetViewDelta().EntityDeltas)
 	{
 		switch (EntityDelta.Type)
@@ -62,6 +74,18 @@ void SpatialDebuggerSystem::Advance()
 				ActorAuthorityGained(EntityDelta.EntityId);
 			}
 		}
+	}
+}
+
+void SpatialDebuggerSystem::UpdateSpatialDebuggingData(Worker_EntityId EntityId, const AActor& Actor)
+{
+	TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
+	const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(&Actor);
+	if (DebuggingInfo->IsLocked != bIsLocked)
+	{
+		DebuggingInfo->IsLocked = bIsLocked;
+		FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
+		NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
 	}
 }
 

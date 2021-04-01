@@ -82,9 +82,9 @@ void CheckCmdLineOverrideOptionalString(const TCHAR* CommandLine, const TCHAR* P
 void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName,
 													TFunctionRef<void(const FString& Setting)> Callback)
 {
+	TOptional<FString> OverrideValue;
 #if ALLOW_SPATIAL_CMDLINE_PARSING
 	FString TempStr;
-	TOptional<FString> OverrideValue;
 	if (FParse::Value(CommandLine, Parameter, TempStr) && TempStr[0] == '=')
 	{
 		OverrideValue = TempStr.Right(TempStr.Len() - 1); // + 1 to skip =
@@ -133,6 +133,10 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bTcpNoDelay(false)
 	, UdpServerDownstreamUpdateIntervalMS(1)
 	, UdpClientDownstreamUpdateIntervalMS(1)
+	, ClientDownstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_DOWNSTREAM_WINDOW_SIZE_BYTES)
+	, ClientUpstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_UPSTREAM_WINDOW_SIZE_BYTES)
+	, ServerDownstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_DOWNSTREAM_WINDOW_SIZE_BYTES)
+	, ServerUpstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_UPSTREAM_WINDOW_SIZE_BYTES)
 	, bWorkerFlushAfterOutgoingNetworkOp(true)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)

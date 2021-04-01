@@ -1,4 +1,6 @@
-﻿#pragma once
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+#pragma once
 
 #include "Containers/Array.h"
 #include "Templates/Function.h"
@@ -58,6 +60,11 @@ public:
 		bCurrentlyInvokingCallbacks = true;
 		for (const CallbackAndId& Callback : Callbacks)
 		{
+			if (CallbacksToRemove.Contains(Callback.Id))
+			{
+				continue;
+			}
+
 			Callback.Callback(Value);
 		}
 		bCurrentlyInvokingCallbacks = false;

@@ -45,6 +45,7 @@ public:
 
 	virtual bool ShouldHaveAuthority(const AActor& Actor) const override;
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
+	virtual SpatialGDK::FActorLoadBalancingGroupId GetActorGroupId(const AActor& Actor) const override;
 
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const override;
 
@@ -71,7 +72,15 @@ public:
 private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
 
-	mutable TMap<TSoftClassPtr<AActor>, FName> ClassPathToLayer;
+	mutable TMap<TSoftClassPtr<AActor>, FName> ClassPathToLayerName;
+
+	struct FLayerData
+	{
+		FName LayerName;
+		int32 LayerIndex;
+	};
+
+	TMap<FName, FLayerData> LayerData;
 
 	TMap<VirtualWorkerId, FName> VirtualWorkerIdToLayerName;
 

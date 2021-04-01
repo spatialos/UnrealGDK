@@ -3,9 +3,9 @@
 #include "TestMaps/Spatial2WorkerSmallInterestMap.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "GameFramework/PlayerStart.h"
-#include "SpatialGDKFunctionalTests/Public/SpatialTest1x2GridSmallInterestWorkerSettings.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialCleanupConnectionTest/SpatialCleanupConnectionTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestHandoverReplication/SpatialTestHandoverActorComponentReplication.h"
+#include "TestWorkerSettings.h"
 
 USpatial2WorkerSmallInterestMap::USpatial2WorkerSmallInterestMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("Spatial2WorkerSmallInterestMap"))
@@ -28,5 +28,5 @@ void USpatial2WorkerSmallInterestMap::CreateCustomContentForMap()
 	(*PlayerStart)->SetActorLocation(FVector(-50, -50, 100));
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
-	WorldSettings->SetMultiWorkerSettingsClass(USpatialTest1x2GridSmallInterestWorkerSettings::StaticClass());
+	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2SmallInterestWorkerSettings::StaticClass());
 }

@@ -2,6 +2,11 @@
 
 #include "SpatialGDKEditorModule.h"
 
+// clang-format off
+#include "SpatialConstants.h"
+#include "SpatialConstants.cxx"
+// clang-format on
+
 #include "Editor.h"
 #include "GeneralProjectSettings.h"
 #include "ISettingsContainer.h"
@@ -268,6 +273,12 @@ bool FSpatialGDKEditorModule::ForEveryServerWorker(TFunction<void(const FName&, 
 		if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
 		{
 			Function(SpatialConstants::RoutingWorkerType, AdditionalServerIndex);
+			++AdditionalServerIndex;
+		}
+
+		if (Settings->bRunStrategyWorker)
+		{
+			Function(SpatialConstants::StrategyWorkerType, AdditionalServerIndex);
 			++AdditionalServerIndex;
 		}
 

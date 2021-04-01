@@ -4,7 +4,6 @@
 
 #include "EngineClasses/SpatialLoadBalanceEnforcer.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Schema/AuthorityIntent.h"
 #include "Tests/TestingSchemaHelpers.h"
 

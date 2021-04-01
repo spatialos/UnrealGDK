@@ -64,8 +64,6 @@ public:
 	EvaluateActorResult EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId);
 
 protected:
-	void UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const;
-
 	uint64 GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const;
 
 	template <typename ReplicationContext>

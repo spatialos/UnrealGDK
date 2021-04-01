@@ -60,6 +60,12 @@ VirtualWorkerId UDebugLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) co
 	return WrappedStrategy->WhoShouldHaveAuthority(Actor);
 }
 
+SpatialGDK::FActorLoadBalancingGroupId UDebugLBStrategy::GetActorGroupId(const AActor& Actor) const
+{
+	check(WrappedStrategy);
+	return WrappedStrategy->GetActorGroupId(Actor);
+}
+
 SpatialGDK::QueryConstraint UDebugLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
 {
 	check(WrappedStrategy);
