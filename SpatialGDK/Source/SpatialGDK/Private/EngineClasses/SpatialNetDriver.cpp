@@ -376,8 +376,7 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 			SpatialPlatformCoordinator->StartPollingForGameserverStatus();
 			SpatialPlatformCoordinator->StartPollingForWorkerFlags();
 		}
-
-		if (USpatialPlatformCoordinator::CheckPlatformSwitch(true))
+		else if (USpatialPlatformCoordinator::CheckPlatformSwitch(true))
 		{
 			SpatialPlatformCoordinator->StartSendingHeartbeat();
 		}
