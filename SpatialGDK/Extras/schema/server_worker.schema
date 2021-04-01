@@ -4,6 +4,7 @@ package unreal;
 import "unreal/gdk/core_types.schema";
 import "unreal/gdk/spawner.schema";
 import "unreal/generated/rpc_endpoints.schema";
+import "improbable/standard_library.schema";
 
 type ForwardSpawnPlayerRequest {
     SpawnPlayerRequest spawn_player_request = 1;
