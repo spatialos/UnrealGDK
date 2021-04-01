@@ -424,7 +424,7 @@ public:
 			  meta = (DisplayName = "SpatialOS platform worker flags polling interval"))
 	float SpatialPlatformWorkerFlagsPollingInterval;
 
-	// Umi customization end 
+	// Umi customization end
 
 	/*
 	 * -- EXPERIMENTAL --
