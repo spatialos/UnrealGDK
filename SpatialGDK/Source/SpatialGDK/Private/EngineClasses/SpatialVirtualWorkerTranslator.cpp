@@ -69,7 +69,7 @@ void SpatialVirtualWorkerTranslator::ApplyVirtualWorkerManagerData(Schema_Object
 				   Entry.Key, *(Entry.Value.WorkerName), Entry.Value.ServerWorkerEntityId);
 		}
 	}
-#endif //!NO_LOGGING
+#endif //! NO_LOGGING
 }
 
 // The translation schema is a list of Mappings, where each entry has a virtual and physical worker ID.
