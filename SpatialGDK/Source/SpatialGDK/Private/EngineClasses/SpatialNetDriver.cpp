@@ -341,6 +341,19 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 	USpatialGameInstance* GameInstance = GetGameInstance();
 	check(GameInstance != nullptr);
 	GameInstance->HandleOnConnected(*this);
+
+	if (GameInstance->IsDedicatedServerInstance())
+	{
+		if (USpatialPlatformCoordinator::CheckPlatformSwitch(false))
+		{
+			SpatialPlatformCoordinator->StartPollingForGameserverStatus();
+			SpatialPlatformCoordinator->StartPollingForWorkerFlags();
+		}
+		else if (USpatialPlatformCoordinator::CheckPlatformSwitch(true))
+		{
+			SpatialPlatformCoordinator->StartSendingHeartbeat();
+		}
+	}
 }
 
 void USpatialNetDriver::OnConnectionToSpatialOSFailed(uint8_t ConnectionStatusCode, const FString& ErrorMessage)
@@ -406,6 +419,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SnapshotManager = MakeUnique<SpatialSnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
 	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
+	SpatialPlatformCoordinator = NewObject<USpatialPlatformCoordinator>(this);
 
 	CreateAndInitializeLoadBalancingClasses();
 
@@ -432,6 +446,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PlayerSpawner->OnPlayerSpawnFailed.BindUObject(GameInstance, &USpatialGameInstance::HandleOnPlayerSpawnFailed);
 	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
 	SpatialMetrics->ControllerRefProvider.BindUObject(this, &USpatialNetDriver::GetCurrentPlayerControllerRef);
+	SpatialPlatformCoordinator->Init(this);
 
 	// PackageMap value has been set earlier in USpatialNetConnection::InitBase
 	// Making sure the value is the same

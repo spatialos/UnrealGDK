@@ -403,6 +403,29 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Event Tracing", meta = (EditCondition = "bEventTracingEnabled"))
 	TMap<FName, double> EventSamplingModeOverrides;
 
+	// Umi customization begin
+	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Enable Initial Only Replication Condition"))
+	bool bEnableInitialOnlyReplicationCondition;
+
+	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator", meta = (DisplayName = "Enable SpatialOS platform coordinator"))
+	bool bEnableSpatialPlatformCoordinator;
+
+	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator", meta = (DisplayName = "SpatialOS platform endpoint url"))
+	FString SpatialPlatformUrl;
+
+	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator", meta = (DisplayName = "SpatialOS platform heartbeat interval"))
+	float SpatialPlatformHeartbeatInterval;
+
+	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator",
+			  meta = (DisplayName = "SpatialOS platform server status polling interval"))
+	float SpatialPlatformServerStatusPollingInterval;
+
+	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator",
+			  meta = (DisplayName = "SpatialOS platform worker flags polling interval"))
+	float SpatialPlatformWorkerFlagsPollingInterval;
+
+	// Umi customization end 
+
 	/*
 	 * -- EXPERIMENTAL --
 	 * The maximum size of the event tracing file, in bytes
