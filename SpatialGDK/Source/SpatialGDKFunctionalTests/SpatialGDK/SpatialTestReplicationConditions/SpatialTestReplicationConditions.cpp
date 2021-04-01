@@ -496,7 +496,7 @@ void ASpatialTestReplicationConditions::ProcessCommonActorProperties(bool bWrite
 		else
 		{
 			RequireEqual_Int(Source, Expected + PropertyOffset,
-							 *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
+							*FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 	};
 
@@ -545,7 +545,7 @@ void ASpatialTestReplicationConditions::ProcessCustomActorProperties(ATestReplic
 		else if (bCustomEnabled)
 		{
 			RequireEqual_Int(Source, Expected + PropertyOffset,
-							 *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
+							*FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 		else
 		{
@@ -568,7 +568,7 @@ void ASpatialTestReplicationConditions::ProcessAutonomousOnlyActorProperties(boo
 		else if (bExpected)
 		{
 			RequireEqual_Int(Source, Expected + PropertyOffset,
-							 *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
+							*FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 		else
 		{
@@ -595,7 +595,7 @@ void ASpatialTestReplicationConditions::ProcessPhysicsActorProperties(ATestRepli
 		else if (bPhysicsExpected)
 		{
 			RequireEqual_Int(Source, Expected + PropertyOffset,
-							 *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
+							*FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 		else
 		{
