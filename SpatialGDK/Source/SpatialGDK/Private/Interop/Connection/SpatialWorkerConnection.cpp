@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
