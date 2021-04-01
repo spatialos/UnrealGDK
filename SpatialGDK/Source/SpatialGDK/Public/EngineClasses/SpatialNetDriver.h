@@ -6,6 +6,7 @@
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/CrossServerRPCSender.h"
 #include "Interop/EntityQueryHandler.h"
+#include "Interop/SpatialPlatformCoordinator.h"
 #include "Utils/SpatialBasicAwaiter.h"
 #include "Utils/SpatialDebugger.h"
 
@@ -209,6 +210,8 @@ public:
 	USpatialNetDriverDebugContext* DebugCtx;
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
+	UPROPERTY()
+	USpatialPlatformCoordinator* SpatialPlatformCoordinator;
 
 	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
 	FFilterPredicate ActorFilter;
