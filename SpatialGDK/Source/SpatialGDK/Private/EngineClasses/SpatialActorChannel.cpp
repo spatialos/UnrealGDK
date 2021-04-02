@@ -1276,8 +1276,16 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 {
 	SCOPE_CYCLE_COUNTER(STAT_ServerProcessOwnershipChange);
 	{
+		SCOPE_CYCLE_COUNTER(STAT_IsAuthoritativeServer);
 		if (!IsReadyForReplication() || !IsAuthoritativeServer())
 		{
+			// IOSH BEGIN
+			// for fixing GSE-1452
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("%s - ActorName:%s, is not authoritative server, delay it until authority gained"),
+				   *FString(__FUNCTION__), *Actor->GetFName().ToString());
+			Actor->ServerProcessOwnershipChange_OnAuthorityGained.Clear();
+			Actor->ServerProcessOwnershipChange_OnAuthorityGained.AddDynamic(this, &USpatialActorChannel::ServerProcessOwnershipChange);
+			// IOSH END
 			return;
 		}
 	}
