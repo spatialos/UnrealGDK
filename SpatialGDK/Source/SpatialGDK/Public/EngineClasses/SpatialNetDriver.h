@@ -89,6 +89,9 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 	GENERATED_BODY()
 
 public:
+
+	FDateTime CurTime;
+	
 	USpatialNetDriver(const FObjectInitializer& ObjectInitializer);
 	USpatialNetDriver(FVTableHelper& Helper);
 	~USpatialNetDriver();

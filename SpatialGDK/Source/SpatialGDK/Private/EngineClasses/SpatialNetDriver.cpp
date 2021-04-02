@@ -70,6 +70,7 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialGDKServicesModule.h"
 #endif
+#include "SpatialGDKModule.h"
 
 using SpatialGDK::ComponentFactory;
 using SpatialGDK::InterestFactory;
@@ -2100,6 +2101,14 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		{
 			InitialOnlyFilter->FlushRequests();
 		}
+	}
+	
+	if (FDateTime::Now() > this->CurTime)
+	{
+		CurTime = FDateTime::Now() + FTimespan::FTimespan(0, 0, 10);
+
+		FSpatialGDKModule& Module = FModuleManager::GetModuleChecked<FSpatialGDKModule>("SpatialGDK");
+		Module.ShowAllocateStatus();
 	}
 }
 
