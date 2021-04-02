@@ -446,9 +446,6 @@ public:
 	UEventTracingSamplingSettings* GetEventTracingSamplingSettings() const;
 
 	// Umi customization begin
-	UPROPERTY(EditAnywhere, Config, Category = "Replication", meta = (DisplayName = "Enable Initial Only Replication Condition"))
-	bool bEnableInitialOnlyReplicationCondition;
-
 	UPROPERTY(EditAnywhere, config, Category = "SpatialPlatformCoordinator", meta = (DisplayName = "Enable SpatialOS platform coordinator"))
 	bool bEnableSpatialPlatformCoordinator;
 
