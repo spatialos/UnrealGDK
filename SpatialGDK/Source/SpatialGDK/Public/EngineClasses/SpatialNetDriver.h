@@ -94,7 +94,6 @@ public:
 	~USpatialNetDriver();
 
 	// Begin UObject Interface
-	virtual void BeginDestroy() override;
 	virtual void PostInitProperties() override;
 	// End UObject Interface
 
