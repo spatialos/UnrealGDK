@@ -4,7 +4,6 @@
 
 #include "Schema/AuthorityIntent.h"
 #include "Schema/Component.h"
-#include "Schema/CustomPersistence.h"
 #include "Schema/Interest.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "Schema/Restricted.h"

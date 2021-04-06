@@ -132,8 +132,6 @@ const Worker_ComponentId MIGRATION_DIAGNOSTIC_COMPONENT_ID = 9969;
 const Worker_ComponentId PARTITION_SHADOW_COMPONENT_ID = 9967;
 const Worker_ComponentId INITIAL_ONLY_PRESENCE_COMPONENT_ID = 9966;
 
-const Worker_ComponentId CUSTOM_PERSISTENCE_COMPONENT_ID = 9950;
-
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
 // System query tags for entity completeness
@@ -268,9 +266,6 @@ const Schema_FieldId WORKER_COMPONENT_WORKER_TYPE_ID = 2;
 
 // Partition component field IDs
 const Schema_FieldId PARTITION_COMPONENT_WORKER_ID = 1;
-
-// CustomPersistence component field IDs
-const Schema_FieldId CUSTOM_PERSISTENCE_DEPLETED = 1;
 
 // Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
