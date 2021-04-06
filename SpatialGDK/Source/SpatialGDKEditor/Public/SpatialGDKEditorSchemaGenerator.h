@@ -66,7 +66,8 @@ SPATIALGDKEDITOR_API void CopyWellKnownSchemaFiles(const FString& GDKSchemaCopyD
 SPATIALGDKEDITOR_API bool RunSchemaCompiler(FString& SchemaJsonPath, FString SchemaInputDir = "", FString BuildDir = "");
 
 SPATIALGDKEDITOR_API bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
-														   TMap<uint32, FComponentSchemaData>& OutFieldIdMap);
+														   TMap<uint32, uint32>& OutComponentIdToTypeIdsMap,
+														   TMap<uint32, FFieldIDs>& OutTypeIdToFieldIdsMap);
 
 SPATIALGDKEDITOR_API void WriteComponentSetFiles(const USchemaDatabase* SchemaDatabase, FString SchemaOutputPath = "");
 

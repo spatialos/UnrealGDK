@@ -75,9 +75,8 @@ struct FSubobjectSchemaData
 	}
 };
 
-// Schema data related to a schema component
 USTRUCT()
-struct FComponentSchemaData
+struct FFieldIDs
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -160,7 +159,10 @@ public:
 	uint32 SchemaBundleHash;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
-	TMap<uint32, FComponentSchemaData> ComponentIdToFieldIds;
+	TMap<uint32, uint32> ComponentIdToTypeIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TMap<uint32, FFieldIDs> TypeIdToFieldIds;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FComponentIDs> ComponentSetIdToComponentIds;

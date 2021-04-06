@@ -68,6 +68,13 @@
 			return false;                                                                                                                  \
 		}                                                                                                                                  \
 	} while (false)
+
+#define SCHEMA_GEN_ERROR(Condition, Format, ...)                                                                                           \
+	if (UNLIKELY(Condition))                                                                                                               \
+	{                                                                                                                                      \
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, Format, ##__VA_ARGS__);                                                                \
+		return false;                                                                                                                      \
+	}
 // clang-format on
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
@@ -1550,7 +1557,7 @@ bool RunSchemaCompiler(FString& SchemaBundleJsonOutput, FString SchemaInputDir, 
 }
 
 bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32, FComponentIDs>& OutComponentSetMap,
-									  TMap<uint32, FComponentSchemaData>& OutFieldIdMap)
+									  TMap<uint32, uint32>& OutComponentIdToTypeIdsMap, TMap<uint32, FFieldIDs>& OutTypeIdToFieldIdsMap)
 {
 	TUniquePtr<FArchive> SchemaFile(IFileManager::Get().CreateFileReader(*SchemaJsonPath));
 	if (!SchemaFile)
@@ -1578,8 +1585,8 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 	TMap<FString, uint32> ComponentMap;
 	TMap<uint32, TSet<FString>> ComponentRefSetMap;
 
-	TMap<uint32, FString> ComponentIdToDataDefinition;
-	TMap<FString, TArray<uint32>> DataDefinitionToFieldIds;
+	TMap<FString, uint32> DataDefinitionNameToTypeId;
+	TMap<uint32, FString> ComponentIdToDataDefinitionName;
 
 	for (const auto& FileValue : *SchemaFiles)
 	{
@@ -1597,7 +1604,14 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 			FString ComponentName;
 			SAFE_TRYGETFIELD((*TypeObject), String, "qualifiedName", ComponentName);
 
-			DataDefinitionToFieldIds.Add(ComponentName);
+			uint32 TypeId = OutTypeIdToFieldIdsMap.Num();
+			SCHEMA_GEN_ERROR(DataDefinitionNameToTypeId.Contains(ComponentName),
+							 TEXT("The schema bundle contains duplicate data definitions for %s."), *ComponentName);
+			DataDefinitionNameToTypeId.Add(ComponentName, TypeId);
+
+			SCHEMA_GEN_ERROR(OutTypeIdToFieldIdsMap.Contains(TypeId), TEXT("Ran into a typeId collision with component %s, typeId: %d."),
+							 *ComponentName, TypeId);
+			OutTypeIdToFieldIdsMap.Add(TypeId);
 
 			const TArray<TSharedPtr<FJsonValue>>* FieldArray;
 			SAFE_TRYGETFIELD((*TypeObject), Array, "fields", FieldArray);
@@ -1610,7 +1624,9 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 				int32 FieldId;
 				SAFE_TRYGETFIELD((*ArrayObject), Number, "fieldId", FieldId);
 
-				DataDefinitionToFieldIds[ComponentName].Add(FieldId);
+				SCHEMA_GEN_ERROR(OutTypeIdToFieldIdsMap[TypeId].FieldIds.Contains(FieldId),
+								 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId, *ComponentName);
+				OutTypeIdToFieldIdsMap[TypeId].FieldIds.Add(FieldId);
 			}
 		}
 
@@ -1633,6 +1649,18 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 			const TArray<TSharedPtr<FJsonValue>>* FieldArray;
 			SAFE_TRYGETFIELD((*CompObject), Array, "fields", FieldArray);
 
+			uint32 TypeId = OutTypeIdToFieldIdsMap.Num();
+			if (FieldArray->Num() > 0)
+			{
+				SCHEMA_GEN_ERROR(OutComponentIdToTypeIdsMap.Contains(ComponentId),
+								 TEXT("The schema bundle contains duplicate component IDs with component %s."), *ComponentName, TypeId);
+				OutComponentIdToTypeIdsMap.Add(ComponentId, TypeId);
+
+				SCHEMA_GEN_ERROR(OutTypeIdToFieldIdsMap.Contains(TypeId),
+								 TEXT("Ran into a typeId collision with component %s, typeId: %d."), *ComponentName, TypeId);
+				OutTypeIdToFieldIdsMap.Add(TypeId);
+			}
+
 			for (const auto& ArrayValue : *FieldArray)
 			{
 				const TSharedPtr<FJsonObject>* ArrayObject;
@@ -1641,7 +1669,9 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 				int32 FieldId;
 				SAFE_TRYGETFIELD((*ArrayObject), Number, "fieldId", FieldId);
 
-				OutFieldIdMap.FindOrAdd(ComponentId).FieldIds.Add(FieldId);
+				SCHEMA_GEN_ERROR(OutTypeIdToFieldIdsMap[TypeId].FieldIds.Contains(FieldId),
+								 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId, *ComponentName);
+				OutTypeIdToFieldIdsMap[TypeId].FieldIds.Add(FieldId);
 			}
 
 			FString DataDefinition;
@@ -1649,7 +1679,11 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 
 			if (!DataDefinition.IsEmpty())
 			{
-				ComponentIdToDataDefinition.Add(ComponentId, DataDefinition);
+				SCHEMA_GEN_ERROR(
+					FieldArray->Num() != 0,
+					TEXT("The schema bundle supplied both a data definition and field IDs - this is unexpected, component name: %s."),
+					*ComponentName);
+				ComponentIdToDataDefinitionName.Add(ComponentId, DataDefinition);
 			}
 		}
 
@@ -1697,23 +1731,19 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 		for (const auto& CompRef : ComponentRefs)
 		{
 			uint32* FoundId = ComponentMap.Find(CompRef);
-			if (FoundId == nullptr)
-			{
-				// clang-format off
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema file %s is missing a component entry for %s"), *SchemaJsonPath, *CompRef);
-				// clang-format on
-				return false;
-			}
-
+			SCHEMA_GEN_ERROR(FoundId == nullptr, TEXT("Schema file %s is missing a component entry for %s"), *SchemaJsonPath, *CompRef);
 			SetIds.ComponentIDs.Add(*FoundId);
 		}
 
 		FinalMap.Add(SetEntry.Key, MoveTemp(SetIds));
 	}
 
-	for (const auto& Pair : ComponentIdToDataDefinition)
+	for (const auto& Pair : ComponentIdToDataDefinitionName)
 	{
-		OutFieldIdMap.FindOrAdd(Pair.Key).FieldIds.Append(DataDefinitionToFieldIds[Pair.Value]);
+		SCHEMA_GEN_ERROR(!DataDefinitionNameToTypeId.Contains(Pair.Value),
+						 TEXT("The schema bundle did not contain a data definition for component ID %d, data definition name: %s."),
+						 Pair.Key, *Pair.Value);
+		OutComponentIdToTypeIdsMap.Add(Pair.Key, DataDefinitionNameToTypeId[Pair.Value]);
 	}
 
 	OutComponentSetMap = MoveTemp(FinalMap);
@@ -1751,7 +1781,7 @@ bool SpatialGDKGenerateSchema()
 	}
 
 	if (!ExtractInformationFromSchemaJson(SchemaJsonOutput, SchemaDatabase->ComponentSetIdToComponentIds,
-										  SchemaDatabase->ComponentIdToFieldIds))
+										  SchemaDatabase->ComponentIdToTypeIds, SchemaDatabase->TypeIdToFieldIds))
 	{
 		return false;
 	}
