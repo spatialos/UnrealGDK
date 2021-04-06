@@ -60,12 +60,6 @@ Worker_ComponentData ComponentData::GetWorkerComponentData() const
 	return { nullptr, ComponentId, Data.Get(), nullptr };
 }
 
-Worker_ComponentData ComponentData::CopyIntoWorkerComponentData() const
-{
-	check(Data.IsValid());
-	return { nullptr, ComponentId, Schema_CopyComponentData(Data.Get()), nullptr };
-}
-
 Worker_ComponentId ComponentData::GetComponentId() const
 {
 	return ComponentId;

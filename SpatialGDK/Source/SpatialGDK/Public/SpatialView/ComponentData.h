@@ -58,8 +58,6 @@ public:
 	Schema_ComponentData* GetUnderlying() const;
 	Worker_ComponentData GetWorkerComponentData() const;
 
-	Worker_ComponentData CopyIntoWorkerComponentData() const;
-
 	Worker_ComponentId GetComponentId() const;
 
 private:
