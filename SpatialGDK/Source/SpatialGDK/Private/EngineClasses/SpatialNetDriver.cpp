@@ -1183,14 +1183,8 @@ void USpatialNetDriver::Shutdown()
 		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
 		if (!bPersistSpatialConnection)
 		{
-			if (UWorld* LocalWorld = GetWorld())
+			if (Connection != nullptr)
 			{
-				// TODO: check if World is ever valid at this point
-				Cast<USpatialGameInstance>(LocalWorld->GetGameInstance())->DestroySpatialConnectionManager();
-			}
-			else if (Connection != nullptr)
-			{
-				// When a client returns to main menu the World is null at this point but we still need to close the connection
 				Connection->DestroyConnection();
 			}
 			Connection = nullptr;
