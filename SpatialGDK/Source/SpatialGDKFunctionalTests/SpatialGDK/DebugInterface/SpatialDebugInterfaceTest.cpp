@@ -304,16 +304,23 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			}
 
 			bool bExpectedResult = true;
+			bool bIsAtWorkerPos = true;
+			uint32 NumAuth = 0;
 
 			TArray<AActor*> TestActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), TestActors);
 			for (AActor* Actor : TestActors)
 			{
 				bExpectedResult &= Actor->HasAuthority();
+				NumAuth += Actor->HasAuthority() ? 1 : 0;
+				bIsAtWorkerPos &= Actor->GetActorLocation() == WorkerEntityPosition;
 			}
 
 			if (bExpectedResult)
 			{
+				check(bIsAtWorkerPos);
+				check(NumAuth == 2);
+
 				FinishStep();
 			}
 		},
@@ -326,7 +333,8 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			{
 				FinishStep();
 			}
-			bool bExpectedResult = true;
+
+			uint32 NumUpdated = 0;
 
 			TArray<AActor*> TestActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), TestActors);
@@ -335,8 +343,11 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				if (Actor->HasAuthority())
 				{
 					AddDebugTag(Actor, GetTestTag());
+					NumUpdated++;
 				}
 			}
+
+			check(NumUpdated == 2);
 
 			ClearTagDelegation(GetTestTag());
 			FinishStep();

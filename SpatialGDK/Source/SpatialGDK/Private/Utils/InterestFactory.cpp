@@ -171,7 +171,7 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 	if (bDebug)
 	{
 		PartitionQuery = Query();
-		PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_DEBUG_COMPONENT_ID };
+		PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID, SpatialConstants::GDK_DEBUG_COMPONENT_ID };
 		PartitionQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_DEBUG_COMPONENT_ID;
 		AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID,
 												 PartitionQuery);
