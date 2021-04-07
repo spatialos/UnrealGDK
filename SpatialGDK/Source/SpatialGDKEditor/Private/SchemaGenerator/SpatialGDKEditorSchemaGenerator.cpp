@@ -1039,7 +1039,7 @@ bool SaveSchemaDatabase(USchemaDatabase* SchemaDatabase)
 		SchemaDatabase->SchemaBundleHash = 0;
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-		TUniquePtr<IFileHandle> FileHandle(PlatformFile.OpenRead(SpatialGDKServicesConstants::SchemaBundlePath.GetCharArray().GetData()));
+		TUniquePtr<IFileHandle> FileHandle(PlatformFile.OpenRead(*SpatialGDKServicesConstants::SchemaBundlePath));
 		if (FileHandle)
 		{
 			// Create our byte buffer
