@@ -69,7 +69,7 @@
 		}                                                                                                                                  \
 	} while (false)
 
-#define SCHEMA_GEN_ERROR(Condition, Format, ...)                                                                                           \
+#define COND_SCHEMA_GEN_ERROR_AND_RETURN(Condition, Format, ...)                                                                                           \
 	if (UNLIKELY(Condition))                                                                                                               \
 	{                                                                                                                                      \
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, Format, ##__VA_ARGS__);                                                                \
@@ -1604,14 +1604,14 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 			FString ComponentName;
 			SAFE_TRYGETFIELD((*TypeObject), String, "qualifiedName", ComponentName);
 
-			uint32 TypeId = OutTypeIdToFieldIdsMap.Num();
-			SCHEMA_GEN_ERROR(DataDefinitionNameToTypeId.Contains(ComponentName),
-							 TEXT("The schema bundle contains duplicate data definitions for %s."), *ComponentName);
+			const uint32 TypeId = OutTypeIdToFieldIdsMap.Num();
+			COND_SCHEMA_GEN_ERROR_AND_RETURN(DataDefinitionNameToTypeId.Contains(ComponentName),
+											 TEXT("The schema bundle contains duplicate data definitions for %s."), *ComponentName);
 			DataDefinitionNameToTypeId.Add(ComponentName, TypeId);
 
-			SCHEMA_GEN_ERROR(OutTypeIdToFieldIdsMap.Contains(TypeId), TEXT("Ran into a typeId collision with component %s, typeId: %d."),
-							 *ComponentName, TypeId);
-			OutTypeIdToFieldIdsMap.Add(TypeId);
+			COND_SCHEMA_GEN_ERROR_AND_RETURN(OutTypeIdToFieldIdsMap.Contains(TypeId),
+											 TEXT("Ran into a typeId collision with component %s, typeId: %d."), *ComponentName, TypeId);
+			TArray<uint32>& FieldIDs = OutTypeIdToFieldIdsMap.Add(TypeId).FieldIds;
 
 			const TArray<TSharedPtr<FJsonValue>>* FieldArray;
 			SAFE_TRYGETFIELD((*TypeObject), Array, "fields", FieldArray);
@@ -1624,9 +1624,10 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 				int32 FieldId;
 				SAFE_TRYGETFIELD((*ArrayObject), Number, "fieldId", FieldId);
 
-				SCHEMA_GEN_ERROR(OutTypeIdToFieldIdsMap[TypeId].FieldIds.Contains(FieldId),
-								 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId, *ComponentName);
-				OutTypeIdToFieldIdsMap[TypeId].FieldIds.Add(FieldId);
+				COND_SCHEMA_GEN_ERROR_AND_RETURN(FieldIDs.Contains(FieldId),
+												 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId,
+												 *ComponentName);
+				FieldIDs.Add(FieldId);
 			}
 		}
 
@@ -1649,15 +1650,17 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 			const TArray<TSharedPtr<FJsonValue>>* FieldArray;
 			SAFE_TRYGETFIELD((*CompObject), Array, "fields", FieldArray);
 
-			uint32 TypeId = OutTypeIdToFieldIdsMap.Num();
+			const uint32 TypeId = OutTypeIdToFieldIdsMap.Num();
 			if (FieldArray->Num() > 0)
 			{
-				SCHEMA_GEN_ERROR(OutComponentIdToTypeIdsMap.Contains(ComponentId),
-								 TEXT("The schema bundle contains duplicate component IDs with component %s."), *ComponentName, TypeId);
+				COND_SCHEMA_GEN_ERROR_AND_RETURN(OutComponentIdToTypeIdsMap.Contains(ComponentId),
+												 TEXT("The schema bundle contains duplicate component IDs with component %s."),
+												 *ComponentName, TypeId);
 				OutComponentIdToTypeIdsMap.Add(ComponentId, TypeId);
 
-				SCHEMA_GEN_ERROR(OutTypeIdToFieldIdsMap.Contains(TypeId),
-								 TEXT("Ran into a typeId collision with component %s, typeId: %d."), *ComponentName, TypeId);
+				COND_SCHEMA_GEN_ERROR_AND_RETURN(OutTypeIdToFieldIdsMap.Contains(TypeId),
+												 TEXT("Ran into a typeId collision with component %s, typeId: %d."), *ComponentName,
+												 TypeId);
 				OutTypeIdToFieldIdsMap.Add(TypeId);
 			}
 
@@ -1669,8 +1672,9 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 				int32 FieldId;
 				SAFE_TRYGETFIELD((*ArrayObject), Number, "fieldId", FieldId);
 
-				SCHEMA_GEN_ERROR(OutTypeIdToFieldIdsMap[TypeId].FieldIds.Contains(FieldId),
-								 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId, *ComponentName);
+				COND_SCHEMA_GEN_ERROR_AND_RETURN(OutTypeIdToFieldIdsMap[TypeId].FieldIds.Contains(FieldId),
+												 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId,
+												 *ComponentName);
 				OutTypeIdToFieldIdsMap[TypeId].FieldIds.Add(FieldId);
 			}
 
@@ -1679,7 +1683,7 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 
 			if (!DataDefinition.IsEmpty())
 			{
-				SCHEMA_GEN_ERROR(
+				COND_SCHEMA_GEN_ERROR_AND_RETURN(
 					FieldArray->Num() != 0,
 					TEXT("The schema bundle supplied both a data definition and field IDs - this is unexpected, component name: %s."),
 					*ComponentName);
@@ -1731,7 +1735,8 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 		for (const auto& CompRef : ComponentRefs)
 		{
 			uint32* FoundId = ComponentMap.Find(CompRef);
-			SCHEMA_GEN_ERROR(FoundId == nullptr, TEXT("Schema file %s is missing a component entry for %s"), *SchemaJsonPath, *CompRef);
+			COND_SCHEMA_GEN_ERROR_AND_RETURN(FoundId == nullptr, TEXT("Schema file %s is missing a component entry for %s"),
+											 *SchemaJsonPath, *CompRef);
 			SetIds.ComponentIDs.Add(*FoundId);
 		}
 
@@ -1740,9 +1745,10 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 
 	for (const auto& Pair : ComponentIdToDataDefinitionName)
 	{
-		SCHEMA_GEN_ERROR(!DataDefinitionNameToTypeId.Contains(Pair.Value),
-						 TEXT("The schema bundle did not contain a data definition for component ID %d, data definition name: %s."),
-						 Pair.Key, *Pair.Value);
+		COND_SCHEMA_GEN_ERROR_AND_RETURN(
+			!DataDefinitionNameToTypeId.Contains(Pair.Value),
+			TEXT("The schema bundle did not contain a data definition for component ID %d, data definition name: %s."), Pair.Key,
+			*Pair.Value);
 		OutComponentIdToTypeIdsMap.Add(Pair.Key, DataDefinitionNameToTypeId[Pair.Value]);
 	}
 
