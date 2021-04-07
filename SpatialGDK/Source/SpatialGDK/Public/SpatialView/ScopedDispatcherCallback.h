@@ -11,14 +11,32 @@ class FDispatcher;
 class FScopedDispatcherCallback final
 {
 public:
+	FScopedDispatcherCallback() = delete;
 	FScopedDispatcherCallback(FDispatcher& InDispatcher, const CallbackId InCallbackId);
 	~FScopedDispatcherCallback();
 
-	// Non-copyable, non-movable
+	// Non-copyable
 	FScopedDispatcherCallback(const FScopedDispatcherCallback&) = delete;
-	FScopedDispatcherCallback(FScopedDispatcherCallback&&) = delete;
 	FScopedDispatcherCallback& operator=(const FScopedDispatcherCallback&) = delete;
-	FScopedDispatcherCallback& operator=(FScopedDispatcherCallback&&) = delete;
+
+	// Movable
+	FScopedDispatcherCallback(FScopedDispatcherCallback&& InOther)
+	{
+		Dispatcher = InOther.Dispatcher;
+		ScopedCallbackId = InOther.ScopedCallbackId;
+		InOther.Dispatcher = nullptr;
+		InOther.ScopedCallbackId = InvalidCallbackId;
+	}
+	FScopedDispatcherCallback& operator=(FScopedDispatcherCallback&& InOther)
+	{
+		Dispatcher = InOther.Dispatcher;
+		ScopedCallbackId = InOther.ScopedCallbackId;
+		InOther.Dispatcher = nullptr;
+		InOther.ScopedCallbackId = InvalidCallbackId;
+		return *this;
+	}
+
+	bool IsValid() const;
 
 private:
 	FDispatcher* Dispatcher;

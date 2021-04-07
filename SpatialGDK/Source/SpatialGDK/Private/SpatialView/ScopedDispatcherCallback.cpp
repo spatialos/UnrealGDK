@@ -15,7 +15,20 @@ FScopedDispatcherCallback::FScopedDispatcherCallback(FDispatcher& InDispatcher, 
 
 FScopedDispatcherCallback::~FScopedDispatcherCallback()
 {
-	check(Dispatcher);
-	Dispatcher->RemoveCallback(ScopedCallbackId);
+	if (IsValid())
+	{
+		Dispatcher->RemoveCallback(ScopedCallbackId);
+	}
 }
+
+bool FScopedDispatcherCallback::IsValid() const
+{
+	if (Dispatcher)
+	{
+		check(ScopedCallbackId != InvalidCallbackId);
+		return true;
+	}
+	return false;
+}
+
 } // namespace SpatialGDK

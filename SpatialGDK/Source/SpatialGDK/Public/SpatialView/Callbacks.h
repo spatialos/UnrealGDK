@@ -6,6 +6,8 @@
 namespace SpatialGDK
 {
 using CallbackId = int32;
+static constexpr CallbackId InvalidCallbackId = 0;
+static constexpr CallbackId FirstValidCallbackId = 1;
 
 /**
  * Container holding a set of callbacks.
