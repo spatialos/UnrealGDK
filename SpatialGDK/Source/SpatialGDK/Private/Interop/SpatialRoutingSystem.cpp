@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "Interop/SpatialRoutingSystem.h"
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "Schema/ServerWorker.h"

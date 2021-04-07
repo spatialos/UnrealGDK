@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "SpatialView/AuthorityRecord.h"
 
 namespace SpatialGDK
