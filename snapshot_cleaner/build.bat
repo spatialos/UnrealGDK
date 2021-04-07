@@ -1,0 +1,1 @@
+cl main.cc improbable_worker.lib /Iworker_sdk_include /EHsc
