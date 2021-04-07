@@ -75,7 +75,8 @@ SCOPED_DISPATCHER_CALLBACK_TEST(GIVEN_ScopedDispatcherCallback_With_Registered_C
 	return true;
 }
 
-SCOPED_DISPATCHER_CALLBACK_TEST(GIVEN_ScopedDispatcherCallback_With_Registered_Callback_WHEN_Callback_Moved_And_Destructed_THEN_Callback_Is_Unregistered)
+SCOPED_DISPATCHER_CALLBACK_TEST(
+	GIVEN_ScopedDispatcherCallback_With_Registered_Callback_WHEN_Callback_Moved_And_Destructed_THEN_Callback_Is_Unregistered)
 {
 	FDispatcher Dispatcher;
 
@@ -95,6 +96,5 @@ SCOPED_DISPATCHER_CALLBACK_TEST(GIVEN_ScopedDispatcherCallback_With_Registered_C
 
 	return true;
 }
-
 
 } // namespace SpatialGDK
