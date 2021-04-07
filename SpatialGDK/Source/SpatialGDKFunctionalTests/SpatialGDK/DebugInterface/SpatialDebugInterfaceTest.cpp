@@ -13,9 +13,10 @@
 
 /**
  * Test for coverage of the USpatialGDKDebugInterface.
- * The debug interface allows you to manipulate interest and load balancing by tagging actors and declaring interest and delegation over these tags
- * The goal is to have an easier time writing load balancing test to not have to derive an additional load balancing strategy for each new test.
- * 
+ * The debug interface allows you to manipulate interest and load balancing by tagging actors and declaring interest and delegation over
+ * these tags The goal is to have an easier time writing load balancing test to not have to derive an additional load balancing strategy for
+ * each new test.
+ *
  * The test walks through a couple of situations that one can setup through the debug interface :
  * - Add interest over all actors having some tags
  * - Delegate tags to specific workers, forcing load balancing
@@ -24,7 +25,7 @@
  * - Remove tags from actors and see interest and load-balancing revert to their default.
  * - Add tags again and clear delegation
  * - Clear all debug information
- * 
+ *
  * Most of these tests are performed in a two-step way, that is setting some debug behaviour and waiting for it to happen on the next step
  * Delegation commands expect consensus between workers to behave properly, so separating change steps from observation steps helps avoiding
  * races that could happen around interest or load balancing.
@@ -319,7 +320,6 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			}
 
 			bool bExpectedResult = true;
-			bool bIsAtWorkerPos = true;
 			uint32 NumAuth = 0;
 
 			TArray<AActor*> TestActors;
@@ -328,13 +328,11 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			{
 				bExpectedResult &= Actor->HasAuthority();
 				NumAuth += Actor->HasAuthority() ? 1 : 0;
-				bIsAtWorkerPos &= Actor->GetActorLocation() == WorkerEntityPosition;
 			}
 
 			if (bExpectedResult)
 			{
-				check(bIsAtWorkerPos);
-				check(NumAuth == 2);
+				AssertTrue(NumAuth == 2, TEXT("We see the expected number of authoritative actors"));
 
 				FinishStep();
 			}
@@ -362,7 +360,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				}
 			}
 
-			check(NumUpdated == 2);
+			AssertTrue(NumUpdated == 2, TEXT("We updated the expected number of authoritative actors"));
 
 			ClearTagDelegation(GetTestTag());
 			FinishStep();
