@@ -1186,8 +1186,8 @@ void USpatialNetDriver::Shutdown()
 			if (Connection != nullptr)
 			{
 				Connection->DestroyConnection();
+				Connection = nullptr;
 			}
-			Connection = nullptr;
 		}
 	}
 
