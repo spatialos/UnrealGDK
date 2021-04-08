@@ -527,7 +527,7 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 
 const TArray<Schema_FieldId>& USpatialClassInfoManager::GetFieldIdsByComponentId(Worker_ComponentId ComponentId)
 {
-	return SchemaDatabase->TypeIdToFieldIds[SchemaDatabase->ComponentIdToTypeIds[ComponentId]].FieldIds;
+	return SchemaDatabase->FieldIdsArray[SchemaDatabase->ComponentIdToFieldIdsIndex[ComponentId]].FieldIds;
 }
 
 const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction* Function)

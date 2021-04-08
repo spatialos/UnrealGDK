@@ -159,11 +159,12 @@ public:
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 SchemaBundleHash;
 
+	// A map from component IDs to an index into the FieldIdsArray.
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
-	TMap<uint32, uint32> ComponentIdToTypeIds;
+	TMap<uint32, uint32> ComponentIdToFieldIdsIndex;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
-	TMap<uint32, FFieldIDs> TypeIdToFieldIds;
+	TArray<FFieldIDs> FieldIdsArray;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FComponentIDs> ComponentSetIdToComponentIds;
