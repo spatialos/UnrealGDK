@@ -1646,28 +1646,27 @@ bool ExtractInformationFromSchemaJson(const FString& SchemaJsonPath, TMap<uint32
 			const TArray<TSharedPtr<FJsonValue>>* FieldArray;
 			SAFE_TRYGETFIELD((*CompObject), Array, "fields", FieldArray);
 
-			const uint32 FieldArrayIndex = OutFieldIdsArray.Num();
 			if (FieldArray->Num() > 0)
 			{
 				COND_SCHEMA_GEN_ERROR_AND_RETURN(OutComponentIdToFieldIdsIndex.Contains(ComponentId),
 												 TEXT("The schema bundle contains duplicate component IDs with component %s."),
 												 *ComponentName);
-				OutComponentIdToFieldIdsIndex.Add(ComponentId, FieldArrayIndex);
-				OutFieldIdsArray.AddDefaulted();
-			}
+				OutComponentIdToFieldIdsIndex.Add(ComponentId, OutFieldIdsArray.Num());
+				TArray<uint32>& FieldIDs = OutFieldIdsArray.AddDefaulted_GetRef().FieldIds;
 
-			for (const auto& ArrayValue : *FieldArray)
-			{
-				const TSharedPtr<FJsonObject>* ArrayObject;
-				SAFE_TRYGET(ArrayValue, Object, ArrayObject);
+				for (const auto& ArrayValue : *FieldArray)
+				{
+					const TSharedPtr<FJsonObject>* ArrayObject;
+					SAFE_TRYGET(ArrayValue, Object, ArrayObject);
 
-				int32 FieldId;
-				SAFE_TRYGETFIELD((*ArrayObject), Number, "fieldId", FieldId);
+					int32 FieldId;
+					SAFE_TRYGETFIELD((*ArrayObject), Number, "fieldId", FieldId);
 
-				COND_SCHEMA_GEN_ERROR_AND_RETURN(OutFieldIdsArray[FieldArrayIndex].FieldIds.Contains(FieldId),
-												 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId,
-												 *ComponentName);
-				OutFieldIdsArray[FieldArrayIndex].FieldIds.Add(FieldId);
+					COND_SCHEMA_GEN_ERROR_AND_RETURN(FieldIDs.Contains(FieldId),
+													 TEXT("The schema bundle contains duplicate fieldId: %d, component name: %s."), FieldId,
+													 *ComponentName);
+					FieldIDs.Add(FieldId);
+				}
 			}
 
 			FString DataDefinition;
