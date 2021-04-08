@@ -1,8 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ViewCoordinator.h"
-#include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Tests/SpatialView/DispatcherSpy.h"
+#include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"
 #include "Utils/ComponentFactory.h"
 

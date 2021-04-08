@@ -20,9 +20,7 @@ public:
 	{
 	}
 
-	virtual void InvokeCallbacks(const TArray<EntityDelta>& Deltas) override
-	{
-	}
+	virtual void InvokeCallbacks(const TArray<EntityDelta>& Deltas) override {}
 
 	virtual CallbackId RegisterAndInvokeComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
 															   const EntityView& View) override
@@ -75,15 +73,9 @@ public:
 		return RegisterAndReturnNewCallback();
 	}
 
-	virtual void RemoveCallback(CallbackId Id) override
-	{
-		RegisteredCallbacks.Remove(Id);
-	}
+	virtual void RemoveCallback(CallbackId Id) override { RegisteredCallbacks.Remove(Id); }
 
-	int32 GetNumCallbacks() const
-	{
-		return RegisteredCallbacks.Num();
-	}
+	int32 GetNumCallbacks() const { return RegisteredCallbacks.Num(); }
 
 private:
 	CallbackId RegisterAndReturnNewCallback()
