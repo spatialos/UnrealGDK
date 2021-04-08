@@ -189,6 +189,17 @@ FString USpatialLatencyTracer::GetTraceMetadata(UObject* WorldContextObject)
 	return TEXT("");
 }
 
+FString USpatialLatencyTracer::GetWorkerId(UObject* WorldContextObject)
+{
+#if TRACE_LIB_ACTIVE
+	if (USpatialLatencyTracer* Tracer = GetTracer(WorldContextObject))
+	{
+		return *Tracer->WorkerId.Left(18);
+	}
+#endif
+	return TEXT("");
+}
+
 #if TRACE_LIB_ACTIVE
 bool USpatialLatencyTracer::IsValidKey(const TraceKey Key)
 {

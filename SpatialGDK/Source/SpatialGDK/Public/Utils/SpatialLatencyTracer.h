@@ -133,6 +133,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
 	static FString GetTraceMetadata(UObject* WorldContextObject);
 
+	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static FString GetWorkerId();
+
 #if TRACE_LIB_ACTIVE
 
 	bool IsValidKey(TraceKey Key);
