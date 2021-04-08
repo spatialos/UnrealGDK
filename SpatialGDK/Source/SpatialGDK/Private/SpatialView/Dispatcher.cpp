@@ -8,7 +8,7 @@
 namespace SpatialGDK
 {
 FDispatcher::FDispatcher()
-	: NextCallbackId(1)
+	: NextCallbackId(FirstValidCallbackId)
 {
 }
 
