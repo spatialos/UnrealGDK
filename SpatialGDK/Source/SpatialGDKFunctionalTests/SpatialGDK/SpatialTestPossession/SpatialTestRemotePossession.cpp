@@ -50,6 +50,14 @@ bool ASpatialTestRemotePossession::IsReadyForPossess()
 	return Pawn->Controller != nullptr;
 }
 
+void ASpatialTestRemotePossession::AddToOriginalPawns_Implementation(ATestPossessionPlayerController* Controller, APawn* Pawn)
+{
+	FControllerPawnPair OriginalPair;
+	OriginalPair.Controller = MakeWeakObjectPtr(Controller);
+	OriginalPair.Pawn = MakeWeakObjectPtr(Pawn);
+	OriginalPawns.Add(OriginalPair);
+}
+
 void ASpatialTestRemotePossession::AddWaitStep(const FWorkerDefinition& Worker)
 {
 	AddStep(TEXT("Wait"), Worker, nullptr, nullptr, [this](float DeltaTime) {

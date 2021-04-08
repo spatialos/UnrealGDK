@@ -6,6 +6,7 @@
 #include "SpatialTestRemotePossession.h"
 #include "CrossServerPossessionTest.generated.h"
 
+
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ACrossServerPossessionTest : public ASpatialTestRemotePossession
 {
@@ -15,4 +16,5 @@ public:
 	ACrossServerPossessionTest();
 
 	virtual void PrepareTest() override;
+
 };
