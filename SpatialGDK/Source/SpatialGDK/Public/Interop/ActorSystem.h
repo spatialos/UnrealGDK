@@ -32,6 +32,8 @@ namespace SpatialGDK
 class SpatialEventTracer;
 class FSubView;
 
+class ActorHandler;
+
 struct ActorData
 {
 	SpawnData Spawn;
@@ -45,6 +47,8 @@ public:
 				SpatialEventTracer* InEventTracer);
 
 	void Advance();
+
+	TSharedRef<ActorHandler> Handler;
 
 	UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
 
@@ -108,9 +112,11 @@ private:
 	void ComponentUpdated(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 	void ComponentRemoved(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 
+public:
 	void EntityAdded(Worker_EntityId EntityId);
 	void EntityRemoved(Worker_EntityId EntityId);
 
+private:
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
 	void HandleEntityDeletedAuthority(Worker_EntityId EntityId) const;

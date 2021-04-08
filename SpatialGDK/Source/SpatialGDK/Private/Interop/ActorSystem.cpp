@@ -139,9 +139,352 @@ private:
 
 struct FSubViewDelta;
 
+class FActorEntityRecognizer
+{
+public:
+	void ProcessDelta(const FSubViewDelta& ViewDelta);
+	static bool Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement);
+
+	TSet<Worker_EntityId_Key> ActorEntityIds;
+};
+
+void FActorEntityRecognizer::ProcessDelta(const FSubViewDelta& ViewDelta)
+{
+	for (const EntityDelta& Delta : ViewDelta.EntityDeltas)
+	{
+		if (Delta.Type == EntityDelta::ADD)
+		{
+			// an entity that passes filters was added
+			ActorEntityIds.Add(Delta.EntityId);
+		}
+		else if (Delta.Type == EntityDelta::REMOVE)
+		{
+			ActorEntityIds.Remove(Delta.EntityId);
+		}
+	}
+}
+
+bool FActorEntityRecognizer::Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement)
+{
+	if (ViewElement.Components.ContainsByPredicate(ComponentIdEquality{ Tombstone::ComponentId }))
+	{
+		return false;
+	}
+	return true;
+}
+
+class FRoleEntityRecognizer
+{
+public:
+	FRoleEntityRecognizer(const FSubView& InSubView, bool bInIsServer)
+		: SubView(InSubView)
+		, bIsServer(bInIsServer)
+	{
+	}
+
+	virtual ~FRoleEntityRecognizer() = default;
+
+	FFilterPredicate GetFilter()
+	{
+		return [this](const Worker_EntityId EntityId, const EntityViewElement& ViewElement) {
+			return Filter(EntityId, ViewElement);
+		};
+	}
+
+	virtual bool Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement) const;
+
+	static TArray<FDispatcherRefreshCallback> GetSubviewCallbacks(ViewCoordinator& Coordinator);
+
+private:
+	const FSubView& SubView;
+	bool bIsServer;
+};
+
+TAutoConsoleVariable<FString> TestVar(TEXT("ActorClassCompletenessCheckName"), {}, TEXT("No help"));
+
+PRAGMA_DISABLE_OPTIMIZATION
+bool FRoleEntityRecognizer::Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement) const
+{
+	auto Metadata = ViewElement.Components.FindByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId });
+
+	if (TestVar.GetValueOnAnyThread().Len() > 0 && Metadata != nullptr)
+	{
+		ensureAlways(!UnrealMetadata(Metadata->GetUnderlying()).ClassPath.Contains(TestVar.GetValueOnAnyThread()));
+	}
+
+	if (!SubView.IsEntityComplete(EntityId))
+	{
+		return false;
+	}
+
+	const bool bIsPlayerController =
+		ViewElement.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID });
+
+	if (bIsPlayerController && bIsServer)
+	{
+		return ViewElement.Components.ContainsByPredicate(ComponentIdEquality{ Partition::ComponentId });
+	}
+
+	return true;
+}
+
+TArray<FDispatcherRefreshCallback> FRoleEntityRecognizer::GetSubviewCallbacks(ViewCoordinator& Coordinator)
+{
+	return { Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
+			 Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId) };
+}
+
+PRAGMA_ENABLE_OPTIMIZATION
+
+class FAutonomousProxyEntityRecognizer : public FRoleEntityRecognizer
+{
+public:
+	explicit FAutonomousProxyEntityRecognizer(const FSubView& InSubView, bool bInIsServer)
+		: FRoleEntityRecognizer(InSubView, bInIsServer)
+	{
+	}
+
+private:
+	virtual bool Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement) const override
+	{
+		return ViewElement.Authority.Contains(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
+			   && FRoleEntityRecognizer::Filter(EntityId, ViewElement);
+	}
+};
+
+class FServerAuthorityEntityRecognizer : public FRoleEntityRecognizer
+{
+public:
+	explicit FServerAuthorityEntityRecognizer(const FSubView& InSubView, bool bInIsServer)
+		: FRoleEntityRecognizer(InSubView, bInIsServer)
+	{
+	}
+
+	virtual bool Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement) const override
+	{
+		return ViewElement.Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+			   && FRoleEntityRecognizer::Filter(EntityId, ViewElement);
+	}
+
+	virtual TArray<FDispatcherRefreshCallback> GetSubviewCallbacks(ViewCoordinator& Coordinator) const
+	{
+		return FRoleEntityRecognizer::GetSubviewCallbacks(Coordinator);
+	}
+};
+
+class FSimulatedProxyEntityRecognizer : public FRoleEntityRecognizer
+{
+public:
+	explicit FSimulatedProxyEntityRecognizer(const FSubView& InSubView, const FSubView& InAuthSubView, const FSubView& InAutonomousSubView,
+											 bool bInIsServer)
+		: FRoleEntityRecognizer(InSubView, bInIsServer)
+		, AuthSubView(InAuthSubView)
+		, AutonomousSubView(InAutonomousSubView)
+	{
+	}
+
+	virtual bool Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement) const override
+	{
+		return FRoleEntityRecognizer::Filter(EntityId, ViewElement) && !AuthSubView.IsEntityComplete(EntityId)
+			   && !AutonomousSubView.IsEntityComplete(EntityId);
+	}
+
+private:
+	const FSubView& AuthSubView;
+	const FSubView& AutonomousSubView;
+};
+
+ActorSystem* GActorSystem = nullptr;
+
+class FActorEntityHandlerBase
+{
+public:
+	virtual ~FActorEntityHandlerBase() = default;
+
+	void ProcessRemoves(const FSubViewDelta& ViewDelta) { ProcessViewDelta(ViewDelta, false); }
+
+	void ProcessAdds(const FSubViewDelta& ViewDelta) { ProcessViewDelta(ViewDelta, true); }
+
+	void ProcessViewDelta(const FSubViewDelta& ViewDelta, bool bProcessAdds)
+	{
+		for (const EntityDelta& Delta : ViewDelta.EntityDeltas)
+		{
+			if (Delta.Type == (bProcessAdds ? EntityDelta::ADD : EntityDelta::REMOVE) || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
+			{
+				ProcessEntityChange(Delta.EntityId, bProcessAdds);
+			}
+		}
+	}
+
+	virtual void ProcessEntityChange(const Worker_EntityId EntityId, bool bProcessAdds)
+	{
+		if (bProcessAdds)
+		{
+			GActorSystem->EntityAdded(EntityId);
+		}
+		else
+		{
+			GActorSystem->EntityRemoved(EntityId);
+		}
+	}
+};
+
+class ActorHandler
+{
+public:
+	explicit ActorHandler(USpatialNetDriver& InNetDriver, ViewCoordinator& Coordinator);
+	void SpawnCompleteOwningActor(const Worker_EntityId EntityId);
+	void InitializeNewlyCompleteAutonomousActor(const Worker_EntityId ValidAutonomousProxyActorEntityId, AActor& Actor);
+	void Advance(ActorSystem& InActorSystem);
+
+public:
+	UWorld& GetWorld();
+
+	const FSubView& ActorSubView;
+	FActorEntityRecognizer ActorEntityRecognizer;
+	const FSubView& AutonomousProxySubView;
+	const FSubView& ServerAuthoritySubView;
+	const FSubView& SimulatedProxySubView;
+	FAutonomousProxyEntityRecognizer AutonomousProxyEntityRecognizer;
+	FServerAuthorityEntityRecognizer ServerAuthorityEntityRecognizer;
+	FSimulatedProxyEntityRecognizer SimulatedProxyEntityRecognizer;
+	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> Actors;
+
+	USpatialNetDriver& NetDriver;
+};
+
+FFilterPredicate GetFilterPredicate(ActorHandler& Handler, int i)
+{
+	return [&Handler, i](const Worker_EntityId EntityId, const EntityViewElement& Entity) -> bool {
+		FRoleEntityRecognizer* Ptr;
+		switch (i)
+		{
+		case 1:
+			Ptr = &Handler.AutonomousProxyEntityRecognizer;
+			break;
+		case 2:
+			Ptr = &Handler.ServerAuthorityEntityRecognizer;
+			break;
+		case 3:
+			Ptr = &Handler.SimulatedProxyEntityRecognizer;
+			break;
+		default:
+			checkNoEntry();
+			return false;
+		}
+		return Ptr->Filter(EntityId, Entity);
+	};
+}
+
+ActorHandler::ActorHandler(USpatialNetDriver& InNetDriver, ViewCoordinator& Coordinator)
+	: ActorSubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, &FActorEntityRecognizer::Filter,
+											 FSubView::NoDispatcherCallbacks))
+	, AutonomousProxySubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetFilterPredicate(*this, 1),
+													   FRoleEntityRecognizer::GetSubviewCallbacks(Coordinator)))
+	, ServerAuthoritySubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetFilterPredicate(*this, 2),
+													   FRoleEntityRecognizer::GetSubviewCallbacks(Coordinator)))
+	, SimulatedProxySubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, GetFilterPredicate(*this, 3),
+													  FRoleEntityRecognizer::GetSubviewCallbacks(Coordinator)))
+	, AutonomousProxyEntityRecognizer(ActorSubView, InNetDriver.IsServer())
+	, ServerAuthorityEntityRecognizer(ActorSubView, InNetDriver.IsServer())
+	, SimulatedProxyEntityRecognizer(ActorSubView, ServerAuthoritySubView, AutonomousProxySubView, InNetDriver.IsServer())
+	, NetDriver(InNetDriver)
+{
+}
+
+void ProcessAddRemove(const FSubView& SubView, TSet<Worker_EntityId_Key>& Added, TSet<Worker_EntityId_Key>& Removed)
+{
+	for (const EntityDelta& Delta : SubView.GetViewDelta().EntityDeltas)
+	{
+		if (Delta.Type == EntityDelta::ADD)
+		{
+			Added.Emplace(Delta.EntityId);
+		}
+		else if (Delta.Type == EntityDelta::REMOVE)
+		{
+			Removed.Emplace(Delta.EntityId);
+		}
+	}
+}
+
+static const TCHAR* LexToCharArray(const ENetMode NetMode)
+{
+	switch (NetMode)
+	{
+	case NM_Standalone:
+		return TEXT("Standalone");
+	case NM_DedicatedServer:
+		return TEXT("DedicatedServer");
+	case NM_ListenServer:
+		return TEXT("ListenServer");
+	case NM_Client:
+		return TEXT("Client");
+	default:
+		check(false);
+		return TEXT("Invalid");
+	}
+}
+
+void ActorHandler::Advance(ActorSystem& InActorSystem)
+{
+	TGuardValue<ActorSystem*> SystemGuard(GActorSystem, &InActorSystem);
+
+	FActorEntityHandlerBase Autonomous;
+	FActorEntityHandlerBase Authority;
+	FActorEntityHandlerBase Simulated;
+
+	const TSet<Worker_EntityId_Key> AutonomousAndServerComplete =
+		AutonomousProxySubView.GetCompleteEntities().Intersect(ServerAuthoritySubView.GetCompleteEntities());
+	for (const Worker_EntityId AutonomousAndServerComplete1 : AutonomousAndServerComplete)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Entity %lld is doubly complete on autonomous and server"), AutonomousAndServerComplete1);
+	}
+
+	const TSet<Worker_EntityId_Key> AutonomousAndSimulatedComplete =
+		AutonomousProxySubView.GetCompleteEntities().Intersect(SimulatedProxySubView.GetCompleteEntities());
+	for (const Worker_EntityId AutonomousAndServerComplete1 : AutonomousAndSimulatedComplete)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Entity %lld is doubly complete on autonomous and simulated"), AutonomousAndServerComplete1);
+	}
+
+	const TSet<Worker_EntityId_Key> ServerAndSimulatedComplete =
+		ServerAuthoritySubView.GetCompleteEntities().Intersect(SimulatedProxySubView.GetCompleteEntities());
+	for (const Worker_EntityId AutonomousAndServerComplete1 : ServerAndSimulatedComplete)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[%s] Entity %lld is doubly complete on simulated and server"), LexToCharArray(GetWorld().GetNetMode()),
+			   AutonomousAndServerComplete1);
+	}
+
+	Autonomous.ProcessRemoves(AutonomousProxySubView.GetViewDelta());
+	Authority.ProcessRemoves(ServerAuthoritySubView.GetViewDelta());
+	Simulated.ProcessRemoves(SimulatedProxySubView.GetViewDelta());
+
+	Autonomous.ProcessAdds(AutonomousProxySubView.GetViewDelta());
+	Authority.ProcessAdds(ServerAuthoritySubView.GetViewDelta());
+	Simulated.ProcessAdds(SimulatedProxySubView.GetViewDelta());
+}
+
+void ActorHandler::SpawnCompleteOwningActor(const Worker_EntityId EntityId)
+{
+	const UnrealMetadata EntityMetadata(
+		ActorSubView.GetView()[EntityId].Components.FindByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId })->GetUnderlying());
+
+	AActor* SpawnedOwningActor = GetWorld().SpawnActor(EntityMetadata.NativeClass.Get());
+
+	Actors.Emplace(EntityId, SpawnedOwningActor);
+}
+
+void ActorHandler::InitializeNewlyCompleteAutonomousActor(const Worker_EntityId ValidAutonomousProxyActorEntityId, AActor& Actor) {}
+
+UWorld& ActorHandler::GetWorld()
+{
+	return *NetDriver.GetWorld();
+}
+
 ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
 						 SpatialEventTracer* InEventTracer)
-	: ActorSubView(&InActorSubView)
+	: Handler(MakeShared<ActorHandler>(*InNetDriver, InNetDriver->Connection->GetCoordinator()))
+	, ActorSubView(&InActorSubView)
 	, TombstoneSubView(&InTombstoneSubView)
 	, NetDriver(InNetDriver)
 	, EventTracer(InEventTracer)
@@ -196,24 +539,22 @@ void ActorSystem::Advance()
 			}
 			break;
 		}
-		case EntityDelta::ADD:
-			PopulateDataStore(Delta.EntityId);
-			EntityAdded(Delta.EntityId);
-			break;
-		case EntityDelta::REMOVE:
-			EntityRemoved(Delta.EntityId);
-			ActorDataStore.Remove(Delta.EntityId);
-			break;
-		case EntityDelta::TEMPORARILY_REMOVED:
-			EntityRemoved(Delta.EntityId);
-			ActorDataStore.Remove(Delta.EntityId);
-			PopulateDataStore(Delta.EntityId);
-			EntityAdded(Delta.EntityId);
-			break;
+		// case EntityDelta::ADD:
+		// 	EntityAdded(Delta.EntityId);
+		// 	break;
+		// case EntityDelta::REMOVE:
+		// 	EntityRemoved(Delta.EntityId);
+		// 	break;
+		// case EntityDelta::TEMPORARILY_REMOVED:
+		// 	EntityRemoved(Delta.EntityId);
+		// 	EntityAdded(Delta.EntityId);
+		// 	break;
 		default:
 			break;
 		}
 	}
+
+	Handler->Advance(*this);
 
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{
@@ -645,6 +986,7 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 
 void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 {
+	PopulateDataStore(EntityId);
 	ReceiveActor(EntityId);
 	for (const auto& AuthoritativeComponentSet : ActorSubView->GetView()[EntityId].Authority)
 	{
@@ -672,6 +1014,8 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 	{
 		EntitiesToRetireOnAuthorityGain.RemoveAtSwap(RetiredActorIndex);
 	}
+
+	ActorDataStore.Remove(EntityId);
 }
 
 bool ActorSystem::HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const

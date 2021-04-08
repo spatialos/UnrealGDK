@@ -54,6 +54,13 @@ const FSubViewDelta& FSubView::GetViewDelta() const
 	return SubViewDelta;
 }
 
+TSet<Worker_EntityId_Key> FSubView::GetCompleteEntities() const
+{
+	return TSet<Worker_EntityId_Key>(CompleteEntities)
+		.Union(TSet<Worker_EntityId_Key>(NewlyCompleteEntities))
+		.Difference(TSet<Worker_EntityId_Key>(NewlyIncompleteEntities));
+}
+
 void FSubView::RefreshEntity(const Worker_EntityId EntityId)
 {
 	if (TaggedEntities.Contains(EntityId))
@@ -75,7 +82,7 @@ bool FSubView::HasEntity(const Worker_EntityId EntityId) const
 
 bool FSubView::IsEntityComplete(const Worker_EntityId EntityId) const
 {
-	return CompleteEntities.Contains(EntityId);
+	return GetCompleteEntities().Contains(EntityId);
 }
 
 bool FSubView::HasComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const

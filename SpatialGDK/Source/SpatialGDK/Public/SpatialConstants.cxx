@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #define LOCTEXT_NAMESPACE "SpatialConstants"
+#include "SpatialConstants.h"
 
 using namespace SpatialGDK;
 
@@ -136,7 +137,7 @@ TArray<Worker_ComponentId>{ // Actor components
                             ACTOR_SET_MEMBER_COMPONENT_ID, ACTOR_GROUP_MEMBER_COMPONENT_ID,
 
                             // Actor tag
-                            ACTOR_TAG_COMPONENT_ID
+                            ACTOR_TAG_COMPONENT_ID, ACTOR_NON_AUTH_TAG_COMPONENT_ID
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
@@ -165,7 +166,7 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
     AUTHORITY_INTENT_COMPONENT_ID,
 
     // Tags: Well known entities, non-auth actors, and tombstone tags
-    GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_TAG_COMPONENT_ID,
+    GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, ACTOR_TAG_COMPONENT_ID, ACTOR_NON_AUTH_TAG_COMPONENT_ID,
 
     // Strategy Worker LB components
     ACTOR_SET_MEMBER_COMPONENT_ID, ACTOR_GROUP_MEMBER_COMPONENT_ID,
