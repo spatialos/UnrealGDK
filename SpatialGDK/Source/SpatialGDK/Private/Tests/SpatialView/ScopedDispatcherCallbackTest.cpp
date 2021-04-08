@@ -3,6 +3,7 @@
 #include "SpatialView/ScopedDispatcherCallback.h"
 
 #include "SpatialView/Dispatcher.h"
+#include "Tests/SpatialView/DispatcherSpy.h"
 #include "Tests/TestDefinitions.h"
 
 #define SCOPED_DISPATCHER_CALLBACK_TEST(TestName) GDK_TEST(Core, Dispatcher, TestName)
@@ -57,7 +58,7 @@ SCOPED_DISPATCHER_CALLBACK_TEST(GIVEN_Constructed_ScopedDispatcherCallback_WHEN_
 
 SCOPED_DISPATCHER_CALLBACK_TEST(GIVEN_ScopedDispatcherCallback_With_Registered_Callback_WHEN_Destructed_THEN_Callback_Is_Unregistered)
 {
-	FDispatcher Dispatcher;
+	FDispatcherSpy Dispatcher;
 
 	// GIVEN
 	const FComponentValueCallback Callback = [](const FEntityComponentChange&) {};
@@ -78,7 +79,7 @@ SCOPED_DISPATCHER_CALLBACK_TEST(GIVEN_ScopedDispatcherCallback_With_Registered_C
 SCOPED_DISPATCHER_CALLBACK_TEST(
 	GIVEN_ScopedDispatcherCallback_With_Registered_Callback_WHEN_Callback_Moved_And_Destructed_THEN_Callback_Is_Unregistered)
 {
-	FDispatcher Dispatcher;
+	FDispatcherSpy Dispatcher;
 
 	// GIVEN
 	const FComponentValueCallback Callback = [](const FEntityComponentChange&) {};

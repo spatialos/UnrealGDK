@@ -6,13 +6,13 @@
 
 namespace SpatialGDK
 {
-class FDispatcher;
+class IDispatcher;
 
 class FScopedDispatcherCallback final
 {
 public:
 	FScopedDispatcherCallback() = delete;
-	FScopedDispatcherCallback(FDispatcher& InDispatcher, const CallbackId InCallbackId);
+	FScopedDispatcherCallback(IDispatcher& InDispatcher, const CallbackId InCallbackId);
 	~FScopedDispatcherCallback();
 
 	// Non-copyable
@@ -39,7 +39,7 @@ public:
 	bool IsValid() const;
 
 private:
-	FDispatcher* Dispatcher;
+	IDispatcher* Dispatcher;
 	CallbackId ScopedCallbackId;
 };
 } // namespace SpatialGDK

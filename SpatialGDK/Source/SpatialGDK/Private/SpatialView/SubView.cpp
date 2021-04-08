@@ -18,7 +18,7 @@ const FAuthorityChangeRefreshPredicate FSubView::NoAuthorityChangeRefreshPredica
 	return true;
 };
 
-FSubView::FSubView(const Worker_ComponentId InTagComponentId, FFilterPredicate InFilter, const EntityView* InView, FDispatcher& Dispatcher,
+FSubView::FSubView(const Worker_ComponentId InTagComponentId, FFilterPredicate InFilter, const EntityView* InView, IDispatcher& Dispatcher,
 				   const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 	: TagComponentId(InTagComponentId)
 	, Filter(MoveTemp(InFilter))
@@ -98,7 +98,7 @@ bool FSubView::HasAuthority(const Worker_EntityId EntityId, const Worker_Compone
 	return Entity->Authority.Contains(ComponentId);
 }
 
-FDispatcherRefreshCallback FSubView::CreateComponentExistenceRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId ComponentId,
+FDispatcherRefreshCallback FSubView::CreateComponentExistenceRefreshCallback(IDispatcher& Dispatcher, const Worker_ComponentId ComponentId,
 																			 const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
@@ -121,7 +121,7 @@ FDispatcherRefreshCallback FSubView::CreateComponentExistenceRefreshCallback(FDi
 	};
 }
 
-FDispatcherRefreshCallback FSubView::CreateComponentChangedRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId ComponentId,
+FDispatcherRefreshCallback FSubView::CreateComponentChangedRefreshCallback(IDispatcher& Dispatcher, const Worker_ComponentId ComponentId,
 																		   const FComponentChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
@@ -136,7 +136,7 @@ FDispatcherRefreshCallback FSubView::CreateComponentChangedRefreshCallback(FDisp
 	};
 }
 
-FDispatcherRefreshCallback FSubView::CreateAuthorityChangeRefreshCallback(FDispatcher& Dispatcher, const Worker_ComponentId ComponentId,
+FDispatcherRefreshCallback FSubView::CreateAuthorityChangeRefreshCallback(IDispatcher& Dispatcher, const Worker_ComponentId ComponentId,
 																		  const FAuthorityChangeRefreshPredicate& RefreshPredicate)
 {
 	return [ComponentId, &Dispatcher, RefreshPredicate](const FRefreshCallback& Callback) {
@@ -158,7 +158,7 @@ FDispatcherRefreshCallback FSubView::CreateAuthorityChangeRefreshCallback(FDispa
 	};
 }
 
-void FSubView::RegisterTagCallbacks(FDispatcher& Dispatcher)
+void FSubView::RegisterTagCallbacks(IDispatcher& Dispatcher)
 {
 	CallbackId AddedCallbackId = Dispatcher.RegisterAndInvokeComponentAddedCallback(
 		TagComponentId,
@@ -175,7 +175,7 @@ void FSubView::RegisterTagCallbacks(FDispatcher& Dispatcher)
 	ScopedDispatcherCallbacks.Emplace(Dispatcher, RemovedCallbackId);
 }
 
-void FSubView::RegisterRefreshCallbacks(FDispatcher& Dispatcher, const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
+void FSubView::RegisterRefreshCallbacks(IDispatcher& Dispatcher, const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks)
 {
 	const FRefreshCallback RefreshEntityCallback = [this](const Worker_EntityId EntityId) {
 		RefreshEntity(EntityId);

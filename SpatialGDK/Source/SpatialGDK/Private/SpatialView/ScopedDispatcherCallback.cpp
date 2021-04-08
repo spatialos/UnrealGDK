@@ -6,7 +6,7 @@
 
 namespace SpatialGDK
 {
-FScopedDispatcherCallback::FScopedDispatcherCallback(FDispatcher& InDispatcher, const CallbackId InCallbackId)
+FScopedDispatcherCallback::FScopedDispatcherCallback(IDispatcher& InDispatcher, const CallbackId InCallbackId)
 	: Dispatcher(&InDispatcher)
 	, ScopedCallbackId(InCallbackId)
 {

@@ -2,6 +2,7 @@
 
 #include "SpatialView/ViewCoordinator.h"
 #include "Tests/SpatialView/SpatialViewUtils.h"
+#include "Tests/SpatialView/DispatcherSpy.h"
 #include "Tests/TestDefinitions.h"
 #include "Utils/ComponentFactory.h"
 
@@ -158,7 +159,7 @@ SUBVIEW_TEST(GIVEN_SubView_With_Tagged_Entities_WHEN_SubView_Destroyed_THEN_Disp
 	const Worker_ComponentId TagComponentId = 1;
 	const Worker_ComponentId ValueComponentId = 2;
 
-	FDispatcher Dispatcher;
+	FDispatcherSpy Dispatcher;
 	EntityView View;
 
 	auto RefreshCallbacks = TArray<FDispatcherRefreshCallback>{ FSubView::CreateComponentChangedRefreshCallback(
