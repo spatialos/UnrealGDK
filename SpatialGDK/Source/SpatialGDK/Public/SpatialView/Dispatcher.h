@@ -3,6 +3,8 @@
 #pragma once
 
 #include "SpatialView/Callbacks.h"
+#include "SpatialView/DispatcherInterface.h"
+#include "SpatialView/ScopedDispatcherCallback.h"
 #include "SpatialView/ViewDelta.h"
 
 #include "Containers/Array.h"
@@ -10,39 +12,32 @@
 
 namespace SpatialGDK
 {
-struct FEntityComponentChange
-{
-	Worker_EntityId EntityId;
-	const ComponentChange& Change;
-};
-
-using FEntityCallback = TCallbacks<Worker_EntityId>::CallbackType;
-using FComponentValueCallback = TCallbacks<FEntityComponentChange>::CallbackType;
-
-class FDispatcher
+class FDispatcher : public IDispatcher
 {
 public:
 	FDispatcher();
 
-	void InvokeCallbacks(const TArray<EntityDelta>& Deltas);
+	virtual void InvokeCallbacks(const TArray<EntityDelta>& Deltas) override;
 
-	CallbackId RegisterAndInvokeComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
-													   const EntityView& View);
-	CallbackId RegisterAndInvokeComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
-														 const EntityView& View);
-	CallbackId RegisterAndInvokeComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
-													   const EntityView& View);
-	CallbackId RegisterAndInvokeAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback, const EntityView& View);
-	CallbackId RegisterAndInvokeAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback, const EntityView& View);
+	virtual CallbackId RegisterAndInvokeComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
+															   const EntityView& View) override;
+	virtual CallbackId RegisterAndInvokeComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
+																 const EntityView& View) override;
+	virtual CallbackId RegisterAndInvokeComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback,
+															   const EntityView& View) override;
+	virtual CallbackId RegisterAndInvokeAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback,
+																const EntityView& View) override;
+	virtual CallbackId RegisterAndInvokeAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback,
+															  const EntityView& View) override;
 
-	CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
-	CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
-	CallbackId RegisterComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback);
-	CallbackId RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
-	CallbackId RegisterAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
-	CallbackId RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, FEntityCallback Callback);
+	virtual CallbackId RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback) override;
+	virtual CallbackId RegisterComponentRemovedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback) override;
+	virtual CallbackId RegisterComponentValueCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback) override;
+	virtual CallbackId RegisterAuthorityGainedCallback(Worker_ComponentId ComponentId, FEntityCallback Callback) override;
+	virtual CallbackId RegisterAuthorityLostCallback(Worker_ComponentId ComponentId, FEntityCallback Callback) override;
+	virtual CallbackId RegisterAuthorityLostTempCallback(Worker_ComponentId ComponentId, FEntityCallback Callback) override;
 
-	void RemoveCallback(CallbackId Id);
+	virtual void RemoveCallback(CallbackId Id) override;
 
 private:
 	struct FComponentCallbacks
