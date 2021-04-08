@@ -5,7 +5,6 @@
 #include "EntityView.h"
 #include "SpatialView/Dispatcher.h"
 #include "Templates/Function.h"
-#include "Templates/SharedPointer.h"
 
 using FFilterPredicate = TFunction<bool(const Worker_EntityId, const SpatialGDK::EntityViewElement&)>;
 using FRefreshCallback = TFunction<void(const Worker_EntityId)>;
