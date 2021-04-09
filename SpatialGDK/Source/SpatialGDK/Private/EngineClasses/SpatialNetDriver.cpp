@@ -1031,6 +1031,18 @@ void USpatialNetDriver::PostInitProperties()
 	}
 }
 
+void USpatialNetDriver::BeginDestroy()
+{
+	Super::BeginDestroy();
+#if WITH_EDITOR
+	// Ensure our OnDeploymentStart delegate is removed when the net driver is shut down.
+	if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
+	{
+		GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
+	}
+#endif
+}
+
 bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const
 {
 	// In our case, the connection is not specific to a client. Thus, it's not relevant whether the level is initialized.
@@ -1183,21 +1195,9 @@ void USpatialNetDriver::Shutdown()
 		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
 		if (!bPersistSpatialConnection)
 		{
-			if (Connection != nullptr)
-			{
-				Connection->DestroyConnection();
-				Connection = nullptr;
-			}
+			OnShutdown.ExecuteIfBound();
 		}
 	}
-
-#if WITH_EDITOR
-	// Ensure our OnDeploymentStart delegate is removed when the net driver is shut down.
-	if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
-	{
-		GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
-	}
-#endif
 }
 
 void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection)

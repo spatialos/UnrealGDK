@@ -46,6 +46,7 @@ class USpatialWorkerConnection;
 class USpatialWorkerFlags;
 
 DECLARE_DELEGATE(PostWorldWipeDelegate);
+DECLARE_DYNAMIC_DELEGATE(FShutdownEvent); 
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -94,6 +95,7 @@ public:
 	~USpatialNetDriver();
 
 	// Begin UObject Interface
+	virtual void BeginDestroy() override;
 	virtual void PostInitProperties() override;
 	// End UObject Interface
 
@@ -263,6 +265,8 @@ public:
 	bool IsLogged(Worker_EntityId ActorEntityId, EActorMigrationResult ActorMigrationFailure);
 
 	virtual int64 GetClientID() const override;
+
+	FShutdownEvent OnShutdown;
 
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
