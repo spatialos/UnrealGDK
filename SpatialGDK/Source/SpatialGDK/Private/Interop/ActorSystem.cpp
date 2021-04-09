@@ -148,127 +148,6 @@ bool FilterActors(const Worker_EntityId EntityId, const EntityViewElement& ViewE
 	return true;
 }
 
-class FRoleEntityRecognizer
-{
-public:
-	FRoleEntityRecognizer(const FSubView& InSubView, bool bInIsServer)
-		: SubView(InSubView)
-		, bIsServer(bInIsServer)
-	{
-	}
-
-	virtual ~FRoleEntityRecognizer() = default;
-
-	FFilterPredicate GetFilter()
-	{
-		return [this](const Worker_EntityId EntityId, const EntityViewElement& ViewElement) {
-			return Filter(EntityId, ViewElement);
-		};
-	}
-
-	virtual bool Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement) const;
-
-	static TArray<FDispatcherRefreshCallback> GetSubviewCallbacks(ViewCoordinator& Coordinator);
-
-private:
-	const FSubView& SubView;
-	bool bIsServer;
-};
-
-TAutoConsoleVariable<FString> TestVar(TEXT("ActorClassCompletenessCheckName"), {}, TEXT("No help"));
-
-PRAGMA_DISABLE_OPTIMIZATION
-bool FRoleEntityRecognizer::Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement) const
-{
-	auto Metadata = ViewElement.Components.FindByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId });
-
-	if (TestVar.GetValueOnAnyThread().Len() > 0 && Metadata != nullptr)
-	{
-		ensureAlways(!UnrealMetadata(Metadata->GetUnderlying()).ClassPath.Contains(TestVar.GetValueOnAnyThread()));
-	}
-
-	if (!SubView.IsEntityComplete(EntityId))
-	{
-		return false;
-	}
-
-	const bool bIsPlayerController =
-		ViewElement.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID });
-
-	if (bIsPlayerController && bIsServer)
-	{
-		return ViewElement.Components.ContainsByPredicate(ComponentIdEquality{ Partition::ComponentId });
-	}
-
-	return true;
-}
-
-TArray<FDispatcherRefreshCallback> FRoleEntityRecognizer::GetSubviewCallbacks(ViewCoordinator& Coordinator)
-{
-	return { Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
-			 Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId) };
-}
-
-PRAGMA_ENABLE_OPTIMIZATION
-
-class FAutonomousProxyEntityRecognizer : public FRoleEntityRecognizer
-{
-public:
-	explicit FAutonomousProxyEntityRecognizer(const FSubView& InSubView, bool bInIsServer)
-		: FRoleEntityRecognizer(InSubView, bInIsServer)
-	{
-	}
-
-private:
-	virtual bool Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement) const override
-	{
-		return ViewElement.Authority.Contains(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
-			   && FRoleEntityRecognizer::Filter(EntityId, ViewElement);
-	}
-};
-
-class FServerAuthorityEntityRecognizer : public FRoleEntityRecognizer
-{
-public:
-	explicit FServerAuthorityEntityRecognizer(const FSubView& InSubView, bool bInIsServer)
-		: FRoleEntityRecognizer(InSubView, bInIsServer)
-	{
-	}
-
-	virtual bool Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement) const override
-	{
-		return ViewElement.Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-			   && FRoleEntityRecognizer::Filter(EntityId, ViewElement);
-	}
-
-	virtual TArray<FDispatcherRefreshCallback> GetSubviewCallbacks(ViewCoordinator& Coordinator) const
-	{
-		return FRoleEntityRecognizer::GetSubviewCallbacks(Coordinator);
-	}
-};
-
-class FSimulatedProxyEntityRecognizer : public FRoleEntityRecognizer
-{
-public:
-	explicit FSimulatedProxyEntityRecognizer(const FSubView& InSubView, const FSubView& InAuthSubView, const FSubView& InAutonomousSubView,
-											 bool bInIsServer)
-		: FRoleEntityRecognizer(InSubView, bInIsServer)
-		, AuthSubView(InAuthSubView)
-		, AutonomousSubView(InAutonomousSubView)
-	{
-	}
-
-	virtual bool Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement) const override
-	{
-		return FRoleEntityRecognizer::Filter(EntityId, ViewElement) && !AuthSubView.IsEntityComplete(EntityId)
-			   && !AutonomousSubView.IsEntityComplete(EntityId);
-	}
-
-private:
-	const FSubView& AuthSubView;
-	const FSubView& AutonomousSubView;
-};
-
 ActorSystem* GActorSystem = nullptr;
 
 class FActorEntityHandlerBase
@@ -323,39 +202,8 @@ public:
 	USpatialNetDriver& NetDriver;
 };
 
-static bool CanSpawnActorEntity(const FSubView& SubView, bool bIsServer, const Worker_EntityId EntityId, const EntityViewElement& Entity)
-{
-	auto Metadata = Entity.Components.FindByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId });
-
-	if (TestVar.GetValueOnAnyThread().Len() > 0 && Metadata != nullptr)
-	{
-		ensureAlways(!UnrealMetadata(Metadata->GetUnderlying()).ClassPath.Contains(TestVar.GetValueOnAnyThread()));
-	}
-
-	if (!SubView.IsEntityComplete(EntityId))
-	{
-		return false;
-	}
-
-	const bool bIsPlayerController =
-		Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID });
-
-	if (bIsPlayerController && bIsServer)
-	{
-		return Entity.Components.ContainsByPredicate(ComponentIdEquality{ Partition::ComponentId });
-	}
-
-	return true;
-}
-
 static bool CommonActorStuff(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver* InNetDriver)
 {
-	if (Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID }))
-	{
-		// This actor has been tombstoned, we leave it alone.
-		return false;
-	}
-
 	if (InNetDriver->AsyncPackageLoadFilter != nullptr)
 	{
 		SpatialGDK::UnrealMetadata Metadata(
@@ -395,8 +243,11 @@ struct FAuthoritySubviewSetup
 
 	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator)
 	{
-		auto Base = FRoleEntityRecognizer::GetSubviewCallbacks(Coordinator);
-		Base.Add(Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId));
+		const TArray<FDispatcherRefreshCallback> Base{
+			// TODO: Move Tombstone refresh callback to a common place with the actor subview filtering
+			Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
+			Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId)
+		};
 		return Base;
 	}
 };
@@ -416,11 +267,11 @@ struct FSimulatedSubviewSetup
 };
 
 template <typename TCallable, typename... TArgs>
-FFilterPredicate GetRoleFilterPredicate(const FSubView& SubView, bool bIsServer, TCallable RolePredicate, TArgs... Args)
+FFilterPredicate GetRoleFilterPredicate(const FSubView& SubView, TCallable RolePredicate, TArgs... Args)
 {
-	return [&SubView, bIsServer, RolePredicate, Args = TTuple<TArgs...>(Args...)](const Worker_EntityId EntityId,
-																				  const EntityViewElement& Entity) -> bool {
-		if (!CanSpawnActorEntity(SubView, bIsServer, EntityId, Entity))
+	return [&SubView, RolePredicate, Args = TTuple<TArgs...>(Args...)](const Worker_EntityId EntityId,
+																	   const EntityViewElement& Entity) -> bool {
+		if (!SubView.IsEntityComplete(EntityId))
 		{
 			return false;
 		}
@@ -432,14 +283,13 @@ FFilterPredicate GetRoleFilterPredicate(const FSubView& SubView, bool bIsServer,
 ActorHandler::ActorHandler(USpatialNetDriver& InNetDriver, ViewCoordinator& Coordinator)
 	: ActorSubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, &FilterActors,
 											 { Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId) }))
-	, ServerAuthoritySubView(Coordinator.CreateSubView(
-		  SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
-		  GetRoleFilterPredicate(ActorSubView, InNetDriver.IsServer(), &FAuthoritySubviewSetup::IsAuthorityActorEntity, &InNetDriver),
-		  FAuthoritySubviewSetup::GetCallbacks(Coordinator)))
+	, ServerAuthoritySubView(
+		  Coordinator.CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
+									GetRoleFilterPredicate(ActorSubView, &FAuthoritySubviewSetup::IsAuthorityActorEntity, &InNetDriver),
+									FAuthoritySubviewSetup::GetCallbacks(Coordinator)))
 	, SimulatedProxySubView(Coordinator.CreateSubView(
 		  SpatialConstants::ACTOR_TAG_COMPONENT_ID,
-		  GetRoleFilterPredicate(ActorSubView, InNetDriver.IsServer(), &FSimulatedSubviewSetup::IsSimulatedActorEntity,
-								 &ServerAuthoritySubView, &InNetDriver),
+		  GetRoleFilterPredicate(ActorSubView, &FSimulatedSubviewSetup::IsSimulatedActorEntity, &ServerAuthoritySubView, &InNetDriver),
 		  FSimulatedSubviewSetup::GetCallbacks(Coordinator)))
 	, NetDriver(InNetDriver)
 {
