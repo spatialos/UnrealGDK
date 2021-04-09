@@ -139,32 +139,7 @@ private:
 
 struct FSubViewDelta;
 
-class FActorEntityRecognizer
-{
-public:
-	void ProcessDelta(const FSubViewDelta& ViewDelta);
-	static bool Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement);
-
-	TSet<Worker_EntityId_Key> ActorEntityIds;
-};
-
-void FActorEntityRecognizer::ProcessDelta(const FSubViewDelta& ViewDelta)
-{
-	for (const EntityDelta& Delta : ViewDelta.EntityDeltas)
-	{
-		if (Delta.Type == EntityDelta::ADD)
-		{
-			// an entity that passes filters was added
-			ActorEntityIds.Add(Delta.EntityId);
-		}
-		else if (Delta.Type == EntityDelta::REMOVE)
-		{
-			ActorEntityIds.Remove(Delta.EntityId);
-		}
-	}
-}
-
-bool FActorEntityRecognizer::Filter(const Worker_EntityId EntityId, const EntityViewElement& ViewElement)
+bool FilterActors(const Worker_EntityId EntityId, const EntityViewElement& ViewElement)
 {
 	if (ViewElement.Components.ContainsByPredicate(ComponentIdEquality{ Tombstone::ComponentId }))
 	{
@@ -341,53 +316,131 @@ public:
 	UWorld& GetWorld();
 
 	const FSubView& ActorSubView;
-	FActorEntityRecognizer ActorEntityRecognizer;
-	const FSubView& AutonomousProxySubView;
 	const FSubView& ServerAuthoritySubView;
 	const FSubView& SimulatedProxySubView;
-	FAutonomousProxyEntityRecognizer AutonomousProxyEntityRecognizer;
-	FServerAuthorityEntityRecognizer ServerAuthorityEntityRecognizer;
-	FSimulatedProxyEntityRecognizer SimulatedProxyEntityRecognizer;
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> Actors;
 
 	USpatialNetDriver& NetDriver;
 };
 
-FFilterPredicate GetFilterPredicate(ActorHandler& Handler, int i)
+static bool CanSpawnActorEntity(const FSubView& SubView, bool bIsServer, const Worker_EntityId EntityId, const EntityViewElement& Entity)
 {
-	return [&Handler, i](const Worker_EntityId EntityId, const EntityViewElement& Entity) -> bool {
-		FRoleEntityRecognizer* Ptr;
-		switch (i)
+	auto Metadata = Entity.Components.FindByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId });
+
+	if (TestVar.GetValueOnAnyThread().Len() > 0 && Metadata != nullptr)
+	{
+		ensureAlways(!UnrealMetadata(Metadata->GetUnderlying()).ClassPath.Contains(TestVar.GetValueOnAnyThread()));
+	}
+
+	if (!SubView.IsEntityComplete(EntityId))
+	{
+		return false;
+	}
+
+	const bool bIsPlayerController =
+		Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID });
+
+	if (bIsPlayerController && bIsServer)
+	{
+		return Entity.Components.ContainsByPredicate(ComponentIdEquality{ Partition::ComponentId });
+	}
+
+	return true;
+}
+
+static bool CommonActorStuff(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver* InNetDriver)
+{
+	if (Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID }))
+	{
+		// This actor has been tombstoned, we leave it alone.
+		return false;
+	}
+
+	if (InNetDriver->AsyncPackageLoadFilter != nullptr)
+	{
+		SpatialGDK::UnrealMetadata Metadata(
+			Element.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::UNREAL_METADATA_COMPONENT_ID })
+				->GetUnderlying());
+
+		if (!InNetDriver->AsyncPackageLoadFilter->IsAssetLoadedOrTriggerAsyncLoad(EntityId, Metadata.ClassPath))
 		{
-		case 1:
-			Ptr = &Handler.AutonomousProxyEntityRecognizer;
-			break;
-		case 2:
-			Ptr = &Handler.ServerAuthorityEntityRecognizer;
-			break;
-		case 3:
-			Ptr = &Handler.SimulatedProxyEntityRecognizer;
-			break;
-		default:
-			checkNoEntry();
 			return false;
 		}
-		return Ptr->Filter(EntityId, Entity);
+	}
+
+	if (InNetDriver->InitialOnlyFilter != nullptr)
+	{
+		if (Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::INITIAL_ONLY_PRESENCE_COMPONENT_ID }))
+		{
+			if (!InNetDriver->InitialOnlyFilter->HasInitialOnlyDataOrRequestIfAbsent(EntityId))
+			{
+				return false;
+			}
+		}
+	}
+
+	// If we see a player controller component on this entity and we're a server we should hold it back until we
+	// also have the partition component.
+	return !InNetDriver->IsServer()
+		   || Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID })
+				  == Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID });
+}
+
+struct FAuthoritySubviewSetup
+{
+	static bool IsAuthorityActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver* InNetDriver)
+	{
+		return CommonActorStuff(EntityId, Element, InNetDriver);
+	}
+
+	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator)
+	{
+		auto Base = FRoleEntityRecognizer::GetSubviewCallbacks(Coordinator);
+		Base.Add(Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId));
+		return Base;
+	}
+};
+
+struct FSimulatedSubviewSetup
+{
+	static bool IsSimulatedActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Entity, const FSubView* AuthSubview,
+									   USpatialNetDriver* InNetDriver)
+	{
+		return CommonActorStuff(EntityId, Entity, InNetDriver) && !AuthSubview->IsEntityComplete(EntityId);
+	}
+
+	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator)
+	{
+		return FAuthoritySubviewSetup::GetCallbacks(Coordinator);
+	}
+};
+
+template <typename TCallable, typename... TArgs>
+FFilterPredicate GetRoleFilterPredicate(const FSubView& SubView, bool bIsServer, TCallable RolePredicate, TArgs... Args)
+{
+	return [&SubView, bIsServer, RolePredicate, Args = TTuple<TArgs...>(Args...)](const Worker_EntityId EntityId,
+																				  const EntityViewElement& Entity) -> bool {
+		if (!CanSpawnActorEntity(SubView, bIsServer, EntityId, Entity))
+		{
+			return false;
+		}
+
+		return Args.ApplyAfter(RolePredicate, EntityId, Entity);
 	};
 }
 
 ActorHandler::ActorHandler(USpatialNetDriver& InNetDriver, ViewCoordinator& Coordinator)
-	: ActorSubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, &FActorEntityRecognizer::Filter,
-											 FSubView::NoDispatcherCallbacks))
-	, AutonomousProxySubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetFilterPredicate(*this, 1),
-													   FRoleEntityRecognizer::GetSubviewCallbacks(Coordinator)))
-	, ServerAuthoritySubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetFilterPredicate(*this, 2),
-													   FRoleEntityRecognizer::GetSubviewCallbacks(Coordinator)))
-	, SimulatedProxySubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID, GetFilterPredicate(*this, 3),
-													  FRoleEntityRecognizer::GetSubviewCallbacks(Coordinator)))
-	, AutonomousProxyEntityRecognizer(ActorSubView, InNetDriver.IsServer())
-	, ServerAuthorityEntityRecognizer(ActorSubView, InNetDriver.IsServer())
-	, SimulatedProxyEntityRecognizer(ActorSubView, ServerAuthoritySubView, AutonomousProxySubView, InNetDriver.IsServer())
+	: ActorSubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, &FilterActors,
+											 { Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId) }))
+	, ServerAuthoritySubView(Coordinator.CreateSubView(
+		  SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
+		  GetRoleFilterPredicate(ActorSubView, InNetDriver.IsServer(), &FAuthoritySubviewSetup::IsAuthorityActorEntity, &InNetDriver),
+		  FAuthoritySubviewSetup::GetCallbacks(Coordinator)))
+	, SimulatedProxySubView(Coordinator.CreateSubView(
+		  SpatialConstants::ACTOR_TAG_COMPONENT_ID,
+		  GetRoleFilterPredicate(ActorSubView, InNetDriver.IsServer(), &FSimulatedSubviewSetup::IsSimulatedActorEntity,
+								 &ServerAuthoritySubView, &InNetDriver),
+		  FSimulatedSubviewSetup::GetCallbacks(Coordinator)))
 	, NetDriver(InNetDriver)
 {
 }
@@ -420,7 +473,7 @@ static const TCHAR* LexToCharArray(const ENetMode NetMode)
 	case NM_Client:
 		return TEXT("Client");
 	default:
-		check(false);
+		checkNoEntry();
 		return TEXT("Invalid");
 	}
 }
@@ -433,20 +486,6 @@ void ActorHandler::Advance(ActorSystem& InActorSystem)
 	FActorEntityHandlerBase Authority;
 	FActorEntityHandlerBase Simulated;
 
-	const TSet<Worker_EntityId_Key> AutonomousAndServerComplete =
-		AutonomousProxySubView.GetCompleteEntities().Intersect(ServerAuthoritySubView.GetCompleteEntities());
-	for (const Worker_EntityId AutonomousAndServerComplete1 : AutonomousAndServerComplete)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Entity %lld is doubly complete on autonomous and server"), AutonomousAndServerComplete1);
-	}
-
-	const TSet<Worker_EntityId_Key> AutonomousAndSimulatedComplete =
-		AutonomousProxySubView.GetCompleteEntities().Intersect(SimulatedProxySubView.GetCompleteEntities());
-	for (const Worker_EntityId AutonomousAndServerComplete1 : AutonomousAndSimulatedComplete)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Entity %lld is doubly complete on autonomous and simulated"), AutonomousAndServerComplete1);
-	}
-
 	const TSet<Worker_EntityId_Key> ServerAndSimulatedComplete =
 		ServerAuthoritySubView.GetCompleteEntities().Intersect(SimulatedProxySubView.GetCompleteEntities());
 	for (const Worker_EntityId AutonomousAndServerComplete1 : ServerAndSimulatedComplete)
@@ -455,11 +494,9 @@ void ActorHandler::Advance(ActorSystem& InActorSystem)
 			   AutonomousAndServerComplete1);
 	}
 
-	Autonomous.ProcessRemoves(AutonomousProxySubView.GetViewDelta());
 	Authority.ProcessRemoves(ServerAuthoritySubView.GetViewDelta());
 	Simulated.ProcessRemoves(SimulatedProxySubView.GetViewDelta());
 
-	Autonomous.ProcessAdds(AutonomousProxySubView.GetViewDelta());
 	Authority.ProcessAdds(ServerAuthoritySubView.GetViewDelta());
 	Simulated.ProcessAdds(SimulatedProxySubView.GetViewDelta());
 }
