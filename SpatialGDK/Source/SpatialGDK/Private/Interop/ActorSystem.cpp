@@ -150,9 +150,19 @@ bool FilterActors(const Worker_EntityId EntityId, const EntityViewElement& ViewE
 
 ActorSystem* GActorSystem = nullptr;
 
+struct FActorEntitySharedData
+{
+	TSet<Worker_EntityId_Key> PresentEntities;
+};
+
 class FActorEntityHandlerBase
 {
 public:
+	FActorEntityHandlerBase(FActorEntitySharedData& InSharedData)
+		: SharedData(InSharedData)
+	{
+	}
+
 	virtual ~FActorEntityHandlerBase() = default;
 
 	void ProcessRemoves(const FSubViewDelta& ViewDelta) { ProcessViewDelta(ViewDelta, false); }
@@ -165,30 +175,72 @@ public:
 		{
 			if (Delta.Type == (bProcessAdds ? EntityDelta::ADD : EntityDelta::REMOVE) || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
 			{
-				ProcessEntityChange(Delta.EntityId, bProcessAdds);
+				ProcessEntityChange(Delta, bProcessAdds);
 			}
 		}
 	}
 
-	virtual void ProcessEntityChange(const Worker_EntityId EntityId, bool bProcessAdds)
+	virtual void ProcessEntityChange(const EntityDelta& Delta, bool bProcessAdds)
 	{
 		if (bProcessAdds)
 		{
-			GActorSystem->EntityAdded(EntityId);
-		}
-		else
-		{
-			GActorSystem->EntityRemoved(EntityId);
+			if (!SharedData.PresentEntities.Contains(Delta.EntityId))
+			{
+				GActorSystem->EntityAdded(Delta.EntityId);
+
+				SharedData.PresentEntities.Emplace(Delta.EntityId);
+			}
 		}
 	}
+
+	void ProcessUpdates(const FSubViewDelta& SubViewDelta);
+
+protected:
+	FActorEntitySharedData& SharedData;
+};
+
+class FAuthorityActorEntityHandler : public FActorEntityHandlerBase
+{
+public:
+	explicit FAuthorityActorEntityHandler(FActorEntitySharedData& InSharedData, bool bInIsServer)
+		: FActorEntityHandlerBase(InSharedData)
+		, bIsServer(bInIsServer)
+	{
+	}
+
+	virtual void ProcessEntityChange(const EntityDelta& Delta, bool bProcessAdds) override
+	{
+		const Worker_EntityId EntityId = Delta.EntityId;
+
+		const bool bOperatingOnPresentEntity = SharedData.PresentEntities.Contains(EntityId);
+
+		if (bOperatingOnPresentEntity)
+		{
+			if (bProcessAdds)
+			{
+				// authority gained
+				GActorSystem->AuthorityGained(
+					EntityId, bIsServer ? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID : SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+			}
+			else
+			{
+				GActorSystem->AuthorityLost(
+					EntityId, bIsServer ? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID : SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+			}
+
+			return;
+		}
+
+		FActorEntityHandlerBase::ProcessEntityChange(Delta, bProcessAdds);
+	}
+
+	bool bIsServer;
 };
 
 class ActorHandler
 {
 public:
 	explicit ActorHandler(USpatialNetDriver& InNetDriver, ViewCoordinator& Coordinator);
-	void SpawnCompleteOwningActor(const Worker_EntityId EntityId);
-	void InitializeNewlyCompleteAutonomousActor(const Worker_EntityId ValidAutonomousProxyActorEntityId, AActor& Actor);
 	void Advance(ActorSystem& InActorSystem);
 
 public:
@@ -196,10 +248,14 @@ public:
 
 	const FSubView& ActorSubView;
 	const FSubView& ServerAuthoritySubView;
+	const FSubView& AutonomousProxySubView;
 	const FSubView& SimulatedProxySubView;
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> Actors;
 
 	USpatialNetDriver& NetDriver;
+
+private:
+	FActorEntitySharedData SharedData;
 };
 
 static bool CommonActorStuff(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver* InNetDriver)
@@ -238,15 +294,40 @@ struct FAuthoritySubviewSetup
 {
 	static bool IsAuthorityActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver* InNetDriver)
 	{
-		return CommonActorStuff(EntityId, Element, InNetDriver);
+		return CommonActorStuff(EntityId, Element, InNetDriver)
+			   && Element.Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
 	}
 
 	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator)
 	{
 		const TArray<FDispatcherRefreshCallback> Base{
-			// TODO: Move Tombstone refresh callback to a common place with the actor subview filtering
+			// TODO: Move Tombstone refresh callback to a common place with the main actor subview filtering
 			Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
-			Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId)
+			Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
+			Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
+
+		};
+		return Base;
+	}
+};
+
+struct FAutonomousSubviewSetup
+{
+	static bool IsAutonomousActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element, const FSubView* AuthSubView,
+										USpatialNetDriver* InNetDriver)
+	{
+		return CommonActorStuff(EntityId, Element, InNetDriver) && !AuthSubView->IsEntityComplete(EntityId)
+			   && Element.Authority.Contains(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+	}
+
+	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator)
+	{
+		const TArray<FDispatcherRefreshCallback> Base{
+			// TODO: Move Tombstone refresh callback to a common place with the main actor subview filtering
+			Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
+			Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
+			Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID),
+			Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
 		};
 		return Base;
 	}
@@ -255,14 +336,22 @@ struct FAuthoritySubviewSetup
 struct FSimulatedSubviewSetup
 {
 	static bool IsSimulatedActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Entity, const FSubView* AuthSubview,
-									   USpatialNetDriver* InNetDriver)
+									   const FSubView* AutonomousSubview, USpatialNetDriver* InNetDriver)
 	{
-		return CommonActorStuff(EntityId, Entity, InNetDriver) && !AuthSubview->IsEntityComplete(EntityId);
+		return CommonActorStuff(EntityId, Entity, InNetDriver) && !AuthSubview->IsEntityComplete(EntityId)
+			   && !AutonomousSubview->IsEntityComplete(EntityId);
 	}
 
 	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator)
 	{
-		return FAuthoritySubviewSetup::GetCallbacks(Coordinator);
+		const TArray<FDispatcherRefreshCallback> Base{
+			// TODO: Move Tombstone refresh callback to a common place with the main actor subview filtering
+			Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
+			Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
+			Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID),
+			Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
+		};
+		return Base;
 	}
 };
 
@@ -280,6 +369,40 @@ FFilterPredicate GetRoleFilterPredicate(const FSubView& SubView, TCallable RoleP
 	};
 }
 
+void FActorEntityHandlerBase::ProcessUpdates(const FSubViewDelta& SubViewDelta)
+{
+	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
+	{
+		switch (Delta.Type)
+		{
+		case EntityDelta::UPDATE:
+		{
+			for (const ComponentChange& Change : Delta.ComponentsAdded)
+			{
+				GActorSystem->ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.Data);
+				GActorSystem->ComponentAdded(Delta.EntityId, Change.ComponentId, Change.Data);
+			}
+			for (const ComponentChange& Change : Delta.ComponentUpdates)
+			{
+				GActorSystem->ComponentUpdated(Delta.EntityId, Change.ComponentId, Change.Update);
+			}
+			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
+			{
+				GActorSystem->ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
+				GActorSystem->ComponentAdded(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
+			}
+			for (const ComponentChange& Change : Delta.ComponentsRemoved)
+			{
+				GActorSystem->ComponentRemoved(Delta.EntityId, Change.ComponentId);
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
+}
+
 ActorHandler::ActorHandler(USpatialNetDriver& InNetDriver, ViewCoordinator& Coordinator)
 	: ActorSubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, &FilterActors,
 											 { Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId) }))
@@ -287,30 +410,20 @@ ActorHandler::ActorHandler(USpatialNetDriver& InNetDriver, ViewCoordinator& Coor
 		  Coordinator.CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
 									GetRoleFilterPredicate(ActorSubView, &FAuthoritySubviewSetup::IsAuthorityActorEntity, &InNetDriver),
 									FAuthoritySubviewSetup::GetCallbacks(Coordinator)))
-	, SimulatedProxySubView(Coordinator.CreateSubView(
-		  SpatialConstants::ACTOR_TAG_COMPONENT_ID,
-		  GetRoleFilterPredicate(ActorSubView, &FSimulatedSubviewSetup::IsSimulatedActorEntity, &ServerAuthoritySubView, &InNetDriver),
-		  FSimulatedSubviewSetup::GetCallbacks(Coordinator)))
+	, AutonomousProxySubView(Coordinator.CreateSubView(
+		  SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
+		  GetRoleFilterPredicate(ActorSubView, &FAutonomousSubviewSetup::IsAutonomousActorEntity, &ServerAuthoritySubView, &InNetDriver),
+		  FAutonomousSubviewSetup::GetCallbacks(Coordinator)))
+	, SimulatedProxySubView(
+		  Coordinator.CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID,
+									GetRoleFilterPredicate(ActorSubView, &FSimulatedSubviewSetup::IsSimulatedActorEntity,
+														   &ServerAuthoritySubView, &AutonomousProxySubView, &InNetDriver),
+									FSimulatedSubviewSetup::GetCallbacks(Coordinator)))
 	, NetDriver(InNetDriver)
 {
 }
 
-void ProcessAddRemove(const FSubView& SubView, TSet<Worker_EntityId_Key>& Added, TSet<Worker_EntityId_Key>& Removed)
-{
-	for (const EntityDelta& Delta : SubView.GetViewDelta().EntityDeltas)
-	{
-		if (Delta.Type == EntityDelta::ADD)
-		{
-			Added.Emplace(Delta.EntityId);
-		}
-		else if (Delta.Type == EntityDelta::REMOVE)
-		{
-			Removed.Emplace(Delta.EntityId);
-		}
-	}
-}
-
-static const TCHAR* LexToCharArray(const ENetMode NetMode)
+static const TCHAR* ToCharArray(const ENetMode NetMode)
 {
 	switch (NetMode)
 	{
@@ -332,36 +445,42 @@ void ActorHandler::Advance(ActorSystem& InActorSystem)
 {
 	TGuardValue<ActorSystem*> SystemGuard(GActorSystem, &InActorSystem);
 
-	FActorEntityHandlerBase Autonomous;
-	FActorEntityHandlerBase Authority;
-	FActorEntityHandlerBase Simulated;
+	FAuthorityActorEntityHandler Autonomous(SharedData, false);
+	FAuthorityActorEntityHandler Authority(SharedData, true);
+	FActorEntityHandlerBase Simulated(SharedData);
 
 	const TSet<Worker_EntityId_Key> ServerAndSimulatedComplete =
 		ServerAuthoritySubView.GetCompleteEntities().Intersect(SimulatedProxySubView.GetCompleteEntities());
 	for (const Worker_EntityId AutonomousAndServerComplete1 : ServerAndSimulatedComplete)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[%s] Entity %lld is doubly complete on simulated and server"), LexToCharArray(GetWorld().GetNetMode()),
+		UE_LOG(LogTemp, Error, TEXT("[%s] Entity %lld is doubly complete on simulated and server"), ToCharArray(GetWorld().GetNetMode()),
 			   AutonomousAndServerComplete1);
 	}
 
+	Autonomous.ProcessRemoves(AutonomousProxySubView.GetViewDelta());
 	Authority.ProcessRemoves(ServerAuthoritySubView.GetViewDelta());
 	Simulated.ProcessRemoves(SimulatedProxySubView.GetViewDelta());
 
+	Autonomous.ProcessUpdates(AutonomousProxySubView.GetViewDelta());
+	Authority.ProcessUpdates(ServerAuthoritySubView.GetViewDelta());
+	Simulated.ProcessUpdates(SimulatedProxySubView.GetViewDelta());
+
+	Autonomous.ProcessAdds(AutonomousProxySubView.GetViewDelta());
 	Authority.ProcessAdds(ServerAuthoritySubView.GetViewDelta());
 	Simulated.ProcessAdds(SimulatedProxySubView.GetViewDelta());
+
+	for (const EntityDelta& Delta : ActorSubView.GetViewDelta().EntityDeltas)
+	{
+		if (Delta.Type == EntityDelta::REMOVE)
+		{
+			InActorSystem.EntityRemoved(Delta.EntityId);
+
+			const int32 EntitiesRemoved = SharedData.PresentEntities.Remove(Delta.EntityId);
+
+			check(EntitiesRemoved != 0);
+		}
+	}
 }
-
-void ActorHandler::SpawnCompleteOwningActor(const Worker_EntityId EntityId)
-{
-	const UnrealMetadata EntityMetadata(
-		ActorSubView.GetView()[EntityId].Components.FindByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId })->GetUnderlying());
-
-	AActor* SpawnedOwningActor = GetWorld().SpawnActor(EntityMetadata.NativeClass.Get());
-
-	Actors.Emplace(EntityId, SpawnedOwningActor);
-}
-
-void ActorHandler::InitializeNewlyCompleteAutonomousActor(const Worker_EntityId ValidAutonomousProxyActorEntityId, AActor& Actor) {}
 
 UWorld& ActorHandler::GetWorld()
 {
@@ -381,66 +500,6 @@ ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InTombs
 
 void ActorSystem::Advance()
 {
-	for (const EntityDelta& Delta : ActorSubView->GetViewDelta().EntityDeltas)
-	{
-		switch (Delta.Type)
-		{
-		case EntityDelta::UPDATE:
-		{
-			// We process authority lost temporarily twice. Once at the start, to lose authority, and again at the end
-			// to regain it. Why? Because if we temporarily lost authority, we may see surprising updates during the
-			// tick, such as updates for components we would otherwise think we were authoritative over and ignore them.
-			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
-			{
-				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
-			}
-			for (const AuthorityChange& Change : Delta.AuthorityLost)
-			{
-				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
-			}
-			for (const ComponentChange& Change : Delta.ComponentsAdded)
-			{
-				ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.Data);
-				ComponentAdded(Delta.EntityId, Change.ComponentId, Change.Data);
-			}
-			for (const ComponentChange& Change : Delta.ComponentUpdates)
-			{
-				ComponentUpdated(Delta.EntityId, Change.ComponentId, Change.Update);
-			}
-			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
-			{
-				ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
-				ComponentAdded(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
-			}
-			for (const ComponentChange& Change : Delta.ComponentsRemoved)
-			{
-				ComponentRemoved(Delta.EntityId, Change.ComponentId);
-			}
-			for (const AuthorityChange& Change : Delta.AuthorityGained)
-			{
-				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
-			}
-			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
-			{
-				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
-			}
-			break;
-		}
-		// case EntityDelta::ADD:
-		// 	EntityAdded(Delta.EntityId);
-		// 	break;
-		// case EntityDelta::REMOVE:
-		// 	EntityRemoved(Delta.EntityId);
-		// 	break;
-		// case EntityDelta::TEMPORARILY_REMOVED:
-		// 	EntityRemoved(Delta.EntityId);
-		// 	EntityAdded(Delta.EntityId);
-		// 	break;
-		default:
-			break;
-		}
-	}
-
 	Handler->Advance(*this);
 
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
