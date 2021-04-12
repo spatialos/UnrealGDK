@@ -439,6 +439,8 @@ void USpatialNetDriverDebugContext::TickServer()
 				{
 					FWorkerComponentData CompData = Data.Component.CreateDebugComponent();
 					NetDriver->Connection->SendAddComponent(Entity, &CompData);
+					NetDriver->Connection->GetCoordinator().RefreshEntityCompleteness(Entity);
+
 					Data.Entity = Entity;
 					Data.bAdded = true;
 				}
