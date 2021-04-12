@@ -11,10 +11,6 @@ component ActorTag {
     id = 2002;
 }
 
-component ActorNonAuthTag {
-    id = 2003;
-}
-
 component LBTag {
     id = 2005;
 }

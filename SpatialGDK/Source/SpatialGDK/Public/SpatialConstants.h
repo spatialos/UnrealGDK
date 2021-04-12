@@ -145,7 +145,6 @@ const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 const Worker_ComponentId FIRST_EC_COMPONENT_ID = 2001;
 const Worker_ComponentId ACTOR_AUTH_TAG_COMPONENT_ID = 2001;
 const Worker_ComponentId ACTOR_TAG_COMPONENT_ID = 2002;
-const Worker_ComponentId ACTOR_NON_AUTH_TAG_COMPONENT_ID = 2003;
 const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
 
 const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;

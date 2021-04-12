@@ -139,15 +139,6 @@ private:
 
 struct FSubViewDelta;
 
-bool FilterActors(const Worker_EntityId EntityId, const EntityViewElement& ViewElement)
-{
-	if (ViewElement.Components.ContainsByPredicate(ComponentIdEquality{ Tombstone::ComponentId }))
-	{
-		return false;
-	}
-	return true;
-}
-
 ActorSystem* GActorSystem = nullptr;
 
 struct FActorEntitySharedData
@@ -258,6 +249,26 @@ private:
 	FActorEntitySharedData SharedData;
 };
 
+static TArray<FDispatcherRefreshCallback> CombineCallbacks(TArray<FDispatcherRefreshCallback> Lhs,
+														   const TArray<FDispatcherRefreshCallback>& Rhs)
+{
+	Lhs.Append(Rhs);
+	return Rhs;
+}
+
+struct FMainActorSubviewSetup
+{
+	static bool IsActorEntity(const Worker_EntityId EntityId, const EntityViewElement& ViewElement)
+	{
+		return !ViewElement.Components.ContainsByPredicate(ComponentIdEquality{ Tombstone::ComponentId });
+	}
+
+	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator)
+	{
+		return { Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId) };
+	}
+};
+
 static bool CommonActorStuff(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver* InNetDriver)
 {
 	if (InNetDriver->AsyncPackageLoadFilter != nullptr)
@@ -294,20 +305,18 @@ struct FAuthoritySubviewSetup
 {
 	static bool IsAuthorityActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver* InNetDriver)
 	{
-		return CommonActorStuff(EntityId, Element, InNetDriver)
-			   && Element.Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
+		return Element.Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+			   && CommonActorStuff(EntityId, Element, InNetDriver);
 	}
 
 	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator)
 	{
-		const TArray<FDispatcherRefreshCallback> Base{
-			// TODO: Move Tombstone refresh callback to a common place with the main actor subview filtering
-			Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
-			Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
-			Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
-
-		};
-		return Base;
+		return CombineCallbacks(FMainActorSubviewSetup::GetCallbacks(Coordinator),
+								{
+									Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID),
+									Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
+									Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
+								});
 	}
 };
 
@@ -316,20 +325,16 @@ struct FAutonomousSubviewSetup
 	static bool IsAutonomousActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element, const FSubView* AuthSubView,
 										USpatialNetDriver* InNetDriver)
 	{
-		return CommonActorStuff(EntityId, Element, InNetDriver) && !AuthSubView->IsEntityComplete(EntityId)
-			   && Element.Authority.Contains(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+		return !AuthSubView->IsEntityComplete(EntityId) && Element.Authority.Contains(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
+			   && CommonActorStuff(EntityId, Element, InNetDriver);
 	}
 
 	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator)
 	{
-		const TArray<FDispatcherRefreshCallback> Base{
-			// TODO: Move Tombstone refresh callback to a common place with the main actor subview filtering
-			Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
-			Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
-			Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID),
-			Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
-		};
-		return Base;
+		return CombineCallbacks(FAuthoritySubviewSetup::GetCallbacks(Coordinator),
+								{
+									Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID),
+								});
 	}
 };
 
@@ -344,14 +349,7 @@ struct FSimulatedSubviewSetup
 
 	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator)
 	{
-		const TArray<FDispatcherRefreshCallback> Base{
-			// TODO: Move Tombstone refresh callback to a common place with the main actor subview filtering
-			Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
-			Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
-			Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID),
-			Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
-		};
-		return Base;
+		return FAutonomousSubviewSetup::GetCallbacks(Coordinator);
 	}
 };
 
@@ -404,8 +402,8 @@ void FActorEntityHandlerBase::ProcessUpdates(const FSubViewDelta& SubViewDelta)
 }
 
 ActorHandler::ActorHandler(USpatialNetDriver& InNetDriver, ViewCoordinator& Coordinator)
-	: ActorSubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, &FilterActors,
-											 { Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId) }))
+	: ActorSubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, &FMainActorSubviewSetup::IsActorEntity,
+											 FMainActorSubviewSetup::GetCallbacks(Coordinator)))
 	, ServerAuthoritySubView(
 		  Coordinator.CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
 									GetRoleFilterPredicate(ActorSubView, &FAuthoritySubviewSetup::IsAuthorityActorEntity, &InNetDriver),

@@ -116,12 +116,6 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate(AActor* InActor, co
 	return CreateInterest(InActor, InInfo, InEntityId).CreateInterestUpdate();
 }
 
-TArray<Worker_ComponentId> RemoveTagComponent(TArray<Worker_ComponentId> Components)
-{
-	Components.Remove(SpatialConstants::ACTOR_NON_AUTH_TAG_COMPONENT_ID);
-	return Components;
-}
-
 Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy) const
 {
 	// Build the Interest component as we go by updating the component-> query list mappings.
@@ -191,9 +185,7 @@ void InterestFactory::AddLoadBalancingInterestQuery(const UAbstractLBStrategy* L
 {
 	// Add load balancing query
 	Query PartitionQuery{};
-	PartitionQuery.ResultComponentIds = LBStrategy->GetLocalVirtualWorkerId() == VirtualWorker
-											? RemoveTagComponent(ServerNonAuthInterestResultType.ComponentIds)
-											: ServerNonAuthInterestResultType.ComponentIds;
+	PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
 	PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
 	PartitionQuery.Constraint = LBStrategy->GetWorkerInterestQueryConstraint(VirtualWorker);
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, PartitionQuery);
