@@ -116,27 +116,9 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 	// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
-	// However, we still want to apply this empty data, so we need to reconstruct the full
-	// list of field IDs for that component type (Data, OwnerOnly).
+	// However, we still want to apply this empty data, so we need the full list of field IDs for
+	// that component type (Data, OwnerOnly, Handover, etc.).
 	const TArray<Schema_FieldId>& InitialIds = ClassInfoManager->GetFieldIdsByComponentId(ComponentId);
-#if DO_GUARD_SLOW
-	TArray<uint32> ReceivedIds;
-	ReceivedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
-	Schema_GetUniqueFieldIds(ComponentObject, ReceivedIds.GetData());
-
-	auto CheckSubsetLambda = [](const TArray<Schema_FieldId>& Subset, const TArray<Schema_FieldId>& Superset) {
-		for (Schema_FieldId Field : Subset)
-		{
-			if (!Superset.Contains(Field))
-			{
-				return false;
-			}
-		}
-		return true;
-	};
-	checkfSlow(CheckSubsetLambda(ReceivedIds, InitialIds), TEXT("The list of received IDs is not a subset of the entire list of field IDs "
-																"associated with the component, this should not happen."));
-#endif
 
 	if (bIsHandover)
 	{
