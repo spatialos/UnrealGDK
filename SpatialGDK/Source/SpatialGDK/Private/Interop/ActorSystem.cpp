@@ -171,18 +171,7 @@ public:
 		}
 	}
 
-	virtual void ProcessEntityChange(const EntityDelta& Delta, bool bProcessAdds)
-	{
-		if (bProcessAdds)
-		{
-			if (!SharedData.PresentEntities.Contains(Delta.EntityId))
-			{
-				GActorSystem->EntityAdded(Delta.EntityId);
-
-				SharedData.PresentEntities.Emplace(Delta.EntityId);
-			}
-		}
-	}
+	virtual void ProcessEntityChange(const EntityDelta& Delta, bool bProcessAdds);
 
 	void ProcessUpdates(const FSubViewDelta& SubViewDelta);
 
@@ -199,34 +188,36 @@ public:
 	{
 	}
 
-	virtual void ProcessEntityChange(const EntityDelta& Delta, bool bProcessAdds) override
-	{
-		const Worker_EntityId EntityId = Delta.EntityId;
-
-		const bool bOperatingOnPresentEntity = SharedData.PresentEntities.Contains(EntityId);
-
-		if (bOperatingOnPresentEntity)
-		{
-			if (bProcessAdds)
-			{
-				// authority gained
-				GActorSystem->AuthorityGained(
-					EntityId, bIsServer ? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID : SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
-			}
-			else
-			{
-				GActorSystem->AuthorityLost(
-					EntityId, bIsServer ? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID : SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
-			}
-
-			return;
-		}
-
-		FActorEntityHandlerBase::ProcessEntityChange(Delta, bProcessAdds);
-	}
+	virtual void ProcessEntityChange(const EntityDelta& Delta, bool bProcessAdds) override;
 
 	bool bIsServer;
 };
+
+void FAuthorityActorEntityHandler::ProcessEntityChange(const EntityDelta& Delta, bool bProcessAdds)
+{
+	const Worker_EntityId EntityId = Delta.EntityId;
+
+	const bool bOperatingOnPresentEntity = SharedData.PresentEntities.Contains(EntityId);
+
+	if (bOperatingOnPresentEntity)
+	{
+		if (bProcessAdds)
+		{
+			// authority gained
+			GActorSystem->AuthorityGained(
+				EntityId, bIsServer ? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID : SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+		}
+		else
+		{
+			GActorSystem->AuthorityLost(
+				EntityId, bIsServer ? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID : SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+		}
+
+		return;
+	}
+
+	FActorEntityHandlerBase::ProcessEntityChange(Delta, bProcessAdds);
+}
 
 class ActorHandler
 {
@@ -249,13 +240,6 @@ private:
 	FActorEntitySharedData SharedData;
 };
 
-static TArray<FDispatcherRefreshCallback> CombineCallbacks(TArray<FDispatcherRefreshCallback> Lhs,
-														   const TArray<FDispatcherRefreshCallback>& Rhs)
-{
-	Lhs.Append(Rhs);
-	return Rhs;
-}
-
 struct FMainActorSubviewSetup
 {
 	static bool IsActorEntity(const Worker_EntityId EntityId, const EntityViewElement& ViewElement)
@@ -269,137 +253,33 @@ struct FMainActorSubviewSetup
 	}
 };
 
-static bool CommonActorStuff(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver* InNetDriver)
-{
-	if (InNetDriver->AsyncPackageLoadFilter != nullptr)
-	{
-		SpatialGDK::UnrealMetadata Metadata(
-			Element.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::UNREAL_METADATA_COMPONENT_ID })
-				->GetUnderlying());
-
-		if (!InNetDriver->AsyncPackageLoadFilter->IsAssetLoadedOrTriggerAsyncLoad(EntityId, Metadata.ClassPath))
-		{
-			return false;
-		}
-	}
-
-	if (InNetDriver->InitialOnlyFilter != nullptr)
-	{
-		if (Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::INITIAL_ONLY_PRESENCE_COMPONENT_ID }))
-		{
-			if (!InNetDriver->InitialOnlyFilter->HasInitialOnlyDataOrRequestIfAbsent(EntityId))
-			{
-				return false;
-			}
-		}
-	}
-
-	// If we see a player controller component on this entity and we're a server we should hold it back until we
-	// also have the partition component.
-	return !InNetDriver->IsServer()
-		   || Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID })
-				  == Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID });
-}
+bool CommonActorStuff(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver* InNetDriver);
 
 struct FAuthoritySubviewSetup
 {
-	static bool IsAuthorityActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver* InNetDriver)
-	{
-		return Element.Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-			   && CommonActorStuff(EntityId, Element, InNetDriver);
-	}
+	static bool IsAuthorityActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver* InNetDriver);
 
-	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator)
-	{
-		return CombineCallbacks(FMainActorSubviewSetup::GetCallbacks(Coordinator),
-								{
-									Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID),
-									Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
-									Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
-								});
-	}
+	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator);
 };
 
 struct FAutonomousSubviewSetup
 {
 	static bool IsAutonomousActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element, const FSubView* AuthSubView,
-										USpatialNetDriver* InNetDriver)
-	{
-		return !AuthSubView->IsEntityComplete(EntityId) && Element.Authority.Contains(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
-			   && CommonActorStuff(EntityId, Element, InNetDriver);
-	}
+										USpatialNetDriver* InNetDriver);
 
-	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator)
-	{
-		return CombineCallbacks(FAuthoritySubviewSetup::GetCallbacks(Coordinator),
-								{
-									Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID),
-								});
-	}
+	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator);
 };
 
 struct FSimulatedSubviewSetup
 {
 	static bool IsSimulatedActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Entity, const FSubView* AuthSubview,
-									   const FSubView* AutonomousSubview, USpatialNetDriver* InNetDriver)
-	{
-		return CommonActorStuff(EntityId, Entity, InNetDriver) && !AuthSubview->IsEntityComplete(EntityId)
-			   && !AutonomousSubview->IsEntityComplete(EntityId);
-	}
+									   const FSubView* AutonomousSubview, USpatialNetDriver* InNetDriver);
 
-	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator)
-	{
-		return FAutonomousSubviewSetup::GetCallbacks(Coordinator);
-	}
+	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator);
 };
 
 template <typename TCallable, typename... TArgs>
-FFilterPredicate GetRoleFilterPredicate(const FSubView& SubView, TCallable RolePredicate, TArgs... Args)
-{
-	return [&SubView, RolePredicate, Args = TTuple<TArgs...>(Args...)](const Worker_EntityId EntityId,
-																	   const EntityViewElement& Entity) -> bool {
-		if (!SubView.IsEntityComplete(EntityId))
-		{
-			return false;
-		}
-
-		return Args.ApplyAfter(RolePredicate, EntityId, Entity);
-	};
-}
-
-void FActorEntityHandlerBase::ProcessUpdates(const FSubViewDelta& SubViewDelta)
-{
-	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
-	{
-		switch (Delta.Type)
-		{
-		case EntityDelta::UPDATE:
-		{
-			for (const ComponentChange& Change : Delta.ComponentsAdded)
-			{
-				GActorSystem->ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.Data);
-				GActorSystem->ComponentAdded(Delta.EntityId, Change.ComponentId, Change.Data);
-			}
-			for (const ComponentChange& Change : Delta.ComponentUpdates)
-			{
-				GActorSystem->ComponentUpdated(Delta.EntityId, Change.ComponentId, Change.Update);
-			}
-			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
-			{
-				GActorSystem->ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
-				GActorSystem->ComponentAdded(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
-			}
-			for (const ComponentChange& Change : Delta.ComponentsRemoved)
-			{
-				GActorSystem->ComponentRemoved(Delta.EntityId, Change.ComponentId);
-			}
-			break;
-		}
-		default:
-			break;
-		}
-	}
-}
+FFilterPredicate GetRoleFilterPredicate(const FSubView& SubView, TCallable RolePredicate, TArgs... Args);
 
 ActorHandler::ActorHandler(USpatialNetDriver& InNetDriver, ViewCoordinator& Coordinator)
 	: ActorSubView(Coordinator.CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, &FMainActorSubviewSetup::IsActorEntity,
@@ -421,23 +301,7 @@ ActorHandler::ActorHandler(USpatialNetDriver& InNetDriver, ViewCoordinator& Coor
 {
 }
 
-static const TCHAR* ToCharArray(const ENetMode NetMode)
-{
-	switch (NetMode)
-	{
-	case NM_Standalone:
-		return TEXT("Standalone");
-	case NM_DedicatedServer:
-		return TEXT("DedicatedServer");
-	case NM_ListenServer:
-		return TEXT("ListenServer");
-	case NM_Client:
-		return TEXT("Client");
-	default:
-		checkNoEntry();
-		return TEXT("Invalid");
-	}
-}
+const TCHAR* ToCharArray(const ENetMode NetMode);
 
 void ActorHandler::Advance(ActorSystem& InActorSystem)
 {
@@ -483,6 +347,168 @@ void ActorHandler::Advance(ActorSystem& InActorSystem)
 UWorld& ActorHandler::GetWorld()
 {
 	return *NetDriver.GetWorld();
+}
+
+const TCHAR* ToCharArray(const ENetMode NetMode)
+{
+	switch (NetMode)
+	{
+	case NM_Standalone:
+		return TEXT("Standalone");
+	case NM_DedicatedServer:
+		return TEXT("DedicatedServer");
+	case NM_ListenServer:
+		return TEXT("ListenServer");
+	case NM_Client:
+		return TEXT("Client");
+	default:
+		checkNoEntry();
+		return TEXT("Invalid");
+	}
+}
+
+template <typename TCallable, typename... TArgs>
+FFilterPredicate GetRoleFilterPredicate(const FSubView& SubView, TCallable RolePredicate, TArgs... Args)
+{
+	return [&SubView, RolePredicate, Args = TTuple<TArgs...>(Args...)](const Worker_EntityId EntityId,
+																	   const EntityViewElement& Entity) -> bool {
+		if (!SubView.IsEntityComplete(EntityId))
+		{
+			return false;
+		}
+
+		return Args.ApplyAfter(RolePredicate, EntityId, Entity);
+	};
+}
+
+static TArray<FDispatcherRefreshCallback> CombineCallbacks(TArray<FDispatcherRefreshCallback> Lhs,
+														   const TArray<FDispatcherRefreshCallback>& Rhs)
+{
+	Lhs.Append(Rhs);
+	return Rhs;
+}
+
+bool CommonActorStuff(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver* InNetDriver)
+{
+	if (InNetDriver->AsyncPackageLoadFilter != nullptr)
+	{
+		SpatialGDK::UnrealMetadata Metadata(
+			Element.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::UNREAL_METADATA_COMPONENT_ID })
+				->GetUnderlying());
+
+		if (!InNetDriver->AsyncPackageLoadFilter->IsAssetLoadedOrTriggerAsyncLoad(EntityId, Metadata.ClassPath))
+		{
+			return false;
+		}
+	}
+
+	if (InNetDriver->InitialOnlyFilter != nullptr)
+	{
+		if (Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::INITIAL_ONLY_PRESENCE_COMPONENT_ID }))
+		{
+			if (!InNetDriver->InitialOnlyFilter->HasInitialOnlyDataOrRequestIfAbsent(EntityId))
+			{
+				return false;
+			}
+		}
+	}
+
+	// If we see a player controller component on this entity and we're a server we should hold it back until we
+	// also have the partition component.
+	return !InNetDriver->IsServer()
+		   || Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID })
+				  == Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID });
+}
+
+bool FAuthoritySubviewSetup::IsAuthorityActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element,
+													USpatialNetDriver* InNetDriver)
+{
+	return Element.Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID) && CommonActorStuff(EntityId, Element, InNetDriver);
+}
+
+TArray<FDispatcherRefreshCallback> FAuthoritySubviewSetup::GetCallbacks(ViewCoordinator& Coordinator)
+{
+	return CombineCallbacks(FMainActorSubviewSetup::GetCallbacks(Coordinator),
+							{
+								Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID),
+								Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
+								Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
+							});
+}
+
+bool FAutonomousSubviewSetup::IsAutonomousActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element,
+													  const FSubView* AuthSubView, USpatialNetDriver* InNetDriver)
+{
+	return !AuthSubView->IsEntityComplete(EntityId) && Element.Authority.Contains(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
+		   && CommonActorStuff(EntityId, Element, InNetDriver);
+}
+
+TArray<FDispatcherRefreshCallback> FAutonomousSubviewSetup::GetCallbacks(ViewCoordinator& Coordinator)
+{
+	return CombineCallbacks(FAuthoritySubviewSetup::GetCallbacks(Coordinator),
+							{
+								Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID),
+							});
+}
+
+bool FSimulatedSubviewSetup::IsSimulatedActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Entity,
+													const FSubView* AuthSubview, const FSubView* AutonomousSubview,
+													USpatialNetDriver* InNetDriver)
+{
+	return CommonActorStuff(EntityId, Entity, InNetDriver) && !AuthSubview->IsEntityComplete(EntityId)
+		   && !AutonomousSubview->IsEntityComplete(EntityId);
+}
+
+TArray<FDispatcherRefreshCallback> FSimulatedSubviewSetup::GetCallbacks(ViewCoordinator& Coordinator)
+{
+	return FAutonomousSubviewSetup::GetCallbacks(Coordinator);
+}
+
+void FActorEntityHandlerBase::ProcessEntityChange(const EntityDelta& Delta, bool bProcessAdds)
+{
+	if (bProcessAdds)
+	{
+		if (!SharedData.PresentEntities.Contains(Delta.EntityId))
+		{
+			GActorSystem->EntityAdded(Delta.EntityId);
+
+			SharedData.PresentEntities.Emplace(Delta.EntityId);
+		}
+	}
+}
+
+void FActorEntityHandlerBase::ProcessUpdates(const FSubViewDelta& SubViewDelta)
+{
+	for (const EntityDelta& Delta : SubViewDelta.EntityDeltas)
+	{
+		switch (Delta.Type)
+		{
+		case EntityDelta::UPDATE:
+		{
+			for (const ComponentChange& Change : Delta.ComponentsAdded)
+			{
+				GActorSystem->ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.Data);
+				GActorSystem->ComponentAdded(Delta.EntityId, Change.ComponentId, Change.Data);
+			}
+			for (const ComponentChange& Change : Delta.ComponentUpdates)
+			{
+				GActorSystem->ComponentUpdated(Delta.EntityId, Change.ComponentId, Change.Update);
+			}
+			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
+			{
+				GActorSystem->ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
+				GActorSystem->ComponentAdded(Delta.EntityId, Change.ComponentId, Change.CompleteUpdate.Data);
+			}
+			for (const ComponentChange& Change : Delta.ComponentsRemoved)
+			{
+				GActorSystem->ComponentRemoved(Delta.EntityId, Change.ComponentId);
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
 }
 
 ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
