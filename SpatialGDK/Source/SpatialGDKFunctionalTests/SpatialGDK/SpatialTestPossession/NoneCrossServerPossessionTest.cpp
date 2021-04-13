@@ -53,6 +53,7 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 				{
 					AssertTrue(PlayerController->HasAuthority(), TEXT("PlayerController should HasAuthority"), PlayerController);
 					AssertTrue(Pawn->HasAuthority(), TEXT("Pawn should HasAuthority"), Pawn);
+					AddToOriginalPawns(PlayerController, PlayerController->GetPawn());
 					PlayerController->UnPossess();
 					PlayerController->RemotePossessOnServer(Pawn);
 				}
@@ -81,4 +82,30 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 			}
 			FinishStep();
 		});
+
+	AddStep(TEXT("Clean up the test"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
+		for (const auto& OriginalPawnPair : OriginalPawns)
+		{
+			if (OriginalPawnPair.Controller.Get() != nullptr && OriginalPawnPair.Controller.Get()->HasAuthority())
+			{
+				OriginalPawnPair.Controller.Get()->UnPossess();
+				OriginalPawnPair.Controller.Get()->RemotePossessOnServer(OriginalPawnPair.Pawn.Get());
+			}
+		}
+		FinishStep();
+	});
+
+	AddStep(TEXT("Wait for all controllers to migrate"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
+		for (const auto& OriginalPawnPair : OriginalPawns)
+		{
+			if (OriginalPawnPair.Controller.Get() != nullptr && OriginalPawnPair.Controller.Get()->HasAuthority())
+			{
+				RequireTrue(OriginalPawnPair.Pawn.Get()->HasAuthority(),
+							TEXT("We should have authority over both original pawn and player controller on their initial server"));
+				RequireTrue(OriginalPawnPair.Controller.Get()->GetPawn() == OriginalPawnPair.Pawn.Get(),
+							TEXT("The player controller should have possession over its original pawn"));
+			}
+		}
+		FinishStep();
+	});
 }

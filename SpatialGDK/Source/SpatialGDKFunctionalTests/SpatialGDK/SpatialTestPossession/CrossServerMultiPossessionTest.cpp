@@ -51,10 +51,11 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 		{
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 			{
-				ATestPossessionPlayerController* Controller = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-				if (Controller != nullptr)
+				ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
+				if (PlayerController != nullptr)
 				{
-					Controller->RemotePossessOnClient(Pawn, false);
+					AddToOriginalPawns(PlayerController, PlayerController->GetPawn());
+					PlayerController->RemotePossessOnClient(Pawn, false);
 				}
 			}
 		}
@@ -77,6 +78,34 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 					{
 						AssertTrue(PlayerController->HasMigrated(), TEXT("PlayerController should have migrated"), PlayerController);
 					}
+				}
+			}
+			FinishStep();
+		});
+
+	AddStep(TEXT("Clean up the test"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
+		for (const auto& OriginalPawnPair : OriginalPawns)
+		{
+			if (OriginalPawnPair.Controller.Get() != nullptr && OriginalPawnPair.Controller.Get()->HasAuthority())
+			{
+				OriginalPawnPair.Controller.Get()->UnPossess();
+				OriginalPawnPair.Controller.Get()->RemotePossessOnServer(OriginalPawnPair.Pawn.Get());
+			}
+		}
+		FinishStep();
+	});
+
+	AddStep(
+		TEXT("Wait for all controllers to migrate"), FWorkerDefinition::AllServers, nullptr, nullptr,
+		[this](float) {
+			for (const auto& OriginalPawnPair : OriginalPawns)
+			{
+				if (OriginalPawnPair.Controller.Get() != nullptr && OriginalPawnPair.Controller.Get()->HasAuthority())
+				{
+					RequireTrue(OriginalPawnPair.Pawn.Get()->HasAuthority(),
+								TEXT("We should have authority over both original pawn and player controller on their initial server"));
+					RequireTrue(OriginalPawnPair.Controller.Get()->GetPawn() == OriginalPawnPair.Pawn.Get(),
+								TEXT("The player controller should have possession over its original pawn"));
 				}
 			}
 			FinishStep();

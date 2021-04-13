@@ -31,39 +31,9 @@ void UCrossServerPossessionMap::CreateCustomContentForMap()
 {
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 
-	// Add the test
+	// Add the tests
 	AddActorToLevel<ACrossServerPossessionTest>(CurrentLevel, FTransform::Identity);
-
-	CrossServerPossessionMapPrivate::SetupWorldSettings(*World);
-}
-
-UCrossServerPossessionLockMap::UCrossServerPossessionLockMap()
-	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("CrossServerPossessionLockMap"))
-{
-	SetNumberOfClients(1);
-}
-
-void UCrossServerPossessionLockMap::CreateCustomContentForMap()
-{
-	ULevel* CurrentLevel = World->GetCurrentLevel();
-
-	// Add the test
 	AddActorToLevel<ACrossServerPossessionLockTest>(CurrentLevel, FTransform::Identity);
-
-	CrossServerPossessionMapPrivate::SetupWorldSettings(*World);
-}
-
-UNoneCrossServerPossessionMap::UNoneCrossServerPossessionMap()
-	: UGeneratedTestMap(EMapCategory::CI_NIGHTLY_SPATIAL_ONLY, TEXT("NoneCrossServerPossessionMap"))
-{
-	SetNumberOfClients(1);
-}
-
-void UNoneCrossServerPossessionMap::CreateCustomContentForMap()
-{
-	ULevel* CurrentLevel = World->GetCurrentLevel();
-
-	// Add the test
 	AddActorToLevel<ANoneCrossServerPossessionTest>(CurrentLevel, FTransform::Identity);
 
 	CrossServerPossessionMapPrivate::SetupWorldSettings(*World);

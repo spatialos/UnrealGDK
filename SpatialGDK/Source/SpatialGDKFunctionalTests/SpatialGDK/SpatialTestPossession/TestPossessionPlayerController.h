@@ -7,6 +7,14 @@
 #include "SpatialCommonTypes.h"
 #include "TestPossessionPlayerController.generated.h"
 
+USTRUCT()
+struct FActorLockToken
+{
+	GENERATED_BODY()
+
+	ActorLockToken Token;
+};
+
 DECLARE_LOG_CATEGORY_EXTERN(LogTestPossessionPlayerController, Log, All);
 
 UCLASS()
@@ -28,6 +36,8 @@ public:
 
 	bool HasMigrated() const { return BeforePossessionWorkerId != AfterPossessionWorkerId; }
 
+	void UnlockAllTokens();
+
 	static void ResetCalledCounter();
 
 	static int32 OnPossessCalled;
@@ -37,4 +47,5 @@ private:
 
 	VirtualWorkerId BeforePossessionWorkerId;
 	VirtualWorkerId AfterPossessionWorkerId;
+	TArray<ActorLockToken> Tokens;
 };

@@ -51,7 +51,7 @@ void ATestPossessionPlayerController::RemotePossessOnClient_Implementation(APawn
 		USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
 		if (NetDriver != nullptr && NetDriver->LockingPolicy)
 		{
-			NetDriver->LockingPolicy->AcquireLock(this, TEXT("TestLock"));
+			Tokens.Add(NetDriver->LockingPolicy->AcquireLock(this, TEXT("TestLock")));
 		}
 	}
 	UnPossess();
@@ -65,6 +65,19 @@ void ATestPossessionPlayerController::RemotePossessOnServer(APawn* InPawn)
 	Component->Target = InPawn;
 	Component->RegisterComponent();
 	BeforePossessionWorkerId = GetCurrentWorkerId();
+}
+
+void ATestPossessionPlayerController::UnlockAllTokens()
+{
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+	if (NetDriver != nullptr && NetDriver->LockingPolicy)
+	{
+		for (ActorLockToken Token : Tokens)
+		{
+			NetDriver->LockingPolicy->ReleaseLock(Token);
+		}
+	}
+	
 }
 
 void ATestPossessionPlayerController::ResetCalledCounter()
