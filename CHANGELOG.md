@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Downgraded a check to an error in SpatialSender::SendAuthorityIntentUpdate when sending the same intent twice.
 - Fixed a client crash that sometimes occurred when quickly unloading and reloading sublevels.
 - Fixed a worker crash when calling RPCs on PlayerControllers with a certain timing.
+- Fixed an issue with player disconnect where controllers, characters, and the client workers were not cleaned up correctly.
 
 ## [`0.12.0`] - 2021-02-01
 
