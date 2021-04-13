@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Downgraded a check to an error in SpatialSender::SendAuthorityIntentUpdate when sending the same intent twice.
 - Fixed a client crash that sometimes occurred when quickly unloading and reloading sublevels.
 - Fixed a worker crash when calling RPCs on PlayerControllers with a certain timing.
+- Modified UnrealGDKExampleProject's `DefaultGame.ini` to whitelist files that were previously throwing WARNs when building assemblies for cloud deployments.
 
 ## [`0.12.0`] - 2021-02-01
 
