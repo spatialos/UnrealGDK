@@ -31,6 +31,8 @@ public:
 
 	void RemotePossessOnServer(APawn* InPawn);
 
+	void RemovePossessionComponent();
+
 	UFUNCTION(Server, Reliable)
 	void RemotePossessOnClient(APawn* InPawn, bool bLockBefore);
 

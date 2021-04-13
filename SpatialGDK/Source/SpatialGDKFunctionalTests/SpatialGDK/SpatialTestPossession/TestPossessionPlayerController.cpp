@@ -67,6 +67,16 @@ void ATestPossessionPlayerController::RemotePossessOnServer(APawn* InPawn)
 	BeforePossessionWorkerId = GetCurrentWorkerId();
 }
 
+void ATestPossessionPlayerController::RemovePossessionComponent()
+{
+	URemotePossessionComponent* Component =
+		Cast<URemotePossessionComponent>(GetComponentByClass(URemotePossessionComponent::StaticClass()));
+	if (Component != nullptr)
+	{
+		Component->DestroyComponent();
+	}
+}
+
 void ATestPossessionPlayerController::UnlockAllTokens()
 {
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
