@@ -77,7 +77,6 @@ void ATestPossessionPlayerController::UnlockAllTokens()
 			NetDriver->LockingPolicy->ReleaseLock(Token);
 		}
 	}
-	
 }
 
 void ATestPossessionPlayerController::ResetCalledCounter()

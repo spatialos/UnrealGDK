@@ -101,19 +101,17 @@ void ACrossServerPossessionTest::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(
-		TEXT("Wait for all controllers to migrate"), FWorkerDefinition::AllServers, nullptr, nullptr,
-		[this](float) {
-			for (const auto& OriginalPawnPair : OriginalPawns)
+	AddStep(TEXT("Wait for all controllers to migrate"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
+		for (const auto& OriginalPawnPair : OriginalPawns)
+		{
+			if (OriginalPawnPair.Controller.Get() != nullptr && OriginalPawnPair.Controller.Get()->HasAuthority())
 			{
-				if (OriginalPawnPair.Controller.Get() != nullptr && OriginalPawnPair.Controller.Get()->HasAuthority())
-				{
-					RequireTrue(OriginalPawnPair.Pawn.Get()->HasAuthority(),
-								TEXT("We should have authority over both original pawn and player controller on their initial server"));
-					RequireTrue(OriginalPawnPair.Controller.Get()->GetPawn() == OriginalPawnPair.Pawn.Get(),
-								TEXT("The player controller should have possession over its original pawn"));
-				}
+				RequireTrue(OriginalPawnPair.Pawn.Get()->HasAuthority(),
+							TEXT("We should have authority over both original pawn and player controller on their initial server"));
+				RequireTrue(OriginalPawnPair.Controller.Get()->GetPawn() == OriginalPawnPair.Pawn.Get(),
+							TEXT("The player controller should have possession over its original pawn"));
 			}
-			FinishStep();
-		});
+		}
+		FinishStep();
+	});
 }

@@ -68,9 +68,11 @@ void ACrossServerPossessionLockTest::PrepareTest()
 	});
 
 	AddStep(TEXT("Release locks on the pawns and player controllers"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
-		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers()) {
+		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
+		{
 			ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-			if (PlayerController != nullptr) {
+			if (PlayerController != nullptr)
+			{
 				PlayerController->UnlockAllTokens();
 			}
 		}
@@ -102,5 +104,4 @@ void ACrossServerPossessionLockTest::PrepareTest()
 		}
 		FinishStep();
 	});
-
 }
