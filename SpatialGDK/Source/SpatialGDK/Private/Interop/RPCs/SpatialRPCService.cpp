@@ -9,6 +9,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Net/NetworkProfiler.h"
 #include "SpatialConstants.h"
+#include "Utils/ObjectAllocUtils.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialLatencyTracer.h"
 
@@ -535,8 +536,9 @@ FRPCErrorInfo SpatialRPCService::ApplyRPC(const FPendingRPCParams& Params)
 
 	return ApplyRPCInternal(TargetObject, Function, Params);
 }
-
-struct NetWriteFenceResolutionHandler
+namespace
+{
+struct NetWriteFenceResolutionHandler : FStackOnly
 {
 	NetWriteFenceResolutionHandler(USpatialNetDriver& InNetDriver, UFunction& Function)
 		: NetDriver(InNetDriver)
@@ -560,6 +562,7 @@ private:
 	USpatialNetDriver& NetDriver;
 	const bool bIsNetWriteFence;
 };
+} // namespace
 
 FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams)
 {

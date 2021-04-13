@@ -1789,7 +1789,12 @@ struct SenderActorDesc
 	bool bHasBeenUsed = false;
 };
 
+namespace
+{
+// "Stack extension" to push additional RPC parameters.
+// This is to work around having to do deep plumbing into the engine to pass additional RPC parameters not part of the RPC payload.
 thread_local TArray<SenderActorDesc> GSenderStack;
+} // namespace
 
 void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters)
 {
@@ -1895,7 +1900,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		const bool bUseEntityInteractionSemantics = Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker;
 		const bool bIsNetWriteFence = Function->HasAnyFunctionFlags(FUNC_NetWriteFence);
 		const bool bIsOnlyNetWriteFence = bIsNetWriteFence && !Function->HasAnyFunctionFlags(FUNC_NetCrossServer);
-		const bool bIsUnordered = Function->HasAnySpatialFunctionFlags(SPATIALFUNC_ExplicitelyUnordered);
+		const bool bIsUnordered = Function->HasAnySpatialFunctionFlags(SPATIALFUNC_ExplicitlyUnordered);
 		const bool bIsReliable = Function->HasAnyFunctionFlags(FUNC_NetReliable);
 
 		bool bNeedSender = bUseEntityInteractionSemantics && ((bIsReliable && !bIsUnordered) || bIsNetWriteFence);
@@ -1905,8 +1910,12 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 			CrossServerRPCSender->SendCommand(MoveTemp(CallingObjectRef), CallingObject, Function, MoveTemp(Payload), Info);
 			return;
 		}
-		else // bNeedSender || bIsReliable
+		else // bUseEntityInteractionSemantics && (bNeedSender || bIsReliable)
 		{
+			// NOTE : the (!bHasSenderAvailable) branch is only there to allow migration to take place
+			// When no sender is available, the RPC will be sent unordered.
+			// When the relevant users are migrated, we should remove the migration branch and enforce the presence of sender
+			// Removing it will allow the rest of the diagnostic code to emit the appropriate errors.
 			bool bHasSenderAvailable = GSenderStack.Num() > 0 && !GSenderStack.Last().bHasBeenUsed;
 
 			if (bIsUnordered)
@@ -1915,17 +1924,18 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 			}
 			else if (!bHasSenderAvailable)
 			{
+				// Migration branch
 				if (bIsNetWriteFence)
 				{
 					UE_LOG(LogSpatialOSNetDriver, Error,
-						   TEXT("Net write fence %s on target %s will be dropped because no sender was provided"), *Function->GetName(),
-						   *Actor->GetName());
+						   TEXT("Net write fence will be dropped because no sender was provided. Function : %s, Target : %s"),
+						   *Function->GetName(), *Actor->GetName());
 					return;
 				}
 				else
 				{
 					UE_LOG(LogSpatialOSNetDriver, Warning,
-						   TEXT("Ordered reliable RPC %s on target %s will be sent unordered because no sender was provided"),
+						   TEXT("Ordered reliable RPC will be sent unordered because no sender was provided. Function : %s, Target : %s"),
 						   *Function->GetName(), *Actor->GetName());
 
 					SenderInfo.Entity = WorkerEntityId;
@@ -1933,11 +1943,12 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 			}
 			else
 			{
+				// Long term branch
 				AActor* SenderActor = nullptr;
 
 				if (GSenderStack.Num() == 0)
 				{
-					UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Missing sender Actor to call RPC %s on target %s"), *Function->GetName(),
+					UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Missing sender Actor. Function : %s, Target : %s"), *Function->GetName(),
 						   *Actor->GetName());
 					return;
 				}
@@ -1949,8 +1960,8 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 					if (!ensure(!Desc.bHasBeenUsed))
 					{
 						UE_LOG(LogSpatialOSNetDriver, Error,
-							   TEXT("(INTERNAl GDK ERROR) Wrong stack semantics when calling RPC %s on Actor %s."
-									"The sender Actor is supposed to be used only once in a RPC case"),
+							   TEXT("(INTERNAl GDK ERROR) Wrong stack semantics.The sender Actor is supposed to be used only once in a RPC "
+									"call. Function : %s, Target : %s"),
 							   *Function->GetName(), *Actor->GetName());
 						return;
 					}
@@ -1960,26 +1971,24 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 					if (bIsOnlyNetWriteFence && Desc.Kind != SenderActorDesc::Dependent
 						|| (!bIsNetWriteFence && Desc.Kind == SenderActorDesc::Dependent))
 					{
-						UE_LOG(
-							LogSpatialOSNetDriver, Error,
-							TEXT(
-								"Wrong kind of sender Actor set to call RPC %s on target %s."
-								"Check that the right AActor function was used with the right kind of RPC (CrossServer and NetWriteFence)"),
-							*Function->GetName(), *Actor->GetName());
+						UE_LOG(LogSpatialOSNetDriver, Error,
+							   TEXT("Wrong kind of sender Actor. Check that the right AActor function was used with the right kind of RPC "
+									"(CrossServer and NetWriteFence). Function : %s, Target : %s"),
+							   *Function->GetName(), *Actor->GetName());
 						return;
 					}
 				}
 
 				if (SenderActor == nullptr)
 				{
-					UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Null sender Actor set to call RPC %s on target %s"), *Function->GetName(),
+					UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Null sender Actor. Function : %s, Target : %s"), *Function->GetName(),
 						   *Actor->GetName());
 					return;
 				}
 
-				if (SenderActor && !SenderActor->HasAuthority())
+				if (!SenderActor->HasAuthority())
 				{
-					UE_LOG(LogSpatialOSNetDriver, Error, TEXT("No authority on sender Actor %s to call RPC %s on target %s"),
+					UE_LOG(LogSpatialOSNetDriver, Error, TEXT("No authority on sender Actor. Function : %s, Target : %s"),
 						   *SenderActor->GetName(), *Function->GetName(), *Actor->GetName());
 					return;
 				}
@@ -3326,7 +3335,8 @@ bool USpatialNetDriver::NeedWriteFence(AActor* Actor, UFunction* Function)
 	if (GSenderStack.Num() == 0)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error,
-			   TEXT("Trying to execute NetWriteFence RPC %s on Actor %s without a dependent Actor. The RPC will be locally executed"),
+			   TEXT("Trying to execute NetWriteFence RPC without a dependent Actor. The RPC will be immediately executed. Actor : %s, "
+					"Function : %s"),
 			   *Actor->GetName(), *Function->GetName());
 		return false;
 	}
@@ -3338,34 +3348,41 @@ bool USpatialNetDriver::NeedWriteFence(AActor* Actor, UFunction* Function)
 		CurrentSender.bHasBeenUsed = true;
 		return false;
 	}
+
 	if (Function->HasAnyFunctionFlags(FUNC_NetCrossServer))
 	{
 		check(Function->HasAnyFunctionFlags(FUNC_NetWriteFence));
 		if (CurrentSender.Kind != SenderActorDesc::Sender)
 		{
 			UE_LOG(LogSpatialOSNetDriver, Error,
-				   TEXT("Trying to execute CrossServer RPC %s on Actor %s with the wrong kind of call method."
-						"Use SendCrossServerRPC instead of ExecuteWithNetWriteFence. The RPC will be executed without a write fence"),
+				   TEXT("Trying to execute CrossServer RPC with the wrong kind of call method."
+						"Use SendCrossServerRPC instead of ExecuteWithNetWriteFence. The RPC will be executed without a write fence. Actor "
+						": %s, Function : %s"),
 				   *Actor->GetName(), *Function->GetName());
 			return false;
 		}
 		return true;
 	}
+
 	if (Function->HasAnyFunctionFlags(FUNC_NetWriteFence) && CurrentSender.Kind != SenderActorDesc::Dependent)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error,
-			   TEXT("Trying to execute NetWriteFence RPC %s on Actor %s with the wrong kind of call method."
-					"Use ExecuteWithNetWriteFence instead of SendCrossServerRPC. The RPC will be locally executed"),
+			   TEXT("Trying to execute NetWriteFenceRPC with the wrong kind of call method."
+					"Use ExecuteWithNetWriteFence instead of SendCrossServerRPC. The RPC will be immediately executed. Actor : %s, "
+					"Function : %s"),
 			   *Actor->GetName(), *Function->GetName());
 		return false;
 	}
+
 	if (CurrentSender.Actor == nullptr)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning,
-			   TEXT("Trying to execute NetWriteFence RPC %s on Actor %s with a null dependent Actor. The RPC will be locally executed"),
+			   TEXT("Trying to execute NetWriteFence RPC with a null dependent Actor. The RPC will be immediately executed. Actor : %s, "
+					"Function : %s"),
 			   *Actor->GetName(), *Function->GetName());
 		return false;
 	}
+
 	return CurrentSender.Actor->HasAuthority();
 }
 

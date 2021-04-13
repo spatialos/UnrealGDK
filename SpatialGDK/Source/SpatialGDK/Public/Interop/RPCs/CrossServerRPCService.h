@@ -38,7 +38,7 @@ class SPATIALGDK_API CrossServerRPCService
 {
 public:
 	CrossServerRPCService(const ActorCanExtractRPCDelegate InCanExtractRPCDelegate, const ExtractRPCDelegate InExtractRPCCallback,
-						  const FSubView& InSubView, const FSubView& InWorkerEntitySubView, FRPCStore& InRPCStore);
+						  const FSubView& InActorSubView, const FSubView& InWorkerEntitySubView, FRPCStore& InRPCStore);
 
 	void AdvanceView();
 	void ProcessChanges();
@@ -77,7 +77,7 @@ private:
 
 	ActorCanExtractRPCDelegate CanExtractRPCDelegate;
 	ExtractRPCDelegate ExtractRPCCallback;
-	const FSubView* SubView;
+	const FSubView* ActorSubView;
 	const FSubView* WorkerEntitySubView;
 
 	FRPCStore* RPCStore;

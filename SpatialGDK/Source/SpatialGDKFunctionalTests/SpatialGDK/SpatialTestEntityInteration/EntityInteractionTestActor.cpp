@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "EntityInteractionTestActor.h"
 #include "Components/SceneComponent.h"
 

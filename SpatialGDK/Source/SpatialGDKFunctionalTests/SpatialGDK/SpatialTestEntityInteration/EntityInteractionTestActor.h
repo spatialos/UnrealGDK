@@ -1,10 +1,12 @@
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worl*ds Ltd, All Rights Reserved
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "EntityInteractionTestActor.generated.h"
+
+class USceneComponent;
 
 UCLASS(Blueprintable)
 class AEntityInteractionTestActor : public AActor
@@ -41,5 +43,5 @@ public:
 	TMap<int32, FString> Steps;
 
 	UPROPERTY()
-	class USceneComponent* SceneComponent;
+	USceneComponent* SceneComponent;
 };

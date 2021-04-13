@@ -12,11 +12,11 @@ DEFINE_LOG_CATEGORY(LogCrossServerRPCService);
 namespace SpatialGDK
 {
 CrossServerRPCService::CrossServerRPCService(const ActorCanExtractRPCDelegate InCanExtractRPCDelegate,
-											 const ExtractRPCDelegate InExtractRPCCallback, const FSubView& InSubView,
+											 const ExtractRPCDelegate InExtractRPCCallback, const FSubView& InActorSubView,
 											 const FSubView& InWorkerEntitySubView, FRPCStore& InRPCStore)
 	: CanExtractRPCDelegate(InCanExtractRPCDelegate)
 	, ExtractRPCCallback(InExtractRPCCallback)
-	, SubView(&InSubView)
+	, ActorSubView(&InActorSubView)
 	, WorkerEntitySubView(&InWorkerEntitySubView)
 	, RPCStore(&InRPCStore)
 {
@@ -78,7 +78,7 @@ EPushRPCResult CrossServerRPCService::PushCrossServerRPC(Worker_EntityId EntityI
 
 void CrossServerRPCService::AdvanceView()
 {
-	const FSubViewDelta* SubViewDeltas[] = { &SubView->GetViewDelta(), &WorkerEntitySubView->GetViewDelta() };
+	const FSubViewDelta* SubViewDeltas[] = { &ActorSubView->GetViewDelta(), &WorkerEntitySubView->GetViewDelta() };
 	for (auto SubViewDelta : SubViewDeltas)
 	{
 		for (const EntityDelta& Delta : SubViewDelta->EntityDeltas)
@@ -122,7 +122,7 @@ void CrossServerRPCService::AdvanceViewForEntityDelta(const EntityDelta& Delta)
 
 void CrossServerRPCService::ProcessChanges()
 {
-	const FSubViewDelta* SubViewDeltas[] = { &SubView->GetViewDelta(), &WorkerEntitySubView->GetViewDelta() };
+	const FSubViewDelta* SubViewDeltas[] = { &ActorSubView->GetViewDelta(), &WorkerEntitySubView->GetViewDelta() };
 	for (auto SubViewDelta : SubViewDeltas)
 	{
 		for (const EntityDelta& Delta : SubViewDelta->EntityDeltas)
@@ -160,7 +160,7 @@ void CrossServerRPCService::ProcessChangesForEntityDelta(const EntityDelta& Delt
 
 void CrossServerRPCService::EntityAdded(const Worker_EntityId EntityId)
 {
-	for (const ComponentData& Component : SubView->GetView()[EntityId].Components)
+	for (const ComponentData& Component : ActorSubView->GetView()[EntityId].Components)
 	{
 		if (!IsCrossServerEndpoint(Component.GetComponentId()))
 		{
@@ -169,10 +169,7 @@ void CrossServerRPCService::EntityAdded(const Worker_EntityId EntityId)
 		OnEndpointAuthorityGained(EntityId, Component);
 	}
 	CrossServerEndpoints* Endpoints = CrossServerDataStore.Find(EntityId);
-	if (Endpoints->ReceivedRPCs.IsSet())
-	{
-		HandleRPC(EntityId, Endpoints->ReceivedRPCs.GetValue());
-	}
+	HandleRPC(EntityId, Endpoints->ReceivedRPCs.GetValue());
 	UpdateSentRPCsACKs(EntityId, Endpoints->ACKedRPCs.GetValue());
 }
 
@@ -227,24 +224,19 @@ void CrossServerRPCService::ProcessComponentChange(const Worker_EntityId EntityI
 
 void CrossServerRPCService::PopulateDataStore(const Worker_EntityId EntityId)
 {
-	const EntityViewElement& Entity = SubView->GetView()[EntityId];
+	const EntityViewElement& Entity = ActorSubView->GetView()[EntityId];
 
 	Schema_ComponentData* SenderACKData =
 		Entity.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID })
 			->GetUnderlying();
 
-	const ComponentData* ReceiverData =
-		Entity.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID });
+	Schema_ComponentData* ReceiverData =
+		Entity.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID })
+			->GetUnderlying();
 
 	CrossServerEndpoints& NewEntry = CrossServerDataStore.FindOrAdd(EntityId);
 	NewEntry.ACKedRPCs.Emplace(CrossServerEndpointACK(SenderACKData));
-
-	// The worker entity won't have a receiver
-	// Could still add for for simplicity though...
-	if (ReceiverData)
-	{
-		NewEntry.ReceivedRPCs.Emplace(CrossServerEndpoint(ReceiverData->GetUnderlying()));
-	}
+	NewEntry.ReceivedRPCs.Emplace(CrossServerEndpoint(ReceiverData));
 }
 
 void CrossServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId EntityId, const ComponentData& Component)
@@ -304,7 +296,7 @@ void CrossServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId Enti
 
 void CrossServerRPCService::HandleRPC(const Worker_EntityId EntityId, const CrossServerEndpoint& Receiver)
 {
-	if (SubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
+	if (ActorSubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
 	{
 		if (!CanExtractRPCDelegate.Execute(EntityId))
 		{

@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "EntityInteractionTest.h"
 #include "EntityInteractionTestActor.h"
 #include "Kismet/GameplayStatics.h"
@@ -58,18 +60,17 @@ void ASpatialEntityInteractionTest::PrepareTest()
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEntityInteractionTestActor::StaticClass(), TestActors);
 			for (AActor* Actor : TestActors)
 			{
-				if (AEntityInteractionTestActor* TestActor = Cast<AEntityInteractionTestActor>(Actor))
+				AEntityInteractionTestActor* TestActor = CastChecked<AEntityInteractionTestActor>(Actor);
+
+				if (ensure(TestActor->Index < 2))
 				{
-					if (ensure(TestActor->Index < 2))
+					if (TestActor->HasAuthority())
 					{
-						if (TestActor->HasAuthority())
-						{
-							LocalActors[TestActor->Index] = TestActor;
-						}
-						else
-						{
-							RemoteActors[TestActor->Index] = TestActor;
-						}
+						LocalActors[TestActor->Index] = TestActor;
+					}
+					else
+					{
+						RemoteActors[TestActor->Index] = TestActor;
 					}
 				}
 			}
@@ -123,7 +124,7 @@ void ASpatialEntityInteractionTest::PrepareTest()
 	AddStep(
 		"Check delayed RPCs", FWorkerDefinition::AllServers,
 		[this]() {
-			if (LocalActors[0]->Steps.Num() == 10)
+			if (LocalActors[0]->Steps.Num() == NumSteps)
 			{
 				return true;
 			}
