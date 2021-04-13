@@ -8,6 +8,7 @@
 #include "Utils/RepDataUtils.h"
 
 #include "Interop/CreateEntityHandler.h"
+#include "SpatialView/ViewCoordinator.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogActorSystem, Log, All);
 
@@ -34,6 +35,8 @@ class FSubView;
 
 class ActorHandler;
 
+struct EntityDelta;
+
 struct ActorData
 {
 	SpawnData Spawn;
@@ -43,12 +46,18 @@ struct ActorData
 class ActorSystem
 {
 public:
-	ActorSystem(const FSubView& InActorSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
+	ActorSystem(const FSubView& InActorSubView, const FSubView& InAuthoritySubView, const FSubView& InAutonomousSubView,
+				const FSubView& InSimulatedSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
 				SpatialEventTracer* InEventTracer);
 
 	void Advance();
 
-	TSharedRef<ActorHandler> Handler;
+	static FSubView& CreateActorSubView(USpatialNetDriver& NetDriver);
+	static FSubView& CreateActorSubViewOnComponent(const Worker_ComponentId ComponentId, USpatialNetDriver& NetDriver);
+	static FSubView& CreateActorAuthSubView(const FSubView& ActorSubView, USpatialNetDriver& NetDriver);
+	static FSubView& CreateAuthoritySubView(const FSubView& ActorSubView, USpatialNetDriver& NetDriver);
+	static FSubView& CreateAutonomousSubView(const FSubView& ActorSubView, USpatialNetDriver& NetDriver);
+	static FSubView& CreateSimulatedSubView(const FSubView& ActorSubView, USpatialNetDriver& NetDriver);
 
 	UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
 
@@ -106,6 +115,23 @@ private:
 
 	// HACK: Make these public so they can be accessed from ActorHandler
 public:
+	enum class EActorSubViewType
+	{
+		Authority,
+		Autonomous,
+		Simulated,
+	};
+
+	struct FEntitySubViewUpdate
+	{
+		const TArray<EntityDelta>& EntityDeltas;
+		EActorSubViewType SubViewType;
+	};
+
+	void ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate);
+	void ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate);
+	void ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate);
+
 	void ApplyComponentAdd(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 
 	void AuthorityLost(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
@@ -169,12 +195,18 @@ private:
 	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds) const;
 
 	const FSubView* ActorSubView;
+	const FSubView* AuthoritySubView;
+	const FSubView* AutonomousSubView;
+	const FSubView* SimulatedSubView;
 	const FSubView* TombstoneSubView;
+
 	USpatialNetDriver* NetDriver;
 	SpatialEventTracer* EventTracer;
 
 	CreateEntityHandler CreateEntityHandler;
 	ClaimPartitionHandler ClaimPartitionHandler;
+
+	TSet<Worker_EntityId_Key> PresentEntities;
 
 	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> CreateEntityRequestIdToActorChannel;
 
