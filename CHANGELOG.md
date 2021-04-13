@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Downgraded a check to an error in SpatialSender::SendAuthorityIntentUpdate when sending the same intent twice.
 - Fixed a client crash that sometimes occurred when quickly unloading and reloading sublevels.
 - Fixed a worker crash when calling RPCs on PlayerControllers with a certain timing.
+- Fixed a warning about whitelisted files which was produced in the ExampleProject when building assemblies for cloud deployments.
 - Fixed a bug where on initial replication, actors with replicated TArrays would not have the array cleared if the local state was not empty.
 
 ## [`0.12.0`] - 2021-02-01

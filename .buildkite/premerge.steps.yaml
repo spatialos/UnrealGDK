@@ -4,55 +4,28 @@
 agent_transients: &agent_transients
   exit_status: -1
   limit: 3
+
 # BK system error
 bk_system_error: &bk_system_error
   exit_status: 255
   limit: 3
-# job was interrupted by a signal (e.g. ctrl+c etc)
+  
+# Job was interrupted by a signal (e.g. ctrl+c etc)
 bk_interrupted_by_signal: &bk_interrupted_by_signal
   exit_status: 15
   limit: 3
 
-script_runner: &script_runner
-  agents:
-  - "agent_count=8"
-  - "capable_of_building=platform"
-  - "environment=production"
-  - "machine_type=quarter"
-  - "permission_set=builder"
-  - "platform=linux"
-  - "queue=${CI_LINUX_BUILDER_QUEUE:-v4-2019-12-12-bk5225-daecba805768d787}"
-  - "scaler_version=2"
-  - "working_hours_time_zone=london"
-
-windows: &windows
-  agents:
-    - "agent_count=1"
-    - "capable_of_building=gdk-for-unreal"
-    - "environment=production"
-    - "machine_type=single-high-cpu"  # this name matches to SpatialOS node-size names
-    - "platform=windows"
-    - "permission_set=builder"
-    - "scaler_version=2"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v4-20-11-18-224740-bk17641-0c4125be-d}"
-  retry:
-    automatic:
-      - <<: *agent_transients
-      - <<: *bk_system_error
-      - <<: *bk_interrupted_by_signal
-  timeout_in_minutes: 60
-  plugins:
-    - improbable-eng/taskkill#v4.4.1: ~
-
-# NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
-# These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
+# Hook failure
+bk_hook_failure: &bk_hook_failure
+  exit_status: 127
+  limit: 3
 
 steps:
   # New build pipeline
   # Trigger a 4.26 build
   - trigger: "unrealgdkbuild-ci"
     label: "gdk-ci-426 ${BUILDKITE_MESSAGE}"
-    async: true
+    async: false
     build: 
       env: 
         BUILD_TYPE: "GDK"
@@ -69,7 +42,7 @@ steps:
   # Trigger a 4.25 build
   - trigger: "unrealgdkbuild-ci"
     label: "gdk-ci-425 ${BUILDKITE_MESSAGE}"
-    async: true
+    async: false
     build: 
       env: 
         BUILD_TYPE: "GDK" # GDK or ENGINE
@@ -83,14 +56,6 @@ steps:
         SKIP_TESTS: "False"
         CLEAN_BUILD: "False"
 
-
-  # Old build pipeline
-  - label: "enforce-version-restrictions"
-    command: "ci/check-version-file.sh"
-    <<: *script_runner
-  # No point in running other steps if the listed versions are invalid
-  - wait: ~
-
   # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
   - trigger: "unrealgdkexampleproject-nightly"
     label: "post-merge-example-project-build"
@@ -101,24 +66,7 @@ steps:
         NIGHTLY_BUILD: "${NIGHTLY_BUILD:-false}"
         GDK_BRANCH: "${BUILDKITE_BRANCH}"
 
-  - label: "generate-pipeline-steps"
-    commands:
-      - "ci/generate-and-upload-build-steps.sh"
-    <<: *script_runner
-
-  - wait: ~
-    continue_on_failure: true
-  
-  - label: "upload-test-metrics"
-    if: build.env("NIGHTLY_BUILD") == "true"
-    command: "ci/upload-test-metrics.sh"
-    <<: *script_runner
-  
-  - label: "slack-notify"
-    if: (build.env("SLACK_NOTIFY") == "true" || build.branch == "master") && build.env("SLACK_NOTIFY") != "false" && build.env("ENGINE_NET_TEST") != "true"
-    commands: "powershell ./ci/build-and-send-slack-notification.ps1"
-    <<: *windows
-
+# Notify unreal-gdk-builds if there was a failure
 notify:
   - slack: 
       channels: 
