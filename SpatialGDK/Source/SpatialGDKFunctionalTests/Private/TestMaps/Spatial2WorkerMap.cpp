@@ -28,10 +28,10 @@ void USpatial2WorkerMap::CreateCustomContentForMap()
 	// that they can demonstrate they work in all situations
 	AddActorToLevel<ACrossServerAndClientOrchestrationTest>(CurrentLevel, Server2Pos);
 	AddActorToLevel<ACrossServerAndClientOrchestrationTest>(CurrentLevel, Server1Pos);
-	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server2Pos)->Index = 0;
-	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server2Pos)->Index = 1;
-	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server1Pos)->Index = 0;
-	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server1Pos)->Index = 1;
+	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server2Pos).Index = 0;
+	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server2Pos).Index = 1;
+	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server1Pos).Index = 0;
+	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server1Pos).Index = 1;
 	AddActorToLevel<ASpatialEntityInteractionTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ARegisterAutoDestroyActorsTestPart1>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ARegisterAutoDestroyActorsTestPart2>(CurrentLevel, FTransform::Identity);

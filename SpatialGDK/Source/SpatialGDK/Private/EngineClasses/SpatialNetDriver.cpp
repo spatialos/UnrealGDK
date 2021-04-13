@@ -1770,6 +1770,8 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 
 #endif // WITH_SERVER_CODE
 
+namespace SpatialNetDriverPrivate
+{
 struct SenderActorDesc
 {
 	enum ItemKind
@@ -1789,15 +1791,15 @@ struct SenderActorDesc
 	bool bHasBeenUsed = false;
 };
 
-namespace
-{
 // "Stack extension" to push additional RPC parameters.
 // This is to work around having to do deep plumbing into the engine to pass additional RPC parameters not part of the RPC payload.
 thread_local TArray<SenderActorDesc> GSenderStack;
-} // namespace
+} // namespace SpatialNetDriverPrivate
 
 void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters)
 {
+	using namespace SpatialNetDriverPrivate;
+
 	// The RPC might have been called by an actor directly, or by a subobject on that actor
 	UObject* CallingObject = SubObject != nullptr ? SubObject : Actor;
 
@@ -1903,7 +1905,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		const bool bIsUnordered = Function->HasAnySpatialFunctionFlags(SPATIALFUNC_ExplicitlyUnordered);
 		const bool bIsReliable = Function->HasAnyFunctionFlags(FUNC_NetReliable);
 
-		bool bNeedSender = bUseEntityInteractionSemantics && ((bIsReliable && !bIsUnordered) || bIsNetWriteFence);
+		const bool bNeedSender = bUseEntityInteractionSemantics && ((bIsReliable && !bIsUnordered) || bIsNetWriteFence);
 
 		if (!bUseEntityInteractionSemantics || (!bNeedSender && !bIsReliable))
 		{
@@ -1916,7 +1918,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 			// When no sender is available, the RPC will be sent unordered.
 			// When the relevant users are migrated, we should remove the migration branch and enforce the presence of sender
 			// Removing it will allow the rest of the diagnostic code to emit the appropriate errors.
-			bool bHasSenderAvailable = GSenderStack.Num() > 0 && !GSenderStack.Last().bHasBeenUsed;
+			const bool bHasSenderAvailable = GSenderStack.Num() > 0 && !GSenderStack.Last().bHasBeenUsed;
 
 			if (bIsUnordered)
 			{
@@ -3308,11 +3310,13 @@ FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 
 void USpatialNetDriver::PushCrossServerRPCSender(AActor* SenderActor)
 {
+	using namespace SpatialNetDriverPrivate;
 	GSenderStack.Add(SenderActorDesc(SenderActor, SenderActorDesc::Sender));
 }
 
 void USpatialNetDriver::PopCrossServerRPCSender(AActor* SenderActor)
 {
+	using namespace SpatialNetDriverPrivate;
 	check(GSenderStack.Num() > 0);
 	check(GSenderStack.Last().Actor == SenderActor);
 	GSenderStack.Pop();
@@ -3320,11 +3324,13 @@ void USpatialNetDriver::PopCrossServerRPCSender(AActor* SenderActor)
 
 void USpatialNetDriver::PushDependentActor(AActor* Dependent)
 {
+	using namespace SpatialNetDriverPrivate;
 	GSenderStack.Add(SenderActorDesc(Dependent, SenderActorDesc::Dependent));
 }
 
 void USpatialNetDriver::PopDependentActor(AActor* Dependent)
 {
+	using namespace SpatialNetDriverPrivate;
 	check(GSenderStack.Num() > 0);
 	check(GSenderStack.Last().Actor == Dependent);
 	GSenderStack.Pop();
@@ -3332,6 +3338,7 @@ void USpatialNetDriver::PopDependentActor(AActor* Dependent)
 
 bool USpatialNetDriver::NeedWriteFence(AActor* Actor, UFunction* Function)
 {
+	using namespace SpatialNetDriverPrivate;
 	if (GSenderStack.Num() == 0)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error,
@@ -3388,10 +3395,12 @@ bool USpatialNetDriver::NeedWriteFence(AActor* Actor, UFunction* Function)
 
 void USpatialNetDriver::PushNetWriteFenceResolution()
 {
+	using namespace SpatialNetDriverPrivate;
 	GSenderStack.Add(SenderActorDesc(nullptr, SenderActorDesc::Resolution));
 }
 
 void USpatialNetDriver::PopNetWriteFenceResolution()
 {
+	using namespace SpatialNetDriverPrivate;
 	GSenderStack.Pop();
 }

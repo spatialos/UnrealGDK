@@ -46,6 +46,12 @@ void ASpatialEntityInteractionTest::PrepareTest()
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	if (Settings->CrossServerRPCImplementation != ECrossServerRPCImplementation::RoutingWorker)
 	{
+		AddStep(
+			"DummyStep", FWorkerDefinition::AllWorkers, nullptr,
+			[this] {
+				FinishStep();
+			},
+			nullptr);
 		return;
 	}
 
