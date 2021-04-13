@@ -11,9 +11,25 @@
 
 #include "Kismet/GameplayStatics.h"
 
-/*
-	Test for coverage of the USpatialGDKDebugInterface.
-*/
+/**
+ * Test for coverage of the USpatialGDKDebugInterface.
+ * The debug interface allows you to manipulate interest and load balancing by tagging actors and declaring interest and delegation over
+ * these tags The goal is to have an easier time writing load balancing test to not have to derive an additional load balancing strategy for
+ * each new test.
+ *
+ * The test walks through a couple of situations that one can setup through the debug interface :
+ * - Add interest over all actors having some tags
+ * - Delegate tags to specific workers, forcing load balancing
+ * - Create new actors with the tag and check that extra interest and delegation is properly applied
+ * - Remove extra interest
+ * - Remove tags from actors and see interest and load-balancing revert to their default.
+ * - Add tags again and clear delegation
+ * - Clear all debug information
+ *
+ * Most of these tests are performed in a two-step way, that is setting some debug behaviour and waiting for it to happen on the next step
+ * Delegation commands expect consensus between workers to behave properly, so separating change steps from observation steps helps avoiding
+ * races that could happen around interest or load balancing.
+ */
 
 ASpatialDebugInterfaceTest::ASpatialDebugInterfaceTest()
 	: Super()
@@ -175,16 +191,22 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 
 			if (DelegationStep >= Workers.Num() * 2)
 			{
-				UWorld* World = GetWorld();
-
-				AReplicatedTestActorBase* Actor = World->SpawnActor<AReplicatedTestActorBase>(WorkerEntityPosition, FRotator());
-				AddDebugTag(Actor, GetTestTag());
-				RegisterAutoDestroyActor(Actor);
-
 				FinishStep();
 			}
 		},
 		5.0f);
+
+	AddStep(
+		TEXT("Create new actors"), FWorkerDefinition::AllServers, nullptr,
+		[this] {
+			UWorld* World = GetWorld();
+
+			AReplicatedTestActorBase* Actor = World->SpawnActor<AReplicatedTestActorBase>(WorkerEntityPosition, FRotator());
+			AddDebugTag(Actor, GetTestTag());
+			RegisterAutoDestroyActor(Actor);
+			FinishStep();
+		},
+		nullptr, 5.0f);
 
 	AddStep(
 		TEXT("Check new actors interest and delegation"), FWorkerDefinition::AllServers,
@@ -254,10 +276,17 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 		nullptr, 5.0f);
 
 	AddStep(
-		TEXT("Remove actor tags"), FWorkerDefinition::AllServers,
+		TEXT("Wait for extra interest to come back"), FWorkerDefinition::AllServers,
 		[this] {
 			return WaitToSeeActors(AReplicatedTestActorBase::StaticClass(), Workers.Num() * 2);
 		},
+		[this] {
+			FinishStep();
+		},
+		nullptr, 5.0f);
+
+	AddStep(
+		TEXT("Remove actor tags"), FWorkerDefinition::AllServers, nullptr,
 		[this] {
 			if (!bIsOnDefaultLayer)
 			{
@@ -291,16 +320,20 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			}
 
 			bool bExpectedResult = true;
+			uint32 NumAuth = 0;
 
 			TArray<AActor*> TestActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), TestActors);
 			for (AActor* Actor : TestActors)
 			{
 				bExpectedResult &= Actor->HasAuthority();
+				NumAuth += Actor->HasAuthority() ? 1 : 0;
 			}
 
 			if (bExpectedResult)
 			{
+				AssertTrue(NumAuth == 2, TEXT("We see the expected number of authoritative actors"));
+
 				FinishStep();
 			}
 		},
@@ -313,7 +346,8 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			{
 				FinishStep();
 			}
-			bool bExpectedResult = true;
+
+			uint32 NumUpdated = 0;
 
 			TArray<AActor*> TestActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase::StaticClass(), TestActors);
@@ -322,8 +356,11 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				if (Actor->HasAuthority())
 				{
 					AddDebugTag(Actor, GetTestTag());
+					NumUpdated++;
 				}
 			}
+
+			AssertTrue(NumUpdated == 2, TEXT("We updated the expected number of authoritative actors"));
 
 			ClearTagDelegation(GetTestTag());
 			FinishStep();
@@ -397,8 +434,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 }
 
 USpatialDebugInterfaceMap::USpatialDebugInterfaceMap()
-	// disabled in CI due to a timeout flake: UNR-5141
-	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("SpatialDebugInterfaceMap"))
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("SpatialDebugInterfaceMap"))
 {
 }
 
