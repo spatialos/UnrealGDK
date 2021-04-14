@@ -78,4 +78,7 @@ void ACrossServerPossessionLockTest::PrepareTest()
 		}
 		FinishStep();
 	});
+
+	AddCleanupSteps();
+
 }

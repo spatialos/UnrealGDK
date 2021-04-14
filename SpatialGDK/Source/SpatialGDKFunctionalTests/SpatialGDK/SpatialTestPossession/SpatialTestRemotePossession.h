@@ -14,8 +14,11 @@ struct FControllerPawnPair
 {
 	GENERATED_BODY()
 
-	TWeakObjectPtr<ATestPossessionPlayerController> Controller;
-	TWeakObjectPtr<APawn> Pawn;
+	UPROPERTY()
+	ATestPossessionPlayerController* Controller;
+
+	UPROPERTY()
+	APawn* Pawn;
 };
 
 UCLASS()
@@ -37,6 +40,8 @@ protected:
 	FVector LocationOfPawn;
 	float WaitTime;
 	const static float MaxWaitTime;
+
+	void AddCleanupSteps();
 
 	UFUNCTION(CrossServer, Reliable)
 	void AddToOriginalPawns(ATestPossessionPlayerController* Controller, APawn* Pawn);

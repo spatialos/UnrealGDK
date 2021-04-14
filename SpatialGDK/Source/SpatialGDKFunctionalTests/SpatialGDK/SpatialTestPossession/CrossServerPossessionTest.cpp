@@ -44,7 +44,7 @@ void ACrossServerPossessionTest::PrepareTest()
 		TEXT("Cross-Server Possession"), FWorkerDefinition::AllServers, nullptr, nullptr,
 		[this](float) {
 			ATestPossessionPawn* Pawn = GetPawn();
-			// AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
+			AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
 				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
@@ -57,7 +57,6 @@ void ACrossServerPossessionTest::PrepareTest()
 						// RequireFalse(Pawn->HasAuthority(), TEXT("Pawn shouldn't HasAuthority"));
 						if (!(Pawn->HasAuthority()))
 						{
-							AddToOriginalPawns(PlayerController, PlayerController->GetPawn());
 							PlayerController->UnPossess();
 							PlayerController->RemotePossessOnServer(Pawn);
 						}
@@ -69,7 +68,7 @@ void ACrossServerPossessionTest::PrepareTest()
 		10000.0);
 
 	AddStep(
-		TEXT("Check test result"), FWorkerDefinition::Server(1),
+		TEXT("Check test result"), FWorkerDefinition::Server(4),
 		[this]() -> bool {
 			return ATestPossessionPlayerController::OnPossessCalled == 1;
 		},
@@ -80,8 +79,9 @@ void ACrossServerPossessionTest::PrepareTest()
 				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 				{
 					ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-					if (PlayerController && PlayerController->HasAuthority())
+					if (PlayerController)
 					{
+						AssertTrue(PlayerController->HasAuthority(), TEXT("The PlayerController should be on server 4"));
 						AssertTrue(PlayerController->HasMigrated(), TEXT("PlayerController should have migrated"), PlayerController);
 					}
 				}
@@ -89,29 +89,5 @@ void ACrossServerPossessionTest::PrepareTest()
 			FinishStep();
 		});
 
-	AddStep(TEXT("Clean up the test"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
-		for (const auto& OriginalPawnPair : OriginalPawns)
-		{
-			if (OriginalPawnPair.Controller.Get() != nullptr && OriginalPawnPair.Controller.Get()->HasAuthority())
-			{
-				OriginalPawnPair.Controller.Get()->UnPossess();
-				OriginalPawnPair.Controller.Get()->RemotePossessOnServer(OriginalPawnPair.Pawn.Get());
-			}
-		}
-		FinishStep();
-	});
-
-	AddStep(TEXT("Wait for all controllers to migrate"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
-		for (const auto& OriginalPawnPair : OriginalPawns)
-		{
-			if (OriginalPawnPair.Controller.Get() != nullptr && OriginalPawnPair.Controller.Get()->HasAuthority())
-			{
-				RequireTrue(OriginalPawnPair.Pawn.Get()->HasAuthority(),
-							TEXT("We should have authority over both original pawn and player controller on their initial server"));
-				RequireTrue(OriginalPawnPair.Controller.Get()->GetPawn() == OriginalPawnPair.Pawn.Get(),
-							TEXT("The player controller should have possession over its original pawn"));
-			}
-		}
-		FinishStep();
-	});
+	AddCleanupSteps();
 }

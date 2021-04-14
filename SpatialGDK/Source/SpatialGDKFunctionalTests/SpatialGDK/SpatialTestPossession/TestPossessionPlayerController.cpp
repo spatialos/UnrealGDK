@@ -87,6 +87,7 @@ void ATestPossessionPlayerController::UnlockAllTokens()
 			NetDriver->LockingPolicy->ReleaseLock(Token);
 		}
 	}
+	Tokens.Empty();
 }
 
 void ATestPossessionPlayerController::ResetCalledCounter()
