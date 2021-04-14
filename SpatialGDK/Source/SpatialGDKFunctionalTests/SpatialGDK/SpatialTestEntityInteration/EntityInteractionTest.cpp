@@ -60,8 +60,14 @@ void ASpatialEntityInteractionTest::PrepareTest()
 		[this]() {
 			NumSteps = 0;
 			ExpectedResult.Empty();
-			FMemory::Memset(LocalActors, 0, sizeof(LocalActors));
-			FMemory::Memset(RemoteActors, 0, sizeof(RemoteActors));
+			for (auto& Actor : LocalActors)
+			{
+				Actor = nullptr;
+			}
+			for (auto& Actor : RemoteActors)
+			{
+				Actor = nullptr;
+			}
 			TArray<AActor*> TestActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEntityInteractionTestActor::StaticClass(), TestActors);
 			for (AActor* Actor : TestActors)

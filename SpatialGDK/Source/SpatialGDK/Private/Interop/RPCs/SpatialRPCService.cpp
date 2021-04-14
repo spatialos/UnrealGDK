@@ -536,36 +536,38 @@ FRPCErrorInfo SpatialRPCService::ApplyRPC(const FPendingRPCParams& Params)
 
 	return ApplyRPCInternal(TargetObject, Function, Params);
 }
-namespace
-{
-struct NetWriteFenceResolutionHandler : FStackOnly
-{
-	NetWriteFenceResolutionHandler(USpatialNetDriver& InNetDriver, UFunction& Function)
-		: NetDriver(InNetDriver)
-		, bIsNetWriteFence(Function.HasAnyFunctionFlags(FUNC_NetWriteFence))
-	{
-		if (bIsNetWriteFence)
-		{
-			NetDriver.PushNetWriteFenceResolution();
-		}
-	}
 
-	~NetWriteFenceResolutionHandler()
+namespace SpatialRPCServicePrivate
+{
+	struct NetWriteFenceResolutionHandler : FStackOnly
 	{
-		if (bIsNetWriteFence)
+		NetWriteFenceResolutionHandler(USpatialNetDriver& InNetDriver, UFunction& Function)
+			: NetDriver(InNetDriver)
+			, bIsNetWriteFence(Function.HasAnyFunctionFlags(FUNC_NetWriteFence))
 		{
-			NetDriver.PopNetWriteFenceResolution();
+			if (bIsNetWriteFence)
+			{
+				NetDriver.PushNetWriteFenceResolution();
+			}
 		}
-	}
 
-private:
-	USpatialNetDriver& NetDriver;
-	const bool bIsNetWriteFence;
-};
-} // namespace
+		~NetWriteFenceResolutionHandler()
+		{
+			if (bIsNetWriteFence)
+			{
+				NetDriver.PopNetWriteFenceResolution();
+			}
+		}
+
+	private:
+		USpatialNetDriver& NetDriver;
+		const bool bIsNetWriteFence;
+	};
+}
 
 FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams)
 {
+	using namespace SpatialRPCServicePrivate;
 	FRPCErrorInfo ErrorInfo = { TargetObject, Function, ERPCResult::UnresolvedParameters };
 
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);

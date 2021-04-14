@@ -22,6 +22,6 @@ public:
 
 	uint32 NumSteps = 0;
 	TMap<uint32, FString> ExpectedResult;
-	AEntityInteractionTestActor* LocalActors[2] = { 0 };
-	AEntityInteractionTestActor* RemoteActors[2] = { 0 };
+	TStaticArray<AEntityInteractionTestActor*, 2> LocalActors;
+	TStaticArray<AEntityInteractionTestActor*, 2> RemoteActors;
 };
