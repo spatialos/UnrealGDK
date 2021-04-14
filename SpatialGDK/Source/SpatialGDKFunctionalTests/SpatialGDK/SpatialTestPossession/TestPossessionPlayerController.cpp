@@ -60,6 +60,8 @@ void ATestPossessionPlayerController::RemotePossessOnClient_Implementation(APawn
 
 void ATestPossessionPlayerController::RemotePossessOnServer(APawn* InPawn)
 {
+	check(HasAuthority());
+
 	URemotePossessionComponent* Component =
 		NewObject<URemotePossessionComponent>(this, URemotePossessionComponent::StaticClass(), TEXT("CrossServer Possession"));
 	Component->Target = InPawn;

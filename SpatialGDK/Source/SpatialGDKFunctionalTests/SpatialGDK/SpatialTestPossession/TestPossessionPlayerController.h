@@ -47,7 +47,11 @@ public:
 private:
 	VirtualWorkerId GetCurrentWorkerId();
 
-	VirtualWorkerId BeforePossessionWorkerId;
-	VirtualWorkerId AfterPossessionWorkerId;
+	UPROPERTY(Handover)
+	uint32 BeforePossessionWorkerId;
+
+	UPROPERTY(Handover)
+	uint32 AfterPossessionWorkerId;
+
 	TArray<ActorLockToken> Tokens;
 };

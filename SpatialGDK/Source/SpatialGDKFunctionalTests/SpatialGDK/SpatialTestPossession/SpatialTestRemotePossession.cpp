@@ -32,7 +32,7 @@ void ASpatialTestRemotePossession::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Create Pawn"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
+	AddStep(TEXT("Create Pawn"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		ATestPossessionPawn* Pawn =
 			GetWorld()->SpawnActor<ATestPossessionPawn>(LocationOfPawn, FRotator::ZeroRotator, FActorSpawnParameters());
 		RegisterAutoDestroyActor(Pawn);
@@ -63,7 +63,8 @@ void ASpatialTestRemotePossession::PrepareTest()
 	ATestPossessionPlayerController::ResetCalledCounter();
 }
 
-void ASpatialTestRemotePossession::AddCleanupSteps() {
+void ASpatialTestRemotePossession::AddCleanupSteps()
+{
 	AddStep(TEXT("Clean up the test"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
 		for (const auto& OriginalPawnPair : OriginalPawns)
 		{
@@ -80,14 +81,15 @@ void ASpatialTestRemotePossession::AddCleanupSteps() {
 	AddStep(TEXT("Wait for all controllers to migrate back"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
 		for (const auto& OriginalPawnPair : OriginalPawns)
 		{
-			//if(AssertIsValid(OriginalPawnPair.Controller,TEXT("We should be able to see all player controllers from any server")))
-			if (OriginalPawnPair.Controller)
+			if (AssertIsValid(OriginalPawnPair.Controller, TEXT("We should be able to see all player controllers from any server")))
+			// if (OriginalPawnPair.Controller)
 			{
 				RequireTrue(OriginalPawnPair.Controller->GetPawn() == OriginalPawnPair.Pawn,
 							FString::Printf(TEXT("The player controller should have possession over its original pawn %s"),
 											*OriginalPawnPair.Pawn->GetName()));
 				if (OriginalPawnPair.Controller->GetPawn() == OriginalPawnPair.Pawn && OriginalPawnPair.Controller->HasAuthority())
-					UE_LOG(LogTemp, Log, TEXT("Controller %s is back on its original server %s"), *OriginalPawnPair.Controller->GetName(), *GetLocalFlowController()->GetDisplayName());
+					UE_LOG(LogTemp, Log, TEXT("Controller %s is back on its original server %s"), *OriginalPawnPair.Controller->GetName(),
+						   *GetLocalFlowController()->GetDisplayName());
 			}
 		}
 		FinishStep();
@@ -119,4 +121,3 @@ void ASpatialTestRemotePossession::AddWaitStep(const FWorkerDefinition& Worker)
 		WaitTime += DeltaTime;
 	});
 }
-
