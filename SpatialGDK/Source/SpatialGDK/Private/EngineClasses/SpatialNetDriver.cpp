@@ -454,7 +454,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		const SpatialGDK::FSubView& ActorSubview = SpatialGDK::ActorSystem::CreateActorSubView(*this);
 
-		const SpatialGDK::FSubView& ActorAuthSubview = SpatialGDK::ActorSystem::CreateActorAuthSubView(ActorSubview, *this);
+		const SpatialGDK::FSubView& ActorAuthSubview = SpatialGDK::ActorSystem::CreateActorAuthSubView(*this);
 
 		const FFilterPredicate TombstoneActorFilter = [this](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
 			return Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
@@ -480,9 +480,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			Connection->GetEventTracer());
 
 		{
-			const SpatialGDK::FSubView& AuthoritySubView = SpatialGDK::ActorSystem::CreateAuthoritySubView(ActorSubview, *this);
-			const SpatialGDK::FSubView& AutonomousSubView = SpatialGDK::ActorSystem::CreateAutonomousSubView(ActorSubview, *this);
-			const SpatialGDK::FSubView& SimulatedSubView = SpatialGDK::ActorSystem::CreateSimulatedSubView(ActorSubview, *this);
+			const SpatialGDK::FSubView& AuthoritySubView = SpatialGDK::ActorSystem::CreateAuthoritySubView(*this);
+			const SpatialGDK::FSubView& AutonomousSubView = SpatialGDK::ActorSystem::CreateAutonomousSubView(*this);
+			const SpatialGDK::FSubView& SimulatedSubView = SpatialGDK::ActorSystem::CreateSimulatedSubView(*this);
 
 			ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, AuthoritySubView, AutonomousSubView, SimulatedSubView,
 															  TombstoneActorSubview, this, Connection->GetEventTracer());

@@ -174,7 +174,7 @@ struct FSimulatedSubviewSetup
 };
 
 template <typename TCallable, typename... TArgs>
-FFilterPredicate GetRoleFilterPredicate(const FSubView& SubView, TCallable RolePredicate, USpatialNetDriver& NetDriver, TArgs... Args);
+FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, USpatialNetDriver& NetDriver, TArgs... Args);
 
 const TCHAR* ToCharArray(const ENetMode NetMode);
 
@@ -197,10 +197,10 @@ const TCHAR* ToCharArray(const ENetMode NetMode)
 }
 
 template <typename TCallable, typename... TArgs>
-FFilterPredicate GetRoleFilterPredicate(const FSubView& SubView, TCallable RolePredicate, USpatialNetDriver& NetDriver, TArgs... Args)
+FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, USpatialNetDriver& NetDriver, TArgs... Args)
 {
-	return [&SubView, RolePredicate, NetDriver = &NetDriver, Args = TTuple<TArgs...>(Args...)](const Worker_EntityId EntityId,
-																							   const EntityViewElement& Entity) -> bool {
+	return [RolePredicate, NetDriver = &NetDriver, Args = TTuple<TArgs...>(Args...)](const Worker_EntityId EntityId,
+																					 const EntityViewElement& Entity) -> bool {
 		// if (!SubView.IsEntityComplete(EntityId))
 		if (!FMainActorSubviewSetup::IsActorEntity(EntityId, Entity))
 		{
@@ -465,39 +465,31 @@ FSubView& ActorSystem::CreateActorSubViewOnComponent(const Worker_ComponentId Co
 		ComponentId, &FMainActorSubviewSetup::IsActorEntity, FMainActorSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 }
 
-static bool HasAnyAuthority(const Worker_EntityId EntityId, const EntityViewElement& Entity, const FSubView* BaseSubView)
-{
-	return FMainActorSubviewSetup::IsActorEntity(EntityId, Entity);
-}
-
-FSubView& ActorSystem::CreateActorAuthSubView(const FSubView& ActorSubView, USpatialNetDriver& NetDriver)
+FSubView& ActorSystem::CreateActorAuthSubView(USpatialNetDriver& NetDriver)
 {
 	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetRoleFilterPredicate(ActorSubView, &HasAnyAuthority, NetDriver, &ActorSubView),
+		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, FSubView::NoFilter,
 		FAutonomousSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 }
 
-FSubView& ActorSystem::CreateAuthoritySubView(const FSubView& ActorSubView, USpatialNetDriver& NetDriver)
+FSubView& ActorSystem::CreateAuthoritySubView(USpatialNetDriver& NetDriver)
 {
 	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
-		GetRoleFilterPredicate(ActorSubView, &FAuthoritySubviewSetup::IsAuthorityActorEntity, NetDriver),
+		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetRoleFilterPredicate(&FAuthoritySubviewSetup::IsAuthorityActorEntity, NetDriver),
 		FAuthoritySubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 }
 
-FSubView& ActorSystem::CreateAutonomousSubView(const FSubView& ActorSubView, USpatialNetDriver& NetDriver)
+FSubView& ActorSystem::CreateAutonomousSubView(USpatialNetDriver& NetDriver)
 {
 	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
-		GetRoleFilterPredicate(ActorSubView, &FAutonomousSubviewSetup::IsAutonomousActorEntity, NetDriver),
+		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetRoleFilterPredicate(&FAutonomousSubviewSetup::IsAutonomousActorEntity, NetDriver),
 		FAutonomousSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 }
 
-FSubView& ActorSystem::CreateSimulatedSubView(const FSubView& ActorSubView, USpatialNetDriver& NetDriver)
+FSubView& ActorSystem::CreateSimulatedSubView(USpatialNetDriver& NetDriver)
 {
 	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_TAG_COMPONENT_ID,
-		GetRoleFilterPredicate(ActorSubView, &FSimulatedSubviewSetup::IsSimulatedActorEntity, NetDriver),
+		SpatialConstants::ACTOR_TAG_COMPONENT_ID, GetRoleFilterPredicate(&FSimulatedSubviewSetup::IsSimulatedActorEntity, NetDriver),
 		FSimulatedSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 }
 

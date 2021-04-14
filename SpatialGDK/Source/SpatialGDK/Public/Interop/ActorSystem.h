@@ -54,10 +54,10 @@ public:
 
 	static FSubView& CreateActorSubView(USpatialNetDriver& NetDriver);
 	static FSubView& CreateActorSubViewOnComponent(const Worker_ComponentId ComponentId, USpatialNetDriver& NetDriver);
-	static FSubView& CreateActorAuthSubView(const FSubView& ActorSubView, USpatialNetDriver& NetDriver);
-	static FSubView& CreateAuthoritySubView(const FSubView& ActorSubView, USpatialNetDriver& NetDriver);
-	static FSubView& CreateAutonomousSubView(const FSubView& ActorSubView, USpatialNetDriver& NetDriver);
-	static FSubView& CreateSimulatedSubView(const FSubView& ActorSubView, USpatialNetDriver& NetDriver);
+	static FSubView& CreateActorAuthSubView(USpatialNetDriver& NetDriver);
+	static FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver);
+	static FSubView& CreateAutonomousSubView(USpatialNetDriver& NetDriver);
+	static FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver);
 
 	UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
 
