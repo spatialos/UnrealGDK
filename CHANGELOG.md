@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a client crash that sometimes occurred when quickly unloading and reloading sublevels.
 - Fixed a worker crash when calling RPCs on PlayerControllers with a certain timing.
 - Fixed an issue with player disconnect where controllers, characters, and the client workers were not cleaned up correctly.
+- Modified UnrealGDKExampleProject's `DefaultGame.ini` to whitelist files that were previously throwing WARNs when building assemblies for cloud deployments.
 
 ## [`0.12.0`] - 2021-02-01
 
