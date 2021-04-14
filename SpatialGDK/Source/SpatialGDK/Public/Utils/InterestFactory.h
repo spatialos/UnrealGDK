@@ -75,6 +75,9 @@ protected:
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest) const;
 
+	void AddClientInterestEntityIdQuery(Interest& OutInterest, const AActor* InActor) const;
+	TArray<Worker_EntityId> GetClientInterestedEntityIds(const APlayerController* InPlayerController) const;
+
 	// Add the always relevant and the always interested query.
 	void AddClientAlwaysRelevantQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
 									  const QueryConstraint& LevelConstraint) const;

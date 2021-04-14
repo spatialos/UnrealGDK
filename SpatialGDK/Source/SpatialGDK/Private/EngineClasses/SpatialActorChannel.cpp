@@ -211,6 +211,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, LastPositionSinceUpdate(FVector::ZeroVector)
 	, TimeWhenPositionLastUpdated(0.0)
 	, bIsAutonomousProxyOnAuthority(false)
+	, TimeWhenClientEntityIdListLastUpdated(0.0)
 {
 }
 
@@ -228,6 +229,7 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	bIsAuthServer = false;
 	LastPositionSinceUpdate = FVector::ZeroVector;
 	TimeWhenPositionLastUpdated = 0.0;
+	TimeWhenClientEntityIdListLastUpdated = 0.0;
 	AuthorityReceivedTimestamp = 0;
 	bNeedOwnerInterestUpdate = false;
 	bIsAutonomousProxyOnAuthority = false;
@@ -669,10 +671,18 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	ReplicationBytesWritten = 0;
 
-	if (!bCreatingNewEntity && NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+	if (!bCreatingNewEntity)
 	{
-		NetDriver->ActorSystem->UpdateInterestComponent(Actor);
-		SetNeedOwnerInterestUpdate(false);
+		if (NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+		{
+			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
+			SetNeedOwnerInterestUpdate(false);
+		}
+		else if (ShouldUpdateClientEntityIdListQuery(Actor))
+		{
+			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
+			TimeWhenClientEntityIdListLastUpdated = NetDriver->GetElapsedTime();
+		}
 	}
 
 	// If any properties have changed, send a component update.
@@ -1281,7 +1291,22 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 	}
 }
 
-bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements()
+bool USpatialActorChannel::ShouldUpdateClientEntityIdListQuery(const AActor* Actor) const
+{
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
+	if (!Settings->bUseEntityIdListClientQueries || !Actor->IsA<APlayerController>())
+	{
+		return false;
+	}
+
+	const float TimeSinceLastClientInterestUpdate = NetDriver->GetElapsedTime() - TimeWhenClientEntityIdListLastUpdated;
+	const float UpdateThresholdSecs = 1/Settings->ClientEntityIdListQueryUpdateFrequency;
+
+	return TimeSinceLastClientInterestUpdate >= UpdateThresholdSecs;
+}
+
+bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements() const
 {
 	// Check that the Actor satisfies both lower thresholds OR either of the maximum thresholds
 	FVector ActorSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);

@@ -16,6 +16,7 @@
 #include "Engine/Classes/GameFramework/Actor.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
+#include "ReplicationGraph.h"
 #include "UObject/UObjectIterator.h"
 
 #if WITH_GAMEPLAY_DEBUGGER
@@ -282,8 +283,12 @@ void InterestFactory::AddClientPlayerControllerActorInterest(Interest& OutIntere
 
 	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
 
+	if (GetDefault<USpatialGDKSettings>()->bUseEntityIdListClientQueries)
+	{
+		AddClientInterestEntityIdQuery(OutInterest, InActor);
+	}
 	// Either add the NCD interest because there are no user interest queries, or because the user interest specified we should.
-	if (ShouldAddNetCullDistanceInterest(InActor))
+	else if (ShouldAddNetCullDistanceInterest(InActor))
 	{
 		AddNetCullDistanceQueries(OutInterest, LevelConstraint);
 	}
@@ -321,6 +326,59 @@ void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(I
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, PlayerControllerQuery);
 }
 #endif
+
+void InterestFactory::AddClientInterestEntityIdQuery(Interest& OutInterest, const AActor* InActor) const
+{
+	ensure(GetDefault<USpatialGDKSettings>()->bUseEntityIdListClientQueries);
+
+	const APlayerController* PlayerController = Cast<APlayerController>(InActor);
+	ensureMsgf(PlayerController != nullptr, TEXT("Tried to update client interest query for a non-PlayerController: %s"), *GetNameSafe(InActor));
+
+	Query RepGraphEntityIdQuery = Query();
+	RepGraphEntityIdQuery.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
+	RepGraphEntityIdQuery.ResultComponentSetIds = ClientNonAuthInterestResultType.ComponentSetsIds;
+	RepGraphEntityIdQuery.Constraint = CreateGDKSnapshotEntitiesConstraint();
+
+	for (Worker_EntityId EntityId : GetClientInterestedEntityIds(PlayerController))
+	{
+		QueryConstraint Constraint;
+		Constraint.EntityIdConstraint = EntityId;
+		RepGraphEntityIdQuery.Constraint.OrConstraint.Add(Constraint);
+	}
+
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, RepGraphEntityIdQuery);
+}
+
+TArray<Worker_EntityId> InterestFactory::GetClientInterestedEntityIds(const APlayerController* InPlayerController) const
+{
+	TArray<Worker_EntityId> InterestedEntityIdList{};
+
+	UNetConnection* NetConnection = InPlayerController->NetConnection;
+	UNetReplicationGraphConnection* NetRepGraphConnection = Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
+	if (NetRepGraphConnection != nullptr)
+	{
+		UE_LOG(LogInterestFactory, Error, TEXT("Failed to NetRepGraphConnection when calculating client interest"));
+		return InterestedEntityIdList;
+	}
+
+	FPerConnectionActorInfoMap& ActorInfoMap = NetRepGraphConnection->ActorInfoMap;
+
+	InterestedEntityIdList.Reserve(ActorInfoMap.Num());
+
+	for (auto ActorInfoIterator = ActorInfoMap.CreateIterator(); ActorInfoIterator; ++ActorInfoIterator)
+	{
+		const AActor* Actor = ActorInfoIterator.Key();
+		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+		{
+			continue;
+		}
+
+		InterestedEntityIdList.Emplace(EntityId);
+	}
+
+	return InterestedEntityIdList;
+}
 
 void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const
 {
@@ -582,6 +640,11 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 
 bool InterestFactory::ShouldAddNetCullDistanceInterest(const AActor* InActor) const
 {
+	if (GetDefault<USpatialGDKSettings>()->bUseEntityIdListClientQueries)
+	{
+		return false;
+	}
+
 	// If the actor has a component to specify interest and that indicates that we shouldn't add
 	// constraints based on NetCullDistanceSquared, abort. There is a check elsewhere to ensure that
 	// there is at most one ActorInterestQueryComponent.
