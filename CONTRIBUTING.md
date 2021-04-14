@@ -13,4 +13,7 @@ We welcome any and all
 
 ## Coding standards
 
-See the [GDK for Unreal C++ coding standards guide](./SpatialGDK/Documentation/contributions/unreal-gdk-coding-standards.md).
+See the [GDK for Unreal C++ coding standards guide](https://documentation.improbable.io/gdk-for-unreal/docs/coding-standards).
+
+## Employe Guidance
+If you work at Improbable see the [Contributor Space](https://improbableio.atlassian.net/l/c/A5aANDEh) for more guidance.
