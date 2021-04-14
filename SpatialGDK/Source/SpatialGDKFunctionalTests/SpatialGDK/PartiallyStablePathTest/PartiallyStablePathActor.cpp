@@ -8,11 +8,11 @@ void APartiallyStablePathActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Component = NewObject<UStaticMeshComponent>(this, "PartiallyStablePathComponent");
-	Component->SetNetAddressable();
-	Component->RegisterComponent();
+	DynamicComponent = NewObject<UStaticMeshComponent>(this, "PartiallyStablePathComponent");
+	DynamicComponent->SetNetAddressable();
+	DynamicComponent->RegisterComponent();
 
-	Component->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'")));
-	Component->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-	Component->SetRelativeTransform(FTransform(FRotator(), FVector(0.0f, 0.0f, 50.0f), FVector(0.5f)));
+	DynamicComponent->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'")));
+	DynamicComponent->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	DynamicComponent->SetRelativeTransform(FTransform(FRotator(), FVector(0.0f, 0.0f, 50.0f), FVector(0.5f)));
 }

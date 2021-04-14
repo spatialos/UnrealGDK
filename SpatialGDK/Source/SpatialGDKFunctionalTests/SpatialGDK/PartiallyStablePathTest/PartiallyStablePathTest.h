@@ -22,6 +22,7 @@ public:
 	virtual void PrepareTest() override;
 
 private:
+	UPROPERTY()
 	APartiallyStablePathPawn* Pawn;
 };
 

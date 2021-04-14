@@ -20,5 +20,5 @@ public:
 	virtual void BeginPlay() override;
 
 	UPROPERTY()
-	UStaticMeshComponent* Component;
+	UStaticMeshComponent* DynamicComponent;
 };

@@ -8,7 +8,7 @@ void APartiallyStablePathPawn::ServerVerifyComponentReference_Implementation(APa
 																			 UStaticMeshComponent* Component)
 {
 	bServerRPCCalled = true;
-	bRPCParamMatchesComponent = Actor != nullptr && Component != nullptr && Actor->Component == Component;
+	bRPCParamMatchesComponent = Actor != nullptr && Component != nullptr && Actor->DynamicComponent == Component;
 }
 
 bool APartiallyStablePathPawn::ServerVerifyComponentReference_Validate(APartiallyStablePathActor* Actor, UStaticMeshComponent* Component)

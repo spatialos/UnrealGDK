@@ -22,8 +22,13 @@
  * The test includes 1 server and 1 client.
  * The flow is as follows:
  * - Setup:
+ *  - The server spawns the test actor.
  * - Test:
+ *  - The client calls a server RPC on its pawn, passing a reference to the test actor's component as an argument.
+ *  - The server verifies that the reference resolves correctly.
  * - Cleanup:
+ *  - The info about the server RPC results on the pawn is reset.
+ *  - The test actor is destroyed (via auto destroy).
  */
 
 APartiallyStablePathTest::APartiallyStablePathTest()
@@ -39,7 +44,7 @@ void APartiallyStablePathTest::PrepareTest()
 	AddStep(TEXT("Spawn the test actor"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Verify the pawn has the right class
 		ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
-		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
+		APlayerController* PlayerController = CastChecked<APlayerController>(FlowController->GetOwner());
 		Pawn = Cast<APartiallyStablePathPawn>(PlayerController->GetPawn());
 		AssertTrue(Pawn != nullptr, TEXT("The pawn is APartiallyStablePathPawn"));
 		AssertFalse(Pawn->bServerRPCCalled, TEXT("Server RPC has not been called"));
@@ -55,6 +60,12 @@ void APartiallyStablePathTest::PrepareTest()
 	AddStep(
 		TEXT("Client calls a Server RPC"), FWorkerDefinition::Client(1),
 		[this]() -> bool {
+			APlayerController* PlayerController = CastChecked<APlayerController>(GetLocalFlowController()->GetOwner());
+			if (PlayerController->GetPawn() == nullptr)
+			{
+				return false;
+			}
+
 			TArray<AActor*> TestActors;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), APartiallyStablePathActor::StaticClass(), TestActors);
 
@@ -65,12 +76,12 @@ void APartiallyStablePathTest::PrepareTest()
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), APartiallyStablePathActor::StaticClass(), TestActors);
 
 			AssertEqual_Int(TestActors.Num(), 1, TEXT("Number of test actors on the client"));
-			APartiallyStablePathActor* TestActor = Cast<APartiallyStablePathActor>(TestActors[0]);
+			APartiallyStablePathActor* TestActor = CastChecked<APartiallyStablePathActor>(TestActors[0]);
 
-			APlayerController* PlayerController = Cast<APlayerController>(GetLocalFlowController()->GetOwner());
-			APartiallyStablePathPawn* Pawn = Cast<APartiallyStablePathPawn>(PlayerController->GetPawn());
+			APlayerController* PlayerController = CastChecked<APlayerController>(GetLocalFlowController()->GetOwner());
+			APartiallyStablePathPawn* Pawn = CastChecked<APartiallyStablePathPawn>(PlayerController->GetPawn());
 
-			Pawn->ServerVerifyComponentReference(TestActor, TestActor->Component);
+			Pawn->ServerVerifyComponentReference(TestActor, TestActor->DynamicComponent);
 
 			FinishStep();
 		},
