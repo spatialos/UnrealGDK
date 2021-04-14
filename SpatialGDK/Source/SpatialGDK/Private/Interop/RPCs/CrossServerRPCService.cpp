@@ -16,9 +16,9 @@ CrossServerRPCService::CrossServerRPCService(const ActorCanExtractRPCDelegate In
 											 const FSubView& InWorkerEntitySubView, FRPCStore& InRPCStore)
 	: CanExtractRPCDelegate(InCanExtractRPCDelegate)
 	, ExtractRPCCallback(InExtractRPCCallback)
-	, ActorSubView(&InActorSubView)
-	, WorkerEntitySubView(&InWorkerEntitySubView)
-	, RPCStore(&InRPCStore)
+	, ActorSubView(InActorSubView)
+	, WorkerEntitySubView(InWorkerEntitySubView)
+	, RPCStore(InRPCStore)
 {
 }
 
@@ -36,12 +36,12 @@ EPushRPCResult CrossServerRPCService::PushCrossServerRPC(Worker_EntityId EntityI
 			return EPushRPCResult::EntityBeingCreated;
 		}
 
-		EndpointObject = Schema_GetComponentDataFields(RPCStore->GetOrCreateComponentData(SenderEndpointId));
+		EndpointObject = Schema_GetComponentDataFields(RPCStore.GetOrCreateComponentData(SenderEndpointId));
 		Endpoints = &CrossServerDataStore.Add(Sender.Entity);
 	}
 	else
 	{
-		EndpointObject = Schema_GetComponentUpdateFields(RPCStore->GetOrCreateComponentUpdate(SenderEndpointId));
+		EndpointObject = Schema_GetComponentUpdateFields(RPCStore.GetOrCreateComponentUpdate(SenderEndpointId));
 	}
 
 	CrossServer::WriterState& SenderState = Endpoints->SenderState;
@@ -78,7 +78,7 @@ EPushRPCResult CrossServerRPCService::PushCrossServerRPC(Worker_EntityId EntityI
 
 void CrossServerRPCService::AdvanceView()
 {
-	const FSubViewDelta* SubViewDeltas[] = { &ActorSubView->GetViewDelta(), &WorkerEntitySubView->GetViewDelta() };
+	const FSubViewDelta* SubViewDeltas[] = { &ActorSubView.GetViewDelta(), &WorkerEntitySubView.GetViewDelta() };
 	for (auto SubViewDelta : SubViewDeltas)
 	{
 		for (const EntityDelta& Delta : SubViewDelta->EntityDeltas)
@@ -106,9 +106,9 @@ void CrossServerRPCService::AdvanceViewForEntityDelta(const EntityDelta& Delta)
 	case EntityDelta::REMOVE:
 	case EntityDelta::TEMPORARILY_REMOVED:
 		CrossServerDataStore.Remove(Delta.EntityId);
-		RPCStore->PendingComponentUpdatesToSend.Remove(
+		RPCStore.PendingComponentUpdatesToSend.Remove(
 			EntityComponentId(Delta.EntityId, SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID));
-		RPCStore->PendingComponentUpdatesToSend.Remove(
+		RPCStore.PendingComponentUpdatesToSend.Remove(
 			EntityComponentId(Delta.EntityId, SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID));
 		if (Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
 		{
@@ -116,13 +116,14 @@ void CrossServerRPCService::AdvanceViewForEntityDelta(const EntityDelta& Delta)
 		}
 		break;
 	default:
+		checkNoEntry();
 		break;
 	}
 }
 
 void CrossServerRPCService::ProcessChanges()
 {
-	const FSubViewDelta* SubViewDeltas[] = { &ActorSubView->GetViewDelta(), &WorkerEntitySubView->GetViewDelta() };
+	const FSubViewDelta* SubViewDeltas[] = { &ActorSubView.GetViewDelta(), &WorkerEntitySubView.GetViewDelta() };
 	for (auto SubViewDelta : SubViewDeltas)
 	{
 		for (const EntityDelta& Delta : SubViewDelta->EntityDeltas)
@@ -160,7 +161,7 @@ void CrossServerRPCService::ProcessChangesForEntityDelta(const EntityDelta& Delt
 
 void CrossServerRPCService::EntityAdded(const Worker_EntityId EntityId)
 {
-	for (const ComponentData& Component : ActorSubView->GetView()[EntityId].Components)
+	for (const ComponentData& Component : ActorSubView.GetView()[EntityId].Components)
 	{
 		if (!IsCrossServerEndpoint(Component.GetComponentId()))
 		{
@@ -224,7 +225,7 @@ void CrossServerRPCService::ProcessComponentChange(const Worker_EntityId EntityI
 
 void CrossServerRPCService::PopulateDataStore(const Worker_EntityId EntityId)
 {
-	const EntityViewElement& Entity = ActorSubView->GetView()[EntityId];
+	const EntityViewElement& Entity = ActorSubView.GetView()[EntityId];
 
 	Schema_ComponentData* SenderACKData =
 		Entity.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID })
@@ -296,7 +297,7 @@ void CrossServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId Enti
 
 void CrossServerRPCService::HandleRPC(const Worker_EntityId EntityId, const CrossServerEndpoint& Receiver)
 {
-	if (ActorSubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
+	if (ActorSubView.HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
 	{
 		if (!CanExtractRPCDelegate.Execute(EntityId))
 		{
@@ -373,7 +374,7 @@ void CrossServerRPCService::WriteCrossServerACKFor(Worker_EntityId Receiver, con
 
 	EntityComponentId Pair(Receiver, SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID);
 
-	Schema_ComponentUpdate* Update = RPCStore->GetOrCreateComponentUpdate(Pair);
+	Schema_ComponentUpdate* Update = RPCStore.GetOrCreateComponentUpdate(Pair);
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update);
 
 	Schema_Object* NewEntry = Schema_AddObject(UpdateObject, 1 + SlotIdx);
@@ -401,7 +402,7 @@ void CrossServerRPCService::UpdateSentRPCsACKs(Worker_EntityId SenderId, const C
 				SenderState.Mailbox.Remove(RPCKey);
 
 				EntityComponentId Pair(ACK.Sender, SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID);
-				RPCStore->GetOrCreateComponentUpdate(Pair);
+				RPCStore.GetOrCreateComponentUpdate(Pair);
 			}
 		}
 	}
@@ -451,7 +452,7 @@ void CrossServerRPCService::CleanupACKsFor(Worker_EntityId EndpointId, const Cro
 			uint32 SlotIdx = SlotToClear.Value.ACKSlot;
 			State.RPCSlots.Remove(SlotToClear.Key);
 
-			RPCStore->GetOrCreateComponentUpdate(Pair);
+			RPCStore.GetOrCreateComponentUpdate(Pair);
 
 			State.ACKAlloc.FreeSlot(SlotIdx);
 		}

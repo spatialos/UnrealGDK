@@ -539,31 +539,37 @@ FRPCErrorInfo SpatialRPCService::ApplyRPC(const FPendingRPCParams& Params)
 
 namespace SpatialRPCServicePrivate
 {
-	struct NetWriteFenceResolutionHandler : FStackOnly
+/**
+ * When receiving a NetWriteFence, it will look like we are trying to
+ * make the initial call again, without the sender/dependent.
+ * So we push a new entry in the NetDriver's stack of sender/dependent to indicate
+ * that it is coming from the network and is actually the resolution of a previous call made earlier.
+ */
+struct NetWriteFenceResolutionHandler : FStackOnly
+{
+	NetWriteFenceResolutionHandler(USpatialNetDriver& InNetDriver, UFunction& Function)
+		: NetDriver(InNetDriver)
+		, bIsNetWriteFence(Function.HasAnyFunctionFlags(FUNC_NetWriteFence))
 	{
-		NetWriteFenceResolutionHandler(USpatialNetDriver& InNetDriver, UFunction& Function)
-			: NetDriver(InNetDriver)
-			, bIsNetWriteFence(Function.HasAnyFunctionFlags(FUNC_NetWriteFence))
+		if (bIsNetWriteFence)
 		{
-			if (bIsNetWriteFence)
-			{
-				NetDriver.PushNetWriteFenceResolution();
-			}
+			NetDriver.PushNetWriteFenceResolution();
 		}
+	}
 
-		~NetWriteFenceResolutionHandler()
+	~NetWriteFenceResolutionHandler()
+	{
+		if (bIsNetWriteFence)
 		{
-			if (bIsNetWriteFence)
-			{
-				NetDriver.PopNetWriteFenceResolution();
-			}
+			NetDriver.PopNetWriteFenceResolution();
 		}
+	}
 
-	private:
-		USpatialNetDriver& NetDriver;
-		const bool bIsNetWriteFence;
-	};
-}
+private:
+	USpatialNetDriver& NetDriver;
+	const bool bIsNetWriteFence;
+};
+} // namespace SpatialRPCServicePrivate
 
 FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFunction* Function, const FPendingRPCParams& PendingRPCParams)
 {

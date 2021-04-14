@@ -77,10 +77,10 @@ private:
 
 	ActorCanExtractRPCDelegate CanExtractRPCDelegate;
 	ExtractRPCDelegate ExtractRPCCallback;
-	const FSubView* ActorSubView;
-	const FSubView* WorkerEntitySubView;
+	const FSubView& ActorSubView;
+	const FSubView& WorkerEntitySubView;
 
-	FRPCStore* RPCStore;
+	FRPCStore& RPCStore;
 
 	// Deserialized state store for client/server RPC components.
 	TMap<Worker_EntityId_Key, CrossServerEndpoints> CrossServerDataStore;

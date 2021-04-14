@@ -8,7 +8,7 @@
 
 class USceneComponent;
 
-UCLASS(Blueprintable)
+UCLASS()
 class AEntityInteractionTestActor : public AActor
 {
 	GENERATED_BODY()
@@ -22,19 +22,19 @@ public:
 
 	AEntityInteractionTestActor();
 
-	UFUNCTION(BlueprintCallable, NetWriteFence, Reliable)
+	UFUNCTION(NetWriteFence, Reliable)
 	void TestNetWriteFence(int32 Param);
 
-	UFUNCTION(BlueprintCallable, CrossServer, Reliable)
+	UFUNCTION(CrossServer, Reliable)
 	void TestReliable(int32 Param);
 
-	UFUNCTION(BlueprintCallable, CrossServer, Unreliable)
+	UFUNCTION(CrossServer, Unreliable)
 	void TestUnreliable(int32 Param);
 
-	UFUNCTION(BlueprintCallable, CrossServer, Reliable, Unordered)
+	UFUNCTION(CrossServer, Reliable, Unordered)
 	void TestUnordered(int32 Param);
 
-	UFUNCTION(BlueprintCallable, CrossServer, Reliable, NetWriteFence)
+	UFUNCTION(CrossServer, Reliable, NetWriteFence)
 	void TestNoLoopback(int32 Param);
 
 	UPROPERTY()
