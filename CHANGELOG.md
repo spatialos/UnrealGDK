@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a worker crash when calling RPCs on PlayerControllers with a certain timing.
 - Fixed a warning about whitelisted files which was produced in the ExampleProject when building assemblies for cloud deployments.
 - Fixed a bug where on initial replication, actors with replicated TArrays would not have the array cleared if the local state was not empty.
+- Fixed an issue with replicating references to stably named dynamically added subobjects of dynamic actors.
 
 ## [`0.12.0`] - 2021-02-01
 
