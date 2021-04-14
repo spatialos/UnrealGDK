@@ -1301,7 +1301,7 @@ bool USpatialActorChannel::ShouldUpdateClientEntityIdListQuery(const AActor* Act
 	}
 
 	const float TimeSinceLastClientInterestUpdate = NetDriver->GetElapsedTime() - TimeWhenClientEntityIdListLastUpdated;
-	const float UpdateThresholdSecs = 1/Settings->ClientEntityIdListQueryUpdateFrequency;
+	const float UpdateThresholdSecs = 1 / Settings->ClientEntityIdListQueryUpdateFrequency;
 
 	return TimeSinceLastClientInterestUpdate >= UpdateThresholdSecs;
 }

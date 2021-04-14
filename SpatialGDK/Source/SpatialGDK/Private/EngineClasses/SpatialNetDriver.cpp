@@ -217,6 +217,14 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
+	if (UReplicationGraph* RepGraph = Cast<UReplicationGraph>(GetReplicationDriver()))
+	{
+		if (GetDefault<USpatialGDKSettings>()->bUseEntityIdListClientQueries)
+		{
+			RepGraph->SetUseEntityIdListClientQueries(true);
+		}
+	}
+
 #if WITH_EDITOR
 	PlayInEditorID = GPlayInEditorID;
 

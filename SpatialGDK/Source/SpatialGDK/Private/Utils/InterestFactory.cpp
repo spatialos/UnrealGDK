@@ -332,12 +332,12 @@ void InterestFactory::AddClientInterestEntityIdQuery(Interest& OutInterest, cons
 	ensure(GetDefault<USpatialGDKSettings>()->bUseEntityIdListClientQueries);
 
 	const APlayerController* PlayerController = Cast<APlayerController>(InActor);
-	ensureMsgf(PlayerController != nullptr, TEXT("Tried to update client interest query for a non-PlayerController: %s"), *GetNameSafe(InActor));
+	ensureMsgf(PlayerController != nullptr, TEXT("Tried to update client interest query for a non-PlayerController: %s"),
+			   *GetNameSafe(InActor));
 
 	Query RepGraphEntityIdQuery = Query();
 	RepGraphEntityIdQuery.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
 	RepGraphEntityIdQuery.ResultComponentSetIds = ClientNonAuthInterestResultType.ComponentSetsIds;
-	RepGraphEntityIdQuery.Constraint = CreateGDKSnapshotEntitiesConstraint();
 
 	for (Worker_EntityId EntityId : GetClientInterestedEntityIds(PlayerController))
 	{
@@ -354,21 +354,22 @@ TArray<Worker_EntityId> InterestFactory::GetClientInterestedEntityIds(const APla
 	TArray<Worker_EntityId> InterestedEntityIdList{};
 
 	UNetConnection* NetConnection = InPlayerController->NetConnection;
-	UNetReplicationGraphConnection* NetRepGraphConnection = Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
+	UNetReplicationGraphConnection* NetRepGraphConnection =
+		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
 	if (NetRepGraphConnection != nullptr)
 	{
 		UE_LOG(LogInterestFactory, Error, TEXT("Failed to NetRepGraphConnection when calculating client interest"));
 		return InterestedEntityIdList;
 	}
 
-	FPerConnectionActorInfoMap& ActorInfoMap = NetRepGraphConnection->ActorInfoMap;
+	const TArray<FPrioritizedRepList::FItem>& ClientInterestedActors = NetRepGraphConnection->ClientInterestedActors;
 
-	InterestedEntityIdList.Reserve(ActorInfoMap.Num());
+	InterestedEntityIdList.Reserve(ClientInterestedActors.Num());
 
-	for (auto ActorInfoIterator = ActorInfoMap.CreateIterator(); ActorInfoIterator; ++ActorInfoIterator)
+	for (const FPrioritizedRepList::FItem ActorWrapperIt : ClientInterestedActors)
 	{
-		const AActor* Actor = ActorInfoIterator.Key();
-		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+		const AActor* Actor = ActorWrapperIt.Actor;
+		const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 		{
 			continue;
