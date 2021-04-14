@@ -623,8 +623,8 @@ void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worke
 		Worker_ComponentData Data = Op.results[0].components[i];
 		if (Data.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
 		{
-			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
+			VirtualWorkerTranslation Translation(Data);
+			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerTranslation(Translation);
 		}
 	}
 }
@@ -633,7 +633,7 @@ void UGlobalStateManager::ApplyDataFromQueryResponse(const Worker_EntityQueryRes
 {
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
 	{
-		Worker_ComponentData Data = Op.results[0].components[i];
+		const Worker_ComponentData Data = Op.results[0].components[i];
 		if (Data.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
 		{
 			ApplyDeploymentMapData(Data.schema_type);

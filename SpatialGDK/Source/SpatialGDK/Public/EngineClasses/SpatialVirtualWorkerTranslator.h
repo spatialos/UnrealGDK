@@ -3,10 +3,10 @@
 #pragma once
 
 #include "Interop/SpatialSender.h"
+#include "Schema/VirtualWorkerTranslation.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
-#include "Containers/Queue.h"
 #include "CoreMinimal.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -19,13 +19,6 @@ class UAbstractLBStrategy;
 class SPATIALGDK_API SpatialVirtualWorkerTranslator
 {
 public:
-	struct WorkerInformation
-	{
-		PhysicalWorkerName WorkerName;
-		Worker_EntityId ServerWorkerEntityId;
-		Worker_PartitionId PartitionEntityId;
-	};
-
 	SpatialVirtualWorkerTranslator() = delete;
 	SpatialVirtualWorkerTranslator(UAbstractLBStrategy* InLoadBalanceStrategy, USpatialNetDriver* InNetDriver,
 								   PhysicalWorkerName InLocalPhysicalWorkerName);
@@ -39,23 +32,23 @@ public:
 	Worker_PartitionId GetClaimedPartitionId() const { return LocalPartitionId; }
 	int32 GetMappingCount() const { return VirtualToPhysicalWorkerMapping.Num(); }
 
-	// Returns the name of the worker currently assigned to VirtualWorkerId id or nullptr if there is
-	// no worker assigned.
-	// TODO(harkness): Do we want to copy this data? Otherwise it's only guaranteed to be valid until
-	// the next mapping update.
 	const PhysicalWorkerName* GetPhysicalWorkerForVirtualWorker(VirtualWorkerId Id) const;
 	Worker_PartitionId GetPartitionEntityForVirtualWorker(VirtualWorkerId Id) const;
 	Worker_EntityId GetServerWorkerEntityForVirtualWorker(VirtualWorkerId Id) const;
 
 	// On receiving a version of the translation state, apply that to the internal mapping.
-	void ApplyVirtualWorkerManagerData(Schema_Object* ComponentObject);
+	void ApplyVirtualWorkerTranslation(Schema_ComponentUpdate* Update);
+	void ApplyVirtualWorkerTranslation(const SpatialGDK::VirtualWorkerTranslation& Translation);
 
 	USpatialNetDriver* NetDriver;
 
 	TWeakObjectPtr<UAbstractLBStrategy> LoadBalanceStrategy;
 
 private:
-	TMap<VirtualWorkerId, WorkerInformation> VirtualToPhysicalWorkerMapping;
+	friend class SpatialVirtualWorkerTranslationManager;
+
+	TMap<VirtualWorkerId, SpatialGDK::VirtualWorkerInfo> VirtualToPhysicalWorkerMapping;
+	uint32 TotalServerCrashCount;
 
 	bool bIsReady;
 
@@ -64,9 +57,6 @@ private:
 	VirtualWorkerId LocalVirtualWorkerId;
 	Worker_PartitionId LocalPartitionId;
 
-	// Serialization and deserialization of the mapping.
-	void ApplyMappingFromSchema(Schema_Object* Object);
-
-	void UpdateMapping(VirtualWorkerId Id, PhysicalWorkerName WorkerName, Worker_PartitionId PartitionEntityId,
-					   Worker_EntityId ServerWorkerEntityId);
+	// Deserializing component data to local state.
+	void UpdateMapping(const SpatialGDK::VirtualWorkerInfo& VirtualWorkerInfo);
 };

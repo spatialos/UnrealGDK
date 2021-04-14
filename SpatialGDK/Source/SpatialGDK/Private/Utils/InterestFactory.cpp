@@ -248,6 +248,8 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, co
 
 	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
 
+	AddClientServerWorkerEntityInterest(OutInterest);
+
 	// Either add the NCD interest because there are no user interest queries, or because the user interest specified we should.
 	if (ShouldAddNetCullDistanceInterest(InActor))
 	{
@@ -375,6 +377,16 @@ void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest,
 
 		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, ServerSystemQuery);
 	}
+}
+
+// This exists so that clients can detect when their authoritative server has crashed.
+void InterestFactory::AddClientServerWorkerEntityInterest(Interest& OutInterest)
+{
+	Query UserQuery;
+	UserQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
+	UserQuery.ResultComponentIds = { SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID };
+
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, UserQuery);
 }
 
 void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const
@@ -602,7 +614,21 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const AActor* 
 	return AlwaysInterestedConstraint;
 }
 
-QueryConstraint CreateOrConstraint(const TArray<Worker_ComponentId>& ComponentIds)
+QueryConstraint CreateOrConstraintWithEntities(const TArray<Worker_EntityId>& EntityIds)
+{
+	QueryConstraint EntityOrConstraint;
+
+	for (Worker_EntityId EntityId : EntityIds)
+	{
+		QueryConstraint Constraint;
+		Constraint.EntityIdConstraint = EntityId;
+		EntityOrConstraint.OrConstraint.Add(Constraint);
+	}
+
+	return EntityOrConstraint;
+}
+
+QueryConstraint CreateOrConstraintWithComponents(const TArray<Worker_ComponentId>& ComponentIds)
 {
 	QueryConstraint ComponentOrConstraint;
 
@@ -618,18 +644,19 @@ QueryConstraint CreateOrConstraint(const TArray<Worker_ComponentId>& ComponentId
 
 QueryConstraint InterestFactory::CreateGDKSnapshotEntitiesConstraint() const
 {
-	return CreateOrConstraint({ SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID,
-								SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID, SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID });
+	return CreateOrConstraintWithEntities(
+		{ SpatialConstants::INITIAL_SPAWNER_ENTITY_ID, SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID,
+		  SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID, SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID });
 }
 
 QueryConstraint InterestFactory::CreateClientAlwaysRelevantConstraint() const
 {
-	return CreateOrConstraint({ SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID });
+	return CreateOrConstraintWithComponents({ SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID });
 }
 
 QueryConstraint InterestFactory::CreateServerAlwaysRelevantConstraint() const
 {
-	return CreateOrConstraint(
+	return CreateOrConstraintWithComponents(
 		{ SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, SpatialConstants::SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID });
 }
 

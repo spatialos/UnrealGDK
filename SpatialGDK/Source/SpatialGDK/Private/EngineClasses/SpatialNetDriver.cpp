@@ -554,16 +554,23 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		// The interest factory depends on the package map, so is created last.
 		InterestFactory = MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager, PackageMap);
 
-		if (!IsServer())
-		{
-			return;
-		}
-
 		SpatialGDK::FSubView& WellKnownSubView =
 			Connection->GetCoordinator().CreateSubView(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
 													   SpatialGDK::FSubView::NoDispatcherCallbacks);
-		WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(
-			WellKnownSubView, Connection, LoadBalanceStrategy->GetMinimumRequiredWorkers(), *VirtualWorkerTranslator, *GlobalStateManager);
+
+		if (IsServer())
+		{
+			WellKnownEntitySystem = MakeUnique<SpatialGDK::WellKnownEntitySystem>(WellKnownSubView, SystemEntitySubview, Connection,
+																				  LoadBalanceStrategy->GetMinimumRequiredWorkers(),
+																				  *VirtualWorkerTranslator, *GlobalStateManager);
+		}
+		else
+		{
+			const SpatialGDK::FSubView& PlayerControllerSubview =
+				Connection->GetCoordinator().CreateSubView(SpatialConstants::PLAYER_CONTROLLER_SERVER_COMPONENT_ID,
+														   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+			ServerCrashHandler = MakeUnique<SpatialGDK::ServerCrashHandler>(WellKnownSubView, PlayerControllerSubview, this);
+		}
 	}
 }
 
@@ -1031,7 +1038,7 @@ void USpatialNetDriver::BeginDestroy()
 		{
 			for (const auto& Partition : VirtualWorkerTranslationManager->GetAllPartitions())
 			{
-				Connection->SendDeleteEntityRequest(Partition.PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
+				Connection->SendDeleteEntityRequest(Partition, SpatialGDK::RETRY_UNTIL_COMPLETE);
 			}
 		}
 
@@ -2115,6 +2122,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			if (ClientConnectionManager.IsValid())
 			{
 				ClientConnectionManager->Advance();
+			}
+
+			if (ServerCrashHandler.IsValid())
+			{
+				ServerCrashHandler->Advance();
 			}
 
 			if (ActorSystem.IsValid())

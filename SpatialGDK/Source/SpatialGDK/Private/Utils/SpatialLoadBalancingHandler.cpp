@@ -10,6 +10,7 @@
 #include "LoadBalancing/OwnershipLockingPolicy.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/MigrationDiagnostic.h"
+#include "Schema/PlayerControllerServer.h"
 #include "Schema/SpatialDebugging.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialLoadBalancingHandler);
@@ -151,6 +152,22 @@ void FSpatialLoadBalancingHandler::ProcessMigrations()
 		Actor->RemoteRole = ROLE_Authority;
 
 		Actor->OnAuthorityLost();
+
+		// The PlayerController component tracks the auth server system entity ID so the client can know
+		// when its server has crashed.
+		if (Actor->IsA<APlayerController>())
+		{
+			const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+
+			const Worker_EntityId AuthServerWorkerSystemEntity =
+				NetDriver->VirtualWorkerTranslator->GetServerWorkerEntityForVirtualWorker(MigrationInfo.Value);
+			FWorkerComponentUpdate PlayerControllerUpdate = PlayerControllerServer(AuthServerWorkerSystemEntity).CreateComponentUpdate();
+
+			NetDriver->Connection->SendComponentUpdate(EntityId, &PlayerControllerUpdate);
+			UE_LOG(LogSpatialLoadBalanceEnforcer, Warning, TEXT("Migrated PC to new auth server system entity: %lld"),
+				   AuthServerWorkerSystemEntity);
+		}
 	}
 	ActorsToMigrate.Empty();
 }

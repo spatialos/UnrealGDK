@@ -216,6 +216,7 @@ bool CreateSnapshotPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Metadata(TEXT("SnapshotPartitionEntity")).CreateComponentData());
 	Components.Add(Persistence().CreateComponentData());
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
 
 	SetEntityData(SnapshotPartitionEntity, Components);
 
