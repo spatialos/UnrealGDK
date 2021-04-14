@@ -525,6 +525,11 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 	return ESchemaComponentType::SCHEMA_Invalid;
 }
 
+const TArray<Schema_FieldId>& USpatialClassInfoManager::GetFieldIdsByComponentId(Worker_ComponentId ComponentId)
+{
+	return SchemaDatabase->FieldIdsArray[SchemaDatabase->ComponentIdToFieldIdsIndex[ComponentId]].FieldIds;
+}
+
 const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction* Function)
 {
 	check(Object != nullptr && Function != nullptr);
