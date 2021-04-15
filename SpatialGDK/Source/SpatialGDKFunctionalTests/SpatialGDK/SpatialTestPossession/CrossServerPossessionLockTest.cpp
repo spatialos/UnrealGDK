@@ -79,6 +79,9 @@ void ACrossServerPossessionLockTest::PrepareTest()
 		FinishStep();
 	});
 
+	//Wait for playercontroller to get unlocked before trying to migrate it back in the cleanup steps
+	AddWaitStep(FWorkerDefinition::AllServers);
+
 	AddCleanupSteps();
 
 }
