@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Downgraded a check to an error in SpatialSender::SendAuthorityIntentUpdate when sending the same intent twice.
 - Fixed a client crash that sometimes occurred when quickly unloading and reloading sublevels.
 - Fixed a worker crash when calling RPCs on PlayerControllers with a certain timing.
+- Reverted a dbghelp fix and applied a fix committed to the UE master branch.
 
 ## [`0.12.0`] - 2021-02-01
 
