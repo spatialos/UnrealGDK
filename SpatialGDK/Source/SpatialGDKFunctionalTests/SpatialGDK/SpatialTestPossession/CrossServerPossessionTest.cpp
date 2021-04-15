@@ -79,7 +79,7 @@ void ACrossServerPossessionTest::PrepareTest()
 				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 				{
 					ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-					if (PlayerController)
+					if (PlayerController != nullptr)
 					{
 						AssertTrue(PlayerController->HasAuthority(), TEXT("The PlayerController should be on server 4"));
 						AssertTrue(PlayerController->HasMigrated(), TEXT("PlayerController should have migrated"), PlayerController);
