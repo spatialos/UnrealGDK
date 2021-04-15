@@ -396,6 +396,8 @@ void USpatialActorChannel::UpdateShadowData()
 	// Update handover shadow data.
 	for (auto& HandoverData : HandoverShadowDataMap)
 	{
+		check(HandoverData.Key.IsValid());
+
 		TArray<uint8>& ShadowDataBuffer = HandoverData.Value.Get();
 		UObject* Object = HandoverData.Key.Get();
 
@@ -1370,6 +1372,8 @@ void USpatialActorChannel::OnSubobjectDeleted(const FUnrealObjectRef& ObjectRef,
 		NetDriver->ActorSystem->CleanupRepStateMap(*SubObjectRefMap);
 		ObjectReferenceMap.Remove(ObjectWeakPtr);
 	}
+	const int32 HandoverShadowStatesRemoved = HandoverShadowDataMap.Remove(ObjectWeakPtr);
+	check(HandoverShadowStatesRemoved == 1);
 }
 
 void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStaticBuffer& StaticBuffer, UObject* TargetObject)
