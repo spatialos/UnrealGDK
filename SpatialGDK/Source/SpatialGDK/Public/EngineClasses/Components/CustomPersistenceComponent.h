@@ -21,7 +21,7 @@ public:
 	virtual Worker_ComponentId GetComponentId() const { return (Worker_ComponentId)0; } // todo use invalid component id constant
 
 	// Internal handling of adding/updating/applying the persistence component data
-	virtual void PostReplication();
+	virtual void PostReplication() override;
 	virtual void OnAuthorityGained() override;
 
 protected:
