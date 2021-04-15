@@ -295,6 +295,19 @@ TArray<FDispatcherRefreshCallback> FSimulatedSubviewSetup::GetCallbacks(ViewCoor
 	return FAutonomousSubviewSetup::GetCallbacks(Coordinator);
 }
 
+enum class EActorSubViewType
+{
+	Authority,
+	Autonomous,
+	Simulated,
+};
+
+struct ActorSystem::FEntitySubViewUpdate
+{
+	const TArray<EntityDelta>& EntityDeltas;
+	EActorSubViewType SubViewType;
+};
+
 void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
 {
 	for (const EntityDelta& Delta : SubViewUpdate.EntityDeltas)
@@ -1579,75 +1592,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
-
-	// Apply initial replicated properties.
-	// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
-	// Potentially we could split out the initial actor state and the initial component state
-	for (const ComponentData& Component : ActorSubView->GetView()[EntityId].Components)
-	{
-		if (NetDriver->ClassInfoManager->IsGeneratedQBIMarkerComponent(Component.GetComponentId())
-			|| Component.GetComponentId() < SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
-		{
-			continue;
-		}
-		ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), *Channel,
-										  ObjectsToResolvePendingOpsFor);
-	}
-
-	if (NetDriver->InitialOnlyFilter != nullptr)
-	{
-		if (const TArray<ComponentData>* InitialOnlyComponents = NetDriver->InitialOnlyFilter->GetInitialOnlyData(EntityId))
-		{
-			for (const ComponentData& Component : *InitialOnlyComponents)
-			{
-				ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), *Channel,
-												  ObjectsToResolvePendingOpsFor);
-			}
-		}
-	}
-
-	// Resolve things like RepNotify or RPCs after applying component data.
-	for (const ObjectPtrRefPair& ObjectToResolve : ObjectsToResolvePendingOpsFor)
-	{
-		ResolvePendingOperations(ObjectToResolve.Key, ObjectToResolve.Value);
-	}
-
-	if (!NetDriver->IsServer())
-	{
-		// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-
-		// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
-		// a player index. For now we don't support split screen, so the number is always 0.
-		if (EntityActor->IsA(APlayerController::StaticClass()))
-		{
-			uint8 PlayerIndex = 0;
-			// FInBunch takes size in bits not bytes
-			FInBunch Bunch(NetDriver->ServerConnection, &PlayerIndex, sizeof(PlayerIndex) * 8);
-			EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
-		}
-		else
-		{
-			FInBunch Bunch(NetDriver->ServerConnection);
-			EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
-		}
-	}
-
-	// Any Actor created here will have been received over the wire as an entity so we can mark it ready.
-	EntityActor->SetActorReady(NetDriver->IsServer() && EntityActor->bNetStartup);
-
-	// Taken from PostNetInit
-	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
-	{
-		EntityActor->DispatchBeginPlay();
-	}
-
-	EntityActor->UpdateOverlaps();
-
-	if (ActorSubView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
-	{
-		NetDriver->AddPendingDormantChannel(Channel);
-	}
+	ApplyInitialState(EntityId, *Channel, *EntityActor);
 }
 
 void ActorSystem::RefreshEntity(const Worker_EntityId EntityId)
@@ -1664,6 +1609,11 @@ void ActorSystem::RefreshEntity(const Worker_EntityId EntityId)
 	check(IsValid(Channel));
 	check(Channel->Actor == EntityActor);
 
+	ApplyInitialState(EntityId, *Channel, *EntityActor);
+}
+
+void ActorSystem::ApplyInitialState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor)
+{
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
 
 	// Apply initial replicated properties.
@@ -1676,7 +1626,7 @@ void ActorSystem::RefreshEntity(const Worker_EntityId EntityId)
 		{
 			continue;
 		}
-		ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), *Channel,
+		ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), EntityActorChannel,
 										  ObjectsToResolvePendingOpsFor);
 	}
 
@@ -1686,7 +1636,7 @@ void ActorSystem::RefreshEntity(const Worker_EntityId EntityId)
 		{
 			for (const ComponentData& Component : *InitialOnlyComponents)
 			{
-				ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), *Channel,
+				ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), EntityActorChannel,
 												  ObjectsToResolvePendingOpsFor);
 			}
 		}
@@ -1704,31 +1654,31 @@ void ActorSystem::RefreshEntity(const Worker_EntityId EntityId)
 
 		// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 		// a player index. For now we don't support split screen, so the number is always 0.
-		if (EntityActor->IsA(APlayerController::StaticClass()))
+		if (EntityActor.IsA(APlayerController::StaticClass()))
 		{
 			uint8 PlayerIndex = 0;
 			// FInBunch takes size in bits not bytes
 			FInBunch Bunch(NetDriver->ServerConnection, &PlayerIndex, sizeof(PlayerIndex) * 8);
-			EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
+			EntityActor.OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
 		}
 		else
 		{
 			FInBunch Bunch(NetDriver->ServerConnection);
-			EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
+			EntityActor.OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
 		}
 	}
 
 	// Taken from PostNetInit
-	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
+	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor.HasActorBegunPlay())
 	{
-		EntityActor->DispatchBeginPlay();
+		EntityActor.DispatchBeginPlay();
 	}
 
-	EntityActor->UpdateOverlaps();
+	EntityActor.UpdateOverlaps();
 
 	if (ActorSubView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
 	{
-		NetDriver->AddPendingDormantChannel(Channel);
+		NetDriver->AddPendingDormantChannel(&EntityActorChannel);
 	}
 }
 

@@ -370,7 +370,7 @@ void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest,
 		QueryConstraint ServerSystemConstraint;
 		ServerSystemConstraint.OrConstraint.Add(AlwaysInterestedConstraint);
 		ServerSystemQuery.Constraint = ServerSystemConstraint;
-		ServerSystemQuery.ResultComponentIds = (ServerNonAuthInterestResultType.ComponentIds);
+		ServerSystemQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
 		ServerSystemQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
 
 		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, ServerSystemQuery);
@@ -431,7 +431,7 @@ void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor*
 			Query ServerUserQuery;
 			ServerUserQuery.Constraint = UserConstraint;
 			ServerUserQuery.Frequency = FrequencyToConstraints.Key;
-			ServerUserQuery.ResultComponentIds = (ServerNonAuthInterestResultType.ComponentIds);
+			ServerUserQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
 			ServerUserQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
 
 			AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, ServerUserQuery);
@@ -534,7 +534,7 @@ void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const Que
 			Query ServerQuery;
 			ServerQuery.Constraint = CheckoutRadiusConstraintFrequencyPair.Constraint;
 			ServerQuery.Frequency = CheckoutRadiusConstraintFrequencyPair.Frequency;
-			ServerQuery.ResultComponentIds = (ServerNonAuthInterestResultType.ComponentIds);
+			ServerQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
 			ServerQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
 
 			AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, ServerQuery);

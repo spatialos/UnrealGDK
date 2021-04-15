@@ -33,8 +33,6 @@ namespace SpatialGDK
 class SpatialEventTracer;
 class FSubView;
 
-class ActorHandler;
-
 struct EntityDelta;
 
 struct ActorData
@@ -116,23 +114,9 @@ private:
 	void PopulateDataStore(Worker_EntityId EntityId);
 	void HandleActorAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority);
 
-	// HACK: Make these public so they can be accessed from ActorHandler
-public:
-	enum class EActorSubViewType
-	{
-		Authority,
-		Autonomous,
-		Simulated,
-	};
-
-	struct FEntitySubViewUpdate
-	{
-		const TArray<EntityDelta>& EntityDeltas;
-		EActorSubViewType SubViewType;
-	};
+	struct FEntitySubViewUpdate;
 
 	void ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate);
-	void RefreshEntity(const Worker_EntityId EntityId);
 	void ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate);
 	void ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate);
 
@@ -147,8 +131,9 @@ public:
 
 	void EntityAdded(Worker_EntityId EntityId);
 	void EntityRemoved(Worker_EntityId EntityId);
+	void RefreshEntity(const Worker_EntityId EntityId);
+	void ApplyInitialState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor);
 
-private:
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
 	void HandleEntityDeletedAuthority(Worker_EntityId EntityId) const;
