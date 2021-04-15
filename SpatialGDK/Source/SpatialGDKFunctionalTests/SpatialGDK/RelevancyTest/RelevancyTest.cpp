@@ -119,7 +119,7 @@ void ARelevancyTest::PrepareTest()
 				RequireEqual_Int(NumAlwaysServerOnlyRelevantActors, NumServers,
 								 TEXT("Servers see expected number of server-only always relevant actors"));
 				RequireEqual_Int(NumOnlyRelevantToOwnerActors, 1, TEXT("Servers see expected number of only relevant to owner actors"));
-				RequireEqual_Int(NumUseOwnerRelevancyActors, 1, TEXT("Servers see expected number of only relevant to owner actors"));
+				RequireEqual_Int(NumUseOwnerRelevancyActors, 1, TEXT("Servers see expected number of use owner relevancy actors"));
 				FinishStep(); // This will only actually finish if requires are satisfied
 			},
 			StepTimeLimit);
@@ -149,7 +149,7 @@ void ARelevancyTest::PrepareTest()
 
 				RequireEqual_Int(NumOnlyRelevantToOwnerActors, 1,
 								 TEXT("Owning client sees expected number of only relevant to owner actors"));
-				RequireEqual_Int(NumUseOwnerRelevancyActors, 1, TEXT("Owning client see expected number of use owner relevancy actors"));
+				RequireEqual_Int(NumUseOwnerRelevancyActors, 1, TEXT("Owning client sees expected number of use owner relevancy actors"));
 				FinishStep(); // This will only actually finish if requires are satisfied
 			},
 			StepTimeLimit);
@@ -163,8 +163,8 @@ void ARelevancyTest::PrepareTest()
 				int NumUseOwnerRelevancyActors = GetNumberOfActorsOfType<AUseOwnerRelevancyTestActor>(GetWorld());
 
 				RequireEqual_Int(NumOnlyRelevantToOwnerActors, 0,
-								 TEXT("Non-owning client see expected number of only relevant to owner actors"));
-				RequireEqual_Int(NumUseOwnerRelevancyActors, 0, TEXT("Owning client see expected number of use owner relevancy actors"));
+								 TEXT("Non-owning client sees expected number of only relevant to owner actors"));
+				RequireEqual_Int(NumUseOwnerRelevancyActors, 0, TEXT("Non-owning client sees expected number of use owner relevancy actors"));
 				FinishStep(); // This will only actually finish if requires are satisfied
 			},
 			StepTimeLimit);
