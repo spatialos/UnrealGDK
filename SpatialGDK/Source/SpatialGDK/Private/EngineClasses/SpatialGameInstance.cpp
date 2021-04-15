@@ -241,7 +241,7 @@ void USpatialGameInstance::Init()
 	}
 }
 
-void USpatialGameInstance::HandleOnConnected(const USpatialNetDriver& NetDriver)
+void USpatialGameInstance::HandleOnConnected(USpatialNetDriver& NetDriver)
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Successfully connected to SpatialOS"));
 	SpatialWorkerId = SpatialConnectionManager->GetWorkerConnection()->GetWorkerId();
@@ -262,6 +262,7 @@ void USpatialGameInstance::HandleOnConnected(const USpatialNetDriver& NetDriver)
 
 		NetDriver.SpatialWorkerFlags->RegisterFlagUpdatedCallback(SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG, WorkerFlagDelegate);
 	}
+	NetDriver.OnShutdown.AddUObject(this, &USpatialGameInstance::DestroySpatialConnectionManager);
 }
 
 void USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated(const FString& FlagName, const FString& FlagValue)
