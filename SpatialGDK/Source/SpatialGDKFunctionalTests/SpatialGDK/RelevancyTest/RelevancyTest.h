@@ -8,6 +8,8 @@
 
 class AAlwaysRelevantTestActor;
 class AAlwaysRelevantServerOnlyTestActor;
+class AOnlyRelevantToOwnerTestActor;
+class AUseOwnerRelevancyTestActor;
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ARelevancyTest : public ASpatialFunctionalTest
@@ -19,6 +21,18 @@ public:
 
 	virtual void PrepareTest() override;
 
+	UPROPERTY()
 	AAlwaysRelevantTestActor* AlwaysRelevantActor;
+
+	UPROPERTY()
 	AAlwaysRelevantServerOnlyTestActor* AlwaysRelevantServerOnlyActor;
+
+	UPROPERTY()
+	AOnlyRelevantToOwnerTestActor* OnlyRelevantToOwnerTestActor;
+
+	UPROPERTY()
+	AUseOwnerRelevancyTestActor* UseOwnerRelevancyTestActor;
+
+	UPROPERTY()
+	TArray<AActor*> ActiveActors;
 };

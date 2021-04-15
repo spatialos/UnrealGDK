@@ -661,8 +661,11 @@ Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(con
 		}
 	}
 
-	// Don't add NCD component to player controller and server only actors as we don't want client's to gain interest in them
-	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceInterest && !Actor->IsA<APlayerController>()
+	checkf(!Actor->IsA<APlayerController>() || Actor->bOnlyRelevantToOwner,
+		   TEXT("Player controllers must have bOnlyRelevantToOwner enabled."));
+	// Don't add NCD component to actors only relevant to their owner (player controllers etc.) and server only actors
+	// as we don't want clients to otherwise gain interest in them.
+	if (GetDefault<USpatialGDKSettings>()->bEnableNetCullDistanceInterest && !Actor->bOnlyRelevantToOwner
 		&& !Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
 		Worker_ComponentId NCDComponentId = GetComponentIdForNetCullDistance(ActorForRelevancy->NetCullDistanceSquared);
