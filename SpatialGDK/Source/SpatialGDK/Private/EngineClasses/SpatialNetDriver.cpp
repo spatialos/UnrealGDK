@@ -25,6 +25,7 @@
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/ActorSetWriter.h"
+#include "Interop/ActorSubviews.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "Interop/ClientConnectionManager.h"
@@ -452,9 +453,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		CreateAndInitializeLoadBalancingClasses();
 
-		const SpatialGDK::FSubView& ActorSubview = SpatialGDK::ActorSystem::CreateActorSubView(*this);
+		const SpatialGDK::FSubView& ActorSubview = SpatialGDK::ActorSubviews::CreateActorSubView(*this);
 
-		const SpatialGDK::FSubView& ActorAuthSubview = SpatialGDK::ActorSystem::CreateActorAuthSubView(*this);
+		const SpatialGDK::FSubView& ActorAuthSubview = SpatialGDK::ActorSubviews::CreateActorAuthSubView(*this);
 
 		const FFilterPredicate TombstoneActorFilter = [this](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
 			return Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
@@ -480,9 +481,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			Connection->GetEventTracer());
 
 		{
-			const SpatialGDK::FSubView& AuthoritySubView = SpatialGDK::ActorSystem::CreateAuthoritySubView(*this);
-			const SpatialGDK::FSubView& AutonomousSubView = SpatialGDK::ActorSystem::CreateAutonomousSubView(*this);
-			const SpatialGDK::FSubView& SimulatedSubView = SpatialGDK::ActorSystem::CreateSimulatedSubView(*this);
+			const SpatialGDK::FSubView& AuthoritySubView = SpatialGDK::ActorSubviews::CreateAuthoritySubView(*this);
+			const SpatialGDK::FSubView& AutonomousSubView = SpatialGDK::ActorSubviews::CreateAutonomousSubView(*this);
+			const SpatialGDK::FSubView& SimulatedSubView = SpatialGDK::ActorSubviews::CreateSimulatedSubView(*this);
 
 			ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, AuthoritySubView, AutonomousSubView, SimulatedSubView,
 															  TombstoneActorSubview, this, Connection->GetEventTracer());
@@ -2983,7 +2984,7 @@ void USpatialNetDriver::TryFinishStartup()
 
 					// Create the subview here rather than with the others as we only know if we need it or not at
 					// this point.
-					const SpatialGDK::FSubView& DebugActorSubView = SpatialGDK::ActorSystem::CreateCustomActorSubView(
+					const SpatialGDK::FSubView& DebugActorSubView = SpatialGDK::ActorSubviews::CreateCustomActorSubView(
 						SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID, DebugCompFilter, DebugCompRefresh, *this);
 					USpatialNetDriverDebugContext::EnableDebugSpatialGDK(DebugActorSubView, this);
 				}
@@ -3099,7 +3100,7 @@ void USpatialNetDriver::RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebug
 		{
 			// Ideally we filter for the SPATIAL_DEBUGGING_COMPONENT_ID here as well, however as filters aren't compositional currently, and
 			// it's more important for Actor correctness, for now we just rely on the existing Actor Filtering.
-			DebuggerSubViewPtr = &SpatialGDK::ActorSystem::CreateActorSubView(*this);
+			DebuggerSubViewPtr = &SpatialGDK::ActorSubviews::CreateActorSubView(*this);
 		}
 
 		check(DebuggerSubViewPtr != nullptr);

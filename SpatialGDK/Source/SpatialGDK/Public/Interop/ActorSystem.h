@@ -50,16 +50,6 @@ public:
 
 	void Advance();
 
-	static FSubView& CreateActorSubView(USpatialNetDriver& NetDriver);
-	static FSubView& CreateCustomActorSubView(TOptional<Worker_ComponentId> MaybeCustomComponentId,
-											  TOptional<FFilterPredicate> MaybeCustomPredicate,
-											  TOptional<TArray<FDispatcherRefreshCallback>> MaybeCustomRefresh,
-											  USpatialNetDriver& NetDriver);
-	static FSubView& CreateActorAuthSubView(USpatialNetDriver& NetDriver);
-	static FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver);
-	static FSubView& CreateAutonomousSubView(USpatialNetDriver& NetDriver);
-	static FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver);
-
 	UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
 
 	void MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref);
