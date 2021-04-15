@@ -114,7 +114,8 @@ public:
 	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
 	const TArray<Schema_FieldId>& GetFieldIdsByComponentId(Worker_ComponentId ComponentId);
 
-	Worker_ComponentId GetComponentIdForClass(const UClass& Class) const;
+	Worker_ComponentId GetComponentIdForActorClass(const UClass& Class) const;
+	TArray<Worker_ComponentId> GetComponentIdsForClass(const UClass& Class) const;
 	TArray<Worker_ComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;
 
 	const FRPCInfo& GetRPCInfo(UObject* Object, UFunction* Function);

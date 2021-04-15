@@ -271,7 +271,7 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		{
 			Actor->SetReplicates(false);
 			NetDriver->ActorSystem->RetireWhenAuthoritative(
-				EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()), Actor->IsNetStartupActor(),
+				EntityId, NetDriver->ClassInfoManager->GetComponentIdForActorClass(*Actor->GetClass()), Actor->IsNetStartupActor(),
 				Actor->GetTearOff()); // Ensure we don't recreate the actor
 		}
 	}

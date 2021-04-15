@@ -451,13 +451,41 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 	return nullptr;
 }
 
-uint32 USpatialClassInfoManager::GetComponentIdForClass(const UClass& Class) const
+uint32 USpatialClassInfoManager::GetComponentIdForActorClass(const UClass& Class) const
 {
 	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(Class.GetPathName()))
 	{
 		return ActorSchemaData->SchemaComponents[SCHEMA_Data];
 	}
 	return SpatialConstants::INVALID_COMPONENT_ID;
+}
+
+TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClass(const UClass& Class) const
+{
+	TArray<Worker_ComponentId> ComponentIds;
+	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(Class.GetPathName()))
+	{
+		ComponentIds.Add(ActorSchemaData->SchemaComponents[SCHEMA_Data]);
+		return ComponentIds;
+	}
+	for (const auto& ActorPair : SchemaDatabase->ActorClassPathToSchema)
+	{
+		for (const auto& ComponentPair : ActorPair.Value.SubobjectData)
+		{
+			if (ComponentPair.Value.ClassPath == Class.GetPathName())
+			{
+				ComponentIds.Add(ComponentPair.Value.SchemaComponents[SCHEMA_Data]);
+			}
+		}
+	}
+	if (const FSubobjectSchemaData* SubobjectSchemaData = SchemaDatabase->SubobjectClassPathToSchema.Find(Class.GetPathName()))
+	{
+		for (const auto& Subobject : SubobjectSchemaData->DynamicSubobjectComponents)
+		{
+			ComponentIds.Add(Subobject.SchemaComponents[SCHEMA_Data]);
+		}
+	}
+	return ComponentIds;
 }
 
 TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHierarchy(const UClass& BaseClass,
@@ -474,21 +502,13 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHier
 			check(Class);
 			if (Class->IsChildOf(&BaseClass))
 			{
-				const Worker_ComponentId ComponentId = GetComponentIdForClass(*Class);
-				if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-				{
-					OutComponentIds.Add(ComponentId);
-				}
+				OutComponentIds.Append(GetComponentIdsForClass(*Class));
 			}
 		}
 	}
 	else
 	{
-		const uint32 ComponentId = GetComponentIdForClass(BaseClass);
-		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			OutComponentIds.Add(ComponentId);
-		}
+		OutComponentIds.Append(GetComponentIdsForClass(BaseClass));
 	}
 
 	return OutComponentIds;
