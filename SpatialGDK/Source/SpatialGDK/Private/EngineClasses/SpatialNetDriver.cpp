@@ -1027,7 +1027,7 @@ void USpatialNetDriver::PostInitProperties()
 	if (!HasAnyFlags(RF_ClassDefaultObject))
 	{
 		// GuidCache will be allocated as an FNetGUIDCache above. To avoid an engine code change, we re-do it with the Spatial equivalent.
-		GuidCache = MakeShareable(new FSpatialNetGUIDCache(this));
+		GuidCache = MakeShared<FSpatialNetGUIDCache>(this);
 	}
 }
 
