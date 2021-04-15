@@ -13,3 +13,15 @@ AAlwaysRelevantServerOnlyTestActor::AAlwaysRelevantServerOnlyTestActor()
 	bAlwaysRelevant = true;
 	NetCullDistanceSquared = 1;
 }
+
+AOnlyRelevantToOwnerTestActor::AOnlyRelevantToOwnerTestActor()
+{
+	bOnlyRelevantToOwner = true;
+	NetCullDistanceSquared = 1;
+}
+
+AUseOwnerRelevancyTestActor::AUseOwnerRelevancyTestActor()
+{
+	bNetUseOwnerRelevancy = true;
+	NetCullDistanceSquared = 1;
+}
