@@ -46,7 +46,7 @@ class USpatialWorkerConnection;
 class USpatialWorkerFlags;
 
 DECLARE_DELEGATE(PostWorldWipeDelegate);
-DECLARE_DELEGATE(FShutdownEvent);
+DECLARE_MULTICAST_DELEGATE(FShutdownEvent);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 

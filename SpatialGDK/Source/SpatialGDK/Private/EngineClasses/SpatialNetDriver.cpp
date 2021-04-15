@@ -1195,7 +1195,7 @@ void USpatialNetDriver::Shutdown()
 		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
 		if (!bPersistSpatialConnection)
 		{
-			OnShutdown.ExecuteIfBound();
+			OnShutdown.Broadcast();
 		}
 	}
 }

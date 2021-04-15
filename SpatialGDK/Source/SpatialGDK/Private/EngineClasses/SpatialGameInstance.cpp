@@ -262,7 +262,7 @@ void USpatialGameInstance::HandleOnConnected(USpatialNetDriver& NetDriver)
 
 		NetDriver.SpatialWorkerFlags->RegisterFlagUpdatedCallback(SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG, WorkerFlagDelegate);
 	}
-	NetDriver.OnShutdown.BindDynamic(this, &USpatialGameInstance::DestroySpatialConnectionManager);
+	NetDriver.OnShutdown.AddUObject(this, &USpatialGameInstance::DestroySpatialConnectionManager);
 }
 
 void USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated(const FString& FlagName, const FString& FlagValue)
