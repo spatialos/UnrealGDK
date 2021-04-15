@@ -132,6 +132,7 @@ public:
 	};
 
 	void ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate);
+	void RefreshEntity(const Worker_EntityId EntityId);
 	void ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate);
 	void ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate);
 

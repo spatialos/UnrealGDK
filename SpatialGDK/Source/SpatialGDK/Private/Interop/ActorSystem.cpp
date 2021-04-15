@@ -340,14 +340,11 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 			}
 			else
 			{
-				// TODO: Refresh the entity.
+				RefreshEntity(Delta.EntityId);
+			}
 
-				if (SubViewUpdate.SubViewType == EActorSubViewType::Simulated)
-				{
-					// Simulated entities have no authority logic.
-					continue;
-				}
-
+			if (SubViewUpdate.SubViewType != EActorSubViewType::Simulated)
+			{
 				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == EActorSubViewType::Authority
 																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
 																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
@@ -373,9 +370,11 @@ void ActorSystem::ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate)
 			const Worker_EntityId EntityId = Delta.EntityId;
 			if (PresentEntities.Contains(EntityId))
 			{
-				AuthorityLost(EntityId, SubViewUpdate.SubViewType == EActorSubViewType::Authority
-											? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
-											: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == EActorSubViewType::Authority
+																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
+																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
+
+				AuthorityLost(EntityId, AuthorityComponentSet);
 			}
 		}
 	}
@@ -426,7 +425,15 @@ void ActorSystem::Advance()
 	for (const FEntitySubView& SubView : SubViews)
 	{
 		ProcessRemoves(SubView);
+	}
+
+	for (const FEntitySubView& SubView : SubViews)
+	{
 		ProcessUpdates(SubView);
+	}
+
+	for (const FEntitySubView& SubView : SubViews)
+	{
 		ProcessAdds(SubView);
 	}
 
@@ -1628,6 +1635,88 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 
 	// Any Actor created here will have been received over the wire as an entity so we can mark it ready.
 	EntityActor->SetActorReady(NetDriver->IsServer() && EntityActor->bNetStartup);
+
+	// Taken from PostNetInit
+	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
+	{
+		EntityActor->DispatchBeginPlay();
+	}
+
+	EntityActor->UpdateOverlaps();
+
+	if (ActorSubView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
+	{
+		NetDriver->AddPendingDormantChannel(Channel);
+	}
+}
+
+void ActorSystem::RefreshEntity(const Worker_EntityId EntityId)
+{
+	AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
+
+	checkf(IsValid(EntityActor), TEXT("RefreshEntity must have an actor for entity %lld"), EntityId);
+	check(EntityActor->IsActorReady());
+
+	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
+	checkf(NetDriver->GetWorld(), TEXT("We should have a World whilst processing ops."));
+
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	check(IsValid(Channel));
+	check(Channel->Actor == EntityActor);
+
+	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
+
+	// Apply initial replicated properties.
+	// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
+	// Potentially we could split out the initial actor state and the initial component state
+	for (const ComponentData& Component : ActorSubView->GetView()[EntityId].Components)
+	{
+		if (NetDriver->ClassInfoManager->IsGeneratedQBIMarkerComponent(Component.GetComponentId())
+			|| Component.GetComponentId() < SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
+		{
+			continue;
+		}
+		ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), *Channel,
+										  ObjectsToResolvePendingOpsFor);
+	}
+
+	if (NetDriver->InitialOnlyFilter != nullptr)
+	{
+		if (const TArray<ComponentData>* InitialOnlyComponents = NetDriver->InitialOnlyFilter->GetInitialOnlyData(EntityId))
+		{
+			for (const ComponentData& Component : *InitialOnlyComponents)
+			{
+				ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), *Channel,
+												  ObjectsToResolvePendingOpsFor);
+			}
+		}
+	}
+
+	// Resolve things like RepNotify or RPCs after applying component data.
+	for (const ObjectPtrRefPair& ObjectToResolve : ObjectsToResolvePendingOpsFor)
+	{
+		ResolvePendingOperations(ObjectToResolve.Key, ObjectToResolve.Value);
+	}
+
+	if (!NetDriver->IsServer())
+	{
+		// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
+
+		// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
+		// a player index. For now we don't support split screen, so the number is always 0.
+		if (EntityActor->IsA(APlayerController::StaticClass()))
+		{
+			uint8 PlayerIndex = 0;
+			// FInBunch takes size in bits not bytes
+			FInBunch Bunch(NetDriver->ServerConnection, &PlayerIndex, sizeof(PlayerIndex) * 8);
+			EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
+		}
+		else
+		{
+			FInBunch Bunch(NetDriver->ServerConnection);
+			EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
+		}
+	}
 
 	// Taken from PostNetInit
 	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
