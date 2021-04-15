@@ -47,13 +47,14 @@ public:
 	void CreateNewSpatialConnectionManager();
 
 	// Destroying the SpatialConnectionManager disconnects us from SpatialOS.
+	UFUNCTION()
 	void DestroySpatialConnectionManager();
 
 	FORCEINLINE USpatialConnectionManager* GetSpatialConnectionManager() { return SpatialConnectionManager; }
 	FORCEINLINE USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
 	FORCEINLINE UGlobalStateManager* GetGlobalStateManager() { return GlobalStateManager; };
 
-	void HandleOnConnected(const USpatialNetDriver& NetDriver);
+	void HandleOnConnected(USpatialNetDriver& NetDriver);
 	void HandleOnConnectionFailed(const FString& Reason);
 	void HandleOnPlayerSpawnFailed(const FString& Reason);
 

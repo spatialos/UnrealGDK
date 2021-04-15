@@ -1020,68 +1020,6 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 #endif // WITH_SERVER_CODE
 }
 
-void USpatialNetDriver::BeginDestroy()
-{
-	Super::BeginDestroy();
-
-	if (Connection != nullptr)
-	{
-		// Delete all load-balancing partition entities if we're translator authoritative.
-		if (VirtualWorkerTranslationManager != nullptr)
-		{
-			for (const auto& Partition : VirtualWorkerTranslationManager->GetAllPartitions())
-			{
-				Connection->SendDeleteEntityRequest(Partition.PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
-			}
-		}
-
-		if (RoutingSystem)
-		{
-			RoutingSystem->Destroy(Connection);
-
-			Connection->Flush();
-			FPlatformProcess::Sleep(0.1f);
-		}
-
-		if (StrategySystem)
-		{
-			StrategySystem->Destroy(Connection);
-
-			Connection->Flush();
-			FPlatformProcess::Sleep(0.1f);
-		}
-
-		// Cleanup our corresponding worker entity if it exists.
-		if (WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
-		{
-			Connection->SendDeleteEntityRequest(WorkerEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
-
-			// Flush the connection and wait a moment to allow the message to propagate.
-			// TODO: UNR-3697 - This needs to be handled more correctly
-			Connection->Flush();
-			FPlatformProcess::Sleep(0.1f);
-		}
-
-		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
-		if (!bPersistSpatialConnection)
-		{
-			if (UWorld* LocalWorld = GetWorld())
-			{
-				Cast<USpatialGameInstance>(LocalWorld->GetGameInstance())->DestroySpatialConnectionManager();
-			}
-			Connection = nullptr;
-		}
-	}
-
-#if WITH_EDITOR
-	// Ensure our OnDeploymentStart delegate is removed when the net driver is shut down.
-	if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
-	{
-		GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
-	}
-#endif
-}
-
 void USpatialNetDriver::PostInitProperties()
 {
 	Super::PostInitProperties();
@@ -1089,8 +1027,20 @@ void USpatialNetDriver::PostInitProperties()
 	if (!HasAnyFlags(RF_ClassDefaultObject))
 	{
 		// GuidCache will be allocated as an FNetGUIDCache above. To avoid an engine code change, we re-do it with the Spatial equivalent.
-		GuidCache = MakeShareable(new FSpatialNetGUIDCache(this));
+		GuidCache = MakeShared<FSpatialNetGUIDCache>(this);
 	}
+}
+
+void USpatialNetDriver::BeginDestroy()
+{
+	Super::BeginDestroy();
+#if WITH_EDITOR
+	// Ensure our OnDeploymentStart delegate is removed when the net driver is shut down.
+	if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
+	{
+		GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
+	}
+#endif
 }
 
 bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const
@@ -1203,6 +1153,51 @@ void USpatialNetDriver::Shutdown()
 		}
 	}
 #endif // WITH_EDITOR
+
+	if (Connection != nullptr)
+	{
+		// Delete all load-balancing partition entities if we're translator authoritative.
+		if (VirtualWorkerTranslationManager != nullptr)
+		{
+			for (const auto& Partition : VirtualWorkerTranslationManager->GetAllPartitions())
+			{
+				Connection->SendDeleteEntityRequest(Partition.PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
+			}
+		}
+
+		if (RoutingSystem)
+		{
+			RoutingSystem->Destroy(Connection);
+
+			Connection->Flush();
+			FPlatformProcess::Sleep(0.1f);
+		}
+
+		if (StrategySystem)
+		{
+			StrategySystem->Destroy(Connection);
+
+			Connection->Flush();
+			FPlatformProcess::Sleep(0.1f);
+		}
+
+		// Cleanup our corresponding worker entity if it exists.
+		if (WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Connection->SendDeleteEntityRequest(WorkerEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);
+
+			// Flush the connection and wait a moment to allow the message to propagate.
+			// TODO: UNR-3697 - This needs to be handled more correctly
+			Connection->Flush();
+			FPlatformProcess::Sleep(0.1f);
+		}
+
+		// Destroy the connection to disconnect from SpatialOS if we aren't meant to persist it.
+		if (!bPersistSpatialConnection)
+		{
+			OnShutdown.Broadcast();
+		}
+	}
 }
 
 void USpatialNetDriver::NotifyActorFullyDormantForConnection(AActor* Actor, UNetConnection* NetConnection)
