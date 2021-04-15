@@ -23,14 +23,14 @@ void USpatialComponentMap::CreateCustomContentForMap()
 	FVector SpatialComponentTestActorPosition = FVector(-250, -250, 0);
 
 	// Add the tests
-	ASpatialComponentTest* CompTest = AddActorToLevel<ASpatialComponentTest>(CurrentLevel, FTransform(SpatialComponentTestActorPosition));
-	ASpatialComponentSettingsOverride* SettingsOverrideTest =
+	ASpatialComponentTest& CompTest = AddActorToLevel<ASpatialComponentTest>(CurrentLevel, FTransform(SpatialComponentTestActorPosition));
+	ASpatialComponentSettingsOverride& SettingsOverrideTest =
 		AddActorToLevel<ASpatialComponentSettingsOverride>(CurrentLevel, FTransform(SpatialComponentTestActorPosition));
 
 	// Add the helpers, as we need things placed in the level
-	CompTest->LevelActor = AddActorToLevel<ASpatialComponentTestActor>(CurrentLevel, FTransform(SpatialComponentTestActorPosition));
-	CompTest->LevelReplicatedActor =
-		AddActorToLevel<ASpatialComponentTestReplicatedActor>(CurrentLevel, FTransform(SpatialComponentTestActorPosition));
+	CompTest.LevelActor = &AddActorToLevel<ASpatialComponentTestActor>(CurrentLevel, FTransform(SpatialComponentTestActorPosition));
+	CompTest.LevelReplicatedActor =
+		&AddActorToLevel<ASpatialComponentTestReplicatedActor>(CurrentLevel, FTransform(SpatialComponentTestActorPosition));
 
 	// Quirk of the test. We need the player spawns on the same portion of the map as the test, so they are LBed together
 	AActor** PlayerStart = CurrentLevel->Actors.FindByPredicate([](AActor* Actor) {

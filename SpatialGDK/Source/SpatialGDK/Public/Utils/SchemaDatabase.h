@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Containers/Map.h"
 #include "Containers/StaticArray.h"
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
@@ -75,9 +76,18 @@ struct FSubobjectSchemaData
 };
 
 USTRUCT()
+struct FFieldIDs
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	TArray<uint32> FieldIds;
+};
+
+USTRUCT()
 struct FComponentIDs
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY()
 	TArray<uint32> ComponentIDs;
@@ -90,6 +100,7 @@ enum class ESchemaDatabaseVersion : uint8
 	VersionSupportAdded,
 	AlwaysWriteRPCAdded,
 	InitialOnlyDataAdded,
+	FieldIDsAdded,
 
 	// Add new versions here
 
@@ -147,6 +158,13 @@ public:
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 SchemaBundleHash;
+
+	// A map from component IDs to an index into the FieldIdsArray.
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TMap<uint32, uint32> ComponentIdToFieldIdsIndex;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<FFieldIDs> FieldIdsArray;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FComponentIDs> ComponentSetIdToComponentIds;

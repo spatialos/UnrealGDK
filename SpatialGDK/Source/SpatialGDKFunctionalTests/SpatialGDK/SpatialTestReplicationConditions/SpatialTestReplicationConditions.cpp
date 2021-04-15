@@ -398,6 +398,10 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		TestActor_PhysicsEnabled->SetAutonomousProxy(true);
 		TestActor_PhysicsDisabled->SetAutonomousProxy(true);
 
+		// Set both custom actors to be owned by the PlayerController, just so we guarantee that they stay on server 1
+		TestActor_CustomEnabled->SetOwner(PlayerController);
+		TestActor_CustomDisabled->SetOwner(PlayerController);
+
 		RegisterAutoDestroyActor(TestActor_Common);
 		RegisterAutoDestroyActor(TestActor_CustomEnabled);
 		RegisterAutoDestroyActor(TestActor_CustomDisabled);
@@ -496,7 +500,7 @@ void ASpatialTestReplicationConditions::ProcessCommonActorProperties(bool bWrite
 		else
 		{
 			RequireEqual_Int(Source, Expected + PropertyOffset,
-							*FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
+							 *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 	};
 
@@ -545,7 +549,7 @@ void ASpatialTestReplicationConditions::ProcessCustomActorProperties(ATestReplic
 		else if (bCustomEnabled)
 		{
 			RequireEqual_Int(Source, Expected + PropertyOffset,
-							*FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
+							 *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 		else
 		{
@@ -568,7 +572,7 @@ void ASpatialTestReplicationConditions::ProcessAutonomousOnlyActorProperties(boo
 		else if (bExpected)
 		{
 			RequireEqual_Int(Source, Expected + PropertyOffset,
-							*FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
+							 *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 		else
 		{
@@ -595,7 +599,7 @@ void ASpatialTestReplicationConditions::ProcessPhysicsActorProperties(ATestRepli
 		else if (bPhysicsExpected)
 		{
 			RequireEqual_Int(Source, Expected + PropertyOffset,
-							*FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
+							 *FString::Printf(TEXT("Property replicated incorrectly on %s"), *GetLocalWorkerString()));
 		}
 		else
 		{

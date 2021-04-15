@@ -46,9 +46,9 @@ protected:
 	// localized to the cpp file, so that the include does not leak into the header file. Thus modules relying on SpatialGDKFunctionalTests
 	// can define TestMaps without needing UnrealEd (most of the time).
 	template <class T>
-	T* AddActorToLevel(ULevel* Level, const FTransform& Transform)
+	T& AddActorToLevel(ULevel* Level, const FTransform& Transform)
 	{
-		return CastChecked<T>(AddActorToLevel(Level, T::StaticClass(), Transform));
+		return *CastChecked<T>(AddActorToLevel(Level, T::StaticClass(), Transform));
 	}
 
 	// Derived test maps can call this to set the string that will be printed into the .ini file to be used with this map to override

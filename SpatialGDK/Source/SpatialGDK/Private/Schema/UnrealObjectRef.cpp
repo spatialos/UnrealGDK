@@ -92,6 +92,20 @@ FUnrealObjectRef FUnrealObjectRef::FromObjectPtr(UObject* ObjectValue, USpatialP
 				{
 					NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
 				}
+				else if (ObjectValue->IsNameStableForNetworking())
+				{
+					// Object is stably named with respect to its outer, but its full path is not stable.
+					if (AActor* OuterActor = ObjectValue->GetTypedOuter<AActor>())
+					{
+						// Outer will usually have a valid NetGUID and ObjectRef already.
+						// If not, resolve it as an entity, and then resolve its subobject as a stably named object.
+						if (PackageMap->GetUnrealObjectRefFromObject(OuterActor) == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+						{
+							PackageMap->TryResolveObjectAsEntity(OuterActor);
+						}
+					}
+					NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
+				}
 				else
 				{
 					NetGUID = PackageMap->TryResolveObjectAsEntity(ObjectValue);

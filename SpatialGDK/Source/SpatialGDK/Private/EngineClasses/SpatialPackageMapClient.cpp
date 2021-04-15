@@ -728,9 +728,15 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const F
 		FNetworkGUID OuterGUID;
 
 		// Recursively resolve the outers for this object in order to ensure that the package can be loaded
-		if (ObjectRef.Outer.IsSet())
+		if (ObjectRef.Outer.IsSet() && ObjectRef.Outer.GetValue() != FUnrealObjectRef::NULL_OBJECT_REF)
 		{
 			OuterGUID = GetNetGUIDFromUnrealObjectRef(ObjectRef.Outer.GetValue());
+
+			if (!OuterGUID.IsValid())
+			{
+				// Couldn't resolve the outer, most likely because it's a dynamic actor that we haven't received yet.
+				return FNetworkGUID{};
+			}
 		}
 
 		// Once all outer packages have been resolved, assign a new NetGUID for this object
@@ -771,10 +777,12 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRe
 
 void FSpatialNetGUIDCache::UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef)
 {
-	FNetworkGUID& NetGUID = UnrealObjectRefToNetGUID.FindChecked(ObjectRef);
-	// Remove ObjectRef first so the reference above isn't destroyed
-	NetGUIDToUnrealObjectRef.Remove(NetGUID);
-	UnrealObjectRefToNetGUID.Remove(ObjectRef);
+	if (FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjectRef))
+	{
+		// Remove ObjectRef first so the reference above isn't destroyed
+		NetGUIDToUnrealObjectRef.Remove(*NetGUID);
+		UnrealObjectRefToNetGUID.Remove(ObjectRef);
+	}
 }
 
 FUnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const

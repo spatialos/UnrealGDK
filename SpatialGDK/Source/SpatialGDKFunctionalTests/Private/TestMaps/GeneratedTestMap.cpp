@@ -87,17 +87,17 @@ void UGeneratedTestMap::GenerateBaseMap()
 
 	// Lights and fog are just for visual effects, strictly not needed for running tests, but it makes it a bit nicer to look at tests while
 	// they are running.
-	AExponentialHeightFog* Fog = AddActorToLevel<AExponentialHeightFog>(CurrentLevel, FTransform::Identity);
-	ASkyLight* SkyLight = AddActorToLevel<ASkyLight>(CurrentLevel, FTransform::Identity);
+	AExponentialHeightFog& Fog = AddActorToLevel<AExponentialHeightFog>(CurrentLevel, FTransform::Identity);
+	ASkyLight& SkyLight = AddActorToLevel<ASkyLight>(CurrentLevel, FTransform::Identity);
 
 	// On the other hand, the plane and the player start are needed for tests and they rely on various properties of them (plane catches
 	// things so they don't fall, player start controls not just the viewport, but is also used for certain tests to see how the spawned
 	// player behaves under LB conditions).
-	AStaticMeshActor* Plane = AddActorToLevel<AStaticMeshActor>(CurrentLevel, FTransform::Identity);
-	Plane->GetStaticMeshComponent()->SetStaticMesh(PlaneStaticMesh);
-	Plane->GetStaticMeshComponent()->SetMaterial(0, BasicShapeMaterial);
+	AStaticMeshActor& Plane = AddActorToLevel<AStaticMeshActor>(CurrentLevel, FTransform::Identity);
+	Plane.GetStaticMeshComponent()->SetStaticMesh(PlaneStaticMesh);
+	Plane.GetStaticMeshComponent()->SetMaterial(0, BasicShapeMaterial);
 	// Make the initial platform much much larger so things don't fall off for tests which use a large area (visibility test)
-	Plane->SetActorScale3D(FVector(10000, 10000, 1));
+	Plane.SetActorScale3D(FVector(10000, 10000, 1));
 
 	// Default player start location is chosen so that players spawn on server 1 by default.
 	// Individual test maps can change this if necessary.

@@ -22,18 +22,18 @@ void USpatialAuthorityMap::CreateCustomContentForMap()
 	FVector SpatialAuthorityTestActorPosition(-250, -250, 0);
 
 	// Add the tests
-	ASpatialAuthorityTest* AuthTestActor =
+	ASpatialAuthorityTest& AuthTestActor =
 		AddActorToLevel<ASpatialAuthorityTest>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
-	ASpatialAuthoritySettingsOverride* SettingsOverrideTest =
+	ASpatialAuthoritySettingsOverride& SettingsOverrideTest =
 		AddActorToLevel<ASpatialAuthoritySettingsOverride>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
 
 	// Add the helpers, as we need things placed in the level
-	AuthTestActor->LevelActor = AddActorToLevel<ASpatialAuthorityTestActor>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
-	AuthTestActor->LevelReplicatedActor =
-		AddActorToLevel<ASpatialAuthorityTestReplicatedActor>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
+	AuthTestActor.LevelActor = &AddActorToLevel<ASpatialAuthorityTestActor>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
+	AuthTestActor.LevelReplicatedActor =
+		&AddActorToLevel<ASpatialAuthorityTestReplicatedActor>(CurrentLevel, FTransform(SpatialAuthorityTestActorPosition));
 	// Says "on the border", but this map doesn't have multi-worker...?
-	AuthTestActor->LevelReplicatedActorOnBorder =
-		AddActorToLevel<ASpatialAuthorityTestReplicatedActor>(CurrentLevel, FTransform(FVector(0, 0, 0)));
+	AuthTestActor.LevelReplicatedActorOnBorder =
+		&AddActorToLevel<ASpatialAuthorityTestReplicatedActor>(CurrentLevel, FTransform(FVector(0, 0, 0)));
 
 	AWorldSettings* WorldSettings = World->GetWorldSettings();
 	WorldSettings->DefaultGameMode = ASpatialAuthorityTestGameMode::StaticClass();

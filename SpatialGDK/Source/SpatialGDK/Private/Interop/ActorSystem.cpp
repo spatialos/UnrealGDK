@@ -456,13 +456,46 @@ void ActorSystem::Advance()
 
 FSubView& ActorSystem::CreateActorSubView(USpatialNetDriver& NetDriver)
 {
-	return CreateActorSubViewOnComponent(SpatialConstants::ACTOR_TAG_COMPONENT_ID, NetDriver);
+	return CreateCustomActorSubView({}, {}, {}, NetDriver);
 }
 
-FSubView& ActorSystem::CreateActorSubViewOnComponent(const Worker_ComponentId ComponentId, USpatialNetDriver& NetDriver)
+FSubView& ActorSystem::CreateCustomActorSubView(TOptional<Worker_ComponentId> MaybeCustomComponentId,
+												TOptional<FFilterPredicate> MaybeCustomPredicate,
+												TOptional<TArray<FDispatcherRefreshCallback>> MaybeCustomRefresh,
+												USpatialNetDriver& NetDriver)
 {
-	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		ComponentId, &FMainActorSubviewSetup::IsActorEntity, FMainActorSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
+	if (!MaybeCustomComponentId)
+	{
+		MaybeCustomComponentId = SpatialConstants::ACTOR_TAG_COMPONENT_ID;
+	}
+
+	if (MaybeCustomPredicate)
+	{
+		MaybeCustomPredicate = [CustomPredicate = MaybeCustomPredicate.GetValue()](const Worker_EntityId EntityId,
+																				   const EntityViewElement& Entity) {
+			if (!FMainActorSubviewSetup::IsActorEntity(EntityId, Entity))
+			{
+				return false;
+			}
+
+			return CustomPredicate(EntityId, Entity);
+		};
+	}
+	else
+	{
+		MaybeCustomPredicate = &FMainActorSubviewSetup::IsActorEntity;
+	}
+
+	if (MaybeCustomRefresh)
+	{
+		MaybeCustomRefresh->Append(FMainActorSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
+	}
+	else
+	{
+		MaybeCustomRefresh = FMainActorSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator());
+	}
+
+	return NetDriver.Connection->GetCoordinator().CreateSubView(*MaybeCustomComponentId, *MaybeCustomPredicate, *MaybeCustomRefresh);
 }
 
 FSubView& ActorSystem::CreateActorAuthSubView(USpatialNetDriver& NetDriver)

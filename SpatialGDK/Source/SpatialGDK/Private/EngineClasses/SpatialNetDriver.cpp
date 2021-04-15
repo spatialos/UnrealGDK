@@ -2971,10 +2971,20 @@ void USpatialNetDriver::TryFinishStartup()
 				ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
 				if (WorldSettings && WorldSettings->bEnableDebugInterface)
 				{
+					FFilterPredicate DebugCompFilter = [this](const Worker_EntityId EntityId,
+															  const SpatialGDK::EntityViewElement& Element) {
+						return Element.Components.ContainsByPredicate(
+							SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_DEBUG_COMPONENT_ID });
+					};
+
+					const TArray<FDispatcherRefreshCallback> DebugCompRefresh = {
+						Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+					};
+
 					// Create the subview here rather than with the others as we only know if we need it or not at
 					// this point.
-					const SpatialGDK::FSubView& DebugActorSubView =
-						SpatialGDK::ActorSystem::CreateActorSubViewOnComponent(SpatialConstants::GDK_DEBUG_COMPONENT_ID, *this);
+					const SpatialGDK::FSubView& DebugActorSubView = SpatialGDK::ActorSystem::CreateCustomActorSubView(
+						SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID, DebugCompFilter, DebugCompRefresh, *this);
 					USpatialNetDriverDebugContext::EnableDebugSpatialGDK(DebugActorSubView, this);
 				}
 #endif

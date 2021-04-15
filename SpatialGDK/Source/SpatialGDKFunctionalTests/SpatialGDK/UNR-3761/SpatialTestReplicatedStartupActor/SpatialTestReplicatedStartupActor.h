@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
+#include "TestMaps/GeneratedTestMap.h"
 #include "SpatialTestReplicatedStartupActor.generated.h"
 
 class AReplicatedStartupActor;
@@ -24,4 +25,16 @@ public:
 	bool bIsValidReference;
 
 	AReplicatedStartupActor* ReplicatedStartupActor;
+};
+
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API USpatialTestReplicatedStartupActorMap : public UGeneratedTestMap
+{
+	GENERATED_BODY()
+
+public:
+	USpatialTestReplicatedStartupActorMap();
+
+protected:
+	virtual void CreateCustomContentForMap() override;
 };
