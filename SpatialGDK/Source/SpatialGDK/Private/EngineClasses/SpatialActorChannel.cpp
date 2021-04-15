@@ -802,6 +802,8 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 	}
 
+	Actor->CallPostReplication();
+
 #if USE_NETWORK_PROFILER
 	NETWORK_PROFILER(GNetworkProfiler.TrackReplicateActor(Actor, RepFlags, FPlatformTime::Cycles() - ActorReplicateStartTime, Connection));
 #endif
