@@ -25,6 +25,7 @@
 #include "EngineClasses/SpatialReplicationGraph.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "Interop/ActorSetWriter.h"
+#include "Interop/ActorSubviews.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "Interop/ClientConnectionManager.h"
@@ -452,56 +453,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		CreateAndInitializeLoadBalancingClasses();
 
-		ActorFilter = [this](const Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) {
-			if (Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID }))
-			{
-				// This actor has been tombstoned, we leave it alone.
-				return false;
-			}
+		const SpatialGDK::FSubView& ActorSubview = SpatialGDK::ActorSubviews::CreateActorSubView(*this);
 
-			if (AsyncPackageLoadFilter != nullptr)
-			{
-				SpatialGDK::UnrealMetadata Metadata(
-					Element.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::UNREAL_METADATA_COMPONENT_ID })
-						->GetUnderlying());
-
-				if (!AsyncPackageLoadFilter->IsAssetLoadedOrTriggerAsyncLoad(EntityId, Metadata.ClassPath))
-				{
-					return false;
-				}
-			}
-
-			if (InitialOnlyFilter != nullptr)
-			{
-				if (Element.Components.ContainsByPredicate(
-						SpatialGDK::ComponentIdEquality{ SpatialConstants::INITIAL_ONLY_PRESENCE_COMPONENT_ID }))
-				{
-					if (!InitialOnlyFilter->HasInitialOnlyDataOrRequestIfAbsent(EntityId))
-					{
-						return false;
-					}
-				}
-			}
-
-			// If we see a player controller component on this entity and we're a server we should hold it back until we
-			// also have the partition component.
-			return !IsServer()
-				   || Element.Components.ContainsByPredicate(
-						  SpatialGDK::ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID })
-						  == Element.Components.ContainsByPredicate(
-							  SpatialGDK::ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID });
-		};
-		ActorRefreshCallbacks = {
-			Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::TOMBSTONE_COMPONENT_ID),
-			Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID),
-			Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::PARTITION_COMPONENT_ID)
-		};
-
-		const SpatialGDK::FSubView& ActorAuthSubview =
-			Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
-
-		const SpatialGDK::FSubView& ActorSubview =
-			Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
+		const SpatialGDK::FSubView& ActorAuthSubview = SpatialGDK::ActorSubviews::CreateActorAuthSubView(*this);
 
 		const FFilterPredicate TombstoneActorFilter = [this](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
 			return Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
@@ -3006,24 +2960,20 @@ void USpatialNetDriver::TryFinishStartup()
 				ASpatialWorldSettings* WorldSettings = Cast<ASpatialWorldSettings>(GetWorld()->GetWorldSettings());
 				if (WorldSettings && WorldSettings->bEnableDebugInterface)
 				{
-					auto DebugCompFilter = [this](const Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) {
-						if (!Element.Components.ContainsByPredicate(
-								SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_DEBUG_COMPONENT_ID }))
-						{
-							return false;
-						}
-
-						return ActorFilter(EntityId, Element);
+					const FFilterPredicate DebugCompFilter = [this](const Worker_EntityId EntityId,
+															  const SpatialGDK::EntityViewElement& Element) {
+						return Element.Components.ContainsByPredicate(
+							SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_DEBUG_COMPONENT_ID });
 					};
 
-					TArray<FDispatcherRefreshCallback> DebugCompRefresh = ActorRefreshCallbacks;
-					DebugCompRefresh.Add(
-						Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::GDK_DEBUG_COMPONENT_ID));
+					const TArray<FDispatcherRefreshCallback> DebugCompRefresh = {
+						Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::GDK_DEBUG_COMPONENT_ID)
+					};
 
 					// Create the subview here rather than with the others as we only know if we need it or not at
 					// this point.
-					const SpatialGDK::FSubView& DebugActorSubView = Connection->GetCoordinator().CreateSubView(
-						SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID, DebugCompFilter, DebugCompRefresh);
+					const SpatialGDK::FSubView& DebugActorSubView = SpatialGDK::ActorSubviews::CreateCustomActorSubView(
+						SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID, DebugCompFilter, DebugCompRefresh, *this);
 					USpatialNetDriverDebugContext::EnableDebugSpatialGDK(DebugActorSubView, this);
 				}
 #endif
@@ -3138,8 +3088,7 @@ void USpatialNetDriver::RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebug
 		{
 			// Ideally we filter for the SPATIAL_DEBUGGING_COMPONENT_ID here as well, however as filters aren't compositional currently, and
 			// it's more important for Actor correctness, for now we just rely on the existing Actor Filtering.
-			DebuggerSubViewPtr =
-				&Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
+			DebuggerSubViewPtr = &SpatialGDK::ActorSubviews::CreateActorSubView(*this);
 		}
 
 		check(DebuggerSubViewPtr != nullptr);
