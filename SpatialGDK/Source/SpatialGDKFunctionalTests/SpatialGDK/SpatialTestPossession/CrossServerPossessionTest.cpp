@@ -40,8 +40,7 @@ void ACrossServerPossessionTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(
-		TEXT("Cross-Server Possession"), FWorkerDefinition::AllServers, nullptr, /*StartEvent*/ [this](float DeltaTime) {
+	AddStep(TEXT("Cross-Server Possession"), FWorkerDefinition::AllServers, nullptr, /*StartEvent*/ [this](float DeltaTime) {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
@@ -63,8 +62,7 @@ void ACrossServerPossessionTest::PrepareTest()
 		FinishStep();
 	});
 
-
-	//The pawn is expected to be spawned on server 4 and thus the player controller is expected to migrate to server 4 to possess it
+	// The pawn is expected to be spawned on server 4 and thus the player controller is expected to migrate to server 4 to possess it
 	AddStep(
 		TEXT("Check test result"), FWorkerDefinition::Server(4),
 		[this]() -> bool {

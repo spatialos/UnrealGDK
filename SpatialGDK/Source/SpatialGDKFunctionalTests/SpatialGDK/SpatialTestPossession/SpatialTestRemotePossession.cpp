@@ -51,7 +51,8 @@ void ASpatialTestRemotePossession::PrepareTest()
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 		{
 			ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-			if (PlayerController != nullptr && PlayerController->HasAuthority() && PlayerController->GetPawn() != nullptr &&PlayerController->GetPawn()->HasAuthority())
+			if (PlayerController != nullptr && PlayerController->HasAuthority() && PlayerController->GetPawn() != nullptr
+				&& PlayerController->GetPawn()->HasAuthority())
 			{
 				AddToOriginalPawns(PlayerController, PlayerController->GetPawn());
 			}
@@ -78,17 +79,18 @@ void ASpatialTestRemotePossession::AddCleanupSteps()
 
 	AddStep(TEXT("Wait for all controllers to migrate back"), FWorkerDefinition::AllServers, nullptr, nullptr,
 			/*TickEvent*/ [this](float DeltaTime) {
-		for (const auto& OriginalPawnPair : OriginalPawns)
-		{
-			if (AssertIsValid(OriginalPawnPair.PlayerController, TEXT("We should be able to see all player controllers from any server")))
-			{
-				RequireTrue(OriginalPawnPair.PlayerController->GetPawn() == OriginalPawnPair.Pawn,
-							FString::Printf(TEXT("The player controller should have possession over its original pawn %s"),
-											*OriginalPawnPair.Pawn->GetName()));					
-			}
-		}
-		FinishStep();
-	});
+				for (const auto& OriginalPawnPair : OriginalPawns)
+				{
+					if (AssertIsValid(OriginalPawnPair.PlayerController,
+									  TEXT("We should be able to see all player controllers from any server")))
+					{
+						RequireTrue(OriginalPawnPair.PlayerController->GetPawn() == OriginalPawnPair.Pawn,
+									FString::Printf(TEXT("The player controller should have possession over its original pawn %s"),
+													*OriginalPawnPair.Pawn->GetName()));
+					}
+				}
+				FinishStep();
+			});
 }
 
 bool ASpatialTestRemotePossession::IsReadyForPossess()

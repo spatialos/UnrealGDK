@@ -51,7 +51,6 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 		{
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 			{
-				
 				if (ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner()))
 				{
 					PlayerController->RemotePossessOnClient(Pawn, false);
