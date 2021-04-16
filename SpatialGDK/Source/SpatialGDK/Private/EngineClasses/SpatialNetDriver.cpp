@@ -3106,6 +3106,12 @@ int64 USpatialNetDriver::GetClientID() const
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
+int64 USpatialNetDriver::GetActorEntityId(const AActor& Actor) const
+{
+	check(PackageMap);
+	return PackageMap->GetEntityIdFromObject(&Actor);
+}
+
 bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
 {
 	const uint64 WatchdogTimer = Interval / FPlatformTime::GetSecondsPerCycle64();
