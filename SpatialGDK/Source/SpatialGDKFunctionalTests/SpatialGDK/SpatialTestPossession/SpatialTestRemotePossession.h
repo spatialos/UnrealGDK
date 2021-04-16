@@ -15,7 +15,7 @@ struct FControllerPawnPair
 	GENERATED_BODY()
 
 	UPROPERTY()
-	ATestPossessionPlayerController* Controller;
+	ATestPossessionPlayerController* PlayerController;
 
 	UPROPERTY()
 	APawn* Pawn;
@@ -44,7 +44,7 @@ protected:
 	void AddCleanupSteps();
 
 	UFUNCTION(CrossServer, Reliable)
-	void AddToOriginalPawns(ATestPossessionPlayerController* Controller, APawn* Pawn);
+	void AddToOriginalPawns(ATestPossessionPlayerController* PlayerController, APawn* Pawn);
 
 	// To save original Pawns and possess them back at the end
 	UPROPERTY(Handover, Transient)

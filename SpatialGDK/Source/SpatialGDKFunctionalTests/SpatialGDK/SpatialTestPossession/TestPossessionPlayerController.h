@@ -7,14 +7,6 @@
 #include "SpatialCommonTypes.h"
 #include "TestPossessionPlayerController.generated.h"
 
-USTRUCT()
-struct FActorLockToken
-{
-	GENERATED_BODY()
-
-	ActorLockToken Token;
-};
-
 DECLARE_LOG_CATEGORY_EXTERN(LogTestPossessionPlayerController, Log, All);
 
 UCLASS()

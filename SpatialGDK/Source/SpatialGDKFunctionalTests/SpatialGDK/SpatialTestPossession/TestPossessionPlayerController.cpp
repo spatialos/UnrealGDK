@@ -49,7 +49,8 @@ void ATestPossessionPlayerController::RemotePossessOnClient_Implementation(APawn
 	if (bLockBefore)
 	{
 		USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-		if (NetDriver != nullptr && NetDriver->LockingPolicy)
+		check(NetDriver != nullptr);
+		if (NetDriver->LockingPolicy)
 		{
 			Tokens.Add(NetDriver->LockingPolicy->AcquireLock(this, TEXT("TestLock")));
 		}

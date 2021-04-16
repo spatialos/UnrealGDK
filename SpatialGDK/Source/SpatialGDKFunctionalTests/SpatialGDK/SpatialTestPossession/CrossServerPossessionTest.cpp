@@ -40,7 +40,8 @@ void ACrossServerPossessionTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(TEXT("Cross-Server Possession"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
+	AddStep(
+		TEXT("Cross-Server Possession"), FWorkerDefinition::AllServers, nullptr, /*StartEvent*/ [this](float DeltaTime) {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
@@ -50,9 +51,8 @@ void ACrossServerPossessionTest::PrepareTest()
 				ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
 				if (PlayerController && PlayerController->HasAuthority())
 				{
-					AssertTrue(PlayerController->HasAuthority(), TEXT("PlayerController should HasAuthority"), PlayerController);
 					AssertFalse(Pawn->HasAuthority(), TEXT("Pawn shouldn't HasAuthority"), Pawn);
-					if (!(Pawn->HasAuthority()))
+					if (!Pawn->HasAuthority())
 					{
 						PlayerController->UnPossess();
 						PlayerController->RemotePossessOnServer(Pawn);
@@ -63,19 +63,21 @@ void ACrossServerPossessionTest::PrepareTest()
 		FinishStep();
 	});
 
+
+	//The pawn is expected to be spawned on server 4 and thus the player controller is expected to migrate to server 4 to possess it
 	AddStep(
 		TEXT("Check test result"), FWorkerDefinition::Server(4),
 		[this]() -> bool {
 			return ATestPossessionPlayerController::OnPossessCalled == 1;
 		},
-		nullptr,
-		[this](float) {
+		/*StartEvent*/
+		[this]() {
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
 				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 				{
-					ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-					if (PlayerController != nullptr)
+					if (ATestPossessionPlayerController* PlayerController =
+							Cast<ATestPossessionPlayerController>(FlowController->GetOwner()))
 					{
 						AssertTrue(PlayerController->HasAuthority(), TEXT("The PlayerController should be on server 4"));
 						AssertTrue(PlayerController->HasMigrated(), TEXT("PlayerController should have migrated"), PlayerController);

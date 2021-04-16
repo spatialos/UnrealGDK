@@ -44,15 +44,15 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 {
 	ASpatialTestRemotePossession::PrepareTest();
 
-	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float) {
+	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr, /*StartEvent*/ [this]() {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 		{
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 			{
-				ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-				if (PlayerController != nullptr)
+				
+				if (ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner()))
 				{
 					PlayerController->RemotePossessOnClient(Pawn, false);
 				}
@@ -66,8 +66,8 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 		[this]() -> bool {
 			return ATestPossessionPlayerController::OnPossessCalled == GetNumRequiredClients();
 		},
-		nullptr,
-		[this](float) {
+		/*StartEvent*/
+		[this]() {
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
 				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)

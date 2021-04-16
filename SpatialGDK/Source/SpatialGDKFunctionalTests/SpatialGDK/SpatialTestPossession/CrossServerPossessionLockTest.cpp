@@ -40,15 +40,14 @@ void ACrossServerPossessionLockTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float) {
+	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr, /*StartEvent*/ [this]() {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 		{
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 			{
-				ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-				if (PlayerController != nullptr)
+				if (ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner()))
 				{
 					PlayerController->RemotePossessOnClient(Pawn, true);
 				}
@@ -59,18 +58,17 @@ void ACrossServerPossessionLockTest::PrepareTest()
 
 	AddWaitStep(FWorkerDefinition::AllServers);
 
-	AddStep(TEXT("Check test result"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
+	AddStep(TEXT("Check test result"), FWorkerDefinition::AllServers, nullptr, /*StartEvent*/ [this]() {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 		AssertTrue(Pawn->GetController() == nullptr, TEXT("Pawn shouldn't have a controller"), Pawn);
 		FinishStep();
 	});
 
-	AddStep(TEXT("Release locks on the pawns and player controllers"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
+	AddStep(TEXT("Release locks on the pawns and player controllers"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 		{
-			ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-			if (PlayerController != nullptr)
+			if (ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner()))
 			{
 				PlayerController->RemovePossessionComponent();
 				PlayerController->UnlockAllTokens();
