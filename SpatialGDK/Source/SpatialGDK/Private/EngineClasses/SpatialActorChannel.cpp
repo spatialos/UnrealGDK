@@ -800,9 +800,9 @@ int64 USpatialActorChannel::ReplicateActor()
 				RepComp.RemoveCurrent();
 			}
 		}
-	}
 
-	Actor->CallPostReplication();
+		Actor->CallPostReplication();
+	}
 
 #if USE_NETWORK_PROFILER
 	NETWORK_PROFILER(GNetworkProfiler.TrackReplicateActor(Actor, RepFlags, FPlatformTime::Cycles() - ActorReplicateStartTime, Connection));
