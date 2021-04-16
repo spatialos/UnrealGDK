@@ -197,17 +197,13 @@ void ActorSystem::Advance()
 			break;
 		}
 		case EntityDelta::ADD:
-			PopulateDataStore(Delta.EntityId);
 			EntityAdded(Delta.EntityId);
 			break;
 		case EntityDelta::REMOVE:
 			EntityRemoved(Delta.EntityId);
-			ActorDataStore.Remove(Delta.EntityId);
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
 			EntityRemoved(Delta.EntityId);
-			ActorDataStore.Remove(Delta.EntityId);
-			PopulateDataStore(Delta.EntityId);
 			EntityAdded(Delta.EntityId);
 			break;
 		default:
@@ -645,6 +641,7 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 
 void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 {
+	PopulateDataStore(EntityId);
 	ReceiveActor(EntityId);
 	for (const auto& AuthoritativeComponentSet : ActorSubView->GetView()[EntityId].Authority)
 	{
@@ -672,6 +669,8 @@ void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)
 	{
 		EntitiesToRetireOnAuthorityGain.RemoveAtSwap(RetiredActorIndex);
 	}
+
+	ActorDataStore.Remove(EntityId);
 }
 
 bool ActorSystem::HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const
@@ -1282,6 +1281,27 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
+	ApplyInitialState(EntityId, *Channel, *EntityActor);
+}
+
+void ActorSystem::RefreshEntity(const Worker_EntityId EntityId)
+{
+	AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
+
+	checkf(IsValid(EntityActor), TEXT("RefreshEntity must have an actor for entity %lld"), EntityId);
+
+	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
+	checkf(NetDriver->GetWorld(), TEXT("We should have a World whilst processing ops."));
+
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	check(IsValid(Channel));
+	check(Channel->Actor == EntityActor);
+
+	ApplyInitialState(EntityId, *Channel, *EntityActor);
+}
+
+void ActorSystem::ApplyInitialState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor)
+{
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
 
 	// Apply initial replicated properties.
@@ -1294,7 +1314,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		{
 			continue;
 		}
-		ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), *Channel,
+		ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), EntityActorChannel,
 										  ObjectsToResolvePendingOpsFor);
 	}
 
@@ -1304,7 +1324,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		{
 			for (const ComponentData& Component : *InitialOnlyComponents)
 			{
-				ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), *Channel,
+				ApplyComponentDataOnActorCreation(EntityId, Component.GetComponentId(), Component.GetUnderlying(), EntityActorChannel,
 												  ObjectsToResolvePendingOpsFor);
 			}
 		}
@@ -1322,34 +1342,34 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 
 		// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 		// a player index. For now we don't support split screen, so the number is always 0.
-		if (EntityActor->IsA(APlayerController::StaticClass()))
+		if (EntityActor.IsA(APlayerController::StaticClass()))
 		{
 			uint8 PlayerIndex = 0;
 			// FInBunch takes size in bits not bytes
 			FInBunch Bunch(NetDriver->ServerConnection, &PlayerIndex, sizeof(PlayerIndex) * 8);
-			EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
+			EntityActor.OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
 		}
 		else
 		{
 			FInBunch Bunch(NetDriver->ServerConnection);
-			EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
+			EntityActor.OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
 		}
 	}
 
 	// Any Actor created here will have been received over the wire as an entity so we can mark it ready.
-	EntityActor->SetActorReady(NetDriver->IsServer() && EntityActor->bNetStartup);
+	EntityActor.SetActorReady(NetDriver->IsServer() && EntityActor.bNetStartup);
 
 	// Taken from PostNetInit
-	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
+	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor.HasActorBegunPlay())
 	{
-		EntityActor->DispatchBeginPlay();
+		EntityActor.DispatchBeginPlay();
 	}
 
-	EntityActor->UpdateOverlaps();
+	EntityActor.UpdateOverlaps();
 
 	if (ActorSubView->HasComponent(EntityId, SpatialConstants::DORMANT_COMPONENT_ID))
 	{
-		NetDriver->AddPendingDormantChannel(Channel);
+		NetDriver->AddPendingDormantChannel(&EntityActorChannel);
 	}
 }
 
