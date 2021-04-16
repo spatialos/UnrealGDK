@@ -1788,12 +1788,14 @@ struct SenderActorDesc
 	}
 	AActor* const Actor;
 	ItemKind Kind;
-	bool bHasBeenUsed = false;
 };
 
 // "Stack extension" to push additional RPC parameters.
 // This is to work around having to do deep plumbing into the engine to pass additional RPC parameters not part of the RPC payload.
-thread_local TArray<SenderActorDesc> GSenderStack;
+// The sender actor is supposed to be reset as soon as it is used, or determined to be useless (see AActor::GetFunctionCallspace)
+// This is done so that while we allow Reliable RPCs to omit a sender, a previously pushed sender for a RPC that short-circuuuited can't be
+// used for another RPC that omits it.
+thread_local TOptional<SenderActorDesc> GSenderActor;
 } // namespace SpatialNetDriverPrivate
 
 void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters)
@@ -1918,7 +1920,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 			// When no sender is available, the RPC will be sent unordered.
 			// When the relevant users are migrated, we should remove the migration branch and enforce the presence of sender
 			// Removing it will allow the rest of the diagnostic code to emit the appropriate errors.
-			const bool bHasSenderAvailable = GSenderStack.Num() > 0 && !GSenderStack.Last().bHasBeenUsed;
+			const bool bHasSenderAvailable = GSenderActor.IsSet();
 
 			if (bIsUnordered)
 			{
@@ -1948,7 +1950,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 				// Long term branch
 				AActor* SenderActor = nullptr;
 
-				if (GSenderStack.Num() == 0)
+				if (!GSenderActor.IsSet())
 				{
 					UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Missing sender Actor. Function : %s, Target : %s"), *Function->GetName(),
 						   *Actor->GetName());
@@ -1956,19 +1958,8 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 				}
 				else
 				{
-					SenderActorDesc& Desc = GSenderStack.Last();
+					SenderActorDesc& Desc = GSenderActor.GetValue();
 					SenderActor = Desc.Actor;
-
-					if (!ensure(!Desc.bHasBeenUsed))
-					{
-						UE_LOG(LogSpatialOSNetDriver, Error,
-							   TEXT("(INTERNAl GDK ERROR) Wrong stack semantics.The sender Actor is supposed to be used only once in a RPC "
-									"call. Function : %s, Target : %s"),
-							   *Function->GetName(), *Actor->GetName());
-						return;
-					}
-
-					Desc.bHasBeenUsed = true;
 
 					if (bIsOnlyNetWriteFence && Desc.Kind != SenderActorDesc::Dependent
 						|| (!bIsNetWriteFence && Desc.Kind == SenderActorDesc::Dependent))
@@ -1980,6 +1971,8 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 						return;
 					}
 				}
+
+				GSenderActor.Reset();
 
 				if (SenderActor == nullptr)
 				{
@@ -3311,35 +3304,33 @@ FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 void USpatialNetDriver::PushCrossServerRPCSender(AActor* SenderActor)
 {
 	using namespace SpatialNetDriverPrivate;
-	GSenderStack.Add(SenderActorDesc(SenderActor, SenderActorDesc::Sender));
+	check(!GSenderActor.IsSet());
+	GSenderActor.Emplace(SenderActorDesc(SenderActor, SenderActorDesc::Sender));
 }
 
-void USpatialNetDriver::PopCrossServerRPCSender(AActor* SenderActor)
+void USpatialNetDriver::PopCrossServerRPCSender()
 {
 	using namespace SpatialNetDriverPrivate;
-	check(GSenderStack.Num() > 0);
-	check(GSenderStack.Last().Actor == SenderActor);
-	GSenderStack.Pop();
+	GSenderActor.Reset();
 }
 
 void USpatialNetDriver::PushDependentActor(AActor* Dependent)
 {
 	using namespace SpatialNetDriverPrivate;
-	GSenderStack.Add(SenderActorDesc(Dependent, SenderActorDesc::Dependent));
+	check(!GSenderActor.IsSet());
+	GSenderActor.Emplace(SenderActorDesc(Dependent, SenderActorDesc::Dependent));
 }
 
-void USpatialNetDriver::PopDependentActor(AActor* Dependent)
+void USpatialNetDriver::PopDependentActor()
 {
 	using namespace SpatialNetDriverPrivate;
-	check(GSenderStack.Num() > 0);
-	check(GSenderStack.Last().Actor == Dependent);
-	GSenderStack.Pop();
+	GSenderActor.Reset();
 }
 
 bool USpatialNetDriver::NeedWriteFence(AActor* Actor, UFunction* Function)
 {
 	using namespace SpatialNetDriverPrivate;
-	if (GSenderStack.Num() == 0)
+	if (!GSenderActor.IsSet())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error,
 			   TEXT("Trying to execute NetWriteFence RPC without a dependent Actor. The RPC will be immediately executed. Actor : %s, "
@@ -3348,11 +3339,10 @@ bool USpatialNetDriver::NeedWriteFence(AActor* Actor, UFunction* Function)
 		return false;
 	}
 
-	SenderActorDesc& CurrentSender = GSenderStack.Last();
+	SenderActorDesc& CurrentSender = GSenderActor.GetValue();
 	if (CurrentSender.Kind == SenderActorDesc::Resolution)
 	{
-		check(!CurrentSender.bHasBeenUsed);
-		CurrentSender.bHasBeenUsed = true;
+		GSenderActor.Reset();
 		return false;
 	}
 
@@ -3396,11 +3386,11 @@ bool USpatialNetDriver::NeedWriteFence(AActor* Actor, UFunction* Function)
 void USpatialNetDriver::PushNetWriteFenceResolution()
 {
 	using namespace SpatialNetDriverPrivate;
-	GSenderStack.Add(SenderActorDesc(nullptr, SenderActorDesc::Resolution));
+	GSenderActor.Emplace(SenderActorDesc(nullptr, SenderActorDesc::Resolution));
 }
 
 void USpatialNetDriver::PopNetWriteFenceResolution()
 {
 	using namespace SpatialNetDriverPrivate;
-	GSenderStack.Pop();
+	GSenderActor.Reset();
 }

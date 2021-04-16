@@ -124,9 +124,9 @@ public:
 	virtual void NotifyStreamingLevelUnload(class ULevel* Level) override;
 
 	virtual void PushCrossServerRPCSender(AActor* Sender) override;
-	virtual void PopCrossServerRPCSender(AActor* Sender) override;
+	virtual void PopCrossServerRPCSender() override;
 	virtual void PushDependentActor(AActor* Dependent) override;
-	virtual void PopDependentActor(AActor* Dependent) override;
+	virtual void PopDependentActor() override;
 	virtual void PushNetWriteFenceResolution();
 	virtual void PopNetWriteFenceResolution();
 	virtual bool NeedWriteFence(AActor* Target, UFunction* Function) override;

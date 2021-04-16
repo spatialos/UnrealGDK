@@ -16,7 +16,7 @@ ASpatialEntityInteractionTest::ASpatialEntityInteractionTest()
 #define EXPECT_IMMEDIATE(Actor, FunctionName, Context)                                                                                     \
 	do                                                                                                                                     \
 	{                                                                                                                                      \
-		FString DebugString = FString::Printf("Immediate execution of a %s on %s : %s", *FunctionName, *Actor->GetName(), *Context);       \
+		FString DebugString = FString::Printf(TEXT("Immediate execution of a %s on %s : %s"), *FunctionName, *Actor->GetName(), Context);  \
 		AssertTrue(Actor->Steps.Contains(NumSteps) && Actor->Steps[NumSteps] == FunctionName, DebugString);                                \
 		++NumSteps;                                                                                                                        \
 	} while (false)
@@ -24,7 +24,7 @@ ASpatialEntityInteractionTest::ASpatialEntityInteractionTest()
 #define EXPECT_DELAYED(Actor, FunctionName, Context)                                                                                       \
 	do                                                                                                                                     \
 	{                                                                                                                                      \
-		FString DebugString("Delayed execution of a %s on %s : %s", *FunctionName, *Actor->GetName(), *Context);                           \
+		FString DebugString = FString::Printf(TEXT("Delayed execution of a %s on %s : %s"), *FunctionName, *Actor->GetName(), Context);    \
 		AssertFalse(Actor->Steps.Contains(NumSteps), DebugString);                                                                         \
 		ExpectedResult.Add(NumSteps++, FunctionName);                                                                                      \
 	} while (false)
