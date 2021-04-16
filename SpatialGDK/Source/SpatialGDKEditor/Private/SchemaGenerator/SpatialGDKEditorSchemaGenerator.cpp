@@ -41,6 +41,7 @@
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaDatabase.h"
+#include "Internationalization/Regex.h"
 
 #if ENGINE_MINOR_VERSION >= 26
 #define GDK_CREATE_PACKAGE(PackagePath) CreatePackage((PackagePath));
@@ -90,6 +91,10 @@ TMap<ESchemaComponentType, TSet<Worker_ComponentId>> SchemaComponentTypeToCompon
 
 // LevelStreaming
 TMap<FString, Worker_ComponentId> LevelPathToComponentId;
+
+// Custom Schema
+TArray<FString> ServerAuthorityWellKnownSchemaImports_Custom;
+TArray<FString> ServerAuthorityWellKnownComponents_Custom;
 
 // Prevent name collisions.
 TMap<FString, FString> ClassPathToSchemaName;
@@ -599,6 +604,82 @@ FString GetComponentSetOutputPathBySchemaType(const FString& BasePath, ESchemaCo
 	return FPaths::Combine(*BasePath, FPaths::Combine(TEXT("ComponentSets"), *FileName));
 }
 
+bool RegexMatch(const FString& Str, const FString& Pattern, TArray<FString>& Result)
+{
+	FRegexPattern MatherPatter(Pattern);
+	FRegexMatcher Matcher(MatherPatter, Str);
+
+	while (Matcher.FindNext())
+	{
+		Result.Add(Matcher.GetCaptureGroup(1));
+	}
+
+	return Result.Num() == 0 ? false : true;
+}
+
+void ImportHandWrittenProjectSchema()
+{
+	const FString HandWrittenSchemaPath = GetDefault<USpatialGDKEditorSettings>()->GetProjectDefinedSchemaFolder();
+	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetSchemaCustomFolder();
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	if (!PlatformFile.CopyDirectoryTree(*SchemaOutputPath, *HandWrittenSchemaPath, true))
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error,
+			   TEXT("Could not Copy Hand Written Project Schema '%s'! Please make sure the directory and the files inside are writeable."),
+			   *SchemaOutputPath);
+	}
+	else
+	{
+		TArray<FString> CustomSchemaFiles;
+		const TCHAR* FileExtension = TEXT(".schema");
+		ServerAuthorityWellKnownComponents_Custom.Empty();
+		ServerAuthorityWellKnownSchemaImports_Custom.Empty();
+
+		PlatformFile.FindFilesRecursively(CustomSchemaFiles, *SchemaOutputPath, FileExtension);
+		for (FString SchemaFile : CustomSchemaFiles)
+		{
+			FString SchemaImportsAddition;
+			FString PathToSchemaAdd;
+			SchemaFile.Split(FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/")), &PathToSchemaAdd,
+							 &SchemaImportsAddition);
+
+			// add the custom schema path to the server's well known imports list
+			TArray<FString>(ServerAuthorityWellKnownSchemaImports_Custom).Add(SchemaImportsAddition);
+			FString SchemaFileContentString;
+
+			FFileHelper::LoadFileToString(SchemaFileContentString, *SchemaFile);
+			FString PackageNameBase = "";
+			TArray<FString> ResultPackage;
+			bool wasFoundPackageName = RegexMatch(SchemaFileContentString, TEXT("package([^;]*);"), ResultPackage);
+			if (wasFoundPackageName)
+			{
+				for (FString item : ResultPackage)
+				{
+					item.Replace(TEXT(";"), TEXT(""));
+					item.Replace(TEXT("{"), TEXT(""));
+					item = item.TrimStartAndEnd();
+					PackageNameBase = item + ".";
+					PackageNameBase.TrimStartAndEnd();
+				}
+			}
+			TArray<FString> ResultContents;
+			bool wasFoundComponent = RegexMatch(SchemaFileContentString, TEXT("component([^;]*)\\{"), ResultContents);
+			if (wasFoundComponent)
+			{
+				for (FString item : ResultContents)
+				{
+					item.Replace(TEXT(";"), TEXT(""));
+					item.Replace(TEXT("{"), TEXT(""));
+					item = item.TrimStartAndEnd();
+					ServerAuthorityWellKnownComponents_Custom.Add(PackageNameBase + item);
+				}
+			}
+		}
+		// All files parsed
+	}
+}
+
 void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, const FString& SchemaOutputPath)
 {
 	FCodeWriter Writer;
@@ -612,6 +693,11 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 	{
 		// Well-known SpatialOS and handwritten GDK schema files.
 		for (const auto& WellKnownSchemaImport : SpatialConstants::ServerAuthorityWellKnownSchemaImports)
+		{
+			Writer.Printf("import \"{0}\";", WellKnownSchemaImport);
+		}
+		// Handwritten GDK schema files.
+		for (const auto& WellKnownSchemaImport : ServerAuthorityWellKnownSchemaImports_Custom)
 		{
 			Writer.Printf("import \"{0}\";", WellKnownSchemaImport);
 		}
@@ -645,6 +731,12 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 		for (const auto& WellKnownComponent : SpatialConstants::ServerAuthorityWellKnownComponents)
 		{
 			Writer.Printf("{0},", WellKnownComponent.Value);
+		}
+
+		// Handwritten GDK components.
+		for (const auto& WellKnownCustomComponent : ServerAuthorityWellKnownComponents_Custom)
+		{
+			Writer.Printf("{0},", WellKnownCustomComponent);
 		}
 
 		// NCDs.
@@ -971,7 +1063,8 @@ void WriteComponentSetFiles(const USchemaDatabase* SchemaDatabase, FString Schem
 	{
 		SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 	}
-
+	
+	ImportHandWrittenProjectSchema();
 	WriteServerAuthorityComponentSet(SchemaDatabase, SchemaOutputPath);
 	WriteClientAuthorityComponentSet(SchemaOutputPath);
 	WriteRoutingWorkerAuthorityComponentSet(SchemaOutputPath);

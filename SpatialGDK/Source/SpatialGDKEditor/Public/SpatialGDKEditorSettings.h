@@ -546,6 +546,17 @@ public:
 		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, GetSpatialOSSnapshotToLoad());
 	}
 
+	FORCEINLINE FString GetProjectDefinedSchemaFolder() const
+	{
+		FString ProjectDefinedSpatialPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial")));
+		return FPaths::Combine(ProjectDefinedSpatialPath, TEXT("/custom_schema"));
+	}
+
+	FORCEINLINE FString GetSchemaCustomFolder() const
+	{
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/custom/"));
+	}
+
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
 		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/generated/"));
