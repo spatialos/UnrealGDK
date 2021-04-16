@@ -3106,10 +3106,22 @@ int64 USpatialNetDriver::GetClientID() const
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-int64 USpatialNetDriver::GetActorEntityId(const AActor& Actor) const
+int64 USpatialNetDriver::GetActorEntityId(AActor& Actor)
 {
-	check(PackageMap);
-	return PackageMap->GetEntityIdFromObject(&Actor);
+	if (!PackageMap)
+	{
+		return SpatialConstants::INVALID_ENTITY_ID;
+	}
+
+	int64 EntityId = PackageMap->GetEntityIdFromObject(&Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		if (IsServer() && Actor.GetIsReplicated() && (Actor.Role == ROLE_Authority))
+		{
+			EntityId = PackageMap->AllocateEntityIdAndResolveActor(&Actor);
+		}
+	}
+	return EntityId;
 }
 
 bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
