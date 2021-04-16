@@ -248,6 +248,16 @@ ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InAutho
 {
 }
 
+#if DO_CHECK
+static void ValidateNoSubviewIntersections(const FSubView& Lhs, const FSubView& Rhs, const FString& SubviewDescription)
+{
+	for (const Worker_EntityId Overlapping : Lhs.GetCompleteEntities().Intersect(Rhs.GetCompleteEntities()))
+	{
+		UE_LOG(LogActorSystem, Warning, TEXT("Entity %lld is doubly complete on %s"), Overlapping, *SubviewDescription);
+	}
+}
+#endif // DO_CHECK
+
 void ActorSystem::Advance()
 {
 	for (const EntityDelta& Delta : ActorSubView->GetViewDelta().EntityDeltas)
@@ -269,6 +279,14 @@ void ActorSystem::Advance()
 
 		operator FEntitySubViewUpdate() const { return { SubView->GetViewDelta().EntityDeltas, Type }; }
 	};
+
+#if DO_CHECK
+	{
+		ValidateNoSubviewIntersections(*AuthoritySubView, *AutonomousSubView, TEXT("Authority and Autonomous"));
+		ValidateNoSubviewIntersections(*AuthoritySubView, *SimulatedSubView, TEXT("Authority and Simulated"));
+		ValidateNoSubviewIntersections(*SimulatedSubView, *AutonomousSubView, TEXT("Simulated and Autonomous"));
+	}
+#endif // DO_CHECK
 
 	const FEntitySubView SubViews[]{
 		{ AuthoritySubView, EActorSubViewType::Authority },
