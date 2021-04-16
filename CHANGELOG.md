@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add feature flag bEnableInitialOnlyReplicationCondition for COND_InitialOnly support.
 - Added a function that allows the worker coordinator to periodically restart the simulated player clients with a bunch of parameters. This feature is disabled by default and can be enabled via `max_lifetime` setting.
 - Exposing worker upstream/downstream window sizes as GDK options for both clients and servers, (`ClientDownstreamWindowSizeBytes`, `ClientUpstreamWindowSizeBytes`) and (`ServerDownstreamWindowSizeBytes` and `ServerUpstreamWindowSizeBytes`).
+- `bOnlyRelevantToOwner` is now supported. Ownership must be setup prior to the first replication of the Actor otherwise it will be ignored.
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
@@ -51,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a warning about whitelisted files which was produced in the ExampleProject when building assemblies for cloud deployments.
 - Fixed a bug where on initial replication, actors with replicated TArrays would not have the array cleared if the local state was not empty.
 - Fixed an issue with replicating references to stably named dynamically added subobjects of dynamic actors.
+- Fixed an issue during client logout where a client's corresponding Actors were not cleaned up correctly.
 
 ## [`0.12.0`] - 2021-02-01
 
