@@ -40,7 +40,7 @@ void ACrossServerPossessionLockTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
+	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float) {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())

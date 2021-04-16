@@ -40,7 +40,7 @@ void ACrossServerPossessionTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(TEXT("Cross-Server Possession"), FWorkerDefinition::AllServers, nullptr, [this]() {
+	AddStep(TEXT("Cross-Server Possession"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
@@ -69,7 +69,7 @@ void ACrossServerPossessionTest::PrepareTest()
 			return ATestPossessionPlayerController::OnPossessCalled == 1;
 		},
 		nullptr,
-		[this](float DeltaTime) {
+		[this](float) {
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
 				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)

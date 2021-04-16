@@ -44,7 +44,7 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 {
 	ASpatialTestRemotePossession::PrepareTest();
 
-	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
+	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float) {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
@@ -67,13 +67,13 @@ void ACrossServerMultiPossessionTest::PrepareTest()
 			return ATestPossessionPlayerController::OnPossessCalled == GetNumRequiredClients();
 		},
 		nullptr,
-		[this](float DeltaTime) {
+		[this](float) {
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
 				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 				{
 					ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-					if (PlayerController && PlayerController->HasAuthority())
+					if (PlayerController != nullptr && PlayerController->HasAuthority())
 					{
 						AssertTrue(PlayerController->HasMigrated(), TEXT("PlayerController should have migrated"), PlayerController);
 					}
