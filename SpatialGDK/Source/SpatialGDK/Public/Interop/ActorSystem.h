@@ -119,7 +119,7 @@ private:
 	void EntityAdded(Worker_EntityId EntityId);
 	void EntityRemoved(Worker_EntityId EntityId);
 	void RefreshEntity(const Worker_EntityId EntityId);
-	void ApplyInitialState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor);
+	void ApplyFullState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor);
 
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;

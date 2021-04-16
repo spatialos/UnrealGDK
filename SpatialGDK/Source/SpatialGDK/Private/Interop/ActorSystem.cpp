@@ -1375,7 +1375,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	ApplyInitialState(EntityId, *Channel, *EntityActor);
+	ApplyFullState(EntityId, *Channel, *EntityActor);
 }
 
 void ActorSystem::RefreshEntity(const Worker_EntityId EntityId)
@@ -1391,10 +1391,10 @@ void ActorSystem::RefreshEntity(const Worker_EntityId EntityId)
 	check(IsValid(Channel));
 	check(Channel->Actor == EntityActor);
 
-	ApplyInitialState(EntityId, *Channel, *EntityActor);
+	ApplyFullState(EntityId, *Channel, *EntityActor);
 }
 
-void ActorSystem::ApplyInitialState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor)
+void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor)
 {
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
 
