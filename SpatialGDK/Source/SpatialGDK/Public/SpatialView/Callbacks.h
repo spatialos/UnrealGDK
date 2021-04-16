@@ -8,6 +8,8 @@
 namespace SpatialGDK
 {
 using CallbackId = int32;
+static constexpr CallbackId InvalidCallbackId = 0;
+static constexpr CallbackId FirstValidCallbackId = 1;
 
 /**
  * Container holding a set of callbacks.
@@ -58,6 +60,7 @@ public:
 		check(!bCurrentlyInvokingCallbacks);
 
 		bCurrentlyInvokingCallbacks = true;
+
 		for (const CallbackAndId& Callback : Callbacks)
 		{
 			if (CallbacksToRemove.Contains(Callback.Id))
@@ -83,6 +86,10 @@ public:
 			CallbacksToRemove.Empty();
 		}
 	}
+
+#if WITH_DEV_AUTOMATION_TESTS
+	int32 GetNumCallbacks() const { return Callbacks.Num() + CallbacksToAdd.Num() + CallbacksToRemove.Num(); }
+#endif
 
 private:
 	struct CallbackAndId
