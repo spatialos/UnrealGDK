@@ -53,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where on initial replication, actors with replicated TArrays would not have the array cleared if the local state was not empty.
 - Fixed an issue with replicating references to stably named dynamically added subobjects of dynamic actors.
 - Fixed an issue during client logout where a client's corresponding Actors were not cleaned up correctly.
-- Reverted a dbghelp fix and applied a fix committed to the UE master branch.
+- Reverted a fix relating to the `dbghelp` file that previously caused the Editor to crash when loading the Session Front End. Our fix is no longer necessary, as Epic have fixed the issue and we've adopted their fix.
 
 ## [`0.12.0`] - 2021-02-01
 
