@@ -49,7 +49,7 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 			{
 				ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-				if (PlayerController && PlayerController->HasAuthority())
+				if (PlayerController != nullptr && PlayerController->HasAuthority())
 				{
 					AssertTrue(PlayerController->HasAuthority(), TEXT("PlayerController should HasAuthority"), PlayerController);
 					AssertTrue(Pawn->HasAuthority(), TEXT("Pawn should HasAuthority"), Pawn);
@@ -73,7 +73,7 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 				{
 					ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-					if (PlayerController && PlayerController->HasAuthority())
+					if (PlayerController != nullptr && PlayerController->HasAuthority())
 					{
 						AssertFalse(PlayerController->HasMigrated(), TEXT("PlayerController shouldn't have migrated"), PlayerController);
 					}
@@ -81,4 +81,6 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 			}
 			FinishStep();
 		});
+
+	AddCleanupSteps();
 }
