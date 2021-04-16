@@ -28,7 +28,7 @@ struct FMainActorSubviewSetup
 	}
 };
 
-bool CommonActorStuff(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver& InNetDriver);
+bool CommonActorFilter(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver& InNetDriver);
 
 struct FAuthoritySubviewSetup
 {
@@ -54,26 +54,6 @@ struct FSimulatedSubviewSetup
 template <typename TCallable, typename... TArgs>
 FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, USpatialNetDriver& NetDriver, TArgs... Args);
 
-const TCHAR* ToCharArray(const ENetMode NetMode);
-
-const TCHAR* ToCharArray(const ENetMode NetMode)
-{
-	switch (NetMode)
-	{
-	case NM_Standalone:
-		return TEXT("Standalone");
-	case NM_DedicatedServer:
-		return TEXT("DedicatedServer");
-	case NM_ListenServer:
-		return TEXT("ListenServer");
-	case NM_Client:
-		return TEXT("Client");
-	default:
-		checkNoEntry();
-		return TEXT("Invalid");
-	}
-}
-
 template <typename TCallable, typename... TArgs>
 FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, USpatialNetDriver& NetDriver, TArgs... Args)
 {
@@ -84,7 +64,7 @@ FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, USpatialNetDriv
 			return false;
 		}
 
-		if (!CommonActorStuff(EntityId, Entity, *NetDriver))
+		if (!CommonActorFilter(EntityId, Entity, *NetDriver))
 		{
 			return false;
 		}
@@ -100,13 +80,12 @@ static TArray<FDispatcherRefreshCallback> CombineCallbacks(TArray<FDispatcherRef
 	return Rhs;
 }
 
-bool CommonActorStuff(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver& InNetDriver)
+bool CommonActorFilter(const Worker_EntityId EntityId, const EntityViewElement& Element, USpatialNetDriver& InNetDriver)
 {
 	if (InNetDriver.AsyncPackageLoadFilter != nullptr)
 	{
-		SpatialGDK::UnrealMetadata Metadata(
-			Element.Components.FindByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::UNREAL_METADATA_COMPONENT_ID })
-				->GetUnderlying());
+		UnrealMetadata Metadata(
+			Element.Components.FindByPredicate(ComponentIdEquality{ SpatialConstants::UNREAL_METADATA_COMPONENT_ID })->GetUnderlying());
 
 		if (!InNetDriver.AsyncPackageLoadFilter->IsAssetLoadedOrTriggerAsyncLoad(EntityId, Metadata.ClassPath))
 		{
@@ -116,7 +95,7 @@ bool CommonActorStuff(const Worker_EntityId EntityId, const EntityViewElement& E
 
 	if (InNetDriver.InitialOnlyFilter != nullptr)
 	{
-		if (Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::INITIAL_ONLY_PRESENCE_COMPONENT_ID }))
+		if (Element.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::INITIAL_ONLY_PRESENCE_COMPONENT_ID }))
 		{
 			if (!InNetDriver.InitialOnlyFilter->HasInitialOnlyDataOrRequestIfAbsent(EntityId))
 			{
@@ -128,8 +107,8 @@ bool CommonActorStuff(const Worker_EntityId EntityId, const EntityViewElement& E
 	// If we see a player controller component on this entity and we're a server we should hold it back until we
 	// also have the partition component.
 	return !InNetDriver.IsServer()
-		   || Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID })
-				  == Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID });
+		   || Element.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID })
+				  == Element.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::PARTITION_COMPONENT_ID });
 }
 
 bool FAuthoritySubviewSetup::IsAuthorityActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element)

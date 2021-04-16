@@ -102,7 +102,6 @@ private:
 	FObjectToRepStateMap ObjectRefToRepStateMap;
 
 	void PopulateDataStore(Worker_EntityId EntityId);
-	void HandleActorAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority);
 
 	struct FEntitySubViewUpdate;
 
@@ -114,6 +113,7 @@ private:
 
 	void AuthorityLost(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
 	void AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
+	void HandleActorAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId, Worker_Authority Authority);
 
 	void ComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 	void ComponentUpdated(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);

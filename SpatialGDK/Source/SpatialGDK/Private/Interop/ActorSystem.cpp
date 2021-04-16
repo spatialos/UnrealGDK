@@ -214,7 +214,6 @@ void ActorSystem::ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate)
 {
 	if (SubViewUpdate.SubViewType == EActorSubViewType::Simulated)
 	{
-		// Simulated SubView has no OnRemove logic.
 		return;
 	}
 

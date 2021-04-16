@@ -1,7 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#define LOCTEXT_NAMESPACE "SpatialConstants"
 #include "SpatialConstants.h"
+
+#define LOCTEXT_NAMESPACE "SpatialConstants"
 
 using namespace SpatialGDK;
 
