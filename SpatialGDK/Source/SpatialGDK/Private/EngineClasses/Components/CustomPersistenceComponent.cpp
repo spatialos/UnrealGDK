@@ -12,13 +12,7 @@ UCustomPersistenceComponent::UCustomPersistenceComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 
-	bWantsInitializeComponent = true;
-
 	bHasProvidedPersistenceData = false;
-
-	// Needed for now, both to replicate the bHasProvidedPersistenceData bool, and to get PreReplication callbacks, during which we pull in
-	// the data from the actor. The latter is not a hard requirement (the actor could also be required to push its data to us)
-	SetIsReplicatedByDefault(true);
 }
 
 // Once we gain authority, we know we have all the data for an entity, and authority to modify it.
@@ -39,19 +33,11 @@ void UCustomPersistenceComponent::OnAuthorityGained()
 	// }
 
 	bHasProvidedPersistenceData = true;
-	UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, OnAuthorityGained, Setting bHasProvidedPersistenceData to true"));
 
 	AActor* Owner = GetOwner();
 	if (Owner == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("UCustomPersistenceComponent, didn't have an owner actor during InternalOnPersistenceDataAvailable"));
-		return;
-	}
-
-	// TODO this shouldn't be needed, keeping it for now to avoid any surprises
-	if (!Owner->HasAuthority())
-	{
-		UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, owner doesn't have authority"));
 		return;
 	}
 
@@ -102,7 +88,6 @@ void UCustomPersistenceComponent::OnAuthorityGained()
 		SpatialGDK::ComponentData Data(GetComponentId());
 		GetAddComponentData(Data);
 		Coordinator.SendAddComponent(EntityID, MoveTemp(Data), {});
-		UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, added component %u to entity %llu"), GetComponentId(), EntityID);
 	}
 }
 
@@ -111,27 +96,27 @@ void UCustomPersistenceComponent::PostReplication()
 	// Work with spatial turned off
 	if (!USpatialStatics::IsSpatialNetworkingEnabled())
 	{
-		UE_LOG(LogTemp, Log, TEXT("UCustomPersistenceComponent, not using spatial networking"));
+		UE_LOG(LogTemp, Warning, TEXT("UCustomPersistenceComponent, not using spatial networking."));
 		return;
 	}
 
 	AActor* Owner = GetOwner();
 	if (Owner == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("UCustomPersistenceComponent, didn't have an owner actor during PreReplication"));
+		UE_LOG(LogTemp, Error, TEXT("UCustomPersistenceComponent, didn't have an owner actor during PostReplication."));
 		return;
 	}
 
 	if (!IsValid(Owner))
 	{
-		UE_LOG(LogTemp, Error, TEXT("UCustomPersistenceComponent, Owner is not yet valid, data loading may fail"));
+		UE_LOG(LogTemp, Error, TEXT("UCustomPersistenceComponent, Owner is not yet valid."));
 		return;
 	}
 
 	const uint64 EntityID = USpatialStatics::GetActorEntityId(Owner);
 	if (EntityID == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UCustomPersistenceComponent, didn't have an entity ID in PreReplication."));
+		UE_LOG(LogTemp, Warning, TEXT("UCustomPersistenceComponent, didn't have an entity ID in PostReplication."));
 		return;
 	}
 
@@ -139,12 +124,6 @@ void UCustomPersistenceComponent::PostReplication()
 	if (NetDriver == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("UCustomPersistenceComponent, running with spatial but can't find a spatial net driver."));
-		return;
-	}
-
-	if (!NetDriver->Connection->GetCoordinator().HasEntity(EntityID))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("UCustomPersistenceComponent, View coordinator doesn't have entity %llu yet."), EntityID);
 		return;
 	}
 
