@@ -137,37 +137,25 @@ private:
 #endif
 };
 
-struct FSubViewDelta;
-
-ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
-						 SpatialEventTracer* InEventTracer)
-	: ActorSubView(&InActorSubView)
-	, TombstoneSubView(&InTombstoneSubView)
-	, NetDriver(InNetDriver)
-	, EventTracer(InEventTracer)
-	, ClaimPartitionHandler(*InNetDriver->Connection)
+enum class EActorSubViewType
 {
-}
+	Authority,
+	Autonomous,
+	Simulated,
+};
 
-void ActorSystem::Advance()
+struct ActorSystem::FEntitySubViewUpdate
 {
-	for (const EntityDelta& Delta : ActorSubView->GetViewDelta().EntityDeltas)
+	const TArray<EntityDelta>& EntityDeltas;
+	EActorSubViewType SubViewType;
+};
+
+void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
+{
+	for (const EntityDelta& Delta : SubViewUpdate.EntityDeltas)
 	{
-		switch (Delta.Type)
+		if (Delta.Type == EntityDelta::UPDATE)
 		{
-		case EntityDelta::UPDATE:
-		{
-			// We process authority lost temporarily twice. Once at the start, to lose authority, and again at the end
-			// to regain it. Why? Because if we temporarily lost authority, we may see surprising updates during the
-			// tick, such as updates for components we would otherwise think we were authoritative over and ignore them.
-			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
-			{
-				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
-			}
-			for (const AuthorityChange& Change : Delta.AuthorityLost)
-			{
-				AuthorityLost(Delta.EntityId, Change.ComponentSetId);
-			}
 			for (const ComponentChange& Change : Delta.ComponentsAdded)
 			{
 				ApplyComponentAdd(Delta.EntityId, Change.ComponentId, Change.Data);
@@ -186,29 +174,121 @@ void ActorSystem::Advance()
 			{
 				ComponentRemoved(Delta.EntityId, Change.ComponentId);
 			}
-			for (const AuthorityChange& Change : Delta.AuthorityGained)
-			{
-				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
-			}
-			for (const AuthorityChange& Change : Delta.AuthorityLostTemporarily)
-			{
-				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
-			}
-			break;
 		}
-		case EntityDelta::ADD:
-			EntityAdded(Delta.EntityId);
-			break;
-		case EntityDelta::REMOVE:
-			EntityRemoved(Delta.EntityId);
-			break;
-		case EntityDelta::TEMPORARILY_REMOVED:
-			EntityRemoved(Delta.EntityId);
-			EntityAdded(Delta.EntityId);
-			break;
-		default:
-			break;
+	}
+}
+
+void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
+{
+	for (const EntityDelta& Delta : SubViewUpdate.EntityDeltas)
+	{
+		if (Delta.Type == EntityDelta::ADD || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
+		{
+			const Worker_EntityId EntityId = Delta.EntityId;
+
+			if (!PresentEntities.Contains(Delta.EntityId))
+			{
+				// Create new actor for the entity.
+				EntityAdded(Delta.EntityId);
+
+				PresentEntities.Emplace(Delta.EntityId);
+			}
+			else
+			{
+				RefreshEntity(Delta.EntityId);
+			}
+
+			if (SubViewUpdate.SubViewType != EActorSubViewType::Simulated)
+			{
+				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == EActorSubViewType::Authority
+																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
+																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
+
+				AuthorityGained(EntityId, AuthorityComponentSet);
+			}
 		}
+	}
+}
+
+void ActorSystem::ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate)
+{
+	if (SubViewUpdate.SubViewType == EActorSubViewType::Simulated)
+	{
+		return;
+	}
+
+	for (const EntityDelta& Delta : SubViewUpdate.EntityDeltas)
+	{
+		if (Delta.Type == EntityDelta::REMOVE || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
+		{
+			const Worker_EntityId EntityId = Delta.EntityId;
+			if (PresentEntities.Contains(EntityId))
+			{
+				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == EActorSubViewType::Authority
+																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
+																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
+
+				AuthorityLost(EntityId, AuthorityComponentSet);
+			}
+		}
+	}
+}
+
+ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InAuthoritySubView, const FSubView& InAutonomousSubView,
+						 const FSubView& InSimulatedSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
+						 SpatialEventTracer* InEventTracer)
+	: ActorSubView(&InActorSubView)
+	, AuthoritySubView(&InAuthoritySubView)
+	, AutonomousSubView(&InAutonomousSubView)
+	, SimulatedSubView(&InSimulatedSubView)
+	, TombstoneSubView(&InTombstoneSubView)
+	, NetDriver(InNetDriver)
+	, EventTracer(InEventTracer)
+	, ClaimPartitionHandler(*InNetDriver->Connection)
+{
+}
+
+void ActorSystem::Advance()
+{
+	for (const EntityDelta& Delta : ActorSubView->GetViewDelta().EntityDeltas)
+	{
+		if (Delta.Type == EntityDelta::REMOVE)
+		{
+			EntityRemoved(Delta.EntityId);
+
+			const int32 EntitiesRemoved = PresentEntities.Remove(Delta.EntityId);
+
+			check(EntitiesRemoved != 0);
+		}
+	}
+
+	struct FEntitySubView
+	{
+		const FSubView* SubView;
+		EActorSubViewType Type;
+
+		operator FEntitySubViewUpdate() const { return { SubView->GetViewDelta().EntityDeltas, Type }; }
+	};
+
+	const FEntitySubView SubViews[]{
+		{ AuthoritySubView, EActorSubViewType::Authority },
+		{ AutonomousSubView, EActorSubViewType::Autonomous },
+		{ SimulatedSubView, EActorSubViewType::Simulated },
+	};
+
+	for (const FEntitySubView& SubView : SubViews)
+	{
+		ProcessRemoves(SubView);
+	}
+
+	for (const FEntitySubView& SubView : SubViews)
+	{
+		ProcessUpdates(SubView);
+	}
+
+	for (const FEntitySubView& SubView : SubViews)
+	{
+		ProcessAdds(SubView);
 	}
 
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
@@ -643,10 +723,6 @@ void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 {
 	PopulateDataStore(EntityId);
 	ReceiveActor(EntityId);
-	for (const auto& AuthoritativeComponentSet : ActorSubView->GetView()[EntityId].Authority)
-	{
-		AuthorityGained(EntityId, AuthoritativeComponentSet);
-	}
 }
 
 void ActorSystem::EntityRemoved(const Worker_EntityId EntityId)

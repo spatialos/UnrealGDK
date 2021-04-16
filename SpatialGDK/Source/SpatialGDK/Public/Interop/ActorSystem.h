@@ -41,7 +41,8 @@ struct ActorData
 class ActorSystem
 {
 public:
-	ActorSystem(const FSubView& InActorSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
+	ActorSystem(const FSubView& InActorSubView, const FSubView& InAuthoritySubView, const FSubView& InAutonomousSubView,
+				const FSubView& InSimulatedSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
 				SpatialEventTracer* InEventTracer);
 
 	void Advance();
@@ -98,6 +99,13 @@ private:
 	FObjectToRepStateMap ObjectRefToRepStateMap;
 
 	void PopulateDataStore(Worker_EntityId EntityId);
+
+	struct FEntitySubViewUpdate;
+
+	void ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate);
+	void ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate);
+	void ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate);
+
 	void ApplyComponentAdd(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 
 	void AuthorityLost(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
@@ -163,12 +171,18 @@ private:
 	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds) const;
 
 	const FSubView* ActorSubView;
+	const FSubView* AuthoritySubView;
+	const FSubView* AutonomousSubView;
+	const FSubView* SimulatedSubView;
 	const FSubView* TombstoneSubView;
+
 	USpatialNetDriver* NetDriver;
 	SpatialEventTracer* EventTracer;
 
 	CreateEntityHandler CreateEntityHandler;
 	ClaimPartitionHandler ClaimPartitionHandler;
+
+	TSet<Worker_EntityId_Key> PresentEntities;
 
 	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> CreateEntityRequestIdToActorChannel;
 

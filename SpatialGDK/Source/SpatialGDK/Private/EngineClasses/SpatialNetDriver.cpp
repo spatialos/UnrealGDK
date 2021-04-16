@@ -480,7 +480,14 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this, Connection->GetEventTracer()),
 			Connection->GetEventTracer());
 
-		ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, TombstoneActorSubview, this, Connection->GetEventTracer());
+		{
+			const SpatialGDK::FSubView& AuthoritySubView = SpatialGDK::ActorSubviews::CreateAuthoritySubView(*this);
+			const SpatialGDK::FSubView& AutonomousSubView = SpatialGDK::ActorSubviews::CreateAutonomousSubView(*this);
+			const SpatialGDK::FSubView& SimulatedSubView = SpatialGDK::ActorSubviews::CreateSimulatedSubView(*this);
+
+			ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, AuthoritySubView, AutonomousSubView, SimulatedSubView,
+															  TombstoneActorSubview, this, Connection->GetEventTracer());
+		}
 
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
@@ -2961,7 +2968,7 @@ void USpatialNetDriver::TryFinishStartup()
 				if (WorldSettings && WorldSettings->bEnableDebugInterface)
 				{
 					const FFilterPredicate DebugCompFilter = [this](const Worker_EntityId EntityId,
-															  const SpatialGDK::EntityViewElement& Element) {
+																	const SpatialGDK::EntityViewElement& Element) {
 						return Element.Components.ContainsByPredicate(
 							SpatialGDK::ComponentIdEquality{ SpatialConstants::GDK_DEBUG_COMPONENT_ID });
 					};
