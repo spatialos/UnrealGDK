@@ -247,7 +247,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		// SpatialPlatformCoordinator->SendReadyStatus();
 	}
 	*/
-	
+
 	return true;
 }
 
@@ -385,8 +385,7 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 	if (GameInstance->IsDedicatedServerInstance())
 	{
 		FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator"));
-		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("%s - EnableSpatialPlatformCoordinator:[%s]"), *FString(__FUNCTION__),
-			   *strSwitch);
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("%s - EnableSpatialPlatformCoordinator:[%s]"), *FString(__FUNCTION__), *strSwitch);
 
 		if (USpatialPlatformCoordinator::CheckPlatformSwitch(false))
 		{

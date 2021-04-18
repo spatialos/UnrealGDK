@@ -66,8 +66,7 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 {
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
 
-	UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - SpatialWorkerId:[%s]"), *FString(__FUNCTION__),
-			*SpatialWorkerId);
+	UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - SpatialWorkerId:[%s]"), *FString(__FUNCTION__), *SpatialWorkerId);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HeartbeatRequest = FHttpModule::Get().CreateRequest();
 
@@ -89,8 +88,7 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 			}
 		});
 
-	HeartbeatRequest->OnRequestProgress().BindLambda(
-		[this](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {});
+	HeartbeatRequest->OnRequestProgress().BindLambda([this](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {});
 
 	HeartbeatRequest->OnHeaderReceived().BindLambda(
 		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {});
@@ -111,8 +109,7 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 	UWorld* World = GetWorld();
 	if (!World)
 	{
-		UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - World is null, queue this ready request"),
-			   *FString(__FUNCTION__));
+		UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - World is null, queue this ready request"), *FString(__FUNCTION__));
 		CachedReadyStatus = true;
 		return;
 	}
@@ -120,8 +117,7 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 	UGameInstance* GameInstance = World->GetGameInstance();
 	if (!GameInstance)
 	{
-		UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - GameInstance is null, queue this ready request"),
-			   *FString(__FUNCTION__));
+		UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - GameInstance is null, queue this ready request"), *FString(__FUNCTION__));
 		CachedReadyStatus = true;
 		return;
 	}
@@ -137,8 +133,7 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 
 	CachedReadyStatus = false;
 
-	UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - SpatialWorkerId:[%s]"), *FString(__FUNCTION__),
-			*SpatialWorkerId);
+	UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - SpatialWorkerId:[%s]"), *FString(__FUNCTION__), *SpatialWorkerId);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> ReadyStatusRequest = FHttpModule::Get().CreateRequest();
 
@@ -155,13 +150,11 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 					   *Response->GetContentAsString());
 
 				GetWorld()->GetTimerManager().ClearTimer(ReadyTimerHandler);
-				GetWorld()->GetTimerManager().SetTimer(ReadyTimerHandler, this, &USpatialPlatformCoordinator::SendReadyStatus,
-												   5, false);
+				GetWorld()->GetTimerManager().SetTimer(ReadyTimerHandler, this, &USpatialPlatformCoordinator::SendReadyStatus, 5, false);
 			}
 		});
 
-	ReadyStatusRequest->OnRequestProgress().BindLambda(
-		[this](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {});
+	ReadyStatusRequest->OnRequestProgress().BindLambda([this](FHttpRequestPtr Request, int32 BytesSent, int32 BytesReceived) {});
 
 	ReadyStatusRequest->OnHeaderReceived().BindLambda(
 		[this](FHttpRequestPtr Request, const FString& HeaderName, const FString& NewHeaderValue) {});
@@ -183,8 +176,7 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
 
-	UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - SpatialWorkerId:[%s]"), *FString(__FUNCTION__),
-			*SpatialWorkerId);
+	UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - SpatialWorkerId:[%s]"), *FString(__FUNCTION__), *SpatialWorkerId);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> WorkerStatusPollingRequest = FHttpModule::Get().CreateRequest();
 
@@ -268,8 +260,7 @@ void USpatialPlatformCoordinator::StartPollingForWorkerFlags()
 	USpatialWorkerFlags* SpatialWorkerFlags = Driver->SpatialWorkerFlags;
 	const FString SpatialWorkerId = GetWorld()->GetGameInstance()->GetSpatialWorkerId();
 
-	UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - SpatialWorkerId:[%s]"), *FString(__FUNCTION__),
-			*SpatialWorkerId);
+	UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - SpatialWorkerId:[%s]"), *FString(__FUNCTION__), *SpatialWorkerId);
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> WorkerFlagsPollingRequest = FHttpModule::Get().CreateRequest();
 

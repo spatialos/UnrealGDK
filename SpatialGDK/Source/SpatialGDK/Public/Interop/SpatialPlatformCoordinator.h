@@ -42,7 +42,7 @@ public:
 	static bool CheckPlatformSwitch(bool bHeartBeat);
 
 public:
-	bool					CachedReadyStatus;
+	bool CachedReadyStatus;
 
 private:
 	USpatialNetDriver* Driver;
