@@ -235,6 +235,19 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	InitiateConnectionToSpatialOS(URL);
 
+	// SpatialPlatformCoordinator must be initialized before OnConnectionToSpatialOSSucceeded
+	// because the developer might call the SendReadyStatus at any time
+	SpatialPlatformCoordinator = NewObject<USpatialPlatformCoordinator>(this);
+	SpatialPlatformCoordinator->Init(this);
+
+	// TODO: to be remove, testing code
+	/*
+	if (GetGameInstance()->IsDedicatedServerInstance())
+	{
+		// SpatialPlatformCoordinator->SendReadyStatus();
+	}
+	*/
+	
 	return true;
 }
 
@@ -371,15 +384,34 @@ void USpatialNetDriver::OnConnectionToSpatialOSSucceeded()
 
 	if (GameInstance->IsDedicatedServerInstance())
 	{
+		FString strSwitch = FPlatformMisc::GetEnvironmentVariable(TEXT("bEnableSpatialPlatformCoordinator"));
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("%s - EnableSpatialPlatformCoordinator:[%s]"), *FString(__FUNCTION__),
+			   *strSwitch);
+
 		if (USpatialPlatformCoordinator::CheckPlatformSwitch(false))
 		{
 			SpatialPlatformCoordinator->StartPollingForGameserverStatus();
 			SpatialPlatformCoordinator->StartPollingForWorkerFlags();
+
+			if (SpatialPlatformCoordinator->CachedReadyStatus)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Display, TEXT("%s - send cached ready status"), *FString(__FUNCTION__));
+				SpatialPlatformCoordinator->SendReadyStatus();
+			}
 		}
-		else if (USpatialPlatformCoordinator::CheckPlatformSwitch(true))
+
+		if (USpatialPlatformCoordinator::CheckPlatformSwitch(true))
 		{
 			SpatialPlatformCoordinator->StartSendingHeartbeat();
 		}
+
+		// TODO: to be remove, testing code
+		/*
+		if (GetGameInstance()->IsDedicatedServerInstance())
+		{
+			SpatialPlatformCoordinator->SendReadyStatus();
+		}
+		*/
 	}
 }
 
@@ -433,8 +465,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
 
 	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
-	SpatialPlatformCoordinator = NewObject<USpatialPlatformCoordinator>(this);
-	SpatialPlatformCoordinator->Init(this);
 
 	FName WorkerType = GameInstance->GetSpatialWorkerType();
 	if (WorkerType == SpatialConstants::DefaultServerWorkerType || WorkerType == SpatialConstants::DefaultClientWorkerType)

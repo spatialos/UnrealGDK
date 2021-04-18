@@ -41,11 +41,15 @@ public:
 
 	static bool CheckPlatformSwitch(bool bHeartBeat);
 
+public:
+	bool					CachedReadyStatus;
+
 private:
 	USpatialNetDriver* Driver;
 	FString Url;
 
 	FTimerHandle HeartBeatTimerHandler;
+	FTimerHandle ReadyTimerHandler;
 	FTimerHandle GameserverStatusTimerHandler;
 	FTimerHandle WorkerFlagsTimerHandler;
 
