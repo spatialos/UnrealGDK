@@ -85,9 +85,6 @@ TMap<FString, FActorSchemaData> ActorClassPathToSchema;
 TMap<FString, FSubobjectSchemaData> SubobjectClassPathToSchema;
 Worker_ComponentId NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 
-// Sets of data/owner only/handover components
-TMap<ESchemaComponentType, TSet<Worker_ComponentId>> SchemaComponentTypeToComponents;
-
 // LevelStreaming
 TMap<FString, Worker_ComponentId> LevelPathToComponentId;
 
@@ -1003,10 +1000,6 @@ USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
 	SchemaDatabase->NetCullDistanceToComponentId = NetCullDistanceToComponentId;
 	SchemaDatabase->ComponentIdToClassPath = CreateComponentIdToClassPathMap();
-	SchemaDatabase->DataComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Data].Array();
-	SchemaDatabase->OwnerOnlyComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_OwnerOnly].Array();
-	SchemaDatabase->HandoverComponentIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_Handover].Array();
-	SchemaDatabase->InitialOnlyComponentsIds = SchemaComponentTypeToComponents[ESchemaComponentType::SCHEMA_InitialOnly].Array();
 
 	SchemaDatabase->NetCullDistanceComponentIds.Reset();
 	TArray<Worker_ComponentId> NetCullDistanceComponentIds;
@@ -1247,10 +1240,6 @@ void ResetSchemaGeneratorState()
 {
 	ActorClassPathToSchema.Empty();
 	SubobjectClassPathToSchema.Empty();
-	SchemaComponentTypeToComponents.Empty();
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-		SchemaComponentTypeToComponents.Add(Type, TSet<Worker_ComponentId>());
-	});
 	LevelPathToComponentId.Empty();
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 	SchemaGeneratedClasses.Empty();
@@ -1295,14 +1284,6 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 
 		ActorClassPathToSchema = SchemaDatabase->ActorClassPathToSchema;
 		SubobjectClassPathToSchema = SchemaDatabase->SubobjectClassPathToSchema;
-		SchemaComponentTypeToComponents.Empty();
-		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_Data, TSet<Worker_ComponentId>(SchemaDatabase->DataComponentIds));
-		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_OwnerOnly,
-											TSet<Worker_ComponentId>(SchemaDatabase->OwnerOnlyComponentIds));
-		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_Handover,
-											TSet<Worker_ComponentId>(SchemaDatabase->HandoverComponentIds));
-		SchemaComponentTypeToComponents.Add(ESchemaComponentType::SCHEMA_InitialOnly,
-											TSet<Worker_ComponentId>(SchemaDatabase->InitialOnlyComponentsIds));
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 		NetCullDistanceToComponentId = SchemaDatabase->NetCullDistanceToComponentId;
