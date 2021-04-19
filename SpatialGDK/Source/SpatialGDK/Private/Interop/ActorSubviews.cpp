@@ -47,7 +47,7 @@ static TArray<FDispatcherRefreshCallback> CombineCallbacks(TArray<FDispatcherRef
 														   const TArray<FDispatcherRefreshCallback>& Rhs)
 {
 	Lhs.Append(Rhs);
-	return Rhs;
+	return Lhs;
 }
 
 bool MainActorSubviewSetup::IsActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Entity, USpatialNetDriver& NetDriver)
@@ -88,7 +88,7 @@ bool MainActorSubviewSetup::IsActorEntity(const Worker_EntityId EntityId, const 
 
 TArray<FDispatcherRefreshCallback> MainActorSubviewSetup::GetCallbacks(ViewCoordinator& Coordinator)
 {
-	return { Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId) };
+	return { Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId), Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId), Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID) };
 }
 
 bool AuthoritySubviewSetup::IsAuthorityActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element)
@@ -100,8 +100,6 @@ TArray<FDispatcherRefreshCallback> AuthoritySubviewSetup::GetCallbacks(ViewCoord
 {
 	return CombineCallbacks(MainActorSubviewSetup::GetCallbacks(Coordinator),
 							{
-								Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID),
-								Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
 								Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
 							});
 }
