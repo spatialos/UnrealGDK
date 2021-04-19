@@ -78,10 +78,11 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 			GetWorld()->GetTimerManager().SetTimer(HeartBeatTimerHandler, this, &USpatialPlatformCoordinator::StartSendingHeartbeat,
 												   GetDefault<USpatialGDKSettings>()->SpatialPlatformHeartbeatInterval, false);
 
-			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Response:[%s]"), *FString(__FUNCTION__),
-				   *Response->GetContentAsString());
+			int32 HttpCode = Response->GetResponseCode();
+			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Code:[%d], Response:[%s]"), *FString(__FUNCTION__),
+				   HttpCode, *Response->GetContentAsString());
 
-			if (!bWasSuccessful)
+			if (!bWasSuccessful || HttpCode != 200)
 			{
 				UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Failed HTTP request, Response:[%s]"), *FString(__FUNCTION__),
 					   *Response->GetContentAsString());
@@ -141,10 +142,11 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
 			UncompletedRequests.Remove(ReadyRequestKey);
 
-			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Response:[%s]"), *FString(__FUNCTION__),
-				   *Response->GetContentAsString());
+			int32 HttpCode = Response->GetResponseCode();
+			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Code:[%d], Response:[%s]"), *FString(__FUNCTION__),
+				   HttpCode, *Response->GetContentAsString());
 
-			if (!bWasSuccessful)
+			if (!bWasSuccessful || HttpCode != 200)
 			{
 				UE_LOG(LogSpatialPlatformCoordinator, Warning, TEXT("%s - Failed HTTP request, Response:[%s]"), *FString(__FUNCTION__),
 					   *Response->GetContentAsString());
@@ -162,6 +164,7 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 	ReadyStatusRequest->OnRequestWillRetry().BindLambda(
 		[this](FHttpRequestPtr Request, FHttpResponsePtr Response, float SecondsToRetry) {});
 
+	// ReadyStatusRequest->SetURL(Url + TEXT("/ready/"));
 	ReadyStatusRequest->SetURL(Url + TEXT("/ready/") + SpatialWorkerId);
 	ReadyStatusRequest->SetVerb("POST");
 	ReadyStatusRequest->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
@@ -189,10 +192,11 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 												   &USpatialPlatformCoordinator::StartPollingForGameserverStatus,
 												   GetDefault<USpatialGDKSettings>()->SpatialPlatformServerStatusPollingInterval, false);
 
-			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Response:[%s]"), *FString(__FUNCTION__),
-				   *Response->GetContentAsString());
+			int32 HttpCode = Response->GetResponseCode();
+			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Code:[%d], Response:[%s]"), *FString(__FUNCTION__),
+				   HttpCode, *Response->GetContentAsString());
 
-			if (bWasSuccessful)
+			if (bWasSuccessful && HttpCode == 200)
 			{
 				TSharedPtr<FJsonObject> RootObject;
 				FString ResponseStr = Response->GetContentAsString();
@@ -272,10 +276,11 @@ void USpatialPlatformCoordinator::StartPollingForWorkerFlags()
 			GetWorld()->GetTimerManager().SetTimer(WorkerFlagsTimerHandler, this, &USpatialPlatformCoordinator::StartPollingForWorkerFlags,
 												   GetDefault<USpatialGDKSettings>()->SpatialPlatformWorkerFlagsPollingInterval, false);
 
-			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Response:[%s]"), *FString(__FUNCTION__),
-				   *Response->GetContentAsString());
+			int32 HttpCode = Response->GetResponseCode();
+			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Code:[%d], Response:[%s]"), *FString(__FUNCTION__),
+				   HttpCode, *Response->GetContentAsString());
 
-			if (bWasSuccessful)
+			if (bWasSuccessful && HttpCode == 200)
 			{
 				TSharedPtr<FJsonObject> RootObject;
 				FString ResponseStr = Response->GetContentAsString();
