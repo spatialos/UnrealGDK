@@ -88,7 +88,9 @@ bool MainActorSubviewSetup::IsActorEntity(const Worker_EntityId EntityId, const 
 
 TArray<FDispatcherRefreshCallback> MainActorSubviewSetup::GetCallbacks(ViewCoordinator& Coordinator)
 {
-	return { Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId), Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId), Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID) };
+	return { Coordinator.CreateComponentExistenceRefreshCallback(Tombstone::ComponentId),
+			 Coordinator.CreateComponentExistenceRefreshCallback(Partition::ComponentId),
+			 Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID) };
 }
 
 bool AuthoritySubviewSetup::IsAuthorityActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element)
@@ -214,4 +216,5 @@ FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver)
 }
 
 } // namespace ActorSubviews
+
 } // namespace SpatialGDK
