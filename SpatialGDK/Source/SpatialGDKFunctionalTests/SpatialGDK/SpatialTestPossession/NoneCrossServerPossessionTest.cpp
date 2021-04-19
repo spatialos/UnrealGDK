@@ -41,7 +41,7 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(TEXT("Possession"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
+	AddStep(TEXT("Possession"), FWorkerDefinition::AllServers, nullptr, /*StartEvent*/ [this]() {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
@@ -49,7 +49,7 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 			{
 				ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-				if (PlayerController && PlayerController->HasAuthority())
+				if (PlayerController != nullptr && PlayerController->HasAuthority())
 				{
 					AssertTrue(PlayerController->HasAuthority(), TEXT("PlayerController should HasAuthority"), PlayerController);
 					AssertTrue(Pawn->HasAuthority(), TEXT("Pawn should HasAuthority"), Pawn);
@@ -66,14 +66,14 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 		[this]() -> bool {
 			return ATestPossessionPlayerController::OnPossessCalled == 1;
 		},
-		nullptr,
-		[this](float) {
+		/*StartEvent*/
+		[this]() {
 			for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 			{
 				if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 				{
 					ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-					if (PlayerController && PlayerController->HasAuthority())
+					if (PlayerController != nullptr && PlayerController->HasAuthority())
 					{
 						AssertFalse(PlayerController->HasMigrated(), TEXT("PlayerController shouldn't have migrated"), PlayerController);
 					}
@@ -81,4 +81,6 @@ void ANoneCrossServerPossessionTest::PrepareTest()
 			}
 			FinishStep();
 		});
+
+	AddCleanupSteps();
 }

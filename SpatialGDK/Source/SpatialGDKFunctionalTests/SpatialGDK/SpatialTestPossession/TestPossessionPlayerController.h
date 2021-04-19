@@ -23,10 +23,14 @@ public:
 
 	void RemotePossessOnServer(APawn* InPawn);
 
+	void RemovePossessionComponent();
+
 	UFUNCTION(Server, Reliable)
 	void RemotePossessOnClient(APawn* InPawn, bool bLockBefore);
 
 	bool HasMigrated() const { return BeforePossessionWorkerId != AfterPossessionWorkerId; }
+
+	void UnlockAllTokens();
 
 	static void ResetCalledCounter();
 
@@ -35,6 +39,11 @@ public:
 private:
 	VirtualWorkerId GetCurrentWorkerId();
 
-	VirtualWorkerId BeforePossessionWorkerId;
-	VirtualWorkerId AfterPossessionWorkerId;
+	UPROPERTY(Handover)
+	uint32 BeforePossessionWorkerId;
+
+	UPROPERTY(Handover)
+	uint32 AfterPossessionWorkerId;
+
+	TArray<ActorLockToken> Tokens;
 };
