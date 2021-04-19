@@ -45,7 +45,7 @@ void FSpatialTestSettings::Override(const FString& MapName)
 	// Group config, applies to maps with the group config set in the Spatial World Settings
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
 	check(World != nullptr);
-	
+
 	if (ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
 		FString GroupOverridesFilename =
@@ -55,7 +55,6 @@ void FSpatialTestSettings::Override(const FString& MapName)
 			// Override the settings from the group specific config file, if it exists
 			Load(GroupOverridesFilename);
 		}
-
 	}
 
 	// Map config, applied to the specific map
@@ -73,7 +72,6 @@ void FSpatialTestSettings::Override(const FString& MapName)
 		// Override the settings from the generated map specific config file
 		Load(GeneratedMapOverridesFilename);
 	}
-
 }
 
 template <typename T>
