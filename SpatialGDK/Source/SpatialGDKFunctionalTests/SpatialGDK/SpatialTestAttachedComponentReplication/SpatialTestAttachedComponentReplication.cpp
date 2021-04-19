@@ -1,4 +1,4 @@
-﻿// Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
+// Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
 
 #include "SpatialTestAttachedComponentReplication.h"
 
@@ -13,19 +13,19 @@ void USpatialTestAttachedComponentReplicationTestMap::CreateCustomContentForMap(
 
 	ULevel* TestLevel = World->GetCurrentLevel();
 
-	AActor* LevelActor = AddActorToLevel<ASpatialTestAttachedComponentReplicationActorForLevelPlacing>(TestLevel, FTransform::Identity);
+	AActor& LevelActor = AddActorToLevel<ASpatialTestAttachedComponentReplicationActorForLevelPlacing>(TestLevel, FTransform::Identity);
 
 	// Adding an instance component...
 	UActorComponent* InstanceComponent =
-		NewObject<USpatialTestAttachedComponentReplicationComponent>(LevelActor, TEXT("PlacedActorComponent"), RF_Transactional);
-	LevelActor->AddInstanceComponent(InstanceComponent);
+		NewObject<USpatialTestAttachedComponentReplicationComponent>(&LevelActor, TEXT("PlacedActorComponent"), RF_Transactional);
+	LevelActor.AddInstanceComponent(InstanceComponent);
 	InstanceComponent->OnComponentCreated();
 	InstanceComponent->RegisterComponent();
 
 	auto AddTest = [this, TestLevel](ESpatialTestAttachedComponentReplicationType TestType) {
-		ASpatialTestAttachedComponentReplication* Test =
+		ASpatialTestAttachedComponentReplication& Test =
 			AddActorToLevel<ASpatialTestAttachedComponentReplication>(TestLevel, FTransform::Identity);
-		Test->AssignedTestType = TestType;
+		Test.AssignedTestType = TestType;
 	};
 
 	AddTest(ESpatialTestAttachedComponentReplicationType::LevelPlaced);
