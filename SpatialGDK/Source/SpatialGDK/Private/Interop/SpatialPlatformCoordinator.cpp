@@ -79,8 +79,8 @@ void USpatialPlatformCoordinator::StartSendingHeartbeat()
 												   GetDefault<USpatialGDKSettings>()->SpatialPlatformHeartbeatInterval, false);
 
 			int32 HttpCode = Response->GetResponseCode();
-			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Code:[%d], Response:[%s]"), *FString(__FUNCTION__),
-				   HttpCode, *Response->GetContentAsString());
+			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Code:[%d], Response:[%s]"), *FString(__FUNCTION__), HttpCode,
+				   *Response->GetContentAsString());
 
 			if (!bWasSuccessful || HttpCode != 200)
 			{
@@ -143,8 +143,8 @@ void USpatialPlatformCoordinator::SendReadyStatus()
 			UncompletedRequests.Remove(ReadyRequestKey);
 
 			int32 HttpCode = Response->GetResponseCode();
-			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Code:[%d], Response:[%s]"), *FString(__FUNCTION__),
-				   HttpCode, *Response->GetContentAsString());
+			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Code:[%d], Response:[%s]"), *FString(__FUNCTION__), HttpCode,
+				   *Response->GetContentAsString());
 
 			if (!bWasSuccessful || HttpCode != 200)
 			{
@@ -193,8 +193,8 @@ void USpatialPlatformCoordinator::StartPollingForGameserverStatus()
 												   GetDefault<USpatialGDKSettings>()->SpatialPlatformServerStatusPollingInterval, false);
 
 			int32 HttpCode = Response->GetResponseCode();
-			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Code:[%d], Response:[%s]"), *FString(__FUNCTION__),
-				   HttpCode, *Response->GetContentAsString());
+			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Code:[%d], Response:[%s]"), *FString(__FUNCTION__), HttpCode,
+				   *Response->GetContentAsString());
 
 			if (bWasSuccessful && HttpCode == 200)
 			{
@@ -277,8 +277,8 @@ void USpatialPlatformCoordinator::StartPollingForWorkerFlags()
 												   GetDefault<USpatialGDKSettings>()->SpatialPlatformWorkerFlagsPollingInterval, false);
 
 			int32 HttpCode = Response->GetResponseCode();
-			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Code:[%d], Response:[%s]"), *FString(__FUNCTION__),
-				   HttpCode, *Response->GetContentAsString());
+			UE_LOG(LogSpatialPlatformCoordinator, Verbose, TEXT("%s - HTTP Code:[%d], Response:[%s]"), *FString(__FUNCTION__), HttpCode,
+				   *Response->GetContentAsString());
 
 			if (bWasSuccessful && HttpCode == 200)
 			{
