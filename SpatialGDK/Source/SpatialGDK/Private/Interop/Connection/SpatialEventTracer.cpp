@@ -228,6 +228,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& Spati
 	}
 }
 
+
 void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) const
 {
 	Io_Stream_Destroy(StreamToDestroy);

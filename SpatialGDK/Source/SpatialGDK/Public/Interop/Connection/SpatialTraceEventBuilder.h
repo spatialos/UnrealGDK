@@ -5,14 +5,62 @@
 #include "Interop/Connection/SpatialTraceEvent.h"
 #include "Interop/Connection/SpatialTraceUniqueId.h"
 #include "SpatialCommonTypes.h"
-#include "WorkerSDK/improbable/c_worker.h"
+#include <WorkerSDK/improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_trace.h>
 
 #define GDK_EVENT_NAMESPACE "unreal_gdk."
 
 namespace SpatialGDK
 {
+
+class SPATIALGDK_API FSpatialTraceEventDataBuilder
+{
+private:
+
+	class FStringCache
+	{
+	public:
+
+		static const uint32 InvalidHandle = -1;
+
+		int32 CombineStrings(const char* A, const char* B);
+		int32 AddString(const char* String);
+		int32 AddFString(const FString& String);
+		const char* Get(int32 Handle) const;
+
+	private:
+		static const int32 BufferSize = 1000;
+		char Buffer[BufferSize];
+		uint32 NextIndex = 0;
+	};
+
+public:
+
+	FSpatialTraceEventDataBuilder() = delete;
+	FSpatialTraceEventDataBuilder(Trace_EventData* EventData);
+	FSpatialTraceEventDataBuilder AddObject(const char* Key, const UObject* Object);
+	FSpatialTraceEventDataBuilder AddFunction(const char* Key, const UFunction* Function);
+	FSpatialTraceEventDataBuilder AddEntityId(const char* Key, const Worker_EntityId EntityId);
+	FSpatialTraceEventDataBuilder AddComponentId(const char* Key, const Worker_ComponentId ComponentId);
+	FSpatialTraceEventDataBuilder AddFieldId(const char* Key, const uint32 FieldId);
+	FSpatialTraceEventDataBuilder AddNewWorkerId(const char* Key, const uint32 NewWorkerId);
+	FSpatialTraceEventDataBuilder AddCommand(const char* Key, const FString& Command);
+	FSpatialTraceEventDataBuilder AddRequestId(const char* Key, const int64 RequestId);
+	FSpatialTraceEventDataBuilder AddAuthority(const char* Key, const Worker_Authority Role);
+	FSpatialTraceEventDataBuilder AddKeyValue(const char* Key, const FString& Value);
+	const Trace_EventData* GetEventData()&&;
+
+public:
+
+	Trace_EventData* EventData;
+	FStringCache StringConverter;
+
+	void AddKeyValue(int32 KeyHandle, int32 ValueHandle);
+};
+
 class SPATIALGDK_API FSpatialTraceEventBuilder
 {
+
 public:
 	FSpatialTraceEventBuilder(FName InType);
 	FSpatialTraceEventBuilder(FName InType, FString InMessage);

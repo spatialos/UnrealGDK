@@ -8,6 +8,97 @@
 
 namespace SpatialGDK
 {
+
+// ---- FStringCache ----
+
+int32 FSpatialTraceEventDataBuilder::FStringCache::CombineStrings(const char* A, const char* B)
+{
+	uint32 InsertIndex = NextIndex;
+	size_t Size = strlen(A) + strlen(B) + sizeof(char);
+	if (InsertIndex + Size >= BufferSize)
+	{
+		return InvalidHandle;
+	}
+	strncpy_s(&Buffer[InsertIndex], Size, A, Size);
+	strcat_s(&Buffer[InsertIndex], Size, B);
+	NextIndex += Size;
+	return InsertIndex;
+}
+
+int32 FSpatialTraceEventDataBuilder::FStringCache::AddString(const char* String)
+{
+	uint32 InsertIndex = NextIndex;
+	size_t Size = strlen(String) + sizeof(char);
+	if (InsertIndex + Size >= BufferSize)
+	{
+		return InvalidHandle;
+	}
+	strncpy_s(&Buffer[InsertIndex], Size, String, Size);
+	NextIndex += Size;
+	return InsertIndex;
+}
+
+int32 FSpatialTraceEventDataBuilder::FStringCache::AddFString(const FString& String)
+{
+	std::string ValueSrc = (const char*)TCHAR_TO_ANSI(*String);
+	return AddString(ValueSrc.c_str());
+}
+
+const char* FSpatialTraceEventDataBuilder::FStringCache::Get(int32 Handle) const
+{
+	if (Handle >= BufferSize || Handle < 0)
+	{
+		return nullptr;
+	}
+	return &Buffer[Handle];
+}
+
+// ---- FSpatialTraceEventDataBuilder ----
+
+FSpatialTraceEventDataBuilder::FSpatialTraceEventDataBuilder(Trace_EventData* EventData)
+	: EventData(EventData)
+{
+}
+
+FSpatialTraceEventDataBuilder FSpatialTraceEventDataBuilder::AddObject(const char* Key, const UObject* Object)
+{
+	if (Object != nullptr)
+	{
+		if (const AActor* Actor = Cast<AActor>(Object))
+		{
+			FString PositionString = Actor->GetTransform().GetTranslation().ToString();
+			AddKeyValue(StringConverter.CombineStrings(Key, "ActorPosition"), StringConverter.AddFString(PositionString));
+		}
+		if (UWorld* World = Object->GetWorld())
+		{
+			if (USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+			{
+				FString NetGuidString = NetDriver->PackageMap->GetNetGUIDFromObject(Object).ToString();
+				AddKeyValue(StringConverter.CombineStrings(Key, "NetGuid"), StringConverter.AddFString(NetGuidString));
+			}
+		}
+		AddKeyValue(Key, Object->GetName());
+	}
+	return *this;
+}
+
+FSpatialTraceEventDataBuilder FSpatialTraceEventDataBuilder::AddKeyValue(const char* Key, const FString& Value)
+{
+	AddKeyValue(StringConverter.AddString(Key), StringConverter.AddFString(Value));
+	return *this;
+}
+
+void FSpatialTraceEventDataBuilder::AddKeyValue(int32 KeyHandle, int32 ValueHandle)
+{
+	const char* Key = StringConverter.Get(KeyHandle);
+	const char* Value = StringConverter.Get(ValueHandle);
+	Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
+}
+
+
+
+
+
 FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(FName InType)
 	: SpatialTraceEvent(MoveTemp(InType), "")
 {
