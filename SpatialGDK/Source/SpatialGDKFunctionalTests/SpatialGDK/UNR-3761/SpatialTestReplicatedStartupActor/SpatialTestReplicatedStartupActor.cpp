@@ -133,14 +133,18 @@ void ASpatialTestReplicatedStartupActor::PrepareTest()
 		TEXT("SpatialTestReplicatedStartupActorAllWorkersCheckDefaultProperties"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 		[this](float DeltaTime) {
 			RequireEqual_Int(ReplicatedStartupActor->TestIntProperty, 1, TEXT("TestInt should be correct after server update."));
-			RequireEqual_Int(ReplicatedStartupActor->TestArrayProperty.Num(), 1,
-							 TEXT("TestArrayProperty size should be correct after server update."));
-			RequireEqual_Int(ReplicatedStartupActor->TestArrayProperty[0], 1,
-							 TEXT("TestArrayProperty[0] should be correct after server update."));
-			RequireEqual_Int(ReplicatedStartupActor->TestArrayStructProperty.Num(), 1,
-							 TEXT("TestArrayProperty size should be correct after server update."));
-			RequireEqual_Int(ReplicatedStartupActor->TestArrayStructProperty[0].Int, 1,
-							 TEXT("TestArrayStructProperty[0] should be correct after server update."));
+			if (RequireEqual_Int(ReplicatedStartupActor->TestArrayProperty.Num(), 1,
+								 TEXT("TestArrayProperty size should be correct after server update.")))
+			{
+				RequireEqual_Int(ReplicatedStartupActor->TestArrayProperty[0], 1,
+								 TEXT("TestArrayProperty[0] should be correct after server update."));
+			}
+			if (RequireEqual_Int(ReplicatedStartupActor->TestArrayStructProperty.Num(), 1,
+								 TEXT("TestArrayProperty size should be correct after server update.")))
+			{
+				RequireEqual_Int(ReplicatedStartupActor->TestArrayStructProperty[0].Int, 1,
+								 TEXT("TestArrayStructProperty[0] should be correct after server update."));
+			}
 			FinishStep();
 		},
 		5.0f);

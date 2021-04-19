@@ -88,8 +88,8 @@ void APartiallyStablePathTest::PrepareTest()
 		nullptr, 5.0f);
 
 	AddStep(
-		TEXT("Server receives the Server RPC"), FWorkerDefinition::Server(1), nullptr,
-		[this]() {
+		TEXT("Server receives the Server RPC"), FWorkerDefinition::Server(1), nullptr, nullptr,
+		[this](float DeltaTime) {
 			RequireTrue(Pawn->bServerRPCCalled, TEXT("Server RPC was called"));
 			if (Pawn->bServerRPCCalled)
 			{
@@ -98,7 +98,7 @@ void APartiallyStablePathTest::PrepareTest()
 
 			FinishStep();
 		},
-		nullptr, 5.0f);
+		5.0f);
 
 	AddStep(
 		TEXT("Reset the pawn"), FWorkerDefinition::Server(1), nullptr,
