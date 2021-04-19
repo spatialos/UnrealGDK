@@ -51,10 +51,12 @@ void ASpatialTestRemotePossession::PrepareTest()
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 		{
 			ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-			if (PlayerController != nullptr && PlayerController->HasAuthority() && PlayerController->GetPawn() != nullptr
-				&& PlayerController->GetPawn()->HasAuthority())
+			if (PlayerController != nullptr && PlayerController->HasAuthority())
 			{
-				AddToOriginalPawns(PlayerController, PlayerController->GetPawn());
+				if (PlayerController->GetPawn() != nullptr && PlayerController->GetPawn()->HasAuthority())
+				{
+					AddToOriginalPawns(PlayerController, PlayerController->GetPawn());
+				}
 			}
 		}
 		FinishStep();

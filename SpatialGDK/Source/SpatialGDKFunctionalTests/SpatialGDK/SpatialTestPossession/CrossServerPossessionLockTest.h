@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "SpatialTestRemotePossession.h"
-#include "TestPossessionPlayerController.h"
 #include "CrossServerPossessionLockTest.generated.h"
 
 UCLASS()

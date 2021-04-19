@@ -6,7 +6,6 @@
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
-#include "TestPossessionPlayerController.h"
 
 /**
  * This test tests 1 locked Controller remote possess over 1 pawn.
@@ -49,7 +48,10 @@ void ACrossServerPossessionLockTest::PrepareTest()
 			{
 				if (ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner()))
 				{
-					PlayerController->RemotePossessOnClient(Pawn, true);
+					if (PlayerController->HasAuthority())
+					{
+						PlayerController->RemotePossessOnClient(Pawn, true);
+					}
 				}
 			}
 		}
@@ -65,7 +67,7 @@ void ACrossServerPossessionLockTest::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Release locks on the pawns and player controllers"), FWorkerDefinition::AllServers, nullptr, [this]() {
+	AddStep(TEXT("Release locks on the player controllers"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 		{
 			if (ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner()))
