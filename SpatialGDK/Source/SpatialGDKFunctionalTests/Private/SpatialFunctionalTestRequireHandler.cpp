@@ -351,6 +351,14 @@ bool SpatialFunctionalTestRequireHandler::GenericRequire(const FString& Msg, boo
 
 void SpatialFunctionalTestRequireHandler::LogAndClearStepRequires()
 {
+	if (Requires.Num() == 0)
+	{
+		FString Msg = FString::Printf(TEXT("[Failed] Test not started"));
+		UE_VLOG(nullptr, LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
+		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("%s"), *Msg);
+		return;
+	}
+
 	// Since it's a TMap, we need to order them for better readability.
 	TArray<FSpatialFunctionalTestRequire> RequiresOrdered;
 	RequiresOrdered.Reserve(Requires.Num());

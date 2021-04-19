@@ -451,7 +451,6 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 
 ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetLocalFlowController()
 {
-	ensureMsgf(LocalFlowController, TEXT("GetLocalFlowController being called without it being set, shouldn't happen"));
 	return LocalFlowController;
 }
 
@@ -678,8 +677,7 @@ void ASpatialFunctionalTest::OnReplicated_CurrentStepIndex()
 	{
 		RequireHandler.LogAndClearStepRequires();
 		// if we ever started in first place
-		ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController();
-		if (AuxLocalFlowController != nullptr)
+		if (ASpatialFunctionalTestFlowController* AuxLocalFlowController = GetLocalFlowController())
 		{
 			AuxLocalFlowController->OnTestFinished();
 			if (AuxLocalFlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
