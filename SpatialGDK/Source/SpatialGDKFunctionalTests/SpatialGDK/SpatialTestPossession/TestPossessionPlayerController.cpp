@@ -49,9 +49,10 @@ void ATestPossessionPlayerController::RemotePossessOnClient_Implementation(APawn
 	if (bLockBefore)
 	{
 		USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-		if (NetDriver != nullptr && NetDriver->LockingPolicy)
+		check(NetDriver != nullptr);
+		if (NetDriver->LockingPolicy)
 		{
-			NetDriver->LockingPolicy->AcquireLock(this, TEXT("TestLock"));
+			Tokens.Add(NetDriver->LockingPolicy->AcquireLock(this, TEXT("TestLock")));
 		}
 	}
 	UnPossess();
@@ -60,11 +61,36 @@ void ATestPossessionPlayerController::RemotePossessOnClient_Implementation(APawn
 
 void ATestPossessionPlayerController::RemotePossessOnServer(APawn* InPawn)
 {
+	check(HasAuthority());
+
 	URemotePossessionComponent* Component =
 		NewObject<URemotePossessionComponent>(this, URemotePossessionComponent::StaticClass(), TEXT("CrossServer Possession"));
 	Component->Target = InPawn;
 	Component->RegisterComponent();
 	BeforePossessionWorkerId = GetCurrentWorkerId();
+}
+
+void ATestPossessionPlayerController::RemovePossessionComponent()
+{
+	URemotePossessionComponent* Component =
+		Cast<URemotePossessionComponent>(GetComponentByClass(URemotePossessionComponent::StaticClass()));
+	if (Component != nullptr)
+	{
+		Component->DestroyComponent();
+	}
+}
+
+void ATestPossessionPlayerController::UnlockAllTokens()
+{
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+	if (NetDriver != nullptr && NetDriver->LockingPolicy)
+	{
+		for (ActorLockToken Token : Tokens)
+		{
+			NetDriver->LockingPolicy->ReleaseLock(Token);
+		}
+	}
+	Tokens.Empty();
 }
 
 void ATestPossessionPlayerController::ResetCalledCounter()

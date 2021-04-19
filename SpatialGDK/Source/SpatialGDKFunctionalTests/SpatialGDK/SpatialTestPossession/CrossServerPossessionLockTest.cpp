@@ -6,7 +6,6 @@
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPossessionPawn.h"
-#include "TestPossessionPlayerController.h"
 
 /**
  * This test tests 1 locked Controller remote possess over 1 pawn.
@@ -40,17 +39,19 @@ void ACrossServerPossessionLockTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr, nullptr, [this](float DeltaTime) {
+	AddStep(TEXT("Controller remote possess"), FWorkerDefinition::AllClients, nullptr, /*StartEvent*/ [this]() {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
 		{
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 			{
-				ATestPossessionPlayerController* Controller = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
-				if (Controller != nullptr)
+				if (ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner()))
 				{
-					Controller->RemotePossessOnClient(Pawn, true);
+					if (PlayerController->HasAuthority())
+					{
+						PlayerController->RemotePossessOnClient(Pawn, true);
+					}
 				}
 			}
 		}
@@ -59,10 +60,27 @@ void ACrossServerPossessionLockTest::PrepareTest()
 
 	AddWaitStep(FWorkerDefinition::AllServers);
 
-	AddStep(TEXT("Check test result"), FWorkerDefinition::AllServers, nullptr, nullptr, [this](float) {
+	AddStep(TEXT("Check test result"), FWorkerDefinition::AllServers, nullptr, /*StartEvent*/ [this]() {
 		ATestPossessionPawn* Pawn = GetPawn();
 		AssertIsValid(Pawn, TEXT("Test requires a Pawn"));
 		AssertTrue(Pawn->GetController() == nullptr, TEXT("Pawn shouldn't have a controller"), Pawn);
 		FinishStep();
 	});
+
+	AddStep(TEXT("Release locks on the player controllers"), FWorkerDefinition::AllServers, nullptr, [this]() {
+		for (ASpatialFunctionalTestFlowController* FlowController : GetFlowControllers())
+		{
+			if (ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner()))
+			{
+				PlayerController->RemovePossessionComponent();
+				PlayerController->UnlockAllTokens();
+			}
+		}
+		FinishStep();
+	});
+
+	// Wait for playercontroller to get unlocked before trying to migrate it back in the cleanup steps
+	AddWaitStep(FWorkerDefinition::AllServers);
+
+	AddCleanupSteps();
 }
