@@ -16,7 +16,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
 namespace SpatialGDK
 {
-
 // SpatialEventTracer wraps Trace_EventTracer related functionality
 class SPATIALGDK_API SpatialEventTracer
 {
@@ -28,11 +27,11 @@ public:
 	Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
 	FSpatialGDKSpanId TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes = nullptr,
-		int32 NumCauses = 0) const;
-
-	template<typename T>
-	FSpatialGDKSpanId TraceEvents(const FSpatialTraceEvent& SpatialTraceEvent, T&& DataCallback, const Trace_SpanIdType* Causes = nullptr,
 								 int32 NumCauses = 0) const;
+
+	template <typename T>
+	FSpatialGDKSpanId TraceEvents(const FSpatialTraceEvent& SpatialTraceEvent, T&& DataCallback, const Trace_SpanIdType* Causes = nullptr,
+								  int32 NumCauses = 0) const;
 
 	void BeginOpsForFrame();
 	void AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId);
@@ -105,9 +104,9 @@ private:
 	Trace_EventTracer* EventTracer;
 };
 
-template<typename T>
-FSpatialGDKSpanId SpatialEventTracer::TraceEvents(const FSpatialTraceEvent& SpatialTraceEvent, T&& DataCallback, const Trace_SpanIdType* Causes /* = nullptr*/,
-	int32 NumCauses /* = 0*/) const
+template <typename T>
+FSpatialGDKSpanId SpatialEventTracer::TraceEvents(const FSpatialTraceEvent& SpatialTraceEvent, T&& DataCallback,
+												  const Trace_SpanIdType* Causes /* = nullptr*/, int32 NumCauses /* = 0*/) const
 {
 	/*
 	if (Causes == nullptr && NumCauses > 0)

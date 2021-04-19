@@ -583,10 +583,12 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 	if (EventTracer != nullptr)
 	{
 		TArray<FSpatialGDKSpanId> CauseSpanIds = EventTracer->GetAndConsumeSpansForComponent(EntityComponentId(EntityId, ComponentId));
-		EventTracer->TraceEvents(FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, EntityId, ComponentId), []() {
+		EventTracer->TraceEvents(
+			FSpatialTraceEventBuilder::CreateComponentUpdate(Channel->Actor, TargetObject, EntityId, ComponentId),
+			[]() {
 
-		},
-								(const Trace_SpanIdType*)CauseSpanIds.GetData(), /* NumCauses */ 1);
+			},
+			(const Trace_SpanIdType*)CauseSpanIds.GetData(), /* NumCauses */ 1);
 	}
 
 	ESchemaComponentType Category = NetDriver->ClassInfoManager->GetCategoryByComponentId(ComponentId);

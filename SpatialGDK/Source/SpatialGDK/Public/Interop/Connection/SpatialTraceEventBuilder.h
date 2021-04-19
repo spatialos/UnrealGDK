@@ -5,22 +5,19 @@
 #include "Interop/Connection/SpatialTraceEvent.h"
 #include "Interop/Connection/SpatialTraceUniqueId.h"
 #include "SpatialCommonTypes.h"
-#include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_trace.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #define GDK_EVENT_NAMESPACE "unreal_gdk."
 
 namespace SpatialGDK
 {
-
 class SPATIALGDK_API FSpatialTraceEventDataBuilder
 {
 private:
-
 	class FStringCache
 	{
 	public:
-
 		static const uint32 InvalidHandle = -1;
 
 		int32 CombineStrings(const char* A, const char* B);
@@ -35,7 +32,6 @@ private:
 	};
 
 public:
-
 	FSpatialTraceEventDataBuilder() = delete;
 	FSpatialTraceEventDataBuilder(Trace_EventData* EventData);
 	FSpatialTraceEventDataBuilder AddObject(const char* Key, const UObject* Object);
@@ -48,10 +44,9 @@ public:
 	FSpatialTraceEventDataBuilder AddRequestId(const char* Key, const int64 RequestId);
 	FSpatialTraceEventDataBuilder AddAuthority(const char* Key, const Worker_Authority Role);
 	FSpatialTraceEventDataBuilder AddKeyValue(const char* Key, const FString& Value);
-	const Trace_EventData* GetEventData()&&;
+	const Trace_EventData* GetEventData() &&;
 
 public:
-
 	Trace_EventData* EventData;
 	FStringCache StringConverter;
 
@@ -60,7 +55,6 @@ public:
 
 class SPATIALGDK_API FSpatialTraceEventBuilder
 {
-
 public:
 	FSpatialTraceEventBuilder(FName InType);
 	FSpatialTraceEventBuilder(FName InType, FString InMessage);

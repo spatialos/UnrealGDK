@@ -8,7 +8,6 @@
 
 namespace SpatialGDK
 {
-
 // ---- FStringCache ----
 
 int32 FSpatialTraceEventDataBuilder::FStringCache::CombineStrings(const char* A, const char* B)
@@ -94,10 +93,6 @@ void FSpatialTraceEventDataBuilder::AddKeyValue(int32 KeyHandle, int32 ValueHand
 	const char* Value = StringConverter.Get(ValueHandle);
 	Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
 }
-
-
-
-
 
 FSpatialTraceEventBuilder::FSpatialTraceEventBuilder(FName InType)
 	: SpatialTraceEvent(MoveTemp(InType), "")
