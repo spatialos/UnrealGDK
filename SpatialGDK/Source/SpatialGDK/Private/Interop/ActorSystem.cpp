@@ -137,17 +137,10 @@ private:
 #endif
 };
 
-enum class EActorSubViewType
-{
-	Authority,
-	Autonomous,
-	Simulated,
-};
-
 struct ActorSystem::FEntitySubViewUpdate
 {
 	const TArray<EntityDelta>& EntityDeltas;
-	EActorSubViewType SubViewType;
+	ENetRole SubViewType;
 };
 
 void ActorSystem::ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate)
@@ -198,9 +191,9 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 				RefreshEntity(Delta.EntityId);
 			}
 
-			if (SubViewUpdate.SubViewType != EActorSubViewType::Simulated)
+			if (SubViewUpdate.SubViewType != ENetRole::ROLE_SimulatedProxy)
 			{
-				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == EActorSubViewType::Authority
+				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
 																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
 																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
 
@@ -212,7 +205,7 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 
 void ActorSystem::ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate)
 {
-	if (SubViewUpdate.SubViewType == EActorSubViewType::Simulated)
+	if (SubViewUpdate.SubViewType == ENetRole::ROLE_SimulatedProxy)
 	{
 		return;
 	}
@@ -224,7 +217,7 @@ void ActorSystem::ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate)
 			const Worker_EntityId EntityId = Delta.EntityId;
 			if (PresentEntities.Contains(EntityId))
 			{
-				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == EActorSubViewType::Authority
+				const Worker_ComponentSetId AuthorityComponentSet = SubViewUpdate.SubViewType == ENetRole::ROLE_Authority
 																		? SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
 																		: SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID;
 
@@ -275,7 +268,7 @@ void ActorSystem::Advance()
 	struct FEntitySubView
 	{
 		const FSubView* SubView;
-		EActorSubViewType Type;
+		ENetRole Type;
 
 		operator FEntitySubViewUpdate() const { return { SubView->GetViewDelta().EntityDeltas, Type }; }
 	};
@@ -289,9 +282,9 @@ void ActorSystem::Advance()
 #endif // DO_CHECK
 
 	const FEntitySubView SubViews[]{
-		{ AuthoritySubView, EActorSubViewType::Authority },
-		{ AutonomousSubView, EActorSubViewType::Autonomous },
-		{ SimulatedSubView, EActorSubViewType::Simulated },
+		{ AuthoritySubView, ENetRole::ROLE_Authority },
+		{ AutonomousSubView, ENetRole::ROLE_AutonomousProxy },
+		{ SimulatedSubView, ENetRole::ROLE_SimulatedProxy },
 	};
 
 	for (const FEntitySubView& SubView : SubViews)
