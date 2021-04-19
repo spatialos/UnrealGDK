@@ -2,6 +2,9 @@
 
 #include "SpatialTestSettings.h"
 
+#include "Engine/World.h"
+#include "EngineClasses/SpatialWorldSettings.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialTestSettings);
 
 FSpatialTestSettings::FSpatialTestSettings()
@@ -17,7 +20,7 @@ const FString FSpatialTestSettings::OverrideSettingsFileExtension = TEXT(".ini")
 const FString FSpatialTestSettings::OverrideSettingsFileDirectoryName = TEXT("MapSettingsOverrides");
 const FString FSpatialTestSettings::OverrideSettingsFilePrefix = TEXT("TestOverrides");
 const FString FSpatialTestSettings::OverrideSettingsBaseFilename =
-	FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir() / OverrideSettingsFileDirectoryName) / OverrideSettingsFilePrefix;
+	FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir() / OverrideSettingsFileDirectoryName);
 const FString FSpatialTestSettings::BaseOverridesFilename = OverrideSettingsBaseFilename + TEXT("Base") + OverrideSettingsFileExtension;
 const FString FSpatialTestSettings::GeneratedOverrideSettingsDirectory =
 	FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir() / TEXT("Config/") / OverrideSettingsFileDirectoryName);
@@ -31,36 +34,46 @@ void FSpatialTestSettings::Override(const FString& MapName)
 	Duplicate(OriginalSpatialGDKEditorSettings);
 	Duplicate(OriginalGeneralProjectSettings);
 	Duplicate(OriginalEditorPerformanceSettings);
-	// First override the settings from the base config file, if it exists
+
+	// Base config, applies to all maps if present
 	if (FPaths::FileExists(BaseOverridesFilename))
 	{
+		// Override the settings from the base config file
 		Load(BaseOverridesFilename);
 	}
-	else
+
+	// Group config, applies to maps with the group config set in the Spatial World Settings
+	const UWorld* World = GEditor->GetEditorWorldContext().World();
+	check(World != nullptr);
+	
+	if (ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
-		UE_LOG(LogSpatialTestSettings, Log, TEXT("Base config file not found %s."), *BaseOverridesFilename);
+		FString GroupOverridesFilename =
+			OverrideSettingsBaseFilename + "/" + SpatialWorldSettings->GroupConfigFilename + (OverrideSettingsFileExtension);
+		if (FPaths::FileExists(GroupOverridesFilename))
+		{
+			// Override the settings from the group specific config file, if it exists
+			Load(GroupOverridesFilename);
+		}
+
 	}
-	// Then override the settings from the map specific config file, if it exists
-	FString MapOverridesFilename = OverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
+
+	// Map config, applied to the specific map
+	FString MapOverridesFilename = OverrideSettingsBaseFilename + "/" + OverrideSettingsFilePrefix + FPackageName::GetShortName(MapName)
+								   + (OverrideSettingsFileExtension);
 	if (FPaths::FileExists(MapOverridesFilename))
 	{
+		// Override the settings from the map specific config file
 		Load(MapOverridesFilename);
 	}
-	else
-	{
-		UE_LOG(LogSpatialTestSettings, Log, TEXT("Map specific config file not found %s."), *MapOverridesFilename);
-	}
-	// Then override the settings from the generated map specific config file, if it exists
 	FString GeneratedMapOverridesFilename =
 		GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
 	if (FPaths::FileExists(GeneratedMapOverridesFilename))
 	{
+		// Override the settings from the generated map specific config file
 		Load(GeneratedMapOverridesFilename);
 	}
-	else
-	{
-		UE_LOG(LogSpatialTestSettings, Log, TEXT("Generated map config file not found %s."), *GeneratedMapOverridesFilename);
-	}
+
 }
 
 template <typename T>

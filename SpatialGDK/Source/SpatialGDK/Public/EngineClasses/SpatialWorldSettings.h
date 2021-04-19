@@ -26,6 +26,9 @@ public:
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere, Category = "Testing")
+	FString GroupConfigFilename;
+
+	UPROPERTY(EditAnywhere, Category = "Testing")
 	bool bEnableDebugInterface = false;
 #endif
 
