@@ -24,30 +24,6 @@ protected:
 };
 
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API UCrossServerPossessionLockMap : public UGeneratedTestMap
-{
-	GENERATED_BODY()
-
-public:
-	UCrossServerPossessionLockMap();
-
-protected:
-	virtual void CreateCustomContentForMap() override;
-};
-
-UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API UNoneCrossServerPossessionMap : public UGeneratedTestMap
-{
-	GENERATED_BODY()
-
-public:
-	UNoneCrossServerPossessionMap();
-
-protected:
-	virtual void CreateCustomContentForMap() override;
-};
-
-UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API UCrossServerMultiPossessionMap : public UGeneratedTestMap
 {
 	GENERATED_BODY()
