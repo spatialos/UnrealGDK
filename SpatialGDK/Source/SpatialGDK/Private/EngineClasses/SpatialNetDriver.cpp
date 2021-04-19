@@ -3108,7 +3108,7 @@ int64 USpatialNetDriver::GetClientID() const
 
 int64 USpatialNetDriver::GetActorEntityId(AActor& Actor)
 {
-	if (!PackageMap)
+	if (PackageMap == nullptr)
 	{
 		return SpatialConstants::INVALID_ENTITY_ID;
 	}
