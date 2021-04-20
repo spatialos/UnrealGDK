@@ -29,3 +29,27 @@ class AAlwaysRelevantServerOnlyTestActor : public AReplicatedTestActorBase
 public:
 	AAlwaysRelevantServerOnlyTestActor();
 };
+
+/**
+ * An only relevant to owner, replicated Actor.
+ */
+UCLASS(SpatialType = ServerOnly)
+class AOnlyRelevantToOwnerTestActor : public AReplicatedTestActorBase
+{
+	GENERATED_BODY()
+
+public:
+	AOnlyRelevantToOwnerTestActor();
+};
+
+/**
+ * A use owner relevancy, replicated Actor.
+ */
+UCLASS(SpatialType = ServerOnly)
+class AUseOwnerRelevancyTestActor : public AReplicatedTestActorBase
+{
+	GENERATED_BODY()
+
+public:
+	AUseOwnerRelevancyTestActor();
+};
