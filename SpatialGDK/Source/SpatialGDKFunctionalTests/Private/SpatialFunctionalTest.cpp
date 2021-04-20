@@ -493,7 +493,7 @@ FString ASpatialFunctionalTest::GetLocalWorkerString()
 
 void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, const FWorkerDefinition& Worker,
 											  const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent,
-											  const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
+											  const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 20.0f*/)
 {
 	if (StepName.IsEmpty())
 	{
@@ -608,7 +608,7 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FStr
 																	  FIsReadyEventFunc IsReadyEvent /*= nullptr*/,
 																	  FStartEventFunc StartEvent /*= nullptr*/,
 																	  FTickEventFunc TickEvent /*= nullptr*/,
-																	  float StepTimeLimit /*= 0.0f*/)
+																	  float StepTimeLimit /*= 20.0f*/)
 {
 	if (StepName.IsEmpty())
 	{
