@@ -199,7 +199,7 @@ void USpatialGDKSettings::PostInitProperties()
 			}
 		});
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
-		   USpatialStatics::IsSpatialNetworkingFEnabled() ? TEXT("enabled") : TEXT("disabled"));
+		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 }
 
 #if WITH_EDITOR
