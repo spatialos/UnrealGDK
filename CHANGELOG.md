@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
+
+## [`0.13.0`] - 2021-04-20
 ### Breaking changes:
 - Removed support for UE 4.24.
 - `MaxRPCRingBufferSize` setting has been removed. This was previously used to specify the RPC ring buffer size when generating schema. Now, `DefaultRPCRingBufferSize` is used, and can be overridden per RPC type using `RPCRingBufferSizeOverrides`.
