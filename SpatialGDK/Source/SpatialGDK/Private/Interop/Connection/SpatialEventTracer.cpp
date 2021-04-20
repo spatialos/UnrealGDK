@@ -117,28 +117,32 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	}
 
 	FolderPath = EventTracePath;
-	const FString FileName = FString::Printf(TEXT("EventTrace_%s"), *WorkerId);
-	const FString FilePath = FPaths::Combine(FolderPath, FileName);
-
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	const FString FileName = TEXT("event-log");
+	const FString FileExt = TEXT(".etlog");
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
 	{
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace file%s to %s."),
 			   (Settings->EventTraceFileOutputType == EEventTraceFileOutputType::Single) ? "" : "s", *FilePath);
+
 		switch (Settings->EventTraceFileOutputType.GetValue())
 		{
 		default:
 		case EEventTraceFileOutputType::Single:
 		{
-			const FString FullFileName = FilePath + TEXT(".etlog");
-			Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FullFileName), Io_OpenMode::IO_OPEN_MODE_WRITE));
+			const FString FullFilename = FString::Printf(TEXT("%s-%s.etlog"), FileName, *WorkerId);
+			const FString FullFilePath = FPaths::Combine(FolderPath, FullFilename);
+			Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FullFilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
 			break;
 		}
 		case EEventTraceFileOutputType::Rotating:
 		{
+			const FString FullFilePathPrefix = FPaths::Combine(FolderPath, FileName);
+			const FString FullFilePathSuffix = WorkerId + FileExt
+
 			Io_RotatingFileStreamParameters FileParamters;
-			FileParamters.filename_prefix = TCHAR_TO_ANSI(*FilePath);
-			FileParamters.filename_suffix = "etlog";
+			FileParamters.filename_prefix = TCHAR_TO_ANSI(*FullFilePathPrefix);
+			FileParamters.filename_suffix = TCHAR_TO_ANSI(*FullFilePathSuffix);
 			FileParamters.max_file_size_bytes = Settings->MaxEventTracingFileSizeBytes;
 			Stream.Reset(Io_CreateRotatingFileStream(&FileParamters));
 			break;
