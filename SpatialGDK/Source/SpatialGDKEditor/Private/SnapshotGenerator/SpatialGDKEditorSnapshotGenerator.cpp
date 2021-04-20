@@ -215,6 +215,7 @@ bool CreateSnapshotPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(Position(DeploymentOrigin).CreateComponentData());
 	Components.Add(Metadata(TEXT("SnapshotPartitionEntity")).CreateComponentData());
 	Components.Add(Persistence().CreateComponentData());
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_SHADOW_COMPONENT_ID));
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
 
 	SetEntityData(SnapshotPartitionEntity, Components);
