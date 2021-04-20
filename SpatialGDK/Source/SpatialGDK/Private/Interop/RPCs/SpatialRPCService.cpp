@@ -47,6 +47,7 @@ SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const F
 
 void SpatialRPCService::AdvanceView()
 {
+	ClientServerRPCs.AdvanceView();
 	MulticastRPCs.AdvanceView();
 	if (CrossServerRPCs)
 	{
@@ -56,6 +57,7 @@ void SpatialRPCService::AdvanceView()
 
 void SpatialRPCService::ProcessChanges(const float NetDriverTime)
 {
+	ClientServerRPCs.ProcessChanges();
 	MulticastRPCs.ProcessChanges();
 	if (CrossServerRPCs)
 	{
