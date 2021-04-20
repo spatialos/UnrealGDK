@@ -236,7 +236,8 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual(const FVector& Value, con
 	}
 	else
 	{
-		SuccessMsg = FString::Printf(TEXT("Received (%s) as expected (within tolerance %f of (%s))"), *Value.ToString(),Tolerance, *Expected.ToString());
+		SuccessMsg = FString::Printf(TEXT("Received (%s) as expected (within tolerance %f of (%s))"), *Value.ToString(), Tolerance,
+									 *Expected.ToString());
 	}
 
 	return GenericRequire(Msg, bPassed, ErrorMsg, SuccessMsg);
@@ -255,7 +256,8 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual(const FRotator& Value, co
 	}
 	else
 	{
-		SuccessMsg = FString::Printf(TEXT("Received (%s) as expected (within tolerance %f of (%s))"), *Value.ToString(), Tolerance, *Expected.ToString());
+		SuccessMsg = FString::Printf(TEXT("Received (%s) as expected (within tolerance %f of (%s))"), *Value.ToString(), Tolerance,
+									 *Expected.ToString());
 	}
 
 	return GenericRequire(Msg, bPassed, ErrorMsg, SuccessMsg);
@@ -275,7 +277,8 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual(const FTransform& Value, 
 	}
 	else
 	{
-		SuccessMsg = FString::Printf(TEXT("Received (%s) as expected (within tolerance %f of (%s))"), *GetTransformAsString(Value), Tolerance, *GetTransformAsString(Expected));
+		SuccessMsg = FString::Printf(TEXT("Received (%s) as expected (within tolerance %f of (%s))"), *GetTransformAsString(Value),
+									 Tolerance, *GetTransformAsString(Expected));
 	}
 
 	return GenericRequire(Msg, bPassed, ErrorMsg, SuccessMsg);
@@ -421,13 +424,15 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(const FTransform& Valu
 	}
 	else
 	{
-		SuccessMsg = FString::Printf(TEXT("Received value %s, not equal to %s, as expected"), *GetTransformAsString(Value), *GetTransformAsString(NotExpected));
+		SuccessMsg = FString::Printf(TEXT("Received value %s, not equal to %s, as expected"), *GetTransformAsString(Value),
+									 *GetTransformAsString(NotExpected));
 	}
 
 	return GenericRequire(Msg, bPassed, ErrorMsg, SuccessMsg);
 }
 
-bool SpatialFunctionalTestRequireHandler::GenericRequire(const FString& Msg, bool bPassed, const FString& ErrorMsg, const FString& SuccessMsg)
+bool SpatialFunctionalTestRequireHandler::GenericRequire(const FString& Msg, bool bPassed, const FString& ErrorMsg,
+														 const FString& SuccessMsg)
 {
 	ensureMsgf(!Msg.IsEmpty(), TEXT("Requires cannot have an empty message"));
 
