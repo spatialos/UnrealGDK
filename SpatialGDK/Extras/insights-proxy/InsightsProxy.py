@@ -1,9 +1,12 @@
+# EXPERIMENTAL: We do not support this functionality currently: Do not use it unless you are Improbable staff.
+
 import socket 
 import sys 
 
 TARGET_IP = "127.0.0.1"
-TARGET_PORT = 1981
-INSIGHTS_PORT = 1980 
+LOCAL_IP = "127.0.0.1"
+TARGET_PORT = 1981 # Our listen port, see Control.cpp for target usage (C:/work/dev/UnrealEngine4.26/Engine/Source/Runtime/TraceLog/Private/Trace/Control.cpp)
+INSIGHTS_PORT = 1980 # See 
 
 def main():
     while True:
@@ -16,9 +19,9 @@ def main():
         except socket.error:
             pass
             
-    print("Connecting to the running Insights instance 127.0.0.1:%s" % INSIGHTS_PORT)
+    print("Connecting to the running Insights instance %s:%s" % (LOCAL_IP, INSIGHTS_PORT))
     proxy_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    proxy_connection.connect(("127.0.0.1", INSIGHTS_PORT))
+    proxy_connection.connect((LOCAL_IP, INSIGHTS_PORT))
     
     print("Waiting for target..")
 
