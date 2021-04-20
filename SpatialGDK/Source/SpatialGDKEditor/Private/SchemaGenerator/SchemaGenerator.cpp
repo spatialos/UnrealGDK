@@ -731,9 +731,8 @@ void GenerateRPCEndpointsSchema(FString SchemaPath)
 	Writer.WriteToFile(*FPaths::Combine(*SchemaPath, TEXT("rpc_endpoints.schema")));
 }
 
-// Add the component ID to the passed schema components array and the set of components of that type.
+// Add the component ID to the passed schema components array.
 void AddComponentId(const Worker_ComponentId ComponentId, ComponentIdPerType& SchemaComponents, const ESchemaComponentType ComponentType)
 {
 	SchemaComponents[ComponentType] = ComponentId;
-	SchemaComponentTypeToComponents[ComponentType].Add(ComponentId);
 }
