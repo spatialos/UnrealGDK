@@ -11,8 +11,7 @@ struct FSpatialFunctionalTestRequire
 {
 	FString Msg;
 	bool bPassed;
-	FString ErrorMsg;
-	FString SuccessMsg;
+	FString StatusMsg;
 	uint32 Order; // Used to be able to log the messages in the same order they occurred at the end.
 };
 
@@ -55,7 +54,7 @@ public:
 	bool RequireNotEqual(const FRotator& Value, const FRotator& NotExpected, const FString& Msg);
 	bool RequireNotEqual(const FTransform& Value, const FTransform& NotExpected, const FString& Msg);
 
-	bool GenericRequire(const FString& Key, bool bPassed, const FString& ErrorMsg, const FString& SuccessMsg);
+	bool GenericRequire(const FString& Key, bool bPassed, const FString& StatusMsg);
 
 	void LogAndClearStepRequires();
 
