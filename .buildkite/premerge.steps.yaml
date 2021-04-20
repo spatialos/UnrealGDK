@@ -54,7 +54,7 @@ steps:
         GDK_BRANCH: "0.13.0-rc" # NOTE: temp fix for new ci release interop issues
         ENGINE_BRANCH: "4.25-SpatialOSUnrealGDK-0.13.0-rc" # NOTE: temp fix for new ci release interop issues
         ENGINE_MAJOR: "4.25"
-        PROJECT_BRANCH: "0.13.0-rc" " # NOTE: temp fix for new ci release interop issues
+        PROJECT_BRANCH: "0.13.0-rc" # NOTE: temp fix for new ci release interop issues
         USE_FASTBUILD: "True"
         IS_BUILDKITE_BUILD: "True"
         BUILD_ANDROID: "False"
