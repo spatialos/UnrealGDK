@@ -123,7 +123,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
 	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace%s to %s."), (Settings->EventTraceFileOutputType == EEventTraceFileOutputType::Single) ? "" : "s", *FilePath);
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace%s to %s."),
+			   (Settings->EventTraceFileOutputType == EEventTraceFileOutputType::Single) ? "" : "s", *FilePath);
 		switch (Settings->EventTraceFileOutputType.GetValue())
 		{
 		default:
