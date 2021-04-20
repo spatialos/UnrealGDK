@@ -138,10 +138,9 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		case EEventTraceFileOutputType::Rotating:
 		{
 			const FString FullFilePathPrefix = FPaths::Combine(FolderPath, FileName);
-			const FString FullFilePathSuffix = WorkerId
-				+ FileExt;
+			const FString FullFilePathSuffix = WorkerId + FileExt;
 
-												   Io_RotatingFileStreamParameters FileParamters;
+			Io_RotatingFileStreamParameters FileParamters;
 			FileParamters.filename_prefix = TCHAR_TO_ANSI(*FullFilePathPrefix);
 			FileParamters.filename_suffix = TCHAR_TO_ANSI(*FullFilePathSuffix);
 			FileParamters.max_file_size_bytes = Settings->MaxEventTracingFileSizeBytes;
