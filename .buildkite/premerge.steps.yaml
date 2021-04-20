@@ -51,8 +51,8 @@ steps:
       message: "gdk-4.25 ${BUILDKITE_MESSAGE}"
       env: 
         BUILD_TYPE: "GDK" # GDK or ENGINE
-        GDK_BRANCH: "0.13.0-rc"
-        ENGINE_BRANCH: "4.25-SpatialOSUnrealGDK-0.13.0-rc"
+        GDK_BRANCH: "0.13.0-rc" " # NOTE: temp fix for new ci release interop issues
+        ENGINE_BRANCH: "4.25-SpatialOSUnrealGDK-0.13.0-rc" " # NOTE: temp fix for new ci release interop issues
         ENGINE_MAJOR: "4.25"
         PROJECT_BRANCH: "0.13.0-rc"
         USE_FASTBUILD: "True"
