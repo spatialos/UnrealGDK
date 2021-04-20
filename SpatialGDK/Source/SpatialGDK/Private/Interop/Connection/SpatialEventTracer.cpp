@@ -123,8 +123,24 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
 	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace to %s."), *FilePath);
-		Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace%s to %s."), (Settings->EventTraceFileOutputType == EEventTraceFileOutputType::Single) ? "" : "s", *FilePath);
+		switch (Settings->EventTraceFileOutputType.GetValue())
+		{
+		default:
+		case EEventTraceFileOutputType::Single:
+		{
+			Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
+			break;
+		}
+		case EEventTraceFileOutputType::Rotating:
+		{
+			Io_RotatingFileStreamParameters FileParamters;
+			FileParamters.filename_prefix = TCHAR_TO_ANSI(*FilePath);
+			FileParamters.max_file_size_bytes = Settings->MaxEventTracingFileSizeBytes;
+			Stream.Reset(Io_CreateRotatingFileStream(&FileParamters));
+			break;
+		}
+		}
 	}
 }
 

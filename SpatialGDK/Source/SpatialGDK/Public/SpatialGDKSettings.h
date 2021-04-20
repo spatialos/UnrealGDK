@@ -7,6 +7,7 @@
 #include "Misc/Paths.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RPCContainer.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 
 #include "SpatialGDKSettings.generated.h"
 
@@ -451,6 +452,13 @@ public:
 	 */
 	UPROPERTY(Config)
 	uint64 MaxEventTracingFileSizeBytes;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * Which type of event-log files are produced (either a single file or a time-rotated collection of files).
+	 */
+	UPROPERTY(Config)
+	TEnumAsByte<EEventTraceFileOutputType::Type> EventTraceFileOutputType;
 
 	UPROPERTY(Config)
 	bool bEnableAlwaysWriteRPCs;

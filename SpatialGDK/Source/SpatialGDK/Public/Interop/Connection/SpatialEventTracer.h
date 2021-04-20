@@ -11,9 +11,21 @@
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
 
+#include "SpatialEventTracer.generated.h"
+
 // Documentation for event tracing in the GDK can be found here: https://brevi.link/gdk-event-tracing-documentation
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
+
+UENUM()
+namespace EEventTraceFileOutputType
+{
+	enum Type
+	{
+		Single,
+		Rotating
+	};
+}
 
 namespace SpatialGDK
 {

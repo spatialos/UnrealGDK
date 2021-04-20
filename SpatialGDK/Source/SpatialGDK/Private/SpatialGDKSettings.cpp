@@ -153,6 +153,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEventTracingEnabled(false)
 	, EventTracingSamplingSettingsClass(UEventTracingSamplingSettings::StaticClass())
 	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
+	, EventTraceFileOutputType(EEventTraceFileOutputType::Single)
 	, bEnableAlwaysWriteRPCs(false)
 	, bEnableInitialOnlyReplicationCondition(false)
 {
@@ -198,7 +199,7 @@ void USpatialGDKSettings::PostInitProperties()
 			}
 		});
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
-		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
+		   USpatialStatics::IsSpatialNetworkingFEnabled() ? TEXT("enabled") : TEXT("disabled"));
 }
 
 #if WITH_EDITOR
