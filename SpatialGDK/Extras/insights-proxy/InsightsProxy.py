@@ -17,7 +17,7 @@ def main():
             worker_connection.settimeout(1.0)
             break
         except socket.error:
-            pass
+            print("Connecting failed. Is the port-foward to the server worker active and listening?")
             
     print("Connecting to the running Insights instance %s:%s" % (LOCAL_IP, INSIGHTS_PORT))
     proxy_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
