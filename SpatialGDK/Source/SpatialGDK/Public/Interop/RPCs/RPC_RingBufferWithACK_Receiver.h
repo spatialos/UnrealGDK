@@ -4,15 +4,20 @@
 
 #include "EngineClasses/SpatialNetDriverRPC.h"
 #include "Interop/RPCs/RPCTypes.h"
+#include "SpatialView/EntityComponentTypes.h"
 
 namespace SpatialGDK
 {
 template <typename PayloadType, template <typename> class PayloadWrapper, typename SerializerType>
 class MonotonicRingBufferWithACKReceiver : public TRPCBufferReceiver<PayloadType, PayloadWrapper>
 {
+	using Super = TRPCBufferReceiver<PayloadType, PayloadWrapper>;
+	using Super::ComponentsToRead;
+	using typename Super::ProcessRPC;
+
 public:
 	MonotonicRingBufferWithACKReceiver(SerializerType&& InSerializer, int32 InNumberOfSlots, PayloadWrapper<PayloadType>&& InWrapper)
-		: TRPCBufferReceiver<PayloadType, PayloadWrapper>(MoveTemp(InWrapper))
+		: Super(MoveTemp(InWrapper))
 		, Serializer(MoveTemp(InSerializer))
 		, NumberOfSlots(InNumberOfSlots)
 	{
@@ -20,48 +25,34 @@ public:
 		ComponentsToRead.Add(Serializer.GetACKComponentId());
 	}
 
-	void OnAdded(FName ReceiverName, Worker_EntityId EntityId, EntityViewElement const& Element) override
+	virtual void OnAdded(FName ReceiverName, Worker_EntityId EntityId, EntityViewElement const& Element) override
 	{
+		const ComponentData* RPCComponentData = Element.Components.FindByPredicate(ComponentIdEquality{ Serializer.GetComponentId() });
+		const ComponentData* ACKComponentData = Element.Components.FindByPredicate(ComponentIdEquality{ Serializer.GetACKComponentId() });
+		RPCReadingContext ReadCtx;
+		ReadCtx.ReaderName = ReceiverName;
+		ReadCtx.EntityId = EntityId;
+
 		// Making sure we read component data in order, first ACK, then RPC
 		// to know which RPC we actually need to extract
-		const ComponentData* RPCComponentData = nullptr;
-		RPCReadingContext readCtx;
-		readCtx.ReaderName = ReceiverName;
-		readCtx.EntityId = EntityId;
-		for (const auto& Component : Element.Components)
+		if (ensure(ACKComponentData != nullptr))
 		{
-			if (Component.GetComponentId() == Serializer.GetComponentId())
-			{
-				RPCComponentData = &Component;
-			}
-			else if (ComponentsToRead.Contains(Component.GetComponentId()))
-			{
-				readCtx.ComponentId = Component.GetComponentId();
-				readCtx.Fields = Schema_GetComponentDataFields(Component.GetUnderlying());
-
-				OnAdded_ReadComponent(readCtx);
-			}
+			ReadCtx.ComponentId = Serializer.GetComponentId();
+			ReadCtx.Fields = Schema_GetComponentDataFields(RPCComponentData->GetUnderlying());
+			OnAdded_ReadRPCComponent(ReadCtx);
 		}
 
-		if (RPCComponentData != nullptr)
+		if (ensure(RPCComponentData != nullptr))
 		{
-			readCtx.ComponentId = Serializer.GetComponentId();
-			readCtx.Fields = Schema_GetComponentDataFields(RPCComponentData->GetUnderlying());
-
-			OnAdded_ReadComponent(readCtx);
+			ReadCtx.ComponentId = Serializer.GetACKComponentId();
+			ReadCtx.Fields = Schema_GetComponentDataFields(ACKComponentData->GetUnderlying());
+			OnAdded_ReadACKComponent(ReadCtx);
 		}
 	}
 
-	void OnAdded_ReadComponent(const RPCReadingContext& Ctx) override
+	virtual void OnAdded_ReadComponent(const RPCReadingContext& Ctx) override
 	{
-		if (Ctx.ComponentId == Serializer.GetComponentId())
-		{
-			OnAdded_ReadRPCComponent(Ctx);
-		}
-		if (Ctx.ComponentId == Serializer.GetACKComponentId())
-		{
-			OnAdded_ReadACKComponent(Ctx);
-		}
+		checkNoEntry();
 	}
 
 	void OnAdded_ReadRPCComponent(const RPCReadingContext& Ctx)
@@ -79,13 +70,13 @@ public:
 		State.LastWrittenACK = State.LastExecuted;
 	}
 
-	void OnRemoved(Worker_EntityId EntityId) override
+	virtual void OnRemoved(Worker_EntityId EntityId) override
 	{
 		ReceiverStates.Remove(EntityId);
 		this->ReceivedRPCs.Remove(EntityId);
 	}
 
-	void OnUpdate(const RPCReadingContext& Ctx) override
+	virtual void OnUpdate(const RPCReadingContext& Ctx) override
 	{
 		if (ComponentsToRead.Contains(Ctx.ComponentId))
 		{
@@ -94,7 +85,7 @@ public:
 		}
 	}
 
-	void FlushUpdates(RPCWritingContext& Ctx) override
+	virtual void FlushUpdates(RPCWritingContext& Ctx) override
 	{
 		for (auto& Receiver : ReceiverStates)
 		{
@@ -109,7 +100,7 @@ public:
 		}
 	}
 
-	void ExtractReceivedRPCs(const RPCCallbacks::CanExtractRPCs& CanExtract, const ProcessRPC& Process) override
+	virtual void ExtractReceivedRPCs(const RPCCallbacks::CanExtractRPCs& CanExtract, const ProcessRPC& Process) override
 	{
 		for (auto Iterator = this->ReceivedRPCs.CreateIterator(); Iterator; ++Iterator)
 		{

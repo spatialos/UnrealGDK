@@ -10,6 +10,9 @@ namespace SpatialGDK
 template <typename Payload, typename SerializerType>
 class MonotonicRingBufferWithACKSender : public TRPCBufferSender<Payload>
 {
+	using Super = TRPCBufferSender<Payload>;
+	using Super::ComponentsToReadOnAuthGained;
+	using Super::ComponentsToReadOnUpdate;
 public:
 	MonotonicRingBufferWithACKSender(SerializerType&& InSerializer, int32 InNumberOfSlots)
 		: Serializer(MoveTemp(InSerializer))
@@ -20,7 +23,7 @@ public:
 		ComponentsToReadOnUpdate.Add(Serializer.GetACKComponentId());
 	}
 
-	void OnUpdate(const RPCReadingContext& Ctx) override
+	virtual void OnUpdate(const RPCReadingContext& Ctx) override
 	{
 		if (Ctx.ComponentId == Serializer.GetACKComponentId())
 		{
@@ -34,7 +37,7 @@ public:
 		}
 	}
 
-	void OnAuthGained_ReadComponent(const RPCReadingContext& Ctx) override
+	virtual void OnAuthGained_ReadComponent(const RPCReadingContext& Ctx) override
 	{
 		if (Ctx.ComponentId == Serializer.GetComponentId())
 		{
@@ -50,19 +53,19 @@ public:
 	{
 		BufferStateData& State = BufferState.FindOrAdd(Ctx.EntityId);
 		TOptional<uint64> RPCCount = Serializer.ReadRPCCount(Ctx);
-		State.CountWritten = RPCCount ? RPCCount.GetValue() : 0;
+		State.CountWritten = RPCCount.Get(/*DefaultValue*/ 0);
 	}
 
 	void OnAuthGained_ReadACKComponent(const RPCReadingContext& Ctx)
 	{
 		BufferStateData& State = BufferState.FindOrAdd(Ctx.EntityId);
 		TOptional<uint64> ACKCount = Serializer.ReadACKCount(Ctx);
-		State.LastACK = ACKCount ? ACKCount.GetValue() : 0;
+		State.LastACK = ACKCount.Get(/*DefaultValue*/ 0);
 	}
 
-	void OnAuthLost(Worker_EntityId Entity) override { BufferState.Remove(Entity); }
+	virtual void OnAuthLost(Worker_EntityId Entity) override { BufferState.Remove(Entity); }
 
-	uint32 Write(RPCWritingContext& Ctx, Worker_EntityId EntityId, TArrayView<const Payload> RPCs,
+	virtual uint32 Write(RPCWritingContext& Ctx, Worker_EntityId EntityId, TArrayView<const Payload> RPCs,
 				 const RPCCallbacks::RPCWritten& WrittenCallback) override
 	{
 		BufferStateData& NextSlot = BufferState.FindOrAdd(EntityId);

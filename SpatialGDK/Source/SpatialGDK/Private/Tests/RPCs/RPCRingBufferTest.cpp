@@ -8,10 +8,11 @@
 
 #define RPCRINGBUFFER_TEST(TestName) GDK_TEST(Core, RPCRingBuffer, TestName)
 
+namespace RPCRingBufferTestPrivate
+{
+
 using namespace SpatialGDK;
 
-namespace
-{
 struct Payload
 {
 	Payload() = default;
@@ -133,7 +134,6 @@ struct RPCRingBufferTest_Fixture
 		ClientWorker.OnAdded(FName(TEXT("DummyName")), EntityId, Element);
 	}
 };
-} // namespace
 
 RPCRINGBUFFER_TEST(TestRingBufferRPCCapacityUpdate)
 {
@@ -318,4 +318,6 @@ RPCRINGBUFFER_TEST(TestRingBufferPartialExtractionAndOverflow)
 	Extracted = 0;
 
 	return true;
+}
+
 }

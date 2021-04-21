@@ -7,7 +7,7 @@
 namespace SpatialGDK
 {
 // Limit for unbounded queue, where we should consider disconnecting a client.
-constexpr int32 GUnboundedQueueOverflowLimit = 1024;
+constexpr int32 UnboundedQueueOverflowLimit = 1024;
 
 /**
  * Unbounded queue.
@@ -17,17 +17,19 @@ template <typename Payload, typename AdditionalSendingData = RPCEmptyData>
 struct TRPCUnboundedQueue : public TRPCQueue<Payload, AdditionalSendingData>
 {
 	using Super = TRPCQueue<Payload, AdditionalSendingData>;
+	using typename Super::SentRPCCallback;
+	using typename Super::QueueData;
 
 	TRPCUnboundedQueue(FName InName, TRPCBufferSender<Payload>& Sender)
 		: Super(InName, Sender)
 	{
 	}
 
-	void FlushAll(RPCWritingContext& Ctx, const typename Super::SentRPCCallback& SentCallback = Super::SentRPCCallback()) override
+	virtual void FlushAll(RPCWritingContext& Ctx, const SentRPCCallback& SentCallback = SentRPCCallback()) override
 	{
 		for (auto Iterator = this->Queues.CreateIterator(); Iterator; ++Iterator)
 		{
-			typename Super::QueueData& Queue = Iterator->Value;
+			QueueData& Queue = Iterator->Value;
 			if (Queue.bAdded)
 			{
 				this->FlushQueue(Iterator->Key, Queue, Ctx, SentCallback);
@@ -36,10 +38,10 @@ struct TRPCUnboundedQueue : public TRPCQueue<Payload, AdditionalSendingData>
 		}
 	}
 
-	void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx,
-			   const typename Super::SentRPCCallback& SentCallback = Super::SentRPCCallback(), bool bIgnoreAdded = false) override
+	virtual void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx,
+			   const SentRPCCallback& SentCallback = SentRPCCallback(), bool bIgnoreAdded = false) override
 	{
-		typename Super::QueueData* Queue = this->Queues.Find(EntityId);
+		QueueData* Queue = this->Queues.Find(EntityId);
 		if (Queue == nullptr || (!Queue->bAdded && !bIgnoreAdded))
 		{
 			return;
@@ -49,14 +51,14 @@ struct TRPCUnboundedQueue : public TRPCQueue<Payload, AdditionalSendingData>
 		CheckOverflow(EntityId, *Queue);
 	}
 
-	void OnAuthLost(Worker_EntityId EntityId) override
+	virtual void OnAuthLost(Worker_EntityId EntityId) override
 	{
 		Super::OnAuthLost(EntityId);
 		OverflowSizes.Remove(EntityId);
 	}
 
 protected:
-	void CheckOverflow(Worker_EntityId EntityId, typename Super::QueueData& Queue)
+	void CheckOverflow(Worker_EntityId EntityId, QueueData& Queue)
 	{
 		const int32 RemainingRPCs = Queue.RPCs.Num();
 		if (RemainingRPCs == 0)
@@ -75,7 +77,7 @@ protected:
 				Overflow = &OverflowSizes.Add(EntityId, RemainingRPCs);
 			}
 			*Overflow = RemainingRPCs;
-			if (*Overflow > GUnboundedQueueOverflowLimit)
+			if (*Overflow > UnboundedQueueOverflowLimit)
 			{
 				if (this->ErrorCallback)
 				{
@@ -88,7 +90,7 @@ protected:
 		}
 	}
 
-	TMap<Worker_EntityId, int32> OverflowSizes;
+	TMap<Worker_EntityId_Key, int32> OverflowSizes;
 };
 
 /**
@@ -100,6 +102,8 @@ template <typename Payload, typename AdditionalSendingData = RPCEmptyData>
 struct TRPCFixedCapacityQueue : public TRPCQueue<Payload, AdditionalSendingData>
 {
 	using Super = TRPCQueue<Payload, AdditionalSendingData>;
+	using typename Super::SentRPCCallback;
+	using typename Super::QueueData;
 
 	TRPCFixedCapacityQueue(FName InName, TRPCBufferSender<Payload>& Sender, uint32 InCapacity)
 		: Super(InName, Sender)
@@ -109,9 +113,9 @@ struct TRPCFixedCapacityQueue : public TRPCQueue<Payload, AdditionalSendingData>
 
 	int32 Capacity;
 
-	void Push(Worker_EntityId EntityId, Payload&& Data, AdditionalSendingData&& AddData = AdditionalSendingData()) override
+	virtual void Push(Worker_EntityId EntityId, Payload&& Data, AdditionalSendingData&& AddData = AdditionalSendingData()) override
 	{
-		typename Super::QueueData& Queue = this->Queues.FindOrAdd(EntityId);
+		QueueData& Queue = this->Queues.FindOrAdd(EntityId);
 
 		if (Queue.RPCs.Num() < Capacity)
 		{
@@ -124,11 +128,11 @@ struct TRPCFixedCapacityQueue : public TRPCQueue<Payload, AdditionalSendingData>
 		}
 	}
 
-	void FlushAll(RPCWritingContext& Ctx, const typename Super::SentRPCCallback& SentCallback = Super::SentRPCCallback()) override
+	virtual void FlushAll(RPCWritingContext& Ctx, const SentRPCCallback& SentCallback = SentRPCCallback()) override
 	{
 		for (auto Iterator = this->Queues.CreateIterator(); Iterator; ++Iterator)
 		{
-			typename Super::QueueData& Queue = Iterator->Value;
+			QueueData& Queue = Iterator->Value;
 			if (Queue.bAdded && Queue.RPCs.Num() > 0)
 			{
 				this->FlushQueue(Iterator->Key, Queue, Ctx, SentCallback);
@@ -138,10 +142,10 @@ struct TRPCFixedCapacityQueue : public TRPCQueue<Payload, AdditionalSendingData>
 		}
 	}
 
-	void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx,
-			   const typename Super::SentRPCCallback& SentCallback = Super::SentRPCCallback(), bool bIgnoreAdded = false) override
+	virtual void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx,
+			   const SentRPCCallback& SentCallback = SentRPCCallback(), bool bIgnoreAdded = false) override
 	{
-		typename Super::QueueData* Queue = this->Queues.Find(EntityId);
+		QueueData* Queue = this->Queues.Find(EntityId);
 		if (Queue == nullptr || (!Queue->bAdded && !bIgnoreAdded))
 		{
 			return;
@@ -160,15 +164,16 @@ template <typename Payload, typename AdditionalSendingData = RPCEmptyData>
 struct TRPCMostRecentQueue : public TRPCFixedCapacityQueue<Payload, AdditionalSendingData>
 {
 	using Super = TRPCFixedCapacityQueue<Payload, AdditionalSendingData>;
+	using typename Super::QueueData;
 
 	TRPCMostRecentQueue(FName InName, TRPCBufferSender<Payload>& Sender, uint32 InCapacity)
 		: Super(InName, Sender, InCapacity)
 	{
 	}
 
-	void Push(Worker_EntityId EntityId, Payload&& Data, AdditionalSendingData&& AddData = AdditionalSendingData()) override
+	virtual void Push(Worker_EntityId EntityId, Payload&& Data, AdditionalSendingData&& AddData = AdditionalSendingData()) override
 	{
-		typename Super::QueueData& Queue = this->Queues.FindOrAdd(EntityId);
+		QueueData& Queue = this->Queues.FindOrAdd(EntityId);
 
 		if (Queue.RPCs.Num() == this->Capacity)
 		{
