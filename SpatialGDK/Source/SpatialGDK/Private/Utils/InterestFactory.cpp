@@ -245,7 +245,6 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, co
 	APlayerController* PlayerController = Connection->GetPlayerController(nullptr);
 	check(PlayerController);
 
-
 	const TSet<FName>& LoadedLevels = PlayerController->NetConnection->ClientVisibleLevelNames;
 	USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(PlayerController->NetConnection);
 
@@ -368,7 +367,7 @@ void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest,
 	QueryConstraint SystemAndLevelConstraint;
 	SystemAndLevelConstraint.AndConstraint.Add(SystemDefinedConstraints);
 
-	if(!ShouldLoadAllLevels)
+	if (!ShouldLoadAllLevels)
 	{
 		SystemAndLevelConstraint.AndConstraint.Add(LevelConstraint);
 	}
@@ -396,7 +395,8 @@ void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest,
 	}
 }
 
-void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint, bool ShouldLoadAllLevels) const
+void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint,
+											bool ShouldLoadAllLevels) const
 {
 	SCOPE_CYCLE_COUNTER(STAT_InterestFactoryAddUserDefinedQueries);
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
@@ -427,7 +427,7 @@ void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor*
 
 		// All constraints have to be limited to the checked out levels, so create an AND constraint with the level.
 		UserQuery.Constraint.AndConstraint.Add(UserConstraint);
-		if(!ShouldLoadAllLevels)
+		if (!ShouldLoadAllLevels)
 		{
 			UserQuery.Constraint.AndConstraint.Add(LevelConstraint);
 		}
@@ -517,7 +517,8 @@ void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor,
 	}
 }
 
-void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint, bool ShouldLoadAllLevels) const
+void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint,
+												bool ShouldLoadAllLevels) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -669,7 +670,6 @@ QueryConstraint InterestFactory::CreateClientLevelConstraints(const AActor* InAc
 	check(Connection);
 	APlayerController* PlayerController = Connection->GetPlayerController(nullptr);
 	check(PlayerController);
-
 
 	const TSet<FName>& LoadedLevels = PlayerController->NetConnection->ClientVisibleLevelNames;
 

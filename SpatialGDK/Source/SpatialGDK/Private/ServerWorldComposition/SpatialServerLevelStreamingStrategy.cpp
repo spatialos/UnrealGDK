@@ -56,7 +56,7 @@ void USpatialServerLevelStreamingStrategy::MarkLevelLoaded(const FWorldCompositi
 
 TSet<FName> USpatialServerLevelStreamingStrategy::GetLoadedLevelNames(VirtualWorkerId Vid) const
 {
-	if(LoadedLevelNames.Contains(Vid))
+	if (LoadedLevelNames.Contains(Vid))
 	{
 		return LoadedLevelNames[Vid];
 	}

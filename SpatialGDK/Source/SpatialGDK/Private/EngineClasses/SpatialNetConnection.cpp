@@ -118,15 +118,13 @@ bool USpatialNetConnection::GetUsingLevelInterestConstraints() const
 
 void USpatialNetConnection::SetUsingLevelInterestConstraints(bool InUsingLevelInterestConstraints)
 {
-	if(UsingLevelInterestConstraints != InUsingLevelInterestConstraints)
+	if (UsingLevelInterestConstraints != InUsingLevelInterestConstraints)
 	{
 		UsingLevelInterestConstraints = InUsingLevelInterestConstraints;
 		USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
 		Sender->UpdateInterestComponent(Cast<AActor>(PlayerController));
 	}
 }
-
-
 
 void USpatialNetConnection::FlushDormancy(AActor* Actor)
 {

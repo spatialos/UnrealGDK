@@ -82,7 +82,8 @@ private:
 	void AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
 											 const QueryConstraint& LevelConstraint, bool ShouldLoadAllLevels) const;
 
-	void AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint, bool ShouldLoadAllLevels) const;
+	void AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint,
+							   bool ShouldLoadAllLevels) const;
 	FrequencyToConstraintsMap GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;
 	void GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints,
 											 bool bRecurseChildren) const;
