@@ -37,23 +37,20 @@ public:
 		// to know which RPC we actually need to extract
 		if (ensure(ACKComponentData != nullptr))
 		{
-			ReadCtx.ComponentId = Serializer.GetComponentId();
-			ReadCtx.Fields = Schema_GetComponentDataFields(RPCComponentData->GetUnderlying());
-			OnAdded_ReadRPCComponent(ReadCtx);
-		}
-
-		if (ensure(RPCComponentData != nullptr))
-		{
 			ReadCtx.ComponentId = Serializer.GetACKComponentId();
 			ReadCtx.Fields = Schema_GetComponentDataFields(ACKComponentData->GetUnderlying());
 			OnAdded_ReadACKComponent(ReadCtx);
 		}
+
+		if (ensure(RPCComponentData != nullptr))
+		{
+			ReadCtx.ComponentId = Serializer.GetComponentId();
+			ReadCtx.Fields = Schema_GetComponentDataFields(RPCComponentData->GetUnderlying());
+			OnAdded_ReadRPCComponent(ReadCtx);
+		}
 	}
 
-	virtual void OnAdded_ReadComponent(const RPCReadingContext& Ctx) override
-	{
-		checkNoEntry();
-	}
+	virtual void OnAdded_ReadComponent(const RPCReadingContext& Ctx) override { checkNoEntry(); }
 
 	void OnAdded_ReadRPCComponent(const RPCReadingContext& Ctx)
 	{

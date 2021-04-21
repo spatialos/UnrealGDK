@@ -10,7 +10,6 @@
 
 namespace RPCRingBufferTestPrivate
 {
-
 using namespace SpatialGDK;
 
 struct Payload
@@ -320,4 +319,4 @@ RPCRINGBUFFER_TEST(TestRingBufferPartialExtractionAndOverflow)
 	return true;
 }
 
-}
+} // namespace RPCRingBufferTestPrivate

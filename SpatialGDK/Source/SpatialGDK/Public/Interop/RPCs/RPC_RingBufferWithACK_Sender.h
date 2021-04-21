@@ -13,6 +13,7 @@ class MonotonicRingBufferWithACKSender : public TRPCBufferSender<Payload>
 	using Super = TRPCBufferSender<Payload>;
 	using Super::ComponentsToReadOnAuthGained;
 	using Super::ComponentsToReadOnUpdate;
+
 public:
 	MonotonicRingBufferWithACKSender(SerializerType&& InSerializer, int32 InNumberOfSlots)
 		: Serializer(MoveTemp(InSerializer))
@@ -66,7 +67,7 @@ public:
 	virtual void OnAuthLost(Worker_EntityId Entity) override { BufferState.Remove(Entity); }
 
 	virtual uint32 Write(RPCWritingContext& Ctx, Worker_EntityId EntityId, TArrayView<const Payload> RPCs,
-				 const RPCCallbacks::RPCWritten& WrittenCallback) override
+						 const RPCCallbacks::RPCWritten& WrittenCallback) override
 	{
 		BufferStateData& NextSlot = BufferState.FindOrAdd(EntityId);
 		int32 AvailableSlots = FMath::Max(0, int32(NumberOfSlots) - int32(NextSlot.CountWritten - NextSlot.LastACK));

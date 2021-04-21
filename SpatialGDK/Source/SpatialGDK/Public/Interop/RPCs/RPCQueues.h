@@ -17,8 +17,8 @@ template <typename Payload, typename AdditionalSendingData = RPCEmptyData>
 struct TRPCUnboundedQueue : public TRPCQueue<Payload, AdditionalSendingData>
 {
 	using Super = TRPCQueue<Payload, AdditionalSendingData>;
-	using typename Super::SentRPCCallback;
 	using typename Super::QueueData;
+	using typename Super::SentRPCCallback;
 
 	TRPCUnboundedQueue(FName InName, TRPCBufferSender<Payload>& Sender)
 		: Super(InName, Sender)
@@ -38,8 +38,8 @@ struct TRPCUnboundedQueue : public TRPCQueue<Payload, AdditionalSendingData>
 		}
 	}
 
-	virtual void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx,
-			   const SentRPCCallback& SentCallback = SentRPCCallback(), bool bIgnoreAdded = false) override
+	virtual void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx, const SentRPCCallback& SentCallback = SentRPCCallback(),
+					   bool bIgnoreAdded = false) override
 	{
 		QueueData* Queue = this->Queues.Find(EntityId);
 		if (Queue == nullptr || (!Queue->bAdded && !bIgnoreAdded))
@@ -102,8 +102,8 @@ template <typename Payload, typename AdditionalSendingData = RPCEmptyData>
 struct TRPCFixedCapacityQueue : public TRPCQueue<Payload, AdditionalSendingData>
 {
 	using Super = TRPCQueue<Payload, AdditionalSendingData>;
-	using typename Super::SentRPCCallback;
 	using typename Super::QueueData;
+	using typename Super::SentRPCCallback;
 
 	TRPCFixedCapacityQueue(FName InName, TRPCBufferSender<Payload>& Sender, uint32 InCapacity)
 		: Super(InName, Sender)
@@ -142,8 +142,8 @@ struct TRPCFixedCapacityQueue : public TRPCQueue<Payload, AdditionalSendingData>
 		}
 	}
 
-	virtual void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx,
-			   const SentRPCCallback& SentCallback = SentRPCCallback(), bool bIgnoreAdded = false) override
+	virtual void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx, const SentRPCCallback& SentCallback = SentRPCCallback(),
+					   bool bIgnoreAdded = false) override
 	{
 		QueueData* Queue = this->Queues.Find(EntityId);
 		if (Queue == nullptr || (!Queue->bAdded && !bIgnoreAdded))
