@@ -106,22 +106,23 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 	{
 		Location = RootComponent->GetComponentLocation();
 	}
-	else if(const AWorldSettings* WorldSettings = Cast<AWorldSettings>(InActor))
+	else if (const AWorldSettings* WorldSettings = Cast<AWorldSettings>(InActor))
 	{
 		// If using server world composition, then WorldSettings in sublevels need to be positioned inside their level bounds
 		// This is only actors that have loaded the sublevel can check out the WorldSettings actor contained in it
 
 		UWorld* World = WorldSettings->GetWorld();
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-	
-		if(!WorldSettings->IsInPersistentLevel() && World && World->WorldComposition && SpatialNetDriver && SpatialNetDriver->ServerLevelStreamingStrategy)
+
+		if (!WorldSettings->IsInPersistentLevel() && World && World->WorldComposition && SpatialNetDriver
+			&& SpatialNetDriver->ServerLevelStreamingStrategy)
 		{
 			ULevel* Level = WorldSettings->GetLevel();
 			FBox Bounds = World->WorldComposition->GetLevelBounds(Level);
 			Location = Bounds.GetCenter();
 		}
 	}
-	
+
 	// Rebase location onto zero origin so actor is positioned correctly in SpatialOS.
 	return FRepMovement::RebaseOntoZeroOrigin(Location, InActor);
 }

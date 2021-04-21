@@ -76,4 +76,12 @@ public:
 	// Player lifecycle
 	Worker_EntityId PlayerControllerEntity;
 	FTimerHandle HeartbeatTimer;
+
+	//SAM-TEST
+	bool GetUsingLevelInterestConstraints() const;
+	void SetUsingLevelInterestConstraints(bool InUsingLevelInterestConstraints);
+	
+private:
+	
+	bool UsingLevelInterestConstraints;
 };

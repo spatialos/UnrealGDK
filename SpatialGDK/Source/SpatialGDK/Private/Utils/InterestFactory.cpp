@@ -239,14 +239,34 @@ void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, co
 {
 	const QueryConstraint LevelConstraint = CreateClientLevelConstraints(InActor);
 
-	AddAlwaysRelevantAndInterestedQuery(OutInterest, InActor, InInfo, LevelConstraint);
+	///////////
+	UNetConnection* Connection = InActor->GetNetConnection();
+	check(Connection);
+	APlayerController* PlayerController = Connection->GetPlayerController(nullptr);
+	check(PlayerController);
 
-	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
+
+	const TSet<FName>& LoadedLevels = PlayerController->NetConnection->ClientVisibleLevelNames;
+	USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(PlayerController->NetConnection);
+
+	bool ShouldLoadAllLevels = false;
+	if (SpatialNetConnection)
+	{
+		if (!SpatialNetConnection->GetUsingLevelInterestConstraints())
+		{
+			ShouldLoadAllLevels = true;
+		}
+	}
+	////////////
+
+	AddAlwaysRelevantAndInterestedQuery(OutInterest, InActor, InInfo, LevelConstraint, ShouldLoadAllLevels);
+
+	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint, ShouldLoadAllLevels);
 
 	// Either add the NCD interest because there are no user interest queries, or because the user interest specified we should.
 	if (ShouldAddNetCullDistanceInterest(InActor))
 	{
-		AddNetCullDistanceQueries(OutInterest, LevelConstraint);
+		AddNetCullDistanceQueries(OutInterest, LevelConstraint, ShouldLoadAllLevels);
 	}
 }
 
@@ -325,7 +345,7 @@ void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AAct
 }
 
 void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
-														  const QueryConstraint& LevelConstraint) const
+														  const QueryConstraint& LevelConstraint, bool ShouldLoadAllLevels) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -347,7 +367,11 @@ void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest,
 	// Add the level constraint here as all client queries need to make sure they don't check out anything outside their loaded levels.
 	QueryConstraint SystemAndLevelConstraint;
 	SystemAndLevelConstraint.AndConstraint.Add(SystemDefinedConstraints);
-	SystemAndLevelConstraint.AndConstraint.Add(LevelConstraint);
+
+	if(!ShouldLoadAllLevels)
+	{
+		SystemAndLevelConstraint.AndConstraint.Add(LevelConstraint);
+	}
 
 	Query ClientSystemQuery;
 	ClientSystemQuery.Constraint = SystemAndLevelConstraint;
@@ -372,7 +396,7 @@ void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest,
 	}
 }
 
-void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const
+void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint, bool ShouldLoadAllLevels) const
 {
 	SCOPE_CYCLE_COUNTER(STAT_InterestFactoryAddUserDefinedQueries);
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
@@ -403,7 +427,10 @@ void InterestFactory::AddUserDefinedQueries(Interest& OutInterest, const AActor*
 
 		// All constraints have to be limited to the checked out levels, so create an AND constraint with the level.
 		UserQuery.Constraint.AndConstraint.Add(UserConstraint);
-		UserQuery.Constraint.AndConstraint.Add(LevelConstraint);
+		if(!ShouldLoadAllLevels)
+		{
+			UserQuery.Constraint.AndConstraint.Add(LevelConstraint);
+		}
 
 		// Make sure that the Entity is not marked as bHidden
 		QueryConstraint VisibilityConstraint;
@@ -490,7 +517,7 @@ void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor,
 	}
 }
 
-void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint) const
+void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const QueryConstraint& LevelConstraint, bool ShouldLoadAllLevels) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -507,7 +534,7 @@ void InterestFactory::AddNetCullDistanceQueries(Interest& OutInterest, const Que
 
 		NewQuery.Constraint.AndConstraint.Add(CheckoutRadiusConstraintFrequencyPair.Constraint);
 
-		if (LevelConstraint.IsValid())
+		if (LevelConstraint.IsValid() && !ShouldLoadAllLevels)
 		{
 			NewQuery.Constraint.AndConstraint.Add(LevelConstraint);
 		}
@@ -642,6 +669,8 @@ QueryConstraint InterestFactory::CreateClientLevelConstraints(const AActor* InAc
 	check(Connection);
 	APlayerController* PlayerController = Connection->GetPlayerController(nullptr);
 	check(PlayerController);
+
+
 	const TSet<FName>& LoadedLevels = PlayerController->NetConnection->ClientVisibleLevelNames;
 
 	return CreateLevelConstraints(LoadedLevels);

@@ -56,10 +56,11 @@ void USpatialServerLevelStreamingStrategy::MarkLevelLoaded(const FWorldCompositi
 
 TSet<FName> USpatialServerLevelStreamingStrategy::GetLoadedLevelNames(VirtualWorkerId Vid) const
 {
-	checkf(TileVisibilityResults.Contains(Vid), TEXT("Getting level names for virtual worker id that hasn't been registered."));
-	const TArray<FVisibilityResult>& Result = TileVisibilityResults[Vid];
-
-	return LoadedLevelNames[Vid];
+	if(LoadedLevelNames.Contains(Vid))
+	{
+		return LoadedLevelNames[Vid];
+	}
+	return {};
 }
 
 FVisibilityResult USpatialServerLevelStreamingStrategy::GetVisibilityResultForTile(int32 TileIdx)

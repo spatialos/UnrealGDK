@@ -23,6 +23,7 @@ DECLARE_CYCLE_STAT(TEXT("UpdateLevelVisibility"), STAT_SpatialNetConnectionUpdat
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
+	, UsingLevelInterestConstraints(true)
 {
 #if ENGINE_MINOR_VERSION <= 24
 	InternalAck = 1;
@@ -103,9 +104,29 @@ void USpatialNetConnection::UpdateLevelVisibility(const struct FUpdateLevelVisib
 	// We want to update our interest as fast as possible
 	// So we send an Interest update immediately.
 
-	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
-	Sender->UpdateInterestComponent(Cast<AActor>(PlayerController));
+	if (UsingLevelInterestConstraints)
+	{
+		USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
+		Sender->UpdateInterestComponent(Cast<AActor>(PlayerController));
+	}
 }
+
+bool USpatialNetConnection::GetUsingLevelInterestConstraints() const
+{
+	return UsingLevelInterestConstraints;
+}
+
+void USpatialNetConnection::SetUsingLevelInterestConstraints(bool InUsingLevelInterestConstraints)
+{
+	if(UsingLevelInterestConstraints != InUsingLevelInterestConstraints)
+	{
+		UsingLevelInterestConstraints = InUsingLevelInterestConstraints;
+		USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
+		Sender->UpdateInterestComponent(Cast<AActor>(PlayerController));
+	}
+}
+
+
 
 void USpatialNetConnection::FlushDormancy(AActor* Actor)
 {
