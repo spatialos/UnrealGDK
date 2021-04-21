@@ -81,14 +81,14 @@ SpatialFunctionalTestRequireHandler::SpatialFunctionalTestRequireHandler()
 
 bool SpatialFunctionalTestRequireHandler::RequireTrue(bool bCheckTrue, const FString& Msg)
 {
-	FString StatusMsg = FString::Printf(TEXT("Received True as expected"));
+	const FString StatusMsg = TEXT("Received True as expected");
 
 	return GenericRequire(Msg, bCheckTrue, StatusMsg);
 }
 
 bool SpatialFunctionalTestRequireHandler::RequireFalse(bool bCheckFalse, const FString& Msg)
 {
-	FString StatusMsg = FString::Printf(TEXT("Received False as expected"));
+	const FString StatusMsg = TEXT("Received False as expected");
 
 	return GenericRequire(Msg, !bCheckFalse, StatusMsg);
 }
@@ -99,13 +99,13 @@ bool SpatialFunctionalTestRequireHandler::RequireCompare(int A, EComparisonMetho
 	FString StatusMsg;
 	FString OperatorStr = GetComparisonMethodAsString(Operator);
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received %d %s %d but was expecting A %s B"), A, *OperatorStr, B, *OperatorStr);
+		StatusMsg = FString::Printf(TEXT("Received %d %s %d as expected"), A, *OperatorStr, B);
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received %d %s %d as expected"), A, *OperatorStr, B);
+		StatusMsg = FString::Printf(TEXT("Received %d %s %d but was expecting A %s B"), A, *OperatorStr, B, *OperatorStr);
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -117,13 +117,14 @@ bool SpatialFunctionalTestRequireHandler::RequireCompare(float A, EComparisonMet
 	FString StatusMsg;
 	FString OperatorStr = GetComparisonMethodAsString(Operator);
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received %f %s %f but was expected A %s B"), A, *OperatorStr, B, *OperatorStr);
+		StatusMsg = FString::Printf(TEXT("Received %f %s %f as expected"), A, *OperatorStr, B);
+		
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received %f %s %f as expected"), A, *OperatorStr, B);
+		StatusMsg = FString::Printf(TEXT("Received %f %s %f but was expected A %s B"), A, *OperatorStr, B, *OperatorStr);
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -135,14 +136,14 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual(bool bValue, bool bExpect
 	FString StatusMsg;
 	FString ValueStr = bValue ? TEXT("True") : TEXT("False");
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		FString ExpectedStr = bExpected ? TEXT("True") : TEXT("False");
-		StatusMsg = FString::Printf(TEXT("Received %s but was expecting %s"), *ValueStr, *ExpectedStr);
+		StatusMsg = FString::Printf(TEXT("Received %s as expected"), *ValueStr);
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received %s as expected"), *ValueStr);
+		FString ExpectedStr = bExpected ? TEXT("True") : TEXT("False");
+		StatusMsg = FString::Printf(TEXT("Received %s but was expecting %s"), *ValueStr, *ExpectedStr);
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -153,13 +154,13 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual(int Value, int Expected, 
 	bool bPassed = Value == Expected;
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received %d but was expecting %d"), Value, Expected);
+		StatusMsg = FString::Printf(TEXT("Received %d as expected"), Value);
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received %d as expected"), Value);
+		StatusMsg = FString::Printf(TEXT("Received %d but was expecting %d"), Value, Expected);
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -170,13 +171,13 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual(float Value, float Expect
 	bool bPassed = FMath::Abs(Value - Expected) <= Tolerance;
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received %f but was expecting %f (tolerance %f)"), Value, Expected, Tolerance);
+		StatusMsg = FString::Printf(TEXT("Received %f as expected (within tolerance %f of %f)"), Value, Tolerance, Expected);
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received %f as expected (within tolerance %f of %f)"), Value, Tolerance, Expected);
+		StatusMsg = FString::Printf(TEXT("Received %f but was expecting %f (tolerance %f)"), Value, Expected, Tolerance);
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -187,13 +188,13 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual(const FString& Value, con
 	bool bPassed = Value == Expected;
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received %s but was expecting %s"), *Value, *Expected);
+		StatusMsg = FString::Printf(TEXT("Received %s as expected"), *Value);
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received %s as expected"), *Value);
+		StatusMsg = FString::Printf(TEXT("Received %s but was expecting %s"), *Value, *Expected);
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -204,13 +205,13 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual(const FName& Value, const
 	bool bPassed = Value == Expected;
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received %s but was expecting %s"), *Value.ToString(), *Expected.ToString());
+		StatusMsg = FString::Printf(TEXT("Received %s as expected"), *Value.ToString());
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received %s as expected"), *Value.ToString());
+		StatusMsg = FString::Printf(TEXT("Received %s but was expecting %s"), *Value.ToString(), *Expected.ToString());
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -221,15 +222,15 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual(const FVector& Value, con
 	bool bPassed = Value.Equals(Expected, Tolerance);
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received (%s) but was expecting (%s) (tolerance %f)"), *Value.ToString(), *Expected.ToString(),
-								   Tolerance);
+		StatusMsg = FString::Printf(TEXT("Received (%s) as expected (within tolerance %f of (%s))"), *Value.ToString(), Tolerance,
+									*Expected.ToString());
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received (%s) as expected (within tolerance %f of (%s))"), *Value.ToString(), Tolerance,
-									 *Expected.ToString());
+		StatusMsg = FString::Printf(TEXT("Received (%s) but was expecting (%s) (tolerance %f)"), *Value.ToString(), *Expected.ToString(),
+									Tolerance);
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -240,15 +241,15 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual(const FRotator& Value, co
 	bool bPassed = Value.Equals(Expected, Tolerance);
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received (%s) but was expecting (%s) (tolerance %f)"), *Value.ToString(), *Expected.ToString(),
-								   Tolerance);
+		StatusMsg = FString::Printf(TEXT("Received (%s) as expected (within tolerance %f of (%s))"), *Value.ToString(), Tolerance,
+									*Expected.ToString());
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received (%s) as expected (within tolerance %f of (%s))"), *Value.ToString(), Tolerance,
-									 *Expected.ToString());
+		StatusMsg = FString::Printf(TEXT("Received (%s) but was expecting (%s) (tolerance %f)"), *Value.ToString(), *Expected.ToString(),
+									Tolerance);
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -260,15 +261,15 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual(const FTransform& Value, 
 	bool bPassed = Value.Equals(Expected, Tolerance);
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received {%s} but was expecting {%s} (tolerance %f)"), *GetTransformAsString(Value),
-								   *GetTransformAsString(Expected), Tolerance);
+		StatusMsg = FString::Printf(TEXT("Received (%s) as expected (within tolerance %f of (%s))"), *GetTransformAsString(Value),
+									Tolerance, *GetTransformAsString(Expected));
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received (%s) as expected (within tolerance %f of (%s))"), *GetTransformAsString(Value),
-									 Tolerance, *GetTransformAsString(Expected));
+		StatusMsg = FString::Printf(TEXT("Received {%s} but was expecting {%s} (tolerance %f)"), *GetTransformAsString(Value),
+									*GetTransformAsString(Expected), Tolerance);
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -281,13 +282,13 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(bool bValue, bool bNot
 	FString ValueStr = bValue ? TEXT("True") : TEXT("False");
 	FString ExpectedStr = bNotExpected ? TEXT("True") : TEXT("False");
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received %s but wasn't expecting it"), *ValueStr);
+		StatusMsg = FString::Printf(TEXT("Received %s, not equal to %s, as expected"), *ValueStr, *ExpectedStr);
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received %s, not equal to %s, as expected"), *ValueStr, *ExpectedStr);
+		StatusMsg = FString::Printf(TEXT("Received %s but wasn't expecting it"), *ValueStr);
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -298,13 +299,13 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(int Value, int NotExpe
 	bool bPassed = Value != NotExpected;
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received %d but wasn't expecting it"), Value);
+		StatusMsg = FString::Printf(TEXT("Received value %d, not equal to %d, as expected"), Value, NotExpected);
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received value %d, not equal to %d, as expected"), Value, NotExpected);
+		StatusMsg = FString::Printf(TEXT("Received %d but wasn't expecting it"), Value);
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -315,13 +316,13 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(float Value, float Not
 	bool bPassed = Value != NotExpected;
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received %f but wasn't expecting it"), Value);
+		StatusMsg = FString::Printf(TEXT("Received value %f, not equal to %f, as expected"), Value, NotExpected);
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received value %f, not equal to %f, as expected"), Value, NotExpected);
+		StatusMsg = FString::Printf(TEXT("Received %f but wasn't expecting it"), Value);
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -332,13 +333,13 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(const FString& Value, 
 	bool bPassed = Value != NotExpected;
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received %s but wasn't expecting it"), *Value);
+		StatusMsg = FString::Printf(TEXT("Received value %s, not equal to %s, as expected"), *Value, *NotExpected);
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received value %s, not equal to %s, as expected"), *Value, *NotExpected);
+		StatusMsg = FString::Printf(TEXT("Received %s but wasn't expecting it"), *Value);
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -349,13 +350,13 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(const FName& Value, co
 	bool bPassed = Value != NotExpected;
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received %s but wasn't expecting it"), *Value.ToString());
+		StatusMsg = FString::Printf(TEXT("Received value %s, not equal to %s, as expected"), *Value.ToString(), *NotExpected.ToString());
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received value %s, not equal to %s, as expected"), *Value.ToString(), *NotExpected.ToString());
+		StatusMsg = FString::Printf(TEXT("Received %s but wasn't expecting it"), *Value.ToString());
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -366,13 +367,13 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(const FVector& Value, 
 	bool bPassed = Value != NotExpected;
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received (%s) but wasn't expecting it"), *Value.ToString());
+		StatusMsg = FString::Printf(TEXT("Received value %s, not equal to %s, as expected"), *Value.ToString(), *NotExpected.ToString());
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received value %s, not equal to %s, as expected"), *Value.ToString(), *NotExpected.ToString());
+		StatusMsg = FString::Printf(TEXT("Received (%s) but wasn't expecting it"), *Value.ToString());
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -383,13 +384,13 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(const FRotator& Value,
 	bool bPassed = Value != NotExpected;
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received (%s) but wasn't expecting it"), *Value.ToString());
+		StatusMsg = FString::Printf(TEXT("Received value %s, not equal to %s, as expected"), *Value.ToString(), *NotExpected.ToString());
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received value %s, not equal to %s, as expected"), *Value.ToString(), *NotExpected.ToString());
+		StatusMsg = FString::Printf(TEXT("Received (%s) but wasn't expecting it"), *Value.ToString());
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
@@ -400,14 +401,14 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(const FTransform& Valu
 	bool bPassed = !Value.Equals(NotExpected);
 	FString StatusMsg;
 
-	if (!bPassed)
+	if (bPassed)
 	{
-		StatusMsg = FString::Printf(TEXT("Received {%s} but wasn't expecting it"), *GetTransformAsString(Value));
+		StatusMsg = FString::Printf(TEXT("Received value %s, not equal to %s, as expected"), *GetTransformAsString(Value),
+									*GetTransformAsString(NotExpected));
 	}
 	else
 	{
-		StatusMsg = FString::Printf(TEXT("Received value %s, not equal to %s, as expected"), *GetTransformAsString(Value),
-									 *GetTransformAsString(NotExpected));
+		StatusMsg = FString::Printf(TEXT("Received {%s} but wasn't expecting it"), *GetTransformAsString(Value));
 	}
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
