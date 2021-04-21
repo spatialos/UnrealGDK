@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a function that allows the worker coordinator to periodically restart the simulated player clients with a bunch of parameters. This feature is disabled by default and can be enabled via `max_lifetime` setting.
 - Exposing worker upstream/downstream window sizes as GDK options for both clients and servers, (`ClientDownstreamWindowSizeBytes`, `ClientUpstreamWindowSizeBytes`) and (`ServerDownstreamWindowSizeBytes` and `ServerUpstreamWindowSizeBytes`).
 - `bOnlyRelevantToOwner` is now supported. Ownership must be setup prior to the first replication of the Actor otherwise it will be ignored.
+- Added experimental Unreal Insights support (internal Improbable use only). 
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
