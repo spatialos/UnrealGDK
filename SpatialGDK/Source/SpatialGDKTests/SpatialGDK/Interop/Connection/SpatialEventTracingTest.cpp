@@ -16,7 +16,6 @@ using namespace SpatialGDK;
 
 namespace
 {
-
 } // anonymous namespace
 
 EVENTTRACING_TEST(GIVEN_a_string_cache_WHEN_combing_two_string_THEN_the_strings_are_combined_and_stored_correctly)
@@ -28,7 +27,8 @@ EVENTTRACING_TEST(GIVEN_a_string_cache_WHEN_combing_two_string_THEN_the_strings_
 	return true;
 }
 
-EVENTTRACING_TEST(GIVEN_a_string_cache_WHEN_combing_two_string_that_will_overflow_but_cant_combine_THEN_the_strings_are_combined_and_stored_correctly)
+EVENTTRACING_TEST(
+	GIVEN_a_string_cache_WHEN_combing_two_string_that_will_overflow_but_cant_combine_THEN_the_strings_are_combined_and_stored_correctly)
 {
 	FSpatialTraceEventDataBuilder::FStringCache StringCache;
 
@@ -46,7 +46,8 @@ EVENTTRACING_TEST(GIVEN_a_string_cache_WHEN_combing_two_string_that_will_overflo
 	return true;
 }
 
-EVENTTRACING_TEST(GIVEN_a_string_cache_WHEN_combing_two_string_that_will_overflow_but_can_partially_combine_THEN_the_strings_are_combined_and_stored_correctly)
+EVENTTRACING_TEST(
+	GIVEN_a_string_cache_WHEN_combing_two_string_that_will_overflow_but_can_partially_combine_THEN_the_strings_are_combined_and_stored_correctly)
 {
 	FSpatialTraceEventDataBuilder::FStringCache StringCache;
 
