@@ -249,8 +249,7 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(bool bValue, bool bNot
 	bool bPassed = bValue != bNotExpected;
 	FString ReceivedString = bValue ? TEXT("True") : TEXT("False");
 	FString ExpectedString = bNotExpected ? TEXT("True") : TEXT("False");
-	FString EmptyTolerance = FString();
-	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, EmptyTolerance, true);
+	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, /*Tolerance = */ FString(), /*bNotEqual = */ true);
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
 }
@@ -260,8 +259,7 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(int Value, int NotExpe
 	bool bPassed = Value != NotExpected;
 	FString ReceivedString = FString::Printf(TEXT("%d"), Value);
 	FString ExpectedString = FString::Printf(TEXT("%d"), NotExpected);
-	FString EmptyTolerance = FString();
-	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, EmptyTolerance, true);
+	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, /*Tolerance = */ FString(), /*bNotEqual = */ true);
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
 }
@@ -271,8 +269,7 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(float Value, float Not
 	bool bPassed = Value != NotExpected;
 	FString ReceivedString = FString::Printf(TEXT("%f"), Value);
 	FString ExpectedString = FString::Printf(TEXT("%f"), NotExpected);
-	FString EmptyTolerance = FString();
-	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, EmptyTolerance, true);
+	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, /*Tolerance = */ FString(), /*bNotEqual = */ true);
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
 }
@@ -280,8 +277,7 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(float Value, float Not
 bool SpatialFunctionalTestRequireHandler::RequireNotEqual(const FString& Value, const FString& NotExpected, const FString& Msg)
 {
 	bool bPassed = Value != NotExpected;
-	FString EmptyTolerance = FString();
-	FString StatusMsg = GenerateStatusMessage(bPassed, /*Received = */ Value, /*Expected = */ NotExpected, EmptyTolerance, true);
+	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, /*Tolerance = */ FString(), /*bNotEqual = */ true);
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
 }
@@ -291,8 +287,7 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(const FName& Value, co
 	bool bPassed = Value != NotExpected;
 	FString ReceivedString = FString::Printf(TEXT("%s"), *Value.ToString());
 	FString ExpectedString = FString::Printf(TEXT("%s"), *NotExpected.ToString());
-	FString EmptyTolerance = FString();
-	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, EmptyTolerance, true);
+	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, /*Tolerance = */ FString(), /*bNotEqual = */ true);
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
 }
@@ -302,8 +297,7 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(const FVector& Value, 
 	bool bPassed = Value != NotExpected;
 	FString ReceivedString = FString::Printf(TEXT("%s"), *Value.ToString());
 	FString ExpectedString = FString::Printf(TEXT("%s"), *NotExpected.ToString());
-	FString EmptyTolerance = FString();
-	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, EmptyTolerance, true);
+	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, /*Tolerance = */ FString(), /*bNotEqual = */ true);
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
 }
@@ -313,8 +307,7 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(const FRotator& Value,
 	bool bPassed = Value != NotExpected;
 	FString ReceivedString = FString::Printf(TEXT("%s"), *Value.ToString());
 	FString ExpectedString = FString::Printf(TEXT("%s"), *NotExpected.ToString());
-	FString EmptyTolerance = FString();
-	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, EmptyTolerance, true);
+	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, /*Tolerance = */ FString(), /*bNotEqual = */ true);
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
 }
@@ -324,8 +317,7 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(const FTransform& Valu
 	bool bPassed = !Value.Equals(NotExpected);
 	FString ReceivedString = FString::Printf(TEXT("%s"), *GetTransformAsString(Value));
 	FString ExpectedString = FString::Printf(TEXT("%s"), *GetTransformAsString(NotExpected));
-	FString EmptyTolerance = FString();
-	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, EmptyTolerance, true);
+	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, /*Tolerance = */ FString(), /*bNotEqual = */ true);
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
 }
