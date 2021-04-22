@@ -82,7 +82,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 		const bool bShouldHaveAuthority = NetDriver->LoadBalanceStrategy->ShouldHaveAuthority(*NetOwner);
 
 		// Load balance if we are not supposed to be on this worker, or if we are separated from our owner.
-		if ((bShouldHaveAuthority || !bNetOwnerHasAuth) && !NetDriver->LockingPolicy->IsLocked(Actor))
+		if ((!bShouldHaveAuthority || !bNetOwnerHasAuth) && !NetDriver->LockingPolicy->IsLocked(Actor))
 		{
 			uint64 HierarchyAuthorityReceivedTimestamp = GetLatestAuthorityChangeFromHierarchy(NetOwner);
 
