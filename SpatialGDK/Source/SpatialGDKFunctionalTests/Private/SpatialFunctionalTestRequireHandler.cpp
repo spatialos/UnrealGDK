@@ -187,7 +187,7 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual(float Value, float Expect
 	FString ReceivedString = FString::Printf(TEXT("%f"), Value);
 	FString ExpectedString = FString::Printf(TEXT("%f"), Expected);
 	FString ToleranceString = FString::Printf(TEXT("%f"), Tolerance);
-	FString StatusMsg =	GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, ToleranceString);
+	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, ToleranceString);
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
 }
@@ -206,7 +206,6 @@ bool SpatialFunctionalTestRequireHandler::RequireEqual(const FName& Value, const
 	FString ReceivedString = Value.ToString();
 	FString ExpectedString = Expected.ToString();
 	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString);
-
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
 }
@@ -305,7 +304,6 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(const FVector& Value, 
 	FString ExpectedString = FString::Printf(TEXT("%s"), *NotExpected.ToString());
 	FString EmptyTolerance = FString();
 	FString StatusMsg = GenerateStatusMessage(bPassed, ReceivedString, ExpectedString, EmptyTolerance, true);
-
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
 }
