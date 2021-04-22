@@ -121,7 +121,7 @@ EVENTTRACING_TEST(GIVEN_a_string_cache_WHEN_adding_a_int64_THEN_the_string_is_st
 	return true;
 }
 
-EVENTTRACING_TEST(GIVEN_a_string_cache_WHEN_adding_multiple_string_THEN_the_strings_is_stored_correctly)
+EVENTTRACING_TEST(GIVEN_a_string_cache_WHEN_adding_multiple_strings_THEN_the_strings_is_stored_correctly)
 {
 	FSpatialTraceEventDataBuilder::FStringCache StringCache;
 	int32 Handle1 = StringCache.CombineStrings("string1", "string2");

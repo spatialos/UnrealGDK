@@ -124,7 +124,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	if (EventTracer != nullptr)
 	{
 		SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::AuthorityIntentUpdateEventName, "", nullptr, 0,
-										 [Actor, NewAuthoritativeVirtualWorkerId](FSpatialTraceEventDataBuilder& EventBuilder) {
+										 [&Actor, NewAuthoritativeVirtualWorkerId](FSpatialTraceEventDataBuilder& EventBuilder) {
 											 EventBuilder.AddObject(&Actor);
 											 EventBuilder.AddWorkerId(NewAuthoritativeVirtualWorkerId, "NewWorkerId");
 										 });

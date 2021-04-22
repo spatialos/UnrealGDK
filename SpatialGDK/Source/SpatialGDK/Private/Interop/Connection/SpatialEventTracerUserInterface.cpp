@@ -33,7 +33,7 @@ TArray<FSpatialGDKSpanId> ConvertSpanIds(const TArray<FUserSpanId>& Causes)
 } // namespace
 
 FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage,
-													     const TMap<FString, FString>& Data)
+														 const TMap<FString, FString>& Data)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
 	if (EventTracer == nullptr)

@@ -787,7 +787,7 @@ void SpatialRPCService::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTarg
 	{
 		SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::PushRPCEventName, "", EventTracer->GetFromStack().GetConstId(), 1,
 										 [TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
-									         EventBuilder.AddObject(TargetObject);
+											 EventBuilder.AddObject(TargetObject);
 											 EventBuilder.AddFunction(Function);
 										 });
 	}
