@@ -5,6 +5,9 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/RPCs/RPC_RingBufferSerializer.h"
+#include "Interop/RPCs/RPC_RingBufferWithACK_Receiver.h"
+#include "Interop/RPCs/RPC_RingBufferWithACK_Sender.h"
 #include "Utils/RPCRingBuffer.h"
 #include "Utils/RepLayoutUtils.h"
 
@@ -128,6 +131,8 @@ FSpatialNetDriverRPC::FSpatialNetDriverRPC(USpatialNetDriver& InNetDriver, const
 	}
 }
 
+FSpatialNetDriverRPC::~FSpatialNetDriverRPC() = default;
+
 void FSpatialNetDriverRPC::AdvanceView()
 {
 	RPCService->AdvanceView();
@@ -249,6 +254,27 @@ void FSpatialNetDriverRPC::FlushRPCQueueForEntity(Worker_EntityId EntityId, Stan
 	Queue.Flush(EntityId, Ctx, MakeRPCSentCallback());
 }
 
+FSpatialGDKSpanId FSpatialNetDriverRPC::CreatePushRPCEvent(UObject* TargetObject, UFunction* Function)
+{
+	FSpatialGDKSpanId SpanId;
+
+	if (EventTracer != nullptr)
+	{
+		SpanId = EventTracer->TraceEvent(SpatialGDK::FSpatialTraceEventBuilder::CreatePushRPC(TargetObject, Function),
+										 /* Causes */ EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1);
+	}
+
+	return SpanId;
+}
+
+TArray<uint8> FSpatialNetDriverRPC::CreateRPCPayloadData(UFunction* Function, void* Parameters)
+{
+	FSpatialNetBitWriter PayloadWriter(NetDriver.PackageMap);
+	const TSharedPtr<FRepLayout> RepLayout = NetDriver.GetFunctionRepLayout(Function);
+	SpatialGDK::RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
+	return TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
+}
+
 bool FSpatialNetDriverRPC::CanExtractRPC(Worker_EntityId EntityId) const
 {
 	const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver.PackageMap->GetObjectFromEntityId(EntityId);
@@ -311,7 +337,7 @@ struct RAIIParamsHolder : FStackOnly
 	uint8* Parms;
 };
 
-bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::ReceivedRPC RPCData, const FRPCMetaData& MetaData) const
+bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload& RPCData, const FRPCMetaData& MetaData) const
 {
 	constexpr bool RPCConsumed = true;
 
@@ -404,17 +430,59 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::Receiv
 	return RPCConsumed;
 }
 
+using ClientServerSender = MonotonicRingBufferWithACKSender<FRPCPayload, RingBufferSerializer_Schema<FRPCPayload>>;
+using ClientServerReceiver =
+	MonotonicRingBufferWithACKReceiver<FRPCPayload, TimestampAndETWrapper, RingBufferSerializer_Schema<FRPCPayload>>;
+
 void FSpatialNetDriverRPC::MakeRingBufferWithACKSender(ERPCType RPCType, Worker_ComponentSetId AuthoritySet,
 													   TUniquePtr<RPCBufferSender>& SenderPtr,
 													   TUniquePtr<TRPCQueue<FRPCPayload, FSpatialGDKSpanId>>& QueuePtr)
 {
-	// TODO UNR-5037
+	auto RPCDesc = RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
+	RingBufferSerializer_Schema<FRPCPayload> Serializer(RPCRingBufferUtils::GetRingBufferComponentId(RPCType), RPCDesc.LastSentRPCFieldId,
+														RPCDesc.SchemaFieldStart, RPCRingBufferUtils::GetAckComponentId(RPCType),
+														RPCRingBufferUtils::GetAckFieldId(RPCType));
+
+	auto Sender = MakeUnique<ClientServerSender>(MoveTemp(Serializer), RPCDesc.RingBufferSize);
+
+	RPCService::RPCQueueDescription Desc;
+	Desc.Sender = Sender.Get();
+
+	FName RPCName(SpatialConstants::RPCTypeToString(RPCType));
+	if (RPCRingBufferUtils::ShouldQueueOverflowed(RPCType))
+	{
+		QueuePtr = MakeUnique<TRPCUnboundedQueue<FRPCPayload, FSpatialGDKSpanId>>(RPCName, *Sender);
+	}
+	else
+	{
+		QueuePtr = MakeUnique<TRPCFixedCapacityQueue<FRPCPayload, FSpatialGDKSpanId>>(RPCName, *Sender, RPCDesc.RingBufferSize);
+	}
+	Desc.Queue = QueuePtr.Get();
+	Desc.Authority = AuthoritySet;
+
+	RPCService->AddRPCQueue(RPCName, MoveTemp(Desc));
+	SenderPtr.Reset(Sender.Release());
 }
 
 void FSpatialNetDriverRPC::MakeRingBufferWithACKReceiver(ERPCType RPCType, Worker_ComponentSetId AuthoritySet,
 														 TUniquePtr<TRPCBufferReceiver<FRPCPayload, TimestampAndETWrapper>>& ReceiverPtr)
 {
-	// TODO UNR-5037
+	auto RPCDesc = RPCRingBufferUtils::GetRingBufferDescriptor(RPCType);
+
+	RingBufferSerializer_Schema<FRPCPayload> Serializer(RPCRingBufferUtils::GetRingBufferComponentId(RPCType), RPCDesc.LastSentRPCFieldId,
+														RPCDesc.SchemaFieldStart, RPCRingBufferUtils::GetAckComponentId(RPCType),
+														RPCRingBufferUtils::GetAckFieldId(RPCType));
+
+	FName RPCName(SpatialConstants::RPCTypeToString(RPCType));
+
+	ReceiverPtr = MakeUnique<ClientServerReceiver>(MoveTemp(Serializer), RPCDesc.RingBufferSize,
+												   TimestampAndETWrapper<FRPCPayload>(RPCName, Serializer.GetComponentId(), EventTracer));
+
+	RPCService::RPCReceiverDescription Desc;
+	Desc.Authority = AuthoritySet;
+	Desc.Receiver = ReceiverPtr.Get();
+
+	RPCService->AddRPCReceiver(RPCName, MoveTemp(Desc));
 }
 
 FSpatialNetDriverServerRPC::FSpatialNetDriverServerRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
@@ -453,7 +521,7 @@ void FSpatialNetDriverServerRPC::ProcessReceivedRPCs()
 	auto CanExtractRPCs = [this](Worker_EntityId EntityId) {
 		return CanExtractRPCOnServer(EntityId);
 	};
-	auto ProcessRPC = [this](Worker_EntityId EntityId, ReceivedRPC RPCData, const FRPCMetaData& MetaData) {
+	auto ProcessRPC = [this](Worker_EntityId EntityId, const FRPCPayload& RPCData, const FRPCMetaData& MetaData) {
 		return ApplyRPC(EntityId, RPCData, MetaData);
 	};
 
@@ -502,7 +570,7 @@ void FSpatialNetDriverClientRPC::ProcessReceivedRPCs()
 	auto CanExtractRPCs = [this](Worker_EntityId EntityId) {
 		return CanExtractRPC(EntityId);
 	};
-	auto ProcessRPC = [this](Worker_EntityId EntityId, ReceivedRPC RPCData, const FRPCMetaData& MetaData) {
+	auto ProcessRPC = [this](Worker_EntityId EntityId, const FRPCPayload& RPCData, const FRPCMetaData& MetaData) {
 		return ApplyRPC(EntityId, RPCData, MetaData);
 	};
 

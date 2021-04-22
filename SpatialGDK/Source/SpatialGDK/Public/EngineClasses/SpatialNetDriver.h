@@ -23,6 +23,9 @@
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
 class FSpatialLoadBalancingHandler;
+class FSpatialNetDriverRPC;
+class FSpatialNetDriverClientRPC;
+class FSpatialNetDriverServerRPC;
 class FSpatialOutputDevice;
 class SpatialDispatcher;
 class SpatialSnapshotManager;
@@ -218,6 +221,9 @@ public:
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
+	TUniquePtr<FSpatialNetDriverRPC> RPCs;
+	FSpatialNetDriverClientRPC* ClientRPCs = nullptr;
+	FSpatialNetDriverServerRPC* ServerRPCs = nullptr;
 
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
 	TUniquePtr<SpatialGDK::SpatialStrategySystem> StrategySystem;
