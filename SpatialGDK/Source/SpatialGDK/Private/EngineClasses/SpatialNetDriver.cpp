@@ -3283,3 +3283,39 @@ void USpatialNetDriver::PopCrossServerRPCSender(AActor* SenderActor)
 	check(GSenderStack.Last() == SenderActor);
 	GSenderStack.Pop();
 }
+
+FActorEntityCreationDelegate& USpatialNetDriver::OnActorEntityCreation(AActor* TargetActor)
+{
+	return ActorEntityCreationDelegates.FindOrAdd(TargetActor);
+}
+
+TArray<SpatialGDK::ComponentData> USpatialNetDriver::GetEntityCreationUserAddComponents(AActor* TargetActor)
+{
+	TArray<SpatialGDK::ComponentData> OutComponentDatas;
+	if (!ActorEntityCreationDelegates.Contains(TargetActor))
+	{
+		return OutComponentDatas;
+	}
+
+	const FActorEntityCreationDelegate EntityCreationDelegate = ActorEntityCreationDelegates.FindAndRemoveChecked(TargetActor);
+	EntityCreationDelegate.Broadcast(OutComponentDatas);
+	return OutComponentDatas;
+}
+
+FActorReplicationDelegate& USpatialNetDriver::OnActorReplication(AActor* TargetActor)
+{
+	return ActorReplicationDelegates.FindOrAdd(TargetActor);
+}
+
+TArray<SpatialGDK::ComponentUpdate> USpatialNetDriver::GetUserComponentUpdates(AActor* TargetActor)
+{
+	TArray<SpatialGDK::ComponentUpdate> OutComponentUpdates;
+	if (!ActorReplicationDelegates.Contains(TargetActor))
+	{
+		return OutComponentUpdates;
+	}
+
+	FActorReplicationDelegate& ActorReplicationDelegate = ActorReplicationDelegates.FindChecked(TargetActor);
+	ActorReplicationDelegate.Broadcast(OutComponentUpdates);
+	return OutComponentUpdates;
+}

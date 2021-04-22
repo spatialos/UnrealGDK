@@ -800,8 +800,6 @@ int64 USpatialActorChannel::ReplicateActor()
 				RepComp.RemoveCurrent();
 			}
 		}
-
-		Actor->CallPostReplication();
 	}
 
 #if USE_NETWORK_PROFILER

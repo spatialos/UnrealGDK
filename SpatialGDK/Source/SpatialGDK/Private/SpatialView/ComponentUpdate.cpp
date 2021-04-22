@@ -33,6 +33,12 @@ Schema_ComponentUpdate* ComponentUpdate::Release() &&
 	return Update.Release();
 }
 
+Worker_ComponentUpdate ComponentUpdate::ReleaseAsWorkerComponentUpdate() &&
+{
+	check(Update.IsValid());
+	return { nullptr, ComponentId, Update.Release(), nullptr };
+}
+
 bool ComponentUpdate::Merge(ComponentUpdate Other)
 {
 	check(Other.GetComponentId() == GetComponentId());

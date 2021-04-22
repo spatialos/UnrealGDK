@@ -1817,6 +1817,14 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 	TArray<FWorkerComponentUpdate> ComponentUpdates =
 		UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
 
+	// Add any updates for user-written components
+	for (auto& Update : NetDriver->GetUserComponentUpdates(Cast<AActor>(Object)))
+	{
+		// Move the data out of the owning ComponentUpdate type, and convert it to the type we need.
+		// `SendComponentUpdate` will take ownership of the underlying component data and free it later.
+		ComponentUpdates.Emplace(MoveTemp(Update).ReleaseAsWorkerComponentUpdate());
+	}
+
 	TArray<FSpatialGDKSpanId> PropertySpans;
 	if (EventTracer != nullptr && RepChanges != nullptr
 		&& RepChanges->RepChanged.Num() > 0) // Only need to add these if they are actively being traced
@@ -1971,6 +1979,14 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(SpatialGDK::ActorSystem::CreateLevelComponentData(*Actor, *NetDriver->GetWorld(), *NetDriver->ClassInfoManager));
+
+	// Add user-provided component data
+	for (auto& Data : NetDriver->GetEntityCreationUserAddComponents(Actor))
+	{
+		// Move the data out of the owning ComponentData type, and convert it to the type we need.
+		// `SendCreateEntityRequest` will take ownership of the underlying component data and free it.
+		ComponentDatas.Emplace(MoveTemp(Data).ReleaseAsWorkerComponentData());
+	}
 
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)

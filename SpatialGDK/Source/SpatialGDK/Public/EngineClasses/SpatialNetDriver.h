@@ -50,6 +50,8 @@ class USpatialWorkerFlags;
 
 DECLARE_DELEGATE(PostWorldWipeDelegate);
 DECLARE_MULTICAST_DELEGATE(FShutdownEvent);
+DECLARE_EVENT_OneParam(USpatialNetDriver, FActorEntityCreationDelegate, TArray<SpatialGDK::ComponentData>& OutComponentDatas);
+DECLARE_EVENT_OneParam(USpatialNetDriver, FActorReplicationDelegate, TArray<SpatialGDK::ComponentUpdate>& OutComponentUpdates);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -213,6 +215,25 @@ public:
 	USpatialNetDriverDebugContext* DebugCtx;
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
+
+	// Returns a delegate that will be triggered when the entity for TargetActor gets created by the GDK.
+	// The callback takes a single TArray<SpatialGDK::ComponentData>& out argument, to which it can add ComponentData objects
+	// for components that should be added to the entity on creation.
+	// Since there may be multiple callbacks, callbacks should _only_ add to this array.
+	FActorEntityCreationDelegate& OnActorEntityCreation(AActor* TargetActor);
+
+	// Get user-provided component data to add to the entity that is being created for the given TargetActor.
+	// Also clears out all entity creation delegates registered for this actor since they will not be called again.
+	TArray<SpatialGDK::ComponentData> GetEntityCreationUserAddComponents(AActor* TargetActor);
+
+	// Returns a delegate that will be triggered when TargetActor gets replicated to the runtime.
+	// The callback takes a single TArray<SpatialGDK::ComponentUpdate>& out argument, to which it can add ComponentUpdate objects
+	// which will be sent to the runtime alongside the updates for its replicated properties.
+	// Since there may be multiple callbacks, callbacks should _only_ add to this array.
+	FActorReplicationDelegate& OnActorReplication(AActor* TargetActor);
+
+	// Get user-provided component updates for the given TargetActor.
+	TArray<SpatialGDK::ComponentUpdate> GetUserComponentUpdates(AActor* TargetActor);
 
 	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
 	FFilterPredicate ActorFilter;
@@ -390,4 +411,8 @@ private:
 
 	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
+
+	// Safety: We use these actor pointers only to identify actors, they never get dereferenced.
+	TMap<AActor*, FActorEntityCreationDelegate> ActorEntityCreationDelegates;
+	TMap<AActor*, FActorReplicationDelegate> ActorReplicationDelegates;
 };

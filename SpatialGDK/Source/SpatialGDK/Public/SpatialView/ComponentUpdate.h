@@ -45,6 +45,9 @@ public:
 	// Releases ownership of the component update.
 	Schema_ComponentUpdate* Release() &&;
 
+	// Releases ownership and converts to Worker_ComponentUpdate
+	Worker_ComponentUpdate ReleaseAsWorkerComponentUpdate() &&;
+
 	// Appends the fields and events from other to the update.
 	bool Merge(ComponentUpdate Update);
 

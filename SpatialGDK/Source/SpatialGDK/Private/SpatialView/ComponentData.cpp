@@ -34,6 +34,12 @@ Schema_ComponentData* ComponentData::Release() &&
 	return Data.Release();
 }
 
+Worker_ComponentData ComponentData::ReleaseAsWorkerComponentData() &&
+{
+	check(Data.IsValid());
+	return { nullptr, ComponentId, Data.Release(), nullptr };
+}
+
 bool ComponentData::ApplyUpdate(const ComponentUpdate& Update)
 {
 	check(Update.GetComponentId() == GetComponentId());

@@ -47,6 +47,9 @@ public:
 	// Releases ownership of the component data.
 	Schema_ComponentData* Release() &&;
 
+	// Releases ownership and converts to Worker_ComponentData
+	Worker_ComponentData ReleaseAsWorkerComponentData() &&;
+
 	// Appends the fields from the provided update.
 	// Returns true if the update was successfully applied and false otherwise.
 	bool ApplyUpdate(const ComponentUpdate& Update);
