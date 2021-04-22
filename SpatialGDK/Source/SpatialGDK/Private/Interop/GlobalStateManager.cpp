@@ -224,8 +224,8 @@ void UGlobalStateManager::OnReceiveShutdownCommand(const Worker_Op& Op, const Wo
 		Worker_RequestId RequestId = Op.op.command_request.request_id;
 		EventTracer->TraceEvent(FSpatialTraceEventName::ReceiveCommandRequestEventName, "", Op.span_id, 1,
 			[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
-				EventBuilder.AddCommand("Command", "SHUTDOWN_MULTI_PROCESS_REQUEST");
-				EventBuilder.AddRequestId("RequestId", RequestId);
+				EventBuilder.AddCommand( "SHUTDOWN_MULTI_PROCESS_REQUEST");
+				EventBuilder.AddRequestId(RequestId);
 		});
 	}
 }

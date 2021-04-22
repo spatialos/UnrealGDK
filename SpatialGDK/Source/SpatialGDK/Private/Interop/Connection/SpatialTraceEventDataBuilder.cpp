@@ -142,7 +142,7 @@ FSpatialTraceEventDataBuilder::~FSpatialTraceEventDataBuilder()
 	Trace_EventData_Destroy(EventData);
 }
 
-void FSpatialTraceEventDataBuilder::AddObject(const char* Key, const UObject* Object)
+void FSpatialTraceEventDataBuilder::AddObject(const UObject* Object, const char* Key /*="Object"*/)
 {
 	if (Object != nullptr)
 	{
@@ -163,7 +163,7 @@ void FSpatialTraceEventDataBuilder::AddObject(const char* Key, const UObject* Ob
 	}
 }
 
-void FSpatialTraceEventDataBuilder::AddFunction(const char* Key, const UFunction* Function)
+void FSpatialTraceEventDataBuilder::AddFunction(const UFunction* Function, const char* Key /*="Function"*/)
 {
 	if (Function != nullptr)
 	{
@@ -171,42 +171,42 @@ void FSpatialTraceEventDataBuilder::AddFunction(const char* Key, const UFunction
 	}
 }
 
-void FSpatialTraceEventDataBuilder::AddEntityId(const char* Key, const Worker_EntityId EntityId)
+void FSpatialTraceEventDataBuilder::AddEntityId(const Worker_EntityId EntityId, const char* Key /*="EntityId"*/)
 {
 	AddKeyValue(Key, EntityId);
 }
 
-void FSpatialTraceEventDataBuilder::AddComponentId(const char* Key, const Worker_ComponentId ComponentId)
+void FSpatialTraceEventDataBuilder::AddComponentId(const Worker_ComponentId ComponentId, const char* Key /*="ComponentId"*/)
 {
 	AddKeyValue(Key, ComponentId);
 }
 
-void FSpatialTraceEventDataBuilder::AddFieldId(const char* Key, const uint32 FieldId)
+void FSpatialTraceEventDataBuilder::AddFieldId(const uint32 FieldId, const char* Key /*="FieldId"*/)
 {
 	AddKeyValue(Key, FieldId);
 }
 
-void FSpatialTraceEventDataBuilder::AddNewWorkerId(const char* Key, const uint32 NewWorkerId)
+void FSpatialTraceEventDataBuilder::AddWorkerId(const uint32 WorkerId, const char* Key /*="WorkerId"*/)
 {
-	AddKeyValue(Key, NewWorkerId);
+	AddKeyValue(Key, WorkerId);
 }
 
-void FSpatialTraceEventDataBuilder::AddCommand(const char* Key, const char* Command)
+void FSpatialTraceEventDataBuilder::AddCommand(const char* Command, const char* Key /*="Command"*/)
 {
 	AddKeyValue(Key, Command);
 }
 
-void FSpatialTraceEventDataBuilder::AddRequestId(const char* Key, const int64 RequestId)
+void FSpatialTraceEventDataBuilder::AddRequestId(const int64 RequestId, const char* Key /*="RequestId"*/)
 {
 	AddKeyValue(Key, RequestId);
 }
 
-void FSpatialTraceEventDataBuilder::AddAuthority(const char* Key, const Worker_Authority Authority)
+void FSpatialTraceEventDataBuilder::AddAuthority(const Worker_Authority Authority, const char* Key /*="Authority"*/)
 {
 	AddKeyValue(Key, AuthorityToString(Authority));
 }
 
-void FSpatialTraceEventDataBuilder::AddLinearTraceId(const char* Key, const EventTraceUniqueId LinearTraceId)
+void FSpatialTraceEventDataBuilder::AddLinearTraceId(const EventTraceUniqueId LinearTraceId, const char* Key /*="LinearTraceId"*/)
 {
 	AddKeyValue(Key, LinearTraceId.Get());
 }

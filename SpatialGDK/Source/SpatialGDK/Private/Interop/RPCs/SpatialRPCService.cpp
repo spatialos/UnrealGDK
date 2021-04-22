@@ -129,9 +129,9 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 		{
 			if (EventTracer != nullptr)
 			{
-				PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::QueueRPCEventName, "", PendingPayload.SpanId.GetConstId(), 1,
-					[](FSpatialTraceEventDataBuilder& EventBuilder) {
-				});
+				PendingPayload.SpanId =
+					EventTracer->TraceEvent(FSpatialTraceEventName::QueueRPCEventName, "", PendingPayload.SpanId.GetConstId(), 1,
+											[](FSpatialTraceEventDataBuilder& EventBuilder) {});
 			}
 
 			// Already has queued RPCs of this type, queue until those are pushed.
@@ -185,8 +185,7 @@ void SpatialRPCService::PushOverflowedRPCs()
 				if (EventTracer != nullptr)
 				{
 					Payload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::QueueRPCEventName, "", Payload.SpanId.GetConstId(), 1,
-						[](FSpatialTraceEventDataBuilder& EventBuilder) {
-					});
+															 [](FSpatialTraceEventDataBuilder& EventBuilder) {});
 				}
 				break;
 			case EPushRPCResult::DropOverflowed:
@@ -253,11 +252,12 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 			Worker_ComponentId ComponentId = UpdateToSend.Update.component_id;
 			TArray<FSpatialGDKSpanId>& Causes = It.Value.SpanIds;
 
-			UpdateToSend.SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::MergeSendRPCEventName, "", Causes.GetData()->GetConstId(), Causes.Num(),
-				[EntityId, ComponentId](FSpatialTraceEventDataBuilder& EventBuilder) {
-					EventBuilder.AddEntityId("EntityId", EntityId);
-					EventBuilder.AddComponentId("ComponentId", ComponentId);
-			});
+			UpdateToSend.SpanId =
+				EventTracer->TraceEvent(FSpatialTraceEventName::MergeSendRPCEventName, "", Causes.GetData()->GetConstId(), Causes.Num(),
+										[EntityId, ComponentId](FSpatialTraceEventDataBuilder& EventBuilder) {
+											EventBuilder.AddEntityId(EntityId);
+											EventBuilder.AddComponentId(ComponentId);
+										});
 		}
 
 #if TRACE_LIB_ACTIVE
@@ -358,12 +358,13 @@ void SpatialRPCService::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarg
 			EntityComponentId(InTargetObjectRef.Entity, RPCRingBufferUtils::GetRingBufferComponentId(Type)));
 
 		const Trace_SpanIdType* Causes = reinterpret_cast<const Trace_SpanIdType*>(ComponentUpdateSpans.GetData());
-		EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForRPC(InTargetObjectRef.Entity, static_cast<uint8>(Type), RPCIdForLinearEventTrace.GetValue());
+		EventTraceUniqueId LinearTraceId =
+			EventTraceUniqueId::GenerateForRPC(InTargetObjectRef.Entity, static_cast<uint8>(Type), RPCIdForLinearEventTrace.GetValue());
 
 		SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::ReceieveRPCEventName, "", Causes, ComponentUpdateSpans.Num(),
-			[LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
-				EventBuilder.AddLinearTraceId("LinearTraceId", LinearTraceId);
-		});
+										 [LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
+											 EventBuilder.AddLinearTraceId(LinearTraceId);
+										 });
 	}
 
 	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, InSender, Type, MoveTemp(InPayload), SpanId);
@@ -459,9 +460,9 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 		{
 			EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForRPC(EntityId, static_cast<uint8>(Type), NewRPCId);
 			FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::SendRPCEventName, "", Payload.SpanId.GetConstId(), 1,
-				[LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
-				EventBuilder.AddLinearTraceId("Object", LinearTraceId);
-			});
+															   [LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
+																   EventBuilder.AddLinearTraceId(LinearTraceId);
+															   });
 			RPCStore.AddSpanIdForComponentUpdate(EntityComponent, SpanId);
 		}
 
@@ -594,11 +595,12 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 			bool bUseEventTracer = EventTracer != nullptr && RPCType != ERPCType::CrossServer;
 			if (bUseEventTracer)
 			{
-				FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::ApplyRPCEventName, "", PendingRPCParams.SpanId.GetConstId(), 1,
-					[TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
-						EventBuilder.AddObject("Object", TargetObject);
-						EventBuilder.AddFunction("Function", Function);
-				});
+				FSpatialGDKSpanId SpanId =
+					EventTracer->TraceEvent(FSpatialTraceEventName::ApplyRPCEventName, "", PendingRPCParams.SpanId.GetConstId(), 1,
+											[TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
+												EventBuilder.AddObject(TargetObject);
+												EventBuilder.AddFunction(Function);
+											});
 
 				EventTracer->AddToStack(SpanId);
 			}
@@ -784,8 +786,7 @@ void SpatialRPCService::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTarg
 	if (EventTracer != nullptr)
 	{
 		SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::PushRPCEventName, "", EventTracer->GetFromStack().GetConstId(), 1,
-			[](FSpatialTraceEventDataBuilder& EventBuilder) {
-		});
+										 [](FSpatialTraceEventDataBuilder& EventBuilder) {});
 	}
 
 	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, InSenderInfo, RPCInfo.Type, MoveTemp(InPayload), SpanId);

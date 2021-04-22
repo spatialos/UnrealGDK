@@ -63,7 +63,7 @@ void USpatialPlayerSpawner::OnPlayerSpawnCommandReceived(const Worker_Op& Op, co
 		Worker_RequestId RequestId = CommandRequestOp.request_id;
 		EventTracer->TraceEvent(FSpatialTraceEventName::ReceiveCommandRequestEventName, "", Op.span_id, 1,
 			[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
-			EventBuilder.AddRequestId("RequestId", RequestId);
+			EventBuilder.AddRequestId(RequestId);
 		});
 	}
 }
@@ -78,7 +78,7 @@ void USpatialPlayerSpawner::OnPlayerSpawnResponseReceived(const Worker_Op& Op, c
 		Worker_RequestId RequestId = CommandResponseOp.request_id;
 		EventTracer->TraceEvent(FSpatialTraceEventName::ReceiveCommandResponseEventName, "", Op.span_id, 1,
 			[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
-			EventBuilder.AddRequestId("RequestId", RequestId);
+			EventBuilder.AddRequestId(RequestId);
 		});
 	}
 }
@@ -93,7 +93,7 @@ void USpatialPlayerSpawner::OnForwardedPlayerSpawnCommandReceived(const Worker_O
 		Worker_RequestId RequestId = CommandRequestOp.request_id;
 		EventTracer->TraceEvent(FSpatialTraceEventName::ReceiveCommandRequestEventName, "", Op.span_id, 1,
 			[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
-			EventBuilder.AddRequestId("RequestId", RequestId);
+			EventBuilder.AddRequestId(RequestId);
 		});
 	}
 }
@@ -106,7 +106,7 @@ void USpatialPlayerSpawner::OnForwardedPlayerSpawnResponseReceived(const Worker_
 		Worker_RequestId RequestId = CommandResponseOp.request_id;
 		EventTracer->TraceEvent(FSpatialTraceEventName::ReceiveCommandResponseEventName, "", Op.span_id, 1,
 			[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
-			EventBuilder.AddRequestId("RequestId", RequestId);
+			EventBuilder.AddRequestId(RequestId);
 		});
 	}
 	ReceiveForwardPlayerSpawnResponse(CommandResponseOp);

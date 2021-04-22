@@ -51,6 +51,22 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextOb
 	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 }
 
+FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage, FEventTracerAddDataDelegate AddDataDelegate)
+{
+	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
+	if (EventTracer == nullptr)
+	{
+		return {};
+	}
+
+	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(TCHAR_TO_ANSI(*EventType), TCHAR_TO_ANSI(*EventMessage), /* Causes */ nullptr, /* NumCauses */ 0,
+		[AddDataDelegate](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
+			AddDataDelegate.ExecuteIfBound(EventBuilder);
+	});
+
+	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
+}
+
 FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage, TMap<FString, FString> Data,
 																   const TArray<FUserSpanId>& Causes)
 {
@@ -67,6 +83,24 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* Worl
 			{
 				EventBuilder.AddKeyValue(Pair.Key, Pair.Value);
 			}
+	});
+
+	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
+}
+
+FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage, const TArray<FUserSpanId>& Causes,
+	FEventTracerAddDataDelegate AddDataDelegate)
+{
+	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
+	if (EventTracer == nullptr)
+	{
+		return {};
+	}
+
+	TArray<FSpatialGDKSpanId> CauseSpanIds = ConvertSpanIds(Causes);
+	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(TCHAR_TO_ANSI(*EventType), TCHAR_TO_ANSI(*EventMessage), CauseSpanIds.GetData()->GetId(), CauseSpanIds.Num(),
+		[AddDataDelegate](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
+			AddDataDelegate.ExecuteIfBound(EventBuilder);
 	});
 
 	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);

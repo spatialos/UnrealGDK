@@ -83,7 +83,7 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 			EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForCrossServerRPC(CommandOp.entity_id, Params->Payload.Id.GetValue());
 			SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::ReceiveCrossServerRPCEventName, "", EventTracer->GetAndConsumeSpanForRequestId(Op.op.command_request.request_id).GetConstId(), 1,
 				[LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
-					EventBuilder.AddLinearTraceId("LinearTraceId", LinearTraceId);
+					EventBuilder.AddLinearTraceId(LinearTraceId);
 			});
 		}
 	}

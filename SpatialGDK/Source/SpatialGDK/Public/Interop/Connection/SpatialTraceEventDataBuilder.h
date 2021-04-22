@@ -97,16 +97,16 @@ public:
 	FSpatialTraceEventDataBuilder();
 	~FSpatialTraceEventDataBuilder();
 
-	void AddObject(const char* Key, const UObject* Object);
-	void AddFunction(const char* Key, const UFunction* Function);
-	void AddEntityId(const char* Key, const Worker_EntityId EntityId);
-	void AddComponentId(const char* Key, const Worker_ComponentId ComponentId);
-	void AddFieldId(const char* Key, const uint32 FieldId);
-	void AddNewWorkerId(const char* Key, const uint32 NewWorkerId);
-	void AddCommand(const char* Key, const char* Command);
-	void AddRequestId(const char* Key, const int64 RequestId);
-	void AddAuthority(const char* Key, const Worker_Authority Authority);
-	void AddLinearTraceId(const char* Key, const EventTraceUniqueId LinearTraceId);
+	void AddObject(const UObject* Object, const char* Key = "Object");
+	void AddFunction(const UFunction* Function, const char* Key = "Function");
+	void AddEntityId(const Worker_EntityId EntityId, const char* Key = "EntityId");
+	void AddComponentId(const Worker_ComponentId ComponentId, const char* Key = "ComponentId");
+	void AddFieldId(const uint32 FieldId, const char* Key = "FieldId");
+	void AddWorkerId(const uint32 WorkerId, const char* Key = "WorkerId");
+	void AddCommand(const char* Command, const char* Key = "Command");
+	void AddRequestId(const int64 RequestId, const char* Key = "RequestId");
+	void AddAuthority(const Worker_Authority Authority, const char* Key = "Authority");
+	void AddLinearTraceId(const EventTraceUniqueId LinearTraceId, const char* Key = "LinearTraceId");
 
 	void AddKeyValue(const char* Key, const char* Value);
 	void AddKeyValue(const char* Key, const FString& Value);
