@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include "Interop/Connection/SpatialTraceEvent.h"
 #include "Interop/Connection/UserSpanId.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Interop/Connection/SpatialEventTracer.h"
+#include "Containers/Map.h"
 
 #include <WorkerSDK/improbable/c_trace.h>
 
@@ -36,7 +37,7 @@ public:
 	 * (This API is subject to change)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static FUserSpanId TraceEvent(UObject* WorldContextObject, const FSpatialTraceEvent& SpatialTraceEvent);
+	static FUserSpanId TraceEvent(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage, TMap<FString, FString> Data);
 
 	/**
 	 * EXPERIMENTAL
@@ -44,15 +45,7 @@ public:
 	 * (This API is subject to change)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static FUserSpanId TraceEventBasic(UObject* WorldContextObject, FName Type, FString Message, const TArray<FUserSpanId>& Causes);
-
-	/**
-	 * EXPERIMENTAL
-	 * Will trace an event using the input data and associate it with the input SpanId
-	 * (This API is subject to change)
-	 */
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static FUserSpanId TraceEventWithCauses(UObject* WorldContextObject, const FSpatialTraceEvent& SpatialTraceEvent,
+	static FUserSpanId TraceEventWithCauses(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage, TMap<FString, FString> Data,
 											const TArray<FUserSpanId>& Causes);
 
 	/**

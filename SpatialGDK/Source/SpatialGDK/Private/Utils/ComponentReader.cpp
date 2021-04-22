@@ -10,7 +10,6 @@
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "Interop/Connection/SpatialEventTracer.h"
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
 #include "Utils/GDKPropertyMacros.h"
@@ -336,10 +335,17 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 				if (bEventTracerEnabled)
 				{
 					EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property);
-					SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(
-														 &Object, EntityId, ComponentId, Cmd.Property->GetName(), LinearTraceId),
-													 /* Causes */ reinterpret_cast<const Trace_SpanIdType*>(CauseSpanIds.GetData()),
-													 /* NumCauses */ CauseSpanIds.Num());
+					FString PropertyName = Cmd.Property->GetName();
+					const Trace_SpanIdType* Causes = reinterpret_cast<const Trace_SpanIdType*>(CauseSpanIds.GetData());
+
+					SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::ReceivePropertyUpdateEventName, "", Causes, CauseSpanIds.Num(),
+						[&Object, EntityId, ComponentId, PropertyName, LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
+							EventBuilder.AddObject("Object", &Object);
+							EventBuilder.AddEntityId("EntityId", EntityId);
+							EventBuilder.AddComponentId("ComponentId", ComponentId);
+							EventBuilder.AddKeyValue("PropertyName", PropertyName);
+							EventBuilder.AddLinearTraceId("LinearTraceId", LinearTraceId);
+					});
 				}
 
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened

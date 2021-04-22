@@ -3,7 +3,6 @@
 #include "Interop/CrossServerRPCHandler.h"
 
 #include "Interop/Connection/SpatialEventTracer.h"
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialGDKSettings.h"
 
@@ -81,10 +80,11 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 	{
 		if (ensureMsgf(Params->Payload.Id.IsSet(), TEXT("Cross-server RPCs are expected to have a payload ID for event tracing.")))
 		{
-			SpanId = EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::CreateReceiveCrossServerRPC(
-					EventTraceUniqueId::GenerateForCrossServerRPC(CommandOp.entity_id, Params->Payload.Id.GetValue())),
-				/* Causes */ EventTracer->GetAndConsumeSpanForRequestId(Op.op.command_request.request_id).GetConstId(), /* NumCauses */ 1);
+			EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForCrossServerRPC(CommandOp.entity_id, Params->Payload.Id.GetValue());
+			SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::ReceiveCrossServerRPCEventName, "", EventTracer->GetAndConsumeSpanForRequestId(Op.op.command_request.request_id).GetConstId(), 1,
+				[LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
+					EventBuilder.AddLinearTraceId("LinearTraceId", LinearTraceId);
+			});
 		}
 	}
 

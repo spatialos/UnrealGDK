@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Interop/Connection/SpatialGDKSpanId.h"
-#include "Interop/Connection/SpatialTraceEvent.h"
+#include "Interop/Connection/SpatialTraceEventDataBuilder.h"
 #include "Interop/Connection/UserSpanId.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialView/EntityComponentId.h"
@@ -23,15 +23,12 @@ public:
 	explicit SpatialEventTracer(const FString& WorkerId);
 	~SpatialEventTracer();
 
-	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
+	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; }
 	Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
-	FSpatialGDKSpanId TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes = nullptr,
-								 int32 NumCauses = 0) const;
-
 	template <typename T>
-	FSpatialGDKSpanId TraceEvents(const FSpatialTraceEvent& SpatialTraceEvent, T&& DataCallback, const Trace_SpanIdType* Causes = nullptr,
-								  int32 NumCauses = 0) const;
+	FSpatialGDKSpanId TraceEvent(const char* EventType, const char* Message, const Trace_SpanIdType* Causes, int32 NumCauses,
+								  T&& DataCallback) const;
 
 	void BeginOpsForFrame();
 	void AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId);
@@ -105,22 +102,17 @@ private:
 };
 
 template <typename T>
-FSpatialGDKSpanId SpatialEventTracer::TraceEvents(const FSpatialTraceEvent& SpatialTraceEvent, T&& DataCallback,
-												  const Trace_SpanIdType* Causes /* = nullptr*/, int32 NumCauses /* = 0*/) const
+FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const char* Message,
+												 const Trace_SpanIdType* Causes, int32 NumCauses, T&& DataCallback) const
 {
-	/*
 	if (Causes == nullptr && NumCauses > 0)
 	{
 		return {};
 	}
 
-	// Worker requires ansi const char*
-	std::string MessageSrc = (const char*)TCHAR_TO_ANSI(*SpatialTraceEvent.Message);	  // Worker requires platform ansi const char*
-	std::string TypeSrc = (const char*)TCHAR_TO_ANSI(*SpatialTraceEvent.Type.ToString()); // Worker requires platform ansi const char*
-
 	// We could add the data to this event if a custom sampling callback was used.
 	// This would allow for sampling dependent on trace event data.
-	Trace_Event Event = { nullptr, 0, MessageSrc.c_str(), TypeSrc.c_str(), nullptr };
+	Trace_Event Event = { nullptr, 0, Message, EventType, nullptr };
 
 	Trace_SamplingResult SpanSamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event);
 	if (SpanSamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
@@ -146,32 +138,24 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvents(const FSpatialTraceEvent& Spat
 		}
 		case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE:
 		{
-			Trace_EventData* EventData = Trace_EventData_Create();
-			DataCallback(EventData)
+			FSpatialTraceEventDataBuilder EventDataBuilder;
+
+			DataCallback(EventDataBuilder);
 
 			// Frame counter
-			{
-				const char* FrameCountStr = "FrameNum";
-				char TmpBuffer[64];
-				FCStringAnsi::Sprintf(TmpBuffer, "%" PRIu64, GFrameCounter);
-				const char* TmpBufferPtr = TmpBuffer;
-				Trace_EventData_AddStringFields(EventData, 1, &FrameCountStr, &TmpBufferPtr);
-			}
+			EventDataBuilder.AddKeyValue("FrameNum", GFrameCounter);
 
-			Event.data = EventData;
+			Event.data = EventDataBuilder.GetEventData();
 			Trace_EventTracer_AddEvent(EventTracer, &Event);
-			Trace_EventData_Destroy(EventData);
 			return TraceSpanId;
 		}
 		default:
 		{
-			UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."),
-				static_cast<int>(EventSamplingResult.decision));
+			//FString Error(FString::Printf(TEXT("Could not handle invalid sampling decision %d."), static_cast<int>(EventSamplingResult.decision)));
+			//Log(Error);
 			return {};
 		}
 	}
-	*/
-	return {};
 }
 
 } // namespace SpatialGDK

@@ -16,7 +16,6 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialEventTracer.h"
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
@@ -124,7 +123,11 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorke
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
+		SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::AuthorityIntentUpdateEventName, "", nullptr, 0,
+			[&Actor, NewAuthoritativeVirtualWorkerId](FSpatialTraceEventDataBuilder& EventBuilder) {
+				EventBuilder.AddObject("Object", &Actor);
+				EventBuilder.AddNewWorkerId("NewWorkerId", NewAuthoritativeVirtualWorkerId);
+		});
 	}
 
 	Connection->SendComponentUpdate(EntityId, &Update, SpanId);

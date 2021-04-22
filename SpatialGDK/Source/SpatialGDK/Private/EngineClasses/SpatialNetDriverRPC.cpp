@@ -4,7 +4,6 @@
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Utils/RPCRingBuffer.h"
 #include "Utils/RepLayoutUtils.h"
@@ -19,10 +18,13 @@ void FRPCMetaData::ComputeSpanId(SpatialGDK::SpatialEventTracer& Tracer, Spatial
 {
 	TArray<FSpatialGDKSpanId> ComponentUpdateSpans = Tracer.GetAndConsumeSpansForComponent(EntityComponent);
 
-	SpanId = Tracer.TraceEvent(
-		FSpatialTraceEventBuilder::CreateReceiveRPC(EventTraceUniqueId::GenerateForNamedRPC(EntityComponent.EntityId, RPCName, RPCId)),
-		/* Causes */ reinterpret_cast<const Trace_SpanIdType*>(ComponentUpdateSpans.GetData()),
-		/* NumCauses */ ComponentUpdateSpans.Num());
+	const Trace_SpanIdType* Causes = reinterpret_cast<const Trace_SpanIdType*>(ComponentUpdateSpans.GetData());
+	EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForNamedRPC(EntityComponent.EntityId, RPCName, RPCId);
+
+	SpanId = Tracer.TraceEvent(FSpatialTraceEventName::ReceieveRPCEventName, "", Causes, ComponentUpdateSpans.Num(),
+		[LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
+			EventBuilder.AddLinearTraceId("LinearTraceId", LinearTraceId);
+	});
 }
 
 void FRPCPayload::ReadFromSchema(const Schema_Object* RPCObject)
@@ -44,8 +46,10 @@ void FSpatialNetDriverRPC::OnRPCSent(SpatialGDK::SpatialEventTracer& EventTracer
 									 const FSpatialGDKSpanId& SpanId)
 {
 	const EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForNamedRPC(EntityId, Name, RPCId);
-	const FSpatialGDKSpanId NewSpanId = EventTracer.TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(LinearTraceId),
-															   /* Causes */ SpanId.GetConstId(), /* NumCauses */ 1);
+	FSpatialGDKSpanId NewSpanId = EventTracer.TraceEvent(FSpatialTraceEventName::SendRPCEventName, "", SpanId.GetConstId(), 1,
+		[LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
+			EventBuilder.AddLinearTraceId("LinearTraceId", LinearTraceId);
+	});
 
 	if (OutUpdates.Num() == 0 || OutUpdates.Last().EntityId != EntityId || OutUpdates.Last().Update.component_id != ComponentId)
 	{
@@ -191,9 +195,15 @@ struct FSpatialNetDriverRPC::RAIIUpdateContext : FStackOnly
 			FSpatialGDKSpanId SpanId;
 			if (RPCSystem.EventTracer != nullptr)
 			{
-				SpanId = RPCSystem.EventTracer->TraceEvent(
-					FSpatialTraceEventBuilder::CreateMergeSendRPCs(Update.EntityId, Update.Update.component_id),
-					/* Causes */ Update.Spans.GetData()->GetConstId(), /* NumCauses */ Update.Spans.Num());
+				Worker_EntityId EntityId = Update.EntityId;
+				Worker_ComponentId ComponentId = Update.Update.component_id;
+				TArray<FSpatialGDKSpanId>& Causes = Update.Spans;
+
+				SpanId = RPCSystem.EventTracer->TraceEvent(FSpatialTraceEventName::MergeSendRPCEventName, "", Causes.GetData()->GetConstId(), Causes.Num(),
+					[EntityId, ComponentId](FSpatialTraceEventDataBuilder& EventBuilder) {
+					EventBuilder.AddEntityId("EntityId", EntityId);
+					EventBuilder.AddComponentId("ComponentId", ComponentId);
+				});
 			}
 			RPCSystem.NetDriver.Connection->SendComponentUpdate(Update.EntityId, &Update.Update, SpanId);
 		}
@@ -376,8 +386,11 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, SpatialGDK::Receiv
 	const bool bUseEventTracer = EventTracer != nullptr;
 	if (bUseEventTracer)
 	{
-		FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateApplyRPC(TargetObject, Function),
-														   /* Causes */ MetaData.SpanId.GetConstId(), /* NumCauses */ 1);
+		FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::ApplyRPCEventName, "", MetaData.SpanId.GetConstId(), 1,
+			[TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
+				EventBuilder.AddObject("Object", TargetObject);
+				EventBuilder.AddFunction("Function", Function);
+		});
 		EventTracer->AddToStack(SpanId);
 	}
 
