@@ -25,7 +25,7 @@ public:
 
 	void UpdateSpatialDebuggingData(Worker_EntityId EntityId, const AActor& Actor);
 
-	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
+	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId, const FString& ActorName) const;
 
 	DECLARE_MULTICAST_DELEGATE_OneParam(FSpatialDebuggerActorAddedDelegate, AActor*);
 	FSpatialDebuggerActorAddedDelegate OnEntityActorAddedDelegate;
