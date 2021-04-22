@@ -105,7 +105,8 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 	const uint32 StatDisplayStartX = 25;
 	const uint32 StatDisplayStartY = 80;
 
-	const FString StatColumnTitles[StatColumn_Last] = { TEXT("Worker"), TEXT("Frame"), TEXT("Movement Corrections"), TEXT("Replication Limit") };
+	const FString StatColumnTitles[StatColumn_Last] = { TEXT("Worker"), TEXT("Frame"), TEXT("Movement Corrections"),
+														TEXT("Replication Limit") };
 	const uint32 StatColumnOffsets[StatColumn_Last] = { 0, 160, 80, 160 };
 	const uint32 StatRowOffset = 20;
 
@@ -142,18 +143,21 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%s"), *OneWorkerStats.WorkerName), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
 		DrawX += StatColumnOffsets[StatColumn_AverageFrameTime];
-		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f ms"), 1000.f / OneWorkerStats.AverageFPS), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
+		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f ms"), 1000.f / OneWorkerStats.AverageFPS), DrawX, DrawY, 1.0f, 1.0f,
+						 FontRenderInfo);
 
 		DrawX += StatColumnOffsets[StatColumn_MovementCorrections];
-		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.4f"), OneWorkerStats.ServerMovementCorrections), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
+		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.4f"), OneWorkerStats.ServerMovementCorrections), DrawX, DrawY, 1.0f, 1.0f,
+						 FontRenderInfo);
 
 		DrawX += StatColumnOffsets[StatColumn_ReplicationLimit];
-		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%d:%d"), OneWorkerStats.ServerConsiderListSize, OneWorkerStats.ServerReplicationLimit), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
+		Canvas->DrawText(RenderFont,
+						 FString::Printf(TEXT("%d:%d"), OneWorkerStats.ServerConsiderListSize, OneWorkerStats.ServerReplicationLimit),
+						 DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
 		DrawY += StatRowOffset;
 	}
 }
-
 
 void ASpatialMetricsDisplay::SpatialToggleStatDisplay()
 {
@@ -167,7 +171,8 @@ void ASpatialMetricsDisplay::SpatialToggleStatDisplay()
 	}
 	else
 	{
-		DrawDebugDelegateHandle = UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialMetricsDisplay::DrawDebug));
+		DrawDebugDelegateHandle =
+			UDebugDrawService::Register(TEXT("Game"), FDebugDrawDelegate::CreateUObject(this, &ASpatialMetricsDisplay::DrawDebug));
 	}
 #endif // !UE_BUILD_SHIPPING
 }
@@ -185,9 +190,7 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
 
-	if (SpatialNetDriver == nullptr ||
-		SpatialNetDriver->Connection == nullptr ||
-		SpatialNetDriver->SpatialMetrics == nullptr)
+	if (SpatialNetDriver == nullptr || SpatialNetDriver->Connection == nullptr || SpatialNetDriver->SpatialMetrics == nullptr)
 	{
 		return;
 	}

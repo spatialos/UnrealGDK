@@ -5,6 +5,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
+#include "Schema/ActorGroupMember.h"
 #include "Utils/LayerInfo.h"
 #include "Utils/SpatialActorUtils.h"
 
@@ -17,16 +18,39 @@ ULayeredLBStrategy::ULayeredLBStrategy()
 {
 }
 
+FString ULayeredLBStrategy::ToString() const
+{
+	const FName LocalLayerName = GetLocalLayerName();
+	const UAbstractLBStrategy* const* LBStrategy = LayerNameToLBStrategy.Find(LocalLayerName);
+
+	FString Description =
+		FString::Printf(TEXT("Layered, LocalLayerName = %s, LocalVirtualWorkerId = %d, LayerStrategy = %s"), *LocalLayerName.ToString(),
+						LocalVirtualWorkerId, *LBStrategy ? *(*LBStrategy)->ToString() : TEXT("NoStrategy"));
+
+	if (VirtualWorkerIdToLayerName.Num() > 0)
+	{
+		Description += TEXT(", LayerNamesPerVirtualWorkerId = {");
+		for (const auto& Entry : VirtualWorkerIdToLayerName)
+		{
+			Description += FString::Printf(TEXT("%d = %s, "), Entry.Key, *Entry.Value.ToString());
+		}
+		check(Description.Len() > 1);
+		Description.LeftChopInline(2);
+		Description += TEXT("}");
+	}
+	return Description;
+}
+
 void ULayeredLBStrategy::SetLayers(const TArray<FLayerInfo>& WorkerLayers)
 {
 	check(WorkerLayers.Num() != 0);
 
 	// For each Layer, add a LB Strategy for that layer.
-	for (const FLayerInfo& LayerInfo : WorkerLayers)
+	for (int32 LayerIndex = 0; LayerIndex < WorkerLayers.Num(); ++LayerIndex)
 	{
+		const FLayerInfo& LayerInfo = WorkerLayers[LayerIndex];
 		checkf(*LayerInfo.LoadBalanceStrategy != nullptr,
-			TEXT("WorkerLayer %s does not specify a load balancing strategy (or it cannot be resolved)"),
-			*LayerInfo.Name.ToString());
+			   TEXT("WorkerLayer %s does not specify a load balancing strategy (or it cannot be resolved)"), *LayerInfo.Name.ToString());
 
 		UE_LOG(LogLayeredLBStrategy, Log, TEXT("Creating LBStrategy for Layer %s."), *LayerInfo.Name.ToString());
 
@@ -35,8 +59,10 @@ void ULayeredLBStrategy::SetLayers(const TArray<FLayerInfo>& WorkerLayers)
 		for (const TSoftClassPtr<AActor>& ClassPtr : LayerInfo.ActorClasses)
 		{
 			UE_LOG(LogLayeredLBStrategy, Log, TEXT(" - Adding class %s."), *ClassPtr.GetAssetName());
-			ClassPathToLayer.Add(ClassPtr, LayerInfo.Name);
+			ClassPathToLayerName.Emplace(ClassPtr, LayerInfo.Name);
 		}
+
+		LayerData.Emplace(LayerInfo.Name, FLayerData{ LayerInfo.Name, LayerIndex });
 	}
 }
 
@@ -45,8 +71,8 @@ void ULayeredLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualW
 	if (LocalVirtualWorkerId != SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 	{
 		UE_LOG(LogLayeredLBStrategy, Error,
-			TEXT("The Local Virtual Worker Id cannot be set twice. Current value: %d Requested new value: %d"),
-			LocalVirtualWorkerId, InLocalVirtualWorkerId);
+			   TEXT("The Local Virtual Worker Id cannot be set twice. Current value: %d Requested new value: %d"), LocalVirtualWorkerId,
+			   InLocalVirtualWorkerId);
 		return;
 	}
 
@@ -66,7 +92,8 @@ bool ULayeredLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
 	{
-		UE_LOG(LogLayeredLBStrategy, Warning, TEXT("LayeredLBStrategy not ready to relinquish authority for Actor %s."), *AActor::GetDebugName(&Actor));
+		UE_LOG(LogLayeredLBStrategy, Warning, TEXT("LayeredLBStrategy not ready to relinquish authority for Actor %s."),
+			   *AActor::GetDebugName(&Actor));
 		return false;
 	}
 
@@ -79,7 +106,8 @@ bool ULayeredLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 	const FName& LayerName = GetLayerNameForActor(*RootOwner);
 	if (!LayerNameToLBStrategy.Contains(LayerName))
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."), *AActor::GetDebugName(RootOwner), *LayerName.ToString());
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."),
+			   *AActor::GetDebugName(RootOwner), *LayerName.ToString());
 		return false;
 	}
 
@@ -96,7 +124,8 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 {
 	if (!IsReady())
 	{
-		UE_LOG(LogLayeredLBStrategy, Warning, TEXT("LayeredLBStrategy not ready to decide on authority for Actor %s."), *AActor::GetDebugName(&Actor));
+		UE_LOG(LogLayeredLBStrategy, Warning, TEXT("LayeredLBStrategy not ready to decide on authority for Actor %s."),
+			   *AActor::GetDebugName(&Actor));
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
@@ -109,32 +138,56 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 	const FName& LayerName = GetLayerNameForActor(*RootOwner);
 	if (!LayerNameToLBStrategy.Contains(LayerName))
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."), *AActor::GetDebugName(RootOwner), *LayerName.ToString());
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."),
+			   *AActor::GetDebugName(RootOwner), *LayerName.ToString());
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
 	const VirtualWorkerId ReturnedWorkerId = LayerNameToLBStrategy[LayerName]->WhoShouldHaveAuthority(*RootOwner);
 
-	UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy returning virtual worker id %d for Actor %s."), ReturnedWorkerId, *AActor::GetDebugName(RootOwner));
+	UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy returning virtual worker id %d for Actor %s."), ReturnedWorkerId,
+		   *AActor::GetDebugName(RootOwner));
 	return ReturnedWorkerId;
 }
 
-SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint() const
+SpatialGDK::FActorLoadBalancingGroupId ULayeredLBStrategy::GetActorGroupId(const AActor& Actor) const
 {
-	check(IsReady());
-	if (!VirtualWorkerIdToLayerName.Contains(LocalVirtualWorkerId))
+	const FName ActorLayerName = GetLayerNameForActor(Actor);
+
+	const int32 ActorLayerIndex = LayerData.FindChecked(ActorLayerName).LayerIndex + 1;
+
+	// We're not going deeper inside nested strategies intentionally; LBStrategy, or nesting thereof,
+	// won't exist when the Strategy Worker is finished, and GroupIDs are only necessary for it to work.
+	return ActorLayerIndex;
+}
+
+SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
+{
+	if (!VirtualWorkerIdToLayerName.Contains(VirtualWorker))
 	{
-		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for worker %d."), LocalVirtualWorkerId);
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for worker %d."), VirtualWorker);
 		SpatialGDK::QueryConstraint Constraint;
 		Constraint.ComponentConstraint = 0;
 		return Constraint;
 	}
 	else
 	{
-		const FName& LayerName = VirtualWorkerIdToLayerName[LocalVirtualWorkerId];
+		const FName& LayerName = VirtualWorkerIdToLayerName[VirtualWorker];
 		check(LayerNameToLBStrategy.Contains(LayerName));
-		return LayerNameToLBStrategy[LayerName]->GetWorkerInterestQueryConstraint();
+		return LayerNameToLBStrategy[LayerName]->GetWorkerInterestQueryConstraint(VirtualWorker);
 	}
+}
+
+bool ULayeredLBStrategy::RequiresHandoverData() const
+{
+	for (const auto& Elem : LayerNameToLBStrategy)
+	{
+		if (Elem.Value->RequiresHandoverData())
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 FVector ULayeredLBStrategy::GetWorkerEntityPosition() const
@@ -162,7 +215,8 @@ uint32 ULayeredLBStrategy::GetMinimumRequiredWorkers() const
 		MinimumRequiredWorkers += Elem.Value->GetMinimumRequiredWorkers();
 	}
 
-	UE_LOG(LogLayeredLBStrategy, Verbose, TEXT("LayeredLBStrategy needs %d workers to support all layer strategies."), MinimumRequiredWorkers);
+	UE_LOG(LogLayeredLBStrategy, Verbose, TEXT("LayeredLBStrategy needs %d workers to support all layer strategies."),
+		   MinimumRequiredWorkers);
 	return MinimumRequiredWorkers;
 }
 
@@ -181,10 +235,12 @@ void ULayeredLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtual
 		VirtualWorkerId LastVirtualWorkerIdToAssign = NextWorkerIdToAssign + MinimumRequiredWorkers - 1;
 		if (LastVirtualWorkerIdToAssign > LastVirtualWorkerId)
 		{
-			UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy was not given enough VirtualWorkerIds to meet the demands of the layer strategies."));
+			UE_LOG(LogLayeredLBStrategy, Error,
+				   TEXT("LayeredLBStrategy was not given enough VirtualWorkerIds to meet the demands of the layer strategies."));
 			return;
 		}
-		UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy assigning VirtualWorkerIds %d to %d to Layer %s"), NextWorkerIdToAssign, LastVirtualWorkerIdToAssign, *Elem.Key.ToString());
+		UE_LOG(LogLayeredLBStrategy, Log, TEXT("LayeredLBStrategy assigning VirtualWorkerIds %d to %d to Layer %s"), NextWorkerIdToAssign,
+			   LastVirtualWorkerIdToAssign, *Elem.Key.ToString());
 		LBStrategy->SetVirtualWorkerIds(NextWorkerIdToAssign, LastVirtualWorkerIdToAssign);
 
 		for (VirtualWorkerId id = NextWorkerIdToAssign; id <= LastVirtualWorkerIdToAssign; id++)
@@ -196,7 +252,8 @@ void ULayeredLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtual
 	}
 
 	// Keep a copy of the VirtualWorkerIds. This is temporary and will be removed in the next PR.
-	for (VirtualWorkerId CurrentVirtualWorkerId = FirstVirtualWorkerId; CurrentVirtualWorkerId <= LastVirtualWorkerId; CurrentVirtualWorkerId++)
+	for (VirtualWorkerId CurrentVirtualWorkerId = FirstVirtualWorkerId; CurrentVirtualWorkerId <= LastVirtualWorkerId;
+		 CurrentVirtualWorkerId++)
 	{
 		VirtualWorkerIds.Add(CurrentVirtualWorkerId);
 	}
@@ -214,12 +271,44 @@ bool ULayeredLBStrategy::CouldHaveAuthority(const TSubclassOf<AActor> Class) con
 UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 {
 	// The default strategy is guaranteed to exist as long as the strategy is ready.
-	check(IsReady());
 	checkf(LayerNameToLBStrategy.Contains(SpatialConstants::DefaultLayer),
-		TEXT("Load balancing strategy does not contain default layer which is needed to render worker debug visualization. "
-			"Default layer presence should be enforced by MultiWorkerSettings edit validation. Class: %s"), *GetNameSafe(this));
+		   TEXT("Load balancing strategy does not contain default layer which is needed to render worker debug visualization. "
+				"Default layer presence should be enforced by MultiWorkerSettings edit validation. Class: %s"),
+		   *GetNameSafe(this));
+	return GetLBStrategyForLayer(SpatialConstants::DefaultLayer);
+}
 
-	return LayerNameToLBStrategy[SpatialConstants::DefaultLayer];
+UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForLayer(FName Layer) const
+{
+	// Editor has the option to display the load balanced zones and could query the strategy anytime.
+#ifndef WITH_EDITOR
+	check(IsReady());
+#endif
+
+	if (UAbstractLBStrategy* const* Entry = LayerNameToLBStrategy.Find(Layer))
+	{
+		return *Entry;
+	}
+	return nullptr;
+}
+
+FName ULayeredLBStrategy::GetLocalLayerName() const
+{
+	if (!IsReady())
+	{
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("Tried to get worker layer name before the load balancing strategy was ready."));
+		return NAME_None;
+	}
+
+	const FName* LocalLayerName = VirtualWorkerIdToLayerName.Find(LocalVirtualWorkerId);
+	if (LocalLayerName == nullptr)
+	{
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("Load balancing strategy didn't contain mapping between virtual worker ID to layer name."),
+			   LocalVirtualWorkerId);
+		return NAME_None;
+	}
+
+	return *LocalLayerName;
 }
 
 FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) const
@@ -234,12 +323,12 @@ FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) 
 
 	while (FoundClass != nullptr && FoundClass->IsChildOf(AActor::StaticClass()))
 	{
-		if (const FName* Layer = ClassPathToLayer.Find(ClassPtr))
+		if (const FName* Layer = ClassPathToLayerName.Find(ClassPtr))
 		{
-			FName LayerHolder = *Layer;
+			const FName LayerHolder = *Layer;
 			if (FoundClass != Class)
 			{
-				ClassPathToLayer.Add(TSoftClassPtr<AActor>(Class), LayerHolder);
+				ClassPathToLayerName.Add(TSoftClassPtr<AActor>(Class), LayerHolder);
 			}
 			return LayerHolder;
 		}
@@ -249,7 +338,7 @@ FName ULayeredLBStrategy::GetLayerNameForClass(const TSubclassOf<AActor> Class) 
 	}
 
 	// No mapping found so set and return default actor group.
-	ClassPathToLayer.Add(TSoftClassPtr<AActor>(Class), SpatialConstants::DefaultLayer);
+	ClassPathToLayerName.Emplace(TSoftClassPtr<AActor>(Class), SpatialConstants::DefaultLayer);
 	return SpatialConstants::DefaultLayer;
 }
 

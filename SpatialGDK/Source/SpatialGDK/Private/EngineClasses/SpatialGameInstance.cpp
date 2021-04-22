@@ -2,6 +2,7 @@
 
 #include "EngineClasses/SpatialGameInstance.h"
 
+#include "Engine/Engine.h"
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
 #include "Misc/Guid.h"
@@ -11,12 +12,15 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #endif
 
+#include "Kismet/GameplayStatics.h"
+
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
-#include "Interop/SpatialStaticComponentView.h"
+#include "Interop/SpatialWorkerFlags.h"
+#include "SpatialConstants.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialLatencyTracer.h"
 #include "Utils/SpatialMetrics.h"
@@ -28,29 +32,34 @@ DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 USpatialGameInstance::USpatialGameInstance()
 	: Super()
 	, bIsSpatialNetDriverReady(false)
-{}
+	, bPreparingForShutdown(false)
+{
+}
 
 bool USpatialGameInstance::HasSpatialNetDriver() const
 {
 	bool bHasSpatialNetDriver = false;
 
+	const bool bUseSpatial = GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking();
+
 	if (WorldContext != nullptr)
 	{
 		UWorld* World = GetWorld();
-		UNetDriver * NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
+		UNetDriver* NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
 		bool bShouldDestroyNetDriver = false;
 
 		if (NetDriver == nullptr)
 		{
 			// If Spatial networking is enabled, override the GameNetDriver with the SpatialNetDriver
-			if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking())
+			if (bUseSpatial)
 			{
-				if (FNetDriverDefinition* DriverDefinition = GEngine->NetDriverDefinitions.FindByPredicate([](const FNetDriverDefinition& CurDef)
+				if (FNetDriverDefinition* DriverDefinition =
+						GEngine->NetDriverDefinitions.FindByPredicate([](const FNetDriverDefinition& CurDef) {
+							return CurDef.DefName == NAME_GameNetDriver;
+						}))
 				{
-					return CurDef.DefName == NAME_GameNetDriver;
-				}))
-				{
-					DriverDefinition->DriverClassName = DriverDefinition->DriverClassNameFallback = TEXT("/Script/SpatialGDK.SpatialNetDriver");
+					DriverDefinition->DriverClassName = DriverDefinition->DriverClassNameFallback =
+						TEXT("/Script/SpatialGDK.SpatialNetDriver");
 				}
 			}
 
@@ -69,11 +78,12 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 		}
 	}
 
-	if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() && !bHasSpatialNetDriver)
+	if (bUseSpatial && !bHasSpatialNetDriver)
 	{
-		UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
-										  "Please make sure you set up the net driver definitions as specified in the porting "
-										  "guide and that you don't override the main net driver."));
+		UE_LOG(LogSpatialGameInstance, Error,
+			   TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
+					"Please make sure you set up the net driver definitions as specified in the porting "
+					"guide and that you don't override the main net driver."));
 	}
 
 	return bHasSpatialNetDriver;
@@ -84,7 +94,6 @@ void USpatialGameInstance::CreateNewSpatialConnectionManager()
 	SpatialConnectionManager = NewObject<USpatialConnectionManager>(this);
 
 	GlobalStateManager = NewObject<UGlobalStateManager>();
-	StaticComponentView = NewObject<USpatialStaticComponentView>();
 }
 
 void USpatialGameInstance::DestroySpatialConnectionManager()
@@ -100,16 +109,11 @@ void USpatialGameInstance::DestroySpatialConnectionManager()
 		GlobalStateManager->ConditionalBeginDestroy();
 		GlobalStateManager = nullptr;
 	}
-
-	if (StaticComponentView != nullptr)
-	{
-		StaticComponentView->ConditionalBeginDestroy();
-		StaticComponentView = nullptr;
-	}
 }
 
 #if WITH_EDITOR
-FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
+FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer,
+																		   const FGameInstancePIEParameters& Params)
 {
 	SpatialWorkerType = Params.SpatialWorkerType;
 	bIsSimulatedPlayer = Params.bIsSimulatedPlayer;
@@ -131,7 +135,8 @@ void USpatialGameInstance::StartSpatialConnection()
 	else
 	{
 		// In native, setup worker name here as we don't get a HandleOnConnected() callback
-		FString WorkerName = FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+		FString WorkerName =
+			FString::Printf(TEXT("%s:%s"), *SpatialWorkerType.ToString(), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
 		SpatialLatencyTracer->SetWorkerId(WorkerName);
 	}
 #endif
@@ -143,7 +148,8 @@ void USpatialGameInstance::TryInjectSpatialLocatorIntoCommandLine()
 	{
 		SetHasPreviouslyConnectedToSpatial();
 		// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
-		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
+		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to
+		// provide parity with native.
 
 		// Initialize a locator configuration which will parse command line arguments.
 		FLocatorConfig LocatorConfig;
@@ -205,9 +211,27 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 	return false;
 }
 
+namespace
+{
+constexpr uint8 SimPlayerErrorExitCode = 10;
+
+void HandleOnSimulatedPlayerNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type NetworkFailureType,
+										   const FString& Reason)
+{
+	UE_LOG(LogSpatialGameInstance, Log, TEXT("SimulatedPlayer network failure due to: %s"), *Reason);
+
+	FPlatformMisc::RequestExitWithStatus(/*bForce =*/false, SimPlayerErrorExitCode);
+}
+} // namespace
+
 void USpatialGameInstance::Init()
 {
 	Super::Init();
+
+	if (UGameplayStatics::HasLaunchOption(TEXT("FailOnNetworkFailure")))
+	{
+		GetEngine()->OnNetworkFailure().AddStatic(&HandleOnSimulatedPlayerNetworkFailure);
+	}
 
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
 
@@ -217,7 +241,7 @@ void USpatialGameInstance::Init()
 	}
 }
 
-void USpatialGameInstance::HandleOnConnected()
+void USpatialGameInstance::HandleOnConnected(USpatialNetDriver& NetDriver)
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Successfully connected to SpatialOS"));
 	SpatialWorkerId = SpatialConnectionManager->GetWorkerConnection()->GetWorkerId();
@@ -230,21 +254,25 @@ void USpatialGameInstance::HandleOnConnected()
 #endif
 
 	OnSpatialConnected.Broadcast();
+
+	if (NetDriver.IsServer())
+	{
+		FOnWorkerFlagUpdatedBP WorkerFlagDelegate;
+		WorkerFlagDelegate.BindDynamic(this, &USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated);
+
+		NetDriver.SpatialWorkerFlags->RegisterFlagUpdatedCallback(SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG, WorkerFlagDelegate);
+	}
+	NetDriver.OnShutdown.AddUObject(this, &USpatialGameInstance::DestroySpatialConnectionManager);
 }
 
-void USpatialGameInstance::CleanupCachedLevelsAfterConnection()
+void USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated(const FString& FlagName, const FString& FlagValue)
 {
-	// Cleanup any actors which were created during level load.
-	UWorld* World = GetWorld();
-	check(World != nullptr);
-	for (ULevel* Level : CachedLevelsForNetworkIntialize)
+	if (!bPreparingForShutdown)
 	{
-		if (World->ContainsLevel(Level))
-		{
-			CleanupLevelInitializedNetworkActors(Level);
-		}
+		bPreparingForShutdown = true;
+		UE_LOG(LogSpatialGameInstance, Log, TEXT("Shutdown preparation triggered."));
+		OnPrepareShutdown.Broadcast();
 	}
-	CachedLevelsForNetworkIntialize.Empty();
 }
 
 void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
@@ -262,65 +290,22 @@ void USpatialGameInstance::HandleOnPlayerSpawnFailed(const FString& Reason)
 	OnSpatialPlayerSpawnFailed.Broadcast(Reason);
 }
 
-void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld)
+void USpatialGameInstance::OnLevelInitializedNetworkActors(ULevel* LoadedLevel, UWorld* OwningWorld) const
 {
-	if (OwningWorld != GetWorld()
-		|| !OwningWorld->IsServer()
-		|| !GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking()
-		|| (OwningWorld->WorldType != EWorldType::PIE
-			&& OwningWorld->WorldType != EWorldType::Game
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("OnLevelInitializedNetworkActors: Level (%s) OwningWorld (%s) World (%s)"),
+		   *GetNameSafe(LoadedLevel), *GetNameSafe(OwningWorld), *GetNameSafe(OwningWorld));
+
+	if (OwningWorld != GetWorld() || !OwningWorld->IsServer() || OwningWorld->GetNetDriver() == nullptr
+		|| !Cast<USpatialNetDriver>(OwningWorld->GetNetDriver())->IsReady()
+		|| (OwningWorld->WorldType != EWorldType::PIE && OwningWorld->WorldType != EWorldType::Game
 			&& OwningWorld->WorldType != EWorldType::GamePreview))
 	{
 		// We only want to do something if this is the correct process and we are on a spatial server, and we are in-game
 		return;
 	}
 
-	if (bIsSpatialNetDriverReady)
+	for (AActor* Actor : LoadedLevel->Actors)
 	{
-		CleanupLevelInitializedNetworkActors(LoadedLevel);
-	}
-	else
-	{
-		CachedLevelsForNetworkIntialize.Add(LoadedLevel);
-	}
-}
-
-void USpatialGameInstance::CleanupLevelInitializedNetworkActors(ULevel* LoadedLevel)
-{
-	bIsSpatialNetDriverReady = true;
-	for (int32 ActorIndex = 0; ActorIndex < LoadedLevel->Actors.Num(); ActorIndex++)
-	{
-		AActor* Actor = LoadedLevel->Actors[ActorIndex];
-		if (Actor == nullptr)
-		{
-			continue;
-		}
-
-		if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()))
-		{
-			if (!USpatialStatics::IsActorGroupOwnerForActor(Actor))
-			{
-				if (!Actor->bNetLoadOnNonAuthServer)
-				{
-					Actor->Destroy(true);
-				}
-				else
-				{
-					UE_LOG(LogSpatialGameInstance, Verbose, TEXT("This worker %s is not the owner of startup actor %s, exchanging Roles"), *GetPathNameSafe(Actor));
-					ENetRole Temp = Actor->Role;
-					Actor->Role = Actor->RemoteRole;
-					Actor->RemoteRole = Temp;
-				}
-			}
-		}
-		else
-		{
-			if (Actor->GetIsReplicated())
-			{
-				// Always wait for authority to be delegated down from SpatialOS, if not using offloading
-				Actor->Role = ROLE_SimulatedProxy;
-				Actor->RemoteRole = ROLE_Authority;
-			}
-		}
+		GlobalStateManager->HandleActorBasedOnLoadBalancer(Actor);
 	}
 }

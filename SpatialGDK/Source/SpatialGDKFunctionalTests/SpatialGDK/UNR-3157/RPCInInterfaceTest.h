@@ -15,9 +15,9 @@ class SPATIALGDKFUNCTIONALTESTS_API ARPCInInterfaceTest : public ASpatialFunctio
 public:
 	ARPCInInterfaceTest();
 
-	virtual void BeginPlay() override;
+	virtual void PrepareTest() override;
 
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;	
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
 	float StepTimer = 0.0f;

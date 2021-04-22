@@ -2,9 +2,9 @@
 
 #include "SpatialGDKEditorSettings.h"
 
+#include "ISettingsModule.h"
 #include "Interfaces/ITargetPlatformManagerModule.h"
 #include "Internationalization/Regex.h"
-#include "ISettingsModule.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
@@ -39,28 +39,30 @@ const FString& FRuntimeVariantVersion::GetVersionForCloud() const
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, bShowSpatialServiceButton(false)
-	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
-	, RuntimeVariant(ESpatialOSRuntimeVariant::Standard)
 	, StandardRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedStandardVersion)
-	, CompatibilityModeRuntimeVersion(SpatialGDKServicesConstants::SpatialOSRuntimePinnedCompatbilityModeVersion)
+	, bShutdownRuntimeGracefullyOnPIEExit(true)
+	, bUseGDKPinnedInspectorVersion(true)
+	, InspectorVersionOverride(TEXT(""))
 	, ExposedRuntimeIP(TEXT(""))
-	, bStopLocalDeploymentOnEndPIE(false)
-	, bStopSpatialOnExit(false)
 	, bAutoStartLocalDeployment(true)
+	, bSpatialDebuggerEditorEnabled(false)
+	, AutoStopLocalDeployment(EAutoStopLocalDeploymentMode::OnEndPIE)
+	, bDeleteDynamicEntities(false)
+	, bStopPIEOnTestingCompleted(true)
 	, CookAndGeneratePlatform("")
 	, CookAndGenerateAdditionalArguments("-cookall -unversioned")
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
 	, bIsAutoGenerateCloudConfigEnabled(true)
-	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
+	, SimulatedPlayerLaunchConfigPath(FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT(
+		  "SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")))
 	, bBuildAndUploadAssembly(true)
 	, AssemblyBuildConfiguration(TEXT("Development"))
 	, bConnectServerToCloud(false)
 	, LocalReceptionistPort(SpatialConstants::DEFAULT_SERVER_RECEPTIONIST_PROXY_PORT)
 	, ListeningAddress(SpatialConstants::LOCAL_HOST)
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
-	, bPackageMobileCommandLineArgs(false)
+	, bPackageMobileCommandLineArgs(true)
 	, bStartPIEClientsWithLocalLaunchOnDevice(false)
 	, SpatialOSNetFlowType(ESpatialOSNetFlow::LocalDeployment)
 {
@@ -68,18 +70,28 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	SpatialOSSnapshotToSave = GetSpatialOSSnapshotToSave();
 	SpatialOSSnapshotToLoad = GetSpatialOSSnapshotToLoad();
 	SnapshotPath.FilePath = GetSpatialOSSnapshotToSavePath();
+
+	// TODO: UNR-4472 - Remove this WorkerTypeName renaming when refactoring FLaunchConfigDescription.
+	// Force update users settings in-case they have a bad server worker name saved.
+	LaunchConfigDesc.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 }
 
 FRuntimeVariantVersion& USpatialGDKEditorSettings::GetRuntimeVariantVersion(ESpatialOSRuntimeVariant::Type Variant)
 {
-	switch (Variant)
-	{
-	case ESpatialOSRuntimeVariant::CompatibilityMode:
-		return CompatibilityModeRuntimeVersion;
-	default:
-		return StandardRuntimeVersion;
-	}
+	return StandardRuntimeVersion;
 }
+
+#if WITH_EDITOR
+bool USpatialGDKEditorSettings::CanEditChange(const FProperty* InProperty) const
+{
+	const bool bParentVal = Super::CanEditChange(InProperty);
+	if (InProperty->GetFName() == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, bDeleteDynamicEntities))
+	{
+		return bParentVal && AutoStopLocalDeployment != EAutoStopLocalDeploymentMode::OnEndPIE;
+	}
+	return bParentVal;
+}
+#endif
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
@@ -96,7 +108,7 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, RuntimeVariant))
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, StandardRuntimeVersion))
 	{
 		FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 		GDKServices.GetLocalDeploymentManager()->SetRedeployRequired();
@@ -116,6 +128,26 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 			// Reset IP to empty instead of keeping the invalid value.
 			SetExposedRuntimeIP(TEXT(""));
 			return;
+		}
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
+	{
+		// TODO: UNR-4472 - Remove this WorkerTypeName renaming when refactoring FLaunchConfigDescription.
+		// Force override the server worker name as it MUST be UnrealWorker.
+		LaunchConfigDesc.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
+
+		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FSpatialLaunchConfigDescription, RuntimeFlags))
+		{
+			USpatialGDKEditorSettings::TrimTMap(LaunchConfigDesc.RuntimeFlags);
+		}
+		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(FWorkerTypeLaunchSection, Flags))
+		{
+			USpatialGDKEditorSettings::TrimTMap(LaunchConfigDesc.ServerWorkerConfiguration.Flags);
+
+			for (auto& WorkerConfig : LaunchConfigDesc.AdditionalWorkerConfigs)
+			{
+				USpatialGDKEditorSettings::TrimTMap(WorkerConfig.Flags);
+			}
 		}
 	}
 }
@@ -245,6 +277,11 @@ void USpatialGDKEditorSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 	SaveConfig();
 }
 
+void USpatialGDKEditorSettings::SetSpatialDebuggerEditorEnabled(bool IsEnabled)
+{
+	bSpatialDebuggerEditorEnabled = IsEnabled;
+}
+
 void USpatialGDKEditorSettings::SetAutoGenerateCloudLaunchConfigEnabledState(bool IsEnabled)
 {
 	bIsAutoGenerateCloudConfigEnabled = IsEnabled;
@@ -327,7 +364,7 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 
 		if (!ConfigFile)
 		{
-			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Could not open configuration file %s"), *LaunchConfigPath);
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Configuration file is missing at path %s"), *LaunchConfigPath);
 			return false;
 		}
 
@@ -345,13 +382,13 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 	}
 
 	const TSharedPtr<FJsonObject>* LoadBalancingField;
-	if (!(*LaunchConfigJsonRootObject)->TryGetObjectField("load_balancing", LoadBalancingField))
+	if (!(*LaunchConfigJsonRootObject)->TryGetObjectField("loadBalancing", LoadBalancingField))
 	{
 		return false;
 	}
 
 	const TArray<TSharedPtr<FJsonValue>>* LayerConfigurations;
-	if (!(*LoadBalancingField)->TryGetArrayField("layer_configurations", LayerConfigurations))
+	if (!(*LoadBalancingField)->TryGetArrayField("layerConfigurations", LayerConfigurations))
 	{
 		return false;
 	}
@@ -365,8 +402,7 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 
 			// Check manual_worker_connection flag, if it exists.
 			if (LayerConfiguration->TryGetObjectField("options", OptionsField)
-			 && (*OptionsField)->TryGetBoolField("manual_worker_connection_only", ManualWorkerConnectionFlag)
-			 && ManualWorkerConnectionFlag)
+				&& (*OptionsField)->TryGetBoolField("manualWorkerConnectionOnly", ManualWorkerConnectionFlag) && ManualWorkerConnectionFlag)
 			{
 				FString WorkerName;
 				if (LayerConfiguration->TryGetStringField("layer", WorkerName))
@@ -375,7 +411,8 @@ bool USpatialGDKEditorSettings::IsManualWorkerConnectionSet(const FString& Launc
 				}
 				else
 				{
-					UE_LOG(LogSpatialEditorSettings, Error, TEXT("Invalid configuration file %s, Layer configuration missing its layer field"), *LaunchConfigPath);
+					UE_LOG(LogSpatialEditorSettings, Error,
+						   TEXT("Invalid configuration file %s, Layer configuration missing its layer field"), *LaunchConfigPath);
 				}
 			}
 		}
@@ -399,7 +436,8 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	}
 	if (!IsDeploymentNameValid(PrimaryDeploymentName))
 	{
-		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint.ToString());
+		UE_LOG(LogSpatialEditorSettings, Error, TEXT("Deployment name is invalid. %s"),
+			   *SpatialConstants::DeploymentPatternHint.ToString());
 		bValid = false;
 	}
 	if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
@@ -422,7 +460,8 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 	{
 		if (!IsDeploymentNameValid(SimulatedPlayerDeploymentName))
 		{
-			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. %s"), *SpatialConstants::DeploymentPatternHint.ToString());
+			UE_LOG(LogSpatialEditorSettings, Error, TEXT("Simulated player deployment name is invalid. %s"),
+				   *SpatialConstants::DeploymentPatternHint.ToString());
 			bValid = false;
 		}
 		if (!IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode))
@@ -437,10 +476,18 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		}
 	}
 
+	return bValid;
+}
+
+bool USpatialGDKEditorSettings::CheckManualWorkerConnectionOnLaunch() const
+{
 	TArray<FString> WorkersManuallyLaunched;
 	if (IsManualWorkerConnectionSet(GetPrimaryLaunchConfigPath(), WorkersManuallyLaunched))
 	{
-		FString WorkersReportString (LOCTEXT("AllowManualWorkerConnection", "Chosen launch configuration will not automatically launch the following worker types. Do you want to continue?\n").ToString());
+		FString WorkersReportString(
+			LOCTEXT("AllowManualWorkerConnection",
+					"Chosen launch configuration will not automatically launch the following worker types. Do you want to continue?\n")
+				.ToString());
 
 		for (const FString& Worker : WorkersManuallyLaunched)
 		{
@@ -453,7 +500,7 @@ bool USpatialGDKEditorSettings::IsDeploymentConfigurationValid() const
 		}
 	}
 
-	return bValid;
+	return true;
 }
 
 void USpatialGDKEditorSettings::SetDevelopmentAuthenticationToken(const FString& Token)
@@ -492,6 +539,15 @@ FString USpatialGDKEditorSettings::GetCookAndGenerateSchemaTargetPlatform() cons
 	return FPlatformProcess::GetBinariesSubdirectory();
 }
 
+void USpatialGDKEditorSettings::TrimTMap(TMap<FString, FString>& Map)
+{
+	for (auto& Flag : Map)
+	{
+		Flag.Key.TrimStartAndEndInline();
+		Flag.Value.TrimStartAndEndInline();
+	}
+}
+
 const FString& FSpatialLaunchConfigDescription::GetTemplate() const
 {
 	if (bUseDefaultTemplateForRuntimeVariant)
@@ -504,27 +560,13 @@ const FString& FSpatialLaunchConfigDescription::GetTemplate() const
 
 const FString& FSpatialLaunchConfigDescription::GetDefaultTemplateForRuntimeVariant() const
 {
-	switch (GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSRuntimeVariant())
+	if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
 	{
-	case ESpatialOSRuntimeVariant::CompatibilityMode:
-		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
-		{
-			return SpatialGDKServicesConstants::PinnedChinaCompatibilityModeRuntimeTemplate;
-		}
-		else
-		{
-			return SpatialGDKServicesConstants::PinnedCompatibilityModeRuntimeTemplate;
-		}
-	default:
-		if (GetDefault<USpatialGDKSettings>()->IsRunningInChina())
-		{
-			return SpatialGDKServicesConstants::PinnedChinaStandardRuntimeTemplate;
-		}
-		else
-		{
-			return SpatialGDKServicesConstants::PinnedStandardRuntimeTemplate;
-		}
+		return SpatialGDKServicesConstants::PinnedChinaStandardRuntimeTemplate;
+	}
+	else
+	{
+		return SpatialGDKServicesConstants::PinnedStandardRuntimeTemplate;
 	}
 }
-
 #undef LOCTEXT_NAMESPACE

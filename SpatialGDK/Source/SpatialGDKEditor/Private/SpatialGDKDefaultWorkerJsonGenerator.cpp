@@ -2,22 +2,22 @@
 
 #include "SpatialGDKDefaultWorkerJsonGenerator.h"
 
-#include "SpatialGDKSettings.h"
 #include "SpatialGDKServicesConstants.h"
+#include "SpatialGDKSettings.h"
 
 #include "Misc/FileHelper.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKDefaultWorkerJsonGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKDefaultWorkerJsonGenerator"
 
-bool GenerateDefaultWorkerJson(const FString& JsonPath, const FString& WorkerTypeName, bool& bOutRedeployRequired)
+bool GenerateDefaultWorkerJson(const FString& JsonPath, bool& bOutRedeployRequired)
 {
-	const FString TemplateWorkerJsonPath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Extras/templates/WorkerJsonTemplate.json"));
+	const FString TemplateWorkerJsonPath =
+		FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Extras/templates/WorkerJsonTemplate.json"));
 
 	FString Contents;
 	if (FFileHelper::LoadFileToString(Contents, *TemplateWorkerJsonPath))
 	{
-		Contents.ReplaceInline(TEXT("{{WorkerTypeName}}"), *WorkerTypeName);
 		if (FFileHelper::SaveStringToFile(Contents, *JsonPath))
 		{
 			bOutRedeployRequired = true;
@@ -32,7 +32,8 @@ bool GenerateDefaultWorkerJson(const FString& JsonPath, const FString& WorkerTyp
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Error, TEXT("Failed to read default worker json template at %s"), *TemplateWorkerJsonPath)
+		UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Error, TEXT("Failed to read default worker json template at %s"),
+			   *TemplateWorkerJsonPath)
 	}
 
 	return false;
@@ -45,15 +46,19 @@ bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired)
 
 	if (const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>())
 	{
-		const FName& Worker = SpatialConstants::DefaultServerWorkerType;
-		FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.ToString()));
-		if (!FPaths::FileExists(JsonPath))
+		const FName WorkerTypes[] = { SpatialConstants::DefaultServerWorkerType, SpatialConstants::RoutingWorkerType,
+									  SpatialConstants::StrategyWorkerType };
+		for (auto Worker : WorkerTypes)
 		{
-			UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
-
-			if (!GenerateDefaultWorkerJson(JsonPath, Worker.ToString(), bOutRedeployRequired))
+			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.ToString()));
+			if (!FPaths::FileExists(JsonPath))
 			{
-				bAllJsonsGeneratedSuccessfully = false;
+				UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
+
+				if (!GenerateDefaultWorkerJson(JsonPath, bOutRedeployRequired))
+				{
+					bAllJsonsGeneratedSuccessfully = false;
+				}
 			}
 		}
 

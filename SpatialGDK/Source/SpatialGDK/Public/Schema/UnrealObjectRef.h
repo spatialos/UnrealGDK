@@ -17,7 +17,8 @@ struct SPATIALGDK_API FUnrealObjectRef
 	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset)
 		: Entity(Entity)
 		, Offset(Offset)
-	{}
+	{
+	}
 
 	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset, FString Path, FUnrealObjectRef Outer, bool bNoLoadOnClient = false)
 		: Entity(Entity)
@@ -25,14 +26,12 @@ struct SPATIALGDK_API FUnrealObjectRef
 		, Path(Path)
 		, Outer(Outer)
 		, bNoLoadOnClient(bNoLoadOnClient)
-	{}
+	{
+	}
 
 	FUnrealObjectRef& operator=(const FUnrealObjectRef&) = default;
 
-	FORCEINLINE FString ToString() const
-	{
-		return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"), Entity, Offset);
-	}
+	FORCEINLINE FString ToString() const { return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"), Entity, Offset); }
 
 	FORCEINLINE FUnrealObjectRef GetLevelReference() const
 	{
@@ -53,23 +52,16 @@ struct SPATIALGDK_API FUnrealObjectRef
 
 	FORCEINLINE bool operator==(const FUnrealObjectRef& Other) const
 	{
-		return Entity == Other.Entity &&
-			Offset == Other.Offset &&
-			((!Path && !Other.Path) || (Path && Other.Path && Path->Equals(*Other.Path))) &&
-			((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer)) &&
-			// Intentionally don't compare bNoLoadOnClient since it does not affect equality.
-			bUseClassPathToLoadObject == Other.bUseClassPathToLoadObject;
+		return Entity == Other.Entity && Offset == Other.Offset
+			   && ((!Path && !Other.Path) || (Path && Other.Path && Path->Equals(*Other.Path)))
+			   && ((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer)) &&
+			   // Intentionally don't compare bNoLoadOnClient since it does not affect equality.
+			   bUseClassPathToLoadObject == Other.bUseClassPathToLoadObject;
 	}
 
-	FORCEINLINE bool operator!=(const FUnrealObjectRef& Other) const
-	{
-		return !operator==(Other);
-	}
+	FORCEINLINE bool operator!=(const FUnrealObjectRef& Other) const { return !operator==(Other); }
 
-	FORCEINLINE bool IsValid() const
-	{
-		return (*this != NULL_OBJECT_REF && *this != UNRESOLVED_OBJECT_REF);
-	}
+	FORCEINLINE bool IsValid() const { return (*this != NULL_OBJECT_REF && *this != UNRESOLVED_OBJECT_REF); }
 
 	static UObject* ToObjectPtr(const FUnrealObjectRef& ObjectRef, USpatialPackageMapClient* PackageMap, bool& bOutUnresolved);
 	static FSoftObjectPath ToSoftObjectPath(const FUnrealObjectRef& ObjectRef);

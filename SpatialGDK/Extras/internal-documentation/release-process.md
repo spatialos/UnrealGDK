@@ -7,7 +7,10 @@ This document outlines the process for releasing a version of the GDK for Unreal
 * **Previous GDK version** is the version of the SpatialOS GDK for Unreal that is currently at HEAD of the `release` branch. You can find out what this version is [here](https://github.com/spatialos/UnrealGDK/releases).
 
 ## Release
-1. Notify `#dev-unreal-internal` that you intend to commence a release. Ask if anyone `@here` knows of any blocking defects in code or documentation that should be resolved prior to commencement of the release process.
+1. Before you start working towards a release, ask product and engineering management to define it, so that all stakeholders are on the same page. They should use [this template](https://brevi.link/justify-your-release).
+1. Check [this filter](https://improbableio.atlassian.net/issues/?filter=-1&jql=project%20%3D%20UNR%20AND%20priority%20%3D%20Blocker%20AND%20resolution%20%3D%20Unresolved%20order%20by%20updated%20DESC&atlOrigin=eyJpIjoiMDk0ZDY1ZWY5OGEzNDUyNzg2YjVjZjg5ZWI0YzRiNDMiLCJwIjoiaiJ9) for unresolved blockers in the UNR Jira Project. All blockers must be resolved prior to the creation of the release candidate.
+1. Notify `#unreal-eng-safespace` that you intend to commence a release. Ask if anyone `@here` knows of any blocking defects in code or documentation that should be resolved prior to commencement of the release process.
+1. Notify `@techwriters` in #docs that they may commence their [CHANGELOG review process](https://improbableio.atlassian.net/l/c/4FsZzbHk).
 1. If nobody objects to the release, navigate to [unrealgdk-release](https://buildkite.com/improbable/unrealgdk-release/) and select the New Build button.
 1. In the Message field type "Releasing [GDK release version]".
 1. The "Commit" field is prepopulated with `HEAD`, leave it as is.

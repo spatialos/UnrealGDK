@@ -11,11 +11,13 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#include "SpatialView/ComponentData.h"
+#include "SpatialView/ComponentUpdate.h"
+
 using StringToEntityMap = TMap<FString, Worker_EntityId>;
 
 namespace SpatialGDK
 {
-
 inline void AddStringToSchema(Schema_Object* Object, Schema_FieldId Id, const FString& Value)
 {
 	FTCHARToUTF8 CStrConversion(*Value);
@@ -64,52 +66,6 @@ inline TArray<uint8> IndexBytesFromSchema(const Schema_Object* Object, Schema_Fi
 inline TArray<uint8> GetBytesFromSchema(const Schema_Object* Object, Schema_FieldId Id)
 {
 	return IndexBytesFromSchema(Object, Id, 0);
-}
-
-inline void AddWorkerRequirementSetToSchema(Schema_Object* Object, Schema_FieldId Id, const WorkerRequirementSet& Value)
-{
-	Schema_Object* RequirementSetObject = Schema_AddObject(Object, Id);
-	for (const WorkerAttributeSet& AttributeSet : Value)
-	{
-		Schema_Object* AttributeSetObject = Schema_AddObject(RequirementSetObject, 1);
-
-		for (const FString& Attribute : AttributeSet)
-		{
-			AddStringToSchema(AttributeSetObject, 1, Attribute);
-		}
-	}
-}
-
-inline WorkerRequirementSet IndexWorkerRequirementSetFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
-{
-	Schema_Object* RequirementSetObject = Schema_IndexObject(Object, Id, Index);
-
-	int32 AttributeSetCount = (int32)Schema_GetObjectCount(RequirementSetObject, 1);
-	WorkerRequirementSet RequirementSet;
-	RequirementSet.Reserve(AttributeSetCount);
-
-	for (int32 i = 0; i < AttributeSetCount; i++)
-	{
-		Schema_Object* AttributeSetObject = Schema_IndexObject(RequirementSetObject, 1, i);
-
-		int32 AttributeCount = (int32)Schema_GetBytesCount(AttributeSetObject, 1);
-		WorkerAttributeSet AttributeSet;
-		AttributeSet.Reserve(AttributeCount);
-
-		for (int32 j = 0; j < AttributeCount; j++)
-		{
-			AttributeSet.Add(IndexStringFromSchema(AttributeSetObject, 1, j));
-		}
-
-		RequirementSet.Add(AttributeSet);
-	}
-
-	return RequirementSet;
-}
-
-inline WorkerRequirementSet GetWorkerRequirementSetFromSchema(Schema_Object* Object, Schema_FieldId Id)
-{
-	return IndexWorkerRequirementSetFromSchema(Object, Id, 0);
 }
 
 inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const FUnrealObjectRef& ObjectRef)
@@ -226,7 +182,7 @@ inline FRotator GetRotatorFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
 	return IndexRotatorFromSchema(Object, Id, 0);
 }
-	
+
 inline void AddVectorToSchema(Schema_Object* Object, Schema_FieldId Id, FVector Vector)
 {
 	Schema_Object* VectorObject = Schema_AddObject(Object, Id);
@@ -257,5 +213,25 @@ inline FVector GetVectorFromSchema(Schema_Object* Object, Schema_FieldId Id)
 // Generates the full path from an ObjectRef, if it has paths. Writes the result to OutPath.
 // Does not clear OutPath first.
 void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath);
+
+template <typename TComponent>
+ComponentUpdate CreateComponentUpdateHelper(const TComponent& Component)
+{
+	ComponentUpdate Update(TComponent::ComponentId);
+	Schema_Object* ComponentObject = Update.GetFields();
+	Component.WriteSchema(ComponentObject);
+	return Update;
+}
+
+template <typename TComponent>
+ComponentData CreateComponentDataHelper(const TComponent& Component)
+{
+	ComponentData Data(TComponent::ComponentId);
+	Schema_Object* ComponentObject = Data.GetFields();
+
+	Component.WriteSchema(ComponentObject);
+
+	return Data;
+}
 
 } // namespace SpatialGDK

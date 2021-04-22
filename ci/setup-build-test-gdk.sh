@@ -17,7 +17,28 @@ pushd "$(dirname "$0")"
     TEST_REPO_URL="git@github.com:spatialos/UnrealGDKTestGyms.git"
     TEST_REPO_MAP="EmptyGym"
     TEST_PROJECT_NAME="GDKTestGyms"
-    CHOSEN_TEST_REPO_BRANCH="${TEST_REPO_BRANCH:-master}"
+
+    # Resolve the TestGym branch to run against. The order of priority is:
+    # TEST_REPO_BRANCH envvar > same-name branch as the branch we are currently on > UnrealGDKTestGymsVersion.txt > "master".
+    TEST_REPO_BRANCH_LOCAL="${TEST_REPO_BRANCH:-}"
+    if [ -z "${TEST_REPO_BRANCH_LOCAL}" ]; then
+        TEST_REPO_HEADS=$(git ls-remote --heads "${TEST_REPO_URL}" "${BUILDKITE_BRANCH}")
+        GDK_REPO_HEAD="refs/heads/${BUILDKITE_BRANCH}"
+        if echo "${TEST_REPO_HEADS}" | grep -qF "${GDK_REPO_HEAD}"; then
+            TEST_REPO_BRANCH_LOCAL="${BUILDKITE_BRANCH}"
+        else
+            # This is a slight hack, we rely on the fact that this version should work even if it's not the TestGym repo
+            # (also currently this script only operates on the TestGym repo)
+            TESTGYM_VERSION=$(cat "${GDK_HOME}/UnrealGDKTestGymsVersion.txt")
+            if [ -z "${TESTGYM_VERSION}" ]; then
+                TEST_REPO_BRANCH_LOCAL="master"
+            else
+                TEST_REPO_BRANCH_LOCAL="${TESTGYM_VERSION}"
+            fi
+        fi
+    fi
+
+    CHOSEN_TEST_REPO_BRANCH="${TEST_REPO_BRANCH_LOCAL}"
 
     # Download Unreal Engine
     echo "--- get-unreal-engine"
@@ -51,7 +72,7 @@ pushd "$(dirname "$0")"
         "${UPROJECT_PATH}" \
         "TestResults" \
         "${TEST_REPO_MAP}" \
-        "SpatialGDK." \
+        "SpatialGDK.+/Game/Intermediate/Maps/CI_Premerge/+/Game/Intermediate/Maps/CI_Premerge_Spatial_Only/" \
         "True"
 
     if [[ -n "${SLOW_NETWORKING_TESTS}" ]]; then
@@ -62,7 +83,7 @@ pushd "$(dirname "$0")"
             "${UPROJECT_PATH}" \
             "SlowTestResults" \
             "${TEST_REPO_MAP}" \
-            "SpatialGDKSlow." \
+            "SpatialGDKSlow.+/Game/Intermediate/Maps/CI_Nightly/+/Game/Intermediate/Maps/CI_Nightly_Spatial_Only/" \
             "True"
     fi
 popd

@@ -1,0 +1,24 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+// System query tags for entity completeness
+
+component ActorAuthTag {
+    id = 2001;
+}
+
+component ActorTag {
+    id = 2002;
+}
+
+component LBTag {
+    id = 2005;
+}
+
+component GDKKnownEntityTag {
+    id = 2007;
+}
+
+component RoutingWorkerEntityTag {
+    id = 2009;
+}

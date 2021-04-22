@@ -10,9 +10,9 @@
  * functionality of Unreal given the spatial class info manager.
  *
  * There are three different ways to generate the checkout radius constraint. The default is legacy NCD interest.
- * This generates a disjunct of radius bucket queries where each spatial bucket is conjoined with all the components representing the actors with that
- * net cull distance. There is also a minimum radius constraint which is not conjoined with any actor components. This is
- * set to the default NCD.
+ * This generates a disjunct of radius bucket queries where each spatial bucket is conjoined with all the components representing the actors
+ * with that net cull distance. There is also a minimum radius constraint which is not conjoined with any actor components. This is set to
+ * the default NCD.
  *
  * If bEnableNetCullDistanceInterest is true, instead each radius bucket generated will only be conjoined with a single
  * marker component representing that net cull distance interest. These marker components are added to entities which represent
@@ -30,29 +30,29 @@ DECLARE_LOG_CATEGORY_EXTERN(LogNetCullDistanceInterest, Log, All);
 
 namespace SpatialGDK
 {
-
 class SPATIALGDK_API NetCullDistanceInterest
 {
 public:
-
 	static FrequencyConstraints CreateCheckoutRadiusConstraints(USpatialClassInfoManager* InClassInfoManager);
 
 	// visible for testing
 	static TMap<float, TArray<UClass*>> DedupeDistancesAcrossActorTypes(const TMap<UClass*, float> ComponentSetToRadius);
 
 private:
-
 	static FrequencyConstraints CreateLegacyNetCullDistanceConstraint(USpatialClassInfoManager* InClassInfoManager);
 	static FrequencyConstraints CreateNetCullDistanceConstraint(USpatialClassInfoManager* InClassInfoManager);
 	static FrequencyConstraints CreateNetCullDistanceConstraintWithFrequency(USpatialClassInfoManager* InClassInfoManager);
 
 	static QueryConstraint GetDefaultCheckoutRadiusConstraint();
 	static TMap<UClass*, float> GetActorTypeToRadius();
-	static TArray<QueryConstraint> BuildNonDefaultActorCheckoutConstraints(const TMap<float, TArray<UClass*>> DistanceToActorTypes, USpatialClassInfoManager* ClassInfoManager);
+	static TArray<QueryConstraint> BuildNonDefaultActorCheckoutConstraints(const TMap<float, TArray<UClass*>> DistanceToActorTypes,
+																		   USpatialClassInfoManager* ClassInfoManager);
 	static float NetCullDistanceSquaredToSpatialDistance(float NetCullDistanceSquared);
 
-	static void AddToFrequencyConstraintMap(const float Frequency, const QueryConstraint& Constraint, FrequencyToConstraintsMap& OutFrequencyToConstraints);
-	static void AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint, USpatialClassInfoManager* ClassInfoManager);
+	static void AddToFrequencyConstraintMap(const float Frequency, const QueryConstraint& Constraint,
+											FrequencyToConstraintsMap& OutFrequencyToConstraints);
+	static void AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint,
+											 USpatialClassInfoManager* ClassInfoManager);
 };
 
 } // namespace SpatialGDK

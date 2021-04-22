@@ -3,7 +3,10 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialWorldSettings.h"
 #include "Utils/SpatialActorUtils.h"
+#include "Utils/SpatialStatics.h"
 
 #include "Templates/Tuple.h"
 
@@ -60,6 +63,11 @@ void UGridBasedLBStrategy::Init()
 	}
 }
 
+FString UGridBasedLBStrategy::ToString() const
+{
+	return TEXT("Grid");
+}
+
 void UGridBasedLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId)
 {
 	if (!VirtualWorkerIds.Contains(InLocalVirtualWorkerId))
@@ -85,7 +93,8 @@ bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 {
 	if (!IsReady())
 	{
-		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to relinquish authority for Actor %s."), *AActor::GetDebugName(&Actor));
+		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to relinquish authority for Actor %s."),
+			   *AActor::GetDebugName(&Actor));
 		return false;
 	}
 
@@ -94,7 +103,7 @@ bool UGridBasedLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 		return false;
 	}
 
-	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
+	const FVector2D Actor2DLocation = GetActorLoadBalancingPosition(Actor);
 	return IsInside(WorkerCells[LocalCellId], Actor2DLocation);
 }
 
@@ -102,44 +111,61 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 {
 	if (!IsReady())
 	{
-		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to decide on authority for Actor %s."), *AActor::GetDebugName(&Actor));
+		UE_LOG(LogGridBasedLBStrategy, Warning, TEXT("GridBasedLBStrategy not ready to decide on authority for Actor %s."),
+			   *AActor::GetDebugName(&Actor));
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
-	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
+	const FVector2D Actor2DLocation = GetActorLoadBalancingPosition(Actor);
 
 	check(VirtualWorkerIds.Num() == WorkerCells.Num());
 	for (int i = 0; i < WorkerCells.Num(); i++)
 	{
 		if (IsInside(WorkerCells[i], Actor2DLocation))
 		{
-			UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Actor: %s, grid %d, worker %d for position %s"), *AActor::GetDebugName(&Actor), i, VirtualWorkerIds[i], *Actor2DLocation.ToString());
+			UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Actor: %s, grid %d, worker %d for position %s"), *AActor::GetDebugName(&Actor), i,
+				   VirtualWorkerIds[i], *Actor2DLocation.ToString());
 			return VirtualWorkerIds[i];
 		}
 	}
 
-	UE_LOG(LogGridBasedLBStrategy, Error, TEXT("GridBasedLBStrategy couldn't determine virtual worker for Actor %s at position %s"), *AActor::GetDebugName(&Actor), *Actor2DLocation.ToString());
+	UE_LOG(LogGridBasedLBStrategy, Error, TEXT("GridBasedLBStrategy couldn't determine virtual worker for Actor %s at position %s"),
+		   *AActor::GetDebugName(&Actor), *Actor2DLocation.ToString());
 	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 }
 
-SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstraint() const
+SpatialGDK::FActorLoadBalancingGroupId UGridBasedLBStrategy::GetActorGroupId(const AActor& Actor) const
 {
-	// For a grid-based strategy, the interest area is the cell that the worker is authoritative over plus some border region.
-	check(IsReady());
-	check(bIsStrategyUsedOnLocalWorker);
+	return 0;
+}
 
-	const FBox2D Interest2D = WorkerCells[LocalCellId].ExpandBy(InterestBorder);
+SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
+{
+	const int32 WorkerCell = VirtualWorkerIds.IndexOfByKey(VirtualWorker);
+	checkf(WorkerCell != INDEX_NONE,
+		   TEXT("Tried to get worker interest query from a GridBasedLBStrategy with an unknown virtual worker ID. "
+				"Virtual worker: %d"),
+		   VirtualWorker);
+
+	// For a grid-based strategy, the interest area is the cell that the worker is authoritative over plus some border region.
+	const FBox2D Interest2D = WorkerCells[WorkerCell].ExpandBy(InterestBorder);
 
 	const FVector2D Center2D = Interest2D.GetCenter();
-	const FVector Center3D{ Center2D.X, Center2D.Y, 0.0f};
+	const FVector Center3D{ Center2D.X, Center2D.Y, 0.0f };
 
 	const FVector2D EdgeLengths2D = Interest2D.GetSize();
 	check(EdgeLengths2D.X > 0.0f && EdgeLengths2D.Y > 0.0f);
-	const FVector EdgeLengths3D{ EdgeLengths2D.X, EdgeLengths2D.Y, FLT_MAX};
+	const FVector EdgeLengths3D{ EdgeLengths2D.X, EdgeLengths2D.Y, FLT_MAX };
 
 	SpatialGDK::QueryConstraint Constraint;
-	Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D), SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
+	Constraint.BoxConstraint =
+		SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D), SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
 	return Constraint;
+}
+
+FVector2D UGridBasedLBStrategy::GetActorLoadBalancingPosition(const AActor& Actor) const
+{
+	return FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
 }
 
 FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const
@@ -158,7 +184,8 @@ uint32 UGridBasedLBStrategy::GetMinimumRequiredWorkers() const
 void UGridBasedLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId)
 {
 	UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Setting VirtualWorkerIds %d to %d"), FirstVirtualWorkerId, LastVirtualWorkerId);
-	for (VirtualWorkerId CurrentVirtualWorkerId = FirstVirtualWorkerId; CurrentVirtualWorkerId <= LastVirtualWorkerId; CurrentVirtualWorkerId++)
+	for (VirtualWorkerId CurrentVirtualWorkerId = FirstVirtualWorkerId; CurrentVirtualWorkerId <= LastVirtualWorkerId;
+		 CurrentVirtualWorkerId++)
 	{
 		VirtualWorkerIds.Add(CurrentVirtualWorkerId);
 	}
@@ -166,8 +193,7 @@ void UGridBasedLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtu
 
 bool UGridBasedLBStrategy::IsInside(const FBox2D& Box, const FVector2D& Location)
 {
-	return Location.X >= Box.Min.X && Location.Y >= Box.Min.Y
-		&& Location.X < Box.Max.X && Location.Y < Box.Max.Y;
+	return Location.X >= Box.Min.X && Location.Y >= Box.Min.Y && Location.X < Box.Max.X && Location.Y < Box.Max.Y;
 }
 
 UGridBasedLBStrategy::LBStrategyRegions UGridBasedLBStrategy::GetLBStrategyRegions() const
@@ -181,3 +207,40 @@ UGridBasedLBStrategy::LBStrategyRegions UGridBasedLBStrategy::GetLBStrategyRegio
 	}
 	return VirtualWorkerToCell;
 }
+
+#if WITH_EDITOR
+void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	if (PropertyChangedEvent.Property != nullptr)
+	{
+		const FName PropertyName(PropertyChangedEvent.Property->GetFName());
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, Rows)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, Cols)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldWidth)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(UGridBasedLBStrategy, WorldHeight))
+		{
+			const UWorld* World = GEditor->GetEditorWorldContext().World();
+			check(World != nullptr);
+
+			const UAbstractSpatialMultiWorkerSettings* MultiWorkerSettings =
+				USpatialStatics::GetSpatialMultiWorkerClass(World)->GetDefaultObject<UAbstractSpatialMultiWorkerSettings>();
+
+			for (const FLayerInfo WorkerLayer : MultiWorkerSettings->WorkerLayers)
+			{
+				if (WorkerLayer.Name == SpatialConstants::DefaultLayer)
+				{
+					const TSubclassOf<UAbstractLBStrategy> VisibleLoadBalanceStrategy = WorkerLayer.LoadBalanceStrategy;
+
+					if (VisibleLoadBalanceStrategy != nullptr && VisibleLoadBalanceStrategy == GetClass())
+					{
+						ASpatialWorldSettings::EditorRefreshSpatialDebugger();
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+#endif // WITH_EDITOR

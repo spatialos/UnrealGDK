@@ -5,7 +5,6 @@
 
 namespace SpatialGDK
 {
-
 ComponentData::ComponentData(Worker_ComponentId Id)
 	: ComponentId(Id)
 	, Data(Schema_CreateComponentData())
@@ -40,7 +39,10 @@ bool ComponentData::ApplyUpdate(const ComponentUpdate& Update)
 	check(Update.GetComponentId() == GetComponentId());
 	check(Update.GetUnderlying() != nullptr);
 
-	return Schema_ApplyComponentUpdateToData(Update.GetUnderlying(), Data.Get()) != 0;
+	const bool bUpdateResult = Schema_ApplyComponentUpdateToData(Update.GetUnderlying(), Data.Get()) != 0;
+	// Copy the component to prevent unbounded memory growth from appending the update to it.
+	Data = OwningComponentDataPtr(Schema_CopyComponentData(Data.Get()));
+	return bUpdateResult;
 }
 
 Schema_Object* ComponentData::GetFields() const
@@ -58,7 +60,7 @@ Schema_ComponentData* ComponentData::GetUnderlying() const
 Worker_ComponentData ComponentData::GetWorkerComponentData() const
 {
 	check(Data.IsValid());
-	return {nullptr, ComponentId, Data.Get(), nullptr};
+	return { nullptr, ComponentId, Data.Get(), nullptr };
 }
 
 Worker_ComponentId ComponentData::GetComponentId() const

@@ -5,8 +5,8 @@
 #include "SpatialGDKDefaultLaunchConfigGenerator.h"
 #include "SpatialGDKSettings.h"
 
-#include "Editor.h"
 #include "DesktopPlatformModule.h"
+#include "Editor.h"
 #include "Framework/Application/SlateApplication.h"
 #include "IDesktopPlatform.h"
 #include "MainFrame/Public/Interfaces/IMainFrameModule.h"
@@ -31,12 +31,27 @@ void ULaunchConfigurationEditor::PostInitProperties()
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	LaunchConfiguration = SpatialGDKEditorSettings->LaunchConfigDesc;
-	LaunchConfiguration.ServerWorkerConfig.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+	LaunchConfiguration.ServerWorkerConfiguration.NumEditorInstances = GetWorkerCountFromWorldSettings(*EditorWorld);
+}
+
+void ULaunchConfigurationEditor::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	// Use MemberProperty here so we report the correct member name for nested changes
+	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
+
+	if (Name == GET_MEMBER_NAME_CHECKED(ULaunchConfigurationEditor, LaunchConfiguration))
+	{
+		// TODO: UNR-4472 - Remove this WorkerTypeName renaming when refactoring FLaunchConfigDescription.
+		// Force override the server worker name as it MUST be UnrealWorker.
+		LaunchConfiguration.ServerWorkerConfiguration.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
+	}
 }
 
 void ULaunchConfigurationEditor::SaveConfiguration()
 {
-	if (!ValidateGeneratedLaunchConfig(LaunchConfiguration, LaunchConfiguration.ServerWorkerConfig))
+	if (!ValidateGeneratedLaunchConfig(LaunchConfiguration))
 	{
 		return;
 	}
@@ -46,18 +61,13 @@ void ULaunchConfigurationEditor::SaveConfiguration()
 	FString DefaultOutPath = SpatialGDKServicesConstants::SpatialOSDirectory;
 	TArray<FString> Filenames;
 
-	bool bSaved = DesktopPlatform->SaveFileDialog(
-		FSlateApplication::Get().FindBestParentWindowHandleForDialogs(nullptr),
-		TEXT("Save launch configuration"),
-		DefaultOutPath,
-		TEXT(""),
-		TEXT("JSON Configuration|*.json"),
-		EFileDialogFlags::None,
-		Filenames);
+	bool bSaved = DesktopPlatform->SaveFileDialog(FSlateApplication::Get().FindBestParentWindowHandleForDialogs(nullptr),
+												  TEXT("Save launch configuration"), DefaultOutPath, TEXT(""),
+												  TEXT("JSON Configuration|*.json"), EFileDialogFlags::None, Filenames);
 
 	if (bSaved && Filenames.Num() > 0)
 	{
-		if (GenerateLaunchConfig(Filenames[0], &LaunchConfiguration, LaunchConfiguration.ServerWorkerConfig))
+		if (GenerateLaunchConfig(Filenames[0], &LaunchConfiguration, bIsCloudConfiguration))
 		{
 			OnConfigurationSaved.ExecuteIfBound(Filenames[0]);
 		}
@@ -66,40 +76,40 @@ void ULaunchConfigurationEditor::SaveConfiguration()
 
 namespace
 {
-	// Copied from FPropertyEditorModule::CreateFloatingDetailsView.
-	bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveTemplate)
-	{
-		const GDK_PROPERTY(Property)& Property = PropertyAndParent.Property;
+// Copied from FPropertyEditorModule::CreateFloatingDetailsView.
+bool ShouldShowProperty(const FPropertyAndParent& PropertyAndParent, bool bHaveTemplate)
+{
+	const GDK_PROPERTY(Property)& Property = PropertyAndParent.Property;
 
-		if (bHaveTemplate)
-		{
+	if (bHaveTemplate)
+	{
 #if ENGINE_MINOR_VERSION <= 24
-			const UClass* PropertyOwnerClass = Cast<const UClass>(Property.GetOuter());
+		const UClass* PropertyOwnerClass = Cast<const UClass>(Property.GetOuter());
 #else
-			const UClass* PropertyOwnerClass = Property.GetOwner<const UClass>();
+		const UClass* PropertyOwnerClass = Property.GetOwner<const UClass>();
 #endif
-			const bool bDisableEditOnTemplate = PropertyOwnerClass
-				&& PropertyOwnerClass->IsNative()
-				&& Property.HasAnyPropertyFlags(CPF_DisableEditOnTemplate);
-			if (bDisableEditOnTemplate)
-			{
-				return false;
-			}
+		const bool bDisableEditOnTemplate =
+			PropertyOwnerClass && PropertyOwnerClass->IsNative() && Property.HasAnyPropertyFlags(CPF_DisableEditOnTemplate);
+		if (bDisableEditOnTemplate)
+		{
+			return false;
 		}
-		return true;
 	}
-
-	FReply ExecuteEditorCommand(ULaunchConfigurationEditor* Instance, UFunction* MethodToExecute)
-	{
-		Instance->CallFunctionByNameWithArguments(*MethodToExecute->GetName(), *GLog, nullptr, true);
-
-		return FReply::Handled();
-	}
+	return true;
 }
+
+FReply ExecuteEditorCommand(ULaunchConfigurationEditor* Instance, UFunction* MethodToExecute)
+{
+	Instance->CallFunctionByNameWithArguments(*MethodToExecute->GetName(), *GLog, nullptr, true);
+
+	return FReply::Handled();
+}
+} // namespace
 
 void ULaunchConfigurationEditor::OpenModalWindow(TSharedPtr<SWindow> InParentWindow, OnLaunchConfigurationSaved InSaved)
 {
-	ULaunchConfigurationEditor* ObjectInstance = NewObject<ULaunchConfigurationEditor>(GetTransientPackage(), ULaunchConfigurationEditor::StaticClass());
+	ULaunchConfigurationEditor* ObjectInstance =
+		NewObject<ULaunchConfigurationEditor>(GetTransientPackage(), ULaunchConfigurationEditor::StaticClass());
 	ObjectInstance->AddToRoot();
 
 	FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
@@ -129,13 +139,7 @@ void ULaunchConfigurationEditor::OpenModalWindow(TSharedPtr<SWindow> InParentWin
 
 	DetailView->SetObjects(ObjectsToView);
 
-	TSharedRef<SVerticalBox> VBoxBuilder = SNew(SVerticalBox)
-		+ SVerticalBox::Slot()
-		.AutoHeight()
-		.FillHeight(1.0)
-		[
-			DetailView
-		];
+	TSharedRef<SVerticalBox> VBoxBuilder = SNew(SVerticalBox) + SVerticalBox::Slot().AutoHeight().FillHeight(1.0)[DetailView];
 
 	// Add UFunction marked Exec as buttons in the editor's window
 	for (TFieldIterator<UFunction> FuncIt(ULaunchConfigurationEditor::StaticClass()); FuncIt; ++FuncIt)
@@ -149,31 +153,19 @@ void ULaunchConfigurationEditor::OpenModalWindow(TSharedPtr<SWindow> InParentWin
 				.AutoHeight()
 				.VAlign(VAlign_Bottom)
 				.HAlign(HAlign_Right)
-				.Padding(2.0)
-				[
-					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot()
-					.AutoWidth()
-					.Padding(2.0)
-					[
-						SNew(SButton)
-						.Text(ButtonCaption)
-						.OnClicked(FOnClicked::CreateStatic(&ExecuteEditorCommand, ObjectInstance, Function))
-					]
-				];
+				.Padding(2.0)[SNew(SHorizontalBox)
+							  + SHorizontalBox::Slot().AutoWidth().Padding(
+								  2.0)[SNew(SButton)
+										   .Text(ButtonCaption)
+										   .OnClicked(FOnClicked::CreateStatic(&ExecuteEditorCommand, ObjectInstance, Function))]];
 		}
 	}
 
-	TSharedRef<SWindow> NewSlateWindow = SNew(SWindow)
-		.Title(LOCTEXT("LaunchConfigurationEditor_Title", "Launch Configuration Editor"))
-		.ClientSize(FVector2D(600, 400))
-		[
-			SNew(SBorder)
-			.BorderImage(FEditorStyle::GetBrush(TEXT("PropertyWindow.WindowBorder")))
-			[
-				VBoxBuilder
-			]
-		];
+	TSharedRef<SWindow> NewSlateWindow =
+		SNew(SWindow)
+			.Title(LOCTEXT("LaunchConfigurationEditor_Title", "Launch Configuration Editor"))
+			.ClientSize(
+				FVector2D(600, 400))[SNew(SBorder).BorderImage(FEditorStyle::GetBrush(TEXT("PropertyWindow.WindowBorder")))[VBoxBuilder]];
 
 	if (!InParentWindow.IsValid() && FModuleManager::Get().IsModuleLoaded("MainFrame"))
 	{

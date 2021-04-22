@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Component.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
@@ -10,31 +9,33 @@
 #include "Utils/SchemaUtils.h"
 
 #include "GameFramework/Actor.h"
-#include "UObject/UObjectHash.h"
-#include "UObject/Package.h"
-
-#include <WorkerSDK/improbable/c_schema.h>
-#include <WorkerSDK/improbable/c_worker.h>
 
 DEFINE_LOG_CATEGORY_STATIC(LogSpatialUnrealMetadata, Warning, All);
 
-using SubobjectToOffsetMap = TMap<UObject*, uint32>;
-
 namespace SpatialGDK
 {
-
-struct UnrealMetadata : Component
+struct UnrealMetadata : AbstractMutableComponent
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 
 	UnrealMetadata() = default;
 
-	UnrealMetadata(const TSchemaOption<FUnrealObjectRef>& InStablyNamedRef, const FString& InClassPath, const TSchemaOption<bool>& InbNetStartup)
-		: StablyNamedRef(InStablyNamedRef), ClassPath(InClassPath), bNetStartup(InbNetStartup) {}
-
-	UnrealMetadata(const Worker_ComponentData& Data)
+	UnrealMetadata(const TSchemaOption<FUnrealObjectRef>& InStablyNamedRef, const FString& InClassPath,
+				   const TSchemaOption<bool>& InbNetStartup)
+		: StablyNamedRef(InStablyNamedRef)
+		, ClassPath(InClassPath)
+		, bNetStartup(InbNetStartup)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	}
+
+	explicit UnrealMetadata(const Worker_ComponentData& Data)
+		: UnrealMetadata(Data.schema_type)
+	{
+	}
+
+	explicit UnrealMetadata(Schema_ComponentData* Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
 		if (Schema_GetObjectCount(ComponentObject, SpatialConstants::UNREAL_METADATA_STABLY_NAMED_REF_ID) == 1)
 		{
@@ -48,7 +49,7 @@ struct UnrealMetadata : Component
 		}
 	}
 
-	Worker_ComponentData CreateUnrealMetadataData()
+	Worker_ComponentData CreateComponentData() const override
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -83,13 +84,18 @@ struct UnrealMetadata : Component
 #endif
 		UClass* Class = FindObject<UClass>(nullptr, *ClassPath, false);
 
-		// Unfortunately StablyNameRef doesn't mean NameStableForNetworking as we add a StablyNameRef for every startup actor (see USpatialSender::CreateEntity)
-		// TODO: UNR-2537 Investigate why FindObject can be used the first time the actor comes into view for a client but not subsequent loads.
+		// Unfortunately StablyNameRef doesn't mean NameStableForNetworking as we add a StablyNameRef for every startup actor (see
+		// USpatialSender::CreateEntity)
+		// TODO: UNR-2537 Investigate why FindObject can be used the first time the actor comes into view for a client but not subsequent
+		// loads.
 		if (Class == nullptr && !(StablyNamedRef.IsSet() && bNetStartup.IsSet() && bNetStartup.GetValue()))
 		{
 			if (GetDefault<USpatialGDKSettings>()->bAsyncLoadNewClassesOnEntityCheckout)
 			{
-				UE_LOG(LogSpatialUnrealMetadata, Warning, TEXT("Class couldn't be found even though async loading on entity checkout is enabled. Will attempt to load it synchronously. Class: %s"), *ClassPath);
+				UE_LOG(LogSpatialUnrealMetadata, Warning,
+					   TEXT("Class couldn't be found even though async loading on entity checkout is enabled. Will attempt to load it "
+							"synchronously. Class: %s"),
+					   *ClassPath);
 			}
 
 			Class = LoadObject<UClass>(nullptr, *ClassPath);
@@ -110,23 +116,5 @@ struct UnrealMetadata : Component
 
 	TWeakObjectPtr<UClass> NativeClass;
 };
-
-FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, const FClassInfo& Info)
-{
-	SubobjectToOffsetMap SubobjectNameToOffset;
-
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
-	{
-		UObject* Subobject = StaticFindObjectFast(UObject::StaticClass(), Actor, SubobjectInfoPair.Value->SubobjectName);
-		uint32 Offset = SubobjectInfoPair.Key;
-
-		if (Subobject != nullptr && Subobject->IsPendingKill() == false && Subobject->IsSupportedForNetworking())
-		{
-			SubobjectNameToOffset.Add(Subobject, Offset);
-		}
-	}
-
-	return SubobjectNameToOffset;
-}
 
 } // namespace SpatialGDK
