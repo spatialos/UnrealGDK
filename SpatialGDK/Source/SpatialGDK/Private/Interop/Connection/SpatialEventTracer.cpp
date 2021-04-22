@@ -170,18 +170,18 @@ void SpatialEventTracer::AddEntity(const Worker_AddEntityOp& Op, const FSpatialG
 {
 	Worker_EntityId EntityId = Op.entity_id;
 	TraceEvent(FSpatialTraceEventName::ReceiveCreateEntityEventName, "", SpanId.GetConstId(), 1,
-		[EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
-			EventBuilder.AddEntityId(EntityId);
-	});
+			   [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
+				   EventBuilder.AddEntityId(EntityId);
+			   });
 }
 
 void SpatialEventTracer::RemoveEntity(const Worker_RemoveEntityOp& Op, const FSpatialGDKSpanId& SpanId)
 {
 	Worker_EntityId EntityId = Op.entity_id;
 	TraceEvent(FSpatialTraceEventName::ReceiveRemoveEntityEventName, "", SpanId.GetConstId(), 1,
-		[EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
-			EventBuilder.AddEntityId(EntityId);
-	});
+			   [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
+				   EventBuilder.AddEntityId(EntityId);
+			   });
 }
 
 void SpatialEventTracer::AuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op, const FSpatialGDKSpanId& SpanId)
@@ -191,11 +191,11 @@ void SpatialEventTracer::AuthorityChange(const Worker_ComponentSetAuthorityChang
 	Worker_Authority Authority = static_cast<Worker_Authority>(Op.authority);
 
 	TraceEvent(FSpatialTraceEventName::AuthorityChangeEventName, "", SpanId.GetConstId(), 1,
-		[EntityId, ComponentSetId, Authority](FSpatialTraceEventDataBuilder& EventBuilder) {
-			EventBuilder.AddEntityId(EntityId);
-			EventBuilder.AddComponentId(ComponentSetId);
-			EventBuilder.AddAuthority(Authority);
-	});
+			   [EntityId, ComponentSetId, Authority](FSpatialTraceEventDataBuilder& EventBuilder) {
+				   EventBuilder.AddEntityId(EntityId);
+				   EventBuilder.AddComponentId(ComponentSetId);
+				   EventBuilder.AddAuthority(Authority);
+			   });
 }
 
 void SpatialEventTracer::AddComponent(const Worker_AddComponentOp& Op, const FSpatialGDKSpanId& SpanId)
@@ -288,9 +288,9 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 		const UObject* ObjectPtr = Object.Get();
 
 		*ExistingSpanId = TraceEvent(FSpatialTraceEventName::MergePropertyUpdateEventName, "", Causes, 2,
-			[ObjectPtr](FSpatialTraceEventDataBuilder& EventBuilder) {
-			EventBuilder.AddObject(ObjectPtr);
-		});
+									 [ObjectPtr](FSpatialTraceEventDataBuilder& EventBuilder) {
+										 EventBuilder.AddObject(ObjectPtr);
+									 });
 	}
 }
 

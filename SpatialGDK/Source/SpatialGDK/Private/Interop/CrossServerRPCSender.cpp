@@ -36,12 +36,12 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef InTargetObjectRef,
 	if (EventTracer)
 	{
 		EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForCrossServerRPC(InTargetObjectRef.Entity, UniqueRPCId);
-		SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::SendCrossServerRPCEventName, "", EventTracer->GetFromStack().GetConstId(), 1,
-			[TargetObject, Function, LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
-				EventBuilder.AddObject(TargetObject);
-				EventBuilder.AddFunction(Function);
-				EventBuilder.AddLinearTraceId(LinearTraceId);
-		});
+		SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::SendCrossServerRPCEventName, "", EventTracer->GetFromStack().GetConstId(),
+										 1, [TargetObject, Function, LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
+											 EventBuilder.AddObject(TargetObject);
+											 EventBuilder.AddFunction(Function);
+											 EventBuilder.AddLinearTraceId(LinearTraceId);
+										 });
 	}
 
 	if (Function->HasAnyFunctionFlags(FUNC_NetReliable))

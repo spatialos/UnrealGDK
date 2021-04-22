@@ -38,10 +38,10 @@ void MigrationDiagnosticsSystem::OnMigrationDiagnosticRequest(const Worker_Op& O
 		if (EventTracer != nullptr)
 		{
 			EventTracer->TraceEvent(FSpatialTraceEventName::SendCommandResponseEventName, "", CauseSpanId.GetConstId(), 1,
-				[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
-					EventBuilder.AddRequestId(RequestId);
-					EventBuilder.AddKeyValue("Success", true);
-			});
+									[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
+										EventBuilder.AddRequestId(RequestId);
+										EventBuilder.AddKeyValue("Success", true);
+									});
 		}
 
 		Connection.SendCommandResponse(RequestId, &Response, CauseSpanId);

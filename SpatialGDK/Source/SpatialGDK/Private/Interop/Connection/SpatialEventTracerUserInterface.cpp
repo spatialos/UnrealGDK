@@ -32,7 +32,8 @@ TArray<FSpatialGDKSpanId> ConvertSpanIds(const TArray<FUserSpanId>& Causes)
 }
 } // namespace
 
-FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage, TMap<FString, FString> Data)
+FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage,
+														 TMap<FString, FString> Data)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
 	if (EventTracer == nullptr)
@@ -40,18 +41,19 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextOb
 		return {};
 	}
 
-	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(TCHAR_TO_ANSI(*EventType), TCHAR_TO_ANSI(*EventMessage), /* Causes */ nullptr, /* NumCauses */ 0,
-		[Data](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
-			for (const auto& Pair : Data)
-			{
-				EventBuilder.AddKeyValue(Pair.Key, Pair.Value);
-			}
-	});
+	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(TCHAR_TO_ANSI(*EventType), TCHAR_TO_ANSI(*EventMessage), /* Causes */ nullptr,
+													   /* NumCauses */ 0, [Data](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
+														   for (const auto& Pair : Data)
+														   {
+															   EventBuilder.AddKeyValue(Pair.Key, Pair.Value);
+														   }
+													   });
 
 	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 }
 
-FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage, FEventTracerAddDataDelegate AddDataDelegate)
+FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage,
+														 FEventTracerAddDataDelegate AddDataDelegate)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
 	if (EventTracer == nullptr)
@@ -59,15 +61,17 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextOb
 		return {};
 	}
 
-	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(TCHAR_TO_ANSI(*EventType), TCHAR_TO_ANSI(*EventMessage), /* Causes */ nullptr, /* NumCauses */ 0,
-		[AddDataDelegate](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
-			AddDataDelegate.ExecuteIfBound(EventBuilder);
-	});
+	FSpatialGDKSpanId SpanId =
+		EventTracer->TraceEvent(TCHAR_TO_ANSI(*EventType), TCHAR_TO_ANSI(*EventMessage), /* Causes */ nullptr, /* NumCauses */ 0,
+								[AddDataDelegate](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
+									AddDataDelegate.ExecuteIfBound(EventBuilder);
+								});
 
 	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 }
 
-FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage, TMap<FString, FString> Data,
+FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* WorldContextObject, const FString& EventType,
+																   const FString& EventMessage, TMap<FString, FString> Data,
 																   const TArray<FUserSpanId>& Causes)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
@@ -77,19 +81,21 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* Worl
 	}
 
 	TArray<FSpatialGDKSpanId> CauseSpanIds = ConvertSpanIds(Causes);
-	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(TCHAR_TO_ANSI(*EventType), TCHAR_TO_ANSI(*EventMessage), CauseSpanIds.GetData()->GetId(), CauseSpanIds.Num(),
-		[Data](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
-			for (const auto& Pair : Data)
-			{
-				EventBuilder.AddKeyValue(Pair.Key, Pair.Value);
-			}
-	});
+	FSpatialGDKSpanId SpanId =
+		EventTracer->TraceEvent(TCHAR_TO_ANSI(*EventType), TCHAR_TO_ANSI(*EventMessage), CauseSpanIds.GetData()->GetId(),
+								CauseSpanIds.Num(), [Data](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
+									for (const auto& Pair : Data)
+									{
+										EventBuilder.AddKeyValue(Pair.Key, Pair.Value);
+									}
+								});
 
 	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 }
 
-FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage, const TArray<FUserSpanId>& Causes,
-	FEventTracerAddDataDelegate AddDataDelegate)
+FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* WorldContextObject, const FString& EventType,
+																   const FString& EventMessage, const TArray<FUserSpanId>& Causes,
+																   FEventTracerAddDataDelegate AddDataDelegate)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
 	if (EventTracer == nullptr)
@@ -98,10 +104,11 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* Worl
 	}
 
 	TArray<FSpatialGDKSpanId> CauseSpanIds = ConvertSpanIds(Causes);
-	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(TCHAR_TO_ANSI(*EventType), TCHAR_TO_ANSI(*EventMessage), CauseSpanIds.GetData()->GetId(), CauseSpanIds.Num(),
-		[AddDataDelegate](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
-			AddDataDelegate.ExecuteIfBound(EventBuilder);
-	});
+	FSpatialGDKSpanId SpanId =
+		EventTracer->TraceEvent(TCHAR_TO_ANSI(*EventType), TCHAR_TO_ANSI(*EventMessage), CauseSpanIds.GetData()->GetId(),
+								CauseSpanIds.Num(), [AddDataDelegate](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
+									AddDataDelegate.ExecuteIfBound(EventBuilder);
+								});
 
 	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 }

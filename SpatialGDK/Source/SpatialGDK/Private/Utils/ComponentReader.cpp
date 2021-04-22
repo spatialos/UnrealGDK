@@ -338,14 +338,15 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					FString PropertyName = Cmd.Property->GetName();
 					const Trace_SpanIdType* Causes = reinterpret_cast<const Trace_SpanIdType*>(CauseSpanIds.GetData());
 
-					SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::ReceivePropertyUpdateEventName, "", Causes, CauseSpanIds.Num(),
+					SpanId = EventTracer->TraceEvent(
+						FSpatialTraceEventName::ReceivePropertyUpdateEventName, "", Causes, CauseSpanIds.Num(),
 						[&Object, EntityId, ComponentId, PropertyName, LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
 							EventBuilder.AddObject(&Object);
 							EventBuilder.AddEntityId(EntityId);
 							EventBuilder.AddComponentId(ComponentId);
 							EventBuilder.AddKeyValue("PropertyName", PropertyName);
 							EventBuilder.AddLinearTraceId(LinearTraceId);
-					});
+						});
 				}
 
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened

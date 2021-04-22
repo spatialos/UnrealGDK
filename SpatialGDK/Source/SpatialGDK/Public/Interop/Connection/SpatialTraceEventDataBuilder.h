@@ -15,13 +15,12 @@ namespace worker
 {
 namespace c
 {
-	struct Trace_EventData;
+struct Trace_EventData;
 }
-}
+} // namespace worker
 
 namespace SpatialGDK
 {
-
 struct SPATIALGDK_API FSpatialTraceEventName
 {
 	static const char* PushRPCEventName;
@@ -53,13 +52,10 @@ struct SPATIALGDK_API FSpatialTraceEventName
 
 class SPATIALGDK_API FSpatialTraceEventDataBuilder
 {
-
 public:
-
 	class SPATIALGDK_API FStringCache
 	{
 	public:
-
 		int32 CombineStrings(const char* A, const char* B);
 
 		int32 AddString(const char* String);
@@ -120,7 +116,6 @@ public:
 	const Trace_EventData* GetEventData() { return EventData; };
 
 private:
-
 	Trace_EventData* EventData;
 	FStringCache StringConverter;
 

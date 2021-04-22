@@ -14,7 +14,6 @@ DEFINE_LOG_CATEGORY(FSpatialTraceEventDataBuilderLog);
 
 namespace SpatialGDK
 {
-
 // ---- FSpatialTraceEventName ----
 
 const char* FSpatialTraceEventName::PushRPCEventName = GDK_EVENT_NAMESPACE "push_rpc";
@@ -59,7 +58,7 @@ int32 FSpatialTraceEventDataBuilder::FStringCache::CombineStrings(const char* A,
 	int32 CharSize = sizeof(char);
 	int32 ALength = FCStringAnsi::Strlen(A);
 	int32 RemainingSize = InitialRemainingSize - ALength;
-	RemainingSize =	FMath::Max(0, RemainingSize);
+	RemainingSize = FMath::Max(0, RemainingSize);
 
 	if (RemainingSize > CharSize)
 	{
@@ -128,7 +127,6 @@ const char* FSpatialTraceEventDataBuilder::FStringCache::Get(int32 Handle) const
 	}
 	return &Buffer[Handle];
 }
-
 
 // ---- FSpatialTraceEventDataBuilder ----
 
@@ -248,7 +246,7 @@ void FSpatialTraceEventDataBuilder::AddKeyValue(const char* Key, const int64 Val
 
 void FSpatialTraceEventDataBuilder::AddKeyValue(const char* Key, const bool bValue)
 {
-	AddKeyValue(StringConverter.AddString(Key), StringConverter.AddString(bValue ? "True": "False"));
+	AddKeyValue(StringConverter.AddString(Key), StringConverter.AddString(bValue ? "True" : "False"));
 }
 
 void FSpatialTraceEventDataBuilder::AddKeyValue(int32 KeyHandle, int32 ValueHandle)

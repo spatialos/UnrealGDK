@@ -586,12 +586,12 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 		const Trace_SpanIdType* Causes = (const Trace_SpanIdType*)CauseSpanIds.GetData();
 
 		EventTracer->TraceEvent(FSpatialTraceEventName::ComponentUpdateEventName, "", Causes, CauseSpanIds.Num(),
-			[&Object, &TargetObject, EntityId, ComponentId](FSpatialTraceEventDataBuilder& EventBuilder) {
-				EventBuilder.AddObject(Object);
-				EventBuilder.AddObject(TargetObject, "TargetObject");
-				EventBuilder.AddEntityId(EntityId);
-				EventBuilder.AddComponentId(ComponentId);
-			});
+								[&Object, &TargetObject, EntityId, ComponentId](FSpatialTraceEventDataBuilder& EventBuilder) {
+									EventBuilder.AddObject(Object);
+									EventBuilder.AddObject(TargetObject, "TargetObject");
+									EventBuilder.AddEntityId(EntityId);
+									EventBuilder.AddComponentId(ComponentId);
+								});
 	}
 
 	ESchemaComponentType Category = NetDriver->ClassInfoManager->GetCategoryByComponentId(ComponentId);
@@ -1803,10 +1803,10 @@ void ActorSystem::RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor
 		if (EventTracer != nullptr)
 		{
 			FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::SendRetireEntityEventName, "", nullptr, 0,
-				[&Actor, EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
-					EventBuilder.AddObject(Actor);
-					EventBuilder.AddEntityId(EntityId);
-			});
+															   [&Actor, EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
+																   EventBuilder.AddObject(Actor);
+																   EventBuilder.AddEntityId(EntityId);
+															   });
 		}
 
 		NetDriver->Connection->SendDeleteEntityRequest(EntityId, RETRY_UNTIL_COMPLETE);
@@ -1845,13 +1845,14 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 			FString PropertyName = Property->GetName();
 			EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForProperty(EntityId, Property);
 
-			FSpatialGDKSpanId PropertySpan = EventTracer->TraceEvent(FSpatialTraceEventName::PropertyChangedEventName, "", CauseSpanId.GetConstId(), 1,
-				[&Object, EntityId, PropertyName, LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
-					EventBuilder.AddObject(Object);
-					EventBuilder.AddEntityId(EntityId);
-					EventBuilder.AddKeyValue("PropertyName", PropertyName);
-					EventBuilder.AddKeyValue("LinearTraceId", LinearTraceId.ToString());
-			});
+			FSpatialGDKSpanId PropertySpan =
+				EventTracer->TraceEvent(FSpatialTraceEventName::PropertyChangedEventName, "", CauseSpanId.GetConstId(), 1,
+										[&Object, EntityId, PropertyName, LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
+											EventBuilder.AddObject(Object);
+											EventBuilder.AddEntityId(EntityId);
+											EventBuilder.AddKeyValue("PropertyName", PropertyName);
+											EventBuilder.AddKeyValue("LinearTraceId", LinearTraceId.ToString());
+										});
 
 			PropertySpans.Push(PropertySpan);
 		}
@@ -1877,11 +1878,11 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 			const Trace_SpanIdType* Causes = (const Trace_SpanIdType*)PropertySpans.GetData();
 
 			SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::SendPropertyUpdateEventName, "", Causes, PropertySpans.Num(),
-				[&Object, EntityId, ComponentId](FSpatialTraceEventDataBuilder& EventBuilder) {
-					EventBuilder.AddObject(Object);
-					EventBuilder.AddEntityId(EntityId);
-					EventBuilder.AddComponentId(ComponentId);
-			});
+											 [&Object, EntityId, ComponentId](FSpatialTraceEventDataBuilder& EventBuilder) {
+												 EventBuilder.AddObject(Object);
+												 EventBuilder.AddEntityId(EntityId);
+												 EventBuilder.AddComponentId(ComponentId);
+											 });
 		}
 
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update, SpanId);
@@ -2000,10 +2001,10 @@ void ActorSystem::SendCreateEntityRequest(USpatialActorChannel& ActorChannel, ui
 	if (EventTracer != nullptr)
 	{
 		SpanId = EventTracer->TraceEvent(FSpatialTraceEventName::SendCreateEntityEventName, "", nullptr, 0,
-			[&Actor, EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
-				EventBuilder.AddObject(Actor);
-				EventBuilder.AddEntityId(EntityId);
-		});
+										 [&Actor, EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
+											 EventBuilder.AddObject(Actor);
+											 EventBuilder.AddEntityId(EntityId);
+										 });
 	}
 
 	const Worker_RequestId CreateEntityRequestId =
@@ -2057,10 +2058,10 @@ void ActorSystem::OnEntityCreated(const Worker_CreateEntityResponseOp& Op, FSpat
 	if (EventTracer != nullptr)
 	{
 		EventTracer->TraceEvent(FSpatialTraceEventName::ReceiveCreateEntitySuccessEventName, "", CreateOpSpan.GetConstId(), 1,
-			[&Actor, EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
-			EventBuilder.AddObject(Actor);
-			EventBuilder.AddEntityId(EntityId);
-		});
+								[&Actor, EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
+									EventBuilder.AddObject(Actor);
+									EventBuilder.AddEntityId(EntityId);
+								});
 	}
 
 	check(NetDriver->GetNetMode() < NM_Client);
