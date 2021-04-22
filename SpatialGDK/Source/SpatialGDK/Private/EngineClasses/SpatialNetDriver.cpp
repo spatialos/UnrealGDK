@@ -1939,7 +1939,8 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 				else
 				{
 					UE_LOG(LogSpatialOSNetDriver, Warning,
-						   TEXT("Ordered reliable RPC will be sent unordered because no sender was provided. Function : %s, Target : %s"),
+						   TEXT("Ordered reliable RPC will be sent unordered because no sender was provided. Use SendCrossServerRPC to "
+								"provide a sender. Function : %s, Target : %s"),
 						   *Function->GetName(), *Actor->GetName());
 
 					SenderInfo.Entity = WorkerEntityId;
@@ -1952,24 +1953,22 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 
 				if (!GSenderActor.IsSet())
 				{
-					UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Missing sender Actor. Function : %s, Target : %s"), *Function->GetName(),
-						   *Actor->GetName());
+					UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Missing sender Actor for CrossServer RPC. Function : %s, Target : %s"),
+						   *Function->GetName(), *Actor->GetName());
 					return;
 				}
-				else
-				{
-					SenderActorDesc& Desc = GSenderActor.GetValue();
-					SenderActor = Desc.Actor;
 
-					if (bIsOnlyNetWriteFence && Desc.Kind != SenderActorDesc::Dependent
-						|| (!bIsNetWriteFence && Desc.Kind == SenderActorDesc::Dependent))
-					{
-						UE_LOG(LogSpatialOSNetDriver, Error,
-							   TEXT("Wrong kind of sender Actor. Check that the right AActor function was used with the right kind of RPC "
-									"(CrossServer and NetWriteFence). Function : %s, Target : %s"),
-							   *Function->GetName(), *Actor->GetName());
-						return;
-					}
+				const SenderActorDesc& Desc = GSenderActor.GetValue();
+				SenderActor = Desc.Actor;
+
+				if (bIsOnlyNetWriteFence && Desc.Kind != SenderActorDesc::Dependent
+					|| (!bIsNetWriteFence && Desc.Kind == SenderActorDesc::Dependent))
+				{
+					UE_LOG(LogSpatialOSNetDriver, Error,
+						   TEXT("Wrong kind of sender Actor. Check that the right AActor function was used with the right kind of RPC "
+								"(CrossServer and NetWriteFence). Function : %s, Target : %s"),
+						   *Function->GetName(), *Actor->GetName());
+					return;
 				}
 
 				GSenderActor.Reset();
@@ -1983,17 +1982,32 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 
 				if (!SenderActor->HasAuthority())
 				{
-					UE_LOG(LogSpatialOSNetDriver, Error, TEXT("No authority on sender Actor. Function : %s, Target : %s"),
-						   *SenderActor->GetName(), *Function->GetName(), *Actor->GetName());
-					return;
-				}
+					if (!ensure(!bIsOnlyNetWriteFence))
+					{
+						UE_LOG(LogSpatialOSNetDriver, Error,
+							   TEXT(" {INTERNAL GDK ERROR} No authority on sender Actor for NetWriteFence. Function : %s, Target : %s, "
+									"Sender %s"),
+							   *Function->GetName(), *Actor->GetName(), *SenderActor->GetName());
+						return;
+					}
 
-				if (bIsNetWriteFence)
+					// Migration branch, keep it a warning for now.
+					UE_LOG(LogSpatialOSNetDriver, Warning,
+						   TEXT("Ordered reliable RPC will be sent unordered because the sender does not have authority. Function : %s, "
+								"Target : %s, Sender : %s"),
+						   *Function->GetName(), *Actor->GetName(), *SenderActor->GetName());
+
+					SenderInfo.Entity = WorkerEntityId;
+				}
+				else
 				{
-					SenderActor->ForceNetUpdate();
-				}
+					if (bIsNetWriteFence)
+					{
+						SenderActor->ForceNetUpdate();
+					}
 
-				SenderInfo.Entity = PackageMap->GetUnrealObjectRefFromObject(SenderActor).Entity;
+					SenderInfo.Entity = PackageMap->GetUnrealObjectRefFromObject(SenderActor).Entity;
+				}
 			}
 		}
 	}

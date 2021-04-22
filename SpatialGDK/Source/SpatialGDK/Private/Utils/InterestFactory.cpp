@@ -143,12 +143,12 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	ServerQuery.Constraint = CreateGDKSnapshotEntitiesConstraint();
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
 
-	// SelfInterest for Sender component.
+	// SelfInterest for routing worker components.
 	ServerQuery = Query();
 	ServerQuery.ResultComponentIds = { SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID,
-									   SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID,
-									   SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID,
-									   SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID };
+									   SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID,
+									   SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID,
+									   SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID };
 	ServerQuery.Constraint.bSelfConstraint = true;
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
 
@@ -213,10 +213,10 @@ Interest InterestFactory::CreateRoutingWorkerInterest()
 
 	ServerQuery.ResultComponentIds = {
 		SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID,
-		SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
-		SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID,
-		SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID,
-		SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID,
+		SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
+		SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID,
+		SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID,
+		SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID,
 	};
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID;
 

@@ -32,7 +32,7 @@ Worker_ComponentId GetRingBufferComponentId(ERPCType Type)
 	case ERPCType::NetMulticast:
 		return SpatialConstants::MULTICAST_RPCS_COMPONENT_ID;
 	case ERPCType::CrossServer:
-		return SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID;
+		return SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID;
 	default:
 		checkNoEntry();
 		return SpatialConstants::INVALID_COMPONENT_ID;
