@@ -179,6 +179,11 @@ void FSpatialTraceEventDataBuilder::AddComponentId(const Worker_ComponentId Comp
 	AddKeyValue(Key, ComponentId);
 }
 
+void FSpatialTraceEventDataBuilder::AddComponentSetId(const Worker_ComponentSetId ComponentSetId, const char* Key /*="ComponentSetId"*/)
+{
+	AddKeyValue(Key, ComponentSetId);
+}
+
 void FSpatialTraceEventDataBuilder::AddFieldId(const uint32 FieldId, const char* Key /*="FieldId"*/)
 {
 	AddKeyValue(Key, FieldId);

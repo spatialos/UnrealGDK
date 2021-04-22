@@ -34,7 +34,7 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
 	static FUserSpanId TraceEvent(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage,
-								  TMap<FString, FString> Data);
+								  const TMap<FString, FString>& Data);
 
 	/**
 	 * EXPERIMENTAL
@@ -43,7 +43,7 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
 	static FUserSpanId TraceEventWithCauses(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage,
-											TMap<FString, FString> Data, const TArray<FUserSpanId>& Causes);
+											const TMap<FString, FString>& Data, const TArray<FUserSpanId>& Causes);
 
 	/**
 	 * EXPERIMENTAL

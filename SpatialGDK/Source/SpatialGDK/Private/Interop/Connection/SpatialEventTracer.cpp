@@ -193,7 +193,7 @@ void SpatialEventTracer::AuthorityChange(const Worker_ComponentSetAuthorityChang
 	TraceEvent(FSpatialTraceEventName::AuthorityChangeEventName, "", SpanId.GetConstId(), 1,
 			   [EntityId, ComponentSetId, Authority](FSpatialTraceEventDataBuilder& EventBuilder) {
 				   EventBuilder.AddEntityId(EntityId);
-				   EventBuilder.AddComponentId(ComponentSetId);
+				   EventBuilder.AddComponentSetId(ComponentSetId);
 				   EventBuilder.AddAuthority(Authority);
 			   });
 }
