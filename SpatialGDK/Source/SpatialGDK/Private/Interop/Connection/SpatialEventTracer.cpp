@@ -81,7 +81,10 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Parameters.callback = &SpatialEventTracer::TraceCallback;
 	EventTracer = Trace_EventTracer_Create(&Parameters);
 
-	Parameters.span_sampling_parameters.sampling_mode = Settings->bCaptureAllEventTracingData ? Trace_SamplingMode::TRACE_SAMPLING_MODE_ALWAYS : Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
+	/* TODO: Also configure filters with Settings->bCaptureAllEventTracingData */
+	Parameters.span_sampling_parameters.sampling_mode = Settings->bCaptureAllEventTracingData
+															? Trace_SamplingMode::TRACE_SAMPLING_MODE_ALWAYS
+															: Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
 
 	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
 
