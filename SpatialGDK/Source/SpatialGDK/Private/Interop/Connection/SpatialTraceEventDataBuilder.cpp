@@ -20,10 +20,7 @@ int32 FSpatialTraceEventDataBuilder::FStringCache::CombineStrings(const char* A,
 {
 	int32 InsertIndex = NextIndex;
 	AddString(A);
-	if (NextIndex > 0)
-	{
-		NextIndex--;
-	}
+	NextIndex--;
 	AddString(B);
 	return InsertIndex;
 }
@@ -40,8 +37,8 @@ int32 FSpatialTraceEventDataBuilder::FStringCache::AddString(const char* String)
 	FCStringAnsi::Strncpy(&Buffer[NextIndex], String, InitialRemainingSize);
 
 	int32 CharSize = sizeof(char);
-	int32 StringLength = FCStringAnsi::Strlen(String);
-	int32 RemainingSize = InitialRemainingSize - StringLength - CharSize;
+	int32 StringLength = FCStringAnsi::Strlen(String) + CharSize;
+	int32 RemainingSize = InitialRemainingSize - StringLength;
 	RemainingSize = FMath::Max(0, RemainingSize);
 
 	NextIndex += InitialRemainingSize - RemainingSize;
