@@ -1961,7 +1961,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 				const SenderActorDesc& Desc = GSenderActor.GetValue();
 				SenderActor = Desc.Actor;
 
-				if (bIsOnlyNetWriteFence && Desc.Kind != SenderActorDesc::Dependent
+				if ((bIsOnlyNetWriteFence && Desc.Kind != SenderActorDesc::Dependent)
 					|| (!bIsNetWriteFence && Desc.Kind == SenderActorDesc::Dependent))
 				{
 					UE_LOG(LogSpatialOSNetDriver, Error,
