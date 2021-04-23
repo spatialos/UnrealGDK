@@ -50,7 +50,6 @@ struct Trace_EventData;
 
 namespace SpatialGDK
 {
-
 class SPATIALGDK_API FSpatialTraceEventDataBuilder
 {
 public:

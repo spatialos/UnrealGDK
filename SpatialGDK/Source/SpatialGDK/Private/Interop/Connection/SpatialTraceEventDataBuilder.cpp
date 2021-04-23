@@ -14,7 +14,6 @@ DEFINE_LOG_CATEGORY(FSpatialTraceEventDataBuilderLog);
 
 namespace SpatialGDK
 {
-
 // ---- FStringCache ----
 
 int32 FSpatialTraceEventDataBuilder::FStringCache::CombineStrings(const char* A, const char* B)

@@ -67,8 +67,8 @@ void DebugMetricsSystem::ProcessOps(const TArray<Worker_Op>& Ops) const
 
 					if (EventTracer != nullptr)
 					{
-						SpanId = EventTracer->TraceEvent(SEND_COMMAND_RESPONSE_EVENT_NAME, "", CauseSpanId.GetConstId(),
-														 1, [RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
+						SpanId = EventTracer->TraceEvent(SEND_COMMAND_RESPONSE_EVENT_NAME, "", CauseSpanId.GetConstId(), 1,
+														 [RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
 															 EventBuilder.AddRequestId(RequestId);
 															 EventBuilder.AddKeyValue("Success", true);
 														 });

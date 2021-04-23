@@ -53,12 +53,11 @@ bool RPCExecutor::ExecuteCommand(const FCrossServerRPCParams& Params)
 	{
 		if (EventTracer != nullptr)
 		{
-			FSpatialGDKSpanId SpanId =
-				EventTracer->TraceEvent(APPLY_CROSS_SERVER_RPC_EVENT_NAME, "", Params.SpanId.GetConstId(), 1,
-										[TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
-											EventBuilder.AddObject(TargetObject);
-											EventBuilder.AddFunction(Function);
-										});
+			FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(APPLY_CROSS_SERVER_RPC_EVENT_NAME, "", Params.SpanId.GetConstId(), 1,
+															   [TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
+																   EventBuilder.AddObject(TargetObject);
+																   EventBuilder.AddFunction(Function);
+															   });
 			EventTracer->AddToStack(SpanId);
 		}
 
@@ -122,16 +121,15 @@ TOptional<FCrossServerRPCParams> RPCExecutor::TryRetrieveCrossServerRPCParams(co
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->TraceEvent(
-			RECEIVE_COMMAND_REQUEST_EVENT_NAME, "", nullptr, 0,
-			[TargetActor, TargetObject, Function, TraceId, Op](FSpatialTraceEventDataBuilder& EventBuilder) {
-				EventBuilder.AddCommand("RPC_COMMAND_REQUEST");
-				EventBuilder.AddObject(TargetActor);
-				EventBuilder.AddObject(TargetActor != TargetObject ? TargetObject : nullptr, "TargetObject");
-				EventBuilder.AddFunction(Function);
-				EventBuilder.AddKeyValue("TraceId", TraceId);
-				EventBuilder.AddRequestId(Op.op.command_request.request_id);
-			});
+		SpanId = EventTracer->TraceEvent(RECEIVE_COMMAND_REQUEST_EVENT_NAME, "", nullptr, 0,
+										 [TargetActor, TargetObject, Function, TraceId, Op](FSpatialTraceEventDataBuilder& EventBuilder) {
+											 EventBuilder.AddCommand("RPC_COMMAND_REQUEST");
+											 EventBuilder.AddObject(TargetActor);
+											 EventBuilder.AddObject(TargetActor != TargetObject ? TargetObject : nullptr, "TargetObject");
+											 EventBuilder.AddFunction(Function);
+											 EventBuilder.AddKeyValue("TraceId", TraceId);
+											 EventBuilder.AddRequestId(Op.op.command_request.request_id);
+										 });
 	}
 
 	FCrossServerRPCParams Params(ObjectRef, Op.op.command_request.request_id, MoveTemp(Payload), SpanId);
