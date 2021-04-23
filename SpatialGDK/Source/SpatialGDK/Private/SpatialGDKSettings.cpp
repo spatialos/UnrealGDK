@@ -153,6 +153,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEventTracingEnabled(false)
 	, EventTracingSamplingSettingsClass(UEventTracingSamplingSettings::StaticClass())
 	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
+	, bCaptureAllEventTracingData(false)
 	, EventTraceFileOutputType(EEventTraceFileOutputType::Single)
 	, bEnableAlwaysWriteRPCs(false)
 	, bEnableInitialOnlyReplicationCondition(false)

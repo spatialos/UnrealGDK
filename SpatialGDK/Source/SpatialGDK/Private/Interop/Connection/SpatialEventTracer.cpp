@@ -76,13 +76,12 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	MaxFileSize = Settings->MaxEventTracingFileSizeBytes;
 
-	Trace_EventTracer_Parameters parameters = {};
-	parameters.user_data = this;
-	parameters.callback = &SpatialEventTracer::TraceCallback;
-	EventTracer = Trace_EventTracer_Create(&parameters);
+	Trace_EventTracer_Parameters Parameters = {};
+	Parameters.user_data = this;
+	Parameters.callback = &SpatialEventTracer::TraceCallback;
+	EventTracer = Trace_EventTracer_Create(&Parameters);
 
-	Trace_SamplingParameters SamplingParameters = {};
-	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
+	Parameters.span_sampling_parameters.sampling_mode = Settings->bCaptureAllEventTracingData ? Trace_SamplingMode::TRACE_SAMPLING_MODE_ALWAYS : Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
 
 	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
 
@@ -100,11 +99,9 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
 	}
 
-	SamplingParameters.probabilistic_parameters.default_probability = SamplingSettings->SamplingProbability;
-	SamplingParameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
-	SamplingParameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
-
-	Trace_EventTracer_SetSampler(EventTracer, &SamplingParameters);
+	Parameters.span_sampling_parameters.probabilistic_parameters.default_probability = SamplingSettings->SamplingProbability;
+	Parameters.span_sampling_parameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
+	Parameters.span_sampling_parameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
 
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
 
@@ -130,7 +127,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		default:
 		case EEventTraceFileOutputType::Single:
 		{
-			const FString FullFilename = FString::Printf(TEXT("%s-%s.etlog"), FileName, *WorkerId);
+			const FString FullFilename = FString::Printf(TEXT("%s-%s.etlog"), *FileName, *WorkerId);
 			const FString FullFilePath = FPaths::Combine(FolderPath, FullFilename);
 			Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FullFilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
 			break;
@@ -151,7 +148,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	}
 	else
 	{
-		UE_LOG(LogSpatialEventTracer, Error, TEXT("Error creating directory tree to %s"), *FilePath);
+		UE_LOG(LogSpatialEventTracer, Error, TEXT("Error creating directory tree to %s"), *FolderPath);
 	}
 }
 
@@ -197,8 +194,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& Spati
 	// This would allow for sampling dependent on trace event data.
 	Trace_Event Event = { nullptr, 0, MessageSrc.c_str(), TypeSrc.c_str(), nullptr };
 
-	Trace_SamplingResult SpanSamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event);
-	if (SpanSamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
+	if (!Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event))
 	{
 		return {};
 	}
@@ -206,6 +202,11 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& Spati
 	FSpatialGDKSpanId TraceSpanId;
 	Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, &Event, TraceSpanId.GetId());
 	Event.span_id = TraceSpanId.GetConstId();
+
+	if (!Trace_EventTracer_ApplyEventPreFilter(EventTracer, &Event))
+	{
+		return {};
+	}
 
 	Trace_SamplingResult EventSamplingResult = Trace_EventTracer_ShouldSampleEvent(EventTracer, &Event);
 	switch (EventSamplingResult.decision)
