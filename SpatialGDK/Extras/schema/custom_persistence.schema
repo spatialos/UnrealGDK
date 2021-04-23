@@ -5,4 +5,4 @@ component CustomPersistence {
      id = 9950;
 
      bool supplied_data = 1;
-} 
+}

@@ -208,7 +208,7 @@ const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
     "unreal/generated/rpc_endpoints.schema",
     "unreal/generated/NetCullDistance/ncdcomponents.schema",
     "unreal/gdk/custom_persistence.schema",
-    
+
     "unreal/gdk/user_persistence.schema",
 };
 
