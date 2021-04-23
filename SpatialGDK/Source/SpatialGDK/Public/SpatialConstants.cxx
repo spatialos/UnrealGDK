@@ -233,6 +233,7 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
     { SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },
     { CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderRPCs" },
     { CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
+	{ MIGRATION_DIAGNOSTIC_COMPONENT_ID, "unreal.MigrationDiagnostic" },
 };
 
 const TArray<FString> ClientAuthorityWellKnownSchemaImports = { "unreal/gdk/player_controller.schema", "unreal/gdk/rpc_components.schema",
