@@ -22,7 +22,7 @@ struct ComponentUpdateDeleter
 using OwningComponentUpdatePtr = TUniquePtr<Schema_ComponentUpdate, ComponentUpdateDeleter>;
 
 // An RAII wrapper for component updates.
-class ComponentUpdate
+class SPATIALGDK_API ComponentUpdate
 {
 public:
 	// Creates a new component update.

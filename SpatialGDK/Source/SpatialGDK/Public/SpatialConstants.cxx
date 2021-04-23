@@ -207,6 +207,8 @@ const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
     "unreal/gdk/actor_set_member.schema",
     "unreal/generated/rpc_endpoints.schema",
     "unreal/generated/NetCullDistance/ncdcomponents.schema",
+
+    "unreal/gdk/custom_persistence.schema",
 };
 
 const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
@@ -219,7 +221,7 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
     { NET_OWNING_CLIENT_WORKER_COMPONENT_ID, "unreal.NetOwningClientWorker" },
     { NOT_STREAMED_COMPONENT_ID, "unreal.NotStreamed" },
     { ALWAYS_RELEVANT_COMPONENT_ID, "unreal.AlwaysRelevant" },
-    { DORMANT_COMPONENT_ID, "unreal.Dormant" },
+    { DORMANT_COMPONENT_ID, "unreal.Dormant" }
     { VISIBLE_COMPONENT_ID, "unreal.Visible" },
     { SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID, "unreal.UnrealServerToServerCommandEndpoint" },
     { SPATIAL_DEBUGGING_COMPONENT_ID, "unreal.SpatialDebugging" },
@@ -234,6 +236,8 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
     { CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderRPCs" },
     { CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
 	{ MIGRATION_DIAGNOSTIC_COMPONENT_ID, "unreal.MigrationDiagnostic" },
+
+    { 9950, "unreal.CustomPersistence" },
 };
 
 const TArray<FString> ClientAuthorityWellKnownSchemaImports = { "unreal/gdk/player_controller.schema", "unreal/gdk/rpc_components.schema",
