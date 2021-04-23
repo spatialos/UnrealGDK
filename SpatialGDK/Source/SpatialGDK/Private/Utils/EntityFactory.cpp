@@ -259,9 +259,9 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 	ComponentDatas.Append(ActorDataComponents);
 
 	// Add ActorOwnership component, mirrored from actor's data component
-	ComponentDatas.Add(
-		Worker_ComponentData{ nullptr, ActorOwnership::ComponentId,
-							  ActorOwnership(GetActorSetData(*PackageMap, *Actor).ActorSetId).CreateComponentData().Release(), nullptr });
+	ComponentDatas.Add(Worker_ComponentData{ nullptr, ActorOwnership::ComponentId,
+											 ActorOwnership::CreateFromActor(Actor, *PackageMap).CreateComponentData().Release(),
+											 nullptr });
 
 	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
 

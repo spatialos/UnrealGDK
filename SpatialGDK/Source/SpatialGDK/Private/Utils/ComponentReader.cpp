@@ -505,7 +505,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	{
 		FUnrealObjectRef ObjectRef = IndexObjectRefFromSchema(Object, FieldId, Index);
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
-		
+
 		if (GDK_CASTFIELD<GDK_PROPERTY(SoftObjectProperty)>(Property))
 		{
 			FSoftObjectPtr* ObjectPtr = reinterpret_cast<FSoftObjectPtr*>(Data);

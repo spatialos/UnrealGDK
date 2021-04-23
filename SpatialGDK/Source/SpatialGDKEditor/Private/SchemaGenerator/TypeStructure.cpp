@@ -2,8 +2,6 @@
 
 #include "TypeStructure.h"
 
-
-#include "InputBehavior.h"
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
@@ -82,7 +80,6 @@ TSharedPtr<FUnrealProperty> CreateUnrealProperty(TSharedPtr<FUnrealType> TypeNod
 	PropertyNode->ContainerType = TypeNode;
 	PropertyNode->ParentChecksum = ParentChecksum;
 	PropertyNode->StaticArrayIndex = StaticArrayIndex;
-	PropertyNode->bIsOwnerProperty = Property == AActor::StaticClass()->FindPropertyByName(TEXT("Owner"));
 
 	// Generate a checksum for this PropertyNode to be used to match properties with the RepLayout Cmds later.
 	PropertyNode->CompatibleChecksum = GenerateChecksum(Property, ParentChecksum, StaticArrayIndex);

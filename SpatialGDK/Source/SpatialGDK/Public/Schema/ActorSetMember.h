@@ -8,6 +8,8 @@
 
 #include "WorkerSDK/improbable/c_worker.h"
 
+class USpatialPackageMapClient;
+
 namespace SpatialGDK
 {
 // The ActorSetMember component exists to hold information which needs to be displayed by the
@@ -68,6 +70,8 @@ struct SPATIALGDK_API ActorOwnership
 
 	ActorOwnership(const ComponentData& Data) { ApplySchema(Data.GetFields()); }
 
+	static ActorOwnership CreateFromActor(const AActor* Actor, const USpatialPackageMapClient& PackageMap);
+
 	ComponentData CreateComponentData() const { return CreateComponentDataHelper(*this); }
 
 	ComponentUpdate CreateComponentUpdate() const { return CreateComponentUpdateHelper(*this); }
@@ -89,5 +93,4 @@ struct SPATIALGDK_API ActorOwnership
 
 	Worker_EntityId OwnerActorEntityId;
 };
-
 } // namespace SpatialGDK

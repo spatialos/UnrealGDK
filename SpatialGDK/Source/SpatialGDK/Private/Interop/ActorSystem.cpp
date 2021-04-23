@@ -1380,7 +1380,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 	ApplyFullState(EntityId, *Channel, *EntityActor);
 
 	const UNetConnection* ActorNetConnection = EntityActor->GetNetConnection();
-	if (NetDriver->ServerConnection == ActorNetConnection)
+	if (IsValid(ActorNetConnection) && NetDriver->ServerConnection == ActorNetConnection)
 	{
 		NetDriver->OwnershipCompletenessHandler.PlayerOwnedEntities.Emplace(EntityId);
 		for (Worker_EntityId_Key PossiblyOwnedEntity : NetDriver->OwnershipCompletenessHandler.EntitiesPossiblyOwned)

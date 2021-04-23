@@ -1228,15 +1228,8 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 		return;
 	}
 
-	const SpatialGDK::ComponentData* MaybeOwnershipData = Connection->GetView()[EntityId].Components.FindByPredicate(
-		SpatialGDK::ComponentIdEquality{ SpatialGDK::ActorOwnership::ComponentId });
-
-	if (ensure(MaybeOwnershipData != nullptr))
-	{
-		SpatialGDK::ActorOwnership O(*MaybeOwnershipData);
-		O.OwnerActorEntityId = PackageMap->GetEntityIdFromObject(Actor->GetOwner());
-		Connection->GetCoordinator().SendComponentUpdate(EntityId, O.CreateComponentUpdate(), FSpatialGDKSpanId());
-	}
+	Connection->GetCoordinator().SendComponentUpdate(
+		EntityId, SpatialGDK::ActorOwnership::CreateFromActor(Actor, *PackageMap).CreateComponentUpdate(), FSpatialGDKSpanId());
 
 	USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId);
 	if (Channel == nullptr)
@@ -1247,6 +1240,23 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 	Channel->MarkInterestDirty();
 
 	OwnershipChangedEntities.Add(EntityId);
+}
+
+SpatialGDK::ActorOwnership SpatialGDK::ActorOwnership::CreateFromActor(const AActor* Actor, const USpatialPackageMapClient& PackageMap)
+{
+	SpatialGDK::ActorOwnership O;
+	UNetConnection* OwningConnection = Actor->GetNetConnection();
+	if (IsValid(OwningConnection))
+	{
+		const Worker_EntityId ControllerEntity = PackageMap.GetEntityIdFromObject(OwningConnection->PlayerController);
+		check(ControllerEntity != SpatialConstants::INVALID_ENTITY_ID);
+		O.OwnerActorEntityId = ControllerEntity;
+	}
+	else
+	{
+		O.OwnerActorEntityId = SpatialConstants::INVALID_ENTITY_ID;
+	}
+	return O;
 }
 
 void USpatialNetDriver::NotifyActorLevelUnloaded(AActor* Actor)
