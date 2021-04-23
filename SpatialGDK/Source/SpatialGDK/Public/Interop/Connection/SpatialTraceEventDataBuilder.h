@@ -9,6 +9,35 @@
 
 #define GDK_EVENT_NAMESPACE "unreal_gdk."
 
+#define PUSH_RPC_EVENT_NAME GDK_EVENT_NAMESPACE "push_rpc"
+#define COMPONENT_UPDATE_EVENT_NAME GDK_EVENT_NAMESPACE "component_update"
+#define SEND_RETIRE_ENTITY_EVENT_NAME GDK_EVENT_NAMESPACE "send_retire_entity"
+#define PROPERTY_CHANGED_EVENT_NAME GDK_EVENT_NAMESPACE "property_changed"
+#define SEND_PROPERTY_UPDATE_EVENT_NAME GDK_EVENT_NAMESPACE "send_property_update"
+#define SEND_CREATE_ENTITY_EVENT_NAME GDK_EVENT_NAMESPACE "send_create_entity"
+#define RECEIVE_CREATE_ENTITY_SUCCESS_EVENT_NAME GDK_EVENT_NAMESPACE "receive_create_entity_success"
+#define RECEIVE_PROPERTY_UPDATE_EVENT_NAME GDK_EVENT_NAMESPACE "receive_property_update"
+#define AUTHORITY_INTENT_UPDATE_EVENT_NAME GDK_EVENT_NAMESPACE "authority_intent_update"
+#define RECEIVE_COMMAND_RESPONSE_EVENT_NAME GDK_EVENT_NAMESPACE "receive_command_response"
+#define RECEIVE_COMMAND_REQUEST_EVENT_NAME GDK_EVENT_NAMESPACE "receive_command_request"
+#define APPLY_RPC_EVENT_NAME GDK_EVENT_NAMESPACE "apply_rpc"
+#define SEND_RPC_EVENT_NAME GDK_EVENT_NAMESPACE "send_rpc"
+#define QUEUE_RPC_EVENT_NAME GDK_EVENT_NAMESPACE "queue_rpc"
+#define RECEIVE_RPC_EVENT_NAME GDK_EVENT_NAMESPACE "receive_rpc"
+#define MERGE_SEND_RPCS_EVENT_NAME GDK_EVENT_NAMESPACE "merge_send_rpcs"
+#define APPLY_CROSS_SERVER_RPC_EVENT_NAME GDK_EVENT_NAMESPACE "apply_cross_server_rpc"
+#define SEND_COMMAND_RESPONSE_EVENT_NAME GDK_EVENT_NAMESPACE "send_command_response"
+#define SEND_COMMAND_REQEUST_EVENT_NAME GDK_EVENT_NAMESPACE "send_command_request"
+#define SEND_CROSS_SERVER_RPC_EVENT_NAME GDK_EVENT_NAMESPACE "send_cross_server_rpc"
+#define MERGE_PROPERTY_EVENT_NAME GDK_EVENT_NAMESPACE "merge_property_update"
+#define RECEIVE_CREATE_ENTITY_EVENT_NAME GDK_EVENT_NAMESPACE "receive_create_entity"
+#define SEND_COMMAND_REQUEST_EVENT_NAME GDK_EVENT_NAMESPACE "send_command_request"
+#define RECEIVE_REMOVE_ENTITY_EVENT_NAME GDK_EVENT_NAMESPACE "receive_remove_entity"
+#define AUTHORITY_CHANGE_EVENT_NAME GDK_EVENT_NAMESPACE "authority_change"
+#define RECEIVE_CROSS_SERVER_RPC_EVENT_NAME GDK_EVENT_NAMESPACE "receive_cross_server_rpc"
+#define MERGE_SEND_RPC_EVENT_NAME GDK_EVENT_NAMESPACE "merge_send_rpcs"
+#define MERGE_PROPERTY_UPDATE_EVENT_NAME GDK_EVENT_NAMESPACE "merge_property_update"
+
 DECLARE_LOG_CATEGORY_EXTERN(FSpatialTraceEventDataBuilderLog, Log, All);
 
 namespace worker
@@ -21,34 +50,6 @@ struct Trace_EventData;
 
 namespace SpatialGDK
 {
-struct SPATIALGDK_API FSpatialTraceEventName
-{
-	static const char* PushRPCEventName;
-	static const char* ComponentUpdateEventName;
-	static const char* SendRetireEntityEventName;
-	static const char* PropertyChangedEventName;
-	static const char* SendPropertyUpdateEventName;
-	static const char* SendCreateEntityEventName;
-	static const char* ReceiveCreateEntitySuccessEventName;
-	static const char* ReceivePropertyUpdateEventName;
-	static const char* AuthorityIntentUpdateEventName;
-	static const char* ReceiveCommandResponseEventName;
-	static const char* ReceiveCommandRequestEventName;
-	static const char* ApplyRPCEventName;
-	static const char* SendRPCEventName;
-	static const char* QueueRPCEventName;
-	static const char* ReceieveRPCEventName;
-	static const char* MergeSendRPCEventName;
-	static const char* ApplyCrossServerRPCEventName;
-	static const char* SendCommandResponseEventName;
-	static const char* SendCommandRequestEventName;
-	static const char* SendCrossServerRPCEventName;
-	static const char* ReceiveCrossServerRPCEventName;
-	static const char* MergePropertyUpdateEventName;
-	static const char* ReceiveCreateEntityEventName;
-	static const char* ReceiveRemoveEntityEventName;
-	static const char* AuthorityChangeEventName;
-};
 
 class SPATIALGDK_API FSpatialTraceEventDataBuilder
 {
@@ -69,7 +70,7 @@ public:
 		int32 GetBufferSize() const { return BufferSize; }
 
 	private:
-		static const int32 BufferSize = 1000;
+		static constexpr int32 BufferSize = 1000;
 		char Buffer[BufferSize];
 		int32 NextIndex = 0;
 

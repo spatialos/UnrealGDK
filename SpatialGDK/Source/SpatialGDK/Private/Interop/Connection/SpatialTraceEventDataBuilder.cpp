@@ -14,62 +14,18 @@ DEFINE_LOG_CATEGORY(FSpatialTraceEventDataBuilderLog);
 
 namespace SpatialGDK
 {
-// ---- FSpatialTraceEventName ----
-
-const char* FSpatialTraceEventName::PushRPCEventName = GDK_EVENT_NAMESPACE "push_rpc";
-const char* FSpatialTraceEventName::ComponentUpdateEventName = GDK_EVENT_NAMESPACE "component_update";
-const char* FSpatialTraceEventName::SendRetireEntityEventName = GDK_EVENT_NAMESPACE "send_retire_entity";
-const char* FSpatialTraceEventName::PropertyChangedEventName = GDK_EVENT_NAMESPACE "property_changed";
-const char* FSpatialTraceEventName::SendPropertyUpdateEventName = GDK_EVENT_NAMESPACE "send_property_update";
-const char* FSpatialTraceEventName::SendCreateEntityEventName = GDK_EVENT_NAMESPACE "send_create_entity";
-const char* FSpatialTraceEventName::ReceiveCreateEntitySuccessEventName = GDK_EVENT_NAMESPACE "receive_create_entity_success";
-const char* FSpatialTraceEventName::ReceivePropertyUpdateEventName = GDK_EVENT_NAMESPACE "receive_property_update";
-const char* FSpatialTraceEventName::AuthorityIntentUpdateEventName = GDK_EVENT_NAMESPACE "authority_intent_update";
-const char* FSpatialTraceEventName::ReceiveCommandResponseEventName = GDK_EVENT_NAMESPACE "receive_command_response";
-const char* FSpatialTraceEventName::ReceiveCommandRequestEventName = GDK_EVENT_NAMESPACE "receive_command_request";
-const char* FSpatialTraceEventName::ApplyRPCEventName = GDK_EVENT_NAMESPACE "apply_rpc";
-const char* FSpatialTraceEventName::SendRPCEventName = GDK_EVENT_NAMESPACE "send_rpc";
-const char* FSpatialTraceEventName::QueueRPCEventName = GDK_EVENT_NAMESPACE "queue_rpc";
-const char* FSpatialTraceEventName::ReceieveRPCEventName = GDK_EVENT_NAMESPACE "receive_rpc";
-const char* FSpatialTraceEventName::MergeSendRPCEventName = GDK_EVENT_NAMESPACE "merge_send_rpcs";
-const char* FSpatialTraceEventName::ApplyCrossServerRPCEventName = GDK_EVENT_NAMESPACE "apply_cross_server_rpc";
-const char* FSpatialTraceEventName::SendCommandResponseEventName = GDK_EVENT_NAMESPACE "send_command_response";
-const char* FSpatialTraceEventName::SendCommandRequestEventName = GDK_EVENT_NAMESPACE "send_command_request";
-const char* FSpatialTraceEventName::SendCrossServerRPCEventName = GDK_EVENT_NAMESPACE "send_cross_server_rpc";
-const char* FSpatialTraceEventName::ReceiveCrossServerRPCEventName = GDK_EVENT_NAMESPACE "receive_cross_server_rpc";
-const char* FSpatialTraceEventName::MergePropertyUpdateEventName = GDK_EVENT_NAMESPACE "merge_property_update";
-const char* FSpatialTraceEventName::ReceiveCreateEntityEventName = GDK_EVENT_NAMESPACE "receive_create_entity";
-const char* FSpatialTraceEventName::ReceiveRemoveEntityEventName = GDK_EVENT_NAMESPACE "receive_remove_entity";
-const char* FSpatialTraceEventName::AuthorityChangeEventName = GDK_EVENT_NAMESPACE "authority_change";
 
 // ---- FStringCache ----
 
 int32 FSpatialTraceEventDataBuilder::FStringCache::CombineStrings(const char* A, const char* B)
 {
-	if (NextIndex >= BufferSize)
-	{
-		return BufferSize - 1;
-	}
-
 	int32 InsertIndex = NextIndex;
-	int32 InitialRemainingSize = BufferSize - NextIndex;
-	FCStringAnsi::Strncpy(&Buffer[NextIndex], A, InitialRemainingSize);
-
-	int32 CharSize = sizeof(char);
-	int32 ALength = FCStringAnsi::Strlen(A);
-	int32 RemainingSize = InitialRemainingSize - ALength;
-	RemainingSize = FMath::Max(0, RemainingSize);
-
-	if (RemainingSize > CharSize)
+	AddString(A);
+	if (NextIndex > 0)
 	{
-		FCStringAnsi::Strncpy(&Buffer[NextIndex + ALength], B, RemainingSize);
+		NextIndex--;
 	}
-
-	int32 BLength = FCStringAnsi::Strlen(B);
-	RemainingSize = RemainingSize - BLength - CharSize;
-	RemainingSize = FMath::Max(0, RemainingSize);
-
-	NextIndex += InitialRemainingSize - RemainingSize;
+	AddString(B);
 	return InsertIndex;
 }
 
@@ -95,8 +51,7 @@ int32 FSpatialTraceEventDataBuilder::FStringCache::AddString(const char* String)
 
 int32 FSpatialTraceEventDataBuilder::FStringCache::AddFString(const FString& String)
 {
-	std::string ValueSrc = (const char*)TCHAR_TO_ANSI(*String);
-	return AddString(ValueSrc.c_str());
+	return AddString(static_cast<const char*>(TCHAR_TO_ANSI(*String)));
 }
 
 int32 FSpatialTraceEventDataBuilder::FStringCache::AddUInt32(uint32 Value)
@@ -121,10 +76,6 @@ int32 FSpatialTraceEventDataBuilder::FStringCache::AddInt64(int64 Value)
 
 const char* FSpatialTraceEventDataBuilder::FStringCache::Get(int32 Handle) const
 {
-	if (Handle >= BufferSize || Handle < 0)
-	{
-		return nullptr;
-	}
 	return &Buffer[Handle];
 }
 

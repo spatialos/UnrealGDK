@@ -54,7 +54,7 @@ bool RPCExecutor::ExecuteCommand(const FCrossServerRPCParams& Params)
 		if (EventTracer != nullptr)
 		{
 			FSpatialGDKSpanId SpanId =
-				EventTracer->TraceEvent(FSpatialTraceEventName::ApplyCrossServerRPCEventName, "", Params.SpanId.GetConstId(), 1,
+				EventTracer->TraceEvent(APPLY_CROSS_SERVER_RPC_EVENT_NAME, "", Params.SpanId.GetConstId(), 1,
 										[TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
 											EventBuilder.AddObject(TargetObject);
 											EventBuilder.AddFunction(Function);
@@ -122,18 +122,15 @@ TOptional<FCrossServerRPCParams> RPCExecutor::TryRetrieveCrossServerRPCParams(co
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
-		UObject* TraceTargetObject = TargetActor != TargetObject ? TargetObject : nullptr;
-
-		Worker_RequestId RequestId = Op.op.command_request.request_id;
 		SpanId = EventTracer->TraceEvent(
-			FSpatialTraceEventName::ReceiveCommandRequestEventName, "", nullptr, 0,
-			[TargetActor, TraceTargetObject, Function, TraceId, RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
+			RECEIVE_COMMAND_REQUEST_EVENT_NAME, "", nullptr, 0,
+			[TargetActor, TargetObject, Function, TraceId, Op](FSpatialTraceEventDataBuilder& EventBuilder) {
 				EventBuilder.AddCommand("RPC_COMMAND_REQUEST");
 				EventBuilder.AddObject(TargetActor);
-				EventBuilder.AddObject(TraceTargetObject, "TargetObject");
+				EventBuilder.AddObject(TargetActor != TargetObject ? TargetObject : nullptr, "TargetObject");
 				EventBuilder.AddFunction(Function);
 				EventBuilder.AddKeyValue("TraceId", TraceId);
-				EventBuilder.AddRequestId(RequestId);
+				EventBuilder.AddRequestId(Op.op.command_request.request_id);
 			});
 	}
 

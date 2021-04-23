@@ -37,7 +37,7 @@ void MigrationDiagnosticsSystem::OnMigrationDiagnosticRequest(const Worker_Op& O
 
 		if (EventTracer != nullptr)
 		{
-			EventTracer->TraceEvent(FSpatialTraceEventName::SendCommandResponseEventName, "", CauseSpanId.GetConstId(), 1,
+			EventTracer->TraceEvent(SEND_COMMAND_RESPONSE_EVENT_NAME, "", CauseSpanId.GetConstId(), 1,
 									[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
 										EventBuilder.AddRequestId(RequestId);
 										EventBuilder.AddKeyValue("Success", true);

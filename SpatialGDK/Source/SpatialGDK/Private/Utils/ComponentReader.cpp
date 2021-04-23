@@ -334,18 +334,15 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 				FSpatialGDKSpanId SpanId;
 				if (bEventTracerEnabled)
 				{
-					EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property);
-					FString PropertyName = Cmd.Property->GetName();
 					const Trace_SpanIdType* Causes = reinterpret_cast<const Trace_SpanIdType*>(CauseSpanIds.GetData());
-
 					SpanId = EventTracer->TraceEvent(
-						FSpatialTraceEventName::ReceivePropertyUpdateEventName, "", Causes, CauseSpanIds.Num(),
-						[&Object, EntityId, ComponentId, PropertyName, LinearTraceId](FSpatialTraceEventDataBuilder& EventBuilder) {
+						RECEIVE_PROPERTY_UPDATE_EVENT_NAME, "", Causes, CauseSpanIds.Num(),
+						[&Object, EntityId, ComponentId, Cmd](FSpatialTraceEventDataBuilder& EventBuilder) {
 							EventBuilder.AddObject(&Object);
 							EventBuilder.AddEntityId(EntityId);
 							EventBuilder.AddComponentId(ComponentId);
-							EventBuilder.AddKeyValue("PropertyName", PropertyName);
-							EventBuilder.AddLinearTraceId(LinearTraceId);
+							EventBuilder.AddKeyValue("PropertyName", Cmd.Property->GetName());
+							EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property));
 						});
 				}
 
