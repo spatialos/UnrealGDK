@@ -11,6 +11,7 @@
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Schema/ActorSetMember.h"
 #include "Schema/Restricted.h"
 #include "Schema/Tombstone.h"
 #include "SpatialConstants.h"
@@ -228,12 +229,16 @@ void ActorSystem::ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate)
 }
 
 ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InAuthoritySubView, const FSubView& InOwnershipSubView,
-						 const FSubView& InSimulatedSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
-						 SpatialEventTracer* InEventTracer)
+						 const FSubView& InSimulatedSubView, const FSubView& InAuthorityUpdateSubView,
+						 const FSubView& InAutonomousUpdateSubView, const FSubView& InSimulatedUpdateSubView,
+						 const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver, SpatialEventTracer* InEventTracer)
 	: ActorSubView(&InActorSubView)
 	, AuthoritySubView(&InAuthoritySubView)
 	, OwnershipSubView(&InOwnershipSubView)
 	, SimulatedSubView(&InSimulatedSubView)
+	, AuthorityUpdateSubView(&InAuthorityUpdateSubView)
+	, AutonomousUpdateSubView(&InAutonomousUpdateSubView)
+	, SimulatedUpdateSubView(&InSimulatedUpdateSubView)
 	, TombstoneSubView(&InTombstoneSubView)
 	, NetDriver(InNetDriver)
 	, EventTracer(InEventTracer)
@@ -260,8 +265,6 @@ void ActorSystem::Advance()
 			EntityRemoved(Delta.EntityId);
 
 			const int32 EntitiesRemoved = PresentEntities.Remove(Delta.EntityId);
-
-			check(EntitiesRemoved != 0);
 		}
 	}
 
@@ -287,17 +290,23 @@ void ActorSystem::Advance()
 		{ SimulatedSubView, ENetRole::ROLE_SimulatedProxy },
 	};
 
+	const FEntitySubView UpdateSubViews[]{
+		{ AuthorityUpdateSubView, ENetRole::ROLE_Authority },
+		{ AutonomousUpdateSubView, ENetRole::ROLE_AutonomousProxy },
+		{ SimulatedUpdateSubView, ENetRole::ROLE_SimulatedProxy },
+	};
+
 	for (const FEntitySubView& SubView : SubViews)
 	{
 		ProcessRemoves(SubView);
 	}
 
-	for (const FEntitySubView& SubView : SubViews)
+	for (const FEntitySubView& SubView : UpdateSubViews)
 	{
 		ProcessUpdates(SubView);
 	}
 
-	for (const FEntitySubView& SubView : SubViews)
+	for (const FEntitySubView& SubView : UpdateSubViews)
 	{
 		ProcessAdds(SubView);
 	}
@@ -1369,6 +1378,16 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 	}
 
 	ApplyFullState(EntityId, *Channel, *EntityActor);
+
+	const UNetConnection* ActorNetConnection = EntityActor->GetNetConnection();
+	if (NetDriver->ServerConnection == ActorNetConnection)
+	{
+		NetDriver->OwnershipCompletenessHandler.PlayerOwnedEntities.Emplace(EntityId);
+		for (Worker_EntityId_Key PossiblyOwnedEntity : NetDriver->OwnershipCompletenessHandler.EntitiesPossiblyOwned)
+		{
+			NetDriver->Connection->GetCoordinator().RefreshEntityCompleteness(PossiblyOwnedEntity);
+		}
+	}
 }
 
 void ActorSystem::RefreshEntity(const Worker_EntityId EntityId)
@@ -1711,6 +1730,8 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 	SCOPE_CYCLE_COUNTER(STAT_ActorSystemRemoveActor);
 
 	TWeakObjectPtr<UObject> WeakActor = NetDriver->PackageMap->GetObjectFromEntityId(EntityId);
+
+	NetDriver->OwnershipCompletenessHandler.PlayerOwnedEntities.Remove(EntityId);
 
 	// Actor has not been resolved yet or has already been destroyed. Clean up surrounding bookkeeping.
 	if (!WeakActor.IsValid())

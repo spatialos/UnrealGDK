@@ -100,6 +100,8 @@ struct FUnrealProperty
 	int32 StaticArrayIndex;
 	uint32 CompatibleChecksum;
 	uint32 ParentChecksum;
+
+	bool bIsOwnerProperty;
 };
 
 struct FUnrealSubobject

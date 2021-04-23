@@ -9,6 +9,9 @@ class USpatialNetDriver;
 
 namespace SpatialGDK
 {
+class FSubView;
+class ViewCoordinator;
+
 namespace ActorSubviews
 {
 FSubView& CreateActorSubView(USpatialNetDriver& NetDriver);
@@ -18,6 +21,8 @@ FSubView& CreateActorAuthSubView(USpatialNetDriver& NetDriver);
 FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver);
 FSubView& CreateOwnershipSubView(USpatialNetDriver& NetDriver);
 FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver);
+FSubView& CreateAutonomousOwnershipCompletenessSubView(USpatialNetDriver& NetDriver);
+FSubView& CreateSimulatedOwnershipCompletenessSubView(USpatialNetDriver& NetDriver);
 } // namespace ActorSubviews
 
 } // namespace SpatialGDK

@@ -501,7 +501,14 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			const SpatialGDK::FSubView& OwnershipSubView = SpatialGDK::ActorSubviews::CreateOwnershipSubView(*this);
 			const SpatialGDK::FSubView& SimulatedSubView = SpatialGDK::ActorSubviews::CreateSimulatedSubView(*this);
 
-			ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, AuthoritySubView, OwnershipSubView, SimulatedSubView,
+			const SpatialGDK::FSubView& AuthorityUpdateSubView = SpatialGDK::ActorSubviews::CreateAuthoritySubView(*this);
+			const SpatialGDK::FSubView& AutonomousUpdateSubView =
+				SpatialGDK::ActorSubviews::CreateAutonomousOwnershipCompletenessSubView(*this);
+			const SpatialGDK::FSubView& SimulatedUpdateSubView =
+				SpatialGDK::ActorSubviews::CreateSimulatedOwnershipCompletenessSubView(*this);
+
+			ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, AuthoritySubView, AutonomousSubView, SimulatedSubView,
+															  AuthorityUpdateSubView, AutonomousUpdateSubView, SimulatedUpdateSubView,
 															  TombstoneActorSubview, this, Connection->GetEventTracer());
 		}
 
@@ -1219,6 +1226,16 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		return;
+	}
+
+	const SpatialGDK::ComponentData* MaybeOwnershipData = Connection->GetView()[EntityId].Components.FindByPredicate(
+		SpatialGDK::ComponentIdEquality{ SpatialGDK::ActorOwnership::ComponentId });
+
+	if (ensure(MaybeOwnershipData != nullptr))
+	{
+		SpatialGDK::ActorOwnership O(*MaybeOwnershipData);
+		O.OwnerActorEntityId = PackageMap->GetEntityIdFromObject(Actor->GetOwner());
+		Connection->GetCoordinator().SendComponentUpdate(EntityId, O.CreateComponentUpdate(), FSpatialGDKSpanId());
 	}
 
 	USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId);

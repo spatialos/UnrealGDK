@@ -14,6 +14,7 @@
 #include "SpatialGDKSettings.h"
 
 #include "CoreMinimal.h"
+#include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
@@ -271,6 +272,7 @@ public:
 	virtual int64 GetActorEntityId(AActor& Actor) override;
 
 	FShutdownEvent OnShutdown;
+	SpatialGDK::FOwnershipCompletenessHandler OwnershipCompletenessHandler;
 
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
@@ -294,7 +296,6 @@ private:
 	bool bWaitingToSpawn;
 	bool bIsReadyToStart;
 	bool bMapLoaded;
-
 	FString SnapshotToLoad;
 
 	// Client variable which stores the SessionId given to us by the server in the URL options.

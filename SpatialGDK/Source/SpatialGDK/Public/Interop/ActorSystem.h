@@ -5,6 +5,7 @@
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
+#include "SpatialView/SubView.h"
 #include "Utils/RepDataUtils.h"
 
 #include "Interop/CreateEntityHandler.h"
@@ -32,17 +33,32 @@ namespace SpatialGDK
 class SpatialEventTracer;
 class FSubView;
 
+struct EntityViewElement;
+
 struct ActorData
 {
 	SpawnData Spawn;
 	UnrealMetadata Metadata;
+};
+class ViewCoordinator;
+
+struct FOwnershipCompletenessHandler
+{
+	bool IsOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity);
+
+	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator);
+
+	TSet<Worker_EntityId_Key> EntitiesPossiblyOwned;
+
+	TSet<Worker_EntityId_Key> PlayerOwnedEntities;
 };
 
 class ActorSystem
 {
 public:
 	ActorSystem(const FSubView& InActorSubView, const FSubView& InAuthoritySubView, const FSubView& InOwnershipSubView,
-				const FSubView& InSimulatedSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
+				const FSubView& InSimulatedSubView, const FSubView& InAuthorityUpdateSubView, const FSubView& InAutonomousUpdateSubView,
+				const FSubView& InSimulatedUpdateSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
 				SpatialEventTracer* InEventTracer);
 
 	void Advance();
@@ -174,6 +190,9 @@ private:
 	const FSubView* AuthoritySubView;
 	const FSubView* OwnershipSubView;
 	const FSubView* SimulatedSubView;
+	const FSubView* AuthorityUpdateSubView;
+	const FSubView* AutonomousUpdateSubView;
+	const FSubView* SimulatedUpdateSubView;
 	const FSubView* TombstoneSubView;
 
 	USpatialNetDriver* NetDriver;

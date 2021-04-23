@@ -136,7 +136,9 @@ TArray<Worker_ComponentId>{ // Actor components
                             ACTOR_SET_MEMBER_COMPONENT_ID, ACTOR_GROUP_MEMBER_COMPONENT_ID,
 
                             // Actor tag
-                            ACTOR_TAG_COMPONENT_ID
+                            ACTOR_TAG_COMPONENT_ID,
+
+                            ACTOR_OWNERSHIP_COMPONENT_ID,
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
@@ -144,7 +146,9 @@ TArray<Worker_ComponentId>{ // RPCs from the server
                             SERVER_ENDPOINT_COMPONENT_ID,
 
                             // Actor tags
-                            ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID
+                            ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
+
+                            ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID,
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST = TArray<Worker_ComponentId>{
@@ -170,7 +174,11 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
     // Strategy Worker LB components
     ACTOR_SET_MEMBER_COMPONENT_ID, ACTOR_GROUP_MEMBER_COMPONENT_ID,
 
-    PLAYER_CONTROLLER_COMPONENT_ID, PARTITION_COMPONENT_ID
+    PLAYER_CONTROLLER_COMPONENT_ID, PARTITION_COMPONENT_ID,
+
+    ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID,
+
+    ACTOR_OWNERSHIP_COMPONENT_ID,
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
