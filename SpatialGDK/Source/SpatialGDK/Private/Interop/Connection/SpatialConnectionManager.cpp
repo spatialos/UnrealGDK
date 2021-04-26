@@ -103,8 +103,8 @@ struct ConfigureConnection
 #else
 		TimeoutSeconds = Settings->HeartbeatTimeoutSeconds;
 #endif
-		HeartbeatParams = { static_cast<uint64_t>(Settings->HeartbeatIntervalSeconds * 1000 ),
-															 static_cast<uint64_t>(TimeoutSeconds * 1000) };
+		HeartbeatParams = { static_cast<uint64_t>(Settings->HeartbeatIntervalSeconds * 1000),
+							static_cast<uint64_t>(TimeoutSeconds * 1000) };
 		Params.network.tcp.downstream_heartbeat = &HeartbeatParams;
 		Params.network.tcp.upstream_heartbeat = &HeartbeatParams;
 		Params.network.kcp.downstream_heartbeat = &HeartbeatParams;
