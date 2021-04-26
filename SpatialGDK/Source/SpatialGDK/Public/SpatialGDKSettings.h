@@ -455,6 +455,13 @@ public:
 
 	/*
 	 * -- EXPERIMENTAL --
+	 * Whether to capture *all* event tracing data, regardless of sample/query parameters.
+	 */
+	UPROPERTY(Config)
+	bool bCaptureAllEventTracingData;
+
+	/*
+	 * -- EXPERIMENTAL --
 	 * Which type of event-log files are produced (either a single file or a time-rotated collection of files).
 	 */
 	UPROPERTY(Config)
