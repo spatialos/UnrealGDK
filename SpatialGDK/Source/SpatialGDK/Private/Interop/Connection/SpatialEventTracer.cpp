@@ -169,17 +169,19 @@ void SpatialEventTracer::BeginOpsForFrame()
 void SpatialEventTracer::AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId)
 {
 	Worker_EntityId EntityId = Op.entity_id;
-	TraceEvent(RECEIVE_CREATE_ENTITY_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1, [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
-		EventBuilder.AddEntityId(EntityId);
-	});
+	TraceEvent(RECEIVE_CREATE_ENTITY_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1,
+			   [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
+				   EventBuilder.AddEntityId(EntityId);
+			   });
 }
 
 void SpatialEventTracer::RemoveEntity(const Worker_RemoveEntityOp& Op, const FSpatialGDKSpanId& SpanId)
 {
 	Worker_EntityId EntityId = Op.entity_id;
-	TraceEvent(RECEIVE_REMOVE_ENTITY_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1, [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
-		EventBuilder.AddEntityId(EntityId);
-	});
+	TraceEvent(RECEIVE_REMOVE_ENTITY_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1,
+			   [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
+				   EventBuilder.AddEntityId(EntityId);
+			   });
 }
 
 void SpatialEventTracer::AuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op, const FSpatialGDKSpanId& SpanId)
@@ -285,10 +287,10 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 		uint8_t* Causes = reinterpret_cast<uint8_t*>(&CauseSpanIds);
 		const UObject* ObjectPtr = Object.Get();
 
-		*ExistingSpanId =
-			TraceEvent(MERGE_PROPERTY_UPDATE_EVENT_NAME, "", Causes, /* NumCauses */ 2, [ObjectPtr](FSpatialTraceEventDataBuilder& EventBuilder) {
-				EventBuilder.AddObject(ObjectPtr);
-			});
+		*ExistingSpanId = TraceEvent(MERGE_PROPERTY_UPDATE_EVENT_NAME, "", Causes, /* NumCauses */ 2,
+									 [ObjectPtr](FSpatialTraceEventDataBuilder& EventBuilder) {
+										 EventBuilder.AddObject(ObjectPtr);
+									 });
 	}
 }
 

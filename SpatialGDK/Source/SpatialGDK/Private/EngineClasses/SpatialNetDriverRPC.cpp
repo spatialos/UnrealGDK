@@ -47,10 +47,11 @@ void FSpatialNetDriverRPC::OnRPCSent(SpatialGDK::SpatialEventTracer& EventTracer
 									 Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId,
 									 const FSpatialGDKSpanId& SpanId)
 {
-	FSpatialGDKSpanId NewSpanId = EventTracer.TraceEvent(
-		SEND_RPC_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1, [EntityId, Name, RPCId](FSpatialTraceEventDataBuilder& EventBuilder) {
-			EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForNamedRPC(EntityId, Name, RPCId));
-		});
+	FSpatialGDKSpanId NewSpanId =
+		EventTracer.TraceEvent(SEND_RPC_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1,
+							   [EntityId, Name, RPCId](FSpatialTraceEventDataBuilder& EventBuilder) {
+								   EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForNamedRPC(EntityId, Name, RPCId));
+							   });
 
 	if (OutUpdates.Num() == 0 || OutUpdates.Last().EntityId != EntityId || OutUpdates.Last().Update.component_id != ComponentId)
 	{
