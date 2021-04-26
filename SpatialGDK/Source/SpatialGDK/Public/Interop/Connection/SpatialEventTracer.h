@@ -28,7 +28,7 @@ public:
 
 	template <typename T>
 	FSpatialGDKSpanId TraceEvent(const char* EventType, const char* Message, const Trace_SpanIdType* Causes, int32 NumCauses,
-								  T&& DataCallback) const;
+								 T&& DataCallback) const;
 
 	void BeginOpsForFrame();
 	void AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId);
@@ -102,11 +102,12 @@ private:
 };
 
 template <typename T>
-FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const char* Message,
-												 const Trace_SpanIdType* Causes, int32 NumCauses, T&& DataCallback) const
+FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const char* Message, const Trace_SpanIdType* Causes,
+												 int32 NumCauses, T&& DataCallback) const
 {
 	if (Causes == nullptr && NumCauses > 0)
 	{
+		UE_LOG(LogSpatialEventTracer, Warn, TEXT("TraceEvent called with invalid arguments."));
 		return {};
 	}
 
@@ -127,32 +128,33 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const ch
 	Trace_SamplingResult EventSamplingResult = Trace_EventTracer_ShouldSampleEvent(EventTracer, &Event);
 	switch (EventSamplingResult.decision)
 	{
-		case Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE:
-		{
-			return TraceSpanId;
-		}
-		case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE_WITHOUT_DATA:
-		{
-			Trace_EventTracer_AddEvent(EventTracer, &Event);
-			return TraceSpanId;
-		}
-		case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE:
-		{
-			FSpatialTraceEventDataBuilder EventDataBuilder;
+	case Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE:
+	{
+		return TraceSpanId;
+	}
+	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE_WITHOUT_DATA:
+	{
+		Trace_EventTracer_AddEvent(EventTracer, &Event);
+		return TraceSpanId;
+	}
+	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE:
+	{
+		FSpatialTraceEventDataBuilder EventDataBuilder;
 
-			DataCallback(EventDataBuilder);
+		DataCallback(EventDataBuilder);
 
-			// Frame counter
-			EventDataBuilder.AddKeyValue("FrameNum", GFrameCounter);
+		// Frame counter
+		EventDataBuilder.AddKeyValue("FrameNum", GFrameCounter);
 
-			Event.data = EventDataBuilder.GetEventData();
-			Trace_EventTracer_AddEvent(EventTracer, &Event);
-			return TraceSpanId;
-		}
-		default:
-		{
-			return {};
-		}
+		Event.data = EventDataBuilder.GetEventData();
+		Trace_EventTracer_AddEvent(EventTracer, &Event);
+		return TraceSpanId;
+	}
+	default:
+	{
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."), , static_cast<int>(EventSamplingResult.decision));
+		return {};
+	}
 	}
 }
 
