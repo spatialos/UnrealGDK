@@ -100,15 +100,16 @@ struct ConfigureConnection
 		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
 #if WITH_EDITOR
-		Worker_HeartbeatParameters WithEditorHeartbeatParams = { (uint64_t) Settings->HeartbeatIntervalSeconds * SECONDS_TO_MILLIS,
-																 (uint64_t) Settings->HeartbeatTimeoutWithEditorSeconds * SECONDS_TO_MILLIS };
+		Worker_HeartbeatParameters WithEditorHeartbeatParams = { (uint64_t)Settings->HeartbeatIntervalSeconds * SECONDS_TO_MILLIS,
+																 (uint64_t)Settings->HeartbeatTimeoutWithEditorSeconds
+																	 * SECONDS_TO_MILLIS };
 		Params.network.tcp.downstream_heartbeat = &WithEditorHeartbeatParams;
 		Params.network.tcp.upstream_heartbeat = &WithEditorHeartbeatParams;
 		Params.network.kcp.downstream_heartbeat = &WithEditorHeartbeatParams;
 		Params.network.kcp.upstream_heartbeat = &WithEditorHeartbeatParams;
 #else
-		Worker_HeartbeatParameters WithoutEditorHeartbeatParams = { Settings->HeartbeatIntervalSeconds * SECONDS_TO_MILLIS,
-																	Settings->HeartbeatTimeoutWithEditorSeconds * SECONDS_TO_MILLIS };
+		Worker_HeartbeatParameters WithoutEditorHeartbeatParams = { (uint64_t) Settings->HeartbeatIntervalSeconds * SECONDS_TO_MILLIS,
+																	(uint64_t) Settings->HeartbeatTimeoutWithEditorSeconds * SECONDS_TO_MILLIS };
 		Params.network.tcp.downstream_heartbeat = &WithoutEditorHeartbeatParams;
 		Params.network.tcp.upstream_heartbeat = &WithoutEditorHeartbeatParams;
 		Params.network.kcp.downstream_heartbeat = &WithoutEditorHeartbeatParams;
