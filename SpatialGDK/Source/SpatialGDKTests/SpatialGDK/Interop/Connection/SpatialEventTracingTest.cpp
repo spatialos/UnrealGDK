@@ -175,11 +175,17 @@ EVENTTRACING_TEST(GIVEN_a_string_cache_that_is_full_WHEN_adding_string_THEN_the_
 		InputString += "a";
 	}
 
-	StringCache.AddFString(InputString);
-	int32 Handle = StringCache.AddString("string1");
+	FString TestString;
+	for (int32 i = 0; i < StringCache.GetBufferSize() - 1; ++i)
+	{
+		TestString += "a";
+	}
 
-	const char* OutputString = StringCache.Get(Handle);
-	bool bSuccess = FCStringAnsi::Strcmp("", OutputString) == 0;
+	int32 Handle1 = StringCache.AddFString(InputString);
+	int32 Handle2 = StringCache.AddString("string1");
+
+	bool bSuccess = FCStringAnsi::Strcmp(TestString, StringCache.Get(Handle1)) == 0;
+	bSuccess &= FCStringAnsi::Strcmp("", StringCache.Get(Handle2)) == 0;
 
 	TestTrue("Strings succesfully stored and retreived", bSuccess);
 	return true;
