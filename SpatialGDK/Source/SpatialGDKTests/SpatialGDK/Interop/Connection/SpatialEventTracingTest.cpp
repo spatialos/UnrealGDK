@@ -58,11 +58,9 @@ EVENTTRACING_TEST(
 	}
 
 	FString OutputString = InputString + "s";
-	std::string InputSrc = (const char*)TCHAR_TO_ANSI(*InputString);
-	std::string OuputSrc = (const char*)TCHAR_TO_ANSI(*OutputString);
 
-	int32 Handle = StringCache.CombineStrings(InputSrc.c_str(), "string2");
-	bool bSuccess = FCStringAnsi::Strcmp(OuputSrc.c_str(), StringCache.Get(Handle)) == 0;
+	int32 Handle = StringCache.CombineStrings(TCHAR_TO_ANSI(*InputString), "string2");
+	bool bSuccess = FCStringAnsi::Strcmp(TCHAR_TO_ANSI(*OutputString), StringCache.Get(Handle)) == 0;
 
 	TestTrue("String succesfully stored and retreived", bSuccess);
 	return true;
@@ -184,9 +182,7 @@ EVENTTRACING_TEST(GIVEN_a_string_cache_that_is_full_WHEN_adding_string_THEN_the_
 	int32 Handle1 = StringCache.AddFString(InputString);
 	int32 Handle2 = StringCache.AddString("string1");
 
-	std::string TestStringSrc = (const char*)TCHAR_TO_ANSI(*TestString);
-
-	bool bSuccess = FCStringAnsi::Strcmp(TestStringSrc.c_str(), StringCache.Get(Handle1)) == 0;
+	bool bSuccess = FCStringAnsi::Strcmp(TCHAR_TO_ANSI(*TestString), StringCache.Get(Handle1)) == 0;
 	bSuccess &= FCStringAnsi::Strcmp("", StringCache.Get(Handle2)) == 0;
 
 	TestTrue("Strings succesfully stored and retreived", bSuccess);

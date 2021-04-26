@@ -94,7 +94,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		const FString& EventName = Pair.Key.ToString();
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Adding trace event sampling override. Event: %s Probability: %f."), *EventName,
 			   Pair.Value);
-		int32 Index = AnsiStrings.Add((const char*)TCHAR_TO_ANSI(*EventName));
+		int32 Index = AnsiStrings.Add(TCHAR_TO_ANSI(*EventName));
 		SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
 	}
 

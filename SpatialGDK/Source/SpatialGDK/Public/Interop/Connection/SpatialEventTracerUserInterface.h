@@ -78,7 +78,7 @@ public:
 	 * Will trace an event using the input data and associate it with the input SpanId
 	 * (This API is subject to change)
 	 */
-	static FUserSpanId TraceEvent(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage,
+	static FUserSpanId TraceEvent(UObject* WorldContextObject, const char* EventType, const char* EventMessage,
 								  FEventTracerAddDataDelegate AddDataDelegate = {});
 
 	/**
@@ -86,7 +86,7 @@ public:
 	 * Will trace an event using the input data and associate it with the input SpanId
 	 * (This API is subject to change)
 	 */
-	static FUserSpanId TraceEventWithCauses(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage,
+	static FUserSpanId TraceEventWithCauses(UObject* WorldContextObject, const char* EventType, const char* EventMessage,
 											const TArray<FUserSpanId>& Causes, FEventTracerAddDataDelegate AddDataDelegate = {});
 
 private:

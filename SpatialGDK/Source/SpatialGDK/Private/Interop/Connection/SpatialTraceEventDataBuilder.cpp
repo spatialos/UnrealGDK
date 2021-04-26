@@ -46,7 +46,7 @@ int32 FSpatialTraceEventDataBuilder::FStringCache::AddString(const char* String)
 
 int32 FSpatialTraceEventDataBuilder::FStringCache::AddFString(const FString& String)
 {
-	return AddString(static_cast<const char*>(TCHAR_TO_ANSI(*String)));
+	return AddString(TCHAR_TO_ANSI(*String));
 }
 
 int32 FSpatialTraceEventDataBuilder::FStringCache::AddUInt32(uint32 Value)

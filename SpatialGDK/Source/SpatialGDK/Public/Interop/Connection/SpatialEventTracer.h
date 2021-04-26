@@ -151,8 +151,6 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const ch
 		}
 		default:
 		{
-			//FString Error(FString::Printf(TEXT("Could not handle invalid sampling decision %d."), static_cast<int>(EventSamplingResult.decision)));
-			//Log(Error);
 			return {};
 		}
 	}

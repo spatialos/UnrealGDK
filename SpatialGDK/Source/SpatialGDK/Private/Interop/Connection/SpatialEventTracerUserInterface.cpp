@@ -41,10 +41,7 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextOb
 		return {};
 	}
 
-	std::string TypeSrc = (const char*)TCHAR_TO_ANSI(*EventType);
-	std::string MessageSrc = (const char*)TCHAR_TO_ANSI(*EventMessage);
-
-	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(TypeSrc.c_str(), MessageSrc.c_str(), /* Causes */ nullptr,
+	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(TCHAR_TO_ANSI(*EventType), TCHAR_TO_ANSI(*EventMessage), /* Causes */ nullptr,
 													   /* NumCauses */ 0, [Data](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
 														   for (const auto& Pair : Data)
 														   {
@@ -55,7 +52,7 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextOb
 	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 }
 
-FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage,
+FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextObject, const char* EventType, const char* EventMessage,
 														 FEventTracerAddDataDelegate AddDataDelegate)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
@@ -64,10 +61,7 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEvent(UObject* WorldContextOb
 		return {};
 	}
 
-	std::string TypeSrc = (const char*)TCHAR_TO_ANSI(*EventType);
-	std::string MessageSrc = (const char*)TCHAR_TO_ANSI(*EventMessage);
-
-	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(TypeSrc.c_str(), MessageSrc.c_str(), /* Causes */ nullptr, /* NumCauses */ 0,
+	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(EventType, EventMessage, /* Causes */ nullptr, /* NumCauses */ 0,
 													   [AddDataDelegate](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
 														   AddDataDelegate.ExecuteIfBound(EventBuilder);
 													   });
@@ -85,11 +79,8 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* Worl
 		return {};
 	}
 
-	std::string TypeSrc = (const char*)TCHAR_TO_ANSI(*EventType);
-	std::string MessageSrc = (const char*)TCHAR_TO_ANSI(*EventMessage);
-
 	TArray<FSpatialGDKSpanId> CauseSpanIds = ConvertSpanIds(Causes);
-	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(TypeSrc.c_str(), MessageSrc.c_str(), CauseSpanIds.GetData()->GetId(),
+	FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(TCHAR_TO_ANSI(*EventType), TCHAR_TO_ANSI(*EventMessage), CauseSpanIds.GetData()->GetId(),
 													   CauseSpanIds.Num(), [Data](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
 														   for (const auto& Pair : Data)
 														   {
@@ -100,8 +91,8 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* Worl
 	return SpatialGDK::SpatialEventTracer::GDKSpanIdToUserSpanId(SpanId);
 }
 
-FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* WorldContextObject, const FString& EventType,
-																   const FString& EventMessage, const TArray<FUserSpanId>& Causes,
+FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* WorldContextObject, const char* EventType,
+	const char* EventMessage, const TArray<FUserSpanId>& Causes,
 																   FEventTracerAddDataDelegate AddDataDelegate)
 {
 	SpatialGDK::SpatialEventTracer* EventTracer = GetEventTracer(WorldContextObject);
@@ -110,12 +101,9 @@ FUserSpanId USpatialEventTracerUserInterface::TraceEventWithCauses(UObject* Worl
 		return {};
 	}
 
-	std::string TypeSrc = (const char*)TCHAR_TO_ANSI(*EventType);
-	std::string MessageSrc = (const char*)TCHAR_TO_ANSI(*EventMessage);
-
 	TArray<FSpatialGDKSpanId> CauseSpanIds = ConvertSpanIds(Causes);
 	FSpatialGDKSpanId SpanId =
-		EventTracer->TraceEvent(TypeSrc.c_str(), MessageSrc.c_str(), CauseSpanIds.GetData()->GetId(), CauseSpanIds.Num(),
+		EventTracer->TraceEvent(EventType, EventMessage, CauseSpanIds.GetData()->GetId(), CauseSpanIds.Num(),
 								[AddDataDelegate](SpatialGDK::FSpatialTraceEventDataBuilder& EventBuilder) {
 									AddDataDelegate.ExecuteIfBound(EventBuilder);
 								});
