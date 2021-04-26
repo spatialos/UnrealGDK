@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CoreMinimal.h"
+#include "Misc/Optional.h"
 
 #include "SpatialCommonTypes.h"
 #include "SpatialView/SubView.h"
@@ -9,8 +9,6 @@ class USpatialNetDriver;
 
 namespace SpatialGDK
 {
-class FSubView;
-
 namespace ActorSubviews
 {
 FSubView& CreateActorSubView(USpatialNetDriver& NetDriver);
@@ -18,7 +16,8 @@ FSubView& CreateCustomActorSubView(TOptional<Worker_ComponentId> MaybeCustomComp
 								   TOptional<TArray<FDispatcherRefreshCallback>> MaybeCustomRefresh, USpatialNetDriver& NetDriver);
 FSubView& CreateActorAuthSubView(USpatialNetDriver& NetDriver);
 FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver);
-FSubView& CreateAutonomousSubView(USpatialNetDriver& NetDriver);
+FSubView& CreateOwnershipSubView(USpatialNetDriver& NetDriver);
 FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver);
 } // namespace ActorSubviews
+
 } // namespace SpatialGDK

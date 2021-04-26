@@ -29,12 +29,12 @@ static bool IsAuthorityActorEntity(const Worker_EntityId EntityId, const EntityV
 static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator);
 } // namespace AuthoritySubviewSetup
 
-namespace AutonomousSubviewSetup
+namespace OwnershipSubviewSetup
 {
-static bool IsAutonomousActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element);
+static bool IsPlayerOwnedActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element);
 
 static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator);
-} // namespace AutonomousSubviewSetup
+} // namespace OwnershipSubviewSetup
 
 namespace SimulatedSubviewSetup
 {
@@ -106,13 +106,13 @@ TArray<FDispatcherRefreshCallback> AuthoritySubviewSetup::GetCallbacks(ViewCoord
 							});
 }
 
-bool AutonomousSubviewSetup::IsAutonomousActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element)
+bool OwnershipSubviewSetup::IsPlayerOwnedActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element)
 {
 	return !AuthoritySubviewSetup::IsAuthorityActorEntity(EntityId, Element)
 		   && Element.Authority.Contains(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
 }
 
-TArray<FDispatcherRefreshCallback> AutonomousSubviewSetup::GetCallbacks(ViewCoordinator& Coordinator)
+TArray<FDispatcherRefreshCallback> OwnershipSubviewSetup::GetCallbacks(ViewCoordinator& Coordinator)
 {
 	return CombineCallbacks(AuthoritySubviewSetup::GetCallbacks(Coordinator),
 							{
@@ -123,12 +123,12 @@ TArray<FDispatcherRefreshCallback> AutonomousSubviewSetup::GetCallbacks(ViewCoor
 bool SimulatedSubviewSetup::IsSimulatedActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Entity)
 {
 	return !AuthoritySubviewSetup::IsAuthorityActorEntity(EntityId, Entity)
-		   && !AutonomousSubviewSetup::IsAutonomousActorEntity(EntityId, Entity);
+		   && !OwnershipSubviewSetup::IsPlayerOwnedActorEntity(EntityId, Entity);
 }
 
 TArray<FDispatcherRefreshCallback> SimulatedSubviewSetup::GetCallbacks(ViewCoordinator& Coordinator)
 {
-	return AutonomousSubviewSetup::GetCallbacks(Coordinator);
+	return OwnershipSubviewSetup::GetCallbacks(Coordinator);
 }
 
 FSubView& CreateActorSubView(USpatialNetDriver& NetDriver)
@@ -201,11 +201,11 @@ FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver)
 		AuthoritySubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 }
 
-FSubView& CreateAutonomousSubView(USpatialNetDriver& NetDriver)
+FSubView& CreateOwnershipSubView(USpatialNetDriver& NetDriver)
 {
 	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetRoleFilterPredicate(&AutonomousSubviewSetup::IsAutonomousActorEntity, NetDriver),
-		AutonomousSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
+		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetRoleFilterPredicate(&OwnershipSubviewSetup::IsPlayerOwnedActorEntity, NetDriver),
+		OwnershipSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 }
 
 FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver)

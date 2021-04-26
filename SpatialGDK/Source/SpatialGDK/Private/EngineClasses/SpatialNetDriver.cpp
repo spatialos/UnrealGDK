@@ -498,10 +498,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		{
 			const SpatialGDK::FSubView& AuthoritySubView = SpatialGDK::ActorSubviews::CreateAuthoritySubView(*this);
-			const SpatialGDK::FSubView& AutonomousSubView = SpatialGDK::ActorSubviews::CreateAutonomousSubView(*this);
+			const SpatialGDK::FSubView& OwnershipSubView = SpatialGDK::ActorSubviews::CreateOwnershipSubView(*this);
 			const SpatialGDK::FSubView& SimulatedSubView = SpatialGDK::ActorSubviews::CreateSimulatedSubView(*this);
 
-			ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, AuthoritySubView, AutonomousSubView, SimulatedSubView,
+			ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, AuthoritySubView, OwnershipSubView, SimulatedSubView,
 															  TombstoneActorSubview, this, Connection->GetEventTracer());
 		}
 

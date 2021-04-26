@@ -227,12 +227,12 @@ void ActorSystem::ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate)
 	}
 }
 
-ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InAuthoritySubView, const FSubView& InAutonomousSubView,
+ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InAuthoritySubView, const FSubView& InOwnershipSubView,
 						 const FSubView& InSimulatedSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
 						 SpatialEventTracer* InEventTracer)
 	: ActorSubView(&InActorSubView)
 	, AuthoritySubView(&InAuthoritySubView)
-	, AutonomousSubView(&InAutonomousSubView)
+	, OwnershipSubView(&InOwnershipSubView)
 	, SimulatedSubView(&InSimulatedSubView)
 	, TombstoneSubView(&InTombstoneSubView)
 	, NetDriver(InNetDriver)
@@ -275,15 +275,15 @@ void ActorSystem::Advance()
 
 #if DO_CHECK
 	{
-		ValidateNoSubviewIntersections(*AuthoritySubView, *AutonomousSubView, TEXT("Authority and Autonomous"));
+		ValidateNoSubviewIntersections(*AuthoritySubView, *OwnershipSubView, TEXT("Authority and Ownership"));
 		ValidateNoSubviewIntersections(*AuthoritySubView, *SimulatedSubView, TEXT("Authority and Simulated"));
-		ValidateNoSubviewIntersections(*SimulatedSubView, *AutonomousSubView, TEXT("Simulated and Autonomous"));
+		ValidateNoSubviewIntersections(*SimulatedSubView, *OwnershipSubView, TEXT("Simulated and Ownership"));
 	}
 #endif // DO_CHECK
 
 	const FEntitySubView SubViews[]{
 		{ AuthoritySubView, ENetRole::ROLE_Authority },
-		{ AutonomousSubView, ENetRole::ROLE_AutonomousProxy },
+		{ OwnershipSubView, ENetRole::ROLE_AutonomousProxy },
 		{ SimulatedSubView, ENetRole::ROLE_SimulatedProxy },
 	};
 

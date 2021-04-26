@@ -41,7 +41,7 @@ struct ActorData
 class ActorSystem
 {
 public:
-	ActorSystem(const FSubView& InActorSubView, const FSubView& InAuthoritySubView, const FSubView& InAutonomousSubView,
+	ActorSystem(const FSubView& InActorSubView, const FSubView& InAuthoritySubView, const FSubView& InOwnershipSubView,
 				const FSubView& InSimulatedSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
 				SpatialEventTracer* InEventTracer);
 
@@ -172,7 +172,7 @@ private:
 
 	const FSubView* ActorSubView;
 	const FSubView* AuthoritySubView;
-	const FSubView* AutonomousSubView;
+	const FSubView* OwnershipSubView;
 	const FSubView* SimulatedSubView;
 	const FSubView* TombstoneSubView;
 
