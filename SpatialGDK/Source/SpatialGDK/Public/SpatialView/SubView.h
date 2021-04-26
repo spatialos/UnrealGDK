@@ -40,6 +40,7 @@ public:
 
 	void Advance(const ViewDelta& Delta);
 	const FSubViewDelta& GetViewDelta() const;
+	TSet<Worker_EntityId_Key> GetCompleteEntities() const;
 	void RefreshEntity(const Worker_EntityId EntityId);
 
 	const EntityView& GetView() const;

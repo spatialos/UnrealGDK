@@ -10,6 +10,7 @@ UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ACrossServerPossessionLockTest : public ASpatialTestRemotePossession
 {
 	GENERATED_BODY()
+
 public:
 	ACrossServerPossessionLockTest();
 

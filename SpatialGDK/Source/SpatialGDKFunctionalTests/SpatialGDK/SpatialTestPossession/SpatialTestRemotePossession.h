@@ -4,9 +4,22 @@
 
 #include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
+#include "TestPossessionPlayerController.h"
 #include "SpatialTestRemotePossession.generated.h"
 
 class ATestPossessionPawn;
+
+USTRUCT()
+struct FControllerPawnPair
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	ATestPossessionPlayerController* PlayerController;
+
+	UPROPERTY()
+	APawn* Pawn;
+};
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestRemotePossession : public ASpatialFunctionalTest
@@ -27,4 +40,13 @@ protected:
 	FVector LocationOfPawn;
 	float WaitTime;
 	const static float MaxWaitTime;
+
+	void AddCleanupSteps();
+
+	UFUNCTION(CrossServer, Reliable)
+	void AddToOriginalPawns(ATestPossessionPlayerController* PlayerController, APawn* Pawn);
+
+	// To save original Pawns and possess them back at the end
+	UPROPERTY(Handover, Transient)
+	TArray<FControllerPawnPair> OriginalPawns;
 };

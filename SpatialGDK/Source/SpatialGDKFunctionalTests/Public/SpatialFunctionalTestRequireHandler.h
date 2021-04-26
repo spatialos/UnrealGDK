@@ -11,7 +11,7 @@ struct FSpatialFunctionalTestRequire
 {
 	FString Msg;
 	bool bPassed;
-	FString ErrorMsg;
+	FString StatusMsg;
 	uint32 Order; // Used to be able to log the messages in the same order they occurred at the end.
 };
 
@@ -30,31 +30,31 @@ public:
 
 	void SetOwnerTest(ASpatialFunctionalTest* SpatialFunctionalTest) { OwnerTest = SpatialFunctionalTest; }
 
-	void RequireTrue(bool bCheckTrue, const FString& Msg);
-	void RequireFalse(bool bCheckFalse, const FString& Msg);
+	bool RequireTrue(bool bCheckTrue, const FString& Msg);
+	bool RequireFalse(bool bCheckFalse, const FString& Msg);
 
-	void RequireCompare(int A, EComparisonMethod Operator, int B, const FString& Msg);
-	void RequireCompare(float A, EComparisonMethod Operator, float B, const FString& Msg);
+	bool RequireCompare(int A, EComparisonMethod Operator, int B, const FString& Msg);
+	bool RequireCompare(float A, EComparisonMethod Operator, float B, const FString& Msg);
 
-	void RequireEqual(bool bValue, bool bExpected, const FString& Msg);
-	void RequireEqual(int Value, int Expected, const FString& Msg);
-	void RequireEqual(float Value, float Expected, const FString& Msg, float Tolerance);
-	void RequireEqual(const FString& Value, const FString& Expected, const FString& Msg);
-	void RequireEqual(const FName& Value, const FName& Expected, const FString& Msg);
-	void RequireEqual(const FVector& Value, const FVector& Expected, const FString& Msg, float Tolerance);
-	void RequireEqual(const FRotator& Value, const FRotator& Expected, const FString& Msg, float Tolerance);
-	void RequireEqual(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance);
+	bool RequireEqual(bool bValue, bool bExpected, const FString& Msg);
+	bool RequireEqual(int Value, int Expected, const FString& Msg);
+	bool RequireEqual(float Value, float Expected, const FString& Msg, float Tolerance);
+	bool RequireEqual(const FString& Value, const FString& Expected, const FString& Msg);
+	bool RequireEqual(const FName& Value, const FName& Expected, const FString& Msg);
+	bool RequireEqual(const FVector& Value, const FVector& Expected, const FString& Msg, float Tolerance);
+	bool RequireEqual(const FRotator& Value, const FRotator& Expected, const FString& Msg, float Tolerance);
+	bool RequireEqual(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance);
 
-	void RequireNotEqual(bool bValue, bool bNotExpected, const FString& Msg);
-	void RequireNotEqual(int Value, int NotExpected, const FString& Msg);
-	void RequireNotEqual(float Value, float NotExpected, const FString& Msg);
-	void RequireNotEqual(const FString& Value, const FString& NotExpected, const FString& Msg);
-	void RequireNotEqual(const FName& Value, const FName& NotExpected, const FString& Msg);
-	void RequireNotEqual(const FVector& Value, const FVector& NotExpected, const FString& Msg);
-	void RequireNotEqual(const FRotator& Value, const FRotator& NotExpected, const FString& Msg);
-	void RequireNotEqual(const FTransform& Value, const FTransform& NotExpected, const FString& Msg);
+	bool RequireNotEqual(bool bValue, bool bNotExpected, const FString& Msg);
+	bool RequireNotEqual(int Value, int NotExpected, const FString& Msg);
+	bool RequireNotEqual(float Value, float NotExpected, const FString& Msg);
+	bool RequireNotEqual(const FString& Value, const FString& NotExpected, const FString& Msg);
+	bool RequireNotEqual(const FName& Value, const FName& NotExpected, const FString& Msg);
+	bool RequireNotEqual(const FVector& Value, const FVector& NotExpected, const FString& Msg);
+	bool RequireNotEqual(const FRotator& Value, const FRotator& NotExpected, const FString& Msg);
+	bool RequireNotEqual(const FTransform& Value, const FTransform& NotExpected, const FString& Msg);
 
-	void GenericRequire(const FString& Key, bool bPassed, const FString& ErrorMsg);
+	bool GenericRequire(const FString& Key, bool bPassed, const FString& StatusMsg);
 
 	void LogAndClearStepRequires();
 
