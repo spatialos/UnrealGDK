@@ -25,7 +25,7 @@ public:
 	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceNonEditorSettings = false);
 
 #if WITH_EDITORONLY_DATA
-	UPROPERTY(EditAnywhere, Category = "Testing", Meta=(FilePathFilter="ini"))
+	UPROPERTY(EditAnywhere, Category = "Testing", Meta = (FilePathFilter = "ini"))
 	FFilePath SettingOverrides;
 
 	UPROPERTY(EditAnywhere, Category = "Testing")
