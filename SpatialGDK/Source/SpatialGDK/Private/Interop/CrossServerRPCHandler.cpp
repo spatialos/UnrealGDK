@@ -81,7 +81,7 @@ void CrossServerRPCHandler::HandleWorkerOp(const Worker_Op& Op)
 		if (ensureMsgf(Params->Payload.Id.IsSet(), TEXT("Cross-server RPCs are expected to have a payload ID for event tracing.")))
 		{
 			SpanId = EventTracer->TraceEvent(RECEIVE_CROSS_SERVER_RPC_EVENT_NAME, "",
-											 EventTracer->GetAndConsumeSpanForRequestId(Op.op.command_request.request_id).GetConstId(), 1,
+											 EventTracer->GetAndConsumeSpanForRequestId(Op.op.command_request.request_id).GetConstId(), /* NumCauses */ 1,
 											 [CommandOp, &Params](FSpatialTraceEventDataBuilder& EventBuilder) {
 												 EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForCrossServerRPC(
 													 CommandOp.entity_id, Params->Payload.Id.GetValue()));

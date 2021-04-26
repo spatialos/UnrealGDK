@@ -61,7 +61,7 @@ void USpatialPlayerSpawner::OnPlayerSpawnCommandReceived(const Worker_Op& Op, co
 	if (EventTracer != nullptr)
 	{
 		Worker_RequestId RequestId = CommandRequestOp.request_id;
-		EventTracer->TraceEvent(RECEIVE_COMMAND_REQUEST_EVENT_NAME, "", Op.span_id, 1,
+		EventTracer->TraceEvent(RECEIVE_COMMAND_REQUEST_EVENT_NAME, "", Op.span_id, /* NumCauses */ 1,
 								[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
 									EventBuilder.AddCommand("SPAWN_PLAYER_COMMAND");
 									EventBuilder.AddRequestId(RequestId);
@@ -93,7 +93,7 @@ void USpatialPlayerSpawner::OnForwardedPlayerSpawnCommandReceived(const Worker_O
 	if (EventTracer != nullptr)
 	{
 		Worker_RequestId RequestId = CommandRequestOp.request_id;
-		EventTracer->TraceEvent(RECEIVE_COMMAND_REQUEST_EVENT_NAME, "", Op.span_id, 1,
+		EventTracer->TraceEvent(RECEIVE_COMMAND_REQUEST_EVENT_NAME, "", Op.span_id, /* NumCauses */ 1,
 								[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
 									EventBuilder.AddCommand("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND");
 									EventBuilder.AddRequestId(RequestId);
@@ -107,7 +107,7 @@ void USpatialPlayerSpawner::OnForwardedPlayerSpawnResponseReceived(const Worker_
 	if (EventTracer != nullptr)
 	{
 		Worker_RequestId RequestId = CommandResponseOp.request_id;
-		EventTracer->TraceEvent(RECEIVE_COMMAND_RESPONSE_EVENT_NAME, "", Op.span_id, 1,
+		EventTracer->TraceEvent(RECEIVE_COMMAND_RESPONSE_EVENT_NAME, "", Op.span_id, /* NumCauses */ 1,
 								[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
 									EventBuilder.AddCommand("SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND");
 									EventBuilder.AddRequestId(RequestId);

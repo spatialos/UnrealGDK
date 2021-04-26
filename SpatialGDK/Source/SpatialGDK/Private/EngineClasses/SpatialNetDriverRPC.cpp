@@ -48,7 +48,7 @@ void FSpatialNetDriverRPC::OnRPCSent(SpatialGDK::SpatialEventTracer& EventTracer
 									 const FSpatialGDKSpanId& SpanId)
 {
 	FSpatialGDKSpanId NewSpanId = EventTracer.TraceEvent(
-		SEND_RPC_EVENT_NAME, "", SpanId.GetConstId(), 1, [EntityId, Name, RPCId](FSpatialTraceEventDataBuilder& EventBuilder) {
+		SEND_RPC_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1, [EntityId, Name, RPCId](FSpatialTraceEventDataBuilder& EventBuilder) {
 			EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForNamedRPC(EntityId, Name, RPCId));
 		});
 
@@ -256,7 +256,7 @@ FSpatialGDKSpanId FSpatialNetDriverRPC::CreatePushRPCEvent(UObject* TargetObject
 
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->TraceEvent(PUSH_RPC_EVENT_NAME, "", EventTracer->GetFromStack().GetConstId(), 1,
+		SpanId = EventTracer->TraceEvent(PUSH_RPC_EVENT_NAME, "", EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1,
 										 [TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
 											 EventBuilder.AddObject(TargetObject);
 											 EventBuilder.AddFunction(Function);
@@ -411,7 +411,7 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload&
 	const bool bUseEventTracer = EventTracer != nullptr;
 	if (bUseEventTracer)
 	{
-		FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(APPLY_RPC_EVENT_NAME, "", MetaData.SpanId.GetConstId(), 1,
+		FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(APPLY_RPC_EVENT_NAME, "", MetaData.SpanId.GetConstId(), /* NumCauses */ 1,
 														   [TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
 															   EventBuilder.AddObject(TargetObject);
 															   EventBuilder.AddFunction(Function);

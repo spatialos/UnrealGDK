@@ -169,7 +169,7 @@ void SpatialEventTracer::BeginOpsForFrame()
 void SpatialEventTracer::AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId)
 {
 	Worker_EntityId EntityId = Op.entity_id;
-	TraceEvent(RECEIVE_CREATE_ENTITY_EVENT_NAME, "", SpanId.GetConstId(), 1, [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
+	TraceEvent(RECEIVE_CREATE_ENTITY_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1, [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
 		EventBuilder.AddEntityId(EntityId);
 	});
 }
@@ -177,7 +177,7 @@ void SpatialEventTracer::AddEntity(const Worker_AddEntityOp& Op, const FSpatialG
 void SpatialEventTracer::RemoveEntity(const Worker_RemoveEntityOp& Op, const FSpatialGDKSpanId& SpanId)
 {
 	Worker_EntityId EntityId = Op.entity_id;
-	TraceEvent(RECEIVE_REMOVE_ENTITY_EVENT_NAME, "", SpanId.GetConstId(), 1, [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
+	TraceEvent(RECEIVE_REMOVE_ENTITY_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1, [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
 		EventBuilder.AddEntityId(EntityId);
 	});
 }
@@ -188,7 +188,7 @@ void SpatialEventTracer::AuthorityChange(const Worker_ComponentSetAuthorityChang
 	Worker_ComponentSetId ComponentSetId = Op.component_set_id;
 	Worker_Authority Authority = static_cast<Worker_Authority>(Op.authority);
 
-	TraceEvent(AUTHORITY_CHANGE_EVENT_NAME, "", SpanId.GetConstId(), 1,
+	TraceEvent(AUTHORITY_CHANGE_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1,
 			   [EntityId, ComponentSetId, Authority](FSpatialTraceEventDataBuilder& EventBuilder) {
 				   EventBuilder.AddEntityId(EntityId);
 				   EventBuilder.AddComponentSetId(ComponentSetId);
@@ -286,7 +286,7 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 		const UObject* ObjectPtr = Object.Get();
 
 		*ExistingSpanId =
-			TraceEvent(MERGE_PROPERTY_UPDATE_EVENT_NAME, "", Causes, 2, [ObjectPtr](FSpatialTraceEventDataBuilder& EventBuilder) {
+			TraceEvent(MERGE_PROPERTY_UPDATE_EVENT_NAME, "", Causes, /* NumCauses */ 2, [ObjectPtr](FSpatialTraceEventDataBuilder& EventBuilder) {
 				EventBuilder.AddObject(ObjectPtr);
 			});
 	}
