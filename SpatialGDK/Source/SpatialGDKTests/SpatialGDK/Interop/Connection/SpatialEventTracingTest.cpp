@@ -184,7 +184,9 @@ EVENTTRACING_TEST(GIVEN_a_string_cache_that_is_full_WHEN_adding_string_THEN_the_
 	int32 Handle1 = StringCache.AddFString(InputString);
 	int32 Handle2 = StringCache.AddString("string1");
 
-	bool bSuccess = FCStringAnsi::Strcmp(TestString, StringCache.Get(Handle1)) == 0;
+	std::string TestStringSrc = (const char*)TCHAR_TO_ANSI(*TestString);
+
+	bool bSuccess = FCStringAnsi::Strcmp(TestStringSrc.c_str(), StringCache.Get(Handle1)) == 0;
 	bSuccess &= FCStringAnsi::Strcmp("", StringCache.Get(Handle2)) == 0;
 
 	TestTrue("Strings succesfully stored and retreived", bSuccess);

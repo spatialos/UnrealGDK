@@ -83,6 +83,7 @@ public:
 
 			int32 InsertIndex = NextIndex;
 			int32 RemainingSize = BufferSize - NextIndex;
+			int32 CharSize = sizeof(char);
 			int32 BytesWritten = CharSize * (FCStringAnsi::Snprintf(&Buffer[NextIndex], RemainingSize, Fmt, Integer) + 1);
 			NextIndex += BytesWritten;
 			return InsertIndex;
