@@ -316,6 +316,17 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			AddProperty(Object, FieldId, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), ClearedIds);
 		}
 
+		if (ArrayHelper.Num() > 0)
+		{
+			if (ArrayProperty->Inner->IsA<GDK_PROPERTY(ObjectPropertyBase)>())
+			{
+				if (ArrayProperty->PropertyFlags & CPF_AlwaysInterested)
+				{
+					bInterestHasChanged = true;
+				}
+			}
+		}
+
 		if (ArrayHelper.Num() == 0 && ClearedIds)
 		{
 			ClearedIds->Add(FieldId);

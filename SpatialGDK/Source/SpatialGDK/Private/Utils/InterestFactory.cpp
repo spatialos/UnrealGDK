@@ -226,7 +226,7 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 	if (InActor->IsA(APlayerController::StaticClass()))
 	{
 		// Put the "main" interest queries on the player controller
-		AddPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
+		AddClientPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
 	}
 
 	// Clients need to see owner only and server RPC components on entities they have authority over
@@ -235,12 +235,15 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 	// Every actor needs a self query for the server to the client RPC endpoint
 	AddServerSelfInterest(ResultInterest);
 
-	AddOwnerInterestOnServer(ResultInterest, InActor, InEntityId);
+	// Ensure the auth server has interest in an actor's ownership chain
+	AddServerActorOwnerInterest(ResultInterest, InActor, InEntityId);
+
+	AddServerAlwaysInterestedInterest(ResultInterest, InActor, InInfo);
 
 	return ResultInterest;
 }
 
-void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
+void InterestFactory::AddClientPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
 {
 	const QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
 
@@ -300,7 +303,7 @@ bool InterestFactory::DoOwnersHaveEntityId(const AActor* Actor) const
 	return true;
 }
 
-void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const
+void InterestFactory::AddServerActorOwnerInterest(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const
 {
 	AActor* Owner = InActor->GetOwner();
 	Query OwnerChainQuery;
@@ -374,6 +377,21 @@ void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest,
 		ServerSystemQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
 
 		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, ServerSystemQuery);
+	}
+}
+
+void InterestFactory::AddServerAlwaysInterestedInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
+{
+	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint(InActor, InInfo);
+
+	if (AlwaysInterestedConstraint.IsValid())
+	{
+		Query AlwaysInterestedQuery;
+		AlwaysInterestedQuery.Constraint = AlwaysInterestedConstraint;
+		AlwaysInterestedQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
+		AlwaysInterestedQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
+
+		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AlwaysInterestedQuery);
 	}
 }
 
