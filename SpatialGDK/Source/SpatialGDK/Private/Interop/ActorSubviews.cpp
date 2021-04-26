@@ -329,8 +329,9 @@ GDK_TEST(Core, OwnershipCompleteness, SomeTest)
 	ViewCoordinator Coordinator(MoveTemp(ConnHandlerUnique), nullptr, FComponentSetData());
 	FSubView& SimSubView = ActorSubviews::CreateSimulatedSubView(Coordinator);
 	FOwnershipCompletenessHandler H;
-	H.PlayerOwnedEntities.Emplace(2);
+	H.AddPlayerEntity(2);
 	FSubView& SimComplSubView = ActorSubviews::CreateSimulatedOwnershipCompletenessSubView(Coordinator, H);
+	H.AddSubView(SimComplSubView);
 
 	Coordinator.Advance(1);
 	TestTrue(TEXT("Entity was complete without considering ownership"), SimSubView.IsEntityComplete(1));
@@ -352,13 +353,12 @@ GDK_TEST(Core, OwnershipCompleteness, SomeTest)
 
 	return true;
 }
+
 PRAGMA_ENABLE_OPTIMIZATION
 
 bool FOwnershipCompletenessHandler::IsOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity)
 {
 	const ActorOwnership Value = *Entity.Components.FindByPredicate(ComponentIdEquality{ ActorOwnership::ComponentId });
-
-	EntitiesPossiblyOwned.Emplace(EntityId);
 
 	const bool bIsPlayerOwned = Value.OwnerActorEntityId != SpatialConstants::INVALID_ENTITY_ID
 								&& (Value.OwnerActorEntityId == EntityId || PlayerOwnedEntities.Contains(EntityId)
@@ -368,6 +368,31 @@ bool FOwnershipCompletenessHandler::IsOwnershipComplete(Worker_EntityId EntityId
 		Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID });
 
 	return bIsPlayerOwned == bHasOwnerOnlyComponents;
+}
+
+void FOwnershipCompletenessHandler::AddPlayerEntity(Worker_EntityId EntityId)
+{
+	PlayerOwnedEntities.Add(EntityId);
+
+	for (FSubView* SubViewToRefresh : SubViewsToRefresh)
+	{
+		SubViewToRefresh->Refresh();
+	}
+}
+
+void FOwnershipCompletenessHandler::RemovePlayerEntity(Worker_EntityId EntityId)
+{
+	PlayerOwnedEntities.Remove(EntityId);
+
+	for (FSubView* SubViewToRefresh : SubViewsToRefresh)
+	{
+		SubViewToRefresh->Refresh();
+	}
+}
+
+void FOwnershipCompletenessHandler::AddSubView(FSubView& InSubView)
+{
+	SubViewsToRefresh.Emplace(&InSubView);
 }
 
 TArray<FDispatcherRefreshCallback> FOwnershipCompletenessHandler::GetCallbacks(ViewCoordinator& Coordinator)

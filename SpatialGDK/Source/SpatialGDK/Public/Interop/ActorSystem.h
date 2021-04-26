@@ -45,12 +45,15 @@ class ViewCoordinator;
 struct FOwnershipCompletenessHandler
 {
 	bool IsOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity);
+	void AddPlayerEntity(Worker_EntityId EntityId);
+	void RemovePlayerEntity(Worker_EntityId EntityId);
+	void AddSubView(FSubView& InSubView);
 
 	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator);
 
-	TSet<Worker_EntityId_Key> EntitiesPossiblyOwned;
-
+private:
 	TSet<Worker_EntityId_Key> PlayerOwnedEntities;
+	TArray<FSubView*> SubViewsToRefresh;
 };
 
 class ActorSystem
