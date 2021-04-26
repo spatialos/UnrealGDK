@@ -42,14 +42,13 @@ void FSpatialTestSettings::Override(const FString& MapName)
 		Load(BaseOverridesFilename);
 	}
 
-	// Group config, applies to maps with the group config set in the Spatial World Settings
+	// Specific config, applies to maps with the setting override config set in the Spatial World Settings
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
 	check(World != nullptr);
 
 	if (ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
-		FString GroupOverridesFilename =
-			OverrideSettingsBaseFilename + "/" + SpatialWorldSettings->GroupConfigFilename + (OverrideSettingsFileExtension);
+		FString GroupOverridesFilename = FPaths::ConvertRelativePathToFull(SpatialWorldSettings->SettingOverrides.FilePath);
 		if (FPaths::FileExists(GroupOverridesFilename))
 		{
 			// Override the settings from the group specific config file, if it exists
@@ -57,14 +56,7 @@ void FSpatialTestSettings::Override(const FString& MapName)
 		}
 	}
 
-	// Map config, applied to the specific map
-	FString MapOverridesFilename = OverrideSettingsBaseFilename + "/" + OverrideSettingsFilePrefix + FPackageName::GetShortName(MapName)
-								   + (OverrideSettingsFileExtension);
-	if (FPaths::FileExists(MapOverridesFilename))
-	{
-		// Override the settings from the map specific config file
-		Load(MapOverridesFilename);
-	}
+	// Generated config, applied to generated maps
 	FString GeneratedMapOverridesFilename =
 		GeneratedOverrideSettingsBaseFilename + FPackageName::GetShortName(MapName) + (OverrideSettingsFileExtension);
 	if (FPaths::FileExists(GeneratedMapOverridesFilename))

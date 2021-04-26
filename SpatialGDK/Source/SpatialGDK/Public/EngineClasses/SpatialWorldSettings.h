@@ -25,8 +25,8 @@ public:
 	TSubclassOf<USpatialMultiWorkerSettings> GetMultiWorkerSettingsClass(bool bForceNonEditorSettings = false);
 
 #if WITH_EDITORONLY_DATA
-	UPROPERTY(EditAnywhere, Category = "Testing")
-	FString GroupConfigFilename;
+	UPROPERTY(EditAnywhere, Category = "Testing", Meta=(FilePathFilter="ini"))
+	FFilePath SettingOverrides;
 
 	UPROPERTY(EditAnywhere, Category = "Testing")
 	bool bEnableDebugInterface = false;
