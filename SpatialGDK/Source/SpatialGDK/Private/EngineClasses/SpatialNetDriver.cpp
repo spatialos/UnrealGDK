@@ -20,6 +20,7 @@
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
+#include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "EngineClasses/SpatialReplicationGraph.h"
@@ -472,6 +473,21 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		RPCService = MakeUnique<SpatialGDK::SpatialRPCService>(ActorAuthSubview, ActorSubview, USpatialLatencyTracer::GetTracer(GetWorld()),
 															   Connection->GetEventTracer(), this);
+
+		if (IsServer())
+		{
+			TUniquePtr<FSpatialNetDriverServerRPC> ServerRPCsPtr =
+				MakeUnique<FSpatialNetDriverServerRPC>(*this, ActorAuthSubview, ActorSubview);
+			ServerRPCs = ServerRPCsPtr.Get();
+			RPCs.Reset(ServerRPCsPtr.Release());
+		}
+		else
+		{
+			TUniquePtr<FSpatialNetDriverClientRPC> ClientRPCsPtr =
+				MakeUnique<FSpatialNetDriverClientRPC>(*this, ActorAuthSubview, ActorSubview);
+			ClientRPCs = ClientRPCsPtr.Get();
+			RPCs.Reset(ClientRPCsPtr.Release());
+		}
 
 		CrossServerRPCSender =
 			MakeUnique<SpatialGDK::CrossServerRPCSender>(Connection->GetCoordinator(), SpatialMetrics, Connection->GetEventTracer());
@@ -1798,6 +1814,54 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	}
 
 	const FRPCInfo& Info = ClassInfoManager->GetRPCInfo(CallingObject, Function);
+
+	if (Info.Type == ERPCType::ServerReliable || Info.Type == ERPCType::ServerUnreliable || Info.Type == ERPCType::ClientReliable
+		|| Info.Type == ERPCType::ClientUnreliable)
+	{
+		FRPCPayload Payload;
+		Payload.Index = Info.Index;
+		Payload.Offset = CallingObjectRef.Offset;
+		Payload.PayloadData = RPCs->CreateRPCPayloadData(Function, Parameters);
+		FSpatialGDKSpanId SpanId = RPCs->CreatePushRPCEvent(CallingObject, Function);
+
+		SpatialGDK::TRPCQueue<FRPCPayload, FSpatialGDKSpanId>* Queue = nullptr;
+		switch (Info.Type)
+		{
+		case ERPCType::ClientReliable:
+			if (ensure(ServerRPCs != nullptr))
+			{
+				Queue = ServerRPCs->ClientReliableQueue.Get();
+			}
+			break;
+		case ERPCType::ClientUnreliable:
+			if (ensure(ServerRPCs != nullptr))
+			{
+				Queue = ServerRPCs->ClientUnreliableQueue.Get();
+			}
+			break;
+		case ERPCType::ServerReliable:
+			if (ensure(ClientRPCs != nullptr))
+			{
+				Queue = ClientRPCs->ServerReliableQueue.Get();
+			}
+			break;
+		case ERPCType::ServerUnreliable:
+			if (ensure(ClientRPCs != nullptr))
+			{
+				Queue = ClientRPCs->ServerUnreliableQueue.Get();
+			}
+			break;
+		}
+
+		if (ensure(Queue))
+		{
+			Queue->Push(CallingObjectRef.Entity, MoveTemp(Payload), MoveTemp(SpanId));
+			RPCs->FlushRPCQueueForEntity(CallingObjectRef.Entity, *Queue);
+		}
+
+		return;
+	}
+
 	RPCPayload Payload = RPCService->CreateRPCPayloadFromParams(CallingObject, CallingObjectRef, Function, Info.Type, Parameters);
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
@@ -2063,6 +2127,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				RPCService->AdvanceView();
 			}
 
+			if (RPCs.IsValid())
+			{
+				RPCs->AdvanceView();
+			}
+
 			if (DebugCtx != nullptr)
 			{
 				DebugCtx->AdvanceView();
@@ -2088,6 +2157,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			if (RPCService.IsValid())
 			{
 				RPCService->ProcessChanges(GetElapsedTime());
+			}
+
+			if (RPCs.IsValid())
+			{
+				RPCs->ProcessReceivedRPCs();
 			}
 
 			if (WellKnownEntitySystem.IsValid())
@@ -2321,6 +2395,11 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	if (RPCService != nullptr)
 	{
 		RPCService->PushUpdates();
+	}
+
+	if (RPCs.IsValid())
+	{
+		RPCs->FlushRPCUpdates();
 	}
 
 	if (IsServer())
@@ -3061,6 +3140,24 @@ int64 USpatialNetDriver::GetClientID() const
 		return static_cast<int64>(NetConnection->PlayerControllerEntity);
 	}
 	return SpatialConstants::INVALID_ENTITY_ID;
+}
+
+int64 USpatialNetDriver::GetActorEntityId(AActor& Actor)
+{
+	if (PackageMap == nullptr)
+	{
+		return SpatialConstants::INVALID_ENTITY_ID;
+	}
+
+	int64 EntityId = PackageMap->GetEntityIdFromObject(&Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		if (IsServer() && Actor.GetIsReplicated() && (Actor.Role == ROLE_Authority))
+		{
+			EntityId = PackageMap->AllocateEntityIdAndResolveActor(&Actor);
+		}
+	}
+	return EntityId;
 }
 
 bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)

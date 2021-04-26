@@ -5,6 +5,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/ActorGroupWriter.h"
@@ -271,6 +272,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
 	ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
+	ComponentDatas.Append(NetDriver->RPCs->GetRPCComponentsOnEntityCreation(EntityId));
 
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
@@ -441,6 +443,7 @@ TArray<FWorkerComponentData> EntityFactory::CreatePartitionEntityComponents(cons
 	Components.Add(Metadata(FString::Format(TEXT("PartitionEntity:{0}"), { VirtualWorker })).CreateComponentData());
 	Components.Add(InterestFactory->CreatePartitionInterest(LbStrategy, VirtualWorker, bDebugContextValid).CreateComponentData());
 	Components.Add(AuthorityDelegation(DelegationMap).CreateComponentData());
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_SHADOW_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
 
 	return Components;
