@@ -98,24 +98,20 @@ struct ConfigureConnection
 		Params.network.kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
 
 		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-
+		float TimeoutSeconds;
 #if WITH_EDITOR
-		Worker_HeartbeatParameters WithEditorHeartbeatParams = { Settings->HeartbeatIntervalSeconds * SECONDS_TO_MILLIS,
-																 Settings->HeartbeatTimeoutWithEditorSeconds
-																	 * SECONDS_TO_MILLIS };
-		Params.network.tcp.downstream_heartbeat = &WithEditorHeartbeatParams;
-		Params.network.tcp.upstream_heartbeat = &WithEditorHeartbeatParams;
-		Params.network.kcp.downstream_heartbeat = &WithEditorHeartbeatParams;
-		Params.network.kcp.upstream_heartbeat = &WithEditorHeartbeatParams;
+		TimeoutSeconds = Settings->HeartbeatTimeoutWithEditorSeconds;
+		
 #else
-		Worker_HeartbeatParameters WithoutEditorHeartbeatParams = { Settings->HeartbeatIntervalSeconds * SECONDS_TO_MILLIS,
-																	Settings->HeartbeatTimeoutSeconds
-																		* SECONDS_TO_MILLIS };
-		Params.network.tcp.downstream_heartbeat = &WithoutEditorHeartbeatParams;
-		Params.network.tcp.upstream_heartbeat = &WithoutEditorHeartbeatParams;
-		Params.network.kcp.downstream_heartbeat = &WithoutEditorHeartbeatParams;
-		Params.network.kcp.upstream_heartbeat = &WithoutEditorHeartbeatParams;
+		TimeoutSeconds = Settings->HeartbeatTimeoutSeconds;
 #endif
+		Worker_HeartbeatParameters WorkerHeartbeatParams = { static_cast<uint64_t>(Settings->HeartbeatIntervalSeconds
+																							   * SECONDS_TO_MILLIS),
+																	static_cast<uint64_t>(TimeoutSeconds * SECONDS_TO_MILLIS) };
+		Params.network.tcp.downstream_heartbeat = &WorkerHeartbeatParams;
+		Params.network.tcp.upstream_heartbeat = &WorkerHeartbeatParams;
+		Params.network.kcp.downstream_heartbeat = &WorkerHeartbeatParams;
+		Params.network.kcp.upstream_heartbeat = &WorkerHeartbeatParams;
 
 		// Use insecure connections default.
 		Params.network.kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
