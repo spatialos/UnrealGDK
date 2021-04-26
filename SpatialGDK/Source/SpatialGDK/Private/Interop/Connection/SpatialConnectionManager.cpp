@@ -14,6 +14,8 @@
 #include "Misc/Paths.h"
 #include "Modules/ModuleManager.h"
 
+#define SECONDS_TO_MILLIS 1000.0
+
 DEFINE_LOG_CATEGORY(LogSpatialConnectionManager);
 
 using namespace SpatialGDK;
@@ -95,11 +97,22 @@ struct ConfigureConnection
 		Params.network.kcp.upstream_kcp.flush_interval_millis = Config.UdpUpstreamIntervalMS;
 		Params.network.kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
 
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
 #if WITH_EDITOR
-		Params.network.tcp.downstream_heartbeat = &HeartbeatParams;
-		Params.network.tcp.upstream_heartbeat = &HeartbeatParams;
-		Params.network.kcp.downstream_heartbeat = &HeartbeatParams;
-		Params.network.kcp.upstream_heartbeat = &HeartbeatParams;
+		Worker_HeartbeatParameters WithEditorHeartbeatParams = { Settings->HeartbeatIntervalSeconds * SECONDS_TO_MILLIS,
+														 Settings->HeartbeatTimeoutWithEditorSeconds * SECONDS_TO_MILLIS };
+		Params.network.tcp.downstream_heartbeat = &WithEditorHeartbeatParams;
+		Params.network.tcp.upstream_heartbeat = &WithEditorHeartbeatParams; 
+		Params.network.kcp.downstream_heartbeat = &WithEditorHeartbeatParams;
+		Params.network.kcp.upstream_heartbeat = &WithEditorHeartbeatParams;
+#else
+		Worker_HeartbeatParameters WithoutEditorHeartbeatParams = { Settings->HeartbeatIntervalSeconds * SECONDS_TO_MILLIS,
+																	Settings->HeartbeatTimeoutWithEditorSeconds * SECONDS_TO_MILLIS };
+		Params.network.tcp.downstream_heartbeat = &WithoutEditorHeartbeatParams;
+		Params.network.tcp.upstream_heartbeat = &WithoutEditorHeartbeatParams;
+		Params.network.kcp.downstream_heartbeat = &WithoutEditorHeartbeatParams;
+		Params.network.kcp.upstream_heartbeat = &WithoutEditorHeartbeatParams;
 #endif
 
 		// Use insecure connections default.
