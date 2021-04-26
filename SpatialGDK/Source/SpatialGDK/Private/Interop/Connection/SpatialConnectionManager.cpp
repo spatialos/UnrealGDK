@@ -14,6 +14,8 @@
 #include "Misc/Paths.h"
 #include "Modules/ModuleManager.h"
 
+constexpr int SECONDS_TO_MILLIS = 1000;
+
 DEFINE_LOG_CATEGORY(LogSpatialConnectionManager);
 
 using namespace SpatialGDK;
