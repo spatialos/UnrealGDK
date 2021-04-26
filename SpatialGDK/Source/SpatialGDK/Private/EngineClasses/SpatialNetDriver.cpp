@@ -501,12 +501,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			const SpatialGDK::FSubView& OwnershipSubView = SpatialGDK::ActorSubviews::CreateOwnershipSubView(*this);
 			const SpatialGDK::FSubView& SimulatedSubView = SpatialGDK::ActorSubviews::CreateSimulatedSubView(*this);
 
-			const SpatialGDK::FSubView& AuthorityUpdateSubView = SpatialGDK::ActorSubviews::CreateAuthoritySubView(*this);
-			SpatialGDK::FSubView& AutonomousUpdateSubView = SpatialGDK::ActorSubviews::CreateAutonomousOwnershipCompletenessSubView(*this);
-			SpatialGDK::FSubView& SimulatedUpdateSubView = SpatialGDK::ActorSubviews::CreateSimulatedOwnershipCompletenessSubView(*this);
-
-			OwnershipCompletenessHandler.AddSubView(AutonomousUpdateSubView);
-			OwnershipCompletenessHandler.AddSubView(SimulatedUpdateSubView);
+			const SpatialGDK::FSubView& AuthorityUpdateSubView = AuthoritySubView;
+			const SpatialGDK::FSubView& AutonomousUpdateSubView =
+				SpatialGDK::ActorSubviews::CreateAutonomousOwnershipCompletenessSubView(*this);
+			const SpatialGDK::FSubView& SimulatedUpdateSubView =
+				SpatialGDK::ActorSubviews::CreateSimulatedOwnershipCompletenessSubView(*this);
 
 			ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, AuthoritySubView, AutonomousSubView, SimulatedSubView,
 															  AuthorityUpdateSubView, AutonomousUpdateSubView, SimulatedUpdateSubView,

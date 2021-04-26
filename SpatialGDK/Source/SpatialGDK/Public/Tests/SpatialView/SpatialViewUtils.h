@@ -3,6 +3,7 @@
 #pragma once
 
 #include "ComponentTestUtils.h"
+#include "SpatialView/ConnectionHandler/AbstractConnectionHandler.h"
 #include "SpatialView/OpList/EntityComponentOpList.h"
 #include "SpatialView/ViewDelta.h"
 #include "SpatialView/WorkerView.h"
@@ -121,4 +122,37 @@ inline bool CompareViews(const EntityView& Lhs, const EntityView& Rhs)
 
 	return true;
 }
+
+class MockConnectionHandler : public AbstractConnectionHandler
+{
+public:
+	void SetListsOfOpLists(TArray<TArray<OpList>> List) { ListsOfOpLists = MoveTemp(List); }
+
+	virtual void Advance() override
+	{
+		QueuedOpLists = MoveTemp(ListsOfOpLists[0]);
+		ListsOfOpLists.RemoveAt(0);
+	}
+
+	virtual uint32 GetOpListCount() override { return QueuedOpLists.Num(); }
+
+	virtual OpList GetNextOpList() override
+	{
+		OpList Temp = MoveTemp(QueuedOpLists[0]);
+		QueuedOpLists.RemoveAt(0);
+		return Temp;
+	}
+
+	virtual void SendMessages(TUniquePtr<MessagesToSend> Messages) override {}
+
+	virtual const FString& GetWorkerId() const override { return WorkerId; }
+
+	virtual Worker_EntityId GetWorkerSystemEntityId() const override { return WorkerSystemEntityId; }
+
+private:
+	TArray<TArray<OpList>> ListsOfOpLists;
+	TArray<OpList> QueuedOpLists;
+	Worker_EntityId WorkerSystemEntityId = 1;
+	FString WorkerId = TEXT("test_worker");
+};
 } // namespace SpatialGDK

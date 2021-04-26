@@ -4,6 +4,7 @@
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/InitialOnlyFilter.h"
+#include "Interop/OwnershipCompletenessHandler.h"
 #include "Schema/ActorSetMember.h"
 #include "Schema/Restricted.h"
 #include "Schema/Tombstone.h"
@@ -195,11 +196,11 @@ FSubView& CreateActorAuthSubView(USpatialNetDriver& NetDriver)
 }
 PRAGMA_DISABLE_OPTIMIZATION
 template <typename TCallable, typename... TValues>
-FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, USpatialNetDriver* NetDriver, TValues... Values)
+FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, USpatialNetDriver& NetDriver, TValues... Values)
 {
-	return [RolePredicate, NetDriver, ExtraValues = TTuple<TValues...>(Values...)](const Worker_EntityId EntityId,
-																				   const EntityViewElement& Entity) -> bool {
-		if (!MainActorSubviewSetup::IsActorEntity(EntityId, Entity, NetDriver))
+	return [RolePredicate, &NetDriver, ExtraValues = TTuple<TValues...>(Values...)](const Worker_EntityId EntityId,
+																					const EntityViewElement& Entity) -> bool {
+		if (!MainActorSubviewSetup::IsActorEntity(EntityId, Entity, &NetDriver))
 		{
 			return false;
 		}
@@ -207,10 +208,20 @@ FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, USpatialNetDriv
 		return ExtraValues.ApplyAfter(RolePredicate, EntityId, Entity);
 	};
 }
+
+template <typename TCallable, typename... TValues>
+FFilterPredicate GetMockRoleFilterPredicate(TCallable RolePredicate, TValues... Values)
+{
+	return [RolePredicate, ExtraValues = TTuple<TValues...>(Values...)](const Worker_EntityId EntityId,
+																		const EntityViewElement& Entity) -> bool {
+		return ExtraValues.ApplyAfter(RolePredicate, EntityId, Entity);
+	};
+}
+
 FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver)
 {
 	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetRoleFilterPredicate(&AuthoritySubviewSetup::IsAuthorityActorEntity, &NetDriver),
+		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetRoleFilterPredicate(&AuthoritySubviewSetup::IsAuthorityActorEntity, NetDriver),
 		AuthoritySubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 }
 
@@ -224,92 +235,84 @@ FSubView& CreateOwnershipSubView(USpatialNetDriver& NetDriver)
 FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver)
 {
 	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_TAG_COMPONENT_ID, GetRoleFilterPredicate(&SimulatedSubviewSetup::IsSimulatedActorEntity, &NetDriver),
+		SpatialConstants::ACTOR_TAG_COMPONENT_ID, GetRoleFilterPredicate(&SimulatedSubviewSetup::IsSimulatedActorEntity, NetDriver),
 		SimulatedSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 }
 
 bool IsAutonomousAndOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity,
-									  FOwnershipCompletenessHandler* CompletenessHandler)
+									  const FOwnershipCompletenessHandler* CompletenessHandler)
 {
 	return AutonomousSubviewSetup::IsAutonomousActorEntity(EntityId, Entity) && CompletenessHandler->IsOwnershipComplete(EntityId, Entity);
 }
 
+FSubView& CreateAutonomousOwnershipCompletenessSubView(ViewCoordinator& Coordinator, const FFilterPredicate& FilterPredicate,
+													   FOwnershipCompletenessHandler& CompletenessHandler)
+{
+	FSubView& SubView = Coordinator.CreateSubView(
+		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, FilterPredicate,
+		CombineCallbacks(FOwnershipCompletenessHandler::GetCallbacks(Coordinator), OwnershipSubviewSetup::GetCallbacks(Coordinator)));
+	CompletenessHandler.AddSubView(SubView);
+	return SubView;
+}
+
 FSubView& CreateAutonomousOwnershipCompletenessSubView(USpatialNetDriver& NetDriver)
 {
-	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
-		GetRoleFilterPredicate(&IsAutonomousAndOwnershipComplete, &NetDriver,
-							   /*const_cast<const FOwnershipCompletenessHandler*>*/ (&NetDriver.OwnershipCompletenessHandler)),
-		FOwnershipCompletenessHandler::GetCallbacks(NetDriver.Connection->GetCoordinator()));
+	return CreateAutonomousOwnershipCompletenessSubView(
+		NetDriver.Connection->GetCoordinator(),
+		GetRoleFilterPredicate(&IsAutonomousAndOwnershipComplete, NetDriver, &NetDriver.OwnershipCompletenessHandler),
+		NetDriver.OwnershipCompletenessHandler);
+}
+
+FSubView& CreateAutonomousOwnershipCompletenessSubView(ViewCoordinator& Coordinator, FOwnershipCompletenessHandler& CompletenessHandler)
+{
+	return CreateAutonomousOwnershipCompletenessSubView(
+		Coordinator, GetMockRoleFilterPredicate(&IsAutonomousAndOwnershipComplete, &CompletenessHandler), CompletenessHandler);
 }
 
 FSubView& CreateSimulatedSubView(ViewCoordinator& Coordinator)
 {
 	return Coordinator.CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID,
-									 GetRoleFilterPredicate(&SimulatedSubviewSetup::IsSimulatedActorEntity, nullptr),
+									 GetMockRoleFilterPredicate(&SimulatedSubviewSetup::IsSimulatedActorEntity),
 									 SimulatedSubviewSetup::GetCallbacks(Coordinator));
 }
 
 bool IsSimulatedAndOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity,
-									 FOwnershipCompletenessHandler* CompletenessHandler)
+									 const FOwnershipCompletenessHandler* CompletenessHandler)
 {
 	return SimulatedSubviewSetup::IsSimulatedActorEntity(EntityId, Entity) && CompletenessHandler->IsOwnershipComplete(EntityId, Entity);
 }
 PRAGMA_ENABLE_OPTIMIZATION
 
-FSubView& CreateSimulatedOwnershipCompletenessSubView(USpatialNetDriver& NetDriver)
+FSubView& CreateSimulatedOwnershipCompletenessSubView(ViewCoordinator& Coordinator, const FFilterPredicate& FilterPredicate,
+													  FOwnershipCompletenessHandler& CompletenessHandler)
 {
-	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_TAG_COMPONENT_ID,
-		GetRoleFilterPredicate(&IsSimulatedAndOwnershipComplete, &NetDriver,
-							   /*const_cast<const FOwnershipCompletenessHandler*>*/ (&NetDriver.OwnershipCompletenessHandler)),
-		FOwnershipCompletenessHandler::GetCallbacks(NetDriver.Connection->GetCoordinator()));
+	FSubView& SubView = Coordinator.CreateSubView(
+		SpatialConstants::ACTOR_TAG_COMPONENT_ID, FilterPredicate,
+		CombineCallbacks(FOwnershipCompletenessHandler::GetCallbacks(Coordinator), SimulatedSubviewSetup::GetCallbacks(Coordinator)));
+	CompletenessHandler.AddSubView(SubView);
+	return SubView;
 }
 
 FSubView& CreateSimulatedOwnershipCompletenessSubView(ViewCoordinator& Coordinator, FOwnershipCompletenessHandler& CompletenessHandler)
 {
-	return Coordinator.CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID,
-									 GetRoleFilterPredicate(&IsSimulatedAndOwnershipComplete, nullptr, &CompletenessHandler),
-									 FOwnershipCompletenessHandler::GetCallbacks(Coordinator));
+	return CreateSimulatedOwnershipCompletenessSubView(
+		Coordinator, GetMockRoleFilterPredicate(&IsSimulatedAndOwnershipComplete, &CompletenessHandler), CompletenessHandler);
+}
+
+FSubView& CreateSimulatedOwnershipCompletenessSubView(USpatialNetDriver& NetDriver)
+{
+	return CreateSimulatedOwnershipCompletenessSubView(
+		NetDriver.Connection->GetCoordinator(),
+		GetRoleFilterPredicate(&IsSimulatedAndOwnershipComplete, NetDriver, &NetDriver.OwnershipCompletenessHandler),
+		NetDriver.OwnershipCompletenessHandler);
 }
 } // namespace ActorSubviews
-
-class MockConnectionHandler : public AbstractConnectionHandler
-{
-public:
-	void SetListsOfOpLists(TArray<TArray<OpList>> List) { ListsOfOpLists = MoveTemp(List); }
-
-	virtual void Advance() override
-	{
-		QueuedOpLists = MoveTemp(ListsOfOpLists[0]);
-		ListsOfOpLists.RemoveAt(0);
-	}
-
-	virtual uint32 GetOpListCount() override { return QueuedOpLists.Num(); }
-
-	virtual OpList GetNextOpList() override
-	{
-		OpList Temp = MoveTemp(QueuedOpLists[0]);
-		QueuedOpLists.RemoveAt(0);
-		return Temp;
-	}
-
-	virtual void SendMessages(TUniquePtr<MessagesToSend> Messages) override {}
-
-	virtual const FString& GetWorkerId() const override { return WorkerId; }
-
-	virtual Worker_EntityId GetWorkerSystemEntityId() const override { return WorkerSystemEntityId; }
-
-private:
-	TArray<TArray<OpList>> ListsOfOpLists;
-	TArray<OpList> QueuedOpLists;
-	Worker_EntityId WorkerSystemEntityId = 1;
-	FString WorkerId = TEXT("test_worker");
-};
 
 PRAGMA_DISABLE_OPTIMIZATION
 GDK_TEST(Core, OwnershipCompleteness, SomeTest)
 {
+	using namespace ActorSubviews;
+
 	// Construct Op list
 	TUniquePtr<MockConnectionHandler> ConnHandlerUnique = MakeUnique<MockConnectionHandler>();
 	MockConnectionHandler* ConnHandler = ConnHandlerUnique.Get();
@@ -327,10 +330,10 @@ GDK_TEST(Core, OwnershipCompleteness, SomeTest)
 
 	// No queue: Handler should be able to execute it
 	ViewCoordinator Coordinator(MoveTemp(ConnHandlerUnique), nullptr, FComponentSetData());
-	FSubView& SimSubView = ActorSubviews::CreateSimulatedSubView(Coordinator);
+	FSubView& SimSubView = CreateSimulatedSubView(Coordinator);
 	FOwnershipCompletenessHandler H;
 	H.AddPlayerEntity(2);
-	FSubView& SimComplSubView = ActorSubviews::CreateSimulatedOwnershipCompletenessSubView(Coordinator, H);
+	FSubView& SimComplSubView = CreateSimulatedOwnershipCompletenessSubView(Coordinator, H);
 	H.AddSubView(SimComplSubView);
 
 	Coordinator.Advance(1);
@@ -356,51 +359,4 @@ GDK_TEST(Core, OwnershipCompleteness, SomeTest)
 
 PRAGMA_ENABLE_OPTIMIZATION
 
-bool FOwnershipCompletenessHandler::IsOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity)
-{
-	const ActorOwnership Value = *Entity.Components.FindByPredicate(ComponentIdEquality{ ActorOwnership::ComponentId });
-
-	const bool bIsPlayerOwned = Value.OwnerActorEntityId != SpatialConstants::INVALID_ENTITY_ID
-								&& (Value.OwnerActorEntityId == EntityId || PlayerOwnedEntities.Contains(EntityId)
-									|| PlayerOwnedEntities.Contains(Value.OwnerActorEntityId));
-
-	const bool bHasOwnerOnlyComponents =
-		Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID });
-
-	return bIsPlayerOwned == bHasOwnerOnlyComponents;
-}
-
-void FOwnershipCompletenessHandler::AddPlayerEntity(Worker_EntityId EntityId)
-{
-	PlayerOwnedEntities.Add(EntityId);
-
-	for (FSubView* SubViewToRefresh : SubViewsToRefresh)
-	{
-		SubViewToRefresh->Refresh();
-	}
-}
-
-void FOwnershipCompletenessHandler::RemovePlayerEntity(Worker_EntityId EntityId)
-{
-	PlayerOwnedEntities.Remove(EntityId);
-
-	for (FSubView* SubViewToRefresh : SubViewsToRefresh)
-	{
-		SubViewToRefresh->Refresh();
-	}
-}
-
-void FOwnershipCompletenessHandler::AddSubView(FSubView& InSubView)
-{
-	SubViewsToRefresh.Emplace(&InSubView);
-}
-
-TArray<FDispatcherRefreshCallback> FOwnershipCompletenessHandler::GetCallbacks(ViewCoordinator& Coordinator)
-{
-	using namespace ActorSubviews;
-	return CombineCallbacks(
-		SimulatedSubviewSetup::GetCallbacks(Coordinator),
-		{ Coordinator.CreateComponentChangedRefreshCallback(ActorOwnership::ComponentId),
-		  Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID) });
-}
 } // namespace SpatialGDK

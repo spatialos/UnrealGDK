@@ -11,7 +11,7 @@ component ActorSetMember {
 }
 
 component ActorOwnership {
-	id = 9963;
+	id = 9959;
 	
 	EntityId leader_entity = 1;
 }
