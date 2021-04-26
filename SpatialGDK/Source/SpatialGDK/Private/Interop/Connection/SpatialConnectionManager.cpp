@@ -14,7 +14,7 @@
 #include "Misc/Paths.h"
 #include "Modules/ModuleManager.h"
 
-#define SECONDS_TO_MILLIS 1000.0
+constexpr float SECONDS_TO_MILLIS = 1000.0;
 
 DEFINE_LOG_CATEGORY(LogSpatialConnectionManager);
 
@@ -108,8 +108,9 @@ struct ConfigureConnection
 		Params.network.kcp.downstream_heartbeat = &WithEditorHeartbeatParams;
 		Params.network.kcp.upstream_heartbeat = &WithEditorHeartbeatParams;
 #else
-		Worker_HeartbeatParameters WithoutEditorHeartbeatParams = { (uint64_t) Settings->HeartbeatIntervalSeconds * SECONDS_TO_MILLIS,
-																	(uint64_t) Settings->HeartbeatTimeoutWithEditorSeconds * SECONDS_TO_MILLIS };
+		Worker_HeartbeatParameters WithoutEditorHeartbeatParams = { (uint64_t)Settings->HeartbeatIntervalSeconds * SECONDS_TO_MILLIS,
+																	(uint64_t)Settings->HeartbeatTimeoutWithEditorSeconds
+																		* SECONDS_TO_MILLIS };
 		Params.network.tcp.downstream_heartbeat = &WithoutEditorHeartbeatParams;
 		Params.network.tcp.upstream_heartbeat = &WithoutEditorHeartbeatParams;
 		Params.network.kcp.downstream_heartbeat = &WithoutEditorHeartbeatParams;
