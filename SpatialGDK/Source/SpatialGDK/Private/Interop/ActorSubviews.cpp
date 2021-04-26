@@ -217,8 +217,8 @@ FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver)
 FSubView& CreateOwnershipSubView(USpatialNetDriver& NetDriver)
 {
 	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetRoleFilterPredicate(&AutonomousSubviewSetup::IsAutonomousActorEntity, &NetDriver),
-		AutonomousSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
+		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetRoleFilterPredicate(&OwnershipSubviewSetup::IsPlayerOwnedActorEntity, NetDriver),
+		OwnershipSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 }
 
 FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver)

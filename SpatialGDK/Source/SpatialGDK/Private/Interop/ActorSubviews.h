@@ -9,9 +9,6 @@ class USpatialNetDriver;
 
 namespace SpatialGDK
 {
-class FSubView;
-class ViewCoordinator;
-
 namespace ActorSubviews
 {
 FSubView& CreateActorSubView(USpatialNetDriver& NetDriver);
