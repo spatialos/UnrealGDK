@@ -1230,9 +1230,6 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 		return;
 	}
 
-	Connection->GetCoordinator().SendComponentUpdate(
-		EntityId, SpatialGDK::ActorOwnership::CreateFromActor(Actor, *PackageMap).CreateComponentUpdate(), FSpatialGDKSpanId());
-
 	USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId);
 	if (Channel == nullptr)
 	{
@@ -1318,6 +1315,12 @@ void USpatialNetDriver::ProcessOwnershipChanges()
 				const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, *Channel->Actor);
 				Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
 			}
+
+			Connection->GetCoordinator().SendComponentUpdate(
+				EntityId,
+				SpatialGDK::ActorOwnership::CreateFromActor(Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)), *PackageMap)
+					.CreateComponentUpdate(),
+				FSpatialGDKSpanId());
 
 			Channel->ServerProcessOwnershipChange();
 		}
