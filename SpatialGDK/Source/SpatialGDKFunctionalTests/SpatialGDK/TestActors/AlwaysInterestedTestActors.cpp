@@ -15,3 +15,8 @@ void AAlwaysInterestedTestActor::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 
 	DOREPLIFETIME(ThisClass, InterestedActors);
 }
+
+ASmallNCDActor::ASmallNCDActor()
+{
+	NetCullDistanceSquared = 1;
+}

@@ -225,7 +225,7 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 
 	if (InActor->IsA(APlayerController::StaticClass()))
 	{
-		// Put the "main" interest queries on the player controller
+		// Put the "main" client interest queries on the player controller
 		AddClientPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
 	}
 
@@ -238,7 +238,8 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 	// Ensure the auth server has interest in an actor's ownership chain
 	AddServerActorOwnerInterest(ResultInterest, InActor, InEntityId);
 
-	AddServerAlwaysInterestedInterest(ResultInterest, InActor, InInfo);
+	// Add interest in AlwaysInterested UProperties
+	AddAlwaysInterestedInterest(ResultInterest, InActor, InInfo);
 
 	return ResultInterest;
 }
@@ -247,7 +248,7 @@ void InterestFactory::AddClientPlayerControllerActorInterest(Interest& OutIntere
 {
 	const QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
 
-	AddAlwaysRelevantAndInterestedQuery(OutInterest, InActor, InInfo, LevelConstraint);
+	AddClientAlwaysRelevantQuery(OutInterest, InActor, InInfo, LevelConstraint);
 
 	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
 
@@ -332,66 +333,57 @@ void InterestFactory::AddServerActorOwnerInterest(Interest& OutInterest, const A
 	}
 }
 
-void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
-														  const QueryConstraint& LevelConstraint) const
+void InterestFactory::AddClientAlwaysRelevantQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
+												   const QueryConstraint& LevelConstraint) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
-	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint(InActor, InInfo);
 	QueryConstraint AlwaysRelevantConstraint = CreateClientAlwaysRelevantConstraint();
 
-	QueryConstraint SystemDefinedConstraints;
-
-	if (AlwaysInterestedConstraint.IsValid())
-	{
-		SystemDefinedConstraints.OrConstraint.Add(AlwaysInterestedConstraint);
-	}
-
-	if (AlwaysRelevantConstraint.IsValid())
-	{
-		SystemDefinedConstraints.OrConstraint.Add(AlwaysRelevantConstraint);
-	}
-
 	// Add the level constraint here as all client queries need to make sure they don't check out anything outside their loaded levels.
-	QueryConstraint SystemAndLevelConstraint;
-	SystemAndLevelConstraint.AndConstraint.Add(SystemDefinedConstraints);
-	SystemAndLevelConstraint.AndConstraint.Add(LevelConstraint);
+	QueryConstraint AlwaysRelevantAndLevelConstraint;
+	AlwaysRelevantAndLevelConstraint.AndConstraint.Add(AlwaysRelevantConstraint);
+	AlwaysRelevantAndLevelConstraint.AndConstraint.Add(LevelConstraint);
 
 	Query ClientSystemQuery;
-	ClientSystemQuery.Constraint = SystemAndLevelConstraint;
+	ClientSystemQuery.Constraint = AlwaysRelevantAndLevelConstraint;
 	ClientSystemQuery.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
 	ClientSystemQuery.ResultComponentSetIds = ClientNonAuthInterestResultType.ComponentSetsIds;
 
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, ClientSystemQuery);
-
-	// Add always interested constraint to the server as well to make sure the server sees the same as the client.
-	// The always relevant constraint is added as part of the server worker query, so leave that out here.
-	// Servers also don't need to be level constrained.
-	if (Settings->bEnableClientQueriesOnServer)
-	{
-		Query ServerSystemQuery;
-		QueryConstraint ServerSystemConstraint;
-		ServerSystemConstraint.OrConstraint.Add(AlwaysInterestedConstraint);
-		ServerSystemQuery.Constraint = ServerSystemConstraint;
-		ServerSystemQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
-		ServerSystemQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
-
-		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, ServerSystemQuery);
-	}
 }
 
-void InterestFactory::AddServerAlwaysInterestedInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
+void InterestFactory::AddAlwaysInterestedInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
 {
 	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint(InActor, InInfo);
 
 	if (AlwaysInterestedConstraint.IsValid())
 	{
-		Query AlwaysInterestedQuery;
-		AlwaysInterestedQuery.Constraint = AlwaysInterestedConstraint;
-		AlwaysInterestedQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
-		AlwaysInterestedQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
+		{
+			const QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
 
-		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, AlwaysInterestedQuery);
+			QueryConstraint AlwaysInterestAndLevelConstraint;
+			AlwaysInterestAndLevelConstraint.AndConstraint.Add(AlwaysInterestedConstraint);
+			AlwaysInterestAndLevelConstraint.AndConstraint.Add(LevelConstraint);
+
+			Query ClientAlwaysInterestedQuery;
+			ClientAlwaysInterestedQuery.Constraint = AlwaysInterestAndLevelConstraint;
+			ClientAlwaysInterestedQuery.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
+			ClientAlwaysInterestedQuery.ResultComponentSetIds = ClientNonAuthInterestResultType.ComponentSetsIds;
+
+			AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID,
+													 ClientAlwaysInterestedQuery);
+		}
+
+		{
+			Query ServerAlwaysInterestedQuery;
+			ServerAlwaysInterestedQuery.Constraint = AlwaysInterestedConstraint;
+			ServerAlwaysInterestedQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
+			ServerAlwaysInterestedQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
+
+			AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID,
+													 ServerAlwaysInterestedQuery);
+		}
 	}
 }
 

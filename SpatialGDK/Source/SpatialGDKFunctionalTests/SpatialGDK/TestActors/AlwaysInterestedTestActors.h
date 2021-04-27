@@ -22,3 +22,15 @@ public:
 	UPROPERTY(Replicated, AlwaysInterested)
 	TArray<AActor*> InterestedActors;
 };
+
+/**
+ * A replicated actor with a small NCD
+ */
+UCLASS()
+class ASmallNCDActor : public AReplicatedTestActorBase
+{
+	GENERATED_BODY()
+
+public:
+	ASmallNCDActor();
+};
