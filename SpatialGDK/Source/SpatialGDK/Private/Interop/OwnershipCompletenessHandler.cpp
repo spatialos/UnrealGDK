@@ -23,9 +23,10 @@ bool FOwnershipCompletenessHandler::IsOwnershipComplete(Worker_EntityId EntityId
 {
 	const ActorOwnership Value = *Entity.Components.FindByPredicate(ComponentIdEquality{ ActorOwnership::ComponentId });
 
-	const bool bIsPlayerOwned = Value.OwnerActorEntityId != SpatialConstants::INVALID_ENTITY_ID
-								&& (Value.OwnerActorEntityId == EntityId || PlayerOwnedEntities.Contains(EntityId)
-									|| PlayerOwnedEntities.Contains(Value.OwnerActorEntityId));
+	const bool bIsPlayerOwned = bIsServer
+								|| Value.OwnerActorEntityId != SpatialConstants::INVALID_ENTITY_ID
+									   && (Value.OwnerActorEntityId == EntityId || PlayerOwnedEntities.Contains(EntityId)
+										   || PlayerOwnedEntities.Contains(Value.OwnerActorEntityId));
 
 	const bool bHasOwnerOnlyComponents =
 		Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID });

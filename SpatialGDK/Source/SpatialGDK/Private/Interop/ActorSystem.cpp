@@ -14,6 +14,7 @@
 #include "Schema/ActorSetMember.h"
 #include "Schema/Restricted.h"
 #include "Schema/Tombstone.h"
+#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "SpatialView/EntityDelta.h"
 #include "SpatialView/SubView.h"
@@ -256,6 +257,19 @@ static void ValidateNoSubviewIntersections(const FSubView& Lhs, const FSubView& 
 }
 #endif // DO_CHECK
 
+void ActorSystem::DoWork(const FSubView& SubView, FString& AuthFlowControllersIds)
+{
+	for (const Worker_EntityId_Key CompleteEntityId : SubView.GetCompleteEntities())
+	{
+		const EntityViewElement& Entity = SubView.GetView()[CompleteEntityId];
+		UnrealMetadata EntityMeta(Entity.Components.FindByPredicate(ComponentIdEquality{ UnrealMetadata::ComponentId })->GetUnderlying());
+		if (EntityMeta.GetNativeEntityClass()->GetName().Contains(TEXT("SpatialFunctionalTestFlowController")))
+		{
+			AuthFlowControllersIds += FString::Printf(TEXT("%lld "), CompleteEntityId);
+		}
+	}
+}
+
 void ActorSystem::Advance()
 {
 	for (const EntityDelta& Delta : ActorSubView->GetViewDelta().EntityDeltas)
@@ -295,6 +309,25 @@ void ActorSystem::Advance()
 		{ AutonomousUpdateSubView, ENetRole::ROLE_AutonomousProxy },
 		{ SimulatedUpdateSubView, ENetRole::ROLE_SimulatedProxy },
 	};
+
+	{
+		FString AuthFlowControllersIds;
+		DoWork(*AuthorityUpdateSubView, AuthFlowControllersIds);
+
+		// UE_LOG(LogSpatial, Log, TEXT("Auth TestControllers: %s"), *AuthFlowControllersIds);
+	}
+	{
+		FString OwnFlowControllersIds;
+		DoWork(*AutonomousUpdateSubView, OwnFlowControllersIds);
+
+		// UE_LOG(LogSpatial, Log, TEXT("Sim TestControllers: %s"), *OwnFlowControllersIds);
+	}
+	{
+		FString SimFlowControllersIds;
+		DoWork(*SimulatedUpdateSubView, SimFlowControllersIds);
+
+		// UE_LOG(LogSpatial, Log, TEXT("Sim TestControllers: %s"), *SimFlowControllersIds);
+	}
 
 	for (const FEntitySubView& SubView : SubViews)
 	{
@@ -1382,7 +1415,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 	const UNetConnection* ActorNetConnection = EntityActor->GetNetConnection();
 	if (IsValid(ActorNetConnection) && NetDriver->ServerConnection == ActorNetConnection)
 	{
-		NetDriver->OwnershipCompletenessHandler.AddPlayerEntity(EntityId);
+		NetDriver->OwnershipCompletenessHandler->AddPlayerEntity(EntityId);
 	}
 }
 
@@ -1727,7 +1760,7 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 
 	TWeakObjectPtr<UObject> WeakActor = NetDriver->PackageMap->GetObjectFromEntityId(EntityId);
 
-	NetDriver->OwnershipCompletenessHandler.RemovePlayerEntity(EntityId);
+	NetDriver->OwnershipCompletenessHandler->RemovePlayerEntity(EntityId);
 
 	// Actor has not been resolved yet or has already been destroyed. Clean up surrounding bookkeeping.
 	if (!WeakActor.IsValid())

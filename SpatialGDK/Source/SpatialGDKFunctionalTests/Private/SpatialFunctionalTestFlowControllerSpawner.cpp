@@ -9,6 +9,7 @@
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialFunctionalTest.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "Utils/SpatialStatics.h"
 
 SpatialFunctionalTestFlowControllerSpawner::SpatialFunctionalTestFlowControllerSpawner()
 	: SpatialFunctionalTestFlowControllerSpawner(
@@ -40,6 +41,8 @@ ASpatialFunctionalTestFlowController* SpatialFunctionalTestFlowControllerSpawner
 		return nullptr;
 	}
 
+	UE_LOG(LogSpatial, Log, TEXT("Spawning ServerTestFlowController"))
+
 	ASpatialFunctionalTestFlowController* ServerFlowController =
 		World->SpawnActorDeferred<ASpatialFunctionalTestFlowController>(FlowControllerClass, FTransform());
 	ServerFlowController->OwningTest = OwningTest;
@@ -62,6 +65,7 @@ ASpatialFunctionalTestFlowController* SpatialFunctionalTestFlowControllerSpawner
 	FlowController->WorkerDefinition =
 		FWorkerDefinition{ ESpatialFunctionalTestWorkerType::Client,
 						   INVALID_FLOW_CONTROLLER_ID }; // by default have invalid id, Test Authority will set it to ensure uniqueness
+	UE_LOG(LogSpatial, Log, TEXT("Spawning ClientTestFlowController"))
 
 	FlowController->FinishSpawning(OwningTest->GetActorTransform(), true);
 

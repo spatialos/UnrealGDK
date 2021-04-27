@@ -242,7 +242,7 @@ FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver)
 bool IsAutonomousAndOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity,
 									  const FOwnershipCompletenessHandler* CompletenessHandler)
 {
-	return AutonomousSubviewSetup::IsAutonomousActorEntity(EntityId, Entity) && CompletenessHandler->IsOwnershipComplete(EntityId, Entity);
+	return OwnershipSubviewSetup::IsPlayerOwnedActorEntity(EntityId, Entity) && CompletenessHandler->IsOwnershipComplete(EntityId, Entity);
 }
 
 FSubView& CreateAutonomousOwnershipCompletenessSubView(ViewCoordinator& Coordinator, const FFilterPredicate& FilterPredicate,
@@ -259,8 +259,8 @@ FSubView& CreateAutonomousOwnershipCompletenessSubView(USpatialNetDriver& NetDri
 {
 	return CreateAutonomousOwnershipCompletenessSubView(
 		NetDriver.Connection->GetCoordinator(),
-		GetRoleFilterPredicate(&IsAutonomousAndOwnershipComplete, NetDriver, &NetDriver.OwnershipCompletenessHandler),
-		NetDriver.OwnershipCompletenessHandler);
+		GetRoleFilterPredicate(&IsAutonomousAndOwnershipComplete, NetDriver, &NetDriver.OwnershipCompletenessHandler.GetValue()),
+		NetDriver.OwnershipCompletenessHandler.GetValue());
 }
 
 FSubView& CreateAutonomousOwnershipCompletenessSubView(ViewCoordinator& Coordinator, FOwnershipCompletenessHandler& CompletenessHandler)
@@ -303,8 +303,8 @@ FSubView& CreateSimulatedOwnershipCompletenessSubView(USpatialNetDriver& NetDriv
 {
 	return CreateSimulatedOwnershipCompletenessSubView(
 		NetDriver.Connection->GetCoordinator(),
-		GetRoleFilterPredicate(&IsSimulatedAndOwnershipComplete, NetDriver, &NetDriver.OwnershipCompletenessHandler),
-		NetDriver.OwnershipCompletenessHandler);
+		GetRoleFilterPredicate(&IsSimulatedAndOwnershipComplete, NetDriver, &NetDriver.OwnershipCompletenessHandler.GetValue()),
+		NetDriver.OwnershipCompletenessHandler.GetValue());
 }
 } // namespace ActorSubviews
 
@@ -331,7 +331,7 @@ GDK_TEST(Core, OwnershipCompleteness, SomeTest)
 	// No queue: Handler should be able to execute it
 	ViewCoordinator Coordinator(MoveTemp(ConnHandlerUnique), nullptr, FComponentSetData());
 	FSubView& SimSubView = CreateSimulatedSubView(Coordinator);
-	FOwnershipCompletenessHandler H;
+	FOwnershipCompletenessHandler H(/*bIsServer =*/false);
 	H.AddPlayerEntity(2);
 	FSubView& SimComplSubView = CreateSimulatedOwnershipCompletenessSubView(Coordinator, H);
 	H.AddSubView(SimComplSubView);

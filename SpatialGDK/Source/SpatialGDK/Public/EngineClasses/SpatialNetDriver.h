@@ -273,7 +273,7 @@ public:
 	virtual int64 GetActorEntityId(AActor& Actor) override;
 
 	FShutdownEvent OnShutdown;
-	SpatialGDK::FOwnershipCompletenessHandler OwnershipCompletenessHandler;
+	TOptional<SpatialGDK::FOwnershipCompletenessHandler> OwnershipCompletenessHandler;
 
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;

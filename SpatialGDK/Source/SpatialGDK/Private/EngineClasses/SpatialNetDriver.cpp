@@ -146,6 +146,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		}
 	}
 
+	OwnershipCompletenessHandler = SpatialGDK::FOwnershipCompletenessHandler(/*bIsServer =*/!bInitAsClient);
+
 	if (!Super::InitBase(bInitAsClient, InNotify, URL, bReuseAddressAndPort, Error))
 	{
 		return false;
@@ -507,7 +509,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			const SpatialGDK::FSubView& SimulatedUpdateSubView =
 				SpatialGDK::ActorSubviews::CreateSimulatedOwnershipCompletenessSubView(*this);
 
-			ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, AuthoritySubView, AutonomousSubView, SimulatedSubView,
+			ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, AuthoritySubView, OwnershipSubView, SimulatedSubView,
 															  AuthorityUpdateSubView, AutonomousUpdateSubView, SimulatedUpdateSubView,
 															  TombstoneActorSubview, this, Connection->GetEventTracer());
 		}

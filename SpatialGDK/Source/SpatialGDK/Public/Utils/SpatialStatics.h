@@ -16,7 +16,7 @@
 class AActor;
 
 // This log category will always log to the spatial runtime and thus also be printed in the SpatialOutput.
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatial, Log, All);
+SPATIALGDK_API DECLARE_LOG_CATEGORY_EXTERN(LogSpatial, Log, All);
 
 USTRUCT(BlueprintType)
 struct FLockingToken

@@ -10,6 +10,7 @@
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTest.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
+#include "Utils/SpatialStatics.h"
 
 ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -47,6 +48,8 @@ void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLi
 void ASpatialFunctionalTestFlowController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UE_LOG(LogSpatial, Log, TEXT("Starting TestFlowController"))
 
 	if (HasAuthority())
 	{

@@ -23,6 +23,7 @@
 #include "SpatialFunctionalTestAutoDestroyComponent.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
+#include "Utils/SpatialStatics.h"
 
 namespace
 {
@@ -167,6 +168,8 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 
 void ASpatialFunctionalTest::OnAuthorityGained()
 {
+	UE_LOG(LogSpatial, Log, TEXT("OnAuthGained, will spawn server flow controllers"))
+
 	bReadyToSpawnServerControllers = true;
 	StartServerFlowControllerSpawn();
 }
@@ -740,6 +743,8 @@ void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 	{
 		return;
 	}
+
+	UE_LOG(LogSpatial, Log, TEXT("Received OnRep, spawning server flow controller"));
 
 	FlowControllerSpawner.SpawnServerFlowController();
 }
