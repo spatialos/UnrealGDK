@@ -435,6 +435,8 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 {
 	TWeakObjectPtr<USpatialConnectionManager> WeakSpatialConnectionManager(this);
 
+	// Create a pending object because GameThread async tasks can be called via a GC callstack.
+	PendingWorkerConnection = NewObject<USpatialWorkerConnection>(this);
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager,
 															 EventTracing = MoveTemp(NewEventTracer)]() mutable {
 		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
@@ -456,7 +458,7 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 			if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 			{
 				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>(WeakSpatialConnectionManager.Get());
+				SpatialConnectionManager->WorkerConnection = SpatialConnectionManager->PendingWorkerConnection;
 
 				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
 																		  SpatialConnectionManager->ComponentSetData);
@@ -468,6 +470,8 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 				Worker_Connection_Destroy(NewCAPIWorkerConnection);
 				SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
 			}
+
+			SpatialConnectionManager->PendingWorkerConnection = nullptr;
 		});
 	});
 }

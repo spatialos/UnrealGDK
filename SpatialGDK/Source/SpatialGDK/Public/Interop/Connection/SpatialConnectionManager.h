@@ -91,6 +91,9 @@ private:
 	UPROPERTY()
 	USpatialWorkerConnection* WorkerConnection;
 
+	UPROPERTY()
+	USpatialWorkerConnection* PendingWorkerConnection;
+
 	Worker_Locator* WorkerLocator;
 
 	bool bIsConnected;
