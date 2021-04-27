@@ -100,7 +100,6 @@ struct ConfigureConnection
 		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 #if WITH_EDITOR
 		float TimeoutSeconds = Settings->HeartbeatTimeoutWithEditorSeconds;
-
 #else
 		float TimeoutSeconds = Settings->HeartbeatTimeoutSeconds;
 #endif
