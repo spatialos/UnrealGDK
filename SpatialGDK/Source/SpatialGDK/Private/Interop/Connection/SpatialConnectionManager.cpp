@@ -98,14 +98,13 @@ struct ConfigureConnection
 		Params.network.kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
 
 		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-		float TimeoutSeconds;
 #if WITH_EDITOR
-		TimeoutSeconds = Settings->HeartbeatTimeoutWithEditorSeconds;
+		float TimeoutSeconds = Settings->HeartbeatTimeoutWithEditorSeconds;
 
 #else
-		TimeoutSeconds = Settings->HeartbeatTimeoutSeconds;
+		float TimeoutSeconds = Settings->HeartbeatTimeoutSeconds;
 #endif
-		Worker_HeartbeatParameters HeartbeatParams = { static_cast<uint64_t>(Settings->HeartbeatIntervalSeconds * 1000),
+		HeartbeatParams = { static_cast<uint64_t>(Settings->HeartbeatIntervalSeconds * 1000),
 							static_cast<uint64_t>(TimeoutSeconds * 1000) };
 		Params.network.tcp.downstream_heartbeat = &HeartbeatParams;
 		Params.network.tcp.upstream_heartbeat = &HeartbeatParams;
@@ -162,6 +161,7 @@ struct ConfigureConnection
 	Worker_LogsinkParameters Logsink{};
 	Worker_NameVersionPair UnrealGDKVersionPair{};
 	Worker_FlowControlParameters WorkerFowControlParameters{};
+	Worker_HeartbeatParameters HeartbeatParams{};
 
 };
 
