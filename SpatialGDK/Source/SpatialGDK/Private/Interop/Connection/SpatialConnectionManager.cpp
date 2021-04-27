@@ -14,8 +14,6 @@
 #include "Misc/Paths.h"
 #include "Modules/ModuleManager.h"
 
-constexpr int SECONDS_TO_MILLIS = 1000;
-
 DEFINE_LOG_CATEGORY(LogSpatialConnectionManager);
 
 using namespace SpatialGDK;
@@ -98,20 +96,17 @@ struct ConfigureConnection
 		Params.network.kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
 
 		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-		float TimeoutSeconds;
 #if WITH_EDITOR
-		TimeoutSeconds = Settings->HeartbeatTimeoutWithEditorSeconds;
-		
+		float TimeoutSeconds = Settings->HeartbeatTimeoutWithEditorSeconds;
 #else
-		TimeoutSeconds = Settings->HeartbeatTimeoutSeconds;
+		float TimeoutSeconds = Settings->HeartbeatTimeoutSeconds;
 #endif
-		Worker_HeartbeatParameters WorkerHeartbeatParams = { static_cast<uint64_t>(Settings->HeartbeatIntervalSeconds
-																							   * SECONDS_TO_MILLIS),
-																	static_cast<uint64_t>(TimeoutSeconds * SECONDS_TO_MILLIS) };
-		Params.network.tcp.downstream_heartbeat = &WorkerHeartbeatParams;
-		Params.network.tcp.upstream_heartbeat = &WorkerHeartbeatParams;
-		Params.network.kcp.downstream_heartbeat = &WorkerHeartbeatParams;
-		Params.network.kcp.upstream_heartbeat = &WorkerHeartbeatParams;
+		HeartbeatParams = { static_cast<uint64_t>(Settings->HeartbeatIntervalSeconds * 1000),
+							static_cast<uint64_t>(TimeoutSeconds * 1000) };
+		Params.network.tcp.downstream_heartbeat = &HeartbeatParams;
+		Params.network.tcp.upstream_heartbeat = &HeartbeatParams;
+		Params.network.kcp.downstream_heartbeat = &HeartbeatParams;
+		Params.network.kcp.upstream_heartbeat = &HeartbeatParams;
 
 		// Use insecure connections default.
 		Params.network.kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
@@ -163,10 +158,7 @@ struct ConfigureConnection
 	Worker_LogsinkParameters Logsink{};
 	Worker_NameVersionPair UnrealGDKVersionPair{};
 	Worker_FlowControlParameters WorkerFowControlParameters{};
-
-#if WITH_EDITOR
-	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, MAX_int64 };
-#endif
+	Worker_HeartbeatParameters HeartbeatParams{};
 };
 
 void USpatialConnectionManager::FinishDestroy()
