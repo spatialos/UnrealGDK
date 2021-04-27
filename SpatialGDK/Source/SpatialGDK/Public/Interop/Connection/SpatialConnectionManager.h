@@ -91,6 +91,7 @@ private:
 	UPROPERTY()
 	USpatialWorkerConnection* WorkerConnection;
 
+	/* A temporary used to create a worker connection UObject outside of the task graph system (UNR-5421). */
 	UPROPERTY()
 	USpatialWorkerConnection* PendingWorkerConnection;
 

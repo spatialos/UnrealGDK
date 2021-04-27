@@ -436,7 +436,7 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 	TWeakObjectPtr<USpatialConnectionManager> WeakSpatialConnectionManager(this);
 
 	// A pending connection is used to avoid creating objects in the task graph as it can be called during GC (via UMaterialInstace::Destroy
-	// -> FlushRenderingCommands) and trigger an error.
+	// -> FlushRenderingCommands) and trigger an error. UNR-5421
 	PendingWorkerConnection = NewObject<USpatialWorkerConnection>(this);
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialConnectionManager,
 															 EventTracing = MoveTemp(NewEventTracer)]() mutable {
