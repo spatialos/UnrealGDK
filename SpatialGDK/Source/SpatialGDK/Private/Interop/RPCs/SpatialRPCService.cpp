@@ -596,7 +596,28 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 	const float TimeQueued = (FDateTime::Now() - PendingRPCParams.Timestamp).GetTotalSeconds();
 	const int32 UnresolvedRefCount = UnresolvedRefs.Num();
 
-	if (UnresolvedRefCount == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued)
+	bool bIsReliableChannel = RPCRingBufferUtils::ShouldQueueOverflowed(PendingRPCParams.Type);
+	bool bMissingServerObject = false;
+	for (const FUnrealObjectRef& MissingRef : UnresolvedRefs)
+	{
+		if (MissingRef.bNoLoadOnClient)
+		{
+			bMissingServerObject = true;
+		}
+		else if (!ensureAlwaysMsgf(MissingRef.Path.IsSet(), TEXT("Received reference to dynamic object as loadable. Target : %s, Parameter Entity : %llu, RPC : %s")
+		, *TargetObject->GetName(), MissingRef.Entity, *Function->GetName()))
+		{
+			// Validation code, to ensure that every loadable ref we receive has a name.
+			bMissingServerObject = true;
+			break;
+		}
+	}
+
+	const bool bCannotWaitLongerThanQueueTime = !bIsReliableChannel || bMissingServerObject;
+	const bool bQueueTimeExpired = TimeQueued > SpatialSettings->QueuedIncomingRPCWaitTime;
+	const bool bMustExecuteRPC = UnresolvedRefCount == 0 || (bCannotWaitLongerThanQueueTime && bQueueTimeExpired);
+
+	if (bMustExecuteRPC)
 	{
 		if (UnresolvedRefCount > 0 && !SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(PendingRPCParams.Type)
 			&& (Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
