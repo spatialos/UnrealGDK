@@ -22,11 +22,15 @@ public:
 	virtual void PrepareTest() override;
 
 	UPROPERTY(Replicated)
-	AAlwaysInterestedTestActor* AlwaysInterestedActor;
+	AAlwaysInterestedTestActor* ActorWithAlwaysInterestedProperty;
 
 	UPROPERTY(Replicated)
 	ASmallNCDActor* InterestedInThisReplicatedActor;
 
 	UPROPERTY(Replicated)
 	ASmallNCDActor* NotInterestedInThisReplicatedActor;
+
+	// Only valid on server workers
+	FVector LocalWorkerPosition;
+	FVector OtherWorkerPosition;
 };

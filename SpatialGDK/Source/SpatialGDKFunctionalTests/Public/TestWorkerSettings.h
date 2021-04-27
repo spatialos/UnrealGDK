@@ -78,7 +78,7 @@ class SPATIALGDKFUNCTIONALTESTS_API UTest1x2SmallInterestGridStrategy : public U
 	GENERATED_BODY()
 
 public:
-	UTest1x2SmallInterestGridStrategy() { InterestBorder = 1.0f; }
+	UTest1x2SmallInterestGridStrategy() { InterestBorder = 150.0f; }
 };
 
 UCLASS()
