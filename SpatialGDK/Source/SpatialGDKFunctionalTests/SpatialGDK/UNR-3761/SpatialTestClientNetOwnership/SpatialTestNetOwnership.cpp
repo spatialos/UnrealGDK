@@ -114,8 +114,30 @@ void ASpatialTestNetOwnership::PrepareTest()
 	AddStep(TEXT("SpatialTestNetOwnershipServerSetOwner"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		if (NetOwnershipCube->HasAuthority())
 		{
-			APlayerController* PlayerController =
-				Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
+			ASpatialFunctionalTestFlowController* TestFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
+			if (TestFlowController == nullptr)
+			{
+				return FinishTest(EFunctionalTestResult::Error,
+								  TEXT("SpatialTestNetOwnershipServerSetOwner - TestFlowController was null"));
+			}
+
+			AActor* Owner = TestFlowController->GetOwner();
+			if (Owner == nullptr)
+			{
+				return FinishTest(EFunctionalTestResult::Error, TEXT("SpatialTestNetOwnershipServerSetOwner - Owner was null"));
+			}
+
+			APlayerController* PlayerController = Cast<APlayerController>(Owner);
+			if (PlayerController == nullptr)
+			{
+				return FinishTest(EFunctionalTestResult::Error, TEXT("SpatialTestNetOwnershipServerSetOwner - PlayerController was null"));
+			}
+
+			if (NetOwnershipCube == nullptr)
+			{
+				return FinishTest(EFunctionalTestResult::Error, TEXT("SpatialTestNetOwnershipServerSetOwner - NetOwnershipCube was null"));
+			}
+
 			NetOwnershipCube->SetOwner(PlayerController);
 		}
 
@@ -140,13 +162,39 @@ void ASpatialTestNetOwnership::PrepareTest()
 	{
 		// The authoritative server moves the cube and Client1's Pawn to the corresponding test location
 		AddStep(TEXT("SpatialTestNetOwnershipServerMoveCube"), FWorkerDefinition::AllServers, nullptr, [this, i, TestLocations]() {
-			APlayerController* PlayerController =
-				Cast<APlayerController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
+			ASpatialFunctionalTestFlowController* TestFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
+			if (TestFlowController == nullptr)
+			{
+				return FinishTest(EFunctionalTestResult::Error,
+								  TEXT("SpatialTestNetOwnershipServerMoveCube - TestFlowController was null"));
+			}
+
+			AActor* Owner = TestFlowController->GetOwner();
+			if (Owner == nullptr)
+			{
+				return FinishTest(EFunctionalTestResult::Error, TEXT("SpatialTestNetOwnershipServerMoveCube - Owner was null"));
+			}
+
+			APlayerController* PlayerController = Cast<APlayerController>(Owner);
+			if (PlayerController == nullptr)
+			{
+				return FinishTest(EFunctionalTestResult::Error, TEXT("SpatialTestNetOwnershipServerMoveCube - PlayerController was null"));
+			}
+
 			APawn* PlayerPawn = PlayerController->GetPawn();
+			if (PlayerPawn == nullptr)
+			{
+				return FinishTest(EFunctionalTestResult::Error, TEXT("SpatialTestNetOwnershipServerMoveCube - PlayerPawn was null"));
+			}
 
 			if (PlayerPawn->HasAuthority())
 			{
 				PlayerPawn->SetActorLocation(TestLocations[i - 1]);
+			}
+
+			if (NetOwnershipCube == nullptr)
+			{
+				return FinishTest(EFunctionalTestResult::Error, TEXT("SpatialTestNetOwnershipServerMoveCube - NetOwnershipCube was null"));
 			}
 
 			if (NetOwnershipCube->HasAuthority())
