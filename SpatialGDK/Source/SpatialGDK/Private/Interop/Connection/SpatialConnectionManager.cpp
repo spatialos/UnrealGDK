@@ -162,7 +162,6 @@ struct ConfigureConnection
 	Worker_NameVersionPair UnrealGDKVersionPair{};
 	Worker_FlowControlParameters WorkerFowControlParameters{};
 	Worker_HeartbeatParameters HeartbeatParams{};
-
 };
 
 void USpatialConnectionManager::FinishDestroy()
