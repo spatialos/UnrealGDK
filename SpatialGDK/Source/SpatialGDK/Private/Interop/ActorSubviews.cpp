@@ -277,4 +277,141 @@ FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver)
 }
 } // namespace ActorSubviews
 
+GDK_TEST(Core, OwnershipCompleteness, PlayerGainsEntityOwnership)
+{
+	using namespace ActorSubviews;
+
+	constexpr Worker_EntityId ActorEntityId = 1;
+	constexpr Worker_EntityId LocalClientControllerEntityId = 2;
+	
+	TUniquePtr<MockConnectionHandler> ConnHandlerUnique = MakeUnique<MockConnectionHandler>();
+	
+	MockConnectionHandler& ConnHandlerRef = *ConnHandlerUnique.Get();
+
+	FComponentSetData ComponentSetData;
+	ComponentSetData.ComponentSets.Emplace(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
+	ComponentSetData.ComponentSets.Emplace(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+	
+	ViewCoordinator Coordinator(MoveTemp(ConnHandlerUnique), nullptr, MoveTemp(ComponentSetData));
+
+	FOwnershipCompletenessHandler OwnershipCompletenessHandler(/*bIsServer =*/false);
+	OwnershipCompletenessHandler.AddPlayerEntity(LocalClientControllerEntityId);
+	
+	FSubView& OwnershipSubview = CreatePlayerOwnershipSubView(Coordinator, OwnershipCompletenessHandler);
+	FSubView& SimulatedSubview = CreateSimulatedSubView(Coordinator, OwnershipCompletenessHandler);
+	
+	{
+		EntityComponentOpListBuilder Builder;
+		Builder.AddEntity(ActorEntityId)
+			.AddComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID))
+			.AddComponent(ActorEntityId, ActorOwnership(LocalClientControllerEntityId).CreateComponentData());
+
+		TArray<OpList> OpLists;
+		OpLists.Emplace(MoveTemp(Builder).CreateOpList());
+
+		TArray<TArray<OpList>> OpLists1;
+		OpLists1.Emplace(MoveTemp(OpLists));
+
+		ConnHandlerRef.SetListsOfOpLists(MoveTemp(OpLists1));
+	}
+
+	constexpr float ViewAdvanceDeltaTime = 1.0f;
+	Coordinator.Advance(ViewAdvanceDeltaTime);
+	
+	TestFalse(TEXT("Entity was player ownership incomplete when considering ownership"), OwnershipSubview.IsEntityComplete(ActorEntityId));
+	TestFalse(TEXT("Entity was simulated incomplete when considering ownership"), SimulatedSubview.IsEntityComplete(ActorEntityId));
+
+	{
+		EntityComponentOpListBuilder Builder;
+		Builder.AddComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID))
+			.AddComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID))
+			.SetAuthority(ActorEntityId, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, WORKER_AUTHORITY_AUTHORITATIVE, /*Components =*/ {});
+
+		TArray<OpList> OpLists;
+		OpLists.Emplace(MoveTemp(Builder).CreateOpList());
+
+		TArray<TArray<OpList>> OpLists1;
+		OpLists1.Emplace(MoveTemp(OpLists));
+
+		ConnHandlerRef.SetListsOfOpLists(MoveTemp(OpLists1));
+	}
+
+	Coordinator.Advance(ViewAdvanceDeltaTime);
+
+	TestTrue(TEXT("Entity became player ownership complete"), OwnershipSubview.IsEntityComplete(ActorEntityId));
+	TestFalse(TEXT("Entity stayed simulated incomplete"), SimulatedSubview.IsEntityComplete(ActorEntityId));
+
+	return true;
+}
+
+GDK_TEST(Core, OwnershipCompleteness, PlayerLosesEntityOwnership)
+{
+	using namespace ActorSubviews;
+
+	constexpr Worker_EntityId ActorEntityId = 1;
+	constexpr Worker_EntityId LocalClientControllerEntityId = 2;
+	constexpr Worker_EntityId RemoteClientControllerEntityId = 3;
+
+	TUniquePtr<MockConnectionHandler> ConnHandlerUnique = MakeUnique<MockConnectionHandler>();
+
+	MockConnectionHandler& ConnHandlerRef = *ConnHandlerUnique.Get();
+
+	FComponentSetData ComponentSetData;
+	ComponentSetData.ComponentSets.Emplace(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
+	ComponentSetData.ComponentSets.Emplace(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
+
+	ViewCoordinator Coordinator(MoveTemp(ConnHandlerUnique), nullptr, MoveTemp(ComponentSetData));
+
+	FOwnershipCompletenessHandler OwnershipCompletenessHandler(/*bIsServer =*/false);
+	OwnershipCompletenessHandler.AddPlayerEntity(LocalClientControllerEntityId);
+
+	FSubView& OwnershipSubview = CreatePlayerOwnershipSubView(Coordinator, OwnershipCompletenessHandler);
+	FSubView& SimulatedSubview = CreateSimulatedSubView(Coordinator, OwnershipCompletenessHandler);
+
+	{
+		EntityComponentOpListBuilder Builder;
+		Builder.AddEntity(ActorEntityId)
+			.AddComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID))
+			.AddComponent(ActorEntityId, ActorOwnership(LocalClientControllerEntityId).CreateComponentData())
+			.AddComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID))
+			.AddComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID))
+			.SetAuthority(ActorEntityId, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, WORKER_AUTHORITY_AUTHORITATIVE,
+						  /*Components =*/{});
+
+		TArray<OpList> OpLists;
+		OpLists.Emplace(MoveTemp(Builder).CreateOpList());
+
+		TArray<TArray<OpList>> OpLists1;
+		OpLists1.Emplace(MoveTemp(OpLists));
+
+		ConnHandlerRef.SetListsOfOpLists(MoveTemp(OpLists1));
+	}
+
+	constexpr float ViewAdvanceDeltaTime = 1.0f;
+	Coordinator.Advance(ViewAdvanceDeltaTime);
+	
+	TestTrue(TEXT("Entity was player ownership complete"), OwnershipSubview.IsEntityComplete(ActorEntityId));
+	TestFalse(TEXT("Entity was simulated incomplete"), SimulatedSubview.IsEntityComplete(ActorEntityId));
+
+	{
+		EntityComponentOpListBuilder Builder;
+		Builder.UpdateComponent(ActorEntityId, ActorOwnership(RemoteClientControllerEntityId).CreateComponentUpdate());
+
+		TArray<OpList> OpLists;
+		OpLists.Emplace(MoveTemp(Builder).CreateOpList());
+
+		TArray<TArray<OpList>> OpLists1;
+		OpLists1.Emplace(MoveTemp(OpLists));
+
+		ConnHandlerRef.SetListsOfOpLists(MoveTemp(OpLists1));
+	}
+
+	Coordinator.Advance(ViewAdvanceDeltaTime);
+	
+	TestFalse(TEXT("Entity became player ownership incomplete"), OwnershipSubview.IsEntityComplete(ActorEntityId));
+	TestFalse(TEXT("Entity stayed simulated incomplete"), SimulatedSubview.IsEntityComplete(ActorEntityId));
+
+	return true;
+}
+
 } // namespace SpatialGDK
