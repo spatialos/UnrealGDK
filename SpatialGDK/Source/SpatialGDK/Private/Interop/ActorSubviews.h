@@ -16,7 +16,7 @@ FSubView& CreateCustomActorSubView(TOptional<Worker_ComponentId> MaybeCustomComp
 								   TOptional<TArray<FDispatcherRefreshCallback>> MaybeCustomRefresh, USpatialNetDriver& NetDriver);
 FSubView& CreateActorAuthSubView(USpatialNetDriver& NetDriver);
 FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver);
-FSubView& CreateOwnershipSubView(USpatialNetDriver& NetDriver);
+FSubView& CreatePlayerOwnershipSubView(USpatialNetDriver& NetDriver);
 FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver);
 } // namespace ActorSubviews
 
