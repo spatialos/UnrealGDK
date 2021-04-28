@@ -1,8 +1,11 @@
 #include "Interop/ActorSubviews.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/InitialOnlyFilter.h"
+#include "Interop/OwnershipCompletenessHandler.h"
+#include "Schema/ActorOwnership.h"
 #include "Schema/Restricted.h"
 #include "Schema/Tombstone.h"
 #include "Schema/UnrealMetadata.h"
@@ -10,6 +13,10 @@
 #include "SpatialView/EntityView.h"
 #include "SpatialView/SubView.h"
 #include "SpatialView/ViewCoordinator.h"
+
+#include "SpatialView/OpList/EntityComponentOpList.h"
+#include "Tests/SpatialView/SpatialViewUtils.h"
+#include "Tests/TestDefinitions.h"
 
 namespace SpatialGDK
 {
@@ -181,16 +188,26 @@ FSubView& CreateActorAuthSubView(USpatialNetDriver& NetDriver)
 																FSubView::NoDispatcherCallbacks);
 }
 
-template <typename TCallable>
-FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, USpatialNetDriver& NetDriver)
+template <typename TCallable, typename... TValues>
+FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, USpatialNetDriver& NetDriver, TValues... Values)
 {
-	return [RolePredicate, &NetDriver](const Worker_EntityId EntityId, const EntityViewElement& Entity) -> bool {
+	return [RolePredicate, &NetDriver, ExtraValues = TTuple<TValues...>(Values...)](const Worker_EntityId EntityId,
+																					const EntityViewElement& Entity) -> bool {
 		if (!MainActorSubviewSetup::IsActorEntity(EntityId, Entity, NetDriver))
 		{
 			return false;
 		}
 
-		return Invoke(RolePredicate, EntityId, Entity);
+		return ExtraValues.ApplyAfter(RolePredicate, EntityId, Entity);
+	};
+}
+
+template <typename TCallable, typename... TValues>
+FFilterPredicate GetMockRoleFilterPredicate(TCallable RolePredicate, TValues... Values)
+{
+	return [RolePredicate, ExtraValues = TTuple<TValues...>(Values...)](const Worker_EntityId EntityId,
+																		const EntityViewElement& Entity) -> bool {
+		return ExtraValues.ApplyAfter(RolePredicate, EntityId, Entity);
 	};
 }
 
@@ -201,20 +218,63 @@ FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver)
 		AuthoritySubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 }
 
-FSubView& CreateOwnershipSubView(USpatialNetDriver& NetDriver)
+bool IsPlayerOwned(Worker_EntityId EntityId, const EntityViewElement& Entity, const FOwnershipCompletenessHandler* OwnershipHandler)
 {
-	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetRoleFilterPredicate(&OwnershipSubviewSetup::IsPlayerOwnedActorEntity, NetDriver),
-		OwnershipSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
+	return OwnershipSubviewSetup::IsPlayerOwnedActorEntity(EntityId, Entity) && OwnershipHandler->IsOwnershipComplete(EntityId, Entity);
+}
+
+FSubView& CreatePlayerOwnershipSubView(ViewCoordinator& Coordinator, const FFilterPredicate& FilterPredicate,
+									   FOwnershipCompletenessHandler& OwnershipHandler)
+{
+	FSubView& SubView = Coordinator.CreateSubView(
+		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, FilterPredicate,
+		CombineCallbacks(FOwnershipCompletenessHandler::GetCallbacks(Coordinator), OwnershipSubviewSetup::GetCallbacks(Coordinator)));
+	OwnershipHandler.AddSubView(SubView);
+	return SubView;
+}
+
+FSubView& CreatePlayerOwnershipSubView(USpatialNetDriver& NetDriver)
+{
+	return CreatePlayerOwnershipSubView(
+		NetDriver.Connection->GetCoordinator(),
+		GetRoleFilterPredicate(&IsPlayerOwned, NetDriver, &NetDriver.OwnershipCompletenessHandler.GetValue()),
+		NetDriver.OwnershipCompletenessHandler.GetValue());
+}
+
+FSubView& CreatePlayerOwnershipSubView(ViewCoordinator& Coordinator, FOwnershipCompletenessHandler& OwnershipHandler)
+{
+	return CreatePlayerOwnershipSubView(Coordinator, GetMockRoleFilterPredicate(&IsPlayerOwned, &OwnershipHandler), OwnershipHandler);
+}
+
+bool IsSimulatedAndOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity,
+									 const FOwnershipCompletenessHandler* OwnershipHandler)
+{
+	return SimulatedSubviewSetup::IsSimulatedActorEntity(EntityId, Entity) && OwnershipHandler->IsOwnershipComplete(EntityId, Entity);
+}
+
+FSubView& CreateSimulatedSubView(ViewCoordinator& Coordinator, const FFilterPredicate& FilterPredicate,
+								 FOwnershipCompletenessHandler& OwnershipHandler)
+{
+	FSubView& SubView = Coordinator.CreateSubView(
+		SpatialConstants::ACTOR_TAG_COMPONENT_ID, FilterPredicate,
+		CombineCallbacks(FOwnershipCompletenessHandler::GetCallbacks(Coordinator), SimulatedSubviewSetup::GetCallbacks(Coordinator)));
+	OwnershipHandler.AddSubView(SubView);
+	return SubView;
+}
+
+FSubView& CreateSimulatedSubView(ViewCoordinator& Coordinator, FOwnershipCompletenessHandler& OwnershipHandler)
+{
+	return CreateSimulatedSubView(Coordinator, GetMockRoleFilterPredicate(&IsSimulatedAndOwnershipComplete, &OwnershipHandler),
+								  OwnershipHandler);
 }
 
 FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver)
 {
-	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_TAG_COMPONENT_ID, GetRoleFilterPredicate(&SimulatedSubviewSetup::IsSimulatedActorEntity, NetDriver),
-		SimulatedSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
+	return CreateSimulatedSubView(
+		NetDriver.Connection->GetCoordinator(),
+		GetRoleFilterPredicate(&IsSimulatedAndOwnershipComplete, NetDriver, &NetDriver.OwnershipCompletenessHandler.GetValue()),
+		NetDriver.OwnershipCompletenessHandler.GetValue());
 }
-
 } // namespace ActorSubviews
 
 } // namespace SpatialGDK
