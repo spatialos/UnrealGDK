@@ -3341,7 +3341,7 @@ void USpatialNetDriver::PopDependentActor()
 	GSenderActor.Reset();
 }
 
-bool USpatialNetDriver::NeedWriteFence(AActor* Actor, UFunction* Function)
+bool USpatialNetDriver::RPCCallNeedWriteFence(AActor* Actor, UFunction* Function)
 {
 	using namespace SpatialNetDriverPrivate;
 	if (!GSenderActor.IsSet())

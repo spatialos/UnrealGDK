@@ -28,9 +28,7 @@ void USpatialRoutingWorkerMap::CreateCustomContentForMap()
 	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server1Pos).Index = 0;
 	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server1Pos).Index = 1;
 	AddActorToLevel<ASpatialEntityInteractionTest>(CurrentLevel, FTransform::Identity);
-	
+
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2FullInterestWorkerSettings::StaticClass());
-
-	
 }

@@ -129,7 +129,7 @@ public:
 	virtual void PopDependentActor() override;
 	virtual void PushNetWriteFenceResolution();
 	virtual void PopNetWriteFenceResolution();
-	virtual bool NeedWriteFence(AActor* Target, UFunction* Function) override;
+	virtual bool RPCCallNeedWriteFence(AActor* Target, UFunction* Function) override;
 	// End UNetDriver interface.
 
 	void OnConnectionToSpatialOSSucceeded();
