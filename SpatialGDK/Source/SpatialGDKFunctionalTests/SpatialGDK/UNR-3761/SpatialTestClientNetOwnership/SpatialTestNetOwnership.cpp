@@ -181,28 +181,26 @@ void ASpatialTestNetOwnership::PrepareTest()
 				return FinishTest(EFunctionalTestResult::Error, TEXT("SpatialTestNetOwnershipServerMoveCube - PlayerController was null"));
 			}
 
-			APawn* PlayerPawn = PlayerController->GetPawn();
-			if (PlayerPawn == nullptr)
+			if (APawn* PlayerPawn = PlayerController->GetPawn())
 			{
-				return FinishTest(EFunctionalTestResult::Error, TEXT("SpatialTestNetOwnershipServerMoveCube - PlayerPawn was null"));
-			}
+				if (PlayerPawn->HasAuthority())
+				{
+					PlayerPawn->SetActorLocation(TestLocations[i - 1]);
+				}
 
-			if (PlayerPawn->HasAuthority())
-			{
-				PlayerPawn->SetActorLocation(TestLocations[i - 1]);
-			}
+				if (NetOwnershipCube == nullptr)
+				{
+					return FinishTest(EFunctionalTestResult::Error,
+									  TEXT("SpatialTestNetOwnershipServerMoveCube - NetOwnershipCube was null"));
+				}
 
-			if (NetOwnershipCube == nullptr)
-			{
-				return FinishTest(EFunctionalTestResult::Error, TEXT("SpatialTestNetOwnershipServerMoveCube - NetOwnershipCube was null"));
-			}
+				if (NetOwnershipCube->HasAuthority())
+				{
+					NetOwnershipCube->SetActorLocation(TestLocations[i - 1]);
+				}
 
-			if (NetOwnershipCube->HasAuthority())
-			{
-				NetOwnershipCube->SetActorLocation(TestLocations[i - 1]);
+				FinishStep();
 			}
-
-			FinishStep();
 		});
 
 		//  Client 1 sends a ServerRPC from the Cube.
