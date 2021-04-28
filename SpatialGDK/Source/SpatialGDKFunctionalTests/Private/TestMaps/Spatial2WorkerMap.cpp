@@ -5,8 +5,6 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/CrossServerAndClientOrchestrationTest/CrossServerAndClientOrchestrationTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RegisterAutoDestroyActorsTest/RegisterAutoDestroyActorsTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/RelevancyTest/RelevancyTest.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestEntityInteration/EntityInteractionTest.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestEntityInteration/EntityInteractionTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestMultiServerUnrealComponents/SpatialTestMultiServerUnrealComponents.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/SpatialTestReplicationConditions/SpatialTestReplicationConditions.h"
 #include "TestWorkerSettings.h"
@@ -28,11 +26,6 @@ void USpatial2WorkerMap::CreateCustomContentForMap()
 	// that they can demonstrate they work in all situations
 	AddActorToLevel<ACrossServerAndClientOrchestrationTest>(CurrentLevel, Server2Pos);
 	AddActorToLevel<ACrossServerAndClientOrchestrationTest>(CurrentLevel, Server1Pos);
-	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server2Pos).Index = 0;
-	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server2Pos).Index = 1;
-	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server1Pos).Index = 0;
-	AddActorToLevel<AEntityInteractionTestActor>(CurrentLevel, Server1Pos).Index = 1;
-	AddActorToLevel<ASpatialEntityInteractionTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ARegisterAutoDestroyActorsTestPart1>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ARegisterAutoDestroyActorsTestPart2>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ARelevancyTest>(CurrentLevel, FTransform::Identity);

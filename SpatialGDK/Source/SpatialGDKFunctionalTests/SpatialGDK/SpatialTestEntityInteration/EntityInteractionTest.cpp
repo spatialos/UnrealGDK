@@ -22,6 +22,8 @@ ASpatialEntityInteractionTest::ASpatialEntityInteractionTest()
 {
 	Author = "Nicolas";
 	Description = TEXT("");
+	// Ignore warnings emitted by the cross server RPC called without a sender as long as the testing framework is not migrated.
+	LogWarningHandling = EFunctionalTestLogHandling::OutputIgnored;
 }
 
 #define EXPECT_IMMEDIATE(Actor, FunctionName, Context)                                                                                     \
@@ -45,7 +47,7 @@ void ASpatialEntityInteractionTest::PrepareTest()
 	Super::PrepareTest();
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	if (Settings->CrossServerRPCImplementation != ECrossServerRPCImplementation::RoutingWorker)
+	if (!ensureAlways(Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker))
 	{
 		AddStep(
 			"DummyStep", FWorkerDefinition::AllWorkers, nullptr,
