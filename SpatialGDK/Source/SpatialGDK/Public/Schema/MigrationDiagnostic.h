@@ -64,7 +64,7 @@ struct MigrationDiagnostic : Component
 						NetDriver->VirtualWorkerTranslator->GetLocalVirtualWorkerId());
 		Schema_AddBool(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_LOCKED_ID, NetDriver->LockingPolicy->IsLocked(BlockingActor));
 
-		AActor* NetOwner;
+		AActor* NetOwner = nullptr;
 		VirtualWorkerId NewAuthWorkerId;
 
 		FSpatialLoadBalancingHandler MigrationHandler(NetDriver);
