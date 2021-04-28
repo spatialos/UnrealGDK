@@ -10,7 +10,7 @@
  * This test goes through the various methods we have added to handle remote action and interaction between Actors.
  * It tests two things :
  * - That all calls eventually make their way to the target actor
- * - That calls that are expected to short circuit do so, and the one that are not results in a remote call.
+ * - That calls that are expected to short circuit do so, and the ones that are not result in a remote call.
  * The map is setup with two workers, each with auth over two actors. Both workers run symmetrical code.
  * So for each RPC emitted, the symmetrical actor is expected to emit a similar one.
  * This is how we test that the "delayed" RPCs have made their way through the network.
