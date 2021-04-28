@@ -69,6 +69,14 @@ TSet<Worker_EntityId_Key> FSubView::GetCompleteEntities() const
 	return CompleteEntitiesSet.Difference(IncompleteEntitiesSet);
 }
 
+void FSubView::Refresh()
+{
+	for (const Worker_EntityId_Key TaggedEntityId : TaggedEntities)
+	{
+		CheckEntityAgainstFilter(TaggedEntityId);
+	}
+}
+
 void FSubView::RefreshEntity(const Worker_EntityId EntityId)
 {
 	if (TaggedEntities.Contains(EntityId))
