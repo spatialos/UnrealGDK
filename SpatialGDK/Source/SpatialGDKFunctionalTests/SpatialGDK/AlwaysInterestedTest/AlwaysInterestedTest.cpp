@@ -9,7 +9,7 @@
 #include "Net/UnrealNetwork.h"
 
 /**
- * This test tests that actors with bAlwaysRelevant are replicated to clients and servers correctly.
+ * This test tests that AlwaysInterested UProperties are replicated to clients and servers correctly.
  *
  * The test should include two servers and two clients
  * The flow is as follows:
