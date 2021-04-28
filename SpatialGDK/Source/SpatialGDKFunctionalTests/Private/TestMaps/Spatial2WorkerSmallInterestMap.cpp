@@ -11,6 +11,7 @@
 USpatial2WorkerSmallInterestMap::USpatial2WorkerSmallInterestMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("Spatial2WorkerSmallInterestMap"))
 {
+	SetNumberOfClients(2);
 }
 
 void USpatial2WorkerSmallInterestMap::CreateCustomContentForMap()
