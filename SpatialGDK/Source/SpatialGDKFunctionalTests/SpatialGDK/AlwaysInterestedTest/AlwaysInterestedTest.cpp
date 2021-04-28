@@ -24,20 +24,6 @@
  *    - Destroy the actors
  */
 
-const static float StepTimeLimit = 5.0f;
-
-template <typename T>
-int GetNumberOfActorsOfType(UWorld* World)
-{
-	int Counter = 0;
-	for (TActorIterator<T> Iter(World); Iter; ++Iter)
-	{
-		Counter++;
-	}
-
-	return Counter;
-}
-
 AAlwaysInterestedTest::AAlwaysInterestedTest()
 	: Super()
 {
@@ -57,6 +43,8 @@ void AAlwaysInterestedTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 void AAlwaysInterestedTest::PrepareTest()
 {
 	Super::PrepareTest();
+
+	const float StepTimeLimit = 5.0f;
 
 	{ // Step 0 - Cache worker positions
 		AddStep(TEXT("AlwaysInterested_SpawnActors"), FWorkerDefinition::AllServers, nullptr, [this]() {
