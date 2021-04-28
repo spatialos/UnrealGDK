@@ -107,7 +107,6 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const ch
 {
 	if (Causes == nullptr && NumCauses > 0)
 	{
-		UE_LOG(LogSpatialEventTracer, Warn, TEXT("TraceEvent called with invalid arguments."));
 		return {};
 	}
 
@@ -152,8 +151,6 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const ch
 	}
 	default:
 	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."), ,
-			   static_cast<int>(EventSamplingResult.decision));
 		return {};
 	}
 	}
