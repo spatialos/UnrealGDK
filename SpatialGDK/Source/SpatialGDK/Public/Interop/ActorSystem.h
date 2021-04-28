@@ -41,7 +41,8 @@ struct ActorData
 class ActorSystem
 {
 public:
-	ActorSystem(const FSubView& InActorSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
+	ActorSystem(const FSubView& InActorSubView, const FSubView& InAuthoritySubView, const FSubView& InOwnershipSubView,
+				const FSubView& InSimulatedSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
 				SpatialEventTracer* InEventTracer);
 
 	void Advance();
@@ -98,6 +99,13 @@ private:
 	FObjectToRepStateMap ObjectRefToRepStateMap;
 
 	void PopulateDataStore(Worker_EntityId EntityId);
+
+	struct FEntitySubViewUpdate;
+
+	void ProcessUpdates(const FEntitySubViewUpdate& SubViewUpdate);
+	void ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate);
+	void ProcessRemoves(const FEntitySubViewUpdate& SubViewUpdate);
+
 	void ApplyComponentAdd(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 
 	void AuthorityLost(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
@@ -110,6 +118,8 @@ private:
 
 	void EntityAdded(Worker_EntityId EntityId);
 	void EntityRemoved(Worker_EntityId EntityId);
+	void RefreshEntity(const Worker_EntityId EntityId);
+	void ApplyFullState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor);
 
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
@@ -161,12 +171,18 @@ private:
 	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds) const;
 
 	const FSubView* ActorSubView;
+	const FSubView* AuthoritySubView;
+	const FSubView* OwnershipSubView;
+	const FSubView* SimulatedSubView;
 	const FSubView* TombstoneSubView;
+
 	USpatialNetDriver* NetDriver;
 	SpatialEventTracer* EventTracer;
 
 	CreateEntityHandler CreateEntityHandler;
 	ClaimPartitionHandler ClaimPartitionHandler;
+
+	TSet<Worker_EntityId_Key> PresentEntities;
 
 	TMap<Worker_RequestId_Key, TWeakObjectPtr<USpatialActorChannel>> CreateEntityRequestIdToActorChannel;
 
