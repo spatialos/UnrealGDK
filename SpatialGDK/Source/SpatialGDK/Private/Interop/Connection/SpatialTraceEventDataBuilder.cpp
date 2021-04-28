@@ -117,17 +117,17 @@ void FSpatialTraceEventDataBuilder::AddFunction(const UFunction* Function, const
 
 void FSpatialTraceEventDataBuilder::AddEntityId(const Worker_EntityId EntityId, const char* Key /*="EntityId"*/)
 {
-	AddKeyValue(Key, EntityId);
+	AddKeyValue(Key, static_cast<int64>(EntityId));
 }
 
 void FSpatialTraceEventDataBuilder::AddComponentId(const Worker_ComponentId ComponentId, const char* Key /*="ComponentId"*/)
 {
-	AddKeyValue(Key, ComponentId);
+	AddKeyValue(Key, static_cast<uint32>(ComponentId));
 }
 
 void FSpatialTraceEventDataBuilder::AddComponentSetId(const Worker_ComponentSetId ComponentSetId, const char* Key /*="ComponentSetId"*/)
 {
-	AddKeyValue(Key, ComponentSetId);
+	AddKeyValue(Key, static_cast<uint32>(ComponentSetId));
 }
 
 void FSpatialTraceEventDataBuilder::AddFieldId(const uint32 FieldId, const char* Key /*="FieldId"*/)
