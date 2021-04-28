@@ -6,6 +6,7 @@
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/CrossServerRPCSender.h"
 #include "Interop/EntityQueryHandler.h"
+#include "Interop/OwnershipCompletenessHandler.h"
 #include "Utils/SpatialBasicAwaiter.h"
 #include "Utils/SpatialDebugger.h"
 
@@ -14,6 +15,7 @@
 #include "SpatialGDKSettings.h"
 
 #include "CoreMinimal.h"
+#include "Interop/ActorSystem.h"
 #include "Interop/AsyncPackageLoadFilter.h"
 #include "IpNetDriver.h"
 #include "TimerManager.h"
@@ -271,6 +273,7 @@ public:
 	virtual int64 GetActorEntityId(AActor& Actor) override;
 
 	FShutdownEvent OnShutdown;
+	TOptional<SpatialGDK::FOwnershipCompletenessHandler> OwnershipCompletenessHandler;
 
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
