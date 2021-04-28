@@ -152,26 +152,23 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 		{
 			if (LocalWorkerDefinition.Id == ExpectedServerId)
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 2),
-							TEXT("Server auth - OnAuthorityGained component and OnActorReady component"));
+				VerifyTestActorComponents(Actor, 2, TEXT("Server auth - OnAuthorityGained component and OnActorReady component"));
 				FinishStep();
 			}
 			else if (Actor->bNetStartup)
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 1),
-							TEXT("Non-auth servers - Level actors receive OnActorReady only OnAuthorityGained"));
+				VerifyTestActorComponents(Actor, 1, TEXT("Non-auth servers - Level actors receive OnActorReady only OnAuthorityGained"));
 				FinishStep();
 			}
 			else
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 0), TEXT("Non-auth servers - Dynamic actors do not receive OnActorReady"));
+				VerifyTestActorComponents(Actor, 0, TEXT("Non-auth servers - Dynamic actors do not receive OnActorReady"));
 				FinishStep();
 			}
 		}
 		else // Support for Native / Single Worker.
 		{
-			RequireTrue(VerifyTestActorComponents(Actor, 2),
-						TEXT("Native / Single Worker - OnActorReady component and OnAuthorityGained component"));
+			VerifyTestActorComponents(Actor, 2, TEXT("Native / Single Worker - OnActorReady component and OnAuthorityGained component"));
 			FinishStep();
 		}
 	}
@@ -179,12 +176,13 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 	{
 		if (LocalWorkerDefinition.Id == 1)
 		{
-			RequireTrue(VerifyTestActorComponents(Actor, ExpectedClient1ComponentCount), TEXT("Client 1"));
+			VerifyTestActorComponents(Actor, ExpectedClient1ComponentCount, TEXT("Client 1"));
+
 			FinishStep();
 		}
 		else if (LocalWorkerDefinition.Id == 2)
 		{
-			RequireTrue(VerifyTestActorComponents(Actor, ExpectedClient2ComponentCount), TEXT("Client 2"));
+			VerifyTestActorComponents(Actor, ExpectedClient2ComponentCount, TEXT("Client 2"));
 			FinishStep();
 		}
 	}
@@ -201,41 +199,47 @@ void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActo
 		{
 			if (LocalWorkerDefinition.Id == StartServerId)
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 3),
-							TEXT("Spawning server - OnActorReady component, OnAuthorityGained component and OnAuthorityLost component"));
+				VerifyTestActorComponents(
+					Actor, 3, TEXT("Spawning server - OnActorReady component, OnAuthorityGained component and OnAuthorityLost component"));
 				FinishStep();
 			}
 			else if (LocalWorkerDefinition.Id == EndServerId)
 			{
-				RequireTrue(VerifyTestActorComponents(Actor, 1), TEXT("Migrated server - OnAuthorityGained component"));
+				VerifyTestActorComponents(Actor, 1, TEXT("Migrated server - OnAuthorityGained component"));
 				FinishStep();
 			}
 		}
 		else // Support for Native / Single Worker.
 		{
-			RequireTrue(VerifyTestActorComponents(Actor, 2),
-						TEXT("Native / Single Worker - OnActorReady component and OnAuthorityGained component"));
+			VerifyTestActorComponents(Actor, 2, TEXT("Native / Single Worker - OnActorReady component and OnAuthorityGained component"));
 			FinishStep();
 		}
 	}
 	else // Clients
 	{
-		RequireTrue(VerifyTestActorComponents(Actor, 0), TEXT("Clients"));
+		VerifyTestActorComponents(Actor, 0, TEXT("Clients"));
 		FinishStep();
 	}
 }
 
-bool ASpatialComponentTest::VerifyTestActorComponents(ASpatialComponentTestActor* Actor, int ExpectedTestComponentCount)
+bool ASpatialComponentTest::VerifyTestActorComponents(ASpatialComponentTestActor* Actor, int ExpectedTestComponentCount,
+													  const FString& Message)
 {
-	if (!IsValid(Actor) || !Actor->HasActorBegunPlay())
+	if (!RequireTrue(IsValid(Actor), FString::Printf(TEXT("(%s) Actor is valid"), *Message)))
 	{
 		return false;
 	}
+	const bool bHasBegunPlay = RequireTrue(Actor->HasActorBegunPlay(), FString::Printf(TEXT("(%s) Actor has begun play"), *Message));
+	const bool bHasComponents = RequireEqual_Int(GetComponentsCount(Actor), ExpectedTestComponentCount,
+												 FString::Printf(TEXT("(%s) Component count correct"), *Message));
+	return bHasBegunPlay && bHasComponents;
+}
 
+int ASpatialComponentTest::GetComponentsCount(ASpatialComponentTestActor* Actor)
+{
 	TArray<UActorComponent*> FoundComponents;
 	Actor->GetComponents(USpatialComponentTestDummyComponent::StaticClass(), FoundComponents);
-	int FoundTestComponentCount = FoundComponents.Num();
-	return FoundTestComponentCount == ExpectedTestComponentCount;
+	return FoundComponents.Num();
 }
 
 void ASpatialComponentTest::CrossServerSetDynamicReplicatedActor_Implementation(ASpatialComponentTestReplicatedActor* Actor)
