@@ -44,10 +44,9 @@ struct SPATIALGDK_API ActorSetMember
 
 	void WriteSchema(Schema_Object* Schema) const
 	{
-		Schema_AddUint32(Schema, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID, ActorSetId);
+		Schema_AddInt64(Schema, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID, ActorSetId);
 	}
 
 	Worker_EntityId ActorSetId;
 };
-
 } // namespace SpatialGDK
