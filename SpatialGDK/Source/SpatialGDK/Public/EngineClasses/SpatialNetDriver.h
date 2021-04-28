@@ -214,10 +214,6 @@ public:
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
 
-	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
-	FFilterPredicate ActorFilter;
-	TArray<FDispatcherRefreshCallback> ActorRefreshCallbacks;
-
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;

@@ -95,12 +95,18 @@ struct ConfigureConnection
 		Params.network.kcp.upstream_kcp.flush_interval_millis = Config.UdpUpstreamIntervalMS;
 		Params.network.kcp.downstream_kcp.flush_interval_millis = Config.UdpDownstreamIntervalMS;
 
+		const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 #if WITH_EDITOR
+		float TimeoutSeconds = Settings->HeartbeatTimeoutWithEditorSeconds;
+#else
+		float TimeoutSeconds = Settings->HeartbeatTimeoutSeconds;
+#endif
+		HeartbeatParams = { static_cast<uint64_t>(Settings->HeartbeatIntervalSeconds * 1000),
+							static_cast<uint64_t>(TimeoutSeconds * 1000) };
 		Params.network.tcp.downstream_heartbeat = &HeartbeatParams;
 		Params.network.tcp.upstream_heartbeat = &HeartbeatParams;
 		Params.network.kcp.downstream_heartbeat = &HeartbeatParams;
 		Params.network.kcp.upstream_heartbeat = &HeartbeatParams;
-#endif
 
 		// Use insecure connections default.
 		Params.network.kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
@@ -152,10 +158,7 @@ struct ConfigureConnection
 	Worker_LogsinkParameters Logsink{};
 	Worker_NameVersionPair UnrealGDKVersionPair{};
 	Worker_FlowControlParameters WorkerFowControlParameters{};
-
-#if WITH_EDITOR
-	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, MAX_int64 };
-#endif
+	Worker_HeartbeatParameters HeartbeatParams{};
 };
 
 void USpatialConnectionManager::FinishDestroy()
