@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Interop/Connection/SpatialGDKSpanId.h"
-#include "Interop/Connection/SpatialTraceEvent.h"
+#include "Interop/Connection/SpatialTraceEventDataBuilder.h"
 #include "Interop/Connection/UserSpanId.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialView/EntityComponentId.h"
@@ -14,7 +14,6 @@
 #include "SpatialEventTracer.generated.h"
 
 // Documentation for event tracing in the GDK can be found here: https://brevi.link/gdk-event-tracing-documentation
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
 UENUM()
@@ -36,11 +35,12 @@ public:
 	explicit SpatialEventTracer(const FString& WorkerId);
 	~SpatialEventTracer();
 
-	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
+	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; }
 	Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
-	FSpatialGDKSpanId TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes = nullptr,
-								 int32 NumCauses = 0) const;
+	template <typename T>
+	FSpatialGDKSpanId TraceEvent(const char* EventType, const char* Message, const Trace_SpanIdType* Causes, int32 NumCauses,
+								 T&& DataCallback) const;
 
 	void BeginOpsForFrame();
 	void AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId);
@@ -112,5 +112,63 @@ private:
 	const FSpatialGDKSpanId& CurrentSpanId;
 	Trace_EventTracer* EventTracer;
 };
+
+template <typename T>
+FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const char* Message, const Trace_SpanIdType* Causes,
+												 int32 NumCauses, T&& DataCallback) const
+{
+	if (Causes == nullptr && NumCauses > 0)
+	{
+		UE_LOG(LogSpatialEventTracer, Warn, TEXT("TraceEvent called with invalid arguments."));
+		return {};
+	}
+
+	// We could add the data to this event if a custom sampling callback was used.
+	// This would allow for sampling dependent on trace event data.
+	Trace_Event Event = { nullptr, 0, Message, EventType, nullptr };
+
+	Trace_SamplingResult SpanSamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event);
+	if (SpanSamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
+	{
+		return {};
+	}
+
+	FSpatialGDKSpanId TraceSpanId;
+	Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, &Event, TraceSpanId.GetId());
+	Event.span_id = TraceSpanId.GetConstId();
+
+	Trace_SamplingResult EventSamplingResult = Trace_EventTracer_ShouldSampleEvent(EventTracer, &Event);
+	switch (EventSamplingResult.decision)
+	{
+	case Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE:
+	{
+		return TraceSpanId;
+	}
+	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE_WITHOUT_DATA:
+	{
+		Trace_EventTracer_AddEvent(EventTracer, &Event);
+		return TraceSpanId;
+	}
+	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE:
+	{
+		FSpatialTraceEventDataBuilder EventDataBuilder;
+
+		DataCallback(EventDataBuilder);
+
+		// Frame counter
+		EventDataBuilder.AddKeyValue("FrameNum", GFrameCounter);
+
+		Event.data = EventDataBuilder.GetEventData();
+		Trace_EventTracer_AddEvent(EventTracer, &Event);
+		return TraceSpanId;
+	}
+	default:
+	{
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."), ,
+			   static_cast<int>(EventSamplingResult.decision));
+		return {};
+	}
+	}
+}
 
 } // namespace SpatialGDK
