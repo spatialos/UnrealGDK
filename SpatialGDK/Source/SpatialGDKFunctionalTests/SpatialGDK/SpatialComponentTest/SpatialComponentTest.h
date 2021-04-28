@@ -46,5 +46,6 @@ private:
 	void CheckComponents(ASpatialComponentTestActor* Actor, int ExpectedServerId, int ExpectedClient1ComponentCount,
 						 int ExpectedClient2ComponentCount);
 	void CheckComponentsCrossServer(ASpatialComponentTestActor* Actor, int StartServerId, int EndServerId);
-	bool VerifyTestActorComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount);
+	bool VerifyTestActorComponents(ASpatialComponentTestActor* Actor, int ExpectedComponentCount, const FString& Message);
+	int GetComponentsCount(ASpatialComponentTestActor* Actor);
 };
