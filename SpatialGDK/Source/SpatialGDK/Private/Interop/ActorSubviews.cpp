@@ -24,7 +24,7 @@ namespace ActorSubviews
 {
 namespace MainActorSubviewSetup
 {
-static bool IsActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Entity, USpatialNetDriver* NetDriver);
+static bool IsActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Entity, USpatialNetDriver& NetDriver);
 
 static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator);
 } // namespace MainActorSubviewSetup
@@ -57,19 +57,12 @@ static TArray<FDispatcherRefreshCallback> CombineCallbacks(TArray<FDispatcherRef
 	return Lhs;
 }
 
-bool MainActorSubviewSetup::IsActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Entity, USpatialNetDriver* InNetDriver)
+bool MainActorSubviewSetup::IsActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Entity, USpatialNetDriver& NetDriver)
 {
 	if (Entity.Components.ContainsByPredicate(ComponentIdEquality{ Tombstone::ComponentId }))
 	{
 		return false;
 	}
-
-	if (InNetDriver == nullptr)
-	{
-		return true;
-	}
-
-	USpatialNetDriver& NetDriver = *InNetDriver;
 
 	if (NetDriver.AsyncPackageLoadFilter != nullptr)
 	{
@@ -162,7 +155,7 @@ FSubView& CreateCustomActorSubView(TOptional<Worker_ComponentId> MaybeCustomComp
 	{
 		MaybeCustomPredicate = [CustomPredicate = MaybeCustomPredicate.GetValue(), &NetDriver](const Worker_EntityId EntityId,
 																							   const EntityViewElement& Entity) {
-			if (!MainActorSubviewSetup::IsActorEntity(EntityId, Entity, &NetDriver))
+			if (!MainActorSubviewSetup::IsActorEntity(EntityId, Entity, NetDriver))
 			{
 				return false;
 			}
@@ -173,7 +166,7 @@ FSubView& CreateCustomActorSubView(TOptional<Worker_ComponentId> MaybeCustomComp
 	else
 	{
 		MaybeCustomPredicate = [&NetDriver](const Worker_EntityId EntityId, const EntityViewElement& Entity) {
-			return MainActorSubviewSetup::IsActorEntity(EntityId, Entity, &NetDriver);
+			return MainActorSubviewSetup::IsActorEntity(EntityId, Entity, NetDriver);
 		};
 	}
 
@@ -194,13 +187,13 @@ FSubView& CreateActorAuthSubView(USpatialNetDriver& NetDriver)
 	return NetDriver.Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, FSubView::NoFilter,
 																FSubView::NoDispatcherCallbacks);
 }
-PRAGMA_DISABLE_OPTIMIZATION
+
 template <typename TCallable, typename... TValues>
 FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, USpatialNetDriver& NetDriver, TValues... Values)
 {
 	return [RolePredicate, &NetDriver, ExtraValues = TTuple<TValues...>(Values...)](const Worker_EntityId EntityId,
 																					const EntityViewElement& Entity) -> bool {
-		if (!MainActorSubviewSetup::IsActorEntity(EntityId, Entity, &NetDriver))
+		if (!MainActorSubviewSetup::IsActorEntity(EntityId, Entity, NetDriver))
 		{
 			return false;
 		}
@@ -239,8 +232,7 @@ FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver)
 		SimulatedSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 }
 
-bool IsAutonomousAndOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity,
-									  const FOwnershipCompletenessHandler* CompletenessHandler)
+bool IsPlayerOwned(Worker_EntityId EntityId, const EntityViewElement& Entity, const FOwnershipCompletenessHandler* CompletenessHandler)
 {
 	return OwnershipSubviewSetup::IsPlayerOwnedActorEntity(EntityId, Entity) && CompletenessHandler->IsOwnershipComplete(EntityId, Entity);
 }
@@ -259,14 +251,14 @@ FSubView& CreateAutonomousOwnershipCompletenessSubView(USpatialNetDriver& NetDri
 {
 	return CreateAutonomousOwnershipCompletenessSubView(
 		NetDriver.Connection->GetCoordinator(),
-		GetRoleFilterPredicate(&IsAutonomousAndOwnershipComplete, NetDriver, &NetDriver.OwnershipCompletenessHandler.GetValue()),
+		GetRoleFilterPredicate(&IsPlayerOwned, NetDriver, &NetDriver.OwnershipCompletenessHandler.GetValue()),
 		NetDriver.OwnershipCompletenessHandler.GetValue());
 }
 
 FSubView& CreateAutonomousOwnershipCompletenessSubView(ViewCoordinator& Coordinator, FOwnershipCompletenessHandler& CompletenessHandler)
 {
-	return CreateAutonomousOwnershipCompletenessSubView(
-		Coordinator, GetMockRoleFilterPredicate(&IsAutonomousAndOwnershipComplete, &CompletenessHandler), CompletenessHandler);
+	return CreateAutonomousOwnershipCompletenessSubView(Coordinator, GetMockRoleFilterPredicate(&IsPlayerOwned, &CompletenessHandler),
+														CompletenessHandler);
 }
 
 FSubView& CreateSimulatedSubView(ViewCoordinator& Coordinator)
@@ -281,7 +273,6 @@ bool IsSimulatedAndOwnershipComplete(Worker_EntityId EntityId, const EntityViewE
 {
 	return SimulatedSubviewSetup::IsSimulatedActorEntity(EntityId, Entity) && CompletenessHandler->IsOwnershipComplete(EntityId, Entity);
 }
-PRAGMA_ENABLE_OPTIMIZATION
 
 FSubView& CreateSimulatedOwnershipCompletenessSubView(ViewCoordinator& Coordinator, const FFilterPredicate& FilterPredicate,
 													  FOwnershipCompletenessHandler& CompletenessHandler)
@@ -308,8 +299,7 @@ FSubView& CreateSimulatedOwnershipCompletenessSubView(USpatialNetDriver& NetDriv
 }
 } // namespace ActorSubviews
 
-PRAGMA_DISABLE_OPTIMIZATION
-GDK_TEST(Core, OwnershipCompleteness, SomeTest)
+GDK_TEST(Core, OwnershipCompleteness, PlayerOwnedEntity)
 {
 	using namespace ActorSubviews;
 
@@ -333,12 +323,13 @@ GDK_TEST(Core, OwnershipCompleteness, SomeTest)
 	FSubView& SimSubView = CreateSimulatedSubView(Coordinator);
 	FOwnershipCompletenessHandler H(/*bIsServer =*/false);
 	H.AddPlayerEntity(2);
+	FSubView& OwnedComplSubView = CreateAutonomousOwnershipCompletenessSubView(Coordinator, H);
 	FSubView& SimComplSubView = CreateSimulatedOwnershipCompletenessSubView(Coordinator, H);
-	H.AddSubView(SimComplSubView);
 
 	Coordinator.Advance(1);
 	TestTrue(TEXT("Entity was complete without considering ownership"), SimSubView.IsEntityComplete(1));
-	TestFalse(TEXT("Entity was incomplete when considering ownership"), SimComplSubView.IsEntityComplete(1));
+	TestFalse(TEXT("Entity was player ownership incomplete when considering ownership"), OwnedComplSubView.IsEntityComplete(1));
+	TestFalse(TEXT("Entity was simulated when considering ownership"), SimComplSubView.IsEntityComplete(1));
 
 	{
 		TArray<OpList> OpLists;
@@ -351,12 +342,11 @@ GDK_TEST(Core, OwnershipCompleteness, SomeTest)
 	}
 
 	Coordinator.Advance(2);
-	TestTrue(TEXT("Entity still complete without considering ownership"), SimSubView.IsEntityComplete(1));
-	TestTrue(TEXT("Entity turned complete when considering ownership"), SimComplSubView.IsEntityComplete(1));
+	TestTrue(TEXT("Entity was complete without considering ownership"), SimSubView.IsEntityComplete(1));
+	TestTrue(TEXT("Entity was player ownership complete when considering ownership"), OwnedComplSubView.IsEntityComplete(1));
+	TestFalse(TEXT("Entity was simulated incomplete when considering ownership"), SimComplSubView.IsEntityComplete(1));
 
 	return true;
 }
-
-PRAGMA_ENABLE_OPTIMIZATION
 
 } // namespace SpatialGDK

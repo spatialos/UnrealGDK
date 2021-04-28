@@ -23,15 +23,16 @@ bool FOwnershipCompletenessHandler::IsOwnershipComplete(Worker_EntityId EntityId
 {
 	const ActorOwnership Value = *Entity.Components.FindByPredicate(ComponentIdEquality{ ActorOwnership::ComponentId });
 
-	const bool bIsPlayerOwned = bIsServer
-								|| (Value.OwnerActorEntityId != SpatialConstants::INVALID_ENTITY_ID
-									&& (Value.OwnerActorEntityId == EntityId || PlayerOwnedEntities.Contains(EntityId)
-										|| PlayerOwnedEntities.Contains(Value.OwnerActorEntityId)));
+	const bool bIsPlayerOwned = Value.OwnerActorEntityId != SpatialConstants::INVALID_ENTITY_ID
+								&& (Value.OwnerActorEntityId == EntityId || PlayerOwnedEntities.Contains(EntityId)
+									|| PlayerOwnedEntities.Contains(Value.OwnerActorEntityId));
+
+	const bool bShouldHaveOwnerOnlyComponents = bIsServer || bIsPlayerOwned;
 
 	const bool bHasOwnerOnlyComponents =
 		Entity.Components.ContainsByPredicate(ComponentIdEquality{ SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID });
 
-	return bIsPlayerOwned == bHasOwnerOnlyComponents;
+	return bShouldHaveOwnerOnlyComponents == bHasOwnerOnlyComponents;
 }
 
 void FOwnershipCompletenessHandler::AddPlayerEntity(Worker_EntityId EntityId)
@@ -64,6 +65,5 @@ TArray<FDispatcherRefreshCallback> FOwnershipCompletenessHandler::GetCallbacks(V
 	return { Coordinator.CreateComponentChangedRefreshCallback(ActorOwnership::ComponentId),
 			 Coordinator.CreateComponentExistenceRefreshCallback(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID) };
 }
-PRAGMA_ENABLE_OPTIMIZATION
 
 } // namespace SpatialGDK

@@ -5,30 +5,13 @@
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "TestWorkerSettings.h"
 
-AOwnershipCompletenessGameMode::AOwnershipCompletenessGameMode()
-{
-	DefaultPawnClass = AOwnershipCompletenessPawn::StaticClass();
-	PlayerControllerClass = AOwnershipCompletenessController::StaticClass();
-}
-
-template <typename T>
-T* First(UWorld& World)
-{
-	for (T* Actor : TActorRange<T>(&World))
-	{
-		return Actor;
-	}
-
-	return nullptr;
-}
-
 UOwnershipCompletenessGeneratedMap::UOwnershipCompletenessGeneratedMap()
 	: Super(EMapCategory::CI_PREMERGE, TEXT("OwnershipCompletenessMap"))
 {
 	// clang-format off
 	SetCustomConfig(
-		TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
-		TEXT("PlayNumberOfClients=1")
+        TEXT("[/Script/UnrealEd.LevelEditorPlaySettings]") LINE_TERMINATOR
+        TEXT("PlayNumberOfClients=1")
     );
 	// clang-format on
 }
@@ -48,6 +31,23 @@ void UOwnershipCompletenessGeneratedMap::CreateCustomContentForMap()
 	AddActorToLevel<AOwnershipCompletenessTest>(Level, FTransform::Identity);
 }
 
+AOwnershipCompletenessGameMode::AOwnershipCompletenessGameMode()
+{
+	DefaultPawnClass = AOwnershipCompletenessPawn::StaticClass();
+	PlayerControllerClass = AOwnershipCompletenessController::StaticClass();
+}
+
+template <typename T>
+T* First(UWorld& World)
+{
+	for (T* Actor : TActorRange<T>(&World))
+	{
+		return Actor;
+	}
+
+	return nullptr;
+}
+
 AOwnershipCompletenessTest::AOwnershipCompletenessTest()
 {
 	Author = TEXT("Dmitrii Kozlov <dmitriikozlov@improbable.io>");
@@ -57,6 +57,8 @@ AOwnershipCompletenessTest::AOwnershipCompletenessTest()
 void AOwnershipCompletenessTest::PrepareTest()
 {
 	Super::PrepareTest();
+
+	constexpr float Timeout = 2.0f;
 
 	AddStep(
 		TEXT("Grabbing required objects"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
@@ -69,7 +71,7 @@ void AOwnershipCompletenessTest::PrepareTest()
 			}
 			FinishStep();
 		},
-		2.0f);
+		Timeout);
 
 	AddStep(TEXT("Spawn additional actors"), FWorkerDefinition::AllServers, nullptr, [this]() {
 		if (Controller->HasAuthority() && Pawn->HasAuthority())
@@ -105,7 +107,7 @@ void AOwnershipCompletenessTest::PrepareTest()
 
 			FinishStep();
 		},
-		10.0f);
+		Timeout);
 
 	AddStep(
 		TEXT("Validate additional actor roles and ownership"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
@@ -116,7 +118,7 @@ void AOwnershipCompletenessTest::PrepareTest()
 
 			FinishStep();
 		},
-		10.0f);
+		Timeout);
 
 	AddStep(TEXT("Move FreeActor to Pawn"), FWorkerDefinition::AllServers, nullptr, [this] {
 		if (FreeActor->HasAuthority())
@@ -133,7 +135,7 @@ void AOwnershipCompletenessTest::PrepareTest()
 
 			FinishStep();
 		},
-		10.0f);
+		Timeout);
 
 	AddStep(TEXT("Remove PawnActor from Pawn"), FWorkerDefinition::AllServers, nullptr, [this] {
 		if (PawnActor->HasAuthority())
@@ -143,13 +145,15 @@ void AOwnershipCompletenessTest::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Wait until all workers receive PawnActor and FreeActor ownership change"), FWorkerDefinition::AllWorkers, nullptr,
-			nullptr, [this](float) {
-				RequireTrue(FreeActor->IsOwnedBy(PawnActor), TEXT("FreeActor is now owned by PawnActor"));
-				RequireFalse(FreeActor->IsOwnedBy(Pawn), TEXT("FreeActor is now NOT owned by Pawn"));
-				RequireFalse(PawnActor->IsOwnedBy(Pawn), TEXT("PawnActor is now NOT owned by Pawn"));
-				FinishStep();
-			});
+	AddStep(
+		TEXT("Wait until all workers receive PawnActor and FreeActor ownership change"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
+		[this](float) {
+			RequireTrue(FreeActor->IsOwnedBy(PawnActor), TEXT("FreeActor is now owned by PawnActor"));
+			RequireFalse(FreeActor->IsOwnedBy(Pawn), TEXT("FreeActor is now NOT owned by Pawn"));
+			RequireFalse(PawnActor->IsOwnedBy(Pawn), TEXT("PawnActor is now NOT owned by Pawn"));
+			FinishStep();
+		},
+		Timeout);
 
 	AddStep(TEXT("Move PawnActor to ControllerActor"), FWorkerDefinition::AllServers, nullptr, [this] {
 		if (PawnActor->HasAuthority())
@@ -159,10 +163,12 @@ void AOwnershipCompletenessTest::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Wait until all workers receive PawnActor and FreeActor ownership change"), FWorkerDefinition::AllWorkers, nullptr,
-			nullptr, [this](float) {
-				RequireTrue(FreeActor->IsOwnedBy(Controller), TEXT("FreeActor is now owned by Controller"));
-				RequireTrue(PawnActor->IsOwnedBy(Controller), TEXT("PawnActor is now owned by Controller"));
-				FinishStep();
-			});
+	AddStep(
+		TEXT("Wait until all workers receive PawnActor and FreeActor ownership change"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
+		[this](float) {
+			RequireTrue(FreeActor->IsOwnedBy(Controller), TEXT("FreeActor is now owned by Controller"));
+			RequireTrue(PawnActor->IsOwnedBy(Controller), TEXT("PawnActor is now owned by Controller"));
+			FinishStep();
+		},
+		Timeout);
 }

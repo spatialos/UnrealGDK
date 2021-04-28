@@ -50,7 +50,6 @@ public:
 				const FSubView& InSimulatedUpdateSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
 				SpatialEventTracer* InEventTracer);
 
-	void DoWork(const FSubView& SubView, FString& AuthFlowControllersIds);
 	void Advance();
 
 	UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);

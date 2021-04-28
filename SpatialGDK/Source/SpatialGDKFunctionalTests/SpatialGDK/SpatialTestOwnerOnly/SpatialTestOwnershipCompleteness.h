@@ -15,6 +15,16 @@
 #include "SpatialTestOwnershipCompleteness.generated.h"
 
 UCLASS()
+class UOwnershipCompletenessGeneratedMap : public UGeneratedTestMap
+{
+	GENERATED_BODY()
+
+	UOwnershipCompletenessGeneratedMap();
+
+	virtual void CreateCustomContentForMap() override;
+};
+
+UCLASS()
 class AOwnershipCompletenessGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
@@ -41,8 +51,6 @@ class AOwnershipCompletenessTestPawnActor : public AActor
 
 public:
 	AOwnershipCompletenessTestPawnActor() { bReplicates = true; }
-	// UPROPERTY(Replicated)
-	int OwnerOnlyValue = 0;
 };
 
 UCLASS()
@@ -52,8 +60,6 @@ class AOwnershipCompletenessTestControllerActor : public AActor
 
 public:
 	AOwnershipCompletenessTestControllerActor() { bReplicates = true; }
-	// UPROPERTY(Replicated)
-	int OwnerOnlyValue = 0;
 };
 
 UCLASS()
@@ -63,18 +69,6 @@ class AOwnershipCompletenessTestFreeActor : public AActor
 
 public:
 	AOwnershipCompletenessTestFreeActor() { bReplicates = true; }
-	// UPROPERTY(Replicated)
-	int OwnerOnlyValue = 0;
-};
-
-UCLASS()
-class UOwnershipCompletenessGeneratedMap : public UGeneratedTestMap
-{
-	GENERATED_BODY()
-
-	UOwnershipCompletenessGeneratedMap();
-
-	virtual void CreateCustomContentForMap() override;
 };
 
 UCLASS()
