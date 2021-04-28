@@ -92,7 +92,8 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			LocalWorker = GridStrategy->GetLocalVirtualWorkerId();
 
 			WorkerEntityPosition = GridStrategy->GetWorkerEntityPosition();
-			AReplicatedTestActorBase_RepGraph* Actor = World->SpawnActor<AReplicatedTestActorBase_RepGraph>(WorkerEntityPosition, FRotator());
+			AReplicatedTestActorBase_RepGraph* Actor =
+				World->SpawnActor<AReplicatedTestActorBase_RepGraph>(WorkerEntityPosition, FRotator());
 			AddDebugTag(Actor, GetTestTag());
 			RegisterAutoDestroyActor(Actor);
 			TimeStampSpinning = FPlatformTime::Cycles64();
@@ -201,7 +202,8 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 		[this] {
 			UWorld* World = GetWorld();
 
-			AReplicatedTestActorBase_RepGraph* Actor = World->SpawnActor<AReplicatedTestActorBase_RepGraph>(WorkerEntityPosition, FRotator());
+			AReplicatedTestActorBase_RepGraph* Actor =
+				World->SpawnActor<AReplicatedTestActorBase_RepGraph>(WorkerEntityPosition, FRotator());
 			AddDebugTag(Actor, GetTestTag());
 			RegisterAutoDestroyActor(Actor);
 			FinishStep();
