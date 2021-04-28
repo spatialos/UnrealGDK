@@ -4,23 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "Interop/Connection/SpatialGDKSpanId.h"
-#include "Schema/RPCPayload.h"
 #include "SpatialView/EntityView.h"
 #include "Utils/ObjectAllocUtils.h"
 
 namespace SpatialGDK
 {
-struct ReceivedRPC : FNoHeapAllocation
+enum class QueueError
 {
-	ReceivedRPC(uint32 InOffset, uint32 InIndex, TArrayView<const uint8> InPayloadData)
-		: Offset(InOffset)
-		, Index(InIndex)
-		, PayloadData(InPayloadData)
-	{
-	}
-	const uint32 Offset;
-	const uint32 Index;
-	const TArrayView<const uint8> PayloadData;
+	BufferOverflow, // The buffer sender is full, RPCs will be locally queued.
+	QueueFull,		// The queue is full, additional RPCs will be dropped.
 };
 
 namespace RPCCallbacks
@@ -30,7 +22,7 @@ using UpdateWritten = TFunction<void(Worker_EntityId, Worker_ComponentId, Schema
 using RequestWritten = TFunction<void(Worker_EntityId, Schema_CommandRequest*)>;
 using ResponseWritten = TFunction<void(Worker_EntityId, Schema_CommandResponse*)>;
 using RPCWritten = TFunction<void(Worker_ComponentId, uint64)>;
-
+using QueueErrorCallback = TFunction<void(FName, Worker_EntityId, QueueError)>;
 using CanExtractRPCs = TFunction<bool(Worker_EntityId)>;
 } // namespace RPCCallbacks
 
@@ -178,6 +170,8 @@ struct NullReceiveWrapper
 	using AdditionalData = RPCEmptyData;
 	struct WrappedData
 	{
+		WrappedData() {}
+
 		WrappedData(T&& InData)
 			: Data(MoveTemp(InData))
 		{
@@ -197,27 +191,27 @@ struct NullReceiveWrapper
 	WrappedData MakeWrappedData(Worker_EntityId EntityId, T&& Data, uint64 RPCId) { return MoveTemp(Data); }
 };
 
-template <typename T, template <typename> class PayloadWrapper = NullReceiveWrapper>
+template <typename PayloadType, template <typename> class PayloadWrapper = NullReceiveWrapper>
 class TRPCBufferReceiver : public RPCBufferReceiver
 {
 public:
-	TRPCBufferReceiver(PayloadWrapper<T>&& InWrapper = PayloadWrapper<T>())
+	TRPCBufferReceiver(PayloadWrapper<PayloadType>&& InWrapper = PayloadWrapper<PayloadType>())
 		: Wrapper(MoveTemp(InWrapper))
 	{
 	}
 
-	using ProcessRPC = TFunction<bool(Worker_EntityId, ReceivedRPC, typename PayloadWrapper<T>::AdditionalData const&)>;
+	using ProcessRPC = TFunction<bool(Worker_EntityId, const PayloadType&, typename PayloadWrapper<PayloadType>::AdditionalData const&)>;
 	virtual void ExtractReceivedRPCs(const RPCCallbacks::CanExtractRPCs&, const ProcessRPC&) = 0;
 
-	void QueueReceivedRPC(Worker_EntityId EntityId, T&& Data, uint64 RPCId)
+	void QueueReceivedRPC(Worker_EntityId EntityId, PayloadType&& Data, uint64 RPCId)
 	{
 		auto& RPCs = ReceivedRPCs.FindOrAdd(EntityId);
 		RPCs.Emplace(Wrapper.MakeWrappedData(EntityId, MoveTemp(Data), RPCId));
 	}
 
 protected:
-	TMap<Worker_EntityId_Key, TArray<typename PayloadWrapper<T>::WrappedData>> ReceivedRPCs;
-	PayloadWrapper<T> Wrapper;
+	TMap<Worker_EntityId_Key, TArray<typename PayloadWrapper<PayloadType>::WrappedData>> ReceivedRPCs;
+	PayloadWrapper<PayloadType> Wrapper;
 };
 
 /**
@@ -234,12 +228,15 @@ struct RPCQueue
 
 	const FName Name;
 
+	void SetErrorCallback(RPCCallbacks::QueueErrorCallback InCallback) { ErrorCallback = MoveTemp(InCallback); }
+
 protected:
 	RPCQueue(FName InName)
 		: Name(InName)
 	{
 	}
 	TSet<Worker_ComponentId> ComponentsToReadOnAuthGained;
+	RPCCallbacks::QueueErrorCallback ErrorCallback;
 };
 
 /**
