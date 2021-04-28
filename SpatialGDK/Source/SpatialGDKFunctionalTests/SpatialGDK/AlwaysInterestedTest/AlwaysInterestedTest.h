@@ -30,6 +30,9 @@ public:
 	UPROPERTY(Replicated)
 	ASmallNCDActor* NotInterestedInThisReplicatedActor;
 
+	UPROPERTY(Replicated)
+	ASmallNCDActor* OtherInterestedInThisReplicatedActor;
+
 	// Only valid on server workers
 	FVector LocalWorkerPosition;
 	FVector OtherWorkerPosition;

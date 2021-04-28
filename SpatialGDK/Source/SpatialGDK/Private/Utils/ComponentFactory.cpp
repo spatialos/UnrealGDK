@@ -316,7 +316,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			AddProperty(Object, FieldId, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), ClearedIds);
 		}
 
-		if (ArrayHelper.Num() > 0)
+		if (ArrayHelper.Num() > 0 || (ArrayHelper.Num() == 0 && ClearedIds))
 		{
 			if (ArrayProperty->Inner->IsA<GDK_PROPERTY(ObjectPropertyBase)>())
 			{
