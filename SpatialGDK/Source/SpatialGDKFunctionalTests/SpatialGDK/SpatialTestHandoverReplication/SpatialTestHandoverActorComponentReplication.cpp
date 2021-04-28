@@ -36,21 +36,39 @@ void AHandoverReplicationTestCube::SetTestValues(int UpdatedTestPropertyValue)
 {
 	HandoverTestProperty = UpdatedTestPropertyValue;
 	ReplicatedTestProperty = UpdatedTestPropertyValue;
+	HandoverTestStruct.FirstProperty = UpdatedTestPropertyValue;
+	HandoverTestStruct.SecondProperty = UpdatedTestPropertyValue * 2; // Just to get something different
+
 	HandoverComponent->HandoverTestProperty = UpdatedTestPropertyValue;
 	HandoverComponent->ReplicatedTestProperty = UpdatedTestPropertyValue;
+	HandoverComponent->HandoverTestStruct.FirstProperty = UpdatedTestPropertyValue;
+	HandoverComponent->HandoverTestStruct.SecondProperty = UpdatedTestPropertyValue * 2; // Just to get something different
 }
 
 void AHandoverReplicationTestCube::RequireTestValues(ASpatialTestHandoverActorComponentReplication* FunctionalTest, int RequiredValue,
 													 const FString& Postfix) const
 {
+	// Handover cube (this actor)
 	FunctionalTest->RequireEqual_Int(HandoverTestProperty, RequiredValue,
 									 FString::Printf(TEXT("Handover Cube = %d: %s"), RequiredValue, *Postfix));
 	FunctionalTest->RequireEqual_Int(ReplicatedTestProperty, RequiredValue,
 									 FString::Printf(TEXT("Replicated Cube = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverTestStruct.FirstProperty, RequiredValue,
+									 FString::Printf(TEXT("Handover Cube Struct First = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverTestStruct.SecondProperty,
+									 RequiredValue * 2, // Just to get something different and to match the SetTestValues
+									 FString::Printf(TEXT("Handover Cube Struct Second = %d: %s"), RequiredValue, *Postfix));
+
+	// Handover Component
 	FunctionalTest->RequireEqual_Int(HandoverComponent->HandoverTestProperty, RequiredValue,
 									 FString::Printf(TEXT("Handover Component = %d: %s"), RequiredValue, *Postfix));
 	FunctionalTest->RequireEqual_Int(HandoverComponent->ReplicatedTestProperty, RequiredValue,
 									 FString::Printf(TEXT("Replicated Component = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverComponent->HandoverTestStruct.FirstProperty, RequiredValue,
+									 FString::Printf(TEXT("Handover Component Struct First = %d: %s"), RequiredValue, *Postfix));
+	FunctionalTest->RequireEqual_Int(HandoverComponent->HandoverTestStruct.SecondProperty,
+									 RequiredValue * 2, // Just to get something different and to match the SetTestValues
+									 FString::Printf(TEXT("Handover Component Struct Second = %d: %s"), RequiredValue, *Postfix));
 }
 
 void AHandoverReplicationTestCube::OnAuthorityGained()

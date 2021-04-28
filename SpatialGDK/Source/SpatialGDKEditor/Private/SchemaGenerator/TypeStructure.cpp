@@ -443,7 +443,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			PropertyInfo->HandoverData = MakeShared<FUnrealHandoverData>();
 			PropertyInfo->HandoverData->Handle = HandoverDataHandle++;
 		}
-		return true;
+		return false;
 	});
 
 	return TypeNode;
