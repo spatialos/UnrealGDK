@@ -259,8 +259,6 @@ void ActorSystem::Advance()
 			EntityRemoved(Delta.EntityId);
 
 			const int32 EntitiesRemoved = PresentEntities.Remove(Delta.EntityId);
-
-			check(EntitiesRemoved != 0);
 		}
 	}
 
