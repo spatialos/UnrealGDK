@@ -6,7 +6,6 @@
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Net/NetworkProfiler.h"
 #include "SpatialConstants.h"
@@ -130,8 +129,8 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 		{
 			if (EventTracer != nullptr)
 			{
-				PendingPayload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateQueueRPC(),
-																/* Causes */ PendingPayload.SpanId.GetConstId(), /* NumCauses */ 1);
+				PendingPayload.SpanId = EventTracer->TraceEvent(QUEUE_RPC_EVENT_NAME, "", PendingPayload.SpanId.GetConstId(),
+																/* NumCauses */ 1, [](FSpatialTraceEventDataBuilder& EventBuilder) {});
 			}
 
 			// Already has queued RPCs of this type, queue until those are pushed.
@@ -184,8 +183,8 @@ void SpatialRPCService::PushOverflowedRPCs()
 				}
 				if (EventTracer != nullptr)
 				{
-					Payload.SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateQueueRPC(),
-															 /* Causes */ Payload.SpanId.GetConstId(), /* NumCauses */ 1);
+					Payload.SpanId = EventTracer->TraceEvent(QUEUE_RPC_EVENT_NAME, "", Payload.SpanId.GetConstId(), /* NumCauses */ 1,
+															 [](FSpatialTraceEventDataBuilder& EventBuilder) {});
 				}
 				break;
 			case EPushRPCResult::DropOverflowed:
@@ -248,9 +247,12 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 
 		if (EventTracer != nullptr)
 		{
-			UpdateToSend.SpanId = EventTracer->TraceEvent(
-				FSpatialTraceEventBuilder::CreateMergeSendRPCs(UpdateToSend.EntityId, UpdateToSend.Update.component_id),
-				/* Causes */ It.Value.SpanIds.GetData()->GetConstId(), /* NumCauses */ It.Value.SpanIds.Num());
+			TArray<FSpatialGDKSpanId>& Causes = It.Value.SpanIds;
+			UpdateToSend.SpanId = EventTracer->TraceEvent(MERGE_SEND_RPC_EVENT_NAME, "", Causes.GetData()->GetConstId(), Causes.Num(),
+														  [UpdateToSend](FSpatialTraceEventDataBuilder& EventBuilder) {
+															  EventBuilder.AddEntityId(UpdateToSend.EntityId);
+															  EventBuilder.AddComponentId(UpdateToSend.Update.component_id);
+														  });
 		}
 
 #if TRACE_LIB_ACTIVE
@@ -349,10 +351,13 @@ void SpatialRPCService::ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTarg
 	{
 		TArray<FSpatialGDKSpanId> ComponentUpdateSpans = EventTracer->GetAndConsumeSpansForComponent(
 			EntityComponentId(InTargetObjectRef.Entity, RPCRingBufferUtils::GetRingBufferComponentId(Type)));
-		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveRPC(EventTraceUniqueId::GenerateForRPC(
-											 InTargetObjectRef.Entity, static_cast<uint8>(Type), RPCIdForLinearEventTrace.GetValue())),
-										 /* Causes */ reinterpret_cast<const Trace_SpanIdType*>(ComponentUpdateSpans.GetData()),
-										 /* NumCauses */ ComponentUpdateSpans.Num());
+
+		const Trace_SpanIdType* Causes = reinterpret_cast<const Trace_SpanIdType*>(ComponentUpdateSpans.GetData());
+		SpanId = EventTracer->TraceEvent(RECEIVE_RPC_EVENT_NAME, "", Causes, ComponentUpdateSpans.Num(),
+										 [InTargetObjectRef, Type, RPCIdForLinearEventTrace](FSpatialTraceEventDataBuilder& EventBuilder) {
+											 EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForRPC(
+												 InTargetObjectRef.Entity, static_cast<uint8>(Type), RPCIdForLinearEventTrace.GetValue()));
+										 });
 	}
 
 	IncomingRPCs.ProcessOrQueueRPC(InTargetObjectRef, InSender, Type, MoveTemp(InPayload), SpanId);
@@ -446,9 +451,11 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 	{
 		if (EventTracer != nullptr)
 		{
-			EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForRPC(EntityId, static_cast<uint8>(Type), NewRPCId);
-			FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendRPC(LinearTraceId),
-															   /* Causes */ Payload.SpanId.GetConstId(), /* NumCauses */ 1);
+			FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(
+				SEND_RPC_EVENT_NAME, "", Payload.SpanId.GetConstId(), /* NumCauses */ 1,
+				[EntityId, Type, NewRPCId](FSpatialTraceEventDataBuilder& EventBuilder) {
+					EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForRPC(EntityId, static_cast<uint8>(Type), NewRPCId));
+				});
 			RPCStore.AddSpanIdForComponentUpdate(EntityComponent, SpanId);
 		}
 
@@ -581,8 +588,13 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 			bool bUseEventTracer = EventTracer != nullptr && RPCType != ERPCType::CrossServer;
 			if (bUseEventTracer)
 			{
-				FSpatialGDKSpanId SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateApplyRPC(TargetObject, Function),
-																   /* Causes */ PendingRPCParams.SpanId.GetConstId(), /* NumCauses */ 1);
+				FSpatialGDKSpanId SpanId =
+					EventTracer->TraceEvent(APPLY_RPC_EVENT_NAME, "", PendingRPCParams.SpanId.GetConstId(), /* NumCauses */ 1,
+											[TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
+												EventBuilder.AddObject(TargetObject);
+												EventBuilder.AddFunction(Function);
+											});
+
 				EventTracer->AddToStack(SpanId);
 			}
 
@@ -766,8 +778,11 @@ void SpatialRPCService::ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTarg
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreatePushRPC(TargetObject, Function),
-										 /* Causes */ EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1);
+		SpanId = EventTracer->TraceEvent(PUSH_RPC_EVENT_NAME, "", EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1,
+										 [TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
+											 EventBuilder.AddObject(TargetObject);
+											 EventBuilder.AddFunction(Function);
+										 });
 	}
 
 	OutgoingRPCs.ProcessOrQueueRPC(InTargetObjectRef, InSenderInfo, RPCInfo.Type, MoveTemp(InPayload), SpanId);
