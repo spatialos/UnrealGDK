@@ -21,6 +21,20 @@ enum class EHandoverReplicationTestStage
 };
 
 USTRUCT()
+struct FHandoverReplicationTestStructInner
+{
+	GENERATED_BODY()
+
+	UPROPERTY(Handover)
+	int FirstProperty;
+
+	// Both the handover marked one and this one should get replicated if the parent property is marked handover.
+	// This is here as a regression test for UNR-5404.
+	UPROPERTY()
+	int SecondProperty;
+};
+
+USTRUCT()
 struct FHandoverReplicationTestStruct
 {
 	GENERATED_BODY()
@@ -32,6 +46,9 @@ struct FHandoverReplicationTestStruct
 	// This is here as a regression test for UNR-5404.
 	UPROPERTY()
 	int SecondProperty;
+
+	UPROPERTY()
+	FHandoverReplicationTestStructInner InnerStruct;
 };
 
 namespace HandoverReplicationTestValues
