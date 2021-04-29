@@ -1929,7 +1929,7 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 
 	// It's not clear if this is ever valid for authority to not be true anymore (since component sets), but still possible if we attempt
 	// to process updates whilst an entity creation is in progress, or after the entity has been deleted or removed from view. So in the
-	// meantime we've kept the checking and queuing of updates, along with an error message.
+	// meantime we've kept the checking with an error message.
 	if (!NetDriver->HasServerAuthority(EntityId))
 	{
 		UE_LOG(LogActorSystem, Error, TEXT("Trying to send component update but don't have authority! entity: %lld"), EntityId);
