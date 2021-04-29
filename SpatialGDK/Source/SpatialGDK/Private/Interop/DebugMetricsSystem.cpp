@@ -3,7 +3,6 @@
 #include "Interop/DebugMetricsSystem.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSpatialDebugMetrics, Log, All);
@@ -68,8 +67,11 @@ void DebugMetricsSystem::ProcessOps(const TArray<Worker_Op>& Ops) const
 
 					if (EventTracer != nullptr)
 					{
-						SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCommandResponse(RequestId, true),
-														 CauseSpanId.GetConstId(), 1);
+						SpanId = EventTracer->TraceEvent(SEND_COMMAND_RESPONSE_EVENT_NAME, "", CauseSpanId.GetConstId(), /* NumCauses */ 1,
+														 [RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
+															 EventBuilder.AddRequestId(RequestId);
+															 EventBuilder.AddKeyValue("Success", true);
+														 });
 					}
 
 					Connection.SendCommandResponse(RequestId, &Response, SpanId);
