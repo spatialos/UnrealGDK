@@ -266,7 +266,7 @@ public:
 
 	virtual int64 GetClientID() const override;
 
-	virtual int64 GetActorEntityId(AActor& Actor) override;
+	virtual int64 GetActorEntityId(const AActor& Actor) const override;
 
 	FShutdownEvent OnShutdown;
 
