@@ -18,7 +18,7 @@ void USpatial2WorkerSmallInterestMap::CreateCustomContentForMap()
 {
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 
-	FVector Server1Pos(-50.f, -50.f, 0.f);
+	FVector Server1Pos(-500.0f, -500.0f, 50.0f);
 
 	// Add the tests
 	AddActorToLevel<ASpatialCleanupConnectionTest>(
