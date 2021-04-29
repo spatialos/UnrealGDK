@@ -90,7 +90,7 @@ struct MigrationDiagnostic : Component
 
 		if (ResponseObject == nullptr)
 		{
-			return FString::Printf(TEXT("Migration diaganostic log failed as response was empty."));
+			return FString::Printf(TEXT("Migration diagnostic log failed as response was empty."));
 		}
 
 		VirtualWorkerId AuthoritativeWorkerId = Schema_GetInt32(ResponseObject, SpatialConstants::MIGRATION_DIAGNOSTIC_AUTHORITY_WORKER_ID);
