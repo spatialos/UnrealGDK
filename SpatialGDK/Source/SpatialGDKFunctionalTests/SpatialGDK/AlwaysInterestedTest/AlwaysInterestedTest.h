@@ -36,4 +36,8 @@ public:
 	// Only valid on server workers
 	FVector LocalWorkerPosition;
 	FVector OtherWorkerPosition;
+
+	// Other tests rely on the pawns to be in the starting position, so cache and reset at end of test.
+	FVector OriginalPawn1Position;
+	FVector OriginalPawn2Position;
 };

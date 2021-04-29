@@ -91,30 +91,32 @@ void AAlwaysInterestedTest::PrepareTest()
 
 				AController* PlayerController1 =
 					Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
-				if (!AssertTrue(IsValid(PlayerController1), TEXT("Failed to retrieve player controller 1")))
+				if (!AssertTrue(IsValid(PlayerController1), TEXT("Should have spawned a PlayerController 1")))
 				{
 					return;
 				}
 
-				if (!AssertTrue(PlayerController1->HasAuthority(), TEXT("Failed to have authority over player controller 1")))
+				if (!AssertTrue(PlayerController1->HasAuthority(), TEXT("Should have authority over the PlayerController 1")))
 				{
 					return;
 				}
 
 				AController* PlayerController2 =
 					Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 2)->GetOwner());
-				if (!AssertTrue(IsValid(PlayerController2), TEXT("Failed to retrieve player controller 2")))
+				if (!AssertTrue(IsValid(PlayerController2), TEXT("Should have spawned a PlayerController 2")))
 				{
 					return;
 				}
 
-				if (!AssertTrue(PlayerController2->HasAuthority(), TEXT("Failed to have authority over player controller 2")))
+				if (!AssertTrue(PlayerController2->HasAuthority(), TEXT("Should have authority over the PlayerController 2")))
 				{
 					return;
 				}
 
 				// Move PCs so they are roughly at worker's position, but with an offset to not trigger the interest of each other,
 				// or the SmallNCDActors located at the worker's position.
+				OriginalPawn1Position = PlayerController1->GetPawn()->GetActorLocation();
+				OriginalPawn2Position = PlayerController2->GetPawn()->GetActorLocation();
 				PlayerController1->GetPawn()->SetActorLocation(LocalWorkerPosition + FVector(200.f, 0.f, 0.f));
 				PlayerController2->GetPawn()->SetActorLocation(LocalWorkerPosition - FVector(200.f, 0.f, 0.f));
 
@@ -299,7 +301,7 @@ void AAlwaysInterestedTest::PrepareTest()
 		AddStep(
 			TEXT("AlwaysInterested_ValidateVisibilityOnServer2_Part3"), FWorkerDefinition::Server(2), nullptr, nullptr,
 			[this](float DeltaTime) {
-				RequireTrue(!IsValid(ActorWithAlwaysInterestedProperty), TEXT("Shouldn't root actor"));
+				RequireTrue(!IsValid(ActorWithAlwaysInterestedProperty), TEXT("Shouldn't see root actor"));
 				RequireTrue(!IsValid(InterestedInThisReplicatedActor), TEXT("Shouldn't see interested actor"));
 				RequireTrue(!IsValid(NotInterestedInThisReplicatedActor), TEXT("Shouldn't see not-interested actor"));
 				RequireTrue(!IsValid(OtherInterestedInThisReplicatedActor), TEXT("Shouldn't see other interested actor"));
@@ -331,5 +333,37 @@ void AAlwaysInterestedTest::PrepareTest()
 				FinishStep(); // This will only actually finish if requires are satisfied
 			},
 			StepTimeLimit);
+	}
+
+	{ // Step 16 - Test cleanup
+		AddStep(TEXT("AlwaysInterested_TestCleanup"), FWorkerDefinition::Server(1), nullptr, [this]() {
+			// Move Pawns back to starting positions otherwise other tests in this map may run incorrectly.
+			AController* PlayerController1 = Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
+			if (!AssertTrue(IsValid(PlayerController1), TEXT("Should have spawned a PlayerController 1")))
+			{
+				return;
+			}
+
+			if (!AssertTrue(PlayerController1->HasAuthority(), TEXT("Should have authority over the PlayerController 1")))
+			{
+				return;
+			}
+
+			AController* PlayerController2 = Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 2)->GetOwner());
+			if (!AssertTrue(IsValid(PlayerController2), TEXT("Should have spawned a PlayerController 2")))
+			{
+				return;
+			}
+
+			if (!AssertTrue(PlayerController2->HasAuthority(), TEXT("Should have authority over the PlayerController 2")))
+			{
+				return;
+			}
+
+			PlayerController1->GetPawn()->SetActorLocation(OriginalPawn1Position);
+			PlayerController2->GetPawn()->SetActorLocation(OriginalPawn2Position);
+
+			FinishStep();
+		});
 	}
 }

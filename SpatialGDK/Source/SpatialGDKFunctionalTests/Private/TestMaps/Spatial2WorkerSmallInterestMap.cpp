@@ -18,7 +18,7 @@ void USpatial2WorkerSmallInterestMap::CreateCustomContentForMap()
 {
 	ULevel* CurrentLevel = World->GetCurrentLevel();
 
-	FVector Server1Pos(-500.0f, -500.0f, 50.0f);
+	FVector Server1Pos(-50.f, -50.f, 0.f);
 
 	// Add the tests
 	AddActorToLevel<ASpatialCleanupConnectionTest>(
@@ -30,7 +30,7 @@ void USpatial2WorkerSmallInterestMap::CreateCustomContentForMap()
 	AActor** PlayerStart = CurrentLevel->Actors.FindByPredicate([](AActor* Actor) {
 		return Actor->GetClass() == APlayerStart::StaticClass();
 	});
-	(*PlayerStart)->SetActorLocation(FVector(-50, -50, 100));
+	(*PlayerStart)->SetActorLocation(Server1Pos);
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->SetMultiWorkerSettingsClass(UTest1x2SmallInterestWorkerSettings::StaticClass());
