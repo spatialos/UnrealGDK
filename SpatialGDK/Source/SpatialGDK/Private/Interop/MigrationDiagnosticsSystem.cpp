@@ -3,7 +3,6 @@
 #include "Interop/MigrationDiagnosticsSystem.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Schema/MigrationDiagnostic.h"
 
@@ -38,8 +37,11 @@ void MigrationDiagnosticsSystem::OnMigrationDiagnosticRequest(const Worker_Op& O
 
 		if (EventTracer != nullptr)
 		{
-			EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateSendCommandResponse(RequestId, true),
-									/* Causes */ CauseSpanId.GetConstId(), /* NumCauses */ 1);
+			EventTracer->TraceEvent(SEND_COMMAND_RESPONSE_EVENT_NAME, "", CauseSpanId.GetConstId(), /* NumCauses */ 1,
+									[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
+										EventBuilder.AddRequestId(RequestId);
+										EventBuilder.AddKeyValue("Success", true);
+									});
 		}
 
 		Connection.SendCommandResponse(RequestId, &Response, CauseSpanId);

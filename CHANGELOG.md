@@ -57,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue during client logout where a client's corresponding Actors were not cleaned up correctly.
 - Reverted a fix relating to the `dbghelp` file that previously caused the Editor to crash when loading the Session Front End. Our fix is no longer necessary, as Epic have fixed the issue and we've adopted their fix.
 - Fixed an issue with migration diagnostic logging failing, when the actor did not have authority.
+- Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
 
 ## [`0.12.0`] - 2021-02-01
 
@@ -81,6 +82,7 @@ These functions and structs can be referenced in both code and blueprints and it
 - Running without Ring Buffered RPCs is no longer supported, and the option has been removed from SpatialGDKSettings.
 - The schema database format has been updated and versioning introduced. Please regenerate your schema after updating.
 - The CookAndGenerateSchemaCommandlet no longer automatically deletes previously generated schema. Deletion of previously generated schema is now controlled by the `-DeleteExistingGeneratedSchema` flag.
+- Event tracing has been optimised to reduce overhead when tracing events in general and in particular when events are not sampled. The tracing API has been modified to accomidate these improvements. You will have to modify your project if you use the API.
 
 ### Features:
 - The DeploymentLauncher tool can be used to start multiple simulated player deployments at once.
