@@ -603,7 +603,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 
 	// Due to UnrealMetadata::GetNativeEntityClass using LoadObject, if we are shutting down and garbage collecting,
 	// calling LoadObject will crash the editor. In this case, just return since everything will be cleaned up anyways.
-	if (IsInGameThread() && IsGarbageCollecting())
+	if (IsEngineExitRequested() || (IsInGameThread() && IsGarbageCollecting()))
 	{
 		return;
 	}
@@ -683,7 +683,7 @@ void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& Subobj
 
 	// Due to UnrealMetadata::GetNativeEntityClass using LoadObject, if we are shutting down and garbage collecting,
 	// calling LoadObject will crash the editor. In this case, just return since everything will be cleaned up anyways.
-	if (IsInGameThread() && IsGarbageCollecting())
+	if (IsEngineExitRequested() || (IsInGameThread() && IsGarbageCollecting()))
 	{
 		return;
 	}
