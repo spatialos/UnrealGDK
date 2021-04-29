@@ -20,6 +20,7 @@
 #include "EngineStats.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"

@@ -16,6 +16,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
@@ -96,9 +97,9 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 	Connection->SendComponentUpdate(PartitionId, &Update);
 }
 
-void USpatialSender::SendAuthorityIntentUpdate(const AActor& InActor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const
+void USpatialSender::SendAuthorityIntentUpdate(const AActor& Actor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const
 {
-	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&InActor);
+	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&Actor);
 	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
 	TOptional<AuthorityIntent> AuthorityIntentComponent =
@@ -109,25 +110,21 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& InActor, VirtualWor
 		/* This seems to occur when using the replication graph, however we're still unsure the cause. */
 		UE_LOG(LogSpatialSender, Error,
 			   TEXT("Attempted to update AuthorityIntent twice to the same value. Actor: %s. Entity ID: %lld. Virtual worker: '%d'"),
-			   *GetNameSafe(&InActor), EntityId, NewAuthoritativeVirtualWorkerId);
+			   *GetNameSafe(&Actor), EntityId, NewAuthoritativeVirtualWorkerId);
 		return;
 	}
 
 	AuthorityIntentComponent->VirtualWorkerId = NewAuthoritativeVirtualWorkerId;
 	UE_LOG(LogSpatialSender, Log,
 		   TEXT("(%s) Sending AuthorityIntent update for entity id %d. Virtual worker '%d' should become authoritative over %s"),
-		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&InActor));
+		   *NetDriver->Connection->GetWorkerId(), EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
 
 	FWorkerComponentUpdate Update = AuthorityIntentComponent->CreateAuthorityIntentUpdate();
 
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
-		SpanId = EventTracer->TraceEvent(AUTHORITY_INTENT_UPDATE_EVENT_NAME, "", /* Causes */ nullptr, /* NumCauses */ 0,
-										 [&InActor, NewAuthoritativeVirtualWorkerId](FSpatialTraceEventDataBuilder& EventBuilder) {
-											 EventBuilder.AddObject(&InActor);
-											 EventBuilder.AddWorkerId(NewAuthoritativeVirtualWorkerId, "NewWorkerId");
-										 });
+		SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateAuthorityIntentUpdate(NewAuthoritativeVirtualWorkerId, &Actor));
 	}
 
 	Connection->SendComponentUpdate(EntityId, &Update, SpanId);

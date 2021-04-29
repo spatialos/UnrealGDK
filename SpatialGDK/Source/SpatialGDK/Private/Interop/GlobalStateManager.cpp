@@ -15,6 +15,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "EngineUtils.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -221,12 +222,9 @@ void UGlobalStateManager::OnReceiveShutdownCommand(const Worker_Op& Op, const Wo
 
 	if (EventTracer != nullptr)
 	{
-		Worker_RequestId RequestId = Op.op.command_request.request_id;
-		EventTracer->TraceEvent(RECEIVE_COMMAND_REQUEST_EVENT_NAME, "", Op.span_id, /* NumCauses */ 1,
-								[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
-									EventBuilder.AddCommand("SHUTDOWN_MULTI_PROCESS_REQUEST");
-									EventBuilder.AddRequestId(RequestId);
-								});
+		EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCommandRequest(TEXT("SHUTDOWN_MULTI_PROCESS_REQUEST"),
+																					   Op.op.command_request.request_id),
+								/* Causes */ Op.span_id, /* NumCauses */ 1);
 	}
 }
 

@@ -22,7 +22,6 @@ class EventTraceUniqueId
 
 public:
 	FString ToString() const;
-	uint32 Get() const { return Hash; };
 
 	bool IsValid() const { return Hash != 0; }
 

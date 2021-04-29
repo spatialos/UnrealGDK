@@ -1,8 +1,9 @@
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/CrossServerRPCSender.h"
 
 #include "Interop/Connection/SpatialEventTracer.h"
+#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Utils/SpatialMetrics.h"
 
@@ -36,12 +37,9 @@ void CrossServerRPCSender::SendCommand(const FUnrealObjectRef InTargetObjectRef,
 	if (EventTracer)
 	{
 		SpanId = EventTracer->TraceEvent(
-			SEND_CROSS_SERVER_RPC_EVENT_NAME, "", EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1,
-			[TargetObject, Function, InTargetObjectRef, UniqueRPCId](FSpatialTraceEventDataBuilder& EventBuilder) {
-				EventBuilder.AddObject(TargetObject);
-				EventBuilder.AddFunction(Function);
-				EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForCrossServerRPC(InTargetObjectRef.Entity, UniqueRPCId));
-			});
+			FSpatialTraceEventBuilder::CreateSendCrossServerRPC(
+				TargetObject, Function, EventTraceUniqueId::GenerateForCrossServerRPC(InTargetObjectRef.Entity, UniqueRPCId)),
+			/* Causes */ EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1);
 	}
 
 	if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
