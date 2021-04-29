@@ -287,7 +287,7 @@ void AAlwaysInterestedTest::PrepareTest()
 			[this](float DeltaTime) {
 				RequireTrue(IsValid(ActorWithAlwaysInterestedProperty), TEXT("Should see root actor via authority"));
 				// There's currently an issue where if an authoritative server loses interest over an actor reference, it won't
-				// correct the reference when the actor comes back into view.
+				// correct the reference when the actor comes back into view - UNR-3917
 				// RequireTrue(IsValid(InterestedInThisReplicatedActor), TEXT("Should see interested actor via authority"));
 				// RequireTrue(IsValid(NotInterestedInThisReplicatedActor), TEXT("Should see not-interested actor via authority"));
 				RequireEqual_Int(GetNumberOfActorsOfType<ASmallNCDActor>(GetWorld()), 3, TEXT("Should see all actors via authority"));
