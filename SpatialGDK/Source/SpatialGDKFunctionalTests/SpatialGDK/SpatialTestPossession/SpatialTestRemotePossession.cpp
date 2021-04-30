@@ -53,8 +53,10 @@ void ASpatialTestRemotePossession::PrepareTest()
 			ATestPossessionPlayerController* PlayerController = Cast<ATestPossessionPlayerController>(FlowController->GetOwner());
 			if (PlayerController != nullptr && PlayerController->HasAuthority())
 			{
+				PlayerController->bAlwaysRelevant = true;
 				if (PlayerController->GetPawn() != nullptr && PlayerController->GetPawn()->HasAuthority())
 				{
+					PlayerController->GetPawn()->bAlwaysRelevant = true;
 					AddToOriginalPawns(PlayerController, PlayerController->GetPawn());
 				}
 			}
