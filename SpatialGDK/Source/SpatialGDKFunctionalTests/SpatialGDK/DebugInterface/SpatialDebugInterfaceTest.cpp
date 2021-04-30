@@ -177,7 +177,8 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				bool bExpectedResult = true;
 
 				TArray<AActor*> TestActors;
-				UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), TestActors);
+				UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(),
+													  TestActors);
 				for (AActor* Actor : TestActors)
 				{
 					bExpectedResult &= Actor->HasAuthority() == bExpectedAuth;
