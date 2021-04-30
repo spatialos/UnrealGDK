@@ -5,10 +5,15 @@
 #include "GameFramework/PlayerStart.h"
 #include "TestPossessionPlayerController.h"
 
+ACrossServerPossessionTestPawn::ACrossServerPossessionTestPawn() {
+	bAlwaysRelevant = true;
+}
+
 ACrossServerPossessionGameMode::ACrossServerPossessionGameMode()
 	: PlayersSpawned(0)
 	, bInitializedSpawnPoints(false)
 {
+	DefaultPawnClass = ACrossServerPossessionTestPawn::StaticClass();
 	PlayerControllerClass = ATestPossessionPlayerController::StaticClass();
 }
 
