@@ -181,7 +181,7 @@ TArray<Worker_ComponentId>{ // RPCs from clients
                             PLAYER_CONTROLLER_COMPONENT_ID,
 
                             // Cross server endpoint
-                            CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
+                            CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
 
                             // Actor tags
                             ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
@@ -231,9 +231,9 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
     { SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },
     { MULTICAST_RPCS_COMPONENT_ID, "unreal.generated.UnrealMulticastRPCs" },
     { SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },
-    { CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderRPCs" },
-    { CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
-	{ MIGRATION_DIAGNOSTIC_COMPONENT_ID, "unreal.MigrationDiagnostic" },
+    { CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderRPCs" },
+    { CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
+    { MIGRATION_DIAGNOSTIC_COMPONENT_ID, "unreal.MigrationDiagnostic" },
 };
 
 const TArray<FString> ClientAuthorityWellKnownSchemaImports = { "unreal/gdk/player_controller.schema", "unreal/gdk/rpc_components.schema",
@@ -245,8 +245,8 @@ const TMap<Worker_ComponentId, FString> ClientAuthorityWellKnownComponents = {
 };
 
 const TMap<Worker_ComponentId, FString> RoutingWorkerComponents = {
-    { CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderACKRPCs" },
-    { CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverRPCs" },
+    { CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderACKRPCs" },
+    { CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverRPCs" },
 };
 
 const TArray<FString> RoutingWorkerSchemaImports = { "unreal/gdk/rpc_components.schema", "unreal/generated/rpc_endpoints.schema" };
@@ -255,6 +255,17 @@ const TArray<Worker_ComponentId> KnownEntityAuthorityComponents = { POSITION_COM
                                                                     INTEREST_COMPONENT_ID,		 PLAYER_SPAWNER_COMPONENT_ID,
                                                                     DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID,
                                                                     GSM_SHUTDOWN_COMPONENT_ID,	 VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID};
+
+const TMap<Worker_ComponentId, FString> WorkerEntityAuthorityComponents = {
+    { POSITION_COMPONENT_ID, "improbable.Position" },
+    { INTEREST_COMPONENT_ID, "improbable.Interest" },
+    { SERVER_WORKER_COMPONENT_ID, "unreal.ServerWorker"},
+    { AUTHORITY_DELEGATION_COMPONENT_ID, "improbable.AuthorityDelegation" },
+    { CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderRPCs" },
+    { CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
+};
+
+const TArray<FString> WorkerEntitySchemaImports = { "unreal/gdk/rpc_components.schema", "unreal/generated/rpc_endpoints.schema" };
 
 }
 
