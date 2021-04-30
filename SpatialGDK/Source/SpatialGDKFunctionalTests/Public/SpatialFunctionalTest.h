@@ -336,6 +336,18 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	bool WasLoadedFromTakenSnapshot();
 
+	template <typename T>
+	static int GetNumberOfActorsOfType(UWorld* World)
+	{
+		int Counter = 0;
+		for (TActorIterator<T> Iter(World); Iter; ++Iter)
+		{
+			Counter++;
+		}
+
+		return Counter;
+	}
+
 	// Get the path of the taken snapshot for this world's map. Returns an empty string if it's using the default snapshot.
 	static FString GetTakenSnapshotPath(UWorld* World);
 
