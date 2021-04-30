@@ -36,6 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `bOnlyRelevantToOwner` is now supported. Ownership must be setup prior to the first replication of the Actor otherwise it will be ignored.
 - GDK heartbeat settings are now used to control the worker heartbeat configurations.
 - Added a property to specify the test settings overrides config filename in the `World Settings` so that maps can share config files during automated testing. This replaces the option to automatically use the map name to determine the config filename.
+- Added a setting to control which CrossServer RPC implementation is used. Both feature mentioned below are only enabled when the RoutingWorker is the chosen implementation. Spatial commands are still the default for now.
+- Added reliable CrossServer RPC. Reliable CrossServer RPC now require a sender actor which will be the reference point for ordering in a multi-worker environment. An additional UFUNCTION Tag, Unordered, was added to opt-out of this requirement.
+- Added NetWriteFence UFUNCTION Tag. This tag is used when Network writes to an actor should be ordered with regard to updates to another actor. This is relevant in worker recovery/snapshot reloading to get some ordering guarantees when SpatialOS can write updates to entities in any order.
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.

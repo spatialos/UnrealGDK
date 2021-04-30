@@ -64,6 +64,9 @@ SpatialGDK::FSubView AuthSubView = SpatialGDK::FSubView(SpatialConstants::ACTOR_
 														&TestView, TestDispatcher, SpatialGDK::FSubView::NoDispatcherCallbacks);
 SpatialGDK::FSubView NonAuthSubView = SpatialGDK::FSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter,
 														   &TestView, TestDispatcher, SpatialGDK::FSubView::NoDispatcherCallbacks);
+SpatialGDK::FSubView WorkerEntitySubView =
+	SpatialGDK::FSubView(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, &TestView, TestDispatcher,
+						 SpatialGDK::FSubView::NoDispatcherCallbacks);
 FTimerManager Timer;
 
 SpatialGDK::ComponentData MakeComponentDataFromData(Schema_ComponentData* Data, const Worker_ComponentId ComponentId)
@@ -140,7 +143,11 @@ SpatialGDK::SpatialRPCService CreateRPCService(const TArray<Worker_EntityId>& En
 									   SpatialGDK::FSubView::NoDispatcherCallbacks);
 	NonAuthSubView = SpatialGDK::FSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, &View, TestDispatcher,
 										  SpatialGDK::FSubView::NoDispatcherCallbacks);
-	SpatialGDK::SpatialRPCService RPCService = SpatialGDK::SpatialRPCService(AuthSubView, NonAuthSubView, nullptr, nullptr, nullptr);
+	WorkerEntitySubView = SpatialGDK::FSubView(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, &View,
+											   TestDispatcher, SpatialGDK::FSubView::NoDispatcherCallbacks);
+
+	SpatialGDK::SpatialRPCService RPCService =
+		SpatialGDK::SpatialRPCService(AuthSubView, NonAuthSubView, WorkerEntitySubView, nullptr, nullptr, nullptr);
 
 	const SpatialGDK::ViewDelta Delta;
 	AuthSubView.Advance(Delta);

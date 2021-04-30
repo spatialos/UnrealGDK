@@ -29,8 +29,8 @@ class SPATIALGDK_API SpatialRPCService
 {
 public:
 	explicit SpatialRPCService(const FSubView& InActorAuthSubView, const FSubView& InActorNonAuthSubView,
-							   USpatialLatencyTracer* InSpatialLatencyTracer, SpatialEventTracer* InEventTracer,
-							   USpatialNetDriver* InNetDriver);
+							   const FSubView& InWorkerEntitySubView, USpatialLatencyTracer* InSpatialLatencyTracer,
+							   SpatialEventTracer* InEventTracer, USpatialNetDriver* InNetDriver);
 
 	void AdvanceView();
 	void ProcessChanges(const float NetDriverTime);
