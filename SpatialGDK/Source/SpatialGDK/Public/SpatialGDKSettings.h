@@ -76,6 +76,12 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
 	TMap<FName, double> EventSamplingModeOverrides;
+
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	FString EventPreFilter;
+
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	FString EventPostFilter;
 };
 
 UCLASS(config = SpatialGDKSettings, defaultconfig)
