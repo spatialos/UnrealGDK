@@ -20,8 +20,6 @@
  *    - Destroy the actors
  */
 
-const static float StepTimeLimit = 5.0f;
-
 ARelevancyTest::ARelevancyTest()
 	: Super()
 {
@@ -29,21 +27,11 @@ ARelevancyTest::ARelevancyTest()
 	Description = TEXT("Test Actor Relevancy");
 }
 
-template <typename T>
-int GetNumberOfActorsOfType(UWorld* World)
-{
-	int Counter = 0;
-	for (TActorIterator<T> Iter(World); Iter; ++Iter)
-	{
-		Counter++;
-	}
-
-	return Counter;
-}
-
 void ARelevancyTest::PrepareTest()
 {
 	Super::PrepareTest();
+
+	const float StepTimeLimit = 5.0f;
 
 	{ // Step 0 - Spawn actors on each server
 		AddStep(TEXT("RelevancyTestSpawnActors"), FWorkerDefinition::AllServers, nullptr, [this]() {
