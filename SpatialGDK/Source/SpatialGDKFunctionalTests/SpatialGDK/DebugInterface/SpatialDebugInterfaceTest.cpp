@@ -6,7 +6,7 @@
 #include "LoadBalancing/GridBasedLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase_RepGraph.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestActorBase_RepGraphAlwaysReplicate.h"
 #include "TestWorkerSettings.h"
 
 #include "Kismet/GameplayStatics.h"
@@ -75,7 +75,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 
 		ULayeredLBStrategy* RootStrategy = GetLoadBalancingStrategy();
 
-		bIsOnDefaultLayer = RootStrategy->CouldHaveAuthority(AReplicatedTestActorBase_RepGraph::StaticClass());
+		bIsOnDefaultLayer = RootStrategy->CouldHaveAuthority(AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass());
 		if (bIsOnDefaultLayer)
 		{
 			FName LocalLayer = RootStrategy->GetLocalLayerName();
@@ -92,8 +92,8 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			LocalWorker = GridStrategy->GetLocalVirtualWorkerId();
 
 			WorkerEntityPosition = GridStrategy->GetWorkerEntityPosition();
-			AReplicatedTestActorBase_RepGraph* Actor =
-				World->SpawnActor<AReplicatedTestActorBase_RepGraph>(WorkerEntityPosition, FRotator());
+			AReplicatedTestActorBase_RepGraphAlwaysReplicate* Actor =
+				World->SpawnActor<AReplicatedTestActorBase_RepGraphAlwaysReplicate>(WorkerEntityPosition, FRotator());
 			AddDebugTag(Actor, GetTestTag());
 			RegisterAutoDestroyActor(Actor);
 			TimeStampSpinning = FPlatformTime::Cycles64();
@@ -118,7 +118,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			UWorld* World = GetWorld();
 
 			TArray<AActor*> TestActors;
-			UGameplayStatics::GetAllActorsOfClass(World, AReplicatedTestActorBase_RepGraph::StaticClass(), TestActors);
+			UGameplayStatics::GetAllActorsOfClass(World, AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), TestActors);
 			if (!AssertTrue(TestActors.Num() == 1, "We should only see a single actor at this point!!"))
 			{
 				return false;
@@ -139,7 +139,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 	AddStep(
 		TEXT("Wait for extra actors"), FWorkerDefinition::AllServers,
 		[this]() -> bool {
-			return WaitToSeeActors(AReplicatedTestActorBase_RepGraph::StaticClass(), Workers.Num());
+			return WaitToSeeActors(AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), Workers.Num());
 		},
 		[this]() {
 			if (!bIsOnDefaultLayer)
@@ -149,7 +149,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			UWorld* World = GetWorld();
 
 			TArray<AActor*> TestActors;
-			UGameplayStatics::GetAllActorsOfClass(World, AReplicatedTestActorBase_RepGraph::StaticClass(), TestActors);
+			UGameplayStatics::GetAllActorsOfClass(World, AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), TestActors);
 
 			AssertTrue(TestActors.Num() == Workers.Num(), TEXT("Not the expected number of actors"));
 
@@ -177,7 +177,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 				bool bExpectedResult = true;
 
 				TArray<AActor*> TestActors;
-				UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraph::StaticClass(), TestActors);
+				UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), TestActors);
 				for (AActor* Actor : TestActors)
 				{
 					bExpectedResult &= Actor->HasAuthority() == bExpectedAuth;
@@ -202,8 +202,8 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 		[this] {
 			UWorld* World = GetWorld();
 
-			AReplicatedTestActorBase_RepGraph* Actor =
-				World->SpawnActor<AReplicatedTestActorBase_RepGraph>(WorkerEntityPosition, FRotator());
+			AReplicatedTestActorBase_RepGraphAlwaysReplicate* Actor =
+				World->SpawnActor<AReplicatedTestActorBase_RepGraphAlwaysReplicate>(WorkerEntityPosition, FRotator());
 			AddDebugTag(Actor, GetTestTag());
 			RegisterAutoDestroyActor(Actor);
 			FinishStep();
@@ -213,7 +213,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 	AddStep(
 		TEXT("Check new actors interest and delegation"), FWorkerDefinition::AllServers,
 		[this]() -> bool {
-			return WaitToSeeActors(AReplicatedTestActorBase_RepGraph::StaticClass(), Workers.Num() * 2);
+			return WaitToSeeActors(AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), Workers.Num() * 2);
 		},
 		nullptr,
 		[this](float DeltaTime) {
@@ -227,7 +227,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			bool bExpectedResult = true;
 
 			TArray<AActor*> TestActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraph::StaticClass(), TestActors);
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), TestActors);
 			for (AActor* Actor : TestActors)
 			{
 				bExpectedResult &= Actor->HasAuthority() == bExpectedAuth;
@@ -258,7 +258,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 		[this] {
 			int32_t CurAuthWorker = Workers.Num() - 1;
 			bool bExpectedAuth = Workers[CurAuthWorker] == LocalWorker;
-			return WaitToSeeActors(AReplicatedTestActorBase_RepGraph::StaticClass(), bExpectedAuth ? Workers.Num() * 2 : 2);
+			return WaitToSeeActors(AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), bExpectedAuth ? Workers.Num() * 2 : 2);
 		},
 		[this] {
 			FinishStep();
@@ -280,7 +280,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 	AddStep(
 		TEXT("Wait for extra interest to come back"), FWorkerDefinition::AllServers,
 		[this] {
-			return WaitToSeeActors(AReplicatedTestActorBase_RepGraph::StaticClass(), Workers.Num() * 2);
+			return WaitToSeeActors(AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), Workers.Num() * 2);
 		},
 		[this] {
 			FinishStep();
@@ -296,7 +296,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			}
 
 			TArray<AActor*> TestActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraph::StaticClass(), TestActors);
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), TestActors);
 			for (AActor* Actor : TestActors)
 			{
 				if (Actor->HasAuthority())
@@ -312,7 +312,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 	AddStep(
 		TEXT("Check state after tags removed"), FWorkerDefinition::AllServers,
 		[this]() -> bool {
-			return WaitToSeeActors(AReplicatedTestActorBase_RepGraph::StaticClass(), 2);
+			return WaitToSeeActors(AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), 2);
 		},
 		nullptr,
 		[this](float DeltaTime) {
@@ -325,7 +325,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			uint32 NumAuth = 0;
 
 			TArray<AActor*> TestActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraph::StaticClass(), TestActors);
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), TestActors);
 			for (AActor* Actor : TestActors)
 			{
 				bExpectedResult &= Actor->HasAuthority();
@@ -352,7 +352,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			uint32 NumUpdated = 0;
 
 			TArray<AActor*> TestActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraph::StaticClass(), TestActors);
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), TestActors);
 			for (AActor* Actor : TestActors)
 			{
 				if (Actor->HasAuthority())
@@ -372,7 +372,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 	AddStep(
 		TEXT("Check state after delegation removal"), FWorkerDefinition::AllServers,
 		[this] {
-			return WaitToSeeActors(AReplicatedTestActorBase_RepGraph::StaticClass(), Workers.Num() * 2);
+			return WaitToSeeActors(AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), Workers.Num() * 2);
 		},
 		[this]() {
 			if (!bIsOnDefaultLayer)
@@ -382,7 +382,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 
 			bool bExpectedResult = true;
 			TArray<AActor*> TestActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraph::StaticClass(), TestActors);
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), TestActors);
 			for (AActor* Actor : TestActors)
 			{
 				bExpectedResult &= (Actor->HasAuthority() == WorkerEntityPosition.Equals(Actor->GetActorLocation()));
@@ -409,7 +409,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 	AddStep(
 		TEXT("Check state after debug reset"), FWorkerDefinition::AllServers,
 		[this]() -> bool {
-			return WaitToSeeActors(AReplicatedTestActorBase_RepGraph::StaticClass(), 2);
+			return WaitToSeeActors(AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), 2);
 		},
 		nullptr,
 		[this](float DeltaTime) {
@@ -421,7 +421,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 			bool bExpectedResult = true;
 
 			TArray<AActor*> TestActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraph::StaticClass(), TestActors);
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedTestActorBase_RepGraphAlwaysReplicate::StaticClass(), TestActors);
 			for (AActor* Actor : TestActors)
 			{
 				bExpectedResult &= Actor->HasAuthority();

@@ -10,7 +10,7 @@
  * A replicated Actor with a Cube Mesh, used as a base for Actors used in spatial tests.
  */
 UCLASS()
-class SPATIALGDKFUNCTIONALTESTS_API AReplicatedTestActorBase : public AActor
+class AReplicatedTestActorBase : public AActor
 {
 	GENERATED_BODY()
 
