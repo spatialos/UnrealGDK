@@ -120,6 +120,7 @@ RPCCallbacks::UpdateWritten FSpatialNetDriverRPC::MakeUpdateWriteCallback()
 FSpatialNetDriverRPC::FSpatialNetDriverRPC(USpatialNetDriver& InNetDriver, const SpatialGDK::FSubView& InActorAuthSubView,
 										   const SpatialGDK::FSubView& InActorNonAuthSubView)
 	: NetDriver(InNetDriver)
+	, bUpdateCacheInUse(false)
 {
 	EventTracer = NetDriver.Connection->GetEventTracer();
 	RPCService = MakeUnique<SpatialGDK::RPCService>(InActorNonAuthSubView, InActorAuthSubView);
