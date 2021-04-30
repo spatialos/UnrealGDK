@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Granting an ability from an `FGameplayAbilitySpecDef` must now be done through the `FGameplayAbilitySpec::GiveAbilityFromSpecDef`/`GiveAbilityAndActivateOnceFromSpecDef` functions.
 - Removed `USpatialStaticComponentView`; similar functionality is now provided in `ViewCoordinator`.
 - We've removed `LaunchSpatial.bat` from the Example Project and Starter Template, having replaced it with an in-Editor workflow in order to maintain a native development experience.
+- Members of a struct marked with `UPROPERTY(Handover)` will now produce a compilation error. This has never been required to allow them to replicate, it is sufficient to mark the containing struct as `Handover`. This now mirrors native Unreal behaviour with struct members marked as `UPROPERTY(Replicated)`, which also produces a compilation error.
 
 ### Features:
 - Added a message box notification when game is closed due to missing generated schema.
