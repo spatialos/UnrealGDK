@@ -24,7 +24,6 @@ struct RPCRingBuffer;
 
 namespace SpatialGDK
 {
-
 class SpatialEventTracer;
 
 class SPATIALGDK_API SpatialRPCService

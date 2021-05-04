@@ -11,7 +11,18 @@
 #include "Utils/GDKPropertyMacros.h"
 
 #if TRACE_LIB_ACTIVE
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshadow"
+#endif
+
 #include <WorkerSDK/improbable/legacy/trace.h>
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 #endif
 
 #include "SpatialLatencyTracer.generated.h"
