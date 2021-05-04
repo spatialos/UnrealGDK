@@ -35,7 +35,7 @@ void AsyncTaskGameThreadOutsideGC(FN&& Func) // A little wrapper which ensures t
 		}
 	});
 }
-} // namespace ConnectionManagerPrivate
+} // namespace AsyncUtil
 
 class GDKVersionLoader
 {
