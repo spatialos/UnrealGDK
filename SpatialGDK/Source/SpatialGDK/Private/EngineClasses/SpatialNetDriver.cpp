@@ -1070,20 +1070,21 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 		{
 			if (!World->bBegunPlay)
 			{
-				// When running in PIE, Blueprint loaded levels can be duplicated and immediately unloaded.
-				// This causes each actor in the level to be destroyed, which we catch here and attempt to create a tombstone for.
-				// This is incorrect behaviour, as the level was never actually part of the scene, just an artifact from the
-				// world duplication process. So ignore this destroy call if the world hasn't begun play, and it was duplicated from PIE.
+				// When running in PIE, Blueprint loaded sub-levels can be duplicated and immediately unloaded.
+				// This causes each actor in the level to be destroyed, which we process here and if the actor is replicated etc., attempt
+				// to create a tombstone for. This would be incorrect behaviour, as the level and actors were never intentionally loaded,
+				// but are present just as an effect of the world duplication process.
+				// So we ignore this destroy call if the world hasn't begun play, and it was duplicated from PIE.
 				if (ThisActor->GetLevel() != nullptr && ThisActor->GetLevel()->bWasDuplicatedForPIE)
 				{
 					UE_LOG(LogSpatialOSNetDriver, Verbose,
-						   TEXT("USpatialNetDriver::NotifyActorDestroyed ignore because world hasn't begun play. Actor: %s."),
+						   TEXT("USpatialNetDriver::NotifyActorDestroyed ignored as level was duplicated for PIE. Actor: %s."),
 						   *ThisActor->GetName());
 				}
 				else
 				{
 					UE_LOG(LogSpatialOSNetDriver, Error,
-						   TEXT("USpatialNetDriver::NotifyActorDestroyed ignore because world hasn't begun play. Actor: %s."),
+						   TEXT("USpatialNetDriver::NotifyActorDestroyed ignored because world hasn't begun play. Actor: %s."),
 						   *ThisActor->GetName());
 				}
 			}
