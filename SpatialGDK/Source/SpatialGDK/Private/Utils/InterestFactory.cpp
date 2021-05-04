@@ -143,6 +143,15 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	ServerQuery.Constraint = CreateGDKSnapshotEntitiesConstraint();
 	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
 
+	// SelfInterest for routing worker components.
+	ServerQuery = Query();
+	ServerQuery.ResultComponentIds = { SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID,
+									   SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID,
+									   SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID,
+									   SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID };
+	ServerQuery.Constraint.bSelfConstraint = true;
+	AddComponentQueryPairToInterestComponent(ServerInterest, SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, ServerQuery);
+
 	return ServerInterest;
 }
 
@@ -204,10 +213,10 @@ Interest InterestFactory::CreateRoutingWorkerInterest()
 
 	ServerQuery.ResultComponentIds = {
 		SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID,
-		SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
-		SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID,
-		SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID,
-		SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID,
+		SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
+		SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID,
+		SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID,
+		SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID,
 	};
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID;
 
@@ -225,8 +234,8 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 
 	if (InActor->IsA(APlayerController::StaticClass()))
 	{
-		// Put the "main" interest queries on the player controller
-		AddPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
+		// Put the "main" client interest queries on the player controller
+		AddClientPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
 	}
 
 	// Clients need to see owner only and server RPC components on entities they have authority over
@@ -235,16 +244,20 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 	// Every actor needs a self query for the server to the client RPC endpoint
 	AddServerSelfInterest(ResultInterest);
 
-	AddOwnerInterestOnServer(ResultInterest, InActor, InEntityId);
+	// Ensure the auth server has interest in an actor's ownership chain
+	AddServerActorOwnerInterest(ResultInterest, InActor, InEntityId);
+
+	// Add interest in AlwaysInterested UProperties
+	AddAlwaysInterestedInterest(ResultInterest, InActor, InInfo);
 
 	return ResultInterest;
 }
 
-void InterestFactory::AddPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
+void InterestFactory::AddClientPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
 {
 	const QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
 
-	AddAlwaysRelevantAndInterestedQuery(OutInterest, InActor, InInfo, LevelConstraint);
+	AddClientAlwaysRelevantQuery(OutInterest, InActor, InInfo, LevelConstraint);
 
 	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
 
@@ -300,7 +313,7 @@ bool InterestFactory::DoOwnersHaveEntityId(const AActor* Actor) const
 	return true;
 }
 
-void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const
+void InterestFactory::AddServerActorOwnerInterest(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const
 {
 	AActor* Owner = InActor->GetOwner();
 	Query OwnerChainQuery;
@@ -329,51 +342,57 @@ void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AAct
 	}
 }
 
-void InterestFactory::AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
-														  const QueryConstraint& LevelConstraint) const
+void InterestFactory::AddClientAlwaysRelevantQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
+												   const QueryConstraint& LevelConstraint) const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
-	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint(InActor, InInfo);
 	QueryConstraint AlwaysRelevantConstraint = CreateClientAlwaysRelevantConstraint();
 
-	QueryConstraint SystemDefinedConstraints;
-
-	if (AlwaysInterestedConstraint.IsValid())
-	{
-		SystemDefinedConstraints.OrConstraint.Add(AlwaysInterestedConstraint);
-	}
-
-	if (AlwaysRelevantConstraint.IsValid())
-	{
-		SystemDefinedConstraints.OrConstraint.Add(AlwaysRelevantConstraint);
-	}
-
 	// Add the level constraint here as all client queries need to make sure they don't check out anything outside their loaded levels.
-	QueryConstraint SystemAndLevelConstraint;
-	SystemAndLevelConstraint.AndConstraint.Add(SystemDefinedConstraints);
-	SystemAndLevelConstraint.AndConstraint.Add(LevelConstraint);
+	QueryConstraint AlwaysRelevantAndLevelConstraint;
+	AlwaysRelevantAndLevelConstraint.AndConstraint.Add(AlwaysRelevantConstraint);
+	AlwaysRelevantAndLevelConstraint.AndConstraint.Add(LevelConstraint);
 
 	Query ClientSystemQuery;
-	ClientSystemQuery.Constraint = SystemAndLevelConstraint;
+	ClientSystemQuery.Constraint = AlwaysRelevantAndLevelConstraint;
 	ClientSystemQuery.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
 	ClientSystemQuery.ResultComponentSetIds = ClientNonAuthInterestResultType.ComponentSetsIds;
 
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, ClientSystemQuery);
+}
 
-	// Add always interested constraint to the server as well to make sure the server sees the same as the client.
-	// The always relevant constraint is added as part of the server worker query, so leave that out here.
-	// Servers also don't need to be level constrained.
-	if (Settings->bEnableClientQueriesOnServer)
+void InterestFactory::AddAlwaysInterestedInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
+{
+	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint(InActor, InInfo);
+
+	if (AlwaysInterestedConstraint.IsValid())
 	{
-		Query ServerSystemQuery;
-		QueryConstraint ServerSystemConstraint;
-		ServerSystemConstraint.OrConstraint.Add(AlwaysInterestedConstraint);
-		ServerSystemQuery.Constraint = ServerSystemConstraint;
-		ServerSystemQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
-		ServerSystemQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
+		{
+			const QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
 
-		AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, ServerSystemQuery);
+			QueryConstraint AlwaysInterestAndLevelConstraint;
+			AlwaysInterestAndLevelConstraint.AndConstraint.Add(AlwaysInterestedConstraint);
+			AlwaysInterestAndLevelConstraint.AndConstraint.Add(LevelConstraint);
+
+			Query ClientAlwaysInterestedQuery;
+			ClientAlwaysInterestedQuery.Constraint = AlwaysInterestAndLevelConstraint;
+			ClientAlwaysInterestedQuery.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
+			ClientAlwaysInterestedQuery.ResultComponentSetIds = ClientNonAuthInterestResultType.ComponentSetsIds;
+
+			AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID,
+													 ClientAlwaysInterestedQuery);
+		}
+
+		{
+			Query ServerAlwaysInterestedQuery;
+			ServerAlwaysInterestedQuery.Constraint = AlwaysInterestedConstraint;
+			ServerAlwaysInterestedQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
+			ServerAlwaysInterestedQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
+
+			AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID,
+													 ServerAlwaysInterestedQuery);
+		}
 	}
 }
 
