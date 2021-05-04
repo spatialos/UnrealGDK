@@ -1068,28 +1068,51 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 		// Check if this is a dormant entity, and if so retire the entity
 		if (PackageMap != nullptr && World != nullptr)
 		{
-			const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
-
-			// If the actor is an initially dormant startup actor that has not been replicated.
-			if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor() && ThisActor->GetIsReplicated()
-				&& ThisActor->HasAuthority())
+			if (!World->bBegunPlay)
 			{
-				UE_LOG(LogSpatialOSNetDriver, Log,
-					   TEXT("Creating a tombstone entity for initially dormant statup actor. "
-							"Actor: %s."),
-					   *ThisActor->GetName());
-				ActorSystem->CreateTombstoneEntity(ThisActor);
-			}
-			else if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
-			{
-				// Deliberately don't unregister the dormant entity, but let it get cleaned up in the entity remove op process
-				if (!HasServerAuthority(EntityId))
+				// When running in PIE, Blueprint loaded sub-levels can be duplicated and immediately unloaded.
+				// This causes each actor in the level to be destroyed, which we process here and if the actor is replicated etc., attempt
+				// to create a tombstone for. This would be incorrect behaviour, as the level and actors were never intentionally loaded,
+				// but are present just as an effect of the world duplication process.
+				// So we ignore this destroy call if the world hasn't begun play, and it was duplicated from PIE.
+				if (ThisActor->GetLevel() != nullptr && ThisActor->GetLevel()->bWasDuplicatedForPIE)
 				{
-					UE_LOG(LogSpatialOSNetDriver, Warning,
-						   TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId,
+					UE_LOG(LogSpatialOSNetDriver, Verbose,
+						   TEXT("USpatialNetDriver::NotifyActorDestroyed ignored as level was duplicated for PIE. Actor: %s."),
 						   *ThisActor->GetName());
 				}
-				ActorSystem->RetireEntity(EntityId, ThisActor->IsNetStartupActor());
+				else
+				{
+					UE_LOG(LogSpatialOSNetDriver, Error,
+						   TEXT("USpatialNetDriver::NotifyActorDestroyed ignored because world hasn't begun play. Actor: %s."),
+						   *ThisActor->GetName());
+				}
+			}
+			else
+			{
+				const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
+
+				// If the actor is an initially dormant startup actor that has not been replicated.
+				if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor() && ThisActor->GetIsReplicated()
+					&& ThisActor->HasAuthority())
+				{
+					UE_LOG(LogSpatialOSNetDriver, Log,
+						   TEXT("Creating a tombstone entity for initially dormant statup actor. "
+								"Actor: %s."),
+						   *ThisActor->GetName());
+					ActorSystem->CreateTombstoneEntity(ThisActor);
+				}
+				else if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
+				{
+					// Deliberately don't unregister the dormant entity, but let it get cleaned up in the entity remove op process
+					if (!HasServerAuthority(EntityId))
+					{
+						UE_LOG(LogSpatialOSNetDriver, Warning,
+							   TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId,
+							   *ThisActor->GetName());
+					}
+					ActorSystem->RetireEntity(EntityId, ThisActor->IsNetStartupActor());
+				}
 			}
 		}
 
