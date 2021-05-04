@@ -244,9 +244,7 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID));
 	}
 
-	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Actor);
-
-	ComponentFactory DataFactory(false, NetDriver, Tracer);
+	ComponentFactory DataFactory(false, NetDriver);
 
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
