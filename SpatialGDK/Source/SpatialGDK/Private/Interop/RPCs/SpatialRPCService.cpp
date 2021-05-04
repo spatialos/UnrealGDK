@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Net/NetworkProfiler.h"
 #include "SpatialConstants.h"
