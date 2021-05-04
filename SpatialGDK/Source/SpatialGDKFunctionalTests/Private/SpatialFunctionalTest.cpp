@@ -451,7 +451,7 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 
 ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetLocalFlowController()
 {
- 	ensureMsgf(LocalFlowController, TEXT("GetLocalFlowController being called without it being set, shouldn't happen"));
+	ensureMsgf(LocalFlowController, TEXT("GetLocalFlowController being called without it being set, shouldn't happen"));
 	return LocalFlowController;
 }
 

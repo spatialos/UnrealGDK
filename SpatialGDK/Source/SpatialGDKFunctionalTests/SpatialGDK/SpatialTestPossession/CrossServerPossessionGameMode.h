@@ -3,17 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
 #include "GameFramework/DefaultPawn.h"
+#include "GameFramework/GameModeBase.h"
 #include "CrossServerPossessionGameMode.generated.h"
-
-UCLASS()
-class ACrossServerPossessionTestPawn : public ADefaultPawn
-{
-	GENERATED_BODY()
-	public:
-	ACrossServerPossessionTestPawn();
-};
 
 UCLASS()
 class ACrossServerPossessionGameMode : public AGameModeBase
