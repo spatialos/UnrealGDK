@@ -1754,9 +1754,9 @@ void ActorSystem::CreateTombstoneEntity(AActor* Actor)
 
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		// This shouldn't happen, but as a precaution error and return instead of attempting to create an entity with ID 0.
+		// This shouldn't happen, but as a precaution, error and return instead of attempting to create an entity with ID 0.
 		UE_LOG(LogActorSystem, Error, TEXT("Failed to tombstone actor, no entity ids available. Actor: %s."), *Actor->GetName());
-		return false;
+		return;
 	}
 
 	EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->GetRPCService());
