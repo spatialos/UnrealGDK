@@ -26,7 +26,12 @@ void AsyncTaskGameThreadOutsideGC(FN&& Func) // A little wrapper which ensures t
 	AsyncTask(ENamedThreads::GameThread, [Func = MoveTemp(Func)]() mutable {
 		if (IsGarbageCollecting())
 		{
-			AsyncTaskGameThreadOutsideGC<FN>(MoveTemp(Func));
+			TSharedPtr<FDelegateHandle> DelegateHandle = MakeShared<FDelegateHandle>();
+			*DelegateHandle = FCoreDelegates::OnBeginFrame.AddLambda([Func = MoveTemp(Func), DelegateHandle]() mutable
+			{
+				FCoreDelegates::OnBeginFrame.Remove(*DelegateHandle);
+				AsyncTaskGameThreadOutsideGC<FN>(MoveTemp(Func)); // Try again, this time we should be outside of GC
+			});
 		}
 		else
 		{
