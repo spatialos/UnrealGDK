@@ -3,8 +3,8 @@
 #include "CrossServerPossessionGameMode.h"
 
 #include "GameFramework/PlayerStart.h"
-#include "TestPossessionPlayerController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestPawnBase_RepGraphAlwaysReplicate.h"
+#include "TestPossessionPlayerController.h"
 
 ACrossServerPossessionGameMode::ACrossServerPossessionGameMode()
 	: PlayersSpawned(0)

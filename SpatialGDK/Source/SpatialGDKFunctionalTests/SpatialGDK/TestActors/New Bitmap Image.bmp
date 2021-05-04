@@ -15,5 +15,4 @@ class AReplicatedTestPawnBase_RepGraphAlwaysReplicate : public ADefaultPawn
 
 public:
 	AReplicatedTestPawnBase_RepGraphAlwaysReplicate();
-
 };

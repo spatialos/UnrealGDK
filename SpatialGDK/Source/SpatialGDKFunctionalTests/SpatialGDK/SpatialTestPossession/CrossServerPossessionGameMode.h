@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/DefaultPawn.h"
 #include "GameFramework/GameModeBase.h"
 #include "CrossServerPossessionGameMode.generated.h"
 
