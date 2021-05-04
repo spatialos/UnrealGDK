@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include "SpatialConstants.h"
 #include "SpatialView/OpList/OpList.h"
 #include "SpatialView/WorkerView.h"
-#include "SpatialConstants.h"
 
 #include "Containers/Array.h"
 #include "Containers/Map.h"
