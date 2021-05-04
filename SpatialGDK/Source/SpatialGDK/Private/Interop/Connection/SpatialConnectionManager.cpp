@@ -18,6 +18,25 @@ DEFINE_LOG_CATEGORY(LogSpatialConnectionManager);
 
 using namespace SpatialGDK;
 
+namespace AsyncUtil
+{
+template <typename FN>
+void AsyncTaskGameThreadOutsideGC(FN&& Func) // A little wrapper which ensures the task is run outside GC
+{
+	AsyncTask(ENamedThreads::GameThread, [Func = MoveTemp(Func)]() mutable
+	{
+		if (IsGarbageCollecting())
+		{
+			AsyncTaskGameThreadOutsideGC<FN>(MoveTemp(Func));
+		}
+		else
+		{
+			Func();
+		}
+	});
+}
+} // namespace ConnectionManagerPrivate
+
 class GDKVersionLoader
 {
 public:
@@ -195,7 +214,7 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 	if (bIsConnected)
 	{
 		check(bInitAsClient == bConnectAsClient);
-		AsyncTask(ENamedThreads::GameThread, [WeakThis = TWeakObjectPtr<USpatialConnectionManager>(this)] {
+		AsyncUtil::AsyncTaskGameThreadOutsideGC([WeakThis = TWeakObjectPtr<USpatialConnectionManager>(this)] {
 			if (WeakThis.IsValid())
 			{
 				WeakThis->OnConnectionSuccess();
@@ -443,7 +462,7 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection,
+		AsyncUtil::AsyncTaskGameThreadOutsideGC([WeakSpatialConnectionManager, NewCAPIWorkerConnection,
 											  EventTracing = MoveTemp(EventTracing)]() mutable {
 			if (!WeakSpatialConnectionManager.IsValid())
 			{
