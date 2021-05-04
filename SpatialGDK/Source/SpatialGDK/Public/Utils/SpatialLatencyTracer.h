@@ -12,6 +12,8 @@
 
 #if TRACE_LIB_ACTIVE
 
+// As a result of using both the old and new trace.h, there's now a shadow warning for TraceSpan. Worker
+// will fix in the interim, but as a stop gap lets just ignore the warning - UNR-5460.
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshadow"
@@ -23,7 +25,7 @@
 #pragma clang diagnostic pop
 #endif
 
-#endif
+#endif // TRACE_LIB_ACTIVE
 
 #include "SpatialLatencyTracer.generated.h"
 
