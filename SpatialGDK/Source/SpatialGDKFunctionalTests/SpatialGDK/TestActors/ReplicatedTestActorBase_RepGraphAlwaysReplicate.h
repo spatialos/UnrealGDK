@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
 #include "ReplicatedTestActorBase.h"
 #include "ReplicatedTestActorBase_RepGraphAlwaysReplicate.generated.h"
 
@@ -16,5 +14,4 @@ class AReplicatedTestActorBase_RepGraphAlwaysReplicate : public AReplicatedTestA
 	GENERATED_BODY()
 
 public:
-	AReplicatedTestActorBase_RepGraphAlwaysReplicate();
 };
