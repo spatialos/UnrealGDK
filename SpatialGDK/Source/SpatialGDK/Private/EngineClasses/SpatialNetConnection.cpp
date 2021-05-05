@@ -118,9 +118,9 @@ void USpatialNetConnection::FlushDormancy(AActor* Actor)
 
 Worker_EntityId USpatialNetConnection::GetPlayerControllerEntityId() const
 {
-	if (USpatialPackageMapClient* PackageMap = Cast<USpatialNetDriver>(Driver)->PackageMap)
+	if (USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialNetDriver>(Driver)->PackageMap)
 	{
-		return PackageMap->GetEntityIdFromObject(PlayerController);
+		return SpatialPackageMap->GetEntityIdFromObject(PlayerController);
 	}
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
