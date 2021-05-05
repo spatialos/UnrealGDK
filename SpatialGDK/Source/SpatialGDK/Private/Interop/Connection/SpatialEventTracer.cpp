@@ -77,9 +77,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Trace_EventTracer_Parameters Parameters = {};
 	Parameters.user_data = this;
 	Parameters.callback = &SpatialEventTracer::TraceCallback;
-	EventTracer = Trace_EventTracer_Create(&Parameters);
 
-	/* TODO: Also configure filters with Settings->bCaptureAllEventTracingData */
 	Parameters.span_sampling_parameters.sampling_mode = Settings->bCaptureAllEventTracingData
 															? Trace_SamplingMode::TRACE_SAMPLING_MODE_ALWAYS
 															: Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
@@ -100,6 +98,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
 	}
 
+	// Only used when sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC
 	Parameters.span_sampling_parameters.probabilistic_parameters.default_probability = SamplingSettings->SamplingProbability;
 	Parameters.span_sampling_parameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
 	Parameters.span_sampling_parameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
@@ -112,6 +111,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Parameters.filter_parameters.event_pre_filter_parameters.simple_query = PreFilter.Get();
 	Parameters.filter_parameters.event_post_filter_parameters.simple_query = PostFilter.Get();
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
+
+	EventTracer = Trace_EventTracer_Create(&Parameters);
 
 	// Open a local file
 	FString EventTracePath = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing"));
