@@ -392,8 +392,9 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload&
 	const float TimeQueued = (FPlatformTime::Cycles64() - MetaData.Timestamp) * FPlatformTime::GetSecondsPerCycle64();
 	const int32 UnresolvedRefCount = UnresolvedRefs.Num();
 
-	// Default to unreliable to allow the Queue to timeout.
-	bool bIsReliableChannel = RPCType.IsSet() ? RPCRingBufferUtils::ShouldQueueOverflowed(RPCType.GetValue()) : false;
+	const bool bIsReliableChannel = RPCType.Get(/*DefaultValue*/ ERPCType::Invalid) == ERPCType::ClientReliable
+									|| RPCType.Get(/*DefaultValue*/ ERPCType::Invalid) == ERPCType::ServerReliable;
+
 	bool bMissingServerObject = false;
 	for (const FUnrealObjectRef& MissingRef : UnresolvedRefs)
 	{
@@ -401,8 +402,9 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload&
 		{
 			bMissingServerObject = true;
 		}
-		else if(!ensureAlwaysMsgf(MissingRef.Path.IsSet(), TEXT("Received reference to dynamic object as loadable. Target : %s, Parameter Entity : %llu, RPC : %s")
-			, *TargetObject->GetName(), MissingRef.Entity, *Function->GetName()))
+		else if (!ensureAlwaysMsgf(MissingRef.Path.IsSet(),
+								   TEXT("Received reference to dynamic object as loadable. Target : %s, Parameter Entity : %llu, RPC : %s"),
+								   *TargetObject->GetName(), MissingRef.Entity, *Function->GetName()))
 		{
 			// Validation code, to ensure that every loadable ref we receive has a name.
 			bMissingServerObject = true;

@@ -596,7 +596,7 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 	const float TimeQueued = (FDateTime::Now() - PendingRPCParams.Timestamp).GetTotalSeconds();
 	const int32 UnresolvedRefCount = UnresolvedRefs.Num();
 
-	bool bIsReliableChannel = RPCRingBufferUtils::ShouldQueueOverflowed(PendingRPCParams.Type);
+	const bool bIsReliableChannel = PendingRPCParams.Type == ERPCType::ClientReliable || PendingRPCParams.Type == ERPCType::ServerReliable;
 	bool bMissingServerObject = false;
 	for (const FUnrealObjectRef& MissingRef : UnresolvedRefs)
 	{
@@ -604,8 +604,9 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 		{
 			bMissingServerObject = true;
 		}
-		else if (!ensureAlwaysMsgf(MissingRef.Path.IsSet(), TEXT("Received reference to dynamic object as loadable. Target : %s, Parameter Entity : %llu, RPC : %s")
-		, *TargetObject->GetName(), MissingRef.Entity, *Function->GetName()))
+		else if (!ensureAlwaysMsgf(MissingRef.Path.IsSet(),
+								   TEXT("Received reference to dynamic object as loadable. Target : %s, Parameter Entity : %llu, RPC : %s"),
+								   *TargetObject->GetName(), MissingRef.Entity, *Function->GetName()))
 		{
 			// Validation code, to ensure that every loadable ref we receive has a name.
 			bMissingServerObject = true;
