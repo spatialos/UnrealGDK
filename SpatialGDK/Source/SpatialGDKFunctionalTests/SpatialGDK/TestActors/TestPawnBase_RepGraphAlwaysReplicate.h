@@ -12,7 +12,4 @@ UCLASS()
 class ATestPawnBase_RepGraphAlwaysReplicate : public ADefaultPawn
 {
 	GENERATED_BODY()
-
-public:
-	ATestPawnBase_RepGraphAlwaysReplicate();
 };
