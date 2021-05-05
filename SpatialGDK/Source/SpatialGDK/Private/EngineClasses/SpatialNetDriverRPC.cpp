@@ -63,14 +63,22 @@ void FSpatialNetDriverRPC::OnRPCSent(SpatialGDK::SpatialEventTracer& EventTracer
 }
 
 void FSpatialNetDriverRPC::OnDataWritten(TArray<FWorkerComponentData>& OutArray, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
-										 Schema_ComponentData* InData)
+										 Schema_ComponentUpdate* InData)
 {
 	if (ensure(InData != nullptr))
 	{
-		FWorkerComponentData Data;
-		Data.component_id = ComponentId;
-		Data.schema_type = InData;
-		OutArray.Add(Data);
+		FWorkerComponentData* ExistingData = OutArray.FindByPredicate([ComponentId](const FWorkerComponentData& Data) {
+			return Data.component_id == ComponentId;
+		});
+		if (ExistingData == nullptr)
+		{
+			FWorkerComponentData Data;
+			Data.component_id = ComponentId;
+			Data.schema_type = Schema_CreateComponentData();
+			ExistingData = &OutArray.Add_GetRef(Data);
+		}
+		Schema_ApplyComponentUpdateToData(InData, ExistingData->schema_type);
+		Schema_DestroyComponentUpdate(InData);
 	}
 }
 
@@ -84,8 +92,18 @@ void FSpatialNetDriverRPC::OnUpdateWritten(TArray<UpdateToSend>& OutUpdates, Wor
 			UpdateToSend& Update = OutUpdates.AddDefaulted_GetRef();
 			Update.EntityId = EntityId;
 			Update.Update.component_id = ComponentId;
+			Update.Update.schema_type = nullptr;
 		}
-		OutUpdates.Last().Update.schema_type = InUpdate;
+		FWorkerComponentUpdate& Update = OutUpdates.Last().Update;
+		if (Update.schema_type == nullptr)
+		{
+			Update.schema_type = InUpdate;
+		}
+		else
+		{
+			Schema_MergeComponentUpdateIntoUpdate(InUpdate, Update.schema_type);
+			Schema_DestroyComponentUpdate(InUpdate);
+		}
 	}
 }
 
@@ -102,9 +120,9 @@ FSpatialNetDriverRPC::StandardQueue::SentRPCCallback FSpatialNetDriverRPC::MakeR
 	return StandardQueue::SentRPCCallback();
 }
 
-RPCCallbacks::DataWritten FSpatialNetDriverRPC::MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const
+RPCCallbacks::UpdateWritten FSpatialNetDriverRPC::MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const
 {
-	return [&OutArray](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* InData) {
+	return [&OutArray](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* InData) {
 		return OnDataWritten(OutArray, EntityId, ComponentId, InData);
 	};
 }
