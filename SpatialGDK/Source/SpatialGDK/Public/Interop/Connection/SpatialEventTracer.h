@@ -72,11 +72,23 @@ public:
 private:
 	struct StreamDeleter
 	{
-		void operator()(Io_Stream* StreamToDestroy) const { if (StreamToDestroy) { Io_Stream_Destroy(StreamToDestroy); } }
+		void operator()(Io_Stream* StreamToDestroy) const
+		{
+			if (StreamToDestroy)
+			{
+				Io_Stream_Destroy(StreamToDestroy);
+			}
+		}
 	};
 	struct QueryDeleter
 	{
-		void operator()(Trace_Query* Query) const { if (Query) { Trace_Query_Destroy(Query); } }
+		void operator()(Trace_Query* Query) const
+		{
+			if (Query)
+			{
+				Trace_Query_Destroy(Query);
+			}
+		}
 	};
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);

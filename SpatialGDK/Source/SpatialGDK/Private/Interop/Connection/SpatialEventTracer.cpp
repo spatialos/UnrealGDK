@@ -104,9 +104,10 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Parameters.span_sampling_parameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
 	Parameters.span_sampling_parameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
 
-	
-	TUniquePtr<Trace_Query, QueryDeleter> PreFilter(Trace_ParseSimpleQuery(SamplingSettings->EventPreFilter.Len() ? TCHAR_TO_ANSI(*SamplingSettings->EventPreFilter) : "true"));
-	TUniquePtr<Trace_Query, QueryDeleter> PostFilter(Trace_ParseSimpleQuery(SamplingSettings->EventPostFilter.Len() ? TCHAR_TO_ANSI(*SamplingSettings->EventPostFilter) : "true"));
+	TUniquePtr<Trace_Query, QueryDeleter> PreFilter(
+		Trace_ParseSimpleQuery(SamplingSettings->EventPreFilter.Len() ? TCHAR_TO_ANSI(*SamplingSettings->EventPreFilter) : "true"));
+	TUniquePtr<Trace_Query, QueryDeleter> PostFilter(
+		Trace_ParseSimpleQuery(SamplingSettings->EventPostFilter.Len() ? TCHAR_TO_ANSI(*SamplingSettings->EventPostFilter) : "true"));
 
 	Parameters.filter_parameters.event_pre_filter_parameters.simple_query = PreFilter.Get();
 	Parameters.filter_parameters.event_post_filter_parameters.simple_query = PostFilter.Get();
@@ -122,7 +123,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 
 	FolderPath = EventTracePath;
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	const FString FileName = TEXT("event-log"); 
+	const FString FileName = TEXT("event-log");
 	const FString FileExt = TEXT(".etlog"); // TODO: Update the NFRs to use the new extension
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
 	{
