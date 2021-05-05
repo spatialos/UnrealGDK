@@ -331,13 +331,14 @@ protected:
 		}
 		else
 		{
-			for (uint32 i = 0; i < WrittenRPCs; ++i)
+			const int32 RemainingRPCs = QueuedRPCs - WrittenRPCs;
+			for (int32 i = 0; i < RemainingRPCs; ++i)
 			{
 				Queue.RPCs[i] = MoveTemp(Queue.RPCs[i + WrittenRPCs]);
 				Queue.AddData[i] = MoveTemp(Queue.AddData[i + WrittenRPCs]);
 			}
-			Queue.RPCs.SetNum(QueuedRPCs - WrittenRPCs);
-			Queue.AddData.SetNum(QueuedRPCs - WrittenRPCs);
+			Queue.RPCs.SetNum(RemainingRPCs);
+			Queue.AddData.SetNum(RemainingRPCs);
 		}
 
 		return false;

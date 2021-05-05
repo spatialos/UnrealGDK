@@ -39,14 +39,14 @@ TraceKey* GetTraceKeyFromComponentObject(T& Obj)
 } // namespace
 namespace SpatialGDK
 {
-ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* InLatencyTracer)
+ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, bInterestHasChanged(bInterestDirty)
 	, bInitialOnlyDataWritten(false)
 	, bInitialOnlyReplicationEnabled(GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition)
-	, LatencyTracer(InLatencyTracer)
+	, LatencyTracer(USpatialLatencyTracer::GetTracer(InNetDriver))
 {
 }
 
@@ -314,6 +314,17 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		for (int i = 0; i < ArrayHelper.Num(); i++)
 		{
 			AddProperty(Object, FieldId, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), ClearedIds);
+		}
+
+		if (ArrayHelper.Num() > 0 || (ArrayHelper.Num() == 0 && ClearedIds))
+		{
+			if (ArrayProperty->Inner->IsA<GDK_PROPERTY(ObjectPropertyBase)>())
+			{
+				if (ArrayProperty->PropertyFlags & CPF_AlwaysInterested)
+				{
+					bInterestHasChanged = true;
+				}
+			}
 		}
 
 		if (ArrayHelper.Num() == 0 && ClearedIds)
