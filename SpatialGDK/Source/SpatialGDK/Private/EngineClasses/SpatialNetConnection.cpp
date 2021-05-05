@@ -115,3 +115,8 @@ void USpatialNetConnection::FlushDormancy(AActor* Actor)
 		Cast<USpatialNetDriver>(Driver)->RefreshActorDormancy(Actor, bMakeDormant);
 	}
 }
+
+Worker_EntityId USpatialNetConnection::GetPlayerControllerEntityId() const
+{
+	return Cast<USpatialNetDriver>(Driver)->PackageMap->GetEntityIdFromObject(PlayerController);
+}

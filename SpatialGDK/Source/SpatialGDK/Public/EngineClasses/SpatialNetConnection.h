@@ -47,6 +47,8 @@ public:
 	///////
 	// End NetConnection Interface
 
+	Worker_EntityId GetPlayerControllerEntityId() const;
+
 	UPROPERTY()
 	bool bReliableSpatialConnection;
 
