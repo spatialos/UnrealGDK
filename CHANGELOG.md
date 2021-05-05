@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a setting to control which CrossServer RPC implementation is used. Both feature mentioned below are only enabled when the RoutingWorker is the chosen implementation. Spatial commands are still the default for now.
 - Added reliable CrossServer RPC. Reliable CrossServer RPC now require a sender actor which will be the reference point for ordering in a multi-worker environment. An additional UFUNCTION Tag, Unordered, was added to opt-out of this requirement.
 - Added NetWriteFence UFUNCTION Tag. This tag is used when Network writes to an actor should be ordered with regard to updates to another actor. This is relevant in worker recovery/snapshot reloading to get some ordering guarantees when SpatialOS can write updates to entities in any order.
+- Added TestPawnBase_RepGraphAlwaysReplicate class. This extension of ADefaultPawn replicates on RepGraph regardless of client interest.
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
@@ -62,7 +63,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reverted a fix relating to the `dbghelp` file that previously caused the Editor to crash when loading the Session Front End. Our fix is no longer necessary, as Epic have fixed the issue and we've adopted their fix.
 - Fixed an issue with migration diagnostic logging failing, when the actor did not have authority.
 - Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
-- Fixed an issue where using RepGraph caused original pawns not to be replicated if its player controller unpossesses it and migrates away, making it impossible to migrate back for repossession.
+- Fixed an issue where migration diagnostic tool would crash if the target actor's owner couldn't be found.
+
 ## [`0.12.0`] - 2021-02-01
 
 ### Breaking changes:
