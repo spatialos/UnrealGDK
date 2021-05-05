@@ -27,7 +27,7 @@ namespace SpatialGDK
 class SPATIALGDK_API ComponentFactory
 {
 public:
-	ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* LatencyTracer);
+	ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver);
 
 	TArray<FWorkerComponentData> CreateComponentDatas(UObject* Object, const FClassInfo& Info, const FRepChangeState& RepChangeState,
 													  const FHandoverChangeState& HandoverChangeState, uint32& OutBytesWritten);
