@@ -10,6 +10,7 @@
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTest.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
+#include "EngineClasses/SpatialGameInstance.h"
 
 ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -59,6 +60,9 @@ void ASpatialFunctionalTestFlowController::BeginPlay()
 				OnReadyToRegisterWithTest();
 			},
 			1.0f, false);
+		USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
+		check(GameInstance != nullptr);
+		GameInstance->OnPrepareShutdown.AddDynamic(this, &ASpatialFunctionalTestFlowController::HandleOnPrepareShutdown);
 	}
 }
 
@@ -225,6 +229,11 @@ void ASpatialFunctionalTestFlowController::SetReadyToRunTest(bool bIsReady)
 			ServerSetReadyToRunTest(bIsReady);
 		}
 	}
+}
+
+void ASpatialFunctionalTestFlowController::HandleOnPrepareShutdown()
+{
+	OwningTest->DeregisterFlowController(this);
 }
 
 void ASpatialFunctionalTestFlowController::ClientStartStep_Implementation(int StepIndex)
