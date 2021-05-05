@@ -1273,6 +1273,30 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 		return;
 	}
 
+	AActor* NewOwner = Actor->GetOwner();
+	if (NewOwner != nullptr)
+	{
+		if (USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(NewOwner->GetNetConnection()))
+		{
+			USpatialActorChannel* OwnerChannel = GetOrCreateSpatialActorChannel(NewOwner);
+			if (!OwnerChannel->IsAuthoritativeServer())
+			{
+				NetConnection->Init(OwnerChannel->GetEntityId());
+			}
+		}
+	}
+	else if (OldOwner != nullptr && NewOwner == nullptr)
+	{
+		if (USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(OldOwner->GetNetConnection()))
+		{
+			USpatialActorChannel* OwnerChannel = GetOrCreateSpatialActorChannel(OldOwner);
+			if (!OwnerChannel->IsAuthoritativeServer())
+			{
+				NetConnection->Disable();
+			}
+		}
+	}
+
 	Channel->MarkInterestDirty();
 
 	OwnershipChangedEntities.Add(EntityId);
