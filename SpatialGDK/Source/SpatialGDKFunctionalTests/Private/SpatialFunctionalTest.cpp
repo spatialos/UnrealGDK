@@ -574,9 +574,10 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 			}
 			for (auto* FlowController : FlowControllers)
 			{
-				if (FlowController != nullptr && (WorkerType == ESpatialFunctionalTestWorkerType::All
-					|| (FlowController->WorkerDefinition.Type == WorkerType
-						&& (WorkerId <= FWorkerDefinition::ALL_WORKERS_ID || FlowController->WorkerDefinition.Id == WorkerId))))
+				if (FlowController != nullptr
+					&& (WorkerType == ESpatialFunctionalTestWorkerType::All
+						|| (FlowController->WorkerDefinition.Type == WorkerType
+							&& (WorkerId <= FWorkerDefinition::ALL_WORKERS_ID || FlowController->WorkerDefinition.Id == WorkerId))))
 				{
 					FlowControllersExecutingStep.AddUnique(FlowController);
 				}

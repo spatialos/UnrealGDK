@@ -2,6 +2,7 @@
 
 #include "SpatialFunctionalTestFlowController.h"
 
+#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "GameFramework/PlayerController.h"
@@ -10,7 +11,6 @@
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTest.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
-#include "EngineClasses/SpatialGameInstance.h"
 
 ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
