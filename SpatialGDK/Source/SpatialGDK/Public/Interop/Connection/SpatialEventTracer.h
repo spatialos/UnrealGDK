@@ -72,7 +72,11 @@ public:
 private:
 	struct StreamDeleter
 	{
-		void operator()(Io_Stream* StreamToDestroy) const;
+		void operator()(Io_Stream* StreamToDestroy) const { if (StreamToDestroy) { Io_Stream_Destroy(StreamToDestroy); } }
+	};
+	struct QueryDeleter
+	{
+		void operator()(Trace_Query* Query) const { if (Query) { Trace_Query_Destroy(Query); } }
 	};
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
@@ -126,8 +130,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const ch
 	// This would allow for sampling dependent on trace event data.
 	Trace_Event Event = { nullptr, 0, Message, EventType, nullptr };
 
-	Trace_SamplingResult SpanSamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event);
-	if (SpanSamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
+	if (!Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event))
 	{
 		return {};
 	}
@@ -136,36 +139,20 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const ch
 	Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, &Event, TraceSpanId.GetId());
 	Event.span_id = TraceSpanId.GetConstId();
 
-	Trace_SamplingResult EventSamplingResult = Trace_EventTracer_ShouldSampleEvent(EventTracer, &Event);
-	switch (EventSamplingResult.decision)
+	if (!Trace_EventTracer_ApplyEventPreFilter(EventTracer, &Event))
 	{
-	case Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE:
-	{
-		return TraceSpanId;
+		return {}; // TODO: Should return TraceSpanId?
 	}
-	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE_WITHOUT_DATA:
-	{
-		Trace_EventTracer_AddEvent(EventTracer, &Event);
-		return TraceSpanId;
-	}
-	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE:
-	{
-		FSpatialTraceEventDataBuilder EventDataBuilder;
 
-		DataCallback(EventDataBuilder);
+	FSpatialTraceEventDataBuilder EventDataBuilder;
+	DataCallback(EventDataBuilder);
 
-		// Frame counter
-		EventDataBuilder.AddKeyValue("FrameNum", GFrameCounter);
+	// Frame counter
+	EventDataBuilder.AddKeyValue("FrameNum", GFrameCounter);
 
-		Event.data = EventDataBuilder.GetEventData();
-		Trace_EventTracer_AddEvent(EventTracer, &Event);
-		return TraceSpanId;
-	}
-	default:
-	{
-		return {};
-	}
-	}
+	Event.data = EventDataBuilder.GetEventData();
+	Trace_EventTracer_AddEvent(EventTracer, &Event);
+	return TraceSpanId;
 }
 
 } // namespace SpatialGDK

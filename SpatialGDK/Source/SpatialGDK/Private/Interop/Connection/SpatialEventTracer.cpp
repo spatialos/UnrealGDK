@@ -104,6 +104,12 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Parameters.span_sampling_parameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
 	Parameters.span_sampling_parameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
 
+	
+	TUniquePtr<Trace_Query, QueryDeleter> PreFilter(Trace_ParseSimpleQuery(SamplingSettings->EventPreFilter.Len() ? TCHAR_TO_ANSI(*SamplingSettings->EventPreFilter) : "true"));
+	TUniquePtr<Trace_Query, QueryDeleter> PostFilter(Trace_ParseSimpleQuery(SamplingSettings->EventPostFilter.Len() ? TCHAR_TO_ANSI(*SamplingSettings->EventPostFilter) : "true"));
+
+	Parameters.filter_parameters.event_pre_filter_parameters.simple_query = PreFilter.Get();
+	Parameters.filter_parameters.event_post_filter_parameters.simple_query = PostFilter.Get();
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
 
 	// Open a local file
@@ -116,8 +122,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 
 	FolderPath = EventTracePath;
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	const FString FileName = TEXT("event-log");
-	const FString FileExt = TEXT(".etlog");
+	const FString FileName = TEXT("event-log"); 
+	const FString FileExt = TEXT(".etlog"); // TODO: Update the NFRs to use the new extension
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
 	{
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace file%s to %s."),
@@ -177,17 +183,6 @@ FSpatialGDKSpanId SpatialEventTracer::UserSpanIdToGDKSpanId(const FUserSpanId& U
 	FSpatialGDKSpanId TraceSpanId;
 	FMemory::Memcpy(TraceSpanId.GetId(), UserSpanId.Data.GetData(), TRACE_SPAN_ID_SIZE_BYTES);
 	return TraceSpanId;
-}
-
-	Trace_SamplingResult SpanSamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event);
-
-	if (!Trace_EventTracer_ApplyEventPreFilter(EventTracer, &Event))
-	{
-		return {};
-	}
-void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) const
-{
-	Io_Stream_Destroy(StreamToDestroy);
 }
 
 void SpatialEventTracer::BeginOpsForFrame()
