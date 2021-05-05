@@ -96,6 +96,40 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 }
 } // namespace
 
+#if WITH_EDITOR
+bool IsQueryValid(const char* QueryStr)
+{
+	Trace_Query* Query = Trace_ParseSimpleQuery(QueryStr);
+	bool bIsValid = !!Query;
+	if (Query != nullptr)
+	{
+		Trace_Query_Destroy(Query);
+	}
+	return bIsValid;
+}
+void UEventTracingSamplingSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) 
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
+	if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, EventPreFilter))
+	{
+		if (!IsQueryValid(TCHAR_TO_ANSI(*EventPreFilter)))
+		{
+			FMessageDialog::Open(
+				EAppMsgType::Ok,
+				FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"), FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
+		}
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, EventPostFilter))
+	{
+		if (!IsQueryValid(TCHAR_TO_ANSI(*EventPostFilter)))
+		{
+			FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"), FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
+		}
+	}
+}
+#endif
+
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, EntityPoolInitialReservationCount(3000)

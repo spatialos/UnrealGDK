@@ -82,6 +82,10 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
 	FString EventPostFilter;
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
 };
 
 UCLASS(config = SpatialGDKSettings, defaultconfig)

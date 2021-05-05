@@ -103,14 +103,25 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Parameters.span_sampling_parameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
 	Parameters.span_sampling_parameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
 
+	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
+
 	TUniquePtr<Trace_Query, QueryDeleter> PreFilter(
 		Trace_ParseSimpleQuery(SamplingSettings->EventPreFilter.Len() ? TCHAR_TO_ANSI(*SamplingSettings->EventPreFilter) : "true"));
+	if (!PreFilter.Get())
+	{
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified prefilter is invalid. %s"), Trace_GetLastError());
+	} // TODO: Default behavior when this fails
+
 	TUniquePtr<Trace_Query, QueryDeleter> PostFilter(
 		Trace_ParseSimpleQuery(SamplingSettings->EventPostFilter.Len() ? TCHAR_TO_ANSI(*SamplingSettings->EventPostFilter) : "true"));
+	if (!PreFilter.Get())
+	{
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified postfilter is invalid. %s"), Trace_GetLastError());
+	}
 
 	Parameters.filter_parameters.event_pre_filter_parameters.simple_query = PreFilter.Get();
 	Parameters.filter_parameters.event_post_filter_parameters.simple_query = PostFilter.Get();
-	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
+	
 
 	EventTracer = Trace_EventTracer_Create(&Parameters);
 
