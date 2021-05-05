@@ -121,7 +121,6 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 
 	Parameters.filter_parameters.event_pre_filter_parameters.simple_query = PreFilter.Get();
 	Parameters.filter_parameters.event_post_filter_parameters.simple_query = PostFilter.Get();
-	
 
 	EventTracer = Trace_EventTracer_Create(&Parameters);
 

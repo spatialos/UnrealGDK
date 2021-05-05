@@ -107,7 +107,7 @@ bool IsQueryValid(const char* QueryStr)
 	}
 	return bIsValid;
 }
-void UEventTracingSamplingSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) 
+void UEventTracingSamplingSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
@@ -115,16 +115,18 @@ void UEventTracingSamplingSettings::PostEditChangeProperty(struct FPropertyChang
 	{
 		if (!IsQueryValid(TCHAR_TO_ANSI(*EventPreFilter)))
 		{
-			FMessageDialog::Open(
-				EAppMsgType::Ok,
-				FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"), FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
+			FMessageDialog::Open(EAppMsgType::Ok,
+								 FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"),
+											   FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
 		}
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, EventPostFilter))
 	{
 		if (!IsQueryValid(TCHAR_TO_ANSI(*EventPostFilter)))
 		{
-			FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"), FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
+			FMessageDialog::Open(EAppMsgType::Ok,
+								 FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"),
+											   FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
 		}
 	}
 }
