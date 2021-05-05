@@ -3,7 +3,7 @@
 #include "CrossServerPossessionGameMode.h"
 
 #include "GameFramework/PlayerStart.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/ReplicatedTestPawnBase_RepGraphAlwaysReplicate.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestPawnBase_RepGraphAlwaysReplicate.h"
 #include "TestPossessionPlayerController.h"
 
 ACrossServerPossessionGameMode::ACrossServerPossessionGameMode()
