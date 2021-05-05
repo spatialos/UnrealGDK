@@ -10,7 +10,7 @@ ACrossServerPossessionGameMode::ACrossServerPossessionGameMode()
 	: PlayersSpawned(0)
 	, bInitializedSpawnPoints(false)
 {
-	DefaultPawnClass = AReplicatedTestPawnBase_RepGraphAlwaysReplicate::StaticClass();
+	DefaultPawnClass = ATestPawnBase_RepGraphAlwaysReplicate::StaticClass();
 	PlayerControllerClass = ATestPossessionPlayerController::StaticClass();
 }
 
