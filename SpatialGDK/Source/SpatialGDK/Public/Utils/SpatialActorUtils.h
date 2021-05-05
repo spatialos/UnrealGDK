@@ -4,6 +4,7 @@
 
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 
 #include "Components/SceneComponent.h"
 #include "Containers/UnrealString.h"
@@ -45,11 +46,11 @@ inline AActor* GetReplicatedHierarchyRoot(const AActor* Actor)
 }
 
 // Effectively, if this Actor is in a player hierarchy, get the PlayerController entity ID.
-inline Worker_PartitionId GetConnectionOwningPartitionId(const AActor* Actor)
+inline Worker_PartitionId GetConnectionOwningPartitionId(const AActor* Actor, USpatialPackageMapClient* PackageMap)
 {
 	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
 	{
-		return NetConnection->PlayerControllerEntity;
+		return PackageMap->GetEntityIdFromObject(NetConnection->PlayerController);
 	}
 
 	return SpatialConstants::INVALID_ENTITY_ID;

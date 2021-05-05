@@ -1293,7 +1293,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	const Worker_PartitionId CurrentClientPartitionId = CurrentNetOwningClientData->ClientPartitionId.IsSet()
 															? CurrentNetOwningClientData->ClientPartitionId.GetValue()
 															: SpatialConstants::INVALID_ENTITY_ID;
-	const Worker_PartitionId NewClientConnectionPartitionId = SpatialGDK::GetConnectionOwningPartitionId(Actor);
+	const Worker_PartitionId NewClientConnectionPartitionId = SpatialGDK::GetConnectionOwningPartitionId(Actor, NetDriver->PackageMap);
 	if (CurrentClientPartitionId != NewClientConnectionPartitionId)
 	{
 		// Update the NetOwningClientWorker component.

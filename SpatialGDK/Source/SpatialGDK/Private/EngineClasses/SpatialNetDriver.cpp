@@ -1273,30 +1273,6 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor, AActor* OldOwner)
 		return;
 	}
 
-	AActor* NewOwner = Actor->GetOwner();
-	if (NewOwner != nullptr)
-	{
-		if (USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(NewOwner->GetNetConnection()))
-		{
-			USpatialActorChannel* OwnerChannel = GetOrCreateSpatialActorChannel(NewOwner);
-			if (!OwnerChannel->IsAuthoritativeServer())
-			{
-				NetConnection->Init(OwnerChannel->GetEntityId());
-			}
-		}
-	}
-	else if (OldOwner != nullptr && NewOwner == nullptr)
-	{
-		if (USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(OldOwner->GetNetConnection()))
-		{
-			USpatialActorChannel* OwnerChannel = GetOrCreateSpatialActorChannel(OldOwner);
-			if (!OwnerChannel->IsAuthoritativeServer())
-			{
-				NetConnection->Disable();
-			}
-		}
-	}
-
 	Channel->MarkInterestDirty();
 
 	OwnershipChangedEntities.Add(EntityId);
@@ -2569,13 +2545,6 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Join failure: %s"), *ErrorMsg);
 		SpatialConnection->FlushNet(true);
 	}
-
-	// Preallocate the PlayerController entity so the AuthorityDelegation client authoritative components can be set
-	// correctly at spawn.
-	USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(SpatialConnection->PlayerController);
-	USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Channel->Actor->GetNetConnection());
-	check(NetConnection != nullptr);
-	NetConnection->PlayerControllerEntity = Channel->GetEntityId();
 }
 
 // This function is called for server workers who received the PC over the wire
@@ -3148,7 +3117,7 @@ int64 USpatialNetDriver::GetClientID() const
 
 	if (USpatialNetConnection* NetConnection = GetSpatialOSNetConnection())
 	{
-		return static_cast<int64>(NetConnection->PlayerControllerEntity);
+		return static_cast<int64>(PackageMap->GetEntityIdFromObject(NetConnection->PlayerController));
 	}
 	return SpatialConstants::INVALID_ENTITY_ID;
 }

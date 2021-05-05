@@ -105,7 +105,7 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 	const Worker_PartitionId AuthoritativeServerPartitionId = NetDriver->VirtualWorkerTranslator->GetClaimedPartitionId();
-	const Worker_PartitionId AuthoritativeClientPartitionId = GetConnectionOwningPartitionId(Actor);
+	const Worker_PartitionId AuthoritativeClientPartitionId = GetConnectionOwningPartitionId(Actor, NetDriver->PackageMap);
 
 	// Add Load Balancer Attribute. If this is a single worker deployment, this will be just be the single worker.
 	const VirtualWorkerId IntendedVirtualWorkerId = NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId();
