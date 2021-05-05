@@ -62,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reverted a fix relating to the `dbghelp` file that previously caused the Editor to crash when loading the Session Front End. Our fix is no longer necessary, as Epic have fixed the issue and we've adopted their fix.
 - Fixed an issue with migration diagnostic logging failing, when the actor did not have authority.
 - Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
-
+- Fixed an issue where using RepGraph caused original pawns not to be replicated if its player controller unpossesses it and migrates away, making it impossible to migrate back for repossession.
 ## [`0.12.0`] - 2021-02-01
 
 ### Breaking changes:
