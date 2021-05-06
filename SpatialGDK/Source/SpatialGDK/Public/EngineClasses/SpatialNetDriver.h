@@ -50,6 +50,9 @@ DECLARE_MULTICAST_DELEGATE(FShutdownEvent);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
+DECLARE_EVENT_OneParam(USpatialNetDriver, FActorEntityCreationDelegate, TArray<SpatialGDK::ComponentData>& OutComponentDatas);
+DECLARE_EVENT_OneParam(USpatialNetDriver, FActorReplicationDelegate, TArray<SpatialGDK::ComponentUpdate>& OutComponentUpdates);
+
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialConsiderList, STATGROUP_SpatialNet, );
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Relevant Actors"), STAT_SpatialActorsRelevant, STATGROUP_SpatialNet, );
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Num Changed Relevant Actors"), STAT_SpatialActorsChanged, STATGROUP_SpatialNet, );
@@ -211,6 +214,25 @@ public:
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
 
+	// Returns a delegate that will be triggered when the entity for TargetActor gets created by the GDK.
+	// The callback takes a single TArray<SpatialGDK::ComponentData>& out argument, to which it can add ComponentData objects
+	// for components that should be added to the entity on creation.
+	// Since there may be multiple callbacks, callbacks should _only_ add to this array.
+	FActorEntityCreationDelegate& OnActorEntityCreation(AActor* TargetActor);
+
+	// Get user-provided component data to add to the entity that is being created for the given TargetActor.
+	// Also clears out all entity creation delegates registered for this actor since they will not be called again.
+	TArray<SpatialGDK::ComponentData> GetEntityCreationUserAddComponents(AActor* TargetActor);
+
+	// Returns a delegate that will be triggered when TargetActor gets replicated to the runtime.
+	// The callback takes a single TArray<SpatialGDK::ComponentUpdate>& out argument, to which it can add ComponentUpdate objects
+	// which will be sent to the runtime alongside the updates for its replicated properties.
+	// Since there may be multiple callbacks, callbacks should _only_ add to this array.
+	FActorReplicationDelegate& OnActorReplication(AActor* TargetActor);
+
+	// Get user-provided component updates for the given TargetActor.
+	TArray<SpatialGDK::ComponentUpdate> GetUserComponentUpdates(AActor* TargetActor);
+
 	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
 	FFilterPredicate ActorFilter;
 	TArray<FDispatcherRefreshCallback> ActorRefreshCallbacks;
@@ -221,6 +243,7 @@ public:
 
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
 	TUniquePtr<SpatialGDK::SpatialStrategySystem> StrategySystem;
+
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
 	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
@@ -384,4 +407,12 @@ private:
 
 	TMultiMap<Worker_EntityId_Key, EActorMigrationResult> MigrationFailureLogStore;
 	uint64 MigrationTimestamp;
+
+	TMap<TWeakObjectPtr<AActor>, FActorEntityCreationDelegate, FDefaultSetAllocator,
+		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<AActor>, FActorEntityCreationDelegate, false>>
+		ActorEntityCreationDelegates;
+	TMap<TWeakObjectPtr<AActor>, FActorReplicationDelegate, FDefaultSetAllocator,
+		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<AActor>, FActorReplicationDelegate, false>>
+		ActorReplicationDelegates;
+	void CleanActorReplicationDelegates();
 };

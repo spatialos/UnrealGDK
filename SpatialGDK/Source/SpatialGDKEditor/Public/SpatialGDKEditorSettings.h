@@ -546,10 +546,19 @@ public:
 		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSSnapshotFolderPath, GetSpatialOSSnapshotToLoad());
 	}
 
-	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
+	FORCEINLINE FString GetUserWrittenSchemaFolder() const
 	{
-		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/unreal/generated/"));
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("custom_schema/"));
 	}
+
+	FORCEINLINE FString GetSchemaFolder() const
+	{
+		return FPaths::Combine(SpatialGDKServicesConstants::SpatialOSDirectory, TEXT("schema/"));
+	}
+
+	FORCEINLINE FString GetUserWrittenSchemaOutputFolder() const { return FPaths::Combine(GetSchemaFolder(), TEXT("unreal/custom/")); }
+
+	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const { return FPaths::Combine(GetSchemaFolder(), TEXT("unreal/generated/")); }
 
 	FORCEINLINE FString GetBuiltWorkerFolder() const
 	{
