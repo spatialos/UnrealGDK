@@ -117,7 +117,7 @@ call :MarkEndOfBlock "Create folders"
 
 call :MarkStartOfBlock "Retrieve dependencies"
     call :ExecuteAndCheck spatial package retrieve tools         schema_compiler-x86_64-win32               %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
-    call :ExecuteAndCheck spatial package retrieve tools         snapshot_converter-x86_64-win32            %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
+    call :ExecuteAndCheck spatial package retrieve tools         snapshot_converter-x86_64-win32            %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\tools\snapshot_converter-x86_64-win32.zip"
     call :ExecuteAndCheck spatial package retrieve schema        standard_library                           %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\schema\standard_library.zip"
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c_headers                                  %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c_headers.zip"
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-x86_64-vc141_md-win32            %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc141_md-win32.zip"
