@@ -1228,7 +1228,7 @@ void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId I
 	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(InEntityId))
 	{
 		FWorkerComponentUpdate Update = SpatialGDK::Position::CreatePositionUpdate(SpatialGDK::Coordinates::FromFVector(NewPosition));
-		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+		NetDriver->Connection->SendComponentUpdate(InEntityId, &Update);
 	}
 
 	for (const auto& Child : InActor->Children)
