@@ -42,7 +42,6 @@ public:
 	void Advance();
 
 private:
-
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 

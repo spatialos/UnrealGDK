@@ -60,8 +60,8 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 		NewEntityRange.CurrentEntityId = Op.first_entity_id;
 		NewEntityRange.LastEntityId = Op.first_entity_id + (Op.number_of_entity_ids - 1);
 
-		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Reserved %d entities, caching in pool, Entity IDs: (%d, %d)"),
-			   Op.number_of_entity_ids, Op.first_entity_id, NewEntityRange.LastEntityId);
+		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Reserved %d entities, caching in pool, Entity IDs: (%d, %d)"), Op.number_of_entity_ids,
+			   Op.first_entity_id, NewEntityRange.LastEntityId);
 
 		ReservedEntityIDRanges.Add(NewEntityRange);
 
