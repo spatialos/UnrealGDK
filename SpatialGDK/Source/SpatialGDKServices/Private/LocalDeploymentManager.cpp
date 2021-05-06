@@ -240,7 +240,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	RuntimeStartTime = FDateTime::Now();
 	bRedeployRequired = false;
 
-	if (bLocalDeploymentRunning)
+	if (bLocalDeploymentRunning || bStartingDeployment)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start a local deployment but one is already running."));
 		if (CallBack)
@@ -358,7 +358,10 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 bool FLocalDeploymentManager::SetupRuntimeFileLogger(const FString& RuntimeLogDir)
 {
 	// Ensure any old log file is cleaned up.
-	RuntimeLogFileHandle.Reset();
+	if (RuntimeLogFileHandle)
+	{
+		RuntimeLogFileHandle.Reset();
+	}
 
 	FString RuntimeLogFilePath = FPaths::Combine(RuntimeLogDir, TEXT("runtime.log"));
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
@@ -449,6 +452,12 @@ bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
 		return false;
 	}
 
+	if (bStoppingDeployment)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to stop local deployment but stopping process is already in progress."));
+		return false;
+	}
+
 	bStoppingDeployment = true;
 	return true;
 }
@@ -475,7 +484,10 @@ bool FLocalDeploymentManager::WaitForRuntimeProcessToShutDown()
 void FLocalDeploymentManager::FinishLocalDeploymentShutDown()
 {
 	// Kill the log file handle.
-	RuntimeLogFileHandle.Reset();
+	if (RuntimeLogFileHandle)
+	{
+		RuntimeLogFileHandle.Reset();
+	}
 
 	bLocalDeploymentRunning = false;
 	bStoppingDeployment = false;
