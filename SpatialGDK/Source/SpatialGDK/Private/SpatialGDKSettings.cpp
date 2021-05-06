@@ -94,19 +94,16 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName,
 		   OverrideValue.IsSet() ? *(OverrideValue.GetValue()) : TEXT("not set"));
 }
+
+bool IsQueryValid(const char* QueryStr)
+{
+	SpatialGDK::TraceQueryPtr Query(Trace_ParseSimpleQuery(QueryStr));
+	bool bIsValid = !!Query.Get();
+	return bIsValid;
+}
 } // namespace
 
 #if WITH_EDITOR
-bool IsQueryValid(const char* QueryStr)
-{
-	Trace_Query* Query = Trace_ParseSimpleQuery(QueryStr);
-	bool bIsValid = !!Query;
-	if (Query != nullptr)
-	{
-		Trace_Query_Destroy(Query);
-	}
-	return bIsValid;
-}
 void UEventTracingSamplingSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);

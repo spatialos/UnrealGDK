@@ -28,6 +28,18 @@ enum Type
 
 namespace SpatialGDK
 {
+struct TraceQueryDeleter
+{
+	void operator()(Trace_Query* Query) const
+	{
+		if (Query)
+		{
+			Trace_Query_Destroy(Query);
+		}
+	}
+};
+typedef TUniquePtr<Trace_Query, TraceQueryDeleter> TraceQueryPtr;
+
 // SpatialEventTracer wraps Trace_EventTracer related functionality
 class SPATIALGDK_API SpatialEventTracer
 {
@@ -69,6 +81,9 @@ public:
 
 	void SetFlushOnWrite(bool bValue);
 
+	static Trace_Query* FilterQueryTrue();
+	static Trace_Query* FilterQueryFalse();
+
 private:
 	struct StreamDeleter
 	{
@@ -77,16 +92,6 @@ private:
 			if (StreamToDestroy)
 			{
 				Io_Stream_Destroy(StreamToDestroy);
-			}
-		}
-	};
-	struct QueryDeleter
-	{
-		void operator()(Trace_Query* Query) const
-		{
-			if (Query)
-			{
-				Trace_Query_Destroy(Query);
 			}
 		}
 	};
@@ -160,7 +165,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const ch
 	DataCallback(EventDataBuilder);
 
 	// Frame counter
-	EventDataBuilder.AddKeyValue("FrameNum", GFrameCounter);
+	EventDataBuilder.AddKeyValue("frame_num", GFrameCounter);
 
 	Event.data = EventDataBuilder.GetEventData();
 	Trace_EventTracer_AddEvent(EventTracer, &Event);
