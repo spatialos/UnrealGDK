@@ -358,10 +358,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 bool FLocalDeploymentManager::SetupRuntimeFileLogger(const FString& RuntimeLogDir)
 {
 	// Ensure any old log file is cleaned up.
-	if (RuntimeLogFileHandle)
-	{
-		RuntimeLogFileHandle.Reset();
-	}
+	RuntimeLogFileHandle.Reset();
 
 	FString RuntimeLogFilePath = FPaths::Combine(RuntimeLogDir, TEXT("runtime.log"));
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
@@ -484,10 +481,7 @@ bool FLocalDeploymentManager::WaitForRuntimeProcessToShutDown()
 void FLocalDeploymentManager::FinishLocalDeploymentShutDown()
 {
 	// Kill the log file handle.
-	if (RuntimeLogFileHandle)
-	{
-		RuntimeLogFileHandle.Reset();
-	}
+	RuntimeLogFileHandle.Reset();
 
 	bLocalDeploymentRunning = false;
 	bStoppingDeployment = false;
