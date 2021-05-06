@@ -526,7 +526,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		USpatialPackageMapClient* NewPackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 		check(NewPackageMap == PackageMap);
 
-		PackageMap->Init(this, &TimerManager);
+		PackageMap->Init(this);
 		if (IsServer())
 		{
 			PackageMap->GetEntityPoolReadyDelegate().AddUObject(Connection, &USpatialWorkerConnection::CreateServerWorkerEntity);
