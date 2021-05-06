@@ -17,7 +17,7 @@ namespace SpatialGDK
 {
 class SpatialEventTracer;
 
-class ViewCoordinator
+class SPATIALGDK_API ViewCoordinator
 {
 public:
 	explicit ViewCoordinator(TUniquePtr<AbstractConnectionHandler> ConnectionHandler, TSharedPtr<SpatialEventTracer> EventTracer,
@@ -93,6 +93,8 @@ public:
 	FDispatcherRefreshCallback CreateAuthorityChangeRefreshCallback(
 		Worker_ComponentId ComponentId,
 		const FAuthorityChangeRefreshPredicate& RefreshPredicate = FSubView::NoAuthorityChangeRefreshPredicate);
+
+	bool HasEntity(Worker_EntityId EntityId) const;
 
 private:
 	WorkerView View;

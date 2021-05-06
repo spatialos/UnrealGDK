@@ -237,6 +237,11 @@ FDispatcherRefreshCallback ViewCoordinator::CreateAuthorityChangeRefreshCallback
 	return FSubView::CreateAuthorityChangeRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
 }
 
+bool ViewCoordinator::HasEntity(Worker_EntityId EntityId) const
+{
+	return View.GetView().Contains(EntityId);
+}
+
 const FString& ViewCoordinator::GetWorkerId() const
 {
 	return ConnectionHandler->GetWorkerId();

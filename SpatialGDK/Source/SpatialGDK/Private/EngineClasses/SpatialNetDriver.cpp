@@ -1718,6 +1718,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 	SET_DWORD_STAT(STAT_SpatialConsiderList, ConsiderList.Num());
 
+	CleanActorReplicationDelegates();
 	FMemMark Mark(FMemStack::Get());
 
 	// Make a list of viewers this connection should consider
@@ -2802,4 +2803,54 @@ FUnrealObjectRef USpatialNetDriver::GetCurrentPlayerControllerRef()
 		}
 	}
 	return FUnrealObjectRef::NULL_OBJECT_REF;
+}
+
+FActorEntityCreationDelegate& USpatialNetDriver::OnActorEntityCreation(AActor* TargetActor)
+{
+	return ActorEntityCreationDelegates.FindOrAdd(TargetActor);
+}
+
+TArray<SpatialGDK::ComponentData> USpatialNetDriver::GetEntityCreationUserAddComponents(AActor* TargetActor)
+{
+	TArray<SpatialGDK::ComponentData> OutComponentDatas;
+	if (!ActorEntityCreationDelegates.Contains(TargetActor))
+	{
+		return OutComponentDatas;
+	}
+
+	const FActorEntityCreationDelegate EntityCreationDelegate = ActorEntityCreationDelegates.FindAndRemoveChecked(TargetActor);
+	EntityCreationDelegate.Broadcast(OutComponentDatas);
+	return OutComponentDatas;
+}
+
+FActorReplicationDelegate& USpatialNetDriver::OnActorReplication(AActor* TargetActor)
+{
+	return ActorReplicationDelegates.FindOrAdd(TargetActor);
+}
+
+TArray<SpatialGDK::ComponentUpdate> USpatialNetDriver::GetUserComponentUpdates(AActor* TargetActor)
+{
+	TArray<SpatialGDK::ComponentUpdate> OutComponentUpdates;
+	if (!ActorReplicationDelegates.Contains(TargetActor))
+	{
+		return OutComponentUpdates;
+	}
+
+	FActorReplicationDelegate& ActorReplicationDelegate = ActorReplicationDelegates.FindChecked(TargetActor);
+	ActorReplicationDelegate.Broadcast(OutComponentUpdates);
+	return OutComponentUpdates;
+}
+
+// Find any stale actor pointers in the actor replication delegate map and remove the corresponding entries
+void USpatialNetDriver::CleanActorReplicationDelegates()
+{
+	TSet<TWeakObjectPtr<AActor>> Keys;
+	ActorReplicationDelegates.GetKeys(Keys);
+	for (auto& Key : Keys)
+	{
+		if (!Key.IsValid())
+		{
+			ActorReplicationDelegates.Remove(Key);
+		}
+	}
 }

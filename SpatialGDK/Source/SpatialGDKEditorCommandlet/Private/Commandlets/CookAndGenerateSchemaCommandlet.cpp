@@ -111,6 +111,12 @@ int32 UCookAndGenerateSchemaCommandlet::Main(const FString& CmdLineParams)
 	SpatialGDKEditor::Schema::RefreshSchemaFiles(GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder(),
 												 bDeleteExistingSchema);
 
+	if (!ImportUserWrittenProjectSchema())
+	{
+		UE_LOG(LogCookAndGenerateSchemaCommandlet, Error, TEXT("Failed to Import User Written Schema"));
+		return 0;
+	}
+
 	if (!LoadGeneratorStateFromSchemaDatabase(SpatialConstants::SCHEMA_DATABASE_FILE_PATH))
 	{
 		ResetSchemaGeneratorStateAndCleanupFolders();

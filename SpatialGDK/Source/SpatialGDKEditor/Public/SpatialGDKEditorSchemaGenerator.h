@@ -22,6 +22,8 @@ SPATIALGDKEDITOR_API TSet<UClass*> GetAllSupportedClasses(const TArray<UObject*>
 
 SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchema();
 
+SPATIALGDKEDITOR_API bool ImportUserWrittenProjectSchema();
+
 SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchemaForClasses(TSet<UClass*> Classes, FString SchemaOutputPath = "");
 
 SPATIALGDKEDITOR_API void SpatialGDKSanitizeGeneratedSchema();

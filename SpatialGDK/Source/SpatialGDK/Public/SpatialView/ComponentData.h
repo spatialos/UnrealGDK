@@ -24,7 +24,7 @@ struct ComponentDataDeleter
 using OwningComponentDataPtr = TUniquePtr<Schema_ComponentData, ComponentDataDeleter>;
 
 // An RAII wrapper for component data.
-class ComponentData
+class SPATIALGDK_API ComponentData
 {
 public:
 	// Creates a new component data.
@@ -46,6 +46,9 @@ public:
 	ComponentData DeepCopy() const;
 	// Releases ownership of the component data.
 	Schema_ComponentData* Release() &&;
+
+	// Releases ownership and converts to Worker_ComponentData
+	Worker_ComponentData ReleaseAsWorkerComponentData() &&;
 
 	// Appends the fields from the provided update.
 	// Returns true if the update was successfully applied and false otherwise.

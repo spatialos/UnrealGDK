@@ -762,6 +762,12 @@ int64 USpatialActorChannel::ReplicateActor()
 				RepComp.RemoveCurrent();
 			}
 		}
+
+		// Add any updates for user-written components
+		for (auto& Update : NetDriver->GetUserComponentUpdates(Actor))
+		{
+			NetDriver->Connection->GetCoordinator().SendComponentUpdate(EntityId, MoveTemp(Update), {});
+		}
 	}
 
 #if USE_NETWORK_PROFILER

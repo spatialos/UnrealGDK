@@ -138,6 +138,14 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel, uin
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	ComponentDatas.Add(CreateLevelComponentData(Channel->Actor));
 
+	// Add user-provided component data
+	for (auto& Data : NetDriver->GetEntityCreationUserAddComponents(Channel->Actor))
+	{
+		// Move the data out of the owning ComponentData type, and convert it to the type we need.
+		// `SendCreateEntityRequest` will take ownership of the underlying component data and free it.
+		ComponentDatas.Emplace(MoveTemp(Data).ReleaseAsWorkerComponentData());
+	}
+
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	FSpatialGDKSpanId SpanId;
