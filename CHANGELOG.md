@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reverted a fix relating to the `dbghelp` file that previously caused the Editor to crash when loading the Session Front End. Our fix is no longer necessary, as Epic have fixed the issue and we've adopted their fix.
 - Fixed an issue with migration diagnostic logging failing, when the actor did not have authority.
 - Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
+- Fixed an issue where migration diagnostic tool would crash if the target actor's owner couldn't be found.
 
 ### Internal:
 - Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs no longer expire, and persist until used.
