@@ -65,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where migration diagnostic tool would crash if the target actor's owner couldn't be found.
 
 ### Internal:
-- Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs no longer expire, and persist until used.
+- Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs now no longer expire, and persist until used.
 
 ## [`0.12.0`] - 2021-02-01
 
