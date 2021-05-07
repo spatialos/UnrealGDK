@@ -1936,8 +1936,7 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 
 	UE_LOG(LogActorSystem, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
-	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Object);
-	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver, Tracer);
+	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver);
 
 	TArray<FWorkerComponentUpdate> ComponentUpdates =
 		UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
@@ -2057,7 +2056,7 @@ void ActorSystem::SendAddComponentForSubobject(USpatialActorChannel* Channel, UO
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-	ComponentFactory DataFactory(false, NetDriver, USpatialLatencyTracer::GetTracer(Subobject));
+	ComponentFactory DataFactory(false, NetDriver);
 
 	TArray<FWorkerComponentData> SubobjectDatas =
 		DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);

@@ -12,14 +12,6 @@ EntityComponentOpListBuilder::EntityComponentOpListBuilder()
 {
 }
 
-EntityComponentOpListBuilder EntityComponentOpListBuilder::Move()
-{
-	EntityComponentOpListBuilder MovedBuilder;
-	Swap(OpListData, MovedBuilder.OpListData);
-
-	return MoveTemp(MovedBuilder);
-}
-
 EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntity(Worker_EntityId EntityId)
 {
 	Worker_Op Op = {};
@@ -97,6 +89,24 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetDisconnect(Worker
 	Op.op_type = WORKER_OP_TYPE_DISCONNECT;
 	Op.op.disconnect.connection_status_code = StatusCode;
 	Op.op.disconnect.reason = StoreString(MoveTemp(DisconnectReason));
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::StartCriticalSection()
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_CRITICAL_SECTION;
+	Op.op.critical_section.in_critical_section = true;
+	OpListData->Ops.Add(Op);
+	return *this;
+}
+
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::EndCriticalSection()
+{
+	Worker_Op Op = {};
+	Op.op_type = WORKER_OP_TYPE_CRITICAL_SECTION;
+	Op.op.critical_section.in_critical_section = false;
 	OpListData->Ops.Add(Op);
 	return *this;
 }

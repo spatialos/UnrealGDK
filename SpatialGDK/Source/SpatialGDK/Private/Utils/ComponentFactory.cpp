@@ -39,14 +39,14 @@ TraceKey* GetTraceKeyFromComponentObject(T& Obj)
 } // namespace
 namespace SpatialGDK
 {
-ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver, USpatialLatencyTracer* InLatencyTracer)
+ComponentFactory::ComponentFactory(bool bInterestDirty, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, bInterestHasChanged(bInterestDirty)
 	, bInitialOnlyDataWritten(false)
 	, bInitialOnlyReplicationEnabled(GetDefault<USpatialGDKSettings>()->bEnableInitialOnlyReplicationCondition)
-	, LatencyTracer(InLatencyTracer)
+	, LatencyTracer(USpatialLatencyTracer::GetTracer(InNetDriver))
 {
 }
 
