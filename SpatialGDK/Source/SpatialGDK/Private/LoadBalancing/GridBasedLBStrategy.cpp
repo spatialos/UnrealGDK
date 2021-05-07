@@ -159,7 +159,13 @@ SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstrai
 	const FVector Center3D{ Center2D.X, Center2D.Y, 0.0f };
 
 	const FVector2D EdgeLengths2D = Interest2D.GetSize();
-	check(EdgeLengths2D.X > 0.0f && EdgeLengths2D.Y > 0.0f);
+
+	if (!ensureAlwaysMsgf(EdgeLengths2D.X > 0.0f && EdgeLengths2D.Y > 0.0f,
+						  TEXT("Failed to create worker interest constraint. Grid cell area was 0")))
+	{
+		return SpatialGDK::QueryConstraint();
+	}
+
 	const FVector EdgeLengths3D{ EdgeLengths2D.X, EdgeLengths2D.Y, FLT_MAX };
 
 	SpatialGDK::QueryConstraint Constraint;

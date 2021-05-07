@@ -645,7 +645,11 @@ void USpatialClassInfoManager::QuitGame()
 
 Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(const AActor* Actor) const
 {
-	check(Actor);
+	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Trying to compute Actor interest component ID for nullptr Actor")))
+	{
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
+
 	const AActor* ActorForRelevancy = Actor;
 	// bAlwaysRelevant takes precedence over bNetUseOwnerRelevancy - see AActor::IsNetRelevantFor
 	while (!ActorForRelevancy->bAlwaysRelevant && ActorForRelevancy->bNetUseOwnerRelevancy && ActorForRelevancy->GetOwner() != nullptr)

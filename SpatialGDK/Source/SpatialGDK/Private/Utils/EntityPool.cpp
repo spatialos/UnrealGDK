@@ -24,7 +24,10 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 {
 	UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Sending bulk entity ID Reservation Request for %d IDs"), EntitiesToReserve);
 
-	checkf(!bIsAwaitingResponse, TEXT("Trying to reserve Entity IDs while another reserve request is in flight"));
+	if (ensureAlwaysMsgf(!bIsAwaitingResponse, TEXT("Trying to reserve Entity IDs while another reserve request is in flight")))
+	{
+		return;
+	}
 
 	// TODO: UNR-4979 Allow full range of uint32 when SQD-1150 is fixed
 	const uint32 TempMaxEntitiesToReserve = static_cast<uint32>(MAX_int32);
@@ -57,7 +60,8 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 		}
 
 		// Ensure we received the same number of reserved IDs as we requested
-		check(EntitiesToReserve == Op.number_of_entity_ids);
+		ensureAlwaysMsgf(EntitiesToReserve == Op.number_of_entity_ids,
+						 TEXT("Received a different number of reserved entity IDs to what was requested"));
 
 		// Clean up any expired Entity ranges
 		ReservedEntityIDRanges = ReservedEntityIDRanges.FilterByPredicate([](const EntityRange& Element) {

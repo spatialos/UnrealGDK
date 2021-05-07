@@ -485,7 +485,11 @@ FrequencyToConstraintsMap InterestFactory::GetUserDefinedFrequencyToConstraintsM
 void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints,
 														  bool bRecurseChildren) const
 {
-	check(ClassInfoManager);
+	if (!ensureAlwaysMsgf(ClassInfoManager != nullptr,
+						  TEXT("Failed to get Actor user defined query constraints. ClassInfoManager was undefined")))
+	{
+		return;
+	}
 
 	if (InActor == nullptr)
 	{
@@ -582,7 +586,6 @@ bool InterestFactory::ShouldAddNetCullDistanceInterest(const AActor* InActor) co
 	if (ActorInterestComponents.Num() == 1)
 	{
 		const UActorInterestComponent* ActorInterest = ActorInterestComponents[0];
-		check(ActorInterest);
 		if (!ActorInterest->bUseNetCullDistanceSquaredForCheckoutRadius)
 		{
 			return false;
@@ -669,9 +672,20 @@ QueryConstraint InterestFactory::CreateLevelConstraints(const AActor* InActor) c
 	LevelConstraint.OrConstraint.Add(DefaultConstraint);
 
 	UNetConnection* Connection = InActor->GetNetConnection();
-	check(Connection);
+	if (!ensureAlwaysMsgf(Connection != nullptr,
+						  TEXT("Failed to create interest level constraints. Couldn't access net connection for Actor %s"),
+						  *GetNameSafe(Actor)))
+	{
+		return QueryConstraint{};
+	}
+
 	APlayerController* PlayerController = Connection->GetPlayerController(nullptr);
-	check(PlayerController);
+	if (!ensureAlwaysMsgf(PlayerController != nullptr,
+						  TEXT("Failed to create interest level constraints. Couldn't find player controller for Actor %s"),
+						  *GetNameSafe(Actor)))
+	{
+		return QueryConstraint{};
+	}
 
 	const TSet<FName>& LoadedLevels = PlayerController->NetConnection->ClientVisibleLevelNames;
 

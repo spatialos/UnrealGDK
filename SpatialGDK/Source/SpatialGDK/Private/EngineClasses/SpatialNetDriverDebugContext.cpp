@@ -239,7 +239,12 @@ void USpatialNetDriverDebugContext::RemoveComponent(Worker_EntityId EntityId)
 void USpatialNetDriverDebugContext::ApplyComponentUpdate(Worker_EntityId Entity, Schema_ComponentUpdate* Update)
 {
 	SpatialGDK::DebugComponent* DbgComp = DebugComponents.Find(Entity);
-	check(DbgComp);
+
+	if (!ensureAlwaysMsgf(DbgComp != nullptr, TEXT("Failed to ApplyComponentUpdate for debug context because component data wasn't found")))
+	{
+		return;
+	}
+
 	DbgComp->ApplyComponentUpdate(Update);
 
 	if (IsSetIntersectionEmpty(SemanticInterest, DbgComp->ActorTags))

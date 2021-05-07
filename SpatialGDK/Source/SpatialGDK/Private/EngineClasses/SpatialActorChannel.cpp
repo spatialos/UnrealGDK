@@ -852,7 +852,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 		}
 	}
 
-	if (!ensureMsgf(Info != nullptr, TEXT("Subobject info was nullptr. Actor: %s"), *GetNameSafe(Object)))
+	if (!ensureAlwaysMsgf(Info != nullptr, TEXT("Subobject info was nullptr. Actor: %s"), *GetNameSafe(Object)))
 	{
 		return;
 	}

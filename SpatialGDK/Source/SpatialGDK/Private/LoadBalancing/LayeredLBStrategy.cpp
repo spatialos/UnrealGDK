@@ -204,7 +204,13 @@ FVector ULayeredLBStrategy::GetWorkerEntityPosition() const
 	}
 
 	const FName& LayerName = VirtualWorkerIdToLayerName[LocalVirtualWorkerId];
-	check(LayerNameToLBStrategy.Contains(LayerName));
+
+	if (!ensureAlwaysMsgf(LayerNameToLBStrategy.Contains(LayerName),
+						  TEXT("Called GetWorkerEntityPosition but couldn't find layer %s in local map"), *LayerName.ToString()))
+	{
+		return FVector();
+	}
+
 	return LayerNameToLBStrategy[LayerName]->GetWorkerEntityPosition();
 }
 
