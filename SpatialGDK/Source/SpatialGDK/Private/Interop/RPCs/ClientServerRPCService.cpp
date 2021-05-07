@@ -224,6 +224,7 @@ void ClientServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId Ent
 		break;
 	}
 	default:
+		// Removed checkNoEntry as part of UNR-5462 to unblock 0.13.0.
 		break;
 	}
 }
