@@ -181,7 +181,7 @@ bool UOwnershipLockingPolicy::ReleaseLockFromDelegate(AActor* ActorToRelease, co
 
 void UOwnershipLockingPolicy::OnOwnerUpdated(const AActor* Actor, const AActor* OldOwner)
 {
-	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Load balancing strategy description should be more than 1 character in length")))
+	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Attempted to call owner update locking policy callback for nullptr Actor")))
 	{
 		return;
 	}

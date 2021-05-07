@@ -332,7 +332,7 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 
 		int32 Offset = DynamicSubobjectData.SchemaComponents[SCHEMA_Data];
 		if (!ensureAlwaysMsgf(Offset != SpatialConstants::INVALID_COMPONENT_ID,
-							  TEXT("Failed to get dynamic subobject data offset when constructing subobject")))
+							  TEXT("Failed to get dynamic subobject data offset when constructing subobject. Is Schema up to date?")))
 		{
 			return;
 		}

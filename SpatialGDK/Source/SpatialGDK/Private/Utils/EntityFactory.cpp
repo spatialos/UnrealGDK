@@ -124,23 +124,21 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 #if !UE_BUILD_SHIPPING
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
-		if (!ensureAlwaysMsgf(NetDriver->VirtualWorkerTranslator != nullptr,
-							  TEXT("Failed to add debugging utilities. Translator was invalid")))
+		if (ensureAlwaysMsgf(NetDriver->VirtualWorkerTranslator != nullptr,
+							 TEXT("Failed to add debugging utilities. Translator was invalid")))
 		{
-			return;
+			const PhysicalWorkerName* PhysicalWorkerName =
+				NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
+			const FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
+			const FColor IntentColor =
+				PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
+
+			const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
+
+			SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId,
+										   IntentColor, bIsLocked);
+			ComponentDatas.Add(DebuggingInfo.CreateComponentData());
 		}
-
-		const PhysicalWorkerName* PhysicalWorkerName =
-			NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
-		FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
-		FColor IntentColor =
-			PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
-
-		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
-
-		SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId,
-									   IntentColor, bIsLocked);
-		ComponentDatas.Add(DebuggingInfo.CreateComponentData());
 	}
 #endif // !UE_BUILD_SHIPPING
 

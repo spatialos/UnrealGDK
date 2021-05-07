@@ -485,12 +485,6 @@ FrequencyToConstraintsMap InterestFactory::GetUserDefinedFrequencyToConstraintsM
 void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor, FrequencyToConstraintsMap& OutFrequencyToConstraints,
 														  bool bRecurseChildren) const
 {
-	if (!ensureAlwaysMsgf(ClassInfoManager != nullptr,
-						  TEXT("Failed to get Actor user defined query constraints. ClassInfoManager was undefined")))
-	{
-		return;
-	}
-
 	if (InActor == nullptr)
 	{
 		return;

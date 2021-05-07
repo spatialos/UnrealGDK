@@ -300,7 +300,7 @@ UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForLayer(FName Layer) cons
 #ifndef WITH_EDITOR
 	if (!ensureAlwaysMsgf(IsReady(), TEXT("Called GetLBStrategyForLayer before load balancing strategy was ready")))
 	{
-		return __nullptr;
+		return nullptr;
 	}
 #endif
 

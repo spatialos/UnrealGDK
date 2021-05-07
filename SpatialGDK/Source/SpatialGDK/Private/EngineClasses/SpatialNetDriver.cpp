@@ -3075,13 +3075,10 @@ bool USpatialNetDriver::IsDormantEntity(Worker_EntityId EntityId) const
 USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor)
 {
 	// This should only be called from GetOrCreateSpatialActorChannel, otherwise we could end up clobbering an existing channel.
-
 	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Tried to call CreateSpatialActorChannel for a nullptr Actor")))
 	{
 		return nullptr;
 	}
-
-	check(PackageMap != nullptr);
 
 	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	ensureAlwaysMsgf(GetActorChannelByEntityId(EntityId) == nullptr,
