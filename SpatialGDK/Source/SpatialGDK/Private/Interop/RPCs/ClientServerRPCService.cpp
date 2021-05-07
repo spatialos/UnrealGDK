@@ -224,7 +224,6 @@ void ClientServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId Ent
 		break;
 	}
 	default:
-		checkNoEntry();
 		break;
 	}
 }
