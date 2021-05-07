@@ -63,6 +63,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue with migration diagnostic logging failing, when the actor did not have authority.
 - Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
 
+### Internal:
+- Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs no longer expire, and persist until used.
+
 ## [`0.12.0`] - 2021-02-01
 
 ### Breaking changes:
