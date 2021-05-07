@@ -99,7 +99,8 @@ void FSpatialTraceEventDataBuilder::AddObject(const UObject* Object, const char*
 		{
 			if (USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 			{
-				AddKeyValue(StringConverter.CombineStrings(Key, "entity_id"), StringConverter.AddInt64((NetDriver->PackageMap->GetEntityIdFromObject(Object))));
+				AddKeyValue(StringConverter.CombineStrings(Key, "entity_id"),
+							StringConverter.AddInt64((NetDriver->PackageMap->GetEntityIdFromObject(Object))));
 			}
 		}
 		AddKeyValue(Key, Object->GetName());

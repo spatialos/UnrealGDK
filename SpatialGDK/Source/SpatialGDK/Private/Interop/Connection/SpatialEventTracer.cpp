@@ -127,7 +127,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 
 	if (!PreFilter.Get())
 	{
-		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified pre-filter is invalid, sampling will be disabled. %s"), Trace_GetLastError());
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified pre-filter is invalid, sampling will be disabled. %s"),
+			   Trace_GetLastError());
 		PreFilter.Reset(FilterQueryFalse());
 	}
 
@@ -150,7 +151,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		PostFilter.Reset(FilterQueryFalse());
 	}
 
-	checkf(PreFilter.Get() != nullptr,  TEXT("Pre-filter is invalid."));
+	checkf(PreFilter.Get() != nullptr, TEXT("Pre-filter is invalid."));
 	checkf(PostFilter.Get() != nullptr, TEXT("Post-filter is invalid."));
 
 	Parameters.filter_parameters.event_pre_filter_parameters.simple_query = PreFilter.Get();
