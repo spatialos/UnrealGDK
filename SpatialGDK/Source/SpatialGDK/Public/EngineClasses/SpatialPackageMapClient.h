@@ -23,7 +23,7 @@ class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()
 public:
-	void Init(USpatialNetDriver* NetDriver);
+	void Init(USpatialNetDriver& NetDriver);
 
 	void Advance();
 

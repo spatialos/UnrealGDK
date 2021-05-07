@@ -10,9 +10,9 @@ DEFINE_LOG_CATEGORY(LogSpatialEntityPool);
 
 using namespace SpatialGDK;
 
-void UEntityPool::Init(USpatialNetDriver* InNetDriver)
+void UEntityPool::Init(USpatialNetDriver& InNetDriver)
 {
-	NetDriver = InNetDriver;
+	NetDriver = &InNetDriver;
 
 	ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolInitialReservationCount);
 }

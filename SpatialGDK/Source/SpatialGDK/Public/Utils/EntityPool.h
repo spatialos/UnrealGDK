@@ -32,7 +32,7 @@ class SPATIALGDK_API UEntityPool : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver);
+	void Init(USpatialNetDriver& InNetDriver);
 	void ReserveEntityIDs(uint32 EntitiesToReserve);
 	Worker_EntityId GetNextEntityId();
 	FEntityPoolReadyEvent& GetEntityPoolReadyDelegate();

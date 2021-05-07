@@ -23,9 +23,9 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
-void USpatialPackageMapClient::Init(USpatialNetDriver* NetDriver)
+void USpatialPackageMapClient::Init(USpatialNetDriver& NetDriver)
 {
-	bIsServer = NetDriver->IsServer();
+	bIsServer = NetDriver.IsServer();
 	// Entity Pools should never exist on clients
 	if (bIsServer)
 	{
