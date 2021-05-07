@@ -31,7 +31,12 @@ struct SPATIALGDK_API FUnrealObjectRef
 
 	FUnrealObjectRef& operator=(const FUnrealObjectRef&) = default;
 
-	FORCEINLINE FString ToString() const { return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"), Entity, Offset); }
+	FORCEINLINE FString ToString() const 
+	{
+		return FString::Printf(TEXT("(entity ID: %lld, offset: %u, path: %s)"), 
+			Entity, Offset,
+			Path.IsSet() ? *Path.GetValue() : TEXT("not set")); 
+	}
 
 	FORCEINLINE FUnrealObjectRef GetLevelReference() const
 	{
