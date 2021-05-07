@@ -34,9 +34,11 @@ FString ULayeredLBStrategy::ToString() const
 		{
 			Description += FString::Printf(TEXT("%d = %s, "), Entry.Key, *Entry.Value.ToString());
 		}
-		check(Description.Len() > 1);
-		Description.LeftChopInline(2);
-		Description += TEXT("}");
+		if (ensureAlwaysMsgf(Description.Len() > 1, TEXT("Load balancing strategy description should be more than 1 character in length")))
+		{
+			Description.LeftChopInline(2);
+			Description += TEXT("}");
+		}
 	}
 	return Description;
 }
@@ -170,12 +172,10 @@ SpatialGDK::QueryConstraint ULayeredLBStrategy::GetWorkerInterestQueryConstraint
 		Constraint.ComponentConstraint = 0;
 		return Constraint;
 	}
-	else
-	{
-		const FName& LayerName = VirtualWorkerIdToLayerName[VirtualWorker];
-		check(LayerNameToLBStrategy.Contains(LayerName));
-		return LayerNameToLBStrategy[LayerName]->GetWorkerInterestQueryConstraint(VirtualWorker);
-	}
+
+	const FName& LayerName = VirtualWorkerIdToLayerName[VirtualWorker];
+	check(LayerNameToLBStrategy.Contains(LayerName));
+	return LayerNameToLBStrategy[LayerName]->GetWorkerInterestQueryConstraint(VirtualWorker);
 }
 
 bool ULayeredLBStrategy::RequiresHandoverData() const
@@ -192,18 +192,20 @@ bool ULayeredLBStrategy::RequiresHandoverData() const
 
 FVector ULayeredLBStrategy::GetWorkerEntityPosition() const
 {
-	check(IsReady());
+	if (!ensureAlwaysMsgf(IsReady(), TEXT("Called GetWorkerEntityPosition before load balancing strategy was ready")))
+	{
+		return FVector();
+	}
+
 	if (!VirtualWorkerIdToLayerName.Contains(LocalVirtualWorkerId))
 	{
 		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for worker %d."), LocalVirtualWorkerId);
 		return FVector{ 0.f, 0.f, 0.f };
 	}
-	else
-	{
-		const FName& LayerName = VirtualWorkerIdToLayerName[LocalVirtualWorkerId];
-		check(LayerNameToLBStrategy.Contains(LayerName));
-		return LayerNameToLBStrategy[LayerName]->GetWorkerEntityPosition();
-	}
+
+	const FName& LayerName = VirtualWorkerIdToLayerName[LocalVirtualWorkerId];
+	check(LayerNameToLBStrategy.Contains(LayerName));
+	return LayerNameToLBStrategy[LayerName]->GetWorkerEntityPosition();
 }
 
 uint32 ULayeredLBStrategy::GetMinimumRequiredWorkers() const
@@ -264,17 +266,25 @@ void ULayeredLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtual
 // Once they are pick up this code, they should be able to switch to another method and we can remove this.
 bool ULayeredLBStrategy::CouldHaveAuthority(const TSubclassOf<AActor> Class) const
 {
-	check(IsReady());
+	if (!ensureAlwaysMsgf(IsReady(), TEXT("Called CouldHaveAuthority before load balancing strategy was ready")))
+	{
+		return false;
+	}
+
 	return *VirtualWorkerIdToLayerName.Find(LocalVirtualWorkerId) == GetLayerNameForClass(Class);
 }
 
 UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForVisualRendering() const
 {
 	// The default strategy is guaranteed to exist as long as the strategy is ready.
-	checkf(LayerNameToLBStrategy.Contains(SpatialConstants::DefaultLayer),
-		   TEXT("Load balancing strategy does not contain default layer which is needed to render worker debug visualization. "
-				"Default layer presence should be enforced by MultiWorkerSettings edit validation. Class: %s"),
-		   *GetNameSafe(this));
+	if (!ensureAlwaysMsgf(
+			LayerNameToLBStrategy.Contains(SpatialConstants::DefaultLayer),
+			TEXT("Load balancing strategy does not contain default layer which is needed to render worker debug visualization. "
+				 "Default layer presence should be enforced by MultiWorkerSettings edit validation. Class: %s"),
+			*GetNameSafe(this)))
+	{
+		return nullptr;
+	}
 	return GetLBStrategyForLayer(SpatialConstants::DefaultLayer);
 }
 
@@ -282,7 +292,10 @@ UAbstractLBStrategy* ULayeredLBStrategy::GetLBStrategyForLayer(FName Layer) cons
 {
 	// Editor has the option to display the load balanced zones and could query the strategy anytime.
 #ifndef WITH_EDITOR
-	check(IsReady());
+	if (!ensureAlwaysMsgf(IsReady(), TEXT("Called GetLBStrategyForLayer before load balancing strategy was ready")))
+	{
+		return __nullptr;
+	}
 #endif
 
 	if (UAbstractLBStrategy* const* Entry = LayerNameToLBStrategy.Find(Layer))

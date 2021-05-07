@@ -331,7 +331,11 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 		SpecificDynamicSubobjectInfo->bDynamicSubobject = true;
 
 		int32 Offset = DynamicSubobjectData.SchemaComponents[SCHEMA_Data];
-		check(Offset != SpatialConstants::INVALID_COMPONENT_ID);
+		if (!ensureAlwaysMsgf(Offset != SpatialConstants::INVALID_COMPONENT_ID,
+							  TEXT("Failed to get dynamic subobject data offset when constructing subobject")))
+		{
+			return;
+		}
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 			Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];

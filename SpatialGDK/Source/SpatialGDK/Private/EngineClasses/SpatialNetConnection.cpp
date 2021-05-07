@@ -79,8 +79,8 @@ void USpatialNetConnection::LowLevelSend(void* Data, int32 CountBits, FOutPacket
 
 bool USpatialNetConnection::ClientHasInitializedLevelFor(const AActor* TestActor) const
 {
-	check(Driver->IsServer());
-	return true;
+	return ensureAlwaysMsgf(Driver->IsServer(), TEXT("ClientHasInitializedLevelFor should only be called on servers. Actor %s"),
+							*GetNameSafe(TestActor));
 	// Intentionally does not call Super::
 }
 

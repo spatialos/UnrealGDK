@@ -99,11 +99,24 @@ void USpatialSender::UpdatePartitionEntityInterestAndPosition()
 void USpatialSender::SendAuthorityIntentUpdate(const AActor& InActor, VirtualWorkerId NewAuthoritativeVirtualWorkerId) const
 {
 	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(&InActor);
-	check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+
+	if (!ensureAlwaysMsgf(EntityId != SpatialConstants::INVALID_ENTITY_ID,
+						  TEXT("Couldn't find entity ID from package map when sending auth intent update. Actor: %s"),
+						  *GetNameSafe(&Actor)))
+	{
+		return;
+	}
 
 	TOptional<AuthorityIntent> AuthorityIntentComponent =
 		DeserializeComponent<AuthorityIntent>(NetDriver->Connection->GetCoordinator(), EntityId);
-	check(AuthorityIntentComponent.IsSet());
+
+	if (!ensureAlwaysMsgf(AuthorityIntentComponent.IsSet(),
+						  TEXT("Failed to get currnet AuthorityIntent data from view coordinator when sending update. Actor: %s"),
+						  *GetNameSafe(&Actor)))
+	{
+		return;
+	}
+
 	if (AuthorityIntentComponent->VirtualWorkerId == NewAuthoritativeVirtualWorkerId)
 	{
 		/* This seems to occur when using the replication graph, however we're still unsure the cause. */

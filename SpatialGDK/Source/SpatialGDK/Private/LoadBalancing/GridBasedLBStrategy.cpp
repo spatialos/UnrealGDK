@@ -118,7 +118,12 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 
 	const FVector2D Actor2DLocation = GetActorLoadBalancingPosition(Actor);
 
-	check(VirtualWorkerIds.Num() == WorkerCells.Num());
+	if (!ensureAlwaysMsgf(VirtualWorkerIds.Num() == WorkerCells.Num(),
+						  TEXT("Found a mismatch between virtual worker count and worker cells count in load balancing strategy")))
+	{
+		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
+	}
+
 	for (int i = 0; i < WorkerCells.Num(); i++)
 	{
 		if (IsInside(WorkerCells[i], Actor2DLocation))
@@ -170,8 +175,17 @@ FVector2D UGridBasedLBStrategy::GetActorLoadBalancingPosition(const AActor& Acto
 
 FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const
 {
-	check(IsReady());
-	check(bIsStrategyUsedOnLocalWorker);
+	if (!ensureAlwaysMsgf(IsReady(), TEXT("Called GetWorkerEntityPosition before load balancing strategy is ready")))
+	{
+		return FVector();
+	}
+
+	if (!ensureAlwaysMsgf(bIsStrategyUsedOnLocalWorker,
+						  TEXT("Called GetWorkerEntityPosition on load balancing stratey that isn't in use by the local worker")))
+	{
+		return FVector();
+	}
+
 	const FVector2D Centre = WorkerCells[LocalCellId].GetCenter();
 	return FVector{ Centre.X, Centre.Y, 0.f };
 }
