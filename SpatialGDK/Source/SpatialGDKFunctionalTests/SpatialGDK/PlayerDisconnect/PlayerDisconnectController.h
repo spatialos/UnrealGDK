@@ -15,10 +15,8 @@ class SPATIALGDKFUNCTIONALTESTS_API APlayerDisconnectController : public APlayer
 	GENERATED_BODY()
 
 public:
-
 	virtual void SetupInputComponent() override;
 
 	UFUNCTION()
 	void MPressed();
-	
 };

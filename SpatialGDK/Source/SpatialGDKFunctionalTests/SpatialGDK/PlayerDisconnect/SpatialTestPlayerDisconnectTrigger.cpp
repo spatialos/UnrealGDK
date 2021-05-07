@@ -4,8 +4,8 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
-#include "SpatialConstants.h"
 #include "PlayerDisconnectController.h"
+#include "SpatialConstants.h"
 
 ASpatialTestPlayerDisconnectTrigger::ASpatialTestPlayerDisconnectTrigger()
 {
@@ -75,9 +75,9 @@ void ASpatialTestPlayerDisconnectTrigger::PrepareTest()
 				int32 ActualNumberOfClients = GetNumberOfClientWorkers();
 				RequireEqual_Int(ActualNumberOfClients, 0, TEXT("Expected zero clients."));
 
-				//TArray<AActor*> PlayerControllers;
-				//UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerDisconnectController::StaticClass(), PlayerControllers);
-				//RequireEqual_Int(PlayerControllers.Num(), 0, TEXT("Expected zero player controllers."));
+				// TArray<AActor*> PlayerControllers;
+				// UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerDisconnectController::StaticClass(), PlayerControllers);
+				// RequireEqual_Int(PlayerControllers.Num(), 0, TEXT("Expected zero player controllers."));
 
 				/*TArray<AActor*> PlayerCharacters;
 				UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), PlayerCharacters);
