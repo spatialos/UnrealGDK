@@ -434,6 +434,12 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 
 	check(NetDriver != nullptr && !NetDriver->IsServer());
 
+	// TODO: fix this hack UNR-5481
+	if (!NetDriver->Connection->HasValidCoordinator())
+	{
+		return;
+	}
+
 	const TOptional<SpatialDebugging> DebuggingInfo = GetDebuggerSystem()->GetDebuggingData(EntityId);
 
 	if (!DebuggingInfo.IsSet())
