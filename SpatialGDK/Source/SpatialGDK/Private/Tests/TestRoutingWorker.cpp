@@ -204,7 +204,8 @@ public:
 		check(!HasNextOpList());
 		TArray<TArray<OpList>> NewListsOfOpLists;
 		TArray<OpList> OpLists;
-		OpLists.Add(Builder.Move().CreateOpList());
+		OpLists.Add(MoveTemp(Builder).CreateOpList());
+		Builder = EntityComponentOpListBuilder();
 		NewListsOfOpLists.Add(MoveTemp(OpLists));
 		SetListsOfOpLists(MoveTemp(NewListsOfOpLists));
 	}
