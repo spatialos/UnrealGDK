@@ -124,7 +124,12 @@ public:
 	virtual void NotifyStreamingLevelUnload(class ULevel* Level) override;
 
 	virtual void PushCrossServerRPCSender(AActor* Sender) override;
-	virtual void PopCrossServerRPCSender(AActor* Sender) override;
+	virtual void PopCrossServerRPCSender() override;
+	virtual void PushDependentActor(AActor* Dependent) override;
+	virtual void PopDependentActor() override;
+	virtual void PushNetWriteFenceResolution();
+	virtual void PopNetWriteFenceResolution();
+	virtual bool RPCCallNeedWriteFence(AActor* Target, UFunction* Function) override;
 	// End UNetDriver interface.
 
 	void OnConnectionToSpatialOSSucceeded();
@@ -268,7 +273,7 @@ public:
 
 	virtual int64 GetClientID() const override;
 
-	virtual int64 GetActorEntityId(AActor& Actor) override;
+	virtual int64 GetActorEntityId(const AActor& Actor) const override;
 
 	FShutdownEvent OnShutdown;
 

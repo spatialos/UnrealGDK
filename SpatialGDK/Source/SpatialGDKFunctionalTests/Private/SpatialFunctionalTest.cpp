@@ -672,7 +672,7 @@ void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpati
 
 	const FString FlowControllerDisplayName = FlowController->GetDisplayName();
 
-	UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s finished Step in %fs"), *FlowControllerDisplayName, TimeRunningStep);
+	UE_LOG(LogSpatialGDKFunctionalTests, Verbose, TEXT("%s finished Step in %fs"), *FlowControllerDisplayName, TimeRunningStep);
 
 	if (FlowControllersExecutingStep.RemoveSwap(FlowController) == 0)
 	{

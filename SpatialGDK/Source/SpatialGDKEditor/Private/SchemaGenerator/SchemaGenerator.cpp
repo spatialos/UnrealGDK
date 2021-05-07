@@ -719,13 +719,13 @@ void GenerateRPCEndpointsSchema(FString SchemaPath)
 						{ ERPCType::ClientReliable, ERPCType::ClientUnreliable },
 						{ ERPCType::ServerReliable, ERPCType::ServerUnreliable, ERPCType::ServerAlwaysWrite });
 	GenerateRPCEndpoint(Writer, TEXT("MulticastRPCs"), SpatialConstants::MULTICAST_RPCS_COMPONENT_ID, { ERPCType::NetMulticast }, {});
-	GenerateRPCEndpoint(Writer, TEXT("CrossServerSenderRPCs"), SpatialConstants::CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID,
+	GenerateRPCEndpoint(Writer, TEXT("CrossServerSenderRPCs"), SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID,
 						{ ERPCType::CrossServer }, {});
-	GenerateRPCEndpoint(Writer, TEXT("CrossServerReceiverRPCs"), SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
+	GenerateRPCEndpoint(Writer, TEXT("CrossServerReceiverRPCs"), SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
 						{ ERPCType::CrossServer }, {});
-	GenerateRPCEndpoint(Writer, TEXT("CrossServerSenderACKRPCs"), SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, {},
+	GenerateRPCEndpoint(Writer, TEXT("CrossServerSenderACKRPCs"), SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, {},
 						{ ERPCType::CrossServer });
-	GenerateRPCEndpoint(Writer, TEXT("CrossServerReceiverACKRPCs"), SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, {},
+	GenerateRPCEndpoint(Writer, TEXT("CrossServerReceiverACKRPCs"), SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, {},
 						{ ERPCType::CrossServer });
 
 	Writer.WriteToFile(*FPaths::Combine(*SchemaPath, TEXT("rpc_endpoints.schema")));

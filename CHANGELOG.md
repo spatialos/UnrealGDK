@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `FGameplayAbilitySpecHandle` instances are now invalid handles when constructed directly. The only way to get a valid handle is from giving an ability to an ASC.
     - Granting an ability from an `FGameplayAbilitySpecDef` must now be done through the `FGameplayAbilitySpec::GiveAbilityFromSpecDef`/`GiveAbilityAndActivateOnceFromSpecDef` functions.
 - Removed `USpatialStaticComponentView`; similar functionality is now provided in `ViewCoordinator`.
+- Reworked AlwaysInterested functionality to run on authoritative servers, and owning clients. The previous behaviour was for it to only run on PlayerController classes, on the client only.
 
 ### Features:
 - Added a message box notification when game is closed due to missing generated schema.
@@ -35,6 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `bOnlyRelevantToOwner` is now supported. Ownership must be setup prior to the first replication of the Actor otherwise it will be ignored.
 - GDK heartbeat settings are now used to control the worker heartbeat configurations.
 - Added a property to specify the test settings overrides config filename in the `World Settings` so that maps can share config files during automated testing. This replaces the option to automatically use the map name to determine the config filename.
+- Added a setting to control which CrossServer RPC implementation is used. Both feature mentioned below are only enabled when the RoutingWorker is the chosen implementation. Spatial commands are still the default for now.
+- Added reliable CrossServer RPC. Reliable CrossServer RPC now require a sender actor which will be the reference point for ordering in a multi-worker environment. An additional UFUNCTION Tag, Unordered, was added to opt-out of this requirement.
+- Added NetWriteFence UFUNCTION Tag. This tag is used when Network writes to an actor should be ordered with regard to updates to another actor. This is relevant in worker recovery/snapshot reloading to get some ordering guarantees when SpatialOS can write updates to entities in any order.
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
@@ -57,6 +61,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue during client logout where a client's corresponding Actors were not cleaned up correctly.
 - Reverted a fix relating to the `dbghelp` file that previously caused the Editor to crash when loading the Session Front End. Our fix is no longer necessary, as Epic have fixed the issue and we've adopted their fix.
 - Fixed an issue with migration diagnostic logging failing, when the actor did not have authority.
+- Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
+- Fixed an issue where migration diagnostic tool would crash if the target actor's owner couldn't be found.
 
 ## [`0.12.0`] - 2021-02-01
 
@@ -81,6 +87,7 @@ These functions and structs can be referenced in both code and blueprints and it
 - Running without Ring Buffered RPCs is no longer supported, and the option has been removed from SpatialGDKSettings.
 - The schema database format has been updated and versioning introduced. Please regenerate your schema after updating.
 - The CookAndGenerateSchemaCommandlet no longer automatically deletes previously generated schema. Deletion of previously generated schema is now controlled by the `-DeleteExistingGeneratedSchema` flag.
+- Event tracing has been optimised to reduce overhead when tracing events in general and in particular when events are not sampled. The tracing API has been modified to accomidate these improvements. You will have to modify your project if you use the API.
 
 ### Features:
 - The DeploymentLauncher tool can be used to start multiple simulated player deployments at once.

@@ -92,7 +92,7 @@ ERPCType GetRPCType(UFunction* RemoteFunction)
 	{
 		return ERPCType::NetMulticast;
 	}
-	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetCrossServer))
+	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetCrossServer | FUNC_NetWriteFence))
 	{
 		return ERPCType::CrossServer;
 	}

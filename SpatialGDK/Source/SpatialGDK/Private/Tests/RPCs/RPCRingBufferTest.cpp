@@ -282,16 +282,18 @@ RPCRINGBUFFER_TEST(TestRingBufferPartialExtractionAndOverflow)
 		Fixture.ServerQueue.Push(EntityForTest, Payload(RpcId++));
 	}
 	TestFalse(TEXT("Queue did not overflow 2"), bQueueOverflowed);
+
+	NumRPCToExtract += BufferSize;
 	Fixture.ServerQueue.FlushAll(WritingCtx);
 	Fixture.ClientWorker.OnUpdate(BufferUpdateReadingCtx);
 	Fixture.ClientWorker.ExtractReceivedRPCs(CanExtractCallback, ExtractCallback);
-	TestEqual(TEXT("Partial extraction step 3 (1.5 buffer size)"), Extracted, BufferSize / 2);
+	TestEqual(TEXT("Partial extraction step 3 (2 buffer size)"), Extracted, BufferSize);
 	Extracted = 0;
 
 	Fixture.ClientWorker.FlushUpdates(WritingCtx);
 	Fixture.ServerWorker.OnUpdate(ACKUpdateReadingCtx);
-	// Write 4 additional RPC, 2 will overflow
-	for (uint32 i = 0; i < BufferSize; ++i)
+	// Write 6 additional RPC, 2 will overflow
+	for (uint32 i = 0; i < BufferSize * 1.5; ++i)
 	{
 		Fixture.ServerQueue.Push(EntityForTest, Payload(RpcId++));
 	}
@@ -299,10 +301,9 @@ RPCRINGBUFFER_TEST(TestRingBufferPartialExtractionAndOverflow)
 	TestTrue(TEXT("Queue did overflow"), bQueueOverflowed);
 	bQueueOverflowed = false;
 
-	NumRPCToExtract += BufferSize;
 	Fixture.ClientWorker.OnUpdate(BufferUpdateReadingCtx);
 	Fixture.ClientWorker.ExtractReceivedRPCs(CanExtractCallback, ExtractCallback);
-	TestEqual(TEXT("Full extraction step 4 (2.5 buffer size)"), Extracted, BufferSize);
+	TestEqual(TEXT("Full extraction step 4 (3 buffer size)"), Extracted, BufferSize);
 	Extracted = 0;
 
 	Fixture.ClientWorker.FlushUpdates(WritingCtx);
@@ -313,7 +314,7 @@ RPCRINGBUFFER_TEST(TestRingBufferPartialExtractionAndOverflow)
 
 	Fixture.ClientWorker.OnUpdate(BufferUpdateReadingCtx);
 	Fixture.ClientWorker.ExtractReceivedRPCs(CanExtractCallback, ExtractCallback);
-	TestEqual(TEXT("Full extraction step 5 (3 buffer size)"), Extracted, BufferSize / 2);
+	TestEqual(TEXT("Full extraction step 5 (3.5 buffer size)"), Extracted, BufferSize / 2);
 	Extracted = 0;
 
 	return true;

@@ -7,7 +7,6 @@
 #include "ClientServerRPCService.h"
 #include "CrossServerRPCService.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
-#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialGDKSpanId.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "MulticastRPCService.h"
@@ -25,12 +24,14 @@ struct RPCRingBuffer;
 
 namespace SpatialGDK
 {
+class SpatialEventTracer;
+
 class SPATIALGDK_API SpatialRPCService
 {
 public:
 	explicit SpatialRPCService(const FSubView& InActorAuthSubView, const FSubView& InActorNonAuthSubView,
-							   USpatialLatencyTracer* InSpatialLatencyTracer, SpatialEventTracer* InEventTracer,
-							   USpatialNetDriver* InNetDriver);
+							   const FSubView& InWorkerEntitySubView, USpatialLatencyTracer* InSpatialLatencyTracer,
+							   SpatialEventTracer* InEventTracer, USpatialNetDriver* InNetDriver);
 
 	void AdvanceView();
 	void ProcessChanges(const float NetDriverTime);
