@@ -522,7 +522,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 
 			// Using StablyNamedRef for the outer since referencing ObjectRef in the map
 			// will have the EntityId
-			FUnrealObjectRef StablyNamedSubobjectRef(0, 0, Subobject->GetFName().ToString(), StablyNamedRef, CanClientLoadObject(Subobject, SubobjectNetGUID));
+			FUnrealObjectRef StablyNamedSubobjectRef(0, 0, Subobject->GetFName().ToString(), StablyNamedRef,
+													 !CanClientLoadObject(Subobject, SubobjectNetGUID));
 
 			// This is the only extra object ref that has to be registered for the subobject.
 			UnrealObjectRefToNetGUID.Emplace(StablyNamedSubobjectRef, SubobjectNetGUID);
@@ -629,8 +630,8 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 				if (StablyNamedRefOption.IsSet())
 				{
 					// bNoLoadOnClient is set to a fixed value because it does not affect equality
-					UnrealObjectRefToNetGUID.Remove(
-						FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(), StablyNamedRefOption.GetValue(), /*bNoLoadOnClient*/ false));
+					UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(),
+																	 StablyNamedRefOption.GetValue(), /*bNoLoadOnClient*/ false));
 				}
 			}
 		}
@@ -706,8 +707,8 @@ void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& Subobj
 			if (StablyNamedRefOption.IsSet())
 			{
 				// bNoLoadOnClient is set to a fixed value because it does not affect equality
-				UnrealObjectRefToNetGUID.Remove(
-					FUnrealObjectRef(0, 0, SubobjectInfoPtr->Get().SubobjectName.ToString(), StablyNamedRefOption.GetValue(), /*bNoLoadOnClient*/ false));
+				UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPtr->Get().SubobjectName.ToString(),
+																 StablyNamedRefOption.GetValue(), /*bNoLoadOnClient*/ false));
 			}
 		}
 	}
