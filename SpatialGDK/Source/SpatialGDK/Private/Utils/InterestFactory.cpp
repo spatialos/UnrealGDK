@@ -668,7 +668,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints(const AActor* InActor) c
 	UNetConnection* Connection = InActor->GetNetConnection();
 	if (!ensureAlwaysMsgf(Connection != nullptr,
 						  TEXT("Failed to create interest level constraints. Couldn't access net connection for Actor %s"),
-						  *GetNameSafe(Actor)))
+						  *GetNameSafe(InActor)))
 	{
 		return QueryConstraint{};
 	}
@@ -676,7 +676,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints(const AActor* InActor) c
 	APlayerController* PlayerController = Connection->GetPlayerController(nullptr);
 	if (!ensureAlwaysMsgf(PlayerController != nullptr,
 						  TEXT("Failed to create interest level constraints. Couldn't find player controller for Actor %s"),
-						  *GetNameSafe(Actor)))
+						  *GetNameSafe(InActor)))
 	{
 		return QueryConstraint{};
 	}

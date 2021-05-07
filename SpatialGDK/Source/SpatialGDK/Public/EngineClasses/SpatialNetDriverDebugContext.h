@@ -100,7 +100,7 @@ protected:
 		bool bDirty = false;
 	};
 
-	DebugComponentAuthData& GetAuthDebugComponent(AActor* Actor);
+	void GetAuthDebugComponent(AActor* Actor, DebugComponentAuthData& Comp);
 
 	TOptional<VirtualWorkerId> GetActorExplicitDelegation(const AActor* Actor);
 	TOptional<VirtualWorkerId> GetActorHierarchyExplicitDelegation_Traverse(const AActor* Actor);

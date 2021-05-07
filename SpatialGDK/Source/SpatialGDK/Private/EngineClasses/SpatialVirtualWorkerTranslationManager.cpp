@@ -45,7 +45,7 @@ void SpatialVirtualWorkerTranslationManager::AuthorityChanged(const Worker_Compo
 						  TEXT("Translation managed handled unexpected component set auth op. Entity: %lld. Set: %u"), AuthOp.entity_id,
 						  AuthOp.component_set_id))
 	{
-		return
+		return;
 	}
 
 	const bool bAuthoritative = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;

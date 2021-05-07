@@ -157,7 +157,7 @@ void USpatialNetDriverDebugContext::Reset()
 	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
 }
 
-USpatialNetDriverDebugContext::DebugComponentAuthData& USpatialNetDriverDebugContext::GetAuthDebugComponent(AActor* Actor)
+void USpatialNetDriverDebugContext::GetAuthDebugComponent(AActor* Actor, DebugComponentAuthData& Comp)
 {
 	if (!ensureAlwaysMsgf(Actor && Actor->HasAuthority(), TEXT("Called GetAuthDebugComponent without authority for Actor: %s"),
 						  *GetNameSafe(Actor)))
@@ -173,22 +173,21 @@ USpatialNetDriverDebugContext::DebugComponentAuthData& USpatialNetDriverDebugCon
 		DbgComp = DebugComponents.Find(Entity);
 	}
 
-	DebugComponentAuthData& Comp = ActorDebugInfo.FindOrAdd(Actor);
+	Comp = ActorDebugInfo.FindOrAdd(Actor);
 	if (DbgComp && Comp.Entity == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		Comp.Component = *DbgComp;
 		Comp.bAdded = true;
 	}
 	Comp.Entity = Entity;
-
-	return Comp;
 }
 
 void USpatialNetDriverDebugContext::AddActorTag(AActor* Actor, FName Tag)
 {
 	if (Actor->HasAuthority())
 	{
-		DebugComponentAuthData& Comp = GetAuthDebugComponent(Actor);
+		DebugComponentAuthData Comp{};
+		GetAuthDebugComponent(Actor, Comp);
 		Comp.Component.ActorTags.Add(Tag);
 		if (SemanticInterest.Contains(Tag) && Comp.Entity != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -202,7 +201,8 @@ void USpatialNetDriverDebugContext::RemoveActorTag(AActor* Actor, FName Tag)
 {
 	if (Actor->HasAuthority())
 	{
-		DebugComponentAuthData& Comp = GetAuthDebugComponent(Actor);
+		DebugComponentAuthData Comp{};
+		GetAuthDebugComponent(Actor, Comp);
 		Comp.Component.ActorTags.Remove(Tag);
 		if (IsSetIntersectionEmpty(SemanticInterest, Comp.Component.ActorTags) && Comp.Entity != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -346,7 +346,8 @@ void USpatialNetDriverDebugContext::KeepActorOnLocalWorker(AActor* Actor)
 {
 	if (Actor->HasAuthority())
 	{
-		DebugComponentAuthData& Comp = GetAuthDebugComponent(Actor);
+		DebugComponentAuthData Comp{};
+		GetAuthDebugComponent(Actor, Comp);
 		Comp.Component.DelegatedWorkerId = DebugStrategy->GetLocalVirtualWorkerId();
 		Comp.bDirty = true;
 	}

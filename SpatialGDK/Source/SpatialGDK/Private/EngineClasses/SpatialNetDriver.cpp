@@ -3232,7 +3232,7 @@ void USpatialNetDriver::TryFinishStartup()
 // This should only be called once on each client, in the SpatialMetricsDisplay constructor after the class is replicated to each client.
 void USpatialNetDriver::SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay)
 {
-	if (!ensure(!IsServer(), TEXT("SetSpatialMetricsDisplay should only be called on the client")))
+	if (!ensureAlwaysMsgf(!IsServer(), TEXT("SetSpatialMetricsDisplay should only be called on the client")))
 	{
 		return;
 	}

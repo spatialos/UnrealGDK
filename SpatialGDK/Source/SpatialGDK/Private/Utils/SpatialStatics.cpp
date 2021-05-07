@@ -395,12 +395,15 @@ void USpatialStatics::SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* 
 
 void USpatialStatics::SpatialSwitchHasAuthority(const AActor* Target, ESpatialHasAuthority& Authority)
 {
-	if (!ensureAlwaysMsgf(IsValid(Target) && Target->IsA(AActor::StaticClass()), TEXT("Called SpatialSwitchHasAuthority for an invalid or non-Actor target: %s", *GetNameSafe(Target)))
+	if (!ensureAlwaysMsgf(IsValid(Target) && Target->IsA(AActor::StaticClass()),
+						  TEXT("Called SpatialSwitchHasAuthority for an invalid or non-Actor target: %s"), *GetNameSafe(Target)))
 	{
 		return;
 	}
 
-	if (!ensureAlwaysMsgf(Target->GetNetDriver() != nullptr, TEXT("Called SpatialSwitchHasAuthority for %s but couldn't access NetDriver through Actor."), *GetNameSafe(Target)))
+	if (!ensureAlwaysMsgf(Target->GetNetDriver() != nullptr,
+						  TEXT("Called SpatialSwitchHasAuthority for %s but couldn't access NetDriver through Actor."),
+						  *GetNameSafe(Target)))
 	{
 		return;
 	}
