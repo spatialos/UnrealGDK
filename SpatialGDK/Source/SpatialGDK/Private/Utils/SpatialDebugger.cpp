@@ -434,7 +434,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 
 	check(NetDriver != nullptr && !NetDriver->IsServer());
 
-	// TODO: fix this hack for fixing spatial debugger crash after client travel UNR-5481
+	// TODO: UNR-5481 - Fix this hack for fixing spatial debugger crash after client travel
 	if (!NetDriver->Connection->HasValidCoordinator())
 	{
 		return;
