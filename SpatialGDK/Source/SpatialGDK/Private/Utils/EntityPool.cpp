@@ -24,7 +24,7 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 {
 	UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Sending bulk entity ID Reservation Request for %d IDs"), EntitiesToReserve);
 
-	if (ensureAlwaysMsgf(!bIsAwaitingResponse, TEXT("Trying to reserve Entity IDs while another reserve request is in flight")))
+	if (!ensureAlwaysMsgf(!bIsAwaitingResponse, TEXT("Trying to reserve Entity IDs while another reserve request is in flight")))
 	{
 		return;
 	}

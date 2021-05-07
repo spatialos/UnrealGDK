@@ -2901,7 +2901,7 @@ TMap<Worker_EntityId_Key, USpatialActorChannel*>& USpatialNetDriver::GetEntityTo
 
 USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject* TargetObject)
 {
-	if (!ensureAlwaysMsgf(TargetObject, TEXT("TargetObject was nullptr when trying to get or create Actor channel")))
+	if (!ensureAlwaysMsgf(TargetObject != nullptr, TEXT("TargetObject was nullptr when trying to get or create Actor channel")))
 	{
 		return nullptr;
 	}
@@ -2915,7 +2915,7 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 			TargetActor = Cast<AActor>(TargetObject->GetOuter());
 		}
 
-		if (!ensureAlwaysMsgf(TargetObject, TEXT("Failed to find outer Actor when getting Actor channel for object: %s"),
+		if (!ensureAlwaysMsgf(TargetObject != nullptr, TEXT("Failed to find outer Actor when getting Actor channel for object: %s"),
 							  *GetNameSafe(TargetObject)))
 		{
 			return nullptr;
