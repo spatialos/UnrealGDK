@@ -438,6 +438,11 @@ static FSubobjectToOffsetMap CreateOffsetMapFromActor(USpatialPackageMapClient* 
 		// server- and client-side components added in the level.
 		TArray<UActorComponent*> ActorInstanceComponents = Actor->GetInstanceComponents();
 
+		// In non-editor builds, editor-only components can be allocated a slot in the array, but left as nullptrs.
+		ActorInstanceComponents.RemoveAll([](UActorComponent* Component) {
+			return Component == nullptr;
+		});
+
 		// These need to be ordered in case there are more than one component of the same type, or
 		// we may end up with wrong component instances having associations between them.
 		ActorInstanceComponents.Sort([](const UActorComponent& Lhs, const UActorComponent& Rhs) -> bool {
