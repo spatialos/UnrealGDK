@@ -80,8 +80,9 @@ class SpatialDebuggerSystem;
 class ActorSystem;
 class SpatialRPCService;
 class SpatialRoutingSystem;
+class SpatialHandoverManager;
 class SpatialLoadBalanceEnforcer;
-class InterestFactory;
+class UnrealServerInterestFactory;
 class WellKnownEntitySystem;
 class ClientConnectionManager;
 class InitialOnlyFilter;
@@ -235,7 +236,8 @@ public:
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
 	TUniquePtr<SpatialGDK::SpatialStrategySystem> StrategySystem;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
-	TUniquePtr<SpatialGDK::InterestFactory> InterestFactory;
+	TUniquePtr<SpatialGDK::SpatialHandoverManager> HandoverManager;
+	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 
 	TUniquePtr<SpatialGDK::WellKnownEntitySystem> WellKnownEntitySystem;

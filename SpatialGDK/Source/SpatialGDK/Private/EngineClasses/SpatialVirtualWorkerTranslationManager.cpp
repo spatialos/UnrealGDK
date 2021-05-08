@@ -8,14 +8,17 @@
 #include "Interop/SpatialOSDispatcherInterface.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityFactory.h"
+#include "Utils/InterestFactory.h"
 #include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialVirtualWorkerTranslationManager);
 
 SpatialVirtualWorkerTranslationManager::SpatialVirtualWorkerTranslationManager(SpatialOSWorkerInterface* InConnection,
+																			   USpatialNetDriver* InNetDriver,
 																			   SpatialVirtualWorkerTranslator* InTranslator)
 	: Translator(InTranslator)
 	, Connection(InConnection)
+	, NetDriver(InNetDriver)
 	, Partitions({})
 	, bWorkerEntityQueryInFlight(false)
 	, ClaimPartitionHandler(*InConnection)
@@ -87,7 +90,7 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntitiesForVirtualWor
 		   VirtualWorkersToAssign.Num());
 	for (const VirtualWorkerId VirtualWorkerId : VirtualWorkersToAssign)
 	{
-		const Worker_EntityId PartitionEntityId = Translator->NetDriver->PackageMap->AllocateNewEntityId();
+		const Worker_EntityId PartitionEntityId = NetDriver->PackageMap->AllocateNewEntityId();
 		UE_LOG(LogSpatialVirtualWorkerTranslationManager, Log, TEXT("- Virtual Worker: %d. Entity: %lld. "), VirtualWorkerId,
 			   PartitionEntityId);
 		SpawnPartitionEntity(PartitionEntityId, VirtualWorkerId);
@@ -219,9 +222,12 @@ void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate() co
 
 void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorkerId)
 {
+	SpatialGDK::UnrealServerInterestFactory* InterestF =
+		USpatialStatics::IsStrategyWorkerEnabled() ? nullptr : NetDriver->InterestFactory.Get();
+
 	TArray<FWorkerComponentData> Components = SpatialGDK::EntityFactory::CreatePartitionEntityComponents(
-		PartitionEntityId, Translator->NetDriver->InterestFactory.Get(), Translator->LoadBalanceStrategy.Get(), VirtualWorkerId,
-		Translator->NetDriver->DebugCtx != nullptr);
+		TEXT("WorkerPartition"), PartitionEntityId, InterestF, Translator->LoadBalanceStrategy.Get(), VirtualWorkerId,
+		NetDriver->DebugCtx != nullptr);
 
 	const Worker_RequestId RequestId =
 		Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);

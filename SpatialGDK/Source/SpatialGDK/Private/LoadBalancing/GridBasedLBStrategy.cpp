@@ -5,6 +5,9 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
+
+#include "LoadBalancing/LoadBalancingCalculator.h"
+
 #include "Utils/SpatialActorUtils.h"
 #include "Utils/SpatialStatics.h"
 
@@ -262,5 +265,15 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 			}
 		}
 	}
+}
+
+TUniquePtr<FLoadBalancingCalculator> UGridBasedLBStrategy::CreateLoadBalancingCalculator() const
+{
+	return MakeUnique<FGridBalancingCalculator>(Cols, Rows, WorldWidth, WorldHeight);
+}
+
+FLoadBalancingDecorator* UGridBasedLBStrategy::GetLoadBalancingDecorator() const
+{
+	return nullptr;
 }
 #endif // WITH_EDITOR

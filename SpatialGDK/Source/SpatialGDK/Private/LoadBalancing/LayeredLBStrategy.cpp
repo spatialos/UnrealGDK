@@ -5,6 +5,8 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "LoadBalancing/GridBasedLBStrategy.h"
+#include "LoadBalancing/LoadBalancingCalculator.h"
+#include "LoadBalancing/LoadBalancingDecorator.h"
 #include "Schema/ActorGroupMember.h"
 #include "Utils/LayerInfo.h"
 #include "Utils/SpatialActorUtils.h"
@@ -13,10 +15,12 @@
 
 DEFINE_LOG_CATEGORY(LogLayeredLBStrategy);
 
+DEFINE_VTABLE_PTR_HELPER_CTOR(ULayeredLBStrategy);
 ULayeredLBStrategy::ULayeredLBStrategy()
 	: Super()
 {
 }
+ULayeredLBStrategy::~ULayeredLBStrategy() = default;
 
 FString ULayeredLBStrategy::ToString() const
 {
@@ -379,4 +383,47 @@ void ULayeredLBStrategy::AddStrategyForLayer(const FName& LayerName, UAbstractLB
 {
 	LayerNameToLBStrategy.Add(LayerName, LBStrategy);
 	LayerNameToLBStrategy[LayerName]->Init();
+}
+
+TUniquePtr<FLoadBalancingCalculator> ULayeredLBStrategy::CreateLoadBalancingCalculator() const
+{
+	TArray<FName> LayerNames;
+	TArray<TUniquePtr<FLoadBalancingCalculator>> Layers;
+	LayerNames.SetNum(LayerNameToLBStrategy.Num());
+	Layers.SetNum(LayerNameToLBStrategy.Num());
+	for (auto Entry : LayerNameToLBStrategy)
+	{
+		check(Entry.Value->IsStrategyWorkerAware());
+	}
+	for (auto Entry : LayerNameToLBStrategy)
+	{
+		FName LayerName = Entry.Key;
+		if (const FLayerData* Data = LayerData.Find(LayerName))
+		{
+			LayerNames[Data->LayerIndex] = LayerName;
+			Layers[Data->LayerIndex] = Entry.Value->CreateLoadBalancingCalculator();
+		}
+	}
+
+	return MakeUnique<FLayerLoadBalancingCalculator>(LayerNames, MoveTemp(Layers));
+}
+
+FLoadBalancingDecorator* ULayeredLBStrategy::GetLoadBalancingDecorator() const
+{
+	if (!Decorator.IsValid())
+	{
+		TClassMap<uint32> GroupMap;
+		for (auto Entry : ClassPathToLayerName)
+		{
+			UClass* Class = Entry.Key.LoadSynchronous();
+			FName LayerName = Entry.Value;
+			if (const FLayerData* Data = LayerData.Find(LayerName))
+			{
+				GroupMap.Set(Class, Data->LayerIndex);
+			}
+		}
+
+		Decorator = MakeUnique<FLayerLoadBalancingDecorator>(MoveTemp(GroupMap));
+	}
+	return Decorator.Get();
 }

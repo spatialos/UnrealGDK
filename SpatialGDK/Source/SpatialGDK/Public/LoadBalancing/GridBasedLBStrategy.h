@@ -65,6 +65,10 @@ public:
 	uint32 GetCols() const { return Cols; }
 	float GetWorldWidth() const { return WorldWidth; }
 	float GetWorldHeight() const { return WorldHeight; }
+	
+	virtual bool IsStrategyWorkerAware() const { return true; }
+	virtual TUniquePtr<FLoadBalancingCalculator> CreateLoadBalancingCalculator() const override;
+	virtual FLoadBalancingDecorator* GetLoadBalancingDecorator() const override;
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

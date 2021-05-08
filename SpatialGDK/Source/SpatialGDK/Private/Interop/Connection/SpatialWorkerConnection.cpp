@@ -57,6 +57,15 @@ void ServerWorkerEntityCreator::CreateWorkerEntity()
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, EntityId);
 
+	if (!Settings->bRunStrategyWorker)
+	{
+		// DelegationMap.Add(SpatialConstants::LB_DELEGATION_AUTH_COMPONENT_SET_ID, EntityId);
+	}
+	else
+	{
+		// DelegationMap.Add(SpatialConstants::LB_DELEGATION_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
+	}
+
 	if (Settings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
 	{
 		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID));

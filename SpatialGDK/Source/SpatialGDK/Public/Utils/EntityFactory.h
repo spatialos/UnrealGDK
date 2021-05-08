@@ -34,7 +34,7 @@ public:
 	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten);
 	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor) const;
 
-	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const Worker_EntityId EntityId,
+	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(FString const& PartitionName, const Worker_EntityId EntityId,
 																		const InterestFactory* InterestFactory,
 																		const UAbstractLBStrategy* LbStrategy,
 																		VirtualWorkerId VirtualWorker, bool bDebugContexValid);

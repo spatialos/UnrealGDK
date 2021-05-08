@@ -12,6 +12,9 @@
 
 #include "AbstractLBStrategy.generated.h"
 
+class FLoadBalancingCalculator;
+class FLoadBalancingDecorator;
+
 /**
  * This class can be used to define a load balancing strategy.
  * At runtime, all unreal workers will:
@@ -80,6 +83,14 @@ public:
 	// Currently, this is just the default strategy.
 	virtual UAbstractLBStrategy* GetLBStrategyForVisualRendering() const
 		PURE_VIRTUAL(UAbstractLBStrategy::GetLBStrategyForVisualRendering, return nullptr;);
+
+	virtual bool IsStrategyWorkerAware() const { return false; }
+	virtual TUniquePtr<FLoadBalancingCalculator> CreateLoadBalancingCalculator() const;
+	virtual FLoadBalancingDecorator* GetLoadBalancingDecorator() const
+	{
+		// Should return the manual assigner decorator for compatibility
+		return nullptr;
+	}
 
 protected:
 	VirtualWorkerId LocalVirtualWorkerId;

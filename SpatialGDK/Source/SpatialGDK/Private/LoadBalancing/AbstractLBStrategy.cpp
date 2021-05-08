@@ -2,6 +2,8 @@
 
 #include "LoadBalancing/AbstractLBStrategy.h"
 
+#include "LoadBalancing/LoadBalancingCalculator.h"
+
 #include "EngineClasses/SpatialNetDriver.h"
 
 UAbstractLBStrategy::UAbstractLBStrategy()
@@ -13,4 +15,9 @@ UAbstractLBStrategy::UAbstractLBStrategy()
 void UAbstractLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualWorkerId)
 {
 	LocalVirtualWorkerId = InLocalVirtualWorkerId;
+}
+
+TUniquePtr<FLoadBalancingCalculator> UAbstractLBStrategy::CreateLoadBalancingCalculator() const
+{
+	return {};
 }

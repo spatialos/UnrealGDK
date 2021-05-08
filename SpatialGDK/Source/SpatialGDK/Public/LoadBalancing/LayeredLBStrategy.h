@@ -15,6 +15,7 @@
 class SpatialVirtualWorkerTranslator;
 class UAbstractLockingPolicy;
 class UAbstractSpatialMultiWorkerSettings;
+class FLayerLoadBalancingDecorator;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogLayeredLBStrategy, Log, All)
 
@@ -31,6 +32,8 @@ class SPATIALGDK_API ULayeredLBStrategy : public UAbstractLBStrategy
 
 public:
 	ULayeredLBStrategy();
+	ULayeredLBStrategy(FVTableHelper& Helper);
+	~ULayeredLBStrategy();
 
 	void SetLayers(const TArray<FLayerInfo>& WorkerLayers);
 
@@ -69,9 +72,13 @@ public:
 
 	FName GetLocalLayerName() const;
 
+	virtual bool IsStrategyWorkerAware() const { return true; }
+	virtual TUniquePtr<FLoadBalancingCalculator> CreateLoadBalancingCalculator() const override;
+	virtual FLoadBalancingDecorator* GetLoadBalancingDecorator() const override;
+
 private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
-
+	mutable TUniquePtr<FLayerLoadBalancingDecorator> Decorator;
 	mutable TMap<TSoftClassPtr<AActor>, FName> ClassPathToLayerName;
 
 	struct FLayerData
