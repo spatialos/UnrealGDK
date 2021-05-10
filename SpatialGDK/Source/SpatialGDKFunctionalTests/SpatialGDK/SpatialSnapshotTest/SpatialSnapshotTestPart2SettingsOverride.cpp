@@ -64,7 +64,7 @@ void ASpatialSnapshotTestPart2SettingsOverride::PrepareTest()
 		TEXT("Check Editor Peformance Settings"), FWorkerDefinition::AllServers, nullptr,
 		[this]() {
 			bool bThrottleCPUWhenNotForeground = GetDefault<UEditorPerformanceSettings>()->bThrottleCPUWhenNotForeground;
-			RequireTrue(bThrottleCPUWhenNotForeground, TEXT("Expected bSpatialNetworking to be True"));
+			RequireTrue(bThrottleCPUWhenNotForeground, TEXT("Expected bThrottleCPUWhenNotForeground to be True"));
 
 			FinishStep();
 		},
