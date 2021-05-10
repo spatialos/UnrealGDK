@@ -1,9 +1,9 @@
 ---
-ci_version: &ci_version "${CI_VERSION:-1.1}"
+ci_version: &ci_version "${CI_VERSION:-1.2}"
 common_env_vars: &common_env_vars
   BUILD_TYPE: "GDK"
-  GDK_BRANCH: "${BUILDKITE_BRANCH}"
-  PROJECT_BRANCH: "${PROJECT_BRANCH:-master}"
+  GDK_BRANCH: "main_branch::${BUILDKITE_BRANCH}"
+  PROJECT_BRANCH: "${PROJECT_BRANCH:-match_branch_name_pref::master}"
   USE_FASTBUILD: "${USE_FASTBUILD:-True}"
   IS_BUILDKITE_BUILD: "${IS_BUILDKITE_BUILD:-True}"
   BUILD_ANDROID: "${BUILD_ANDROID:-False}"
@@ -22,7 +22,7 @@ steps:
       message: "gdk-4.26 ${BUILDKITE_MESSAGE}"
       env:
         <<: *common_env_vars
-        ENGINE_BRANCH: "${ENGINE_BRANCH_426:-4.26-SpatialOSUnrealGDK}"
+        ENGINE_BRANCH: "${ENGINE_BRANCH_426:-match_branch_name_pref_engine::4.26-SpatialOSUnrealGDK}"
         ENGINE_MAJOR: "4.26"
 
   # Trigger a 4.25 build
@@ -34,7 +34,7 @@ steps:
       message: "gdk-4.25 ${BUILDKITE_MESSAGE}"
       env:
         <<: *common_env_vars
-        ENGINE_BRANCH: "${ENGINE_BRANCH_425:-4.25-SpatialOSUnrealGDK}"
+        ENGINE_BRANCH: "${ENGINE_BRANCH_425:-match_branch_name_pref_engine::4.25-SpatialOSUnrealGDK}"
         ENGINE_MAJOR: "4.25"
 
   # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
