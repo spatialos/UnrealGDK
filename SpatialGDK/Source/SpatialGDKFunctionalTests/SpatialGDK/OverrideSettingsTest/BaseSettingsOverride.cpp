@@ -1,9 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "BaseSettingsOverride.h"
+#include "Editor/EditorPerformanceSettings.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "Editor/EditorPerformanceSettings.h"
 
 /**
  * This test checks that the test settings overridden in the base .ini file have been set correctly
@@ -15,7 +15,7 @@
  *
  *	[/Script/UnrealEd.EditorPerformanceSettings]
  *	bThrottleCPUWhenNotForeground=False
- *	
+ *
  */
 
 ABaseSettingsOverride::ABaseSettingsOverride()
@@ -30,7 +30,6 @@ void ABaseSettingsOverride::PrepareTest()
 	Super::PrepareTest();
 
 	// Settings will have already been automatically overwritten when the map was loaded -> check the settings are as expected
-
 
 	AddStep(
 		TEXT("Check PIE override settings"), FWorkerDefinition::AllServers, nullptr,
