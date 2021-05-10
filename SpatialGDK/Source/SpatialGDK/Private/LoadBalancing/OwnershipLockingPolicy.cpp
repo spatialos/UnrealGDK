@@ -72,7 +72,7 @@ bool UOwnershipLockingPolicy::ReleaseLock(const ActorLockToken Token)
 	if (!ensureAlwaysMsgf(ActorToLockingState.Contains(Actor),
 						  TEXT("Tried to release lock on Actor which wasn't present in locking state map. Actor: %s"), *GetNameSafe(Actor)))
 	{
-		return nullptr;
+		return false;
 	}
 
 	{
