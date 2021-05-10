@@ -14,6 +14,7 @@
 #include "SpatialConstants.h"
 #include "Utils/SchemaOption.h"
 
+#include "Algo/Copy.h"
 #include "Engine/Engine.h"
 #include "EngineUtils.h"
 #include "GameFramework/Actor.h"
@@ -439,7 +440,7 @@ static FSubobjectToOffsetMap CreateOffsetMapFromActor(USpatialPackageMapClient* 
 		TArray<UActorComponent*> ActorInstanceComponents;
 
 		// In non-editor builds, editor-only components can be allocated a slot in the array, but left as nullptrs.
-		Algo::CopyIf(Actor->GetInstanceComponents(), ActorInstanceComponents, [](UActorComponent* Component) {
+		Algo::CopyIf(Actor->GetInstanceComponents(), ActorInstanceComponents, [](UActorComponent* Component) -> bool {
 			return IsValid(Component);
 		});
 		// These need to be ordered in case there are more than one component of the same type, or
