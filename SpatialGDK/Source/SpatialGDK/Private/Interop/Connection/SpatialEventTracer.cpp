@@ -168,7 +168,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	FolderPath = EventTracePath;
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	const FString FileName = TEXT("event-log");
-	const FString FileExt = TEXT(".etlog"); // TODO: Update the NFRs to use the new extension
+	const FString FileExt = TEXT(".etlog"); 
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
 	{
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace file%s to %s."),
