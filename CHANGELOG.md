@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Granting an ability from an `FGameplayAbilitySpecDef` must now be done through the `FGameplayAbilitySpec::GiveAbilityFromSpecDef`/`GiveAbilityAndActivateOnceFromSpecDef` functions.
 - Removed `USpatialStaticComponentView`; similar functionality is now provided in `ViewCoordinator`.
 - Reworked AlwaysInterested functionality to run on authoritative servers, and owning clients. The previous behaviour was for it to only run on PlayerController classes, on the client only.
-- `bUseNetOwnerActorGroup` actor setting has been removed. Previously you could set this as a default for an Actor, now it is simply always set to true under the hood and you can no longer configure this.
+- `bUseNetOwnerActorGroup` actor setting has been removed. Previously you could set this as a default for an Actor Class, now it is simply always set to true under the hood and you can no longer configure this.
 
 ### Features:
 - Added a message box notification when game is closed due to missing generated schema.
