@@ -264,7 +264,8 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
 {
-	for (ESchemaComponentType Type : AllSchemaComponentTypes{}) {
+	for (ESchemaComponentType Type : AllSchemaComponentTypes{})
+	{
 		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
 
 		if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
@@ -302,7 +303,8 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 		TSharedRef<FClassInfo> ActorSubobjectInfo = MakeShared<FClassInfo>(SubobjectInfo);
 		ActorSubobjectInfo->SubobjectName = SubobjectSchemaData.Name;
 
-		for (ESchemaComponentType Type : AllSchemaComponentTypes{}) {
+		for (ESchemaComponentType Type : AllSchemaComponentTypes{})
+		{
 			if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
 			{
 				return;
@@ -333,7 +335,8 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 		int32 Offset = DynamicSubobjectData.SchemaComponents[SCHEMA_Data];
 		check(Offset != SpatialConstants::INVALID_COMPONENT_ID);
 
-		for (ESchemaComponentType Type : AllSchemaComponentTypes{}) {
+		for (ESchemaComponentType Type : AllSchemaComponentTypes{})
+		{
 			Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
 
 			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)

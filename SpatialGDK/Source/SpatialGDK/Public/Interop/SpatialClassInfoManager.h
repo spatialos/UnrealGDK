@@ -15,13 +15,20 @@ struct AllSchemaComponentTypes
 {
 	struct It
 	{
-		It(int32 Counter) : Internal(Counter) {}
+		It(int32 Counter)
+			: Internal(Counter)
+		{
+		}
 		ESchemaComponentType operator*() { return ESchemaComponentType(Internal); }
 
 		int32 Internal;
 
 		bool operator!=(const It& Rh) const { return Internal != Rh.Internal; }
-		It& operator++() { Internal++; return *this; }
+		It& operator++()
+		{
+			Internal++;
+			return *this;
+		}
 	};
 	It begin() { return It(SCHEMA_Begin); }
 	It end() { return It(SCHEMA_Count); }

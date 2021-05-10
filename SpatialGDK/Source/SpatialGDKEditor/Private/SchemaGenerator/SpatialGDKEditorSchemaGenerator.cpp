@@ -528,7 +528,8 @@ TMap<Worker_ComponentId, FString> CreateComponentIdToClassPathMap()
 
 		for (const auto& SubobjectSchemaData : ActorSchemaData.Value.SubobjectData)
 		{
-			for (ESchemaComponentType Type : AllSchemaComponentTypes{}) {
+			for (ESchemaComponentType Type : AllSchemaComponentTypes{})
+			{
 				ComponentIdToClassPath.Add(SubobjectSchemaData.Value.SchemaComponents[Type], SubobjectSchemaData.Value.ClassPath);
 			}
 		}
@@ -538,7 +539,8 @@ TMap<Worker_ComponentId, FString> CreateComponentIdToClassPathMap()
 	{
 		for (const auto& DynamicSubobjectData : SubobjectSchemaData.Value.DynamicSubobjectComponents)
 		{
-			for (ESchemaComponentType Type : AllSchemaComponentTypes{}) {
+			for (ESchemaComponentType Type : AllSchemaComponentTypes{})
+			{
 				ComponentIdToClassPath.Add(DynamicSubobjectData.SchemaComponents[Type], SubobjectSchemaData.Key);
 			}
 		}
@@ -685,7 +687,8 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 			for (const auto& ActorSubObjectData : GeneratedActorClass.Value.SubobjectData)
 			{
 				const FString ActorSubObjectName = UnrealNameToSchemaComponentName(ActorSubObjectData.Value.Name.ToString());
-				for (ESchemaComponentType SchemaType : AllSchemaComponentTypes{}) {
+				for (ESchemaComponentType SchemaType : AllSchemaComponentTypes{})
+				{
 					const Worker_ComponentId& ComponentId = ActorSubObjectData.Value.SchemaComponents[SchemaType];
 					if (ComponentId != 0)
 					{
@@ -720,7 +723,8 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 			{
 				const FDynamicSubobjectSchemaData& SubObjectSchemaData =
 					GeneratedSubObjectClass.Value.DynamicSubobjectComponents[SubObjectNumber];
-				for (ESchemaComponentType SchemaType : AllSchemaComponentTypes{}) {
+				for (ESchemaComponentType SchemaType : AllSchemaComponentTypes{})
+				{
 					const Worker_ComponentId& ComponentId = SubObjectSchemaData.SchemaComponents[SchemaType];
 					if (ComponentId != 0)
 					{
