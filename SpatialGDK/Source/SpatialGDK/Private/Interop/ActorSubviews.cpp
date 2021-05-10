@@ -194,21 +194,21 @@ FFilterPredicate GetMockRoleFilterPredicate(TCallable RolePredicate, TValues... 
 
 static FActorSubviewExtension GetNetDriverSubviewExtension(USpatialNetDriver& NetDriver)
 {
-	return { [&NetDriver](FFilterPredicate BasePredicate) {
-				return [&NetDriver, BasePredicate = MoveTemp(BasePredicate)](const Worker_EntityId EntityId,
-																			 const EntityViewElement& Element) {
-					if (!MainActorSubviewSetup::IsActorEntity(EntityId, Element, NetDriver))
-					{
-						return false;
-					}
+	return { FActorFilterPredicateFactory([&NetDriver](FFilterPredicate BasePredicate) {
+				 return [&NetDriver, BasePredicate = MoveTemp(BasePredicate)](const Worker_EntityId EntityId,
+																			  const EntityViewElement& Element) {
+					 if (!MainActorSubviewSetup::IsActorEntity(EntityId, Element, NetDriver))
+					 {
+						 return false;
+					 }
 
-					return BasePredicate(EntityId, Element);
-				};
-			},
-			 [&NetDriver](TArray<FDispatcherRefreshCallback> RefreshCallbacks) {
+					 return BasePredicate(EntityId, Element);
+				 };
+			 }),
+			 FActorRefreshCallbackPredicateFactory([&NetDriver](TArray<FDispatcherRefreshCallback> RefreshCallbacks) {
 				 RefreshCallbacks.Append(MainActorSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
 				 return RefreshCallbacks;
-			 } };
+			 }) };
 }
 
 FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver)
