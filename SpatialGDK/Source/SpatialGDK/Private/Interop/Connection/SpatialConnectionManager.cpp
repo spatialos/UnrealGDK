@@ -21,15 +21,15 @@ using namespace SpatialGDK;
 namespace AsyncUtil
 {
 template <typename FN>
-void AsyncTaskGameThreadOutsideGC(FN&& Func) // A little wrapper which ensures the task is run outside GC
+void AsyncTaskGameThreadOutsideGC(FN&& Func) // A little wrapper which ensures the task is run outside GC (UNR-5421)
 {
 	AsyncTask(ENamedThreads::GameThread, [Func = MoveTemp(Func)]() mutable {
 		if (IsGarbageCollecting())
 		{
 			TSharedPtr<FDelegateHandle> DelegateHandle = MakeShared<FDelegateHandle>();
-			*DelegateHandle = FCoreDelegates::OnBeginFrame.AddLambda([Func = MoveTemp(Func), DelegateHandle]() mutable {
-				FCoreDelegates::OnBeginFrame.Remove(*DelegateHandle);
-				AsyncTaskGameThreadOutsideGC<FN>(MoveTemp(Func)); // Try again, this time we should be outside of GC
+			*DelegateHandle = FCoreUObjectDelegates::GetPostGarbageCollect().AddLambda([Func = MoveTemp(Func), DelegateHandle]() mutable {
+				Func(); // Try again, once GC has completed.
+				FCoreUObjectDelegates::GetPostGarbageCollect().Remove(*DelegateHandle);
 			});
 		}
 		else
@@ -484,6 +484,7 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 					SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>(WeakSpatialConnectionManager.Get());
 
 					SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
+					SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, EventTracing,
 																			  SpatialConnectionManager->ComponentSetData);
 					SpatialConnectionManager->OnConnectionSuccess();
 				}
