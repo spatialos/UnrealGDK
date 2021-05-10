@@ -11,13 +11,21 @@
 
 #include "SpatialClassInfoManager.generated.h"
 
-FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)> Callback)
+struct AllSchemaComponentTypes
 {
-	for (int32 Type = SCHEMA_Begin; Type < SCHEMA_Count; Type++)
+	struct It
 	{
-		Callback(ESchemaComponentType(Type));
-	}
-}
+		It(int32 Counter) : Internal(Counter) {}
+		ESchemaComponentType operator*() { return ESchemaComponentType(Internal); }
+
+		int32 Internal;
+
+		bool operator!=(const It& Rh) const { return Internal != Rh.Internal; }
+		It& operator++() { Internal++; return *this; }
+	};
+	It begin() { return It(SCHEMA_Begin); }
+	It end() { return It(SCHEMA_Count); }
+};
 
 FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condition)
 {

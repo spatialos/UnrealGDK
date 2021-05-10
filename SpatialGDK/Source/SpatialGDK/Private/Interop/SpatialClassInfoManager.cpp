@@ -264,7 +264,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
 {
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+	for (ESchemaComponentType Type : AllSchemaComponentTypes{}) {
 		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
 
 		if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
@@ -279,7 +279,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 			ComponentToOffsetMap.Add(ComponentId, 0);
 			ComponentToCategoryMap.Add(ComponentId, (ESchemaComponentType)Type);
 		}
-	});
+	}
 
 	for (auto& SubobjectClassDataPair : SchemaDatabase->ActorClassPathToSchema[ClassPath].SubobjectData)
 	{
@@ -302,7 +302,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 		TSharedRef<FClassInfo> ActorSubobjectInfo = MakeShared<FClassInfo>(SubobjectInfo);
 		ActorSubobjectInfo->SubobjectName = SubobjectSchemaData.Name;
 
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+		for (ESchemaComponentType Type : AllSchemaComponentTypes{}) {
 			if (!ShouldTrackHandoverProperties() && Type == SCHEMA_Handover)
 			{
 				return;
@@ -316,7 +316,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 				ComponentToOffsetMap.Add(ComponentId, Offset);
 				ComponentToCategoryMap.Add(ComponentId, ESchemaComponentType(Type));
 			}
-		});
+		};
 
 		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
 	}
@@ -333,7 +333,7 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 		int32 Offset = DynamicSubobjectData.SchemaComponents[SCHEMA_Data];
 		check(Offset != SpatialConstants::INVALID_COMPONENT_ID);
 
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+		for (ESchemaComponentType Type : AllSchemaComponentTypes{}) {
 			Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
 
 			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
@@ -343,7 +343,7 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 				ComponentToOffsetMap.Add(ComponentId, Offset);
 				ComponentToCategoryMap.Add(ComponentId, ESchemaComponentType(Type));
 			}
-		});
+		}
 
 		Info->DynamicSubobjectInfo.Add(SpecificDynamicSubobjectInfo);
 	}

@@ -925,7 +925,8 @@ void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId
 	Channel->CreateSubObjects.Add(Subobject);
 
 	TSet<Worker_ComponentId>& Components = PendingDynamicSubobjectComponents.FindChecked(EntityId);
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+	for (ESchemaComponentType Type : AllSchemaComponentTypes{})
+	{
 		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
 
 		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
@@ -943,7 +944,7 @@ void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId
 			ActorSubView->GetView()[EntityId].Components.FindByPredicate(ComponentIdEquality{ ComponentId })->GetUnderlying());
 
 		Components.Remove(ComponentId);
-	});
+	}
 
 	// Resolve things like RepNotify or RPCs after applying component data.
 	ResolvePendingOperations(Subobject, SubobjectRef);

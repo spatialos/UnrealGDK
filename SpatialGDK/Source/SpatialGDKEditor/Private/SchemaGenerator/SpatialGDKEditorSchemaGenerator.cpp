@@ -521,15 +521,16 @@ TMap<Worker_ComponentId, FString> CreateComponentIdToClassPathMap()
 
 	for (const auto& ActorSchemaData : ActorClassPathToSchema)
 	{
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+		for (ESchemaComponentType Type : AllSchemaComponentTypes{})
+		{
 			ComponentIdToClassPath.Add(ActorSchemaData.Value.SchemaComponents[Type], ActorSchemaData.Key);
-		});
+		}
 
 		for (const auto& SubobjectSchemaData : ActorSchemaData.Value.SubobjectData)
 		{
-			ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+			for (ESchemaComponentType Type : AllSchemaComponentTypes{}) {
 				ComponentIdToClassPath.Add(SubobjectSchemaData.Value.SchemaComponents[Type], SubobjectSchemaData.Value.ClassPath);
-			});
+			}
 		}
 	}
 
@@ -537,9 +538,9 @@ TMap<Worker_ComponentId, FString> CreateComponentIdToClassPathMap()
 	{
 		for (const auto& DynamicSubobjectData : SubobjectSchemaData.Value.DynamicSubobjectComponents)
 		{
-			ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+			for (ESchemaComponentType Type : AllSchemaComponentTypes{}) {
 				ComponentIdToClassPath.Add(DynamicSubobjectData.SchemaComponents[Type], SubobjectSchemaData.Key);
-			});
+			}
 		}
 	}
 
@@ -655,7 +656,8 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 		{
 			// Actor components.
 			const FString& ActorClassName = UnrealNameToSchemaComponentName(GeneratedActorClass.Value.GeneratedSchemaName);
-			ForAllSchemaComponentTypes([&](ESchemaComponentType SchemaType) {
+			for (ESchemaComponentType SchemaType : AllSchemaComponentTypes{})
+			{
 				const Worker_ComponentId ComponentId = GeneratedActorClass.Value.SchemaComponents[SchemaType];
 				if (ComponentId != 0)
 				{
@@ -677,13 +679,13 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 						break;
 					}
 				}
-			});
+			}
 
 			// Actor static subobjects.
 			for (const auto& ActorSubObjectData : GeneratedActorClass.Value.SubobjectData)
 			{
 				const FString ActorSubObjectName = UnrealNameToSchemaComponentName(ActorSubObjectData.Value.Name.ToString());
-				ForAllSchemaComponentTypes([&](ESchemaComponentType SchemaType) {
+				for (ESchemaComponentType SchemaType : AllSchemaComponentTypes{}) {
 					const Worker_ComponentId& ComponentId = ActorSubObjectData.Value.SchemaComponents[SchemaType];
 					if (ComponentId != 0)
 					{
@@ -705,7 +707,7 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 							break;
 						}
 					}
-				});
+				}
 			}
 		}
 
@@ -718,7 +720,7 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 			{
 				const FDynamicSubobjectSchemaData& SubObjectSchemaData =
 					GeneratedSubObjectClass.Value.DynamicSubobjectComponents[SubObjectNumber];
-				ForAllSchemaComponentTypes([&](ESchemaComponentType SchemaType) {
+				for (ESchemaComponentType SchemaType : AllSchemaComponentTypes{}) {
 					const Worker_ComponentId& ComponentId = SubObjectSchemaData.SchemaComponents[SchemaType];
 					if (ComponentId != 0)
 					{
@@ -740,7 +742,7 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 							break;
 						}
 					}
-				});
+				}
 			}
 		}
 	}
