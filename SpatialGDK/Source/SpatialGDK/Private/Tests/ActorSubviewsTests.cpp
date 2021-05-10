@@ -5,35 +5,27 @@
 
 #include "SpatialView/OpList/EntityComponentOpList.h"
 #include "Tests/SpatialView/SpatialViewUtils.h"
+#include "Tests/SpatialView/TargetView.h"
+#include "Tests/SpatialView/TestWorker.h"
 #include "Tests/TestDefinitions.h"
 
 namespace SpatialGDK
 {
 struct FOwnershipCompletenessTestFixture
 {
-	static FOwnershipCompletenessTestFixture Create()
-	{
-		FComponentSetData ComponentSetData;
-		ComponentSetData.ComponentSets.Emplace(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID);
-		ComponentSetData.ComponentSets.Emplace(SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
-
-		return FOwnershipCompletenessTestFixture(MakeUnique<MockConnectionHandler>(), ComponentSetData, /*bIsServer =*/false);
-	}
-
-private:
-	FOwnershipCompletenessTestFixture(TUniquePtr<MockConnectionHandler> InConnectionHandler, FComponentSetData ComponentSetData,
-									  bool bIsServer)
-		: ConnectionHandler(*InConnectionHandler)
-		, Coordinator(MoveTemp(InConnectionHandler), /*EventTracer =*/nullptr, MoveTemp(ComponentSetData))
-		, OwnershipCompletenessHandler(bIsServer)
-		, OwnershipSubview(ActorSubviews::CreatePlayerOwnershipSubView(Coordinator, OwnershipCompletenessHandler))
-		, SimulatedSubview(ActorSubviews::CreateSimulatedSubView(Coordinator, OwnershipCompletenessHandler))
+	FOwnershipCompletenessTestFixture()
+		: Worker(FTestWorker::Create({
+			SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID,
+			SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID,
+		}))
+		, OwnershipCompletenessHandler(/*bIsServer =*/false)
+		, OwnershipSubview(ActorSubviews::CreatePlayerOwnershipSubView(Worker.GetCoordinator(), OwnershipCompletenessHandler))
+		, SimulatedSubview(ActorSubviews::CreateSimulatedSubView(Worker.GetCoordinator(), OwnershipCompletenessHandler))
 	{
 	}
 
 public:
-	MockConnectionHandler& ConnectionHandler;
-	ViewCoordinator Coordinator;
+	FTestWorker Worker;
 	FOwnershipCompletenessHandler OwnershipCompletenessHandler;
 	FSubView& OwnershipSubview;
 	FSubView& SimulatedSubview;
@@ -46,29 +38,19 @@ GDK_TEST(Core, OwnershipCompleteness, PlayerGainsEntityOwnership)
 	constexpr Worker_EntityId ActorEntityId = 1;
 	constexpr Worker_EntityId LocalClientControllerEntityId = 2;
 
-	FOwnershipCompletenessTestFixture Fixture = FOwnershipCompletenessTestFixture::Create();
-
-	MockConnectionHandler& ConnHandlerRef = Fixture.ConnectionHandler;
+	FOwnershipCompletenessTestFixture Fixture;
 
 	Fixture.OwnershipCompletenessHandler.AddPlayerEntity(LocalClientControllerEntityId);
 
 	{
-		EntityComponentOpListBuilder Builder;
-		Builder.AddEntity(ActorEntityId)
-			.AddComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID))
-			.AddComponent(ActorEntityId, ActorOwnership(LocalClientControllerEntityId).CreateComponentData());
-
-		TArray<OpList> OpLists;
-		OpLists.Emplace(MoveTemp(Builder).CreateOpList());
-
-		TArray<TArray<OpList>> OpLists1;
-		OpLists1.Emplace(MoveTemp(OpLists));
-
-		ConnHandlerRef.SetListsOfOpLists(MoveTemp(OpLists1));
+		Fixture.Worker.GetTargetView().AddEntity(ActorEntityId);
+		Fixture.Worker.GetTargetView().AddOrSetComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID));
+		Fixture.Worker.GetTargetView().AddOrSetComponent(ActorEntityId,
+														 ActorOwnership(LocalClientControllerEntityId).CreateComponentData());
 	}
 
 	constexpr float ViewAdvanceDeltaTime = 1.0f;
-	Fixture.Coordinator.Advance(ViewAdvanceDeltaTime);
+	Fixture.Worker.AdvanceToTargetView(ViewAdvanceDeltaTime);
 
 	TestFalse(TEXT("Entity was player ownership incomplete when considering ownership"),
 			  Fixture.OwnershipSubview.IsEntityComplete(ActorEntityId));
@@ -76,21 +58,14 @@ GDK_TEST(Core, OwnershipCompleteness, PlayerGainsEntityOwnership)
 
 	{
 		EntityComponentOpListBuilder Builder;
-		Builder.AddComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID))
-			.AddComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID))
-			.SetAuthority(ActorEntityId, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, WORKER_AUTHORITY_AUTHORITATIVE,
-						  /*Components =*/{});
 
-		TArray<OpList> OpLists;
-		OpLists.Emplace(MoveTemp(Builder).CreateOpList());
-
-		TArray<TArray<OpList>> OpLists1;
-		OpLists1.Emplace(MoveTemp(OpLists));
-
-		ConnHandlerRef.SetListsOfOpLists(MoveTemp(OpLists1));
+		Fixture.Worker.GetTargetView().AddOrSetComponent(ActorEntityId,
+														 ComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID));
+		Fixture.Worker.GetTargetView().AddOrSetComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
+		Fixture.Worker.GetTargetView().AddAuthority(ActorEntityId, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
 	}
 
-	Fixture.Coordinator.Advance(ViewAdvanceDeltaTime);
+	Fixture.Worker.AdvanceToTargetView(ViewAdvanceDeltaTime);
 
 	TestTrue(TEXT("Entity became player ownership complete"), Fixture.OwnershipSubview.IsEntityComplete(ActorEntityId));
 	TestFalse(TEXT("Entity stayed simulated incomplete"), Fixture.SimulatedSubview.IsEntityComplete(ActorEntityId));
@@ -106,49 +81,34 @@ GDK_TEST(Core, OwnershipCompleteness, PlayerLosesEntityOwnership)
 	constexpr Worker_EntityId LocalClientControllerEntityId = 2;
 	constexpr Worker_EntityId RemoteClientControllerEntityId = 3;
 
-	FOwnershipCompletenessTestFixture Fixture = FOwnershipCompletenessTestFixture::Create();
+	FOwnershipCompletenessTestFixture Fixture;
 
 	Fixture.OwnershipCompletenessHandler.AddPlayerEntity(LocalClientControllerEntityId);
 
 	{
 		EntityComponentOpListBuilder Builder;
-		Builder.AddEntity(ActorEntityId)
-			.AddComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID))
-			.AddComponent(ActorEntityId, ActorOwnership(LocalClientControllerEntityId).CreateComponentData())
-			.AddComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID))
-			.AddComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID))
-			.SetAuthority(ActorEntityId, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID, WORKER_AUTHORITY_AUTHORITATIVE,
-						  /*Components =*/{});
-
-		TArray<OpList> OpLists;
-		OpLists.Emplace(MoveTemp(Builder).CreateOpList());
-
-		TArray<TArray<OpList>> OpLists1;
-		OpLists1.Emplace(MoveTemp(OpLists));
-
-		Fixture.ConnectionHandler.SetListsOfOpLists(MoveTemp(OpLists1));
+		Fixture.Worker.GetTargetView().AddEntity(ActorEntityId);
+		Fixture.Worker.GetTargetView().AddOrSetComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID));
+		Fixture.Worker.GetTargetView().AddOrSetComponent(ActorEntityId,
+														 ActorOwnership(LocalClientControllerEntityId).CreateComponentData());
+		Fixture.Worker.GetTargetView().AddOrSetComponent(ActorEntityId,
+														 ComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID));
+		Fixture.Worker.GetTargetView().AddOrSetComponent(ActorEntityId, ComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
+		Fixture.Worker.GetTargetView().AddAuthority(ActorEntityId, SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID);
 	}
 
 	constexpr float ViewAdvanceDeltaTime = 1.0f;
-	Fixture.Coordinator.Advance(ViewAdvanceDeltaTime);
+	Fixture.Worker.AdvanceToTargetView(ViewAdvanceDeltaTime);
 
 	TestTrue(TEXT("Entity was player ownership complete"), Fixture.OwnershipSubview.IsEntityComplete(ActorEntityId));
 	TestFalse(TEXT("Entity was simulated incomplete"), Fixture.SimulatedSubview.IsEntityComplete(ActorEntityId));
 
 	{
-		EntityComponentOpListBuilder Builder;
-		Builder.UpdateComponent(ActorEntityId, ActorOwnership(RemoteClientControllerEntityId).CreateComponentUpdate());
-
-		TArray<OpList> OpLists;
-		OpLists.Emplace(MoveTemp(Builder).CreateOpList());
-
-		TArray<TArray<OpList>> OpLists1;
-		OpLists1.Emplace(MoveTemp(OpLists));
-
-		Fixture.ConnectionHandler.SetListsOfOpLists(MoveTemp(OpLists1));
+		Fixture.Worker.GetTargetView().UpdateComponent(ActorEntityId,
+													   ActorOwnership(RemoteClientControllerEntityId).CreateComponentUpdate());
 	}
 
-	Fixture.Coordinator.Advance(ViewAdvanceDeltaTime);
+	Fixture.Worker.AdvanceToTargetView(ViewAdvanceDeltaTime);
 
 	TestFalse(TEXT("Entity became player ownership incomplete"), Fixture.OwnershipSubview.IsEntityComplete(ActorEntityId));
 	TestFalse(TEXT("Entity stayed simulated incomplete"), Fixture.SimulatedSubview.IsEntityComplete(ActorEntityId));
