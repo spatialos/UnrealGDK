@@ -85,9 +85,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	if (Settings->bCaptureAllEventTracingData)
 	{
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing span sampling always."));
-		Parameters.span_sampling_parameters.sampling_mode = Settings->bCaptureAllEventTracingData
-																? Trace_SamplingMode::TRACE_SAMPLING_MODE_ALWAYS
-																: Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
+		Parameters.span_sampling_parameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_ALWAYS;
 	}
 	else
 	{
