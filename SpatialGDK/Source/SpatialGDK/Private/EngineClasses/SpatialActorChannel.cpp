@@ -24,6 +24,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Schema/ActorOwnership.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -1302,6 +1303,17 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 		// Notify the load balance enforcer of a potential short circuit if we are the delegation authoritative worker.
 		NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+
+		bUpdatedThisActor = true;
+	}
+
+	TOptional<SpatialGDK::ActorOwnership> CurrentActorOwnershipData =
+		SpatialGDK::DeserializeComponent<SpatialGDK::ActorOwnership>(NetDriver->Connection->GetCoordinator(), EntityId);
+	const SpatialGDK::ActorOwnership NewActorOwnership = SpatialGDK::ActorOwnership::CreateFromActor(*Actor, *NetDriver->PackageMap);
+	if (CurrentActorOwnershipData != NewActorOwnership)
+	{
+		NetDriver->Connection->GetCoordinator().SendComponentUpdate(EntityId, NewActorOwnership.CreateComponentUpdate(),
+																	FSpatialGDKSpanId());
 
 		bUpdatedThisActor = true;
 	}

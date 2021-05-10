@@ -30,6 +30,13 @@ struct SPATIALGDK_API ActorOwnership
 
 	ActorOwnership(const ComponentData& Data) { ApplySchema(Data.GetFields()); }
 
+	ActorOwnership(const Worker_ComponentData& Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		ApplySchema(ComponentObject);
+	}
+
 	static ActorOwnership CreateFromActor(const AActor& Actor, const USpatialPackageMapClient& PackageMap);
 
 	ComponentData CreateComponentData() const { return CreateComponentDataHelper(*this); }
@@ -52,5 +59,12 @@ struct SPATIALGDK_API ActorOwnership
 	}
 
 	Worker_EntityId OwnerActorEntityId;
+
+	friend bool operator==(const ActorOwnership& Lhs, const ActorOwnership& Rhs)
+	{
+		return Lhs.OwnerActorEntityId == Rhs.OwnerActorEntityId;
+	}
+
+	friend bool operator!=(const ActorOwnership& Lhs, const ActorOwnership& Rhs) { return !(Lhs == Rhs); }
 };
 } // namespace SpatialGDK

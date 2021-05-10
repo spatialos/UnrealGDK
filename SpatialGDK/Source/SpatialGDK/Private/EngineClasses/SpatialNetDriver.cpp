@@ -1298,10 +1298,6 @@ void USpatialNetDriver::ProcessOwnershipChanges()
 				Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
 			}
 
-			Connection->GetCoordinator().SendComponentUpdate(
-				EntityId, SpatialGDK::ActorOwnership::CreateFromActor(*Channel->Actor, *PackageMap).CreateComponentUpdate(),
-				FSpatialGDKSpanId());
-
 			Channel->ServerProcessOwnershipChange();
 		}
 	}
