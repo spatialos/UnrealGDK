@@ -783,6 +783,7 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 APlayerController* ASpatialFunctionalTest::GetFlowPlayerController()
 {
 	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
+	checkf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server."));
 	if (!IsValid(FlowController))
 	{
 		return nullptr;
