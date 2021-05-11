@@ -28,7 +28,6 @@ DECLARE_CYCLE_STAT(TEXT("Actor System SendComponentUpdates"), STAT_ActorSystemSe
 DECLARE_CYCLE_STAT(TEXT("Actor System UpdateInterestComponent"), STAT_ActorSystemUpdateInterestComponent, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Actor System RemoveEntity"), STAT_ActorSystemRemoveEntity, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Actor System ApplyData"), STAT_ActorSystemApplyData, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("Actor System ApplyHandover"), STAT_ActorSystemApplyHandover, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Actor System ReceiveActor"), STAT_ActorSystemReceiveActor, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Actor System RemoveActor"), STAT_ActorSystemRemoveActor, STATGROUP_SpatialNet);
 
@@ -666,17 +665,14 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 
 	ESchemaComponentType Category = NetDriver->ClassInfoManager->GetCategoryByComponentId(ComponentId);
 
-	if (Category == SCHEMA_Data || Category == SCHEMA_OwnerOnly || Category == SCHEMA_InitialOnly)
+	if (Category == SCHEMA_Data || Category == SCHEMA_OwnerOnly || Category == SCHEMA_InitialOnly || Category == SCHEMA_Handover)
 	{
+		if (Category == SCHEMA_Handover)
+		{
+			ensureAlways(NetDriver->IsServer());
+		}
 		SCOPE_CYCLE_COUNTER(STAT_ActorSystemApplyData);
-		ApplyComponentUpdate(ComponentId, Update, *TargetObject, *Channel, /* bIsHandover */ false);
-	}
-	else if (Category == SCHEMA_Handover)
-	{
-		SCOPE_CYCLE_COUNTER(STAT_ActorSystemApplyHandover);
-		check(NetDriver->IsServer());
-
-		ApplyComponentUpdate(ComponentId, Update, *TargetObject, *Channel, /* bIsHandover */ true);
+		ApplyComponentUpdate(ComponentId, Update, *TargetObject, *Channel);
 	}
 	else
 	{
@@ -942,7 +938,8 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 
 	ESchemaComponentType ComponentType = NetDriver->ClassInfoManager->GetCategoryByComponentId(ComponentId);
 
-	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly || ComponentType == SCHEMA_InitialOnly)
+	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly || ComponentType == SCHEMA_InitialOnly
+		|| ComponentType == SCHEMA_Handover)
 	{
 		if (ComponentType == SCHEMA_Data && TargetObject.IsA<UActorComponent>())
 		{
@@ -957,17 +954,7 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 
 		ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 		bool bOutReferencesChanged = false;
-		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, /* bIsHandover */ false, bOutReferencesChanged);
-
-		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
-	}
-	else if (ComponentType == SCHEMA_Handover)
-	{
-		RepStateUpdateHelper RepStateHelper(Channel, TargetObject);
-
-		ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
-		bool bOutReferencesChanged = false;
-		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, /* bIsHandover */ true, bOutReferencesChanged);
+		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, bOutReferencesChanged);
 
 		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 	}
@@ -1120,9 +1107,7 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 			continue;
 		}
 
-		// ParentIndex is -1 for handover properties
-		bool bIsHandover = ObjectReferences.ParentIndex == -1;
-		FRepParentCmd* Parent = ObjectReferences.ParentIndex >= 0 ? &RepLayout.Parents[ObjectReferences.ParentIndex] : nullptr;
+		FRepParentCmd& Parent = RepLayout.Parents[ObjectReferences.ParentIndex];
 
 		int32 StoredDataOffset = ObjectReferences.ShadowOffset;
 
@@ -1131,19 +1116,15 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 			GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property);
 			check(ArrayProperty != nullptr);
 
-			if (!bIsHandover)
-			{
-				Property->CopySingleValue(StoredData + StoredDataOffset, Data + AbsOffset);
-			}
+			Property->CopySingleValue(StoredData + StoredDataOffset, Data + AbsOffset);
 
-			FScriptArray* StoredArray = bIsHandover ? nullptr : (FScriptArray*)(StoredData + StoredDataOffset);
+			FScriptArray* StoredArray = (FScriptArray*)(StoredData + StoredDataOffset);
 			FScriptArray* Array = (FScriptArray*)(Data + AbsOffset);
 
 			int32 NewMaxOffset = Array->Num() * ArrayProperty->Inner->ElementSize;
 
-			ResolveObjectReferences(RepLayout, ReplicatedObject, RepState, *ObjectReferences.Array,
-									bIsHandover ? nullptr : (uint8*)StoredArray->GetData(), (uint8*)Array->GetData(), NewMaxOffset,
-									RepNotifies, bOutSomeObjectsWereMapped);
+			ResolveObjectReferences(RepLayout, ReplicatedObject, RepState, *ObjectReferences.Array, (uint8*)StoredArray->GetData(),
+									(uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped);
 			continue;
 		}
 
@@ -1185,7 +1166,7 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 				bOutSomeObjectsWereMapped = true;
 			}
 
-			if (Parent && Parent->Property->HasAnyPropertyFlags(CPF_RepNotify))
+			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
 				Property->CopySingleValue(StoredData + StoredDataOffset, Data + AbsOffset);
 			}
@@ -1208,8 +1189,8 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 				check(Property->IsA<GDK_PROPERTY(ArrayProperty)>());
 				UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property));
 
-				FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, ReplicatedObject, Parent->ArrayIndex,
-																  Parent->Property, NetDeltaStruct);
+				FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, ReplicatedObject, Parent.ArrayIndex,
+																  Parent.Property, NetDeltaStruct);
 
 				ObjectReferences.MappedRefs.Append(NewMappedRefs);
 			}
@@ -1228,11 +1209,11 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 				ObjectReferences.MappedRefs.Append(NewMappedRefs);
 			}
 
-			if (Parent && Parent->Property->HasAnyPropertyFlags(CPF_RepNotify))
+			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-				if (Parent->RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + StoredDataOffset, Data + AbsOffset))
+				if (Parent.RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + StoredDataOffset, Data + AbsOffset))
 				{
-					RepNotifies.AddUnique(Parent->Property);
+					RepNotifies.AddUnique(Parent.Property);
 				}
 			}
 		}
@@ -1257,13 +1238,13 @@ USpatialActorChannel* ActorSystem::GetOrRecreateChannelForDormantActor(AActor* A
 }
 
 void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& TargetObject,
-									   USpatialActorChannel& Channel, bool bIsHandover)
+									   USpatialActorChannel& Channel)
 {
 	RepStateUpdateHelper RepStateHelper(Channel, TargetObject);
 
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 	bool bOutReferencesChanged = false;
-	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, bIsHandover, bOutReferencesChanged);
+	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, bOutReferencesChanged);
 	RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 
 	// This is a temporary workaround, see UNR-841:
@@ -1927,8 +1908,7 @@ void ActorSystem::RetireEntity(Worker_EntityId EntityId, bool bIsNetStartupActor
 }
 
 void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel,
-									   const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges,
-									   uint32& OutBytesWritten)
+									   const FRepChangeState* RepChanges, uint32& OutBytesWritten)
 {
 	SCOPE_CYCLE_COUNTER(STAT_ActorSystemSendComponentUpdates);
 	const Worker_EntityId EntityId = Channel->GetEntityId();
@@ -1947,7 +1927,7 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 	ComponentFactory UpdateFactory(Channel->GetInterestDirty(), NetDriver);
 
 	TArray<FWorkerComponentUpdate> ComponentUpdates =
-		UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges, OutBytesWritten);
+		UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, OutBytesWritten);
 
 	TArray<FSpatialGDKSpanId> PropertySpans;
 	if (EventTracer != nullptr && RepChanges != nullptr
@@ -2062,12 +2042,11 @@ void ActorSystem::SendAddComponentForSubobject(USpatialActorChannel* Channel, UO
 											   uint32& OutBytesWritten)
 {
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
-	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
 	ComponentFactory DataFactory(false, NetDriver);
 
 	TArray<FWorkerComponentData> SubobjectDatas =
-		DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
+		DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, OutBytesWritten);
 	SendAddComponents(Channel->GetEntityId(), SubobjectDatas);
 
 	Channel->PendingDynamicSubobjects.Remove(TWeakObjectPtr<UObject>(Subobject));
