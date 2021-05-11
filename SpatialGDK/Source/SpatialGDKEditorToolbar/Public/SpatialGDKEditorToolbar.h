@@ -137,6 +137,7 @@ private:
 	void AddDeploymentTagIfMissing(const FString& TagToAdd);
 
 	void GenerateTestMaps();
+	void OpenPolyLBEditorTool();
 
 private:
 	bool CanExecuteSchemaGenerator() const;

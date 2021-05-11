@@ -10,28 +10,30 @@ public class SpatialGDKEditor : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		bUseUnity = false;
 
-		PrivateDependencyModuleNames.AddRange(
-			new string[] {
-				"Core",
-				"CoreUObject",
-				"DesktopPlatform",
-				"EditorStyle",
-				"Engine",
-				"EngineSettings",
-				"FunctionalTesting",
-				"IOSRuntimeSettings",
-				"LauncherServices",
-				"Json",
-				"PropertyEditor",
-				"Slate",
-				"SlateCore",
-				"SpatialGDK",
-				"SpatialGDKServices",
-				"UATHelper",
-				"UnrealEd",
-				"DesktopPlatform",
-				"MessageLog",
-			});
+        PrivateDependencyModuleNames.AddRange(
+            new string[] {
+                "Core",
+                "CoreUObject",
+                "DesktopPlatform",
+                "EditorStyle",
+                "Engine",
+                "EngineSettings",
+                "FunctionalTesting",
+                "IOSRuntimeSettings",
+                "LauncherServices",
+                "Json",
+                "PropertyEditor",
+                "Slate",
+                "SlateCore",
+                "SpatialGDK",
+                "SpatialGDKServices",
+                "UATHelper",
+                "UnrealEd",
+                "DesktopPlatform",
+                "MessageLog",
+                "Voronoi",
+                "ProceduralMeshComponent",
+            }) ;
 
 		PrivateIncludePaths.AddRange(
 			new string[]

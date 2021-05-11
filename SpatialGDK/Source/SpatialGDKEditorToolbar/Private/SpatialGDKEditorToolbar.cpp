@@ -55,8 +55,10 @@
 #include "TestMapGeneration.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/LaunchConfigurationEditor.h"
+#include "Utils/PolyLBEditorTool.h"
 #include "Utils/SpatialDebugger.h"
 #include "Utils/SpatialStatics.h"
+#include "Utils/TransientUObjectEditor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -330,6 +332,9 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 
 	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().GenerateTestMaps,
 								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::GenerateTestMaps));
+
+	InPluginCommands->MapAction(FSpatialGDKEditorToolbarCommands::Get().OpenLBPolyEditorTool,
+								FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OpenPolyLBEditorTool));
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -368,6 +373,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchema);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().GenerateTestMaps);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenLBPolyEditorTool);
 	}
 	Builder.EndSection();
 }
@@ -1607,6 +1613,12 @@ void FSpatialGDKEditorToolbarModule::GenerateTestMaps()
 	{
 		OnShowFailedNotification(TEXT("Failed to generate test maps. See output log for details."));
 	}
+}
+
+void FSpatialGDKEditorToolbarModule::OpenPolyLBEditorTool()
+{
+	UTransientUObjectEditor::LaunchTransientUObjectEditor<UPolyLBEditorTool>(FText::FromString("Polygon Load Balancing Editor Tool"),
+																			 nullptr);
 }
 
 #undef LOCTEXT_NAMESPACE
