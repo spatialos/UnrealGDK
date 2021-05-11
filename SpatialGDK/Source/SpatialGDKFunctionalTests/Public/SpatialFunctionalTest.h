@@ -30,6 +30,7 @@ constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// Represents test already 
 } // namespace
 
 class ULayeredLBStrategy;
+class ATestMovementCharacter;
 
 /*
  * A Spatial Functional NetTest allows you to define a series of steps, and control which server/client context they execute on
@@ -359,6 +360,12 @@ public:
 
 	// Clears all the snapshots taken, not meant to be used directly.
 	static void ClearAllTakenSnapshots();
+
+	// Get the player controller owned by the current flow.
+	APlayerController* GetFlowPlayerController();
+
+	// Get the pawn that belongs to the PlayerController owned by the current flow.
+	ATestMovementCharacter* GetFlowPawn();
 
 protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }
