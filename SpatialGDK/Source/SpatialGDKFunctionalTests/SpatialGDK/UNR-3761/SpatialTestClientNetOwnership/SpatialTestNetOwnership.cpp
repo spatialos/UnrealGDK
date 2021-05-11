@@ -72,7 +72,6 @@ void ASpatialTestNetOwnership::PrepareTest()
 	// Step definition for Client 1 to send a Server RPC
 	FSpatialFunctionalTestStepDefinition ClientSendRPCStepDefinition(/*bIsNativeDefinition*/ true);
 	ClientSendRPCStepDefinition.StepName = TEXT("SpatialTestNetOwnershipClientSendRPC");
-	ClientSendRPCStepDefinition.TimeLimit = 10.0f;
 	ClientSendRPCStepDefinition.NativeStartEvent.BindLambda([this]() {
 		NetOwnershipCube->ServerIncreaseRPCCount();
 
