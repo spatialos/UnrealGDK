@@ -94,20 +94,19 @@ void ADynamicSubobjectsTest::PrepareTest()
 		},
 		StepTimeLimit);
 
-
 	// Step 2 - Client 1 checks if it has correctly possessed the TestMovementCharacter.
 	AddStep(
 		TEXT("DynamicSubobjectsTestClientCheckPossesion"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float DeltaTime) {
 			APlayerController* PlayerController = GetFlowPlayerController();
 			ATestMovementCharacter* PlayerCharacter = GetFlowPawn();
-			if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid")) && PlayerCharacter == PlayerController->AcknowledgedPawn)
+			if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid"))
+				&& PlayerCharacter == PlayerController->AcknowledgedPawn)
 			{
 				FinishStep();
 			}
 		},
 		StepTimeLimit);
-
 
 	for (int i = 0; i < DynamicComponentsPerClass + 2; ++i)
 	{
@@ -117,12 +116,12 @@ void ADynamicSubobjectsTest::PrepareTest()
 		// AReplicatedGASTestActor.
 		AddStep(TEXT("DynamicSubobjectsTestServerMoveClient1"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			if (ClientOneSpawnedPawn->SetActorLocation(CharacterRemoteLocation)
-				&& AssertEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterRemoteLocation, TEXT("Client pawn was not moved to remote location"), 1.0f))
+				&& AssertEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterRemoteLocation,
+									  TEXT("Client pawn was not moved to remote location"), 1.0f))
 			{
 				FinishStep();
 			}
 		});
-
 
 		// Step 4 - Client 1 makes sure that the movement was correctly replicated
 		AddStep(
@@ -131,13 +130,13 @@ void ADynamicSubobjectsTest::PrepareTest()
 				ATestMovementCharacter* PlayerCharacter = GetFlowPawn();
 
 				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should not be nullptr"))
-					&& AssertEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterRemoteLocation, TEXT("Character was not moved to remote location"), 1.0f))
+					&& AssertEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterRemoteLocation,
+										  TEXT("Character was not moved to remote location"), 1.0f))
 				{
 					FinishStep();
 				}
 			},
 			StepTimeLimit);
-
 
 		// Step 5 - Server increases AReplicatedGASTestActor's TestIntProperty to enable checking if the client is out of interest later.
 		AddStep(TEXT("DynamicSubobjectsTestServerIncreasesIntValue"), FWorkerDefinition::Server(1), nullptr, [this, i]() {
@@ -147,7 +146,6 @@ void ADynamicSubobjectsTest::PrepareTest()
 				FinishStep();
 			}
 		});
-
 
 		// Step 6 - Client 1 checks it can no longer see the AReplicatedGASTestActor
 		AddStep(
@@ -166,7 +164,6 @@ void ADynamicSubobjectsTest::PrepareTest()
 			},
 			StepTimeLimit);
 
-
 		if (LastStepLoop)
 		{
 			// step 6.1 - Server removes all components for secondary test case
@@ -178,10 +175,11 @@ void ADynamicSubobjectsTest::PrepareTest()
 						TArray<USceneComponent*> AllSceneComps;
 						TestActor->GetComponents<USceneComponent>(AllSceneComps);
 
-						RequireCompare_Int(AllSceneComps.Num(), EComparisonMethod::Greater_Than_Or_Equal_To, 1, TEXT("For this test, DynamicSubobjectTestActor should have at least 1 component"));
+						RequireCompare_Int(AllSceneComps.Num(), EComparisonMethod::Greater_Than_Or_Equal_To, 1,
+										   TEXT("For this test, DynamicSubobjectTestActor should have at least 1 component"));
 
 						// delete all the components on the actor
-						for(int j = 0; j < AllSceneComps.Num(); j++)
+						for (int j = 0; j < AllSceneComps.Num(); j++)
 						{
 							AllSceneComps[j]->DestroyComponent();
 						}
@@ -191,16 +189,15 @@ void ADynamicSubobjectsTest::PrepareTest()
 				StepTimeLimit);
 		}
 
-
 		// Step7 - Server moves Client 1 close to the cube.
 		AddStep(TEXT("DynamicSubobjectsTestServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			if (ClientOneSpawnedPawn->SetActorLocation(CharacterSpawnLocation)
-				&& AssertEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterSpawnLocation, TEXT("Server 1 should see the pawn close to the initial spawn location"), 1.0f))
+				&& AssertEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterSpawnLocation,
+									  TEXT("Server 1 should see the pawn close to the initial spawn location"), 1.0f))
 			{
 				FinishStep();
 			}
 		});
-
 
 		// Step 8 - Client 1 checks that the movement was replicated correctly.
 		AddStep(
@@ -209,19 +206,20 @@ void ADynamicSubobjectsTest::PrepareTest()
 				ATestMovementCharacter* PlayerCharacter = GetFlowPawn();
 
 				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid"))
-					&& AssertEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterSpawnLocation, TEXT("Client 1 should see themself close to the initial spawn location"), 1.0f))
+					&& AssertEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterSpawnLocation,
+										  TEXT("Client 1 should see themself close to the initial spawn location"), 1.0f))
 				{
 					FinishStep();
 				}
 			},
 			StepTimeLimit);
 
-
 		// Step 9 - Client 1 checks it can see the AReplicatedGASTestActor
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased2"), FWorkerDefinition::Client(1), nullptr, nullptr,
 			[this, i](float DeltaTime) {
-				if (AssertIsValid(TestActor, TEXT("Test actor should be valid")) && AssertEqual_Int(TestActor->TestIntProperty, i + 1, TEXT("Client 1 should see the updated TestIntProperty value")))
+				if (AssertIsValid(TestActor, TEXT("Test actor should be valid"))
+					&& AssertEqual_Int(TestActor->TestIntProperty, i + 1, TEXT("Client 1 should see the updated TestIntProperty value")))
 				{
 					FinishStep();
 				}
@@ -239,13 +237,13 @@ void ADynamicSubobjectsTest::PrepareTest()
 						TArray<UActorComponent*> AllActorComp;
 						TestActor->GetComponents<UActorComponent>(AllActorComp);
 
-						RequireEqual_Int(AllActorComp.Num(), 0, TEXT("All components on DynamicSubobjectTestActor should have been destroyed."));
+						RequireEqual_Int(AllActorComp.Num(), 0,
+										 TEXT("All components on DynamicSubobjectTestActor should have been destroyed."));
 						FinishStep();
 					}
 				},
 				StepTimeLimit);
 		}
-
 	}
 
 	// Step 10 - Server Cleanup.
@@ -260,7 +258,6 @@ void ADynamicSubobjectsTest::PrepareTest()
 			FinishStep();
 		}
 	});
-
 }
 
 AReplicatedGASTestActor* ADynamicSubobjectsTest::GetReplicatedTestActor()
