@@ -103,8 +103,17 @@ void USpatialNetConnection::UpdateLevelVisibility(const struct FUpdateLevelVisib
 	// We want to update our interest as fast as possible
 	// So we send an Interest update immediately.
 
-	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
-	Sender->UpdateInterestComponent(Cast<AActor>(PlayerController));
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-19238 - [IMPROVEMENT] Send interest updates caused by UpdateLevelVisibility at most once / frame
+	//USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
+	//Sender->UpdateInterestComponent(Cast<AActor>(PlayerController));
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
+	check(SpatialNetDriver != nullptr);
+
+	USpatialActorChannel* Channel = SpatialNetDriver->GetOrCreateSpatialActorChannel(PlayerController);
+	check(Channel != nullptr);
+
+	Channel->SetIsInterestUpdateRequired(true);
+	// NWX_END
 }
 
 void USpatialNetConnection::FlushDormancy(AActor* Actor)

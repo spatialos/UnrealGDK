@@ -213,6 +213,25 @@ public:
 
 	uint64 GetAuthorityReceivedTimestamp() const { return AuthorityReceivedTimestamp; }
 
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-16777 - [IMPROVEMENT] Adding timestamp for migration prevention warnings
+	static const uint64 MIGRATION_TIMESTAMP_NOTSET = 0;
+
+	void ResetMigrationPreventedTimestamp()
+	{
+		MigrationPreventedTimestamp = MIGRATION_TIMESTAMP_NOTSET;
+	}
+
+	void SetMigrationPreventedTimestamp()
+	{
+		MigrationPreventedTimestamp = FPlatformTime::Cycles64();
+	}
+
+	uint64 GetMigrationPreventedTimestamp() const
+	{
+		return MigrationPreventedTimestamp;
+	}
+	// NWX_END
+
 	inline bool IsAuthoritativeServer() const { return bIsAuthServer; }
 
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
@@ -279,6 +298,11 @@ public:
 	void SetNeedOwnerInterestUpdate(bool bInNeedOwnerInterestUpdate) { bNeedOwnerInterestUpdate = bInNeedOwnerInterestUpdate; }
 
 	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
+
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-19238 - [IMPROVEMENT] Move UpdateRequired logic to SpatialActorChannel
+	inline void SetIsInterestUpdateRequired(const bool bUpdateRequired) { bIsInterestUpdateRequired = bUpdateRequired; }
+	inline bool IsInterestUpdateRequired() const { return bIsInterestUpdateRequired; }
+	// NWX_END
 
 protected:
 	// Begin UChannel interface
@@ -364,7 +388,17 @@ private:
 	// Using this timestamp, we can back off attempting migrations for a while.
 	uint64 AuthorityReceivedTimestamp;
 
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-16777 - [IMPROVEMENT] Adding timestamp for migration prevention warnings
+	// Used to prevent transient warnings on migration prevention that only last for a short
+	// amount of time.
+	uint64 MigrationPreventedTimestamp;
+	// NWX_END
+
 	// In case the actor's owner did not have an entity ID when trying to set interest to it
 	// We set this flag in order to try to add interest as soon as possible.
 	bool bNeedOwnerInterestUpdate;
+
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-19238 - [IMPROVEMENT] Move UpdateRequired logic to SpatialActorChannel
+	bool bIsInterestUpdateRequired = false;
+	// NWX_END
 };

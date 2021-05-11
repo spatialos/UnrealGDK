@@ -174,6 +174,27 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialGDK|Spatial Debugger", meta = (WorldContext = "WorldContextObject"))
 	static void SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* WorldContextObject, FOnConfigUIClosedDelegate Delegate);
 
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-18854 - [IMPROVEMENT] Add GetEntityIdsInHierarchy
+	static void GetEntityIdsInHierarchy(const AActor* RootActor, TArray<int64>& OutEntityIds);
+	// NWX_END
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-20132 - [IMPROVEMENT]  Add GDK support for player disconnects.
+	template<typename T>
+	static TOptional<T> GetComponentFromEntity(const Worker_Entity& Entity)
+	{
+		for (const Worker_ComponentData& ComponentData : TArray<Worker_ComponentData>(Entity.components, Entity.component_count))
+		{
+			if (ComponentData.component_id == T::ComponentId)
+			{
+				return T(ComponentData);
+			}
+		}
+
+		return {};
+	}
+
+	static Worker_EntityId FindEntityIdForWorkerId(const TArray<Worker_Entity>& Entities, const FString& WorkerId);
+	// NWX_END
+
 private:
 	static FName GetCurrentWorkerType(const UObject* WorldContext);
 };

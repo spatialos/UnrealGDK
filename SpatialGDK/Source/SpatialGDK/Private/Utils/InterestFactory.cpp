@@ -3,6 +3,9 @@
 #include "Utils/InterestFactory.h"
 
 #include "EngineClasses/Components/ActorInterestComponent.h"
+// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-18915 - [IMPROVEMENT] InterestSettingsComponent
+#include "EngineClasses/Components/InterestSettingsComponent.h"
+// NWX_END
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -272,10 +275,23 @@ void InterestFactory::AddOwnerInterestOnServer(Interest& OutInterest, const AAct
 		OwnerQuery.EntityIdConstraint = PackageMap->GetEntityIdFromObject(Owner);
 		if (OwnerQuery.EntityIdConstraint == SpatialConstants::INVALID_ENTITY_ID)
 		{
-			UE_LOG(LogInterestFactory, Warning,
-				   TEXT("Interest for Actor %s (%llu) is out of date because owner %s does not have an entity id."
-						"USpatialActorChannel::NeedOwnerInterestUpdate should be set in order to eventually update it"),
-				   *InActor->GetName(), EntityId, *Owner->GetName());
+			// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-20005 - [TEMP] Until we can move logic to onready we're downgrading this to a log for actors in begin play (https://improbableio.atlassian.net/browse/UNR-4525)
+			// 	UE_LOG(LogInterestFactory, Warning,
+			//    TEXT("Interest for Actor %s (%llu) is out of date because owner %s does not have an entity id."
+			//    "USpatialActorChannel::NeedOwnerInterestUpdate should be set in order to eventually update it"),
+			//	  * InActor->GetName(), EntityId, * Owner->GetName());
+			const FString Message = FString::Printf(TEXT("Interest for Actor %s (%llu) is out of date because owner %s does not have an entity id."
+				"USpatialActorChannel::NeedOwnerInterestUpdate should be set in order to eventually update it."),
+				* InActor->GetName(), EntityId, * Owner->GetName());
+			if (Owner->bNetStartup || FUnrealObjectRef::IsUniqueActorClass(Owner->GetClass()))
+			{
+				UE_LOG(LogInterestFactory, Log, TEXT("%s"), *Message);
+			}
+			else
+			{
+				UE_LOG(LogInterestFactory, Warning, TEXT("%s"), *Message);
+			}
+			//NWX_END
 			return;
 		}
 		OwnerChainQuery.Constraint.OrConstraint.Add(OwnerQuery);
@@ -434,18 +450,29 @@ void InterestFactory::GetActorUserDefinedQueryConstraints(const AActor* InActor,
 		return;
 	}
 
-	// The defined actor interest component populates the frequency to constraints map with the user defined queries.
-	TArray<UActorInterestComponent*> ActorInterestComponents;
-	InActor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
-	if (ActorInterestComponents.Num() == 1)
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-18843 - [IMPROVEMENT] Support for custom Interest components
+	// NWX_MORE - https://improbableio.atlassian.net/browse/NWX-18916 - [IMPROVEMENT] Support for more than 1 Interest component per player
+	//// The defined actor interest component populates the frequency to constraints map with the user defined queries.
+	//TArray<UActorInterestComponent*> ActorInterestComponents;
+	//InActor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
+	//if (ActorInterestComponents.Num() == 1)
+	//{
+	//	ActorInterestComponents[0]->PopulateFrequencyToConstraintsMap(*ClassInfoManager, OutFrequencyToConstraints);
+	//}
+	//else if (ActorInterestComponents.Num() > 1)
+	//{
+	//	UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestComponent"), *InActor->GetPathName());
+	//	checkNoEntry()
+	//}
+	// Any ActorComponent implementing ISpatialInterestProvider can populate the frequency to constraints map with the user defined queries.
+	TArray<UActorComponent*> InterestProvidingComponents = InActor->GetComponentsByInterface(USpatialInterestProvider::StaticClass());
+
+	for (const auto InterestProvidingComponent : InterestProvidingComponents)
 	{
-		ActorInterestComponents[0]->PopulateFrequencyToConstraintsMap(*ClassInfoManager, OutFrequencyToConstraints);
+		const ISpatialInterestProvider* InterestProvider = Cast<ISpatialInterestProvider>(InterestProvidingComponent);
+		InterestProvider->PopulateFrequencyToConstraintsMap(*ClassInfoManager, OutFrequencyToConstraints);
 	}
-	else if (ActorInterestComponents.Num() > 1)
-	{
-		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestComponent"), *InActor->GetPathName());
-		checkNoEntry()
-	}
+	// NWX_END
 
 	if (bRecurseChildren)
 	{
@@ -516,22 +543,31 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 
 bool InterestFactory::ShouldAddNetCullDistanceInterest(const AActor* InActor) const
 {
-	// If the actor has a component to specify interest and that indicates that we shouldn't add
-	// constraints based on NetCullDistanceSquared, abort. There is a check elsewhere to ensure that
-	// there is at most one ActorInterestQueryComponent.
-	TArray<UActorInterestComponent*> ActorInterestComponents;
-	InActor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
-	if (ActorInterestComponents.Num() == 1)
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-18843 - [IMPROVEMENT] Support for custom Interest components
+	// NWX_MORE - https://improbableio.atlassian.net/browse/NWX-18916 - [IMPROVEMENT] Support for more than 1 Interest component per player
+	// NWX_MORE - https://improbableio.atlassian.net/browse/NWX-18915 - [IMPROVEMENT] InterestSettingsComponent
+	//// there is at most one ActorInterestQueryComponent.
+	//TArray<UActorInterestComponent*> ActorInterestComponents;
+	//InActor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
+	//if (ActorInterestComponents.Num() == 1)
+	//{
+	//	const UActorInterestComponent* ActorInterest = ActorInterestComponents[0];
+	//	check(ActorInterest);
+	//	if (!ActorInterest->bUseNetCullDistanceSquaredForCheckoutRadius)
+	//	{
+	//		return false;
+	//	}
+	//}
+	TArray<UInterestSettingsComponent*> SettingsComponents;
+	InActor->GetComponents<UInterestSettingsComponent>(SettingsComponents);
+
+	if (SettingsComponents.Num() == 0)
 	{
-		const UActorInterestComponent* ActorInterest = ActorInterestComponents[0];
-		check(ActorInterest);
-		if (!ActorInterest->bUseNetCullDistanceSquaredForCheckoutRadius)
-		{
-			return false;
-		}
+		return true;
 	}
 
-	return true;
+	return SettingsComponents[0]->bUseNetCullDistanceSquaredForCheckoutRadius;
+	// NWX_END
 }
 
 QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint(const AActor* InActor, const FClassInfo& InInfo) const

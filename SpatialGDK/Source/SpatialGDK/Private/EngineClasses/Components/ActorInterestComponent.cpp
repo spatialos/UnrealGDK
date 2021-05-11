@@ -5,6 +5,14 @@
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
 
+// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-18843 - [IMPROVEMENT] Support for custom Interest components
+UActorInterestComponent::UActorInterestComponent(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	PrimaryComponentTick.bCanEverTick = false;
+}
+// NWX_END
+
 void UActorInterestComponent::PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager,
 																SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const
 {

@@ -18,6 +18,9 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineStats.h"
+// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-18843 - [IMPROVEMENT] Support for custom Interest components
+#include "Interfaces/ISpatialInterestProvider.h"
+// NWX_END
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
@@ -212,6 +215,10 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	TimeWhenPositionLastUpdated = 0.0;
 	AuthorityReceivedTimestamp = 0;
 	bNeedOwnerInterestUpdate = false;
+
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-16777 - [IMPROVEMENT] Adding timestamp for migration prevention warnings
+	ResetMigrationPreventedTimestamp();
+	// NWX_END
 
 	PendingDynamicSubobjects.Empty();
 	SavedInterestBucketComponentID = SpatialConstants::INVALID_COMPONENT_ID;
@@ -645,11 +652,29 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	ReplicationBytesWritten = 0;
 
-	if (!bCreatingNewEntity && NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-18843 - [IMPROVEMENT] Support for custom Interest components
+	// NWX_MORE - https://improbableio.atlassian.net/browse/NWX-18916 - [IMPROVEMENT] Support for more than 1 Interest component per player
+	// NWX_MORE - https://improbableio.atlassian.net/browse/NWX-19238 - [IMPROVEMENT] Move UpdateRequired logic to SpatialActorChannel
+	//if (!bCreatingNewEntity && NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+	//{
+	//	Sender->UpdateInterestComponent(Actor);
+	//	SetNeedOwnerInterestUpdate(false);
+	//}
+	if (!bCreatingNewEntity)
 	{
-		Sender->UpdateInterestComponent(Actor);
-		SetNeedOwnerInterestUpdate(false);
+		TRACE_CPUPROFILER_EVENT_SCOPE(USpatialActorChannel::UpdateInterest);
+		if (NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
+		{
+			Sender->UpdateInterestComponent(Actor);
+			SetNeedOwnerInterestUpdate(false);
+		}
+		else if (IsInterestUpdateRequired())
+		{
+			Sender->UpdateInterestComponent(Actor);
+			SetIsInterestUpdateRequired(false);
+		}
 	}
+	// NWX_END
 
 	// If any properties have changed, send a component update.
 	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)

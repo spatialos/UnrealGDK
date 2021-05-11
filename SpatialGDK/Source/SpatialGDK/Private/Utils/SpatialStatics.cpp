@@ -28,7 +28,22 @@ bool CanProcessActor(const AActor* Actor)
 		return false;
 	}
 
-	const UNetDriver* NetDriver = Actor->GetWorld()->GetNetDriver();
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-16741 - [IMPROVEMENT] Checking for null world and net driver in CanProcessActor
+	//const UNetDriver* NetDriver = Actor->GetWorld()->GetNetDriver();
+	const UWorld* World = Actor->GetWorld();
+	if(World == nullptr)
+	{
+		return false;
+	}
+
+	const UNetDriver* NetDriver = World->GetNetDriver();
+
+	if(NetDriver == nullptr)
+	{
+		return false;
+	}
+	// NWX_END
+
 	if (!NetDriver->IsServer())
 	{
 		UE_LOG(LogSpatial, Error, TEXT("Calling locking API functions on a client is invalid. Actor: %s"), *GetNameSafe(Actor));
@@ -128,6 +143,13 @@ FColor USpatialStatics::GetInspectorColorForWorkerName(const FString& WorkerName
 bool USpatialStatics::IsMultiWorkerEnabled()
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-18360 - [IMPROVEMENT] - Make sure that we always return false if the project setting has spatial networking turned off. 
+	if (GetDefault<UGeneralProjectSettings>()->UsesSpatialNetworking() == false)
+	{
+		return false;
+	}
+	// NWX_END
 
 	// Check if multi-worker settings class was overridden from the command line
 	if (SpatialGDKSettings->OverrideMultiWorkerSettingsClass.IsSet())
@@ -249,7 +271,7 @@ void USpatialStatics::PrintTextSpatial(UObject* WorldContextObject, const FText 
 
 int64 USpatialStatics::GetActorEntityId(const AActor* Actor)
 {
-	if (Actor == nullptr)
+	if (Actor == nullptr)// || !IsValid(Actor))
 	{
 		return SpatialConstants::INVALID_ENTITY_ID;
 	}
@@ -383,3 +405,38 @@ void USpatialStatics::SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* 
 		SpatialNetDriver->SpatialDebugger->OnConfigUIClosed = Delegate;
 	}));
 }
+
+// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-18854 - [IMPROVEMENT] Add GetEntityIdsInHierarchy
+void USpatialStatics::GetEntityIdsInHierarchy(const AActor* RootActor, TArray<int64>& OutEntityIds)
+{
+	const int64 EntityId = USpatialStatics::GetActorEntityId(RootActor);
+
+	if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		OutEntityIds.Add(EntityId);
+	}
+
+	for (const auto& Child : RootActor->Children)
+	{
+		GetEntityIdsInHierarchy(Child, OutEntityIds);
+	}
+}
+// NWX_END
+
+// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-20132 - [IMPROVEMENT]  Add GDK support for player disconnects.
+Worker_EntityId USpatialStatics::FindEntityIdForWorkerId(const TArray<Worker_Entity>& Entities, const FString& WorkerId)
+{
+	for (const Worker_Entity& Entity : Entities)
+	{
+		if (TOptional<SpatialGDK::Worker> WorkerComponent = USpatialStatics::GetComponentFromEntity<SpatialGDK::Worker>(Entity))
+		{
+			if (WorkerComponent->WorkerId == WorkerId)
+			{
+				return Entity.entity_id;
+			}
+		}
+	}
+
+	return SpatialConstants::INVALID_ENTITY_ID;
+}
+// NWX_END

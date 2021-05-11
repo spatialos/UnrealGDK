@@ -4,6 +4,9 @@
 
 #include "Components/ActorComponent.h"
 #include "CoreMinimal.h"
+// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-18843 - [IMPROVEMENT] Support for custom Interest components
+#include "EngineClasses/Components/AbstractInterestComponent.h"
+// NWX_END
 #include "Interop/SpatialInterestConstraints.h"
 #include "Schema/Interest.h"
 
@@ -15,23 +18,32 @@ class USpatialClassInfoManager;
  * Creates a set of SpatialOS Queries for describing interest that this actor has in other entities.
  */
 UCLASS(ClassGroup = (SpatialGDK), NotSpatialType, Meta = (BlueprintSpawnableComponent))
-class SPATIALGDK_API UActorInterestComponent final : public UActorComponent
+// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-18843 - [IMPROVEMENT] Support for custom Interest components
+//class SPATIALGDK_API UActorInterestComponent final : public UActorComponent
+class SPATIALGDK_API UActorInterestComponent final : public UAbstractInterestComponent
+// NWX_END
 {
 	GENERATED_BODY()
 
 public:
-	UActorInterestComponent() = default;
-	~UActorInterestComponent() = default;
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-18843 - [IMPROVEMENT] Support for custom Interest components
+	//UActorInterestComponent() = default;
+	//~UActorInterestComponent() = default;
+	//void PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager,
+	//									   SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const;
+	UActorInterestComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-	void PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager,
-										   SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const;
+	virtual void PopulateFrequencyToConstraintsMap(const USpatialClassInfoManager& ClassInfoManager,
+										   SpatialGDK::FrequencyToConstraintsMap& OutFrequencyToQueryConstraints) const override;
+	// NWX_END
 
 	/**
 	 * Whether to use NetCullDistanceSquared to generate constraints relative to the Actor that this component is attached to.
 	 */
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Interest")
-	bool bUseNetCullDistanceSquaredForCheckoutRadius = true;
-
+	// NWX_BEGIN - https://improbableio.atlassian.net/browse/NWX-18843 - [IMPROVEMENT] Support for custom Interest components
+	//UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Interest")
+	//bool bUseNetCullDistanceSquaredForCheckoutRadius = true;
+	// NWX_END
 	/**
 	 * The Queries associated with this component.
 	 */
