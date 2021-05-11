@@ -597,22 +597,20 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 	const int32 UnresolvedRefCount = UnresolvedRefs.Num();
 
 	const bool bIsReliableChannel = PendingRPCParams.Type == ERPCType::ClientReliable || PendingRPCParams.Type == ERPCType::ServerReliable;
-	bool bMissingServerObject = false;
-	for (const FUnrealObjectRef& MissingRef : UnresolvedRefs)
-	{
+	const bool bMissingServerObject = Algo::AnyOf(UnresolvedRefs, [&TargetObject, Function](const FUnrealObjectRef& MissingRef) {
 		if (MissingRef.bNoLoadOnClient)
 		{
-			bMissingServerObject = true;
+			return true;
 		}
 		else if (!ensureAlwaysMsgf(MissingRef.Path.IsSet(),
 								   TEXT("Received reference to dynamic object as loadable. Target : %s, Parameter Entity : %llu, RPC : %s"),
 								   *TargetObject->GetName(), MissingRef.Entity, *Function->GetName()))
 		{
 			// Validation code, to ensure that every loadable ref we receive has a name.
-			bMissingServerObject = true;
-			break;
+			return true;
 		}
-	}
+		return false;
+	});
 
 	const bool bCannotWaitLongerThanQueueTime = !bIsReliableChannel || bMissingServerObject;
 	const bool bQueueTimeExpired = TimeQueued > SpatialSettings->QueuedIncomingRPCWaitTime;
