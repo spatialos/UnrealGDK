@@ -84,9 +84,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	if (Settings->bCaptureAllEventTracingData)
 	{
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing span sampling always."));
-		Parameters.span_sampling_parameters.sampling_mode = Settings->bCaptureAllEventTracingData
-																? Trace_SamplingMode::TRACE_SAMPLING_MODE_ALWAYS
-																: Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
+		Parameters.span_sampling_parameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_ALWAYS;
 	}
 	else
 	{
@@ -167,7 +165,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	FolderPath = EventTracePath;
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	const FString FileName = TEXT("event-log");
-	const FString FileExt = TEXT(".etlog"); // TODO: Update the NFRs to use the new extension
+	const FString FileExt = TEXT(".etlog"); 
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
 	{
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace file%s to %s."),

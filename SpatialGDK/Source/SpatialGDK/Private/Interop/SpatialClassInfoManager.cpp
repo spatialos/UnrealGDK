@@ -318,7 +318,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 				ComponentToOffsetMap.Add(ComponentId, Offset);
 				ComponentToCategoryMap.Add(ComponentId, ESchemaComponentType(Type));
 			}
-		};
+		}
 
 		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
 	}
