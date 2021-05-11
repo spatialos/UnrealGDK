@@ -282,9 +282,6 @@ const Schema_FieldId ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID = 1;
 // ActorGroupMember field IDs
 const Schema_FieldId ACTOR_GROUP_MEMBER_COMPONENT_ACTOR_GROUP_ID = 1;
 
-// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
-const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
-
 const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 const float FORWARD_PLAYER_SPAWN_COMMAND_WAIT_SECONDS = 0.2f;

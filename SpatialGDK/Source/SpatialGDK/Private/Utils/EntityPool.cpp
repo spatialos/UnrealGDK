@@ -6,16 +6,13 @@
 #include "Interop/SpatialSender.h"
 #include "SpatialGDKSettings.h"
 
-#include "TimerManager.h"
-
 DEFINE_LOG_CATEGORY(LogSpatialEntityPool);
 
 using namespace SpatialGDK;
 
-void UEntityPool::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
+void UEntityPool::Init(USpatialNetDriver& InNetDriver)
 {
-	NetDriver = InNetDriver;
-	TimerManager = InTimerManager;
+	NetDriver = &InNetDriver;
 
 	ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolInitialReservationCount);
 }
@@ -63,32 +60,14 @@ void UEntityPool::ReserveEntityIDs(uint32 EntitiesToReserve)
 		ensureAlwaysMsgf(EntitiesToReserve == Op.number_of_entity_ids,
 						 TEXT("Received a different number of reserved entity IDs to what was requested"));
 
-		// Clean up any expired Entity ranges
-		ReservedEntityIDRanges = ReservedEntityIDRanges.FilterByPredicate([](const EntityRange& Element) {
-			return !Element.bExpired;
-		});
-
 		EntityRange NewEntityRange = {};
 		NewEntityRange.CurrentEntityId = Op.first_entity_id;
 		NewEntityRange.LastEntityId = Op.first_entity_id + (Op.number_of_entity_ids - 1);
-		NewEntityRange.EntityRangeId = NextEntityRangeId++;
 
-		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Reserved %d entities, caching in pool, Entity IDs: (%d, %d) Range ID: %d"),
-			   Op.number_of_entity_ids, Op.first_entity_id, NewEntityRange.LastEntityId, NewEntityRange.EntityRangeId);
+		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Reserved %d entities, caching in pool, Entity IDs: (%d, %d)"), Op.number_of_entity_ids,
+			   Op.first_entity_id, NewEntityRange.LastEntityId);
 
 		ReservedEntityIDRanges.Add(NewEntityRange);
-
-		FTimerHandle ExpirationTimer;
-		TWeakObjectPtr<UEntityPool> WeakThis(this);
-		TimerManager->SetTimer(
-			ExpirationTimer,
-			[WeakThis, ExpiringEntityRangeId = NewEntityRange.EntityRangeId]() {
-				if (UEntityPool* Pool = WeakThis.Get())
-				{
-					Pool->OnEntityRangeExpired(ExpiringEntityRangeId);
-				}
-			},
-			SpatialConstants::ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS, false);
 
 		if (!bIsReady)
 		{
@@ -109,41 +88,6 @@ void UEntityPool::Advance()
 	ReserveEntityIdsHandler.ProcessOps(NetDriver->Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
 }
 
-void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)
-{
-	UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Entity range expired! Range ID: %d"), ExpiringEntityRangeId);
-
-	int32 FoundEntityRangeIndex = ReservedEntityIDRanges.IndexOfByPredicate([ExpiringEntityRangeId](const EntityRange& Element) {
-		return Element.EntityRangeId == ExpiringEntityRangeId;
-	});
-
-	if (FoundEntityRangeIndex == INDEX_NONE)
-	{
-		// This entity range has already been cleaned up as a result of running out of Entity IDs.
-		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Entity range ID: %d has already been depleted"), ExpiringEntityRangeId);
-		return;
-	}
-
-	if (FoundEntityRangeIndex < ReservedEntityIDRanges.Num() - 1)
-	{
-		// This is not the most recent entity range, just clean up without requesting additional IDs.
-		UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Newer range detected, cleaning up Entity range ID: %d without new request"),
-			   ExpiringEntityRangeId);
-		ReservedEntityIDRanges.RemoveAt(FoundEntityRangeIndex);
-	}
-	else
-	{
-		// Reserve then cleanup
-		if (!bIsAwaitingResponse)
-		{
-			UE_LOG(LogSpatialEntityPool, Verbose, TEXT("Reserving new Entity range to replace Entity range ID: %d"), ExpiringEntityRangeId);
-			ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolRefreshCount);
-		}
-		// Mark this entity range as expired, so it gets cleaned up when we receive a new entity range from Spatial.
-		ReservedEntityIDRanges[FoundEntityRangeIndex].bExpired = true;
-	}
-}
-
 Worker_EntityId UEntityPool::GetNextEntityId()
 {
 	if (ReservedEntityIDRanges.Num() == 0)
@@ -155,7 +99,7 @@ Worker_EntityId UEntityPool::GetNextEntityId()
 	}
 
 	EntityRange& CurrentEntityRange = ReservedEntityIDRanges[0];
-	Worker_EntityId NextId = CurrentEntityRange.CurrentEntityId++;
+	const Worker_EntityId NextId = CurrentEntityRange.CurrentEntityId++;
 
 	uint32_t TotalRemainingEntityIds = 0;
 	for (EntityRange Range : ReservedEntityIDRanges)
