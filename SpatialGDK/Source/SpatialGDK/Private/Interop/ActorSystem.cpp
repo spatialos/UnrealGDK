@@ -2398,7 +2398,7 @@ void ActorSystem::DeleteEntityComponentData(TArray<FWorkerComponentData>& Entity
 void ActorSystem::AddTombstoneToEntity(Worker_EntityId EntityId) const
 {
 	if (!ensureAlwaysMsgf(ActorSubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
-						  TEXT("Trying to add tombstone to entity from non-auth server")))
+						  TEXT("Trying to add tombstone to entity without authority")))
 	{
 		return;
 	}

@@ -194,13 +194,13 @@ FVector ULayeredLBStrategy::GetWorkerEntityPosition() const
 {
 	if (!ensureAlwaysMsgf(IsReady(), TEXT("Called GetWorkerEntityPosition before load balancing strategy was ready")))
 	{
-		return FVector();
+		return FVector::ZeroVector;
 	}
 
 	if (!VirtualWorkerIdToLayerName.Contains(LocalVirtualWorkerId))
 	{
 		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for worker %d."), LocalVirtualWorkerId);
-		return FVector{ 0.f, 0.f, 0.f };
+		return FVector::ZeroVector;
 	}
 
 	const FName& LayerName = VirtualWorkerIdToLayerName[LocalVirtualWorkerId];
@@ -208,7 +208,7 @@ FVector ULayeredLBStrategy::GetWorkerEntityPosition() const
 	if (!ensureAlwaysMsgf(LayerNameToLBStrategy.Contains(LayerName),
 						  TEXT("Called GetWorkerEntityPosition but couldn't find layer %s in local map"), *LayerName.ToString()))
 	{
-		return FVector();
+		return FVector::ZeroVector;
 	}
 
 	return LayerNameToLBStrategy[LayerName]->GetWorkerEntityPosition();

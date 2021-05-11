@@ -1102,7 +1102,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 
 	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
 	if (!ensureAlwaysMsgf(!HandoverShadowDataMap.Contains(InActor),
-						  TEXT("HandoverShadowDataMap already contained Actor %s with id %lld, this shouldn't happen. Calling Empty()."),
+						  TEXT("HandoverShadowDataMap already contained Actor, will remove data. Actor: %s. Entity: %lld."),
 						  *InActor->GetName(), EntityId))
 	{
 		HandoverShadowDataMap.FindAndRemoveChecked(InActor);

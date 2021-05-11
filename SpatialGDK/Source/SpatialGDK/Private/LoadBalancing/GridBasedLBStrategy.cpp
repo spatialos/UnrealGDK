@@ -183,13 +183,13 @@ FVector UGridBasedLBStrategy::GetWorkerEntityPosition() const
 {
 	if (!ensureAlwaysMsgf(IsReady(), TEXT("Called GetWorkerEntityPosition before load balancing strategy is ready")))
 	{
-		return FVector();
+		return FVector::ZeroVector;
 	}
 
 	if (!ensureAlwaysMsgf(bIsStrategyUsedOnLocalWorker,
 						  TEXT("Called GetWorkerEntityPosition on load balancing stratey that isn't in use by the local worker")))
 	{
-		return FVector();
+		return FVector::ZeroVector;
 	}
 
 	const FVector2D Centre = WorkerCells[LocalCellId].GetCenter();

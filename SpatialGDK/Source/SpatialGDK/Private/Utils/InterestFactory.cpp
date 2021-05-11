@@ -29,6 +29,7 @@ InterestFactory::InterestFactory(USpatialClassInfoManager* InClassInfoManager, U
 	: ClassInfoManager(InClassInfoManager)
 	, PackageMap(InPackageMap)
 {
+	check(ClassInfoManager != nullptr);
 	CreateAndCacheInterestState();
 }
 

@@ -157,7 +157,7 @@ void USpatialNetDriverDebugContext::Reset()
 	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
 }
 
-void USpatialNetDriverDebugContext::GetAuthDebugComponent(AActor* Actor, DebugComponentAuthData& Comp)
+void USpatialNetDriverDebugContext::GetAuthDebugComponent(AActor* Actor, DebugComponentAuthData& OutComp)
 {
 	if (!ensureAlwaysMsgf(Actor && Actor->HasAuthority(), TEXT("Called GetAuthDebugComponent without authority for Actor: %s"),
 						  *GetNameSafe(Actor)))
@@ -173,13 +173,13 @@ void USpatialNetDriverDebugContext::GetAuthDebugComponent(AActor* Actor, DebugCo
 		DbgComp = DebugComponents.Find(Entity);
 	}
 
-	Comp = ActorDebugInfo.FindOrAdd(Actor);
-	if (DbgComp && Comp.Entity == SpatialConstants::INVALID_ENTITY_ID)
+	OutComp = ActorDebugInfo.FindOrAdd(Actor);
+	if (DbgComp && OutComp.Entity == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		Comp.Component = *DbgComp;
-		Comp.bAdded = true;
+		OutComp.Component = *DbgComp;
+		OutComp.bAdded = true;
 	}
-	Comp.Entity = Entity;
+	OutComp.Entity = Entity;
 }
 
 void USpatialNetDriverDebugContext::AddActorTag(AActor* Actor, FName Tag)

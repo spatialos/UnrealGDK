@@ -1087,13 +1087,12 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 			if (UActorChannel* Channel = ClientConnection->ActorChannelMap().FindRef(ThisActor))
 			{
-				if (!ensureAlwaysMsgf(Channel->OpenedLocally, TEXT("Trying to close non-locally-opened Actor channel when deleting Actor")))
+				if (ensureAlwaysMsgf(Channel->OpenedLocally, TEXT("Trying to close non-locally-opened Actor channel when deleting Actor")))
 				{
-					continue;
+					Channel->bClearRecentActorRefs = false;
+					// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
+					Channel->Close(EChannelCloseReason::Destroyed);
 				}
-				Channel->bClearRecentActorRefs = false;
-				// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
-				Channel->Close(EChannelCloseReason::Destroyed);
 			}
 
 			// Remove it from any dormancy lists
@@ -1295,13 +1294,12 @@ void USpatialNetDriver::ProcessOwnershipChanges()
 		{
 			if (bShouldWriteLoadBalancingData)
 			{
-				if (!ensureAlwaysMsgf(IsValid(Channel->Actor),
-									  TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %lld"), EntityId))
+				if (ensureAlwaysMsgf(IsValid(Channel->Actor),
+									 TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %lld"), EntityId))
 				{
-					continue;
+					const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, *Channel->Actor);
+					Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
 				}
-				const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, *Channel->Actor);
-				Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
 			}
 
 			Channel->ServerProcessOwnershipChange();
@@ -2887,11 +2885,7 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId, USpatialAct
 		return;
 	}
 
-	const int32 ValuesRemoved = EntityToActorChannel.Remove(EntityId);
-	if (ValuesRemoved != 1)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed removing Entity ID %lld from ActorChannel map in NetDriver."), EntityId);
-	}
+	EntityToActorChannel.Remove(EntityId);
 }
 
 TMap<Worker_EntityId_Key, USpatialActorChannel*>& USpatialNetDriver::GetEntityToActorChannelMap()
@@ -2915,7 +2909,7 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 			TargetActor = Cast<AActor>(TargetObject->GetOuter());
 		}
 
-		if (!ensureAlwaysMsgf(TargetObject != nullptr, TEXT("Failed to find outer Actor when getting Actor channel for object: %s"),
+		if (!ensureAlwaysMsgf(TargetObject != nullptr, TEXT("Failed to find valid Actor when creating Actor channel. Object: %s"),
 							  *GetNameSafe(TargetObject)))
 		{
 			return nullptr;
@@ -2926,7 +2920,7 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 			// This can happen if schema database is out of date and had no entry for a static subobject.
 			UE_LOG(LogSpatialOSNetDriver, Warning,
 				   TEXT("GetOrCreateSpatialActorChannel: No channel for target object but channel already present for actor. Target "
-						"object: %s, actor: %s"),
+						"object: %s. Actor: %s"),
 				   *TargetObject->GetPathName(), *TargetActor->GetPathName());
 			return ActorChannel;
 		}
@@ -2945,7 +2939,8 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 	if (Channel != nullptr && Channel->Actor == nullptr)
 	{
 		// This shouldn't occur, but can often crop up whilst we are refactoring entity/actor/channel lifecycles.
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to correctly initialize SpatialActorChannel for [%s]"), *TargetObject->GetName());
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to correctly initialize SpatialActorChannel. Object: %s"),
+			   *TargetObject->GetName());
 	}
 #endif // !UE_BUILD_SHIPPING
 	return Channel;
