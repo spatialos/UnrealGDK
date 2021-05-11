@@ -258,6 +258,7 @@ public:
 
 	void UpdateShadowData();
 	void UpdateSpatialPosition();
+	void ForcePositionReplication() { TimeWhenPositionLastUpdated = 0; }
 
 	void ServerProcessOwnershipChange();
 	void ClientProcessOwnershipChange(bool bNewNetOwned);

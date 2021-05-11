@@ -2169,18 +2169,57 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 				TWeakObjectPtr<UObject> ObjectPtr = PackageMap->GetObjectFromEntityId(EntityId);
 				if (AActor* Actor = Cast<AActor>(ObjectPtr.Get()))
 				{
+					if (!Actor->HasAuthority())
+					{
+						continue;
+					}
+
 					if (!LockingPolicy->IsLocked(Actor))
 					{
-						if (FNetworkObjectInfo* Info = FindNetworkObjectInfo(Actor))
+						if (FNetworkObjectInfo const* ActorInfo = FindNetworkObjectInfo(Actor))
 						{
-							if (!Info->bPendingNetUpdate)
+							if (!ActorInfo->bPendingNetUpdate)
 							{
 								LoadBalancingContext.AddActorToReplicate(Actor);
 							}
 						}
 
+						if (USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(Actor))
+						{
+							Channel->ForcePositionReplication();
+						}
+
 						ActorsHandedOver.Add(Actor);
 						EntitiesHandedOver.Add(EntityId);
+					}
+
+					AActor* Owner = SpatialGDK::GetTopmostReplicatedOwner(Actor);
+					AActor* HierarchyRoot = Owner ? Owner : Actor;
+					if (HierarchyRoot->HasAuthority())
+					{
+						TFunction<void(AActor*)> ForceReplicateChildren;
+						ForceReplicateChildren = [&](AActor* HierarchyActor) {
+							if (HierarchyActor != Actor)
+							{
+								if (FNetworkObjectInfo const* ActorInfo = FindNetworkObjectInfo(HierarchyActor))
+								{
+									if (!ActorInfo->bPendingNetUpdate)
+									{
+										LoadBalancingContext.AddActorToReplicate(HierarchyActor);
+									}
+								}
+
+								if (USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(HierarchyActor))
+								{
+									Channel->ForcePositionReplication();
+								}
+							}
+							for (AActor* ChildActor : HierarchyActor->Children)
+							{
+								ForceReplicateChildren(ChildActor);
+							}
+						};
+						ForceReplicateChildren(HierarchyRoot);
 					}
 				}
 				else

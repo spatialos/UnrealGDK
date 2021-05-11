@@ -1184,8 +1184,11 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		FWorkerComponentUpdate Update = CurrentNetOwningClientData->CreateNetOwningClientWorkerUpdate();
 		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 
-		// Notify the load balance enforcer of a potential short circuit if we are the delegation authoritative worker.
-		NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+		if (NetDriver->LoadBalanceEnforcer)
+		{
+			// Notify the load balance enforcer of a potential short circuit if we are the delegation authoritative worker.
+			NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+		}
 
 		bUpdatedThisActor = true;
 	}
