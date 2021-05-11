@@ -2,8 +2,6 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 
-#include <string>
-
 #include "HAL/PlatformFile.h"
 #include "HAL/PlatformFilemanager.h"
 #include "SpatialGDKSettings.h"
@@ -81,6 +79,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
 
 	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
+	FSpatialTraceEventDataBuilder::FStringCache AnsiStrings;// Storage for strings passed to the worker SDK Worker requires ansi const char*
 
 	if (Settings->bCaptureAllEventTracingData)
 	{
@@ -97,14 +96,12 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 			   SamplingSettings->SamplingProbability);
 
 		TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
-		TArray<std::string> AnsiStrings; // Worker requires ansi const char*
 		for (const auto& Pair : SamplingSettings->EventSamplingModeOverrides)
 		{
 			const FString& EventName = Pair.Key.ToString();
 			UE_LOG(LogSpatialEventTracer, Log, TEXT("Adding trace event sampling override. Event: %s Probability: %f."), *EventName,
 				   Pair.Value);
-			int32 Index = AnsiStrings.Add(TCHAR_TO_ANSI(*EventName));
-			SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
+			SpanSamplingProbabilities.Add({ AnsiStrings.Get(AnsiStrings.AddFString(EventName)), Pair.Value });
 		}
 
 		Parameters.span_sampling_parameters.probabilistic_parameters.default_probability = SamplingSettings->SamplingProbability;
