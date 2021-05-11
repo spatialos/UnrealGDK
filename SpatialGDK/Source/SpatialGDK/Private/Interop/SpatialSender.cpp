@@ -102,7 +102,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& InActor, VirtualWor
 
 	if (!ensureAlwaysMsgf(EntityId != SpatialConstants::INVALID_ENTITY_ID,
 						  TEXT("Couldn't find entity ID from package map when sending auth intent update. Actor: %s"),
-						  *GetNameSafe(&Actor)))
+						  *GetNameSafe(&InActor)))
 	{
 		return;
 	}
@@ -112,7 +112,7 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& InActor, VirtualWor
 
 	if (!ensureAlwaysMsgf(AuthorityIntentComponent.IsSet(),
 						  TEXT("Failed to get currnet AuthorityIntent data from view coordinator when sending update. Actor: %s"),
-						  *GetNameSafe(&Actor)))
+						  *GetNameSafe(&InActor)))
 	{
 		return;
 	}
