@@ -22,6 +22,7 @@
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestAutoDestroyComponent.h"
 #include "SpatialFunctionalTestFlowController.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 
 namespace
@@ -777,6 +778,36 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 			FoundActor->SetLifeSpan(0.01f);
 		}
 	}
+}
+
+APlayerController* ASpatialFunctionalTest::GetFlowPlayerController()
+{
+	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
+	if (!IsValid(FlowController))
+	{
+		return nullptr;
+	}
+	APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
+	if (!IsValid(PlayerController))
+	{
+		return nullptr;
+	}
+	return PlayerController;
+}
+
+ATestMovementCharacter* ASpatialFunctionalTest::GetFlowPawn()
+{
+	APlayerController* PlayerController = GetFlowPlayerController();
+	if (!IsValid(PlayerController))
+	{
+		return nullptr;
+	}
+	ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
+	if (!IsValid(PlayerCharacter))
+	{
+		return nullptr;
+	}
+	return PlayerCharacter;
 }
 
 namespace

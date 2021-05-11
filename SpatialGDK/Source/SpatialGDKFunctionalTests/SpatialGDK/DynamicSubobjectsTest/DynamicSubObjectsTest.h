@@ -18,6 +18,7 @@ public:
 	ADynamicSubobjectsTest();
 
 	virtual void PrepareTest() override;
+	AReplicatedGASTestActor* GetReplicatedTestActor();
 
 	// A reference to the Default Pawn of Client 1 to allow for repossession in the final step of the test.
 	APawn* ClientOneDefaultPawn;
