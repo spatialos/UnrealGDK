@@ -79,7 +79,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
 
 	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
-	FSpatialTraceEventDataBuilder::FStringCache AnsiStrings;// Storage for strings passed to the worker SDK Worker requires ansi const char*
+	FSpatialTraceEventDataBuilder::FStringCache
+		AnsiStrings; // Storage for strings passed to the worker SDK Worker requires ansi const char*
 
 	if (Settings->bCaptureAllEventTracingData)
 	{
@@ -165,7 +166,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	FolderPath = EventTracePath;
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	const FString FileName = TEXT("event-log");
-	const FString FileExt = TEXT(".etlog"); 
+	const FString FileExt = TEXT(".etlog");
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
 	{
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace file%s to %s."),
