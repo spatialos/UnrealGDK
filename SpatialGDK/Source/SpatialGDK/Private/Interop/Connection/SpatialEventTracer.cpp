@@ -10,6 +10,30 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
 namespace SpatialGDK
 {
+TraceQueryPtr ParseOrDefault(const FString& Str, const char* FilterForLog)
+{
+	TraceQueryPtr Ptr;
+	if (Str.Len())
+	{
+		Ptr.Reset(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str)));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Applied %s query: %s"), FilterForLog, *Str);
+	}
+	else
+	{
+		Ptr.Reset(Trace_ParseSimpleQuery("true"));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("No %s specified, using \"true\""), FilterForLog);
+	}
+
+	if (!Ptr.Get())
+	{
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified %s is invalid, sampling will be disabled. %s"), FilterForLog,
+			   Trace_GetLastError());
+		Ptr.Reset(Trace_ParseSimpleQuery("false"));
+	}
+
+	return Ptr;
+}
+
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
 	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
@@ -79,6 +103,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
 
 	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
+
+	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
 	FSpatialTraceEventDataBuilder::FStringCache
 		AnsiStrings; // Storage for strings passed to the worker SDK Worker requires ansi const char*
 
@@ -94,7 +120,6 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing span sampling probabalistic. Probability: %f."),
 			   SamplingSettings->SamplingProbability);
 
-		TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
 		for (const auto& Pair : SamplingSettings->EventSamplingModeOverrides)
 		{
 			const FString& EventName = Pair.Key.ToString();
@@ -109,43 +134,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	}
 
 	// Filters
-	TraceQueryPtr PreFilter;
-	if (SamplingSettings->EventPreFilter.Len())
-	{
-		PreFilter.Reset(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*SamplingSettings->EventPreFilter)));
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Applied pre-filter query: %s"), *SamplingSettings->EventPreFilter);
-	}
-	else
-	{
-		PreFilter.Reset(FilterQueryTrue());
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("No pre-filter specified, using \"true\""));
-	}
-
-	if (!PreFilter.Get())
-	{
-		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified pre-filter is invalid, sampling will be disabled. %s"),
-			   Trace_GetLastError());
-		PreFilter.Reset(FilterQueryFalse());
-	}
-
-	TraceQueryPtr PostFilter;
-	if (SamplingSettings->EventPostFilter.Len())
-	{
-		PostFilter.Reset(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*SamplingSettings->EventPostFilter)));
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Applied post-filter query: %s"), *SamplingSettings->EventPostFilter);
-	}
-	else
-	{
-		PostFilter.Reset(FilterQueryTrue());
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("No post-filter specified, using \"true\""));
-	}
-
-	if (!PostFilter.Get())
-	{
-		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified post-filter is invalid, sampling will be disabled. %s"),
-			   Trace_GetLastError());
-		PostFilter.Reset(FilterQueryFalse());
-	}
+	TraceQueryPtr PreFilter = ParseOrDefault(SamplingSettings->EventPreFilter, "pre-filter");
+	TraceQueryPtr PostFilter = ParseOrDefault(SamplingSettings->EventPostFilter, "post-filter");
 
 	checkf(PreFilter.Get() != nullptr, TEXT("Pre-filter is invalid."));
 	checkf(PostFilter.Get() != nullptr, TEXT("Post-filter is invalid."));
@@ -382,16 +372,6 @@ FSpatialGDKSpanId SpatialEventTracer::PopLatentPropertyUpdateSpanId(const TWeakO
 void SpatialEventTracer::SetFlushOnWrite(bool bValue)
 {
 	FPlatformAtomics::AtomicStore_Relaxed(&FlushOnWriteAtomic, bValue ? 1 : 0);
-}
-
-Trace_Query* SpatialEventTracer::FilterQueryTrue()
-{
-	return Trace_ParseSimpleQuery("true");
-}
-
-Trace_Query* SpatialEventTracer::FilterQueryFalse()
-{
-	return Trace_ParseSimpleQuery("false");
 }
 
 } // namespace SpatialGDK

@@ -80,10 +80,6 @@ public:
 	FSpatialGDKSpanId PopLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObject>& Object);
 
 	void SetFlushOnWrite(bool bValue);
-
-	static Trace_Query* FilterQueryTrue();
-	static Trace_Query* FilterQueryFalse();
-
 private:
 	struct StreamDeleter
 	{
