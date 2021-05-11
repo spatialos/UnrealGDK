@@ -41,8 +41,8 @@ struct ActorData
 class ActorSystem
 {
 public:
-	ActorSystem(const FSubView& InActorSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
-				SpatialEventTracer* InEventTracer);
+	ActorSystem(const FSubView& InActorSubView, const FSubView& InTombstoneSubView, const FSubView& InStrippedActorSubView,
+				USpatialNetDriver* InNetDriver, SpatialEventTracer* InEventTracer);
 
 	void Advance();
 
@@ -162,6 +162,7 @@ private:
 
 	const FSubView* ActorSubView;
 	const FSubView* TombstoneSubView;
+	const FSubView* StrippedActorSubView;
 	USpatialNetDriver* NetDriver;
 	SpatialEventTracer* EventTracer;
 
@@ -176,6 +177,11 @@ private:
 
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;
+
+	// Entities corresponding to stripped actors which are in the process of being recreated.
+	// We need to keep track of these to identify when we already have a fully formed actor for an incoming added entity
+	// due to entity recreation.
+	TSet<Worker_EntityId_Key> EntitiesBeingRecreated;
 };
 
 } // namespace SpatialGDK

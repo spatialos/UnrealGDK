@@ -503,6 +503,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		const SpatialGDK::FSubView& ActorSubview =
 			Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
 
+		const SpatialGDK::FSubView& StrippedActorSubview = Connection->GetCoordinator().CreateSubView(
+			SpatialConstants::STRIPPED_ACTOR_TAG_COMPONENT_ID, ActorFilter, ActorRefreshCallbacks);
+
 		const FFilterPredicate TombstoneActorFilter = [this](const Worker_EntityId, const SpatialGDK::EntityViewElement& Element) {
 			return Element.Components.ContainsByPredicate(SpatialGDK::ComponentIdEquality{ SpatialConstants::TOMBSTONE_COMPONENT_ID });
 		};
@@ -526,7 +529,8 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 			Connection->GetCoordinator(), MakeUnique<SpatialGDK::RPCExecutor>(this, Connection->GetEventTracer()),
 			Connection->GetEventTracer());
 
-		ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, TombstoneActorSubview, this, Connection->GetEventTracer());
+		ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, TombstoneActorSubview, StrippedActorSubview, this,
+														  Connection->GetEventTracer());
 
 		ClientConnectionManager = MakeUnique<SpatialGDK::ClientConnectionManager>(SystemEntitySubview, this);
 
@@ -2000,7 +2004,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	SET_DWORD_STAT(STAT_SpatialConsiderList, ConsiderList.Num());
 
 	CleanActorReplicationDelegates();
-	
+
 	FMemMark Mark(FMemStack::Get());
 
 	// Make a list of viewers this connection should consider

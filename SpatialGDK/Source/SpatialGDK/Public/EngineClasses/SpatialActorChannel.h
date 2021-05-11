@@ -151,6 +151,11 @@ public:
 
 	FORCEINLINE bool IsReadyForReplication()
 	{
+		if (bWaitingForEntityDeletion)
+		{
+			return false;
+		}
+
 		// Make sure we have authority
 		if (Actor->Role != ROLE_Authority)
 		{
@@ -278,6 +283,10 @@ public:
 
 	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
 
+	void SetWaitingForEntityDeletion(bool bInWaitingForEntityDeletion) { bWaitingForEntityDeletion = bInWaitingForEntityDeletion; }
+
+	bool WaitingForEntityDeletion() const { return bWaitingForEntityDeletion; }
+
 protected:
 	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
@@ -366,4 +375,8 @@ private:
 	// In case the actor's owner did not have an entity ID when trying to set interest to it
 	// We set this flag in order to try to add interest as soon as possible.
 	bool bNeedOwnerInterestUpdate;
+
+	// For stripped actors, we delete the entity we receive before re-creating it through our normal replication flow.
+	// Until we got confirmation that the entity was deleted, this is set to true, which blocks replication from happening.
+	bool bWaitingForEntityDeletion;
 };

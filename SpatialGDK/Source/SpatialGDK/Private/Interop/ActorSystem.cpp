@@ -139,10 +139,11 @@ private:
 
 struct FSubViewDelta;
 
-ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InTombstoneSubView, USpatialNetDriver* InNetDriver,
-						 SpatialEventTracer* InEventTracer)
+ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InTombstoneSubView, const FSubView& InStrippedActorSubView,
+						 USpatialNetDriver* InNetDriver, SpatialEventTracer* InEventTracer)
 	: ActorSubView(&InActorSubView)
 	, TombstoneSubView(&InTombstoneSubView)
+	, StrippedActorSubView(&InStrippedActorSubView)
 	, NetDriver(InNetDriver)
 	, EventTracer(InEventTracer)
 	, ClaimPartitionHandler(*InNetDriver->Connection)
@@ -151,6 +152,52 @@ ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InTombs
 
 void ActorSystem::Advance()
 {
+	for (const EntityDelta& Delta : StrippedActorSubView->GetViewDelta().EntityDeltas)
+	{
+		switch (Delta.Type)
+		{
+		case EntityDelta::ADD:
+		{
+			UE_LOG(LogTemp, Log, TEXT("entity recreation / actor system / Got ADD of %llu."), Delta.EntityId);
+
+			PopulateDataStore(Delta.EntityId);
+			EntityAdded(Delta.EntityId);
+
+			USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Delta.EntityId);
+			// Force the channel to create a new entity. This will be false by default because we already had data for the entity in the
+			// view when creating the channel.
+			Channel->bCreatingNewEntity = true;
+			// Block replication until we've deleted the stripped entity
+			Channel->SetWaitingForEntityDeletion(true);
+
+			EntitiesBeingRecreated.Emplace(Delta.EntityId);
+			NetDriver->Connection->SendDeleteEntityRequest(Delta.EntityId, RETRY_UNTIL_COMPLETE);
+			break;
+		}
+		case EntityDelta::REMOVE:
+		{
+			UE_LOG(LogTemp, Log, TEXT("entity recreation / actor system / Got REMOVE of %llu."), Delta.EntityId);
+			// Intentionally not calling EntityRemoved here - we don't want to delete our local actor.
+			ActorDataStore.Remove(Delta.EntityId);
+			USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Delta.EntityId);
+			// We've gotten confirmation that the entity was deleted, so we can unblock replication, which will create a new entity with the
+			// same ID
+			Channel->SetWaitingForEntityDeletion(false);
+			break;
+		}
+		case EntityDelta::UPDATE:
+			UE_LOG(LogTemp, Warning, TEXT("entity recreation / actor system / Got UPDATE of %llu. This should not happen."),
+				   Delta.EntityId);
+			break;
+		case EntityDelta::TEMPORARILY_REMOVED:
+			UE_LOG(LogTemp, Warning, TEXT("entity recreation / actor system / Got TEMPORARILY_REMOVED of %llu. This should not happen."),
+				   Delta.EntityId);
+			break;
+		default:
+			break;
+		}
+	}
+
 	for (const EntityDelta& Delta : ActorSubView->GetViewDelta().EntityDeltas)
 	{
 		switch (Delta.Type)
@@ -197,8 +244,17 @@ void ActorSystem::Advance()
 			break;
 		}
 		case EntityDelta::ADD:
-			PopulateDataStore(Delta.EntityId);
-			EntityAdded(Delta.EntityId);
+			if (!EntitiesBeingRecreated.Contains(Delta.EntityId))
+			{
+				PopulateDataStore(Delta.EntityId);
+				EntityAdded(Delta.EntityId);
+			}
+			// If this is a recreated entity, we've already done all the initial entity add handling for the actor,
+			// so don't do it again. This avoids duplicate OnAuthorityGained calls
+			else
+			{
+				EntitiesBeingRecreated.Remove(Delta.EntityId);
+			}
 			break;
 		case EntityDelta::REMOVE:
 			EntityRemoved(Delta.EntityId);

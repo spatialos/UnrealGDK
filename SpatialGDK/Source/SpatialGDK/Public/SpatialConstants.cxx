@@ -184,7 +184,7 @@ TArray<Worker_ComponentId>{ // RPCs from clients
                             CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
 
                             // Actor tags
-                            ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
+                            ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID, STRIPPED_ACTOR_TAG_COMPONENT_ID,
 
                             PARTITION_COMPONENT_ID
 };
