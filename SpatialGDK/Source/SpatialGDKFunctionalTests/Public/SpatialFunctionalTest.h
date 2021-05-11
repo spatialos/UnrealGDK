@@ -365,7 +365,7 @@ public:
 	APlayerController* GetFlowPlayerController();
 
 	// Get the pawn that belongs to the PlayerController owned by the current flow.
-	ATestMovementCharacter* GetFlowPawn();
+	APawn* GetFlowPawn();
 
 protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }

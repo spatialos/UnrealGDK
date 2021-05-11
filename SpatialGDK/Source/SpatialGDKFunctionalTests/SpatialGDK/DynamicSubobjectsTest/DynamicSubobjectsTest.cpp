@@ -99,7 +99,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		TEXT("DynamicSubobjectsTestClientCheckPossesion"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float DeltaTime) {
 			APlayerController* PlayerController = GetFlowPlayerController();
-			ATestMovementCharacter* PlayerCharacter = GetFlowPawn();
+			APawn* PlayerCharacter = GetFlowPawn();
 			if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid"))
 				&& PlayerCharacter == PlayerController->AcknowledgedPawn)
 			{
@@ -127,7 +127,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckFirstMovement"), FWorkerDefinition::Client(1), nullptr, nullptr,
 			[this](float DeltaTime) {
-				ATestMovementCharacter* PlayerCharacter = GetFlowPawn();
+				APawn* PlayerCharacter = GetFlowPawn();
 
 				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should not be nullptr"))
 					&& AssertEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterRemoteLocation,
@@ -203,7 +203,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckSecondMovement"), FWorkerDefinition::Client(1), nullptr, nullptr,
 			[this](float DeltaTime) {
-				ATestMovementCharacter* PlayerCharacter = GetFlowPawn();
+				APawn* PlayerCharacter = GetFlowPawn();
 
 				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid"))
 					&& AssertEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterSpawnLocation,

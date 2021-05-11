@@ -783,7 +783,7 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 APlayerController* ASpatialFunctionalTest::GetFlowPlayerController()
 {
 	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
-	checkf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server."));
+	ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server."));
 	if (!IsValid(FlowController))
 	{
 		return nullptr;
@@ -796,14 +796,14 @@ APlayerController* ASpatialFunctionalTest::GetFlowPlayerController()
 	return PlayerController;
 }
 
-ATestMovementCharacter* ASpatialFunctionalTest::GetFlowPawn()
+APawn* ASpatialFunctionalTest::GetFlowPawn()
 {
 	APlayerController* PlayerController = GetFlowPlayerController();
 	if (!IsValid(PlayerController))
 	{
 		return nullptr;
 	}
-	ATestMovementCharacter* PlayerCharacter = Cast<ATestMovementCharacter>(PlayerController->GetPawn());
+	APawn* PlayerCharacter = PlayerController->GetPawn();
 	if (!IsValid(PlayerCharacter))
 	{
 		return nullptr;
