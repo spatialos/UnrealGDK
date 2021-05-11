@@ -8,11 +8,13 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Net/NetworkProfiler.h"
 #include "SpatialConstants.h"
 #include "Utils/ObjectAllocUtils.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialLatencyTracer.h"
+
+#include "Algo/AnyOf.h"
+#include "Net/NetworkProfiler.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 
