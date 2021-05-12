@@ -179,9 +179,9 @@ void ADynamicSubobjectsTest::PrepareTest()
 										   TEXT("For this test, DynamicSubobjectTestActor should have at least 1 component"));
 
 						// delete all the components on the actor
-						for (int j = 0; j < AllSceneComps.Num(); j++)
+						for (USceneComponent* SceneComponent : AllSceneComps)
 						{
-							AllSceneComps[j]->DestroyComponent();
+							SceneComponent->DestroyComponent();
 						}
 						FinishStep();
 					}
