@@ -126,19 +126,21 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 #if !UE_BUILD_SHIPPING
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
-		check(NetDriver->VirtualWorkerTranslator != nullptr);
+		if (ensureAlwaysMsgf(NetDriver->VirtualWorkerTranslator != nullptr,
+							 TEXT("Failed to add debugging utilities. Translator was invalid")))
+		{
+			const PhysicalWorkerName* PhysicalWorkerName =
+				NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
+			const FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
+			const FColor IntentColor =
+				PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
 
-		const PhysicalWorkerName* PhysicalWorkerName =
-			NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
-		FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
-		FColor IntentColor =
-			PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
+			const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
 
-		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
-
-		SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId,
-									   IntentColor, bIsLocked);
-		ComponentDatas.Add(DebuggingInfo.CreateComponentData());
+			SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId,
+										   IntentColor, bIsLocked);
+			ComponentDatas.Add(DebuggingInfo.CreateComponentData());
+		}
 	}
 #endif // !UE_BUILD_SHIPPING
 
@@ -380,7 +382,10 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AActor* Actor) const
 {
-	check(Actor->IsNetStartupActor());
+	if (!ensureAlwaysMsgf(Actor->IsNetStartupActor(), TEXT("Tried to create tombstone entity components for non-net-startup Actor")))
+	{
+		return TArray<FWorkerComponentData>{};
+	}
 
 	const UClass* Class = Actor->GetClass();
 

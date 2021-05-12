@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Granting an ability from an `FGameplayAbilitySpecDef` must now be done through the `FGameplayAbilitySpec::GiveAbilityFromSpecDef`/`GiveAbilityAndActivateOnceFromSpecDef` functions.
 - Removed `USpatialStaticComponentView`; similar functionality is now provided in `ViewCoordinator`.
 - Reworked AlwaysInterested functionality to run on authoritative servers, and owning clients. The previous behaviour was for it to only run on PlayerController classes, on the client only.
+- `bUseNetOwnerActorGroup` actor setting has been removed with the default behavior now true inside LayeredLBStrategy. Extend this class if you wish to alter this default behavior.
 
 ### Features:
 - Added a message box notification when game is closed due to missing generated schema.
@@ -63,6 +64,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue with migration diagnostic logging failing, when the actor did not have authority.
 - Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
 - Fixed an issue where migration diagnostic tool would crash if the target actor's owner couldn't be found.
+
+### Internal:
+- Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs now no longer expire, and persist until used.
 
 ## [`0.12.0`] - 2021-02-01
 
