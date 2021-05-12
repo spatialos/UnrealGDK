@@ -157,37 +157,35 @@ void USpatialNetDriverDebugContext::Reset()
 	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
 }
 
-void USpatialNetDriverDebugContext::GetAuthDebugComponent(AActor* Actor, DebugComponentAuthData& OutComp)
+USpatialNetDriverDebugContext::DebugComponentAuthData& USpatialNetDriverDebugContext::GetAuthDebugComponent(AActor* Actor)
 {
-	if (!ensureAlwaysMsgf(Actor && Actor->HasAuthority(), TEXT("Called GetAuthDebugComponent without authority for Actor: %s"),
-						  *GetNameSafe(Actor)))
-	{
-		return;
-	}
+	ensureAlwaysMsgf(Actor && Actor->HasAuthority(), TEXT("Called GetAuthDebugComponent without authority. Actor: %s"),
+					 *GetNameSafe(Actor));
 
 	SpatialGDK::DebugComponent* DbgComp = nullptr;
 
-	Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+	const Worker_EntityId Entity = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 	if (Entity != SpatialConstants::INVALID_ENTITY_ID)
 	{
 		DbgComp = DebugComponents.Find(Entity);
 	}
 
-	OutComp = ActorDebugInfo.FindOrAdd(Actor);
-	if (DbgComp && OutComp.Entity == SpatialConstants::INVALID_ENTITY_ID)
+	DebugComponentAuthData& Comp = ActorDebugInfo.FindOrAdd(Actor);
+	if (DbgComp && Comp.Entity == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		OutComp.Component = *DbgComp;
-		OutComp.bAdded = true;
+		Comp.Component = *DbgComp;
+		Comp.bAdded = true;
 	}
-	OutComp.Entity = Entity;
+	Comp.Entity = Entity;
+
+	return Comp;
 }
 
 void USpatialNetDriverDebugContext::AddActorTag(AActor* Actor, FName Tag)
 {
 	if (Actor->HasAuthority())
 	{
-		DebugComponentAuthData Comp{};
-		GetAuthDebugComponent(Actor, Comp);
+		DebugComponentAuthData Comp = GetAuthDebugComponent(Actor);
 		Comp.Component.ActorTags.Add(Tag);
 		if (SemanticInterest.Contains(Tag) && Comp.Entity != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -201,8 +199,7 @@ void USpatialNetDriverDebugContext::RemoveActorTag(AActor* Actor, FName Tag)
 {
 	if (Actor->HasAuthority())
 	{
-		DebugComponentAuthData Comp{};
-		GetAuthDebugComponent(Actor, Comp);
+		DebugComponentAuthData& Comp = GetAuthDebugComponent(Actor);
 		Comp.Component.ActorTags.Remove(Tag);
 		if (IsSetIntersectionEmpty(SemanticInterest, Comp.Component.ActorTags) && Comp.Entity != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -346,8 +343,7 @@ void USpatialNetDriverDebugContext::KeepActorOnLocalWorker(AActor* Actor)
 {
 	if (Actor->HasAuthority())
 	{
-		DebugComponentAuthData Comp{};
-		GetAuthDebugComponent(Actor, Comp);
+		DebugComponentAuthData& Comp = GetAuthDebugComponent(Actor);
 		Comp.Component.DelegatedWorkerId = DebugStrategy->GetLocalVirtualWorkerId();
 		Comp.bDirty = true;
 	}
