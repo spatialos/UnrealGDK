@@ -1068,27 +1068,14 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 		// Check if this is a dormant entity, and if so retire the entity
 		if (PackageMap != nullptr && World != nullptr)
 		{
-			if (!World->bBegunPlay)
-			{
-				// When running in PIE, Blueprint loaded sub-levels can be duplicated and immediately unloaded.
-				// This causes each actor in the level to be destroyed, which we process here and if the actor is replicated etc., attempt
-				// to create a tombstone for. This would be incorrect behaviour, as the level and actors were never intentionally loaded,
-				// but are present just as an effect of the world duplication process.
-				// So we ignore this destroy call if the world hasn't begun play, and it was duplicated from PIE.
-				if (ThisActor->GetLevel() != nullptr && ThisActor->GetLevel()->bWasDuplicatedForPIE)
-				{
-					UE_LOG(LogSpatialOSNetDriver, Verbose,
-						   TEXT("USpatialNetDriver::NotifyActorDestroyed ignored as level was duplicated for PIE. Actor: %s."),
-						   *ThisActor->GetName());
-				}
-				else
-				{
-					UE_LOG(LogSpatialOSNetDriver, Error,
-						   TEXT("USpatialNetDriver::NotifyActorDestroyed ignored because world hasn't begun play. Actor: %s."),
-						   *ThisActor->GetName());
-				}
-			}
-			else
+			// PackageMap != nullptr implies the spatial connection is connected, however World::BeginPlay has not been called yet which means we are still in a UEngine::LoadMap call. During the load process, actors are created and destroyed in the following scenarios:
+			// - When running in PIE, Blueprint loaded sub-levels can be duplicated and immediately unloaded.
+			// - ChildActorComponent::OnRegister
+			// If an actor is destroyed as part of these processes, we process here and if the actor is replicated etc., attempt
+			// to create a tombstone for. This would be incorrect behavior, as the level and actors were never intentionally loaded,
+			// but are present just as an effect of the map load process.
+			// So we ignore this destroy call if the world hasn't begun play.
+			if (World->bBegunPlay)
 			{
 				const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
 
