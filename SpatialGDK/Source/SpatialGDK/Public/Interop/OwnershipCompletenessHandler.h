@@ -14,10 +14,11 @@ class ViewCoordinator;
 class FOwnershipCompletenessHandler
 {
 public:
-	FOwnershipCompletenessHandler(bool bInIsServer)
+	explicit FOwnershipCompletenessHandler(bool bInIsServer)
 		: bIsServer(bInIsServer)
 	{
 	}
+
 	bool IsOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity) const;
 	void AddPlayerEntity(Worker_EntityId EntityId);
 	void RemovePlayerEntity(Worker_EntityId EntityId);

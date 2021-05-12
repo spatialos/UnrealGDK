@@ -18,7 +18,7 @@ struct SPATIALGDK_API ActorOwnership
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_ID;
 
-	ActorOwnership(Worker_EntityId InLeaderEntityId)
+	explicit ActorOwnership(Worker_EntityId InLeaderEntityId)
 		: OwnerActorEntityId(InLeaderEntityId)
 	{
 	}
@@ -28,9 +28,9 @@ struct SPATIALGDK_API ActorOwnership
 	{
 	}
 
-	ActorOwnership(const ComponentData& Data) { ApplySchema(Data.GetFields()); }
+	explicit ActorOwnership(const ComponentData& Data) { ApplySchema(Data.GetFields()); }
 
-	ActorOwnership(const Worker_ComponentData& Data)
+	explicit ActorOwnership(const Worker_ComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 

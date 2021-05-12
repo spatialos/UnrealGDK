@@ -235,7 +235,7 @@ bool ASpatialComponentTest::VerifyTestActorComponents(ASpatialComponentTestActor
 	return bHasBegunPlay && bHasComponents;
 }
 
-int ASpatialComponentTest::GetComponentsCount(ASpatialComponentTestActor* Actor)
+int32 ASpatialComponentTest::GetComponentsCount(ASpatialComponentTestActor* Actor)
 {
 	TArray<UActorComponent*> FoundComponents;
 	Actor->GetComponents(USpatialComponentTestDummyComponent::StaticClass(), FoundComponents);

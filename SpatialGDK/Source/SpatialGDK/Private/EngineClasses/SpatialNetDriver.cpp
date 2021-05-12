@@ -1290,7 +1290,10 @@ void USpatialNetDriver::ProcessOwnershipChanges()
 	{
 		if (USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId))
 		{
-			check(IsValid(Channel->Actor));
+			if (!ensureMsgf(IsValid(Channel->Actor), TEXT("EntityId: %lld Actor missing when applying ownership"), EntityId))
+			{
+				continue;
+			}
 
 			if (bShouldWriteLoadBalancingData)
 			{

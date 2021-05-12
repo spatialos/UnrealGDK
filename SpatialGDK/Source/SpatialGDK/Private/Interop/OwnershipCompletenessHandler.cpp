@@ -10,11 +10,12 @@ namespace SpatialGDK
 bool FOwnershipCompletenessHandler::IsOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity) const
 {
 	const ComponentData* OwnershipData = Entity.Components.FindByPredicate(ComponentIdEquality{ ActorOwnership::ComponentId });
-	if (!ensure(OwnershipData != nullptr))
+	if (!ensureMsgf(OwnershipData != nullptr, TEXT("EntityId: %lld should have ActorOwnership, component ID %ld"), EntityId,
+					ActorOwnership::ComponentId))
 	{
 		return false;
 	}
-	
+
 	const ActorOwnership Value(*OwnershipData);
 
 	const bool bIsPlayerOwned = Value.OwnerActorEntityId != SpatialConstants::INVALID_ENTITY_ID
