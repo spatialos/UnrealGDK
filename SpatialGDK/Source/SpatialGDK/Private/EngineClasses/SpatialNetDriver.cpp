@@ -1802,6 +1802,27 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 {
 	using namespace SpatialNetDriverPrivate;
 
+	FString WorkerId = [&]() -> FString {
+		if (World == nullptr)
+		{
+			return "(no world)";
+		}
+
+		const UGameInstance* GameInstance = World->GetGameInstance();
+		if (GameInstance == nullptr)
+		{
+			return "(no game instance)";
+		}
+
+		return GameInstance->GetSpatialWorkerId();
+	}();
+	FString FunctionName = Function->GetName();
+
+	if (FunctionName == "ServerSetEnabled")
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[%s] ProcessRPC %s %s"), *WorkerId, *Function->GetName(), *Actor->GetFullName());
+	}
+
 	// The RPC might have been called by an actor directly, or by a subobject on that actor
 	UObject* CallingObject = SubObject != nullptr ? SubObject : Actor;
 
@@ -2336,6 +2357,27 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 void USpatialNetDriver::ProcessRemoteFunction(AActor* Actor, UFunction* Function, void* Parameters, FOutParmRec* OutParms, FFrame* Stack,
 											  UObject* SubObject)
 {
+	FString WorkerId = [&]() -> FString {
+		if (World == nullptr)
+		{
+			return "(no world)";
+		}
+
+		const UGameInstance* GameInstance = World->GetGameInstance();
+		if (GameInstance == nullptr)
+		{
+			return "(no game instance)";
+		}
+
+		return GameInstance->GetSpatialWorkerId();
+	}();
+	FString FunctionName = Function->GetName();
+
+	if (FunctionName == "ServerSetEnabled")
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[%s] ProcessRemoteFunction %s %s"), *WorkerId, *Function->GetName(), *Actor->GetFullName());
+	}
+
 	if (Connection == nullptr)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"));
@@ -2357,8 +2399,10 @@ void USpatialNetDriver::ProcessRemoteFunction(AActor* Actor, UFunction* Function
 	// owned by other AActor instances possessed by a UNetConnection. For native Unreal reference see ProcessRemoteFunction() of
 	// IpNetDriver.cpp. However if we are on the server, and the RPC is a CrossServer or NetMulticast RPC, this can be invoked without an
 	// owner.
-	if (!Actor->GetNetConnection()
-		&& !(Function->FunctionFlags & (FUNC_NetCrossServer | FUNC_NetMulticast | FUNC_NetWriteFence) && IsServer()))
+	auto ActorNetConnection = Actor->GetNetConnection();
+	bool IsServerSideFunction = (Function->FunctionFlags & (FUNC_NetCrossServer | FUNC_NetMulticast | FUNC_NetWriteFence)) != 0;
+	bool AreWeServer = IsServer();
+	if (!ActorNetConnection && !(IsServerSideFunction && AreWeServer))
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("No owning connection for actor %s. Function %s will not be processed."),
 			   *Actor->GetName(), *Function->GetName());
@@ -3245,6 +3289,20 @@ int64 USpatialNetDriver::GetActorEntityId(const AActor& Actor) const
 	}
 
 	return PackageMap->GetEntityIdFromObject(&Actor);
+}
+
+FVector USpatialNetDriver::GetServerPosition() const
+{
+	if (LoadBalanceStrategy != nullptr)
+	{
+		if (const UGridBasedLBStrategy* GridBasedLBStrategy =
+				Cast<UGridBasedLBStrategy>(LoadBalanceStrategy->GetLBStrategyForVisualRendering()))
+		{
+			return GridBasedLBStrategy->GetWorkerEntityPosition();
+		}
+	}
+
+	return FVector::ZeroVector;
 }
 
 bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)

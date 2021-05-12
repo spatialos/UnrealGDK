@@ -275,6 +275,8 @@ public:
 
 	virtual int64 GetActorEntityId(const AActor& Actor) const override;
 
+	virtual FVector GetServerPosition() const override;
+
 	FShutdownEvent OnShutdown;
 
 private:
