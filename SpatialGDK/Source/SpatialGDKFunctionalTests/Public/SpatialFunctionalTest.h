@@ -30,7 +30,6 @@ constexpr int SPATIAL_FUNCTIONAL_TEST_FINISHED = -2;	// Represents test already 
 } // namespace
 
 class ULayeredLBStrategy;
-class ATestMovementCharacter;
 
 /*
  * A Spatial Functional NetTest allows you to define a series of steps, and control which server/client context they execute on

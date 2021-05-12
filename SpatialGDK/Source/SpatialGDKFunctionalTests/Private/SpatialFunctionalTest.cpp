@@ -22,7 +22,6 @@
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestAutoDestroyComponent.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "SpatialGDKFunctionalTestsPrivate.h"
 
 namespace
