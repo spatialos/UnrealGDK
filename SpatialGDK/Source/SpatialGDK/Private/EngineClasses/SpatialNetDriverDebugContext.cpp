@@ -185,7 +185,7 @@ void USpatialNetDriverDebugContext::AddActorTag(AActor* Actor, FName Tag)
 {
 	if (Actor->HasAuthority())
 	{
-		DebugComponentAuthData Comp = GetAuthDebugComponent(Actor);
+		DebugComponentAuthData& Comp = GetAuthDebugComponent(Actor);
 		Comp.Component.ActorTags.Add(Tag);
 		if (SemanticInterest.Contains(Tag) && Comp.Entity != SpatialConstants::INVALID_ENTITY_ID)
 		{
