@@ -465,7 +465,10 @@ static FSubobjectToOffsetMap CreateOffsetMapFromActor(USpatialPackageMapClient* 
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId)
 {
-	check(EntityId > 0);
+	if (!ensureAlwaysMsgf(EntityId > 0, TEXT("Tried to assign net guid for invalid entity ID. Actor: %s"), *GetNameSafe(Actor)))
+	{
+		return FNetworkGUID();
+	}
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
