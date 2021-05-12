@@ -138,6 +138,6 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& InActor, VirtualWor
 
 	if (NetDriver->SpatialDebuggerSystem.IsValid())
 	{
-		NetDriver->SpatialDebuggerSystem->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId);
+		NetDriver->SpatialDebuggerSystem->ActorAuthorityIntentChanged(EntityId, NewAuthoritativeVirtualWorkerId, *GetNameSafe(&Actor));
 	}
 }

@@ -159,7 +159,7 @@ void SpatialDebuggerSystem::ActorAuthorityGained(const Worker_EntityId EntityId)
 	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
 }
 
-void SpatialDebuggerSystem::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
+void SpatialDebuggerSystem::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId, const FString& ActorName) const
 {
 	TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
 	check(DebuggingInfo.IsSet());
@@ -167,7 +167,14 @@ void SpatialDebuggerSystem::ActorAuthorityIntentChanged(Worker_EntityId EntityId
 
 	const PhysicalWorkerName* NewAuthoritativePhysicalWorkerName =
 		NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(NewIntentVirtualWorkerId);
-	check(NewAuthoritativePhysicalWorkerName != nullptr);
+
+	if (NewAuthoritativePhysicalWorkerName == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to find physical worker name for for virtual worker %d. Actor %s migration will likely fail. "
+					"Does your load balancing strategy definitely include virtual worker %d?"),
+			   NewIntentVirtualWorkerId, *ActorName, NewIntentVirtualWorkerId);
+		return;
+	}
 
 	DebuggingInfo->IntentColor = GetColorForWorkerName(*NewAuthoritativePhysicalWorkerName);
 	FWorkerComponentUpdate DebuggingUpdate = DebuggingInfo->CreateSpatialDebuggingUpdate();
