@@ -1068,7 +1068,9 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 		// Check if this is a dormant entity, and if so retire the entity
 		if (PackageMap != nullptr && World != nullptr)
 		{
-			// PackageMap != nullptr implies the spatial connection is connected, however World::BeginPlay has not been called yet which means we are still in a UEngine::LoadMap call. During the load process, actors are created and destroyed in the following scenarios:
+			// PackageMap != nullptr implies the spatial connection is connected, however World::BeginPlay may not been called yet which
+			// means we are still in a UEngine::LoadMap call. During the load process, actors are created and destroyed in the following
+			// scenarios:
 			// - When running in PIE, Blueprint loaded sub-levels can be duplicated and immediately unloaded.
 			// - ChildActorComponent::OnRegister
 			// If an actor is destroyed as part of these processes, we process here and if the actor is replicated etc., attempt
