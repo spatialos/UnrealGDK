@@ -38,17 +38,14 @@ void ASpatialTestPlayerDisconnectReturnToMainMenu::PrepareTest()
 			},
 			nullptr, 5.0f);
 
-		AddStep(
-			TEXT("Client1_ReturnToMainMenu"), FWorkerDefinition::Client(1), nullptr,
-			[this]() {
+		AddStep(TEXT("Client1_ReturnToMainMenu"), FWorkerDefinition::Client(1), nullptr, [this]() {
+			APlayerDisconnectController* LocalPlayerController =
+				Cast<APlayerDisconnectController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 
-				APlayerDisconnectController* LocalPlayerController =
-				Cast<APlayerDisconnectController> (UGameplayStatics::GetPlayerController(GetWorld(), 0));
+			LocalPlayerController->ReturnToMainMenu();
 
-				LocalPlayerController->ReturnToMainMenu();
-
-				FinishStep();
-			});
+			FinishStep();
+		});
 
 		// Need this additional step after client returns to main menu to deregister their flowcontroller from the server
 		// If the client itself deregisters it's own flow controller it can never send the FinishStep command and will fail the step.
