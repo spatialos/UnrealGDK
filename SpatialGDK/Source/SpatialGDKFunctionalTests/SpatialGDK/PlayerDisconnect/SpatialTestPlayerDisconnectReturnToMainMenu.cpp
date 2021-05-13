@@ -76,13 +76,13 @@ void ASpatialTestPlayerDisconnectReturnToMainMenu::PrepareTest()
 				int32 ActualNumberOfClients = GetNumberOfClientWorkers();
 				RequireEqual_Int(ActualNumberOfClients, 1, TEXT("Expected one client."));
 
-				// TArray<AActor*> PlayerControllers;
-				// UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerDisconnectController::StaticClass(), PlayerControllers);
-				// RequireEqual_Int(PlayerControllers.Num(), 1, TEXT("Expected one player controllers."));
+				 TArray<AActor*> PlayerControllers;
+				 UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerDisconnectController::StaticClass(), PlayerControllers);
+				 RequireEqual_Int(PlayerControllers.Num(), 1, TEXT("Expected one player controllers."));
 
-				/*TArray<AActor*> PlayerCharacters;
+				TArray<AActor*> PlayerCharacters;
 				UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), PlayerCharacters);
-				RequireEqual_Int(PlayerCharacters.Num(), 1, TEXT("Expected one player characters."));*/
+				RequireEqual_Int(PlayerCharacters.Num(), 1, TEXT("Expected one player characters."));
 
 				FinishStep();
 			},

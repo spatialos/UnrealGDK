@@ -75,14 +75,6 @@ void ASpatialTestPlayerDisconnectTrigger::PrepareTest()
 				int32 ActualNumberOfClients = GetNumberOfClientWorkers();
 				RequireEqual_Int(ActualNumberOfClients, 0, TEXT("Expected zero clients."));
 
-				// TArray<AActor*> PlayerControllers;
-				// UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerDisconnectController::StaticClass(), PlayerControllers);
-				// RequireEqual_Int(PlayerControllers.Num(), 0, TEXT("Expected zero player controllers."));
-
-				/*TArray<AActor*> PlayerCharacters;
-				UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), PlayerCharacters);
-				RequireEqual_Int(PlayerCharacters.Num(), 0, TEXT("Expected zero player characters."));*/
-
 				FinishStep();
 			},
 			nullptr, 5.0f);
