@@ -18,6 +18,28 @@ DEFINE_LOG_CATEGORY(LogSpatialConnectionManager);
 
 using namespace SpatialGDK;
 
+namespace AsyncUtil
+{
+template <typename FN>
+void AsyncTaskGameThreadOutsideGC(FN&& Func) // A little wrapper which ensures the task is run outside GC (UNR-5421)
+{
+	AsyncTask(ENamedThreads::GameThread, [Func = MoveTemp(Func)]() mutable {
+		if (IsGarbageCollecting())
+		{
+			TSharedPtr<FDelegateHandle> DelegateHandle = MakeShared<FDelegateHandle>();
+			*DelegateHandle = FCoreUObjectDelegates::GetPostGarbageCollect().AddLambda([Func = MoveTemp(Func), DelegateHandle]() mutable {
+				Func(); // Try again, once GC has completed.
+				FCoreUObjectDelegates::GetPostGarbageCollect().Remove(*DelegateHandle);
+			});
+		}
+		else
+		{
+			Func();
+		}
+	});
+}
+} // namespace AsyncUtil
+
 class GDKVersionLoader
 {
 public:
@@ -195,7 +217,7 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 	if (bIsConnected)
 	{
 		check(bInitAsClient == bConnectAsClient);
-		AsyncTask(ENamedThreads::GameThread, [WeakThis = TWeakObjectPtr<USpatialConnectionManager>(this)] {
+		AsyncUtil::AsyncTaskGameThreadOutsideGC([WeakThis = TWeakObjectPtr<USpatialConnectionManager>(this)] {
 			if (WeakThis.IsValid())
 			{
 				WeakThis->OnConnectionSuccess();
@@ -443,35 +465,35 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection,
-											  EventTracing = MoveTemp(EventTracing)]() mutable {
-			if (!WeakSpatialConnectionManager.IsValid())
-			{
-				// The game instance was destroyed before the connection finished, so just clean up the connection.
-				Worker_Connection_Destroy(NewCAPIWorkerConnection);
-				return;
-			}
+		AsyncUtil::AsyncTaskGameThreadOutsideGC(
+			[WeakSpatialConnectionManager, NewCAPIWorkerConnection, EventTracing = MoveTemp(EventTracing)]() mutable {
+				if (!WeakSpatialConnectionManager.IsValid())
+				{
+					// The game instance was destroyed before the connection finished, so just clean up the connection.
+					Worker_Connection_Destroy(NewCAPIWorkerConnection);
+					return;
+				}
 
-			USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
+				USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
 
-			const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
+				const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
 
-			if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
-			{
-				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>(WeakSpatialConnectionManager.Get());
+				if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
+				{
+					const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+					SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>(WeakSpatialConnectionManager.Get());
 
-				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
-																		  SpatialConnectionManager->ComponentSetData);
-				SpatialConnectionManager->OnConnectionSuccess();
-			}
-			else
-			{
-				const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
-				Worker_Connection_Destroy(NewCAPIWorkerConnection);
-				SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
-			}
-		});
+					SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
+																			  SpatialConnectionManager->ComponentSetData);
+					SpatialConnectionManager->OnConnectionSuccess();
+				}
+				else
+				{
+					const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
+					Worker_Connection_Destroy(NewCAPIWorkerConnection);
+					SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
+				}
+			});
 	});
 }
 
