@@ -14,10 +14,8 @@ class ViewCoordinator;
 class FOwnershipCompletenessHandler
 {
 public:
-	explicit FOwnershipCompletenessHandler(bool bInIsServer)
-		: bIsServer(bInIsServer)
-	{
-	}
+	static FOwnershipCompletenessHandler CreateServerOwnershipHandler() { return FOwnershipCompletenessHandler(/*bInIsServer =*/true); }
+	static FOwnershipCompletenessHandler CreateClientOwnershipHandler() { return FOwnershipCompletenessHandler(/*bInIsServer =*/false); }
 
 	bool IsOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity) const;
 	void AddPlayerEntity(Worker_EntityId EntityId);
@@ -27,6 +25,11 @@ public:
 	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator);
 
 private:
+	explicit FOwnershipCompletenessHandler(const bool bInIsServer)
+		: bIsServer(bInIsServer)
+	{
+	}
+
 	bool bIsServer;
 	TSet<Worker_EntityId_Key> PlayerOwnedEntities;
 	TArray<FSubView*> SubViewsToRefresh;

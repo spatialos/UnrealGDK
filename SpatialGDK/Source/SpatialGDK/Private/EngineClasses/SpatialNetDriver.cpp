@@ -36,6 +36,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/MigrationDiagnosticsSystem.h"
+#include "Interop/OwnershipCompletenessHandler.h"
 #include "Interop/RPCExecutor.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialDispatcher.h"
@@ -147,7 +148,14 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		}
 	}
 
-	OwnershipCompletenessHandler.Emplace(/*bIsServer =*/!bInitAsClient);
+	if (bInitAsClient)
+	{
+		OwnershipCompletenessHandler = SpatialGDK::FOwnershipCompletenessHandler::CreateClientOwnershipHandler();
+	}
+	else
+	{
+		OwnershipCompletenessHandler = SpatialGDK::FOwnershipCompletenessHandler::CreateServerOwnershipHandler();
+	}
 
 	if (!Super::InitBase(bInitAsClient, InNotify, URL, bReuseAddressAndPort, Error))
 	{

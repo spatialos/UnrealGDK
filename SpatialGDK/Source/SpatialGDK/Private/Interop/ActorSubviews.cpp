@@ -184,7 +184,7 @@ FSubView& CreateActorAuthSubView(USpatialNetDriver& NetDriver)
 }
 
 template <typename TCallable, typename... TValues>
-FFilterPredicate GetMockRoleFilterPredicate(TCallable RolePredicate, TValues... Values)
+FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, TValues... Values)
 {
 	return [RolePredicate, ExtraValues = TTuple<TValues...>(Values...)](const Worker_EntityId EntityId,
 																		const EntityViewElement& Entity) -> bool {
@@ -217,7 +217,7 @@ FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver)
 
 	return NetDriver.Connection->GetCoordinator().CreateSubView(
 		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
-		Extension.ExtendPredicate(GetMockRoleFilterPredicate(&AuthoritySubviewSetup::IsAuthorityActorEntity)),
+		Extension.ExtendPredicate(GetRoleFilterPredicate(&AuthoritySubviewSetup::IsAuthorityActorEntity)),
 		Extension.ExtendCallbacks(AuthoritySubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator())));
 }
 
@@ -230,7 +230,7 @@ FSubView& CreatePlayerOwnershipSubView(ViewCoordinator& Coordinator, FOwnershipC
 									   const FActorSubviewExtension& Extension)
 {
 	FSubView& SubView = Coordinator.CreateSubView(
-		SpatialConstants::ACTOR_TAG_COMPONENT_ID, Extension.ExtendPredicate(GetMockRoleFilterPredicate(&IsPlayerOwned, &OwnershipHandler)),
+		SpatialConstants::ACTOR_TAG_COMPONENT_ID, Extension.ExtendPredicate(GetRoleFilterPredicate(&IsPlayerOwned, &OwnershipHandler)),
 		Extension.ExtendCallbacks(
 			CombineCallbacks(FOwnershipCompletenessHandler::GetCallbacks(Coordinator), OwnershipSubviewSetup::GetCallbacks(Coordinator))));
 	OwnershipHandler.AddSubView(SubView);
@@ -252,11 +252,11 @@ bool IsSimulatedAndOwnershipComplete(Worker_EntityId EntityId, const EntityViewE
 FSubView& CreateSimulatedSubView(ViewCoordinator& Coordinator, FOwnershipCompletenessHandler& OwnershipHandler,
 								 const FActorSubviewExtension& Extension)
 {
-	FSubView& SubView = Coordinator.CreateSubView(
-		SpatialConstants::ACTOR_TAG_COMPONENT_ID,
-		Extension.ExtendPredicate(GetMockRoleFilterPredicate(&IsSimulatedAndOwnershipComplete, &OwnershipHandler)),
-		Extension.ExtendCallbacks(
-			CombineCallbacks(FOwnershipCompletenessHandler::GetCallbacks(Coordinator), SimulatedSubviewSetup::GetCallbacks(Coordinator))));
+	FSubView& SubView =
+		Coordinator.CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID,
+								  Extension.ExtendPredicate(GetRoleFilterPredicate(&IsSimulatedAndOwnershipComplete, &OwnershipHandler)),
+								  Extension.ExtendCallbacks(CombineCallbacks(FOwnershipCompletenessHandler::GetCallbacks(Coordinator),
+																			 SimulatedSubviewSetup::GetCallbacks(Coordinator))));
 	OwnershipHandler.AddSubView(SubView);
 	return SubView;
 }
