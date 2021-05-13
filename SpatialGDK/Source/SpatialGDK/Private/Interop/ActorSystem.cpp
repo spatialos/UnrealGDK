@@ -164,14 +164,23 @@ void ActorSystem::Advance()
 			EntityAdded(Delta.EntityId);
 
 			USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Delta.EntityId);
-			// Force the channel to create a new entity. This will be false by default because we already had data for the entity in the
-			// view when creating the channel.
-			Channel->bCreatingNewEntity = true;
-			// Block replication until we've deleted the stripped entity
-			Channel->SetWaitingForEntityDeletion(true);
+			// We might not get a channel if the entity references a level actor that doesn't exist in our version of the map
+			if (Channel != nullptr)
+			{
+				// Force the channel to create a new entity. This will be false by default because we already had data for the entity in the
+				// view when creating the channel.
+				Channel->bCreatingNewEntity = true;
+				// Block replication until we've deleted the stripped entity
+				Channel->SetWaitingForEntityDeletion(true);
 
-			EntitiesBeingRecreated.Emplace(Delta.EntityId);
-			NetDriver->Connection->SendDeleteEntityRequest(Delta.EntityId, RETRY_UNTIL_COMPLETE);
+				EntitiesBeingRecreated.Emplace(Delta.EntityId);
+				NetDriver->Connection->SendDeleteEntityRequest(Delta.EntityId, RETRY_UNTIL_COMPLETE);
+			}
+			else
+			{
+				// TODO maybe delete the entity here, assuming it was a reference to a level actor that doesn't exist anymore?
+				// Not sure yet whether that's the only way we can get a null channel in this flow
+			}
 			break;
 		}
 		case EntityDelta::REMOVE:
@@ -180,9 +189,14 @@ void ActorSystem::Advance()
 			// Intentionally not calling EntityRemoved here - we don't want to delete our local actor.
 			ActorDataStore.Remove(Delta.EntityId);
 			USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Delta.EntityId);
-			// We've gotten confirmation that the entity was deleted, so we can unblock replication, which will create a new entity with the
-			// same ID
-			Channel->SetWaitingForEntityDeletion(false);
+
+			// I would expect to usually get a valid channel here, but better to be safe
+			if (Channel != nullptr)
+			{
+				// We've gotten confirmation that the entity was deleted, so we can unblock replication,
+				// which will create a new entity with the same ID
+				Channel->SetWaitingForEntityDeletion(false);
+			}
 			break;
 		}
 		case EntityDelta::UPDATE:
