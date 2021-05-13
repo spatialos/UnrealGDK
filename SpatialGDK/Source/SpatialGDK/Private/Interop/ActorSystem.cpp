@@ -1396,10 +1396,12 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 {
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
 
+	const TArray<ComponentData>& EntityComponents = ActorSubView->GetView()[EntityId].Components;
+
 	// Apply initial replicated properties.
 	// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
 	// Potentially we could split out the initial actor state and the initial component state
-	for (const ComponentData& Component : ActorSubView->GetView()[EntityId].Components)
+	for (const ComponentData& Component : EntityComponents)
 	{
 		if (NetDriver->ClassInfoManager->IsGeneratedQBIMarkerComponent(Component.GetComponentId())
 			|| Component.GetComponentId() < SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
@@ -1421,6 +1423,8 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 			}
 		}
 	}
+
+	NetDriver->PackageMap->DestroyRuntimeRemovedComponents(EntityId, EntityComponents, *NetDriver);
 
 	// Resolve things like RepNotify or RPCs after applying component data.
 	for (const ObjectPtrRefPair& ObjectToResolve : ObjectsToResolvePendingOpsFor)

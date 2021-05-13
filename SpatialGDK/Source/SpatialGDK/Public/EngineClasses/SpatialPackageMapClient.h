@@ -60,6 +60,7 @@ public:
 	FNetworkGUID* GetRemovedDynamicSubobjectNetGUID(const FUnrealObjectRef& ObjectRef);
 	void AddRemovedDynamicSubobjectObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID);
 	void ClearRemovedDynamicSubobjectObjectRefs(const Worker_EntityId& InEntityId);
+	void DestroyRuntimeRemovedComponents(const Worker_EntityId& EntityId, const TArray<SpatialGDK::ComponentData>& Components, const USpatialNetDriver& InNetDriver);
 
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
@@ -86,6 +87,8 @@ private:
 	// Entities that have been assigned on this server and not created yet
 	TSet<Worker_EntityId_Key> PendingCreationEntityIds;
 	TMap<FUnrealObjectRef, FNetworkGUID> RemovedDynamicSubobjectObjectRefs;
+
+	USpatialNetDriver* NetDriver;
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache

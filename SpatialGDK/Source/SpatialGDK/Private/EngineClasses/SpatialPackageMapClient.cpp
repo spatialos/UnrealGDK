@@ -23,14 +23,16 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
-void USpatialPackageMapClient::Init(USpatialNetDriver& NetDriver)
+void USpatialPackageMapClient::Init(USpatialNetDriver& InNetDriver)
 {
-	bIsServer = NetDriver.IsServer();
+	NetDriver = &InNetDriver;
+
+	bIsServer = InNetDriver.IsServer();
 	// Entity Pools should never exist on clients
 	if (bIsServer)
 	{
 		EntityPool = NewObject<UEntityPool>();
-		EntityPool->Init(NetDriver);
+		EntityPool->Init(InNetDriver);
 	}
 }
 
@@ -265,6 +267,44 @@ void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Work
 		if (DynamicSubobjectIterator->Key.Entity == InEntityId)
 		{
 			DynamicSubobjectIterator.RemoveCurrent();
+		}
+	}
+}
+
+void USpatialPackageMapClient::DestroyRuntimeRemovedComponents(const Worker_EntityId& EntityId, const TArray<SpatialGDK::ComponentData>& Components, const USpatialNetDriver& InNetDriver)
+{
+	auto ContainedInComponentsArr = [&Components, &EntityId, &InNetDriver](const FUnrealObjectRef CheckComponentObjRef)
+	{
+		for (const SpatialGDK::ComponentData& Component : Components)
+		{
+			uint32 Offset = 0;
+			InNetDriver.ClassInfoManager->GetOffsetByComponentId(Component.GetComponentId(), Offset);
+
+			if (FUnrealObjectRef (EntityId, Offset) == CheckComponentObjRef)
+			{
+				return true;
+			}
+		}
+		return false;
+	};
+
+	for (auto DynamicSubObjectIterator = RemovedDynamicSubobjectObjectRefs.CreateIterator(); DynamicSubObjectIterator;
+	++DynamicSubObjectIterator)
+	{
+		if (DynamicSubObjectIterator->Key.Entity == EntityId)
+		{
+			const FUnrealObjectRef theKey = DynamicSubObjectIterator->Key;
+			const Worker_EntityId iteratingOn = DynamicSubObjectIterator->Key.Entity;
+
+			if (ContainedInComponentsArr(DynamicSubObjectIterator->Key))
+			{
+				UObject* DynamicSubobject = InNetDriver.PackageMap->GetObjectFromNetGUID(DynamicSubObjectIterator->Value, false);
+				if (UActorComponent* Component = Cast<UActorComponent>(DynamicSubobject))
+				{
+					Component->DestroyComponent();
+					DynamicSubObjectIterator.RemoveCurrent();
+				}
+			}
 		}
 	}
 }
