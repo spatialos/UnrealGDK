@@ -141,7 +141,6 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 		FinishStep();
 	});
 
-	constexpr float ActorReceiptTimeout = 5.0f;
 	AddStep(
 		TEXT("Retrieve actors on all workers"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 		[this](float) {
@@ -155,10 +154,8 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 			RequireTrue(TargetZonedActors.Num() == 2, TEXT("Received zoned actors"));
 
 			FinishStep();
-		},
-		ActorReceiptTimeout);
+		});
 
-	const float LoadBalancingDataReceiptTimeout = 5.0f;
 	AddStep(
 		TEXT("Confirm LB group IDs on the server"), FWorkerDefinition::AllServers, nullptr, nullptr,
 		[this](float) {
@@ -175,8 +172,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 			RequireTrue(bIsValid, TEXT("Load balancing group ids are different for the main server and for the offloaded server"));
 
 			FinishStep();
-		},
-		LoadBalancingDataReceiptTimeout);
+		});
 
 	AddStep(TEXT("Put zoned actors to a single ownership group"), ZonedServers[0], nullptr, [this]() {
 		AssertTrue(TargetZonedActors[0]->HasAuthority(), TEXT("Zoned actor 1 is owned by the zoned server 1"));
@@ -192,8 +188,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 			const bool bShouldHaveAuthority = GetLocalWorkerId() == 4;
 			RequireTrue(TargetZonedActors[0]->HasAuthority() == bShouldHaveAuthority, TEXT("Authority was moved correctly"));
 			FinishStep();
-		},
-		LoadBalancingDataReceiptTimeout);
+		});
 
 	AddStep(TEXT("Put main server actor and offloaded server actor into different ownership groups"), ZonedServers[1], nullptr, [this]() {
 		AssertTrue(TargetZonedActors[0]->HasAuthority(), TEXT("Zoned actor 1 is owned by the zoned server 2"));
@@ -208,8 +203,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 						TEXT("Actor set IDs are different for the two zoned actors"));
 
 			FinishStep();
-		},
-		LoadBalancingDataReceiptTimeout);
+		});
 }
 
 template <typename TComponent>
