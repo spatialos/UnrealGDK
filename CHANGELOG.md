@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
+- Added a "Clean and Generate Schema" option to the Schema menu, which lets you delete the SchemaDatabase.uasset, all generated schema files, and run a Full Scan in one click.
+- Added a pop-up message when schema generation fails, which suggests running a Clean and Generate to fix a bad schema state.
+- Fixed a bug that left the SchemaDatabase.uasset file locked after a failed schema generation.
+
 ### Breaking changes:
 - Removed support for UE 4.24.
 - `MaxRPCRingBufferSize` setting has been removed. This was previously used to specify the RPC ring buffer size when generating schema. Now, `DefaultRPCRingBufferSize` is used, and can be overridden per RPC type using `RPCRingBufferSizeOverrides`.

@@ -588,9 +588,9 @@ bool FSpatialGDKEditorToolbarModule::DeleteSchemaDatabase()
 void FSpatialGDKEditorToolbarModule::CleanSchemaGenerateButtonClicked()
 {
 	if (FMessageDialog::Open(
-		EAppMsgType::YesNo,
-		LOCTEXT("DeleteSchemaDatabase_Prompt",
-			"Are you sure you want to delete the schema database, delete all generated schema, and regenerate schema?"))
+			EAppMsgType::YesNo,
+			LOCTEXT("DeleteSchemaDatabase_Prompt",
+					"Are you sure you want to delete the schema database, delete all generated schema, and regenerate schema?"))
 		== EAppReturnType::Yes)
 	{
 		CleanSchemaGenerate();
@@ -625,9 +625,9 @@ void FSpatialGDKEditorToolbarModule::HandleGenerateSchemaFailure()
 	// Run the dialogue on a background task -- this allows the editor UI to update and display Schema Gen errors in the log
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this] {
 		if (FMessageDialog::Open(EAppMsgType::YesNo,
-			LOCTEXT("DeleteAndRegenerateSchemaDatabase_Prompt",
-				"Schema generation failed. Common schema generation issues can be solved by deleting all schema "
-				"and generating again. Would you like to clean and retry now?"))
+								 LOCTEXT("DeleteAndRegenerateSchemaDatabase_Prompt",
+										 "Schema generation failed. Common schema generation issues can be solved by deleting all schema "
+										 "and generating again. Would you like to clean and retry now?"))
 			== EAppReturnType::Yes)
 		{
 			// GameThread is required for building schema
