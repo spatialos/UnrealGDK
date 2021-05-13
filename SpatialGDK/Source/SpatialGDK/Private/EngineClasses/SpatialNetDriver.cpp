@@ -526,7 +526,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		USpatialPackageMapClient* NewPackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 		check(NewPackageMap == PackageMap);
 
-		PackageMap->Init(this, &TimerManager);
+		PackageMap->Init(*this);
 		if (IsServer())
 		{
 			PackageMap->GetEntityPoolReadyDelegate().AddUObject(Connection, &USpatialWorkerConnection::CreateServerWorkerEntity);
@@ -646,8 +646,11 @@ void USpatialNetDriver::CleanUpServerConnectionForPC(APlayerController* PC)
 		if (ClientConnection->OwningActor == PC)
 		{
 			USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(ClientConnection);
-			check(SpatialConnection != nullptr);
-			SpatialConnection->CleanUp();
+			if (ensureAlwaysMsgf(SpatialConnection != nullptr,
+								 TEXT("SpatialConnection was nullptr when trying to cleanup server connection")))
+			{
+				SpatialConnection->CleanUp();
+			}
 			return;
 		}
 	}
@@ -1084,10 +1087,12 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 			if (UActorChannel* Channel = ClientConnection->ActorChannelMap().FindRef(ThisActor))
 			{
-				check(Channel->OpenedLocally);
-				Channel->bClearRecentActorRefs = false;
-				// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
-				Channel->Close(EChannelCloseReason::Destroyed);
+				if (ensureAlwaysMsgf(Channel->OpenedLocally, TEXT("Trying to close non-locally-opened Actor channel when deleting Actor")))
+				{
+					Channel->bClearRecentActorRefs = false;
+					// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
+					Channel->Close(EChannelCloseReason::Destroyed);
+				}
 			}
 
 			// Remove it from any dormancy lists
@@ -1289,9 +1294,12 @@ void USpatialNetDriver::ProcessOwnershipChanges()
 		{
 			if (bShouldWriteLoadBalancingData)
 			{
-				check(IsValid(Channel->Actor));
-				const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, *Channel->Actor);
-				Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
+				if (ensureAlwaysMsgf(IsValid(Channel->Actor),
+									 TEXT("Tried to process ownership changes for invalid channel Actor. Entity: %lld"), EntityId))
+				{
+					const SpatialGDK::ActorSetMember ActorSetData = SpatialGDK::GetActorSetData(*PackageMap, *Channel->Actor);
+					Connection->GetCoordinator().SendComponentUpdate(EntityId, ActorSetData.CreateComponentUpdate(), {});
+				}
 			}
 
 			Channel->ServerProcessOwnershipChange();
@@ -1695,7 +1703,10 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						continue;
 					}
 
-					check(Actor->HasAuthority());
+					if (!ensureAlwaysMsgf(Actor->HasAuthority(), TEXT("Trying to replicate Actor without authority")))
+					{
+						continue;
+					}
 
 					Channel = GetOrCreateSpatialActorChannel(Actor);
 					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))
@@ -1809,7 +1820,11 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	{
 		if (PackageMap->GetEntityIdFromObject(CallingObject) == SpatialConstants::INVALID_ENTITY_ID)
 		{
-			check(Actor != nullptr);
+			if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Trying to process RPC for nullptr Actor")))
+			{
+				return;
+			}
+
 			if (!Actor->HasAuthority() && Actor->IsNameStableForNetworking() && Actor->GetIsReplicated())
 			{
 				// We don't want GetOrCreateSpatialActorChannel to pre-allocate an entity id here, because it exists on another worker.
@@ -2669,7 +2684,10 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 // This function is called for server workers who received the PC over the wire
 void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerController, const Worker_EntityId ClientSystemEntityId)
 {
-	check(PlayerController != nullptr);
+	if (!ensureAlwaysMsgf(PlayerController != nullptr, TEXT("PlayerController Actor was nullptr in PostSpawnPlayerController")))
+	{
+		return;
+	}
 
 	PlayerController->SetFlags(GetFlags() | RF_Transient);
 
@@ -2867,7 +2885,7 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId, USpatialAct
 		return;
 	}
 
-	EntityToActorChannel.FindAndRemoveChecked(EntityId);
+	EntityToActorChannel.Remove(EntityId);
 }
 
 TMap<Worker_EntityId_Key, USpatialActorChannel*>& USpatialNetDriver::GetEntityToActorChannelMap()
@@ -2877,7 +2895,11 @@ TMap<Worker_EntityId_Key, USpatialActorChannel*>& USpatialNetDriver::GetEntityTo
 
 USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject* TargetObject)
 {
-	check(TargetObject);
+	if (!ensureAlwaysMsgf(TargetObject != nullptr, TEXT("TargetObject was nullptr when trying to get or create Actor channel")))
+	{
+		return nullptr;
+	}
+
 	USpatialActorChannel* Channel = GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetObject));
 	if (Channel == nullptr)
 	{
@@ -2886,14 +2908,19 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 		{
 			TargetActor = Cast<AActor>(TargetObject->GetOuter());
 		}
-		check(TargetActor);
+
+		if (!ensureAlwaysMsgf(TargetObject != nullptr, TEXT("Failed to find valid Actor when creating Actor channel. Object: %s"),
+							  *GetNameSafe(TargetObject)))
+		{
+			return nullptr;
+		}
 
 		if (USpatialActorChannel* ActorChannel = GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetActor)))
 		{
 			// This can happen if schema database is out of date and had no entry for a static subobject.
 			UE_LOG(LogSpatialOSNetDriver, Warning,
 				   TEXT("GetOrCreateSpatialActorChannel: No channel for target object but channel already present for actor. Target "
-						"object: %s, actor: %s"),
+						"object: %s. Actor: %s"),
 				   *TargetObject->GetPathName(), *TargetActor->GetPathName());
 			return ActorChannel;
 		}
@@ -2912,7 +2939,8 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 	if (Channel != nullptr && Channel->Actor == nullptr)
 	{
 		// This shouldn't occur, but can often crop up whilst we are refactoring entity/actor/channel lifecycles.
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to correctly initialize SpatialActorChannel for [%s]"), *TargetObject->GetName());
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Failed to correctly initialize SpatialActorChannel. Object: %s"),
+			   *TargetObject->GetName());
 	}
 #endif // !UE_BUILD_SHIPPING
 	return Channel;
@@ -2925,8 +2953,15 @@ USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_Entity
 
 void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 {
-	check(IsServer());
-	check(Actor);
+	if (!ensureAlwaysMsgf(IsServer(), TEXT("RefreshActorDormancy should only be called on the server")))
+	{
+		return;
+	}
+
+	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Called RefreshActorDormancy on nullptr Actor")))
+	{
+		return;
+	}
 
 	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
@@ -2964,8 +2999,15 @@ void USpatialNetDriver::RefreshActorDormancy(AActor* Actor, bool bMakeDormant)
 
 void USpatialNetDriver::RefreshActorVisibility(AActor* Actor, bool bMakeVisible)
 {
-	check(IsServer());
-	check(Actor);
+	if (!ensureAlwaysMsgf(IsServer(), TEXT("RefreshActorVisibility should only be called on the server")))
+	{
+		return;
+	}
+
+	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Called RefreshActorVisibility on nullptr Actor")))
+	{
+		return;
+	}
 
 	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
@@ -3028,13 +3070,14 @@ bool USpatialNetDriver::IsDormantEntity(Worker_EntityId EntityId) const
 USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor)
 {
 	// This should only be called from GetOrCreateSpatialActorChannel, otherwise we could end up clobbering an existing channel.
+	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Tried to call CreateSpatialActorChannel for a nullptr Actor")))
+	{
+		return nullptr;
+	}
 
-	check(Actor != nullptr);
-	check(PackageMap != nullptr);
-
-	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
-
-	check(GetActorChannelByEntityId(EntityId) == nullptr);
+	const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	ensureAlwaysMsgf(GetActorChannelByEntityId(EntityId) == nullptr,
+					 TEXT("Called CreateSpatialActorChannel while Actor Channel already exists for entity %lld"), EntityId);
 
 	USpatialNetConnection* NetConnection = GetSpatialOSNetConnection();
 	check(NetConnection != nullptr);
@@ -3184,7 +3227,11 @@ void USpatialNetDriver::TryFinishStartup()
 // This should only be called once on each client, in the SpatialMetricsDisplay constructor after the class is replicated to each client.
 void USpatialNetDriver::SetSpatialMetricsDisplay(ASpatialMetricsDisplay* InSpatialMetricsDisplay)
 {
-	check(!IsServer());
+	if (!ensureAlwaysMsgf(!IsServer(), TEXT("SetSpatialMetricsDisplay should only be called on the client")))
+	{
+		return;
+	}
+
 	if (SpatialMetricsDisplay != nullptr)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("SpatialMetricsDisplay should only be set once on each client!"));
@@ -3282,7 +3329,10 @@ void USpatialNetDriver::RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebug
 			DebuggerSubViewPtr = &SpatialGDK::ActorSubviews::CreateActorSubView(*this);
 		}
 
-		check(DebuggerSubViewPtr != nullptr);
+		if (!ensureAlwaysMsgf(DebuggerSubViewPtr != nullptr, TEXT("Failed creating DebuggerSubViewPtr subview")))
+		{
+			return;
+		}
 
 		SpatialDebuggerSystem = MakeUnique<SpatialGDK::SpatialDebuggerSystem>(this, *DebuggerSubViewPtr);
 	}

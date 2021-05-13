@@ -2398,7 +2398,11 @@ void ActorSystem::DeleteEntityComponentData(TArray<FWorkerComponentData>& Entity
 
 void ActorSystem::AddTombstoneToEntity(Worker_EntityId EntityId) const
 {
-	check(ActorSubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID));
+	if (!ensureAlwaysMsgf(ActorSubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
+						  TEXT("Trying to add tombstone to entity without authority")))
+	{
+		return;
+	}
 
 	FWorkerComponentData TombstoneData = Tombstone().CreateComponentData();
 	NetDriver->Connection->SendAddComponent(EntityId, &TombstoneData);

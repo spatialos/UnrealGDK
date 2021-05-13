@@ -346,7 +346,11 @@ FName USpatialStatics::GetLayerName(const UObject* WorldContextObject)
 	}
 
 	const ULayeredLBStrategy* LBStrategy = Cast<ULayeredLBStrategy>(SpatialNetDriver->LoadBalanceStrategy);
-	check(LBStrategy != nullptr);
+	if (!ensureAlwaysMsgf(LBStrategy != nullptr, TEXT("Failed calling GetLayerName because load balancing strategy was nullptr")))
+	{
+		return FName();
+	}
+
 	return LBStrategy->GetLocalLayerName();
 }
 
@@ -391,14 +395,23 @@ void USpatialStatics::SpatialDebuggerSetOnConfigUIClosedCallback(const UObject* 
 
 void USpatialStatics::SpatialSwitchHasAuthority(const AActor* Target, ESpatialHasAuthority& Authority)
 {
+	if (!ensureAlwaysMsgf(IsValid(Target) && Target->IsA(AActor::StaticClass()),
+						  TEXT("Called SpatialSwitchHasAuthority for an invalid or non-Actor target: %s"), *GetNameSafe(Target)))
+	{
+		return;
+	}
+
+	if (!ensureAlwaysMsgf(Target->GetNetDriver() != nullptr,
+						  TEXT("Called SpatialSwitchHasAuthority for %s but couldn't access NetDriver through Actor."),
+						  *GetNameSafe(Target)))
+	{
+		return;
+	}
+
 	// A static UFunction does not have the Target parameter, here it is recreated by adding our own Target parameter
 	// that is defaulted to self and hidden so that the user does not need to set it
-	check(IsValid(Target));
-	check(Target->IsA(AActor::StaticClass()));
-	check(Target->GetNetDriver() != nullptr);
-
-	const bool bHasAuthority = Target->HasAuthority();
 	const bool bIsServer = Target->GetNetDriver()->IsServer();
+	const bool bHasAuthority = Target->HasAuthority();
 
 	if (bHasAuthority && bIsServer)
 	{

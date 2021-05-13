@@ -58,8 +58,13 @@ bool SpatialDispatcher::IsExternalSchemaOp(const Worker_Op& Op) const
 
 void SpatialDispatcher::ProcessExternalSchemaOp(const Worker_Op& Op)
 {
-	Worker_ComponentId ComponentId = SpatialGDK::GetComponentId(Op);
-	check(ComponentId != SpatialConstants::INVALID_COMPONENT_ID);
+	const Worker_ComponentId ComponentId = SpatialGDK::GetComponentId(Op);
+
+	if (!ensureAlwaysMsgf(ComponentId != SpatialConstants::INVALID_COMPONENT_ID,
+						  TEXT("Tried to process external schema op with invalid component ID")))
+	{
+		return;
+	}
 
 	switch (Op.op_type)
 	{
@@ -130,7 +135,12 @@ SpatialDispatcher::FCallbackId SpatialDispatcher::OnCommandResponse(Worker_Compo
 SpatialDispatcher::FCallbackId SpatialDispatcher::AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType,
 																	   const TFunction<void(const Worker_Op*)>& Callback)
 {
-	check(SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID);
+	if (!ensureAlwaysMsgf(
+			SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID,
+			TEXT("Tried to add op callback for external schema component ID outside of permitted range")))
+	{
+		return -1;
+	}
 	const FCallbackId NewCallbackId = NextCallbackId++;
 	ComponentOpTypeToCallbacksMap.FindOrAdd(ComponentId).FindOrAdd(OpType).Add(UserOpCallbackData{ NewCallbackId, Callback });
 	CallbackIdToDataMap.Add(NewCallbackId, CallbackIdData{ ComponentId, OpType });

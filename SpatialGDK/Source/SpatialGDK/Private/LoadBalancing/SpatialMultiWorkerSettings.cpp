@@ -40,7 +40,11 @@ void UAbstractSpatialMultiWorkerSettings::PostEditChangeProperty(struct FPropert
 void UAbstractSpatialMultiWorkerSettings::EditorRefreshSpatialDebugger() const
 {
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
-	check(World != nullptr);
+
+	if (!ensureAlwaysMsgf(World != nullptr, TEXT("Tried to refresh editor spatial debugger but failed to access World from GEditor")))
+	{
+		return;
+	}
 
 	const TSubclassOf<UAbstractSpatialMultiWorkerSettings> VisibleMultiWorkerSettingsClass =
 		USpatialStatics::GetSpatialMultiWorkerClass(World);
@@ -58,8 +62,11 @@ uint32 UAbstractSpatialMultiWorkerSettings::GetMinimumRequiredWorkerCount() cons
 
 	for (const FLayerInfo& LayerInfo : WorkerLayers)
 	{
-		check(*LayerInfo.LoadBalanceStrategy != nullptr);
-		WorkerCount += GetDefault<UAbstractLBStrategy>(*LayerInfo.LoadBalanceStrategy)->GetMinimumRequiredWorkers();
+		if (ensureAlwaysMsgf(*LayerInfo.LoadBalanceStrategy != nullptr,
+							 TEXT("Failed to get minimum worker count for multiserver settings because strategy on a layer was invalid")))
+		{
+			WorkerCount += GetDefault<UAbstractLBStrategy>(*LayerInfo.LoadBalanceStrategy)->GetMinimumRequiredWorkers();
+		}
 	}
 
 	return WorkerCount;
