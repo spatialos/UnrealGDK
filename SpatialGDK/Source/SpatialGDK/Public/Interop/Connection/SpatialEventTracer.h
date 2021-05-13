@@ -155,7 +155,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const ch
 
 	if (!Trace_EventTracer_ApplyEventPreFilter(EventTracer, &Event))
 	{
-		return {}; // TODO: Should return TraceSpanId?
+		return TraceSpanId;
 	}
 
 	FSpatialTraceEventDataBuilder EventDataBuilder;
