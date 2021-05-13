@@ -271,16 +271,17 @@ void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Work
 	}
 }
 
-void USpatialPackageMapClient::DestroyRuntimeRemovedComponents(const Worker_EntityId& EntityId, const TArray<SpatialGDK::ComponentData>& Components, const USpatialNetDriver& InNetDriver)
+void USpatialPackageMapClient::DestroyRuntimeRemovedComponents(const Worker_EntityId& EntityId,
+															   const TArray<SpatialGDK::ComponentData>& Components,
+															   const USpatialNetDriver& InNetDriver)
 {
-	auto ContainedInComponentsArr = [&Components, &EntityId, &InNetDriver](const FUnrealObjectRef CheckComponentObjRef)
-	{
+	auto ContainedInComponentsArr = [&Components, &EntityId, &InNetDriver](const FUnrealObjectRef CheckComponentObjRef) {
 		for (const SpatialGDK::ComponentData& Component : Components)
 		{
 			uint32 Offset = 0;
 			InNetDriver.ClassInfoManager->GetOffsetByComponentId(Component.GetComponentId(), Offset);
 
-			if (FUnrealObjectRef (EntityId, Offset) == CheckComponentObjRef)
+			if (FUnrealObjectRef(EntityId, Offset) == CheckComponentObjRef)
 			{
 				return true;
 			}
@@ -289,7 +290,7 @@ void USpatialPackageMapClient::DestroyRuntimeRemovedComponents(const Worker_Enti
 	};
 
 	for (auto DynamicSubObjectIterator = RemovedDynamicSubobjectObjectRefs.CreateIterator(); DynamicSubObjectIterator;
-	++DynamicSubObjectIterator)
+		 ++DynamicSubObjectIterator)
 	{
 		if (DynamicSubObjectIterator->Key.Entity == EntityId)
 		{
