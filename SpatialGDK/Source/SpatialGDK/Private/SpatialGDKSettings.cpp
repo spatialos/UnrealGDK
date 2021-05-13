@@ -95,15 +95,15 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 		   OverrideValue.IsSet() ? *(OverrideValue.GetValue()) : TEXT("not set"));
 }
 
-bool IsQueryValid(const char* QueryStr)
-{
-	return SpatialGDK::TraceQueryPtr(Trace_ParseSimpleQuery(QueryStr)).Get() != nullptr;
-}
 } // namespace
 
 #if WITH_EDITOR
 void UEventTracingSamplingSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
+	auto IsQueryValid = [](const char* QueryStr) -> bool
+	{
+		return SpatialGDK::TraceQueryPtr(Trace_ParseSimpleQuery(QueryStr)).Get() != nullptr;
+	};
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 	if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, EventPreFilter))
