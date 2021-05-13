@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
+#include "SpatialGDK/TestActors/TestPossessionPawn.h"
+
 #include "DynamicSubobjectsTest.generated.h"
 
 class ATestMovementCharacter;
@@ -23,7 +25,7 @@ public:
 	// A reference to the Default Pawn of Client 1 to allow for repossession in the final step of the test.
 	APawn* ClientOneDefaultPawn;
 
-	ATestMovementCharacter* ClientOneSpawnedPawn;
+	ATestPossessionPawn* ClientOneSpawnedPawn;
 
 	AReplicatedGASTestActor* TestActor;
 

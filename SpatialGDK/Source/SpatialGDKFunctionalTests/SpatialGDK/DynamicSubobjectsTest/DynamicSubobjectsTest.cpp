@@ -71,7 +71,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		if (AssertIsValid(PlayerController, TEXT("PlayerController should be valid")))
 		{
 			ClientOneSpawnedPawn =
-				GetWorld()->SpawnActor<ATestMovementCharacter>(CharacterSpawnLocation, FRotator::ZeroRotator, FActorSpawnParameters());
+				GetWorld()->SpawnActor<ATestPossessionPawn>(CharacterSpawnLocation, FRotator::ZeroRotator, FActorSpawnParameters());
 			RegisterAutoDestroyActor(ClientOneSpawnedPawn);
 
 			ClientOneDefaultPawn = PlayerController->GetPawn();
@@ -116,7 +116,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		// AReplicatedGASTestActor.
 		AddStep(TEXT("DynamicSubobjectsTestServerMoveClient1"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			if (ClientOneSpawnedPawn->SetActorLocation(CharacterRemoteLocation)
-				&& AssertEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterRemoteLocation,
+				&& RequireEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterRemoteLocation,
 									  TEXT("Client pawn was not moved to remote location"), 1.0f))
 			{
 				FinishStep();
@@ -130,7 +130,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 				APawn* PlayerCharacter = GetFlowPawn();
 
 				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should not be nullptr"))
-					&& AssertEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterRemoteLocation,
+					&& RequireEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterRemoteLocation,
 										  TEXT("Character was not moved to remote location"), 1.0f))
 				{
 					FinishStep();
@@ -192,7 +192,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		// Step7 - Server moves Client 1 close to the cube.
 		AddStep(TEXT("DynamicSubobjectsTestServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			if (ClientOneSpawnedPawn->SetActorLocation(CharacterSpawnLocation)
-				&& AssertEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterSpawnLocation,
+				&& RequireEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterSpawnLocation,
 									  TEXT("Server 1 should see the pawn close to the initial spawn location"), 1.0f))
 			{
 				FinishStep();
@@ -206,7 +206,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 				APawn* PlayerCharacter = GetFlowPawn();
 
 				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid"))
-					&& AssertEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterSpawnLocation,
+					&& RequireEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterSpawnLocation,
 										  TEXT("Client 1 should see themself close to the initial spawn location"), 1.0f))
 				{
 					FinishStep();
