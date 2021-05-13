@@ -235,7 +235,7 @@ void FSpatialGDKEditor::GenerateSchema(ESchemaGenerationMethod Method, TFunction
 
 			// Make sure SchemaDatabase is not loaded (unlocks the file after any failed schema gen operations)
 			if (UPackage* LoadedDatabase =
-					FindPackage(nullptr, *FPaths::Combine(TEXT("/Game/"), *SpatialConstants::SCHEMA_DATABASE_FILE_PATH)))
+					FindPackage(nullptr, *SpatialConstants::SCHEMA_DATABASE_ASSET_PATH))
 			{
 				TArray<UPackage*> ToUnload;
 				ToUnload.Add(LoadedDatabase);
