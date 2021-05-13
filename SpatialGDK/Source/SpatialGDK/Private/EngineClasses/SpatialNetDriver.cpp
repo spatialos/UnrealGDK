@@ -1071,8 +1071,8 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 			if (!World->bBegunPlay)
 			{
 				// PackageMap != nullptr implies the spatial connection is connected, however World::BeginPlay may not have been called yet
-				// which means we are still in a UEngine::LoadMap call. During the initial load process, actors are created and destroyed in the
-				// following scenarios:
+				// which means we are still in a UEngine::LoadMap call. During the initial load process, actors are created and destroyed in
+				// the following scenarios:
 				// - When running in PIE, Blueprint loaded sub-levels can be duplicated and immediately unloaded.
 				// - ChildActorComponent::OnRegister
 				UE_LOG(LogSpatialOSNetDriver, Verbose,
