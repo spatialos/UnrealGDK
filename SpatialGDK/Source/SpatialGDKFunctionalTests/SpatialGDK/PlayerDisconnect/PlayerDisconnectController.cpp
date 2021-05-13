@@ -8,10 +8,10 @@ void APlayerDisconnectController::SetupInputComponent()
 	Super::SetupInputComponent();
 	EnableInput(this);
 	check(InputComponent);
-	InputComponent->BindKey(EKeys::M, IE_Pressed, this, &APlayerDisconnectController::MPressed);
+	InputComponent->BindKey(EKeys::M, IE_Pressed, this, &APlayerDisconnectController::ReturnToMainMenu);
 }
 
-void APlayerDisconnectController::MPressed()
+void APlayerDisconnectController::ReturnToMainMenu()
 {
 	// Test a client disconnecting by returning to the main menu, in this case will travel to the default map
 	GetGameInstance()->ReturnToMainMenu();

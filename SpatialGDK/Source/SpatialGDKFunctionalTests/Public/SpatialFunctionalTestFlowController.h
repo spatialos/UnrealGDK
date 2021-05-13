@@ -79,7 +79,7 @@ public:
 	bool HasAckFinishedTest() const { return bHasAckFinishedTest; }
 
 	UFUNCTION()
-	void HandleOnPrepareShutdown();
+	void DeregisterFlowController();
 
 private:
 	// Current Step being executed

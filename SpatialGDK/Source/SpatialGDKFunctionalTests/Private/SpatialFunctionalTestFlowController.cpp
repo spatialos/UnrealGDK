@@ -62,7 +62,7 @@ void ASpatialFunctionalTestFlowController::BeginPlay()
 			1.0f, false);
 		USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
 		check(GameInstance != nullptr);
-		GameInstance->OnPrepareShutdown.AddDynamic(this, &ASpatialFunctionalTestFlowController::HandleOnPrepareShutdown);
+		GameInstance->OnPrepareShutdown.AddDynamic(this, &ASpatialFunctionalTestFlowController::DeregisterFlowController);
 	}
 }
 
@@ -231,7 +231,7 @@ void ASpatialFunctionalTestFlowController::SetReadyToRunTest(bool bIsReady)
 	}
 }
 
-void ASpatialFunctionalTestFlowController::HandleOnPrepareShutdown()
+void ASpatialFunctionalTestFlowController::DeregisterFlowController()
 {
 	OwningTest->DeregisterFlowController(this);
 }

@@ -18,5 +18,5 @@ public:
 	virtual void SetupInputComponent() override;
 
 	UFUNCTION()
-	void MPressed();
+	void ReturnToMainMenu();
 };
