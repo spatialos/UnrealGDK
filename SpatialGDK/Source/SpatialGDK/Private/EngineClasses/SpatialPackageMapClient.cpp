@@ -23,14 +23,14 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
-void USpatialPackageMapClient::Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager)
+void USpatialPackageMapClient::Init(USpatialNetDriver& NetDriver)
 {
-	bIsServer = NetDriver->IsServer();
+	bIsServer = NetDriver.IsServer();
 	// Entity Pools should never exist on clients
 	if (bIsServer)
 	{
 		EntityPool = NewObject<UEntityPool>();
-		EntityPool->Init(NetDriver, TimerManager);
+		EntityPool->Init(NetDriver);
 	}
 }
 
@@ -465,7 +465,10 @@ static FSubobjectToOffsetMap CreateOffsetMapFromActor(USpatialPackageMapClient* 
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId)
 {
-	check(EntityId > 0);
+	if (!ensureAlwaysMsgf(EntityId > 0, TEXT("Tried to assign net guid for invalid entity ID. Actor: %s"), *GetNameSafe(Actor)))
+	{
+		return FNetworkGUID();
+	}
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 

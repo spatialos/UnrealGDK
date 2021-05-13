@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
+- Added a "Clean and Generate Schema" option to the Schema menu, which lets you delete the SchemaDatabase.uasset, all generated schema files, and run a Full Scan in one click.
+- Added a pop-up message when schema generation fails, which suggests running a Clean and Generate to fix a bad schema state.
+- Fixed a bug that left the SchemaDatabase.uasset file locked after a failed schema generation.
+
 ### Breaking changes:
 - Removed support for UE 4.24.
 - `MaxRPCRingBufferSize` setting has been removed. This was previously used to specify the RPC ring buffer size when generating schema. Now, `DefaultRPCRingBufferSize` is used, and can be overridden per RPC type using `RPCRingBufferSizeOverrides`.
@@ -21,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Granting an ability from an `FGameplayAbilitySpecDef` must now be done through the `FGameplayAbilitySpec::GiveAbilityFromSpecDef`/`GiveAbilityAndActivateOnceFromSpecDef` functions.
 - Removed `USpatialStaticComponentView`; similar functionality is now provided in `ViewCoordinator`.
 - Reworked AlwaysInterested functionality to run on authoritative servers, and owning clients. The previous behaviour was for it to only run on PlayerController classes, on the client only.
+- `bUseNetOwnerActorGroup` actor setting has been removed with the default behavior now true inside LayeredLBStrategy. Extend this class if you wish to alter this default behavior.
 
 ### Features:
 - Added a message box notification when game is closed due to missing generated schema.
@@ -63,6 +68,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue with migration diagnostic logging failing, when the actor did not have authority.
 - Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
 - Fixed an issue where migration diagnostic tool would crash if the target actor's owner couldn't be found.
+
+### Internal:
+- Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs now no longer expire, and persist until used.
 
 ## [`0.12.0`] - 2021-02-01
 

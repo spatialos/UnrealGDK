@@ -22,7 +22,10 @@ namespace SpatialGDK
 {
 inline AActor* GetTopmostReplicatedOwner(const AActor* Actor)
 {
-	check(Actor != nullptr);
+	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Called GetTopmostReplicatedOwner for nullptr Actor")))
+	{
+		return nullptr;
+	}
 
 	AActor* Owner = Actor->GetOwner();
 	if (Owner == nullptr || Owner->IsPendingKillPending() || !Owner->GetIsReplicated())

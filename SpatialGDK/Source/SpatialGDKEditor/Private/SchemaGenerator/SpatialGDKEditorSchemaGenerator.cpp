@@ -1272,8 +1272,6 @@ bool LoadGeneratorStateFromSchemaDatabase(const FString& FileName)
 		return false;
 	}
 
-	bool bResetSchema = false;
-
 	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*RelativeFileName);
 	if (StatData.bIsValid)
 	{

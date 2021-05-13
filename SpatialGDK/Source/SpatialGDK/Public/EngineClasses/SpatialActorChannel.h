@@ -248,10 +248,6 @@ public:
 	FRepChangeState CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object);
 	FHandoverChangeState CreateInitialHandoverChangeState(const FClassInfo& ClassInfo);
 
-	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an
-	// array.
-	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
-
 	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
 								  const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
