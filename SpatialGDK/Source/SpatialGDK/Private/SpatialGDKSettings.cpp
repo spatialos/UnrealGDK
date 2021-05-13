@@ -97,9 +97,7 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 
 bool IsQueryValid(const char* QueryStr)
 {
-	SpatialGDK::TraceQueryPtr Query(Trace_ParseSimpleQuery(QueryStr));
-	bool bIsValid = !!Query.Get();
-	return bIsValid;
+	return SpatialGDK::TraceQueryPtr(Trace_ParseSimpleQuery(QueryStr)).Get() != nullptr;
 }
 } // namespace
 
