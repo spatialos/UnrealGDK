@@ -17,11 +17,14 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
 UENUM()
-enum class EEventTraceFileOutputType
+namespace EEventTraceFileOutputType
+{
+enum Type
 {
 	Single,
 	Rotating
 };
+}
 
 namespace SpatialGDK
 {
