@@ -117,7 +117,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddStep(TEXT("DynamicSubobjectsTestServerMoveClient1"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			if (ClientOneSpawnedPawn->SetActorLocation(CharacterRemoteLocation)
 				&& RequireEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterRemoteLocation,
-									  TEXT("Client pawn was not moved to remote location"), 1.0f))
+									   TEXT("Client pawn was not moved to remote location"), 1.0f))
 			{
 				FinishStep();
 			}
@@ -131,7 +131,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should not be nullptr"))
 					&& RequireEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterRemoteLocation,
-										  TEXT("Character was not moved to remote location"), 1.0f))
+										   TEXT("Character was not moved to remote location"), 1.0f))
 				{
 					FinishStep();
 				}
@@ -193,7 +193,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddStep(TEXT("DynamicSubobjectsTestServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			if (ClientOneSpawnedPawn->SetActorLocation(CharacterSpawnLocation)
 				&& RequireEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterSpawnLocation,
-									  TEXT("Server 1 should see the pawn close to the initial spawn location"), 1.0f))
+									   TEXT("Server 1 should see the pawn close to the initial spawn location"), 1.0f))
 			{
 				FinishStep();
 			}
@@ -207,7 +207,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid"))
 					&& RequireEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterSpawnLocation,
-										  TEXT("Client 1 should see themself close to the initial spawn location"), 1.0f))
+										   TEXT("Client 1 should see themself close to the initial spawn location"), 1.0f))
 				{
 					FinishStep();
 				}
