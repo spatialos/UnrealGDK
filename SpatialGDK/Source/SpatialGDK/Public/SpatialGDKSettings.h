@@ -475,7 +475,7 @@ public:
 	 * Which type of event-log files are produced (either a single file or a time-rotated collection of files).
 	 */
 	UPROPERTY(Config)
-	TEnumAsByte<EEventTraceFileOutputType::Type> EventTraceFileOutputType;
+	TEnumAsByte<EEventTraceFileOutputType> EventTraceFileOutputType;
 
 	UPROPERTY(Config)
 	bool bEnableAlwaysWriteRPCs;
