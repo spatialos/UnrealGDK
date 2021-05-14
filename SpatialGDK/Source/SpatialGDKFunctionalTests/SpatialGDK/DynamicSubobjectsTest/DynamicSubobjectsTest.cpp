@@ -70,8 +70,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 		if (AssertIsValid(PlayerController, TEXT("PlayerController should be valid")))
 		{
-			ClientOneSpawnedPawn =
-				GetWorld()->SpawnActor<ATestMovementCharacter>(CharacterSpawnLocation, FRotator::ZeroRotator);
+			ClientOneSpawnedPawn = GetWorld()->SpawnActor<ATestMovementCharacter>(CharacterSpawnLocation, FRotator::ZeroRotator);
 			RegisterAutoDestroyActor(ClientOneSpawnedPawn);
 
 			ClientOneDefaultPawn = PlayerController->GetPawn();
@@ -93,8 +92,6 @@ void ADynamicSubobjectsTest::PrepareTest()
 			}
 		},
 		StepTimeLimit);
-
-
 
 	// Step 2 - Client 1 checks if it has correctly possessed the TestMovementCharacter.
 	AddStep(
@@ -177,12 +174,11 @@ void ADynamicSubobjectsTest::PrepareTest()
 					TestActor = GetReplicatedTestActor();
 					if (AssertIsValid(TestActor, TEXT("Test actor should be valid")))
 					{
-
 						TArray<USceneComponent*> AllSceneComps;
 						TestActor->GetComponents<USceneComponent>(AllSceneComps);
 
 						RequireCompare_Int(AllSceneComps.Num(), EComparisonMethod::Greater_Than_Or_Equal_To, 1,
-										TEXT("For this test, DynamicSubobjectTestActor should have at least 1 component"));
+										   TEXT("For this test, DynamicSubobjectTestActor should have at least 1 component"));
 
 						// delete all the components on the actor
 						for (USceneComponent* SceneComponent : AllSceneComps)
@@ -192,8 +188,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 						TArray<USceneComponent*> TwoSceneComps;
 						TestActor->GetComponents<USceneComponent>(TwoSceneComps);
-						RequireEqual_Int(TwoSceneComps.Num(), 0,
-										TEXT("now gasactor should have 0 components"));
+						RequireEqual_Int(TwoSceneComps.Num(), 0, TEXT("now gasactor should have 0 components"));
 
 						FinishStep();
 					}
@@ -226,7 +221,6 @@ void ADynamicSubobjectsTest::PrepareTest()
 			},
 			StepTimeLimit);
 
-
 		// Step 9 - Client 1 checks it can see the AReplicatedGASTestActor
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased2"), FWorkerDefinition::Client(1), nullptr, nullptr,
@@ -243,32 +237,32 @@ void ADynamicSubobjectsTest::PrepareTest()
 		if (LastStepLoop)
 		{
 			AddStep(
-	TEXT("DynamicSubobjectsTestAllWorkers"), FWorkerDefinition::Server(1), nullptr, nullptr,
-	[this](float DeltaTime) {
-				TestActor = GetReplicatedTestActor();
-				if (TestActor)
-				{
-					// TArray<USceneComponent*> AllSceneComps;
-					// TestActor->GetComponents<USceneComponent>(AllSceneComps);
-					//
-					// RequireCompare_Int(AllSceneComps.Num(), EComparisonMethod::Greater_Than_Or_Equal_To, 1,
-					// 				TEXT("For this test, DynamicSubobjectTestActor should have at least 1 component"));
-					//
-					// // delete all the components on the actor
-					// for (USceneComponent* SceneComponent : AllSceneComps)
-					// {
-					// 	SceneComponent->DestroyComponent();
-					// }
-					//
-					// TArray<USceneComponent*> TwoSceneComps;
-					// TestActor->GetComponents<USceneComponent>(TwoSceneComps);
-					// RequireEqual_Int(TwoSceneComps.Num(), 0,
-					// 				TEXT("now gasactor should have 0 components"));
+				TEXT("DynamicSubobjectsTestAllWorkers"), FWorkerDefinition::Server(1), nullptr, nullptr,
+				[this](float DeltaTime) {
+					TestActor = GetReplicatedTestActor();
+					if (TestActor)
+					{
+						// TArray<USceneComponent*> AllSceneComps;
+						// TestActor->GetComponents<USceneComponent>(AllSceneComps);
+						//
+						// RequireCompare_Int(AllSceneComps.Num(), EComparisonMethod::Greater_Than_Or_Equal_To, 1,
+						// 				TEXT("For this test, DynamicSubobjectTestActor should have at least 1 component"));
+						//
+						// // delete all the components on the actor
+						// for (USceneComponent* SceneComponent : AllSceneComps)
+						// {
+						// 	SceneComponent->DestroyComponent();
+						// }
+						//
+						// TArray<USceneComponent*> TwoSceneComps;
+						// TestActor->GetComponents<USceneComponent>(TwoSceneComps);
+						// RequireEqual_Int(TwoSceneComps.Num(), 0,
+						// 				TEXT("now gasactor should have 0 components"));
 
-					FinishStep();
-				}
-			},
-			StepTimeLimit);
+						FinishStep();
+					}
+				},
+				StepTimeLimit);
 		}
 
 		if (LastStepLoop)
