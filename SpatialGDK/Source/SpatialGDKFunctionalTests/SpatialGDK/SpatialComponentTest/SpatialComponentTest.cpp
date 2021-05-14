@@ -49,6 +49,7 @@ void ASpatialComponentTest::PrepareTest()
 			TEXT("Replicated Level Actor - Verify Server Components"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
 				CheckComponents(LevelReplicatedActor, 1, 0, 0);
+				FinishStep();
 			},
 			5.0f);
 	}
@@ -70,6 +71,7 @@ void ASpatialComponentTest::PrepareTest()
 			nullptr,
 			[this](float DeltaTime) {
 				CheckComponents(DynamicReplicatedActor, 1, 0, 0);
+				FinishStep();
 			},
 			5.0f);
 
@@ -87,6 +89,7 @@ void ASpatialComponentTest::PrepareTest()
 			[this](float DeltaTime) {
 				// Client 1 OnClientOwnershipGained component and Client 2 no events expected
 				CheckComponents(DynamicReplicatedActor, 1, 1, 0);
+				FinishStep();
 			},
 			5.0f);
 
@@ -105,6 +108,7 @@ void ASpatialComponentTest::PrepareTest()
 				// Client 1 OnClientOwnershipGained component and OnClientOwnershipLost component and Client 2 OnClientOwnershipGained
 				// component
 				CheckComponents(DynamicReplicatedActor, 1, 2, 1);
+				FinishStep();
 			},
 			5.0f);
 
@@ -126,6 +130,7 @@ void ASpatialComponentTest::PrepareTest()
 			FWorkerDefinition::AllWorkers, nullptr, nullptr,
 			[this](float DeltaTime) {
 				CheckComponentsCrossServer(DynamicReplicatedActor, 1, 2);
+				FinishStep();
 			},
 			5.0f);
 
@@ -144,6 +149,16 @@ void ASpatialComponentTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, int ExpectedServerId, int ExpectedClient1ComponentCount,
 											int ExpectedClient2ComponentCount)
 {
+	if (!RequireTrue(IsValid(Actor), TEXT("Actor is valid")))
+	{
+		return;
+	}
+
+	if (!RequireTrue(Actor->HasActorBegunPlay(), TEXT("Actor has begun play")))
+	{
+		return;
+	}
+
 	const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 	if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 	{
@@ -153,23 +168,19 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 			if (LocalWorkerDefinition.Id == ExpectedServerId)
 			{
 				VerifyTestActorComponents(Actor, 2, TEXT("Server auth - OnAuthorityGained component and OnActorReady component"));
-				FinishStep();
 			}
 			else if (Actor->bNetStartup)
 			{
 				VerifyTestActorComponents(Actor, 1, TEXT("Non-auth servers - Level actors receive OnActorReady only OnAuthorityGained"));
-				FinishStep();
 			}
 			else
 			{
 				VerifyTestActorComponents(Actor, 0, TEXT("Non-auth servers - Dynamic actors do not receive OnActorReady"));
-				FinishStep();
 			}
 		}
 		else // Support for Native / Single Worker.
 		{
 			VerifyTestActorComponents(Actor, 2, TEXT("Native / Single Worker - OnActorReady component and OnAuthorityGained component"));
-			FinishStep();
 		}
 	}
 	else // Clients
@@ -177,13 +188,10 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 		if (LocalWorkerDefinition.Id == 1)
 		{
 			VerifyTestActorComponents(Actor, ExpectedClient1ComponentCount, TEXT("Client 1"));
-
-			FinishStep();
 		}
 		else if (LocalWorkerDefinition.Id == 2)
 		{
 			VerifyTestActorComponents(Actor, ExpectedClient2ComponentCount, TEXT("Client 2"));
-			FinishStep();
 		}
 	}
 }
@@ -191,6 +199,16 @@ void ASpatialComponentTest::CheckComponents(ASpatialComponentTestActor* Actor, i
 // Checks the number of components on the servers and clients when an actor migrates
 void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActor* Actor, int StartServerId, int EndServerId)
 {
+	if (!RequireTrue(IsValid(Actor), TEXT("Actor is valid")))
+	{
+		return;
+	}
+
+	if (!RequireTrue(Actor->HasActorBegunPlay(), TEXT("Actor has begun play")))
+	{
+		return;
+	}
+
 	const FWorkerDefinition& LocalWorkerDefinition = GetLocalFlowController()->WorkerDefinition;
 	if (LocalWorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 	{
@@ -201,38 +219,28 @@ void ASpatialComponentTest::CheckComponentsCrossServer(ASpatialComponentTestActo
 			{
 				VerifyTestActorComponents(
 					Actor, 3, TEXT("Spawning server - OnActorReady component, OnAuthorityGained component and OnAuthorityLost component"));
-				FinishStep();
 			}
 			else if (LocalWorkerDefinition.Id == EndServerId)
 			{
 				VerifyTestActorComponents(Actor, 1, TEXT("Migrated server - OnAuthorityGained component"));
-				FinishStep();
 			}
 		}
 		else // Support for Native / Single Worker.
 		{
 			VerifyTestActorComponents(Actor, 2, TEXT("Native / Single Worker - OnActorReady component and OnAuthorityGained component"));
-			FinishStep();
 		}
 	}
 	else // Clients
 	{
 		VerifyTestActorComponents(Actor, 0, TEXT("Clients"));
-		FinishStep();
 	}
 }
 
 bool ASpatialComponentTest::VerifyTestActorComponents(ASpatialComponentTestActor* Actor, int ExpectedTestComponentCount,
 													  const FString& Message)
 {
-	if (!RequireTrue(IsValid(Actor), FString::Printf(TEXT("(%s) Actor is valid"), *Message)))
-	{
-		return false;
-	}
-	const bool bHasBegunPlay = RequireTrue(Actor->HasActorBegunPlay(), FString::Printf(TEXT("(%s) Actor has begun play"), *Message));
-	const bool bHasComponents = RequireEqual_Int(GetComponentsCount(Actor), ExpectedTestComponentCount,
-												 FString::Printf(TEXT("(%s) Component count correct"), *Message));
-	return bHasBegunPlay && bHasComponents;
+	return RequireEqual_Int(GetComponentsCount(Actor), ExpectedTestComponentCount,
+							FString::Printf(TEXT("(%s) Component count correct"), *Message));
 }
 
 int32 ASpatialComponentTest::GetComponentsCount(ASpatialComponentTestActor* Actor)
