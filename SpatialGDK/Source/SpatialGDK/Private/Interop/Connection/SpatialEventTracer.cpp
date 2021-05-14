@@ -20,7 +20,7 @@ TraceQueryPtr ParseOrDefault(const FString& Str, const char* FilterForLog)
 	}
 	else
 	{
-		Ptr.Reset(Trace_ParseSimpleQuery("true"));
+		Ptr.Reset(Trace_ParseSimpleQuery("span_id != \"00000000000000000000000000000000\""));
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("No %s specified, using \"true\""), FilterForLog);
 	}
 
@@ -167,7 +167,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		default:
 		case EEventTraceFileOutputType::Single:
 		{
-			const FString FullFilename = FString::Printf(TEXT("%s-%s.%s"), *FileName, *WorkerId, *FileExt);
+			const FString FullFilename = FString::Printf(TEXT("%s-%s%s"), *FileName, *WorkerId, *FileExt);
 			const FString FullFilePath = FPaths::Combine(FolderPath, FullFilename);
 			Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FullFilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
 			break;
