@@ -28,35 +28,21 @@ struct SPATIALGDK_API ActorOwnership
 	{
 	}
 
-	explicit ActorOwnership(const ComponentData& Data) { ApplySchema(Data.GetFields()); }
+	explicit ActorOwnership(const ComponentData& Data);
 
-	explicit ActorOwnership(const Worker_ComponentData& Data)
-	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-		ApplySchema(ComponentObject);
-	}
+	explicit ActorOwnership(const Worker_ComponentData& Data);
 
 	static ActorOwnership CreateFromActor(const AActor& Actor, const USpatialPackageMapClient& PackageMap);
 
-	ComponentData CreateComponentData() const { return CreateComponentDataHelper(*this); }
+	ComponentData CreateComponentData() const;
 
-	ComponentUpdate CreateComponentUpdate() const { return CreateComponentUpdateHelper(*this); }
+	ComponentUpdate CreateComponentUpdate() const;
 
-	void ApplyComponentUpdate(const ComponentUpdate& Update) { ApplySchema(Update.GetFields()); }
+	void ApplyComponentUpdate(const ComponentUpdate& Update);
 
-	void ApplySchema(Schema_Object* Schema)
-	{
-		if (Schema_GetEntityIdCount(Schema, SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID) == 1)
-		{
-			OwnerActorEntityId = Schema_GetEntityId(Schema, SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID);
-		}
-	}
+	void ApplySchema(Schema_Object* Schema);
 
-	void WriteSchema(Schema_Object* Schema) const
-	{
-		Schema_AddInt64(Schema, SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID, OwnerActorEntityId);
-	}
+	void WriteSchema(Schema_Object* Schema) const;
 
 	Worker_EntityId OwnerActorEntityId;
 
@@ -67,4 +53,5 @@ struct SPATIALGDK_API ActorOwnership
 
 	friend bool operator!=(const ActorOwnership& Lhs, const ActorOwnership& Rhs) { return !(Lhs == Rhs); }
 };
+
 } // namespace SpatialGDK

@@ -10,6 +10,52 @@
 
 namespace SpatialGDK
 {
+ActorOwnership::ActorOwnership(const ComponentData& Data)
+{
+	ApplySchema(Data.GetFields());
+}
+
+ActorOwnership::ActorOwnership(const Worker_ComponentData& Data)
+{
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+	ApplySchema(ComponentObject);
+}
+
+ComponentData ActorOwnership::CreateComponentData() const
+{
+	return CreateComponentDataHelper(*this);
+}
+
+ComponentUpdate ActorOwnership::CreateComponentUpdate() const
+{
+	return CreateComponentUpdateHelper(*this);
+}
+
+void ActorOwnership::ApplyComponentUpdate(const ComponentUpdate& Update)
+{
+	ApplySchema(Update.GetFields());
+}
+
+void ActorOwnership::ApplySchema(Schema_Object* Schema)
+{
+	if (Schema != nullptr)
+	{
+		if (Schema_GetEntityIdCount(Schema, SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID) == 1)
+		{
+			OwnerActorEntityId = Schema_GetEntityId(Schema, SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID);
+		}
+	}
+}
+
+void ActorOwnership::WriteSchema(Schema_Object* Schema) const
+{
+	if (Schema != nullptr)
+	{
+		Schema_AddInt64(Schema, SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID, OwnerActorEntityId);
+	}
+}
+
 ActorOwnership ActorOwnership::CreateFromActor(const AActor& Actor, const USpatialPackageMapClient& PackageMap)
 {
 	ActorOwnership Ownership;
