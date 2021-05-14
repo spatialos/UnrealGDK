@@ -82,7 +82,7 @@ void ASpatialTestPlayerDisconnectReturnToMainMenu::PrepareTest()
 
 				TArray<AActor*> PlayerCharacters;
 				UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), PlayerCharacters);
-				RequireEqual_Int(PlayerCharacters.Num(), 1, TEXT("Expected one player characters."));
+				RequireEqual_Int(PlayerCharacters.Num(), 1, TEXT("Expected one player character."));
 
 				FinishStep();
 			},
