@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`0.13.0`] - 2021-04-20
 ### Breaking changes:
-- Removed support for UE 4.24.
+- Removed support for Unreal Engine 4.24.
 - `MaxRPCRingBufferSize` setting has been removed. This was previously used to specify the RPC ring buffer size when generating schema. Now, `DefaultRPCRingBufferSize` is used, and can be overridden per RPC type using `RPCRingBufferSizeOverrides`.
 - `RPCRingBufferSizeMap` setting has been renamed to `RPCRingBufferSizeOverrides`.
 - Changed the uniqueness of `FGameplayAbilitySpecHandle`.
@@ -29,31 +29,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features:
 - Added a message box notification when game is closed due to missing generated schema.
 - Adapted SpatialDebugger to use SubViews.
-- Added a function flag `AlwaysWrite` that allows specifying an RPC to use a separate channel and allow overwriting unacked RPC calls. This is currently limited to Unreliable Server RPCs on classes inheriting from AActor, and only one such RPC can be specified per actor. This feature is disabled by default and can be enabled via `bEnableAlwaysWriteRPCs` setting.
+- Added a function flag `AlwaysWrite` that allows specifying an RPC to use a separate channel and allow overwriting unacked RPC calls. This is currently limited to Unreliable Server RPCs on classes inheriting from `AActor`, and only one such RPC can be specified per actor. This feature is disabled by default and can be enabled via `bEnableAlwaysWriteRPCs` setting.
 - Enhanced server logging to include load balancing and local worker info on startup.
-- Added 'Persistent' spatial class flag, typically used to override a non persistent base class.
+- Added `Persistent` spatial class flag, typically used to override a non persistent base class.
 - Added a button to generate functional test maps from the editor. It can be found under **Window** > **Generate test maps**.
 - Added versioning to snapshots. Attempting to load an incompatible snapshot will fail, and output error logs that request the snapshot be regenerated.
-- Add feature flag bEnableInitialOnlyReplicationCondition for COND_InitialOnly support.
+- Add feature flag `bEnableInitialOnlyReplicationCondition` for `COND_InitialOnly` support.
 - Added a function that allows the worker coordinator to periodically restart the simulated player clients with a bunch of parameters. This feature is disabled by default and can be enabled via `max_lifetime` setting.
 - Exposing worker upstream/downstream window sizes as GDK options for both clients and servers, (`ClientDownstreamWindowSizeBytes`, `ClientUpstreamWindowSizeBytes`) and (`ServerDownstreamWindowSizeBytes` and `ServerUpstreamWindowSizeBytes`).
-- `bOnlyRelevantToOwner` is now supported. Ownership must be setup prior to the first replication of the Actor otherwise it will be ignored.
+- `bOnlyRelevantToOwner` is now supported. Ownership must be setup prior to the first replication of the `Actor` otherwise it will be ignored.
 - Added a property to specify the test settings overrides config filename in the `World Settings` so that maps can share config files during automated testing. This replaces the option to automatically use the map name to determine the config filename.
-- Added experimental Unreal Insights support (internal Improbable use only). 
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
 - Fixed incorrect allocation of entity ID from a non-authoritative server sending a cross-server RPC to a replicated level actor that hasn't been received from runtime.
-- Fixed a regression where bReplicates would not be handed over correctly when dynamically set.
-- Fixed an issue where resetting handover property to default value would be omitted during handover value replication
-- Fixed EntityPool capacity overflow issue by removing the ability from the gdk settings to request a pool size larger than int32_max.
+- Fixed a regression where `bReplicates` would not be handed over correctly when dynamically set.
+- Fixed an issue where resetting `Handover` property to default value would be omitted during `Handover` value replication
+- Fixed `EntityPool` capacity overflow issue by removing the ability from the gdk settings to request a pool size larger than `int32_max`.
 - Fixed an issue where components added to a scene actor would be replicated incorrectly.
 - Fixed an issue where an actor channel was added to the wrong net connection.
 - Fixed an issue where an auto generated launch config was giving the client worker too many permissions.
-- Fixed an issue where authority was not correctly delegated to sublevel world settings prior to BeginPlay being issued. This resulted in duplicate world settings entities being created.
-- Fixed an issue in the SpatialTestCharacterMovement test where trigger boxes sometimes wouldn't trigger.
-- Fixed an issue where dynamic components without handover or owneronly data weren't created on receiving workers.
-- Downgraded a check to an error in SpatialSender::SendAuthorityIntentUpdate when sending the same intent twice.
+- Fixed an issue where authority was not correctly delegated to sublevel world settings prior to `BeginPlay` being issued. This resulted in duplicate world settings entities being created.
+- Fixed an issue in the `SpatialTestCharacterMovement` test where trigger boxes sometimes wouldn't trigger.
+- Fixed an issue where dynamic components without `Handover` or `OwnerOnly` data weren't created on receiving workers.
+- Downgraded a check to an error in `SpatialSender::SendAuthorityIntentUpdate` when sending the same intent twice.
 - Fixed a client crash that sometimes occurred when quickly unloading and reloading sublevels.
 - Fixed a worker crash when calling RPCs on PlayerControllers with a certain timing.
 - Fixed a warning about whitelisted files which was produced in the ExampleProject when building assemblies for cloud deployments.
@@ -61,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue with replicating references to stably named dynamically added subobjects of dynamic actors.
 - Fixed an issue during client logout where a client's corresponding Actors were not cleaned up correctly.
 - Reverted a fix relating to the `dbghelp` file that previously caused the Editor to crash when loading the Session Front End. Our fix is no longer necessary, as Epic have fixed the issue and we've adopted their fix.
-- Fixed issue with SpatialDebugger crashing when client travelling.
+- Fixed issue with `SpatialDebugger` crashing when client travelling.
 
 ## [`0.12.0`] - 2021-02-01
 
