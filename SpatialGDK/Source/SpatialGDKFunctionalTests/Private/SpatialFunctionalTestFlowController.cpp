@@ -60,9 +60,13 @@ void ASpatialFunctionalTestFlowController::BeginPlay()
 				OnReadyToRegisterWithTest();
 			},
 			1.0f, false);
-		USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
-		check(GameInstance != nullptr);
-		GameInstance->OnPrepareShutdown.AddDynamic(this, &ASpatialFunctionalTestFlowController::DeregisterFlowController);
+
+		if (WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
+		{
+			USpatialGameInstance* GameInstance = GetGameInstance<USpatialGameInstance>();
+			check(GameInstance != nullptr);
+			GameInstance->OnPrepareShutdown.AddDynamic(this, &ASpatialFunctionalTestFlowController::DeregisterFlowController);
+		}
 	}
 }
 

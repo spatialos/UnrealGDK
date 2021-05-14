@@ -229,7 +229,7 @@ bool ASpatialFunctionalTest::IsReady_Implementation()
 
 	for (ASpatialFunctionalTestFlowController* FlowController : FlowControllers)
 	{
-		if (FlowController != nullptr && FlowController->IsReadyToRunTest()) // Check if the owner already finished initialization
+		if (FlowController->IsReadyToRunTest()) // Check if the owner already finished initialization
 		{
 			if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Server)
 			{
@@ -455,6 +455,10 @@ void ASpatialFunctionalTest::DeregisterFlowController(ASpatialFunctionalTestFlow
 	{
 		FlowControllers.Remove(FlowController);
 		FlowController->Destroy();
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("DeregisterFlowController called on Server on test %s"), *GetName());
 	}
 }
 

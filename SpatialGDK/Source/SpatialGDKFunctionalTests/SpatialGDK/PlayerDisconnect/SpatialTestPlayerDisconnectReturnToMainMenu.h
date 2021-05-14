@@ -15,10 +15,4 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestPlayerDisconnectReturnToMainMenu
 	ASpatialTestPlayerDisconnectReturnToMainMenu();
 
 	virtual void PrepareTest() override;
-
-	UPROPERTY(EditInstanceOnly, Category = "Test Settings")
-	float TriggerEventWaitTime;
-
-	float StepTimer;
-	FHttpRequestPtr LocalShutdownRequest;
 };

@@ -11,8 +11,6 @@ ASpatialTestPlayerDisconnectTrigger::ASpatialTestPlayerDisconnectTrigger()
 {
 	Author = "Victoria Bloom";
 	Description = TEXT("Ensure players are cleaned up correctly when they disconnected by the SHUTDOWN_PREPARATION worker flag.");
-	TriggerEventWaitTime = 5.0f;
-	StepTimer = 0.0f;
 }
 
 void ASpatialTestPlayerDisconnectTrigger::PrepareTest()

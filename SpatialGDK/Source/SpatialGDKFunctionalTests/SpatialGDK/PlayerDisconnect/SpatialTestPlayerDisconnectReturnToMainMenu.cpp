@@ -12,8 +12,6 @@ ASpatialTestPlayerDisconnectReturnToMainMenu::ASpatialTestPlayerDisconnectReturn
 {
 	Author = "Victoria Bloom";
 	Description = TEXT("Ensure players are cleaned up correctly when they disconnected by the return to main menu.");
-	TriggerEventWaitTime = 5.0f;
-	StepTimer = 0.0f;
 }
 
 void ASpatialTestPlayerDisconnectReturnToMainMenu::PrepareTest()
@@ -52,18 +50,10 @@ void ASpatialTestPlayerDisconnectReturnToMainMenu::PrepareTest()
 		AddStep(
 			TEXT("AllServers_RemoveFlowControllerForClient1"), FWorkerDefinition::AllServers, nullptr,
 			[this]() {
-				TArray<AActor*> FoundActors;
-				UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASpatialFunctionalTestFlowController::StaticClass(), FoundActors);
-				for (AActor* Actor : FoundActors)
+
+				if (ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1))
 				{
-					if (ASpatialFunctionalTestFlowController* FlowController = Cast<ASpatialFunctionalTestFlowController>(Actor))
-					{
-						if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client
-							&& FlowController->WorkerDefinition.Id == 1)
-						{
-							FlowController->DeregisterFlowController();
-						}
-					}
+					FlowController->DeregisterFlowController();
 				}
 
 				FinishStep();

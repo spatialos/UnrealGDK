@@ -16,9 +16,5 @@ class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestPlayerDisconnectTrigger : public
 
 	virtual void PrepareTest() override;
 
-	UPROPERTY(EditInstanceOnly, Category = "Test Settings")
-	float TriggerEventWaitTime;
-
-	float StepTimer;
 	FHttpRequestPtr LocalShutdownRequest;
 };
