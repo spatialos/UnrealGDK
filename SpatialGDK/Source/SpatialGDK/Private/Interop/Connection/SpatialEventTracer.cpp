@@ -162,7 +162,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace file%s to %s."),
 			   (Settings->EventTraceFileOutputType == EEventTraceFileOutputType::Single) ? "" : "s", *FolderPath);
 
-		switch (Settings->EventTraceFileOutputType.GetValue())
+		switch (Settings->EventTraceFileOutputType)
 		{
 		default:
 		case EEventTraceFileOutputType::Single:

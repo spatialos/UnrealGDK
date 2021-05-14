@@ -21,7 +21,7 @@ enum class EEventTraceFileOutputType : uint8
 {
 	Single,
 	Rotating
-}
+};
 
 namespace SpatialGDK
 {
