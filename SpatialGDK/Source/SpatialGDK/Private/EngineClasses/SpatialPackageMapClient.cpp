@@ -303,8 +303,12 @@ void USpatialPackageMapClient::DestroyRuntimeRemovedComponents(const Worker_Enti
 				if (UActorComponent* Component = Cast<UActorComponent>(DynamicSubobject))
 				{
 					Component->DestroyComponent();
-					DynamicSubObjectIterator.RemoveCurrent();
 				}
+				else
+				{
+					DynamicSubobject->ConditionalBeginDestroy();
+				}
+				DynamicSubObjectIterator.RemoveCurrent();
 			}
 		}
 	}
