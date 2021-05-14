@@ -78,7 +78,7 @@ void ASpatialTestPlayerDisconnectReturnToMainMenu::PrepareTest()
 
 				TArray<AActor*> PlayerControllers;
 				UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerDisconnectController::StaticClass(), PlayerControllers);
-				RequireEqual_Int(PlayerControllers.Num(), 1, TEXT("Expected one player controllers."));
+				RequireEqual_Int(PlayerControllers.Num(), 1, TEXT("Expected one player controller."));
 
 				TArray<AActor*> PlayerCharacters;
 				UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), PlayerCharacters);
