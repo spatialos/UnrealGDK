@@ -50,7 +50,6 @@ void ASpatialTestPlayerDisconnectReturnToMainMenu::PrepareTest()
 		AddStep(
 			TEXT("AllServers_RemoveFlowControllerForClient1"), FWorkerDefinition::AllServers, nullptr,
 			[this]() {
-
 				if (ASpatialFunctionalTestFlowController* FlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1))
 				{
 					FlowController->DeregisterFlowController();
