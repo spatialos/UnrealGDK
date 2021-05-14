@@ -101,7 +101,7 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 void UEventTracingSamplingSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	auto IsQueryValid = [](const char* QueryStr) -> bool {
-		return SpatialGDK::TraceQueryPtr(Trace_ParseSimpleQuery(QueryStr)).Get() != nullptr;
+		return strlen(QueryStr) == 0 || SpatialGDK::TraceQueryPtr(Trace_ParseSimpleQuery(QueryStr)).Get() != nullptr;
 	};
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;

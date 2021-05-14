@@ -17,13 +17,10 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
 UENUM()
-namespace EEventTraceFileOutputType
-{
-enum Type
+enum class EEventTraceFileOutputType : uint8
 {
 	Single,
 	Rotating
-};
 }
 
 namespace SpatialGDK
@@ -32,7 +29,7 @@ struct TraceQueryDeleter
 {
 	void operator()(Trace_Query* Query) const
 	{
-		if (Query)
+		if (Query != nullptr)
 		{
 			Trace_Query_Destroy(Query);
 		}

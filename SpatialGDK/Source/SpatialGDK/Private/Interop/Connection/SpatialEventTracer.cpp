@@ -13,7 +13,7 @@ namespace SpatialGDK
 TraceQueryPtr ParseOrDefault(const FString& Str, const char* FilterForLog)
 {
 	TraceQueryPtr Ptr;
-	if (Str.Len())
+	if (Str.Len() > 0)
 	{
 		Ptr.Reset(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str)));
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Applied %s query: %s"), FilterForLog, *Str);
@@ -24,7 +24,7 @@ TraceQueryPtr ParseOrDefault(const FString& Str, const char* FilterForLog)
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("No %s specified, using \"true\""), FilterForLog);
 	}
 
-	if (!Ptr.Get())
+	if (Ptr.IsValid())
 	{
 		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified %s is invalid, sampling will be disabled. %s"), FilterForLog,
 			   Trace_GetLastError());
@@ -110,7 +110,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 
 	if (Settings->bCaptureAllEventTracingData)
 	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing span sampling always."));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing span sampling \"always\"."));
 		Parameters.span_sampling_parameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_ALWAYS;
 	}
 	else
@@ -167,7 +167,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		default:
 		case EEventTraceFileOutputType::Single:
 		{
-			const FString FullFilename = FString::Printf(TEXT("%s-%s.etlog"), *FileName, *WorkerId);
+			const FString FullFilename = FString::Printf(TEXT("%s-%s.%s"), *FileName, *WorkerId, *FileExt);
 			const FString FullFilePath = FPaths::Combine(FolderPath, FullFilename);
 			Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FullFilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
 			break;
