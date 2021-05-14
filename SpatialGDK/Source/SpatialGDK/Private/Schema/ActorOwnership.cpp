@@ -14,6 +14,7 @@ ActorOwnership ActorOwnership::CreateFromActor(const AActor& Actor, const USpati
 {
 	ActorOwnership Ownership;
 	UNetConnection* OwningConnection = Actor.GetNetConnection();
+
 	if (IsValid(OwningConnection))
 	{
 		// Add owning PlayerController's EntityId.

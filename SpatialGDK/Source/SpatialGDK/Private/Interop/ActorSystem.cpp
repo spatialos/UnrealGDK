@@ -1378,7 +1378,11 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 	const UNetConnection* ActorNetConnection = EntityActor->GetNetConnection();
 	if (IsValid(ActorNetConnection) && NetDriver->ServerConnection == ActorNetConnection)
 	{
-		NetDriver->OwnershipCompletenessHandler->AddPlayerEntity(EntityId);
+		if (ensureMsgf(NetDriver->OwnershipCompletenessHandler,
+					   TEXT("OwnershipCompletenessHandler must be valid throughout ActorSystem's lifetime")))
+		{
+			NetDriver->OwnershipCompletenessHandler->AddPlayerEntity(EntityId);
+		}
 	}
 }
 
@@ -1723,7 +1727,11 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 
 	TWeakObjectPtr<UObject> WeakActor = NetDriver->PackageMap->GetObjectFromEntityId(EntityId);
 
-	NetDriver->OwnershipCompletenessHandler->RemovePlayerEntity(EntityId);
+	if (ensureMsgf(NetDriver->OwnershipCompletenessHandler,
+				   TEXT("OwnershipCompletenessHandler must be valid throughout ActorSystem's lifetime")))
+	{
+		NetDriver->OwnershipCompletenessHandler->RemovePlayerEntity(EntityId);
+	}
 
 	// Actor has not been resolved yet or has already been destroyed. Clean up surrounding bookkeeping.
 	if (!WeakActor.IsValid())

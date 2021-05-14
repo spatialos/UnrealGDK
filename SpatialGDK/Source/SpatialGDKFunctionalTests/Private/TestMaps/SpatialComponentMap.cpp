@@ -13,6 +13,7 @@
 USpatialComponentMap::USpatialComponentMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialComponentMap"))
 {
+	SetNumberOfClients(2);
 }
 
 void USpatialComponentMap::CreateCustomContentForMap()
