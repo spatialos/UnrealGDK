@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
-## [`0.13.0`] - 2021-04-20
+## [`0.13.0`] - 2021-05-17
 ### Breaking changes:
 - Removed support for Unreal Engine 4.24.
 - `MaxRPCRingBufferSize` setting has been removed. This was previously used to specify the RPC ring buffer size when generating schema. Now, `DefaultRPCRingBufferSize` is used, and can be overridden per RPC type using `RPCRingBufferSizeOverrides`.
