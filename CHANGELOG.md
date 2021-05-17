@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exposing worker upstream/downstream window sizes as GDK options for both clients and servers, (`ClientDownstreamWindowSizeBytes`, `ClientUpstreamWindowSizeBytes`) and (`ServerDownstreamWindowSizeBytes` and `ServerUpstreamWindowSizeBytes`).
 - `bOnlyRelevantToOwner` is now supported. Ownership must be setup prior to the first replication of the `Actor` otherwise it will be ignored.
 - Added a property to specify the test settings overrides config filename in the `World Settings` so that maps can share config files during automated testing. This replaces the option to automatically use the map name to determine the config filename.
+- Added a `-FailOnNetworkFailure` flag that makes a Spatial-enabled game fail on any NetworkFailure.
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
@@ -145,15 +146,11 @@ These functions and structs can be referenced in both code and blueprints and it
 - Unreal Engine version 4.26.0 is supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
 - Running with an out-of-date schema database reports a version warning when attempting to launch in editor.
 - Reworked schema generation (incremental and full) pop-ups to be clearer. 
-- Unreal Engine version 4.26.0 is now supported! Refer to https://documentation.improbable.io/gdk-for-unreal/docs/keep-your-gdk-up-to-date for versioning information and how to upgrade.
 - Added cross-server variants of ability activation functions on the Ability System Component.
 - Added `SpatialSwitchHasAuthority` function to differentiate authoritative server, non-authoritative server, and clients. This can be called in code or used in blueprints that derive from actor.
 - Added blueprint callable function `GetMaxDynamicallyAttachedSubobjectsPerClass` to `USpatialStatics` that gets the maximum dynamically attached subobjects per class as set in `SpatialGDKSettings`
-- Running with an out-of-date schema database will now report a version warning when attempting to launch in editor.
 - Simulated Player deployments no longer depend on DeploymentLauncher for readiness. You can now restart them via the Console and expect them to reconnect to your main deployment. DeploymentLauncher will also restart any crashed or incorrectly finished simulated players applications.
-- Added a `-FailOnNetworkFailure` flag that makes a Spatial-enabled game fail on any NetworkFailure.
 - Reworked schema generation (incremental + full) pop-ups to be clearer.
-- Added a `-FailOnNetworkFailure` flag that makes a Spatial-enabled game fail on any NetworkFailure
 - Added `URemotePossessionComponent` to deal with Cross-Server Possession. Add this componenet to an AController, it will possess the Target Pawn after OnAuthorityGained. It can be implemented in C++ and Blueprint.
 
 ### Bug fixes:
