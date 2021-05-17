@@ -113,8 +113,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 	AddStep(
 		TEXT("DynamicSubobjectsTestClientCheckNumComponents"), FWorkerDefinition::Client(1), nullptr,
 		[this]() {
-			AssertEqual_Int(GetNumComponentsOnTestActor(), 3,
-							   TEXT("For this test, DynamicSubobjectTestActor should have 3 components"));
+			AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("For this test, DynamicSubobjectTestActor should have 3 components"));
 			FinishStep();
 		},
 		nullptr);
@@ -124,8 +123,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		TEXT("DynamicSubobjectsTestServerAddComponent"), FWorkerDefinition::Server(1), nullptr,
 		[this]() {
 			// server has 1 more component than client (idk why)
-			AssertEqual_Int(GetNumComponentsOnTestActor(), 3,
-							   TEXT("For this test, DynamicSubobjectTestActor should have 3 components"));
+			AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("For this test, DynamicSubobjectTestActor should have 3 components"));
 
 			// add new dynamic component to test actor
 			UStaticMeshComponent* AddedComponent = NewObject<UStaticMeshComponent>(TestActor, TEXT("ToRemoveComponent"));
@@ -133,8 +131,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 			AddedComponent->RegisterComponent();
 			AddedComponent->SetIsReplicated(true);
 
-			AssertEqual_Int(GetNumComponentsOnTestActor(), 4,
-							   TEXT("Now DynamicSubobjectTestActor should have 4 components"));
+			AssertEqual_Int(GetNumComponentsOnTestActor(), 4, TEXT("Now DynamicSubobjectTestActor should have 4 components"));
 			FinishStep();
 		},
 		nullptr);
@@ -143,8 +140,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 	AddStep(
 		TEXT("DynamicSubobjectsTestClientSeeNewComponent"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireEqual_Int(GetNumComponentsOnTestActor(), 4,
-							   TEXT("Now DynamicSubobjectTestActor should have 4 components"));
+			RequireEqual_Int(GetNumComponentsOnTestActor(), 4, TEXT("Now DynamicSubobjectTestActor should have 4 components"));
 			FinishStep();
 		},
 		StepTimeLimit);
@@ -221,8 +217,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 				[this]() {
 					TArray<USceneComponent*> AllSceneComps;
 					TestActor->GetComponents<USceneComponent>(AllSceneComps);
-					AssertEqual_Int(AllSceneComps.Num(), 4,
-									   TEXT("DynamicSubobjectTestActor should have 4 components"));
+					AssertEqual_Int(AllSceneComps.Num(), 4, TEXT("DynamicSubobjectTestActor should have 4 components"));
 
 					// delete the component with the right name
 					for (USceneComponent* SceneComponent : AllSceneComps)

@@ -20,7 +20,6 @@
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
 #include "Programs/UnrealLightmass/Private/ImportExport/3DVisualizer.h"
-#include "Programs/UnrealLightmass/Private/ImportExport/3DVisualizer.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "UObject/UObjectGlobals.h"
 
@@ -274,9 +273,10 @@ void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Work
 	}
 }
 
-void USpatialPackageMapClient::RemoveBNetLoadOnClientRuntimeRemovedComponents(
-	const Worker_EntityId& EntityId, const TArray<SpatialGDK::ComponentData>& Components, const USpatialNetDriver& InNetDriver
-	, const SpatialGDK::ActorSystem& ActorSystem
+void USpatialPackageMapClient::RemoveBNetLoadOnClientRuntimeRemovedComponents(const Worker_EntityId& EntityId,
+																			  const TArray<SpatialGDK::ComponentData>& Components,
+																			  const USpatialNetDriver& InNetDriver,
+																			  const SpatialGDK::ActorSystem& ActorSystem
 
 )
 {

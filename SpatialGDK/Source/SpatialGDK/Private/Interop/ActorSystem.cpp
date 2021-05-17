@@ -724,7 +724,7 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 	}
 }
 
-void ActorSystem::DestroySubObject(const Worker_EntityId EntityId, UObject* Object,  const FUnrealObjectRef& ObjectRef) const
+void ActorSystem::DestroySubObject(const Worker_EntityId EntityId, UObject* Object, const FUnrealObjectRef& ObjectRef) const
 {
 	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
