@@ -447,6 +447,9 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 	}
 
 	FlowControllers.Add(FlowController);
+
+	const FString FlowControllerDisplayName = FlowController->GetDisplayName();
+	UE_LOG(LogSpatialGDKFunctionalTests, Log, TEXT("Registered flow controller: %s"), *FlowControllerDisplayName);
 }
 
 void ASpatialFunctionalTest::DeregisterFlowController(ASpatialFunctionalTestFlowController* FlowController)
@@ -454,6 +457,10 @@ void ASpatialFunctionalTest::DeregisterFlowController(ASpatialFunctionalTestFlow
 	if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
 	{
 		FlowControllers.Remove(FlowController);
+
+		const FString FlowControllerDisplayName = FlowController->GetDisplayName();
+		UE_LOG(LogSpatialGDKFunctionalTests, Log, TEXT("De-registered flow controller: %s"), *FlowControllerDisplayName);
+
 		FlowController->Destroy();
 	}
 	else
