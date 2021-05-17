@@ -9,11 +9,6 @@
 ATestPossessionPawn::ATestPossessionPawn()
 {
 	bReplicates = true;
-#if ENGINE_MINOR_VERSION < 24
-	bReplicateMovement = true;
-#else
-	SetReplicatingMovement(true);
-#endif
 
 	SphereComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SphereComponent"));
 	SphereComponent->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'")));

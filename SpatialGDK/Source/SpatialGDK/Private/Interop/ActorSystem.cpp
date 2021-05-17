@@ -1431,7 +1431,7 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 		}
 	}
 
-	NetDriver->PackageMap->RemoveBNetLoadOnClientRuntimeRemovedComponents(EntityId, EntityComponents, *NetDriver, *this);
+	NetDriver->PackageMap->RemoveBNetLoadOnClientRuntimeRemovedComponents(EntityId, EntityComponents, *this);
 
 	// Resolve things like RepNotify or RPCs after applying component data.
 	for (const ObjectPtrRefPair& ObjectToResolve : ObjectsToResolvePendingOpsFor)
