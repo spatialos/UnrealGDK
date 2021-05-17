@@ -321,7 +321,7 @@ protected:
 		const uint32 WrittenRPCsReported = this->Sender.Write(Ctx, EntityId, Queue.RPCs, WrittenCallback);
 
 		// Basic check that the written callback was called for every individual RPC.
-		check(WrittenRPCs == WrittenRPCsReported);
+		ensureAlwaysMsgf(WrittenRPCs == WrittenRPCsReported, TEXT("Failed to add callbacks for every written RPC"));
 
 		if (WrittenRPCs == QueuedRPCs)
 		{
