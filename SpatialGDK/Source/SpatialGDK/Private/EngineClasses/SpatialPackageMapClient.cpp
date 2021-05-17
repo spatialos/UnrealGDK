@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("", off)
 
 #include "EngineClasses/SpatialPackageMapClient.h"
 
@@ -9,7 +8,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
@@ -19,7 +17,6 @@
 #include "EngineUtils.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
-#include "Programs/UnrealLightmass/Private/ImportExport/3DVisualizer.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "UObject/UObjectGlobals.h"
 
@@ -29,9 +26,8 @@ void USpatialPackageMapClient::Init(USpatialNetDriver& InNetDriver)
 {
 	NetDriver = &InNetDriver;
 
-	bIsServer = InNetDriver.IsServer();
 	// Entity Pools should never exist on clients
-	if (bIsServer)
+	if (InNetDriver.IsServer())
 	{
 		EntityPool = NewObject<UEntityPool>();
 		EntityPool->Init(InNetDriver);
@@ -274,17 +270,16 @@ void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Work
 }
 
 void USpatialPackageMapClient::RemoveBNetLoadOnClientRuntimeRemovedComponents(const Worker_EntityId& EntityId,
-																			  const TArray<SpatialGDK::ComponentData>& Components,
-																			  const USpatialNetDriver& InNetDriver,
+																			  const TArray<SpatialGDK::ComponentData>& NewComponents,
 																			  const SpatialGDK::ActorSystem& ActorSystem
 
 )
 {
-	auto ContainedInComponentsArr = [&Components, &EntityId, &InNetDriver](const FUnrealObjectRef CheckComponentObjRef) {
-		for (const SpatialGDK::ComponentData& Component : Components)
+	auto ContainedInComponentsArr = [this, &NewComponents, &EntityId](const FUnrealObjectRef CheckComponentObjRef) {
+		for (const SpatialGDK::ComponentData& Component : NewComponents)
 		{
 			uint32 Offset = 0;
-			InNetDriver.ClassInfoManager->GetOffsetByComponentId(Component.GetComponentId(), Offset);
+			NetDriver->ClassInfoManager->GetOffsetByComponentId(Component.GetComponentId(), Offset);
 
 			if (FUnrealObjectRef(EntityId, Offset) == CheckComponentObjRef)
 			{
@@ -294,6 +289,9 @@ void USpatialPackageMapClient::RemoveBNetLoadOnClientRuntimeRemovedComponents(co
 		return false;
 	};
 
+	// Go over each stored sub-object and determine whether it is contained within the new components array
+	// If it is not contained within the new components array, it means the sub-object was removed while out of the client's interest
+	// If so, remove it now
 	for (auto DynamicSubObjectIterator = RemovedDynamicSubobjectObjectRefs.CreateIterator(); DynamicSubObjectIterator;
 		 ++DynamicSubObjectIterator)
 	{
@@ -301,7 +299,6 @@ void USpatialPackageMapClient::RemoveBNetLoadOnClientRuntimeRemovedComponents(co
 		{
 			if (!ContainedInComponentsArr(DynamicSubObjectIterator->Key))
 			{
-				// DestroySubObject(DynamicSubObjectIterator->Key, DynamicSubObjectIterator->Value);
 				if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(DynamicSubObjectIterator->Value, false))
 				{
 					ActorSystem.DestroySubObject(EntityId, Object, DynamicSubObjectIterator->Key);
