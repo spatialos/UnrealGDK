@@ -717,7 +717,18 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 		{
 			GetOrRecreateChannelForDormantActor(Actor, EntityId);
 		}
-		else if (UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
+		else
+		{
+			DestroySubObject2(EntityId, ObjectRef);
+		}
+	}
+}
+
+void ActorSystem::DestroySubObject2(const Worker_EntityId EntityId, const FUnrealObjectRef& ObjectRef) const
+{
+	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
+	{
+		if (UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
 			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 			{
@@ -729,7 +740,34 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 				Object->PreDestroyFromReplication();
 				Object->MarkPendingKill();
 
-				NetDriver->PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, ComponentId));
+				NetDriver->PackageMap->RemoveSubobject(ObjectRef);
+			}
+		}
+	}
+}
+
+void ActorSystem::DestroySubObject(const Worker_EntityId EntityId, const FNetworkGUID SubObjGuid) const
+{
+	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
+	{
+		if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(SubObjGuid, false))
+		{
+			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
+			{
+
+				// actually yes, I need to do this
+				// would a new channel be constructed for this actor coming back into interest? Or do I need to figure out way to get this
+				// 				TWeakObjectPtr<UObject> WeakPtr(Object);
+				// Channel->OnSubobjectDeleted(ObjectRef, Object, WeakPtr);
+
+				// needed?
+				// Channel->MoveMappedObjectToUnmapped(ObjectRef);
+
+
+				Actor->OnSubobjectDestroyFromReplication(Object);
+
+				Object->PreDestroyFromReplication();
+				Object->MarkPendingKill();
 			}
 		}
 	}
@@ -1424,7 +1462,11 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 		}
 	}
 
-	NetDriver->PackageMap->DestroyRuntimeRemovedComponents(EntityId, EntityComponents, *NetDriver);
+	const TArray<FNetworkGUID> RemoveObjects = NetDriver->PackageMap->GetBNetLoadOnClientRuntimeRemovedComponents(EntityId, EntityComponents, *NetDriver);
+	for (FNetworkGUID ObjGuid : RemoveObjects)
+	{
+		DestroySubObject(EntityId, ObjGuid);
+	}
 
 	// Resolve things like RepNotify or RPCs after applying component data.
 	for (const ObjectPtrRefPair& ObjectToResolve : ObjectsToResolvePendingOpsFor)

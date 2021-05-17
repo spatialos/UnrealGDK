@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+#pragma optimize("", off)
 
 #include "EngineClasses/SpatialPackageMapClient.h"
 
@@ -271,9 +272,11 @@ void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Work
 	}
 }
 
-void USpatialPackageMapClient::DestroyRuntimeRemovedComponents(const Worker_EntityId& EntityId,
+TArray<FNetworkGUID> USpatialPackageMapClient::GetBNetLoadOnClientRuntimeRemovedComponents(const Worker_EntityId& EntityId,
 															   const TArray<SpatialGDK::ComponentData>& Components,
-															   const USpatialNetDriver& InNetDriver)
+															   const USpatialNetDriver& InNetDriver
+
+															   )
 {
 	auto ContainedInComponentsArr = [&Components, &EntityId, &InNetDriver](const FUnrealObjectRef CheckComponentObjRef) {
 		for (const SpatialGDK::ComponentData& Component : Components)
@@ -289,29 +292,70 @@ void USpatialPackageMapClient::DestroyRuntimeRemovedComponents(const Worker_Enti
 		return false;
 	};
 
+	auto DestroySubObject = [this, &EntityId](const FUnrealObjectRef ObjRef, const FNetworkGUID ObjGuid)
+	{
+		if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
+		{
+			if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(ObjGuid, false))
+			{
+				if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
+				{
+					Channel->OnSubobjectDeleted(ObjRef, Object, TWeakObjectPtr<UObject>(Object));
+
+					Actor->OnSubobjectDestroyFromReplication(Object);
+
+					Object->PreDestroyFromReplication();
+					Object->MarkPendingKill();
+				}
+			}
+		}
+	};
+
+
+	TArray<FNetworkGUID> ObjectsToRemove;
+
 	for (auto DynamicSubObjectIterator = RemovedDynamicSubobjectObjectRefs.CreateIterator(); DynamicSubObjectIterator;
 		 ++DynamicSubObjectIterator)
 	{
 		if (DynamicSubObjectIterator->Key.Entity == EntityId)
 		{
-			const FUnrealObjectRef theKey = DynamicSubObjectIterator->Key;
-			const Worker_EntityId iteratingOn = DynamicSubObjectIterator->Key.Entity;
 
-			if (ContainedInComponentsArr(DynamicSubObjectIterator->Key))
+
+			// debug construction
+			TArray<FUnrealObjectRef> InCompArr;
+			for (const SpatialGDK::ComponentData& Component : Components)
 			{
-				UObject* DynamicSubobject = InNetDriver.PackageMap->GetObjectFromNetGUID(DynamicSubObjectIterator->Value, false);
-				if (UActorComponent* Component = Cast<UActorComponent>(DynamicSubobject))
+				uint32 Offset = 0;
+				InNetDriver.ClassInfoManager->GetOffsetByComponentId(Component.GetComponentId(), Offset);
+				InCompArr.Add(FUnrealObjectRef(EntityId, Offset));
+			}
+			TArray<FUnrealObjectRef> ExistingCompArr;
+			for (auto DynamicSubObjectIterator2 = RemovedDynamicSubobjectObjectRefs.CreateIterator(); DynamicSubObjectIterator2;
+				++DynamicSubObjectIterator2)
+			{
+				if (DynamicSubObjectIterator2->Key.Entity == EntityId)
 				{
-					Component->DestroyComponent();
+					ExistingCompArr.Add(DynamicSubObjectIterator2->Key);
 				}
-				else
-				{
-					DynamicSubobject->ConditionalBeginDestroy();
-				}
+			}
+
+
+			// const FUnrealObjectRef theKey = DynamicSubObjectIterator->Key;
+			// const Worker_EntityId iteratingOn = DynamicSubObjectIterator->Key.Entity;
+			if (!ContainedInComponentsArr(DynamicSubObjectIterator->Key))
+			{
+				// UObject* SubObj = InNetDriver.PackageMap->GetObjectFromNetGUID(DynamicSubObjectIterator->Value, false);
+				// ObjectsToRemove.Add(DynamicSubObjectIterator->Key);
+
+				DestroySubObject(DynamicSubObjectIterator->Key, DynamicSubObjectIterator->Value);
+
+				// ObjectsToRemove.Add(DynamicSubObjectIterator->Value);
+				// ActorSystem.ComponentRemoved(EntityId, );
 				DynamicSubObjectIterator.RemoveCurrent();
 			}
 		}
 	}
+	return ObjectsToRemove;
 }
 
 TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const Worker_EntityId EntityId)

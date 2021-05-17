@@ -115,6 +115,8 @@ private:
 	void ComponentAdded(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 	void ComponentUpdated(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 	void ComponentRemoved(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	void DestroySubObject(const Worker_EntityId EntityId, const FNetworkGUID ObjId) const;
+	void DestroySubObject2(Worker_EntityId EntityId, const FUnrealObjectRef& ObjectRef) const;
 
 	void EntityAdded(Worker_EntityId EntityId);
 	void EntityRemoved(Worker_EntityId EntityId);

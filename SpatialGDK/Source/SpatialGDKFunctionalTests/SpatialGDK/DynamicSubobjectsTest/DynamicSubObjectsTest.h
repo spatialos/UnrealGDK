@@ -21,6 +21,7 @@ public:
 
 	virtual void PrepareTest() override;
 	AReplicatedGASTestActor* GetReplicatedTestActor();
+	int GetNumComponentsOnTestActor();
 
 	// A reference to the Default Pawn of Client 1 to allow for repossession in the final step of the test.
 	APawn* ClientOneDefaultPawn;

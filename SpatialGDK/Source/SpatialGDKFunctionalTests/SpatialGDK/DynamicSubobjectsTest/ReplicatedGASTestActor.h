@@ -19,7 +19,4 @@ public:
 
 	UPROPERTY(Replicated)
 	int TestIntProperty;
-
-	UPROPERTY()
-	class USceneComponent* TestComponent;
 };

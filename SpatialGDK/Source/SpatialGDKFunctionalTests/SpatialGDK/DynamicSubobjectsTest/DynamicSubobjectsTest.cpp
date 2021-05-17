@@ -10,6 +10,9 @@
 #include "Kismet/GameplayStatics.h"
 
 #include "Components/SceneComponent.h"
+#include "Components/StaticMeshComponent.h"
+
+#include "EngineClasses/SpatialNetDriver.h"
 
 /**
  * Tests if the dynamic sub-object of the AReplicatedGASTestActor is not duplicated on Clients when leaving
@@ -44,7 +47,7 @@
  * This extra test case is implemented in steps 6.1 and 9.1
  */
 
-const static float StepTimeLimit = 10.0f;
+const static float StepTimeLimit = 20.0f;
 
 ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 	: Super()
@@ -54,6 +57,8 @@ ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 
 	CharacterSpawnLocation = FVector(0.0f, 120.0f, 40.0f);
 	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 40.0f); // Outside of the interest range of the client
+
+	TimeLimit = 200.0f;
 }
 
 void ADynamicSubobjectsTest::PrepareTest()
@@ -86,10 +91,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		TEXT("DynamicSubobjectsTestAllWorkers"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 		[this](float DeltaTime) {
 			TestActor = GetReplicatedTestActor();
-			if (TestActor)
-			{
-				FinishStep();
-			}
+			FinishStep();
 		},
 		StepTimeLimit);
 
@@ -97,13 +99,50 @@ void ADynamicSubobjectsTest::PrepareTest()
 	AddStep(
 		TEXT("DynamicSubobjectsTestClientCheckPossesion"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-			APlayerController* PlayerController = GetFlowPlayerController();
 			APawn* PlayerCharacter = GetFlowPawn();
 			if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid"))
-				&& PlayerCharacter == PlayerController->AcknowledgedPawn)
+				&& PlayerCharacter == GetFlowPlayerController()->AcknowledgedPawn)
 			{
 				FinishStep();
 			}
+		},
+		StepTimeLimit);
+
+	AddStep(
+	TEXT("DynamicSubobjectsTestClientCheckPossesion"), FWorkerDefinition::Client(1), nullptr, nullptr,
+	[this](float DeltaTime) {
+		RequireCompare_Int(GetNumComponentsOnTestActor(), EComparisonMethod::Greater_Than_Or_Equal_To, 3,
+			TEXT("For this test, DynamicSubobjectTestActor should have at least 3 components"));
+		FinishStep();
+	},
+	StepTimeLimit);
+
+	AddStep(
+		TEXT("DynamicSubobjectsTestClientCheckPossesion"), FWorkerDefinition::Server(1), nullptr, nullptr,
+		[this](float DeltaTime) {
+			// server has 1 more component than client (idk why)
+			RequireCompare_Int(GetNumComponentsOnTestActor(), EComparisonMethod::Greater_Than_Or_Equal_To, 4,
+				TEXT("For this test, DynamicSubobjectTestActor should have at least 4 components"));
+
+			// add new dynamic component to test actor
+			TestActor = GetReplicatedTestActor();
+			UStaticMeshComponent* createdComp = NewObject<UStaticMeshComponent>(TestActor);
+			createdComp->AttachToComponent(TestActor->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+			createdComp->RegisterComponent();
+			createdComp->SetIsReplicated(true);
+
+			RequireCompare_Int(GetNumComponentsOnTestActor(), EComparisonMethod::Greater_Than_Or_Equal_To, 5,
+				TEXT("Now DynamicSubobjectTestActor should have at least 5 components"));
+			FinishStep();
+		},
+		StepTimeLimit);
+
+	AddStep(
+		TEXT("DynamicSubobjectsTestClientCheckPossesion"), FWorkerDefinition::Client(1), nullptr, nullptr,
+		[this](float DeltaTime) {
+			RequireCompare_Int(GetNumComponentsOnTestActor(), EComparisonMethod::Greater_Than_Or_Equal_To, 4,
+				TEXT("Now DynamicSubobjectTestActor should have at least 4 components"));
+			FinishStep();
 		},
 		StepTimeLimit);
 
@@ -137,6 +176,24 @@ void ADynamicSubobjectsTest::PrepareTest()
 			},
 			StepTimeLimit);
 
+		// when in native, we need to wait for a while here - so the engine can update relevancy
+		USpatialNetDriver* CastNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
+		if (!CastNetDriver)
+		{
+
+			AddStep(TEXT("DynamicSubobjectsTestNativeWaitABit"), FWorkerDefinition::Server(1), nullptr, nullptr,
+				[this](float DeltaTime)
+				{
+					StepTimer += DeltaTime;
+					if (StepTimer > 10.0f)
+					{
+						StepTimer = 0;
+						FinishStep();
+					}
+				}
+			);
+		}
+
 		// Step 5 - Server increases AReplicatedGASTestActor's TestIntProperty to enable checking if the client is out of interest later.
 		AddStep(TEXT("DynamicSubobjectsTestServerIncreasesIntValue"), FWorkerDefinition::Server(1), nullptr, [this, i]() {
 			TestActor = GetReplicatedTestActor();
@@ -147,20 +204,18 @@ void ADynamicSubobjectsTest::PrepareTest()
 			}
 		});
 
+
+
 		// Step 6 - Client 1 checks it can no longer see the AReplicatedGASTestActor
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr, nullptr,
 			[this, i](float DeltaTime) {
-				TestActor = GetReplicatedTestActor();
-				if (AssertIsValid(TestActor, TEXT("Test actor should be valid")))
+				RequireNotEqual_Int(TestActor->TestIntProperty, i + 1, TEXT("Check TestIntProperty didn't get replicated"));
+				StepTimer += DeltaTime;
+				if (StepTimer >= 0.5f)
 				{
-					RequireNotEqual_Int(TestActor->TestIntProperty, i + 1, TEXT("Check TestIntProperty didn't get replicated"));
-					StepTimer += DeltaTime;
-					if (StepTimer >= 0.5f)
-					{
-						FinishStep();
-						StepTimer = 0.0f; // reset for the next time
-					}
+					FinishStep();
+					StepTimer = 0.0f; // reset for the next time
 				}
 			},
 			StepTimeLimit);
@@ -171,39 +226,35 @@ void ADynamicSubobjectsTest::PrepareTest()
 			AddStep(
 				TEXT("DynamicSubobjectsTestServerDestroyActorComponents"), FWorkerDefinition::Server(1), nullptr, nullptr,
 				[this](float DeltaTime) {
-					TestActor = GetReplicatedTestActor();
-					if (AssertIsValid(TestActor, TEXT("Test actor should be valid")))
+					TArray<USceneComponent*> AllSceneComps;
+					TestActor->GetComponents<USceneComponent>(AllSceneComps);
+
+					RequireCompare_Int(AllSceneComps.Num(), EComparisonMethod::Greater_Than_Or_Equal_To, 2,
+									   TEXT("For this test, DynamicSubobjectTestActor should have at least 2 components"));
+
+					// delete all the components on the actor (apart from root)
+					const uint32 RootComponentId = TestActor->GetRootComponent()->GetUniqueID();
+					for (USceneComponent* SceneComponent : AllSceneComps)
 					{
-						TArray<USceneComponent*> AllSceneComps;
-						TestActor->GetComponents<USceneComponent>(AllSceneComps);
-
-						RequireCompare_Int(AllSceneComps.Num(), EComparisonMethod::Greater_Than_Or_Equal_To, 1,
-										   TEXT("For this test, DynamicSubobjectTestActor should have at least 1 component"));
-
-						// delete all the components on the actor
-						for (USceneComponent* SceneComponent : AllSceneComps)
+						if (SceneComponent->GetUniqueID() != RootComponentId)
 						{
 							SceneComponent->DestroyComponent();
 						}
-
-						TArray<USceneComponent*> TwoSceneComps;
-						TestActor->GetComponents<USceneComponent>(TwoSceneComps);
-						RequireEqual_Int(TwoSceneComps.Num(), 0, TEXT("now gasactor should have 0 components"));
-
-						FinishStep();
 					}
+
+					RequireEqual_Int(GetNumComponentsOnTestActor(), 1, TEXT("now gasactor should have 1 component"));
+
+					FinishStep();
 				},
 				StepTimeLimit);
 		}
 
 		// Step7 - Server moves Client 1 close to the cube.
 		AddStep(TEXT("DynamicSubobjectsTestServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			if (ClientOneSpawnedPawn->SetActorLocation(CharacterSpawnLocation)
-				&& RequireEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterSpawnLocation,
-									   TEXT("Server 1 should see the pawn close to the initial spawn location"), 1.0f))
-			{
-				FinishStep();
-			}
+			ClientOneSpawnedPawn->SetActorLocation(CharacterSpawnLocation);
+			RequireEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterSpawnLocation,
+				TEXT("Server 1 should see the pawn close to the initial spawn location"), 1.0f);
+			FinishStep();
 		});
 
 		// Step 8 - Client 1 checks that the movement was replicated correctly.
@@ -225,12 +276,8 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased2"), FWorkerDefinition::Client(1), nullptr, nullptr,
 			[this, i](float DeltaTime) {
-				TestActor = GetReplicatedTestActor();
-				if (AssertIsValid(TestActor, TEXT("Test actor should be valid"))
-					&& AssertEqual_Int(TestActor->TestIntProperty, i + 1, TEXT("Client 1 should see the updated TestIntProperty value")))
-				{
-					FinishStep();
-				}
+				RequireEqual_Int(TestActor->TestIntProperty, i + 1, TEXT("Client 1 should see the updated TestIntProperty value"));
+				FinishStep();
 			},
 			StepTimeLimit);
 
@@ -271,16 +318,13 @@ void ADynamicSubobjectsTest::PrepareTest()
 			AddStep(
 				TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased2"), FWorkerDefinition::Client(1), nullptr, nullptr,
 				[this](float DeltaTime) {
-					TestActor = GetReplicatedTestActor();
-					if (AssertIsValid(TestActor, TEXT("Test actor should be valid")))
-					{
-						TArray<UActorComponent*> AllActorComp;
-						TestActor->GetComponents<UActorComponent>(AllActorComp);
 
-						RequireEqual_Int(AllActorComp.Num(), 0,
-										 TEXT("All components on DynamicSubobjectTestActor should have been destroyed."));
-						FinishStep();
-					}
+					// RequireEqual_Int(GetNumComponentsOnTestActor(), 1,
+									 // TEXT("Every one of DynamicSubobjectTestActor's components (apart from root comp) should have been destroyed."));
+					RequireEqual_Int(GetNumComponentsOnTestActor(), 3,
+													TEXT("All of DynamicSubobjectTestActor's dynamic components should have been destroyed."));
+
+					FinishStep();
 				},
 				StepTimeLimit);
 		}
@@ -313,4 +357,13 @@ AReplicatedGASTestActor* ADynamicSubobjectsTest::GetReplicatedTestActor()
 		}
 	}
 	return nullptr;
+}
+
+int ADynamicSubobjectsTest::GetNumComponentsOnTestActor()
+{
+	TestActor = GetReplicatedTestActor();
+	TArray<USceneComponent*> AllActorComp;
+	TestActor->GetComponents<USceneComponent>(AllActorComp);
+
+	return AllActorComp.Num();
 }
