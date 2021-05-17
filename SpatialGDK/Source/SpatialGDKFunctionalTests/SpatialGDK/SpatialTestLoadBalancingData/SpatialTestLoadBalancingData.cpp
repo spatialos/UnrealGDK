@@ -9,6 +9,7 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "TestWorkerSettings.h"
+#include "Algo/AllOf.h"
 
 #include "Kismet/GameplayStatics.h"
 
@@ -87,9 +88,9 @@ void GetWorldActors(UWorld* World, TArray<U>& OutActors)
 		DiscoveredActors.Sort([](const AActor& Lhs, const AActor& Rhs) {
 			return Lhs.GetActorLocation().Y < Rhs.GetActorLocation().Y;
 		});
-		if(Algo::AllOf(DiscoveredActors, [](AActor* Actor) -> bool {
-			return Actor->IsActorReady();
-		}))
+		if (Algo::AllOf(DiscoveredActors, [](AActor* Actor) -> bool {
+				return Actor->IsActorReady();
+			}))
 		{
 			Algo::Transform(DiscoveredActors, OutActors, [](AActor* Actor) -> U {
 				return Cast<T>(Actor);
