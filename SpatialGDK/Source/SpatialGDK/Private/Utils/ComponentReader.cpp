@@ -567,8 +567,10 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	}
 	else
 	{
-		UE_LOG(LogSpatialComponentReader, Error, TEXT("Tried to read unknown property in field %d. Property name %s."), FieldId,
-			   Property ? *Property->GetFullName() : TEXT("null"));
+		UE_LOG(
+			LogSpatialComponentReader, Error,
+			TEXT("Tried to set unknown property or unsupported property type while applying schema component field %d. Property name: %s."),
+			FieldId, Property ? *Property->GetFullName() : TEXT("null"));
 	}
 }
 
