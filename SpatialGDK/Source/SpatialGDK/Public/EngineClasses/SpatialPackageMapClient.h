@@ -60,8 +60,9 @@ public:
 	FNetworkGUID* GetRemovedDynamicSubobjectNetGUID(const FUnrealObjectRef& ObjectRef);
 	void AddRemovedDynamicSubobjectObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID);
 	void ClearRemovedDynamicSubobjectObjectRefs(const Worker_EntityId& InEntityId);
-	TArray<FNetworkGUID> GetBNetLoadOnClientRuntimeRemovedComponents(const Worker_EntityId& EntityId, const TArray<SpatialGDK::ComponentData>& Components,
-										 const USpatialNetDriver& InNetDriver);
+	void RemoveBNetLoadOnClientRuntimeRemovedComponents(const long long& EntityId,
+	                                                 const TArray<SpatialGDK::ComponentData>& Components,
+	                                                 const USpatialNetDriver& InNetDriver, const SpatialGDK::ActorSystem& ActorSystem);
 
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
