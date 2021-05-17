@@ -244,7 +244,7 @@ void USpatialGameInstance::Init()
 void USpatialGameInstance::HandleOnConnected(USpatialNetDriver& NetDriver)
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Successfully connected to SpatialOS"));
-	SpatialWorkerId = SpatialConnectionManager->GetWorkerConnection()->GetWorkerId();
+	SetSpatialWorkerId(SpatialConnectionManager->GetWorkerConnection()->GetWorkerId());
 #if TRACE_LIB_ACTIVE
 	SpatialLatencyTracer->SetWorkerId(SpatialWorkerId);
 
