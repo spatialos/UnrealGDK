@@ -185,11 +185,11 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 			Writer->WriteValue(TEXT("enabled"), true);
 			if (bGenerateCloudConfig)
 			{
-				// TODO:
+				Writer->WriteValue(TEXT("log_directory"), TEXT("/improbable/logs/"));
 			}
 			else
 			{
-				FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing"));
+				FString Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing")));
 				Writer->WriteValue(TEXT("log_directory"), *Path);
 			}
 			Writer->WriteValue(TEXT("max_log_file_size_bytes"), SpatialGDKSettings->RuntimeMaxEventTracingFileSizeBytes);
