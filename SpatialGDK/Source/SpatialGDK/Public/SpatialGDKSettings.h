@@ -78,10 +78,16 @@ public:
 	TMap<FName, double> EventSamplingModeOverrides;
 
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
-	FString EventPreFilter;
+	FString GDKEventPreFilter;
 
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
-	FString EventPostFilter;
+	FString RuntimeEventPreFilter;
+
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	FString GDKEventPostFilter;
+
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	FString RuntimeEventPostFilter;
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -461,7 +467,14 @@ public:
 	 * The maximum size of the event tracing file, in bytes
 	 */
 	UPROPERTY(Config)
-	uint64 MaxEventTracingFileSizeBytes;
+	int64 MaxEventTracingFileSizeBytes;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * The maximum size of the runtime event tracing file, in bytes (for generated configs).
+	 */
+	UPROPERTY(Config)
+	int64 RuntimeMaxEventTracingFileSizeBytes;
 
 	/*
 	 * -- EXPERIMENTAL --

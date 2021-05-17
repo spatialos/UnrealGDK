@@ -25,7 +25,7 @@ void ViewCoordinator::Advance(float DeltaTimeS)
 {
 	// Get new op lists.
 	ConnectionHandler->Advance();
-	const uint32 OpListCount = ConnectionHandler->GetOpListCount();
+	const uint32 OpListCount = ConnectionHandler->GetOpListCount(); 
 
 	// Hold back open critical sections.
 	for (uint32 i = 0; i < OpListCount; ++i)

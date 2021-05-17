@@ -178,6 +178,43 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 
 		Writer->WriteValue(TEXT("max_concurrent_workers"), LaunchConfigDescription.MaxConcurrentWorkers);
 
+		// Event tracing
+		if (SpatialGDKSettings->bEventTracingEnabled)
+		{
+			Writer->WriteObjectStart(TEXT("event_tracing_configuration"));
+			Writer->WriteValue(TEXT("enabled"), true);
+			if (bGenerateCloudConfig)
+			{
+				// TODO:
+			}
+			else
+			{
+				FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing"));
+				Writer->WriteValue(TEXT("log_directory"), *Path);
+			}
+			Writer->WriteValue(TEXT("max_log_file_size_bytes"), SpatialGDKSettings->RuntimeMaxEventTracingFileSizeBytes);
+			Writer->WriteObjectStart(TEXT("event_filter_configuration"));
+
+			UEventTracingSamplingSettings* SamplingSettings = SpatialGDKSettings->GetEventTracingSamplingSettings(); // TODO: Is this trouble in editor?
+			if (SpatialGDKSettings->bCaptureAllEventTracingData)
+			{
+				Writer->WriteValue(TEXT("event_pre_filter"), TEXT("true"));
+				Writer->WriteValue(TEXT("event_post_filter"), TEXT("true"));
+			}
+			else
+			{
+				Writer->WriteValue(TEXT("event_pre_filter"), SamplingSettings->RuntimeEventPreFilter.Len()
+																 ? *SamplingSettings->RuntimeEventPreFilter
+																 : TEXT("false"));
+				Writer->WriteValue(TEXT("event_post_filter"), SamplingSettings->RuntimeEventPostFilter.Len()
+																  ? SamplingSettings->RuntimeEventPostFilter
+																  : TEXT("false"));
+			}
+
+			Writer->WriteObjectEnd();
+			Writer->WriteObjectEnd();
+		}
+		
 		Writer->WriteObjectEnd(); // End of json
 
 		Writer->Close();

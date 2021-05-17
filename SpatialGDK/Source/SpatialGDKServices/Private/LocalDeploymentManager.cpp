@@ -276,13 +276,11 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	// runtime.exe --config=squid_config.json --snapshot=snapshots/default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
 	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots/<timestamp>
 	// --schema-bundle=spatial/build/assembly/schema/schema.sb
-	// --event-tracing-logs-directory=`<Project>/spatial/localdeployment/<timestamp>/`
 	FString RuntimeArgs =
 		FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
-							 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
+							 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" %s"),
 						*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-						*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *SnapshotPath, *SchemaBundle,
-						*LocalDeploymentLogsDir, *LaunchArgs);
+						*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *SnapshotPath, *SchemaBundle, *LaunchArgs);
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{

@@ -100,28 +100,30 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 #if WITH_EDITOR
 void UEventTracingSamplingSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
-	auto IsQueryValid = [](const char* QueryStr) -> bool {
-		return strlen(QueryStr) == 0 || SpatialGDK::TraceQueryPtr(Trace_ParseSimpleQuery(QueryStr)).Get() != nullptr;
+	auto CheckQueryValid = [](const char* QueryStr)
+	{
+		if (strlen(QueryStr) > 0 && SpatialGDK::TraceQueryPtr(Trace_ParseSimpleQuery(QueryStr)).Get() == nullptr)
+		{
+			FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"), FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
+		}
 	};
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
-	if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, EventPreFilter))
+	if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, GDKEventPreFilter))
 	{
-		if (!IsQueryValid(TCHAR_TO_ANSI(*EventPreFilter)))
-		{
-			FMessageDialog::Open(EAppMsgType::Ok,
-								 FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"),
-											   FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
-		}
+		CheckQueryValid(TCHAR_TO_ANSI(*GDKEventPreFilter));
 	}
-	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, EventPostFilter))
+	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, RuntimeEventPreFilter))
 	{
-		if (!IsQueryValid(TCHAR_TO_ANSI(*EventPostFilter)))
-		{
-			FMessageDialog::Open(EAppMsgType::Ok,
-								 FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"),
-											   FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
-		}
+		CheckQueryValid(TCHAR_TO_ANSI(*RuntimeEventPreFilter));
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, GDKEventPostFilter))
+	{
+		CheckQueryValid(TCHAR_TO_ANSI(*GDKEventPostFilter));
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, RuntimeEventPostFilter))
+	{
+		CheckQueryValid(TCHAR_TO_ANSI(*RuntimeEventPostFilter));
 	}
 }
 #endif
@@ -183,6 +185,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEventTracingEnabled(false)
 	, EventTracingSamplingSettingsClass(UEventTracingSamplingSettings::StaticClass())
 	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
+	, RuntimeMaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
 	, bCaptureAllEventTracingData(false)
 	, EventTraceFileOutputType(EEventTraceFileOutputType::Single)
 	, bEnableAlwaysWriteRPCs(false)

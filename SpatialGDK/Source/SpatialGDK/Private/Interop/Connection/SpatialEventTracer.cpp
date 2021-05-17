@@ -18,13 +18,8 @@ TraceQueryPtr ParseOrDefault(const FString& Str, const char* FilterForLog)
 		Ptr.Reset(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str)));
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Applied %s query: %s"), FilterForLog, *Str);
 	}
-	else
-	{
-		Ptr.Reset(Trace_ParseSimpleQuery("span_id != \"00000000000000000000000000000000\""));
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("No %s specified, using \"true\""), FilterForLog);
-	}
 
-	if (Ptr.IsValid())
+	if (!Ptr.IsValid())
 	{
 		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified %s is invalid, sampling will be disabled. %s"), FilterForLog,
 			   Trace_GetLastError());
@@ -134,8 +129,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	}
 
 	// Filters
-	TraceQueryPtr PreFilter = ParseOrDefault(SamplingSettings->EventPreFilter, "pre-filter");
-	TraceQueryPtr PostFilter = ParseOrDefault(SamplingSettings->EventPostFilter, "post-filter");
+	TraceQueryPtr PreFilter = ParseOrDefault(SamplingSettings->GDKEventPreFilter, "pre-filter");
+	TraceQueryPtr PostFilter = ParseOrDefault(SamplingSettings->GDKEventPostFilter, "post-filter");
 
 	checkf(PreFilter.Get() != nullptr, TEXT("Pre-filter is invalid."));
 	checkf(PostFilter.Get() != nullptr, TEXT("Post-filter is invalid."));
