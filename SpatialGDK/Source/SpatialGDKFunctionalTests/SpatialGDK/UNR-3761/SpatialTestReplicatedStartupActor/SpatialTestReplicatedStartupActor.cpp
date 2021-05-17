@@ -3,6 +3,7 @@
 #include "SpatialTestReplicatedStartupActor.h"
 
 #include "ReplicatedStartupActor.h"
+#include "ReplicatedStartupActorGameMode.h"
 #include "ReplicatedStartupActorPlayerController.h"
 #include "SpatialFunctionalTestFlowController.h"
 
@@ -14,8 +15,6 @@
  * correctly spawned on all clients". The test also covers the QA work-flow "Startup actors correctly replicate arbitrary properties".
  * NOTE: 1. This test requires a specific Map with a ReplicatedStartupActor placed on the map and in the interest of the players and a
  * custom GameMode and PlayerController, trying to run this test on a different Map will make it fail.
- *       2. After UNR-3128 is solved, this test should be updated to also include the check for the case mentioned in the ticket. This would
- * require applying the suggestions found in the last 2 steps of the test.
  *
  * The test contains two main phases:
  * - Common Setup:
@@ -109,10 +108,8 @@ void ASpatialTestReplicatedStartupActor::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestReplicatedStarupActorClientsCheckRPC"), FWorkerDefinition::AllClients, nullptr, nullptr,
 		[this](float DeltaTime) {
-			if (bIsValidReference)
-			{
-				FinishStep();
-			}
+			RequireTrue(bIsValidReference, TEXT("Reference should be valid."));
+			FinishStep();
 		},
 		5.0f);
 
@@ -135,12 +132,20 @@ void ASpatialTestReplicatedStartupActor::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestReplicatedStartupActorAllWorkersCheckDefaultProperties"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 		[this](float DeltaTime) {
-			if (ReplicatedStartupActor->TestIntProperty == 1 && ReplicatedStartupActor->TestArrayProperty.Num() == 1
-				&& ReplicatedStartupActor->TestArrayProperty[0] == 1 && ReplicatedStartupActor->TestArrayStructProperty.Num() == 1
-				&& ReplicatedStartupActor->TestArrayStructProperty[0].Int == 1)
+			RequireEqual_Int(ReplicatedStartupActor->TestIntProperty, 1, TEXT("TestInt should be correct after server update."));
+			if (RequireEqual_Int(ReplicatedStartupActor->TestArrayProperty.Num(), 1,
+								 TEXT("TestArrayProperty size should be correct after server update.")))
 			{
-				FinishStep();
+				RequireEqual_Int(ReplicatedStartupActor->TestArrayProperty[0], 1,
+								 TEXT("TestArrayProperty[0] should be correct after server update."));
 			}
+			if (RequireEqual_Int(ReplicatedStartupActor->TestArrayStructProperty.Num(), 1,
+								 TEXT("TestArrayProperty size should be correct after server update.")))
+			{
+				RequireEqual_Int(ReplicatedStartupActor->TestArrayStructProperty[0].Int, 1,
+								 TEXT("TestArrayStructProperty[0] should be correct after server update."));
+			}
+			FinishStep();
 		},
 		5.0f);
 
@@ -156,7 +161,8 @@ void ASpatialTestReplicatedStartupActor::PrepareTest()
 		TEXT("SpatialTestReplicatedStartupActorAllWorkersCheckMovement"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 		[this](float DeltaTime) {
 			// Make sure the Actor was moved out of view of the clients before updating its properties
-			if (ReplicatedStartupActor->GetActorLocation().Equals(FVector(15000.0f, 15000.0f, 50.0f), 1))
+			// TODO: UNR-4305, we should have the if condition after this ticket is completed
+			// if (ReplicatedStartupActor->GetActorLocation().Equals(FVector(15000.0f, 15000.0f, 50.0f), 1))
 			{
 				FinishStep();
 			}
@@ -167,15 +173,9 @@ void ASpatialTestReplicatedStartupActor::PrepareTest()
 	AddStep(TEXT("SpatialTestReplicatedStartupActorServerUpdateProperties"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		ReplicatedStartupActor->TestIntProperty = 0;
 
-		ReplicatedStartupActor->TestArrayProperty.Add(2);
-
-		ReplicatedStartupActor->TestArrayStructProperty.Add(FTestStruct{ 2 });
-
-		/* TODO: After UNR-3128 is solved, replace the 2 uncommented lines above with the commented ones, also do the same in the next step.
 		ReplicatedStartupActor->TestArrayProperty.Empty();
 
 		ReplicatedStartupActor->TestArrayStructProperty.Empty();
-		*/
 
 		ReplicatedStartupActor->SetActorLocation(FVector(250.0f, -250.0f, 50.0f));
 
@@ -186,26 +186,34 @@ void ASpatialTestReplicatedStartupActor::PrepareTest()
 	AddStep(
 		TEXT("SpatialTestReplicatedStartupActorAllWorkersCheckModifiedProperties"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 		[this](float DeltaTime) {
-			if (ReplicatedStartupActor->GetActorLocation().Equals(FVector(250.0f, -250.0f, 50.0f), 1))
-			{
-				if (ReplicatedStartupActor->TestIntProperty == 0 && ReplicatedStartupActor->TestArrayProperty.Num() == 2
-					&& ReplicatedStartupActor->TestArrayProperty[0] == 1 && ReplicatedStartupActor->TestArrayProperty[1] == 2
-					&& ReplicatedStartupActor->TestArrayStructProperty.Num() == 2
-					&& ReplicatedStartupActor->TestArrayStructProperty[0].Int == 1
-					&& ReplicatedStartupActor->TestArrayStructProperty[1].Int == 2)
-				{
-					FinishStep();
-				}
+			RequireTrue(ReplicatedStartupActor->GetActorLocation().Equals(FVector(250.0f, -250.0f, 50.0f), 1),
+						TEXT("ReplicatedStartupActor should have moved after server update."));
+			RequireEqual_Int(ReplicatedStartupActor->TestIntProperty, 0, TEXT("TestInt should be correct after server update."));
+			RequireEqual_Int(ReplicatedStartupActor->TestArrayProperty.Num(), 0,
+							 TEXT("TestArrayProperty size should be correct after server update."));
+			RequireEqual_Int(ReplicatedStartupActor->TestArrayStructProperty.Num(), 0,
+							 TEXT("TestArrayProperty size should be correct after server update."));
 
-				/* TODO: After UNR-3128 is solved, replace the if statement above with the commented version below.
-				if (ReplicatedStartupActor->TestIntProperty == 0
-					&& ReplicatedStartupActor->TestArrayProperty.Num() == 0
-					&& ReplicatedStartupActor->TestArrayStructProperty.Num() == 0)
-				{
-					FinishStep();
-				}
-				*/
-			}
+			FinishStep();
 		},
 		5.0f);
+}
+
+USpatialTestReplicatedStartupActorMap::USpatialTestReplicatedStartupActorMap()
+	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("ReplicatedStartupActorMap"))
+{
+}
+
+void USpatialTestReplicatedStartupActorMap::CreateCustomContentForMap()
+{
+	ULevel* CurrentLevel = World->GetCurrentLevel();
+
+	// Add the test
+	AddActorToLevel<ASpatialTestReplicatedStartupActor>(CurrentLevel, FTransform::Identity);
+
+	// Add the test helper - startup actor placed in the level
+	AddActorToLevel<AReplicatedStartupActor>(CurrentLevel, FTransform::Identity);
+
+	AWorldSettings* WorldSettings = World->GetWorldSettings();
+	WorldSettings->DefaultGameMode = AReplicatedStartupActorGameMode::StaticClass();
 }

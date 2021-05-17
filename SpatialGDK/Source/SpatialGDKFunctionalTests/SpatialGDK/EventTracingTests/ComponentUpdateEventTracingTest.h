@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EventTracingTest.h"
+#include "EventTracingCrossServerTest.h"
 
 #include "ComponentUpdateEventTracingTest.generated.h"
 

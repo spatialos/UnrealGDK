@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/Dispatcher.h"
 
@@ -8,7 +8,7 @@
 namespace SpatialGDK
 {
 FDispatcher::FDispatcher()
-	: NextCallbackId(1)
+	: NextCallbackId(FirstValidCallbackId)
 {
 }
 
@@ -152,6 +152,7 @@ void FDispatcher::RemoveCallback(CallbackId Id)
 	{
 		Callback.ComponentAddedCallbacks.Remove(Id);
 		Callback.ComponentRemovedCallbacks.Remove(Id);
+		Callback.ComponentValueCallbacks.Remove(Id);
 	}
 
 	for (FAuthorityCallbacks& Callback : AuthorityCallbacks)
@@ -247,11 +248,11 @@ void FDispatcher::HandleAuthorityChange(Worker_EntityId EntityId, const Componen
 	// Find the intersection between callbacks and changes and invoke all such callbacks.
 	while (CallbackIt != CallbackEnd && ChangeIt != ChangeEnd)
 	{
-		if (CallbackIt->Id < ChangeIt->ComponentId)
+		if (CallbackIt->Id < ChangeIt->ComponentSetId)
 		{
 			++CallbackIt;
 		}
-		else if (ChangeIt->ComponentId < CallbackIt->Id)
+		else if (ChangeIt->ComponentSetId < CallbackIt->Id)
 		{
 			++ChangeIt;
 		}

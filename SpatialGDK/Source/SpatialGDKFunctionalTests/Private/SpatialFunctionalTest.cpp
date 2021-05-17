@@ -44,6 +44,8 @@ ASpatialFunctionalTest::ASpatialFunctionalTest()
 	PrimaryActorTick.TickInterval = 0.0f;
 
 	PreparationTimeLimit = 30.0f;
+	bReadyToSpawnServerControllers = false;
+	CachedTestResult = EFunctionalTestResult::Default;
 }
 
 void ASpatialFunctionalTest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -93,6 +95,11 @@ void ASpatialFunctionalTest::BeginPlay()
 	{
 		UAbstractLBStrategy* LBStrategy = SpatialNetDriver->LoadBalanceStrategy;
 		NumExpectedServers = LBStrategy != nullptr ? LBStrategy->GetMinimumRequiredWorkers() : 1;
+	}
+
+	if (FlowControllerActorClass.Get() != nullptr)
+	{
+		FlowControllerSpawner.ModifyFlowControllerClassToSpawn(FlowControllerActorClass);
 	}
 
 	if (GetWorld()->IsServer())
@@ -194,8 +201,18 @@ void ASpatialFunctionalTest::LogStep(ELogVerbosity::Type Verbosity, const FStrin
 
 void ASpatialFunctionalTest::PrepareTest()
 {
-	StepDefinitions.Empty();
+	if (bFinishedTest && !bNotifyObserversCalled) // This happens when the world is not reset.
+	{
+		// Wait for this
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
+			PrepareTest();
+		});
+		return;
+	}
 
+	bFinishedTest = false; // Reset the test state
+
+	StepDefinitions.Empty();
 	Super::PrepareTest();
 
 	if (HasAuthority())
@@ -227,7 +244,7 @@ bool ASpatialFunctionalTest::IsReady_Implementation()
 
 	checkf(NumRegisteredServers <= NumExpectedServers, TEXT("There's more servers registered than expected, this shouldn't happen"));
 
-	return Super::IsReady_Implementation() && NumRegisteredClients >= NumRequiredClients && NumExpectedServers == NumRegisteredServers;
+	return Super::IsReady_Implementation() && NumRegisteredClients >= GetNumRequiredClients() && NumExpectedServers == NumRegisteredServers;
 }
 
 void ASpatialFunctionalTest::StartTest()
@@ -326,13 +343,13 @@ void ASpatialFunctionalTest::FinishTest(EFunctionalTestResult TestResult, const 
 					}
 				}
 
-				if (NumRegisteredClients < NumRequiredClients)
+				if (NumRegisteredClients < GetNumRequiredClients())
 				{
 					UE_LOG(
 						LogSpatialGDKFunctionalTests, Warning,
 						TEXT("In %s, the number of connected clients is less than the number of required clients: Connected clients: %d, "
 							 "Required clients: %d!"),
-						*GetName(), NumRegisteredClients, NumRequiredClients);
+						*GetName(), NumRegisteredClients, GetNumRequiredClients());
 				}
 
 				if (NumRegisteredServers < NumExpectedServers)
@@ -414,7 +431,6 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 				   TEXT("OwningTest already had different LocalFlowController, this shouldn't happen"));
 			return;
 		}
-
 		LocalFlowController = FlowController;
 	}
 
@@ -449,6 +465,28 @@ int ASpatialFunctionalTest::GetLocalWorkerId()
 {
 	ASpatialFunctionalTestFlowController* AuxFlowController = GetLocalFlowController();
 	return AuxFlowController != nullptr ? AuxFlowController->WorkerDefinition.Id : INVALID_FLOW_CONTROLLER_ID;
+}
+
+FString ASpatialFunctionalTest::GetLocalWorkerString()
+{
+	FString WorkerTypeName;
+	switch (GetLocalWorkerType())
+	{
+	case ESpatialFunctionalTestWorkerType::Server:
+		WorkerTypeName = TEXT("Server");
+		break;
+	case ESpatialFunctionalTestWorkerType::Client:
+		WorkerTypeName = TEXT("Client");
+		break;
+	case ESpatialFunctionalTestWorkerType::All:
+		WorkerTypeName = TEXT("All");
+		break;
+	default:
+		UE_LOG(LogSpatialGDKFunctionalTests, Warning, TEXT("GetLocalWorkerString called on Invalid worker type on test %s"), *GetName());
+		WorkerTypeName = TEXT("Invalid");
+		break;
+	}
+	return FString::Printf(TEXT("%s:%d"), *WorkerTypeName, GetLocalWorkerId());
 }
 
 // Add Steps for Blueprints
@@ -658,21 +696,32 @@ void ASpatialFunctionalTest::OnReplicated_bPreparedTest()
 {
 	if (bPreparedTest)
 	{
-		// We need to delay until next Tick since on non-Authority
-		// OnReplicated_bPreparedTest() will be called before BeginPlay().
-		GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
-			if (!HasAuthority())
-			{
-				PrepareTest();
-			}
+		PrepareTestAfterBeginPlay();
+	}
+}
 
-			// Currently PrepareTest() happens before FlowControllers are registered,
-			// but that is most likely because of the bug that forces us to delay their registration.
-			if (LocalFlowController != nullptr)
-			{
-				LocalFlowController->SetReadyToRunTest(true);
-			}
+void ASpatialFunctionalTest::PrepareTestAfterBeginPlay()
+{
+	// We need to delay until next BeginPlay since on non-Authority
+	// OnReplicated_bPreparedTest() will be called before BeginPlay().
+	if (!HasActorBegunPlay())
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
+			PrepareTestAfterBeginPlay();
 		});
+		return;
+	}
+
+	if (!HasAuthority())
+	{
+		PrepareTest();
+	}
+
+	// Currently PrepareTest() happens before FlowControllers are registered,
+	// but that is most likely because of the bug that forces us to delay their registration.
+	if (LocalFlowController != nullptr)
+	{
+		LocalFlowController->SetReadyToRunTest(true);
 	}
 }
 
@@ -690,11 +739,6 @@ void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 	if (!bReadyToSpawnServerControllers)
 	{
 		return;
-	}
-
-	if (FlowControllerActorClass.Get() != nullptr)
-	{
-		FlowControllerSpawner.ModifyFlowControllerClassToSpawn(FlowControllerActorClass);
 	}
 
 	FlowControllerSpawner.SpawnServerFlowController();
@@ -834,11 +878,12 @@ void ASpatialFunctionalTest::KeepActorOnCurrentWorker(AActor* Actor)
 
 void ASpatialFunctionalTest::AddStepSetTagDelegation(FName Tag, int32 ServerWorkerId /*= 1*/)
 {
+	// Valid ServerWorkerIDs range from 1 to NumExpectedServers, inclusive
 	if (!ensureMsgf(ServerWorkerId > 0, TEXT("Invalid Server Worker Id")))
 	{
 		return;
 	}
-	if (ServerWorkerId >= GetNumExpectedServers())
+	if (ServerWorkerId > GetNumExpectedServers())
 	{
 		ServerWorkerId = 1; // Support for single worker environments.
 	}
@@ -889,6 +934,12 @@ void ASpatialFunctionalTest::ClearTagDelegationAndInterest()
 	{
 		NetDriver->DebugCtx->Reset();
 	}
+}
+
+void ASpatialFunctionalTest::NotifyTestFinishedObserver()
+{
+	Super::NotifyTestFinishedObserver();
+	bNotifyObserversCalled = true;
 }
 
 void ASpatialFunctionalTest::TakeSnapshot(const FSpatialFunctionalTestSnapshotTakenDelegate& BlueprintCallback)

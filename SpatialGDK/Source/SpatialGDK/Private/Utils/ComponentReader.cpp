@@ -102,36 +102,43 @@ ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver,
 void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentData, UObject& Object, USpatialActorChannel& Channel,
 										 bool bIsHandover, bool& bOutReferencesChanged)
 {
-	if (Object.IsPendingKill())
-	{
-		return;
-	}
-
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
-
-	TArray<uint32> UpdatedIds;
-	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
-	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
-
-	if (bIsHandover)
-	{
-		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentData.component_id, bOutReferencesChanged);
-	}
-	else
-	{
-		ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ComponentData.component_id, bOutReferencesChanged);
-	}
+	ApplyComponentData(ComponentData.component_id, ComponentData.schema_type, Object, Channel, bIsHandover, bOutReferencesChanged);
 }
 
-void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject& Object, USpatialActorChannel& Channel,
-										   bool bIsHandover, bool& bOutReferencesChanged)
+void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object,
+										 USpatialActorChannel& Channel, bool bIsHandover, bool& bOutReferencesChanged)
 {
 	if (Object.IsPendingKill())
 	{
 		return;
 	}
 
-	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
+
+	// ComponentData will be missing fields if they are completely empty (options, lists, and maps).
+	// However, we still want to apply this empty data, so we need the full list of field IDs for
+	// that component type (Data, OwnerOnly, Handover, etc.).
+	const TArray<Schema_FieldId>& InitialIds = ClassInfoManager->GetFieldIdsByComponentId(ComponentId);
+
+	if (bIsHandover)
+	{
+		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentId, bOutReferencesChanged);
+	}
+	else
+	{
+		ApplySchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentId, bOutReferencesChanged);
+	}
+}
+
+void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& Object,
+										   USpatialActorChannel& Channel, bool bIsHandover, bool& bOutReferencesChanged)
+{
+	if (Object.IsPendingKill())
+	{
+		return;
+	}
+
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate);
 
 	// Retrieve all the fields that have been updated in this component update
 	TArray<uint32> UpdatedIds;
@@ -140,8 +147,8 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 
 	// Retrieve all the fields that have been cleared (eg. list with no entries)
 	TArray<Schema_FieldId> ClearedIds;
-	ClearedIds.SetNumUninitialized(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
-	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate.schema_type, ClearedIds.GetData());
+	ClearedIds.SetNumUninitialized(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate));
+	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate, ClearedIds.GetData());
 
 	// Merge cleared fields into updated fields to ensure they will be processed (Schema_FieldId == uint32)
 	UpdatedIds.Append(ClearedIds);
@@ -150,12 +157,11 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 	{
 		if (bIsHandover)
 		{
-			ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentUpdate.component_id,
-									  bOutReferencesChanged);
+			ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged);
 		}
 		else
 		{
-			ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentUpdate.component_id, bOutReferencesChanged);
+			ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged);
 		}
 	}
 }
@@ -191,10 +197,10 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
 
 		Worker_EntityId EntityId = Channel.GetEntityId();
-		FSpatialGDKSpanId CauseSpanId;
+		TArray<FSpatialGDKSpanId> CauseSpanIds;
 		if (bEventTracerEnabled)
 		{
-			CauseSpanId = EventTracer->GetSpanId(EntityComponentId(EntityId, ComponentId));
+			CauseSpanIds = EventTracer->GetAndConsumeSpansForComponent(EntityComponentId(EntityId, ComponentId));
 		}
 
 		for (uint32 FieldId : UpdatedIds)
@@ -332,7 +338,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					EventTraceUniqueId LinearTraceId = EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property);
 					SpanId = EventTracer->TraceEvent(FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(
 														 &Object, EntityId, ComponentId, Cmd.Property->GetName(), LinearTraceId),
-													 CauseSpanId.GetConstId(), 1);
+													 /* Causes */ reinterpret_cast<const Trace_SpanIdType*>(CauseSpanIds.GetData()),
+													 /* NumCauses */ CauseSpanIds.Num());
 				}
 
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
@@ -560,7 +567,10 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	}
 	else
 	{
-		checkf(false, TEXT("Tried to read unknown property in field %d"), FieldId);
+		UE_LOG(
+			LogSpatialComponentReader, Error,
+			TEXT("Tried to set unknown property or unsupported property type while applying schema component field %d. Property name: %s."),
+			FieldId, Property ? *Property->GetFullName() : TEXT("null"));
 	}
 }
 

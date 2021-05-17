@@ -13,9 +13,7 @@
 #include "Materials/Material.h"
 #include "Math/Box2D.h"
 #include "Math/Color.h"
-#include "Templates/Tuple.h"
 
-#include <WorkerSDK/improbable/c_worker.h>
 #include "SpatialDebugger.generated.h"
 
 class APawn;
@@ -35,7 +33,11 @@ DECLARE_CYCLE_STAT(TEXT("Projection"), STAT_Projection, STATGROUP_SpatialDebugge
 DECLARE_CYCLE_STAT(TEXT("DrawIcons"), STAT_DrawIcons, STATGROUP_SpatialDebugger);
 DECLARE_CYCLE_STAT(TEXT("DrawText"), STAT_DrawText, STATGROUP_SpatialDebugger);
 DECLARE_CYCLE_STAT(TEXT("BuildText"), STAT_BuildText, STATGROUP_SpatialDebugger);
-DECLARE_CYCLE_STAT(TEXT("SortingActors"), STAT_SortingActors, STATGROUP_SpatialDebugger);
+
+namespace SpatialGDK
+{
+class SpatialDebuggerSystem;
+}
 
 USTRUCT()
 struct FWorkerRegionInfo
@@ -81,6 +83,8 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
+
+	void OnEntityAdded(AActor* Actor);
 
 	virtual void OnAuthorityGained() override;
 
@@ -191,8 +195,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization, meta = (ToolTip = "WorldSpace offset of tag from actor pivot"))
 	FVector WorldSpaceActorTagOffset = FVector(0.0f, 0.0f, 200.0f);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Visualization,
-			  meta = (ToolTip = "Color used for any server with an unresolved name"))
+	UPROPERTY(EditDefaultsOnly, Category = Visualization, meta = (ToolTip = "Color used for any server with an unresolved name"))
 	FColor InvalidServerTintColor = FColor::Magenta;
 
 	UPROPERTY(ReplicatedUsing = OnRep_SetWorkerRegions)
@@ -224,9 +227,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Visualization)
 	void SetShowWorkerRegions(const bool bNewShow);
 
-	void ActorAuthorityChanged(const Worker_ComponentSetAuthorityChangeOp& AuthOp) const;
-	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
-
 #if WITH_EDITOR
 	void EditorRefreshWorkerRegions();
 	static void EditorRefreshDisplay();
@@ -237,12 +237,10 @@ public:
 private:
 	void LoadIcons();
 
-	// FOnEntityAdded/FOnEntityRemoved Delegates
-	void OnEntityAdded(const Worker_EntityId EntityId);
-	void OnEntityRemoved(const Worker_EntityId EntityId);
-
 	// FDebugDrawDelegate
 	void DrawDebug(UCanvas* Canvas, APlayerController* Controller);
+
+	bool ProjectActorToScreen(const FVector& ActorLocation, const FVector& PlayerLocation, FVector2D& OutLocation, const UCanvas* Canvas);
 
 	FVector GetLocalPawnLocation();
 
@@ -252,11 +250,11 @@ private:
 
 	void HighlightActorUnderCursor(TWeakObjectPtr<AActor>& NewHoverActor);
 
-	TWeakObjectPtr<AActor> GetActorAtPosition(const FVector2D& MousePosition);
+	TWeakObjectPtr<AActor> GetActorAtPosition(const FVector2D& MousePosition, const UCanvas* Canvas);
 
 	TWeakObjectPtr<AActor> GetHitActor();
 
-	FVector2D ProjectActorToScreen(const TWeakObjectPtr<AActor> Actor, const FVector& PlayerLocation);
+	bool CanProjectActorLocationToScreen(const FVector& ActorLocation, const FVector& PlayerLocation, const UCanvas* Canvas);
 
 	void RevertHoverMaterials();
 
@@ -272,10 +270,9 @@ private:
 
 #if WITH_EDITOR
 	void EditorInitialiseWorkerRegions();
-	void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
-	static const int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 	static const int PLAYER_TAG_VERTICAL_OFFSET = 18;
 
 	enum EIcon
@@ -290,13 +287,9 @@ private:
 
 	USpatialNetDriver* NetDriver;
 
-	// These mappings are maintained independently on each client
-	// Mapping of the entities a client has checked out
-	TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> EntityActorMapping;
+	SpatialGDK::SpatialDebuggerSystem* GetDebuggerSystem() const;
 
 	FDelegateHandle DrawDebugDelegateHandle;
-	FDelegateHandle OnEntityAddedHandle;
-	FDelegateHandle OnEntityRemovedHandle;
 
 	TWeakObjectPtr<APawn> LocalPawn;
 	TWeakObjectPtr<APlayerController> LocalPlayerController;

@@ -2,6 +2,7 @@
 
 #include "SpatialView/ViewCoordinator.h"
 
+#include "SpatialView/EntityComponentTypes.h"
 #include "SpatialView/OpList/ViewDeltaLegacyOpList.h"
 
 namespace SpatialGDK
@@ -82,6 +83,18 @@ void ViewCoordinator::RefreshEntityCompleteness(Worker_EntityId EntityId)
 	{
 		SubviewToRefresh->RefreshEntity(EntityId);
 	}
+}
+
+const ComponentData* ViewCoordinator::GetComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
+{
+	const EntityViewElement* EntityDataPtr = GetView().Find(EntityId);
+
+	if (EntityDataPtr != nullptr)
+	{
+		return EntityDataPtr->Components.FindByPredicate(ComponentIdEquality{ ComponentId });
+	}
+
+	return nullptr;
 }
 
 void ViewCoordinator::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId)
@@ -235,6 +248,29 @@ FDispatcherRefreshCallback ViewCoordinator::CreateAuthorityChangeRefreshCallback
 																				 const FAuthorityChangeRefreshPredicate& RefreshPredicate)
 {
 	return FSubView::CreateAuthorityChangeRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
+}
+
+bool ViewCoordinator::HasEntity(Worker_EntityId EntityId) const
+{
+	return View.GetView().Contains(EntityId);
+}
+
+bool ViewCoordinator::HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
+{
+	if (const EntityViewElement* Element = View.GetView().Find(EntityId))
+	{
+		return Element->Components.ContainsByPredicate(ComponentIdEquality{ ComponentId });
+	}
+	return false;
+}
+
+bool ViewCoordinator::HasAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId) const
+{
+	if (const EntityViewElement* Element = View.GetView().Find(EntityId))
+	{
+		return Element->Authority.Contains(ComponentSetId);
+	}
+	return false;
 }
 
 const FString& ViewCoordinator::GetWorkerId() const

@@ -38,6 +38,8 @@ public:
 	FWorkerComponentData CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info,
 													 const FHandoverChangeState& Changes, uint32& OutBytesWritten);
 
+	bool WasInitialOnlyDataWritten() const { return bInitialOnlyDataWritten; }
+
 	static FWorkerComponentData CreateEmptyComponentData(Worker_ComponentId ComponentId);
 
 private:
@@ -65,6 +67,8 @@ private:
 	USpatialClassInfoManager* ClassInfoManager;
 
 	bool bInterestHasChanged;
+	bool bInitialOnlyDataWritten;
+	bool bInitialOnlyReplicationEnabled;
 
 	USpatialLatencyTracer* LatencyTracer;
 };

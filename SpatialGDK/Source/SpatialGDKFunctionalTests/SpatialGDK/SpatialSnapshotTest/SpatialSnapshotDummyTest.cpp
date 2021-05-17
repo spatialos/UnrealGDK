@@ -13,7 +13,6 @@ ASpatialSnapshotDummyTest::ASpatialSnapshotDummyTest()
 {
 	Author = "Nuno";
 	Description = TEXT("Dummy Test that just passes");
-	SetNumRequiredClients(1);
 }
 
 void ASpatialSnapshotDummyTest::PrepareTest()

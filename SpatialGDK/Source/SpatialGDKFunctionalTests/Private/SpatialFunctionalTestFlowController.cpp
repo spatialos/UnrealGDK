@@ -27,6 +27,10 @@ ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const
 #else
 	SetReplicatingMovement(false);
 #endif
+	OwningTest = nullptr;
+	bHasAckFinishedTest = true;
+	bReadyToRegisterWithTest = false;
+	bIsReadyToRunTest = false;
 }
 
 void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

@@ -100,12 +100,17 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::GetEvent() &&
 	return MoveTemp(SpatialTraceEvent);
 }
 
-FSpatialTraceEvent FSpatialTraceEventBuilder::CreateProcessRPC(const UObject* Object, UFunction* Function,
-															   const EventTraceUniqueId& LinearTraceId)
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateApplyRPC(const UObject* Object, UFunction* Function)
 {
-	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "process_rpc")
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "apply_rpc")
 		.AddObject(TEXT("Object"), Object)
 		.AddFunction(TEXT("Function"), Function)
+		.GetEvent();
+}
+
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceiveRPC(const EventTraceUniqueId& LinearTraceId)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "receive_rpc")
 		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
 		.GetEvent();
 }
@@ -113,6 +118,31 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateProcessRPC(const UObject* Ob
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreatePushRPC(const UObject* Object, UFunction* Function)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "push_rpc")
+		.AddObject(TEXT("Object"), Object)
+		.AddFunction(TEXT("Function"), Function)
+		.GetEvent();
+}
+
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateSendCrossServerRPC(const UObject* Object, UFunction* Function,
+																	   const EventTraceUniqueId& LinearTraceId)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "send_cross_server_rpc")
+		.AddObject(TEXT("Object"), Object)
+		.AddFunction(TEXT("Function"), Function)
+		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
+		.GetEvent();
+}
+
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceiveCrossServerRPC(const EventTraceUniqueId& LinearTraceId)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "receive_cross_server_rpc")
+		.AddKeyValue(TEXT("LinearTraceId"), LinearTraceId.ToString())
+		.GetEvent();
+}
+
+FSpatialTraceEvent FSpatialTraceEventBuilder::CreateApplyCrossServerRPC(const UObject* Object, UFunction* Function)
+{
+	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "apply_cross_server_rpc")
 		.AddObject(TEXT("Object"), Object)
 		.AddFunction(TEXT("Function"), Function)
 		.GetEvent();
@@ -172,15 +202,6 @@ FSpatialTraceEvent FSpatialTraceEventBuilder::CreateReceivePropertyUpdate(const 
 FSpatialTraceEvent FSpatialTraceEventBuilder::CreateMergeSendRPCs(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_send_rpcs")
-		.AddEntityId(TEXT("EntityId"), EntityId)
-		.AddComponentId(TEXT("ComponentId"), ComponentId)
-		.GetEvent();
-}
-
-FSpatialTraceEvent FSpatialTraceEventBuilder::CreateMergeComponentUpdate(const Worker_EntityId EntityId,
-																		 const Worker_ComponentId ComponentId)
-{
-	return FSpatialTraceEventBuilder(GDK_EVENT_NAMESPACE "merge_component_update")
 		.AddEntityId(TEXT("EntityId"), EntityId)
 		.AddComponentId(TEXT("ComponentId"), ComponentId)
 		.GetEvent();

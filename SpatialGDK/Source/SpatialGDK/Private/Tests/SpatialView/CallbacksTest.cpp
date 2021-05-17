@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Tests/TestDefinitions.h"
 
@@ -139,7 +139,7 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Callback_WHEN_Callback_Adds_Other_Callback_T
 	return true;
 }
 
-CALLBACKS_TEST(GIVEN_Callbacks_With_Two_Callback_WHEN_Callback_Removes_Other_Callback_THEN_Calls_Both_Callbacks)
+CALLBACKS_TEST(GIVEN_Callbacks_With_Two_Callback_WHEN_First_Callback_Removes_Second_Callback_THEN_Second_Callback_Is_Not_Called)
 {
 	// GIVEN
 	SpatialGDK::CallbackId Id = 2;
@@ -159,12 +159,12 @@ CALLBACKS_TEST(GIVEN_Callbacks_With_Two_Callback_WHEN_Callback_Removes_Other_Cal
 	Callbacks.Invoke(1);
 
 	// THEN
-	TestEqual("Both callbacks were invoked", InvokeCount, 2);
+	TestEqual("Only first callback was invoked", InvokeCount, 1);
 
-	// sanity check: Only one callback invoked on second invocation
+	// sanity check: Only one callback invoked on second invocation also
 	InvokeCount = 0;
 	Callbacks.Invoke(1);
-	TestEqual("Only one callback invoked", InvokeCount, 1);
+	TestEqual("Still only one callback invoked on second invoke", InvokeCount, 1);
 
 	return true;
 }

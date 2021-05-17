@@ -67,12 +67,22 @@ struct FConnectionConfig
 
 		TcpNoDelay = (SpatialGDKSettings->bTcpNoDelay ? 1 : 0);
 
+		static_assert(EWorkerType::Client == 0 && EWorkerType::Server == 1, "Assuming indexes of enum for client and server");
+
 		UdpUpstreamIntervalMS =
 			10; // Despite flushing on the worker ops thread, WorkerSDK still needs to send periodic data (like ACK, resends and ping).
 		UdpDownstreamIntervalMS = (bConnectAsClient ? SpatialGDKSettings->UdpClientDownstreamUpdateIntervalMS
 													: SpatialGDKSettings->UdpServerDownstreamUpdateIntervalMS);
 
 		LinkProtocol = ConnectionTypeMap[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
+
+		uint32 DownstreamWindowSizes[2] = { SpatialGDKSettings->ClientDownstreamWindowSizeBytes,
+											SpatialGDKSettings->ServerDownstreamWindowSizeBytes };
+		uint32 UpstreamWindowSizes[2] = { SpatialGDKSettings->ClientUpstreamWindowSizeBytes,
+										  SpatialGDKSettings->ServerUpstreamWindowSizeBytes };
+
+		DownstreamWindowSizeBytes = DownstreamWindowSizes[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
+		UpstreamWindowSizeBytes = UpstreamWindowSizes[bConnectAsClient ? EWorkerType::Client : EWorkerType::Server];
 	}
 
 private:
@@ -98,7 +108,8 @@ private:
 		}
 		else if (!LogLevelString.IsEmpty())
 		{
-			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."), *LogLevelString);
+			UE_LOG(LogConnectionConfig, Warning, TEXT("Unknown worker SDK log verbosity %s specified. Defaulting to Info."),
+				   *LogLevelString);
 		}
 	}
 
@@ -147,6 +158,8 @@ public:
 	uint8 TcpNoDelay;
 	uint8 UdpUpstreamIntervalMS;
 	uint8 UdpDownstreamIntervalMS;
+	uint32 DownstreamWindowSizeBytes;
+	uint32 UpstreamWindowSizeBytes;
 };
 
 class FLocatorConfig : public FConnectionConfig

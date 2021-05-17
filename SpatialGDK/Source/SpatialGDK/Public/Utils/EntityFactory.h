@@ -20,18 +20,19 @@ namespace SpatialGDK
 class InterestFactory;
 class SpatialRPCService;
 
-struct RPCsOnEntityCreation;
-using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation, FDefaultSetAllocator,
-									  TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<const UObject>, SpatialGDK::RPCsOnEntityCreation, false>>;
-
 class SPATIALGDK_API EntityFactory
 {
 public:
 	EntityFactory(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, USpatialClassInfoManager* InClassInfoManager,
 				  SpatialRPCService* InRPCService);
 
+	// The philosophy behind having this function is to have a minimal set of SpatialOS components associated with an Unreal actor.
+	// This should primarily be enough to reason about the actor's identity and possibly inform some level of load-balancing.
+	static TArray<FWorkerComponentData> CreateSkeletonEntityComponents(AActor* Actor);
+	void WriteUnrealComponents(TArray<FWorkerComponentData>& ComponentDatas, USpatialActorChannel* Channel, uint32& OutBytesWritten);
+	void WriteLBComponents(TArray<FWorkerComponentData>& ComponentDatas, AActor* Actor);
 	TArray<FWorkerComponentData> CreateEntityComponents(USpatialActorChannel* Channel, uint32& OutBytesWritten);
-	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor);
+	TArray<FWorkerComponentData> CreateTombstoneEntityComponents(AActor* Actor) const;
 
 	static TArray<FWorkerComponentData> CreatePartitionEntityComponents(const Worker_EntityId EntityId,
 																		const InterestFactory* InterestFactory,
@@ -40,7 +41,8 @@ public:
 
 	static inline bool IsClientAuthoritativeComponent(Worker_ComponentId ComponentId)
 	{
-		return ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID || ComponentId == SpatialConstants::HEARTBEAT_COMPONENT_ID;
+		return ComponentId == SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID
+			   || ComponentId == SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID;
 	}
 
 private:

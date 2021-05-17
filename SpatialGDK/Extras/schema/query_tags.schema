@@ -7,7 +7,7 @@ component ActorAuthTag {
     id = 2001;
 }
 
-component ActorNonAuthTag {
+component ActorTag {
     id = 2002;
 }
 
@@ -17,4 +17,8 @@ component LBTag {
 
 component GDKKnownEntityTag {
     id = 2007;
+}
+
+component RoutingWorkerEntityTag {
+    id = 2009;
 }

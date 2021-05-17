@@ -15,18 +15,13 @@ using namespace SpatialGDK;
 SpatialSnapshotManager::SpatialSnapshotManager()
 	: Connection(nullptr)
 	, GlobalStateManager(nullptr)
-	, Receiver(nullptr)
 {
 }
 
-void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager,
-								  USpatialReceiver* InReceiver)
+void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager)
 {
 	check(InConnection != nullptr);
 	Connection = InConnection;
-
-	check(InReceiver != nullptr);
-	Receiver = InReceiver;
 
 	check(InGlobalStateManager != nullptr);
 	GlobalStateManager = InGlobalStateManager;
@@ -47,6 +42,10 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 
 	Worker_EntityQuery WorldQuery{};
 	WorldQuery.constraint = UnrealMetadataConstraint;
+	WorldQuery.snapshot_result_type_component_id_count = 0;
+	// This memory address will not be read, but needs to be non-null, so that the WorkerSDK correctly doesn't send us ANY components.
+	// Setting it to a valid component id address, just in case.
+	WorldQuery.snapshot_result_type_component_ids = &SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 
 	check(Connection.IsValid());
 	const Worker_RequestId RequestID = Connection->SendEntityQueryRequest(&WorldQuery, RETRY_UNTIL_COMPLETE);
@@ -71,8 +70,7 @@ void SpatialSnapshotManager::WorldWipe(const PostWorldWipeDelegate& PostWorldWip
 		}
 	});
 
-	check(Receiver.IsValid());
-	Receiver->AddEntityQueryDelegate(RequestID, WorldQueryDelegate);
+	QueryHandler.AddRequest(RequestID, WorldQueryDelegate);
 }
 
 void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op, TWeakObjectPtr<USpatialWorkerConnection> Connection)
@@ -207,6 +205,12 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 	// References to entities that are stored within the snapshot need remapping once we know the new entity IDs.
 
 	// Add the spawn delegate
-	check(Receiver.IsValid());
-	Receiver->AddReserveEntityIdsDelegate(ReserveRequestID, SpawnEntitiesDelegate);
+	ReserveEntityIdsHandler.AddRequest(ReserveRequestID, SpawnEntitiesDelegate);
+}
+
+void SpatialSnapshotManager::Advance()
+{
+	const TArray<Worker_Op>& Ops = Connection->GetCoordinator().GetViewDelta().GetWorkerMessages();
+	ReserveEntityIdsHandler.ProcessOps(Ops);
+	QueryHandler.ProcessOps(Ops);
 }

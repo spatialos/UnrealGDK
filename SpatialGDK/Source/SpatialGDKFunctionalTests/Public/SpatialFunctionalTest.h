@@ -6,7 +6,6 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "FunctionalTest.h"
-#include "Improbable/SpatialGDKSettingsBridge.h"
 #include "SpatialFunctionalTestFlowControllerSpawner.h"
 #include "SpatialFunctionalTestRequireHandler.h"
 #include "SpatialFunctionalTestStep.h"
@@ -69,7 +68,13 @@ public:
 
 	// # Test APIs
 
-	int GetNumRequiredClients() const { return NumRequiredClients; }
+	int32 GetNumRequiredClients() const
+	{
+		const ULevelEditorPlaySettings* EditorPlaySettings = GetDefault<ULevelEditorPlaySettings>();
+		int32 NumRequiredClients = 0;
+		EditorPlaySettings->GetPlayNumberOfClients(NumRequiredClients);
+		return NumRequiredClients;
+	}
 
 	// Called at the beginning of the test, use it to setup your steps. Contrary to AFunctionalTest, this will
 	// run on all Workers (Server and Client).
@@ -123,6 +128,10 @@ public:
 	// Helper to get the local Worker Id.
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	int GetLocalWorkerId();
+
+	// Helper to get the local Worker String.
+	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
+	FString GetLocalWorkerString();
 
 	// # Step APIs.
 
@@ -247,64 +256,64 @@ public:
 
 	// clang-format off
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	void RequireTrue(bool bCheckTrue, const FString& Msg) { RequireHandler.RequireTrue(bCheckTrue, Msg); }
+	bool RequireTrue(bool bCheckTrue, const FString& Msg) { return RequireHandler.RequireTrue(bCheckTrue, Msg); }
 
 	UFUNCTION(BlueprintCallable, Category = "Spatial Functional Test")
-	void RequireFalse(bool bCheckFalse, const FString& Msg) { RequireHandler.RequireFalse(bCheckFalse, Msg); }
+	bool RequireFalse(bool bCheckFalse, const FString& Msg) { return RequireHandler.RequireFalse(bCheckFalse, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Compare (Int)"), Category = "Spatial Functional Test")
-	void RequireCompare_Int(int A, EComparisonMethod Operator, int B, const FString& Msg) { RequireHandler.RequireCompare(A, Operator, B, Msg); }
+	bool RequireCompare_Int(int A, EComparisonMethod Operator, int B, const FString& Msg) { return RequireHandler.RequireCompare(A, Operator, B, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Compare (Float)"), Category = "Spatial Functional Test")
-	void RequireCompare_Float(float A, EComparisonMethod Operator, float B, const FString& Msg) { RequireHandler.RequireCompare(A, Operator, B, Msg); }
+	bool RequireCompare_Float(float A, EComparisonMethod Operator, float B, const FString& Msg) { return RequireHandler.RequireCompare(A, Operator, B, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Bool)"), Category = "Spatial Functional Test")
-	void RequireEqual_Bool(bool bValue, bool bExpected, const FString& Msg) { RequireHandler.RequireEqual(bValue, bExpected, Msg); }
+	bool RequireEqual_Bool(bool bValue, bool bExpected, const FString& Msg) { return RequireHandler.RequireEqual(bValue, bExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Int)"), Category = "Spatial Functional Test")
-	void RequireEqual_Int(int Value, int Expected, const FString& Msg) { RequireHandler.RequireEqual(Value, Expected, Msg); }
+	bool RequireEqual_Int(int Value, int Expected, const FString& Msg) { return RequireHandler.RequireEqual(Value, Expected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Float)"), Category = "Spatial Functional Test")
-	void RequireEqual_Float(float Value, float Expected, const FString& Msg, float Tolerance = 1.e-4) { RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
+	bool RequireEqual_Float(float Value, float Expected, const FString& Msg, float Tolerance = 1.e-4) { return RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (String)"), Category = "Spatial Functional Test")
-	void RequireEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { RequireHandler.RequireEqual(Value, Expected, Msg); }
+	bool RequireEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { return RequireHandler.RequireEqual(Value, Expected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Name)"), Category = "Spatial Functional Test")
-	void RequireEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { RequireHandler.RequireEqual(Value, Expected, Msg); }
+	bool RequireEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { return RequireHandler.RequireEqual(Value, Expected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Vector)"), Category = "Spatial Functional Test")
-	void RequireEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg, float Tolerance = 1.e-4) { RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
+	bool RequireEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg, float Tolerance = 1.e-4) { return RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Rotator)"), Category = "Spatial Functional Test")
-	void RequireEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg, float Tolerance = 1.e-4) { RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
+	bool RequireEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg, float Tolerance = 1.e-4) { return RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Equal (Transform)"), Category = "Spatial Functional Test")
-	void RequireEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance = 1.e-4) { RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
+	bool RequireEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg, float Tolerance = 1.e-4) { return RequireHandler.RequireEqual(Value, Expected, Msg, Tolerance); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Bool)"), Category = "Spatial Functional Test")
-	void RequireNotEqual_Bool(bool bValue, bool bNotExpected, const FString& Msg) { RequireHandler.RequireNotEqual(bValue, bNotExpected, Msg); }
+	bool RequireNotEqual_Bool(bool bValue, bool bNotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(bValue, bNotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Int)"), Category = "Spatial Functional Test")
-	void RequireNotEqual_Int(int Value, int Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Int(int Value, int Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Float)"), Category = "Spatial Functional Test")
-	void RequireNotEqual_Float(float Value, float Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Float(float Value, float Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (String)"), Category = "Spatial Functional Test")
-	void RequireNotEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Name)"), Category = "Spatial Functional Test")
-	void RequireNotEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Vector)"), Category = "Spatial Functional Test")
-	void RequireNotEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Rotator)"), Category = "Spatial Functional Test")
-	void RequireNotEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Transform)"), Category = "Spatial Functional Test")
-	void RequireNotEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg) { RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
 	// clang-format on
 
 	// # Snapshot APIs.
@@ -340,8 +349,6 @@ public:
 	static void ClearAllTakenSnapshots();
 
 protected:
-	void SetNumRequiredClients(int NewNumRequiredClients) { NumRequiredClients = FMath::Max(NewNumRequiredClients, 0); }
-
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();
 
@@ -370,9 +377,10 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Spatial Functional Test")
 	FSpatialFunctionalTestStepDefinition ClearSnapshotStepDefinition;
 
+	void NotifyTestFinishedObserver() override;
+
 private:
-	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"), Category = "Spatial Functional Test")
-	int NumRequiredClients = 2;
+	bool bNotifyObserversCalled = false;
 
 	// Number of servers that should be running in the world.
 	int NumExpectedServers = 0;
@@ -408,6 +416,7 @@ private:
 
 	UFUNCTION()
 	void OnReplicated_bPreparedTest();
+	void PrepareTestAfterBeginPlay();
 
 	UPROPERTY(ReplicatedUsing = OnReplicated_bFinishedTest, Transient)
 	bool bFinishedTest = false;

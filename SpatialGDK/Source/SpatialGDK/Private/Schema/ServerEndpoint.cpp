@@ -4,21 +4,11 @@
 
 namespace SpatialGDK
 {
-ServerEndpoint::ServerEndpoint(const Worker_ComponentData& Data)
-	: ServerEndpoint(Data.schema_type)
-{
-}
-
 ServerEndpoint::ServerEndpoint(Schema_ComponentData* Data)
 	: ReliableRPCBuffer(ERPCType::ClientReliable)
 	, UnreliableRPCBuffer(ERPCType::ClientUnreliable)
 {
 	ReadFromSchema(Schema_GetComponentDataFields(Data));
-}
-
-void ServerEndpoint::ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
-{
-	ApplyComponentUpdate(Update.schema_type);
 }
 
 void ServerEndpoint::ApplyComponentUpdate(Schema_ComponentUpdate* Update)
@@ -32,6 +22,7 @@ void ServerEndpoint::ReadFromSchema(Schema_Object* SchemaObject)
 	RPCRingBufferUtils::ReadBufferFromSchema(SchemaObject, UnreliableRPCBuffer);
 	RPCRingBufferUtils::ReadAckFromSchema(SchemaObject, ERPCType::ServerReliable, ReliableRPCAck);
 	RPCRingBufferUtils::ReadAckFromSchema(SchemaObject, ERPCType::ServerUnreliable, UnreliableRPCAck);
+	RPCRingBufferUtils::ReadAckFromSchema(SchemaObject, ERPCType::ServerAlwaysWrite, AlwaysWriteRPCAck);
 }
 
 } // namespace SpatialGDK

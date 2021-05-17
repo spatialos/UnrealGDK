@@ -52,6 +52,8 @@ public:
 	const FString& GetWorkerId() const;
 	Worker_EntityId GetWorkerSystemEntityId() const;
 
+	const ComponentData* GetComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+
 	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId);
 	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId);
 	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
@@ -94,6 +96,10 @@ public:
 		Worker_ComponentId ComponentId,
 		const FAuthorityChangeRefreshPredicate& RefreshPredicate = FSubView::NoAuthorityChangeRefreshPredicate);
 
+	bool HasEntity(Worker_EntityId EntityId) const;
+	bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
+	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId) const;
+
 private:
 	WorkerView View;
 	TUniquePtr<AbstractConnectionHandler> ConnectionHandler;
@@ -113,5 +119,16 @@ private:
 	TCommandRetryHandler<FEntityQueryRetryHandlerImpl> EntityQueryRetryHandler;
 	TCommandRetryHandler<FEntityCommandRetryHandlerImpl> EntityCommandRetryHandler;
 };
+
+template <class T>
+TOptional<T> DeserializeComponent(const ViewCoordinator& Coordinator, Worker_EntityId EntityId)
+{
+	const ComponentData* Data = Coordinator.GetComponent(EntityId, T::ComponentId);
+	if (Data != nullptr)
+	{
+		return T(Data->GetWorkerComponentData());
+	}
+	return {};
+}
 
 } // namespace SpatialGDK

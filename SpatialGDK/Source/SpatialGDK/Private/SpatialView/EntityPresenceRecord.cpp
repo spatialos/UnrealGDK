@@ -1,4 +1,6 @@
-﻿#include "SpatialView/EntityPresenceRecord.h"
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
+#include "SpatialView/EntityPresenceRecord.h"
 
 namespace SpatialGDK
 {

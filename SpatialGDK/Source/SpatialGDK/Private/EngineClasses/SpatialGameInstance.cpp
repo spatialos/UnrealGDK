@@ -12,12 +12,13 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #endif
 
+#include "Kismet/GameplayStatics.h"
+
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialConnectionManager.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "SpatialConstants.h"
 #include "Utils/SpatialDebugger.h"
@@ -93,7 +94,6 @@ void USpatialGameInstance::CreateNewSpatialConnectionManager()
 	SpatialConnectionManager = NewObject<USpatialConnectionManager>(this);
 
 	GlobalStateManager = NewObject<UGlobalStateManager>();
-	StaticComponentView = NewObject<USpatialStaticComponentView>();
 }
 
 void USpatialGameInstance::DestroySpatialConnectionManager()
@@ -108,12 +108,6 @@ void USpatialGameInstance::DestroySpatialConnectionManager()
 	{
 		GlobalStateManager->ConditionalBeginDestroy();
 		GlobalStateManager = nullptr;
-	}
-
-	if (StaticComponentView != nullptr)
-	{
-		StaticComponentView->ConditionalBeginDestroy();
-		StaticComponentView = nullptr;
 	}
 }
 
@@ -217,9 +211,27 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 	return false;
 }
 
+namespace
+{
+constexpr uint8 SimPlayerErrorExitCode = 10;
+
+void HandleOnSimulatedPlayerNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type NetworkFailureType,
+										   const FString& Reason)
+{
+	UE_LOG(LogSpatialGameInstance, Log, TEXT("SimulatedPlayer network failure due to: %s"), *Reason);
+
+	FPlatformMisc::RequestExitWithStatus(/*bForce =*/false, SimPlayerErrorExitCode);
+}
+} // namespace
+
 void USpatialGameInstance::Init()
 {
 	Super::Init();
+
+	if (UGameplayStatics::HasLaunchOption(TEXT("FailOnNetworkFailure")))
+	{
+		GetEngine()->OnNetworkFailure().AddStatic(&HandleOnSimulatedPlayerNetworkFailure);
+	}
 
 	SpatialLatencyTracer = NewObject<USpatialLatencyTracer>(this);
 
@@ -229,7 +241,7 @@ void USpatialGameInstance::Init()
 	}
 }
 
-void USpatialGameInstance::HandleOnConnected(const USpatialNetDriver& NetDriver)
+void USpatialGameInstance::HandleOnConnected(USpatialNetDriver& NetDriver)
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Successfully connected to SpatialOS"));
 	SpatialWorkerId = SpatialConnectionManager->GetWorkerConnection()->GetWorkerId();
@@ -250,6 +262,7 @@ void USpatialGameInstance::HandleOnConnected(const USpatialNetDriver& NetDriver)
 
 		NetDriver.SpatialWorkerFlags->RegisterFlagUpdatedCallback(SpatialConstants::SHUTDOWN_PREPARATION_WORKER_FLAG, WorkerFlagDelegate);
 	}
+	NetDriver.OnShutdown.AddUObject(this, &USpatialGameInstance::DestroySpatialConnectionManager);
 }
 
 void USpatialGameInstance::HandlePrepareShutdownWorkerFlagUpdated(const FString& FlagName, const FString& FlagValue)

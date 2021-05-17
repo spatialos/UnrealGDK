@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialFunctionalTest.h"
+#include "TestMaps/GeneratedTestMap.h"
 
 #include "GameFramework/GameMode.h"
 #include "GameFramework/PlayerController.h"
@@ -52,4 +53,16 @@ private:
 	float CheckNoPlayerSpawnTime;
 
 	bool bReceivedNewDestination;
+};
+
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API USpatialTestPlayerControllerHandoverMap : public UGeneratedTestMap
+{
+	GENERATED_BODY()
+
+public:
+	USpatialTestPlayerControllerHandoverMap();
+
+protected:
+	virtual void CreateCustomContentForMap() override;
 };

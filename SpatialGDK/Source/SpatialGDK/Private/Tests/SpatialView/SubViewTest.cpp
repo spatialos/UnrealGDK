@@ -1,6 +1,7 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialView/ViewCoordinator.h"
+#include "Tests/SpatialView/DispatcherSpy.h"
 #include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"
 #include "Utils/ComponentFactory.h"
@@ -151,4 +152,28 @@ SUBVIEW_TEST(GIVEN_Tagged_Incomplete_Entity_Which_Should_Be_Complete_WHEN_Refres
 
 	return true;
 }
+
+SUBVIEW_TEST(GIVEN_SubView_With_Tagged_Entities_WHEN_SubView_Destroyed_THEN_Dispatcher_Callbacks_Are_Removed)
+{
+	const Worker_EntityId TaggedEntityId = 1;
+	const Worker_ComponentId TagComponentId = 1;
+	const Worker_ComponentId ValueComponentId = 2;
+
+	FDispatcherSpy Dispatcher;
+	EntityView View;
+
+	auto RefreshCallbacks = TArray<FDispatcherRefreshCallback>{ FSubView::CreateComponentChangedRefreshCallback(
+		Dispatcher, ValueComponentId, FSubView::NoComponentChangeRefreshPredicate) };
+
+	TUniquePtr<FSubView> SubView = MakeUnique<FSubView>(TagComponentId, FSubView::NoFilter, &View, Dispatcher, RefreshCallbacks);
+
+	TestTrue("Callbacks registered before subview is destroyed", Dispatcher.GetNumCallbacks() > 0);
+
+	SubView.Reset();
+
+	TestEqual("No callbacks registered after subview is destroyed", Dispatcher.GetNumCallbacks(), 0);
+
+	return true;
+}
+
 } // namespace SpatialGDK

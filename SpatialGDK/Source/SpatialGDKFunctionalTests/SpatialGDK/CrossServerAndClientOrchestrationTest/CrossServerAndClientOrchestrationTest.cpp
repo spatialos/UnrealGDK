@@ -48,7 +48,11 @@ void ACrossServerAndClientOrchestrationTest::PrepareTest()
 			// Send Server RPC via flow controller to set the Test actor flag for this client flow controller instance
 			ACrossServerAndClientOrchestrationFlowController* FlowController =
 				Cast<ACrossServerAndClientOrchestrationFlowController>(GetLocalFlowController());
-			FlowController->ServerClientReadValueAck();
+			AssertTrue(FlowController != nullptr, TEXT("Flow controller has the expected class"));
+			if (FlowController != nullptr)
+			{
+				FlowController->ServerClientReadValueAck();
+			}
 			FinishStep();
 		});
 	}

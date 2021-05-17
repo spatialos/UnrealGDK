@@ -61,13 +61,13 @@ struct ComponentChange
 
 struct AuthorityChange
 {
-	AuthorityChange(Worker_ComponentId Id, int Type)
-		: ComponentId(Id)
+	AuthorityChange(Worker_ComponentSetId Id, int Type)
+		: ComponentSetId(Id)
 		, Type(static_cast<AuthorityType>(Type))
 	{
 	}
 
-	Worker_ComponentId ComponentId;
+	Worker_ComponentSetId ComponentSetId;
 	enum AuthorityType
 	{
 		AUTHORITY_GAINED = 1,

@@ -5,6 +5,7 @@ param (
     [string] $msbuild_path = "$((Get-Item 'Env:programfiles(x86)').Value)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe", ## Location of MSBuild.exe on the build agent, as it only has the build tools, not the full visual studio
     [switch] $includeTraceLibs
 )
+. "$PSScriptRoot\common.ps1"
 
 Push-Location $gdk_path
     if (-Not (Test-Path env:NO_PAUSE)) { # seems like this is set somewhere previously in CI, but just to make sure

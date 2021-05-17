@@ -49,7 +49,7 @@ inline Worker_PartitionId GetConnectionOwningPartitionId(const AActor* Actor)
 {
 	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
 	{
-		return NetConnection->PlayerControllerEntity;
+		return NetConnection->GetPlayerControllerEntityId();
 	}
 
 	return SpatialConstants::INVALID_ENTITY_ID;
@@ -59,14 +59,6 @@ inline Worker_EntityId GetConnectionOwningClientSystemEntityId(const APlayerCont
 {
 	const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PC->GetNetConnection());
 	checkf(NetConnection != nullptr, TEXT("PlayerController did not have NetConnection when trying to find client system entity ID."));
-
-	if (NetConnection->ConnectionClientWorkerSystemEntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		UE_LOG(LogTemp, Error,
-			   TEXT("Client system entity ID was invalid on a PlayerController. "
-					"This is expected after the PlayerController migrates, the client system entity ID is currently only "
-					"used on the spawning server."));
-	}
 
 	return NetConnection->ConnectionClientWorkerSystemEntityId;
 }

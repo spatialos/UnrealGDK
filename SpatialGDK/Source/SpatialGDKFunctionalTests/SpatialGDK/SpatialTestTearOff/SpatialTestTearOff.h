@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
+#include "TestMaps/GeneratedTestMap.h"
+
 #include "SpatialTestTearOff.generated.h"
 
 class AReplicatedTearOffActor;
@@ -37,4 +39,16 @@ public:
 
 	// Helper variable used for implementing the WorkerWaitForTimeStepDefinition.
 	float TimerHelper;
+};
+
+UCLASS()
+class SPATIALGDKFUNCTIONALTESTS_API USpatialTestTearOffMap : public UGeneratedTestMap
+{
+	GENERATED_BODY()
+
+public:
+	USpatialTestTearOffMap();
+
+protected:
+	virtual void CreateCustomContentForMap() override;
 };

@@ -23,6 +23,8 @@ public:
 
 	virtual void OnAuthorityLost() override;
 
+	virtual void OnActorReady(bool bHasAuthority) override;
+
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction);
 
 	UPROPERTY(Replicated)
@@ -35,6 +37,10 @@ public:
 	int NumAuthorityGains = 0;
 
 	int NumAuthorityLosses = 0;
+
+	int NumActorReadyAuth = 0;
+
+	int NumActorReadyNonAuth = 0;
 
 protected:
 	virtual void BeginPlay() override;

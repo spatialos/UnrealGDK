@@ -27,6 +27,8 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 	case COND_ReplayOrOwner:
 	case COND_OwnerOnly:
 		return SCHEMA_OwnerOnly;
+	case COND_InitialOnly:
+		return SCHEMA_InitialOnly;
 	default:
 		return SCHEMA_Data;
 	}
@@ -42,6 +44,7 @@ struct FHandoverPropertyInfo
 {
 	uint16 Handle;
 	int32 Offset;
+	uint32 ShadowOffset;
 	int32 ArrayIdx;
 	GDK_PROPERTY(Property) * Property;
 };
@@ -62,6 +65,7 @@ struct FClassInfo
 	// Exists for all classes
 	TArray<UFunction*> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
+	uint32 HandoverPropertiesSize;
 	TArray<FHandoverPropertyInfo> HandoverProperties;
 	TArray<FInterestPropertyInfo> InterestProperties;
 
@@ -73,6 +77,9 @@ struct FClassInfo
 
 	// Only for default Subobjects belonging to Actors
 	FName SubobjectName;
+
+	// Only true on class FClassInfos that represent a dynamic subobject
+	bool bDynamicSubobject = false;
 
 	// Only for Subobject classes
 	TArray<TSharedRef<const FClassInfo>> DynamicSubobjectInfo;
@@ -105,6 +112,7 @@ public:
 	UClass* GetClassByComponentId(Worker_ComponentId ComponentId);
 	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
 	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
+	const TArray<Schema_FieldId>& GetFieldIdsByComponentId(Worker_ComponentId ComponentId);
 
 	Worker_ComponentId GetComponentIdForClass(const UClass& Class) const;
 	TArray<Worker_ComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;

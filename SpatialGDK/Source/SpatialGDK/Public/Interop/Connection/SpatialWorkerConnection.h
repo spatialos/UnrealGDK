@@ -4,6 +4,9 @@
 
 #include "Interop/Connection/SpatialOSWorkerInterface.h"
 
+#include "Interop/ClaimPartitionHandler.h"
+#include "Interop/CreateEntityHandler.h"
+
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 #include "SpatialView/EntityView.h"
@@ -12,6 +15,35 @@
 #include "SpatialView/ViewCoordinator.h"
 
 #include "SpatialWorkerConnection.generated.h"
+
+class USpatialNetDriver;
+class USpatialWorkerConnection;
+
+namespace SpatialGDK
+{
+class ServerWorkerEntityCreator
+{
+public:
+	ServerWorkerEntityCreator(USpatialNetDriver& InNetDriver, USpatialWorkerConnection& InConnection);
+	void CreateWorkerEntity();
+	void ProcessOps(const TArray<Worker_Op>& Ops);
+
+private:
+	void OnEntityCreated(const Worker_CreateEntityResponseOp& Op);
+	enum class WorkerSystemEntityCreatorState
+	{
+		CreatingWorkerSystemEntity,
+		ClaimingWorkerPartition,
+	};
+	WorkerSystemEntityCreatorState State;
+
+	USpatialNetDriver& NetDriver;
+	USpatialWorkerConnection& Connection;
+
+	CreateEntityHandler CreateEntityHandler;
+	ClaimPartitionHandler ClaimPartitionHandler;
+};
+} // namespace SpatialGDK
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
@@ -54,6 +86,8 @@ public:
 													const SpatialGDK::FRetryData& RetryData) override;
 	virtual void SendMetrics(SpatialGDK::SpatialMetrics Metrics) override;
 
+	void CreateServerWorkerEntity();
+
 	void Advance(float DeltaTimeS);
 	bool HasDisconnected() const;
 	Worker_ConnectionStatusCode GetConnectionStatus() const;
@@ -61,6 +95,8 @@ public:
 
 	const SpatialGDK::EntityView& GetView() const;
 	SpatialGDK::ViewCoordinator& GetCoordinator() const;
+	// TODO: UNR-5481 - Fix this hack for fixing spatial debugger crash after client travel
+	bool HasValidCoordinator() const { return Coordinator.IsValid(); }
 
 	PhysicalWorkerName GetWorkerId() const;
 	Worker_EntityId GetWorkerSystemEntityId() const;
@@ -86,6 +122,8 @@ public:
 	SpatialGDK::SpatialEventTracer* GetEventTracer() const { return EventTracer; }
 
 private:
+	TOptional<SpatialGDK::ServerWorkerEntityCreator> WorkerEntityCreator;
+
 	static bool IsStartupComponent(Worker_ComponentId Id);
 	static void ExtractStartupOps(SpatialGDK::OpList& OpList, SpatialGDK::ExtractedOpListData& ExtractedOpList);
 	bool StartupComplete = false;

@@ -10,12 +10,58 @@
 #include "Async/Async.h"
 #include "Improbable/SpatialEngineConstants.h"
 #include "Improbable/SpatialGDKSettingsBridge.h"
+#include "Interfaces/IPluginManager.h"
 #include "Misc/Paths.h"
 #include "Modules/ModuleManager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialConnectionManager);
 
 using namespace SpatialGDK;
+
+namespace AsyncUtil
+{
+template <typename FN>
+void AsyncTaskGameThreadOutsideGC(FN&& Func) // A little wrapper which ensures the task is run outside GC (UNR-5421)
+{
+	AsyncTask(ENamedThreads::GameThread, [Func = MoveTemp(Func)]() mutable {
+		if (IsGarbageCollecting())
+		{
+			TSharedPtr<FDelegateHandle> DelegateHandle = MakeShared<FDelegateHandle>();
+			*DelegateHandle = FCoreUObjectDelegates::GetPostGarbageCollect().AddLambda([Func = MoveTemp(Func), DelegateHandle]() mutable {
+				Func(); // Try again, once GC has completed.
+				FCoreUObjectDelegates::GetPostGarbageCollect().Remove(*DelegateHandle);
+			});
+		}
+		else
+		{
+			Func();
+		}
+	});
+}
+} // namespace AsyncUtil
+
+class GDKVersionLoader
+{
+public:
+	static FString GetGDKVersion()
+	{
+		if (GDKVersion.IsEmpty())
+		{
+			IPluginManager& PluginManager = IPluginManager::Get();
+			IPlugin* SpatialGDKPlugin = PluginManager.FindPlugin("SpatialGDK").Get();
+			if (SpatialGDKPlugin != nullptr)
+			{
+				GDKVersion = SpatialGDKPlugin->GetDescriptor().VersionName;
+			}
+		}
+		return GDKVersion;
+	}
+
+private:
+	static FString GDKVersion;
+};
+
+FString GDKVersionLoader::GDKVersion;
 
 struct ConfigureConnection
 {
@@ -24,6 +70,7 @@ struct ConfigureConnection
 		, Params()
 		, WorkerType(*Config.WorkerType)
 		, WorkerSDKLogFilePrefix(*FormatWorkerSDKLogFilePrefix())
+		, GDKVersion(*GDKVersionLoader::GetGDKVersion())
 	{
 		Params = Worker_DefaultConnectionParameters();
 
@@ -81,6 +128,11 @@ struct ConfigureConnection
 		Params.network.kcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
 		Params.network.tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_INSECURE;
 
+		// Unreal GDK version
+		UnrealGDKVersionPair.name = "gdk_version";
+		UnrealGDKVersionPair.version = GDKVersion.Get();
+		Params.versions = &UnrealGDKVersionPair;
+
 		// Override the security type to be secure only if the user has requested it and we are not using an editor build.
 		if ((!bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureServerConnection)
 			|| (bConnectAsClient && GetDefault<USpatialGDKSettings>()->bUseSecureClientConnection))
@@ -93,6 +145,12 @@ struct ConfigureConnection
 			Params.network.tcp.security_type = WORKER_NETWORK_SECURITY_TYPE_TLS;
 #endif
 		}
+
+		WorkerFowControlParameters.downstream_window_size_bytes = Config.DownstreamWindowSizeBytes;
+		WorkerFowControlParameters.upstream_window_size_bytes = Config.UpstreamWindowSizeBytes;
+
+		Params.network.kcp.flow_control = &WorkerFowControlParameters; // Both tcp and udp use same window concepts.
+		Params.network.tcp.flow_control = &WorkerFowControlParameters;
 	}
 
 	FString FormatWorkerSDKLogFilePrefix() const
@@ -110,9 +168,12 @@ struct ConfigureConnection
 	Worker_ConnectionParameters Params;
 	FTCHARToUTF8 WorkerType;
 	FTCHARToUTF8 WorkerSDKLogFilePrefix;
+	FTCHARToUTF8 GDKVersion;
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_CompressionParameters EnableCompressionParams{};
 	Worker_LogsinkParameters Logsink{};
+	Worker_NameVersionPair UnrealGDKVersionPair{};
+	Worker_FlowControlParameters WorkerFowControlParameters{};
 
 #if WITH_EDITOR
 	Worker_HeartbeatParameters HeartbeatParams{ WORKER_DEFAULTS_HEARTBEAT_INTERVAL_MILLIS, MAX_int64 };
@@ -153,7 +214,7 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 	if (bIsConnected)
 	{
 		check(bInitAsClient == bConnectAsClient);
-		AsyncTask(ENamedThreads::GameThread, [WeakThis = TWeakObjectPtr<USpatialConnectionManager>(this)] {
+		AsyncUtil::AsyncTaskGameThreadOutsideGC([WeakThis = TWeakObjectPtr<USpatialConnectionManager>(this)] {
 			if (WeakThis.IsValid())
 			{
 				WeakThis->OnConnectionSuccess();
@@ -201,10 +262,16 @@ void USpatialConnectionManager::Connect(bool bInitAsClient, uint32 PlayInEditorI
 
 void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_LoginTokensResponse* LoginTokens)
 {
+	USpatialConnectionManager* ConnectionManager = static_cast<USpatialConnectionManager*>(UserData);
+
 	if (LoginTokens->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to get login token, StatusCode: %d, Error: %s"), LoginTokens->status.code,
 			   UTF8_TO_TCHAR(LoginTokens->status.detail));
+
+		ConnectionManager->OnConnectionFailure(LoginTokens->status.code, FString::Printf(TEXT("Failed to get login token, Error: %s"),
+																						 UTF8_TO_TCHAR(LoginTokens->status.detail)));
+
 		return;
 	}
 
@@ -212,11 +279,12 @@ void USpatialConnectionManager::OnLoginTokens(void* UserData, const Worker_Login
 	{
 		UE_LOG(LogSpatialWorkerConnection, Warning,
 			   TEXT("No deployment found to connect to. Did you add the 'dev_login' tag to the deployment you want to connect to?"));
+
+		ConnectionManager->OnConnectionFailure(WORKER_CONNECTION_STATUS_CODE_REJECTED, TEXT("Zero login tokens received"));
 		return;
 	}
 
 	UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
-	USpatialConnectionManager* ConnectionManager = static_cast<USpatialConnectionManager*>(UserData);
 	ConnectionManager->ProcessLoginTokensResponse(LoginTokens);
 }
 
@@ -294,15 +362,21 @@ void USpatialConnectionManager::RequestDeploymentLoginTokens()
 
 void USpatialConnectionManager::OnPlayerIdentityToken(void* UserData, const Worker_PlayerIdentityTokenResponse* PIToken)
 {
+	USpatialConnectionManager* ConnectionManager = static_cast<USpatialConnectionManager*>(UserData);
+
 	if (PIToken->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to get PlayerIdentityToken, StatusCode: %d, Error: %s"),
 			   PIToken->status.code, UTF8_TO_TCHAR(PIToken->status.detail));
+
+		ConnectionManager->OnConnectionFailure(PIToken->status.code,
+											   FString::Printf(TEXT("Failed to get PlayerIdentityToken, StatusCode: %d, Error: %s"),
+															   PIToken->status.code, UTF8_TO_TCHAR(PIToken->status.detail)));
+
 		return;
 	}
 
 	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully received PIToken: %s"), UTF8_TO_TCHAR(PIToken->player_identity_token));
-	USpatialConnectionManager* ConnectionManager = static_cast<USpatialConnectionManager*>(UserData);
 	ConnectionManager->DevAuthConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
 
 	ConnectionManager->RequestDeploymentLoginTokens();
@@ -350,6 +424,9 @@ void USpatialConnectionManager::ConnectToLocator(FLocatorConfig* InLocatorConfig
 	if (InLocatorConfig == nullptr)
 	{
 		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Trying to connect to locator with invalid locator config"));
+
+		OnConnectionFailure(WORKER_CONNECTION_STATUS_CODE_INVALID_ARGUMENT, TEXT("Invalid locator config"));
+
 		return;
 	}
 
@@ -385,35 +462,35 @@ void USpatialConnectionManager::FinishConnecting(Worker_ConnectionFuture* Connec
 		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		AsyncTask(ENamedThreads::GameThread, [WeakSpatialConnectionManager, NewCAPIWorkerConnection,
-											  EventTracing = MoveTemp(EventTracing)]() mutable {
-			if (!WeakSpatialConnectionManager.IsValid())
-			{
-				// The game instance was destroyed before the connection finished, so just clean up the connection.
-				Worker_Connection_Destroy(NewCAPIWorkerConnection);
-				return;
-			}
+		AsyncUtil::AsyncTaskGameThreadOutsideGC(
+			[WeakSpatialConnectionManager, NewCAPIWorkerConnection, EventTracing = MoveTemp(EventTracing)]() mutable {
+				if (!WeakSpatialConnectionManager.IsValid())
+				{
+					// The game instance was destroyed before the connection finished, so just clean up the connection.
+					Worker_Connection_Destroy(NewCAPIWorkerConnection);
+					return;
+				}
 
-			USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
+				USpatialConnectionManager* SpatialConnectionManager = WeakSpatialConnectionManager.Get();
 
-			const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
+				const uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(NewCAPIWorkerConnection);
 
-			if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
-			{
-				const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-				SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>();
+				if (ConnectionStatusCode == WORKER_CONNECTION_STATUS_CODE_SUCCESS)
+				{
+					const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+					SpatialConnectionManager->WorkerConnection = NewObject<USpatialWorkerConnection>(WeakSpatialConnectionManager.Get());
 
-				SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
-																		  SpatialConnectionManager->ComponentSetData);
-				SpatialConnectionManager->OnConnectionSuccess();
-			}
-			else
-			{
-				const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
-				Worker_Connection_Destroy(NewCAPIWorkerConnection);
-				SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
-			}
-		});
+					SpatialConnectionManager->WorkerConnection->SetConnection(NewCAPIWorkerConnection, MoveTemp(EventTracing),
+																			  SpatialConnectionManager->ComponentSetData);
+					SpatialConnectionManager->OnConnectionSuccess();
+				}
+				else
+				{
+					const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(NewCAPIWorkerConnection)));
+					Worker_Connection_Destroy(NewCAPIWorkerConnection);
+					SpatialConnectionManager->OnConnectionFailure(ConnectionStatusCode, ErrorMessage);
+				}
+			});
 	});
 }
 

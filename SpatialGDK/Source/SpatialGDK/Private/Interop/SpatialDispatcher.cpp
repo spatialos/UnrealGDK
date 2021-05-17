@@ -3,7 +3,6 @@
 #include "Interop/SpatialDispatcher.h"
 
 #include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "UObject/UObjectIterator.h"
 #include "Utils/OpUtils.h"
@@ -13,25 +12,13 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
-void SpatialDispatcher::Init(USpatialReceiver* InReceiver, USpatialStaticComponentView* InStaticComponentView,
-							 USpatialMetrics* InSpatialMetrics, USpatialWorkerFlags* InSpatialWorkerFlags)
+void SpatialDispatcher::Init(USpatialWorkerFlags* InSpatialWorkerFlags)
 {
-	check(InReceiver != nullptr);
-	Receiver = InReceiver;
-
-	check(InStaticComponentView != nullptr);
-	StaticComponentView = InStaticComponentView;
-
-	check(InSpatialMetrics != nullptr);
-	SpatialMetrics = InSpatialMetrics;
 	SpatialWorkerFlags = InSpatialWorkerFlags;
 }
 
 void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 {
-	check(Receiver.IsValid());
-	check(StaticComponentView.IsValid());
-
 	for (const Worker_Op& Op : Ops)
 	{
 		if (IsExternalSchemaOp(Op))
@@ -44,58 +31,9 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 		{
 		// Critical Section
 		case WORKER_OP_TYPE_CRITICAL_SECTION:
-			Receiver->OnCriticalSection(Op.op.critical_section.in_critical_section != 0);
-			break;
-
-		// Entity Lifetime
-		case WORKER_OP_TYPE_ADD_ENTITY:
-			Receiver->OnAddEntity(Op.op.add_entity);
-			break;
-		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			Receiver->OnRemoveEntity(Op.op.remove_entity);
-			StaticComponentView->OnRemoveEntity(Op.op.remove_entity.entity_id);
-			Receiver->DropQueuedRemoveComponentOpsForEntity(Op.op.remove_entity.entity_id);
-			break;
-
-		// Components
-		case WORKER_OP_TYPE_ADD_COMPONENT:
-			StaticComponentView->OnAddComponent(Op.op.add_component);
-			Receiver->OnAddComponent(Op.op.add_component);
-			break;
-		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			Receiver->OnRemoveComponent(Op.op.remove_component);
-			break;
-		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			StaticComponentView->OnComponentUpdate(Op.op.component_update);
-			Receiver->OnComponentUpdate(Op.op.component_update);
-			break;
-
-		// Commands
-		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			Receiver->OnCommandRequest(Op);
-			break;
-		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			Receiver->OnCommandResponse(Op);
-			break;
-
-		// Authority Change
-		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
-			Receiver->OnAuthorityChange(Op.op.component_set_authority_change);
 			break;
 
 		// World Command Responses
-		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-			Receiver->OnReserveEntityIdsResponse(Op.op.reserve_entity_ids_response);
-			break;
-		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			Receiver->OnCreateEntityResponse(Op);
-			break;
-		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
-			break;
-		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
-			Receiver->OnEntityQueryResponse(Op.op.entity_query_response);
-			break;
-
 		case WORKER_OP_TYPE_FLAG_UPDATE:
 			if (Op.op.flag_update.value == nullptr)
 			{
@@ -106,21 +44,10 @@ void SpatialDispatcher::ProcessOps(const TArray<Worker_Op>& Ops)
 				SpatialWorkerFlags->SetWorkerFlag(UTF8_TO_TCHAR(Op.op.flag_update.name), UTF8_TO_TCHAR(Op.op.flag_update.value));
 			}
 			break;
-		case WORKER_OP_TYPE_METRICS:
-#if !UE_BUILD_SHIPPING
-			check(SpatialMetrics.IsValid());
-			SpatialMetrics->HandleWorkerMetrics(Op);
-#endif
-			break;
-		case WORKER_OP_TYPE_DISCONNECT:
-			break;
 		default:
 			break;
 		}
 	}
-
-	Receiver->FlushRemoveComponentOps();
-	Receiver->FlushRetryRPCs();
 }
 
 bool SpatialDispatcher::IsExternalSchemaOp(const Worker_Op& Op) const
@@ -133,13 +60,10 @@ void SpatialDispatcher::ProcessExternalSchemaOp(const Worker_Op& Op)
 {
 	Worker_ComponentId ComponentId = SpatialGDK::GetComponentId(Op);
 	check(ComponentId != SpatialConstants::INVALID_COMPONENT_ID);
-	check(StaticComponentView.IsValid());
 
 	switch (Op.op_type)
 	{
 	case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
-		StaticComponentView->OnAuthorityChange(Op.op.component_set_authority_change);
-		// Intentional fall-through
 	case WORKER_OP_TYPE_ADD_COMPONENT:
 	case WORKER_OP_TYPE_REMOVE_COMPONENT:
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:

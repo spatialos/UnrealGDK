@@ -6,8 +6,8 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/ReserveEntityIdsHandler.h"
 #include "Interop/SpatialClassInfoManager.h"
-#include "Interop/SpatialStaticComponentView.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/StandardLibrary.h"
@@ -256,8 +256,6 @@ public:
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
 								  const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds);
 
-	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
-
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPERTY(Property) *>& RepNotifies, const FRepLayout& RepLayout,
 											 const FObjectReferencesMap& RefMap, UObject* Object);
 
@@ -299,6 +297,8 @@ private:
 
 	bool SatisfiesSpatialPositionUpdateRequirements();
 
+	void ValidateChannelNotBroken();
+
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
 	bool bCreatedEntity;
@@ -332,8 +332,7 @@ private:
 	UPROPERTY(transient)
 	class USpatialSender* Sender;
 
-	UPROPERTY(transient)
-	class USpatialReceiver* Receiver;
+	SpatialGDK::SpatialEventTracer* EventTracer;
 
 	FVector LastPositionSinceUpdate;
 	double TimeWhenPositionLastUpdated;

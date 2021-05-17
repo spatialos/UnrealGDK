@@ -64,8 +64,6 @@ public:
 	EvaluateActorResult EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner, VirtualWorkerId& OutWorkerId);
 
 protected:
-	void UpdateSpatialDebugInfo(AActor* Actor, Worker_EntityId EntityId) const;
-
 	uint64 GetLatestAuthorityChangeFromHierarchy(const AActor* HierarchyActor) const;
 
 	template <typename ReplicationContext>
@@ -104,6 +102,10 @@ protected:
 	}
 
 	void LogMigrationFailure(EActorMigrationResult ActorMigrationResult, AActor* Actor);
+
+	bool EvaluateRemoteMigrationComponent(const AActor* NetOwner, const AActor* Target, VirtualWorkerId& OutWorkerId);
+
+	VirtualWorkerId GetWorkerId(const AActor* NetOwner);
 
 	USpatialNetDriver* NetDriver;
 

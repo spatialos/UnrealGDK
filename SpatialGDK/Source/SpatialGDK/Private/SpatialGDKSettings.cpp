@@ -78,6 +78,22 @@ void CheckCmdLineOverrideOptionalString(const TCHAR* CommandLine, const TCHAR* P
 #endif // ALLOW_SPATIAL_CMDLINE_PARSING
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName, StrOutValue.IsSet() ? *(StrOutValue.GetValue()) : TEXT("not set"));
 }
+
+void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, const TCHAR* Parameter, const TCHAR* PrettyName,
+													TFunctionRef<void(const FString& Setting)> Callback)
+{
+	TOptional<FString> OverrideValue;
+#if ALLOW_SPATIAL_CMDLINE_PARSING
+	FString TempStr;
+	if (FParse::Value(CommandLine, Parameter, TempStr) && TempStr[0] == '=')
+	{
+		OverrideValue = TempStr.Right(TempStr.Len() - 1); // + 1 to skip =
+		Callback(OverrideValue.GetValue());
+	}
+#endif // ALLOW_SPATIAL_CMDLINE_PARSING
+	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName,
+		   OverrideValue.IsSet() ? *(OverrideValue.GetValue()) : TEXT("not set"));
+}
 } // namespace
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
@@ -112,11 +128,15 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, CloudWorkerLogLevel(WorkerLogLevel)
 	, bEnableMultiWorker(true)
 	, DefaultRPCRingBufferSize(32)
-	, MaxRPCRingBufferSize(32)
+	, CrossServerRPCImplementation(ECrossServerRPCImplementation::SpatialCommand)
 	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
 	, bTcpNoDelay(false)
 	, UdpServerDownstreamUpdateIntervalMS(1)
 	, UdpClientDownstreamUpdateIntervalMS(1)
+	, ClientDownstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_DOWNSTREAM_WINDOW_SIZE_BYTES)
+	, ClientUpstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_UPSTREAM_WINDOW_SIZE_BYTES)
+	, ServerDownstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_DOWNSTREAM_WINDOW_SIZE_BYTES)
+	, ServerUpstreamWindowSizeBytes(WORKER_DEFAULTS_FLOW_CONTROL_UPSTREAM_WINDOW_SIZE_BYTES)
 	, bWorkerFlushAfterOutgoingNetworkOp(true)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
@@ -131,10 +151,13 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, StartupLogRate(5.0f)
 	, ActorMigrationLogRate(5.0f)
 	, bEventTracingEnabled(false)
-	, SamplingProbability(1.0f)
+	, EventTracingSamplingSettingsClass(UEventTracingSamplingSettings::StaticClass())
 	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
+	, bEnableAlwaysWriteRPCs(false)
+	, bEnableInitialOnlyReplicationCondition(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
+	RPCRingBufferSizeOverrides.Add(ERPCType::ServerAlwaysWrite, 1);
 }
 
 void USpatialGDKSettings::PostInitProperties()
@@ -157,8 +180,23 @@ void USpatialGDKSettings::PostInitProperties()
 							 TEXT("Prevent client cloud deployment auto connect"), bPreventClientCloudDeploymentAutoConnect);
 	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideWorkerFlushAfterOutgoingNetworkOp"),
 							 TEXT("Flush worker ops after sending an outgoing network op."), bWorkerFlushAfterOutgoingNetworkOp);
+	CheckCmdLineOverrideBool(CommandLine, TEXT("OverrideEventTracingEnabled"), TEXT("Event tracing enabled"), bEventTracingEnabled);
 	CheckCmdLineOverrideOptionalString(CommandLine, TEXT("OverrideMultiWorkerSettingsClass"), TEXT("Override MultiWorker Settings Class"),
 									   OverrideMultiWorkerSettingsClass);
+	CheckCmdLineOverrideOptionalStringWithCallback(
+		CommandLine, TEXT("OverrideEventTracingSamplingSettingsClass"), TEXT("Override Event Tracing Sampling Class"),
+		[&SamplingSettingsClass = EventTracingSamplingSettingsClass](const FString& OverrideValue) {
+			FSoftClassPath OverrideSampleSettingsSoftClassPath(OverrideValue);
+			UClass* OverrideSampleSettingsClass = OverrideSampleSettingsSoftClassPath.TryLoadClass<UEventTracingSamplingSettings>();
+			if (OverrideSampleSettingsClass != nullptr)
+			{
+				SamplingSettingsClass = OverrideSampleSettingsClass;
+			}
+			else
+			{
+				UE_LOG(LogSpatialGDKSettings, Log, TEXT("Invalid event tracing sampling class specified: %s."), *OverrideValue);
+			}
+		});
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 }
@@ -224,7 +262,7 @@ void USpatialGDKSettings::UpdateServicesRegionFile()
 
 uint32 USpatialGDKSettings::GetRPCRingBufferSize(ERPCType RPCType) const
 {
-	if (const uint32* Size = RPCRingBufferSizeMap.Find(RPCType))
+	if (const uint32* Size = RPCRingBufferSizeOverrides.Find(RPCType))
 	{
 		return *Size;
 	}
@@ -265,6 +303,13 @@ bool USpatialGDKSettings::GetPreventClientCloudDeploymentAutoConnect() const
 {
 	return (IsRunningGame() || IsRunningClientOnly()) && bPreventClientCloudDeploymentAutoConnect;
 };
+
+UEventTracingSamplingSettings* USpatialGDKSettings::GetEventTracingSamplingSettings() const
+{
+	return EventTracingSamplingSettingsClass != nullptr
+			   ? EventTracingSamplingSettingsClass->GetDefaultObject<UEventTracingSamplingSettings>()
+			   : UEventTracingSamplingSettings::StaticClass()->GetDefaultObject<UEventTracingSamplingSettings>();
+}
 
 #if WITH_EDITOR
 void USpatialGDKSettings::SetMultiWorkerEditorEnabled(bool bIsEnabled)

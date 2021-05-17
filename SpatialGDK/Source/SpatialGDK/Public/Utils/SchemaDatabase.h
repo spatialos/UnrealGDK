@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Containers/Map.h"
 #include "Containers/StaticArray.h"
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
@@ -75,9 +76,18 @@ struct FSubobjectSchemaData
 };
 
 USTRUCT()
+struct FFieldIDs
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	TArray<uint32> FieldIds;
+};
+
+USTRUCT()
 struct FComponentIDs
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY()
 	TArray<uint32> ComponentIDs;
@@ -88,6 +98,9 @@ enum class ESchemaDatabaseVersion : uint8
 {
 	BeforeVersionSupportAdded = 0,
 	VersionSupportAdded,
+	AlwaysWriteRPCAdded,
+	InitialOnlyDataAdded,
+	FieldIDsAdded,
 
 	// Add new versions here
 
@@ -124,16 +137,6 @@ public:
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FString> ComponentIdToClassPath;
 
-	// These component ID lists for each data type are stored separately as you cannot have nested maps in a UPROPERTY
-	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
-	TArray<uint32> DataComponentIds;
-
-	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
-	TArray<uint32> OwnerOnlyComponentIds;
-
-	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
-	TArray<uint32> HandoverComponentIds;
-
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TArray<uint32> LevelComponentIds;
 
@@ -143,8 +146,18 @@ public:
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 SchemaBundleHash;
 
+	// A map from component IDs to an index into the FieldIdsArray.
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TMap<uint32, uint32> ComponentIdToFieldIdsIndex;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TArray<FFieldIDs> FieldIdsArray;
+
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FComponentIDs> ComponentSetIdToComponentIds;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TMap<ERPCType, uint32> RPCRingBufferSizeMap;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	ESchemaDatabaseVersion SchemaDatabaseVersion;

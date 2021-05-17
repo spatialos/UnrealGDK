@@ -30,10 +30,12 @@ public:
 
 	using LocalDeploymentCallback = TFunction<void(bool)>;
 
-	void SPATIALGDKSERVICES_API TryStartLocalDeployment(FString LaunchConfig, FString RuntimeVersion, FString LaunchArgs,
-														FString SnapshotName, FString RuntimeIPToExpose,
-														const LocalDeploymentCallback& CallBack);
+	void SPATIALGDKSERVICES_API TryStartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion,
+														const FString& LaunchArgs, const FString& SnapshotName,
+														const FString& RuntimeIPToExpose, const LocalDeploymentCallback& CallBack);
+
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
+	bool SPATIALGDKSERVICES_API TryStopLocalDeploymentGracefully();
 
 	bool SPATIALGDKSERVICES_API IsLocalDeploymentRunning() const;
 
@@ -52,7 +54,6 @@ public:
 
 	void WorkerBuildConfigAsync();
 
-	FSimpleMulticastDelegate OnSpatialShutdown;
 	FSimpleMulticastDelegate OnDeploymentStart;
 
 	FDelegateHandle WorkerConfigDirectoryChangedDelegateHandle;
@@ -63,6 +64,22 @@ private:
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
 	bool SetupRuntimeFileLogger(const FString& SpatialLogsSubDirectoryName);
+
+	bool WaitForRuntimeProcessToShutDown();
+	bool StartLocalDeploymentShutDown();
+	void FinishLocalDeploymentShutDown();
+
+	enum class ERuntimeStartResponse
+	{
+		AlreadyRunning,
+		PreRunChecksFailed,
+		Timeout,
+		Success
+	};
+
+	ERuntimeStartResponse StartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
+											   const FString& SnapshotName, const FString& RuntimeIPToExpose,
+											   const LocalDeploymentCallback& CallBack);
 
 	TFuture<bool> AttemptSpatialAuthResult;
 
@@ -75,6 +92,7 @@ private:
 	static const int32 HTTPPort = 5006;
 
 	static constexpr double RuntimeTimeout = 10.0;
+	static constexpr int32 RuntimeStartRetries = 3;
 
 	bool bLocalDeploymentManagerEnabled = true;
 
@@ -82,6 +100,7 @@ private:
 
 	bool bStartingDeployment;
 	bool bStoppingDeployment;
+	bool bTestRunnning;
 
 	FString ExposedRuntimeIP;
 

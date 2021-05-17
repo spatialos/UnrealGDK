@@ -12,13 +12,23 @@ using namespace SpatialGDKEditor::Schema;
 
 TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
 {
-	static TArray<EReplicatedPropertyGroup> Groups = { REP_MultiClient, REP_SingleClient };
-	return Groups;
+	return { REP_MultiClient, REP_SingleClient, REP_InitialOnly };
 }
 
 FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 {
-	return Group == REP_SingleClient ? TEXT("OwnerOnly") : TEXT("");
+	if (Group == REP_SingleClient)
+	{
+		return TEXT("OwnerOnly");
+	}
+	else if (Group == REP_InitialOnly)
+	{
+		return TEXT("InitialOnly");
+	}
+	else
+	{
+		return TEXT("");
+	}
 }
 
 void VisitAllObjects(TSharedPtr<FUnrealType> TypeNode, TFunction<bool(TSharedPtr<FUnrealType>)> Visitor)
@@ -259,6 +269,35 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		return TypeNode;
 	}
 
+	if (Class->IsChildOf<AActor>())
+	{
+		// Handle components attached to the actor; some of them may not have properties pointing to them.
+		const AActor* CDO = Cast<AActor>(Class->GetDefaultObject());
+
+		for (UActorComponent* Component : CDO->GetComponents())
+		{
+			if (Component->IsEditorOnly())
+			{
+				continue;
+			}
+
+			if (!Component->IsSupportedForNetworking())
+			{
+				continue;
+			}
+
+			//  is definitely a strong reference, recurse into it.
+			TSharedPtr<FUnrealType> SubobjectType = CreateUnrealTypeInfo(Component->GetClass(), ParentChecksum, 0);
+			SubobjectType->Object = Component;
+			SubobjectType->Name = Component->GetFName();
+
+			FUnrealSubobject Subobject;
+			Subobject.Type = SubobjectType;
+
+			TypeNode->NoPropertySubobjects.Add(Subobject);
+		}
+	}
+
 	// Set up replicated properties by reading the rep layout and matching the properties with the ones in the type node.
 	// Based on inspection in InitFromObjectClass, the RepLayout will always replicate object properties using NetGUIDs, regardless of
 	// ownership. However, the rep layout will recurse into structs and allocate rep handles for their properties, unless the condition
@@ -415,8 +454,9 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 	FUnrealFlatRepData RepData;
 	RepData.Add(REP_MultiClient);
 	RepData.Add(REP_SingleClient);
+	RepData.Add(REP_InitialOnly);
 
-	VisitAllProperties(TypeInfo, [&RepData](TSharedPtr<FUnrealProperty> PropertyInfo) {
+	VisitAllProperties(TypeInfo, [&RepData, &TypeInfo](TSharedPtr<FUnrealProperty> PropertyInfo) {
 		if (PropertyInfo->ReplicationData.IsValid())
 		{
 			EReplicatedPropertyGroup Group = REP_MultiClient;
@@ -426,6 +466,14 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 			case COND_ReplayOrOwner:
 			case COND_OwnerOnly:
 				Group = REP_SingleClient;
+				break;
+			case COND_InitialOnly:
+				Group = REP_InitialOnly;
+				break;
+			case COND_InitialOrOwner:
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error,
+					   TEXT("COND_InitialOrOwner not supported. COND_None will be used instead. %s::%s"), *TypeInfo->Type->GetName(),
+					   *PropertyInfo->Property->GetName());
 				break;
 			}
 			RepData[Group].Add(PropertyInfo->ReplicationData->Handle, PropertyInfo);
@@ -438,6 +486,9 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 		return A < B;
 	});
 	RepData[REP_SingleClient].KeySort([](uint16 A, uint16 B) {
+		return A < B;
+	});
+	RepData[REP_InitialOnly].KeySort([](uint16 A, uint16 B) {
 		return A < B;
 	});
 	return RepData;
@@ -484,12 +535,23 @@ TArray<TSharedPtr<FUnrealProperty>> GetPropertyChain(TSharedPtr<FUnrealProperty>
 	return OutputChain;
 }
 
-FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
+FSubobjects GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
 {
-	FSubobjectMap Subobjects;
+	FSubobjects Subobjects;
 
 	TSet<UObject*> SeenComponents;
-	uint32 CurrentOffset = 1;
+	auto AddSubobject = [&SeenComponents, &Subobjects](TSharedPtr<FUnrealType> PropertyTypeInfo) {
+		UObject* Value = PropertyTypeInfo->Object;
+
+		if (Value != nullptr && IsSupportedClass(Value->GetClass()))
+		{
+			if (!SeenComponents.Contains(Value))
+			{
+				SeenComponents.Add(Value);
+				Subobjects.Add({ PropertyTypeInfo });
+			}
+		}
+	};
 
 	for (auto& PropertyPair : TypeInfo->Properties)
 	{
@@ -498,18 +560,15 @@ FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
 
 		if (Property->IsA<GDK_PROPERTY(ObjectProperty)>() && PropertyTypeInfo.IsValid())
 		{
-			UObject* Value = PropertyTypeInfo->Object;
+			AddSubobject(PropertyTypeInfo);
+		}
+	}
 
-			if (Value != nullptr && IsSupportedClass(Value->GetClass()))
-			{
-				if (!SeenComponents.Contains(Value))
-				{
-					SeenComponents.Add(Value);
-					Subobjects.Add(CurrentOffset, PropertyTypeInfo);
-				}
-
-				CurrentOffset++;
-			}
+	for (const FUnrealSubobject& NonPropertySubobject : TypeInfo->NoPropertySubobjects)
+	{
+		if (NonPropertySubobject.Type->Object->IsSupportedForNetworking())
+		{
+			AddSubobject(NonPropertySubobject.Type);
 		}
 	}
 
