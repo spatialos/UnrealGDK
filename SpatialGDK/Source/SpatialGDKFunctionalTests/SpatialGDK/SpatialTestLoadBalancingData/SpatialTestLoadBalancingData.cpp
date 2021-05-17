@@ -70,7 +70,7 @@ T* GetWorldActor(UWorld* World)
 {
 	TArray<AActor*> DiscoveredActors;
 	UGameplayStatics::GetAllActorsOfClass(World, T::StaticClass(), DiscoveredActors);
-	if (DiscoveredActors.Num() == 1)
+	if (DiscoveredActors.Num() == 1 && DiscoveredActors[0]->IsActorReady())
 	{
 		return Cast<T>(DiscoveredActors[0]);
 	}
@@ -87,9 +87,14 @@ void GetWorldActors(UWorld* World, TArray<U>& OutActors)
 		DiscoveredActors.Sort([](const AActor& Lhs, const AActor& Rhs) {
 			return Lhs.GetActorLocation().Y < Rhs.GetActorLocation().Y;
 		});
-		Algo::Transform(DiscoveredActors, OutActors, [](AActor* Actor) -> U {
-			return Cast<T>(Actor);
-		});
+		if(Algo::AllOf(DiscoveredActors, [](AActor* Actor) -> bool {
+			return Actor->IsActorReady();
+		}))
+		{
+			Algo::Transform(DiscoveredActors, OutActors, [](AActor* Actor) -> U {
+				return Cast<T>(Actor);
+			});
+		}
 	}
 }
 
@@ -143,7 +148,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 
 	AddStep(TEXT("Retrieve actors on all workers"), FWorkerDefinition::AllWorkers, nullptr, nullptr, [this](float) {
 		TargetActor = GetWorldActor<ASpatialTestLoadBalancingDataActor>(GetWorld());
-		RequireTrue(TargetActor.IsValid(), TEXT("Received main actor"));
+		RequireTrue(TargetActor.IsValid() && TargetActor->IsActorReady(), TEXT("Received main actor"));
 
 		TargetOffloadedActor = GetWorldActor<ASpatialTestLoadBalancingDataOffloadedActor>(GetWorld());
 		RequireTrue(TargetOffloadedActor.IsValid(), TEXT("Received offloaded actor"));
