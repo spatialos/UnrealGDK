@@ -2,6 +2,7 @@
 
 #include "SpatialGDK/SpatialTestLoadBalancingData/SpatialTestLoadBalancingData.h"
 
+#include "Algo/AllOf.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
@@ -9,7 +10,6 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "TestWorkerSettings.h"
-#include "Algo/AllOf.h"
 
 #include "Kismet/GameplayStatics.h"
 
