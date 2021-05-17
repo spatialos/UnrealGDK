@@ -195,7 +195,8 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 			Writer->WriteValue(TEXT("max_log_file_size_bytes"), SpatialGDKSettings->RuntimeMaxEventTracingFileSizeBytes);
 			Writer->WriteObjectStart(TEXT("event_filter_configuration"));
 
-			UEventTracingSamplingSettings* SamplingSettings = SpatialGDKSettings->GetEventTracingSamplingSettings(); // TODO: Is this trouble in editor?
+			UEventTracingSamplingSettings* SamplingSettings =
+				SpatialGDKSettings->GetEventTracingSamplingSettings(); // TODO: Is this trouble in editor?
 			if (SpatialGDKSettings->bCaptureAllEventTracingData)
 			{
 				Writer->WriteValue(TEXT("event_pre_filter"), TEXT("true"));
@@ -214,7 +215,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 			Writer->WriteObjectEnd();
 			Writer->WriteObjectEnd();
 		}
-		
+
 		Writer->WriteObjectEnd(); // End of json
 
 		Writer->Close();

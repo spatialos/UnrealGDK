@@ -100,11 +100,12 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 #if WITH_EDITOR
 void UEventTracingSamplingSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
-	auto CheckQueryValid = [](const char* QueryStr)
-	{
+	auto CheckQueryValid = [](const char* QueryStr) {
 		if (strlen(QueryStr) > 0 && SpatialGDK::TraceQueryPtr(Trace_ParseSimpleQuery(QueryStr)).Get() == nullptr)
 		{
-			FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"), FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
+			FMessageDialog::Open(EAppMsgType::Ok,
+								 FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"),
+											   FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
 		}
 	};
 	Super::PostEditChangeProperty(PropertyChangedEvent);
