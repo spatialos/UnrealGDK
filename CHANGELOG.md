@@ -36,6 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added versioning to snapshots. Attempting to load an incompatible snapshot will fail, and output error logs that request the snapshot be regenerated.
 - Add feature flag `bEnableInitialOnlyReplicationCondition` for `COND_InitialOnly` support.
 - Added a function that allows the worker coordinator to periodically restart the simulated player clients with a bunch of parameters. This feature is disabled by default and can be enabled via `max_lifetime` setting.
+  - When you define your test scenario yaml file or call `StartCoordinator.sh`, please provide the arguments as below:
+  - `max_lifetime=90` will cap your simulated player clients' lives at 90 minutes.
+  - `min_lifetime=30` will allow your simulated player clients to live for at least 30 minutes.
+  - `use_new_simulated_player=1` will use a new simulated player id everytime that you start a simulated player client.
 - Exposing worker upstream/downstream window sizes as GDK options for both clients and servers, (`ClientDownstreamWindowSizeBytes`, `ClientUpstreamWindowSizeBytes`) and (`ServerDownstreamWindowSizeBytes` and `ServerUpstreamWindowSizeBytes`).
 - `bOnlyRelevantToOwner` is now supported. Ownership must be setup prior to the first replication of the `Actor` otherwise it will be ignored.
 - Added a property to specify the test settings overrides config filename in the `World Settings` so that maps can share config files during automated testing. This replaces the option to automatically use the map name to determine the config filename.
