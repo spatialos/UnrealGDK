@@ -262,6 +262,7 @@ public:
 	void UpdateShadowData();
 	void UpdateSpatialPosition();
 
+	UFUNCTION()
 	void ServerProcessOwnershipChange();
 	void ClientProcessOwnershipChange(bool bNewNetOwned);
 
