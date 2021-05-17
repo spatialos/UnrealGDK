@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
 ## [`x.y.z`] - Unreleased
+- Added a "Clean and Generate Schema" option to the Schema menu, which lets you delete the SchemaDatabase.uasset, all generated schema files, and run a Full Scan in one click.
+- Added a pop-up message when schema generation fails, which suggests running a Clean and Generate to fix a bad schema state.
+- Fixed a bug that left the SchemaDatabase.uasset file locked after a failed schema generation.
+
 ### Breaking changes:
 - Removed support for UE 4.24.
 - `MaxRPCRingBufferSize` setting has been removed. This was previously used to specify the RPC ring buffer size when generating schema. Now, `DefaultRPCRingBufferSize` is used, and can be overridden per RPC type using `RPCRingBufferSizeOverrides`.
@@ -33,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added versioning to snapshots. Attempting to load an incompatible snapshot will fail, and output error logs that request the snapshot be regenerated.
 - Add feature flag bEnableInitialOnlyReplicationCondition for COND_InitialOnly support.
 - Added a function that allows the worker coordinator to periodically restart the simulated player clients with a bunch of parameters. This feature is disabled by default and can be enabled via `max_lifetime` setting.
+  - When you define your test scenario yaml file or call `StartCoordinator.sh`, add args as below
+  - `max_lifetime=90` will let your sim player clients lives no longer than 90 minutes.
+  - `min_lifetime=30` will let your sim player clients lives at least 30 minutes.
+  - `use_new_simulated_player=1` will use a new sim player id everytime when you start a sim player client.
 - Exposing worker upstream/downstream window sizes as GDK options for both clients and servers, (`ClientDownstreamWindowSizeBytes`, `ClientUpstreamWindowSizeBytes`) and (`ServerDownstreamWindowSizeBytes` and `ServerUpstreamWindowSizeBytes`).
 - `bOnlyRelevantToOwner` is now supported. Ownership must be setup prior to the first replication of the Actor otherwise it will be ignored.
 - GDK heartbeat settings are now used to control the worker heartbeat configurations.
