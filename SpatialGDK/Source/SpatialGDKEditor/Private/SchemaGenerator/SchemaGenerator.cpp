@@ -129,11 +129,6 @@ void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> 
 	Writer.Printf("{0} {1} = {2};", *PropertyToSchemaType(RepProp->Property), *SchemaFieldName(RepProp), FieldCounter);
 }
 
-void WriteSchemaHandoverField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> HandoverProp, const int FieldCounter)
-{
-	Writer.Printf("{0} {1} = {2};", *PropertyToSchemaType(HandoverProp->Property), *SchemaFieldName(HandoverProp), FieldCounter);
-}
-
 // Generates schema for a statically attached subobject on an Actor.
 FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator,
 																			   FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo,
@@ -175,32 +170,6 @@ FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(F
 		Writer.Outdent().Print("}");
 
 		AddComponentId(ComponentId, SubobjectData.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
-	}
-
-	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
-	if (HandoverData.Num() > 0)
-	{
-		Worker_ComponentId ComponentId = 0;
-		if (ExistingSchemaData != nullptr && ExistingSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] != 0)
-		{
-			ComponentId = ExistingSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover];
-		}
-		else
-		{
-			ComponentId = IdGenerator.Next();
-		}
-
-		Writer.PrintNewLine();
-
-		// Handover (server to server) replicated properties.
-		FString ComponentName = PropertyName + TEXT("Handover");
-		Writer.Printf("component {0} {", *ComponentName);
-		Writer.Indent();
-		Writer.Printf("id = {0};", ComponentId);
-		Writer.Printf("data unreal.generated.{0};", *SchemaHandoverDataName(ComponentClass));
-		Writer.Outdent().Print("}");
-
-		AddComponentId(ComponentId, SubobjectData.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
 	}
 
 	return SubobjectData;
@@ -404,25 +373,6 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		}
 	}
 
-	// Also check the HandoverData
-	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
-	for (auto& PropertyPair : HandoverData)
-	{
-		GDK_PROPERTY(Property)* Property = PropertyPair.Value->Property;
-		if (Property->IsA<GDK_PROPERTY(ObjectPropertyBase)>())
-		{
-			bShouldIncludeCoreTypes = true;
-		}
-
-		if (Property->IsA<GDK_PROPERTY(ArrayProperty)>())
-		{
-			if (GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(Property)->Inner->IsA<GDK_PROPERTY(ObjectPropertyBase)>())
-			{
-				bShouldIncludeCoreTypes = true;
-			}
-		}
-	}
-
 	if (bShouldIncludeCoreTypes)
 	{
 		Writer.PrintNewLine();
@@ -461,21 +411,6 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		for (auto& RepProp : RepData[Group])
 		{
 			WriteSchemaRepField(Writer, RepProp.Value, RepProp.Value->ReplicationData->Handle);
-		}
-		Writer.Outdent().Print("}");
-	}
-
-	if (HandoverData.Num() > 0)
-	{
-		Writer.PrintNewLine();
-
-		Writer.Printf("type {0} {", *SchemaHandoverDataName(Class));
-		Writer.Indent();
-		int FieldCounter = 0;
-		for (auto& Prop : HandoverData)
-		{
-			FieldCounter++;
-			WriteSchemaHandoverField(Writer, Prop.Value, FieldCounter);
 		}
 		Writer.Outdent().Print("}");
 	}
@@ -533,31 +468,6 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.Outdent().Print("}");
 
 			AddComponentId(ComponentId, DynamicSubobjectComponents.SchemaComponents, PropertyGroupToSchemaComponentType(Group));
-		}
-
-		if (HandoverData.Num() > 0)
-		{
-			Writer.PrintNewLine();
-
-			Worker_ComponentId ComponentId = 0;
-			if (ExistingSchemaData != nullptr)
-			{
-				ComponentId = ExistingSchemaData->GetDynamicSubobjectComponentId(i - 1, SCHEMA_Handover);
-			}
-
-			if (ComponentId == 0)
-			{
-				ComponentId = IdGenerator.Next();
-			}
-			FString ComponentName = SchemaHandoverDataName(Class) + TEXT("Dynamic") + FString::FromInt(i);
-
-			Writer.Printf("component {0} {", *ComponentName);
-			Writer.Indent();
-			Writer.Printf("id = {0};", ComponentId);
-			Writer.Printf("data {0};", *SchemaHandoverDataName(Class));
-			Writer.Outdent().Print("}");
-
-			AddComponentId(ComponentId, DynamicSubobjectComponents.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
 		}
 
 		SubobjectSchemaData.DynamicSubobjectComponents.Add(MoveTemp(DynamicSubobjectComponents));
@@ -639,38 +549,6 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 			WriteSchemaRepField(Writer, RepProp.Value, RepProp.Value->ReplicationData->Handle);
 		}
 
-		Writer.Outdent().Print("}");
-	}
-
-	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
-	if (HandoverData.Num() > 0)
-	{
-		Worker_ComponentId ComponentId = 0;
-		if (SchemaData != nullptr && SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] != 0)
-		{
-			ComponentId = SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover];
-		}
-		else
-		{
-			ComponentId = IdGenerator.Next();
-		}
-
-		Writer.PrintNewLine();
-
-		// Handover (server to server) replicated properties.
-		FString ComponentName = SchemaHandoverDataName(Class);
-		Writer.Printf("component {0} {", *ComponentName);
-		Writer.Indent();
-		Writer.Printf("id = {0};", ComponentId);
-
-		AddComponentId(ComponentId, ActorSchemaData.SchemaComponents, ESchemaComponentType::SCHEMA_Handover);
-
-		int FieldCounter = 0;
-		for (auto& Prop : HandoverData)
-		{
-			FieldCounter++;
-			WriteSchemaHandoverField(Writer, Prop.Value, FieldCounter);
-		}
 		Writer.Outdent().Print("}");
 	}
 
