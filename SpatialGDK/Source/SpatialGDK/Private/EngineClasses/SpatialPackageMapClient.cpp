@@ -279,6 +279,12 @@ void USpatialPackageMapClient::RemoveBNetLoadOnClientRuntimeRemovedComponents(co
 	auto ContainedInComponentsArr = [this, &NewComponents, &EntityId](const FUnrealObjectRef CheckComponentObjRef) {
 		for (const SpatialGDK::ComponentData& Component : NewComponents)
 		{
+			// Skip if this isn't a generated component
+			if (Component.GetComponentId() < SpatialConstants::STARTING_GENERATED_COMPONENT_ID && Component.GetComponentId() != SpatialConstants::DORMANT_COMPONENT_ID)
+			{
+				continue;
+			}
+
 			uint32 Offset = 0;
 			NetDriver->ClassInfoManager->GetOffsetByComponentId(Component.GetComponentId(), Offset);
 
