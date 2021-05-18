@@ -1433,7 +1433,12 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 		}
 	}
 
-	NetDriver->PackageMap->RemoveBNetLoadOnClientRuntimeRemovedComponents(EntityId, EntityComponents, *this);
+	if (EntityActor.IsFullNameStableForNetworking())
+	{
+		// bNetLoadOnClient actors could have components removed while out of the client's interest.
+		// If that happened, remove the removed components.
+		NetDriver->PackageMap->RemoveBNetLoadOnClientRuntimeRemovedComponents(EntityId, EntityComponents, *this);
+	}
 
 	// Resolve things like RepNotify or RPCs after applying component data.
 	for (const ObjectPtrRefPair& ObjectToResolve : ObjectsToResolvePendingOpsFor)
