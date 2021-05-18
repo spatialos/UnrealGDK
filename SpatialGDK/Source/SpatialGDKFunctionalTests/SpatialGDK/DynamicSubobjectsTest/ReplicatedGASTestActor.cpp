@@ -5,7 +5,7 @@
 
 AReplicatedGASTestActor::AReplicatedGASTestActor()
 {
-	TestIntProperty = 0;
+	TestIntProperty = -1;
 	bNetLoadOnClient = true;
 	bNetLoadOnNonAuthServer = true;
 	bReplicates = true;

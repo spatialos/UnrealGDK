@@ -186,7 +186,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 		// Step 8 - Server increases AReplicatedGASTestActor's TestIntProperty to enable checking if the client is out of interest later.
 		AddStep(TEXT("DynamicSubobjectsTestServerIncreasesIntValue"), FWorkerDefinition::Server(1), nullptr, [this, i]() {
-			TestActor->TestIntProperty = i + 1;
+			TestActor->TestIntProperty = i;
 			FinishStep();
 		});
 
@@ -197,7 +197,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 				StepTimer = 0.f;
 			},
 			[this, i](float DeltaTime) {
-				RequireNotEqual_Int(TestActor->TestIntProperty, i + 1, TEXT("Check TestIntProperty didn't get replicated"));
+				RequireNotEqual_Int(TestActor->TestIntProperty, i, TEXT("Check TestIntProperty didn't get replicated"));
 				StepTimer += DeltaTime;
 				if (StepTimer >= 0.5f)
 				{
@@ -231,7 +231,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		// Step 10 - Server moves Client 1 close to the cube.
 		AddStep(TEXT("DynamicSubobjectsTestServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			ClientOneSpawnedPawn->SetActorLocation(CharacterSpawnLocation);
-			RequireEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterSpawnLocation,
+			AssertEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterSpawnLocation,
 								TEXT("Server 1 should see the pawn close to the initial spawn location"), 1.0f);
 			FinishStep();
 		});
@@ -242,10 +242,10 @@ void ADynamicSubobjectsTest::PrepareTest()
 			[this](float DeltaTime) {
 				APawn* PlayerCharacter = GetFlowPawn();
 
-				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid"))
-					&& RequireEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterSpawnLocation,
-										   TEXT("Client 1 should see themself close to the initial spawn location"), 1.0f))
+				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid")))
 				{
+					RequireEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterSpawnLocation,
+										TEXT("Client 1 should see themself close to the initial spawn location"), 1.0f);
 					FinishStep();
 				}
 			},
@@ -255,7 +255,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased2"), FWorkerDefinition::Client(1), nullptr, nullptr,
 			[this, i](float DeltaTime) {
-				RequireEqual_Int(TestActor->TestIntProperty, i + 1, TEXT("Client 1 should see the updated TestIntProperty value"));
+				RequireEqual_Int(TestActor->TestIntProperty, i, TEXT("Client 1 should see the updated TestIntProperty value"));
 				FinishStep();
 			},
 			StepTimeLimit);
@@ -275,7 +275,14 @@ void ADynamicSubobjectsTest::PrepareTest()
 		}
 	}
 
-	// Step 13 - Server Cleanup.
+	// Step 13 - All worker cleanup
+	AddStep(TEXT("DynamicSubobjectsTestAllWorkerCleanup"), FWorkerDefinition::AllWorkers, nullptr, [this]()
+	{
+		TestActor->TestIntProperty = -1;
+		FinishStep();
+	});
+
+	// Step 14 - Server Cleanup.
 	AddStep(TEXT("DynamicSubobjectsTestServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Possess the original pawn, so that the spawned character can get destroyed correctly
 		ASpatialFunctionalTestFlowController* ClientOneFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
