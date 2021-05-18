@@ -103,36 +103,31 @@ void ADynamicSubobjectsTest::PrepareTest()
 			APawn* PlayerCharacter = GetFlowPawn();
 			if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid")))
 			{
-				RequireTrue(PlayerCharacter == GetFlowPlayerController()->AcknowledgedPawn,
-				            TEXT("The client should possess the pawn."));
+				RequireTrue(PlayerCharacter == GetFlowPlayerController()->AcknowledgedPawn, TEXT("The client should possess the pawn."));
 				FinishStep();
 			}
 		},
 		StepTimeLimit);
 
 	// Step 3 - The client checks it has the right initial amount of components
-	AddStep(
-		TEXT("DynamicSubobjectsTestClientCheckNumComponents"), FWorkerDefinition::Client(1), nullptr,
-		[this]() {
-			AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("For this test, DynamicSubobjectTestActor should have 3 components"));
-			FinishStep();
-		});
+	AddStep(TEXT("DynamicSubobjectsTestClientCheckNumComponents"), FWorkerDefinition::Client(1), nullptr, [this]() {
+		AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("For this test, DynamicSubobjectTestActor should have 3 components"));
+		FinishStep();
+	});
 
 	// Step 4 - The server adds the new dynamic component
-	AddStep(
-		TEXT("DynamicSubobjectsTestServerAddComponent"), FWorkerDefinition::Server(1), nullptr,
-		[this]() {
-			AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("For this test, DynamicSubobjectTestActor should have 3 components"));
+	AddStep(TEXT("DynamicSubobjectsTestServerAddComponent"), FWorkerDefinition::Server(1), nullptr, [this]() {
+		AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("For this test, DynamicSubobjectTestActor should have 3 components"));
 
-			// add new dynamic component to test actor
-			USceneComponent* AddedComponent = NewObject<USceneComponent>(TestActor, TEXT("ToRemoveComponent"));
-			AddedComponent->AttachToComponent(TestActor->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-			AddedComponent->RegisterComponent();
-			AddedComponent->SetIsReplicated(true);
+		// add new dynamic component to test actor
+		USceneComponent* AddedComponent = NewObject<USceneComponent>(TestActor, TEXT("ToRemoveComponent"));
+		AddedComponent->AttachToComponent(TestActor->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+		AddedComponent->RegisterComponent();
+		AddedComponent->SetIsReplicated(true);
 
-			AssertEqual_Int(GetNumComponentsOnTestActor(), 4, TEXT("Now DynamicSubobjectTestActor should have 4 components"));
-			FinishStep();
-		});
+		AssertEqual_Int(GetNumComponentsOnTestActor(), 4, TEXT("Now DynamicSubobjectTestActor should have 4 components"));
+		FinishStep();
+	});
 
 	// Step 5 - The client checks it sees the new component
 	AddStep(
@@ -152,7 +147,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddStep(TEXT("DynamicSubobjectsTestServerMoveClient1"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			ClientOneSpawnedPawn->SetActorLocation(CharacterRemoteLocation);
 			AssertEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterRemoteLocation,
-									   TEXT("Client pawn was not moved to remote location"), 1.0f);
+							   TEXT("Client pawn was not moved to remote location"), 1.0f);
 			FinishStep();
 		});
 
@@ -175,17 +170,18 @@ void ADynamicSubobjectsTest::PrepareTest()
 		const bool bIsSpatial = Cast<USpatialNetDriver>(GetNetDriver()) != nullptr;
 		if (!bIsSpatial)
 		{
-			AddStep(TEXT("DynamicSubobjectsTestNativeWaitABit"), FWorkerDefinition::Server(1), nullptr, [this]()
-			{
-				StepTimer = 0.f;
-			},
-			[this](float DeltaTime) {
-				StepTimer += DeltaTime;
-				if (StepTimer > 7.5f)
-				{
-					FinishStep();
-				}
-			});
+			AddStep(
+				TEXT("DynamicSubobjectsTestNativeWaitABit"), FWorkerDefinition::Server(1), nullptr,
+				[this]() {
+					StepTimer = 0.f;
+				},
+				[this](float DeltaTime) {
+					StepTimer += DeltaTime;
+					if (StepTimer > 7.5f)
+					{
+						FinishStep();
+					}
+				});
 		}
 
 		// Step 8 - Server increases AReplicatedGASTestActor's TestIntProperty to enable checking if the client is out of interest later.
@@ -196,8 +192,8 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 		// Step 9 - Client 1 checks it can no longer see the AReplicatedGASTestActor
 		AddStep(
-			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr, [this]()
-			{
+			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr,
+			[this]() {
 				StepTimer = 0.f;
 			},
 			[this, i](float DeltaTime) {
@@ -213,25 +209,23 @@ void ADynamicSubobjectsTest::PrepareTest()
 		if (bLastStepLoop)
 		{
 			// step 9.1 - Server removes the component for secondary test case
-			AddStep(
-				TEXT("DynamicSubobjectsTestServerDestroyActorComponent"), FWorkerDefinition::Server(1), nullptr,
-				[this]() {
-					TArray<USceneComponent*> AllSceneComps;
-					TestActor->GetComponents<USceneComponent>(AllSceneComps);
-					AssertEqual_Int(AllSceneComps.Num(), 4, TEXT("DynamicSubobjectTestActor should have 4 components"));
+			AddStep(TEXT("DynamicSubobjectsTestServerDestroyActorComponent"), FWorkerDefinition::Server(1), nullptr, [this]() {
+				TArray<USceneComponent*> AllSceneComps;
+				TestActor->GetComponents<USceneComponent>(AllSceneComps);
+				AssertEqual_Int(AllSceneComps.Num(), 4, TEXT("DynamicSubobjectTestActor should have 4 components"));
 
-					// delete the component with the right name
-					for (USceneComponent* SceneComponent : AllSceneComps)
+				// delete the component with the right name
+				for (USceneComponent* SceneComponent : AllSceneComps)
+				{
+					if (SceneComponent->GetName() == TEXT("ToRemoveComponent"))
 					{
-						if (SceneComponent->GetName() == TEXT("ToRemoveComponent"))
-						{
-							SceneComponent->DestroyComponent();
-						}
+						SceneComponent->DestroyComponent();
 					}
+				}
 
-					AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("Now DynamicSubobjectTestActor should have 3 components"));
-					FinishStep();
-				});
+				AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("Now DynamicSubobjectTestActor should have 3 components"));
+				FinishStep();
+			});
 		}
 
 		// Step 10 - Server moves Client 1 close to the cube.
