@@ -424,28 +424,6 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		}
 	} // END CMD FOR LOOP
 
-	// Find the handover properties.
-	uint16 HandoverDataHandle = 1;
-	VisitAllProperties(TypeNode, [&HandoverDataHandle, &Class](TSharedPtr<FUnrealProperty> PropertyInfo) {
-		if (PropertyInfo->Property->PropertyFlags & CPF_Handover)
-		{
-			if (GDK_PROPERTY(StructProperty)* StructProp = GDK_CASTFIELD<GDK_PROPERTY(StructProperty)>(PropertyInfo->Property))
-			{
-				if (StructProp->Struct->StructFlags & STRUCT_NetDeltaSerializeNative)
-				{
-					// Warn about delta serialization
-					UE_LOG(LogSpatialGDKSchemaGenerator, Warning,
-						   TEXT("%s in %s uses delta serialization. "
-								"This is not supported and standard serialization will be used instead."),
-						   *PropertyInfo->Property->GetName(), *Class->GetName());
-				}
-			}
-			PropertyInfo->HandoverData = MakeShared<FUnrealHandoverData>();
-			PropertyInfo->HandoverData->Handle = HandoverDataHandle++;
-		}
-		return true;
-	});
-
 	return TypeNode;
 }
 
@@ -492,24 +470,6 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 		return A < B;
 	});
 	return RepData;
-}
-
-FCmdHandlePropertyMap GetFlatHandoverData(TSharedPtr<FUnrealType> TypeInfo)
-{
-	FCmdHandlePropertyMap HandoverData;
-	VisitAllProperties(TypeInfo, [&HandoverData](TSharedPtr<FUnrealProperty> PropertyInfo) {
-		if (PropertyInfo->HandoverData.IsValid())
-		{
-			HandoverData.Add(PropertyInfo->HandoverData->Handle, PropertyInfo);
-		}
-		return true;
-	});
-
-	// Sort by property handle.
-	HandoverData.KeySort([](uint16 A, uint16 B) {
-		return A < B;
-	});
-	return HandoverData;
 }
 
 TArray<TSharedPtr<FUnrealProperty>> GetPropertyChain(TSharedPtr<FUnrealProperty> LeafProperty)

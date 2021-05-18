@@ -52,8 +52,7 @@ FUnrealType
 		[3] FUnrealProperty
 			+ Property: "SomeTransientProperty"
 			+ Type: nullptr
-			+ ReplicationData: nullptr
-			+ HandoverData: FUnrealHandoverData
+			+ ReplicationData: FUnrealHandoverData
 				+ RepLayoutType: REPCMD_PropertyFloat
 				+ Handle: 1
 				...
@@ -71,7 +70,6 @@ enum EReplicatedPropertyGroup
 
 struct FUnrealProperty;
 struct FUnrealRepData;
-struct FUnrealHandoverData;
 struct FUnrealSubobject;
 
 // A node which represents an unreal type, such as ACharacter or UCharacterMovementComponent.
@@ -89,9 +87,8 @@ struct FUnrealType
 struct FUnrealProperty
 {
 	GDK_PROPERTY(Property) * Property;
-	TSharedPtr<FUnrealType> Type;				  // Only set if strong reference to object/struct property.
-	TSharedPtr<FUnrealRepData> ReplicationData;	  // Only set if property is replicated.
-	TSharedPtr<FUnrealHandoverData> HandoverData; // Only set if property is marked for handover (and not replicated).
+	TSharedPtr<FUnrealType> Type;				// Only set if strong reference to object/struct property.
+	TSharedPtr<FUnrealRepData> ReplicationData; // Only set if property is replicated.
 	TWeakPtr<FUnrealType> ContainerType;
 
 	// These variables are used for unique variable checksum generation. We do this to accurately match properties at run-time.
@@ -116,12 +113,6 @@ struct FUnrealRepData
 	uint16 Handle;
 	int32 RoleSwapHandle;
 	int32 ArrayIndex;
-};
-
-// A node which represents handover (server to server) data.
-struct FUnrealHandoverData
-{
-	uint16 Handle;
 };
 
 using FUnrealFlatRepData = TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPtr<FUnrealProperty>>>;
@@ -159,12 +150,6 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 //
 // This function will _not_ traverse into subobject properties (as the replication system deals with each object separately).
 FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo);
-
-// Traverses an AST, and generates a flattened list of handover properties. The list of handover properties will all have
-// the HandoverData field set to a value FUnrealHandoverData node which contains data such as the handle or replication type.
-//
-// This function will traverse into subobject properties.
-FCmdHandlePropertyMap GetFlatHandoverData(TSharedPtr<FUnrealType> TypeInfo);
 
 // Given a property, traverse up to the root property and create a list of properties needed to reach the leaf property.
 // For example: foo->bar->baz becomes {"foo", "bar", "baz"}.
