@@ -16,6 +16,7 @@
 #include "UObject/WeakObjectPtrTemplates.h"
 
 #include "Algo/AnyOf.h"
+#include "Async/Async.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -668,13 +669,15 @@ void USpatialNetDriver::ClientOnGSMQuerySuccess()
 	StartupClientDebugString.Empty();
 
 	auto FlagNetworkFailure = [this](const FString& ErrorString) {
-		if (USpatialGameInstance* GameInstance = GetGameInstance())
-		{
-			if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+		AsyncTask(ENamedThreads::GameThread, [this, ErrorString] {
+			if (USpatialGameInstance* GameInstance = GetGameInstance())
 			{
-				GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, ErrorString);
+				if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+				{
+					GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, ErrorString);
+				}
 			}
-		}
+		});
 	};
 
 	const uint64 SnapshotVersion = GlobalStateManager->GetSnapshotVersion();
