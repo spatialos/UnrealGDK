@@ -8,8 +8,6 @@
 
 ATestPossessionPawn::ATestPossessionPawn()
 {
-	bReplicates = true;
-
 	SphereComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SphereComponent"));
 	SphereComponent->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("StaticMesh'/Engine/BasicShapes/Sphere.Sphere'")));
 	SphereComponent->SetMaterial(

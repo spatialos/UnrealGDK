@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "SpatialFunctionalTest.h"
-#include "SpatialGDK/TestActors/TestPossessionPawn.h"
 
 #include "DynamicSubobjectsTest.generated.h"
 
