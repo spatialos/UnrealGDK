@@ -360,7 +360,7 @@ public:
 	// Clears all the snapshots taken, not meant to be used directly.
 	static void ClearAllTakenSnapshots();
 
-	// Get the player controller owned by the current flow.
+	// Get the player controller owned by the current flow controller.
 	APlayerController* GetFlowPlayerController();
 
 	// Get the pawn that belongs to the PlayerController owned by the current flow.
