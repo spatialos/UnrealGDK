@@ -782,8 +782,7 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 APlayerController* ASpatialFunctionalTest::GetFlowPlayerController()
 {
 	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
-	ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server."));
-	if (!IsValid(FlowController))
+	if (!ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server.")))
 	{
 		return nullptr;
 	}
