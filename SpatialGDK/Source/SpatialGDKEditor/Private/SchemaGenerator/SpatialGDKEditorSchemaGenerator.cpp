@@ -189,33 +189,6 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 		}
 	}
 
-	// Check Handover data.
-	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
-	TMap<FString, TSharedPtr<FUnrealProperty>> SchemaHandoverDataNames;
-	for (auto& Prop : HandoverData)
-	{
-		FString NextSchemaHandoverDataName = SchemaFieldName(Prop.Value);
-
-		if (!CheckSchemaNameValidity(NextSchemaHandoverDataName, Prop.Value->Property->GetPathName(), TEXT("Handover property")))
-		{
-			bOutSuccess = false;
-		}
-
-		if (TSharedPtr<FUnrealProperty>* ExistingHandoverData = SchemaHandoverDataNames.Find(NextSchemaHandoverDataName))
-		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error,
-				   TEXT("Handover data name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides "
-						"for '%s' and '%s'"),
-				   *NextSchemaHandoverDataName, *ExistingHandoverData->Get()->Property->GetPathName(),
-				   *Prop.Value->Property->GetPathName());
-			bOutSuccess = false;
-		}
-		else
-		{
-			SchemaHandoverDataNames.Add(NextSchemaHandoverDataName, Prop.Value);
-		}
-	}
-
 	// Check subobject name validity.
 	FSubobjects Subobjects = GetAllSubobjects(TypeInfo);
 	TMap<FString, TSharedPtr<FUnrealType>> SchemaSubobjectNames;
