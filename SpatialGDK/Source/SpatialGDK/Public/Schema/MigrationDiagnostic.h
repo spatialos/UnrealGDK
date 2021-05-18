@@ -41,13 +41,16 @@ struct MigrationDiagnostic : Component
 	static Worker_CommandResponse CreateMigrationDiagnosticResponse(USpatialNetDriver* NetDriver, Worker_EntityId EntityId,
 																	AActor* BlockingActor)
 	{
-		check(NetDriver != nullptr);
-		check(NetDriver->Connection != nullptr);
-		check(NetDriver->LockingPolicy != nullptr);
-		check(NetDriver->VirtualWorkerTranslator != nullptr);
-		check(NetDriver->PackageMap != nullptr);
-
 		Worker_CommandResponse CommandResponse = {};
+
+		if (!ensureAlwaysMsgf(
+				NetDriver != nullptr && NetDriver->Connection != nullptr && NetDriver->LockingPolicy != nullptr
+					&& NetDriver->VirtualWorkerTranslator != nullptr && NetDriver->PackageMap != nullptr,
+				TEXT("Failed to create migration disagnostic response. Some core class was undefined. EntityId: %lld. Actor: %s"), EntityId,
+				*GetNameSafe(BlockingActor)))
+		{
+			return CommandResponse;
+		}
 
 		CommandResponse.component_id = SpatialConstants::MIGRATION_DIAGNOSTIC_COMPONENT_ID;
 		CommandResponse.command_index = SpatialConstants::MIGRATION_DIAGNOSTIC_COMMAND_ID;
@@ -84,9 +87,12 @@ struct MigrationDiagnostic : Component
 	// worker over the actor that is blocking the migration and log the results.
 	static FString CreateMigrationDiagnosticLog(USpatialNetDriver* NetDriver, Schema_Object* ResponseObject, AActor* BlockingActor)
 	{
-		check(NetDriver != nullptr);
-		check(NetDriver->Connection != nullptr);
-		check(NetDriver->LockingPolicy != nullptr);
+		if (!ensureAlwaysMsgf(NetDriver != nullptr && NetDriver->Connection != nullptr && NetDriver->LockingPolicy != nullptr,
+							  TEXT("Failed to create migration disagnostic log. Some core class was undefined. Actor: %s"),
+							  *GetNameSafe(BlockingActor)))
+		{
+			return FString();
+		}
 
 		if (ResponseObject == nullptr)
 		{
