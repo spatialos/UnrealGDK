@@ -534,6 +534,8 @@ FString GetComponentSetNameBySchemaType(ESchemaComponentType SchemaType)
 	case SCHEMA_InitialOnly:
 		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_NAME;
 	default:
+		static_assert(SCHEMA_Count == 4,
+					  "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 		// For some reason these statements, if formatted cause a bug in VS where the lines reported by the compiler and debugger are wrong.
 		// clang-format off
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not return component set name. Schema component type was invalid: %d"), SchemaType);
@@ -555,6 +557,8 @@ Worker_ComponentId GetComponentSetIdBySchemaType(ESchemaComponentType SchemaType
 	case SCHEMA_InitialOnly:
 		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID;
 	default:
+		static_assert(SCHEMA_Count == 4,
+					  "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 		// clang-format off
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not return component set ID. Schema component type was invalid: %d"), SchemaType);
 		// clang-format on
@@ -632,23 +636,8 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 				const Worker_ComponentId ComponentId = GeneratedActorClass.Value.SchemaComponents[SchemaType];
 				if (ComponentId != 0)
 				{
-					switch (SchemaType)
-					{
-					case SCHEMA_Data:
-						Writer.Printf("unreal.generated.{0}.{1},", ActorClassName.ToLower(), ActorClassName);
-						break;
-					case SCHEMA_OwnerOnly:
-						Writer.Printf("unreal.generated.{0}.{1}OwnerOnly,", ActorClassName.ToLower(), ActorClassName);
-						break;
-					case SCHEMA_Handover:
-						Writer.Printf("unreal.generated.{0}.{1}Handover,", ActorClassName.ToLower(), ActorClassName);
-						break;
-					case SCHEMA_InitialOnly:
-						Writer.Printf("unreal.generated.{0}.{1}InitialOnly,", ActorClassName.ToLower(), ActorClassName);
-						break;
-					default:
-						break;
-					}
+					Writer.Printf("unreal.generated.{0}.{1}{2},", ActorClassName.ToLower(), ActorClassName,
+								  GetReplicatedPropertyGroupName(SchemaComponentTypeToPropertyGroup(SchemaType)));
 				}
 			});
 
@@ -660,23 +649,8 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 					const Worker_ComponentId& ComponentId = ActorSubObjectData.Value.SchemaComponents[SchemaType];
 					if (ComponentId != 0)
 					{
-						switch (SchemaType)
-						{
-						case SCHEMA_Data:
-							Writer.Printf("unreal.generated.{0}.subobjects.{1},", ActorClassName.ToLower(), ActorSubObjectName);
-							break;
-						case SCHEMA_OwnerOnly:
-							Writer.Printf("unreal.generated.{0}.subobjects.{1}OwnerOnly,", ActorClassName.ToLower(), ActorSubObjectName);
-							break;
-						case SCHEMA_Handover:
-							Writer.Printf("unreal.generated.{0}.subobjects.{1}Handover,", ActorClassName.ToLower(), ActorSubObjectName);
-							break;
-						case SCHEMA_InitialOnly:
-							Writer.Printf("unreal.generated.{0}.subobjects.{1}InitialOnly,", ActorClassName.ToLower(), ActorSubObjectName);
-							break;
-						default:
-							break;
-						}
+						Writer.Printf("unreal.generated.{0}.subobjects.{1}{2},", ActorClassName.ToLower(), ActorSubObjectName,
+									  GetReplicatedPropertyGroupName(SchemaComponentTypeToPropertyGroup(SchemaType)));
 					}
 				});
 			}
@@ -695,23 +669,8 @@ void WriteServerAuthorityComponentSet(const USchemaDatabase* SchemaDatabase, con
 					const Worker_ComponentId& ComponentId = SubObjectSchemaData.SchemaComponents[SchemaType];
 					if (ComponentId != 0)
 					{
-						switch (SchemaType)
-						{
-						case SCHEMA_Data:
-							Writer.Printf("unreal.generated.{0}Dynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-							break;
-						case SCHEMA_OwnerOnly:
-							Writer.Printf("unreal.generated.{0}OwnerOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-							break;
-						case SCHEMA_Handover:
-							Writer.Printf("unreal.generated.{0}HandoverDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-							break;
-						case SCHEMA_InitialOnly:
-							Writer.Printf("unreal.generated.{0}InitialOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-							break;
-						default:
-							break;
-						}
+						Writer.Printf("unreal.generated.{0}{1}Dynamic{2},", SubObjectClassName,
+									  GetReplicatedPropertyGroupName(SchemaComponentTypeToPropertyGroup(SchemaType)), SubObjectNumber + 1);
 					}
 				});
 			}
@@ -841,6 +800,8 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 	Writer.Printf("id = {0};", GetComponentSetIdBySchemaType(SchemaType));
 	Writer.Printf("components = [").Indent();
 
+	FString SchemaTypeString = GetReplicatedPropertyGroupName(SchemaComponentTypeToPropertyGroup(SchemaType));
+
 	// Write all components.
 	{
 		for (const auto& GeneratedActorClass : SchemaDatabase->ActorClassPathToSchema)
@@ -849,23 +810,7 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 			const FString& ActorClassName = UnrealNameToSchemaComponentName(GeneratedActorClass.Value.GeneratedSchemaName);
 			if (GeneratedActorClass.Value.SchemaComponents[SchemaType] != 0)
 			{
-				switch (SchemaType)
-				{
-				case SCHEMA_Data:
-					Writer.Printf("unreal.generated.{0}.{1},", ActorClassName.ToLower(), ActorClassName);
-					break;
-				case SCHEMA_OwnerOnly:
-					Writer.Printf("unreal.generated.{0}.{1}OwnerOnly,", ActorClassName.ToLower(), ActorClassName);
-					break;
-				case SCHEMA_Handover:
-					Writer.Printf("unreal.generated.{0}.{1}Handover,", ActorClassName.ToLower(), ActorClassName);
-					break;
-				case SCHEMA_InitialOnly:
-					Writer.Printf("unreal.generated.{0}.{1}InitialOnly,", ActorClassName.ToLower(), ActorClassName);
-					break;
-				default:
-					break;
-				}
+				Writer.Printf("unreal.generated.{0}.{1}{2},", ActorClassName.ToLower(), ActorClassName, SchemaTypeString);
 			}
 			// Actor static subobjects.
 			for (const auto& ActorSubObjectData : GeneratedActorClass.Value.SubobjectData)
@@ -873,23 +818,8 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 				const FString ActorSubObjectName = UnrealNameToSchemaComponentName(ActorSubObjectData.Value.Name.ToString());
 				if (ActorSubObjectData.Value.SchemaComponents[SchemaType] != 0)
 				{
-					switch (SchemaType)
-					{
-					case SCHEMA_Data:
-						Writer.Printf("unreal.generated.{0}.subobjects.{1},", ActorClassName.ToLower(), ActorSubObjectName);
-						break;
-					case SCHEMA_OwnerOnly:
-						Writer.Printf("unreal.generated.{0}.subobjects.{1}OwnerOnly,", ActorClassName.ToLower(), ActorSubObjectName);
-						break;
-					case SCHEMA_Handover:
-						Writer.Printf("unreal.generated.{0}.subobjects.{1}Handover,", ActorClassName.ToLower(), ActorSubObjectName);
-						break;
-					case SCHEMA_InitialOnly:
-						Writer.Printf("unreal.generated.{0}.subobjects.{1}InitialOnly,", ActorClassName.ToLower(), ActorSubObjectName);
-						break;
-					default:
-						break;
-					}
+					Writer.Printf("unreal.generated.{0}.subobjects.{1}{2},", ActorClassName.ToLower(), ActorSubObjectName,
+								  SchemaTypeString);
 				}
 			}
 		}
@@ -904,23 +834,7 @@ void WriteComponentSetBySchemaType(const USchemaDatabase* SchemaDatabase, ESchem
 					GeneratedSubObjectClass.Value.DynamicSubobjectComponents[SubObjectNumber];
 				if (SubObjectSchemaData.SchemaComponents[SchemaType] != 0)
 				{
-					switch (SchemaType)
-					{
-					case SCHEMA_Data:
-						Writer.Printf("unreal.generated.{0}Dynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-						break;
-					case SCHEMA_OwnerOnly:
-						Writer.Printf("unreal.generated.{0}OwnerOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-						break;
-					case SCHEMA_Handover:
-						Writer.Printf("unreal.generated.{0}HandoverDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-						break;
-					case SCHEMA_InitialOnly:
-						Writer.Printf("unreal.generated.{0}InitialOnlyDynamic{1},", SubObjectClassName, SubObjectNumber + 1);
-						break;
-					default:
-						break;
-					}
+					Writer.Printf("unreal.generated.{0}{1}Dynamic{2},", SubObjectClassName, SchemaTypeString, SubObjectNumber + 1);
 				}
 			}
 		}
@@ -949,6 +863,7 @@ void WriteComponentSetFiles(const USchemaDatabase* SchemaDatabase, FString Schem
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly, SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover, SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_InitialOnly, SchemaOutputPath);
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 }
 
 USchemaDatabase* InitialiseSchemaDatabase(const FString& PackagePath)

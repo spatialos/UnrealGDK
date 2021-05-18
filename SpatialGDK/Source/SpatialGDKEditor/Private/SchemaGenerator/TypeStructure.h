@@ -60,12 +60,21 @@ FUnrealType
 
 // As we cannot fully implement replication conditions using SpatialOS's component interest API, we instead try
 // to emulate it by separating all replicated properties into three groups: properties which are meant for just one
-// client (AutonomousProxy/OwnerOnly), initial only properties (InitialOnly), or many clients (everything else).
+// client (AutonomousProxy/OwnerOnly), initial only properties (InitialOnly), server only properties (ServerOnly), or many clients
+// (everything else).
 enum EReplicatedPropertyGroup
 {
+	// Beware that the order of these currently matters for actually applying the variables.
+	// Specifically, we will e.g. apply all MultiClient data, then all SingleClient data, etc.
+	// This is a difference from native. TODO: UNR-5576.
+	REP_MultiClient = 0,
 	REP_SingleClient,
-	REP_MultiClient,
-	REP_InitialOnly
+	REP_InitialOnly,
+	REP_ServerOnly,
+
+	// Iteration helpers
+	REP_Count,
+	REP_First = REP_MultiClient
 };
 
 struct FUnrealProperty;

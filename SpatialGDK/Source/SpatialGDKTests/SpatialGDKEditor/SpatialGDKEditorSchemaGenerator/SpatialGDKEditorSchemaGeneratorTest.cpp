@@ -116,8 +116,11 @@ FString ComponentTypeToString(ESchemaComponentType Type)
 		return TEXT("Handover");
 	case SCHEMA_InitialOnly:
 		return TEXT("InitialOnly");
+	default:
+		static_assert(SCHEMA_Count == 4,
+					  "Unexpected number of Schema type components, please check ComponentTypeToString is still correct.");
+		return TEXT("");
 	}
-	return TEXT("");
 }
 
 bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FString& InSchemaOutputFolder,

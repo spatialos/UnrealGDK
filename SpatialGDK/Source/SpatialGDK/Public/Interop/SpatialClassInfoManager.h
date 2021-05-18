@@ -32,6 +32,8 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 	case COND_ServerOnly:
 		return SCHEMA_Handover;
 	default:
+		static_assert(SCHEMA_Count == 4,
+					  "Unexpected number of Schema type components, please make sure GetGroupFromCondition is still correct.");
 		return SCHEMA_Data;
 	}
 }

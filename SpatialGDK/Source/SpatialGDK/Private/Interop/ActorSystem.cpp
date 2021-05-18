@@ -665,7 +665,7 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 
 	ESchemaComponentType Category = NetDriver->ClassInfoManager->GetCategoryByComponentId(ComponentId);
 
-	if (Category == SCHEMA_Data || Category == SCHEMA_OwnerOnly || Category == SCHEMA_InitialOnly || Category == SCHEMA_Handover)
+	if (Category != SCHEMA_Invalid)
 	{
 		if (Category == SCHEMA_Handover)
 		{
@@ -865,6 +865,7 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 	ComponentFilter[SCHEMA_OwnerOnly] = bIsServer || bIsAuthClient;
 	ComponentFilter[SCHEMA_Handover] = bIsServer;
 	ComponentFilter[SCHEMA_InitialOnly] = bInitialOnlyExpected;
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 
 	bool bComponentsComplete = true;
 	for (int i = 0; i < SCHEMA_Count; ++i)
@@ -938,8 +939,7 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 
 	ESchemaComponentType ComponentType = NetDriver->ClassInfoManager->GetCategoryByComponentId(ComponentId);
 
-	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly || ComponentType == SCHEMA_InitialOnly
-		|| ComponentType == SCHEMA_Handover)
+	if (ComponentType != SCHEMA_Invalid)
 	{
 		if (ComponentType == SCHEMA_Data && TargetObject.IsA<UActorComponent>())
 		{

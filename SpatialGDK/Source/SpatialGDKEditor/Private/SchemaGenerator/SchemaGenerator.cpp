@@ -23,21 +23,23 @@ namespace
 {
 ESchemaComponentType PropertyGroupToSchemaComponentType(EReplicatedPropertyGroup Group)
 {
-	if (Group == REP_MultiClient)
+	switch (Group)
 	{
+	case REP_MultiClient:
 		return SCHEMA_Data;
-	}
-	else if (Group == REP_SingleClient)
-	{
+	case REP_SingleClient:
 		return SCHEMA_OwnerOnly;
-	}
-	else if (Group == REP_InitialOnly)
-	{
+	case REP_InitialOnly:
 		return SCHEMA_InitialOnly;
-	}
-	else
-	{
+	case REP_ServerOnly:
+		return SCHEMA_Handover;
+	default:
 		checkNoEntry();
+		static_assert(
+			REP_Count == 4,
+			"Unexpected number of ReplicatedPropertyGroups, please make sure PropertyGroupToSchemaComponentType is still correct.");
+		static_assert(SCHEMA_Count == 4,
+					  "Unexpected number of Schema component types, please make sure PropertyGroupToSchemaComponentType is still correct.");
 		return SCHEMA_Invalid;
 	}
 }
@@ -477,6 +479,29 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 	Writer.WriteToFile(FPaths::Combine(*SchemaPath, *FileName));
 	SubobjectSchemaData.GeneratedSchemaName = ClassPathToSchemaName[Class->GetPathName()];
 	SubobjectClassPathToSchema.Add(Class->GetPathName(), SubobjectSchemaData);
+}
+
+EReplicatedPropertyGroup SchemaComponentTypeToPropertyGroup(ESchemaComponentType SchemaType)
+{
+	switch (SchemaType)
+	{
+	case SCHEMA_Data:
+		return REP_MultiClient;
+	case SCHEMA_OwnerOnly:
+		return REP_SingleClient;
+	case SCHEMA_InitialOnly:
+		return REP_InitialOnly;
+	case SCHEMA_Handover:
+		return REP_ServerOnly;
+	default:
+		checkNoEntry();
+		static_assert(
+			REP_Count == 4,
+			"Unexpected number of ReplicatedPropertyGroups, please make sure SchemaComponentTypeToPropertyGroup is still correct.");
+		static_assert(SCHEMA_Count == 4,
+					  "Unexpected number of Schema component types, please make sure SchemaComponentTypeToPropertyGroup is still correct.");
+		return REP_MultiClient;
+	}
 }
 
 void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)

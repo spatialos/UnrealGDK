@@ -12,21 +12,30 @@ using namespace SpatialGDKEditor::Schema;
 
 TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
 {
-	return { REP_MultiClient, REP_SingleClient, REP_InitialOnly };
+	static TArray<EReplicatedPropertyGroup> ReplicatedPropertyGroups = []() {
+		TArray<EReplicatedPropertyGroup> Temp;
+		for (uint32 i = EReplicatedPropertyGroup::REP_First; i < EReplicatedPropertyGroup::REP_Count; i++)
+		{
+			Temp.Add(static_cast<EReplicatedPropertyGroup>(i));
+		}
+		return Temp;
+	}();
+
+	return ReplicatedPropertyGroups;
 }
 
 FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 {
-	if (Group == REP_SingleClient)
+	switch (Group)
 	{
+	case REP_SingleClient:
 		return TEXT("OwnerOnly");
-	}
-	else if (Group == REP_InitialOnly)
-	{
+	case REP_InitialOnly:
 		return TEXT("InitialOnly");
-	}
-	else
-	{
+	case REP_ServerOnly:
+		return TEXT("ServerOnly");
+	default:
+		static_assert(REP_Count == 4, "Unexpected number of ReplicatedPropertyGroups, please update this function.");
 		return TEXT("");
 	}
 }
@@ -430,9 +439,10 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 {
 	FUnrealFlatRepData RepData;
-	RepData.Add(REP_MultiClient);
-	RepData.Add(REP_SingleClient);
-	RepData.Add(REP_InitialOnly);
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		RepData.Add(Group);
+	}
 
 	VisitAllProperties(TypeInfo, [&RepData, &TypeInfo](TSharedPtr<FUnrealProperty> PropertyInfo) {
 		if (PropertyInfo->ReplicationData.IsValid())
@@ -448,27 +458,29 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 			case COND_InitialOnly:
 				Group = REP_InitialOnly;
 				break;
+			case COND_ServerOnly:
+				Group = REP_ServerOnly;
+				break;
 			case COND_InitialOrOwner:
 				UE_LOG(LogSpatialGDKSchemaGenerator, Error,
 					   TEXT("COND_InitialOrOwner not supported. COND_None will be used instead. %s::%s"), *TypeInfo->Type->GetName(),
 					   *PropertyInfo->Property->GetName());
 				break;
 			}
+			static_assert(REP_Count == 4,
+						  "Unexpected number of ReplicatedPropertyGroups. Please make sure the GetFlatRepData function is still correct.");
 			RepData[Group].Add(PropertyInfo->ReplicationData->Handle, PropertyInfo);
 		}
 		return true;
 	});
 
 	// Sort by replication handle.
-	RepData[REP_MultiClient].KeySort([](uint16 A, uint16 B) {
-		return A < B;
-	});
-	RepData[REP_SingleClient].KeySort([](uint16 A, uint16 B) {
-		return A < B;
-	});
-	RepData[REP_InitialOnly].KeySort([](uint16 A, uint16 B) {
-		return A < B;
-	});
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		RepData[Group].KeySort([](uint16 A, uint16 B) {
+			return A < B;
+		});
+	}
 	return RepData;
 }
 
