@@ -101,9 +101,10 @@ void ADynamicSubobjectsTest::PrepareTest()
 		TEXT("DynamicSubobjectsTestClientCheckPossesion"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float DeltaTime) {
 			APawn* PlayerCharacter = GetFlowPawn();
-			if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid"))
-				&& PlayerCharacter == GetFlowPlayerController()->AcknowledgedPawn)
+			if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid")))
 			{
+				RequireTrue(PlayerCharacter == GetFlowPlayerController()->AcknowledgedPawn,
+				            TEXT("The client should possess the pawn."));
 				FinishStep();
 			}
 		},
@@ -115,26 +116,23 @@ void ADynamicSubobjectsTest::PrepareTest()
 		[this]() {
 			AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("For this test, DynamicSubobjectTestActor should have 3 components"));
 			FinishStep();
-		},
-		nullptr);
+		});
 
 	// Step 4 - The server adds the new dynamic component
 	AddStep(
 		TEXT("DynamicSubobjectsTestServerAddComponent"), FWorkerDefinition::Server(1), nullptr,
 		[this]() {
-			// server has 1 more component than client (idk why)
 			AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("For this test, DynamicSubobjectTestActor should have 3 components"));
 
 			// add new dynamic component to test actor
-			UStaticMeshComponent* AddedComponent = NewObject<UStaticMeshComponent>(TestActor, TEXT("ToRemoveComponent"));
+			USceneComponent* AddedComponent = NewObject<USceneComponent>(TestActor, TEXT("ToRemoveComponent"));
 			AddedComponent->AttachToComponent(TestActor->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
 			AddedComponent->RegisterComponent();
 			AddedComponent->SetIsReplicated(true);
 
 			AssertEqual_Int(GetNumComponentsOnTestActor(), 4, TEXT("Now DynamicSubobjectTestActor should have 4 components"));
 			FinishStep();
-		},
-		nullptr);
+		});
 
 	// Step 5 - The client checks it sees the new component
 	AddStep(
@@ -147,17 +145,15 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 	for (int i = 0; i < DynamicComponentsPerClass + 2; ++i)
 	{
-		const bool LastStepLoop = i == DynamicComponentsPerClass + 1;
+		const bool bLastStepLoop = i == DynamicComponentsPerClass + 1;
 
 		// Step 6 - Server moves the TestMovementCharacter of Client 1 to a remote location, so that it does not see the
 		// AReplicatedGASTestActor.
 		AddStep(TEXT("DynamicSubobjectsTestServerMoveClient1"), FWorkerDefinition::Server(1), nullptr, [this]() {
-			if (ClientOneSpawnedPawn->SetActorLocation(CharacterRemoteLocation)
-				&& RequireEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterRemoteLocation,
-									   TEXT("Client pawn was not moved to remote location"), 1.0f))
-			{
-				FinishStep();
-			}
+			ClientOneSpawnedPawn->SetActorLocation(CharacterRemoteLocation);
+			AssertEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterRemoteLocation,
+									   TEXT("Client pawn was not moved to remote location"), 1.0f);
+			FinishStep();
 		});
 
 		// Step 7 - Client 1 makes sure that the movement was correctly replicated
@@ -166,24 +162,27 @@ void ADynamicSubobjectsTest::PrepareTest()
 			[this](float DeltaTime) {
 				APawn* PlayerCharacter = GetFlowPawn();
 
-				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should not be nullptr"))
-					&& RequireEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterRemoteLocation,
-										   TEXT("Character was not moved to remote location"), 1.0f))
+				if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should not be nullptr")))
 				{
+					RequireEqual_Vector(PlayerCharacter->GetActorLocation(), CharacterRemoteLocation,
+										TEXT("Character was not moved to remote location"), 1.0f);
 					FinishStep();
 				}
 			},
 			StepTimeLimit);
 
 		// when in native, we need to wait for a while here - so the engine can update relevancy
-		USpatialNetDriver* CastNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-		if (!CastNetDriver)
+		const bool bIsSpatial = Cast<USpatialNetDriver>(GetNetDriver()) != nullptr;
+		if (!bIsSpatial)
 		{
-			AddStep(TEXT("DynamicSubobjectsTestNativeWaitABit"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
+			AddStep(TEXT("DynamicSubobjectsTestNativeWaitABit"), FWorkerDefinition::Server(1), nullptr, [this]()
+			{
+				StepTimer = 0.f;
+			},
+			[this](float DeltaTime) {
 				StepTimer += DeltaTime;
-				if (StepTimer > 6.0f)
+				if (StepTimer > 7.5f)
 				{
-					StepTimer = 0;
 					FinishStep();
 				}
 			});
@@ -197,19 +196,21 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 		// Step 9 - Client 1 checks it can no longer see the AReplicatedGASTestActor
 		AddStep(
-			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr, nullptr,
+			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr, [this]()
+			{
+				StepTimer = 0.f;
+			},
 			[this, i](float DeltaTime) {
 				RequireNotEqual_Int(TestActor->TestIntProperty, i + 1, TEXT("Check TestIntProperty didn't get replicated"));
 				StepTimer += DeltaTime;
 				if (StepTimer >= 0.5f)
 				{
 					FinishStep();
-					StepTimer = 0.0f; // reset for the next time
 				}
 			},
 			StepTimeLimit);
 
-		if (LastStepLoop)
+		if (bLastStepLoop)
 		{
 			// step 9.1 - Server removes the component for secondary test case
 			AddStep(
@@ -230,8 +231,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 					AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("Now DynamicSubobjectTestActor should have 3 components"));
 					FinishStep();
-				},
-				nullptr);
+				});
 		}
 
 		// Step 10 - Server moves Client 1 close to the cube.
@@ -266,7 +266,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 			},
 			StepTimeLimit);
 
-		if (LastStepLoop)
+		if (bLastStepLoop)
 		{
 			// Step 12.1 - Client 1 checks the dynamic component on ReplicatedGASTestActor has been removed
 			AddStep(
