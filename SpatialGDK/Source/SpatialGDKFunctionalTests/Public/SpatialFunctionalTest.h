@@ -363,7 +363,7 @@ public:
 	// Get the player controller owned by the current flow controller.
 	APlayerController* GetFlowPlayerController();
 
-	// Get the pawn that belongs to the PlayerController owned by the current flow.
+	// Get the pawn that belongs to the PlayerController associated with the current flow controller.
 	APawn* GetFlowPawn();
 
 protected:
