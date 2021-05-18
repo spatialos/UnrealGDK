@@ -73,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
 - Fixed an issue where migration diagnostic tool would crash if the target actor's owner couldn't be found.
 - Fix RPC timeouts for parameters referencing assets that can be asynchronously loaded.
-- A dynamic subobject removed from an actor while out of a client's interest will now be removed on the client when the actor comes back into the client's interest.
+- A dynamic subobject removed from an actor while out of a client's interest will now be properly removed on the client when the actor comes back into the client's interest.
 
 ### Internal:
 - Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs now no longer expire, and persist until used.
