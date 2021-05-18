@@ -302,10 +302,8 @@ void USpatialPackageMapClient::RemoveBNetLoadOnClientRuntimeRemovedComponents(co
 			{
 				if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(DynamicSubObjectIterator->Value, false))
 				{
-					UE_LOG(LogSpatialPackageMap, Verbose, TEXT("A SubObject (ObjectRef offset: %u) on \
-						bNetLoadOnClient actor with entityId %d \
-						was destroyed while the actor was out of the client's interest. Destroying the SubObject now.")
-						, DynamicSubObjectIterator->Key.Offset, EntityId);
+					UE_LOG(LogSpatialPackageMap, Verbose, TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the actor was out of the client's interest. Destroying the SubObject now."),
+						   DynamicSubObjectIterator->Key.Offset, EntityId);
 					ActorSystem.DestroySubObject(EntityId, Object, DynamicSubObjectIterator->Key);
 				}
 				DynamicSubObjectIterator.RemoveCurrent();
