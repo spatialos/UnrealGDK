@@ -276,7 +276,7 @@ void USpatialPackageMapClient::RemoveBNetLoadOnClientRuntimeRemovedComponents(co
 
 )
 {
-	auto ContainedInComponentsArr = [this, &NewComponents, &EntityId](const FUnrealObjectRef CheckComponentObjRef) {
+	auto ContainedInComponentsArr = [this, &NewComponents, &EntityId](const FUnrealObjectRef& CheckComponentObjRef) {
 		for (const SpatialGDK::ComponentData& Component : NewComponents)
 		{
 			// Skip if this isn't a generated component
