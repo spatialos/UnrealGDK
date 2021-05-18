@@ -166,7 +166,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 			},
 			StepTimeLimit);
 
-		// when in native, we need to wait for a while here - so the engine can update relevancy
+		// When in native, we need to wait for a while here - so the engine can update relevancy
 		const bool bIsSpatial = Cast<USpatialNetDriver>(GetNetDriver()) != nullptr;
 		if (!bIsSpatial)
 		{
@@ -208,13 +208,13 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 		if (bLastStepLoop)
 		{
-			// step 9.1 - Server removes the component for secondary test case
+			// Step 9.1 - Server removes the component for secondary test case
 			AddStep(TEXT("DynamicSubobjectsTestServerDestroyActorComponent"), FWorkerDefinition::Server(1), nullptr, [this]() {
 				TArray<USceneComponent*> AllSceneComps;
 				TestActor->GetComponents<USceneComponent>(AllSceneComps);
 				AssertEqual_Int(AllSceneComps.Num(), 4, TEXT("DynamicSubobjectTestActor should have 4 components"));
 
-				// delete the component with the right name
+				// Delete the component with the right name
 				for (USceneComponent* SceneComponent : AllSceneComps)
 				{
 					if (SceneComponent->GetName() == TEXT("ToRemoveComponent"))
@@ -232,7 +232,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddStep(TEXT("DynamicSubobjectsTestServerMoveClient1CloseToCube"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			ClientOneSpawnedPawn->SetActorLocation(CharacterSpawnLocation);
 			AssertEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterSpawnLocation,
-								TEXT("Server 1 should see the pawn close to the initial spawn location"), 1.0f);
+							   TEXT("Server 1 should see the pawn close to the initial spawn location"), 1.0f);
 			FinishStep();
 		});
 
@@ -276,8 +276,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 	}
 
 	// Step 13 - All worker cleanup
-	AddStep(TEXT("DynamicSubobjectsTestAllWorkerCleanup"), FWorkerDefinition::AllWorkers, nullptr, [this]()
-	{
+	AddStep(TEXT("DynamicSubobjectsTestAllWorkerCleanup"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
 		TestActor->TestIntProperty = -1;
 		FinishStep();
 	});
