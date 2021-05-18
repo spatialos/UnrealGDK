@@ -49,7 +49,7 @@
  * This extra test case is implemented in steps 9.1 and 12.1
  */
 
-const static float StepTimeLimit = 20.0f;
+const static float StepTimeLimit = 15.0f;
 
 ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 	: Super()
@@ -60,7 +60,7 @@ ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 	CharacterSpawnLocation = FVector(0.0f, 120.0f, 40.0f);
 	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 40.0f); // Outside of the interest range of the client
 
-	TimeLimit = 200.0f;
+	TimeLimit = 100.0f;
 }
 
 void ADynamicSubobjectsTest::PrepareTest()
@@ -181,7 +181,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		{
 			AddStep(TEXT("DynamicSubobjectsTestNativeWaitABit"), FWorkerDefinition::Server(1), nullptr, nullptr, [this](float DeltaTime) {
 				StepTimer += DeltaTime;
-				if (StepTimer > 10.0f)
+				if (StepTimer > 6.0f)
 				{
 					StepTimer = 0;
 					FinishStep();

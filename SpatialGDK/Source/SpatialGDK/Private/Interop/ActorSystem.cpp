@@ -730,6 +730,8 @@ void ActorSystem::DestroySubObject(const Worker_EntityId EntityId, UObject* Obje
 	{
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
+			UE_LOG(LogActorSystem, Verbose, TEXT("Destroying subobject with offset %u on entity %d"), ObjectRef.Offset, EntityId);
+
 			Channel->OnSubobjectDeleted(ObjectRef, Object, TWeakObjectPtr<UObject>(Object));
 
 			Actor->OnSubobjectDestroyFromReplication(Object);
