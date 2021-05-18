@@ -125,7 +125,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 			// server has 1 more component than client (idk why)
 			AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("For this test, DynamicSubobjectTestActor should have 3 components"));
 
-			// add new dynamic component to test actor
+			// Add new dynamic component to test actor
 			UStaticMeshComponent* AddedComponent = NewObject<UStaticMeshComponent>(TestActor, TEXT("ToRemoveComponent"));
 			AddedComponent->AttachToComponent(TestActor->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
 			AddedComponent->RegisterComponent();
