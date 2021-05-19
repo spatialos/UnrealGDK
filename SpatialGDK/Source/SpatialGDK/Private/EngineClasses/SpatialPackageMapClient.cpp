@@ -246,24 +246,35 @@ TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromUnrealObjectRef(c
 
 FNetworkGUID* USpatialPackageMapClient::GetRemovedDynamicSubobjectNetGUID(const FUnrealObjectRef& ObjectRef)
 {
-	if (FNetworkGUID* NetGUID = RemovedDynamicSubobjectObjectRefs.Find(ObjectRef))
+	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = EntityRemovedDynamicSubObjects.Find(ObjectRef.Entity))
 	{
-		return NetGUID;
+		if (FNetworkGUID* NetGUID = EntityMappings->Find(ObjectRef))
+		{
+			return NetGUID;
+		}
 	}
 	return nullptr;
 }
 
 void USpatialPackageMapClient::AddRemovedDynamicSubobjectObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID)
 {
-	RemovedDynamicSubobjectObjectRefs.Emplace(ObjectRef, NetGUID);
+	TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = EntityRemovedDynamicSubObjects.Find(ObjectRef.Entity);
+	if (!EntityMappings)
+	{
+		// If this is the first subobject ref to be added to EntityRemovedDynamicSubObjects for an entity, initialise
+		// Their own TMap
+		EntityRemovedDynamicSubObjects.Emplace(ObjectRef.Entity, TMap<FUnrealObjectRef, FNetworkGUID>());
+		EntityMappings = EntityRemovedDynamicSubObjects.Find(ObjectRef.Entity);
+	}
+	EntityMappings->Emplace(ObjectRef, NetGUID);
 }
 
 void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Worker_EntityId& InEntityId)
 {
-	for (auto DynamicSubobjectIterator = RemovedDynamicSubobjectObjectRefs.CreateIterator(); DynamicSubobjectIterator;
-		 ++DynamicSubobjectIterator)
+	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = EntityRemovedDynamicSubObjects.Find(InEntityId))
 	{
-		if (DynamicSubobjectIterator->Key.Entity == InEntityId)
+		for (auto DynamicSubobjectIterator = EntityMappings->CreateIterator(); DynamicSubobjectIterator;
+		++DynamicSubobjectIterator)
 		{
 			DynamicSubobjectIterator.RemoveCurrent();
 		}
@@ -297,25 +308,28 @@ void USpatialPackageMapClient::RemoveBNetLoadOnClientRuntimeRemovedComponents(co
 		return false;
 	};
 
-	// Go over each stored sub-object and determine whether it is contained within the new components array
-	// If it is not contained within the new components array, it means the sub-object was removed while out of the client's interest
-	// If so, remove it now
-	for (auto DynamicSubObjectIterator = RemovedDynamicSubobjectObjectRefs.CreateIterator(); DynamicSubObjectIterator;
-		 ++DynamicSubObjectIterator)
+	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = EntityRemovedDynamicSubObjects.Find(EntityId))
 	{
-		if (DynamicSubObjectIterator->Key.Entity == EntityId)
+		// Go over each stored sub-object and determine whether it is contained within the new components array
+		// If it is not contained within the new components array, it means the sub-object was removed while out of the client's interest
+		// If so, remove it now
+		for (auto DynamicSubObjectIterator = EntityMappings->CreateIterator(); DynamicSubObjectIterator;
+		++DynamicSubObjectIterator)
 		{
-			if (!ContainedInComponentsArr(DynamicSubObjectIterator->Key))
+			if (DynamicSubObjectIterator->Key.Entity == EntityId)
 			{
-				if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(DynamicSubObjectIterator->Value, false))
+				if (!ContainedInComponentsArr(DynamicSubObjectIterator->Key))
 				{
-					UE_LOG(LogSpatialPackageMap, Verbose,
-						   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
-								"actor was out of the client's interest. Destroying the SubObject now."),
-						   DynamicSubObjectIterator->Key.Offset, EntityId);
-					ActorSystem.DestroySubObject(EntityId, Object, DynamicSubObjectIterator->Key);
+					if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(DynamicSubObjectIterator->Value, false))
+					{
+						UE_LOG(LogSpatialPackageMap, Verbose,
+							TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
+									"actor was out of the client's interest. Destroying the SubObject now."),
+							DynamicSubObjectIterator->Key.Offset, EntityId);
+						ActorSystem.DestroySubObject(EntityId, Object, DynamicSubObjectIterator->Key);
+					}
+					DynamicSubObjectIterator.RemoveCurrent();
 				}
-				DynamicSubObjectIterator.RemoveCurrent();
 			}
 		}
 	}

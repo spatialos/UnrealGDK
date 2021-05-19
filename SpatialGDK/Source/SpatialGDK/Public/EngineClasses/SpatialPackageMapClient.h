@@ -88,7 +88,7 @@ private:
 
 	// Entities that have been assigned on this server and not created yet
 	TSet<Worker_EntityId_Key> PendingCreationEntityIds;
-	TMap<FUnrealObjectRef, FNetworkGUID> RemovedDynamicSubobjectObjectRefs;
+	TMap<Worker_EntityId, TMap<FUnrealObjectRef, FNetworkGUID>> EntityRemovedDynamicSubObjects;
 
 	USpatialNetDriver* NetDriver;
 };
