@@ -14,6 +14,7 @@
 #include "SpatialConstants.h"
 #include "Utils/SchemaOption.h"
 
+#include "Algo/Copy.h"
 #include "Engine/Engine.h"
 #include "EngineUtils.h"
 #include "GameFramework/Actor.h"
@@ -436,8 +437,12 @@ static FSubobjectToOffsetMap CreateOffsetMapFromActor(USpatialPackageMapClient* 
 	{
 		// Process components attached to this object; this allows us to join up
 		// server- and client-side components added in the level.
-		TArray<UActorComponent*> ActorInstanceComponents = Actor->GetInstanceComponents();
+		TArray<UActorComponent*> ActorInstanceComponents;
 
+		// In non-editor builds, editor-only components can be allocated a slot in the array, but left as nullptrs.
+		Algo::CopyIf(Actor->GetInstanceComponents(), ActorInstanceComponents, [](UActorComponent* Component) -> bool {
+			return IsValid(Component);
+		});
 		// These need to be ordered in case there are more than one component of the same type, or
 		// we may end up with wrong component instances having associations between them.
 		ActorInstanceComponents.Sort([](const UActorComponent& Lhs, const UActorComponent& Rhs) -> bool {

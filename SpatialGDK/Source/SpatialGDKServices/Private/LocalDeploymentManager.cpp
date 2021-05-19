@@ -240,7 +240,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	RuntimeStartTime = FDateTime::Now();
 	bRedeployRequired = false;
 
-	if (bLocalDeploymentRunning)
+	if (bLocalDeploymentRunning || bStartingDeployment)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start a local deployment but one is already running."));
 		if (CallBack)
@@ -448,6 +448,12 @@ bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
 	if (!bLocalDeploymentRunning)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to stop local deployment but no active deployment exists."));
+		return false;
+	}
+
+	if (bStoppingDeployment)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to stop local deployment but stopping process is already in progress."));
 		return false;
 	}
 
