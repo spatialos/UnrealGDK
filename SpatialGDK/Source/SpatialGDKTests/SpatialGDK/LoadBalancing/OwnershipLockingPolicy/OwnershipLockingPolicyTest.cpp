@@ -416,6 +416,7 @@ OWNERSHIPLOCKINGPOLICY_TEST(GIVEN_AcquireLock_is_called_WHEN_the_locked_Actor_is
 	ADD_LATENT_AUTOMATION_COMMAND(FSetActorRole(Data, "Actor", ROLE_SimulatedProxy));
 	ADD_LATENT_AUTOMATION_COMMAND(FAcquireLock(this, Data, "Actor", "First lock", false));
 	ADD_LATENT_AUTOMATION_COMMAND(FTestIsLocked(this, Data, "Actor", false));
+	ADD_LATENT_AUTOMATION_COMMAND(FSetActorRole(Data, "Actor", ROLE_Authority));
 	TearDown(this, Data);
 
 	return true;
