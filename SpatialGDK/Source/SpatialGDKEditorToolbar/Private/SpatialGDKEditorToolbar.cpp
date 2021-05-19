@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+#pragma optimize("", off)
 
 #include "SpatialGDKEditorToolbar.h"
 
@@ -972,7 +973,12 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 		}
 
 		FLocalDeploymentManager::LocalDeploymentCallback CallBack = [this](bool bSuccess) {
-			if (!bSuccess)
+			if (bSuccess)
+			{
+				// Once we've launched the local deployment, attempt to start the inspector process
+				StartInspectorProcess(nullptr);
+			}
+			else
 			{
 				OnShowFailedNotification(TEXT("Local deployment failed to start"));
 			}
@@ -1018,16 +1024,24 @@ void FSpatialGDKEditorToolbarModule::OpenInspectorURL()
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
+void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> InOnReady)
 {
+	auto OnReady = [InOnReady]()
+	{
+		if (InOnReady)
+		{
+			InOnReady();
+		}
+	};
+
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion] {
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion, OnReady] {
 		if (InspectorProcess && InspectorProcess->Update())
 		{
-			// We already have an inspector running. Just open the URL.
-			OpenInspectorURL();
+			// We already have an inspector process running. Do nothing.
+			OnReady();
 			return;
 		}
 
@@ -1068,6 +1082,14 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 
 		InspectorProcess->Launch();
 
+		OnReady();
+	});
+}
+
+void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
+{
+	StartInspectorProcess([this]()
+	{
 		OpenInspectorURL();
 	});
 }
