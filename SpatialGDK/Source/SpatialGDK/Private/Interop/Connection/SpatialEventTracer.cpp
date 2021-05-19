@@ -10,7 +10,7 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
 namespace SpatialGDK
 {
-TraceQueryPtr ParseOrDefault(const FString& Str, const char* FilterForLog)
+TraceQueryPtr ParseOrDefault(const FString& Str, const TCHAR* FilterForLog)
 {
 	TraceQueryPtr Ptr;
 	if (Str.Len() > 0)
@@ -129,8 +129,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	}
 
 	// Filters
-	TraceQueryPtr PreFilter = ParseOrDefault(SamplingSettings->GDKEventPreFilter, "pre-filter");
-	TraceQueryPtr PostFilter = ParseOrDefault(SamplingSettings->GDKEventPostFilter, "post-filter");
+	TraceQueryPtr PreFilter = ParseOrDefault(SamplingSettings->GDKEventPreFilter, TEXT("pre-filter"));
+	TraceQueryPtr PostFilter = ParseOrDefault(SamplingSettings->GDKEventPostFilter, TEXT("post-filter"));
 
 	checkf(PreFilter.Get() != nullptr, TEXT("Pre-filter is invalid."));
 	checkf(PostFilter.Get() != nullptr, TEXT("Post-filter is invalid."));
