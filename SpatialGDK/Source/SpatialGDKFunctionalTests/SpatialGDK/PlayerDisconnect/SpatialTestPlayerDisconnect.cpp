@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialTestPlayerDisconnectReturnToMainMenu.h"
+#include "SpatialTestPlayerDisconnect.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
@@ -8,13 +8,13 @@
 #include "SpatialConstants.h"
 #include "SpatialFunctionalTestFlowController.h"
 
-ASpatialTestPlayerDisconnectReturnToMainMenu::ASpatialTestPlayerDisconnectReturnToMainMenu()
+ASpatialTestPlayerDisconnect::ASpatialTestPlayerDisconnect()
 {
 	Author = "Victoria Bloom";
 	Description = TEXT("Ensure players are cleaned up correctly when they disconnected by the return to main menu.");
 }
 
-void ASpatialTestPlayerDisconnectReturnToMainMenu::PrepareTest()
+void ASpatialTestPlayerDisconnect::PrepareTest()
 {
 	Super::PrepareTest();
 	{
