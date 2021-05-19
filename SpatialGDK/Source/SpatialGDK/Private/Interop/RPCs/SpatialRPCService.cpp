@@ -8,13 +8,11 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Net/NetworkProfiler.h"
 #include "SpatialConstants.h"
 #include "Utils/ObjectAllocUtils.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialLatencyTracer.h"
-
-#include "Algo/AnyOf.h"
-#include "Net/NetworkProfiler.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialRPCService);
 
@@ -598,27 +596,7 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 	const float TimeQueued = (FDateTime::Now() - PendingRPCParams.Timestamp).GetTotalSeconds();
 	const int32 UnresolvedRefCount = UnresolvedRefs.Num();
 
-	const bool bIsReliableChannel = PendingRPCParams.Type == ERPCType::ClientReliable || PendingRPCParams.Type == ERPCType::ServerReliable;
-	const bool bMissingServerObject = Algo::AnyOf(UnresolvedRefs, [&TargetObject, Function](const FUnrealObjectRef& MissingRef) {
-		if (MissingRef.bNoLoadOnClient)
-		{
-			return true;
-		}
-		else if (!ensureAlwaysMsgf(MissingRef.Path.IsSet(),
-								   TEXT("Received reference to dynamic object as loadable. Target : %s, Parameter Entity : %llu, RPC : %s"),
-								   *TargetObject->GetName(), MissingRef.Entity, *Function->GetName()))
-		{
-			// Validation code, to ensure that every loadable ref we receive has a name.
-			return true;
-		}
-		return false;
-	});
-
-	const bool bCannotWaitLongerThanQueueTime = !bIsReliableChannel || bMissingServerObject;
-	const bool bQueueTimeExpired = TimeQueued > SpatialSettings->QueuedIncomingRPCWaitTime;
-	const bool bMustExecuteRPC = UnresolvedRefCount == 0 || (bCannotWaitLongerThanQueueTime && bQueueTimeExpired);
-
-	if (bMustExecuteRPC)
+	if (UnresolvedRefCount == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued)
 	{
 		if (UnresolvedRefCount > 0 && !SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(PendingRPCParams.Type)
 			&& (Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)

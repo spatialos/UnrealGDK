@@ -160,13 +160,13 @@ protected:
 		TArray<FSpatialGDKSpanId> Spans;
 	};
 	StandardQueue::SentRPCCallback MakeRPCSentCallback();
-	SpatialGDK::RPCCallbacks::UpdateWritten MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const;
+	SpatialGDK::RPCCallbacks::DataWritten MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const;
 	SpatialGDK::RPCCallbacks::UpdateWritten MakeUpdateWriteCallback();
 
 	static void OnRPCSent(SpatialGDK::SpatialEventTracer& EventTracer, TArray<UpdateToSend>& OutUpdates, FName Name,
 						  Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId, const FSpatialGDKSpanId& SpanId);
 	static void OnDataWritten(TArray<FWorkerComponentData>& OutArray, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
-							  Schema_ComponentUpdate* InData);
+							  Schema_ComponentData* InData);
 	static void OnUpdateWritten(TArray<UpdateToSend>& OutUpdates, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
 								Schema_ComponentUpdate* InUpdate);
 

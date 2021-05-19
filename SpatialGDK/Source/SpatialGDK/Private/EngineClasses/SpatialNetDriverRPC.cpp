@@ -5,14 +5,13 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/RPCs/RPCQueues.h"
 #include "Interop/RPCs/RPC_RingBufferSerializer.h"
 #include "Interop/RPCs/RPC_RingBufferWithACK_Receiver.h"
 #include "Interop/RPCs/RPC_RingBufferWithACK_Sender.h"
 #include "Utils/RPCRingBuffer.h"
 #include "Utils/RepLayoutUtils.h"
 
-#include "Algo/AnyOf.h"
+#include "Interop/RPCs/RPCQueues.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialNetDriverRPC);
 
@@ -64,22 +63,14 @@ void FSpatialNetDriverRPC::OnRPCSent(SpatialGDK::SpatialEventTracer& EventTracer
 }
 
 void FSpatialNetDriverRPC::OnDataWritten(TArray<FWorkerComponentData>& OutArray, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
-										 Schema_ComponentUpdate* InData)
+										 Schema_ComponentData* InData)
 {
 	if (ensure(InData != nullptr))
 	{
-		FWorkerComponentData* ExistingData = OutArray.FindByPredicate([ComponentId](const FWorkerComponentData& Data) {
-			return Data.component_id == ComponentId;
-		});
-		if (ExistingData == nullptr)
-		{
-			FWorkerComponentData Data;
-			Data.component_id = ComponentId;
-			Data.schema_type = Schema_CreateComponentData();
-			ExistingData = &OutArray.Add_GetRef(Data);
-		}
-		Schema_ApplyComponentUpdateToData(InData, ExistingData->schema_type);
-		Schema_DestroyComponentUpdate(InData);
+		FWorkerComponentData Data;
+		Data.component_id = ComponentId;
+		Data.schema_type = InData;
+		OutArray.Add(Data);
 	}
 }
 
@@ -93,18 +84,8 @@ void FSpatialNetDriverRPC::OnUpdateWritten(TArray<UpdateToSend>& OutUpdates, Wor
 			UpdateToSend& Update = OutUpdates.AddDefaulted_GetRef();
 			Update.EntityId = EntityId;
 			Update.Update.component_id = ComponentId;
-			Update.Update.schema_type = nullptr;
 		}
-		FWorkerComponentUpdate& Update = OutUpdates.Last().Update;
-		if (Update.schema_type == nullptr)
-		{
-			Update.schema_type = InUpdate;
-		}
-		else
-		{
-			Schema_MergeComponentUpdateIntoUpdate(InUpdate, Update.schema_type);
-			Schema_DestroyComponentUpdate(InUpdate);
-		}
+		OutUpdates.Last().Update.schema_type = InUpdate;
 	}
 }
 
@@ -121,9 +102,9 @@ FSpatialNetDriverRPC::StandardQueue::SentRPCCallback FSpatialNetDriverRPC::MakeR
 	return StandardQueue::SentRPCCallback();
 }
 
-RPCCallbacks::UpdateWritten FSpatialNetDriverRPC::MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const
+RPCCallbacks::DataWritten FSpatialNetDriverRPC::MakeDataWriteCallback(TArray<FWorkerComponentData>& OutArray) const
 {
-	return [&OutArray](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* InData) {
+	return [&OutArray](Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* InData) {
 		return OnDataWritten(OutArray, EntityId, ComponentId, InData);
 	};
 }
@@ -406,37 +387,15 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload&
 
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
-	const TOptional<ERPCType> RPCType = SpatialConstants::RPCStringToType(MetaData.RPCName.ToString());
-
 	const float TimeQueued = (FPlatformTime::Cycles64() - MetaData.Timestamp) * FPlatformTime::GetSecondsPerCycle64();
 	const int32 UnresolvedRefCount = UnresolvedRefs.Num();
 
-	const bool bIsReliableChannel = RPCType.Get(/*DefaultValue*/ ERPCType::Invalid) == ERPCType::ClientReliable
-									|| RPCType.Get(/*DefaultValue*/ ERPCType::Invalid) == ERPCType::ServerReliable;
-
-	const bool bMissingServerObject = Algo::AnyOf(UnresolvedRefs, [&TargetObject, Function](const FUnrealObjectRef& MissingRef) {
-		if (MissingRef.bNoLoadOnClient)
-		{
-			return true;
-		}
-		else if (!ensureAlwaysMsgf(MissingRef.Path.IsSet(),
-								   TEXT("Received reference to dynamic object as loadable. Target : %s, Parameter Entity : %llu, RPC : %s"),
-								   *TargetObject->GetName(), MissingRef.Entity, *Function->GetName()))
-		{
-			// Validation code, to ensure that every loadable ref we receive has a name.
-			return true;
-		}
-		return false;
-	});
-
-	const bool bCannotWaitLongerThanQueueTime = !bIsReliableChannel || bMissingServerObject;
-	const bool bQueueTimeExpired = TimeQueued > SpatialSettings->QueuedIncomingRPCWaitTime;
-	const bool bMustExecuteRPC = UnresolvedRefCount == 0 || (bCannotWaitLongerThanQueueTime && bQueueTimeExpired);
-
-	if (!bMustExecuteRPC)
+	if (UnresolvedRefCount != 0 && TimeQueued < SpatialSettings->QueuedIncomingRPCWaitTime)
 	{
 		return !RPCConsumed;
 	}
+
+	TOptional<ERPCType> RPCType = SpatialConstants::RPCStringToType(MetaData.RPCName.ToString());
 
 	if (UnresolvedRefCount > 0 && RPCType.IsSet() && !SpatialSettings->ShouldRPCTypeAllowUnresolvedParameters(RPCType.GetValue())
 		&& (Function->SpatialFunctionFlags & SPATIALFUNC_AllowUnresolvedParameters) == 0)
