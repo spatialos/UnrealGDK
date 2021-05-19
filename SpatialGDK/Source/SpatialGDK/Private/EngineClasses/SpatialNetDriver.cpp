@@ -1052,28 +1052,42 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 		// Check if this is a dormant entity, and if so retire the entity
 		if (PackageMap != nullptr && World != nullptr)
 		{
-			const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
-
-			// If the actor is an initially dormant startup actor that has not been replicated.
-			if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor() && ThisActor->GetIsReplicated()
-				&& ThisActor->HasAuthority())
+			if (!World->bBegunPlay)
 			{
-				UE_LOG(LogSpatialOSNetDriver, Log,
-					   TEXT("Creating a tombstone entity for initially dormant statup actor. "
-							"Actor: %s."),
+				// PackageMap != nullptr implies the spatial connection is connected, however World::BeginPlay may not have been called yet
+				// which means we are still in a UEngine::LoadMap call. During the initial load process, actors are created and destroyed in
+				// the following scenarios:
+				// - When running in PIE, Blueprint loaded sub-levels can be duplicated and immediately unloaded.
+				// - ChildActorComponent::OnRegister
+				UE_LOG(LogSpatialOSNetDriver, Verbose,
+					   TEXT("USpatialNetDriver::NotifyActorDestroyed ignored because world hasn't begun play. Actor: %s."),
 					   *ThisActor->GetName());
-				ActorSystem->CreateTombstoneEntity(ThisActor);
 			}
-			else if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
+			else
 			{
-				// Deliberately don't unregister the dormant entity, but let it get cleaned up in the entity remove op process
-				if (!HasServerAuthority(EntityId))
+				const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ThisActor);
+
+				// If the actor is an initially dormant startup actor that has not been replicated.
+				if (EntityId == SpatialConstants::INVALID_ENTITY_ID && ThisActor->IsNetStartupActor() && ThisActor->GetIsReplicated()
+					&& ThisActor->HasAuthority())
 				{
-					UE_LOG(LogSpatialOSNetDriver, Warning,
-						   TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId,
+					UE_LOG(LogSpatialOSNetDriver, Log,
+						   TEXT("Creating a tombstone entity for initially dormant statup actor. "
+								"Actor: %s."),
 						   *ThisActor->GetName());
+					ActorSystem->CreateTombstoneEntity(ThisActor);
 				}
-				ActorSystem->RetireEntity(EntityId, ThisActor->IsNetStartupActor());
+				else if (IsDormantEntity(EntityId) && ThisActor->HasAuthority())
+				{
+					// Deliberately don't unregister the dormant entity, but let it get cleaned up in the entity remove op process
+					if (!HasServerAuthority(EntityId))
+					{
+						UE_LOG(LogSpatialOSNetDriver, Warning,
+							   TEXT("Retiring dormant entity that we don't have spatial authority over [%lld][%s]"), EntityId,
+							   *ThisActor->GetName());
+					}
+					ActorSystem->RetireEntity(EntityId, ThisActor->IsNetStartupActor());
+				}
 			}
 		}
 
@@ -2672,13 +2686,6 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Join failure: %s"), *ErrorMsg);
 		SpatialConnection->FlushNet(true);
 	}
-
-	// Preallocate the PlayerController entity so the AuthorityDelegation client authoritative components can be set
-	// correctly at spawn.
-	USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(SpatialConnection->PlayerController);
-	USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Channel->Actor->GetNetConnection());
-	check(NetConnection != nullptr);
-	NetConnection->PlayerControllerEntity = Channel->GetEntityId();
 }
 
 // This function is called for server workers who received the PC over the wire
@@ -3279,7 +3286,7 @@ int64 USpatialNetDriver::GetClientID() const
 
 	if (USpatialNetConnection* NetConnection = GetSpatialOSNetConnection())
 	{
-		return static_cast<int64>(NetConnection->PlayerControllerEntity);
+		return static_cast<int64>(NetConnection->GetPlayerControllerEntityId());
 	}
 	return SpatialConstants::INVALID_ENTITY_ID;
 }

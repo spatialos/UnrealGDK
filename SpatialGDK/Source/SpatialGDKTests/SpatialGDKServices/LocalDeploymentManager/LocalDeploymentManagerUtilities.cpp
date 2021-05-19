@@ -88,7 +88,8 @@ bool FStartDeployment::Update()
 				return;
 			}
 
-			if (LocalDeploymentManager->IsLocalDeploymentRunning())
+			if (LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStarting()
+				|| LocalDeploymentManager->IsDeploymentStopping())
 			{
 				return;
 			}
