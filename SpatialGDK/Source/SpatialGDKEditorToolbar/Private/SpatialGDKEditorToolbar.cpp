@@ -1026,8 +1026,7 @@ void FSpatialGDKEditorToolbarModule::OpenInspectorURL()
 
 void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> InOnReady)
 {
-	auto OnReady = [InOnReady]()
-	{
+	auto OnReady = [InOnReady]() {
 		if (InOnReady)
 		{
 			InOnReady();
@@ -1088,8 +1087,7 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> InO
 
 void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 {
-	StartInspectorProcess([this]()
-	{
+	StartInspectorProcess([this]() {
 		OpenInspectorURL();
 	});
 }
