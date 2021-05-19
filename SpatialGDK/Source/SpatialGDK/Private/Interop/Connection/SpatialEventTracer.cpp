@@ -21,8 +21,8 @@ TraceQueryPtr ParseOrDefault(const FString& Str, const TCHAR* FilterForLog)
 
 	if (!Ptr.IsValid())
 	{
-		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified query \"%s\" is invalid; defaulting to \"false\" query. %s"), FilterForLog,
-			   Trace_GetLastError());
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified query \"%s\" is invalid; defaulting to \"false\" query. %s"),
+			   FilterForLog, Trace_GetLastError());
 		Ptr.Reset(Trace_ParseSimpleQuery("false"));
 	}
 
@@ -110,13 +110,13 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Parameters.span_sampling_parameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
 
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing span sampling probabalistic. Probability: %f."),
-			SamplingSettings->SamplingProbability);
+		   SamplingSettings->SamplingProbability);
 
 	for (const auto& Pair : SamplingSettings->EventSamplingModeOverrides)
 	{
 		const FString& EventName = Pair.Key.ToString();
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Adding trace event sampling override. Event: %s Probability: %f."), *EventName,
-				Pair.Value);
+			   Pair.Value);
 		SpanSamplingProbabilities.Add({ AnsiStrings.Get(AnsiStrings.AddFString(EventName)), Pair.Value });
 	}
 

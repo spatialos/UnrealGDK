@@ -214,9 +214,7 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 			Writer->WriteValue(TEXT("event_pre_filter"),
 							   SamplingSettings->RuntimeEventPreFilter.Len() ? *SamplingSettings->RuntimeEventPreFilter : TEXT("false"));
 			Writer->WriteValue(TEXT("event_post_filter"),
-							   SamplingSettings->RuntimeEventPostFilter.Len()
-																  ? SamplingSettings->RuntimeEventPostFilter
-																  : TEXT("false"));
+							   SamplingSettings->RuntimeEventPostFilter.Len() ? SamplingSettings->RuntimeEventPostFilter : TEXT("false"));
 
 			Writer->WriteObjectEnd();
 			Writer->WriteObjectEnd();
