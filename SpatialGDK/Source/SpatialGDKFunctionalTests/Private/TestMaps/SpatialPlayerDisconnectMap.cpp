@@ -3,8 +3,8 @@
 #include "TestMaps/SpatialPlayerDisconnectMap.h"
 #include "EngineClasses/SpatialWorldSettings.h"
 #include "GameFramework/PlayerStart.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/PlayerDisconnect/SpatialTestPlayerDisconnect.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/PlayerDisconnect/SpatialPlayerDisconnectGameMode.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/PlayerDisconnect/SpatialTestPlayerDisconnect.h"
 #include "TestWorkerSettings.h"
 
 USpatialPlayerDisconnectMap::USpatialPlayerDisconnectMap()
@@ -23,8 +23,7 @@ void USpatialPlayerDisconnectMap::CreateCustomContentForMap()
 	(*PlayerStart)->SetActorLocation(FVector(-190, 0, 50));
 
 	// Add the test
-	ASpatialTestPlayerDisconnect& TriggerTest =
-		AddActorToLevel<ASpatialTestPlayerDisconnect>(CurrentLevel, FTransform::Identity);
+	ASpatialTestPlayerDisconnect& TriggerTest = AddActorToLevel<ASpatialTestPlayerDisconnect>(CurrentLevel, FTransform::Identity);
 
 	ASpatialWorldSettings* WorldSettings = CastChecked<ASpatialWorldSettings>(World->GetWorldSettings());
 	WorldSettings->DefaultGameMode = ASpatialPlayerDisconnectGameMode::StaticClass();

@@ -1,9 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialPlayerDisconnectGameMode.h"
-#include "PlayerDisconnectController.h"
 #include "EngineClasses/SpatialGameInstance.h"
-
+#include "PlayerDisconnectController.h"
 
 ASpatialPlayerDisconnectGameMode::ASpatialPlayerDisconnectGameMode()
 	: Super()
@@ -13,5 +12,3 @@ ASpatialPlayerDisconnectGameMode::ASpatialPlayerDisconnectGameMode()
 	static ConstructorHelpers::FClassFinder<AActor> PawnClassFinder(TEXT("/Game/Characters/PlayerCharacter_BP"));
 	DefaultPawnClass = PawnClassFinder.Class;
 }
-
-

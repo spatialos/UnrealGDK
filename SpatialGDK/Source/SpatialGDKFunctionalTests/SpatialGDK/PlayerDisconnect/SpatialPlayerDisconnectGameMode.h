@@ -5,7 +5,6 @@
 #include "GameFramework/GameModeBase.h"
 #include "SpatialPlayerDisconnectGameMode.generated.h"
 
-
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialPlayerDisconnectGameMode : public AGameModeBase
 {
