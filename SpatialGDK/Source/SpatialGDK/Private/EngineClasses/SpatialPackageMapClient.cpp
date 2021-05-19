@@ -273,8 +273,7 @@ void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Work
 {
 	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = EntityRemovedDynamicSubObjects.Find(InEntityId))
 	{
-		for (auto DynamicSubobjectIterator = EntityMappings->CreateIterator(); DynamicSubobjectIterator;
-		++DynamicSubobjectIterator)
+		for (auto DynamicSubobjectIterator = EntityMappings->CreateIterator(); DynamicSubobjectIterator; ++DynamicSubobjectIterator)
 		{
 			DynamicSubobjectIterator.RemoveCurrent();
 		}
@@ -313,8 +312,7 @@ void USpatialPackageMapClient::RemoveBNetLoadOnClientRuntimeRemovedComponents(co
 		// Go over each stored sub-object and determine whether it is contained within the new components array
 		// If it is not contained within the new components array, it means the sub-object was removed while out of the client's interest
 		// If so, remove it now
-		for (auto DynamicSubObjectIterator = EntityMappings->CreateIterator(); DynamicSubObjectIterator;
-		++DynamicSubObjectIterator)
+		for (auto DynamicSubObjectIterator = EntityMappings->CreateIterator(); DynamicSubObjectIterator; ++DynamicSubObjectIterator)
 		{
 			if (DynamicSubObjectIterator->Key.Entity == EntityId)
 			{
@@ -323,9 +321,9 @@ void USpatialPackageMapClient::RemoveBNetLoadOnClientRuntimeRemovedComponents(co
 					if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(DynamicSubObjectIterator->Value, false))
 					{
 						UE_LOG(LogSpatialPackageMap, Verbose,
-							TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
+							   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
 									"actor was out of the client's interest. Destroying the SubObject now."),
-							DynamicSubObjectIterator->Key.Offset, EntityId);
+							   DynamicSubObjectIterator->Key.Offset, EntityId);
 						ActorSystem.DestroySubObject(EntityId, Object, DynamicSubObjectIterator->Key);
 					}
 					DynamicSubObjectIterator.RemoveCurrent();
