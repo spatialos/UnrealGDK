@@ -92,7 +92,7 @@ ERPCType GetRPCType(UFunction* RemoteFunction)
 	{
 		return ERPCType::NetMulticast;
 	}
-	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetCrossServer))
+	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetCrossServer | FUNC_NetWriteFence))
 	{
 		return ERPCType::CrossServer;
 	}
@@ -331,7 +331,11 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 		SpecificDynamicSubobjectInfo->bDynamicSubobject = true;
 
 		int32 Offset = DynamicSubobjectData.SchemaComponents[SCHEMA_Data];
-		check(Offset != SpatialConstants::INVALID_COMPONENT_ID);
+		if (!ensureAlwaysMsgf(Offset != SpatialConstants::INVALID_COMPONENT_ID,
+							  TEXT("Failed to get dynamic subobject data offset when constructing subobject. Is Schema up to date?")))
+		{
+			continue;
+		}
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 			Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
@@ -641,7 +645,11 @@ void USpatialClassInfoManager::QuitGame()
 
 Worker_ComponentId USpatialClassInfoManager::ComputeActorInterestComponentId(const AActor* Actor) const
 {
-	check(Actor);
+	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Trying to compute Actor interest component ID for nullptr Actor")))
+	{
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
+
 	const AActor* ActorForRelevancy = Actor;
 	// bAlwaysRelevant takes precedence over bNetUseOwnerRelevancy - see AActor::IsNetRelevantFor
 	while (!ActorForRelevancy->bAlwaysRelevant && ActorForRelevancy->bNetUseOwnerRelevancy && ActorForRelevancy->GetOwner() != nullptr)

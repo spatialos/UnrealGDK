@@ -124,14 +124,6 @@ uint64 ClientServerRPCService::GetAckFromView(const Worker_EntityId EntityId, co
 {
 	switch (Type)
 	{
-	case ERPCType::ClientReliable:
-		return ClientServerDataStore[EntityId].Client.ReliableRPCAck;
-	case ERPCType::ClientUnreliable:
-		return ClientServerDataStore[EntityId].Client.UnreliableRPCAck;
-	case ERPCType::ServerReliable:
-		return ClientServerDataStore[EntityId].Server.ReliableRPCAck;
-	case ERPCType::ServerUnreliable:
-		return ClientServerDataStore[EntityId].Server.UnreliableRPCAck;
 	case ERPCType::ServerAlwaysWrite:
 		return ClientServerDataStore[EntityId].Server.AlwaysWriteRPCAck;
 	default:
@@ -201,26 +193,14 @@ void ClientServerRPCService::OnEndpointAuthorityGained(const Worker_EntityId Ent
 	case SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID:
 	{
 		const ClientEndpoint& Endpoint = ClientServerDataStore[EntityId].Client;
-		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint.ReliableRPCAck);
-		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientUnreliable), Endpoint.UnreliableRPCAck);
-		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint.ReliableRPCAck);
-		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientUnreliable), Endpoint.UnreliableRPCAck);
-		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint.ReliableRPCBuffer.LastSentRPCId);
-		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerUnreliable), Endpoint.UnreliableRPCBuffer.LastSentRPCId);
 		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerAlwaysWrite), Endpoint.AlwaysWriteRPCBuffer.LastSentRPCId);
 		break;
 	}
 	case SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID:
 	{
 		const ServerEndpoint& Endpoint = ClientServerDataStore[EntityId].Server;
-		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint.ReliableRPCAck);
-		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerUnreliable), Endpoint.UnreliableRPCAck);
 		LastSeenRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerAlwaysWrite), Endpoint.AlwaysWriteRPCAck);
-		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerReliable), Endpoint.ReliableRPCAck);
-		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerUnreliable), Endpoint.UnreliableRPCAck);
 		LastAckedRPCIds.Add(EntityRPCType(EntityId, ERPCType::ServerAlwaysWrite), Endpoint.AlwaysWriteRPCAck);
-		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientReliable), Endpoint.ReliableRPCBuffer.LastSentRPCId);
-		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::ClientUnreliable), Endpoint.UnreliableRPCBuffer.LastSentRPCId);
 		break;
 	}
 	default:
@@ -235,26 +215,13 @@ void ClientServerRPCService::OnEndpointAuthorityLost(const Worker_EntityId Entit
 	{
 	case SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID:
 	{
-		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
-		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
-		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
-		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
-		RPCStore->LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerReliable));
-		RPCStore->LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
 		RPCStore->LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerAlwaysWrite));
 		ClearOverflowedRPCs(EntityId);
 		break;
 	}
 	case SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID:
 	{
-		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerReliable));
-		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
-		LastSeenRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerAlwaysWrite));
-		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerReliable));
-		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerUnreliable));
 		LastAckedRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ServerAlwaysWrite));
-		RPCStore->LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientReliable));
-		RPCStore->LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::ClientUnreliable));
 		ClearOverflowedRPCs(EntityId);
 		break;
 	}
@@ -294,13 +261,9 @@ void ClientServerRPCService::ExtractRPCsForEntity(const Worker_EntityId EntityId
 	switch (ComponentId)
 	{
 	case SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID:
-		ExtractRPCsForType(EntityId, ERPCType::ServerReliable);
-		ExtractRPCsForType(EntityId, ERPCType::ServerUnreliable);
 		ExtractRPCsForType(EntityId, ERPCType::ServerAlwaysWrite);
 		break;
 	case SpatialConstants::SERVER_ENDPOINT_COMPONENT_ID:
-		ExtractRPCsForType(EntityId, ERPCType::ClientReliable);
-		ExtractRPCsForType(EntityId, ERPCType::ClientUnreliable);
 		break;
 	default:
 		checkNoEntry();
@@ -379,17 +342,6 @@ const RPCRingBuffer& ClientServerRPCService::GetBufferFromView(const Worker_Enti
 {
 	switch (Type)
 	{
-	// Server sends Client RPCs, so ClientReliable & ClientUnreliable buffers live on ServerEndpoint.
-	case ERPCType::ClientReliable:
-		return ClientServerDataStore[EntityId].Server.ReliableRPCBuffer;
-	case ERPCType::ClientUnreliable:
-		return ClientServerDataStore[EntityId].Server.UnreliableRPCBuffer;
-
-	// Client sends Server RPCs, so ServerReliable & ServerUnreliable buffers live on ClientEndpoint.
-	case ERPCType::ServerReliable:
-		return ClientServerDataStore[EntityId].Client.ReliableRPCBuffer;
-	case ERPCType::ServerUnreliable:
-		return ClientServerDataStore[EntityId].Client.UnreliableRPCBuffer;
 	case ERPCType::ServerAlwaysWrite:
 		return ClientServerDataStore[EntityId].Client.AlwaysWriteRPCBuffer;
 	default:

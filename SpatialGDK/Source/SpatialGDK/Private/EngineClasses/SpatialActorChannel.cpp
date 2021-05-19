@@ -20,7 +20,6 @@
 #include "EngineStats.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -56,10 +55,19 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 {
 	FSendingRepState* SendingRepState = RepState->GetSendingRepState();
 
-	check(SendingRepState->HistoryEnd >= SendingRepState->HistoryStart);
+	if (!ensureAlwaysMsgf(SendingRepState->HistoryEnd >= SendingRepState->HistoryStart,
+						  TEXT("HistoryEnd buffer index should never be smaller than HistoryStart")))
+	{
+		return;
+	}
 
 	const int32 HistoryCount = SendingRepState->HistoryEnd - SendingRepState->HistoryStart;
-	check(HistoryCount < MaxSendingChangeHistory);
+
+	if (!ensureAlwaysMsgf(HistoryCount < MaxSendingChangeHistory,
+						  TEXT("Changelist history should always be smaller than the MaxSendingChangeHistory")))
+	{
+		return;
+	}
 
 	for (int32 i = SendingRepState->HistoryStart; i < SendingRepState->HistoryEnd; i++)
 	{
@@ -67,8 +75,7 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 
 		FRepChangedHistory& HistoryItem = SendingRepState->ChangeHistory[HistoryIndex];
 
-		// All active history items should contain a change list
-		check(HistoryItem.Changed.Num() > 0);
+		ensureAlwaysMsgf(HistoryItem.Changed.Num() > 0, TEXT("All active history items should contain a change list"));
 
 		HistoryItem.Changed.Empty();
 		HistoryItem.OutPacketIdRange = FPacketIdRange();
@@ -78,7 +85,10 @@ void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
 	// Remove any tiling in the history markers to keep them from wrapping over time
 	const int32 NewHistoryCount = SendingRepState->HistoryEnd - SendingRepState->HistoryStart;
 
-	check(NewHistoryCount <= MaxSendingChangeHistory);
+	if (!ensureAlwaysMsgf(NewHistoryCount <= MaxSendingChangeHistory, TEXT("NewHistoryCount greater or equal to MaxSendingChangeHistory")))
+	{
+		return;
+	}
 
 	SendingRepState->HistoryStart = SendingRepState->HistoryStart % MaxSendingChangeHistory;
 	SendingRepState->HistoryEnd = SendingRepState->HistoryStart + NewHistoryCount;
@@ -257,10 +267,14 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 			if (Actor->GetTearOff())
 			{
 				NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
-				// Since the entity deletion is delayed, this creates a situation,
-				// when the Actor is torn off, but still replicates.
-				// Disabling replication makes RPC calls impossible for this Actor.
-				Actor->SetReplicates(false);
+				if (ensureMsgf(Actor->HasAuthority(), TEXT("EntityId %lld Actor %s doesn't have authority, can't disable replication"),
+							   EntityId, *Actor->GetName()))
+				{
+					// Since the entity deletion is delayed, this creates a situation,
+					// when the Actor is torn off, but still replicates.
+					// Disabling replication makes RPC calls impossible for this Actor.
+					Actor->SetReplicates(false);
+				}
 			}
 			else
 			{
@@ -269,7 +283,12 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		}
 		else if (bCreatedEntity) // We have not gained authority yet
 		{
-			Actor->SetReplicates(false);
+			if (ensureMsgf(Actor->HasAuthority(), TEXT("EntityId %lld Actor %s doesn't have authority, can't disable replication"),
+						   EntityId, *Actor->GetName()))
+			{
+				Actor->SetReplicates(false);
+			}
+
 			NetDriver->ActorSystem->RetireWhenAuthoritative(
 				EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()), Actor->IsNetStartupActor(),
 				Actor->GetTearOff()); // Ensure we don't recreate the actor
@@ -346,7 +365,8 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	}
 	else if (Reason == EChannelCloseReason::Relevancy)
 	{
-		check(IsAuthoritativeServer());
+		ensureAlwaysMsgf(IsAuthoritativeServer(),
+						 TEXT("Trying to close SpatialActorChannel because of Relevancy on a non-authoritative server"));
 		// Do nothing except close actor channel - this should only get processed on auth server
 	}
 	else
@@ -360,18 +380,12 @@ int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
 	return Super::Close(Reason);
 }
 
-bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
-{
-	check(ObjectHasReplicator(Object));
-	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
-	TSharedPtr<FRepLayout>& RepLayout = Replicator.RepLayout;
-	check(Handle - 1 < RepLayout->BaseHandleToCmdIndex.Num());
-	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == ERepLayoutCmdType::DynamicArray;
-}
-
 void USpatialActorChannel::UpdateShadowData()
 {
-	check(Actor);
+	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Called UpdateShadowData but Actor was nullptr")))
+	{
+		return;
+	}
 
 	// If this channel was responsible for creating the actor, we do not want to initialize our shadow data
 	// to the latest state since there could have been state that has changed between creation of the entity
@@ -847,7 +861,10 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 		}
 	}
 
-	check(Info != nullptr);
+	if (!ensureAlwaysMsgf(Info != nullptr, TEXT("Subobject info was nullptr. Actor: %s"), *GetNameSafe(Object)))
+	{
+		return;
+	}
 
 	NetDriver->ActorSystem->SendAddComponentForSubobject(this, Object, *Info, ReplicationBytesWritten);
 }
@@ -1093,7 +1110,12 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 	}
 
 	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
-	check(!HandoverShadowDataMap.Contains(InActor));
+	if (!ensureAlwaysMsgf(!HandoverShadowDataMap.Contains(InActor),
+						  TEXT("HandoverShadowDataMap already contained Actor, will remove data. Actor: %s. Entity: %lld."),
+						  *InActor->GetName(), EntityId))
+	{
+		HandoverShadowDataMap.FindAndRemoveChecked(InActor);
+	}
 
 	// Create the shadow map, and store a quick access pointer to it
 	const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(InActor->GetClass());
@@ -1107,7 +1129,14 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 	{
 		UObject* Subobject = SubobjectInfoPair.Key;
 
-		check(!HandoverShadowDataMap.Contains(Subobject));
+		if (!ensureAlwaysMsgf(
+				!HandoverShadowDataMap.Contains(Subobject),
+				TEXT("HandoverShadowDataMap already contained subobject %s of Actor %s with id %lld, this shouldn't happen. Calling "
+					 "Empty()."),
+				*Subobject->GetName(), *InActor->GetName(), EntityId))
+		{
+			HandoverShadowDataMap.FindAndRemoveChecked(Subobject);
+		}
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
 }
@@ -1287,7 +1316,12 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	bool bUpdatedThisActor = false;
 
 	// Changing an Actor's owner can affect its NetConnection so we need to reevaluate this.
-	check(NetDriver->HasServerAuthority(EntityId));
+	if (!ensureAlwaysMsgf(NetDriver->HasServerAuthority(EntityId),
+						  TEXT("Trying to process ownership change on non-auth server. Entity: %lld"), EntityId))
+	{
+		return;
+	}
+
 	TOptional<SpatialGDK::NetOwningClientWorker> CurrentNetOwningClientData =
 		SpatialGDK::DeserializeComponent<SpatialGDK::NetOwningClientWorker>(NetDriver->Connection->GetCoordinator(), EntityId);
 	const Worker_PartitionId CurrentClientPartitionId = CurrentNetOwningClientData->ClientPartitionId.IsSet()

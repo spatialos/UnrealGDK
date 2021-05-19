@@ -23,6 +23,9 @@
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
 class FSpatialLoadBalancingHandler;
+class FSpatialNetDriverRPC;
+class FSpatialNetDriverClientRPC;
+class FSpatialNetDriverServerRPC;
 class FSpatialOutputDevice;
 class SpatialDispatcher;
 class SpatialSnapshotManager;
@@ -121,7 +124,12 @@ public:
 	virtual void NotifyStreamingLevelUnload(class ULevel* Level) override;
 
 	virtual void PushCrossServerRPCSender(AActor* Sender) override;
-	virtual void PopCrossServerRPCSender(AActor* Sender) override;
+	virtual void PopCrossServerRPCSender() override;
+	virtual void PushDependentActor(AActor* Dependent) override;
+	virtual void PopDependentActor() override;
+	virtual void PushNetWriteFenceResolution();
+	virtual void PopNetWriteFenceResolution();
+	virtual bool RPCCallNeedWriteFence(AActor* Target, UFunction* Function) override;
 	// End UNetDriver interface.
 
 	void OnConnectionToSpatialOSSucceeded();
@@ -211,13 +219,12 @@ public:
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
 
-	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
-	FFilterPredicate ActorFilter;
-	TArray<FDispatcherRefreshCallback> ActorRefreshCallbacks;
-
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
+	TUniquePtr<FSpatialNetDriverRPC> RPCs;
+	FSpatialNetDriverClientRPC* ClientRPCs = nullptr;
+	FSpatialNetDriverServerRPC* ServerRPCs = nullptr;
 
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
 	TUniquePtr<SpatialGDK::SpatialStrategySystem> StrategySystem;
@@ -266,7 +273,7 @@ public:
 
 	virtual int64 GetClientID() const override;
 
-	virtual int64 GetActorEntityId(AActor& Actor) override;
+	virtual int64 GetActorEntityId(const AActor& Actor) const override;
 
 	FShutdownEvent OnShutdown;
 
