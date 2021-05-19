@@ -95,6 +95,8 @@ public:
 
 	const SpatialGDK::EntityView& GetView() const;
 	SpatialGDK::ViewCoordinator& GetCoordinator() const;
+	// TODO: UNR-5481 - Fix this hack for fixing spatial debugger crash after client travel
+	bool HasValidCoordinator() const { return Coordinator.IsValid(); }
 
 	PhysicalWorkerName GetWorkerId() const;
 	Worker_EntityId GetWorkerSystemEntityId() const;

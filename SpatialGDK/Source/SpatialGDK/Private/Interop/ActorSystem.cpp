@@ -423,21 +423,6 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 		}
 	}
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
-	{
-		if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
-		{
-			if (Authority == WORKER_AUTHORITY_AUTHORITATIVE)
-			{
-				Connection->Init(EntityId);
-			}
-			else if (Authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
-			{
-				Connection->Disable();
-			}
-		}
-	}
-
 	if (NetDriver->IsServer())
 	{
 		// If we became authoritative over the server auth component set, set our role to be ROLE_Authority
@@ -1864,6 +1849,13 @@ void ActorSystem::CreateTombstoneEntity(AActor* Actor)
 
 	const Worker_EntityId EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
 
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		// This shouldn't happen, but as a precaution, error and return instead of attempting to create an entity with ID 0.
+		UE_LOG(LogActorSystem, Error, TEXT("Failed to tombstone actor, no entity ids available. Actor: %s."), *Actor->GetName());
+		return;
+	}
+
 	EntityFactory DataFactory(NetDriver, NetDriver->PackageMap, NetDriver->ClassInfoManager, NetDriver->GetRPCService());
 	TArray<FWorkerComponentData> Components = DataFactory.CreateTombstoneEntityComponents(Actor);
 
@@ -2397,7 +2389,11 @@ void ActorSystem::DeleteEntityComponentData(TArray<FWorkerComponentData>& Entity
 
 void ActorSystem::AddTombstoneToEntity(Worker_EntityId EntityId) const
 {
-	check(ActorSubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID));
+	if (!ensureAlwaysMsgf(ActorSubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
+						  TEXT("Trying to add tombstone to entity without authority")))
+	{
+		return;
+	}
 
 	FWorkerComponentData TombstoneData = Tombstone().CreateComponentData();
 	NetDriver->Connection->SendAddComponent(EntityId, &TombstoneData);

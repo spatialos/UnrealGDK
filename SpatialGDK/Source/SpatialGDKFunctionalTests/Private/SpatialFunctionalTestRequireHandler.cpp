@@ -277,7 +277,8 @@ bool SpatialFunctionalTestRequireHandler::RequireNotEqual(float Value, float Not
 bool SpatialFunctionalTestRequireHandler::RequireNotEqual(const FString& Value, const FString& NotExpected, const FString& Msg)
 {
 	bool bPassed = Value != NotExpected;
-	FString StatusMsg = GenerateStatusMessage(bPassed, /*Received = */ Value, /*Expected = */ NotExpected, /*Tolerance = */ FString(), /*bNotEqual = */ true);
+	FString StatusMsg = GenerateStatusMessage(bPassed, /*Received = */ Value, /*Expected = */ NotExpected, /*Tolerance = */ FString(),
+											  /*bNotEqual = */ true);
 
 	return GenericRequire(Msg, bPassed, StatusMsg);
 }

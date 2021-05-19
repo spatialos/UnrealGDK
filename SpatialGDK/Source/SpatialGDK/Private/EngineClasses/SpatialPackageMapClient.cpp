@@ -14,6 +14,7 @@
 #include "SpatialConstants.h"
 #include "Utils/SchemaOption.h"
 
+#include "Algo/Copy.h"
 #include "Engine/Engine.h"
 #include "EngineUtils.h"
 #include "GameFramework/Actor.h"
@@ -23,14 +24,14 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
-void USpatialPackageMapClient::Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager)
+void USpatialPackageMapClient::Init(USpatialNetDriver& NetDriver)
 {
-	bIsServer = NetDriver->IsServer();
+	bIsServer = NetDriver.IsServer();
 	// Entity Pools should never exist on clients
 	if (bIsServer)
 	{
 		EntityPool = NewObject<UEntityPool>();
-		EntityPool->Init(NetDriver, TimerManager);
+		EntityPool->Init(NetDriver);
 	}
 }
 
@@ -436,8 +437,12 @@ static FSubobjectToOffsetMap CreateOffsetMapFromActor(USpatialPackageMapClient* 
 	{
 		// Process components attached to this object; this allows us to join up
 		// server- and client-side components added in the level.
-		TArray<UActorComponent*> ActorInstanceComponents = Actor->GetInstanceComponents();
+		TArray<UActorComponent*> ActorInstanceComponents;
 
+		// In non-editor builds, editor-only components can be allocated a slot in the array, but left as nullptrs.
+		Algo::CopyIf(Actor->GetInstanceComponents(), ActorInstanceComponents, [](UActorComponent* Component) -> bool {
+			return IsValid(Component);
+		});
 		// These need to be ordered in case there are more than one component of the same type, or
 		// we may end up with wrong component instances having associations between them.
 		ActorInstanceComponents.Sort([](const UActorComponent& Lhs, const UActorComponent& Rhs) -> bool {
@@ -465,7 +470,10 @@ static FSubobjectToOffsetMap CreateOffsetMapFromActor(USpatialPackageMapClient* 
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId)
 {
-	check(EntityId > 0);
+	if (!ensureAlwaysMsgf(EntityId > 0, TEXT("Tried to assign net guid for invalid entity ID. Actor: %s"), *GetNameSafe(Actor)))
+	{
+		return FNetworkGUID();
+	}
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
@@ -522,7 +530,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 
 			// Using StablyNamedRef for the outer since referencing ObjectRef in the map
 			// will have the EntityId
-			FUnrealObjectRef StablyNamedSubobjectRef(0, 0, Subobject->GetFName().ToString(), StablyNamedRef);
+			FUnrealObjectRef StablyNamedSubobjectRef(0, 0, Subobject->GetFName().ToString(), StablyNamedRef,
+													 !CanClientLoadObject(Subobject, SubobjectNetGUID));
 
 			// This is the only extra object ref that has to be registered for the subobject.
 			UnrealObjectRefToNetGUID.Emplace(StablyNamedSubobjectRef, SubobjectNetGUID);
@@ -628,8 +637,9 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 
 				if (StablyNamedRefOption.IsSet())
 				{
-					UnrealObjectRefToNetGUID.Remove(
-						FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(), StablyNamedRefOption.GetValue()));
+					// bNoLoadOnClient is set to a fixed value because it does not affect equality
+					UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(),
+																	 StablyNamedRefOption.GetValue(), /*bNoLoadOnClient*/ false));
 				}
 			}
 		}
@@ -704,8 +714,9 @@ void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& Subobj
 
 			if (StablyNamedRefOption.IsSet())
 			{
-				UnrealObjectRefToNetGUID.Remove(
-					FUnrealObjectRef(0, 0, SubobjectInfoPtr->Get().SubobjectName.ToString(), StablyNamedRefOption.GetValue()));
+				// bNoLoadOnClient is set to a fixed value because it does not affect equality
+				UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPtr->Get().SubobjectName.ToString(),
+																 StablyNamedRefOption.GetValue(), /*bNoLoadOnClient*/ false));
 			}
 		}
 	}

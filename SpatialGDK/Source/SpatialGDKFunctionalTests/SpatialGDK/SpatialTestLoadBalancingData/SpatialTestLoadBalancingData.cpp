@@ -2,6 +2,7 @@
 
 #include "SpatialGDK/SpatialTestLoadBalancingData/SpatialTestLoadBalancingData.h"
 
+#include "Algo/AllOf.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialWorldSettings.h"
@@ -70,7 +71,8 @@ T* GetWorldActor(UWorld* World)
 {
 	TArray<AActor*> DiscoveredActors;
 	UGameplayStatics::GetAllActorsOfClass(World, T::StaticClass(), DiscoveredActors);
-	if (DiscoveredActors.Num() == 1)
+	// IsActorReady check is required to avoid potential nullptr in future test steps
+	if (DiscoveredActors.Num() == 1 && DiscoveredActors[0]->IsActorReady())
 	{
 		return Cast<T>(DiscoveredActors[0]);
 	}
@@ -87,9 +89,14 @@ void GetWorldActors(UWorld* World, TArray<U>& OutActors)
 		DiscoveredActors.Sort([](const AActor& Lhs, const AActor& Rhs) {
 			return Lhs.GetActorLocation().Y < Rhs.GetActorLocation().Y;
 		});
-		Algo::Transform(DiscoveredActors, OutActors, [](AActor* Actor) -> U {
-			return Cast<T>(Actor);
-		});
+		if (Algo::AllOf(DiscoveredActors, [](AActor* Actor) -> bool {
+				return Actor->IsActorReady();
+			}))
+		{
+			Algo::Transform(DiscoveredActors, OutActors, [](AActor* Actor) -> U {
+				return Cast<T>(Actor);
+			});
+		}
 	}
 }
 
@@ -108,14 +115,14 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 	const FWorkerDefinition OffloadedServer = FWorkerDefinition::Server(2);
 	const FWorkerDefinition ZonedServers[]{ FWorkerDefinition::Server(3), FWorkerDefinition::Server(4) };
 
-	AddStep(TEXT("Create an actor on the main server"), MainServer, nullptr, [this] {
+	AddStep(TEXT("Create an actor on the main server"), MainServer, nullptr, /*StartEvent= */ [this] {
 		ASpatialTestLoadBalancingDataActor* SpawnedActor = GetWorld()->SpawnActor<ASpatialTestLoadBalancingDataActor>();
 		check(SpawnedActor->HasAuthority());
 		RegisterAutoDestroyActor(SpawnedActor);
 		FinishStep();
 	});
 
-	AddStep(TEXT("Create an offloaded actor on the offloaded server"), OffloadedServer, nullptr, [this] {
+	AddStep(TEXT("Create an offloaded actor on the offloaded server"), OffloadedServer, nullptr, /*StartEvent= */ [this] {
 		ASpatialTestLoadBalancingDataOffloadedActor* SpawnedActor = GetWorld()->SpawnActor<ASpatialTestLoadBalancingDataOffloadedActor>();
 		check(SpawnedActor->HasAuthority());
 		RegisterAutoDestroyActor(SpawnedActor);
@@ -125,7 +132,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 	// One to the left of the boundary, one to the right.
 	const static FVector ZonedActorsPositions[]{ { 100, -100, 100 }, { 100, 100, 100 } };
 
-	AddStep(TEXT("Create zoned actor on zoned server 1"), ZonedServers[0], nullptr, [this] {
+	AddStep(TEXT("Create zoned actor on zoned server 1"), ZonedServers[0], nullptr, /*StartEvent= */ [this] {
 		ASpatialTestLoadBalancingDataZonedActor* SpawnedActor =
 			GetWorld()->SpawnActor<ASpatialTestLoadBalancingDataZonedActor>(ZonedActorsPositions[0], FRotator::ZeroRotator);
 		check(SpawnedActor->HasAuthority());
@@ -133,7 +140,7 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 		FinishStep();
 	});
 
-	AddStep(TEXT("Create zoned actor on zoned server 2"), ZonedServers[1], nullptr, [this] {
+	AddStep(TEXT("Create zoned actor on zoned server 2"), ZonedServers[1], nullptr, /*StartEvent= */ [this] {
 		ASpatialTestLoadBalancingDataZonedActor* SpawnedActor =
 			GetWorld()->SpawnActor<ASpatialTestLoadBalancingDataZonedActor>(ZonedActorsPositions[1], FRotator::ZeroRotator);
 		check(SpawnedActor->HasAuthority());
@@ -141,75 +148,64 @@ void ASpatialTestLoadBalancingData::PrepareTest()
 		FinishStep();
 	});
 
-	constexpr float ActorReceiptTimeout = 5.0f;
-	AddStep(
-		TEXT("Retrieve actors on all workers"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
-		[this](float) {
-			TargetActor = GetWorldActor<ASpatialTestLoadBalancingDataActor>(GetWorld());
-			RequireTrue(TargetActor.IsValid(), TEXT("Received main actor"));
+	AddStep(TEXT("Trying to Retrieve ready actors on all workers"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
+			/*TickEvent= */ [this](float) {
+				TargetActor = GetWorldActor<ASpatialTestLoadBalancingDataActor>(GetWorld());
+				RequireTrue(TargetActor.IsValid(), TEXT("Received main actor"));
 
-			TargetOffloadedActor = GetWorldActor<ASpatialTestLoadBalancingDataOffloadedActor>(GetWorld());
-			RequireTrue(TargetOffloadedActor.IsValid(), TEXT("Received offloaded actor"));
+				TargetOffloadedActor = GetWorldActor<ASpatialTestLoadBalancingDataOffloadedActor>(GetWorld());
+				RequireTrue(TargetOffloadedActor.IsValid(), TEXT("Received offloaded actor"));
 
-			GetWorldActors<ASpatialTestLoadBalancingDataZonedActor, 2>(GetWorld(), TargetZonedActors);
-			RequireTrue(TargetZonedActors.Num() == 2, TEXT("Received zoned actors"));
+				GetWorldActors<ASpatialTestLoadBalancingDataZonedActor, 2>(GetWorld(), TargetZonedActors);
+				RequireEqual_Int(TargetZonedActors.Num(), 2, TEXT("Received zoned actors"));
 
-			FinishStep();
-		},
-		ActorReceiptTimeout);
+				FinishStep();
+			});
 
-	const float LoadBalancingDataReceiptTimeout = 5.0f;
-	AddStep(
-		TEXT("Confirm LB group IDs on the server"), FWorkerDefinition::AllServers, nullptr, nullptr,
-		[this](float) {
-			// ServerWorkers should have interest in LoadBalancingData so it should be available
-			TOptional<SpatialGDK::ActorGroupMember> LoadBalancingData = GetActorGroupData(TargetActor.Get());
-			RequireTrue(LoadBalancingData.IsSet(), TEXT("Main actor entity has LoadBalancingData"));
+	AddStep(TEXT("Confirm LB group IDs on the server"), FWorkerDefinition::AllServers, nullptr, nullptr, /*TickEvent= */ [this](float) {
+		// ServerWorkers should have interest in LoadBalancingData so it should be available
+		TOptional<SpatialGDK::ActorGroupMember> LoadBalancingData = GetActorGroupData(TargetActor.Get());
+		RequireTrue(LoadBalancingData.IsSet(), TEXT("Main actor entity has LoadBalancingData"));
 
-			TOptional<SpatialGDK::ActorGroupMember> OffloadedLoadBalancingData = GetActorGroupData(TargetOffloadedActor.Get());
-			RequireTrue(OffloadedLoadBalancingData.IsSet(), TEXT("Offloaded actor entity has LoadBalancingData"));
+		TOptional<SpatialGDK::ActorGroupMember> OffloadedLoadBalancingData = GetActorGroupData(TargetOffloadedActor.Get());
+		RequireTrue(OffloadedLoadBalancingData.IsSet(), TEXT("Offloaded actor entity has LoadBalancingData"));
 
-			const bool bIsValid = LoadBalancingData.IsSet() && OffloadedLoadBalancingData.IsSet()
-								  && LoadBalancingData->ActorGroupId != OffloadedLoadBalancingData->ActorGroupId;
+		const bool bIsValid = LoadBalancingData.IsSet() && OffloadedLoadBalancingData.IsSet()
+							  && LoadBalancingData->ActorGroupId != OffloadedLoadBalancingData->ActorGroupId;
 
-			RequireTrue(bIsValid, TEXT("Load balancing group ids are different for the main server and for the offloaded server"));
+		RequireTrue(bIsValid, TEXT("Load balancing group ids are different for the main server and for the offloaded server"));
 
-			FinishStep();
-		},
-		LoadBalancingDataReceiptTimeout);
+		FinishStep();
+	});
 
-	AddStep(TEXT("Put zoned actors to a single ownership group"), ZonedServers[0], nullptr, [this]() {
+	AddStep(TEXT("Put zoned actors to a single ownership group"), ZonedServers[0], nullptr, /*StartEvent= */ [this]() {
 		AssertTrue(TargetZonedActors[0]->HasAuthority(), TEXT("Zoned actor 1 is owned by the zoned server 1"));
 		TargetZonedActors[0]->SetOwner(TargetZonedActors[1].Get());
 		FinishStep();
 	});
 
-	AddStep(
-		TEXT("Wait until actor set IDs are the same"), FWorkerDefinition::AllServers, nullptr, nullptr,
-		[this](float) {
-			RequireTrue(GetActorSetData(TargetZonedActors[0].Get())->ActorSetId == GetActorSetData(TargetZonedActors[1].Get())->ActorSetId,
-						TEXT("Actor set IDs are the same for the two zoned actors"));
-			const bool bShouldHaveAuthority = GetLocalWorkerId() == 4;
-			RequireTrue(TargetZonedActors[0]->HasAuthority() == bShouldHaveAuthority, TEXT("Authority was moved correctly"));
-			FinishStep();
-		},
-		LoadBalancingDataReceiptTimeout);
-
-	AddStep(TEXT("Put main server actor and offloaded server actor into different ownership groups"), ZonedServers[1], nullptr, [this]() {
-		AssertTrue(TargetZonedActors[0]->HasAuthority(), TEXT("Zoned actor 1 is owned by the zoned server 2"));
-		TargetZonedActors[0]->SetOwner(nullptr);
+	AddStep(TEXT("Wait until actor set IDs are the same"), FWorkerDefinition::AllServers, nullptr, nullptr, /*TickEvent= */ [this](float) {
+		RequireTrue(GetActorSetData(TargetZonedActors[0].Get())->ActorSetId == GetActorSetData(TargetZonedActors[1].Get())->ActorSetId,
+					TEXT("Actor set IDs are the same for the two zoned actors"));
+		const bool bShouldHaveAuthority = GetLocalWorkerId() == 4;
+		RequireTrue(TargetZonedActors[0]->HasAuthority() == bShouldHaveAuthority, TEXT("Authority was moved correctly"));
 		FinishStep();
 	});
 
+	AddStep(TEXT("Put main server actor and offloaded server actor into different ownership groups"), ZonedServers[1], nullptr,
+			/*StartEvent= */ [this]() {
+				AssertTrue(TargetZonedActors[0]->HasAuthority(), TEXT("Zoned actor 1 is owned by the zoned server 2"));
+				TargetZonedActors[0]->SetOwner(nullptr);
+				FinishStep();
+			});
+
 	AddStep(
-		TEXT("Wait until actor set IDs different again"), FWorkerDefinition::AllServers, nullptr, nullptr,
-		[this](float) {
+		TEXT("Wait until actor set IDs different again"), FWorkerDefinition::AllServers, nullptr, nullptr, /*TickEvent= */ [this](float) {
 			RequireTrue(GetActorSetData(TargetZonedActors[0].Get())->ActorSetId != GetActorSetData(TargetZonedActors[1].Get())->ActorSetId,
 						TEXT("Actor set IDs are different for the two zoned actors"));
 
 			FinishStep();
-		},
-		LoadBalancingDataReceiptTimeout);
+		});
 }
 
 template <typename TComponent>
