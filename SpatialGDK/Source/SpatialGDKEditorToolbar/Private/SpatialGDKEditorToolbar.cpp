@@ -1039,7 +1039,7 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> InO
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, InspectorVersion, OnReady] {
 		if (InspectorProcess && InspectorProcess->Update())
 		{
-			// We already have an inspector process running. Do nothing.
+			// We already have an inspector process running. Call ready callback if any.
 			OnReady();
 			return;
 		}
