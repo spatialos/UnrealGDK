@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [`x.y.z`] - Unreleased
-- Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.
 
 ### Breaking changes:
 - Reworked AlwaysInterested functionality to run on authoritative servers, and owning clients. The previous behaviour was for it to only run on PlayerController classes, on the client only.
@@ -31,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix RPC timeouts for parameters referencing assets that can be asynchronously loaded.
 
 ### Internal:
+- Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.
 - Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs now no longer expire, and persist until used.
 - A test was calling `SetReplicates` on an actor over which it did not have authority. This was causing warnings to be triggered. We've fixed this by reverting the actor's role at the end of the test, so that the actor is not left in an unexpected state.
 
