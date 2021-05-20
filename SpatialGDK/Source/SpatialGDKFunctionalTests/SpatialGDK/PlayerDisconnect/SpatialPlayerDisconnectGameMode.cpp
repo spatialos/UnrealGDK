@@ -2,13 +2,12 @@
 
 #include "SpatialPlayerDisconnectGameMode.h"
 #include "EngineClasses/SpatialGameInstance.h"
+#include "GameFramework/Character.h"
 #include "PlayerDisconnectController.h"
 
 ASpatialPlayerDisconnectGameMode::ASpatialPlayerDisconnectGameMode()
 	: Super()
 {
 	PlayerControllerClass = APlayerDisconnectController::StaticClass();
-
-	static ConstructorHelpers::FClassFinder<AActor> PawnClassFinder(TEXT("/Game/Characters/PlayerCharacter_BP"));
-	DefaultPawnClass = PawnClassFinder.Class;
+	DefaultPawnClass = ACharacter::StaticClass();
 }
