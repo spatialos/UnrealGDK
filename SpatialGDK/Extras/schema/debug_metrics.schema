@@ -9,9 +9,9 @@ type ModifySettingPayload {
 }
 
 type ExecServerCommandPayload {
-	string server_worker = 1;
-	string command = 2;
-	string args = 3;
+    string server_worker = 1;
+    string command = 2;
+    string args = 3;
 }
 
 component DebugMetrics {
@@ -19,5 +19,5 @@ component DebugMetrics {
     command Void start_rpc_metrics(Void);
     command Void stop_rpc_metrics(Void);
     command Void modify_spatial_settings(ModifySettingPayload);
-	command Void exec_server_command(ExecServerCommandPayload);
+    command Void exec_server_command(ExecServerCommandPayload);
 }

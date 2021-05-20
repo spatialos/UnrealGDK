@@ -388,7 +388,8 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 	const EServerCommands ServerCommand = ServerCommandsStringToEnum(Command);
 	if (ServerCommand == EServerCommands::ServerCommandInvalid)
 	{
-		UE_LOG(LogSpatialMetrics, Error, TEXT("Failed to execute server command. Command not found. Command %s (%s)"), *Command, *Args);
+		UE_LOG(LogSpatialMetrics, Error, TEXT("SpatialExecServerCmd: Failed to execute server command. Command not found. Command %s (%s)"),
+			   *Command, *Args);
 		return;
 	}
 
@@ -415,7 +416,7 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 		else
 		{
 			UE_LOG(LogSpatialMetrics, Warning,
-				   TEXT("SpatialModifySetting: Could not resolve local PlayerController entity! Setting will not be sent to server."));
+				   TEXT("SpatialExecServerCmd: Could not resolve local PlayerController entity! Command will not be sent to server."));
 		}
 	}
 	else
@@ -455,7 +456,8 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 				break;
 
 			default:
-				UE_LOG(LogSpatialMetrics, Error, TEXT("Failed to execute server command. Command not handled. Command %s (%s)"), *Command,
+				UE_LOG(LogSpatialMetrics, Error,
+					   TEXT("SpatialExecServerCmd: Failed to execute server command. Command not handled. Command %s (%s)"), *Command,
 					   *Args);
 			}
 		}
@@ -477,7 +479,8 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 		}
 		else
 		{
-			UE_LOG(LogSpatialMetrics, Error, TEXT("Failed to execute server command. Server not found. ServerName %s. Command %s (%s)"),
+			UE_LOG(LogSpatialMetrics, Error,
+				   TEXT("SpatialExecServerCmd: Failed to execute server command. Server not found. ServerName %s. Command %s (%s)"),
 				   *ServerName, *Command, *Args);
 		}
 	}
