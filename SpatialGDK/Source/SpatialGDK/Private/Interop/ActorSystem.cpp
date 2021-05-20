@@ -667,7 +667,7 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 
 	if (Category != SCHEMA_Invalid)
 	{
-		if (Category == SCHEMA_Handover)
+		if (Category == SCHEMA_ServerOnly)
 		{
 			ensureAlways(NetDriver->IsServer());
 		}
@@ -863,7 +863,7 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 	Worker_ComponentId ComponentFilter[SCHEMA_Count];
 	ComponentFilter[SCHEMA_Data] = true;
 	ComponentFilter[SCHEMA_OwnerOnly] = bIsServer || bIsAuthClient;
-	ComponentFilter[SCHEMA_Handover] = bIsServer;
+	ComponentFilter[SCHEMA_ServerOnly] = bIsServer;
 	ComponentFilter[SCHEMA_InitialOnly] = bInitialOnlyExpected;
 	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 

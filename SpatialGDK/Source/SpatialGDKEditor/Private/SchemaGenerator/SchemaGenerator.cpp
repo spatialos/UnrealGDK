@@ -32,7 +32,7 @@ ESchemaComponentType PropertyGroupToSchemaComponentType(EReplicatedPropertyGroup
 	case REP_InitialOnly:
 		return SCHEMA_InitialOnly;
 	case REP_ServerOnly:
-		return SCHEMA_Handover;
+		return SCHEMA_ServerOnly;
 	default:
 		checkNoEntry();
 		static_assert(
@@ -491,7 +491,7 @@ EReplicatedPropertyGroup SchemaComponentTypeToPropertyGroup(ESchemaComponentType
 		return REP_SingleClient;
 	case SCHEMA_InitialOnly:
 		return REP_InitialOnly;
-	case SCHEMA_Handover:
+	case SCHEMA_ServerOnly:
 		return REP_ServerOnly;
 	default:
 		checkNoEntry();

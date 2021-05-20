@@ -30,7 +30,7 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 	case COND_InitialOnly:
 		return SCHEMA_InitialOnly;
 	case COND_ServerOnly:
-		return SCHEMA_Handover;
+		return SCHEMA_ServerOnly;
 	default:
 		static_assert(SCHEMA_Count == 4,
 					  "Unexpected number of Schema type components, please make sure GetGroupFromCondition is still correct.");

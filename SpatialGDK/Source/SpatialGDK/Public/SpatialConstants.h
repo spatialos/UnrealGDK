@@ -36,7 +36,7 @@ enum ESchemaComponentType : int32
 	// Properties
 	SCHEMA_Data, // Represents properties being replicated to all workers
 	SCHEMA_OwnerOnly,
-	SCHEMA_Handover,
+	SCHEMA_ServerOnly,
 	SCHEMA_InitialOnly,
 
 	SCHEMA_Count,

@@ -529,7 +529,7 @@ FString GetComponentSetNameBySchemaType(ESchemaComponentType SchemaType)
 		return SpatialConstants::DATA_COMPONENT_SET_NAME;
 	case SCHEMA_OwnerOnly:
 		return SpatialConstants::OWNER_ONLY_COMPONENT_SET_NAME;
-	case SCHEMA_Handover:
+	case SCHEMA_ServerOnly:
 		return SpatialConstants::HANDOVER_COMPONENT_SET_NAME;
 	case SCHEMA_InitialOnly:
 		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_NAME;
@@ -552,7 +552,7 @@ Worker_ComponentId GetComponentSetIdBySchemaType(ESchemaComponentType SchemaType
 		return SpatialConstants::DATA_COMPONENT_SET_ID;
 	case SCHEMA_OwnerOnly:
 		return SpatialConstants::OWNER_ONLY_COMPONENT_SET_ID;
-	case SCHEMA_Handover:
+	case SCHEMA_ServerOnly:
 		return SpatialConstants::HANDOVER_COMPONENT_SET_ID;
 	case SCHEMA_InitialOnly:
 		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID;
@@ -861,7 +861,7 @@ void WriteComponentSetFiles(const USchemaDatabase* SchemaDatabase, FString Schem
 	WriteRoutingWorkerAuthorityComponentSet(SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Data, SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_OwnerOnly, SchemaOutputPath);
-	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_Handover, SchemaOutputPath);
+	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_ServerOnly, SchemaOutputPath);
 	WriteComponentSetBySchemaType(SchemaDatabase, SCHEMA_InitialOnly, SchemaOutputPath);
 	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 }

@@ -349,10 +349,10 @@ TArray<FWorkerComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 			CreateComponentData(Info.SchemaComponents[SCHEMA_OwnerOnly], Object, RepChangeState, SCHEMA_OwnerOnly, OutBytesWritten));
 	}
 
-	if (Info.SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
+	if (Info.SchemaComponents[SCHEMA_ServerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		ComponentDatas.Add(
-			CreateComponentData(Info.SchemaComponents[SCHEMA_Handover], Object, RepChangeState, SCHEMA_Handover, OutBytesWritten));
+			CreateComponentData(Info.SchemaComponents[SCHEMA_ServerOnly], Object, RepChangeState, SCHEMA_ServerOnly, OutBytesWritten));
 	}
 
 	if (Info.SchemaComponents[SCHEMA_InitialOnly] != SpatialConstants::INVALID_COMPONENT_ID)
@@ -437,11 +437,11 @@ TArray<FWorkerComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			}
 		}
 
-		if (Info.SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
+		if (Info.SchemaComponents[SCHEMA_ServerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			uint32 BytesWritten = 0;
 			FWorkerComponentUpdate HandoverUpdate =
-				CreateComponentUpdate(Info.SchemaComponents[SCHEMA_Handover], Object, *RepChangeState, SCHEMA_Handover, BytesWritten);
+				CreateComponentUpdate(Info.SchemaComponents[SCHEMA_ServerOnly], Object, *RepChangeState, SCHEMA_ServerOnly, BytesWritten);
 			if (BytesWritten > 0)
 			{
 				ComponentUpdates.Add(HandoverUpdate);

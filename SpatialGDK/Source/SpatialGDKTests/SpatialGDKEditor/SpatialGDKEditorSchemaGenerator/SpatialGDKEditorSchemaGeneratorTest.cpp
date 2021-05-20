@@ -112,7 +112,7 @@ FString ComponentTypeToString(ESchemaComponentType Type)
 		return TEXT("");
 	case SCHEMA_OwnerOnly:
 		return TEXT("OwnerOnly");
-	case SCHEMA_Handover:
+	case SCHEMA_ServerOnly:
 		return TEXT("ServerOnly");
 	case SCHEMA_InitialOnly:
 		return TEXT("InitialOnly");
