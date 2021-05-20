@@ -21,7 +21,8 @@ const FString FSpatialTestSettings::OverrideSettingsFileDirectoryName = TEXT("Ma
 const FString FSpatialTestSettings::OverrideSettingsFilePrefix = TEXT("TestOverrides");
 const FString FSpatialTestSettings::OverrideSettingsBaseFilename =
 	FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir() / OverrideSettingsFileDirectoryName);
-const FString FSpatialTestSettings::BaseOverridesFilename = OverrideSettingsBaseFilename + TEXT("Base") + OverrideSettingsFileExtension;
+const FString FSpatialTestSettings::BaseOverridesFilename =
+	OverrideSettingsBaseFilename + TEXT("/") + OverrideSettingsFilePrefix + TEXT("Base") + OverrideSettingsFileExtension;
 const FString FSpatialTestSettings::GeneratedOverrideSettingsDirectory =
 	FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir() / TEXT("Config/") / OverrideSettingsFileDirectoryName);
 const FString FSpatialTestSettings::GeneratedOverrideSettingsBaseFilename = GeneratedOverrideSettingsDirectory / OverrideSettingsFilePrefix;
