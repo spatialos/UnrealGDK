@@ -27,20 +27,12 @@ USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectIni
 	: Super(ObjectInitializer)
 	, bReliableSpatialConnection(false)
 	, ConnectionClientWorkerSystemEntityId(SpatialConstants::INVALID_ENTITY_ID)
-	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
 {
 #if ENGINE_MINOR_VERSION <= 24
 	InternalAck = 1;
 #else
 	SetInternalAck(true);
 #endif
-}
-
-void USpatialNetConnection::BeginDestroy()
-{
-	Disable();
-
-	Super::BeginDestroy();
 }
 
 void USpatialNetConnection::CleanUp()
@@ -125,12 +117,11 @@ void USpatialNetConnection::FlushDormancy(AActor* Actor)
 	}
 }
 
-void USpatialNetConnection::Init(const Worker_EntityId InPlayerControllerEntity)
+Worker_EntityId USpatialNetConnection::GetPlayerControllerEntityId() const
 {
-	PlayerControllerEntity = InPlayerControllerEntity;
-}
-
-void USpatialNetConnection::Disable()
-{
-	PlayerControllerEntity = SpatialConstants::INVALID_ENTITY_ID;
+	if (USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialPackageMapClient>(PackageMap))
+	{
+		return SpatialPackageMap->GetEntityIdFromObject(PlayerController);
+	}
+	return SpatialConstants::INVALID_ENTITY_ID;
 }
