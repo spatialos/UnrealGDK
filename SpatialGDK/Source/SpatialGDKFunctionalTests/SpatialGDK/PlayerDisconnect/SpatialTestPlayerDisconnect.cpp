@@ -17,7 +17,13 @@ ASpatialTestPlayerDisconnect::ASpatialTestPlayerDisconnect()
 void ASpatialTestPlayerDisconnect::PrepareTest()
 {
 	Super::PrepareTest();
-	{
+	
+		if (HasAuthority())
+		{
+			AddExpectedLogError("OSS: No game present to leave for session",2);
+		}
+
+
 		AddStep(
 			TEXT("AllServers_ChecksBefore"), FWorkerDefinition::AllServers, nullptr,
 			[this]() {
@@ -76,5 +82,5 @@ void ASpatialTestPlayerDisconnect::PrepareTest()
 				FinishStep();
 			},
 			nullptr, 5.0f);
-	}
+	
 }
