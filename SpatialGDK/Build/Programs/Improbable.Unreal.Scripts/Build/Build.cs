@@ -172,6 +172,7 @@ exit /b !ERRORLEVEL!";
                     "-SkipCookingEditorContent",
                     "-platform=" + platform,
                     "-targetplatform=" + platform,
+                    "-NoCodeSign",
                     additionalUATArgs
                 });
 
@@ -211,6 +212,7 @@ exit /b !ERRORLEVEL!";
                     "-platform=" + platform,
                     "-targetplatform=" + platform,
                     "-nullrhi",
+                    "-NoCodeSign",
                     additionalUATArgs
                 });
 
@@ -272,6 +274,7 @@ exit /b !ERRORLEVEL!";
                     "-server",
                     "-serverplatform=" + platform,
                     "-noclient",
+                    "-NoCodeSign",
                     additionalUATArgs
                 });
 
@@ -319,6 +322,7 @@ exit /b !ERRORLEVEL!";
                     "-noserver",
                     "-platform=" + platform,
                     "-targetplatform=" + platform,
+                    "-NoCodeSign",
                     additionalUATArgs
                 });
 
