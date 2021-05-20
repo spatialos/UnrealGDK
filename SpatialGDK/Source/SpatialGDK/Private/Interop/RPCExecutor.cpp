@@ -47,7 +47,7 @@ bool RPCExecutor::ExecuteCommand(const FCrossServerRPCParams& Params)
 	const USpatialGDKSettings* SpatialSettings = GetDefault<USpatialGDKSettings>();
 
 	const float TimeQueued = (FDateTime::Now() - Params.Timestamp).GetTotalSeconds();
-	bool CanProcessRPC = UnresolvedRefs.Num() == 0 || SpatialSettings->QueuedIncomingRPCWaitTime < TimeQueued;
+	bool CanProcessRPC = UnresolvedRefs.Num() == 0 || SpatialSettings->QueuedIncomingRPCWaitTimeSeconds < TimeQueued;
 
 	if (CanProcessRPC)
 	{

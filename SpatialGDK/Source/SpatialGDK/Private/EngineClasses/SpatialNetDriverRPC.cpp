@@ -430,7 +430,7 @@ bool FSpatialNetDriverRPC::ApplyRPC(Worker_EntityId EntityId, const FRPCPayload&
 	});
 
 	const bool bCannotWaitLongerThanQueueTime = !bIsReliableChannel || bMissingServerObject;
-	const bool bQueueTimeExpired = TimeQueued > SpatialSettings->QueuedIncomingRPCWaitTime;
+	const bool bQueueTimeExpired = TimeQueued > SpatialSettings->QueuedIncomingRPCWaitTimeSeconds;
 	const bool bMustExecuteRPC = UnresolvedRefCount == 0 || (bCannotWaitLongerThanQueueTime && bQueueTimeExpired);
 
 	if (!bMustExecuteRPC)
