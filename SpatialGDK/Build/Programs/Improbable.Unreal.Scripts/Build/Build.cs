@@ -344,14 +344,14 @@ exit /b !ERRORLEVEL!";
             }
         }
 
-        private static void Zip(string PathToItem, string CompressedOutputPath)
+        private static void Zip(string pathToItem, string compressedOutputPath)
         {
             Common.RunRedirected(runUATBatPath, new[]
             {
                     "ZipUtils",
                     "-NoP4",
-                    "-add=" + PathToItem,
-                    "-archive=" + CompressedOutputPath,
+                    "-add=" + pathToItem,
+                    "-archive=" + compressedOutputPath,
             });
         }
 
