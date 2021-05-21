@@ -41,7 +41,7 @@ public:
 	void OnStopRPCMetricsCommand();
 
 	UFUNCTION(Exec)
-	void SpatialModifySetting(const FString& Name, float Value);
+	void SpatialModifySetting(const FString& Name, const float Value);
 	void OnModifySettingCommand(Schema_Object* CommandPayload);
 
 	UFUNCTION(Exec)

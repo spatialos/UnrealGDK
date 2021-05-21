@@ -13,6 +13,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialMetrics);
 
+namespace SpatialMetricsPrivate
+{
 enum class EServerCommands : uint8
 {
 	StartInsights,
@@ -21,20 +23,11 @@ enum class EServerCommands : uint8
 	ServerCommandInvalid = ServerCommandsCount,
 };
 
-const FString ServerCommandNames[EServerCommands::ServerCommandsCount] = { TEXT("StartInsights") };
+const FString ServerCommandNames[static_cast<uint8>(EServerCommands::ServerCommandsCount) + 1] = { TEXT("StartInsights"), TEXT("Invalid") };
 
 const FString& ServerCommandsEnumToString(const EServerCommands Command)
 {
-	static FString Invalid(TEXT("Invalid"));
-
-	if (Command < EServerCommands::ServerCommandsCount)
-	{
-		return ServerCommandNames[static_cast<uint8>(Command)];
-	}
-	else
-	{
-		return Invalid;
-	}
+	return ServerCommandNames[static_cast<uint8>(Command)];
 }
 
 const EServerCommands ServerCommandsStringToEnum(const FString& Command)
@@ -49,6 +42,7 @@ const EServerCommands ServerCommandsStringToEnum(const FString& Command)
 
 	return EServerCommands::ServerCommandInvalid;
 }
+} // namespace SpatialMetricsPrivate
 
 void USpatialMetrics::Init(USpatialWorkerConnection* InConnection, float InNetServerMaxTickRate, bool bInIsServer)
 {
@@ -181,8 +175,8 @@ void USpatialMetrics::SpatialStartRPCMetrics()
 	// If RPC tracking is activated on a client, send a command to the server to start tracking.
 	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
-		FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
-		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+		const FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
+		const Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -281,8 +275,8 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 	// If RPC tracking is stopped on a client, send a command to the server to stop tracking.
 	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
-		FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
-		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+		const FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
+		const Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -306,12 +300,12 @@ void USpatialMetrics::OnStopRPCMetricsCommand()
 	SpatialStopRPCMetrics();
 }
 
-void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
+void USpatialMetrics::SpatialModifySetting(const FString& Name, const float Value)
 {
 	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
-		FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
-		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+		const FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
+		const Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -377,16 +371,16 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 
 void USpatialMetrics::OnModifySettingCommand(Schema_Object* CommandPayload)
 {
-	FString Name = SpatialGDK::GetStringFromSchema(CommandPayload, SpatialConstants::MODIFY_SETTING_PAYLOAD_NAME_ID);
-	float Value = Schema_GetFloat(CommandPayload, SpatialConstants::MODIFY_SETTING_PAYLOAD_VALUE_ID);
+	const FString Name = SpatialGDK::GetStringFromSchema(CommandPayload, SpatialConstants::MODIFY_SETTING_PAYLOAD_NAME_ID);
+	const float Value = Schema_GetFloat(CommandPayload, SpatialConstants::MODIFY_SETTING_PAYLOAD_VALUE_ID);
 
 	SpatialModifySetting(Name, Value);
 }
 
 void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FString& Command, const FString& Args)
 {
-	const EServerCommands ServerCommand = ServerCommandsStringToEnum(Command);
-	if (ServerCommand == EServerCommands::ServerCommandInvalid)
+	const SpatialMetricsPrivate::EServerCommands ServerCommand = SpatialMetricsPrivate::ServerCommandsStringToEnum(Command);
+	if (ServerCommand == SpatialMetricsPrivate::EServerCommands::ServerCommandInvalid)
 	{
 		UE_LOG(LogSpatialMetrics, Error, TEXT("SpatialExecServerCmd: Failed to execute server command. Command not found. Command %s (%s)"),
 			   *Command, *Args);
@@ -395,8 +389,8 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 
 	if (!bIsServer && ControllerRefProvider.IsBound())
 	{
-		FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
-		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+		const FUnrealObjectRef PCObjectRef = ControllerRefProvider.Execute();
+		const Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
@@ -449,9 +443,11 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 
 		if (bExecuteLocally)
 		{
+			UE_LOG(LogSpatialMetrics, Log, TEXT("SpatialExecServerCmd: Executing server command. Command %s (%s)"), *Command, *Args);
+
 			switch (ServerCommand)
 			{
-			case EServerCommands::StartInsights:
+			case SpatialMetricsPrivate::EServerCommands::StartInsights:
 				FTraceAuxiliary::UpdateTraceCapture(*Args);
 				break;
 
@@ -459,10 +455,14 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 				UE_LOG(LogSpatialMetrics, Error,
 					   TEXT("SpatialExecServerCmd: Failed to execute server command. Command not handled. Command %s (%s)"), *Command,
 					   *Args);
+				break;
 			}
 		}
 		else if (ServerWorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
+			UE_LOG(LogSpatialMetrics, Log, TEXT("SpatialExecServerCmd: Forwarding server command. ServerName %s. Command %s (%s)"),
+				   *ServerName, *Command, *Args);
+
 			// Forward command to correct server.
 			Worker_CommandRequest Request = {};
 			Request.component_id = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
@@ -488,9 +488,10 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 
 void USpatialMetrics::OnExecServerCmdCommand(Schema_Object* CommandPayload)
 {
-	FString ServerName = SpatialGDK::GetStringFromSchema(CommandPayload, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_SERVER_NAME_ID);
-	FString Command = SpatialGDK::GetStringFromSchema(CommandPayload, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_COMMAND_ID);
-	FString Args = SpatialGDK::GetStringFromSchema(CommandPayload, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_ARGS_ID);
+	const FString ServerName =
+		SpatialGDK::GetStringFromSchema(CommandPayload, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_SERVER_NAME_ID);
+	const FString Command = SpatialGDK::GetStringFromSchema(CommandPayload, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_COMMAND_ID);
+	const FString Args = SpatialGDK::GetStringFromSchema(CommandPayload, SpatialConstants::EXEC_SERVER_COMMAND_PAYLOAD_ARGS_ID);
 
 	SpatialExecServerCmd(ServerName, Command, Args);
 }
