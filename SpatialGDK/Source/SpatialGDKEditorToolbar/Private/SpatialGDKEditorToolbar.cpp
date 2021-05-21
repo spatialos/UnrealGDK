@@ -1023,15 +1023,8 @@ void FSpatialGDKEditorToolbarModule::OpenInspectorURL()
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> InOnReady)
+void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> OnReady)
 {
-	auto OnReady = [InOnReady]() {
-		if (InOnReady)
-		{
-			InOnReady();
-		}
-	};
-
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString InspectorVersion = SpatialGDKEditorSettings->GetInspectorVersion();
 
@@ -1039,7 +1032,10 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> InO
 		if (InspectorProcess && InspectorProcess->Update())
 		{
 			// We already have an inspector process running. Call ready callback if any.
-			OnReady();
+			if (OnReady)
+			{
+				OnReady();
+			}
 			return;
 		}
 
@@ -1080,7 +1076,10 @@ void FSpatialGDKEditorToolbarModule::StartInspectorProcess(TFunction<void()> InO
 
 		InspectorProcess->Launch();
 
-		OnReady();
+		if (OnReady)
+		{
+			OnReady();
+		}
 	});
 }
 
