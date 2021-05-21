@@ -59,6 +59,7 @@ void FSpatialNetDriverRPC::OnRPCSent(SpatialGDK::SpatialEventTracer& EventTracer
 		UpdateToSend& Update = OutUpdates.AddDefaulted_GetRef();
 		Update.EntityId = EntityId;
 		Update.Update.component_id = ComponentId;
+		Update.Update.schema_type = nullptr;
 	}
 	OutUpdates.Last().Spans.Add(NewSpanId);
 }
