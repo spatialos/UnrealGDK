@@ -19,6 +19,7 @@ class FLocalDeploymentManager
 {
 public:
 	FLocalDeploymentManager();
+	~FLocalDeploymentManager();
 
 	void SPATIALGDKSERVICES_API PreInit(bool bChinaEnabled);
 
@@ -80,6 +81,8 @@ private:
 	ERuntimeStartResponse StartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
 											   const FString& SnapshotName, const FString& RuntimeIPToExpose,
 											   const LocalDeploymentCallback& CallBack);
+
+	FCriticalSection StoppingDeployment;
 
 	TFuture<bool> AttemptSpatialAuthResult;
 

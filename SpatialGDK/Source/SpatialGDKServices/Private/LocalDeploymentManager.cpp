@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
 #include "LocalDeploymentManager.h"
 
 #include "AssetRegistryModule.h"
@@ -38,6 +37,14 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	, bStartingDeployment(false)
 	, bStoppingDeployment(false)
 {
+}
+
+FLocalDeploymentManager::~FLocalDeploymentManager()
+{
+	// The idea behind this lock is to try and make the thread calling the destructor wait for the thread that is cleaning up processes
+	// if something tries to run on this object after the destructor then we're ruined anyway
+	StoppingDeployment.Lock();
+	StoppingDeployment.Unlock();
 }
 
 void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
@@ -404,41 +411,51 @@ bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
 		return TryStopLocalDeployment();
 	}
 
-	if (!StartLocalDeploymentShutDown())
+	StoppingDeployment.Lock();
+	try
 	{
-		return false;
-	}
+		if (!StartLocalDeploymentShutDown())
+		{
+			StoppingDeployment.Unlock();
+			return false;
+		}
 
-	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
+		FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
 #if ENGINE_MINOR_VERSION >= 26
-	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = HttpModule.Get().CreateRequest();
+		TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = HttpModule.Get().CreateRequest();
 #else
-	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
+		TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
 #endif
 
-	FString URL = FString::Printf(TEXT("http://localhost:%d/shutdown"), HTTPPort);
-	HttpRequest->SetURL(URL);
-	HttpRequest->SetVerb("GET");
-	HttpRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
-		int32 ResponseCode = HttpResponse->GetResponseCode();
-		if (ResponseCode != 200)
+		FString URL = FString::Printf(TEXT("http://localhost:%d/shutdown"), HTTPPort);
+		HttpRequest->SetURL(URL);
+		HttpRequest->SetVerb("GET");
+		HttpRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+			int32 ResponseCode = HttpResponse->GetResponseCode();
+			if (ResponseCode != 200)
+			{
+				UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime shutdown http request failed with code: %d"), ResponseCode);
+			}
+		});
+
+		HttpRequest->ProcessRequest();
+
+		bool bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+		if (!bRuntimeShutDownSuccesfully)
 		{
-			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime shutdown http request failed with code: %d"), ResponseCode);
+			RuntimeProcess->Stop();
+			bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
 		}
-	});
+		FinishLocalDeploymentShutDown();
+		StoppingDeployment.Unlock();
 
-	HttpRequest->ProcessRequest();
-
-	bool bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
-	if (!bRuntimeShutDownSuccesfully)
-	{
-		RuntimeProcess->Stop();
-		bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+		return bRuntimeShutDownSuccesfully;
 	}
-
-	FinishLocalDeploymentShutDown();
-
-	return bRuntimeShutDownSuccesfully;
+	catch (...)
+	{
+		StoppingDeployment.Unlock();
+		throw;
+	}
 }
 
 bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
@@ -470,7 +487,6 @@ bool FLocalDeploymentManager::WaitForRuntimeProcessToShutDown()
 		if (RuntimeProcess->GetDuration().GetTotalSeconds() > RuntimeStopTime + RuntimeTimeout)
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to stop."));
-			bStoppingDeployment = false;
 			return false;
 		}
 	}
