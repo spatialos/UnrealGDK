@@ -13,7 +13,7 @@ namespace Improbable
 {
     public static class Build
     {
-        static string runUATBat;
+        static string runUATBatPath;
 
         public static void Main(string[] args)
         {
@@ -103,7 +103,7 @@ namespace Improbable
                 Console.WriteLine("Engine is at: " + unrealEngine);
             }
 
-            runUATBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\RunUAT.bat");
+            runUATBatPath = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\RunUAT.bat");
             string buildBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\Build.bat");
 
             if (gameName == baseGameName + "Editor")
@@ -148,7 +148,7 @@ exit /b !ERRORLEVEL!";
             else if (gameName == baseGameName)
             {
                 Common.WriteHeading(" > Building client.");
-                Common.RunRedirected(runUATBat, new[]
+                Common.RunRedirected(runUATBatPath, new[]
                 {
                     "BuildCookRun",
                     noBuild ? "-nobuild" : "-build",
@@ -186,7 +186,7 @@ exit /b !ERRORLEVEL!";
             else if (gameName == baseGameName + "SimulatedPlayer") // This is for internal use only. We do not support Linux clients.
             {
                 Common.WriteHeading(" > Building simulated player.");
-                Common.RunRedirected(runUATBat, new[]
+                Common.RunRedirected(runUATBatPath, new[]
                 {
                     "BuildCookRun",
                     noBuild ? "-nobuild" : "-build",
@@ -247,7 +247,7 @@ exit /b !ERRORLEVEL!";
             else if (gameName == baseGameName + "Server")
             {
                 Common.WriteHeading(" > Building worker.");
-                Common.RunRedirected(runUATBat, new[]
+                Common.RunRedirected(runUATBatPath, new[]
                 {
                     "BuildCookRun",
                     noBuild ? "-nobuild" : "-build",
@@ -293,7 +293,7 @@ exit /b !ERRORLEVEL!";
             else if (gameName == baseGameName + "Client")
             {
                 Common.WriteHeading(" > Building client.");
-                Common.RunRedirected(runUATBat, new[]
+                Common.RunRedirected(runUATBatPath, new[]
                 {
                     "BuildCookRun",
                     noBuild ? "-nobuild" : "-build",
@@ -346,7 +346,7 @@ exit /b !ERRORLEVEL!";
 
         private static void Zip(string PathToItem, string CompressedOutputPath)
         {
-            Common.RunRedirected(runUATBat, new[]
+            Common.RunRedirected(runUATBatPath, new[]
             {
                     "ZipUtils",
                     "-NoP4",
