@@ -27,6 +27,12 @@ public:
 
 	virtual void PrepareTest() override;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EventTracingConfig)
+	int32 MinRequiredClients = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EventTracingConfig)
+	int32 MinRequiredWorkers = 1;
+
 protected:
 	const static FName ReceiveOpEventName;
 	const static FName PropertyChangedEventName;
@@ -65,8 +71,8 @@ protected:
 
 	virtual void FinishEventTraceTest();
 
-	virtual int GetRequiredClients() { return 1; }
-	virtual int GetRequiredWorkers() { return 1; }
+	virtual int GetRequiredClients() { return MinRequiredClients; }
+	virtual int GetRequiredWorkers() { return MinRequiredWorkers; }
 
 	struct CheckResult
 	{

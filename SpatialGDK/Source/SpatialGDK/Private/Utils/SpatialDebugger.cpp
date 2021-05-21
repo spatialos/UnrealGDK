@@ -456,6 +456,12 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 		return;
 	}
 
+	// TODO: UNR-5481 - Fix this hack for fixing spatial debugger crash after client travel
+	if (!NetDriver->Connection->HasValidCoordinator())
+	{
+		return;
+	}
+
 	const TOptional<SpatialDebugging> DebuggingInfo = GetDebuggerSystem()->GetDebuggingData(EntityId);
 
 	if (!DebuggingInfo.IsSet())
