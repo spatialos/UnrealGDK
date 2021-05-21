@@ -935,7 +935,7 @@ void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId
 
 	TSet<Worker_ComponentId>& Components = PendingDynamicSubobjectComponents.FindChecked(EntityId);
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
+		const Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
 
 		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 		{
@@ -1002,7 +1002,7 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 	}
 }
 
-bool ActorSystem::IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset)
+bool ActorSystem::IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset) const
 {
 	const FClassInfo& ActorClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 	return !ActorClassInfo.SubobjectInfo.Contains(SubObjectOffset);
@@ -1437,7 +1437,7 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 	{
 		// bNetLoadOnClient actors could have components removed while out of the client's interest.
 		// If that happened, remove the removed components.
-		NetDriver->PackageMap->RemoveBNetLoadOnClientRuntimeRemovedComponents(EntityId, EntityComponents, *this);
+		RemoveBNetLoadOnClientRuntimeRemovedComponents(EntityId, EntityComponents, *this);
 	}
 
 	// Resolve things like RepNotify or RPCs after applying component data.
@@ -1644,7 +1644,7 @@ void ActorSystem::ApplyComponentDataOnActorCreation(const Worker_EntityId Entity
 		}
 
 		// If we can't find this subobject, it's a dynamically attached object. Check if we created previously.
-		if (FNetworkGUID* SubobjectNetGUID = NetDriver->PackageMap->GetRemovedDynamicSubobjectNetGUID(TargetObjectRef))
+		if (FNetworkGUID* SubobjectNetGUID = GetRemovedDynamicSubObjectNetGUID(TargetObjectRef))
 		{
 			if (UObject* DynamicSubobject = NetDriver->PackageMap->GetObjectFromNetGUID(*SubobjectNetGUID, false))
 			{
@@ -1807,23 +1807,23 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 		}
 	}
 
-	// Actor is a startup actor that is a part of the level. If it's not Tombstone'd, then it
+	// Actor is a startup actor that is a part of the level. If it's not Tombstone-d, then it
 	// has just fallen out of our view and we should only remove the entity.
 	if (Actor->IsFullNameStableForNetworking() && !ActorSubView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 	{
-		NetDriver->PackageMap->ClearRemovedDynamicSubobjectObjectRefs(EntityId);
+		ClearRemovedDynamicSubObjectRefs(EntityId);
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
-			for (UObject* DynamicSubobject : Channel->CreateSubObjects)
+			for (UObject* DynamicSubObject : Channel->CreateSubObjects)
 			{
-				FNetworkGUID SubobjectNetGUID = NetDriver->PackageMap->GetNetGUIDFromObject(DynamicSubobject);
-				if (SubobjectNetGUID.IsValid())
+				FNetworkGUID SubObjectNetGUID = NetDriver->PackageMap->GetNetGUIDFromObject(DynamicSubObject);
+				if (SubObjectNetGUID.IsValid())
 				{
-					FUnrealObjectRef SubobjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromNetGUID(SubobjectNetGUID);
+					FUnrealObjectRef SubObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromNetGUID(SubObjectNetGUID);
 
-					if (SubobjectRef.IsValid() && IsDynamicSubObject(Actor, SubobjectRef.Offset))
+					if (SubObjectRef.IsValid() && IsDynamicSubObject(Actor, SubObjectRef.Offset))
 					{
-						NetDriver->PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
+						AddRemovedDynamicSubObjectRef(SubObjectRef, SubObjectNetGUID);
 					}
 				}
 			}
@@ -2304,6 +2304,96 @@ void ActorSystem::DestroyActor(AActor* Actor, const Worker_EntityId EntityId)
 
 	check(NetDriver->PackageMap->GetObjectFromEntityId(EntityId) == nullptr);
 }
+
+FNetworkGUID* ActorSystem::GetRemovedDynamicSubObjectNetGUID(const FUnrealObjectRef& ObjectRef)
+{
+	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = EntityRemovedDynamicSubObjects.Find(ObjectRef.Entity))
+	{
+		if (FNetworkGUID* NetGUID = EntityMappings->Find(ObjectRef))
+		{
+			return NetGUID;
+		}
+	}
+	return nullptr;
+}
+
+void ActorSystem::AddRemovedDynamicSubObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID)
+{
+	TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = EntityRemovedDynamicSubObjects.Find(ObjectRef.Entity);
+	if (!EntityMappings)
+	{
+		// If this is the first subObject ref to be added to EntityRemovedDynamicSubObjects for an entity, initialise
+		// Their own TMap
+		EntityRemovedDynamicSubObjects.Emplace(ObjectRef.Entity, TMap<FUnrealObjectRef, FNetworkGUID>());
+		EntityMappings = EntityRemovedDynamicSubObjects.Find(ObjectRef.Entity);
+	}
+	EntityMappings->Emplace(ObjectRef, NetGUID);
+}
+
+void ActorSystem::ClearRemovedDynamicSubObjectRefs(const Worker_EntityId& InEntityId)
+{
+	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = EntityRemovedDynamicSubObjects.Find(InEntityId))
+	{
+		for (auto DynamicSubObjectIterator = EntityMappings->CreateIterator(); DynamicSubObjectIterator; ++DynamicSubObjectIterator)
+		{
+			DynamicSubObjectIterator.RemoveCurrent();
+		}
+	}
+}
+
+void ActorSystem::RemoveBNetLoadOnClientRuntimeRemovedComponents(const Worker_EntityId& EntityId,
+																			  const TArray<SpatialGDK::ComponentData>& NewComponents,
+																			  const SpatialGDK::ActorSystem& ActorSystem
+
+)
+{
+	auto ContainedInComponentsArr = [this, &NewComponents, &EntityId](const FUnrealObjectRef& CheckComponentObjRef) {
+		for (const ComponentData& Component : NewComponents)
+		{
+			// Skip if this isn't a generated component
+			if (Component.GetComponentId() < SpatialConstants::STARTING_GENERATED_COMPONENT_ID
+				&& Component.GetComponentId() != SpatialConstants::DORMANT_COMPONENT_ID)
+			{
+				continue;
+			}
+
+			uint32 Offset = 0;
+			NetDriver->ClassInfoManager->GetOffsetByComponentId(Component.GetComponentId(), Offset);
+
+			if (FUnrealObjectRef(EntityId, Offset) == CheckComponentObjRef)
+			{
+				return true;
+			}
+		}
+		return false;
+	};
+
+	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = EntityRemovedDynamicSubObjects.Find(EntityId))
+	{
+		// Go over each stored sub-object and determine whether it is contained within the new components array
+		// If it is not contained within the new components array, it means the sub-object was removed while out of the client's interest
+		// If so, remove it now
+		for (auto DynamicSubObjectIterator = EntityMappings->CreateIterator(); DynamicSubObjectIterator; ++DynamicSubObjectIterator)
+		{
+			if (DynamicSubObjectIterator->Key.Entity == EntityId)
+			{
+				if (!ContainedInComponentsArr(DynamicSubObjectIterator->Key))
+				{
+					if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(DynamicSubObjectIterator->Value, false))
+					{
+						UE_LOG(LogSpatialPackageMap, Verbose,
+							   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
+									"actor was out of the client's interest. Destroying the SubObject now."),
+							   DynamicSubObjectIterator->Key.Offset, EntityId);
+						ActorSystem.DestroySubObject(EntityId, Object, DynamicSubObjectIterator->Key);
+					}
+					DynamicSubObjectIterator.RemoveCurrent();
+				}
+			}
+		}
+	}
+}
+
 
 void ActorSystem::MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref)
 {

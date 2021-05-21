@@ -57,13 +57,6 @@ public:
 	AActor* GetUniqueActorInstanceByClassRef(const FUnrealObjectRef& ClassRef);
 	AActor* GetUniqueActorInstanceByClass(UClass* Class) const;
 
-	FNetworkGUID* GetRemovedDynamicSubobjectNetGUID(const FUnrealObjectRef& ObjectRef);
-	void AddRemovedDynamicSubobjectObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID);
-	void ClearRemovedDynamicSubobjectObjectRefs(const Worker_EntityId& InEntityId);
-	void RemoveBNetLoadOnClientRuntimeRemovedComponents(const Worker_EntityId& EntityId,
-														const TArray<SpatialGDK::ComponentData>& NewComponents,
-														const SpatialGDK::ActorSystem& ActorSystem);
-
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
 
@@ -88,11 +81,6 @@ private:
 
 	// Entities that have been assigned on this server and not created yet
 	TSet<Worker_EntityId_Key> PendingCreationEntityIds;
-
-	// Stores subobjects from bnetloadonclient actors that have gone out of the client's interest
-	TMap<Worker_EntityId_Key, TMap<FUnrealObjectRef, FNetworkGUID>> EntityRemovedDynamicSubObjects;
-
-	USpatialNetDriver* NetDriver;
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
