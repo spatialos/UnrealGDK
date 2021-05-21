@@ -49,11 +49,15 @@ void FSpatialTestSettings::Override(const FString& MapName)
 
 	if (ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
-		FString GroupOverridesFilename = FPaths::ConvertRelativePathToFull(SpatialWorldSettings->SettingsOverride.FilePath);
+		FString GroupOverridesFilename = FPaths::ProjectDir() + SpatialWorldSettings->SettingsOverride.FilePath;
 		if (FPaths::FileExists(GroupOverridesFilename))
 		{
 			// Override the settings from the group specific config file, if it exists
 			Load(GroupOverridesFilename);
+		}
+		else if (!SpatialWorldSettings->SettingsOverride.FilePath.IsEmpty())
+		{
+			UE_LOG(LogSpatialTestSettings, Error, TEXT("Could not find setting override file %s."), *GroupOverridesFilename);
 		}
 	}
 
