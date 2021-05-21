@@ -1,60 +1,18 @@
 #include "LoadBalancing/LoadBalancingCalculator.h"
-#include "Schema/StandardLibrary.h"
-#include "Utils/SchemaUtils.h"
+#include "LoadBalancing/LBDataStorage.h"
+#include "LoadBalancing/PartitionManager.h"
 
+namespace SpatialGDK
+{
 FGridBalancingCalculator::FGridBalancingCalculator(uint32 GridX, uint32 GridY, float Height, float Width)
 	: Rows(GridY)
 	, Cols(GridX)
 	, WorldWidth(Width)
 	, WorldHeight(Height)
 {
-	ComponentsToInspect.Add(SpatialConstants::POSITION_COMPONENT_ID);
 }
 
-void FGridBalancingCalculator::OnAdded_ReadComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data)
-{
-	Schema_Object* PositionObject = Schema_GetComponentDataFields(Data);
-
-	Schema_Object* CoordsObject = Schema_GetObject(PositionObject, 1);
-	SpatialGDK::Coordinates Coords;
-	Coords.X = Schema_GetDouble(CoordsObject, 1);
-	Coords.Y = Schema_GetDouble(CoordsObject, 2);
-	Coords.Z = Schema_GetDouble(CoordsObject, 3);
-
-	FVector Position = SpatialGDK::Coordinates::ToFVector(Coords);
-
-	Modified.Add(EntityId);
-	EntityData NewEntityData;
-	NewEntityData.Position = Position;
-	Positions.Add(EntityId, NewEntityData);
-}
-
-void FGridBalancingCalculator::OnRemoved(Worker_EntityId EntityId)
-{
-	Modified.Remove(EntityId);
-	Positions.Remove(EntityId);
-}
-
-void FGridBalancingCalculator::OnUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update)
-{
-	if (ComponentId == SpatialConstants::POSITION_COMPONENT_ID)
-	{
-		Schema_Object* PositionObject = Schema_GetComponentUpdateFields(Update);
-		Schema_Object* CoordsObject = Schema_GetObject(PositionObject, 1);
-		SpatialGDK::Coordinates Coords;
-		Coords.X = Schema_GetDouble(CoordsObject, 1);
-		Coords.Y = Schema_GetDouble(CoordsObject, 2);
-		Coords.Z = Schema_GetDouble(CoordsObject, 3);
-
-		EntityData& Data = Positions.FindChecked(EntityId);
-		Data.Position = SpatialGDK::Coordinates::ToFVector(Coords);
-
-		Modified.Add(EntityId);
-	}
-}
-
-void FGridBalancingCalculator::CollectPartitionsToAdd(const FPartitionDeclaration* Parent,
-													  TArray<TSharedPtr<FPartitionDeclaration>>& OutPartitions)
+void FGridBalancingCalculator::CollectPartitionsToAdd(FPartitionManager& PartitionMgr, TArray<FPartitionHandle>& OutPartitions)
 {
 	if (Partitions.Num() == 0)
 	{
@@ -83,13 +41,18 @@ void FGridBalancingCalculator::CollectPartitionsToAdd(const FPartitionDeclaratio
 				FBox2D Cell(Min, Max);
 				Cells.Add(Cell);
 
-				TSharedPtr<FPartitionDeclaration> NewPartition = MakeShared<FPartitionDeclaration>();
-				NewPartition->bActive = true;
-				NewPartition->Calculator = this;
-				NewPartition->CalculatorIndex = Partitions.Num();
-				NewPartition->ParentPartition = Parent;
-				NewPartition->Name = FString::Printf(TEXT("GridCell (%i, %i)"), Col, Row);
+				const FVector2D Center2D = Cell.GetCenter();
+				const FVector Center3D{ Center2D.X, Center2D.Y, 0.0f };
 
+				const FVector2D EdgeLengths2D = Cell.GetSize();
+				check(EdgeLengths2D.X > 0.0f && EdgeLengths2D.Y > 0.0f);
+				const FVector EdgeLengths3D{ EdgeLengths2D.X, EdgeLengths2D.Y, FLT_MAX };
+
+				SpatialGDK::QueryConstraint Constraint;
+				Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D),
+																	  SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
+
+				FPartitionHandle NewPartition = PartitionMgr.CreatePartition(nullptr, Constraint);
 				Partitions.Add(NewPartition);
 
 				OutPartitions.Add(NewPartition);
@@ -103,10 +66,12 @@ void FGridBalancingCalculator::CollectPartitionsToAdd(const FPartitionDeclaratio
 	}
 }
 
-void FGridBalancingCalculator::CollectEntitiesToMigrate(MigrationContext& Ctx)
+void FGridBalancingCalculator::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 {
-	TSet<Worker_EntityId> NotChecked;
-	for (Worker_EntityId EntityId : Modified)
+	TMap<Worker_EntityId_Key, FVector> const& PositionData = DataStorage->GetPositions();
+	TSet<Worker_EntityId_Key> NotChecked;
+	ToRefresh = ToRefresh.Union(DataStorage->GetModifiedEntities());
+	for (Worker_EntityId EntityId : ToRefresh)
 	{
 		if (Ctx.MigratingEntities.Contains(EntityId))
 		{
@@ -114,13 +79,14 @@ void FGridBalancingCalculator::CollectEntitiesToMigrate(MigrationContext& Ctx)
 			continue;
 		}
 
-		EntityData& Data = Positions.FindChecked(EntityId);
+		const FVector& Position = PositionData.FindChecked(EntityId);
+		const FVector2D Actor2DLocation(Position);
 
-		const FVector2D Actor2DLocation(Data.Position);
+		int32& CurAssignment = Assignment.FindOrAdd(EntityId, -1);
 
-		if (Data.Assignment >= 0 && Data.Assignment < Cells.Num())
+		if (CurAssignment >= 0 && CurAssignment < Cells.Num())
 		{
-			if (Cells[Data.Assignment].IsInside(Actor2DLocation))
+			if (Cells[CurAssignment].IsInside(Actor2DLocation))
 			{
 				continue;
 			}
@@ -134,13 +100,13 @@ void FGridBalancingCalculator::CollectEntitiesToMigrate(MigrationContext& Ctx)
 			}
 		}
 
-		if (NewAssignment >= 0 && NewAssignment < Cells.Num() && ensure(NewAssignment != Data.Assignment))
+		if (NewAssignment >= 0 && NewAssignment < Cells.Num() && ensure(NewAssignment != CurAssignment))
 		{
-			Data.Assignment = NewAssignment;
+			CurAssignment = NewAssignment;
 			Ctx.EntitiesToMigrate.Add(EntityId, Partitions[NewAssignment]);
 		}
 	}
-	Modified = MoveTemp(NotChecked);
+	ToRefresh = MoveTemp(NotChecked);
 }
 
 FLayerLoadBalancingCalculator::FLayerLoadBalancingCalculator(TArray<FName> InLayerNames,
@@ -148,80 +114,39 @@ FLayerLoadBalancingCalculator::FLayerLoadBalancingCalculator(TArray<FName> InLay
 	: LayerNames(InLayerNames)
 	, Layers(MoveTemp(InLayers))
 {
-	ComponentsToInspect.Add(SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ID);
 }
 
-void FLayerLoadBalancingCalculator::OnAdded(Worker_EntityId EntityId, SpatialGDK::EntityViewElement const& Element)
-{
-	FLoadBalancingCalculator::OnAdded(EntityId, Element);
-	uint32* Group = GroupMembership.Find(EntityId);
-	if (Group)
-	{
-		Layers[*Group]->OnAdded(EntityId, Element);
-	}
-}
-
-void FLayerLoadBalancingCalculator::OnAdded_ReadComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
-														  Schema_ComponentData* Data)
-{
-	Schema_Object* GroupObject = Schema_GetComponentDataFields(Data);
-	int32 GroupId = Schema_GetUint32(GroupObject, SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ACTOR_GROUP_ID);
-	if (GroupId >= 0 && GroupId < Layers.Num())
-	{
-		GroupMembership.Add(EntityId, GroupId);
-	}
-}
-
-void FLayerLoadBalancingCalculator::OnRemoved(Worker_EntityId EntityId)
-{
-	uint32 Group;
-	GroupMembership.RemoveAndCopyValue(EntityId, Group);
-
-	Layers[Group]->OnRemoved(EntityId);
-}
-
-void FLayerLoadBalancingCalculator::OnUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update)
-{
-	// Snore.... try to organize a data oriented update dispatch instead.
-	// Even though different calculator instances manage different entities they could share data storage.
-	uint32* Group = GroupMembership.Find(EntityId);
-	if (Group)
-	{
-		Layers[*Group]->OnUpdate(EntityId, ComponentId, Update);
-	}
-}
-
-void FLayerLoadBalancingCalculator::CollectPartitionsToAdd(const FPartitionDeclaration* Parent,
-														   TArray<TSharedPtr<FPartitionDeclaration>>& OutPartitions)
+void FLayerLoadBalancingCalculator::CollectPartitionsToAdd(FPartitionManager& PartitionMgr, TArray<FPartitionHandle>& OutPartitions)
 {
 	for (int32 i = 0; i < Layers.Num(); ++i)
 	{
 		FLoadBalancingCalculator* Calculator = Layers[i].Get();
-		TSharedPtr<FPartitionDeclaration> NewPartition = MakeShared<FPartitionDeclaration>();
-		NewPartition->bActive = true;
-		NewPartition->Calculator = this;
-		NewPartition->CalculatorIndex = VirtualPartitions.Num();
-		NewPartition->ParentPartition = Parent;
-		NewPartition->Name = FString::Printf(TEXT("Layer %s"), *LayerNames[i].ToString());
-		VirtualPartitions.Add(NewPartition);
-
-		Layers[i]->CollectPartitionsToAdd(NewPartition.Get(), OutPartitions);
+		Layers[i]->CollectPartitionsToAdd(PartitionMgr, OutPartitions);
 	}
 }
 
-void FLayerLoadBalancingCalculator::CollectEntitiesToMigrate(MigrationContext& Ctx)
+void FLayerLoadBalancingCalculator::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 {
-	for (TUniquePtr<FLoadBalancingCalculator>& Calculator : Layers)
+	TSet<Worker_EntityId_Key> FilteredSet;
+	for (int32 LayerIdx = 0; LayerIdx < Layers.Num(); ++LayerIdx)
 	{
-		Calculator->CollectEntitiesToMigrate(Ctx);
-	}
-}
+		TUniquePtr<FLoadBalancingCalculator>& Calculator = Layers[LayerIdx];
+		FilteredSet.Empty();
+		for (auto EntityId : Ctx.ModifiedEntities)
+		{
+			const int32* Group = GroupStorage->GetGroups().Find(EntityId);
+			if (Group && *Group == LayerIdx)
+			{
+				FilteredSet.Add(EntityId);
+			}
+		}
 
-void FLayerLoadBalancingCalculator::CollectComponentsToInspect(TSet<Worker_ComponentId>& OutSet)
-{
-	FLoadBalancingCalculator::CollectComponentsToInspect(OutSet);
-	for (TUniquePtr<FLoadBalancingCalculator>& Calculator : Layers)
-	{
-		Calculator->CollectComponentsToInspect(OutSet);
+		FMigrationContext LayerCtx(Ctx.MigratingEntities, FilteredSet);
+		Calculator->CollectEntitiesToMigrate(LayerCtx);
+		for (auto MigrationEntry : LayerCtx.EntitiesToMigrate)
+		{
+			Ctx.EntitiesToMigrate.Add(MigrationEntry);
+		}
 	}
 }
+} // namespace SpatialGDK

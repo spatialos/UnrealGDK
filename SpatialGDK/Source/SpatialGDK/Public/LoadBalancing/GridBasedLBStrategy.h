@@ -67,8 +67,8 @@ public:
 	float GetWorldHeight() const { return WorldHeight; }
 	
 	virtual bool IsStrategyWorkerAware() const { return true; }
-	virtual TUniquePtr<FLoadBalancingCalculator> CreateLoadBalancingCalculator() const override;
-	virtual FLoadBalancingDecorator* GetLoadBalancingDecorator() const override;
+	virtual TUniquePtr<SpatialGDK::FLoadBalancingCalculator> CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const override;
+	virtual SpatialGDK::FLoadBalancingDecorator* GetLoadBalancingDecorator() const override;
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

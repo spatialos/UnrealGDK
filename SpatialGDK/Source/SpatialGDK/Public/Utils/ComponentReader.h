@@ -25,6 +25,9 @@ public:
 	void ApplyComponentUpdate(Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update, UObject& Object,
 							  USpatialActorChannel& Channel, bool& bOutReferencesChanged);
 
+	Schema_FieldId GetFieldFromProperty(UClass* ObjectClass, GDK_PROPERTY(Property) * Property, Worker_ComponentId ComponentId);
+	void ExtractField(Schema_Object* ComponentObject, UClass* ObjectClass, Schema_FieldId ComponentId, uint8* Data);
+
 private:
 	void ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
 						   const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId, bool& bOutReferencesChanged);

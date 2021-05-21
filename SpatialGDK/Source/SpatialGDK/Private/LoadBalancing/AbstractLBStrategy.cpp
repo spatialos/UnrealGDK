@@ -17,7 +17,7 @@ void UAbstractLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtual
 	LocalVirtualWorkerId = InLocalVirtualWorkerId;
 }
 
-TUniquePtr<FLoadBalancingCalculator> UAbstractLBStrategy::CreateLoadBalancingCalculator() const
+TUniquePtr<SpatialGDK::FLoadBalancingCalculator> UAbstractLBStrategy::CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const
 {
 	return {};
 }

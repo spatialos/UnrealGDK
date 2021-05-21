@@ -225,9 +225,10 @@ void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityI
 	SpatialGDK::UnrealServerInterestFactory* InterestF =
 		USpatialStatics::IsStrategyWorkerEnabled() ? nullptr : NetDriver->InterestFactory.Get();
 
+	SpatialGDK::QueryConstraint LBConstraint = Translator->LoadBalanceStrategy.Get()->GetWorkerInterestQueryConstraint(VirtualWorkerId);
+
 	TArray<FWorkerComponentData> Components = SpatialGDK::EntityFactory::CreatePartitionEntityComponents(
-		TEXT("WorkerPartition"), PartitionEntityId, InterestF, Translator->LoadBalanceStrategy.Get(), VirtualWorkerId,
-		NetDriver->DebugCtx != nullptr);
+		TEXT("WorkerPartition"), PartitionEntityId, InterestF, LBConstraint, VirtualWorkerId, NetDriver->DebugCtx != nullptr);
 
 	const Worker_RequestId RequestId =
 		Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionEntityId, SpatialGDK::RETRY_UNTIL_COMPLETE);

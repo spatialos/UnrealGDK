@@ -385,10 +385,10 @@ void ULayeredLBStrategy::AddStrategyForLayer(const FName& LayerName, UAbstractLB
 	LayerNameToLBStrategy[LayerName]->Init();
 }
 
-TUniquePtr<FLoadBalancingCalculator> ULayeredLBStrategy::CreateLoadBalancingCalculator() const
+TUniquePtr<SpatialGDK::FLoadBalancingCalculator> ULayeredLBStrategy::CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const
 {
 	TArray<FName> LayerNames;
-	TArray<TUniquePtr<FLoadBalancingCalculator>> Layers;
+	TArray<TUniquePtr<SpatialGDK::FLoadBalancingCalculator>> Layers;
 	LayerNames.SetNum(LayerNameToLBStrategy.Num());
 	Layers.SetNum(LayerNameToLBStrategy.Num());
 	for (auto Entry : LayerNameToLBStrategy)
@@ -401,14 +401,17 @@ TUniquePtr<FLoadBalancingCalculator> ULayeredLBStrategy::CreateLoadBalancingCalc
 		if (const FLayerData* Data = LayerData.Find(LayerName))
 		{
 			LayerNames[Data->LayerIndex] = LayerName;
-			Layers[Data->LayerIndex] = Entry.Value->CreateLoadBalancingCalculator();
+			Layers[Data->LayerIndex] = Entry.Value->CreateLoadBalancingCalculator(OutCtx);
 		}
 	}
 
-	return MakeUnique<FLayerLoadBalancingCalculator>(LayerNames, MoveTemp(Layers));
+	auto Calculator = MakeUnique<SpatialGDK::FLayerLoadBalancingCalculator>(LayerNames, MoveTemp(Layers));
+	OutCtx.Layers = Calculator.Get();
+
+	return Calculator;
 }
 
-FLoadBalancingDecorator* ULayeredLBStrategy::GetLoadBalancingDecorator() const
+SpatialGDK::FLoadBalancingDecorator* ULayeredLBStrategy::GetLoadBalancingDecorator() const
 {
 	if (!Decorator.IsValid())
 	{
@@ -423,7 +426,7 @@ FLoadBalancingDecorator* ULayeredLBStrategy::GetLoadBalancingDecorator() const
 			}
 		}
 
-		Decorator = MakeUnique<FLayerLoadBalancingDecorator>(MoveTemp(GroupMap));
+		Decorator = MakeUnique<SpatialGDK::FLayerLoadBalancingDecorator>(MoveTemp(GroupMap));
 	}
 	return Decorator.Get();
 }

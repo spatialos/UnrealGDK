@@ -2,15 +2,15 @@
 
 #include "Interop/SpatialStrategySystem.h"
 
-#include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "Interop/SpatialOSDispatcherInterface.h"
-#include "LoadBalancing/AbstractLBStrategy.h"
-#include "LoadBalancing/LoadBalancingCalculator.h"
+#include "LoadBalancing/LoadBalancingStrategy.h"
 #include "Schema/AuthorityIntent.h"
-#include "Schema/ServerWorker.h"
+#include "SpatialView/EntityComponentTypes.h"
 #include "Utils/EntityFactory.h"
 #include "Utils/InterestFactory.h"
+
+#include "LoadBalancing/LBDataStorage.h"
+#include "LoadBalancing/PartitionManager.h"
 
 #pragma optimize("", off)
 
@@ -18,254 +18,40 @@ DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 
 namespace SpatialGDK
 {
-SpatialStrategySystem::SpatialStrategySystem(const FSubView& InLBView, const FSubView& InWorkerView, const FSubView& InPartitionView,
-											 Worker_EntityId InStrategyWorkerEntityId, SpatialOSWorkerInterface* Connection,
-											 UAbstractLBStrategy& InStrategy, SpatialVirtualWorkerTranslator& InTranslator,
-											 TUniquePtr<InterestFactory>&& InInterestF)
+SpatialStrategySystem::SpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionsMgr, const FSubView& InLBView,
+											 TUniquePtr<FLoadBalancingStrategy>&& InStrategy)
 	: LBView(InLBView)
-	, WorkerView(InWorkerView)
-	, PartitionView(InPartitionView)
-	, StrategyWorkerEntityId(InStrategyWorkerEntityId)
-	, StrategyPartitionEntityId(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID)
-	, Strategy(InStrategy)
-	, Translator(InTranslator)
-	, InterestF(MoveTemp(InInterestF))
+	, PartitionsMgr(MoveTemp(InPartitionsMgr))
+	, Strategy(MoveTemp(InStrategy))
 {
-	Worker_CommandRequest ClaimRequest = Worker::CreateClaimPartitionRequest(StrategyPartitionEntityId);
-	StrategyWorkerRequest = Connection->SendCommandRequest(StrategyWorkerEntityId, &ClaimRequest, SpatialGDK::RETRY_UNTIL_COMPLETE, {});
+	Strategy->Init(DataStorages);
 
-	NumPartitions = Strategy.GetMinimumRequiredWorkers();
-	PartitionCreationRequests.Add(Connection->SendReserveEntityIdsRequest(NumPartitions, RETRY_UNTIL_COMPLETE));
-	StrategyCalculator = Strategy.CreateLoadBalancingCalculator();
-	StrategyCalculator->CollectComponentsToInspect(UpdatesToConsider);
-	TArray<TSharedPtr<FPartitionDeclaration>> PartitionsDecl;
-	StrategyCalculator->CollectPartitionsToAdd(nullptr, PartitionsDecl);
-
-	// Should rebuild a graph to match the VirtualWorkerIds, but currently declaration array order is in DFS traversal order anyway
-	for (auto Decl : PartitionsDecl)
+	for (auto Storage : DataStorages)
 	{
-		PartitionsMap.Add(Decl, PartitionsMap.Num());
+		UpdatesToConsider = UpdatesToConsider.Union(Storage->GetComponentsToWatch());
 	}
+
+	bStrategySystemInterestDirty = true;
 }
 
 SpatialStrategySystem::~SpatialStrategySystem() = default;
 
 void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 {
-	const TArray<Worker_Op>& Messages = Connection->GetWorkerMessages();
+	PartitionsMgr->AdvanceView(Connection);
 
-	for (const auto& Message : Messages)
+	TArray<FLBWorker> DisconnectedWorkers = PartitionsMgr->GetDisconnectedWorkers();
+
+	if (DisconnectedWorkers.Num() > 0)
 	{
-		switch (Message.op_type)
-		{
-		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
-		{
-			const Worker_EntityQueryResponseOp& Op = Message.op.entity_query_response;
-			if (Op.request_id == WorkerTranslationRequest)
-			{
-				if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
-				{
-					for (uint32_t i = 0; i < Op.results[0].component_count; i++)
-					{
-						Worker_ComponentData Data = Op.results[0].components[i];
-						if (Data.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
-						{
-							Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-							Translator.ApplyVirtualWorkerManagerData(ComponentObject);
-							bTranslatorIsReady = true;
-							for (uint32 VirtualWorker = 0; VirtualWorker < NumPartitions; ++VirtualWorker)
-							{
-								if (Translator.GetServerWorkerEntityForVirtualWorker(VirtualWorker + 1)
-									== SpatialConstants::INVALID_ENTITY_ID)
-								{
-									bTranslatorIsReady = false;
-								}
-							}
-						}
-					}
-				}
-			}
-			bTranslationQueryInFlight = false;
-		}
-
-		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-		{
-			const Worker_CreateEntityResponseOp& Op = Message.op.create_entity_response;
-			if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-			{
-				UE_LOG(LogSpatialStrategySystem, Error, TEXT("Partition entity creation failed: \"%s\". Entity: %lld."),
-					   UTF8_TO_TCHAR(Op.message), Op.entity_id);
-			}
-			else
-			{
-				if (PartitionCreationRequests.Contains(Op.request_id))
-				{
-					PartitionCreationRequests.Remove(Op.request_id);
-					if (PartitionCreationRequests.Num() == 0)
-					{
-						bStrategyPartitionsCreated = true;
-					}
-				}
-			}
-
-			break;
-		}
-		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
-		{
-			const Worker_ReserveEntityIdsResponseOp& Op = Message.op.reserve_entity_ids_response;
-
-			if (PartitionCreationRequests.Contains(Op.request_id))
-			{
-				PartitionCreationRequests.Remove(Op.request_id);
-				if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-				{
-					UE_LOG(LogSpatialStrategySystem, Error, TEXT("Reserve partition Id failed : %s"), UTF8_TO_TCHAR(Op.message));
-				}
-				else
-				{
-					for (uint32 VirtualWorker = 0; VirtualWorker < NumPartitions; ++VirtualWorker)
-					{
-						Worker_EntityId PartitionId = Op.first_entity_id + VirtualWorker;
-						StrategyPartitions.Add(StrategyPartition(PartitionId));
-						TArray<FWorkerComponentData> Components = SpatialGDK::EntityFactory::CreatePartitionEntityComponents(
-							TEXT("StrategyPartition"), PartitionId, InterestF.Get(), &Strategy, VirtualWorker, false);
-
-						const Worker_RequestId RequestId =
-							Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionId, SpatialGDK::RETRY_UNTIL_COMPLETE);
-						PartitionCreationRequests.Add(RequestId);
-					}
-				}
-			}
-			break;
-		}
-		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-		{
-			const Worker_CommandResponseOp& Op = Message.op.command_response;
-			if (Op.request_id == StrategyWorkerRequest)
-			{
-				if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-				{
-					UE_LOG(LogSpatialStrategySystem, Error, TEXT("Claim partition failed : %s"), UTF8_TO_TCHAR(Op.message));
-				}
-				StrategyWorkerRequest = 0;
-			}
-		}
-		break;
-		}
+		Strategy->OnWorkersDisconnected(DisconnectedWorkers);
 	}
 
-	for (const EntityDelta& Delta : PartitionView.GetViewDelta().EntityDeltas)
-	{
-		switch (Delta.Type)
-		{
-		case EntityDelta::UPDATE:
-		{
-			for (const auto& CompleteUpdate : Delta.ComponentsRefreshed)
-			{
-				if (CompleteUpdate.ComponentId == SpatialConstants::PARTITION_ACK_COMPONENT_ID)
-				{
-					Schema_Object* Object = Schema_GetComponentDataFields(CompleteUpdate.CompleteUpdate.Data);
-					if (Schema_GetUint64(Object, 1) != 0)
-					{
-						SetPartitionReady(Delta.EntityId);
-					}
-				}
-			}
-			for (const auto& Update : Delta.ComponentUpdates)
-			{
-				if (Update.ComponentId == SpatialConstants::PARTITION_ACK_COMPONENT_ID)
-				{
-					Schema_Object* Object = Schema_GetComponentUpdateFields(Update.Update);
-					if (Schema_GetUint64(Object, 1) != 0)
-					{
-						SetPartitionReady(Delta.EntityId);
-					}
-				}
-			}
-		}
-		break;
-		case EntityDelta::ADD:
-		{
-			const EntityViewElement& WorkerDesc = WorkerView.GetView().FindChecked(Delta.EntityId);
-			for (const auto& Component : WorkerDesc.Components)
-			{
-				if (Component.GetComponentId() == SpatialConstants::PARTITION_ACK_COMPONENT_ID)
-				{
-					Schema_Object* Object = Schema_GetComponentDataFields(Component.GetUnderlying());
-					if (Schema_GetUint64(Object, 1) != 0)
-					{
-						SetPartitionReady(Delta.EntityId);
-					}
-				}
-			}
-		}
-		break;
-		case EntityDelta::REMOVE:
-		{
-		}
-		case EntityDelta::TEMPORARILY_REMOVED:
-		{
-		}
-		break;
-		default:
-			break;
-		}
-	}
+	TArray<FLBWorker> ConnectedWorkers = PartitionsMgr->GetConnectedWorkers();
 
-	for (const EntityDelta& Delta : WorkerView.GetViewDelta().EntityDeltas)
+	if (ConnectedWorkers.Num() > 0)
 	{
-		switch (Delta.Type)
-		{
-		case EntityDelta::UPDATE:
-		{
-			ServerWorker& ServerWorkerData = Workers.FindChecked(Delta.EntityId);
-			bool bWasReady = ServerWorkerData.bReadyToBeginPlay;
-			for (const auto& CompleteUpdate : Delta.ComponentsRefreshed)
-			{
-				if (CompleteUpdate.ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
-				{
-					ServerWorkerData = ServerWorker(CompleteUpdate.Data);
-				}
-			}
-			for (const auto& Update : Delta.ComponentUpdates)
-			{
-				if (Update.ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
-				{
-					ServerWorkerData.ApplyComponentUpdate(Update.Update);
-				}
-			}
-			if (!bWasReady && ServerWorkerData.bReadyToBeginPlay)
-			{
-				++NumWorkerReady;
-			}
-		}
-		break;
-		case EntityDelta::ADD:
-		{
-			const EntityViewElement& WorkerDesc = WorkerView.GetView().FindChecked(Delta.EntityId);
-			for (const auto& Component : WorkerDesc.Components)
-			{
-				if (Component.GetComponentId() == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
-				{
-					ServerWorker& ServerWorkerData = Workers.Add(Delta.EntityId, ServerWorker(Component.GetUnderlying()));
-					if (ServerWorkerData.bReadyToBeginPlay)
-					{
-						NumWorkerReady++;
-					}
-				}
-			}
-		}
-		break;
-		case EntityDelta::REMOVE:
-		{
-		}
-		case EntityDelta::TEMPORARILY_REMOVED:
-		{
-		}
-		break;
-		default:
-			break;
-		}
+		Strategy->OnWorkersConnected(ConnectedWorkers);
 	}
 
 	for (const EntityDelta& Delta : LBView.GetViewDelta().EntityDeltas)
@@ -277,9 +63,12 @@ void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 			for (const auto& CompleteUpdate : Delta.ComponentsRefreshed) {}
 			for (const auto& Update : Delta.ComponentUpdates)
 			{
-				if (UpdatesToConsider.Contains(Update.ComponentId))
+				for (auto& Storage : DataStorages)
 				{
-					StrategyCalculator->OnUpdate(Delta.EntityId, Update.ComponentId, Update.Update);
+					if (Storage->GetComponentsToWatch().Contains(Update.ComponentId))
+					{
+						Storage->OnUpdate(Delta.EntityId, Update.ComponentId, Update.Update);
+					}
 				}
 				if (Update.ComponentId == SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID)
 				{
@@ -331,19 +120,32 @@ void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 				}
 			}
 
-			StrategyCalculator->OnAdded(Delta.EntityId, Element);
+			for (auto& Storage : DataStorages)
+			{
+				Storage->OnAdded(Delta.EntityId, Element);
+			}
 		}
 		break;
 		case EntityDelta::REMOVE:
 		{
-			StrategyCalculator->OnRemoved(Delta.EntityId);
+			for (auto& Storage : DataStorages)
+			{
+				Storage->OnRemoved(Delta.EntityId);
+			}
 			AuthorityIntentView.Remove(Delta.EntityId);
 		}
 		break;
 		case EntityDelta::TEMPORARILY_REMOVED:
 		{
-			StrategyCalculator->OnRemoved(Delta.EntityId);
-			StrategyCalculator->OnAdded(Delta.EntityId, LBView.GetView().FindChecked(Delta.EntityId));
+			for (auto& Storage : DataStorages)
+			{
+				Storage->OnRemoved(Delta.EntityId);
+			}
+			const SpatialGDK::EntityViewElement& Element = LBView.GetView().FindChecked(Delta.EntityId);
+			for (auto& Storage : DataStorages)
+			{
+				Storage->OnAdded(Delta.EntityId, Element);
+			}
 		}
 		break;
 		default:
@@ -352,62 +154,31 @@ void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 	}
 }
 
-void SpatialStrategySystem::SetPartitionReady(Worker_EntityId EntityId)
-{
-	for (auto& PartitionState : StrategyPartitions)
-	{
-		if (PartitionState.Id == EntityId)
-		{
-			PartitionState.bAcked = true;
-			return;
-		}
-	}
-}
-
-void SpatialStrategySystem::CheckPartitionDistributed(SpatialOSWorkerInterface* Connection)
-{
-	if (bPartitionsDistributed)
-	{
-		return;
-	}
-
-	if (!bStrategyPartitionsCreated || NumWorkerReady < NumPartitions)
-	{
-		return;
-	}
-
-	if (!bTranslatorIsReady)
-	{
-		QueryTranslation(Connection);
-		return;
-	}
-
-	for (uint32 Partition = 0; Partition < NumPartitions; ++Partition)
-	{
-		Worker_EntityId ServerWorkerEntity = Translator.GetServerWorkerEntityForVirtualWorker(Partition + 1);
-
-		const ServerWorker& ServerWorkerData = Workers.FindChecked(ServerWorkerEntity);
-
-		Worker_CommandRequest ClaimRequest = Worker::CreateClaimPartitionRequest(StrategyPartitions[Partition].Id);
-		Connection->SendCommandRequest(ServerWorkerData.SystemEntityId, &ClaimRequest, SpatialGDK::RETRY_UNTIL_COMPLETE, {});
-	}
-
-	bPartitionsDistributed = true;
-}
-
 void SpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
 {
-	CheckPartitionDistributed(Connection);
+	PartitionsMgr->Flush(Connection);
 
-	if (!bPartitionsDistributed)
+	if (bStrategySystemInterestDirty)
+	{
+		UpdateStrategySystemInterest(Connection);
+	}
+
+	Strategy->TickPartitions(*PartitionsMgr);
+
+	if (!PartitionsMgr->IsReady())
 	{
 		return;
 	}
 
-	MigrationContext Ctx;
-	Ctx.MigratingEntities = MigratingEntities;
+	TSet<Worker_EntityId_Key> ModifiedEntities;
+	for (auto& Storage : DataStorages)
+	{
+		ModifiedEntities = ModifiedEntities.Union(Storage->GetModifiedEntities());
+	}
 
-	StrategyCalculator->CollectEntitiesToMigrate(Ctx);
+	FMigrationContext Ctx(MigratingEntities, ModifiedEntities);
+
+	Strategy->CollectEntitiesToMigrate(Ctx);
 
 	for (auto const& Migration : Ctx.EntitiesToMigrate)
 	{
@@ -418,15 +189,16 @@ void SpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
 			continue;
 		}
 
-		TSharedPtr<FPartitionDeclaration> Partition = Migration.Value;
-		uint32 PartitionIdx = PartitionsMap.FindChecked(Partition);
+		FPartitionHandle Partition = Migration.Value;
+		TOptional<Worker_PartitionId> DestPartition = PartitionsMgr->GetPartitionId(Partition);
 		AuthorityIntentV2& AuthIntent = AuthorityIntentView.FindChecked(EntityId);
-		const StrategyPartition& PartitionState = StrategyPartitions[PartitionIdx];
-		if (!PartitionState.bAcked)
+		if (!DestPartition)
 		{
+			// Have to remember the migration request !!
+			// Or stop doing that altogether
 			continue;
 		}
-		AuthIntent.PartitionId = PartitionState.Id;
+		AuthIntent.PartitionId = DestPartition.GetValue();
 		AuthIntent.AssignmentCounter++;
 
 		FWorkerComponentUpdate Update;
@@ -469,26 +241,52 @@ void SpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
 
 void SpatialStrategySystem::Destroy(SpatialOSWorkerInterface* Connection) {}
 
-void SpatialStrategySystem::QueryTranslation(SpatialOSWorkerInterface* Connection)
+void SpatialStrategySystem::UpdateStrategySystemInterest(SpatialOSWorkerInterface* Connection)
 {
-	if (bTranslationQueryInFlight)
+	if (!PartitionsMgr->IsReady())
 	{
 		return;
 	}
 
-	// Build a constraint for the Virtual Worker Translation.
-	Worker_ComponentConstraint TranslationComponentConstraint;
-	TranslationComponentConstraint.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
+	Interest ServerInterest;
+	Query ServerQuery = {};
+	ServerQuery.ResultComponentIds = {
+		SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
+		/*SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ID,*/ SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID,
+		SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID
+	};
 
-	Worker_Constraint TranslationConstraint;
-	TranslationConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
-	TranslationConstraint.constraint.component_constraint = TranslationComponentConstraint;
+	for (auto& Component : UpdatesToConsider)
+	{
+		ServerQuery.ResultComponentIds.Add(Component);
+	}
 
-	Worker_EntityQuery TranslationQuery{};
-	TranslationQuery.constraint = TranslationConstraint;
+	// ServerQuery.ResultComponentSetIds = { SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID };
+	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID;
+	ServerInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
+	ServerInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(ServerQuery);
 
-	WorkerTranslationRequest = Connection->SendEntityQueryRequest(&TranslationQuery, RETRY_UNTIL_COMPLETE);
-	bTranslationQueryInFlight = true;
+	ServerQuery = {};
+	ServerQuery.ResultComponentIds = { SpatialConstants::SERVER_WORKER_COMPONENT_ID };
+	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
+	ServerInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(ServerQuery);
+
+	ServerQuery = {};
+	ServerQuery.ResultComponentIds = { SpatialConstants::WORKER_COMPONENT_ID };
+	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
+	ServerInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(ServerQuery);
+
+	ServerQuery = {};
+	ServerQuery.ResultComponentIds = { SpatialConstants::PARTITION_ACK_COMPONENT_ID };
+	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::PARTITION_ACK_COMPONENT_ID;
+	ServerInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(ServerQuery);
+
+	FWorkerComponentUpdate Update;
+	Update.component_id = Interest::ComponentId;
+	Update.schema_type = ServerInterest.CreateInterestUpdate().schema_type;
+	Connection->SendComponentUpdate(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID, &Update, {});
+
+	bStrategySystemInterestDirty = false;
 }
 
 } // namespace SpatialGDK

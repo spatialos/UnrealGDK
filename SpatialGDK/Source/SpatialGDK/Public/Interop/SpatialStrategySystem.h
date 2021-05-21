@@ -16,20 +16,18 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialStrategySystem, Log, All)
 
 class SpatialOSWorkerInterface;
 class SpatialVirtualWorkerTranslator;
-class UAbstractLBStrategy;
-class FLoadBalancingCalculator;
-struct FPartitionDeclaration;
 
 namespace SpatialGDK
 {
-class InterestFactory;
+class FLoadBalancingStrategy;
+class FLBDataStorage;
+class FPartitionManager;
 
 class SpatialStrategySystem
 {
 public:
-	SpatialStrategySystem(const FSubView& InLBView, const FSubView& InWorkerView, const FSubView& InPartitionView,
-						  Worker_EntityId InStrategyWorkerEntityId, SpatialOSWorkerInterface* Connection, UAbstractLBStrategy& InStrategy,
-						  SpatialVirtualWorkerTranslator& InTranslator, TUniquePtr<InterestFactory>&& InInterestF);
+	SpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionMgr, const FSubView& InLBView,
+						  TUniquePtr<FLoadBalancingStrategy>&& Strategy);
 
 	~SpatialStrategySystem();
 
@@ -38,57 +36,22 @@ public:
 	void Destroy(SpatialOSWorkerInterface* Connection);
 
 private:
-	void QueryTranslation(SpatialOSWorkerInterface* Connection);
-
-	void CheckPartitionDistributed(SpatialOSWorkerInterface* Connection);
-
-	uint32 NumPartitions;
-
 	const FSubView& LBView;
-	const FSubView& WorkerView;
-	const FSubView& PartitionView;
-	Worker_EntityId StrategyWorkerEntityId;
-	Worker_EntityId StrategyPartitionEntityId;
-	Worker_RequestId StrategyWorkerRequest;
 
-	TSet<Worker_RequestId> PartitionCreationRequests;
-
-	UAbstractLBStrategy& Strategy;
-	SpatialVirtualWorkerTranslator& Translator;
-	TUniquePtr<InterestFactory> InterestF;
+	TUniquePtr<FPartitionManager> PartitionsMgr;
 
 	TSet<Worker_ComponentId> UpdatesToConsider;
 	TSet<Worker_EntityId> MigratingEntities;
 	TSet<Worker_EntityId> EntitiesACKMigration;
 	TSet<Worker_EntityId> EntitiesClientChanged;
+	TArray<FLBDataStorage*> DataStorages;
 	TMap<Worker_EntityId, AuthorityIntentV2> AuthorityIntentView;
 	TMap<Worker_EntityId, AuthorityDelegation> AuthorityDelegationView;
 	TMap<Worker_EntityId, NetOwningClientWorker> NetOwningClientView;
-	TUniquePtr<FLoadBalancingCalculator> StrategyCalculator;
-	TMap<TSharedPtr<FPartitionDeclaration>, uint32> PartitionsMap;
+	TUniquePtr<FLoadBalancingStrategy> Strategy;
 
-	void SetPartitionReady(Worker_EntityId EntityId);
+	void UpdateStrategySystemInterest(SpatialOSWorkerInterface* Connection);
 
-	struct StrategyPartition
-	{
-		StrategyPartition(Worker_PartitionId InId)
-			: Id(InId)
-		{
-		}
-		Worker_PartitionId Id;
-		bool bAcked = false;
-	};
-
-	TArray<StrategyPartition> StrategyPartitions;
-	bool bStrategyPartitionsCreated = false;
-
-	TMap<Worker_EntityId, ServerWorker> Workers;
-	uint32 NumWorkerReady = 0;
-
-	bool bPartitionsDistributed = false;
-
-	Worker_RequestId WorkerTranslationRequest;
-	bool bTranslationQueryInFlight = false;
-	bool bTranslatorIsReady = false;
+	bool bStrategySystemInterestDirty = false;
 };
 } // namespace SpatialGDK

@@ -9,12 +9,14 @@
 
 #include "ReplicationGraphTypes.h"
 
+namespace SpatialGDK
+{
 class SPATIALGDK_API FLoadBalancingDecorator
 {
 public:
 	virtual ~FLoadBalancingDecorator() = default;
 
-	virtual TArray<SpatialGDK::ComponentData> OnCreate(/*Worker_EntityId EntityId,*/ AActor* Actor) = 0;
+	virtual TArray<SpatialGDK::ComponentData> OnCreate(AActor* Actor) = 0;
 
 	virtual void UpdateDecoration(TMap<Worker_EntityId_Key, SpatialGDK::ComponentUpdate>& OutUpdates) {}
 };
@@ -24,8 +26,9 @@ class SPATIALGDK_API FLayerLoadBalancingDecorator : public FLoadBalancingDecorat
 public:
 	FLayerLoadBalancingDecorator(TClassMap<uint32>&& ClassToGroup);
 
-	virtual TArray<SpatialGDK::ComponentData> OnCreate(/*Worker_EntityId EntityId,*/ AActor* Actor) override;
+	virtual TArray<SpatialGDK::ComponentData> OnCreate(AActor* Actor) override;
 
 protected:
 	TClassMap<uint32> ClassToGroup;
 };
+} // namespace SpatialGDK

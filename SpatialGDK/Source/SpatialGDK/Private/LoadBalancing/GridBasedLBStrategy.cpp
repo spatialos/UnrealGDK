@@ -267,12 +267,14 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 	}
 }
 
-TUniquePtr<FLoadBalancingCalculator> UGridBasedLBStrategy::CreateLoadBalancingCalculator() const
+TUniquePtr<SpatialGDK::FLoadBalancingCalculator> UGridBasedLBStrategy::CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const
 {
-	return MakeUnique<FGridBalancingCalculator>(Cols, Rows, WorldWidth, WorldHeight);
+	auto Calculator = MakeUnique<SpatialGDK::FGridBalancingCalculator>(Cols, Rows, WorldWidth, WorldHeight);
+	OutCtx.Grid.Add(Calculator.Get());
+	return Calculator;
 }
 
-FLoadBalancingDecorator* UGridBasedLBStrategy::GetLoadBalancingDecorator() const
+SpatialGDK::FLoadBalancingDecorator* UGridBasedLBStrategy::GetLoadBalancingDecorator() const
 {
 	return nullptr;
 }

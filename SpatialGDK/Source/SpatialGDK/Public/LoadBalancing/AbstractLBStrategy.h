@@ -12,8 +12,19 @@
 
 #include "AbstractLBStrategy.generated.h"
 
+namespace SpatialGDK
+{
 class FLoadBalancingCalculator;
 class FLoadBalancingDecorator;
+class FGridBalancingCalculator;
+class FLayerLoadBalancingCalculator;
+} // namespace SpatialGDK
+
+struct FLegacyLBContext
+{
+	TArray<SpatialGDK::FGridBalancingCalculator*> Grid;
+	SpatialGDK::FLayerLoadBalancingCalculator* Layers;
+};
 
 /**
  * This class can be used to define a load balancing strategy.
@@ -85,8 +96,8 @@ public:
 		PURE_VIRTUAL(UAbstractLBStrategy::GetLBStrategyForVisualRendering, return nullptr;);
 
 	virtual bool IsStrategyWorkerAware() const { return false; }
-	virtual TUniquePtr<FLoadBalancingCalculator> CreateLoadBalancingCalculator() const;
-	virtual FLoadBalancingDecorator* GetLoadBalancingDecorator() const
+	virtual TUniquePtr<SpatialGDK::FLoadBalancingCalculator> CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const;
+	virtual SpatialGDK::FLoadBalancingDecorator* GetLoadBalancingDecorator() const
 	{
 		// Should return the manual assigner decorator for compatibility
 		return nullptr;

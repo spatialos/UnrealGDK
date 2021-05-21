@@ -54,8 +54,11 @@
 #include "Interop/WellKnownEntitySystem.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
+#include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
+#include "LoadBalancing/LegacyLoadBalancingStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
+#include "LoadBalancing/PartitionManager.h"
 #include "Schema/ActorOwnership.h"
 #include "Schema/ActorSetMember.h"
 #include "Schema/SpatialDebugging.h"
@@ -3332,15 +3335,30 @@ void USpatialNetDriver::TryFinishStartup()
 				Connection->GetCoordinator().CreateSubView(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
 														   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-			SpatialGDK::FSubView& WorkerView = Connection->GetCoordinator().CreateSubView(
-				SpatialConstants::SERVER_WORKER_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+			auto PartitionMgr = MakeUnique<SpatialGDK::FPartitionManager>(Connection->GetWorkerSystemEntityId(),
+																		  Connection->GetCoordinator(), *VirtualWorkerTranslator,
+																		  MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
 
-			SpatialGDK::FSubView& PartitionView = Connection->GetCoordinator().CreateSubView(
-				SpatialConstants::PARTITION_ACK_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+			PartitionMgr->Init(Connection, LoadBalanceStrategy->GetMinimumRequiredWorkers());
 
-			StrategySystem = MakeUnique<SpatialGDK::SpatialStrategySystem>(
-				LBView, WorkerView, PartitionView, Connection->GetWorkerSystemEntityId(), Connection, *LoadBalanceStrategy,
-				*VirtualWorkerTranslator, MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
+			TUniquePtr<SpatialGDK::FLBDataStorage> MovementDataStorage;
+			// GDK_PROPERTY(Property)* MovementProperty = FindFProperty<FProperty>(AActor::StaticClass(),
+			// /*GET_MEMBER_NAME_CHECKED(AActor,*/ TEXT("ReplicatedMovement")); if(MovementProperty != nullptr)
+			//{
+			//	MovementDataStorage = MakeUnique<SpatialGDK::TLBDataStorage<FRepMovement>>(this, AActor::StaticClass(), MovementProperty);
+			//}
+
+			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy = MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy);
+
+			// TArray<SpatialGDK::FPartitionHandle> Partitions;
+			// Strategy->CollectPartitionsToAdd(*PartitionMgr, Partitions);
+			//
+			// StrategySystem->AddDataStorage(MoveTemp(MovementDataStorage));
+			// StrategySystem->AddDataStorage(MoveTemp(PositionStorage));
+			// StrategySystem->AddDataStorage(MoveTemp(GroupStorage));
+
+			StrategySystem = MakeUnique<SpatialGDK::SpatialStrategySystem>(MoveTemp(PartitionMgr), LBView, MoveTemp(Strategy));
+
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();
 		}

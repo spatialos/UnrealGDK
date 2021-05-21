@@ -1,6 +1,8 @@
 #include "LoadBalancing/LoadBalancingDecorator.h"
 #include "Utils/SchemaUtils.h"
 
+namespace SpatialGDK
+{
 FLayerLoadBalancingDecorator::FLayerLoadBalancingDecorator(TClassMap<uint32>&& InClassToGroup)
 	: ClassToGroup(MoveTemp(InClassToGroup))
 {
@@ -19,3 +21,4 @@ TArray<SpatialGDK::ComponentData> FLayerLoadBalancingDecorator::OnCreate(/*Worke
 	}
 	return NewData;
 }
+} // namespace SpatialGDK

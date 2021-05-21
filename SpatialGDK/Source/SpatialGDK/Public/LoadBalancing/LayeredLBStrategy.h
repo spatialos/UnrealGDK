@@ -15,7 +15,11 @@
 class SpatialVirtualWorkerTranslator;
 class UAbstractLockingPolicy;
 class UAbstractSpatialMultiWorkerSettings;
+
+namespace SpatialGDK
+{
 class FLayerLoadBalancingDecorator;
+}
 
 DECLARE_LOG_CATEGORY_EXTERN(LogLayeredLBStrategy, Log, All)
 
@@ -73,12 +77,12 @@ public:
 	FName GetLocalLayerName() const;
 
 	virtual bool IsStrategyWorkerAware() const { return true; }
-	virtual TUniquePtr<FLoadBalancingCalculator> CreateLoadBalancingCalculator() const override;
-	virtual FLoadBalancingDecorator* GetLoadBalancingDecorator() const override;
+	virtual TUniquePtr<SpatialGDK::FLoadBalancingCalculator> CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const override;
+	virtual SpatialGDK::FLoadBalancingDecorator* GetLoadBalancingDecorator() const override;
 
 private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
-	mutable TUniquePtr<FLayerLoadBalancingDecorator> Decorator;
+	mutable TUniquePtr<SpatialGDK::FLayerLoadBalancingDecorator> Decorator;
 	mutable TMap<TSoftClassPtr<AActor>, FName> ClassPathToLayerName;
 
 	struct FLayerData

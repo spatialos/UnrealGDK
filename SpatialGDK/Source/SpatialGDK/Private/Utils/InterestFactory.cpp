@@ -160,7 +160,7 @@ Interest InterestFactory::CreateServerWorkerInterest(const UAbstractLBStrategy* 
 	return ServerInterest;
 }
 
-Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, bool bDebug) const
+Interest InterestFactory::CreatePartitionInterest(SpatialGDK::QueryConstraint const& LoadBalancingConstraint, bool bDebug) const
 {
 	// Add load balancing query
 	Interest PartitionInterest{};
@@ -178,7 +178,7 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 	Query PartitionQuery{};
 	PartitionQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
 	PartitionQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
-	PartitionQuery.Constraint = LBStrategy->GetWorkerInterestQueryConstraint(VirtualWorker);
+	PartitionQuery.Constraint = LoadBalancingConstraint;
 	AddComponentQueryPairToInterestComponent(PartitionInterest, PartitionAuthComponentSet, PartitionQuery);
 
 	// Ensure server worker receives AlwaysRelevant entities.
