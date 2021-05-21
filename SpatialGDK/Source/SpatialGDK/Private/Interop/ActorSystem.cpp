@@ -2342,8 +2342,8 @@ void ActorSystem::ClearRemovedDynamicSubObjectRefs(const Worker_EntityId& InEnti
 }
 
 void ActorSystem::RemoveBNetLoadOnClientRuntimeRemovedComponents(const Worker_EntityId& EntityId,
-																			  const TArray<SpatialGDK::ComponentData>& NewComponents,
-																			  const SpatialGDK::ActorSystem& ActorSystem
+																 const TArray<SpatialGDK::ComponentData>& NewComponents,
+																 const SpatialGDK::ActorSystem& ActorSystem
 
 )
 {
@@ -2393,7 +2393,6 @@ void ActorSystem::RemoveBNetLoadOnClientRuntimeRemovedComponents(const Worker_En
 		}
 	}
 }
-
 
 void ActorSystem::MoveMappedObjectToUnmapped(const FUnrealObjectRef& Ref)
 {
