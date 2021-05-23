@@ -217,8 +217,12 @@ RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_RPCQueu
 	check(SpatialGDKSettings != nullptr);
 	FPlatformProcess::Sleep(SpatialGDKSettings->RPCQueueWarningDefaultTimeoutSeconds);
 	RPCs.ProcessRPCs();
-	constexpr float WaitForLoggingTime = 0.5f;
-	FPlatformProcess::Sleep(WaitForLoggingTime);
+	constexpr float ErrorRetryWaitTime = 0.5f;
+	int NrRetries = 0;
+	while (!HasMetExpectedErrors() && NrRetries<=10) {
+		NrRetries++;
+		FPlatformProcess::Sleep(ErrorRetryWaitTime);
+	}
 
 	return true;
 }
