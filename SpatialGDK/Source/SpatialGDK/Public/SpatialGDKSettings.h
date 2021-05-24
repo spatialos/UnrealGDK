@@ -178,16 +178,16 @@ public:
 	/** Seconds to wait before executing a received RPC substituting nullptr for unresolved UObjects*/
 	UPROPERTY(EditAnywhere, config, Category = "Replication",
 			  meta = (DisplayName = "Wait Time Before Processing Received RPC With Unresolved Refs"))
-	float QueuedIncomingRPCWaitTimeSeconds;
+	float QueuedIncomingRPCWaitTime;
 
 	/** Seconds to wait before attempting to reprocess queued incoming RPCs */
 	UPROPERTY(EditAnywhere, config, Category = "Replication",
 			  meta = (DisplayName = "Wait Time Before Attempting To Reprocess Queued Incoming RPCs"))
-	float QueuedIncomingRPCRetryTimeSeconds;
+	float QueuedIncomingRPCRetryTime;
 
 	/** Seconds to wait before retying all queued outgoing RPCs. If 0 there will not be retried on a timer. */
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (DisplayName = "Wait Time Before Retrying Outoing RPC"))
-	float QueuedOutgoingRPCRetryTimeSeconds;
+	float QueuedOutgoingRPCRetryTime;
 
 	/**
 	 * Minimum time, in seconds, required to pass before an Actor will update its SpatialOS Position, if it has also traveled more than the
@@ -359,7 +359,7 @@ public:
 
 	UPROPERTY(EditAnywhere, config, Category = "Queued RPC Warning Timeouts", AdvancedDisplay,
 			  meta = (DisplayName = "Default time before a queued RPC will start reporting warnings to the logs."))
-	float RPCQueueWarningDefaultTimeoutSeconds;
+	float RPCQueueWarningDefaultTimeout;
 
 	FORCEINLINE bool IsRunningInChina() const { return ServicesRegion == EServicesRegion::CN; }
 

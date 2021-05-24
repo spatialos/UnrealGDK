@@ -109,9 +109,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseIsActorRelevantForConnection(false)
 	, OpsUpdateRate(1000.0f)
 	, MaxNetCullDistanceSquared(0.0f) // Default disabled
-	, QueuedIncomingRPCWaitTimeSeconds(1.0f)
-	, QueuedIncomingRPCRetryTimeSeconds(1.0f)
-	, QueuedOutgoingRPCRetryTimeSeconds(1.0f)
+	, QueuedIncomingRPCWaitTime(1.0f)
+	, QueuedIncomingRPCRetryTime(1.0f)
+	, QueuedOutgoingRPCRetryTime(1.0f)
 	, PositionUpdateLowerThresholdSeconds(1.0f)		  // 1 second
 	, PositionUpdateLowerThresholdCentimeters(100.0f) // 1m (100cm)
 	, PositionUpdateThresholdMaxSeconds(60.0f)		  // 1 minute (60 seconds)
@@ -140,7 +140,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bWorkerFlushAfterOutgoingNetworkOp(true)
 	// TODO - end
 	, bAsyncLoadNewClassesOnEntityCheckout(false)
-	, RPCQueueWarningDefaultTimeoutSeconds(2.0f)
+	, RPCQueueWarningDefaultTimeout(2.0f)
 	, bEnableNetCullDistanceInterest(true)
 	, bEnableNetCullDistanceFrequency(false)
 	, FullFrequencyNetCullDistanceRatio(1.0f)
@@ -277,7 +277,7 @@ float USpatialGDKSettings::GetSecondsBeforeWarning(const ERPCResult Result) cons
 		return *CustomSecondsBeforeWarning;
 	}
 
-	return RPCQueueWarningDefaultTimeoutSeconds;
+	return RPCQueueWarningDefaultTimeout;
 }
 
 bool USpatialGDKSettings::ShouldRPCTypeAllowUnresolvedParameters(const ERPCType Type) const

@@ -215,7 +215,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_RPCQueu
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	check(SpatialGDKSettings != nullptr);
-	FPlatformProcess::Sleep(SpatialGDKSettings->RPCQueueWarningDefaultTimeoutSeconds);
+	FPlatformProcess::Sleep(SpatialGDKSettings->RPCQueueWarningDefaultTimeout);
 	RPCs.ProcessRPCs();
 	constexpr float ErrorRetryWaitTimeSeconds = 0.1f;
 	int NrRetries = 0;

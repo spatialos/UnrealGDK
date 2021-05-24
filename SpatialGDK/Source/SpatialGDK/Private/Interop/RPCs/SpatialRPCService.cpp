@@ -33,8 +33,8 @@ SpatialRPCService::SpatialRPCService(const FSubView& InActorAuthSubView, const F
 					   ExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ProcessOrQueueIncomingRPC), InActorAuthSubView, RPCStore)
 	, MulticastRPCs(ExtractRPCDelegate::CreateRaw(this, &SpatialRPCService::ProcessOrQueueIncomingRPC), InActorNonAuthSubView, RPCStore)
 	, AuthSubView(&InActorAuthSubView)
-	, LastIncomingProcessingTime(-GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCRetryTimeSeconds)
-	, LastOutgoingProcessingTime(-GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTimeSeconds)
+	, LastIncomingProcessingTime(-GetDefault<USpatialGDKSettings>()->QueuedIncomingRPCRetryTime)
+	, LastOutgoingProcessingTime(-GetDefault<USpatialGDKSettings>()->QueuedOutgoingRPCRetryTime)
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 	if (NetDriver != nullptr && NetDriver->IsServer()
@@ -69,13 +69,13 @@ void SpatialRPCService::ProcessChanges(const float NetDriverTime)
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
-	if (NetDriverTime - LastIncomingProcessingTime > Settings->QueuedIncomingRPCRetryTimeSeconds)
+	if (NetDriverTime - LastIncomingProcessingTime > Settings->QueuedIncomingRPCRetryTime)
 	{
 		LastIncomingProcessingTime = NetDriverTime;
 		ProcessIncomingRPCs();
 	}
 
-	if (NetDriverTime - LastOutgoingProcessingTime > Settings->QueuedOutgoingRPCRetryTimeSeconds)
+	if (NetDriverTime - LastOutgoingProcessingTime > Settings->QueuedOutgoingRPCRetryTime)
 	{
 		LastOutgoingProcessingTime = NetDriverTime;
 		ProcessOutgoingRPCs();
@@ -615,7 +615,7 @@ FRPCErrorInfo SpatialRPCService::ApplyRPCInternal(UObject* TargetObject, UFuncti
 	});
 
 	const bool bCannotWaitLongerThanQueueTime = !bIsReliableChannel || bMissingServerObject;
-	const bool bQueueTimeExpired = TimeQueued > SpatialSettings->QueuedIncomingRPCWaitTimeSeconds;
+	const bool bQueueTimeExpired = TimeQueued > SpatialSettings->QueuedIncomingRPCWaitTime;
 	const bool bMustExecuteRPC = UnresolvedRefCount == 0 || (bCannotWaitLongerThanQueueTime && bQueueTimeExpired);
 
 	if (bMustExecuteRPC)
