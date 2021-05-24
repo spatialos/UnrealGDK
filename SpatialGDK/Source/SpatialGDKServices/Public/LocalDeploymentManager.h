@@ -15,7 +15,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialDeploymentManager, Log, All);
 
 class FJsonObject;
 
-class FLocalDeploymentManager
+class FLocalDeploymentManager final
 {
 public:
 	FLocalDeploymentManager();
