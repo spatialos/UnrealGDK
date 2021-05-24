@@ -41,8 +41,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 
 	uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
 	// Depends whether we are using rotating logs or single-log mode (where we track max size).
-	bool bTrackFileSize =
-		EventTracer->MaxFileSize != 0;
+	bool bTrackFileSize = EventTracer->MaxFileSize != 0;
 	if (!bTrackFileSize || (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize))
 	{
 		if (bTrackFileSize) // Tracked file size
