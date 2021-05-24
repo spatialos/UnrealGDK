@@ -219,7 +219,8 @@ RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_RPCQueu
 	RPCs.ProcessRPCs();
 	constexpr float ErrorRetryWaitTime = 0.5f;
 	int NrRetries = 0;
-	while (!HasMetExpectedErrors() && NrRetries<=10) {
+	while (!HasMetExpectedErrors() && NrRetries <= 10)
+	{
 		NrRetries++;
 		FPlatformProcess::Sleep(ErrorRetryWaitTime);
 	}
