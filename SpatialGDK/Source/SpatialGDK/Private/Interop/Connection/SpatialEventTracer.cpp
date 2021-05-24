@@ -40,9 +40,10 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	}
 
 	uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
-	if (EventTracer->MaxFileSize == 0 || (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize))
+	bool bTrackFileSize = EventTracer->MaxFileSize != 0; // Depends whether we are using rotating logs or single-log mode (where we track max size).
+	if (!bTrackFileSize || (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize))
 	{
-		if (EventTracer->MaxFileSize != 0) // Tracked file size
+		if (bTrackFileSize) // Tracked file size
 		{
 			EventTracer->BytesWrittenToStream += ItemSize;
 		}
@@ -104,8 +105,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
 
 	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
-	FSpatialTraceEventDataBuilder::FStringCache
-		AnsiStrings; // Storage for strings passed to the worker SDK Worker requires ansi const char*
+	// Storage for strings passed to the worker SDK Worker requires ansi const char*
+	FSpatialTraceEventDataBuilder::FStringCache AnsiStrings;
 
 	Parameters.span_sampling_parameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
 
@@ -155,7 +156,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 
 		if (Settings->bEnableEventTracingRotatingLogs)
 		{
-			const FString FullFilePathPrefix = FPaths::Combine(FolderPath, FileName);
+			FString FullFilePathPrefix = FString::Printf(TEXT("%s-"), *FPaths::Combine(FolderPath, FileName));
 			const FString FullFilePathSuffix = WorkerId + FileExt;
 
 			Io_RotatingFileStreamParameters FileParamters;

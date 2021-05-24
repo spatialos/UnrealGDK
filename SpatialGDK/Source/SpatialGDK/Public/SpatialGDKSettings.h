@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
-#include "Interop/Connection/SpatialEventTracer.h"
 #include "Misc/Paths.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RPCContainer.h"
