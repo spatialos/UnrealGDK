@@ -107,6 +107,7 @@ public:
 	// # FlowController related APIs.
 
 	void RegisterFlowController(ASpatialFunctionalTestFlowController* FlowController);
+	void DeregisterFlowController(ASpatialFunctionalTestFlowController* FlowController);
 
 	// Get all the FlowControllers registered in this Test.
 	const TArray<ASpatialFunctionalTestFlowController*>& GetFlowControllers() const { return FlowControllers; }
