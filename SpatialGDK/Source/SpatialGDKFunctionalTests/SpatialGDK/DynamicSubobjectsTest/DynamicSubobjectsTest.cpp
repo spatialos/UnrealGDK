@@ -129,7 +129,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		FinishStep();
 	});
 
-	// Step 5 - The client checks it sees the new component
+	// Step 5 - The client waits till it can see the new component
 	AddStep(
 		TEXT("DynamicSubobjectsTestClientSeeNewComponent"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float DeltaTime) {
@@ -190,7 +190,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 			FinishStep();
 		});
 
-		// Step 9 - Client 1 checks it can no longer see the AReplicatedGASTestActor
+		// Step 9 - Client 1 checks it can no longer see the AReplicatedGASTestActor by waiting for 0.5s and checking TestIntProperty hasn't updated
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr,
 			[this]() {
