@@ -78,6 +78,9 @@ public:
 	// Let's you know if the owning worker has acknowledged the FinishTest flow.
 	bool HasAckFinishedTest() const { return bHasAckFinishedTest; }
 
+	UFUNCTION()
+	void DeregisterFlowController();
+
 private:
 	// Current Step being executed
 	SpatialFunctionalTestStep CurrentStep;
