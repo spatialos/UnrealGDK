@@ -150,7 +150,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const ch
 	Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, &Event, TraceSpanId.GetId());
 	Event.span_id = TraceSpanId.GetConstId();
 
-	if (!Trace_EventTracer_ApplyEventPreFilter(EventTracer, &Event))
+	if (!Trace_EventTracer_PreFilterAcceptsEvent(EventTracer, &Event))
 	{
 		return TraceSpanId;
 	}

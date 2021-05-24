@@ -192,25 +192,29 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 				FString Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing")));
 				Writer->WriteValue(TEXT("log_directory"), *Path);
 			}
-			Writer->WriteValue(TEXT("max_log_file_size_bytes"), SpatialGDKSettings->RuntimeMaxEventTracingFileSizeBytes);
+
+			if (SpatialGDKSettings->bEnableEventTracingRotatingLogs)
+			{
+				Writer->WriteObjectStart(TEXT("single_event_log_file_configuration"));
+				Writer->WriteValue(TEXT("max_file_size_bytes"), SpatialGDKSettings->EventTracingSingleLogMaxFileSizeBytes);
+				Writer->WriteObjectEnd();
+			}
+			else
+			{
+				Writer->WriteObjectStart(TEXT("rotating_event_log_file_configuration"));
+				Writer->WriteValue(TEXT("max_file_size_bytes"), SpatialGDKSettings->EventTracingRotatingLogsMaxFileSizeBytes);
+				Writer->WriteValue(TEXT("max_file_count"), SpatialGDKSettings->EventTracingRotatingLogsMaxFileCount);
+				Writer->WriteObjectEnd();
+			}
+
 			Writer->WriteObjectStart(TEXT("event_filter_configuration"));
 
 			UEventTracingSamplingSettings* SamplingSettings =
 				SpatialGDKSettings->GetEventTracingSamplingSettings(); // TODO: Is this trouble in editor?
-			if (SpatialGDKSettings->bCaptureAllEventTracingData)
-			{
-				Writer->WriteValue(TEXT("event_pre_filter"), TEXT("true"));
-				Writer->WriteValue(TEXT("event_post_filter"), TEXT("true"));
-			}
-			else
-			{
-				Writer->WriteValue(TEXT("event_pre_filter"), SamplingSettings->RuntimeEventPreFilter.Len()
-																 ? *SamplingSettings->RuntimeEventPreFilter
-																 : TEXT("false"));
-				Writer->WriteValue(TEXT("event_post_filter"), SamplingSettings->RuntimeEventPostFilter.Len()
-																  ? SamplingSettings->RuntimeEventPostFilter
-																  : TEXT("false"));
-			}
+			Writer->WriteValue(TEXT("event_pre_filter"),
+							   SamplingSettings->RuntimeEventPreFilter.Len() ? *SamplingSettings->RuntimeEventPreFilter : TEXT("false"));
+			Writer->WriteValue(TEXT("event_post_filter"),
+							   SamplingSettings->RuntimeEventPostFilter.Len() ? SamplingSettings->RuntimeEventPostFilter : TEXT("false"));
 
 			Writer->WriteObjectEnd();
 			Writer->WriteObjectEnd();

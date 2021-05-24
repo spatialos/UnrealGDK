@@ -185,10 +185,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, ActorMigrationLogRate(5.0f)
 	, bEventTracingEnabled(false)
 	, EventTracingSamplingSettingsClass(UEventTracingSamplingSettings::StaticClass())
-	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
-	, RuntimeMaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
-	, bCaptureAllEventTracingData(false)
-	, EventTraceFileOutputType(EEventTraceFileOutputType::Single)
+	, EventTracingSingleLogMaxFileSizeBytes(DefaultEventTracingFileSize)
+	, EventTracingRotatingLogsMaxFileSizeBytes(DefaultEventTracingFileSize)
+	, EventTracingRotatingLogsMaxFileCount(256)
 	, bEnableAlwaysWriteRPCs(false)
 	, bEnableInitialOnlyReplicationCondition(false)
 {

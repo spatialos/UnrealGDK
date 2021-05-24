@@ -81,11 +81,13 @@ public:
 	FString GDKEventPreFilter;
 
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
-	FString RuntimeEventPreFilter;
-
-	UPROPERTY(EditAnywhere, Category = "Event Tracing")
 	FString GDKEventPostFilter;
 
+	/* The runtime filter which is used for local/cloud editor workflows (generated configs). */
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	FString RuntimeEventPreFilter;
+
+	/* The runtime filter which is used for local/cloud editor workflows (generated configs). */
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
 	FString RuntimeEventPostFilter;
 
@@ -464,31 +466,31 @@ public:
 
 	/*
 	 * -- EXPERIMENTAL --
-	 * The maximum size of the event tracing file, in bytes
+	 * The maximum size of a event log (non-rotating), synonymous with squid config behavior `event_tracing_single_log_max_file_size_bytes`
 	 */
 	UPROPERTY(Config)
-	int64 MaxEventTracingFileSizeBytes;
+	int64 EventTracingSingleLogMaxFileSizeBytes;
 
 	/*
 	 * -- EXPERIMENTAL --
-	 * The maximum size of the runtime event tracing file, in bytes (for generated configs).
+	 * Whether to enable rotating logs, synonymous with squid config behavior `enable_event_tracing_rotating_logs`
 	 */
 	UPROPERTY(Config)
-	int64 RuntimeMaxEventTracingFileSizeBytes;
+	bool bEnableEventTracingRotatingLogs;
 
 	/*
 	 * -- EXPERIMENTAL --
-	 * Whether to capture *all* event tracing data, regardless of sample/query parameters.
+	 * Rotating log file size, synonymous with squid config behavior `event_tracing_rotating_logs_max_file_size_bytes`
 	 */
 	UPROPERTY(Config)
-	bool bCaptureAllEventTracingData;
+	int64 EventTracingRotatingLogsMaxFileSizeBytes;
 
 	/*
 	 * -- EXPERIMENTAL --
-	 * Which type of event-log files are produced (either a single file or a time-rotated collection of files).
+	 * The maximum number of rotating logs to produce, synonymous with squid config behavior `event_tracing_rotating_logs_max_file_count`
 	 */
 	UPROPERTY(Config)
-	EEventTraceFileOutputType EventTraceFileOutputType;
+	int32 EventTracingRotatingLogsMaxFileCount;
 
 	UPROPERTY(Config)
 	bool bEnableAlwaysWriteRPCs;
