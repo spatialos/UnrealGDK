@@ -183,27 +183,18 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 		{
 			Writer->WriteObjectStart(TEXT("event_tracing_configuration"));
 			Writer->WriteValue(TEXT("enabled"), true);
-			if (bGenerateCloudConfig)
-			{
-				Writer->WriteValue(TEXT("log_directory"), TEXT("/improbable/logs/"));
-			}
-			else
-			{
-				FString Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing")));
-				Writer->WriteValue(TEXT("log_directory"), *Path);
-			}
 
 			if (SpatialGDKSettings->bEnableEventTracingRotatingLogs)
-			{
-				Writer->WriteObjectStart(TEXT("single_event_log_file_configuration"));
-				Writer->WriteValue(TEXT("max_file_size_bytes"), SpatialGDKSettings->EventTracingSingleLogMaxFileSizeBytes);
-				Writer->WriteObjectEnd();
-			}
-			else
 			{
 				Writer->WriteObjectStart(TEXT("rotating_event_log_file_configuration"));
 				Writer->WriteValue(TEXT("max_file_size_bytes"), SpatialGDKSettings->EventTracingRotatingLogsMaxFileSizeBytes);
 				Writer->WriteValue(TEXT("max_file_count"), SpatialGDKSettings->EventTracingRotatingLogsMaxFileCount);
+				Writer->WriteObjectEnd();
+			}
+			else
+			{
+				Writer->WriteObjectStart(TEXT("single_event_log_file_configuration"));
+				Writer->WriteValue(TEXT("max_file_size_bytes"), SpatialGDKSettings->EventTracingSingleLogMaxFileSizeBytes);
 				Writer->WriteObjectEnd();
 			}
 

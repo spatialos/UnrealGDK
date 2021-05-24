@@ -162,7 +162,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableMultiWorker(true)
 	, DefaultRPCRingBufferSize(32)
 	, CrossServerRPCImplementation(ECrossServerRPCImplementation::SpatialCommand)
-	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress when we have better data
+	// TODO - UNR 2514 - These defaults are not necessarily optimal - readdress bEnableEventTracingRotatingLogswhen we have better data
 	, bTcpNoDelay(false)
 	, UdpServerDownstreamUpdateIntervalMS(1)
 	, UdpClientDownstreamUpdateIntervalMS(1)
@@ -186,6 +186,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEventTracingEnabled(false)
 	, EventTracingSamplingSettingsClass(UEventTracingSamplingSettings::StaticClass())
 	, EventTracingSingleLogMaxFileSizeBytes(DefaultEventTracingFileSize)
+	, bEnableEventTracingRotatingLogs(false)
 	, EventTracingRotatingLogsMaxFileSizeBytes(DefaultEventTracingFileSize)
 	, EventTracingRotatingLogsMaxFileCount(256)
 	, bEnableAlwaysWriteRPCs(false)
