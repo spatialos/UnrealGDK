@@ -190,7 +190,8 @@ void ADynamicSubobjectsTest::PrepareTest()
 			FinishStep();
 		});
 
-		// Step 9 - Client 1 checks it can no longer see the AReplicatedGASTestActor by waiting for 0.5s and checking TestIntProperty hasn't updated
+		// Step 9 - Client 1 checks it can no longer see the AReplicatedGASTestActor by waiting for 0.5s and checking TestIntProperty hasn't
+		// updated
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr,
 			[this]() {
