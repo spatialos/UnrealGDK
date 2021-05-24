@@ -8,6 +8,7 @@
 #include "Utils/RepDataUtils.h"
 
 #include "Interop/CreateEntityHandler.h"
+#include "Interop/ClientNetLoadActorHelper.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogActorSystem, Log, All);
 
@@ -22,7 +23,6 @@ struct FClassInfo;
 class USpatialNetDriver;
 
 class SpatialActorChannel;
-class USpatialNetDriver;
 
 using FChannelsToUpdatePosition =
 	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>>;
@@ -31,6 +31,7 @@ namespace SpatialGDK
 {
 class SpatialEventTracer;
 class FSubView;
+class FClientNetLoadActorHelper;
 
 struct ActorData
 {
@@ -136,7 +137,6 @@ private:
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentId ComponentId,
 							Schema_ComponentData* Data);
 
-	bool IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset) const;
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState,
 								 FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data,
@@ -168,14 +168,6 @@ private:
 	static void DeleteEntityComponentData(TArray<FWorkerComponentData>& EntityComponents);
 	void AddTombstoneToEntity(Worker_EntityId EntityId) const;
 
-	// BNetLoadOnClient component edge case handling
-	FNetworkGUID* GetRemovedDynamicSubObjectNetGUID(const FUnrealObjectRef& ObjectRef);
-	void AddRemovedDynamicSubObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID);
-	void ClearRemovedDynamicSubObjectRefs(const Worker_EntityId& InEntityId);
-	void RemoveBNetLoadOnClientRuntimeRemovedComponents(const Worker_EntityId& EntityId,
-														const TArray<SpatialGDK::ComponentData>& NewComponents,
-														const SpatialGDK::ActorSystem& ActorSystem);
-
 	// Updates
 	void SendAddComponents(Worker_EntityId EntityId, TArray<FWorkerComponentData> ComponentDatas) const;
 	void SendRemoveComponents(Worker_EntityId EntityId, TArray<Worker_ComponentId> ComponentIds) const;
@@ -188,6 +180,7 @@ private:
 
 	USpatialNetDriver* NetDriver;
 	SpatialEventTracer* EventTracer;
+	FClientNetLoadActorHelper ClientNetLoadActorHelper;
 
 	CreateEntityHandler CreateEntityHandler;
 	ClaimPartitionHandler ClaimPartitionHandler;
