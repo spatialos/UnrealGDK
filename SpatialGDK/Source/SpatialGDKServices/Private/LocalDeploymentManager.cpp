@@ -274,7 +274,15 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	FString LocalDeploymentLogsDir = FPaths::Combine(SpatialGDKServicesConstants::LocalDeploymentLogsDir, RuntimeStartTime.ToString());
 
 	// Store these logs alongside the GDK ones for convenience
-	FString EventTracingPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing")));
+	const TCHAR* RuntimeEventLogPaths = TEXT("EventTracing/runtime");
+	FString EventTracingPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectSavedDir(), RuntimeEventLogPaths));
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	const FString FileName = TEXT("gdk");
+	const FString FileExt = TEXT(".etlog");
+	if (!PlatformFile.CreateDirectoryTree(*EventTracingPath))
+	{
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Failed to create runtime event log path."));
+	}
 
 	// runtime.exe --config=squid_config.json --snapshot=snapshots/default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
 	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots/<timestamp>

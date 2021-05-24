@@ -146,7 +146,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		EventTracePath = FPaths::GetPath(AbsLogPath);
 	}
 
-	FolderPath = EventTracePath;
+	FolderPath = FPaths::Combine(EventTracePath, WorkerId);
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	const FString FileName = TEXT("gdk");
 	const FString FileExt = TEXT(".etlog");
@@ -158,7 +158,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		if (Settings->bEnableEventTracingRotatingLogs)
 		{
 			FString FullFilePathPrefix = FString::Printf(TEXT("%s-"), *FPaths::Combine(FolderPath, FileName));
-			const FString FullFilePathSuffix = WorkerId + FileExt;
+			const FString FullFilePathSuffix = FileExt;
 
 			Io_RotatingFileStreamParameters FileParamters;
 			FileParamters.filename_prefix = TCHAR_TO_ANSI(*FullFilePathPrefix);
@@ -169,7 +169,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		}
 		else
 		{
-			const FString FullFilename = FString::Printf(TEXT("%s-%s%s"), *FileName, *WorkerId, *FileExt);
+			const FString FullFilename = FString::Printf(TEXT("%s%s"), *FileName, *FileExt);
 			const FString FullFilePath = FPaths::Combine(FolderPath, FullFilename);
 			Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FullFilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
 		}
