@@ -5,6 +5,7 @@
 #include "LoadBalancing/LoadBalancingStrategy.h"
 
 class UAbstractLBStrategy;
+class SpatialVirtualWorkerTranslator;
 
 namespace SpatialGDK
 {
@@ -15,22 +16,34 @@ class FLoadBalancingCalculator;
 class FLegacyLoadBalancing : public FLoadBalancingStrategy
 {
 public:
-	FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat);
+	FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, SpatialVirtualWorkerTranslator& InTranslator);
 	~FLegacyLoadBalancing();
 
 	virtual void Init(TArray<FLBDataStorage*>& OutLoadBalancingData) override;
 
-	virtual void OnWorkersConnected(TArrayView<FLBWorker> ConnectedWorkers) override;
-	virtual void OnWorkersDisconnected(TArrayView<FLBWorker> DisconnectedWorkers) override;
+	virtual void Advance(SpatialOSWorkerInterface* Connection) override;
+	virtual void Flush(SpatialOSWorkerInterface* Connection) override;
+
+	virtual void OnWorkersConnected(TArrayView<FLBWorkerHandle> ConnectedWorkers) override;
+	virtual void OnWorkersDisconnected(TArrayView<FLBWorkerHandle> DisconnectedWorkers) override;
 	virtual void TickPartitions(FPartitionManager& Partitions) override;
 	virtual void CollectEntitiesToMigrate(FMigrationContext& Ctx) override;
 
 protected:
+	void QueryTranslation(SpatialOSWorkerInterface* Connection);
+
 	TUniquePtr<FSpatialPositionStorage> PositionStorage;
 	TUniquePtr<FActorGroupStorage> GroupStorage;
 	TUniquePtr<FLoadBalancingCalculator> Calculator;
 	TArray<FPartitionHandle> Partitions;
-	uint32 NumWorkers = 0;
+	TArray<FLBWorkerHandle> VirtualWorkerIdToHandle;
+
+	TSet<FLBWorkerHandle> ConnectedWorkers;
+
+	SpatialVirtualWorkerTranslator& Translator;
+	TOptional<Worker_RequestId> WorkerTranslationRequest;
+	bool bTranslatorIsReady = false;
+
 	uint32 ExpectedWorkers = 0;
 	bool bCreatedPartitions = false;
 };

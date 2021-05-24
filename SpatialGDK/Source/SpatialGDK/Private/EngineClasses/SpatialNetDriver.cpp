@@ -3335,11 +3335,11 @@ void USpatialNetDriver::TryFinishStartup()
 				Connection->GetCoordinator().CreateSubView(SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
 														   SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-			auto PartitionMgr = MakeUnique<SpatialGDK::FPartitionManager>(Connection->GetWorkerSystemEntityId(),
-																		  Connection->GetCoordinator(), *VirtualWorkerTranslator,
-																		  MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
+			auto PartitionMgr =
+				MakeUnique<SpatialGDK::FPartitionManager>(Connection->GetWorkerSystemEntityId(), Connection->GetCoordinator(),
+														  MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
 
-			PartitionMgr->Init(Connection, LoadBalanceStrategy->GetMinimumRequiredWorkers());
+			PartitionMgr->Init(Connection /*, LoadBalanceStrategy->GetMinimumRequiredWorkers()*/);
 
 			TUniquePtr<SpatialGDK::FLBDataStorage> MovementDataStorage;
 			// GDK_PROPERTY(Property)* MovementProperty = FindFProperty<FProperty>(AActor::StaticClass(),
@@ -3348,7 +3348,8 @@ void USpatialNetDriver::TryFinishStartup()
 			//	MovementDataStorage = MakeUnique<SpatialGDK::TLBDataStorage<FRepMovement>>(this, AActor::StaticClass(), MovementProperty);
 			//}
 
-			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy = MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy);
+			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy =
+				MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);
 
 			// TArray<SpatialGDK::FPartitionHandle> Partitions;
 			// Strategy->CollectPartitionsToAdd(*PartitionMgr, Partitions);

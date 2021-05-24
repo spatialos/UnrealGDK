@@ -6,6 +6,8 @@
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
+class SpatialOSWorkerInterface;
+
 namespace SpatialGDK
 {
 class FPartitionManager;
@@ -18,8 +20,11 @@ public:
 
 	virtual void Init(TArray<FLBDataStorage*>& OutLoadBalancingData) {}
 
-	virtual void OnWorkersConnected(TArrayView<FLBWorker> ConnectedWorkers) {}
-	virtual void OnWorkersDisconnected(TArrayView<FLBWorker> DisconnectedWorkers) {}
+	virtual void Advance(SpatialOSWorkerInterface* Connection) {}
+	virtual void Flush(SpatialOSWorkerInterface* Connection) {}
+
+	virtual void OnWorkersConnected(TArrayView<FLBWorkerHandle> ConnectedWorkers) {}
+	virtual void OnWorkersDisconnected(TArrayView<FLBWorkerHandle> DisconnectedWorkers) {}
 	virtual void TickPartitions(FPartitionManager& Partitions) {}
 	virtual void CollectEntitiesToMigrate(FMigrationContext& Ctx) {}
 };

@@ -40,14 +40,14 @@ void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 {
 	PartitionsMgr->AdvanceView(Connection);
 
-	TArray<FLBWorker> DisconnectedWorkers = PartitionsMgr->GetDisconnectedWorkers();
+	TArray<FLBWorkerHandle> DisconnectedWorkers = PartitionsMgr->GetDisconnectedWorkers();
 
 	if (DisconnectedWorkers.Num() > 0)
 	{
 		Strategy->OnWorkersDisconnected(DisconnectedWorkers);
 	}
 
-	TArray<FLBWorker> ConnectedWorkers = PartitionsMgr->GetConnectedWorkers();
+	TArray<FLBWorkerHandle> ConnectedWorkers = PartitionsMgr->GetConnectedWorkers();
 
 	if (ConnectedWorkers.Num() > 0)
 	{
@@ -152,6 +152,8 @@ void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 			break;
 		}
 	}
+
+	Strategy->Advance(Connection);
 }
 
 void SpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
@@ -164,11 +166,7 @@ void SpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
 	}
 
 	Strategy->TickPartitions(*PartitionsMgr);
-
-	if (!PartitionsMgr->IsReady())
-	{
-		return;
-	}
+	Strategy->Flush(Connection);
 
 	TSet<Worker_EntityId_Key> ModifiedEntities;
 	for (auto& Storage : DataStorages)

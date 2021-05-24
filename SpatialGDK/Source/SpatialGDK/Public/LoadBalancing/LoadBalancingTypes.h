@@ -7,15 +7,20 @@
 
 namespace SpatialGDK
 {
-struct FLBWorker
+struct FLBWorkerInternalState;
+struct FLBWorkerDesc : TSharedFromThis<FLBWorkerDesc>
 {
-	FName WorkerType;
-	VirtualWorkerId WorkerId;
+	FLBWorkerDesc(FName InWorkerType);
+	~FLBWorkerDesc();
+	const FName WorkerType;
+	TUniquePtr<FLBWorkerInternalState> State;
 };
+using FLBWorkerHandle = TSharedPtr<FLBWorkerDesc>;
 
 struct FPartitionInternalState;
 struct FPartitionDesc : TSharedFromThis<FPartitionDesc>
 {
+	~FPartitionDesc();
 	TUniquePtr<FPartitionInternalState> State;
 };
 using FPartitionHandle = TSharedPtr<FPartitionDesc>;

@@ -10,7 +10,6 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPartitionManager, Log, All)
 
 class SpatialOSWorkerInterface;
-class SpatialVirtualWorkerTranslator;
 
 namespace SpatialGDK
 {
@@ -21,25 +20,26 @@ class ViewCoordinator;
 class FPartitionManager
 {
 public:
-	FPartitionManager(Worker_EntityId InStrategyWorkerEntityId, ViewCoordinator& Coordinator, SpatialVirtualWorkerTranslator& InTranslator,
-					  TUniquePtr<InterestFactory>&& InterestF);
+	FPartitionManager(Worker_EntityId InStrategyWorkerEntityId, ViewCoordinator& Coordinator, TUniquePtr<InterestFactory>&& InterestF);
 	~FPartitionManager();
 
-	void Init(SpatialOSWorkerInterface* Connection, uint32 ExpectedWorkers);
+	void Init(SpatialOSWorkerInterface* Connection /*, uint32 ExpectedWorkers*/);
 
 	bool IsReady();
 
 	TOptional<Worker_PartitionId> GetPartitionId(FPartitionHandle);
 	FPartitionHandle CreatePartition(void* UserData, const SpatialGDK::QueryConstraint& Interest);
 	void SetPartitionInterest(FPartitionHandle Partition, const SpatialGDK::QueryConstraint& NewInterest);
-	void AssignPartitionTo(FPartitionHandle Partition, VirtualWorkerId Worker);
+	void AssignPartitionTo(FPartitionHandle Partition, FLBWorkerHandle Worker);
 	void SetPartitionMetadata(FPartitionHandle /*???*/);
 
 	void AdvanceView(SpatialOSWorkerInterface* Connection);
 	void Flush(SpatialOSWorkerInterface* Connection);
 
-	TArray<FLBWorker> GetConnectedWorkers();
-	TArray<FLBWorker> GetDisconnectedWorkers();
+	TArray<FLBWorkerHandle> GetConnectedWorkers();
+	TArray<FLBWorkerHandle> GetDisconnectedWorkers();
+
+	Worker_EntityId GetServerWorkerEntityIdForWorker(FLBWorkerHandle);
 
 private:
 	struct Impl;
