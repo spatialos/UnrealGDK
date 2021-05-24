@@ -412,7 +412,6 @@ bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
 		return TryStopLocalDeployment();
 	}
 
-
 	FScopeLock StoppingDeploymentScoped(&StoppingDeployment);
 	if (!StartLocalDeploymentShutDown())
 	{
