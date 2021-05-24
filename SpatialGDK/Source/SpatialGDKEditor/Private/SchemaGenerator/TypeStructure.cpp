@@ -26,6 +26,8 @@ TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
 
 FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 {
+	static_assert(REP_Count == 4, "Unexpected number of ReplicatedPropertyGroups, please update this function.");
+
 	switch (Group)
 	{
 	case REP_SingleClient:
@@ -35,7 +37,6 @@ FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 	case REP_ServerOnly:
 		return TEXT("ServerOnly");
 	default:
-		static_assert(REP_Count == 4, "Unexpected number of ReplicatedPropertyGroups, please update this function.");
 		return TEXT("");
 	}
 }
@@ -448,6 +449,8 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 		if (PropertyInfo->ReplicationData.IsValid())
 		{
 			EReplicatedPropertyGroup Group = REP_MultiClient;
+			static_assert(REP_Count == 4,
+						  "Unexpected number of ReplicatedPropertyGroups. Please make sure the GetFlatRepData function is still correct.");
 			switch (PropertyInfo->ReplicationData->Condition)
 			{
 			case COND_AutonomousOnly:
@@ -467,8 +470,6 @@ FUnrealFlatRepData GetFlatRepData(TSharedPtr<FUnrealType> TypeInfo)
 					   *PropertyInfo->Property->GetName());
 				break;
 			}
-			static_assert(REP_Count == 4,
-						  "Unexpected number of ReplicatedPropertyGroups. Please make sure the GetFlatRepData function is still correct.");
 			RepData[Group].Add(PropertyInfo->ReplicationData->Handle, PropertyInfo);
 		}
 		return true;

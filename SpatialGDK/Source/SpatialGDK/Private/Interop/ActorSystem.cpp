@@ -667,10 +667,7 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 
 	if (Category != SCHEMA_Invalid)
 	{
-		if (Category == SCHEMA_ServerOnly)
-		{
-			ensureAlways(NetDriver->IsServer());
-		}
+		ensureAlways(Category != SCHEMA_ServerOnly || NetDriver->IsServer());
 		SCOPE_CYCLE_COUNTER(STAT_ActorSystemApplyData);
 		ApplyComponentUpdate(ComponentId, Update, *TargetObject, *Channel);
 	}
@@ -1107,7 +1104,7 @@ void ActorSystem::ResolveObjectReferences(FRepLayout& RepLayout, UObject* Replic
 			continue;
 		}
 
-		FRepParentCmd& Parent = RepLayout.Parents[ObjectReferences.ParentIndex];
+		const FRepParentCmd& Parent = RepLayout.Parents[ObjectReferences.ParentIndex];
 
 		int32 StoredDataOffset = ObjectReferences.ShadowOffset;
 

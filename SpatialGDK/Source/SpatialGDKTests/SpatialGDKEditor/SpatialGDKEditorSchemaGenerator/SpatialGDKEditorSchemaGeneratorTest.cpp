@@ -106,6 +106,8 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FStrin
 
 FString ComponentTypeToString(ESchemaComponentType Type)
 {
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check ComponentTypeToString is still correct.");
+
 	switch (Type)
 	{
 	case SCHEMA_Data:
@@ -117,8 +119,6 @@ FString ComponentTypeToString(ESchemaComponentType Type)
 	case SCHEMA_InitialOnly:
 		return TEXT("InitialOnly");
 	default:
-		static_assert(SCHEMA_Count == 4,
-					  "Unexpected number of Schema type components, please check ComponentTypeToString is still correct.");
 		return TEXT("");
 	}
 }

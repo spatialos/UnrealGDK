@@ -523,6 +523,8 @@ TMap<Worker_ComponentId, FString> CreateComponentIdToClassPathMap()
 
 FString GetComponentSetNameBySchemaType(ESchemaComponentType SchemaType)
 {
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
+
 	switch (SchemaType)
 	{
 	case SCHEMA_Data:
@@ -530,12 +532,10 @@ FString GetComponentSetNameBySchemaType(ESchemaComponentType SchemaType)
 	case SCHEMA_OwnerOnly:
 		return SpatialConstants::OWNER_ONLY_COMPONENT_SET_NAME;
 	case SCHEMA_ServerOnly:
-		return SpatialConstants::HANDOVER_COMPONENT_SET_NAME;
+		return SpatialConstants::SERVER_ONLY_COMPONENT_SET_NAME;
 	case SCHEMA_InitialOnly:
 		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_NAME;
 	default:
-		static_assert(SCHEMA_Count == 4,
-					  "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 		// For some reason these statements, if formatted cause a bug in VS where the lines reported by the compiler and debugger are wrong.
 		// clang-format off
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not return component set name. Schema component type was invalid: %d"), SchemaType);
@@ -546,6 +546,8 @@ FString GetComponentSetNameBySchemaType(ESchemaComponentType SchemaType)
 
 Worker_ComponentId GetComponentSetIdBySchemaType(ESchemaComponentType SchemaType)
 {
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check the enclosing function is still correct.");
+
 	switch (SchemaType)
 	{
 	case SCHEMA_Data:
@@ -557,8 +559,6 @@ Worker_ComponentId GetComponentSetIdBySchemaType(ESchemaComponentType SchemaType
 	case SCHEMA_InitialOnly:
 		return SpatialConstants::INITIAL_ONLY_COMPONENT_SET_ID;
 	default:
-		static_assert(SCHEMA_Count == 4,
-					  "Unexpected number of Schema type components, please check the enclosing function is still correct.");
 		// clang-format off
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not return component set ID. Schema component type was invalid: %d"), SchemaType);
 		// clang-format on

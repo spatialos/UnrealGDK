@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`x.y.z`] - Unreleased
 
 ### Breaking changes:
+- The `Handover` variable specifier has been deprecated. It should be replaced with just the normal `Replicated` variable specifier and restricting the replication with the new `COND_ServerOnly` replication condition in `GetLifetimeReplicatedProps`. `Handover` variables will try to replicate using the new replication condition, but we recommend converting variables manually as soon as possible.
 - Reworked AlwaysInterested functionality to run on authoritative servers, and owning clients. The previous behaviour was for it to only run on PlayerController classes, on the client only.
 - `bUseNetOwnerActorGroup` actor setting has been removed with the default behavior now true inside LayeredLBStrategy. Extend this class if you wish to alter this default behavior.
 

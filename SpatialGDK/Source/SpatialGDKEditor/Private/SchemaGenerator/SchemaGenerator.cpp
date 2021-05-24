@@ -23,6 +23,11 @@ namespace
 {
 ESchemaComponentType PropertyGroupToSchemaComponentType(EReplicatedPropertyGroup Group)
 {
+	static_assert(REP_Count == 4,
+				  "Unexpected number of ReplicatedPropertyGroups, please make sure PropertyGroupToSchemaComponentType is still correct.");
+	static_assert(SCHEMA_Count == 4,
+				  "Unexpected number of Schema component types, please make sure PropertyGroupToSchemaComponentType is still correct.");
+
 	switch (Group)
 	{
 	case REP_MultiClient:
@@ -35,11 +40,6 @@ ESchemaComponentType PropertyGroupToSchemaComponentType(EReplicatedPropertyGroup
 		return SCHEMA_ServerOnly;
 	default:
 		checkNoEntry();
-		static_assert(
-			REP_Count == 4,
-			"Unexpected number of ReplicatedPropertyGroups, please make sure PropertyGroupToSchemaComponentType is still correct.");
-		static_assert(SCHEMA_Count == 4,
-					  "Unexpected number of Schema component types, please make sure PropertyGroupToSchemaComponentType is still correct.");
 		return SCHEMA_Invalid;
 	}
 }
@@ -483,6 +483,11 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 EReplicatedPropertyGroup SchemaComponentTypeToPropertyGroup(ESchemaComponentType SchemaType)
 {
+	static_assert(REP_Count == 4,
+				  "Unexpected number of ReplicatedPropertyGroups, please make sure SchemaComponentTypeToPropertyGroup is still correct.");
+	static_assert(SCHEMA_Count == 4,
+				  "Unexpected number of Schema component types, please make sure SchemaComponentTypeToPropertyGroup is still correct.");
+
 	switch (SchemaType)
 	{
 	case SCHEMA_Data:
@@ -495,11 +500,6 @@ EReplicatedPropertyGroup SchemaComponentTypeToPropertyGroup(ESchemaComponentType
 		return REP_ServerOnly;
 	default:
 		checkNoEntry();
-		static_assert(
-			REP_Count == 4,
-			"Unexpected number of ReplicatedPropertyGroups, please make sure SchemaComponentTypeToPropertyGroup is still correct.");
-		static_assert(SCHEMA_Count == 4,
-					  "Unexpected number of Schema component types, please make sure SchemaComponentTypeToPropertyGroup is still correct.");
 		return REP_MultiClient;
 	}
 }

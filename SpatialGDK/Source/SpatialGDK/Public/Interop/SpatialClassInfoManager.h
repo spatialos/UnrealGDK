@@ -21,6 +21,9 @@ FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)
 
 FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condition)
 {
+	static_assert(SCHEMA_Count == 4,
+				  "Unexpected number of Schema type components, please make sure GetGroupFromCondition is still correct.");
+
 	switch (Condition)
 	{
 	case COND_AutonomousOnly:
@@ -32,8 +35,6 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 	case COND_ServerOnly:
 		return SCHEMA_ServerOnly;
 	default:
-		static_assert(SCHEMA_Count == 4,
-					  "Unexpected number of Schema type components, please make sure GetGroupFromCondition is still correct.");
 		return SCHEMA_Data;
 	}
 }
