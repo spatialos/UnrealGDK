@@ -11,8 +11,8 @@
 #include "Utils/SpatialStatics.h"
 
 #if WITH_EDITOR
-#include "Interop/Connection/SpatialEventTracer.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Misc/FileHelper.h"
 #include "Settings/LevelEditorPlaySettings.h"
 
