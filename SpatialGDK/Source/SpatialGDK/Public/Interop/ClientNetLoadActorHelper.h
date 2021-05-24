@@ -11,15 +11,14 @@ class USpatialNetDriver;
 
 namespace SpatialGDK
 {
-
 class FClientNetLoadActorHelper
 {
 public:
 	FClientNetLoadActorHelper(USpatialNetDriver& InNetDriver);
 	void EntityRemoved(const Worker_EntityId EntityId, const AActor* Actor);
 	UObject* GetReusableDynamicSubObject(const FUnrealObjectRef ObjectRef);
-	void RemoveRuntimeRemovedComponents(const Worker_EntityId& EntityId,
-														const TArray<ComponentData>& NewComponents);
+	void RemoveRuntimeRemovedComponents(const Worker_EntityId& EntityId, const TArray<ComponentData>& NewComponents);
+
 private:
 	USpatialNetDriver* NetDriver;
 

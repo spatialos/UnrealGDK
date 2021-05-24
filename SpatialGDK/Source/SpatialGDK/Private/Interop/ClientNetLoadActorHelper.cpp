@@ -4,9 +4,9 @@
 
 #include "Algo/AnyOf.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/ActorSystem.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
-#include "Interop/ActorSystem.h"
 #include "Schema/Restricted.h"
 #include "SpatialConstants.h"
 #include "Utils/RepLayoutUtils.h"
@@ -29,8 +29,8 @@ UObject* FClientNetLoadActorHelper::GetReusableDynamicSubObject(const FUnrealObj
 		{
 			NetDriver->PackageMap->ResolveSubobject(DynamicSubObject, ObjectRef);
 			UE_LOG(LogClientNetLoadActorHelper, Verbose,
-				TEXT("Found reusable dynamic SubObject (ObjectRef offset: %u) for ClientNetLoad actor with entityId %d"),
-				ObjectRef.Offset, ObjectRef.Entity);
+				   TEXT("Found reusable dynamic SubObject (ObjectRef offset: %u) for ClientNetLoad actor with entityId %d"),
+				   ObjectRef.Offset, ObjectRef.Entity);
 			return DynamicSubObject;
 		}
 	}
@@ -51,7 +51,8 @@ void FClientNetLoadActorHelper::EntityRemoved(const Worker_EntityId EntityId, co
 				if (SubObjectRef.IsValid() && IsDynamicSubObject(*NetDriver, Actor, SubObjectRef.Offset))
 				{
 					SaveDynamicSubObjectRef(SubObjectRef, SubObjectNetGUID);
-					UE_LOG(LogClientNetLoadActorHelper, Verbose,
+					UE_LOG(
+						LogClientNetLoadActorHelper, Verbose,
 						TEXT("Saved reusable dynamic SubObject ObjectRef (ObjectRef offset: %u) for ClientNetLoad actor with entityId %d"),
 						SubObjectRef.Offset, SubObjectRef.Entity);
 				}
@@ -59,7 +60,6 @@ void FClientNetLoadActorHelper::EntityRemoved(const Worker_EntityId EntityId, co
 		}
 	}
 }
-
 
 FNetworkGUID* FClientNetLoadActorHelper::GetSavedDynamicSubObjectNetGUID(const FUnrealObjectRef& ObjectRef)
 {
@@ -95,9 +95,7 @@ void FClientNetLoadActorHelper::ClearDynamicSubObjectRefs(const Worker_EntityId&
 	}
 }
 
-void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId& EntityId,
-																 const TArray<ComponentData>& NewComponents
-)
+void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId& EntityId, const TArray<ComponentData>& NewComponents)
 {
 	auto ContainedInComponentsArr = [this, &NewComponents, &EntityId](const FUnrealObjectRef& CheckComponentObjRef) {
 		for (const ComponentData& Component : NewComponents)

@@ -7,8 +7,8 @@
 #include "SpatialConstants.h"
 #include "Utils/RepDataUtils.h"
 
-#include "Interop/CreateEntityHandler.h"
 #include "Interop/ClientNetLoadActorHelper.h"
+#include "Interop/CreateEntityHandler.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogActorSystem, Log, All);
 
