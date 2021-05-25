@@ -4,44 +4,6 @@
 
 namespace SpatialGDK
 {
-void ComputeFieldAndComponents(USpatialNetDriver* NetDriver, UClass* Class, GDK_PROPERTY(Property) * Property,
-							   TSet<Worker_ComponentId>& Components, Schema_FieldId& FieldId)
-{
-	// for (TObjectIterator< UClass > ClassIt; ClassIt; ++ClassIt)
-	//{
-	//	UClass* Class = *ClassIt;
-	//	if (!Class->IsChildOf(Class))
-	//	{
-	//		continue;
-	//	}
-	//	Worker_ComponentId Component = NetDriver->ClassInfoManager->GetComponentIdForClass(*Class);
-	//	if (Component != 0)
-	//	{
-	//		Components.Add(Component);
-	//	}
-	//}
-	USchemaDatabase* Database = NetDriver->ClassInfoManager->SchemaDatabase;
-	for (auto const& ComponentEntry : Database->ComponentIdToClassPath)
-	{
-		FString ClassPath = ComponentEntry.Value;
-		UClass* ActorClass = StaticLoadClass(AActor::StaticClass(), nullptr, *ClassPath);
-		if (ActorClass && ActorClass->IsChildOf(Class))
-		{
-			Components.Add(ComponentEntry.Key);
-		}
-
-		// UClass* ActorComponentClass = StaticLoadClass(UActorComponent::StaticClass(), nullptr, *ClassPath);
-		// if()
-	}
-
-	if (Components.Num() > 0)
-	{
-		FObjectReferencesMap Map;
-		ComponentReader Reader(NetDriver, Map, nullptr);
-		FieldId = Reader.GetFieldFromProperty(Class, Property, *Components.CreateConstIterator());
-	}
-}
-
 FSpatialPositionStorage::FSpatialPositionStorage()
 {
 	Components.Add(SpatialConstants::POSITION_COMPONENT_ID);
