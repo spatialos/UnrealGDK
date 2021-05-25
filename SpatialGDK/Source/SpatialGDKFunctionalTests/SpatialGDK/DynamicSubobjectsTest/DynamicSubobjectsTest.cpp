@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "DynamicSubobjectsTest.h"
-#include "ReplicatedGASTestActor.h"
+#include "DynamicSubObjectTestActor.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "SpatialGDKSettings.h"
@@ -14,7 +14,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 
 /**
- * Tests if the dynamic sub-object of the AReplicatedGASTestActor is not duplicated on Clients when leaving
+ * Tests if the dynamic sub-object of the ADynamicSubObjectTestActor is not duplicated on Clients when leaving
  * and re-entering interest.
  *
  * The test includes a single server and one client worker.
@@ -24,12 +24,12 @@
  *true.
  *    - The Server spawns a TestMovementCharacter and makes Client 1 possess it.
  *  - Test:
- *    - Each worker tests if it can initially see the AReplicatedGASTestActor.
+ *    - Each worker tests if it can initially see the ADynamicSubObjectTestActor.
  *    - Repeat the following steps MaxDynamicallyAttachedSubobjectsPerClass + 1 times:
  *		- After ensuring possession happened, the Server moves Client 1's Character to a remote location, so it cannot see the
- *AReplicatedGASTestActor.
- *		- After ensuring movement replicated correctly, Client 1 checks it can no longer see the AReplicatedGASTestActor.
- *		- The Server moves the character of Client 1 back close to its spawn location, so that the AReplicatedGASTestActor is
+ *ADynamicSubObjectTestActor.
+ *		- After ensuring movement replicated correctly, Client 1 checks it can no longer see the ADynamicSubObjectTestActor.
+ *		- The Server moves the character of Client 1 back close to its spawn location, so that the ADynamicSubObjectTestActor is
  *in its interest area.
  *	  - If the "Too many dynamic sub objects" error does not appears in the log the test is successful.
  *  - Cleanup:
@@ -40,10 +40,10 @@
  * A second test case is also tested with this same test.
  * This tests that
  * 1. The server adds a dynamic component to the actor
- * 1. AReplicatedGASTestActor moves out of the client's interest
- * 2. AReplicatedGASTestActor has the dynamic component removed
- * 3. AReplicatedGASTestActor moves into the client's interest
- * 4. The client sees AReplicatedGASTestActor no longer has the dynamic component
+ * 1. ADynamicSubObjectTestActor moves out of the client's interest
+ * 2. ADynamicSubObjectTestActor has the dynamic component removed
+ * 3. ADynamicSubObjectTestActor moves into the client's interest
+ * 4. The client sees ADynamicSubObjectTestActor no longer has the dynamic component
  *
  * This extra test case is implemented in steps 9.1 and 12.1
  */
@@ -60,14 +60,18 @@ ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 40.0f); // Outside of the interest range of the client
 
 	TimeLimit = 100.0f;
+	InitialNumComponents = 1;
+
 }
 
 void ADynamicSubobjectsTest::PrepareTest()
 {
 	Super::PrepareTest();
 
+
 	const int DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
 	StepTimer = 0.0f;
+
 
 	// Step 0 - The server spawn a TestMovementCharacter and makes Client 1 possess it.
 	AddStep(TEXT("DynamicSubobjectsTestSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -86,7 +90,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		}
 	});
 
-	// Step 1 - All workers check if they have one AReplicatedGASTestActor in the world, and set a reference to it.
+	// Step 1 - All workers check if they have one ADynamicSubObjectTestActor in the world, and set a reference to it.
 	AddStep(
 		TEXT("DynamicSubobjectsTestAllWorkers"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 		[this](float DeltaTime) {
@@ -110,13 +114,13 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 	// Step 3 - The client checks it has the right initial amount of components
 	AddStep(TEXT("DynamicSubobjectsTestClientCheckNumComponents"), FWorkerDefinition::Client(1), nullptr, [this]() {
-		AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("For this test, DynamicSubobjectTestActor should have 3 components"));
+		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents, TEXT("ADynamicSubObjectTestActor should have the initial number of components"));
 		FinishStep();
 	});
 
 	// Step 4 - The server adds the new dynamic component
 	AddStep(TEXT("DynamicSubobjectsTestServerAddComponent"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("For this test, DynamicSubobjectTestActor should have 3 components"));
+		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents, TEXT("ADynamicSubObjectTestActor should have the initial number of components"));
 
 		// add new dynamic component to test actor
 		USceneComponent* AddedComponent = NewObject<USceneComponent>(TestActor, TEXT("ToRemoveComponent"));
@@ -124,7 +128,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddedComponent->RegisterComponent();
 		AddedComponent->SetIsReplicated(true);
 
-		AssertEqual_Int(GetNumComponentsOnTestActor(), 4, TEXT("Now DynamicSubobjectTestActor should have 4 components"));
+		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents+1, TEXT("Now ADynamicSubObjectTestActor should have 1 more component"));
 		FinishStep();
 	});
 
@@ -132,7 +136,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 	AddStep(
 		TEXT("DynamicSubobjectsTestClientSeeNewComponent"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireEqual_Int(GetNumComponentsOnTestActor(), 4, TEXT("Now DynamicSubobjectTestActor should have 4 components"));
+			RequireEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents+1, TEXT("Now ADynamicSubObjectTestActor should have 1 more component"));
 			FinishStep();
 		},
 		StepTimeLimit);
@@ -142,7 +146,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		const bool bLastStepLoop = i == DynamicComponentsPerClass + 1;
 
 		// Step 6 - Server moves the TestMovementCharacter of Client 1 to a remote location, so that it does not see the
-		// AReplicatedGASTestActor.
+		// ADynamicSubObjectTestActor.
 		AddStep(TEXT("DynamicSubobjectsTestServerMoveClient1"), FWorkerDefinition::Server(1), nullptr, [this]() {
 			ClientOneSpawnedPawn->SetActorLocation(CharacterRemoteLocation);
 			AssertEqual_Vector(ClientOneSpawnedPawn->GetActorLocation(), CharacterRemoteLocation,
@@ -183,13 +187,13 @@ void ADynamicSubobjectsTest::PrepareTest()
 				});
 		}
 
-		// Step 8 - Server increases AReplicatedGASTestActor's TestIntProperty to enable checking if the client is out of interest later.
+		// Step 8 - Server increases ADynamicSubObjectTestActor's TestIntProperty to enable checking if the client is out of interest later.
 		AddStep(TEXT("DynamicSubobjectsTestServerIncreasesIntValue"), FWorkerDefinition::Server(1), nullptr, [this, i]() {
 			TestActor->TestIntProperty = i;
 			FinishStep();
 		});
 
-		// Step 9 - Client 1 checks it can no longer see the AReplicatedGASTestActor by waiting for 0.5s and checking TestIntProperty hasn't
+		// Step 9 - Client 1 checks it can no longer see the ADynamicSubObjectTestActor by waiting for 0.5s and checking TestIntProperty hasn't
 		// updated
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr,
@@ -212,7 +216,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 			AddStep(TEXT("DynamicSubobjectsTestServerDestroyActorComponent"), FWorkerDefinition::Server(1), nullptr, [this]() {
 				TArray<USceneComponent*> AllSceneComps;
 				TestActor->GetComponents<USceneComponent>(AllSceneComps);
-				AssertEqual_Int(AllSceneComps.Num(), 4, TEXT("DynamicSubobjectTestActor should have 4 components"));
+				AssertEqual_Int(AllSceneComps.Num(), InitialNumComponents+1, TEXT("ADynamicSubObjectTestActor should have 1 more than the initial number of components"));
 
 				// Delete the component with the right name
 				for (USceneComponent* SceneComponent : AllSceneComps)
@@ -223,7 +227,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 					}
 				}
 
-				AssertEqual_Int(GetNumComponentsOnTestActor(), 3, TEXT("Now DynamicSubobjectTestActor should have 3 components"));
+				AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents, TEXT("ADynamicSubObjectTestActor should have the initial number of components again"));
 				FinishStep();
 			});
 		}
@@ -251,7 +255,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 			},
 			StepTimeLimit);
 
-		// Step 12 - Client 1 checks it can see the AReplicatedGASTestActor
+		// Step 12 - Client 1 checks it can see the ADynamicSubObjectTestActor
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased2"), FWorkerDefinition::Client(1), nullptr, nullptr,
 			[this, i](float DeltaTime) {
@@ -266,8 +270,8 @@ void ADynamicSubobjectsTest::PrepareTest()
 			AddStep(
 				TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased2"), FWorkerDefinition::Client(1), nullptr, nullptr,
 				[this](float DeltaTime) {
-					RequireEqual_Int(GetNumComponentsOnTestActor(), 3,
-									 TEXT("DynamicSubobjectTestActor's dynamic component should have been destroyed."));
+					RequireEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents,
+									 TEXT("ADynamicSubObjectTestActor's dynamic component should have been destroyed."));
 
 					FinishStep();
 				},
@@ -295,13 +299,13 @@ void ADynamicSubobjectsTest::PrepareTest()
 	});
 }
 
-AReplicatedGASTestActor* ADynamicSubobjectsTest::GetReplicatedTestActor()
+ADynamicSubObjectTestActor* ADynamicSubobjectsTest::GetReplicatedTestActor()
 {
 	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AReplicatedGASTestActor::StaticClass(), FoundActors);
-	if (AssertEqual_Int(FoundActors.Num(), 1, TEXT("There should only be one actor of type AReplicatedGASTestActor in the world")))
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ADynamicSubObjectTestActor::StaticClass(), FoundActors);
+	if (AssertEqual_Int(FoundActors.Num(), 1, TEXT("There should only be one actor of type ADynamicSubObjectTestActor in the world")))
 	{
-		TestActor = Cast<AReplicatedGASTestActor>(FoundActors[0]);
+		TestActor = Cast<ADynamicSubObjectTestActor>(FoundActors[0]);
 		if (AssertIsValid(TestActor, TEXT("TestActor must be valid")))
 		{
 			return TestActor;

@@ -13,6 +13,8 @@
 #include "SpatialGDKFunctionalTests/SpatialGDK/UNR-3761/SpatialTestMultipleOwnership/SpatialTestMultipleOwnership.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/VisibilityTest/ReplicatedVisibilityTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/VisibilityTest/VisibilityTest.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/DynamicSubobjectsTest/DynamicSubObjectsTest.h"
+#include "SpatialGDKFunctionalTests/SpatialGDK/DynamicSubobjectsTest/DynamicSubObjectTestActor.h"
 
 USpatialNetworkingMap::USpatialNetworkingMap()
 	: UGeneratedTestMap(EMapCategory::CI_PREMERGE, TEXT("SpatialNetworkingMap"))
@@ -35,9 +37,11 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	AddActorToLevel<ADormancyAndTombstoneTest>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ASpatialTestSingleServerDynamicComponents>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ASpatialTestMultipleOwnership>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ADynamicSubobjectsTest>(CurrentLevel, FTransform::Identity);
 
 	// Add test helpers
 	// Unfortunately, the nature of some tests requires them to have actors placed in the level, to trigger some Unreal behavior
 	AddActorToLevel<ADormancyTestActor>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<AReplicatedVisibilityTestActor>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<ADynamicSubObjectTestActor>(CurrentLevel, FTransform::Identity);
 }

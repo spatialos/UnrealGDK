@@ -8,7 +8,7 @@
 #include "DynamicSubobjectsTest.generated.h"
 
 class ATestMovementCharacter;
-class AReplicatedGASTestActor;
+class ADynamicSubObjectTestActor;
 
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ADynamicSubobjectsTest : public ASpatialFunctionalTest
@@ -19,7 +19,7 @@ public:
 	ADynamicSubobjectsTest();
 
 	virtual void PrepareTest() override;
-	AReplicatedGASTestActor* GetReplicatedTestActor();
+	ADynamicSubObjectTestActor* GetReplicatedTestActor();
 	int GetNumComponentsOnTestActor();
 
 	// A reference to the Default Pawn of Client 1 to allow for repossession in the final step of the test.
@@ -27,7 +27,7 @@ public:
 
 	ATestMovementCharacter* ClientOneSpawnedPawn;
 
-	AReplicatedGASTestActor* TestActor;
+	ADynamicSubObjectTestActor* TestActor;
 
 	// The spawn location for Client 1's Pawn;
 	FVector CharacterSpawnLocation;
@@ -36,4 +36,6 @@ public:
 	FVector CharacterRemoteLocation;
 
 	float StepTimer;
+
+	int32 InitialNumComponents;
 };
