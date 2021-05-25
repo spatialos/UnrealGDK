@@ -57,7 +57,7 @@ void FSpatialTestSettings::Override(const FString& MapName)
 		}
 		else if (!SpatialWorldSettings->SettingsOverride.FilePath.IsEmpty())
 		{
-			UE_LOG(LogSpatialTestSettings, Error, TEXT("Could not find setting override file %s."), *GroupOverridesFilename);
+			UE_LOG(LogSpatialTestSettings, Error, TEXT("Could not find settings override file %s."), *GroupOverridesFilename);
 		}
 	}
 
