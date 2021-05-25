@@ -37,7 +37,15 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
 	, bStartingDeployment(false)
 	, bStoppingDeployment(false)
+	, bTestRunnning(false)
 {
+}
+
+FLocalDeploymentManager::~FLocalDeploymentManager()
+{
+	// The idea behind this lock is to try and make the thread calling the destructor wait for the thread that is cleaning up processes
+	// if something tries to run on this object after the destructor then we're ruined anyway
+	FScopeLock StoppingDeploymentScoped(&StoppingDeployment);
 }
 
 void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
@@ -383,6 +391,7 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(const FString& RuntimeLogDi
 
 bool FLocalDeploymentManager::TryStopLocalDeployment()
 {
+	FScopeLock StoppingDeploymentScoped(&StoppingDeployment);
 	if (!StartLocalDeploymentShutDown())
 	{
 		return false;
@@ -404,6 +413,7 @@ bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
 		return TryStopLocalDeployment();
 	}
 
+	FScopeLock StoppingDeploymentScoped(&StoppingDeployment);
 	if (!StartLocalDeploymentShutDown())
 	{
 		return false;
@@ -435,7 +445,6 @@ bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
 		RuntimeProcess->Stop();
 		bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
 	}
-
 	FinishLocalDeploymentShutDown();
 
 	return bRuntimeShutDownSuccesfully;
@@ -470,7 +479,6 @@ bool FLocalDeploymentManager::WaitForRuntimeProcessToShutDown()
 		if (RuntimeProcess->GetDuration().GetTotalSeconds() > RuntimeStopTime + RuntimeTimeout)
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to stop."));
-			bStoppingDeployment = false;
 			return false;
 		}
 	}

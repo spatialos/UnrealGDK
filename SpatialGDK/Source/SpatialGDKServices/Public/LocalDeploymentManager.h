@@ -15,10 +15,11 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialDeploymentManager, Log, All);
 
 class FJsonObject;
 
-class FLocalDeploymentManager
+class FLocalDeploymentManager final
 {
 public:
 	FLocalDeploymentManager();
+	~FLocalDeploymentManager();
 
 	void SPATIALGDKSERVICES_API PreInit(bool bChinaEnabled);
 
@@ -80,6 +81,8 @@ private:
 	ERuntimeStartResponse StartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
 											   const FString& SnapshotName, const FString& RuntimeIPToExpose,
 											   const LocalDeploymentCallback& CallBack);
+
+	FCriticalSection StoppingDeployment;
 
 	TFuture<bool> AttemptSpatialAuthResult;
 

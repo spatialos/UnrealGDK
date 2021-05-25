@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
 - Fix RPC timeouts for parameters referencing assets that can be asynchronously loaded.
 - Fixed the test settings overrides config filename in `Spatial World Settings` so that the file path is relative to the game directory.
+- Fix editor encountering exceptions when shutting down during a PIE session.
 
 ### Internal:
 - Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.
