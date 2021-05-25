@@ -360,6 +360,11 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	EAutomationControllerModuleState::Type TestState = AutomationController->GetTestState();
 	bTestRunnning = TestState == EAutomationControllerModuleState::Type::Running;
 
+	if (CallBack)
+	{
+		CallBack(/*bSuccess*/ true);
+	}
+
 	return ERuntimeStartResponse::Success;
 }
 
