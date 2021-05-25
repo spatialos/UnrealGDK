@@ -130,4 +130,41 @@ void FActorGroupStorage::OnUpdate(Worker_EntityId EntityId, Worker_ComponentId I
 	Groups.Add(EntityId, GroupId);
 	Modified.Add(EntityId);
 }
+
+FDirectAssignmentStorage::FDirectAssignmentStorage()
+{
+	Components.Add(SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID);
+}
+
+void FDirectAssignmentStorage::OnAdded(Worker_EntityId EntityId, SpatialGDK::EntityViewElement const& Element)
+{
+	for (const auto& Component : Element.Components)
+	{
+		if (SpatialConstants::AUTHORITY_INTENT_COMPONENT_ID == Component.GetComponentId())
+		{
+			AuthorityIntent NewIntent(Component.GetUnderlying());
+			Intents.Add(EntityId, NewIntent);
+			Modified.Add(EntityId);
+		}
+	}
+}
+
+void FDirectAssignmentStorage::OnRemoved(Worker_EntityId EntityId)
+{
+	Intents.Remove(EntityId);
+	Modified.Remove(EntityId);
+}
+
+void FDirectAssignmentStorage::OnUpdate(Worker_EntityId EntityId, Worker_ComponentId InComponentId, Schema_ComponentUpdate* Update)
+{
+	AuthorityIntent* Intent = Intents.Find(EntityId);
+	if (!ensure(Intent != nullptr))
+	{
+		return;
+	}
+
+	Intent->ApplyComponentUpdate(Update);
+	Modified.Add(EntityId);
+}
+
 } // namespace SpatialGDK

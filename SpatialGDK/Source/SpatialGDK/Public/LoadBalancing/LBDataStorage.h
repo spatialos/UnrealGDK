@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Schema/AuthorityIntent.h"
 #include "Utils/ComponentReader.h"
 
 namespace SpatialGDK
@@ -53,6 +54,21 @@ public:
 
 protected:
 	TMap<Worker_EntityId_Key, int32> Groups;
+};
+
+class FDirectAssignmentStorage : public FLBDataStorage
+{
+public:
+	FDirectAssignmentStorage();
+
+	virtual void OnAdded(Worker_EntityId EntityId, SpatialGDK::EntityViewElement const& Element) override;
+	virtual void OnRemoved(Worker_EntityId EntityId) override;
+	virtual void OnUpdate(Worker_EntityId EntityId, Worker_ComponentId InComponentId, Schema_ComponentUpdate* Update) override;
+
+	TMap<Worker_EntityId_Key, AuthorityIntent> const& GetAssignments() const { return Intents; }
+
+protected:
+	TMap<Worker_EntityId_Key, AuthorityIntent> Intents;
 };
 
 void ComputeFieldAndComponents(USpatialNetDriver* NetDriver, UClass* InClass, GDK_PROPERTY(Property) * InProperty,

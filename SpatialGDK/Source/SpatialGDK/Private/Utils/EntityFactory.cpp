@@ -185,7 +185,7 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 			}
 		}
 	}
-	else
+	if (!SpatialSettings->bRunStrategyWorker || !NetDriver->LoadBalanceStrategy->IsStrategyWorkerAware())
 	{
 		ComponentDatas.Add(AuthorityIntent(IntendedVirtualWorkerId).CreateComponentData());
 	}

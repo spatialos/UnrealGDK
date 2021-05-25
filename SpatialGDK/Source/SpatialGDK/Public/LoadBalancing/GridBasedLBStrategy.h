@@ -66,7 +66,7 @@ public:
 	float GetWorldWidth() const { return WorldWidth; }
 	float GetWorldHeight() const { return WorldHeight; }
 	
-	virtual bool IsStrategyWorkerAware() const { return true; }
+	virtual bool IsStrategyWorkerAware() const override;
 	virtual TUniquePtr<SpatialGDK::FLoadBalancingCalculator> CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const override;
 	virtual SpatialGDK::FLoadBalancingDecorator* GetLoadBalancingDecorator() const override;
 

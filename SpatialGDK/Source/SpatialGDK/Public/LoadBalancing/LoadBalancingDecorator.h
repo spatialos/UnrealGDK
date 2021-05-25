@@ -31,4 +31,12 @@ public:
 protected:
 	TClassMap<uint32> ClassToGroup;
 };
+
+// class SPATIALGDK_API FDirectAssignmentLoadBalancingDecorator : public FLoadBalancingDecorator
+//{
+// public:
+//	FDirectAssignmentLoadBalancingDecorator();
+//
+//	virtual TArray<SpatialGDK::ComponentData> OnCreate(AActor* Actor) override;
+//};
 } // namespace SpatialGDK

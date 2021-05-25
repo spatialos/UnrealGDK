@@ -267,6 +267,11 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 	}
 }
 
+bool UGridBasedLBStrategy::IsStrategyWorkerAware() const
+{
+	return false;
+}
+
 TUniquePtr<SpatialGDK::FLoadBalancingCalculator> UGridBasedLBStrategy::CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const
 {
 	auto Calculator = MakeUnique<SpatialGDK::FGridBalancingCalculator>(Cols, Rows, WorldWidth, WorldHeight);

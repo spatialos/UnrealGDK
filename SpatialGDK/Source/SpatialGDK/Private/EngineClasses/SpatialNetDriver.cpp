@@ -2160,8 +2160,9 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	TSet<Worker_EntityId> EntitiesHandedOver;
 	TSet<AActor*> ActorsHandedOver;
 
-	bool bStrategyWorkerEnabled = USpatialStatics::IsStrategyWorkerEnabled();
-	bool bHandoverEnabled = USpatialStatics::IsHandoverEnabled(this);
+	const bool bStrategyWorkerEnabled = USpatialStatics::IsStrategyWorkerEnabled();
+	const bool bDirectAssignment = bStrategyWorkerEnabled && !LoadBalanceStrategy->IsStrategyWorkerAware();
+	const bool bHandoverEnabled = USpatialStatics::IsHandoverEnabled(this);
 	if (bHandoverEnabled)
 	{
 		if (bStrategyWorkerEnabled)
@@ -2170,7 +2171,12 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 			for (Worker_EntityId EntityId : ActorsToHandover)
 			{
 				TWeakObjectPtr<UObject> ObjectPtr = PackageMap->GetObjectFromEntityId(EntityId);
-				if (AActor* Actor = Cast<AActor>(ObjectPtr.Get()))
+				AActor* Actor = Cast<AActor>(ObjectPtr.Get());
+				if (Actor == nullptr || bDirectAssignment)
+				{
+					EntitiesHandedOver.Add(EntityId);
+				}
+				else
 				{
 					if (!Actor->HasAuthority())
 					{
@@ -2225,13 +2231,9 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 						ForceReplicateChildren(HierarchyRoot);
 					}
 				}
-				else
-				{
-					EntitiesHandedOver.Add(EntityId);
-				}
 			}
 		}
-		else
+		if (!bStrategyWorkerEnabled || bDirectAssignment)
 		{
 			MigrationHandler.EvaluateActorsToMigrate(LoadBalancingContext);
 		}
@@ -2293,17 +2295,20 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	{
 		if (bStrategyWorkerEnabled)
 		{
-			for (AActor* Actor : ActorsHandedOver)
+			if (!bDirectAssignment)
 			{
-				// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy
-				Actor->Role = ROLE_SimulatedProxy;
-				Actor->RemoteRole = ROLE_Authority;
+				for (AActor* Actor : ActorsHandedOver)
+				{
+					// If we're setting a different authority intent, preemptively changed to ROLE_SimulatedProxy
+					Actor->Role = ROLE_SimulatedProxy;
+					Actor->RemoteRole = ROLE_Authority;
 
-				Actor->OnAuthorityLost();
+					Actor->OnAuthorityLost();
+				}
 			}
 			HandoverManager->Flush(Connection, EntitiesHandedOver);
 		}
-		else
+		if (!bStrategyWorkerEnabled || bDirectAssignment)
 		{
 			// Once an up to date version of the actors have been sent, do the actual migration.
 			MigrationHandler.ProcessMigrations();
@@ -3301,8 +3306,6 @@ void USpatialNetDriver::TryFinishStartup()
 
 		if (WorkerType == SpatialConstants::RoutingWorkerType)
 		{
-			// RoutingWorkerId = Connection->GetWorkerId();
-
 			SpatialGDK::FSubView& NewView =
 				Connection->GetCoordinator().CreateSubView(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID,
 														   [](const Worker_EntityId, const SpatialGDK::EntityViewElement&) {
@@ -3339,24 +3342,10 @@ void USpatialNetDriver::TryFinishStartup()
 				MakeUnique<SpatialGDK::FPartitionManager>(Connection->GetWorkerSystemEntityId(), Connection->GetCoordinator(),
 														  MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
 
-			PartitionMgr->Init(Connection /*, LoadBalanceStrategy->GetMinimumRequiredWorkers()*/);
-
-			TUniquePtr<SpatialGDK::FLBDataStorage> MovementDataStorage;
-			// GDK_PROPERTY(Property)* MovementProperty = FindFProperty<FProperty>(AActor::StaticClass(),
-			// /*GET_MEMBER_NAME_CHECKED(AActor,*/ TEXT("ReplicatedMovement")); if(MovementProperty != nullptr)
-			//{
-			//	MovementDataStorage = MakeUnique<SpatialGDK::TLBDataStorage<FRepMovement>>(this, AActor::StaticClass(), MovementProperty);
-			//}
+			PartitionMgr->Init(Connection);
 
 			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy =
 				MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);
-
-			// TArray<SpatialGDK::FPartitionHandle> Partitions;
-			// Strategy->CollectPartitionsToAdd(*PartitionMgr, Partitions);
-			//
-			// StrategySystem->AddDataStorage(MoveTemp(MovementDataStorage));
-			// StrategySystem->AddDataStorage(MoveTemp(PositionStorage));
-			// StrategySystem->AddDataStorage(MoveTemp(GroupStorage));
 
 			StrategySystem = MakeUnique<SpatialGDK::SpatialStrategySystem>(MoveTemp(PartitionMgr), LBView, MoveTemp(Strategy));
 

@@ -387,14 +387,16 @@ void ULayeredLBStrategy::AddStrategyForLayer(const FName& LayerName, UAbstractLB
 
 TUniquePtr<SpatialGDK::FLoadBalancingCalculator> ULayeredLBStrategy::CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const
 {
+	if (!IsStrategyWorkerAware())
+	{
+		return nullptr;
+	}
+
 	TArray<FName> LayerNames;
 	TArray<TUniquePtr<SpatialGDK::FLoadBalancingCalculator>> Layers;
 	LayerNames.SetNum(LayerNameToLBStrategy.Num());
 	Layers.SetNum(LayerNameToLBStrategy.Num());
-	for (auto Entry : LayerNameToLBStrategy)
-	{
-		check(Entry.Value->IsStrategyWorkerAware());
-	}
+
 	for (auto Entry : LayerNameToLBStrategy)
 	{
 		FName LayerName = Entry.Key;
@@ -411,10 +413,27 @@ TUniquePtr<SpatialGDK::FLoadBalancingCalculator> ULayeredLBStrategy::CreateLoadB
 	return Calculator;
 }
 
+bool ULayeredLBStrategy::IsStrategyWorkerAware() const
+{
+	for (auto Entry : LayerNameToLBStrategy)
+	{
+		if (!Entry.Value->IsStrategyWorkerAware())
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 SpatialGDK::FLoadBalancingDecorator* ULayeredLBStrategy::GetLoadBalancingDecorator() const
 {
 	if (!Decorator.IsValid())
 	{
+		if (!IsStrategyWorkerAware())
+		{
+			return nullptr;
+		}
+
 		TClassMap<uint32> GroupMap;
 		for (auto Entry : ClassPathToLayerName)
 		{

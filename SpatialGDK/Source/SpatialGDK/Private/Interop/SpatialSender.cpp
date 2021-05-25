@@ -146,9 +146,12 @@ void USpatialSender::SendAuthorityIntentUpdate(const AActor& InActor, VirtualWor
 
 	Connection->SendComponentUpdate(EntityId, &Update, SpanId);
 
-	// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
-	// This should always happen with USLB.
-	NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+	if (NetDriver->LoadBalanceEnforcer)
+	{
+		// Notify the enforcer directly on the worker that sends the component update, as the update will short circuit.
+		// This should always happen with USLB.
+		NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+	}
 
 	if (NetDriver->SpatialDebuggerSystem.IsValid())
 	{

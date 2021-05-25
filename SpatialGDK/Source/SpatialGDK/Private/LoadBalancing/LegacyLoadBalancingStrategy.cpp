@@ -16,19 +16,27 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 {
 	ExpectedWorkers = LegacyLBStrat.GetMinimumRequiredWorkers();
 	VirtualWorkerIdToHandle.SetNum(ExpectedWorkers);
-	PositionStorage = MakeUnique<SpatialGDK::FSpatialPositionStorage>();
-	GroupStorage = MakeUnique<SpatialGDK::FActorGroupStorage>();
 
-	FLegacyLBContext LBContext;
-	Calculator = LegacyLBStrat.CreateLoadBalancingCalculator(LBContext);
-
-	if (LBContext.Layers != nullptr)
+	if (!LegacyLBStrat.IsStrategyWorkerAware())
 	{
-		LBContext.Layers->SetGroupData(*GroupStorage);
+		AssignmentStorage = MakeUnique<FDirectAssignmentStorage>();
 	}
-	for (auto* Grid : LBContext.Grid)
+	else
 	{
-		Grid->SetPositionData(*PositionStorage);
+		PositionStorage = MakeUnique<SpatialGDK::FSpatialPositionStorage>();
+		GroupStorage = MakeUnique<SpatialGDK::FActorGroupStorage>();
+
+		FLegacyLBContext LBContext;
+		Calculator = LegacyLBStrat.CreateLoadBalancingCalculator(LBContext);
+
+		if (LBContext.Layers != nullptr)
+		{
+			LBContext.Layers->SetGroupData(*GroupStorage);
+		}
+		for (auto* Grid : LBContext.Grid)
+		{
+			Grid->SetPositionData(*PositionStorage);
+		}
 	}
 }
 
@@ -106,8 +114,18 @@ void FLegacyLoadBalancing::Flush(SpatialOSWorkerInterface* Connection)
 
 void FLegacyLoadBalancing::Init(TArray<FLBDataStorage*>& OutLoadBalancingData)
 {
-	OutLoadBalancingData.Add(PositionStorage.Get());
-	OutLoadBalancingData.Add(GroupStorage.Get());
+	if (PositionStorage)
+	{
+		OutLoadBalancingData.Add(PositionStorage.Get());
+	}
+	if (GroupStorage)
+	{
+		OutLoadBalancingData.Add(GroupStorage.Get());
+	}
+	if (AssignmentStorage)
+	{
+		OutLoadBalancingData.Add(AssignmentStorage.Get());
+	}
 }
 
 void FLegacyLoadBalancing::OnWorkersConnected(TArrayView<FLBWorkerHandle> InConnectedWorkers)
@@ -143,7 +161,17 @@ void FLegacyLoadBalancing::TickPartitions(FPartitionManager& PartitionMgr)
 			VirtualWorkerIdToHandle[i - 1] = WorkersMap.FindChecked(ServerWorkerEntityId);
 		}
 
-		Calculator->CollectPartitionsToAdd(PartitionMgr, Partitions);
+		if (Calculator != nullptr)
+		{
+			Calculator->CollectPartitionsToAdd(PartitionMgr, Partitions);
+		}
+		else
+		{
+			for (VirtualWorkerId i = 1; i <= ExpectedWorkers; ++i)
+			{
+				Partitions.Add(PartitionMgr.CreatePartition(nullptr, QueryConstraint()));
+			}
+		}
 
 		for (uint32 i = 0; i < ExpectedWorkers; ++i)
 		{
@@ -157,7 +185,27 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 {
 	if (bCreatedPartitions)
 	{
-		Calculator->CollectEntitiesToMigrate(Ctx);
+		if (Calculator)
+		{
+			Calculator->CollectEntitiesToMigrate(Ctx);
+		}
+		else
+		{
+			const TMap<Worker_EntityId, AuthorityIntent>& AssignmentMap = AssignmentStorage->GetAssignments();
+			for (Worker_EntityId ToMigrate : Ctx.ModifiedEntities)
+			{
+				if (!ensureAlways(!Ctx.MigratingEntities.Contains(ToMigrate)))
+				{
+					continue;
+				}
+				const AuthorityIntent& Intent = AssignmentMap.FindChecked(ToMigrate);
+				if (!ensureAlways(Intent.VirtualWorkerId > 0 && Intent.VirtualWorkerId <= (uint32)Partitions.Num()))
+				{
+					continue;
+				}
+				Ctx.EntitiesToMigrate.Add(ToMigrate, Partitions[Intent.VirtualWorkerId - 1]);
+			}
+		}
 	}
 }
 } // namespace SpatialGDK

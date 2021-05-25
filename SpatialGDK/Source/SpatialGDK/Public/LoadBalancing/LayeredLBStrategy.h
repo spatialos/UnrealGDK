@@ -76,13 +76,13 @@ public:
 
 	FName GetLocalLayerName() const;
 
-	virtual bool IsStrategyWorkerAware() const { return true; }
+	virtual bool IsStrategyWorkerAware() const override;
 	virtual TUniquePtr<SpatialGDK::FLoadBalancingCalculator> CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const override;
 	virtual SpatialGDK::FLoadBalancingDecorator* GetLoadBalancingDecorator() const override;
 
 private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
-	mutable TUniquePtr<SpatialGDK::FLayerLoadBalancingDecorator> Decorator;
+	mutable TUniquePtr<SpatialGDK::FLoadBalancingDecorator> Decorator;
 	mutable TMap<TSoftClassPtr<AActor>, FName> ClassPathToLayerName;
 
 	struct FLayerData

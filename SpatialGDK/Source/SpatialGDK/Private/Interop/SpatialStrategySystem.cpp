@@ -178,6 +178,20 @@ void SpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
 
 	Strategy->CollectEntitiesToMigrate(Ctx);
 
+	for (auto& Storage : DataStorages)
+	{
+		Storage->ClearModified();
+	}
+
+	for (auto PendingMigration : PendingMigrations)
+	{
+		if (!Ctx.EntitiesToMigrate.Contains(PendingMigration.Key))
+		{
+			Ctx.EntitiesToMigrate.Add(PendingMigration);
+		}
+	}
+	PendingMigrations.Empty();
+
 	for (auto const& Migration : Ctx.EntitiesToMigrate)
 	{
 		Worker_EntityId EntityId = Migration.Key;
@@ -192,8 +206,7 @@ void SpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
 		AuthorityIntentV2& AuthIntent = AuthorityIntentView.FindChecked(EntityId);
 		if (!DestPartition)
 		{
-			// Have to remember the migration request !!
-			// Or stop doing that altogether
+			PendingMigrations.Add(EntityId, Partition);
 			continue;
 		}
 		AuthIntent.PartitionId = DestPartition.GetValue();
@@ -248,18 +261,16 @@ void SpatialStrategySystem::UpdateStrategySystemInterest(SpatialOSWorkerInterfac
 
 	Interest ServerInterest;
 	Query ServerQuery = {};
-	ServerQuery.ResultComponentIds = {
-		SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID, SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
-		/*SpatialConstants::ACTOR_GROUP_MEMBER_COMPONENT_ID,*/ SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID,
-		SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID
-	};
+	ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
+									   SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
+									   SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID,
+									   SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID };
 
 	for (auto& Component : UpdatesToConsider)
 	{
 		ServerQuery.ResultComponentIds.Add(Component);
 	}
 
-	// ServerQuery.ResultComponentSetIds = { SpatialConstants::SPATIALOS_WELLKNOWN_COMPONENTSET_ID };
 	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID;
 	ServerInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
 	ServerInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(ServerQuery);

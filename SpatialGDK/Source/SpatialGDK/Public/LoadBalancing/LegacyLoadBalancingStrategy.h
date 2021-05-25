@@ -11,6 +11,7 @@ namespace SpatialGDK
 {
 class FSpatialPositionStorage;
 class FActorGroupStorage;
+class FDirectAssignmentStorage;
 class FLoadBalancingCalculator;
 
 class FLegacyLoadBalancing : public FLoadBalancingStrategy
@@ -34,6 +35,7 @@ protected:
 
 	TUniquePtr<FSpatialPositionStorage> PositionStorage;
 	TUniquePtr<FActorGroupStorage> GroupStorage;
+	TUniquePtr<FDirectAssignmentStorage> AssignmentStorage;
 	TUniquePtr<FLoadBalancingCalculator> Calculator;
 	TArray<FPartitionHandle> Partitions;
 	TArray<FLBWorkerHandle> VirtualWorkerIdToHandle;

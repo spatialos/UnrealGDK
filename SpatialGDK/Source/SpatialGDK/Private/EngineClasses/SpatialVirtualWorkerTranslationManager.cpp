@@ -222,8 +222,14 @@ void SpatialVirtualWorkerTranslationManager::SendVirtualWorkerMappingUpdate() co
 
 void SpatialVirtualWorkerTranslationManager::SpawnPartitionEntity(Worker_EntityId PartitionEntityId, VirtualWorkerId VirtualWorkerId)
 {
-	SpatialGDK::UnrealServerInterestFactory* InterestF =
-		USpatialStatics::IsStrategyWorkerEnabled() ? nullptr : NetDriver->InterestFactory.Get();
+	const bool bRunStrategyWorker = USpatialStatics::IsStrategyWorkerEnabled();
+	const bool bDirectAssignment = bRunStrategyWorker && !Translator->LoadBalanceStrategy->IsStrategyWorkerAware();
+
+	SpatialGDK::UnrealServerInterestFactory* InterestF = nullptr;
+	if (!bRunStrategyWorker || bDirectAssignment)
+	{
+		InterestF = NetDriver->InterestFactory.Get();
+	}
 
 	SpatialGDK::QueryConstraint LBConstraint = Translator->LoadBalanceStrategy.Get()->GetWorkerInterestQueryConstraint(VirtualWorkerId);
 

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "LoadBalancing/LoadBalancingTypes.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/CrossServerEndpoint.h"
 #include "Schema/NetOwningClientWorker.h"
@@ -44,6 +45,7 @@ private:
 	TSet<Worker_EntityId> MigratingEntities;
 	TSet<Worker_EntityId> EntitiesACKMigration;
 	TSet<Worker_EntityId> EntitiesClientChanged;
+	TMap<Worker_EntityId, FPartitionHandle> PendingMigrations;
 	TArray<FLBDataStorage*> DataStorages;
 	TMap<Worker_EntityId, AuthorityIntentV2> AuthorityIntentView;
 	TMap<Worker_EntityId, AuthorityDelegation> AuthorityDelegationView;
