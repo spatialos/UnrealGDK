@@ -100,6 +100,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	Trace_EventTracer_Parameters Parameters = {};
 	Parameters.user_data = this;
 	Parameters.callback = &SpatialEventTracer::TraceCallback;
+	Parameters.enabled = true;
 
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
 
@@ -110,7 +111,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	FSpatialTraceEventDataBuilder::FStringCache AnsiStrings;
 
 	Parameters.span_sampling_parameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
-
+	
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing span sampling probabalistic. Probability: %f."),
 		   SamplingSettings->SamplingProbability);
 
