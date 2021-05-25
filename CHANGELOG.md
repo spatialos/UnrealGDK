@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a setting to control which CrossServer RPC implementation is used. Both feature mentioned below are only enabled when the RoutingWorker is the chosen implementation. Spatial commands are still the default for now.
 - Added reliable CrossServer RPC. Reliable CrossServer RPC now require a sender actor which will be the reference point for ordering in a multi-worker environment. An additional UFUNCTION Tag, Unordered, was added to opt-out of this requirement.
 - Added NetWriteFence UFUNCTION Tag. This tag is used when Network writes to an actor should be ordered with regard to updates to another actor. This is relevant in worker recovery/snapshot reloading to get some ordering guarantees when SpatialOS can write updates to entities in any order.
+- Visual Logger now supports multi-worker environments.
 
 ### Bug fixes:
 - Added a pop-up message when schema generation fails, which suggests running a Clean and Generate to fix a bad schema state.
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where migration diagnostic tool would crash if the target actor's owner couldn't be found.
 - Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
 - Fix RPC timeouts for parameters referencing assets that can be asynchronously loaded.
+- Fixed the test settings overrides config filename in `Spatial World Settings` so that the file path is relative to the game directory.
 - Fix editor encountering exceptions when shutting down during a PIE session.
 
 ### Internal:
