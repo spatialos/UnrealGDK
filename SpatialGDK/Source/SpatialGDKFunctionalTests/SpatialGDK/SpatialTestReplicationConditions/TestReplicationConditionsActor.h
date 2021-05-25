@@ -79,6 +79,9 @@ public:
 
 	UPROPERTY(Replicated)
 	int32 CondSkipReplay_Var;
+
+	UPROPERTY(Replicated)
+	int32 CondServerOnly_Var;
 };
 
 /**
@@ -126,6 +129,9 @@ public:
 
 	UPROPERTY(Replicated)
 	int32 CondSkipReplay_Var;
+
+	UPROPERTY(Replicated)
+	int32 CondServerOnly_Var;
 
 	UPROPERTY(Replicated)
 	UTestReplicationConditionsComponent_Common* StaticComponent;
