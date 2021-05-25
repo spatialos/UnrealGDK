@@ -75,6 +75,24 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Event Tracing")
 	TMap<FName, double> EventSamplingModeOverrides;
+
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	FString GDKEventPreFilter;
+
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	FString GDKEventPostFilter;
+
+	/* The runtime filter which is used for local/cloud editor workflows (generated configs). */
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	FString RuntimeEventPreFilter;
+
+	/* The runtime filter which is used for local/cloud editor workflows (generated configs). */
+	UPROPERTY(EditAnywhere, Category = "Event Tracing")
+	FString RuntimeEventPostFilter;
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
 };
 
 UCLASS(config = SpatialGDKSettings, defaultconfig)
@@ -447,10 +465,31 @@ public:
 
 	/*
 	 * -- EXPERIMENTAL --
-	 * The maximum size of the event tracing file, in bytes
+	 * The maximum size of a event log (non-rotating), synonymous with squid config behavior `event_tracing_single_log_max_file_size_bytes`
 	 */
 	UPROPERTY(Config)
-	uint64 MaxEventTracingFileSizeBytes;
+	int64 EventTracingSingleLogMaxFileSizeBytes;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * Whether to enable rotating logs, synonymous with squid config behavior `enable_event_tracing_rotating_logs`
+	 */
+	UPROPERTY(Config)
+	bool bEnableEventTracingRotatingLogs;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * Rotating log file size, synonymous with squid config behavior `event_tracing_rotating_logs_max_file_size_bytes`
+	 */
+	UPROPERTY(Config)
+	int64 EventTracingRotatingLogsMaxFileSizeBytes;
+
+	/*
+	 * -- EXPERIMENTAL --
+	 * The maximum number of rotating logs to produce, synonymous with squid config behavior `event_tracing_rotating_logs_max_file_count`
+	 */
+	UPROPERTY(Config)
+	int32 EventTracingRotatingLogsMaxFileCount;
 
 	UPROPERTY(Config)
 	bool bEnableAlwaysWriteRPCs;

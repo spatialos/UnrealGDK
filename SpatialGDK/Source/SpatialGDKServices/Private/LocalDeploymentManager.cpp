@@ -273,16 +273,26 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	// Use the runtime start timestamp as the log directory, e.g. `<Project>/spatial/localdeployment/<timestamp>/`
 	FString LocalDeploymentLogsDir = FPaths::Combine(SpatialGDKServicesConstants::LocalDeploymentLogsDir, RuntimeStartTime.ToString());
 
+	// Store these logs alongside the GDK ones for convenience
+	const TCHAR* RuntimeEventLogPaths = TEXT("EventTracing/runtime");
+	FString EventTracingPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectSavedDir(), RuntimeEventLogPaths));
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	const FString FileName = TEXT("gdk");
+	const FString FileExt = TEXT(".etlog");
+	if (!PlatformFile.CreateDirectoryTree(*EventTracingPath))
+	{
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Failed to create runtime event log path."));
+	}
+
 	// runtime.exe --config=squid_config.json --snapshot=snapshots/default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777
 	// --worker-external-host 127.0.0.1 --snapshots-directory=spatial/snapshots/<timestamp>
 	// --schema-bundle=spatial/build/assembly/schema/schema.sb
-	// --event-tracing-logs-directory=`<Project>/spatial/localdeployment/<timestamp>/`
-	FString RuntimeArgs =
-		FString::Printf(TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
-							 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
-						*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
-						*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *SnapshotPath, *SchemaBundle,
-						*LocalDeploymentLogsDir, *LaunchArgs);
+	// --event - tracing - logs - directory = `<Project > / spatial / localdeployment / <timestamp> / `
+	FString RuntimeArgs = FString::Printf(
+		TEXT("--config=\"%s\" --snapshot=\"%s\" --worker-port %s --http-port=%s --grpc-port=%s "
+			 "--snapshots-directory=\"%s\" --schema-bundle=\"%s\" --event-tracing-logs-directory=\"%s\" %s"),
+		*LaunchConfig, *SnapshotName, *FString::FromInt(WorkerPort), *FString::FromInt(HTTPPort),
+		*FString::FromInt(SpatialGDKServicesConstants::RuntimeGRPCPort), *SnapshotPath, *SchemaBundle, *EventTracingPath, *LaunchArgs);
 
 	if (!RuntimeIPToExpose.IsEmpty())
 	{

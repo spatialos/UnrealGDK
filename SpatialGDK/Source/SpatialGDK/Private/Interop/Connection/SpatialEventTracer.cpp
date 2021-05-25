@@ -2,8 +2,6 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 
-#include <string>
-
 #include "HAL/PlatformFile.h"
 #include "HAL/PlatformFilemanager.h"
 #include "SpatialGDKSettings.h"
@@ -12,6 +10,25 @@ DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
 namespace SpatialGDK
 {
+TraceQueryPtr ParseOrDefault(const FString& Str, const TCHAR* FilterForLog)
+{
+	TraceQueryPtr Ptr;
+	if (Str.Len() > 0)
+	{
+		Ptr.Reset(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str)));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Applied %s query: %s"), FilterForLog, *Str);
+	}
+
+	if (!Ptr.IsValid())
+	{
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified query \"%s\" is invalid; defaulting to \"false\" query. %s"),
+			   FilterForLog, Trace_GetLastError());
+		Ptr.Reset(Trace_ParseSimpleQuery("false"));
+	}
+
+	return Ptr;
+}
+
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
 	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
@@ -23,9 +40,15 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	}
 
 	uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
-	if (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize)
+	// Depends whether we are using rotating logs or single-log mode (where we track max size).
+	bool bTrackFileSize = EventTracer->MaxFileSize != 0;
+	if (!bTrackFileSize || (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize))
 	{
-		EventTracer->BytesWrittenToStream += ItemSize;
+		if (bTrackFileSize) // Tracked file size
+		{
+			EventTracer->BytesWrittenToStream += ItemSize;
+		}
+
 		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
 		if (Code != 1)
 		{
@@ -34,8 +57,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 
 		if (FPlatformAtomics::AtomicRead_Relaxed(&EventTracer->FlushOnWriteAtomic))
 		{
-			int64_t Flushresult = Io_Stream_Flush(Stream);
-			if (Flushresult == -1)
+			if (Io_Stream_Flush(Stream) == -1)
 			{
 				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %d (%s)"), Code,
 					   Io_Stream_GetLastError(Stream));
@@ -44,6 +66,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	}
 	else
 	{
+		// Went over max capacity so stop writing here.
 		EventTracer->BytesWrittenToStream = EventTracer->MaxFileSize;
 	}
 }
@@ -72,39 +95,48 @@ SpatialScopedActiveSpanId::~SpatialScopedActiveSpanId()
 SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	MaxFileSize = Settings->MaxEventTracingFileSizeBytes;
+	MaxFileSize = Settings->bEnableEventTracingRotatingLogs ? 0 : Settings->EventTracingSingleLogMaxFileSizeBytes; // 0 indicates unbounded.
 
-	Trace_EventTracer_Parameters parameters = {};
-	parameters.user_data = this;
-	parameters.callback = &SpatialEventTracer::TraceCallback;
-	EventTracer = Trace_EventTracer_Create(&parameters);
+	Trace_EventTracer_Parameters Parameters = {};
+	Parameters.user_data = this;
+	Parameters.callback = &SpatialEventTracer::TraceCallback;
 
-	Trace_SamplingParameters SamplingParameters = {};
-	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
+	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
 
 	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
 
-	UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing sampling probability. Probability: %f."),
+	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
+	// Storage for strings passed to the worker SDK Worker requires ansi const char*
+	FSpatialTraceEventDataBuilder::FStringCache AnsiStrings;
+
+	Parameters.span_sampling_parameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
+
+	UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing span sampling probabalistic. Probability: %f."),
 		   SamplingSettings->SamplingProbability);
 
-	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
-	TArray<std::string> AnsiStrings; // Worker requires ansi const char*
 	for (const auto& Pair : SamplingSettings->EventSamplingModeOverrides)
 	{
 		const FString& EventName = Pair.Key.ToString();
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Adding trace event sampling override. Event: %s Probability: %f."), *EventName,
 			   Pair.Value);
-		int32 Index = AnsiStrings.Add(TCHAR_TO_ANSI(*EventName));
-		SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
+		SpanSamplingProbabilities.Add({ AnsiStrings.Get(AnsiStrings.AddFString(EventName)), Pair.Value });
 	}
 
-	SamplingParameters.probabilistic_parameters.default_probability = SamplingSettings->SamplingProbability;
-	SamplingParameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
-	SamplingParameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
+	Parameters.span_sampling_parameters.probabilistic_parameters.default_probability = SamplingSettings->SamplingProbability;
+	Parameters.span_sampling_parameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
+	Parameters.span_sampling_parameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
 
-	Trace_EventTracer_SetSampler(EventTracer, &SamplingParameters);
+	// Filters
+	TraceQueryPtr PreFilter = ParseOrDefault(SamplingSettings->GDKEventPreFilter, TEXT("pre-filter"));
+	TraceQueryPtr PostFilter = ParseOrDefault(SamplingSettings->GDKEventPostFilter, TEXT("post-filter"));
 
-	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
+	checkf(PreFilter.Get() != nullptr, TEXT("Pre-filter is invalid."));
+	checkf(PostFilter.Get() != nullptr, TEXT("Post-filter is invalid."));
+
+	Parameters.filter_parameters.event_pre_filter_parameters.simple_query = PreFilter.Get();
+	Parameters.filter_parameters.event_post_filter_parameters.simple_query = PostFilter.Get();
+
+	EventTracer = Trace_EventTracer_Create(&Parameters);
 
 	// Open a local file
 	FString EventTracePath = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing"));
@@ -114,15 +146,37 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		EventTracePath = FPaths::GetPath(AbsLogPath);
 	}
 
-	FolderPath = EventTracePath;
-	const FString FullFileName = FString::Printf(TEXT("EventTrace_%s_%s.trace"), *WorkerId, *FDateTime::Now().ToString());
-	const FString FilePath = FPaths::Combine(FolderPath, FullFileName);
-
+	FolderPath = FPaths::Combine(EventTracePath, WorkerId);
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	const FString FileName = TEXT("gdk");
+	const FString FileExt = TEXT(".etlog");
 	if (PlatformFile.CreateDirectoryTree(*FolderPath))
 	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace to %s."), *FilePath);
-		Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace file%s to %s."),
+			   (Settings->bEnableEventTracingRotatingLogs) ? TEXT("s") : TEXT(""), *FolderPath);
+
+		if (Settings->bEnableEventTracingRotatingLogs)
+		{
+			FString FullFilePathPrefix = FString::Printf(TEXT("%s-"), *FPaths::Combine(FolderPath, FileName));
+			const FString FullFilePathSuffix = FileExt;
+
+			Io_RotatingFileStreamParameters FileParamters;
+			FileParamters.filename_prefix = TCHAR_TO_ANSI(*FullFilePathPrefix);
+			FileParamters.filename_suffix = TCHAR_TO_ANSI(*FullFilePathSuffix);
+			FileParamters.max_file_size_bytes = Settings->EventTracingRotatingLogsMaxFileSizeBytes;
+			FileParamters.max_file_count = Settings->EventTracingRotatingLogsMaxFileCount;
+			Stream.Reset(Io_CreateRotatingFileStream(&FileParamters));
+		}
+		else
+		{
+			const FString FullFilename = FString::Printf(TEXT("%s%s"), *FileName, *FileExt);
+			const FString FullFilePath = FPaths::Combine(FolderPath, FullFilename);
+			Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FullFilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialEventTracer, Error, TEXT("Error creating directory tree to %s"), *FolderPath);
 	}
 }
 
@@ -150,11 +204,6 @@ FSpatialGDKSpanId SpatialEventTracer::UserSpanIdToGDKSpanId(const FUserSpanId& U
 	FSpatialGDKSpanId TraceSpanId;
 	FMemory::Memcpy(TraceSpanId.GetId(), UserSpanId.Data.GetData(), TRACE_SPAN_ID_SIZE_BYTES);
 	return TraceSpanId;
-}
-
-void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) const
-{
-	Io_Stream_Destroy(StreamToDestroy);
 }
 
 void SpatialEventTracer::BeginOpsForFrame()

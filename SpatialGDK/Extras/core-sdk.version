@@ -1,2 +1,2 @@
-15.0.1
+15.1.0-b9612-7b155f6-WORKER-SNAPSHOT
 // If changing version, update SpatialGDK/Source/SpatialGDK/Public/Utils/WorkerVersionCheck.h too

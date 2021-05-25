@@ -11,11 +11,32 @@
 #include <WorkerSDK/improbable/c_io.h>
 #include <WorkerSDK/improbable/c_trace.h>
 
+#include "SpatialEventTracer.generated.h"
+
 // Documentation for event tracing in the GDK can be found here: https://brevi.link/gdk-event-tracing-documentation
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
+UENUM()
+enum class EEventTraceFileOutputType : uint8
+{
+	Single,
+	Rotating
+};
+
 namespace SpatialGDK
 {
+struct TraceQueryDeleter
+{
+	void operator()(Trace_Query* Query) const
+	{
+		if (Query != nullptr)
+		{
+			Trace_Query_Destroy(Query);
+		}
+	}
+};
+typedef TUniquePtr<Trace_Query, TraceQueryDeleter> TraceQueryPtr;
+
 // SpatialEventTracer wraps Trace_EventTracer related functionality
 class SPATIALGDK_API SpatialEventTracer
 {
@@ -60,7 +81,13 @@ public:
 private:
 	struct StreamDeleter
 	{
-		void operator()(Io_Stream* StreamToDestroy) const;
+		void operator()(Io_Stream* StreamToDestroy) const
+		{
+			if (StreamToDestroy)
+			{
+				Io_Stream_Destroy(StreamToDestroy);
+			}
+		}
 	};
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
@@ -114,8 +141,7 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const ch
 	// This would allow for sampling dependent on trace event data.
 	Trace_Event Event = { nullptr, 0, Message, EventType, nullptr };
 
-	Trace_SamplingResult SpanSamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event);
-	if (SpanSamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
+	if (!Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event))
 	{
 		return {};
 	}
@@ -124,36 +150,20 @@ FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const ch
 	Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, &Event, TraceSpanId.GetId());
 	Event.span_id = TraceSpanId.GetConstId();
 
-	Trace_SamplingResult EventSamplingResult = Trace_EventTracer_ShouldSampleEvent(EventTracer, &Event);
-	switch (EventSamplingResult.decision)
-	{
-	case Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE:
+	if (!Trace_EventTracer_PreFilterAcceptsEvent(EventTracer, &Event))
 	{
 		return TraceSpanId;
 	}
-	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE_WITHOUT_DATA:
-	{
-		Trace_EventTracer_AddEvent(EventTracer, &Event);
-		return TraceSpanId;
-	}
-	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE:
-	{
-		FSpatialTraceEventDataBuilder EventDataBuilder;
 
-		DataCallback(EventDataBuilder);
+	FSpatialTraceEventDataBuilder EventDataBuilder;
+	DataCallback(EventDataBuilder);
 
-		// Frame counter
-		EventDataBuilder.AddKeyValue("FrameNum", GFrameCounter);
+	// Frame counter
+	EventDataBuilder.AddKeyValue("frame_num", GFrameCounter);
 
-		Event.data = EventDataBuilder.GetEventData();
-		Trace_EventTracer_AddEvent(EventTracer, &Event);
-		return TraceSpanId;
-	}
-	default:
-	{
-		return {};
-	}
-	}
+	Event.data = EventDataBuilder.GetEventData();
+	Trace_EventTracer_AddEvent(EventTracer, &Event);
+	return TraceSpanId;
 }
 
 } // namespace SpatialGDK

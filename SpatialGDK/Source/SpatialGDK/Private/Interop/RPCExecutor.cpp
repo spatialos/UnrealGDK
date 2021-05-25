@@ -126,9 +126,9 @@ TOptional<FCrossServerRPCParams> RPCExecutor::TryRetrieveCrossServerRPCParams(co
 										 [TargetActor, TargetObject, Function, TraceId, Op](FSpatialTraceEventDataBuilder& EventBuilder) {
 											 EventBuilder.AddCommand("RPC_COMMAND_REQUEST");
 											 EventBuilder.AddObject(TargetActor);
-											 EventBuilder.AddObject(TargetActor != TargetObject ? TargetObject : nullptr, "TargetObject");
+											 EventBuilder.AddObject(TargetActor != TargetObject ? TargetObject : nullptr, "target_object");
 											 EventBuilder.AddFunction(Function);
-											 EventBuilder.AddKeyValue("TraceId", TraceId);
+											 EventBuilder.AddKeyValue("trace_id", TraceId);
 											 EventBuilder.AddRequestId(Op.op.command_request.request_id);
 										 });
 	}
