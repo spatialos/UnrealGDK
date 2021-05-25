@@ -61,17 +61,14 @@ ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 
 	TimeLimit = 100.0f;
 	InitialNumComponents = 1;
-
 }
 
 void ADynamicSubobjectsTest::PrepareTest()
 {
 	Super::PrepareTest();
 
-
 	const int DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
 	StepTimer = 0.0f;
-
 
 	// Step 0 - The server spawn a TestMovementCharacter and makes Client 1 possess it.
 	AddStep(TEXT("DynamicSubobjectsTestSetup"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -114,13 +111,15 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 	// Step 3 - The client checks it has the right initial amount of components
 	AddStep(TEXT("DynamicSubobjectsTestClientCheckNumComponents"), FWorkerDefinition::Client(1), nullptr, [this]() {
-		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents, TEXT("ADynamicSubObjectTestActor should have the initial number of components"));
+		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents,
+						TEXT("ADynamicSubObjectTestActor should have the initial number of components"));
 		FinishStep();
 	});
 
 	// Step 4 - The server adds the new dynamic component
 	AddStep(TEXT("DynamicSubobjectsTestServerAddComponent"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents, TEXT("ADynamicSubObjectTestActor should have the initial number of components"));
+		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents,
+						TEXT("ADynamicSubObjectTestActor should have the initial number of components"));
 
 		// add new dynamic component to test actor
 		USceneComponent* AddedComponent = NewObject<USceneComponent>(TestActor, TEXT("ToRemoveComponent"));
@@ -128,7 +127,8 @@ void ADynamicSubobjectsTest::PrepareTest()
 		AddedComponent->RegisterComponent();
 		AddedComponent->SetIsReplicated(true);
 
-		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents+1, TEXT("Now ADynamicSubObjectTestActor should have 1 more component"));
+		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents + 1,
+						TEXT("Now ADynamicSubObjectTestActor should have 1 more component"));
 		FinishStep();
 	});
 
@@ -136,7 +136,8 @@ void ADynamicSubobjectsTest::PrepareTest()
 	AddStep(
 		TEXT("DynamicSubobjectsTestClientSeeNewComponent"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float DeltaTime) {
-			RequireEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents+1, TEXT("Now ADynamicSubObjectTestActor should have 1 more component"));
+			RequireEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents + 1,
+							 TEXT("Now ADynamicSubObjectTestActor should have 1 more component"));
 			FinishStep();
 		},
 		StepTimeLimit);
@@ -193,8 +194,8 @@ void ADynamicSubobjectsTest::PrepareTest()
 			FinishStep();
 		});
 
-		// Step 9 - Client 1 checks it can no longer see the ADynamicSubObjectTestActor by waiting for 0.5s and checking TestIntProperty hasn't
-		// updated
+		// Step 9 - Client 1 checks it can no longer see the ADynamicSubObjectTestActor by waiting for 0.5s and checking TestIntProperty
+		// hasn't updated
 		AddStep(
 			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr,
 			[this]() {
@@ -216,7 +217,8 @@ void ADynamicSubobjectsTest::PrepareTest()
 			AddStep(TEXT("DynamicSubobjectsTestServerDestroyActorComponent"), FWorkerDefinition::Server(1), nullptr, [this]() {
 				TArray<USceneComponent*> AllSceneComps;
 				TestActor->GetComponents<USceneComponent>(AllSceneComps);
-				AssertEqual_Int(AllSceneComps.Num(), InitialNumComponents+1, TEXT("ADynamicSubObjectTestActor should have 1 more than the initial number of components"));
+				AssertEqual_Int(AllSceneComps.Num(), InitialNumComponents + 1,
+								TEXT("ADynamicSubObjectTestActor should have 1 more than the initial number of components"));
 
 				// Delete the component with the right name
 				for (USceneComponent* SceneComponent : AllSceneComps)
@@ -227,7 +229,8 @@ void ADynamicSubobjectsTest::PrepareTest()
 					}
 				}
 
-				AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents, TEXT("ADynamicSubObjectTestActor should have the initial number of components again"));
+				AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents,
+								TEXT("ADynamicSubObjectTestActor should have the initial number of components again"));
 				FinishStep();
 			});
 		}
