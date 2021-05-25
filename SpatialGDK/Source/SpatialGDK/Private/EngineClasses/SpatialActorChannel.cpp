@@ -268,10 +268,14 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 			if (Actor->GetTearOff())
 			{
 				NetDriver->DelayedRetireEntity(EntityId, 1.0f, Actor->IsNetStartupActor());
-				// Since the entity deletion is delayed, this creates a situation,
-				// when the Actor is torn off, but still replicates.
-				// Disabling replication makes RPC calls impossible for this Actor.
-				Actor->SetReplicates(false);
+				if (ensureMsgf(Actor->HasAuthority(), TEXT("EntityId %lld Actor %s doesn't have authority, can't disable replication"),
+							   EntityId, *Actor->GetName()))
+				{
+					// Since the entity deletion is delayed, this creates a situation,
+					// when the Actor is torn off, but still replicates.
+					// Disabling replication makes RPC calls impossible for this Actor.
+					Actor->SetReplicates(false);
+				}
 			}
 			else
 			{
@@ -280,7 +284,12 @@ void USpatialActorChannel::RetireEntityIfAuthoritative()
 		}
 		else if (bCreatedEntity) // We have not gained authority yet
 		{
-			Actor->SetReplicates(false);
+			if (ensureMsgf(Actor->HasAuthority(), TEXT("EntityId %lld Actor %s doesn't have authority, can't disable replication"),
+						   EntityId, *Actor->GetName()))
+			{
+				Actor->SetReplicates(false);
+			}
+
 			NetDriver->ActorSystem->RetireWhenAuthoritative(
 				EntityId, NetDriver->ClassInfoManager->GetComponentIdForClass(*Actor->GetClass()), Actor->IsNetStartupActor(),
 				Actor->GetTearOff()); // Ensure we don't recreate the actor
@@ -1250,7 +1259,7 @@ void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId I
 	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->HasServerAuthority(InEntityId))
 	{
 		FWorkerComponentUpdate Update = SpatialGDK::Position::CreatePositionUpdate(SpatialGDK::Coordinates::FromFVector(NewPosition));
-		NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+		NetDriver->Connection->SendComponentUpdate(InEntityId, &Update);
 	}
 
 	for (const auto& Child : InActor->Children)

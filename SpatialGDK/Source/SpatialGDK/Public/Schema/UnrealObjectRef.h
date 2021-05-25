@@ -20,7 +20,7 @@ struct SPATIALGDK_API FUnrealObjectRef
 	{
 	}
 
-	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset, FString Path, FUnrealObjectRef Outer, bool bNoLoadOnClient = false)
+	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset, FString Path, FUnrealObjectRef Outer, bool bNoLoadOnClient)
 		: Entity(Entity)
 		, Offset(Offset)
 		, Path(Path)
@@ -31,7 +31,12 @@ struct SPATIALGDK_API FUnrealObjectRef
 
 	FUnrealObjectRef& operator=(const FUnrealObjectRef&) = default;
 
-	FORCEINLINE FString ToString() const { return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"), Entity, Offset); }
+	FORCEINLINE FString ToString() const 
+	{
+		return FString::Printf(TEXT("(entity ID: %lld, offset: %u, path: %s)"), 
+			Entity, Offset,
+			Path.IsSet() ? *Path.GetValue() : TEXT("not set")); 
+	}
 
 	FORCEINLINE FUnrealObjectRef GetLevelReference() const
 	{
@@ -78,7 +83,7 @@ struct SPATIALGDK_API FUnrealObjectRef
 	uint32 Offset;
 	SpatialGDK::TSchemaOption<FString> Path;
 	SpatialGDK::TSchemaOption<FUnrealObjectRef> Outer;
-	bool bNoLoadOnClient = false;
+	bool bNoLoadOnClient = true;
 	// If this field is set to true, we are saying that the Actor will exist at most once on the given worker.
 	// In addition, if we receive information for an Actor of this class over the network, then this data
 	// should be applied to the Actor we've already spawned (where another worker created the entity). This

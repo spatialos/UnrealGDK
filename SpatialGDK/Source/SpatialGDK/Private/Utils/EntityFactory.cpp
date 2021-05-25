@@ -370,9 +370,11 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	{
 		if (ComponentIds.Contains(ComponentData.component_id))
 		{
-			UE_LOG(LogEntityFactory, Error,
-				   TEXT("Constructed entity components for an Unreal actor channel contained a duplicate component. This is unexpected and "
-						"could cause problems later on."));
+			UE_LOG(
+				LogEntityFactory, Error,
+				TEXT("Constructed entity components for an Unreal actor channel contained a duplicate component %i. This is unexpected and "
+					 "could cause problems later on."),
+				ComponentData.component_id);
 		}
 		ComponentIds.Add(ComponentData.component_id);
 	}

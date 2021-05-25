@@ -52,7 +52,7 @@ inline Worker_PartitionId GetConnectionOwningPartitionId(const AActor* Actor)
 {
 	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
 	{
-		return NetConnection->PlayerControllerEntity;
+		return NetConnection->GetPlayerControllerEntityId();
 	}
 
 	return SpatialConstants::INVALID_ENTITY_ID;
