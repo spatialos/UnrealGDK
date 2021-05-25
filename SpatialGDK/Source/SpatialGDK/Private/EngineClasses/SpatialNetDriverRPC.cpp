@@ -246,22 +246,6 @@ void FSpatialNetDriverRPC::FlushRPCQueueForEntity(Worker_EntityId EntityId, Stan
 	Queue.Flush(EntityId, Ctx, MakeRPCSentCallback());
 }
 
-FSpatialGDKSpanId FSpatialNetDriverRPC::CreatePushRPCEvent(UObject* TargetObject, UFunction* Function)
-{
-	FSpatialGDKSpanId SpanId;
-
-	if (EventTracer != nullptr)
-	{
-		SpanId = EventTracer->TraceEvent(PUSH_RPC_EVENT_NAME, "", EventTracer->GetFromStack().GetConstId(), /* NumCauses */ 1,
-										 [TargetObject, Function](FSpatialTraceEventDataBuilder& EventBuilder) {
-											 EventBuilder.AddObject(TargetObject);
-											 EventBuilder.AddFunction(Function);
-										 });
-	}
-
-	return SpanId;
-}
-
 bool FSpatialNetDriverRPC::CanExtractRPC(Worker_EntityId EntityId) const
 {
 	const TWeakObjectPtr<UObject> ActorReceivingRPC = NetDriver.PackageMap->GetObjectFromEntityId(EntityId);
