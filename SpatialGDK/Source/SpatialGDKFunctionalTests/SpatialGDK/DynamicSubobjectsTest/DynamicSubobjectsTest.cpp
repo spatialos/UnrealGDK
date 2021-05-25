@@ -10,7 +10,6 @@
 #include "Kismet/GameplayStatics.h"
 
 #include "Components/SceneComponent.h"
-#include "Components/StaticMeshComponent.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 

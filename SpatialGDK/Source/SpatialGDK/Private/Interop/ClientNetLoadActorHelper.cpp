@@ -63,7 +63,7 @@ void FClientNetLoadActorHelper::EntityRemoved(const Worker_EntityId EntityId, co
 
 FNetworkGUID* FClientNetLoadActorHelper::GetSavedDynamicSubObjectNetGUID(const FUnrealObjectRef& ObjectRef)
 {
-	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = EntityRemovedDynamicSubObjects.Find(ObjectRef.Entity))
+	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = DynamicSubObjectRefToGuid.Find(ObjectRef.Entity))
 	{
 		if (FNetworkGUID* NetGUID = EntityMappings->Find(ObjectRef))
 		{
@@ -75,13 +75,13 @@ FNetworkGUID* FClientNetLoadActorHelper::GetSavedDynamicSubObjectNetGUID(const F
 
 void FClientNetLoadActorHelper::SaveDynamicSubObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID)
 {
-	TMap<FUnrealObjectRef, FNetworkGUID>& EntityMappings = EntityRemovedDynamicSubObjects.FindOrAdd(ObjectRef.Entity);
+	TMap<FUnrealObjectRef, FNetworkGUID>& EntityMappings = DynamicSubObjectRefToGuid.FindOrAdd(ObjectRef.Entity);
 	EntityMappings.Emplace(ObjectRef, NetGUID);
 }
 
-void FClientNetLoadActorHelper::ClearDynamicSubObjectRefs(const Worker_EntityId& InEntityId)
+void FClientNetLoadActorHelper::ClearDynamicSubObjectRefs(const Worker_EntityId InEntityId)
 {
-	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = EntityRemovedDynamicSubObjects.Find(InEntityId))
+	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = DynamicSubObjectRefToGuid.Find(InEntityId))
 	{
 		for (auto DynamicSubObjectIterator = EntityMappings->CreateIterator(); DynamicSubObjectIterator; ++DynamicSubObjectIterator)
 		{
@@ -90,9 +90,9 @@ void FClientNetLoadActorHelper::ClearDynamicSubObjectRefs(const Worker_EntityId&
 	}
 }
 
-void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId& EntityId, const TArray<ComponentData>& NewComponents)
+void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents)
 {
-	auto ContainedInComponentsArr = [this, &NewComponents, &EntityId](const FUnrealObjectRef& CheckComponentObjRef) {
+	auto ContainedInComponentsArr = [this, EntityId, &NewComponents](const FUnrealObjectRef& CheckComponentObjRef) {
 		for (const ComponentData& Component : NewComponents)
 		{
 			// Skip if this isn't a generated component
@@ -113,7 +113,7 @@ void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_Enti
 		return false;
 	};
 
-	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = EntityRemovedDynamicSubObjects.Find(EntityId))
+	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = DynamicSubObjectRefToGuid.Find(EntityId))
 	{
 		// Go over each stored sub-object and determine whether it is contained within the new components array
 		// If it is not contained within the new components array, it means the sub-object was removed while out of the client's interest

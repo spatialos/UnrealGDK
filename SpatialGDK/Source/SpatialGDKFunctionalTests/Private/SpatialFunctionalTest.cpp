@@ -795,31 +795,29 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 APlayerController* ASpatialFunctionalTest::GetFlowPlayerController()
 {
 	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
-	if (!ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server.")))
+	if (ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server.")))
 	{
-		return nullptr;
+		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
+		if (IsValid(PlayerController))
+		{
+			return PlayerController;
+		}
 	}
-	APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-	if (!IsValid(PlayerController))
-	{
-		return nullptr;
-	}
-	return PlayerController;
+	return nullptr;
 }
 
 APawn* ASpatialFunctionalTest::GetFlowPawn()
 {
 	APlayerController* PlayerController = GetFlowPlayerController();
-	if (!IsValid(PlayerController))
+	if (IsValid(PlayerController))
 	{
-		return nullptr;
+		APawn* PlayerCharacter = PlayerController->GetPawn();
+		if (IsValid(PlayerCharacter))
+		{
+			return PlayerCharacter;
+		}
 	}
-	APawn* PlayerCharacter = PlayerController->GetPawn();
-	if (!IsValid(PlayerCharacter))
-	{
-		return nullptr;
-	}
-	return PlayerCharacter;
+	return nullptr;
 }
 
 namespace

@@ -17,18 +17,21 @@ public:
 	FClientNetLoadActorHelper(USpatialNetDriver& InNetDriver);
 	void EntityRemoved(const Worker_EntityId EntityId, const AActor* Actor);
 	UObject* GetReusableDynamicSubObject(const FUnrealObjectRef ObjectRef);
-	void RemoveRuntimeRemovedComponents(const Worker_EntityId& EntityId, const TArray<ComponentData>& NewComponents);
+
+	// The runtime can remove components from a ClientNetLoad Actor while the actor is out of the client's interest
+	// The client doesn't receive these updates when they happen, so the difference must be reconciled
+	void RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents);
 
 private:
 	USpatialNetDriver* NetDriver;
 
 	// Stores subobjects from client net load actors that have gone out of the client's interest
-	TMap<Worker_EntityId_Key, TMap<FUnrealObjectRef, FNetworkGUID>> EntityRemovedDynamicSubObjects;
+	TMap<Worker_EntityId_Key, TMap<FUnrealObjectRef, FNetworkGUID>> DynamicSubObjectRefToGuid;
 
 	// BNetLoadOnClient component edge case handling
 	FNetworkGUID* GetSavedDynamicSubObjectNetGUID(const FUnrealObjectRef& ObjectRef);
 	void SaveDynamicSubObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID);
-	void ClearDynamicSubObjectRefs(const Worker_EntityId& InEntityId);
+	void ClearDynamicSubObjectRefs(const Worker_EntityId InEntityId);
 };
 
 } // namespace SpatialGDK
