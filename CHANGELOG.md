@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a setting to control which CrossServer RPC implementation is used. Both feature mentioned below are only enabled when the RoutingWorker is the chosen implementation. Spatial commands are still the default for now.
 - Added reliable CrossServer RPC. Reliable CrossServer RPC now require a sender actor which will be the reference point for ordering in a multi-worker environment. An additional UFUNCTION Tag, Unordered, was added to opt-out of this requirement.
 - Added NetWriteFence UFUNCTION Tag. This tag is used when Network writes to an actor should be ordered with regard to updates to another actor. This is relevant in worker recovery/snapshot reloading to get some ordering guarantees when SpatialOS can write updates to entities in any order.
+- Visual Logger now supports multi-worker environments.
 
 ### Bug fixes:
 - Added a pop-up message when schema generation fails, which suggests running a Clean and Generate to fix a bad schema state.
