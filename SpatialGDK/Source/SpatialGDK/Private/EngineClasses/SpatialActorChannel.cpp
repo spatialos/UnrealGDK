@@ -696,7 +696,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
 			SetNeedOwnerInterestUpdate(false);
 		}
-		else if (ShouldUpdateClientEntityIdListQuery(Actor))
+		else if (ShouldUpdateClientEntityIdListQuery())
 		{
 			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
 			TimeWhenClientEntityIdListLastUpdated = NetDriver->GetElapsedTime();
