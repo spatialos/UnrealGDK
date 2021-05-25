@@ -10,9 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`x.y.z`] - Unreleased
 
 ## [`0.13.1`] - 2021-05-21
+### Features:
 - Added `SpatialExecServerCmd` console command with one command `StartInsights` to dynamically enable insights capturing.
   - Format: SpatialExecServerCmd < server > < command > < args >
   - Example usage: "SpatialExecServerCmd local StartInsights -trace=CustomChannel -tracefile=MyNewTrace"
+- Visual Logger now supports multi-worker environments.
 
 ## [`0.13.0`] - 2021-05-17
 ### Breaking changes:
