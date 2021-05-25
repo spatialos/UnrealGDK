@@ -32,10 +32,10 @@ steps:
       message: "gdk-4.26 ${BUILDKITE_MESSAGE}"
       env: 
         BUILD_TYPE: "GDK"
-        GDK_BRANCH: "${BUILDKITE_BRANCH}"
-        ENGINE_BRANCH: "${ENGINE_BRANCH_426:-4.26-SpatialOSUnrealGDK-0.13.1-rc}" # NOTE: temp fix for new ci release interop issues
+        GDK_BRANCH: "main_branch::${BUILDKITE_BRANCH}"
+        ENGINE_BRANCH: "${ENGINE_BRANCH_426:-match_branch_name_pref_engine::4.26-SpatialOSUnrealGDK-0.13.1-rc}"
         ENGINE_MAJOR: "4.26"
-        PROJECT_BRANCH: "${PROJECT_BRANCH:-0.13.1-rc}" # NOTE: temp fix for new ci release interop issues
+        PROJECT_BRANCH: "${PROJECT_BRANCH:-match_branch_name_pref::0.13.1-rc}"
         USE_FASTBUILD: "True"
         IS_BUILDKITE_BUILD: "True"
         BUILD_ANDROID: "False"
@@ -51,10 +51,10 @@ steps:
       message: "gdk-4.25 ${BUILDKITE_MESSAGE}"
       env: 
         BUILD_TYPE: "GDK" # GDK or ENGINE
-        GDK_BRANCH: "${BUILDKITE_BRANCH}"
-        ENGINE_BRANCH: "${ENGINE_BRANCH_425:-4.25-SpatialOSUnrealGDK-0.13.1-rc}" # NOTE: temp fix for new ci release interop issues
+        GDK_BRANCH: "main_branch::${BUILDKITE_BRANCH}"
+        ENGINE_BRANCH: "${ENGINE_BRANCH_425:-match_branch_name_pref_engine::4.25-SpatialOSUnrealGDK-0.13.1-rc}"
         ENGINE_MAJOR: "4.25"
-        PROJECT_BRANCH: "${PROJECT_BRANCH:-0.13.1-rc}" # NOTE: temp fix for new ci release interop issues
+        PROJECT_BRANCH: "${PROJECT_BRANCH:-match_branch_name_pref::0.13.1-rc}"
         USE_FASTBUILD: "True"
         IS_BUILDKITE_BUILD: "True"
         BUILD_ANDROID: "False"
