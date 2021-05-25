@@ -111,7 +111,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	FSpatialTraceEventDataBuilder::FStringCache AnsiStrings;
 
 	Parameters.span_sampling_parameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
-	
+
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing span sampling probabalistic. Probability: %f."),
 		   SamplingSettings->SamplingProbability);
 
