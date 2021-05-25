@@ -27,9 +27,9 @@ public:
 
 	void Advance();
 
-	const TSet<Worker_EntityId>& GetActorsToHandover() { return ActorsToHandover; }
+	const TSet<Worker_EntityId_Key>& GetActorsToHandover() { return ActorsToHandover; }
 
-	void Flush(SpatialOSWorkerInterface* Connection, const TSet<Worker_EntityId>& ActorsReleased);
+	void Flush(SpatialOSWorkerInterface* Connection, const TSet<Worker_EntityId_Key>& ActorsReleased);
 
 private:
 	void PopulateDataStore(const Worker_EntityId EntityId);
@@ -45,10 +45,10 @@ private:
 	TMap<Worker_EntityId_Key, LBComponents2> DataStore;
 	TUniqueFunction<void(EntityComponentUpdate)> UpdateSender;
 
-	TSet<Worker_EntityId> PartitionsToACK;
-	TSet<Worker_EntityId> OwnedPartitions;
-	TSet<Worker_EntityId> ActorsToHandover;
-	TSet<Worker_EntityId> ActorsToACK;
+	TSet<Worker_EntityId_Key> PartitionsToACK;
+	TSet<Worker_EntityId_Key> OwnedPartitions;
+	TSet<Worker_EntityId_Key> ActorsToHandover;
+	TSet<Worker_EntityId_Key> ActorsToACK;
 };
 
 } // namespace SpatialGDK

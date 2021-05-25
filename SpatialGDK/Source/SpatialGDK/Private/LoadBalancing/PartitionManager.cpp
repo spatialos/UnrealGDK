@@ -334,8 +334,9 @@ struct FPartitionManager::Impl
 					TArray<FWorkerComponentData> Components = CreatePartitionEntityComponents(
 						TEXT("StrategyPartition"), PartitionState.Id, PartitionState.Id, PartitionState.LBConstraint);
 
+					Worker_EntityId PartitionEntity = PartitionState.Id;
 					const Worker_RequestId RequestId =
-						Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionState.Id, SpatialGDK::RETRY_UNTIL_COMPLETE);
+						Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionEntity, SpatialGDK::RETRY_UNTIL_COMPLETE);
 					PartitionState.CreationRequest = RequestId;
 					PartitionCreationRequests.Add(RequestId, PartitionEntry);
 				}
@@ -404,16 +405,16 @@ struct FPartitionManager::Impl
 	Worker_EntityId StrategyWorkerEntityId = 0;
 	TOptional<Worker_RequestId> StrategyWorkerRequest;
 
-	TMap<Worker_RequestId, FPartitionHandle> PartitionCreationRequests;
+	TMap<Worker_RequestId_Key, FPartitionHandle> PartitionCreationRequests;
 	TOptional<Worker_RequestId> PartitionReserveRequest = 0;
 
-	TMap<Worker_EntityId, FPartitionHandle> IdToPartitionsMap;
+	TMap<Worker_EntityId_Key, FPartitionHandle> IdToPartitionsMap;
 	TSet<FPartitionHandle> Partitions;
 
 	bool bStrategyPartitionsCreated = false;
 
-	TMap<Worker_EntityId, ServerWorker> WorkersData;
-	TMap<Worker_EntityId, Worker> SystemWorkersData;
+	TMap<Worker_EntityId_Key, ServerWorker> WorkersData;
+	TMap<Worker_EntityId_Key, Worker> SystemWorkersData;
 	int32 NumWorkerReady = 0;
 
 	Worker_EntityId FirstPartitionId = 0;

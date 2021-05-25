@@ -219,7 +219,7 @@ void SpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
 		MigratingEntities.Add(EntityId);
 	}
 
-	TSet<Worker_EntityId> EntitiesToUpdate = EntitiesClientChanged;
+	TSet<Worker_EntityId_Key> EntitiesToUpdate = EntitiesClientChanged;
 	EntitiesToUpdate.Append(EntitiesACKMigration);
 
 	for (auto EntityToMigrate : EntitiesACKMigration)

@@ -149,7 +149,7 @@ void FLegacyLoadBalancing::TickPartitions(FPartitionManager& PartitionMgr)
 	}
 	if (ConnectedWorkers.Num() == ExpectedWorkers && bTranslatorIsReady)
 	{
-		TMap<Worker_EntityId, FLBWorkerHandle> WorkersMap;
+		TMap<Worker_EntityId_Key, FLBWorkerHandle> WorkersMap;
 		for (auto Worker : ConnectedWorkers)
 		{
 			WorkersMap.Add(PartitionMgr.GetServerWorkerEntityIdForWorker(Worker), Worker);
@@ -191,7 +191,7 @@ void FLegacyLoadBalancing::CollectEntitiesToMigrate(FMigrationContext& Ctx)
 		}
 		else
 		{
-			const TMap<Worker_EntityId, AuthorityIntent>& AssignmentMap = AssignmentStorage->GetAssignments();
+			const TMap<Worker_EntityId_Key, AuthorityIntent>& AssignmentMap = AssignmentStorage->GetAssignments();
 			for (Worker_EntityId ToMigrate : Ctx.ModifiedEntities)
 			{
 				if (!ensureAlways(!Ctx.MigratingEntities.Contains(ToMigrate)))

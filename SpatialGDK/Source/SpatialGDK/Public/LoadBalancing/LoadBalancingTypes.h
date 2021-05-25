@@ -27,15 +27,15 @@ using FPartitionHandle = TSharedPtr<FPartitionDesc>;
 
 struct FMigrationContext
 {
-	FMigrationContext(const TSet<Worker_EntityId>& InMigratingEntities, const TSet<Worker_EntityId>& InModifiedEntities)
+	FMigrationContext(const TSet<Worker_EntityId_Key>& InMigratingEntities, const TSet<Worker_EntityId_Key>& InModifiedEntities)
 		: MigratingEntities(InMigratingEntities)
 		, ModifiedEntities(InModifiedEntities)
 	{
 	}
 
-	const TSet<Worker_EntityId>& MigratingEntities;
-	const TSet<Worker_EntityId>& ModifiedEntities;
-	TMap<Worker_EntityId, FPartitionHandle> EntitiesToMigrate;
+	const TSet<Worker_EntityId_Key>& MigratingEntities;
+	const TSet<Worker_EntityId_Key>& ModifiedEntities;
+	TMap<Worker_EntityId_Key, FPartitionHandle> EntitiesToMigrate;
 };
 
 } // namespace SpatialGDK

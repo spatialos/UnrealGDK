@@ -267,6 +267,8 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 	}
 }
 
+#endif // WITH_EDITOR
+
 bool UGridBasedLBStrategy::IsStrategyWorkerAware() const
 {
 	return false;
@@ -283,4 +285,3 @@ SpatialGDK::FLoadBalancingDecorator* UGridBasedLBStrategy::GetLoadBalancingDecor
 {
 	return nullptr;
 }
-#endif // WITH_EDITOR

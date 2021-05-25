@@ -42,14 +42,14 @@ private:
 	TUniquePtr<FPartitionManager> PartitionsMgr;
 
 	TSet<Worker_ComponentId> UpdatesToConsider;
-	TSet<Worker_EntityId> MigratingEntities;
-	TSet<Worker_EntityId> EntitiesACKMigration;
-	TSet<Worker_EntityId> EntitiesClientChanged;
-	TMap<Worker_EntityId, FPartitionHandle> PendingMigrations;
+	TSet<Worker_EntityId_Key> MigratingEntities;
+	TSet<Worker_EntityId_Key> EntitiesACKMigration;
+	TSet<Worker_EntityId_Key> EntitiesClientChanged;
+	TMap<Worker_EntityId_Key, FPartitionHandle> PendingMigrations;
 	TArray<FLBDataStorage*> DataStorages;
-	TMap<Worker_EntityId, AuthorityIntentV2> AuthorityIntentView;
-	TMap<Worker_EntityId, AuthorityDelegation> AuthorityDelegationView;
-	TMap<Worker_EntityId, NetOwningClientWorker> NetOwningClientView;
+	TMap<Worker_EntityId_Key, AuthorityIntentV2> AuthorityIntentView;
+	TMap<Worker_EntityId_Key, AuthorityDelegation> AuthorityDelegationView;
+	TMap<Worker_EntityId_Key, NetOwningClientWorker> NetOwningClientView;
 	TUniquePtr<FLoadBalancingStrategy> Strategy;
 
 	void UpdateStrategySystemInterest(SpatialOSWorkerInterface* Connection);

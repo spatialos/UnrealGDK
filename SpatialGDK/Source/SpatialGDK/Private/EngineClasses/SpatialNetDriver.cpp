@@ -2157,7 +2157,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	FSpatialLoadBalancingHandler MigrationHandler(this);
 	FSpatialNetDriverLoadBalancingContext LoadBalancingContext(this, ConsiderList);
 
-	TSet<Worker_EntityId> EntitiesHandedOver;
+	TSet<Worker_EntityId_Key> EntitiesHandedOver;
 	TSet<AActor*> ActorsHandedOver;
 
 	const bool bStrategyWorkerEnabled = USpatialStatics::IsStrategyWorkerEnabled();

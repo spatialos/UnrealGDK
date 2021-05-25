@@ -138,7 +138,7 @@ void SpatialHandoverManager::ApplyComponentRefresh(const Worker_EntityId EntityI
 	HandleChange(EntityId, Components);
 }
 
-void SpatialHandoverManager::Flush(SpatialOSWorkerInterface* Connection, TSet<Worker_EntityId> const& ActorsReleased)
+void SpatialHandoverManager::Flush(SpatialOSWorkerInterface* Connection, TSet<Worker_EntityId_Key> const& ActorsReleased)
 {
 	for (auto Partition : PartitionsToACK)
 	{
