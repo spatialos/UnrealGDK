@@ -277,8 +277,6 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	const TCHAR* RuntimeEventLogPaths = TEXT("EventTracing/runtime");
 	FString EventTracingPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectSavedDir(), RuntimeEventLogPaths));
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	const FString FileName = TEXT("gdk");
-	const FString FileExt = TEXT(".etlog");
 	if (!PlatformFile.CreateDirectoryTree(*EventTracingPath))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Failed to create runtime event log path."));

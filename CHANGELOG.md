@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features: 
 - The Unreal GDK has been updated to run against SpatialOS 15.1.0, older version of SpatialOS will no longer work with the Unreal GDK.
+- Event tracing rotating log support (via `bEnableEventTracingRotatingLogs`, `EventTracingRotatingLogsMaxFileSizeBytes` and `EventTracingRotatingLogsMaxFileCount`). 
+- Event tracing filter support (configured via `UEventTracingSamplingSettings`).
 
 ## [`0.13.0`] - 2021-05-17
 ### Breaking changes:
