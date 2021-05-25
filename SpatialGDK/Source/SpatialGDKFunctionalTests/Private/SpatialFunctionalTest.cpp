@@ -797,11 +797,7 @@ APlayerController* ASpatialFunctionalTest::GetFlowPlayerController()
 	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
 	if (ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server.")))
 	{
-		APlayerController* PlayerController = Cast<APlayerController>(FlowController->GetOwner());
-		if (IsValid(PlayerController))
-		{
-			return PlayerController;
-		}
+		return Cast<APlayerController>(FlowController->GetOwner());
 	}
 	return nullptr;
 }
