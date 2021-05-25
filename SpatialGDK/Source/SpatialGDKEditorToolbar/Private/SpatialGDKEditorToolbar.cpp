@@ -974,8 +974,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment(FString ForceSnaps
 		FLocalDeploymentManager::LocalDeploymentCallback CallBack = [this](bool bSuccess) {
 			if (bSuccess)
 			{
-				// Once we've launched the local deployment, attempt to start the inspector process
-				StartInspectorProcess(nullptr /*InOnReady*/);
+				StartInspectorProcess(/*OnReady*/ nullptr);
 			}
 			else
 			{

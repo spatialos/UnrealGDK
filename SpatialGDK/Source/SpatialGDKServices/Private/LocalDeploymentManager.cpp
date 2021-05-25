@@ -354,7 +354,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 
 	if (CallBack)
 	{
-		CallBack(/*bSuccess =*/true);
+		CallBack(/*bSuccess*/ true);
 	}
 
 	return ERuntimeStartResponse::Success;
