@@ -14,23 +14,37 @@ class ViewCoordinator;
 class FOwnershipCompletenessHandler
 {
 public:
-	static FOwnershipCompletenessHandler CreateServerOwnershipHandler() { return FOwnershipCompletenessHandler(/*bInIsServer =*/true); }
-	static FOwnershipCompletenessHandler CreateClientOwnershipHandler() { return FOwnershipCompletenessHandler(/*bInIsServer =*/false); }
+	enum class EOwnershipCompletenessStrategy
+	{
+		AlwaysHasOwnerComponents,
+		RequiresPlayerOwnership,
+	};
+
+	static FOwnershipCompletenessHandler CreateServerOwnershipHandler()
+	{
+		return FOwnershipCompletenessHandler(EOwnershipCompletenessStrategy::AlwaysHasOwnerComponents);
+	}
+	static FOwnershipCompletenessHandler CreateClientOwnershipHandler()
+	{
+		return FOwnershipCompletenessHandler(EOwnershipCompletenessStrategy::RequiresPlayerOwnership);
+	}
 
 	bool IsOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity) const;
 	void AddPlayerEntity(Worker_EntityId EntityId);
-	void RemovePlayerEntity(Worker_EntityId EntityId);
+	void TryRemovePlayerEntity(Worker_EntityId EntityId);
 	void AddSubView(FSubView& InSubView);
 
 	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator);
 
 private:
-	explicit FOwnershipCompletenessHandler(const bool bInIsServer)
-		: bIsServer(bInIsServer)
+	bool ShouldHaveOwnerOnlyComponents(Worker_EntityId EntityId, const EntityViewElement& Entity) const;
+
+	explicit FOwnershipCompletenessHandler(const EOwnershipCompletenessStrategy InStrategy)
+		: Strategy(InStrategy)
 	{
 	}
 
-	bool bIsServer;
+	EOwnershipCompletenessStrategy Strategy;
 	TSet<Worker_EntityId_Key> PlayerOwnedEntities;
 	TArray<FSubView*> SubViewsToRefresh;
 };
