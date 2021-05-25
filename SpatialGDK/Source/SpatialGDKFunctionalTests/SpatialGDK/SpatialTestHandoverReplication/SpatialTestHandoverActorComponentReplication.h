@@ -20,6 +20,33 @@ enum class EHandoverReplicationTestStage
 	Final,
 };
 
+USTRUCT()
+struct FHandoverReplicationTestStructInner
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	int FirstProperty;
+
+	UPROPERTY()
+	int SecondProperty;
+};
+
+USTRUCT()
+struct FHandoverReplicationTestStruct
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	int FirstProperty;
+
+	UPROPERTY()
+	int SecondProperty;
+
+	UPROPERTY()
+	FHandoverReplicationTestStructInner InnerStruct;
+};
+
 namespace HandoverReplicationTestValues
 {
 // This value has to be zero as handover shadow state is zero-initialized
@@ -47,6 +74,9 @@ public:
 	UPROPERTY(Handover)
 	int HandoverTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
 
+	UPROPERTY(Handover)
+	FHandoverReplicationTestStruct HandoverTestStruct;
+
 	UPROPERTY(Replicated)
 	int ReplicatedTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
 };
@@ -71,6 +101,9 @@ public:
 
 	UPROPERTY(Handover)
 	int HandoverTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;
+
+	UPROPERTY(Handover)
+	FHandoverReplicationTestStruct HandoverTestStruct;
 
 	UPROPERTY(Replicated)
 	int ReplicatedTestProperty = HandoverReplicationTestValues::BasicTestPropertyValue;

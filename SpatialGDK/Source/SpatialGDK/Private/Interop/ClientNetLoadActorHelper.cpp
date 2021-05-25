@@ -75,13 +75,8 @@ FNetworkGUID* FClientNetLoadActorHelper::GetSavedDynamicSubObjectNetGUID(const F
 
 void FClientNetLoadActorHelper::SaveDynamicSubObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID)
 {
-	TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = EntityRemovedDynamicSubObjects.Find(ObjectRef.Entity);
-	if (!EntityMappings)
-	{
-		EntityRemovedDynamicSubObjects.Emplace(ObjectRef.Entity, TMap<FUnrealObjectRef, FNetworkGUID>());
-		EntityMappings = EntityRemovedDynamicSubObjects.Find(ObjectRef.Entity);
-	}
-	EntityMappings->Emplace(ObjectRef, NetGUID);
+	TMap<FUnrealObjectRef, FNetworkGUID>& EntityMappings = EntityRemovedDynamicSubObjects.FindOrAdd(ObjectRef.Entity);
+	EntityMappings.Emplace(ObjectRef, NetGUID);
 }
 
 void FClientNetLoadActorHelper::ClearDynamicSubObjectRefs(const Worker_EntityId& InEntityId)
