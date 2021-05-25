@@ -279,7 +279,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	if (!PlatformFile.CreateDirectoryTree(*EventTracingPath))
 	{
-		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Failed to create runtime event log path."));
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to create runtime event log path."));
 	}
 
 	// runtime.exe --config=squid_config.json --snapshot=snapshots/default.snapshot --worker-port 8018 --http-port 5006 --grpc-port 7777

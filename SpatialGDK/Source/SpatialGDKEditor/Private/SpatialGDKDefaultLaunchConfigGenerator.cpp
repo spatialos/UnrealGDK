@@ -189,26 +189,26 @@ bool GenerateLaunchConfig(const FString& LaunchConfigPath, const FSpatialLaunchC
 				Writer->WriteObjectStart(TEXT("rotating_event_log_file_configuration"));
 				Writer->WriteValue(TEXT("max_file_size_bytes"), SpatialGDKSettings->EventTracingRotatingLogsMaxFileSizeBytes);
 				Writer->WriteValue(TEXT("max_file_count"), SpatialGDKSettings->EventTracingRotatingLogsMaxFileCount);
-				Writer->WriteObjectEnd();
+				Writer->WriteObjectEnd(); // rotating_event_log_file_configuration end
 			}
 			else
 			{
 				Writer->WriteObjectStart(TEXT("single_event_log_file_configuration"));
 				Writer->WriteValue(TEXT("max_file_size_bytes"), SpatialGDKSettings->EventTracingSingleLogMaxFileSizeBytes);
-				Writer->WriteObjectEnd();
+				Writer->WriteObjectEnd(); // single_event_log_file_configuration end
 			}
 
 			Writer->WriteObjectStart(TEXT("event_filter_configuration"));
 
 			UEventTracingSamplingSettings* SamplingSettings =
-				SpatialGDKSettings->GetEventTracingSamplingSettings(); // TODO: Is this trouble in editor?
+				SpatialGDKSettings->GetEventTracingSamplingSettings();
 			Writer->WriteValue(TEXT("event_pre_filter"),
 							   SamplingSettings->RuntimeEventPreFilter.Len() ? *SamplingSettings->RuntimeEventPreFilter : TEXT("false"));
 			Writer->WriteValue(TEXT("event_post_filter"),
 							   SamplingSettings->RuntimeEventPostFilter.Len() ? SamplingSettings->RuntimeEventPostFilter : TEXT("false"));
 
-			Writer->WriteObjectEnd();
-			Writer->WriteObjectEnd();
+			Writer->WriteObjectEnd(); // event_filter_configuration end 
+			Writer->WriteObjectEnd(); // event_tracing_configuration end
 		}
 
 		Writer->WriteObjectEnd(); // End of json
