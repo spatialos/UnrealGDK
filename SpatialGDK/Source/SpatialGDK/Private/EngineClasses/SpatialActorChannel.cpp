@@ -678,7 +678,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
 			SetNeedOwnerInterestUpdate(false);
 		}
-		else if (ShouldUpdateClientEntityIdListQuery(Actor))
+		else if (ShouldUpdateClientEntityIdListQuery())
 		{
 			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
 			TimeWhenClientEntityIdListLastUpdated = NetDriver->GetElapsedTime();
@@ -1291,7 +1291,7 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 	}
 }
 
-bool USpatialActorChannel::ShouldUpdateClientEntityIdListQuery(const AActor* Actor) const
+bool USpatialActorChannel::ShouldUpdateClientEntityIdListQuery() const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 

@@ -277,18 +277,18 @@ Interest UnrealServerInterestFactory::CreateInterest(AActor* InActor, const FCla
 
 void InterestFactory::AddClientPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
 {
-	const QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
-
-	AddClientAlwaysRelevantQuery(OutInterest, InActor, InInfo, LevelConstraint);
-
-	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
-
 	if (GetDefault<USpatialGDKSettings>()->bUseEntityIdListClientQueries)
 	{
 		AddClientInterestEntityIdQuery(OutInterest, InActor);
+		return;
 	}
+
+	const QueryConstraint LevelConstraint = CreateLevelConstraints(InActor);
+	AddClientAlwaysRelevantQuery(OutInterest, InActor, InInfo, LevelConstraint);
+	AddUserDefinedQueries(OutInterest, InActor, LevelConstraint);
+
 	// Either add the NCD interest because there are no user interest queries, or because the user interest specified we should.
-	else if (ShouldAddNetCullDistanceInterest(InActor))
+	if (ShouldAddNetCullDistanceInterest(InActor))
 	{
 		AddNetCullDistanceQueries(OutInterest, LevelConstraint);
 	}
@@ -356,20 +356,23 @@ TArray<Worker_EntityId> InterestFactory::GetClientInterestedEntityIds(const APla
 	UNetConnection* NetConnection = InPlayerController->NetConnection;
 	UNetReplicationGraphConnection* NetRepGraphConnection =
 		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
-	if (NetRepGraphConnection != nullptr)
+	if (NetRepGraphConnection == nullptr)
 	{
 		UE_LOG(LogInterestFactory, Error, TEXT("Failed to NetRepGraphConnection when calculating client interest"));
 		return InterestedEntityIdList;
 	}
 
-	const TArray<FPrioritizedRepList::FItem>& ClientInterestedActors = NetRepGraphConnection->ClientInterestedActors;
+	const TArray<TWeakObjectPtr<AActor>>& ClientInterestedActors = NetRepGraphConnection->ClientInterestedActors;
 
 	InterestedEntityIdList.Reserve(ClientInterestedActors.Num());
 
-	for (const FPrioritizedRepList::FItem ActorWrapperIt : ClientInterestedActors)
+	for (const TWeakObjectPtr<AActor> ActorWeakPtr : ClientInterestedActors)
 	{
-		const AActor* Actor = ActorWrapperIt.Actor;
-		const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+		if (!ActorWeakPtr.IsValid())
+		{
+			continue;
+		}
+		const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ActorWeakPtr.Get());
 		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 		{
 			continue;
