@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
+## [`0.13.1`] - 2021-05-21
+
 ## [`0.13.0`] - 2021-05-17
 ### Breaking changes:
 - Removed support for Unreal Engine 4.24.
