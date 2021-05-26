@@ -3113,22 +3113,14 @@ int64 USpatialNetDriver::GetClientID() const
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-int64 USpatialNetDriver::GetActorEntityId(AActor& Actor)
+int64 USpatialNetDriver::GetActorEntityId(const AActor& Actor) const
 {
 	if (PackageMap == nullptr)
 	{
 		return SpatialConstants::INVALID_ENTITY_ID;
 	}
 
-	int64 EntityId = PackageMap->GetEntityIdFromObject(&Actor);
-	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		if (IsServer() && Actor.GetIsReplicated() && (Actor.Role == ROLE_Authority))
-		{
-			EntityId = PackageMap->AllocateEntityIdAndResolveActor(&Actor);
-		}
-	}
-	return EntityId;
+	return PackageMap->GetEntityIdFromObject(&Actor);
 }
 
 bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
