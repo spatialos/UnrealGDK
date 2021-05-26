@@ -142,6 +142,8 @@ private:
 
 	void GenerateTestMaps();
 
+	void StartInspectorProcess(TFunction<void()> OnReady);
+
 private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;
