@@ -2,25 +2,25 @@
 
 #include "LocalDeploymentManager.h"
 
+#include "Async/Async.h"
 #include "DirectoryWatcherModule.h"
+#include "Engine/World.h"
+#include "HAL/FileManagerGeneric.h"
 #include "HttpModule.h"
 #include "IAutomationControllerModule.h"
 #include "IPAddress.h"
-#include "Sockets.h"
-#include "SocketSubsystem.h"
-#include "SpatialCommandUtils.h"
-#include "SpatialGDKServicesConstants.h"
-#include "SpatialGDKServicesModule.h"
-#include "SSpatialOutputLog.h"
-#include "Async/Async.h"
-#include "Engine/World.h"
-#include "HAL/FileManagerGeneric.h"
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Internationalization/Internationalization.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
+#include "SSpatialOutputLog.h"
+#include "SocketSubsystem.h"
+#include "Sockets.h"
+#include "SpatialCommandUtils.h"
+#include "SpatialGDKServicesConstants.h"
+#include "SpatialGDKServicesModule.h"
 #include "Windows/MinWindows.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
@@ -504,7 +504,8 @@ void FLocalDeploymentManager::WindowsRequestGracefulRuntimeShutdown()
 	else
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error,
-			TEXT("Tried to gracefully stop local deployment but could not find runtime window. Runtime will eventually stop non-gracefully."));
+			   TEXT("Tried to gracefully stop local deployment but could not find runtime window. Runtime will eventually stop "
+					"non-gracefully."));
 	}
 }
 
