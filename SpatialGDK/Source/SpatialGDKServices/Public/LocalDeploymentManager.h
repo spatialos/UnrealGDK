@@ -36,6 +36,8 @@ public:
 														const FString& RuntimeIPToExpose, const LocalDeploymentCallback& CallBack);
 
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
+	void WindowsRequestGracefulRuntimeShutdown();
+	void NonWindowsRequestGracefulRuntimeShutdown();
 	bool SPATIALGDKSERVICES_API TryStopLocalDeploymentGracefully();
 
 	bool SPATIALGDKSERVICES_API IsLocalDeploymentRunning() const;
@@ -68,6 +70,8 @@ private:
 
 	bool WaitForRuntimeProcessToShutDown();
 	bool StartLocalDeploymentShutDown();
+	bool WaitForGracefulShutdown();
+	bool WaitForForcefulShutdown();
 	void FinishLocalDeploymentShutDown();
 
 	enum class ERuntimeStartResponse
@@ -104,6 +108,8 @@ private:
 	bool bStartingDeployment;
 	bool bStoppingDeployment;
 	bool bTestRunnning;
+
+	FString RuntimePath;
 
 	FString ExposedRuntimeIP;
 

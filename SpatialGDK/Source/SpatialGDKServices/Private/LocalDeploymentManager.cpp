@@ -2,32 +2,26 @@
 
 #include "LocalDeploymentManager.h"
 
-#include "AssetRegistryModule.h"
-#include "Async/Async.h"
 #include "DirectoryWatcherModule.h"
-#include "Editor.h"
-#include "Engine/World.h"
-#include "FileCache.h"
-#include "GeneralProjectSettings.h"
-#include "HAL/FileManagerGeneric.h"
 #include "HttpModule.h"
 #include "IAutomationControllerModule.h"
 #include "IPAddress.h"
-#include "Improbable/SpatialGDKSettingsBridge.h"
-#include "Interfaces/IHttpResponse.h"
-#include "Internationalization/Internationalization.h"
-#include "Internationalization/Regex.h"
-#include "Json/Public/Dom/JsonObject.h"
-#include "Misc/FileHelper.h"
-#include "Misc/MessageDialog.h"
-#include "Misc/MonitoredProcess.h"
-#include "SSpatialOutputLog.h"
-#include "SocketSubsystem.h"
 #include "Sockets.h"
+#include "SocketSubsystem.h"
 #include "SpatialCommandUtils.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
-#include "UObject/CoreNet.h"
+#include "SSpatialOutputLog.h"
+#include "Async/Async.h"
+#include "Engine/World.h"
+#include "HAL/FileManagerGeneric.h"
+#include "Improbable/SpatialGDKSettingsBridge.h"
+#include "Interfaces/IHttpResponse.h"
+#include "Internationalization/Internationalization.h"
+#include "Misc/FileHelper.h"
+#include "Misc/MessageDialog.h"
+#include "Misc/MonitoredProcess.h"
+#include "Windows/MinWindows.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
@@ -300,7 +294,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	// Setup the runtime file logger.
 	SetupRuntimeFileLogger(LocalDeploymentLogsDir);
 
-	FString RuntimePath = SpatialGDKServicesConstants::GetRuntimeExecutablePath(RuntimeVersion);
+	RuntimePath = SpatialGDKServicesConstants::GetRuntimeExecutablePath(RuntimeVersion);
 
 	RuntimeProcess = { *RuntimePath, *RuntimeArgs, SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
 					   /*InCreatePipes*/ true };
@@ -402,12 +396,10 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 		return false;
 	}
 
-	RuntimeProcess->Stop();
-
-	bool bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+	const bool bRuntimeShutDownSuccessfully = WaitForForcefulShutdown();
 	FinishLocalDeploymentShutDown();
 
-	return bRuntimeShutDownSuccesfully;
+	return bRuntimeShutDownSuccessfully;
 }
 
 bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
@@ -424,35 +416,14 @@ bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
 		return false;
 	}
 
-	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
-#if ENGINE_MINOR_VERSION >= 26
-	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = HttpModule.Get().CreateRequest();
-#else
-	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
-#endif
-
-	FString URL = FString::Printf(TEXT("http://localhost:%d/shutdown"), HTTPPort);
-	HttpRequest->SetURL(URL);
-	HttpRequest->SetVerb("GET");
-	HttpRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
-		int32 ResponseCode = HttpResponse->GetResponseCode();
-		if (ResponseCode != 200)
-		{
-			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime shutdown http request failed with code: %d"), ResponseCode);
-		}
-	});
-
-	HttpRequest->ProcessRequest();
-
-	bool bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
-	if (!bRuntimeShutDownSuccesfully)
+	bool bShutdownSuccess = WaitForGracefulShutdown();
+	if (!bShutdownSuccess)
 	{
-		RuntimeProcess->Stop();
-		bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+		bShutdownSuccess = WaitForForcefulShutdown();
 	}
-	FinishLocalDeploymentShutDown();
 
-	return bRuntimeShutDownSuccesfully;
+	FinishLocalDeploymentShutDown();
+	return bShutdownSuccess;
 }
 
 bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
@@ -471,6 +442,24 @@ bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
 
 	bStoppingDeployment = true;
 	return true;
+}
+
+bool FLocalDeploymentManager::WaitForGracefulShutdown()
+{
+#if PLATFORM_WINDOWS
+	WindowsRequestGracefulRuntimeShutdown();
+#else
+	NonWindowsRequestGracefulRuntimeShutdown();
+#endif
+	bool bGracefulShutdownSuccess = WaitForRuntimeProcessToShutDown();
+	return bGracefulShutdownSuccess;
+}
+
+bool FLocalDeploymentManager::WaitForForcefulShutdown()
+{
+	RuntimeProcess->Stop();
+	const bool bForcefulShutdownSuccess = WaitForRuntimeProcessToShutDown();
+	return bForcefulShutdownSuccess;
 }
 
 bool FLocalDeploymentManager::WaitForRuntimeProcessToShutDown()
@@ -498,6 +487,50 @@ void FLocalDeploymentManager::FinishLocalDeploymentShutDown()
 
 	bLocalDeploymentRunning = false;
 	bStoppingDeployment = false;
+}
+
+void FLocalDeploymentManager::WindowsRequestGracefulRuntimeShutdown()
+{
+	// Prepare runtime process name
+	FString RuntimeProcessName = RuntimePath;
+	RuntimeProcessName = RuntimeProcessName.Replace(TEXT("/"), TEXT("\\"));
+	// Find runtime window
+	HWND RuntimeWindowHandle = FindWindowA(NULL, TCHAR_TO_ANSI(*RuntimeProcessName));
+	if (RuntimeWindowHandle != NULL)
+	{
+		// Send message to runtime window to close gracefully.
+		SendMessage(RuntimeWindowHandle, WM_CLOSE, NULL, NULL);
+	}
+	else
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error,
+			TEXT("Tried to gracefully stop local deployment but could not find runtime window. Runtime will eventually stop non-gracefully."));
+	}
+}
+
+void FLocalDeploymentManager::NonWindowsRequestGracefulRuntimeShutdown()
+{
+	// Sends a http message requesting graceful shutdown
+
+	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
+#if ENGINE_MINOR_VERSION >= 26
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = HttpModule.Get().CreateRequest();
+#else
+	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
+#endif
+
+	const FString URL = FString::Printf(TEXT("http://localhost:%d/shutdown"), HTTPPort);
+	HttpRequest->SetURL(URL);
+	HttpRequest->SetVerb("GET");
+	HttpRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
+		const int32 ResponseCode = HttpResponse->GetResponseCode();
+		if (ResponseCode != 200)
+		{
+			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime graceful shutdown http request failed with code: %d"), ResponseCode);
+		}
+	});
+
+	HttpRequest->ProcessRequest();
 }
 
 bool FLocalDeploymentManager::IsLocalDeploymentRunning() const
