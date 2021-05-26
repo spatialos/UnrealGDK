@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the test settings overrides config filename in `Spatial World Settings` so that the file path is relative to the game directory.
 - Fix editor encountering exceptions when shutting down during a PIE session.
 - Fixed a rare issue where one would see a change to the owner field but not the changes to owner-only fields.
+- Fixed an issue that would crash the client if there was a schema hash mismatch.
 
 ### Internal:
 - Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.
