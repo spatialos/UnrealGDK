@@ -440,6 +440,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 		SnapshotManager = MakeUnique<SpatialSnapshotManager>();
 
+		MigrationDiagnosticsSystem = MakeUnique <SpatialGDK::MigrationDiagnosticsSystem>(*this);
+		DebugMetricsSystem = MakeUnique<SpatialGDK::DebugMetricsSystem>(*this);
+
+		QueryHandler = MakeUnique <SpatialGDK::EntityQueryHandler>();
+
 		if (SpatialSettings->bAsyncLoadNewClassesOnEntityCheckout)
 		{
 			AsyncPackageLoadFilter = NewObject<UAsyncPackageLoadFilter>();
@@ -1126,6 +1131,10 @@ void USpatialNetDriver::Shutdown()
 	USpatialNetDriverDebugContext::DisableDebugSpatialGDK(this);
 
 	SpatialOutputDevice = nullptr;
+	SnapshotManager = nullptr;
+	MigrationDiagnosticsSystem = nullptr;
+	DebugMetricsSystem = nullptr;
+	QueryHandler = nullptr;
 
 	Super::Shutdown();
 
@@ -2312,14 +2321,14 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 				SpatialDebuggerSystem->Advance();
 			}
 
+			if (MigrationDiagnosticsSystem.IsValid())
 			{
-				const SpatialGDK::MigrationDiagnosticsSystem MigrationDiagnosticsSystem(*this);
-				MigrationDiagnosticsSystem.ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
+				MigrationDiagnosticsSystem->ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
 			}
 
+			if (DebugMetricsSystem.IsValid())
 			{
-				const SpatialGDK::DebugMetricsSystem DebugMetricsSystem(*this);
-				DebugMetricsSystem.ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
+				DebugMetricsSystem->ProcessOps(Connection->GetCoordinator().GetViewDelta().GetWorkerMessages());
 			}
 		}
 
@@ -2358,7 +2367,10 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			InitialOnlyFilter->FlushRequests();
 		}
 
-		QueryHandler.ProcessOps(Connection->GetWorkerMessages());
+		if (QueryHandler.IsValid())
+		{
+			QueryHandler->ProcessOps(Connection->GetWorkerMessages());
+		}
 	}
 }
 
