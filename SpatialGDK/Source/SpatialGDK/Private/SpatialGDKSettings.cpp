@@ -238,7 +238,7 @@ void USpatialGDKSettings::PostInitProperties()
 			}
 		});
 	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableClientEntityInterest"), TEXT("Client interest using entity ID lists"),
-                         bUseEntityIdListClientQueries);
+							 bUseEntityIdListClientQueries);
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 

@@ -341,7 +341,15 @@ void InterestFactory::AddClientInterestEntityIdQuery(Interest& OutInterest, cons
 	RepGraphEntityIdQuery.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
 	RepGraphEntityIdQuery.ResultComponentSetIds = ClientNonAuthInterestResultType.ComponentSetsIds;
 
-	for (Worker_EntityId EntityId : GetClientInterestedEntityIds(PlayerController))
+	TArray<Worker_EntityId> ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
+
+	// We don't do any checking whether we're resending a duplicate list here.
+	// I imagine a duplicate list might still involve the Runtime recalculating a bunch of stuff.
+	// We could sort list here then check against existing list?
+	// If doing this, would need to move retrieving the interest list earlier in the replication process
+	// (basically to inform whether interest is actually dirty).
+
+	for (Worker_EntityId EntityId : ClientInterestedEntities)
 	{
 		QueryConstraint Constraint;
 		Constraint.EntityIdConstraint = EntityId;

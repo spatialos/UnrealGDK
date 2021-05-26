@@ -682,13 +682,13 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 		else if (ShouldUpdateClientEntityIdListQuery())
 		{
-			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
+			MarkInterestDirty();
 			TimeWhenClientEntityIdListLastUpdated = NetDriver->GetElapsedTime();
 		}
 	}
 
 	// If any properties have changed, send a component update.
-	if (bCreatingNewEntity || RepChanged.Num() > 0)
+	if (bCreatingNewEntity || RepChanged.Num() > 0 || GetInterestDirty())
 	{
 		if (bCreatingNewEntity)
 		{
@@ -1297,7 +1297,8 @@ bool USpatialActorChannel::ShouldUpdateClientEntityIdListQuery() const
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
-	if (!Settings->bUseEntityIdListClientQueries || !Actor->IsA<APlayerController>() || Cast<UReplicationGraph>(NetDriver->GetReplicationDriver()) != nullptr)
+	const UReplicationGraph* RepGraph = Cast<UReplicationGraph>(NetDriver->GetReplicationDriver());
+	if (RepGraph == nullptr || !RepGraph->GetUseEntityIdListClientQueries() || !Actor->IsA<APlayerController>())
 	{
 		return false;
 	}
