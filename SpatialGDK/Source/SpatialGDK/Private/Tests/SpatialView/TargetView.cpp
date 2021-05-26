@@ -10,6 +10,7 @@ void FTargetView::AddEntity(Worker_EntityId EntityId)
 {
 	check(!bDisconnected);
 	Builder.AddEntity(EntityId);
+	View.Emplace(EntityId);
 }
 
 void FTargetView::RemoveEntity(Worker_EntityId EntityId)
@@ -35,6 +36,7 @@ void FTargetView::AddOrSetComponent(Worker_EntityId EntityId, ComponentData Data
 	if (EntityData == nullptr)
 	{
 		Builder.AddEntity(EntityId);
+		EntityData = &View.Emplace(EntityId);
 	}
 	ComponentData* Component = EntityData->Components.FindByPredicate(ComponentIdEquality{ Data.GetComponentId() });
 	if (Component != nullptr)
@@ -75,6 +77,7 @@ void FTargetView::AddAuthority(Worker_EntityId EntityId, Worker_ComponentSetId C
 	if (EntityData == nullptr)
 	{
 		Builder.AddEntity(EntityId);
+		EntityData = &View.Emplace(EntityId);
 	}
 	check(!EntityData->Authority.Contains(ComponentSetId));
 	EntityData->Authority.Add(ComponentSetId);
