@@ -497,8 +497,8 @@ void FLocalDeploymentManager::WindowsRequestGracefulRuntimeShutdown()
 	FString RuntimeProcessName = RuntimePath;
 	RuntimeProcessName = RuntimeProcessName.Replace(TEXT("/"), TEXT("\\"));
 	// Find runtime window
-	HWND RuntimeWindowHandle = FindWindowA(NULL, TCHAR_TO_ANSI(*RuntimeProcessName));
-	if (RuntimeWindowHandle != NULL)
+	const HWND RuntimeWindowHandle = FindWindowA(nullptr, TCHAR_TO_ANSI(*RuntimeProcessName));
+	if (RuntimeWindowHandle != nullptr)
 	{
 		// Send message to runtime window to close gracefully.
 		SendMessage(RuntimeWindowHandle, WM_CLOSE, NULL, NULL);
