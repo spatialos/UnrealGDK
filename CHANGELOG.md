@@ -64,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue with migration diagnostic logging failing, when the actor did not have authority.
 - Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
 - Fixed an issue where migration diagnostic tool would crash if the target actor's owner couldn't be found.
+- Fixed a Windows compile issue when updating the worker SDK which did not recompile code dependent on the updated libs/dlls. 
 
 ### Internal:
 - Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs now no longer expire, and persist until used.
