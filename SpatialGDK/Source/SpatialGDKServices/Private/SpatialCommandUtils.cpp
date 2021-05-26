@@ -396,14 +396,13 @@ void SpatialCommandUtils::TryGracefullyKillWindows(FString ProcName)
 	const HWND RuntimeWindowHandle = FindWindowA(nullptr, TCHAR_TO_ANSI(*ProcName));
 	if (RuntimeWindowHandle != nullptr)
 	{
-		// Using SendMessageW to send message despite being 'supposed to' use SendMessage - as including "Windows/MinWindows.h" needed for SendMessage overrides the TEXT macro
-		// (SendMessageW is also used elsewhere in unreal)
+		// Using SendMessageW to send message despite being 'supposed to' use SendMessage - as including "Windows/MinWindows.h" needed for
+		// SendMessage overrides the TEXT macro (SendMessageW is also used elsewhere in unreal)
 		SendMessageW(RuntimeWindowHandle, WM_CLOSE, NULL, NULL);
 	}
 	else
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error,
-			TEXT("Tried to gracefully stop process but could not find runtime window."));
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to gracefully stop process but could not find runtime window."));
 	}
 }
 
