@@ -36,8 +36,6 @@ public:
 														const FString& RuntimeIPToExpose, const LocalDeploymentCallback& CallBack);
 
 	bool SPATIALGDKSERVICES_API TryStopLocalDeployment();
-	void WindowsRequestGracefulRuntimeShutdown();
-	void NonWindowsRequestGracefulRuntimeShutdown();
 	bool SPATIALGDKSERVICES_API TryStopLocalDeploymentGracefully();
 
 	bool SPATIALGDKSERVICES_API IsLocalDeploymentRunning() const;
@@ -67,6 +65,9 @@ private:
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
 	bool SetupRuntimeFileLogger(const FString& SpatialLogsSubDirectoryName);
+
+	void WindowsRequestGracefulRuntimeShutdown();
+	void NonWindowsRequestGracefulRuntimeShutdown();
 
 	bool WaitForRuntimeProcessToShutDown();
 	bool StartLocalDeploymentShutDown();
