@@ -4,7 +4,9 @@
 
 #include "Engine/Engine.h"
 #include "EngineGlobals.h"
+#if ENGINE_MINOR_VERSION >= 26
 #include "ProfilingDebugging/TraceAuxiliary.h"
+#endif
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Schema/ServerWorker.h"
@@ -448,7 +450,13 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 			switch (ServerCommand)
 			{
 			case SpatialMetricsPrivate::EServerCommands::StartInsights:
+#if ENGINE_MINOR_VERSION >= 26
 				FTraceAuxiliary::UpdateTraceCapture(*Args);
+#else
+				UE_LOG(LogSpatialMetrics, Warning,
+					TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. Command only available prior to 4.26."), *Command,
+					*Args);
+#endif
 				break;
 
 			default:
