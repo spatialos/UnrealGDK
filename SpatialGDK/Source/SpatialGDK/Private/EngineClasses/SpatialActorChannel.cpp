@@ -700,13 +700,13 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 		else if (ShouldUpdateClientEntityIdListQuery())
 		{
-			NetDriver->ActorSystem->UpdateInterestComponent(Actor);
+			MarkInterestDirty();
 			TimeWhenClientEntityIdListLastUpdated = NetDriver->GetElapsedTime();
 		}
 	}
 
 	// If any properties have changed, send a component update.
-	if (bCreatingNewEntity || RepChanged.Num() > 0)
+	if (bCreatingNewEntity || RepChanged.Num() > 0 || GetInterestDirty())
 	{
 		if (bCreatingNewEntity)
 		{
@@ -1325,7 +1325,23 @@ void USpatialActorChannel::ResetShadowData(FRepLayout& RepLayout, FRepStateStati
 	}
 }
 
-bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements(FVector& OutNewSpatialPosition)
+bool USpatialActorChannel::ShouldUpdateClientEntityIdListQuery() const
+{
+	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
+
+	const UReplicationGraph* RepGraph = Cast<UReplicationGraph>(NetDriver->GetReplicationDriver());
+	if (RepGraph == nullptr || !RepGraph->GetUseEntityIdListClientQueries() || !Actor->IsA<APlayerController>())
+	{
+		return false;
+	}
+
+	const float TimeSinceLastClientInterestUpdate = NetDriver->GetElapsedTime() - TimeWhenClientEntityIdListLastUpdated;
+	const float UpdateThresholdSecs = 1 / Settings->ClientEntityIdListQueryUpdateFrequency;
+
+	return TimeSinceLastClientInterestUpdate >= UpdateThresholdSecs;
+}
+
+bool USpatialActorChannel::SatisfiesSpatialPositionUpdateRequirements() const
 {
 	// Check that the Actor satisfies both lower thresholds OR either of the maximum thresholds
 	OutNewSpatialPosition = SpatialGDK::GetActorSpatialPosition(Actor);
