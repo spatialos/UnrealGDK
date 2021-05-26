@@ -38,6 +38,8 @@
 #include "Utils/SchemaOption.h"
 #include "Utils/SpatialActorUtils.h"
 
+#include "ReplicationGraph.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
 DECLARE_CYCLE_STAT(TEXT("ReplicateActor"), STAT_SpatialActorChannelReplicateActor, STATGROUP_SpatialNet);
