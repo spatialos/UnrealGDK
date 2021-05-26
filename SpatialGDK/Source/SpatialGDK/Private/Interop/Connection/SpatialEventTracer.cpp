@@ -163,8 +163,8 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 			const FString FullFilePathSuffix = FileExt;
 
 			Io_RotatingFileStreamParameters FileParamters;
-			FileParamters.filename_prefix = TCHAR_TO_ANSI(*FullFilePathPrefix);
-			FileParamters.filename_suffix = TCHAR_TO_ANSI(*FullFilePathSuffix);
+			FileParamters.filename_prefix = AnsiStrings.Get(AnsiStrings.AddFString(FullFilePathPrefix));
+			FileParamters.filename_suffix = AnsiStrings.Get(AnsiStrings.AddFString(FullFilePathSuffix));
 			FileParamters.max_file_size_bytes = Settings->EventTracingRotatingLogsMaxFileSizeBytes;
 			FileParamters.max_file_count = Settings->EventTracingRotatingLogsMaxFileCount;
 			Stream.Reset(Io_CreateRotatingFileStream(&FileParamters));
