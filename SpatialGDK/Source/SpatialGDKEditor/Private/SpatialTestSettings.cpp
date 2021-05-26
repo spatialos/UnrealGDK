@@ -21,7 +21,8 @@ const FString FSpatialTestSettings::OverrideSettingsFileDirectoryName = TEXT("Ma
 const FString FSpatialTestSettings::OverrideSettingsFilePrefix = TEXT("TestOverrides");
 const FString FSpatialTestSettings::OverrideSettingsBaseFilename =
 	FPaths::ConvertRelativePathToFull(FPaths::ProjectConfigDir() / OverrideSettingsFileDirectoryName);
-const FString FSpatialTestSettings::BaseOverridesFilename = OverrideSettingsBaseFilename + TEXT("Base") + OverrideSettingsFileExtension;
+const FString FSpatialTestSettings::BaseOverridesFilename =
+	OverrideSettingsBaseFilename + TEXT("/") + OverrideSettingsFilePrefix + TEXT("Base") + OverrideSettingsFileExtension;
 const FString FSpatialTestSettings::GeneratedOverrideSettingsDirectory =
 	FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir() / TEXT("Config/") / OverrideSettingsFileDirectoryName);
 const FString FSpatialTestSettings::GeneratedOverrideSettingsBaseFilename = GeneratedOverrideSettingsDirectory / OverrideSettingsFilePrefix;
@@ -48,11 +49,15 @@ void FSpatialTestSettings::Override(const FString& MapName)
 
 	if (ASpatialWorldSettings* SpatialWorldSettings = Cast<ASpatialWorldSettings>(World->GetWorldSettings()))
 	{
-		FString GroupOverridesFilename = FPaths::ConvertRelativePathToFull(SpatialWorldSettings->SettingsOverride.FilePath);
+		FString GroupOverridesFilename = FPaths::ProjectDir() + SpatialWorldSettings->SettingsOverride.FilePath;
 		if (FPaths::FileExists(GroupOverridesFilename))
 		{
 			// Override the settings from the group specific config file, if it exists
 			Load(GroupOverridesFilename);
+		}
+		else if (!SpatialWorldSettings->SettingsOverride.FilePath.IsEmpty())
+		{
+			UE_LOG(LogSpatialTestSettings, Error, TEXT("Could not find settings override file %s."), *GroupOverridesFilename);
 		}
 	}
 

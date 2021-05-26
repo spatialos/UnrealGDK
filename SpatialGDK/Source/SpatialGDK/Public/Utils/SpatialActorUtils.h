@@ -22,7 +22,10 @@ namespace SpatialGDK
 {
 inline AActor* GetTopmostReplicatedOwner(const AActor* Actor)
 {
-	check(Actor != nullptr);
+	if (!ensureAlwaysMsgf(Actor != nullptr, TEXT("Called GetTopmostReplicatedOwner for nullptr Actor")))
+	{
+		return nullptr;
+	}
 
 	AActor* Owner = Actor->GetOwner();
 	if (Owner == nullptr || Owner->IsPendingKillPending() || !Owner->GetIsReplicated())
@@ -49,7 +52,7 @@ inline Worker_PartitionId GetConnectionOwningPartitionId(const AActor* Actor)
 {
 	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
 	{
-		return NetConnection->PlayerControllerEntity;
+		return NetConnection->GetPlayerControllerEntityId();
 	}
 
 	return SpatialConstants::INVALID_ENTITY_ID;

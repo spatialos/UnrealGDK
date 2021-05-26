@@ -11,16 +11,16 @@ namespace SpatialGDK
 class FTestWorker
 {
 public:
-	explicit FTestWorker(TArray<Worker_ComponentSetId> ComponentSetIds, FString InWorkerId = {}, Worker_EntityId InWorkerSystemEntityId = 0)
+	static FTestWorker Create(TArray<Worker_ComponentSetId> ComponentSetIds, FString InWorkerId = {},
+							  Worker_EntityId InWorkerSystemEntityId = 0)
 	{
 		TUniquePtr<FTestConnectionHandler> Handler = MakeUnique<FTestConnectionHandler>(InWorkerId, InWorkerSystemEntityId);
-		ConnectionHandler = Handler.Get();
 		FComponentSetData SetData;
 		for (Worker_ComponentSetId SetId : ComponentSetIds)
 		{
 			SetData.ComponentSets.Add(SetId, {});
 		}
-		Coordinator = ViewCoordinator(MoveTemp(Handler), nullptr, MoveTemp(SetData));
+		return FTestWorker(MoveTemp(Handler), MoveTemp(SetData));
 	}
 
 	void SetSendMessageCallback(FSendMessageCallback InSendMessageCallback)
@@ -40,6 +40,12 @@ public:
 	const ViewCoordinator& GetCoordinator() const { return Coordinator; }
 
 private:
+	explicit FTestWorker(TUniquePtr<FTestConnectionHandler> Handler, FComponentSetData SetData)
+		: ConnectionHandler(Handler.Get())
+		, Coordinator(MoveTemp(Handler), /*EventTracer =*/nullptr, MoveTemp(SetData))
+	{
+	}
+
 	FTestConnectionHandler* ConnectionHandler;
 	FTargetView TargetView;
 	ViewCoordinator Coordinator;

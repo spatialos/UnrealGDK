@@ -13,6 +13,7 @@
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ActorGroupMember.h"
+#include "Schema/ActorOwnership.h"
 #include "Schema/ActorSetMember.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/NetOwningClientWorker.h"
@@ -94,6 +95,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 	// Add Actor completeness tags.
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID));
@@ -124,19 +126,21 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 #if !UE_BUILD_SHIPPING
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
-		check(NetDriver->VirtualWorkerTranslator != nullptr);
+		if (ensureAlwaysMsgf(NetDriver->VirtualWorkerTranslator != nullptr,
+							 TEXT("Failed to add debugging utilities. Translator was invalid")))
+		{
+			const PhysicalWorkerName* PhysicalWorkerName =
+				NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
+			const FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
+			const FColor IntentColor =
+				PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
 
-		const PhysicalWorkerName* PhysicalWorkerName =
-			NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
-		FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
-		FColor IntentColor =
-			PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
+			const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
 
-		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
-
-		SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId,
-									   IntentColor, bIsLocked);
-		ComponentDatas.Add(DebuggingInfo.CreateComponentData());
+			SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId,
+										   IntentColor, bIsLocked);
+			ComponentDatas.Add(DebuggingInfo.CreateComponentData());
+		}
 	}
 #endif // !UE_BUILD_SHIPPING
 
@@ -255,6 +259,10 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 
 	ComponentDatas.Append(ActorDataComponents);
 
+	ComponentDatas.Add(Worker_ComponentData{ nullptr, ActorOwnership::ComponentId,
+											 ActorOwnership::CreateFromActor(*Actor, *PackageMap).CreateComponentData().Release(),
+											 nullptr });
+
 	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
 
 	Channel->SetNeedOwnerInterestUpdate(!NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor));
@@ -362,9 +370,11 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	{
 		if (ComponentIds.Contains(ComponentData.component_id))
 		{
-			UE_LOG(LogEntityFactory, Error,
-				   TEXT("Constructed entity components for an Unreal actor channel contained a duplicate component. This is unexpected and "
-						"could cause problems later on."));
+			UE_LOG(
+				LogEntityFactory, Error,
+				TEXT("Constructed entity components for an Unreal actor channel contained a duplicate component %i. This is unexpected and "
+					 "could cause problems later on."),
+				ComponentData.component_id);
 		}
 		ComponentIds.Add(ComponentData.component_id);
 	}
@@ -374,7 +384,10 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AActor* Actor) const
 {
-	check(Actor->IsNetStartupActor());
+	if (!ensureAlwaysMsgf(Actor->IsNetStartupActor(), TEXT("Tried to create tombstone entity components for non-net-startup Actor")))
+	{
+		return TArray<FWorkerComponentData>{};
+	}
 
 	const UClass* Class = Actor->GetClass();
 
@@ -421,6 +434,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	// Add Actor completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID));
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 

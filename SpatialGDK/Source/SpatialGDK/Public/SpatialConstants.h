@@ -139,12 +139,15 @@ const Worker_ComponentId INITIAL_ONLY_PRESENCE_COMPONENT_ID = 9966;
 const Worker_ComponentId ACTOR_SET_MEMBER_COMPONENT_ID = 9965;
 const Worker_ComponentId ACTOR_GROUP_MEMBER_COMPONENT_ID = 9964;
 
+const Worker_ComponentId ACTOR_OWNERSHIP_COMPONENT_ID = 9959;
+
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
 // System query tags for entity completeness
 const Worker_ComponentId FIRST_EC_COMPONENT_ID = 2001;
 const Worker_ComponentId ACTOR_AUTH_TAG_COMPONENT_ID = 2001;
 const Worker_ComponentId ACTOR_TAG_COMPONENT_ID = 2002;
+const Worker_ComponentId ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID = 2003;
 const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
 
 const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
@@ -281,6 +284,9 @@ const Schema_FieldId ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID = 1;
 
 // ActorGroupMember field IDs
 const Schema_FieldId ACTOR_GROUP_MEMBER_COMPONENT_ACTOR_GROUP_ID = 1;
+
+// ActorOwnership field IDs
+const Schema_FieldId ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID = 1;
 
 const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;

@@ -37,7 +37,15 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	: bLocalDeploymentRunning(false)
 	, bStartingDeployment(false)
 	, bStoppingDeployment(false)
+	, bTestRunnning(false)
 {
+}
+
+FLocalDeploymentManager::~FLocalDeploymentManager()
+{
+	// The idea behind this lock is to try and make the thread calling the destructor wait for the thread that is cleaning up processes
+	// if something tries to run on this object after the destructor then we're ruined anyway
+	FScopeLock StoppingDeploymentScoped(&StoppingDeployment);
 }
 
 void FLocalDeploymentManager::PreInit(bool bChinaEnabled)
@@ -240,7 +248,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	RuntimeStartTime = FDateTime::Now();
 	bRedeployRequired = false;
 
-	if (bLocalDeploymentRunning)
+	if (bLocalDeploymentRunning || bStartingDeployment)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start a local deployment but one is already running."));
 		if (CallBack)
@@ -352,6 +360,11 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	EAutomationControllerModuleState::Type TestState = AutomationController->GetTestState();
 	bTestRunnning = TestState == EAutomationControllerModuleState::Type::Running;
 
+	if (CallBack)
+	{
+		CallBack(/*bSuccess*/ true);
+	}
+
 	return ERuntimeStartResponse::Success;
 }
 
@@ -383,6 +396,7 @@ bool FLocalDeploymentManager::SetupRuntimeFileLogger(const FString& RuntimeLogDi
 
 bool FLocalDeploymentManager::TryStopLocalDeployment()
 {
+	FScopeLock StoppingDeploymentScoped(&StoppingDeployment);
 	if (!StartLocalDeploymentShutDown())
 	{
 		return false;
@@ -404,6 +418,7 @@ bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
 		return TryStopLocalDeployment();
 	}
 
+	FScopeLock StoppingDeploymentScoped(&StoppingDeployment);
 	if (!StartLocalDeploymentShutDown())
 	{
 		return false;
@@ -435,7 +450,6 @@ bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
 		RuntimeProcess->Stop();
 		bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
 	}
-
 	FinishLocalDeploymentShutDown();
 
 	return bRuntimeShutDownSuccesfully;
@@ -446,6 +460,12 @@ bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
 	if (!bLocalDeploymentRunning)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to stop local deployment but no active deployment exists."));
+		return false;
+	}
+
+	if (bStoppingDeployment)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to stop local deployment but stopping process is already in progress."));
 		return false;
 	}
 
@@ -464,7 +484,6 @@ bool FLocalDeploymentManager::WaitForRuntimeProcessToShutDown()
 		if (RuntimeProcess->GetDuration().GetTotalSeconds() > RuntimeStopTime + RuntimeTimeout)
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Timed out waiting for the Runtime to stop."));
-			bStoppingDeployment = false;
 			return false;
 		}
 	}

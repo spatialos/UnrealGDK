@@ -74,7 +74,10 @@ void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const 
 		*ERPCResultToString(ErrorInfo.ErrorCode));
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	check(SpatialGDKSettings != nullptr);
+	if (!ensureAlwaysMsgf(SpatialGDKSettings != nullptr, TEXT("Failed to log RPC error. Couldn't access GDK settings")))
+	{
+		return;
+	}
 
 	if (TimeDiff.GetTotalSeconds() > SpatialGDKSettings->GetSecondsBeforeWarning(ErrorInfo.ErrorCode))
 	{

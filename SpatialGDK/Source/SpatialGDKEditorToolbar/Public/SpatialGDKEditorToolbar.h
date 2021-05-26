@@ -120,7 +120,11 @@ private:
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
 	void SchemaGenerateFullButtonClicked();
+	void CleanSchemaGenerateButtonClicked();
+	void CleanSchemaGenerate();
 	void DeleteSchemaDatabaseButtonClicked();
+	bool DeleteSchemaDatabase();
+	void HandleGenerateSchemaFailure();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
 	void ShowCloudDeploymentDialog();
@@ -137,6 +141,8 @@ private:
 	void AddDeploymentTagIfMissing(const FString& TagToAdd);
 
 	void GenerateTestMaps();
+
+	void StartInspectorProcess(TFunction<void()> OnReady);
 
 private:
 	bool CanExecuteSchemaGenerator() const;
