@@ -32,12 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix RPC timeouts for parameters referencing assets that can be asynchronously loaded.
 - Fixed the test settings overrides config filename in `Spatial World Settings` so that the file path is relative to the game directory.
 - Fix editor encountering exceptions when shutting down during a PIE session.
+- Fixed a rare issue where one would see a change to the owner field but not the changes to owner-only fields.
 
 ### Internal:
 - Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.
 - Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs now no longer expire, and persist until used.
 - A test was calling `SetReplicates` on an actor over which it did not have authority. This was causing warnings to be triggered. We've fixed this by reverting the actor's role at the end of the test, so that the actor is not left in an unexpected state.
 - Added support for clients to disconnect during a test in the automated test framework. 
+- Modified ActorSystem's Ownership and Simulated Subviews to take player ownership into account.
 
 ## [`0.13.0`] - 2021-05-17
 
