@@ -454,8 +454,8 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 				FTraceAuxiliary::UpdateTraceCapture(*Args);
 #else
 				UE_LOG(LogSpatialMetrics, Warning,
-					TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. Command only available prior to 4.26."), *Command,
-					*Args);
+					   TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. Command only available prior to 4.26."),
+					   *Command, *Args);
 #endif
 				break;
 
