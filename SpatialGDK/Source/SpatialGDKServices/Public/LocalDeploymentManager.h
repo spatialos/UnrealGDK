@@ -66,13 +66,10 @@ private:
 
 	bool SetupRuntimeFileLogger(const FString& SpatialLogsSubDirectoryName);
 
-	void WindowsRequestGracefulRuntimeShutdown();
-	void NonWindowsRequestGracefulRuntimeShutdown();
-
 	bool WaitForRuntimeProcessToShutDown();
 	bool StartLocalDeploymentShutDown();
-	bool WaitForGracefulShutdown();
-	bool WaitForForcefulShutdown();
+	bool GracefulShutdownAndWaitForTermination();
+	bool ForceShutdownAndWaitForTermination();
 	void FinishLocalDeploymentShutDown();
 
 	enum class ERuntimeStartResponse

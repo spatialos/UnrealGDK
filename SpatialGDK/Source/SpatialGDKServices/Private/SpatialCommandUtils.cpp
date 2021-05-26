@@ -7,6 +7,7 @@
 #include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
+#include "Windows/AllowWindowsPlatformTypes.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialCommandUtils);
 
@@ -58,62 +59,6 @@ bool SpatialCommandUtils::AttemptSpatialAuth(bool bIsRunningInChina)
 	return bSuccess;
 }
 
-bool SpatialCommandUtils::StartSpatialService(const FString& Version, const FString& RuntimeIP, bool bIsRunningInChina,
-											  const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode)
-{
-	FString Command = TEXT("service start");
-
-	if (bIsRunningInChina)
-	{
-		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
-	}
-
-	if (!Version.IsEmpty())
-	{
-		Command.Append(FString::Printf(TEXT(" --version=%s"), *Version));
-	}
-
-	if (!RuntimeIP.IsEmpty())
-	{
-		Command.Append(FString::Printf(TEXT(" --runtime_ip=%s"), *RuntimeIP));
-		UE_LOG(LogSpatialCommandUtils, Verbose, TEXT("Trying to start spatial service with exposed runtime ip: %s"), *RuntimeIP);
-	}
-
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(*SpatialGDKServicesConstants::SpatialExe, Command, DirectoryToRun, OutResult,
-													OutExitCode);
-
-	bool bSuccess = OutExitCode == 0;
-	if (!bSuccess)
-	{
-		UE_LOG(LogSpatialCommandUtils, Warning, TEXT("Spatial start service failed. Error Code: %d, Error Message: %s"), OutExitCode,
-			   *OutResult);
-	}
-
-	return bSuccess;
-}
-
-bool SpatialCommandUtils::StopSpatialService(bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode)
-{
-	FString Command = TEXT("service stop");
-
-	if (bIsRunningInChina)
-	{
-		Command += SpatialGDKServicesConstants::ChinaEnvironmentArgument;
-	}
-
-	FSpatialGDKServicesModule::ExecuteAndReadOutput(*SpatialGDKServicesConstants::SpatialExe, Command, DirectoryToRun, OutResult,
-													OutExitCode);
-
-	bool bSuccess = OutExitCode == 0;
-	if (!bSuccess)
-	{
-		UE_LOG(LogSpatialCommandUtils, Warning, TEXT("Spatial stop service failed. Error Code: %d, Error Message: %s"), OutExitCode,
-			   *OutResult);
-	}
-
-	return bSuccess;
-}
-
 bool SpatialCommandUtils::BuildWorkerConfig(bool bIsRunningInChina, const FString& DirectoryToRun, FString& OutResult, int32& OutExitCode)
 {
 	FString Command = TEXT("worker build build-config");
@@ -134,22 +79,6 @@ bool SpatialCommandUtils::BuildWorkerConfig(bool bIsRunningInChina, const FStrin
 	}
 
 	return bSuccess;
-}
-
-FProcHandle SpatialCommandUtils::LocalWorkerReplace(const FString& ServicePort, const FString& OldWorker, const FString& NewWorker,
-													bool bIsRunningInChina, uint32* OutProcessID)
-{
-	check(!ServicePort.IsEmpty());
-	check(!OldWorker.IsEmpty());
-	check(!NewWorker.IsEmpty());
-
-	FString Command = TEXT("worker build build-config");
-	Command.Append(FString::Printf(TEXT(" --local_service_grpc_port %s"), *ServicePort));
-	Command.Append(FString::Printf(TEXT(" --existing_worker_id %s"), *OldWorker));
-	Command.Append(FString::Printf(TEXT(" --replacing_worker_id %s"), *NewWorker));
-
-	return FPlatformProcess::CreateProc(*SpatialGDKServicesConstants::SpatialExe, *Command, false, true, true, OutProcessID,
-										2 /*PriorityModifier*/, nullptr, nullptr, nullptr);
 }
 
 bool SpatialCommandUtils::GenerateDevAuthToken(bool bIsRunningInChina, FString& OutTokenSecret, FText& OutErrorMessage)
@@ -446,6 +375,35 @@ void SpatialCommandUtils::TryKillProcessWithName(const FString& ProcessName)
 			auto Handle = FPlatformProcess::OpenProcess(ProcessIt.GetCurrent().GetPID());
 			FPlatformProcess::TerminateProc(Handle);
 		}
+	}
+}
+
+void SpatialCommandUtils::TryGracefullyKill(FString ProcName, FProcHandle ProcHandle)
+{
+#if PLATFORM_WINDOWS
+	TryGracefullyKillWindows(ProcName);
+#else
+	// This sends a SIGTERM signal
+	FGenericPlatformProcess::TerminateProc(ProcHandle);
+#endif
+}
+
+void SpatialCommandUtils::TryGracefullyKillWindows(FString ProcName)
+{
+	// Use WM_CLOSE signal on windows as DestroyProc has forcefully kills when on Windows
+
+	// Find runtime window
+	const HWND RuntimeWindowHandle = FindWindowA(nullptr, TCHAR_TO_ANSI(*ProcName));
+	if (RuntimeWindowHandle != nullptr)
+	{
+		// Using SendMessageW to send message despite being 'supposed to' use SendMessage - as including "Windows/MinWindows.h" needed for SendMessage overrides the TEXT macro
+		// (SendMessageW is also used elsewhere in unreal)
+		SendMessageW(RuntimeWindowHandle, WM_CLOSE, NULL, NULL);
+	}
+	else
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error,
+			TEXT("Tried to gracefully stop process but could not find runtime window."));
 	}
 }
 

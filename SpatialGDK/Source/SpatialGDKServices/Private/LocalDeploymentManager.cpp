@@ -21,7 +21,6 @@
 #include "SpatialCommandUtils.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
-#include "Windows/MinWindows.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
@@ -396,7 +395,7 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 		return false;
 	}
 
-	const bool bRuntimeShutDownSuccessfully = WaitForForcefulShutdown();
+	const bool bRuntimeShutDownSuccessfully = ForceShutdownAndWaitForTermination();
 	FinishLocalDeploymentShutDown();
 
 	return bRuntimeShutDownSuccessfully;
@@ -416,10 +415,10 @@ bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
 		return false;
 	}
 
-	bool bShutdownSuccess = WaitForGracefulShutdown();
+	bool bShutdownSuccess = GracefulShutdownAndWaitForTermination();
 	if (!bShutdownSuccess)
 	{
-		bShutdownSuccess = WaitForForcefulShutdown();
+		bShutdownSuccess = ForceShutdownAndWaitForTermination();
 	}
 
 	FinishLocalDeploymentShutDown();
@@ -444,18 +443,21 @@ bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
 	return true;
 }
 
-bool FLocalDeploymentManager::WaitForGracefulShutdown()
+bool FLocalDeploymentManager::GracefulShutdownAndWaitForTermination()
 {
-#if PLATFORM_WINDOWS
-	WindowsRequestGracefulRuntimeShutdown();
-#else
-	NonWindowsRequestGracefulRuntimeShutdown();
-#endif
-	bool bGracefulShutdownSuccess = WaitForRuntimeProcessToShutDown();
-	return bGracefulShutdownSuccess;
+	if (RuntimeProcess.IsSet())
+	{
+		const FString ProcName = RuntimePath.Replace(TEXT("/"), TEXT("\\"));
+		SpatialCommandUtils::TryGracefullyKill(ProcName, RuntimeProcess->GetProcessHandle());
+
+		const bool bGracefulShutdownSuccess = WaitForRuntimeProcessToShutDown();
+		return bGracefulShutdownSuccess;
+	}
+	UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Trying to stop deployment gracefully but RuntimeProcess is not set."));
+	return false;
 }
 
-bool FLocalDeploymentManager::WaitForForcefulShutdown()
+bool FLocalDeploymentManager::ForceShutdownAndWaitForTermination()
 {
 	RuntimeProcess->Stop();
 	const bool bForcefulShutdownSuccess = WaitForRuntimeProcessToShutDown();
@@ -487,53 +489,6 @@ void FLocalDeploymentManager::FinishLocalDeploymentShutDown()
 
 	bLocalDeploymentRunning = false;
 	bStoppingDeployment = false;
-}
-
-void FLocalDeploymentManager::WindowsRequestGracefulRuntimeShutdown()
-{
-	// Sends a process signal requesting the runtime shutdown
-
-	// Prepare runtime process name
-	FString RuntimeProcessName = RuntimePath;
-	RuntimeProcessName = RuntimeProcessName.Replace(TEXT("/"), TEXT("\\"));
-	// Find runtime window
-	const HWND RuntimeWindowHandle = FindWindowA(nullptr, TCHAR_TO_ANSI(*RuntimeProcessName));
-	if (RuntimeWindowHandle != nullptr)
-	{
-		// Send message to runtime window to close gracefully.
-		SendMessage(RuntimeWindowHandle, WM_CLOSE, NULL, NULL);
-	}
-	else
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error,
-			   TEXT("Tried to gracefully stop local deployment but could not find runtime window. Runtime will eventually stop "
-					"non-gracefully."));
-	}
-}
-
-void FLocalDeploymentManager::NonWindowsRequestGracefulRuntimeShutdown()
-{
-	// Sends a http message requesting graceful shutdown
-
-	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
-#if ENGINE_MINOR_VERSION >= 26
-	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = HttpModule.Get().CreateRequest();
-#else
-	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
-#endif
-
-	const FString URL = FString::Printf(TEXT("http://localhost:%d/shutdown"), HTTPPort);
-	HttpRequest->SetURL(URL);
-	HttpRequest->SetVerb("GET");
-	HttpRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
-		const int32 ResponseCode = HttpResponse->GetResponseCode();
-		if (ResponseCode != 200)
-		{
-			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime graceful shutdown http request failed with code: %d"), ResponseCode);
-		}
-	});
-
-	HttpRequest->ProcessRequest();
 }
 
 bool FLocalDeploymentManager::IsLocalDeploymentRunning() const
