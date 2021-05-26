@@ -491,6 +491,8 @@ void FLocalDeploymentManager::FinishLocalDeploymentShutDown()
 
 void FLocalDeploymentManager::WindowsRequestGracefulRuntimeShutdown()
 {
+	// Sends a process signal requesting the runtime shutdown
+
 	// Prepare runtime process name
 	FString RuntimeProcessName = RuntimePath;
 	RuntimeProcessName = RuntimeProcessName.Replace(TEXT("/"), TEXT("\\"));
