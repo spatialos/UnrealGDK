@@ -332,8 +332,10 @@ void InterestFactory::AddClientInterestEntityIdQuery(Interest& OutInterest, cons
 	ensure(GetDefault<USpatialGDKSettings>()->bUseEntityIdListClientQueries);
 
 	const APlayerController* PlayerController = Cast<APlayerController>(InActor);
-	ensureMsgf(PlayerController != nullptr, TEXT("Tried to update client interest query for a non-PlayerController: %s"),
-			   *GetNameSafe(InActor));
+	if (!ensureMsgf(PlayerController != nullptr, TEXT("Only PCs can use client entity interest: %s"), *GetNameSafe(InActor)))
+	{
+		return;
+	}
 
 	Query RepGraphEntityIdQuery = Query();
 	RepGraphEntityIdQuery.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
@@ -354,25 +356,21 @@ TArray<Worker_EntityId> InterestFactory::GetClientInterestedEntityIds(const APla
 	TArray<Worker_EntityId> InterestedEntityIdList{};
 
 	UNetConnection* NetConnection = InPlayerController->NetConnection;
-	UNetReplicationGraphConnection* NetRepGraphConnection =
-		Cast<UNetReplicationGraphConnection>(NetConnection->GetReplicationConnectionDriver());
-	if (NetRepGraphConnection == nullptr)
+
+	UReplicationGraph* RepGraph = Cast<UReplicationGraph>(NetConnection->Driver->GetReplicationDriver());
+	if (RepGraph == nullptr)
 	{
-		UE_LOG(LogInterestFactory, Error, TEXT("Failed to NetRepGraphConnection when calculating client interest"));
-		return InterestedEntityIdList;
+		UE_LOG(LogInterestFactory, Error, TEXT("Rep graph was nullptr when trying to get client entity interest list"));
+		return TArray<Worker_EntityId>();
 	}
 
-	const TArray<TWeakObjectPtr<AActor>>& ClientInterestedActors = NetRepGraphConnection->ClientInterestedActors;
+	TArray<AActor*> ClientInterestedActors = RepGraph->GatherClientInterestedActors(NetConnection);
 
 	InterestedEntityIdList.Reserve(ClientInterestedActors.Num());
 
-	for (const TWeakObjectPtr<AActor> ActorWeakPtr : ClientInterestedActors)
+	for (const AActor* Actor : ClientInterestedActors)
 	{
-		if (!ActorWeakPtr.IsValid())
-		{
-			continue;
-		}
-		const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(ActorWeakPtr.Get());
+		const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 		{
 			continue;

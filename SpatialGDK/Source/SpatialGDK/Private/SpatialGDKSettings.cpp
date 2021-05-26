@@ -237,6 +237,8 @@ void USpatialGDKSettings::PostInitProperties()
 				UE_LOG(LogSpatialGDKSettings, Log, TEXT("Invalid event tracing sampling class specified: %s."), *OverrideValue);
 			}
 		});
+	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableClientEntityInterest"), TEXT("Client interest using entity ID lists"),
+                         bUseEntityIdListClientQueries);
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 
