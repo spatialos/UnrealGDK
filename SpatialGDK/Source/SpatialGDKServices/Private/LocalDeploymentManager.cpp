@@ -447,8 +447,8 @@ bool FLocalDeploymentManager::GracefulShutdownAndWaitForTermination()
 {
 	if (RuntimeProcess.IsSet())
 	{
-		const FString ProcName = RuntimePath.Replace(TEXT("/"), TEXT("\\"));
-		SpatialCommandUtils::TryGracefullyKill(ProcName, RuntimeProcess->GetProcessHandle());
+		const FString RuntimeProcName = RuntimePath.Replace(TEXT("/"), TEXT("\\"));
+		SpatialCommandUtils::TryGracefullyKill(RuntimeProcName, RuntimeProcess->GetProcessHandle());
 
 		const bool bGracefulShutdownSuccess = WaitForRuntimeProcessToShutDown();
 		return bGracefulShutdownSuccess;
