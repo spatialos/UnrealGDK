@@ -440,10 +440,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 		SnapshotManager = MakeUnique<SpatialSnapshotManager>();
 
-		MigrationDiagnosticsSystem = MakeUnique <SpatialGDK::MigrationDiagnosticsSystem>(*this);
+		MigrationDiagnosticsSystem = MakeUnique<SpatialGDK::MigrationDiagnosticsSystem>(*this);
 		DebugMetricsSystem = MakeUnique<SpatialGDK::DebugMetricsSystem>(*this);
 
-		QueryHandler = MakeUnique <SpatialGDK::EntityQueryHandler>();
+		QueryHandler = MakeUnique<SpatialGDK::EntityQueryHandler>();
 
 		if (SpatialSettings->bAsyncLoadNewClassesOnEntityCheckout)
 		{

@@ -222,8 +222,8 @@ public:
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
 
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
-	TUniquePtr <SpatialGDK::MigrationDiagnosticsSystem> MigrationDiagnosticsSystem;
-	TUniquePtr <SpatialGDK::DebugMetricsSystem> DebugMetricsSystem;
+	TUniquePtr<SpatialGDK::MigrationDiagnosticsSystem> MigrationDiagnosticsSystem;
+	TUniquePtr<SpatialGDK::DebugMetricsSystem> DebugMetricsSystem;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 	TUniquePtr<FSpatialNetDriverRPC> RPCs;
@@ -289,7 +289,7 @@ private:
 	TUniquePtr<SpatialGDK::CrossServerRPCSender> CrossServerRPCSender;
 	TUniquePtr<SpatialGDK::CrossServerRPCHandler> CrossServerRPCHandler;
 
-	TUniquePtr <SpatialGDK::EntityQueryHandler> QueryHandler;
+	TUniquePtr<SpatialGDK::EntityQueryHandler> QueryHandler;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 	TSet<Worker_EntityId_Key> DormantEntities;
