@@ -74,7 +74,7 @@ private:
 	{
 		void operator()(Io_Stream* StreamToDestroy) const
 		{
-			if (StreamToDestroy)
+			if (StreamToDestroy != nullptr)
 			{
 				Io_Stream_Destroy(StreamToDestroy);
 			}

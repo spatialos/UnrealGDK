@@ -41,7 +41,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 
 	uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
 	// Depends whether we are using rotating logs or single-log mode (where we track max size).
-	bool bTrackFileSize = EventTracer->MaxFileSize != 0;
+	const bool bTrackFileSize = EventTracer->MaxFileSize != 0;
 	if (!bTrackFileSize || (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize))
 	{
 		if (bTrackFileSize) // Tracked file size
@@ -50,7 +50,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 		}
 
 		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
-		if (Code != 1)
+		if (Code != WORKER_RESULT_FAILURE)
 		{
 			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s)"), Code, Trace_GetLastError());
 		}
@@ -115,6 +115,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing span sampling probabalistic. Probability: %f."),
 		   SamplingSettings->SamplingProbability);
 
+	SpanSamplingProbabilities.SetNum(SamplingSettings->EventSamplingModeOverrides.Num());
 	for (const auto& Pair : SamplingSettings->EventSamplingModeOverrides)
 	{
 		const FString& EventName = Pair.Key.ToString();
