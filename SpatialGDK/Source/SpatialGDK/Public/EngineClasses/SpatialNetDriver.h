@@ -6,6 +6,7 @@
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/CrossServerRPCSender.h"
 #include "Interop/EntityQueryHandler.h"
+#include "Interop/OwnershipCompletenessHandler.h"
 #include "Utils/SpatialBasicAwaiter.h"
 #include "Utils/SpatialDebugger.h"
 
@@ -224,6 +225,7 @@ public:
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
 	TUniquePtr<SpatialGDK::MigrationDiagnosticsSystem> MigrationDiagnosticsSystem;
 	TUniquePtr<SpatialGDK::DebugMetricsSystem> DebugMetricsSystem;
+	TOptional<SpatialGDK::FOwnershipCompletenessHandler> OwnershipCompletenessHandler;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
 	TUniquePtr<FSpatialNetDriverRPC> RPCs;

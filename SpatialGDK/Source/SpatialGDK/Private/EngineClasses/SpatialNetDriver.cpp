@@ -36,6 +36,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/MigrationDiagnosticsSystem.h"
+#include "Interop/OwnershipCompletenessHandler.h"
 #include "Interop/RPCExecutor.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialDispatcher.h"
@@ -53,6 +54,7 @@
 #include "LoadBalancing/DebugLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "LoadBalancing/OwnershipLockingPolicy.h"
+#include "Schema/ActorOwnership.h"
 #include "Schema/ActorSetMember.h"
 #include "Schema/SpatialDebugging.h"
 #include "SpatialConstants.h"
@@ -144,6 +146,15 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 				NetServerMaxTickRate = 120;
 			}
 		}
+	}
+
+	if (bInitAsClient)
+	{
+		OwnershipCompletenessHandler = SpatialGDK::FOwnershipCompletenessHandler::CreateClientOwnershipHandler();
+	}
+	else
+	{
+		OwnershipCompletenessHandler = SpatialGDK::FOwnershipCompletenessHandler::CreateServerOwnershipHandler();
 	}
 
 	if (!Super::InitBase(bInitAsClient, InNotify, URL, bReuseAddressAndPort, Error))
@@ -507,7 +518,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 		{
 			const SpatialGDK::FSubView& AuthoritySubView = SpatialGDK::ActorSubviews::CreateAuthoritySubView(*this);
-			const SpatialGDK::FSubView& OwnershipSubView = SpatialGDK::ActorSubviews::CreateOwnershipSubView(*this);
+			const SpatialGDK::FSubView& OwnershipSubView = SpatialGDK::ActorSubviews::CreatePlayerOwnershipSubView(*this);
 			const SpatialGDK::FSubView& SimulatedSubView = SpatialGDK::ActorSubviews::CreateSimulatedSubView(*this);
 
 			ActorSystem = MakeUnique<SpatialGDK::ActorSystem>(ActorSubview, AuthoritySubView, OwnershipSubView, SimulatedSubView,

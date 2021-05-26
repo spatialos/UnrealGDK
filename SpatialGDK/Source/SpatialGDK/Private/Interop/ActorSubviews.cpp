@@ -1,8 +1,11 @@
 #include "Interop/ActorSubviews.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/InitialOnlyFilter.h"
+#include "Interop/OwnershipCompletenessHandler.h"
+#include "Schema/ActorOwnership.h"
 #include "Schema/Restricted.h"
 #include "Schema/Tombstone.h"
 #include "Schema/UnrealMetadata.h"
@@ -100,10 +103,9 @@ bool AuthoritySubviewSetup::IsAuthorityActorEntity(const Worker_EntityId EntityI
 
 TArray<FDispatcherRefreshCallback> AuthoritySubviewSetup::GetCallbacks(ViewCoordinator& Coordinator)
 {
-	return CombineCallbacks(MainActorSubviewSetup::GetCallbacks(Coordinator),
-							{
-								Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
-							});
+	return {
+		Coordinator.CreateAuthorityChangeRefreshCallback(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID),
+	};
 }
 
 bool OwnershipSubviewSetup::IsPlayerOwnedActorEntity(const Worker_EntityId EntityId, const EntityViewElement& Element)
@@ -181,40 +183,89 @@ FSubView& CreateActorAuthSubView(USpatialNetDriver& NetDriver)
 																FSubView::NoDispatcherCallbacks);
 }
 
-template <typename TCallable>
-FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, USpatialNetDriver& NetDriver)
+template <typename TCallable, typename... TValues>
+FFilterPredicate GetRoleFilterPredicate(TCallable RolePredicate, TValues... Values)
 {
-	return [RolePredicate, &NetDriver](const Worker_EntityId EntityId, const EntityViewElement& Entity) -> bool {
-		if (!MainActorSubviewSetup::IsActorEntity(EntityId, Entity, NetDriver))
-		{
-			return false;
-		}
-
-		return Invoke(RolePredicate, EntityId, Entity);
+	return [RolePredicate, ExtraValues = TTuple<TValues...>(Values...)](const Worker_EntityId EntityId,
+																		const EntityViewElement& Entity) -> bool {
+		return ExtraValues.ApplyAfter(RolePredicate, EntityId, Entity);
 	};
+}
+
+static FActorSubviewExtension GetNetDriverSubviewExtension(USpatialNetDriver& NetDriver)
+{
+	return { FActorFilterPredicateFactory([&NetDriver](FFilterPredicate BasePredicate) {
+				 return [&NetDriver, BasePredicate = MoveTemp(BasePredicate)](const Worker_EntityId EntityId,
+																			  const EntityViewElement& Element) {
+					 if (!MainActorSubviewSetup::IsActorEntity(EntityId, Element, NetDriver))
+					 {
+						 return false;
+					 }
+
+					 return BasePredicate(EntityId, Element);
+				 };
+			 }),
+			 FActorRefreshCallbackPredicateFactory([&NetDriver](TArray<FDispatcherRefreshCallback> RefreshCallbacks) {
+				 RefreshCallbacks.Append(MainActorSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
+				 return RefreshCallbacks;
+			 }) };
 }
 
 FSubView& CreateAuthoritySubView(USpatialNetDriver& NetDriver)
 {
+	const FActorSubviewExtension Extension = GetNetDriverSubviewExtension(NetDriver);
+
 	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetRoleFilterPredicate(&AuthoritySubviewSetup::IsAuthorityActorEntity, NetDriver),
-		AuthoritySubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
+		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
+		Extension.ExtendPredicate(GetRoleFilterPredicate(&AuthoritySubviewSetup::IsAuthorityActorEntity)),
+		Extension.ExtendCallbacks(AuthoritySubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator())));
 }
 
-FSubView& CreateOwnershipSubView(USpatialNetDriver& NetDriver)
+bool IsPlayerOwned(Worker_EntityId EntityId, const EntityViewElement& Entity, const FOwnershipCompletenessHandler* OwnershipHandler)
 {
-	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID, GetRoleFilterPredicate(&OwnershipSubviewSetup::IsPlayerOwnedActorEntity, NetDriver),
-		OwnershipSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
+	return OwnershipSubviewSetup::IsPlayerOwnedActorEntity(EntityId, Entity) && OwnershipHandler->IsOwnershipComplete(EntityId, Entity);
+}
+
+FSubView& CreatePlayerOwnershipSubView(ViewCoordinator& Coordinator, FOwnershipCompletenessHandler& OwnershipHandler,
+									   const FActorSubviewExtension& Extension)
+{
+	FSubView& SubView = Coordinator.CreateSubView(
+		SpatialConstants::ACTOR_TAG_COMPONENT_ID, Extension.ExtendPredicate(GetRoleFilterPredicate(&IsPlayerOwned, &OwnershipHandler)),
+		Extension.ExtendCallbacks(
+			CombineCallbacks(FOwnershipCompletenessHandler::GetCallbacks(Coordinator), OwnershipSubviewSetup::GetCallbacks(Coordinator))));
+	OwnershipHandler.AddSubView(SubView);
+	return SubView;
+}
+
+FSubView& CreatePlayerOwnershipSubView(USpatialNetDriver& NetDriver)
+{
+	return CreatePlayerOwnershipSubView(NetDriver.Connection->GetCoordinator(), NetDriver.OwnershipCompletenessHandler.GetValue(),
+										GetNetDriverSubviewExtension(NetDriver));
+}
+
+bool IsSimulatedAndOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity,
+									 const FOwnershipCompletenessHandler* OwnershipHandler)
+{
+	return SimulatedSubviewSetup::IsSimulatedActorEntity(EntityId, Entity) && OwnershipHandler->IsOwnershipComplete(EntityId, Entity);
+}
+
+FSubView& CreateSimulatedSubView(ViewCoordinator& Coordinator, FOwnershipCompletenessHandler& OwnershipHandler,
+								 const FActorSubviewExtension& Extension)
+{
+	FSubView& SubView =
+		Coordinator.CreateSubView(SpatialConstants::ACTOR_TAG_COMPONENT_ID,
+								  Extension.ExtendPredicate(GetRoleFilterPredicate(&IsSimulatedAndOwnershipComplete, &OwnershipHandler)),
+								  Extension.ExtendCallbacks(CombineCallbacks(FOwnershipCompletenessHandler::GetCallbacks(Coordinator),
+																			 SimulatedSubviewSetup::GetCallbacks(Coordinator))));
+	OwnershipHandler.AddSubView(SubView);
+	return SubView;
 }
 
 FSubView& CreateSimulatedSubView(USpatialNetDriver& NetDriver)
 {
-	return NetDriver.Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::ACTOR_TAG_COMPONENT_ID, GetRoleFilterPredicate(&SimulatedSubviewSetup::IsSimulatedActorEntity, NetDriver),
-		SimulatedSubviewSetup::GetCallbacks(NetDriver.Connection->GetCoordinator()));
+	return CreateSimulatedSubView(NetDriver.Connection->GetCoordinator(), NetDriver.OwnershipCompletenessHandler.GetValue(),
+								  GetNetDriverSubviewExtension(NetDriver));
 }
-
 } // namespace ActorSubviews
 
 } // namespace SpatialGDK
