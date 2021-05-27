@@ -38,7 +38,7 @@ public:
 																	 const int32 NumRetries = 3);
 
 private:
-	static void TryGracefullyKillWindows(FString ProcName);
+	static void TryGracefullyKillWindows(const FString& ProcName);
 
 	// Timeout given in seconds.
 	static constexpr double ProcessTimeoutTime = 120.0;

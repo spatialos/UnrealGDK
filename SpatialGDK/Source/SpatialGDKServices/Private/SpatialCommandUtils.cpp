@@ -7,7 +7,13 @@
 #include "Serialization/JsonSerializer.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
+
+#if PLATFORM_WINDOWS
 #include "Windows/AllowWindowsPlatformTypes.h"
+#include "Windows/HideWindowsPlatformTypes.h"
+#endif
+
+#include <csignal>
 
 DEFINE_LOG_CATEGORY(LogSpatialCommandUtils);
 
@@ -380,17 +386,19 @@ void SpatialCommandUtils::TryKillProcessWithName(const FString& ProcessName)
 
 void SpatialCommandUtils::TryGracefullyKill(const FString& ProcName, const FProcHandle& ProcHandle)
 {
-#if PLATFORM_WINDOWS
-	TryGracefullyKillWindows(ProcName);
-#else
-	// This sends a SIGTERM signal
+#if !PLATFORM_WINDOWS
+	// On UNIX this sends a SIGTERM signal
 	FGenericPlatformProcess::TerminateProc(ProcHandle);
+#else
+	// TerminateProc is too forceful on Windows
+	TryGracefullyKillWindows(ProcName);
 #endif
 }
 
-void SpatialCommandUtils::TryGracefullyKillWindows(const FString ProcName)
+void SpatialCommandUtils::TryGracefullyKillWindows(const FString& ProcName)
 {
-	// Use WM_CLOSE signal on windows as DestroyProc has forcefully kills on Windows
+#if PLATFORM_WINDOWS
+	// Use WM_CLOSE signal on windows as DestroyProc forcefully kills on Windows
 
 	// Find runtime window
 	const HWND RuntimeWindowHandle = FindWindowA(nullptr, TCHAR_TO_ANSI(*ProcName));
@@ -405,7 +413,9 @@ void SpatialCommandUtils::TryGracefullyKillWindows(const FString ProcName)
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to gracefully stop process '%s' but could not find runtime window."),
 			   *ProcName);
 	}
+#endif
 }
+
 
 bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName)
 {
