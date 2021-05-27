@@ -416,7 +416,6 @@ void SpatialCommandUtils::TryGracefullyKillWindows(const FString& ProcName)
 #endif
 }
 
-
 bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName)
 {
 #if PLATFORM_WINDOWS
