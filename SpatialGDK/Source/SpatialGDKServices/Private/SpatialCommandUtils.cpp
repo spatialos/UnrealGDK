@@ -11,9 +11,6 @@
 #if PLATFORM_WINDOWS
 #include "Windows/WindowsHWrapper.h"
 #endif
-
-#include <csignal>
-
 DEFINE_LOG_CATEGORY(LogSpatialCommandUtils);
 
 #define LOCTEXT_NAMESPACE "SpatialCommandUtils"
@@ -397,14 +394,14 @@ void SpatialCommandUtils::TryGracefullyKill(const FString& ProcName, const FProc
 void SpatialCommandUtils::TryGracefullyKillWindows(const FString& ProcName)
 {
 #if PLATFORM_WINDOWS
-	// Use WM_CLOSE signal on windows as DestroyProc forcefully kills on Windows
+	// Use WM_CLOSE signal on windows as TerminateProc forcefully kills on Windows
 
 	// Find runtime window
 	const HWND RuntimeWindowHandle = FindWindowA(nullptr, TCHAR_TO_ANSI(*ProcName));
 	if (RuntimeWindowHandle != nullptr)
 	{
 		// Using SendMessageW to send message despite being 'supposed to' use SendMessage - as including "Windows/MinWindows.h" needed for
-		// SendMessage overrides the TEXT macro (SendMessageW is also used elsewhere in unreal)
+		// SendMessage overrides the TEXT macro (SendMessageW is also used elsewhere in Unreal)
 		SendMessageW(RuntimeWindowHandle, WM_CLOSE, NULL, NULL);
 	}
 	else
