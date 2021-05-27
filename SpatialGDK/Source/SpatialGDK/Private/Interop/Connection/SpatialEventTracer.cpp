@@ -52,7 +52,8 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
 		if (Code == WORKER_RESULT_FAILURE)
 		{
-			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s)"), Code, ANSI_TO_TCHAR(Trace_GetLastError()));
+			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s)"), Code,
+				   ANSI_TO_TCHAR(Trace_GetLastError()));
 		}
 
 		if (FPlatformAtomics::AtomicRead_Relaxed(&EventTracer->FlushOnWriteAtomic))
@@ -150,7 +151,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 
 	FolderPath = EventTracePath;
 	const FString FolderWorkerPath = FPaths::Combine(EventTracePath, WorkerId);
-	
+
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	const FString FileName = TEXT("gdk");
 	const FString FileExt = TEXT(".etlog");
