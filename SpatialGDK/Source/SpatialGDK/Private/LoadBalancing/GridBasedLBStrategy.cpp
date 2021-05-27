@@ -271,7 +271,7 @@ void UGridBasedLBStrategy::PostEditChangeProperty(FPropertyChangedEvent& Propert
 
 bool UGridBasedLBStrategy::IsStrategyWorkerAware() const
 {
-	return false;
+	return true;
 }
 
 TUniquePtr<SpatialGDK::FLoadBalancingCalculator> UGridBasedLBStrategy::CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const
