@@ -87,6 +87,9 @@ void DebugMetricsSystem::ProcessOps(const TArray<Worker_Op>& Ops) const
 				Response.command_index = CommandIndex;
 				Response.schema_type = Schema_CreateCommandResponse();
 
+				const FSpatialGDKSpanId CauseSpanId(Op.span_id);
+				FSpatialGDKSpanId SpanId;
+
 				if (EventTracer != nullptr)
 				{
 						SpanId = EventTracer->TraceEvent(SEND_COMMAND_RESPONSE_EVENT_NAME, "", CauseSpanId.GetConstId(), /* NumCauses */ 1,
