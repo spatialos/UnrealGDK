@@ -402,7 +402,8 @@ void SpatialCommandUtils::TryGracefullyKillWindows(const FString ProcName)
 	}
 	else
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to gracefully stop process '%s' but could not find runtime window."), *ProcName);
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to gracefully stop process '%s' but could not find runtime window."),
+			   *ProcName);
 	}
 }
 
