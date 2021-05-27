@@ -378,7 +378,7 @@ void SpatialCommandUtils::TryKillProcessWithName(const FString& ProcessName)
 	}
 }
 
-void SpatialCommandUtils::TryGracefullyKill(FString ProcName, FProcHandle ProcHandle)
+void SpatialCommandUtils::TryGracefullyKill(const FString& ProcName, const FProcHandle& ProcHandle)
 {
 #if PLATFORM_WINDOWS
 	TryGracefullyKillWindows(ProcName);
@@ -388,9 +388,9 @@ void SpatialCommandUtils::TryGracefullyKill(FString ProcName, FProcHandle ProcHa
 #endif
 }
 
-void SpatialCommandUtils::TryGracefullyKillWindows(FString ProcName)
+void SpatialCommandUtils::TryGracefullyKillWindows(const FString ProcName)
 {
-	// Use WM_CLOSE signal on windows as DestroyProc has forcefully kills when on Windows
+	// Use WM_CLOSE signal on windows as DestroyProc has forcefully kills on Windows
 
 	// Find runtime window
 	const HWND RuntimeWindowHandle = FindWindowA(nullptr, TCHAR_TO_ANSI(*ProcName));
@@ -402,7 +402,7 @@ void SpatialCommandUtils::TryGracefullyKillWindows(FString ProcName)
 	}
 	else
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to gracefully stop process but could not find runtime window."));
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to gracefully stop process '%s' but could not find runtime window."), *ProcName);
 	}
 }
 

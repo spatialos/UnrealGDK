@@ -26,7 +26,7 @@ public:
 	SPATIALGDKSERVICES_API static bool GetProcessName(const FString& PID, FString& OutProcessName);
 	SPATIALGDKSERVICES_API static bool TryKillProcessWithPID(const FString& PID);
 	SPATIALGDKSERVICES_API static void TryKillProcessWithName(const FString& ProcessName);
-	SPATIALGDKSERVICES_API static void TryGracefullyKill(FString ProcName, FProcHandle ProcHandle);
+	SPATIALGDKSERVICES_API static void TryGracefullyKill(const FString& ProcName, const FProcHandle& ProcHandle);
 	SPATIALGDKSERVICES_API static bool FetchRuntimeBinary(const FString& RuntimeVersion, const bool bIsRunningInChina);
 	SPATIALGDKSERVICES_API static bool FetchInspectorBinary(const FString& InspectorVersion, const bool bIsRunningInChina);
 	SPATIALGDKSERVICES_API static bool FetchPackageBinary(const FString& PackageVersion, const FString& PackageExe,
