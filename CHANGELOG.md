@@ -102,6 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reverted a fix relating to the `dbghelp` file that previously caused the Editor to crash when loading the Session Front End. Our fix is no longer necessary, as Epic have fixed the issue and we've adopted their fix.
 - Fixed issue with `SpatialDebugger` crashing when client travelling.
 - Fixed an issue where a NetworkFailure won't be reported when connecting to a deployment that doesn't support dev_login with a developer token, and in some other configuration-dependent cases.
+- Fixed a Windows compile issue when updating the worker SDK which did not recompile code dependent on the updated libs/dlls. 
 
 
 ## [`0.12.0`] - 2021-02-01

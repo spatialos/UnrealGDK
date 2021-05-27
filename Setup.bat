@@ -153,6 +153,13 @@ call :MarkStartOfBlock "Unpack dependencies"
     xcopy /s /i /q "%BINARIES_DIR%\Headers\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
 
+REM When the worker libs are updated outside of the build system, timestamps are not updated on unzip so 
+REM no change is registered, resulting in broken builds (lib / dll mismatch). 
+call :MarkStartOfBlock "Touching worker libs"
+call :TouchFilesInFolder %BINARIES_DIR%\Win64\
+call :TouchFilesInFolder %BINARIES_DIR%\Linux\
+call :MarkEndOfBlock "Touching worker libs"
+
 if exist "%SPATIAL_DIR%" (
     call :MarkStartOfBlock "Copy standard library schema"
         echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"
@@ -191,6 +198,13 @@ if not defined NO_PAUSE (
 )
 
 exit /b %ERRORLEVEL%
+
+:TouchFilesInFolder
+echo Touching lib/dll files in: %~1
+pushd "%~1"
+for /R %%f in (*.lib,*.dll,*.so) do copy /b %%f +,,
+popd 
+exit /b 0
 
 :MarkStartOfBlock
 echo Starting: %~1
