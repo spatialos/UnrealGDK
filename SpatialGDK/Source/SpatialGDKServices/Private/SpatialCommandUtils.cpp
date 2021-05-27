@@ -9,7 +9,7 @@
 #include "SpatialGDKServicesModule.h"
 
 #if PLATFORM_WINDOWS
-#include "Windows/WindowsHWrapper.h"
+	#include "Windows/WindowsHWrapper.h"
 #endif
 
 #include <csignal>
