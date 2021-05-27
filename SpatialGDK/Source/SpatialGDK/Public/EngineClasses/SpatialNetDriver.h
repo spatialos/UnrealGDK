@@ -302,6 +302,7 @@ private:
 	bool bIsReadyToStart;
 	bool bMapLoaded;
 
+	FString NetworkFailureError;
 	FString SnapshotToLoad;
 
 	// Client variable which stores the SessionId given to us by the server in the URL options.

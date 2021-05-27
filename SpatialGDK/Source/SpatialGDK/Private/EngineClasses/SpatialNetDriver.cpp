@@ -115,6 +115,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, NextRPCIndex(0)
 	, StartupTimestamp(0)
 	, MigrationTimestamp(0)
+	, NetworkFailureError("")
 {
 	// Due to changes in 4.23, we now use an outdated flow in ComponentReader::ApplySchemaObject
 	// Native Unreal now iterates over all commands on clients, and no longer has access to a BaseHandleToCmdIndex
@@ -678,16 +679,6 @@ void USpatialNetDriver::ClientOnGSMQuerySuccess()
 {
 	StartupClientDebugString.Empty();
 
-	auto FlagNetworkFailure = [this](const FString& ErrorString) {
-		if (USpatialGameInstance* GameInstance = GetGameInstance())
-		{
-			if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
-			{
-				GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, ErrorString);
-			}
-		}
-	};
-
 	const uint64 SnapshotVersion = GlobalStateManager->GetSnapshotVersion();
 	if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != SnapshotVersion) // Are we running with the same snapshot version?
 	{
@@ -696,8 +687,7 @@ void USpatialNetDriver::ClientOnGSMQuerySuccess()
 					"version = '%llu'"),
 			   SnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
 
-		FlagNetworkFailure(
-			TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot."));
+		NetworkFailureError = TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot.");
 
 		return;
 	}
@@ -712,7 +702,7 @@ void USpatialNetDriver::ClientOnGSMQuerySuccess()
 				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
 				   ClassInfoManager->SchemaDatabase->SchemaBundleHash, ServerHash);
 
-			FlagNetworkFailure(TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
+			NetworkFailureError = TEXT("Your version of the game does not match that of the server. Please try updating your game version.");
 			return;
 		}
 
@@ -2370,6 +2360,20 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		}
 
 		QueryHandler.ProcessOps(Connection->GetWorkerMessages());
+	}
+
+	// Broadcast network failure if any network errors occurred
+	// NOTE: this should be performed at the end of this function to prevent network disconnection errors  
+	if (!NetworkFailureError.IsEmpty())
+	{
+		if (USpatialGameInstance* GameInstance = GetGameInstance())
+		{
+			if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+			{
+				GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, NetworkFailureError);
+			}
+		}
+		NetworkFailureError.Empty();
 	}
 }
 
