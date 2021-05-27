@@ -44,7 +44,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	const bool bTrackFileSize = EventTracer->MaxFileSize != 0;
 	if (!bTrackFileSize || (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize))
 	{
-		if (bTrackFileSize) // Tracked file size
+		if (bTrackFileSize) 
 		{
 			EventTracer->BytesWrittenToStream += ItemSize;
 		}
