@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Event tracing has been optimised to reduce overhead when tracing events in general and in particular when events are not sampled. The tracing API has been modified to accomidate these improvements. You will have to modify your project if you use the API.
 
 ### Features: 
+- Added `SpatialExecServerCmd` console command with one command `StartInsights` to dynamically enable insights capturing.
+  - Format: SpatialExecServerCmd < server > < command > < args >
+  - Example usage: "SpatialExecServerCmd local StartInsights -trace=CustomChannel -tracefile=MyNewTrace"
 - The Unreal GDK has been updated to run against SpatialOS 15.1.0, older version of SpatialOS will no longer work with the Unreal GDK.
 - Event tracing rotating log support (via `bEnableEventTracingRotatingLogs`, `EventTracingRotatingLogsMaxFileSizeBytes` and `EventTracingRotatingLogsMaxFileCount`). 
 - Event tracing filter support (configured via `UEventTracingSamplingSettings`).
