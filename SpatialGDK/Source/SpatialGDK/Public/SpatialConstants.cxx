@@ -205,7 +205,6 @@ const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
     "unreal/gdk/unreal_metadata.schema",
     "unreal/gdk/actor_group_member.schema",
     "unreal/gdk/actor_set_member.schema",
-    "unreal/gdk/migration_diagnostic.schema",
     "unreal/generated/rpc_endpoints.schema",
     "unreal/generated/NetCullDistance/ncdcomponents.schema",
 };
