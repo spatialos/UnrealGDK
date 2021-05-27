@@ -50,9 +50,9 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 		}
 
 		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
-		if (Code != WORKER_RESULT_FAILURE)
+		if (Code == WORKER_RESULT_FAILURE)
 		{
-			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s)"), Code, Trace_GetLastError());
+			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s)"), Code, ANSI_TO_TCHAR(Trace_GetLastError()));
 		}
 
 		if (FPlatformAtomics::AtomicRead_Relaxed(&EventTracer->FlushOnWriteAtomic))
@@ -60,7 +60,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 			if (Io_Stream_Flush(Stream) == -1)
 			{
 				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %d (%s)"), Code,
-					   Io_Stream_GetLastError(Stream));
+					   ANSI_TO_TCHAR(Io_Stream_GetLastError(Stream)));
 			}
 		}
 	}
@@ -148,18 +148,20 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		EventTracePath = FPaths::GetPath(AbsLogPath);
 	}
 
-	FolderPath = FPaths::Combine(EventTracePath, WorkerId);
+	FolderPath = EventTracePath;
+	const FString FolderWorkerPath = FPaths::Combine(EventTracePath, WorkerId);
+	
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	const FString FileName = TEXT("gdk");
 	const FString FileExt = TEXT(".etlog");
-	if (PlatformFile.CreateDirectoryTree(*FolderPath))
+	if (PlatformFile.CreateDirectoryTree(*FolderWorkerPath))
 	{
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace file%s to %s."),
-			   (Settings->bEnableEventTracingRotatingLogs) ? TEXT("s") : TEXT(""), *FolderPath);
+			   (Settings->bEnableEventTracingRotatingLogs) ? TEXT("s") : TEXT(""), *FolderWorkerPath);
 
 		if (Settings->bEnableEventTracingRotatingLogs)
 		{
-			FString FullFilePathPrefix = FString::Printf(TEXT("%s-"), *FPaths::Combine(FolderPath, FileName));
+			FString FullFilePathPrefix = FString::Printf(TEXT("%s-"), *FPaths::Combine(FolderWorkerPath, FileName));
 			const FString FullFilePathSuffix = FileExt;
 
 			Io_RotatingFileStreamParameters FileParamters;
@@ -172,13 +174,13 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 		else
 		{
 			const FString FullFilename = FString::Printf(TEXT("%s%s"), *FileName, *FileExt);
-			const FString FullFilePath = FPaths::Combine(FolderPath, FullFilename);
+			const FString FullFilePath = FPaths::Combine(FolderWorkerPath, FullFilename);
 			Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FullFilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
 		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialEventTracer, Error, TEXT("Error creating directory tree to %s"), *FolderPath);
+		UE_LOG(LogSpatialEventTracer, Error, TEXT("Error creating directory tree to %s"), *FolderWorkerPath);
 	}
 }
 
