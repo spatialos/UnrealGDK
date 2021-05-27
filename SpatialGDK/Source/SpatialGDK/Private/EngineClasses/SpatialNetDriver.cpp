@@ -687,7 +687,8 @@ void USpatialNetDriver::ClientOnGSMQuerySuccess()
 					"version = '%llu'"),
 			   SnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
 
-		NetworkFailureError = TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot.");
+		NetworkFailureError =
+			TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot.");
 
 		return;
 	}
@@ -702,7 +703,8 @@ void USpatialNetDriver::ClientOnGSMQuerySuccess()
 				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
 				   ClassInfoManager->SchemaDatabase->SchemaBundleHash, ServerHash);
 
-			NetworkFailureError = TEXT("Your version of the game does not match that of the server. Please try updating your game version.");
+			NetworkFailureError =
+				TEXT("Your version of the game does not match that of the server. Please try updating your game version.");
 			return;
 		}
 
@@ -2363,7 +2365,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	}
 
 	// Broadcast network failure if any network errors occurred
-	// NOTE: this should be performed at the end of this function to prevent network disconnection errors  
+	// NOTE: this should be performed at the end of this function to prevent network disconnection errors
 	if (!NetworkFailureError.IsEmpty())
 	{
 		if (USpatialGameInstance* GameInstance = GetGameInstance())
