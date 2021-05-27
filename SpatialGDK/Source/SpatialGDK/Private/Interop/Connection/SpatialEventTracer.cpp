@@ -115,7 +115,7 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing span sampling probabalistic. Probability: %f."),
 		   SamplingSettings->SamplingProbability);
 
-	SpanSamplingProbabilities.SetNum(SamplingSettings->EventSamplingModeOverrides.Num());
+	SpanSamplingProbabilities.Reserve(SamplingSettings->EventSamplingModeOverrides.Num());
 	for (const auto& Pair : SamplingSettings->EventSamplingModeOverrides)
 	{
 		const FString& EventName = Pair.Key.ToString();
