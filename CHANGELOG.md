@@ -95,6 +95,7 @@ These functions and structs can be referenced in both code and blueprints and it
 - Running without Ring Buffered RPCs is no longer supported, and the option has been removed from SpatialGDKSettings.
 - The schema database format has been updated and versioning introduced. Please regenerate your schema after updating.
 - The CookAndGenerateSchemaCommandlet no longer automatically deletes previously generated schema. Deletion of previously generated schema is now controlled by the `-DeleteExistingGeneratedSchema` flag.
+- Event tracing has been optimised to reduce overhead when tracing events in general and in particular when events are not sampled. The tracing API has been modified to accommodate these improvements. You will have to modify your project if you use the API.
 
 ### Features:
 - The DeploymentLauncher tool can be used to start multiple simulated player deployments at once.
