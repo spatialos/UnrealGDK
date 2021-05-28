@@ -7,6 +7,12 @@
 
 #include "DynamicSubobjectsTest.generated.h"
 
+namespace boost {
+	namespace python {
+		class override;
+	}
+}
+
 class ATestMovementCharacter;
 class ADynamicSubObjectTestActor;
 
@@ -30,12 +36,14 @@ public:
 	ADynamicSubObjectTestActor* TestActor;
 
 	// The spawn location for Client 1's Pawn;
-	FVector CharacterSpawnLocation;
+	FVector CharacterSpawnLocation = FVector(0.0f, 120.0f, 40.0f);
 
 	// A remote location where Client 1's Pawn will be moved in order to not see the AReplicatedVisibilityTestActor.
-	FVector CharacterRemoteLocation;
+	FVector CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 40.0f); // Outside of the interest range of the client
+
+	static constexpr int32 InitialNumComponents = 1;
+
+	static constexpr float TimeLimit = 100.0f;
 
 	float StepTimer;
-
-	int32 InitialNumComponents;
 };

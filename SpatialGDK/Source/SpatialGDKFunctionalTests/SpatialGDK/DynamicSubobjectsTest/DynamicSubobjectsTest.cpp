@@ -55,12 +55,6 @@ ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 {
 	Author = "Evi&Arthur&Miron";
 	Description = TEXT("Test Dynamic Subobjects Duplication in Client");
-
-	CharacterSpawnLocation = FVector(0.0f, 120.0f, 40.0f);
-	CharacterRemoteLocation = FVector(20000.0f, 20000.0f, 40.0f); // Outside of the interest range of the client
-
-	TimeLimit = 100.0f;
-	InitialNumComponents = 1;
 }
 
 void ADynamicSubobjectsTest::PrepareTest()

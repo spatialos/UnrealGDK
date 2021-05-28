@@ -81,13 +81,7 @@ void FClientNetLoadActorHelper::SaveDynamicSubObjectRef(const FUnrealObjectRef& 
 
 void FClientNetLoadActorHelper::ClearDynamicSubObjectRefs(const Worker_EntityId InEntityId)
 {
-	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = DynamicSubObjectRefToGuid.Find(InEntityId))
-	{
-		for (auto DynamicSubObjectIterator = EntityMappings->CreateIterator(); DynamicSubObjectIterator; ++DynamicSubObjectIterator)
-		{
-			DynamicSubObjectIterator.RemoveCurrent();
-		}
-	}
+	DynamicSubObjectRefToGuid.Remove(InEntityId);
 }
 
 void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents)
@@ -120,20 +114,17 @@ void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_Enti
 		// If so, remove it now
 		for (auto DynamicSubObjectIterator = EntityMappings->CreateIterator(); DynamicSubObjectIterator; ++DynamicSubObjectIterator)
 		{
-			if (DynamicSubObjectIterator->Key.Entity == EntityId)
+			if (!ContainedInComponentsArr(DynamicSubObjectIterator->Key))
 			{
-				if (!ContainedInComponentsArr(DynamicSubObjectIterator->Key))
+				if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(DynamicSubObjectIterator->Value, false))
 				{
-					if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(DynamicSubObjectIterator->Value, false))
-					{
-						UE_LOG(LogClientNetLoadActorHelper, Verbose,
-							   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
-									"actor was out of the client's interest. Destroying the SubObject now."),
-							   DynamicSubObjectIterator->Key.Offset, EntityId);
-						NetDriver->ActorSystem.Get()->DestroySubObject(EntityId, Object, DynamicSubObjectIterator->Key);
-					}
-					DynamicSubObjectIterator.RemoveCurrent();
+					UE_LOG(LogClientNetLoadActorHelper, Verbose,
+						   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
+								"actor was out of the client's interest. Destroying the SubObject now."),
+						   DynamicSubObjectIterator->Key.Offset, EntityId);
+					NetDriver->ActorSystem.Get()->DestroySubObject(EntityId, Object, DynamicSubObjectIterator->Key);
 				}
+				DynamicSubObjectIterator.RemoveCurrent();
 			}
 		}
 	}
