@@ -695,7 +695,7 @@ void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& Subobj
 
 	if (UnrealMetadata->NativeClass.IsStale())
 	{
-		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Attempting to remove stale subobject from package map - %s"),
+		UE_LOG(LogSpatialPackageMap, Log, TEXT("Attempting to remove stale subobject from package map - %s"),
 			   *UnrealMetadata->ClassPath);
 	}
 	else
