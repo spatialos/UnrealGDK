@@ -240,6 +240,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		if (UReplicationGraph* RepGraph = Cast<UReplicationGraph>(GetReplicationDriver()))
 		{
 			RepGraph->SetUseEntityIdListClientQueries(true);
+			RepGraph->SetUseNarrowPhaseNCDInterestCulling( GetDefault<USpatialGDKSettings>()->bUseNarrowPhaseNCDInterestCulling);
 		}
 		else
 		{
