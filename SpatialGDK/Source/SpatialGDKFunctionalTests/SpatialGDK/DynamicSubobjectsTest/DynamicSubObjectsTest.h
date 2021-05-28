@@ -7,12 +7,6 @@
 
 #include "DynamicSubobjectsTest.generated.h"
 
-namespace boost {
-	namespace python {
-		class override;
-	}
-}
-
 class ATestMovementCharacter;
 class ADynamicSubObjectTestActor;
 
