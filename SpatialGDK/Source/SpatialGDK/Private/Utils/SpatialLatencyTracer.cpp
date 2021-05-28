@@ -36,13 +36,13 @@ public:
 UEStream UStream;
 
 #if TRACE_LIB_ACTIVE
-const improbable::trace::SpanContext ReadSpanContext(const void* TraceBytes, const void* SpanBytes)
+const improbable::legacy::trace::SpanContext ReadSpanContext(const void* TraceBytes, const void* SpanBytes)
 {
-	improbable::trace::TraceId _TraceId;
-	memcpy(&_TraceId[0], TraceBytes, sizeof(improbable::trace::TraceId));
+	improbable::legacy::trace::TraceId _TraceId;
+	memcpy(&_TraceId[0], TraceBytes, sizeof(improbable::legacy::trace::TraceId));
 
-	improbable::trace::SpanId _SpanId;
-	memcpy(&_SpanId[0], SpanBytes, sizeof(improbable::trace::SpanId));
+	improbable::legacy::trace::SpanId _SpanId;
+	memcpy(&_SpanId[0], SpanBytes, sizeof(improbable::legacy::trace::SpanId));
 
 	return { _TraceId, _SpanId };
 }
@@ -60,7 +60,7 @@ USpatialLatencyTracer::USpatialLatencyTracer()
 void USpatialLatencyTracer::RegisterProject(UObject* WorldContextObject, const FString& ProjectId)
 {
 #if TRACE_LIB_ACTIVE
-	using namespace improbable::exporters::trace;
+	using namespace improbable::legacy::exporters::trace;
 
 	StackdriverExporter::Register({ TCHAR_TO_UTF8(*ProjectId) });
 
@@ -262,9 +262,9 @@ void USpatialLatencyTracer::WriteTraceToSchemaObject(const TraceKey Key, Schema_
 	{
 		Schema_Object* TraceObj = Schema_AddObject(Obj, FieldId);
 
-		const improbable::trace::SpanContext& TraceContext = Trace->context();
-		improbable::trace::TraceId _TraceId = TraceContext.trace_id();
-		improbable::trace::SpanId _SpanId = TraceContext.span_id();
+		const improbable::legacy::trace::SpanContext& TraceContext = Trace->context();
+		improbable::legacy::trace::TraceId _TraceId = TraceContext.trace_id();
+		improbable::legacy::trace::SpanId _SpanId = TraceContext.span_id();
 
 		SpatialGDK::AddBytesToSchema(TraceObj, SpatialConstants::UNREAL_RPC_TRACE_ID, &_TraceId[0], _TraceId.size());
 		SpatialGDK::AddBytesToSchema(TraceObj, SpatialConstants::UNREAL_RPC_SPAN_ID, &_SpanId[0], _SpanId.size());
@@ -282,7 +282,7 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, co
 		const uint8* TraceBytes = Schema_GetBytes(TraceData, SpatialConstants::UNREAL_RPC_TRACE_ID);
 		const uint8* SpanBytes = Schema_GetBytes(TraceData, SpatialConstants::UNREAL_RPC_SPAN_ID);
 
-		const improbable::trace::SpanContext DestContext = ReadSpanContext(TraceBytes, SpanBytes);
+		const improbable::legacy::trace::SpanContext DestContext = ReadSpanContext(TraceBytes, SpanBytes);
 
 		TraceKey Key = InvalidTraceKey;
 
@@ -307,7 +307,7 @@ TraceKey USpatialLatencyTracer::ReadTraceFromSchemaObject(Schema_Object* Obj, co
 		else
 		{
 			FString SpanMsg = FormatMessage(TEXT("Remote Parent Trace - Schema Obj Read"));
-			TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent(TCHAR_TO_UTF8(*SpanMsg), DestContext);
+			TraceSpan RetrieveTrace = improbable::legacy::trace::Span::StartSpanWithRemoteParent(TCHAR_TO_UTF8(*SpanMsg), DestContext);
 
 			Key = GenerateNewTraceKey();
 			TraceMap.Add(Key, MoveTemp(RetrieveTrace));
@@ -328,10 +328,10 @@ FSpatialLatencyPayload USpatialLatencyTracer::RetrievePayload_Internal(const UOb
 	{
 		if (const TraceSpan* Span = TraceMap.Find(Key))
 		{
-			const improbable::trace::SpanContext& TraceContext = Span->context();
+			const improbable::legacy::trace::SpanContext& TraceContext = Span->context();
 
-			TArray<uint8> TraceBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.trace_id()[0], sizeof(improbable::trace::TraceId));
-			TArray<uint8> SpanBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.span_id()[0], sizeof(improbable::trace::SpanId));
+			TArray<uint8> TraceBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.trace_id()[0], sizeof(improbable::legacy::trace::TraceId));
+			TArray<uint8> SpanBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.span_id()[0], sizeof(improbable::legacy::trace::SpanId));
 			return FSpatialLatencyPayload(MoveTemp(TraceBytes), MoveTemp(SpanBytes), Key);
 		}
 	}
@@ -395,14 +395,14 @@ bool USpatialLatencyTracer::BeginLatencyTrace_Internal(const FString& TraceDesc,
 	FScopeLock Lock(&Mutex);
 
 	FString SpanMsg = FormatMessage(TraceDesc, true);
-	TraceSpan NewTrace = improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*SpanMsg), nullptr);
+	TraceSpan NewTrace = improbable::legacy::trace::Span::StartSpan(TCHAR_TO_UTF8(*SpanMsg), nullptr);
 
 	// Construct payload data from trace
-	const improbable::trace::SpanContext& TraceContext = NewTrace.context();
+	const improbable::legacy::trace::SpanContext& TraceContext = NewTrace.context();
 
 	{
-		TArray<uint8> TraceBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.trace_id()[0], sizeof(improbable::trace::TraceId));
-		TArray<uint8> SpanBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.span_id()[0], sizeof(improbable::trace::SpanId));
+		TArray<uint8> TraceBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.trace_id()[0], sizeof(improbable::legacy::trace::TraceId));
+		TArray<uint8> SpanBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.span_id()[0], sizeof(improbable::legacy::trace::SpanId));
 		OutLatencyPayload = FSpatialLatencyPayload(MoveTemp(TraceBytes), MoveTemp(SpanBytes), GenerateNewTraceKey());
 	}
 
@@ -573,10 +573,10 @@ void USpatialLatencyTracer::ResolveKeyInLatencyPayload(FSpatialLatencyPayload& P
 		// Uninitialized key, generate and add to map
 		Payload.Key = GenerateNewTraceKey();
 
-		const improbable::trace::SpanContext DestContext = ReadSpanContext(Payload.TraceId.GetData(), Payload.SpanId.GetData());
+		const improbable::legacy::trace::SpanContext DestContext = ReadSpanContext(Payload.TraceId.GetData(), Payload.SpanId.GetData());
 
 		FString SpanMsg = FormatMessage(TEXT("Remote Parent Trace - Payload Obj Read"));
-		TraceSpan RetrieveTrace = improbable::trace::Span::StartSpanWithRemoteParent(TCHAR_TO_UTF8(*SpanMsg), DestContext);
+		TraceSpan RetrieveTrace = improbable::legacy::trace::Span::StartSpanWithRemoteParent(TCHAR_TO_UTF8(*SpanMsg), DestContext);
 
 		TraceMap.Add(Payload.Key, MoveTemp(RetrieveTrace));
 	}
@@ -587,7 +587,7 @@ void USpatialLatencyTracer::WriteKeyFrameToTrace(const TraceSpan* Trace, const F
 	if (Trace != nullptr)
 	{
 		FString TraceMsg = FormatMessage(TraceDesc);
-		improbable::trace::Span::StartSpan(TCHAR_TO_UTF8(*TraceMsg), Trace).End();
+		improbable::legacy::trace::Span::StartSpan(TCHAR_TO_UTF8(*TraceMsg), Trace).End();
 	}
 }
 
@@ -609,7 +609,7 @@ void USpatialLatencyTracer::Debug_SendTestTrace()
 {
 #if TRACE_LIB_ACTIVE
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [] {
-		using namespace improbable::trace;
+		using namespace improbable::legacy::trace;
 
 		std::cout << "Sending test trace" << std::endl;
 

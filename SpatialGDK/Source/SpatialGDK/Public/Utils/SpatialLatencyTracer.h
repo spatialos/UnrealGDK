@@ -19,7 +19,7 @@
 #pragma clang diagnostic ignored "-Wshadow"
 #endif
 
-#include <WorkerSDK/improbable/legacy/trace.h>
+#include <WorkerSDK/improbable/legacy_trace.h>
 
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -169,7 +169,7 @@ private:
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
 	using ActorPropertyKey = TPair<const AActor*, const GDK_PROPERTY(Property)*>;
 	using ActorTagKey = TPair<const AActor*, FString>;
-	using TraceSpan = improbable::trace::Span;
+	using TraceSpan = improbable::legacy::trace::Span;
 
 	bool BeginLatencyTrace_Internal(const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
 	bool ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType::Type Type, const FString& TraceDesc,
