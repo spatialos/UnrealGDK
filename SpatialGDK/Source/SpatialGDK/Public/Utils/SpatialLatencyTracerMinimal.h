@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "SpatialConstants.h"
 #include "Utils/SpatialLatencyTracer.h"
-#include "CoreMinimal.h"
 
 class FSpatialLatencyTracerMinimal
 {
