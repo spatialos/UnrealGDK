@@ -429,6 +429,12 @@ public:
 	float ClientEntityIdListQueryUpdateFrequency;
 
 	/**
+	 * Do we use explicit NCD to affect client entity interest or just grid cell broadphase
+	 */
+	UPROPERTY(EditAnywhere, config, Category = "Interest", meta = (EditCondition = "bUseEntityIdListClientQueries"))
+	bool bUseNarrowPhaseNCDInterestCulling;
+
+	/**
 	 * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
 	 * the multi-worker settings class
 	 */
