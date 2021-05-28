@@ -2,13 +2,9 @@
 
 #include "LocalDeploymentManager.h"
 
-#include "AssetRegistryModule.h"
 #include "Async/Async.h"
 #include "DirectoryWatcherModule.h"
-#include "Editor.h"
 #include "Engine/World.h"
-#include "FileCache.h"
-#include "GeneralProjectSettings.h"
 #include "HAL/FileManagerGeneric.h"
 #include "HttpModule.h"
 #include "IAutomationControllerModule.h"
@@ -16,8 +12,6 @@
 #include "Improbable/SpatialGDKSettingsBridge.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Internationalization/Internationalization.h"
-#include "Internationalization/Regex.h"
-#include "Json/Public/Dom/JsonObject.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
@@ -27,7 +21,6 @@
 #include "SpatialCommandUtils.h"
 #include "SpatialGDKServicesConstants.h"
 #include "SpatialGDKServicesModule.h"
-#include "UObject/CoreNet.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
@@ -300,7 +293,7 @@ FLocalDeploymentManager::ERuntimeStartResponse FLocalDeploymentManager::StartLoc
 	// Setup the runtime file logger.
 	SetupRuntimeFileLogger(LocalDeploymentLogsDir);
 
-	FString RuntimePath = SpatialGDKServicesConstants::GetRuntimeExecutablePath(RuntimeVersion);
+	RuntimePath = SpatialGDKServicesConstants::GetRuntimeExecutablePath(RuntimeVersion);
 
 	RuntimeProcess = { *RuntimePath, *RuntimeArgs, SpatialGDKServicesConstants::SpatialOSDirectory, /*InHidden*/ true,
 					   /*InCreatePipes*/ true };
@@ -402,12 +395,10 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 		return false;
 	}
 
-	RuntimeProcess->Stop();
-
-	bool bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+	const bool bRuntimeShutDownSuccessfully = ForceShutdownAndWaitForTermination();
 	FinishLocalDeploymentShutDown();
 
-	return bRuntimeShutDownSuccesfully;
+	return bRuntimeShutDownSuccessfully;
 }
 
 bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
@@ -424,35 +415,14 @@ bool FLocalDeploymentManager::TryStopLocalDeploymentGracefully()
 		return false;
 	}
 
-	FHttpModule& HttpModule = FModuleManager::LoadModuleChecked<FHttpModule>("HTTP");
-#if ENGINE_MINOR_VERSION >= 26
-	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> HttpRequest = HttpModule.Get().CreateRequest();
-#else
-	TSharedRef<IHttpRequest> HttpRequest = HttpModule.Get().CreateRequest();
-#endif
-
-	FString URL = FString::Printf(TEXT("http://localhost:%d/shutdown"), HTTPPort);
-	HttpRequest->SetURL(URL);
-	HttpRequest->SetVerb("GET");
-	HttpRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded) {
-		int32 ResponseCode = HttpResponse->GetResponseCode();
-		if (ResponseCode != 200)
-		{
-			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Runtime shutdown http request failed with code: %d"), ResponseCode);
-		}
-	});
-
-	HttpRequest->ProcessRequest();
-
-	bool bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
-	if (!bRuntimeShutDownSuccesfully)
+	bool bShutdownSuccess = GracefulShutdownAndWaitForTermination();
+	if (!bShutdownSuccess)
 	{
-		RuntimeProcess->Stop();
-		bRuntimeShutDownSuccesfully = WaitForRuntimeProcessToShutDown();
+		bShutdownSuccess = ForceShutdownAndWaitForTermination();
 	}
-	FinishLocalDeploymentShutDown();
 
-	return bRuntimeShutDownSuccesfully;
+	FinishLocalDeploymentShutDown();
+	return bShutdownSuccess;
 }
 
 bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
@@ -471,6 +441,27 @@ bool FLocalDeploymentManager::StartLocalDeploymentShutDown()
 
 	bStoppingDeployment = true;
 	return true;
+}
+
+bool FLocalDeploymentManager::GracefulShutdownAndWaitForTermination()
+{
+	if (RuntimeProcess.IsSet())
+	{
+		const FString RuntimeProcName = RuntimePath.Replace(TEXT("/"), TEXT("\\"));
+		SpatialCommandUtils::TryGracefullyKill(RuntimeProcName, RuntimeProcess->GetProcessHandle());
+
+		const bool bGracefulShutdownSuccess = WaitForRuntimeProcessToShutDown();
+		return bGracefulShutdownSuccess;
+	}
+	UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Trying to stop deployment gracefully but RuntimeProcess is not set."));
+	return false;
+}
+
+bool FLocalDeploymentManager::ForceShutdownAndWaitForTermination()
+{
+	RuntimeProcess->Stop();
+	const bool bForcefulShutdownSuccess = WaitForRuntimeProcessToShutDown();
+	return bForcefulShutdownSuccess;
 }
 
 bool FLocalDeploymentManager::WaitForRuntimeProcessToShutDown()
