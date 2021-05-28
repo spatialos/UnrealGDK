@@ -33,12 +33,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the test settings overrides config filename in `Spatial World Settings` so that the file path is relative to the game directory.
 - Fix editor encountering exceptions when shutting down during a PIE session.
 - The runtime will shut down slightly faster after a PIE session.
+- Fixed a rare issue where one would see a change to the owner field but not the changes to owner-only fields.
 
 ### Internal:
 - Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.
 - Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs now no longer expire, and persist until used.
 - A test was calling `SetReplicates` on an actor over which it did not have authority. This was causing warnings to be triggered. We've fixed this by reverting the actor's role at the end of the test, so that the actor is not left in an unexpected state.
 - Added support for clients to disconnect during a test in the automated test framework. 
+- Modified ActorSystem's Ownership and Simulated Subviews to take player ownership into account.
 
 ## [`0.13.0`] - 2021-05-17
 
@@ -101,6 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reverted a fix relating to the `dbghelp` file that previously caused the Editor to crash when loading the Session Front End. Our fix is no longer necessary, as Epic have fixed the issue and we've adopted their fix.
 - Fixed issue with `SpatialDebugger` crashing when client travelling.
 - Fixed an issue where a NetworkFailure won't be reported when connecting to a deployment that doesn't support dev_login with a developer token, and in some other configuration-dependent cases.
+- Fixed a Windows compile issue when updating the worker SDK which did not recompile code dependent on the updated libs/dlls. 
 
 
 ## [`0.12.0`] - 2021-02-01
