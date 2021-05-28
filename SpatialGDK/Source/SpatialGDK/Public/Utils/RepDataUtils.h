@@ -13,5 +13,4 @@ struct FRepChangeState
 	FRepLayout& RepLayout;
 };
 
-using FHandoverChangeState = TArray<uint16>; // changed handover properties
 using FInterestChangeState = TArray<uint16>; // changed interest properties
