@@ -330,8 +330,10 @@ FSpatialLatencyPayload USpatialLatencyTracer::RetrievePayload_Internal(const UOb
 		{
 			const improbable::legacy::trace::SpanContext& TraceContext = Span->context();
 
-			TArray<uint8> TraceBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.trace_id()[0], sizeof(improbable::legacy::trace::TraceId));
-			TArray<uint8> SpanBytes = TArray<uint8_t>((const uint8_t*)&TraceContext.span_id()[0], sizeof(improbable::legacy::trace::SpanId));
+			TArray<uint8> TraceBytes =
+				TArray<uint8_t>((const uint8_t*)&TraceContext.trace_id()[0], sizeof(improbable::legacy::trace::TraceId));
+			TArray<uint8> SpanBytes =
+				TArray<uint8_t>((const uint8_t*)&TraceContext.span_id()[0], sizeof(improbable::legacy::trace::SpanId));
 			return FSpatialLatencyPayload(MoveTemp(TraceBytes), MoveTemp(SpanBytes), Key);
 		}
 	}
