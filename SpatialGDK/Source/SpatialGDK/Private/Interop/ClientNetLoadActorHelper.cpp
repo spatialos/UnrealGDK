@@ -90,8 +90,7 @@ void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_Enti
 		for (const ComponentData& Component : NewComponents)
 		{
 			// Skip if this isn't a generated component
-			if (Component.GetComponentId() < SpatialConstants::STARTING_GENERATED_COMPONENT_ID
-				&& Component.GetComponentId() != SpatialConstants::DORMANT_COMPONENT_ID)
+			if (Component.GetComponentId() < SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 			{
 				continue;
 			}
