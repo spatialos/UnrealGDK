@@ -391,9 +391,9 @@ void SpatialCommandUtils::TryGracefullyKill(const FString& ProcName, const FProc
 #endif
 }
 
+#if PLATFORM_WINDOWS
 void SpatialCommandUtils::TryGracefullyKillWindows(const FString& ProcName)
 {
-#if PLATFORM_WINDOWS
 	// Use WM_CLOSE signal on windows as TerminateProc forcefully kills on Windows
 
 	// Find runtime window
@@ -409,8 +409,8 @@ void SpatialCommandUtils::TryGracefullyKillWindows(const FString& ProcName)
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Tried to gracefully stop process '%s' but could not find runtime window."),
 			   *ProcName);
 	}
-#endif
 }
+#endif
 
 bool SpatialCommandUtils::GetProcessInfoFromPort(int32 Port, FString& OutPid, FString& OutState, FString& OutProcessName)
 {
