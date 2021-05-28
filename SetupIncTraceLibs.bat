@@ -18,8 +18,8 @@ call :MarkStartOfBlock "Create folders"
 call :MarkEndOfBlock "Create folders"
 
 call :MarkStartOfBlock "Retrieve dependencies"	
-	spatial package retrieve internal        trace-dynamic-x86_64-vc141_md-win32        %PINNED_CORE_SDK_VERSION% 	"%CORE_SDK_DIR%\trace_lib\trace-win32.zip"
-	spatial package retrieve internal        trace-dynamic-x86_64-clang1000-linux       %PINNED_CORE_SDK_VERSION% 	"%CORE_SDK_DIR%\trace_lib\trace-linux.zip"
+	spatial package retrieve internal        trace-dynamic-x86_64-vc141_md-win32        15.1.0 	"%CORE_SDK_DIR%\trace_lib\trace-win32.zip"
+	spatial package retrieve internal        trace-dynamic-x86_64-clang1000-linux       15.1.0 	"%CORE_SDK_DIR%\trace_lib\trace-linux.zip"
 call :MarkEndOfBlock "Retrieve dependencies"
 
 REM There is a race condition between retrieve and unzip, add version call to stall briefly
