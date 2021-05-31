@@ -678,16 +678,6 @@ void USpatialNetDriver::ClientOnGSMQuerySuccess()
 {
 	StartupClientDebugString.Empty();
 
-	auto FlagNetworkFailure = [this](const FString& ErrorString) {
-		if (USpatialGameInstance* GameInstance = GetGameInstance())
-		{
-			if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
-			{
-				GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, ErrorString);
-			}
-		}
-	};
-
 	const uint64 SnapshotVersion = GlobalStateManager->GetSnapshotVersion();
 	if (SpatialConstants::SPATIAL_SNAPSHOT_VERSION != SnapshotVersion) // Are we running with the same snapshot version?
 	{
@@ -696,8 +686,10 @@ void USpatialNetDriver::ClientOnGSMQuerySuccess()
 					"version = '%llu'"),
 			   SnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
 
-		FlagNetworkFailure(
-			TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot."));
+		PendingNetworkFailure = {
+			ENetworkFailure::OutdatedClient,
+			TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot.")
+		};
 
 		return;
 	}
@@ -712,7 +704,10 @@ void USpatialNetDriver::ClientOnGSMQuerySuccess()
 				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
 				   ClassInfoManager->SchemaDatabase->SchemaBundleHash, ServerHash);
 
-			FlagNetworkFailure(TEXT("Your version of the game does not match that of the server. Please try updating your game version."));
+			PendingNetworkFailure = {
+				ENetworkFailure::OutdatedClient,
+				TEXT("Your version of the game does not match that of the server. Please try updating your game version.")
+			};
 			return;
 		}
 
@@ -2370,6 +2365,22 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		}
 
 		QueryHandler.ProcessOps(Connection->GetWorkerMessages());
+	}
+
+	// Broadcast network failure if any network errors occurred
+	// NOTE: This should be performed at the end of this function to avoid shutting down the net driver while still running tick functions
+	// and indirectly destroying resources that those functions are still using.
+	if (PendingNetworkFailure)
+	{
+		if (USpatialGameInstance* GameInstance = GetGameInstance())
+		{
+			if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+			{
+				GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, PendingNetworkFailure->FailureType,
+												 PendingNetworkFailure->Message);
+			}
+		}
+		PendingNetworkFailure.Reset();
 	}
 }
 

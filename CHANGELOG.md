@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix editor encountering exceptions when shutting down during a PIE session.
 - The runtime will shut down slightly faster after a PIE session.
 - Fixed a rare issue where one would see a change to the owner field but not the changes to owner-only fields.
+- Prevented a client crash that occurs if there is a mismatch between the client and server schema hash.
 
 ### Internal:
 - Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.
