@@ -2,9 +2,8 @@
 
 #pragma once
 
-
-#include "Engine/EngineBaseTypes.h"
 #include "Interop/CrossServerRPCHandler.h"
+#include "Engine/EngineBaseTypes.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/CrossServerRPCSender.h"
 #include "Interop/EntityQueryHandler.h"
