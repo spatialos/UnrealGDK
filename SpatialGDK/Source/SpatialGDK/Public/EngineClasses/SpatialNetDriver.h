@@ -2,6 +2,8 @@
 
 #pragma once
 
+
+#include "Engine/EngineBaseTypes.h"
 #include "Interop/CrossServerRPCHandler.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/CrossServerRPCSender.h"
@@ -304,7 +306,7 @@ private:
 
 	struct FPendingNetworkFailure
 	{
-		ENetworkFailure FailureType;
+		ENetworkFailure::Type FailureType;
 		FString Message;
 	};
 	TOptional<FPendingNetworkFailure> PendingNetworkFailure;

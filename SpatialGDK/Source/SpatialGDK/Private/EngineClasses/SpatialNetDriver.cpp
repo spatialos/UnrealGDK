@@ -115,7 +115,6 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, NextRPCIndex(0)
 	, StartupTimestamp(0)
 	, MigrationTimestamp(0)
-	, NetworkFailureError("")
 {
 	// Due to changes in 4.23, we now use an outdated flow in ComponentReader::ApplySchemaObject
 	// Native Unreal now iterates over all commands on clients, and no longer has access to a BaseHandleToCmdIndex
@@ -687,8 +686,10 @@ void USpatialNetDriver::ClientOnGSMQuerySuccess()
 					"version = '%llu'"),
 			   SnapshotVersion, SpatialConstants::SPATIAL_SNAPSHOT_VERSION);
 
-		NetworkFailureError =
-			TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot.");
+		PendingNetworkFailure = {
+			ENetworkFailure::OutdatedClient,
+			TEXT("Your snapshot version of the game does not match that of the server. Please try updating your game snapshot.")
+		};
 
 		return;
 	}
@@ -703,8 +704,10 @@ void USpatialNetDriver::ClientOnGSMQuerySuccess()
 				   TEXT("Your client's schema does not match your deployment's schema. Client hash: '%u' Server hash: '%u'"),
 				   ClassInfoManager->SchemaDatabase->SchemaBundleHash, ServerHash);
 
-			NetworkFailureError =
-				TEXT("Your version of the game does not match that of the server. Please try updating your game version.");
+			PendingNetworkFailure = {
+				ENetworkFailure::OutdatedClient,
+				TEXT("Your version of the game does not match that of the server. Please try updating your game version.")
+			};
 			return;
 		}
 
@@ -2366,16 +2369,17 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 	// Broadcast network failure if any network errors occurred
 	// NOTE: This should be performed at the end of this function to avoid shutting down the net driver while still running tick functions and indirectly destroying resources that those functions are still using.
-	if (!NetworkFailureError.IsEmpty())
+	if (PendingNetworkFailure)
 	{
 		if (USpatialGameInstance* GameInstance = GetGameInstance())
 		{
 			if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
 			{
-				GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, ENetworkFailure::OutdatedClient, NetworkFailureError);
+				GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), this, PendingNetworkFailure->FailureType,
+												 PendingNetworkFailure->Message);
 			}
 		}
-		NetworkFailureError.Empty();
+		PendingNetworkFailure.Reset();
 	}
 }
 
