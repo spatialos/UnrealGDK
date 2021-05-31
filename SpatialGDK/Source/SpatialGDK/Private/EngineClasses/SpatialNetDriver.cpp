@@ -2365,7 +2365,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	}
 
 	// Broadcast network failure if any network errors occurred
-	// NOTE: this should be performed at the end of this function to prevent network disconnection errors
+	// NOTE: This should be performed at the end of this function to avoid shutting down the net driver while still running tick functions and indirectly destroying resources that those functions are still using.
 	if (!NetworkFailureError.IsEmpty())
 	{
 		if (USpatialGameInstance* GameInstance = GetGameInstance())
