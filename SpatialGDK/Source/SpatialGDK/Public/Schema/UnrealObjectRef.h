@@ -13,7 +13,6 @@ class USpatialPackageMapClient;
 
 struct SPATIALGDK_API FUnrealObjectRef
 {
-
 	FUnrealObjectRef() = default;
 	FUnrealObjectRef(const FUnrealObjectRef&) = default;
 
@@ -36,9 +35,8 @@ struct SPATIALGDK_API FUnrealObjectRef
 
 	FORCEINLINE FString ToString() const
 	{
-		return FString::Printf(TEXT("(entity ID: %lld, offset: %u, path: %s)"),
-			Entity, Offset,
-			Path.IsSet() ? *Path.GetValue() : TEXT("not set"));
+		return FString::Printf(TEXT("(entity ID: %lld, offset: %u, path: %s)"), Entity, Offset,
+							   Path.IsSet() ? *Path.GetValue() : TEXT("not set"));
 	}
 
 	FORCEINLINE FUnrealObjectRef GetLevelReference() const

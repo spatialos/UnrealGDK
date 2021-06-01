@@ -111,7 +111,8 @@ void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_Enti
 	}
 }
 
-bool FClientNetLoadActorHelper::OffsetContainedInComponentArray(const TArray<ComponentData>& Components, const ObjectOffset OffsetToCheckIfContained) const
+bool FClientNetLoadActorHelper::OffsetContainedInComponentArray(const TArray<ComponentData>& Components,
+																const ObjectOffset OffsetToCheckIfContained) const
 {
 	for (const ComponentData& Component : Components)
 	{
