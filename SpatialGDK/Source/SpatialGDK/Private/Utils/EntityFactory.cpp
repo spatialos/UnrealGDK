@@ -13,6 +13,7 @@
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ActorGroupMember.h"
+#include "Schema/ActorOwnership.h"
 #include "Schema/ActorSetMember.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/NetOwningClientWorker.h"
@@ -94,6 +95,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 	// Add Actor completeness tags.
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID));
@@ -250,12 +252,14 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 	ComponentFactory DataFactory(false, NetDriver);
 
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
-	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
 
-	TArray<FWorkerComponentData> ActorDataComponents =
-		DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges, OutBytesWritten);
+	TArray<FWorkerComponentData> ActorDataComponents = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, OutBytesWritten);
 
 	ComponentDatas.Append(ActorDataComponents);
+
+	ComponentDatas.Add(Worker_ComponentData{ nullptr, ActorOwnership::ComponentId,
+											 ActorOwnership::CreateFromActor(*Actor, *PackageMap).CreateComponentData().Release(),
+											 nullptr });
 
 	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
 
@@ -300,48 +304,11 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 			const FClassInfo& SubobjectInfo = ClassInfoManager->GetOrCreateClassInfoByObject(Subobject);
 
 			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
-			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
 			TArray<FWorkerComponentData> ActorSubobjectDatas =
-				DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
+				DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, OutBytesWritten);
 			ComponentDatas.Append(ActorSubobjectDatas);
 		}
-	}
-
-	// Or if the subobject has handover properties, add it as well.
-	// NOTE: this is only for subobjects that are a part of the CDO.
-	// NOT dynamic subobjects which have been added before entity creation.
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
-	{
-		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
-
-		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding to delegation component
-		TWeakObjectPtr<UObject> WeakSubobject =
-			PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
-		if (!WeakSubobject.IsValid())
-		{
-			continue;
-		}
-
-		UObject* Subobject = WeakSubobject.Get();
-
-		if (SubobjectInfo.SchemaComponents[SCHEMA_Handover] == SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			continue;
-		}
-
-		// If it contains it, we've already created handover data for it.
-		if (Channel->ReplicationMap.Contains(Subobject))
-		{
-			continue;
-		}
-
-		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
-
-		FWorkerComponentData SubobjectHandoverData = DataFactory.CreateHandoverComponentData(
-			SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges, OutBytesWritten);
-
-		ComponentDatas.Add(SubobjectHandoverData);
 	}
 
 	if (DataFactory.WasInitialOnlyDataWritten())
@@ -428,6 +395,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	// Add Actor completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID));
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 

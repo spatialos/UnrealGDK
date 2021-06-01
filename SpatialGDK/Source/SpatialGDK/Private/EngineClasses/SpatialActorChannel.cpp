@@ -24,6 +24,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
+#include "Schema/ActorOwnership.h"
 #include "Schema/NetOwningClientWorker.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
@@ -234,9 +235,6 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 
 	FramesTillDormancyAllowed = 0;
 
-	ActorHandoverShadowData = nullptr;
-	HandoverShadowDataMap.Empty();
-
 	NetDriver = Cast<USpatialNetDriver>(Connection->Driver);
 	check(NetDriver);
 	Sender = NetDriver->Sender;
@@ -406,16 +404,6 @@ void USpatialActorChannel::UpdateShadowData()
 		ResetShadowData(*ComponentReplicator.RepLayout, ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer,
 						ActorComponent);
 	}
-
-	// Update handover shadow data.
-	for (auto& HandoverData : HandoverShadowDataMap)
-	{
-		TArray<uint8>& ShadowDataBuffer = HandoverData.Value.Get();
-		UObject* Object = HandoverData.Key.Get();
-
-		// This updates ShadowDataBuffer to Object's current handover state.
-		GetHandoverChangeList(ShadowDataBuffer, Object);
-	}
 }
 
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
@@ -458,17 +446,6 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 	}
 
 	return { InitialRepChanged, *Replicator.RepLayout };
-}
-
-FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(const FClassInfo& ClassInfo)
-{
-	FHandoverChangeState HandoverChanged;
-	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
-	{
-		HandoverChanged.Add(PropertyInfo.Handle);
-	}
-
-	return HandoverChanged;
 }
 
 void USpatialActorChannel::UpdateVisibleComponent(AActor* InActor)
@@ -688,13 +665,6 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-	FHandoverChangeState HandoverChangeState;
-
-	if (ActorHandoverShadowData != nullptr)
-	{
-		HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
-	}
-
 	ReplicationBytesWritten = 0;
 
 	if (!bCreatingNewEntity && NeedOwnerInterestUpdate() && NetDriver->InterestFactory->DoOwnersHaveEntityId(Actor))
@@ -704,7 +674,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	// If any properties have changed, send a component update.
-	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
+	if (bCreatingNewEntity || RepChanged.Num() > 0)
 	{
 		if (bCreatingNewEntity)
 		{
@@ -728,7 +698,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
 
-			NetDriver->ActorSystem->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState, ReplicationBytesWritten);
+			NetDriver->ActorSystem->SendComponentUpdates(Actor, Info, this, &RepChangeState, ReplicationBytesWritten);
 
 			bInterestDirty = false;
 		}
@@ -771,29 +741,6 @@ int64 USpatialActorChannel::ReplicateActor()
 		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
 		// the same SpatialActorChannel::ReplicateSubobject.
 		Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
-
-		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
-		{
-			UObject* Subobject = SubobjectInfoPair.Key;
-			const FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
-
-			// Handover shadow data should already exist for this object. If it doesn't, it must have
-			// started replicating after SetChannelActor was called on the owning actor.
-			TSharedRef<TArray<uint8>>* SubobjectHandoverShadowData = HandoverShadowDataMap.Find(Subobject);
-			if (SubobjectHandoverShadowData == nullptr)
-			{
-				UE_LOG(LogSpatialActorChannel, Warning, TEXT("EntityId: %lld Actor: %s HandoverShadowData not found for Subobject %s"),
-					   EntityId, *Actor->GetName(), *Subobject->GetName());
-				continue;
-			}
-
-			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
-			if (SubobjectHandoverChangeState.Num() > 0)
-			{
-				NetDriver->ActorSystem->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState,
-															 ReplicationBytesWritten);
-			}
-		}
 
 		// Look for deleted subobjects
 		for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
@@ -969,7 +916,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		}
 
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
-		NetDriver->ActorSystem->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr, ReplicationBytesWritten);
+		NetDriver->ActorSystem->SendComponentUpdates(Object, Info, this, &RepChangeState, ReplicationBytesWritten);
 
 		SendingRepState->HistoryEnd++;
 	}
@@ -1006,82 +953,6 @@ bool USpatialActorChannel::ReadyForDormancy(bool bSuppressLogs /*= false*/)
 	return Super::ReadyForDormancy(bSuppressLogs);
 }
 
-TMap<UObject*, const FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
-{
-	const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-
-	TMap<UObject*, const FClassInfo*> FoundSubobjects;
-
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
-	{
-		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
-
-		if (SubobjectInfo.HandoverProperties.Num() == 0)
-		{
-			// Not interested in this component if it has no handover properties
-			continue;
-		}
-
-		UObject* Object = nullptr;
-		if (EntityId == 0)
-		{
-			Object = Actor->GetDefaultSubobjectByName(SubobjectInfo.SubobjectName);
-		}
-		else
-		{
-			Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, SubobjectInfoPair.Key)).Get();
-		}
-
-		if (Object == nullptr)
-		{
-			continue;
-		}
-
-		FoundSubobjects.Add(Object, &SubobjectInfo);
-	}
-
-	return FoundSubobjects;
-}
-
-void USpatialActorChannel::InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object)
-{
-	const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
-
-	ShadowData.SetNumUninitialized(ClassInfo.HandoverPropertiesSize);
-	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
-	{
-		if (PropertyInfo.ArrayIdx == 0) // For static arrays, the first element will handle the whole array
-		{
-			PropertyInfo.Property->InitializeValue(ShadowData.GetData() + PropertyInfo.ShadowOffset);
-		}
-	}
-}
-
-FHandoverChangeState USpatialActorChannel::GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object)
-{
-	FHandoverChangeState HandoverChanged;
-
-	const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
-
-	uint32 ShadowDataOffset = 0;
-	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
-	{
-		ShadowDataOffset = Align(ShadowDataOffset, PropertyInfo.Property->GetMinAlignment());
-
-		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
-		uint8* StoredData = ShadowData.GetData() + ShadowDataOffset;
-		// Compare and assign.
-		if (bCreatingNewEntity || !PropertyInfo.Property->Identical(StoredData, Data))
-		{
-			HandoverChanged.Add(PropertyInfo.Handle);
-			PropertyInfo.Property->CopySingleValue(StoredData, Data);
-		}
-		ShadowDataOffset += PropertyInfo.Property->ElementSize;
-	}
-
-	return HandoverChanged;
-}
-
 void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlags Flags)
 {
 	Super::SetChannelActor(InActor, Flags);
@@ -1107,37 +978,6 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor, ESetChannelActorFlag
 		}
 		NetDriver->AddActorChannel(EntityId, this);
 		NetDriver->UnregisterDormantEntityId(EntityId);
-	}
-
-	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
-	if (!ensureAlwaysMsgf(!HandoverShadowDataMap.Contains(InActor),
-						  TEXT("HandoverShadowDataMap already contained Actor, will remove data. Actor: %s. Entity: %lld."),
-						  *InActor->GetName(), EntityId))
-	{
-		HandoverShadowDataMap.FindAndRemoveChecked(InActor);
-	}
-
-	// Create the shadow map, and store a quick access pointer to it
-	const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(InActor->GetClass());
-	if (Info.SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
-	{
-		ActorHandoverShadowData = &HandoverShadowDataMap.Add(InActor, MakeShared<TArray<uint8>>()).Get();
-		InitializeHandoverShadowData(*ActorHandoverShadowData, InActor);
-	}
-
-	for (auto& SubobjectInfoPair : GetHandoverSubobjects())
-	{
-		UObject* Subobject = SubobjectInfoPair.Key;
-
-		if (!ensureAlwaysMsgf(
-				!HandoverShadowDataMap.Contains(Subobject),
-				TEXT("HandoverShadowDataMap already contained subobject %s of Actor %s with id %lld, this shouldn't happen. Calling "
-					 "Empty()."),
-				*Subobject->GetName(), *InActor->GetName(), EntityId))
-		{
-			HandoverShadowDataMap.FindAndRemoveChecked(Subobject);
-		}
-		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
 }
 
@@ -1275,8 +1115,8 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<GDK_PROPER
 	RepNotifies.RemoveAll([&](GDK_PROPERTY(Property) * Property) {
 		for (auto& ObjRef : RefMap)
 		{
-			// ParentIndex will be -1 for handover properties.
-			if (ObjRef.Value.ParentIndex < 0)
+			if (!ensureAlwaysMsgf(ObjRef.Value.ParentIndex >= 0, TEXT("ParentIndex should always be >= 0, but it was %d."),
+								  ObjRef.Value.ParentIndex))
 			{
 				continue;
 			}
@@ -1337,6 +1177,17 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 		// Notify the load balance enforcer of a potential short circuit if we are the delegation authoritative worker.
 		NetDriver->LoadBalanceEnforcer->ShortCircuitMaybeRefreshAuthorityDelegation(EntityId);
+
+		bUpdatedThisActor = true;
+	}
+
+	TOptional<SpatialGDK::ActorOwnership> CurrentActorOwnershipData =
+		SpatialGDK::DeserializeComponent<SpatialGDK::ActorOwnership>(NetDriver->Connection->GetCoordinator(), EntityId);
+	const SpatialGDK::ActorOwnership NewActorOwnership = SpatialGDK::ActorOwnership::CreateFromActor(*Actor, *NetDriver->PackageMap);
+	if (CurrentActorOwnershipData != NewActorOwnership)
+	{
+		NetDriver->Connection->GetCoordinator().SendComponentUpdate(EntityId, NewActorOwnership.CreateComponentUpdate(),
+																	FSpatialGDKSpanId());
 
 		bUpdatedThisActor = true;
 	}

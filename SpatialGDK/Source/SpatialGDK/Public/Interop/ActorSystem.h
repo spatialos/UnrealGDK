@@ -60,7 +60,7 @@ public:
 
 	// Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges,
-							  const FHandoverChangeState* HandoverChanges, uint32& OutBytesWritten);
+							  uint32& OutBytesWritten);
 	void SendActorTornOffUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const;
 	void ProcessPositionUpdates();
 	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
@@ -143,7 +143,7 @@ private:
 	// Component update
 	USpatialActorChannel* GetOrRecreateChannelForDormantActor(AActor* Actor, Worker_EntityId EntityID) const;
 	void ApplyComponentUpdate(Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& TargetObject,
-							  USpatialActorChannel& Channel, bool bIsHandover);
+							  USpatialActorChannel& Channel);
 
 	// Entity add
 	void ReceiveActor(Worker_EntityId EntityId);

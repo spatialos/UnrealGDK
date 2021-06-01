@@ -23,10 +23,6 @@ FString UnrealNameToSchemaComponentName(const FString& UnrealName);
 // For example: UnrealCharacterMultiClientRepData
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UClass* Class);
 
-// Given an unreal type, generates the name of the component which stores server to server replication data.
-// For example: UnrealCharacterHandoverData
-FString SchemaHandoverDataName(UClass* Class);
-
 // Given a property node, generates the schema field name.
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property);
 

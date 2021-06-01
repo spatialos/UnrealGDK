@@ -296,25 +296,25 @@ public:
 	bool RequireNotEqual_Bool(bool bValue, bool bNotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(bValue, bNotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Int)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Int(int Value, int Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Int(int Value, int NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Float)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Float(float Value, float Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Float(float Value, float NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (String)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_String(const FString& Value, const FString& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Name)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Name(const FName& Value, const FName& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Vector)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Vector(const FVector& Value, const FVector& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Rotator)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Rotator(const FRotator& Value, const FRotator& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Transform)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Transform(const FTransform& Value, const FTransform& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 	// clang-format on
 
 	// # Snapshot APIs.

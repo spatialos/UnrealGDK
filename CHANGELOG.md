@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`x.y.z`] - Unreleased
 
 ### Breaking changes:
+- The `Handover` variable specifier has been deprecated. It should be replaced with the standard `Replicated` variable specifier and restricting the replication with the new `COND_ServerOnly` replication condition in `GetLifetimeReplicatedProps`. `Handover` variables will try to replicate using the new replication condition, but support will be removed in the next release.
 - Reworked AlwaysInterested functionality to run on authoritative servers, and owning clients. The previous behaviour was for it to only run on PlayerController classes, on the client only.
 - `bUseNetOwnerActorGroup` actor setting has been removed with the default behavior now true inside LayeredLBStrategy. Extend this class if you wish to alter this default behavior.
 
@@ -20,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a setting to control which CrossServer RPC implementation is used. Both feature mentioned below are only enabled when the RoutingWorker is the chosen implementation. Spatial commands are still the default for now.
 - Added reliable CrossServer RPC. Reliable CrossServer RPC now require a sender actor which will be the reference point for ordering in a multi-worker environment. An additional UFUNCTION Tag, Unordered, was added to opt-out of this requirement.
 - Added NetWriteFence UFUNCTION Tag. This tag is used when Network writes to an actor should be ordered with regard to updates to another actor. This is relevant in worker recovery/snapshot reloading to get some ordering guarantees when SpatialOS can write updates to entities in any order.
+- Inspector process is automatically started when starting PIE. This means you can re-use existing inspector browser sessions.
+- Visual Logger now supports multi-worker environments.
 
 ### Bug fixes:
 - Added a pop-up message when schema generation fails, which suggests running a Clean and Generate to fix a bad schema state.
@@ -28,6 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where migration diagnostic tool would crash if the target actor's owner couldn't be found.
 - Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
 - Fix RPC timeouts for parameters referencing assets that can be asynchronously loaded.
+- Fixed the test settings overrides config filename in `Spatial World Settings` so that the file path is relative to the game directory.
+- Fix editor encountering exceptions when shutting down during a PIE session.
+- The runtime will shut down slightly faster after a PIE session.
+- Fixed a rare issue where one would see a change to the owner field but not the changes to owner-only fields.
+- Prevented a client crash that occurs if there is a mismatch between the client and server schema hash.
 - Fixed an issue for actors with bNetLoadOnClient. A dynamic subobject removed from such an actor while out of a client's view will now be properly removed on the client when the actor comes back into the client's view.
 
 ### Internal:
@@ -35,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs now no longer expire, and persist until used.
 - A test was calling `SetReplicates` on an actor over which it did not have authority. This was causing warnings to be triggered. We've fixed this by reverting the actor's role at the end of the test, so that the actor is not left in an unexpected state.
 - Added support for clients to disconnect during a test in the automated test framework. 
+- Modified ActorSystem's Ownership and Simulated Subviews to take player ownership into account.
 
 ## [`0.13.0`] - 2021-05-17
 
@@ -97,6 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reverted a fix relating to the `dbghelp` file that previously caused the Editor to crash when loading the Session Front End. Our fix is no longer necessary, as Epic have fixed the issue and we've adopted their fix.
 - Fixed issue with `SpatialDebugger` crashing when client travelling.
 - Fixed an issue where a NetworkFailure won't be reported when connecting to a deployment that doesn't support dev_login with a developer token, and in some other configuration-dependent cases.
+- Fixed a Windows compile issue when updating the worker SDK which did not recompile code dependent on the updated libs/dlls. 
 
 
 ## [`0.12.0`] - 2021-02-01

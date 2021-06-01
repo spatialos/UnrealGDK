@@ -7,6 +7,7 @@
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
+#include "Net/UnrealNetwork.h"
 #include "SpatialConstants.h"
 #include "Utils/SpatialStatics.h"
 
@@ -18,6 +19,14 @@ ATestPossessionPlayerController::ATestPossessionPlayerController()
 	: BeforePossessionWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 	, AfterPossessionWorkerId(SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 {
+}
+
+void ATestPossessionPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ThisClass, BeforePossessionWorkerId, COND_ServerOnly);
+	DOREPLIFETIME_CONDITION(ThisClass, AfterPossessionWorkerId, COND_ServerOnly);
 }
 
 void ATestPossessionPlayerController::OnPossess(APawn* InPawn)

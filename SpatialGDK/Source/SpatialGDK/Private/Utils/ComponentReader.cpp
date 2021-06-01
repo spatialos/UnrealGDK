@@ -19,7 +19,6 @@
 DEFINE_LOG_CATEGORY(LogSpatialComponentReader);
 
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyPropertyUpdates"), STAT_ReaderApplyPropertyUpdates, STATGROUP_SpatialNet);
-DECLARE_CYCLE_STAT(TEXT("Reader ApplyHandoverPropertyUpdates"), STAT_ReaderApplyHandoverPropertyUpdates, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyFastArrayUpdate"), STAT_ReaderApplyFastArrayUpdate, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyProperty"), STAT_ReaderApplyProperty, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyArray"), STAT_ReaderApplyArray, STATGROUP_SpatialNet);
@@ -99,13 +98,13 @@ ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver,
 }
 
 void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentData, UObject& Object, USpatialActorChannel& Channel,
-										 bool bIsHandover, bool& bOutReferencesChanged)
+										 bool& bOutReferencesChanged)
 {
-	ApplyComponentData(ComponentData.component_id, ComponentData.schema_type, Object, Channel, bIsHandover, bOutReferencesChanged);
+	ApplyComponentData(ComponentData.component_id, ComponentData.schema_type, Object, Channel, bOutReferencesChanged);
 }
 
 void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object,
-										 USpatialActorChannel& Channel, bool bIsHandover, bool& bOutReferencesChanged)
+										 USpatialActorChannel& Channel, bool& bOutReferencesChanged)
 {
 	if (Object.IsPendingKill())
 	{
@@ -119,18 +118,11 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 	// that component type (Data, OwnerOnly, Handover, etc.).
 	const TArray<Schema_FieldId>& InitialIds = ClassInfoManager->GetFieldIdsByComponentId(ComponentId);
 
-	if (bIsHandover)
-	{
-		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentId, bOutReferencesChanged);
-	}
-	else
-	{
-		ApplySchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentId, bOutReferencesChanged);
-	}
+	ApplySchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentId, bOutReferencesChanged);
 }
 
 void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& Object,
-										   USpatialActorChannel& Channel, bool bIsHandover, bool& bOutReferencesChanged)
+										   USpatialActorChannel& Channel, bool& bOutReferencesChanged)
 {
 	if (Object.IsPendingKill())
 	{
@@ -154,14 +146,7 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId,
 
 	if (UpdatedIds.Num() > 0)
 	{
-		if (bIsHandover)
-		{
-			ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged);
-		}
-		else
-		{
-			ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged);
-		}
+		ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged);
 	}
 }
 
@@ -380,51 +365,6 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator->RepLayout, RootObjectReferencesMap, &Object);
 
 	Channel.PostReceiveSpatialUpdate(&Object, RepNotifies, PropertySpanIds);
-}
-
-void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel,
-												bool bIsInitialData, const TArray<Schema_FieldId>& UpdatedIds,
-												Worker_ComponentId ComponentId, bool& bOutReferencesChanged)
-{
-	SCOPE_CYCLE_COUNTER(STAT_ReaderApplyHandoverPropertyUpdates);
-
-	FObjectReplicator* Replicator = Channel.PreReceiveSpatialUpdate(&Object);
-	if (Replicator == nullptr)
-	{
-		// Can't apply this schema object. Error printed from PreReceiveSpatialUpdate.
-		return;
-	}
-
-	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Object.GetClass());
-
-	for (uint32 FieldId : UpdatedIds)
-	{
-		// FieldId is the same as handover handle
-		if (FieldId == 0 || (int)FieldId - 1 >= ClassInfo.HandoverProperties.Num())
-		{
-			UE_LOG(LogSpatialComponentReader, Error,
-				   TEXT("ApplyHandoverSchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: "
-						"%lld, Component: %d"),
-				   *Object.GetPathName(), FieldId, Channel.GetEntityId(), ComponentId);
-			continue;
-		}
-		const FHandoverPropertyInfo& PropertyInfo = ClassInfo.HandoverProperties[FieldId - 1];
-
-		uint8* Data = (uint8*)&Object + PropertyInfo.Offset;
-
-		if (GDK_PROPERTY(ArrayProperty)* ArrayProperty = GDK_CASTFIELD<GDK_PROPERTY(ArrayProperty)>(PropertyInfo.Property))
-		{
-			ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, PropertyInfo.Offset, -1, -1,
-					   bOutReferencesChanged);
-		}
-		else
-		{
-			ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, PropertyInfo.Property, Data, PropertyInfo.Offset, -1, -1,
-						  bOutReferencesChanged);
-		}
-	}
-
-	Channel.PostReceiveSpatialUpdate(&Object, TArray<GDK_PROPERTY(Property)*>(), {});
 }
 
 void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap,
