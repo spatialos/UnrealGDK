@@ -37,7 +37,7 @@ UObject* FClientNetLoadActorHelper::GetReusableDynamicSubObject(const FUnrealObj
 	return nullptr;
 }
 
-void FClientNetLoadActorHelper::EntityRemoved(const Worker_EntityId EntityId, const AActor* Actor)
+void FClientNetLoadActorHelper::EntityRemoved(const Worker_EntityId EntityId, const AActor& Actor)
 {
 	ClearDynamicSubObjectRefs(EntityId);
 	if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
@@ -121,7 +121,7 @@ void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_Enti
 						   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
 								"actor was out of the client's interest. Destroying the SubObject now."),
 						   DynamicSubObjectIterator->Key.Offset, EntityId);
-					NetDriver->ActorSystem.Get()->DestroySubObject(EntityId, Object, DynamicSubObjectIterator->Key);
+					NetDriver->ActorSystem.Get()->DestroySubObject(EntityId, *Object, DynamicSubObjectIterator->Key);
 				}
 				DynamicSubObjectIterator.RemoveCurrent();
 			}

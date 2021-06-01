@@ -15,7 +15,7 @@ class FClientNetLoadActorHelper
 {
 public:
 	FClientNetLoadActorHelper(USpatialNetDriver& InNetDriver);
-	void EntityRemoved(const Worker_EntityId EntityId, const AActor* Actor);
+	void EntityRemoved(const Worker_EntityId EntityId, const AActor& Actor);
 	UObject* GetReusableDynamicSubObject(const FUnrealObjectRef ObjectRef);
 
 	// The runtime can remove components from a ClientNetLoad Actor while the actor is out of the client's interest

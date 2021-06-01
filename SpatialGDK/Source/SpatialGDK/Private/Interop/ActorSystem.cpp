@@ -706,12 +706,12 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 		}
 		else if (UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
-			DestroySubObject(EntityId, Object, ObjectRef);
+			DestroySubObject(EntityId, *Object, ObjectRef);
 		}
 	}
 }
 
-void ActorSystem::DestroySubObject(const Worker_EntityId EntityId, UObject* Object, const FUnrealObjectRef& ObjectRef) const
+void ActorSystem::DestroySubObject(const Worker_EntityId EntityId, UObject& Object, const FUnrealObjectRef& ObjectRef) const
 {
 	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
@@ -719,12 +719,12 @@ void ActorSystem::DestroySubObject(const Worker_EntityId EntityId, UObject* Obje
 		{
 			UE_LOG(LogActorSystem, Verbose, TEXT("Destroying subobject with offset %u on entity %d"), ObjectRef.Offset, EntityId);
 
-			Channel->OnSubobjectDeleted(ObjectRef, Object, TWeakObjectPtr<UObject>(Object));
+			Channel->OnSubobjectDeleted(ObjectRef, &Object, TWeakObjectPtr<UObject>(&Object));
 
-			Actor->OnSubobjectDestroyFromReplication(Object);
+			Actor->OnSubobjectDestroyFromReplication(&Object);
 
-			Object->PreDestroyFromReplication();
-			Object->MarkPendingKill();
+			Object.PreDestroyFromReplication();
+			Object.MarkPendingKill();
 
 			NetDriver->PackageMap->RemoveSubobject(ObjectRef);
 		}
@@ -852,7 +852,7 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 	}
 
 	// Check if this is a static subobject that's been destroyed by the receiver.
-	if (!IsDynamicSubObject(*NetDriver, Actor, Offset))
+	if (!IsDynamicSubObject(*NetDriver, *Actor, Offset))
 	{
 		UE_LOG(LogActorSystem, Verbose,
 			   TEXT("Tried to apply component data on add component for a static subobject that's been deleted, will skip. Entity: %lld, "
@@ -1614,7 +1614,7 @@ void ActorSystem::ApplyComponentDataOnActorCreation(const Worker_EntityId Entity
 	TWeakObjectPtr<UObject> TargetObject = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetObject.IsValid())
 	{
-		if (!IsDynamicSubObject(*NetDriver, Actor, Offset))
+		if (!IsDynamicSubObject(*NetDriver, *Actor, Offset))
 		{
 			UE_LOG(LogActorSystem, Verbose,
 				   TEXT("Tried to apply component data on actor creation for a static subobject that's been deleted, will skip. Entity: "
@@ -1786,7 +1786,7 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 	// has just fallen out of our view and we should only remove the entity.
 	if (Actor->IsFullNameStableForNetworking() && !ActorSubView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 	{
-		ClientNetLoadActorHelper.EntityRemoved(EntityId, Actor);
+		ClientNetLoadActorHelper.EntityRemoved(EntityId, *Actor);
 		// We can't call CleanupDeletedEntity here as we need the NetDriver to maintain the EntityId
 		// to Actor Channel mapping for the DestroyActor to function correctly
 		NetDriver->PackageMap->RemoveEntityActor(EntityId);
