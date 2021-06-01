@@ -63,9 +63,9 @@ void FClientNetLoadActorHelper::EntityRemoved(const Worker_EntityId EntityId, co
 
 FNetworkGUID* FClientNetLoadActorHelper::GetSavedDynamicSubObjectNetGUID(const FUnrealObjectRef& ObjectRef)
 {
-	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = DynamicSubObjectRefToGuid.Find(ObjectRef.Entity))
+	if (TMap<ObjectOffset, FNetworkGUID>* SubobjectOffsetToNetGuid = SpatialEntityRemovedSubobjects.Find(ObjectRef.Entity))
 	{
-		if (FNetworkGUID* NetGUID = EntityMappings->Find(ObjectRef))
+		if (FNetworkGUID* NetGUID = SubobjectOffsetToNetGuid->Find(ObjectRef.Offset))
 		{
 			return NetGUID;
 		}
@@ -75,58 +75,61 @@ FNetworkGUID* FClientNetLoadActorHelper::GetSavedDynamicSubObjectNetGUID(const F
 
 void FClientNetLoadActorHelper::SaveDynamicSubObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID)
 {
-	TMap<FUnrealObjectRef, FNetworkGUID>& EntityMappings = DynamicSubObjectRefToGuid.FindOrAdd(ObjectRef.Entity);
-	EntityMappings.Emplace(ObjectRef, NetGUID);
+	TMap<ObjectOffset, FNetworkGUID>& SubobjectOffsetToNetGuid = SpatialEntityRemovedSubobjects.FindOrAdd(ObjectRef.Entity);
+	SubobjectOffsetToNetGuid.Emplace(ObjectRef.Offset, NetGUID);
 }
 
 void FClientNetLoadActorHelper::ClearDynamicSubObjectRefs(const Worker_EntityId InEntityId)
 {
-	DynamicSubObjectRefToGuid.Remove(InEntityId);
+	SpatialEntityRemovedSubobjects.Remove(InEntityId);
 }
 
 void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents)
 {
-	auto ContainedInComponentsArr = [this, EntityId, &NewComponents](const FUnrealObjectRef& CheckComponentObjRef) {
-		for (const ComponentData& Component : NewComponents)
-		{
-			// Skip if this isn't a generated component
-			if (Component.GetComponentId() < SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
-			{
-				continue;
-			}
-
-			uint32 Offset = 0;
-			NetDriver->ClassInfoManager->GetOffsetByComponentId(Component.GetComponentId(), Offset);
-
-			if (FUnrealObjectRef(EntityId, Offset) == CheckComponentObjRef)
-			{
-				return true;
-			}
-		}
-		return false;
-	};
-
-	if (TMap<FUnrealObjectRef, FNetworkGUID>* EntityMappings = DynamicSubObjectRefToGuid.Find(EntityId))
+	if (TMap<ObjectOffset, FNetworkGUID>* SubobjectOffsetToNetGuid = SpatialEntityRemovedSubobjects.Find(EntityId))
 	{
 		// Go over each stored sub-object and determine whether it is contained within the new components array
 		// If it is not contained within the new components array, it means the sub-object was removed while out of the client's interest
 		// If so, remove it now
-		for (auto DynamicSubObjectIterator = EntityMappings->CreateIterator(); DynamicSubObjectIterator; ++DynamicSubObjectIterator)
+		for (auto SubobjectIterator = SubobjectOffsetToNetGuid->CreateIterator(); SubobjectIterator; ++SubobjectIterator)
 		{
-			if (!ContainedInComponentsArr(DynamicSubObjectIterator->Key))
+			const ObjectOffset ObjectOffset = SubobjectIterator->Key;
+			if (!OffsetContainedInComponentArray(NewComponents, ObjectOffset))
 			{
-				if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(DynamicSubObjectIterator->Value, false))
+				if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(SubobjectIterator->Value, false))
 				{
 					UE_LOG(LogClientNetLoadActorHelper, Verbose,
 						   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
 								"actor was out of the client's interest. Destroying the SubObject now."),
-						   DynamicSubObjectIterator->Key.Offset, EntityId);
-					NetDriver->ActorSystem.Get()->DestroySubObject(EntityId, *Object, DynamicSubObjectIterator->Key);
+						   ObjectOffset, EntityId);
+					const FUnrealObjectRef ObjectRef(EntityId, ObjectOffset);
+					NetDriver->ActorSystem.Get()->DestroySubObject(EntityId, *Object, ObjectRef);
 				}
-				DynamicSubObjectIterator.RemoveCurrent();
+				SubobjectIterator.RemoveCurrent();
 			}
 		}
 	}
 }
+
+bool FClientNetLoadActorHelper::OffsetContainedInComponentArray(const TArray<ComponentData>& Components, const ObjectOffset OffsetToCheckIfContained) const
+{
+	for (const ComponentData& Component : Components)
+	{
+		// Skip if this isn't a generated component
+		if (Component.GetComponentId() < SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
+		{
+			continue;
+		}
+
+		ObjectOffset NewComponentOffset = 0;
+		NetDriver->ClassInfoManager->GetOffsetByComponentId(Component.GetComponentId(), NewComponentOffset);
+
+		if (NewComponentOffset == OffsetToCheckIfContained)
+		{
+			return true;
+		}
+	}
+	return false;
+};
 
 } // namespace SpatialGDK

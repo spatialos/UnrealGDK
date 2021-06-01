@@ -48,7 +48,7 @@
  * This extra test case is implemented in steps 9.1 and 12.1
  */
 
-const static float StepTimeLimit = 15.0f;
+constexpr static float StepTimeLimit = 15.0f;
 
 ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 	: Super()

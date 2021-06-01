@@ -26,12 +26,14 @@ private:
 	USpatialNetDriver* NetDriver;
 
 	// Stores subobjects from client net load actors that have gone out of the client's interest
-	TMap<Worker_EntityId_Key, TMap<FUnrealObjectRef, FNetworkGUID>> DynamicSubObjectRefToGuid;
+	TMap<Worker_EntityId_Key, TMap<ObjectOffset, FNetworkGUID>> SpatialEntityRemovedSubobjects;
 
 	// BNetLoadOnClient component edge case handling
 	FNetworkGUID* GetSavedDynamicSubObjectNetGUID(const FUnrealObjectRef& ObjectRef);
 	void SaveDynamicSubObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID);
 	void ClearDynamicSubObjectRefs(const Worker_EntityId InEntityId);
+
+	bool OffsetContainedInComponentArray(const TArray<ComponentData>& Components, const ObjectOffset OffsetToCheckIfContained) const;
 };
 
 } // namespace SpatialGDK

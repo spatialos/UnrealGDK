@@ -191,9 +191,6 @@ private:
 
 	TMap<Worker_EntityId_Key, TSet<Worker_ComponentId>> PendingDynamicSubobjectComponents;
 
-	// Stores subobjects from bnetloadonclient actors that have gone out of the client's interest
-	TMap<Worker_EntityId_Key, TMap<FUnrealObjectRef, FNetworkGUID>> EntityRemovedDynamicSubObjects;
-
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
 
 	// Deserialized state store for Actor relevant components.
