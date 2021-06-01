@@ -382,7 +382,7 @@ void SpatialCommandUtils::TryKillProcessWithName(const FString& ProcessName)
 
 void SpatialCommandUtils::TryGracefullyKill(const FString& ProcName, const FProcHandle& ProcHandle)
 {
-#if PLATFORM_LINUX || PLATFORM_MAC 
+#if PLATFORM_LINUX || PLATFORM_MAC
 	// On Linux this sends a SIGTERM signal
 	// TODO: does this work on Mac?
 	FPlatformProcess::TerminateProc(ProcHandle);
