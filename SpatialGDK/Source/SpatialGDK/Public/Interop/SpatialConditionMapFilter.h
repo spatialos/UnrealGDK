@@ -62,6 +62,8 @@ public:
 		ConditionMap[COND_ReplayOnly] = bIsReplay;
 		ConditionMap[COND_SkipReplay] = !bIsReplay;
 
+		ConditionMap[COND_ServerOnly] = !bIsClient;
+
 		ConditionMap[COND_Custom] = true;
 		ConditionMap[COND_Never] = false;
 	}

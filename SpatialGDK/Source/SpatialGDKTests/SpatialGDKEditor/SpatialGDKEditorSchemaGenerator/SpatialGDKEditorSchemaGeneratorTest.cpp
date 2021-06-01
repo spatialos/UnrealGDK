@@ -106,18 +106,21 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FStrin
 
 FString ComponentTypeToString(ESchemaComponentType Type)
 {
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check ComponentTypeToString is still correct.");
+
 	switch (Type)
 	{
 	case SCHEMA_Data:
 		return TEXT("");
 	case SCHEMA_OwnerOnly:
 		return TEXT("OwnerOnly");
-	case SCHEMA_Handover:
-		return TEXT("Handover");
+	case SCHEMA_ServerOnly:
+		return TEXT("ServerOnly");
 	case SCHEMA_InitialOnly:
 		return TEXT("InitialOnly");
+	default:
+		return TEXT("");
 	}
-	return TEXT("");
 }
 
 bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FString& InSchemaOutputFolder,
