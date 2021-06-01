@@ -25,7 +25,7 @@ UObject* FClientNetLoadActorHelper::GetReusableDynamicSubObject(const FUnrealObj
 {
 	if (FNetworkGUID* SubObjectNetGUID = GetSavedDynamicSubObjectNetGUID(ObjectRef))
 	{
-		if (UObject* DynamicSubObject = NetDriver->PackageMap->GetObjectFromNetGUID(*SubObjectNetGUID, /*bIgnoreMustBeMapped =*/ false))
+		if (UObject* DynamicSubObject = NetDriver->PackageMap->GetObjectFromNetGUID(*SubObjectNetGUID, /* bIgnoreMustBeMapped */ false))
 		{
 			NetDriver->PackageMap->ResolveSubobject(DynamicSubObject, ObjectRef);
 			UE_LOG(LogClientNetLoadActorHelper, Verbose,
@@ -39,7 +39,7 @@ UObject* FClientNetLoadActorHelper::GetReusableDynamicSubObject(const FUnrealObj
 
 void FClientNetLoadActorHelper::EntityRemoved(const Worker_EntityId EntityId, const AActor& Actor)
 {
-	ClearDynamicSubObjectRefs(EntityId);
+	ClearDynamicSubobjectMetadata(EntityId);
 	if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
 		for (UObject* DynamicSubObject : Channel->CreateSubObjects)
@@ -50,7 +50,7 @@ void FClientNetLoadActorHelper::EntityRemoved(const Worker_EntityId EntityId, co
 				FUnrealObjectRef SubObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromNetGUID(SubObjectNetGUID);
 				if (SubObjectRef.IsValid() && IsDynamicSubObject(*NetDriver, Actor, SubObjectRef.Offset))
 				{
-					SaveDynamicSubObjectRef(SubObjectRef, SubObjectNetGUID);
+					SaveDynamicSubobjectMetadata(SubObjectRef, SubObjectNetGUID);
 					UE_LOG(
 						LogClientNetLoadActorHelper, Verbose,
 						TEXT("Saved reusable dynamic SubObject ObjectRef (ObjectRef offset: %u) for ClientNetLoad actor with entityId %d"),
@@ -63,7 +63,7 @@ void FClientNetLoadActorHelper::EntityRemoved(const Worker_EntityId EntityId, co
 
 FNetworkGUID* FClientNetLoadActorHelper::GetSavedDynamicSubObjectNetGUID(const FUnrealObjectRef& ObjectRef)
 {
-	if (TMap<ObjectOffset, FNetworkGUID>* SubobjectOffsetToNetGuid = SpatialEntityRemovedSubobjects.Find(ObjectRef.Entity))
+	if (TMap<ObjectOffset, FNetworkGUID>* SubobjectOffsetToNetGuid = SpatialEntityRemovedSubobjectMetadata.Find(ObjectRef.Entity))
 	{
 		if (FNetworkGUID* NetGUID = SubobjectOffsetToNetGuid->Find(ObjectRef.Offset))
 		{
@@ -73,30 +73,30 @@ FNetworkGUID* FClientNetLoadActorHelper::GetSavedDynamicSubObjectNetGUID(const F
 	return nullptr;
 }
 
-void FClientNetLoadActorHelper::SaveDynamicSubObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID)
+void FClientNetLoadActorHelper::SaveDynamicSubobjectMetadata(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID)
 {
-	TMap<ObjectOffset, FNetworkGUID>& SubobjectOffsetToNetGuid = SpatialEntityRemovedSubobjects.FindOrAdd(ObjectRef.Entity);
+	TMap<ObjectOffset, FNetworkGUID>& SubobjectOffsetToNetGuid = SpatialEntityRemovedSubobjectMetadata.FindOrAdd(ObjectRef.Entity);
 	SubobjectOffsetToNetGuid.Emplace(ObjectRef.Offset, NetGUID);
 }
 
-void FClientNetLoadActorHelper::ClearDynamicSubObjectRefs(const Worker_EntityId InEntityId)
+void FClientNetLoadActorHelper::ClearDynamicSubobjectMetadata(const Worker_EntityId InEntityId)
 {
-	SpatialEntityRemovedSubobjects.Remove(InEntityId);
+	SpatialEntityRemovedSubobjectMetadata.Remove(InEntityId);
 }
 
 void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents)
 {
-	if (TMap<ObjectOffset, FNetworkGUID>* SubobjectOffsetToNetGuid = SpatialEntityRemovedSubobjects.Find(EntityId))
+	if (TMap<ObjectOffset, FNetworkGUID>* SubobjectOffsetToNetGuid = SpatialEntityRemovedSubobjectMetadata.Find(EntityId))
 	{
 		// Go over each stored sub-object and determine whether it is contained within the new components array
 		// If it is not contained within the new components array, it means the sub-object was removed while out of the client's interest
 		// If so, remove it now
-		for (auto SubobjectIterator = SubobjectOffsetToNetGuid->CreateIterator(); SubobjectIterator; ++SubobjectIterator)
+		for (auto OffsetToNetGuidIterator = SubobjectOffsetToNetGuid->CreateIterator(); OffsetToNetGuidIterator; ++OffsetToNetGuidIterator)
 		{
-			const ObjectOffset ObjectOffset = SubobjectIterator->Key;
+			const ObjectOffset ObjectOffset = OffsetToNetGuidIterator->Key;
 			if (!OffsetContainedInComponentArray(NewComponents, ObjectOffset))
 			{
-				if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(SubobjectIterator->Value, false))
+				if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(OffsetToNetGuidIterator->Value, false))
 				{
 					UE_LOG(LogClientNetLoadActorHelper, Verbose,
 						   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
@@ -105,7 +105,7 @@ void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_Enti
 					const FUnrealObjectRef ObjectRef(EntityId, ObjectOffset);
 					NetDriver->ActorSystem.Get()->DestroySubObject(EntityId, *Object, ObjectRef);
 				}
-				SubobjectIterator.RemoveCurrent();
+				OffsetToNetGuidIterator.RemoveCurrent();
 			}
 		}
 	}

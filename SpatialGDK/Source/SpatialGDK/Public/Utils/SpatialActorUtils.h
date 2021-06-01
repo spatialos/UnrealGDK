@@ -130,7 +130,7 @@ inline bool ShouldActorHaveVisibleComponent(AActor* InActor)
 	return false;
 }
 
-inline bool IsDynamicSubObject(const USpatialNetDriver& NetDriver, const AActor& Actor, uint32 SubObjectOffset)
+inline bool IsDynamicSubObject(const USpatialNetDriver& NetDriver, const AActor& Actor, const ObjectOffset SubObjectOffset)
 {
 	const FClassInfo& ActorClassInfo = NetDriver.ClassInfoManager->GetOrCreateClassInfoByClass(Actor.GetClass());
 	return !ActorClassInfo.SubobjectInfo.Contains(SubObjectOffset);

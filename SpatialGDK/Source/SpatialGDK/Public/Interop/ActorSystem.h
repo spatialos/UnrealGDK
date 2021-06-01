@@ -4,7 +4,6 @@
 #include "ClaimPartitionHandler.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
-#include "SpatialConstants.h"
 #include "Utils/RepDataUtils.h"
 
 #include "Interop/ClientNetLoadActorHelper.h"
@@ -31,7 +30,6 @@ namespace SpatialGDK
 {
 class SpatialEventTracer;
 class FSubView;
-class FClientNetLoadActorHelper;
 
 struct ActorData
 {
