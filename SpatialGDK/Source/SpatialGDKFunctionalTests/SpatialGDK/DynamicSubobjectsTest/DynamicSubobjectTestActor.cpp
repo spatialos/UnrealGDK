@@ -17,3 +17,8 @@ void ADynamicSubObjectTestActor::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 
 	DOREPLIFETIME(ADynamicSubObjectTestActor, TestIntProperty);
 }
+
+void ADynamicSubObjectTestActor::InitialiseTestIntProperty()
+{
+	TestIntProperty = -1;
+}

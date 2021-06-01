@@ -48,7 +48,8 @@
  * This extra test case is implemented in steps 9.1 and 12.1
  */
 
-constexpr static float StepTimeLimit = 15.0f;
+static constexpr float StepTimeLimit = 15.0f;
+static const FName ToRemoveComponentName = TEXT("ToRemoveComponent");
 
 ADynamicSubobjectsTest::ADynamicSubobjectsTest()
 	: Super()
@@ -81,11 +82,12 @@ void ADynamicSubobjectsTest::PrepareTest()
 		}
 	});
 
-	// Step 1 - All workers check if they have one ADynamicSubObjectTestActor in the world, and set a reference to it.
+	// Step 1 - All workers check if they have one ADynamicSubObjectTestActor in the world, and set a reference to it
 	AddStep(
 		TEXT("DynamicSubobjectsTestAllWorkers"), FWorkerDefinition::AllWorkers, nullptr, nullptr,
 		[this](float DeltaTime) {
 			TestActor = GetReplicatedTestActor();
+			TestActor->InitialiseTestIntProperty();
 			FinishStep();
 		},
 		StepTimeLimit);
@@ -116,7 +118,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 						TEXT("ADynamicSubObjectTestActor should have the initial number of components"));
 
 		// add new dynamic component to test actor
-		USceneComponent* AddedComponent = NewObject<USceneComponent>(TestActor, TEXT("ToRemoveComponent"));
+		USceneComponent* AddedComponent = NewObject<USceneComponent>(TestActor, ToRemoveComponentName);
 		AddedComponent->AttachToComponent(TestActor->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
 		AddedComponent->RegisterComponent();
 		AddedComponent->SetIsReplicated(true);
@@ -191,7 +193,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		// Step 9 - Client 1 checks it can no longer see the ADynamicSubObjectTestActor by waiting for 0.5s and checking TestIntProperty
 		// hasn't updated
 		AddStep(
-			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr,
+			TEXT("DynamicSubobjectsTestClientCheckIntValueDidntIncrease"), FWorkerDefinition::Client(1), nullptr,
 			[this]() {
 				StepTimer = 0.f;
 			},
@@ -217,7 +219,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 				// Delete the component with the right name
 				for (USceneComponent* SceneComponent : AllSceneComps)
 				{
-					if (SceneComponent->GetName() == TEXT("ToRemoveComponent"))
+					if (SceneComponent->GetName() == ToRemoveComponentName.ToString())
 					{
 						SceneComponent->DestroyComponent();
 					}
@@ -254,7 +256,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 
 		// Step 12 - Client 1 checks it can see the ADynamicSubObjectTestActor
 		AddStep(
-			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased2"), FWorkerDefinition::Client(1), nullptr, nullptr,
+			TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr, nullptr,
 			[this, i](float DeltaTime) {
 				RequireEqual_Int(TestActor->TestIntProperty, i, TEXT("Client 1 should see the updated TestIntProperty value"));
 				FinishStep();
@@ -265,7 +267,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		{
 			// Step 12.1 - Client 1 checks the dynamic component on ReplicatedGASTestActor has been removed
 			AddStep(
-				TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased2"), FWorkerDefinition::Client(1), nullptr, nullptr,
+				TEXT("DynamicSubobjectsTestClientCheckNumComponentsDecreased"), FWorkerDefinition::Client(1), nullptr, nullptr,
 				[this](float DeltaTime) {
 					AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents,
 									TEXT("ADynamicSubObjectTestActor's dynamic component should have been destroyed."));
@@ -276,13 +278,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 		}
 	}
 
-	// Step 13 - All worker cleanup
-	AddStep(TEXT("DynamicSubobjectsTestAllWorkerCleanup"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
-		TestActor->TestIntProperty = -1;
-		FinishStep();
-	});
-
-	// Step 14 - Server Cleanup.
+	// Step 13 - Server Cleanup.
 	AddStep(TEXT("DynamicSubobjectsTestServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		// Possess the original pawn, so that the spawned character can get destroyed correctly
 		ASpatialFunctionalTestFlowController* ClientOneFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);

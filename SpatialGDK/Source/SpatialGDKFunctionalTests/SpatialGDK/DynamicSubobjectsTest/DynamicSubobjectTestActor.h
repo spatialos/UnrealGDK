@@ -15,7 +15,9 @@ class ADynamicSubObjectTestActor : public AReplicatedTestActorBase
 public:
 	ADynamicSubObjectTestActor();
 
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	void InitialiseTestIntProperty();
 
 	UPROPERTY(Replicated)
 	int TestIntProperty;
