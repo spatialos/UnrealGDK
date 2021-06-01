@@ -267,7 +267,7 @@ void ADynamicSubobjectsTest::PrepareTest()
 			AddStep(
 				TEXT("DynamicSubobjectsTestClientCheckIntValueIncreased2"), FWorkerDefinition::Client(1), nullptr, nullptr,
 				[this](float DeltaTime) {
-					RequireEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents,
+					AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents,
 									 TEXT("ADynamicSubObjectTestActor's dynamic component should have been destroyed."));
 
 					FinishStep();
