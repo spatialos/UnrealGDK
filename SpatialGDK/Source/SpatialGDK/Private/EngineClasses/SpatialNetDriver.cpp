@@ -3323,6 +3323,20 @@ int64 USpatialNetDriver::GetActorEntityId(const AActor& Actor) const
 	return PackageMap->GetEntityIdFromObject(&Actor);
 }
 
+FVector USpatialNetDriver::GetServerPosition() const
+{
+	if (LoadBalanceStrategy != nullptr)
+	{
+		if (const UGridBasedLBStrategy* GridBasedLBStrategy =
+				Cast<UGridBasedLBStrategy>(LoadBalanceStrategy->GetLBStrategyForVisualRendering()))
+		{
+			return GridBasedLBStrategy->GetWorkerEntityPosition();
+		}
+	}
+
+	return FVector::ZeroVector;
+}
+
 bool USpatialNetDriver::HasTimedOut(const float Interval, uint64& TimeStamp)
 {
 	const uint64 WatchdogTimer = Interval / FPlatformTime::GetSecondsPerCycle64();
