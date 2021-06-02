@@ -54,7 +54,7 @@ void ASpatialTestHandover::PrepareTest()
 		FinishStep();
 	});
 
-	float StepTimeLimit = 10.0f;
+	float StepTimeLimit = 100000.0f;
 
 	// All servers set a reference to the HandoverCube and reset the LocationIndex and AuthorityCheckIndex.
 	AddStep(

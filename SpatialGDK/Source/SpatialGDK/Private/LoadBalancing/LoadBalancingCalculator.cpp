@@ -4,11 +4,12 @@
 
 namespace SpatialGDK
 {
-FGridBalancingCalculator::FGridBalancingCalculator(uint32 GridX, uint32 GridY, float Height, float Width)
+FGridBalancingCalculator::FGridBalancingCalculator(uint32 GridX, uint32 GridY, float Height, float Width, float InInterestBorder)
 	: Rows(GridY)
 	, Cols(GridX)
 	, WorldWidth(Width)
 	, WorldHeight(Height)
+	, InterestBorder(InInterestBorder)
 {
 }
 
@@ -46,7 +47,7 @@ void FGridBalancingCalculator::CollectPartitionsToAdd(FPartitionManager& Partiti
 
 				const FVector2D EdgeLengths2D = Cell.GetSize();
 				check(EdgeLengths2D.X > 0.0f && EdgeLengths2D.Y > 0.0f);
-				const FVector EdgeLengths3D{ EdgeLengths2D.X, EdgeLengths2D.Y, FLT_MAX };
+				const FVector EdgeLengths3D{ EdgeLengths2D.X + InterestBorder, EdgeLengths2D.Y + InterestBorder, FLT_MAX };
 
 				SpatialGDK::QueryConstraint Constraint;
 				Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D),

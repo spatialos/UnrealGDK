@@ -27,7 +27,7 @@ protected:
 class SPATIALGDK_API FGridBalancingCalculator : public FLoadBalancingCalculator
 {
 public:
-	FGridBalancingCalculator(uint32 GridX, uint32 GridY, float Height, float Width);
+	FGridBalancingCalculator(uint32 GridX, uint32 GridY, float Height, float Width, float InterestBorder);
 
 	void SetPositionData(FSpatialPositionStorage const& iStorage) { DataStorage = &iStorage; }
 
@@ -40,6 +40,7 @@ protected:
 	uint32 Cols;
 	float WorldWidth;
 	float WorldHeight;
+	float InterestBorder;
 
 	TArray<FPartitionHandle> Partitions;
 	TArray<FBox2D> Cells;

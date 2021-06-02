@@ -276,7 +276,7 @@ bool UGridBasedLBStrategy::IsStrategyWorkerAware() const
 
 TUniquePtr<SpatialGDK::FLoadBalancingCalculator> UGridBasedLBStrategy::CreateLoadBalancingCalculator(FLegacyLBContext& OutCtx) const
 {
-	auto Calculator = MakeUnique<SpatialGDK::FGridBalancingCalculator>(Cols, Rows, WorldWidth, WorldHeight);
+	auto Calculator = MakeUnique<SpatialGDK::FGridBalancingCalculator>(Cols, Rows, WorldWidth, WorldHeight, InterestBorder);
 	OutCtx.Grid.Add(Calculator.Get());
 	return Calculator;
 }

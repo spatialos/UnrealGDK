@@ -244,6 +244,7 @@ struct FPartitionManager::Impl
 			break;
 			case EntityDelta::REMOVE:
 			{
+				WorkersData.Remove(Delta.EntityId);
 			}
 			case EntityDelta::TEMPORARILY_REMOVED:
 			{
@@ -331,8 +332,8 @@ struct FPartitionManager::Impl
 					PartitionState.Id = CurPartitionId++;
 					IdToPartitionsMap.Add(PartitionState.Id, PartitionEntry);
 
-					TArray<FWorkerComponentData> Components = CreatePartitionEntityComponents(
-						TEXT("StrategyPartition"), PartitionState.Id, PartitionState.Id, PartitionState.LBConstraint);
+					TArray<FWorkerComponentData> Components =
+						CreatePartitionEntityComponents(TEXT("StrategyPartition"), PartitionState.Id, PartitionState.LBConstraint);
 
 					Worker_EntityId PartitionEntity = PartitionState.Id;
 					const Worker_RequestId RequestId =
@@ -372,7 +373,7 @@ struct FPartitionManager::Impl
 		}
 	}
 
-	TArray<FWorkerComponentData> CreatePartitionEntityComponents(FString const& PartitionName, const Worker_EntityId EntityId, int32 Idx,
+	TArray<FWorkerComponentData> CreatePartitionEntityComponents(FString const& PartitionName, const Worker_EntityId EntityId,
 																 const QueryConstraint& LBConstraint)
 	{
 		AuthorityDelegationMap DelegationMap;
@@ -382,7 +383,7 @@ struct FPartitionManager::Impl
 		TArray<FWorkerComponentData> Components;
 		Components.Add(Position().CreateComponentData());
 		Components.Add(Persistence().CreateComponentData());
-		Components.Add(Metadata(FString::Format(TEXT("{0}:{1}"), { *PartitionName, Idx })).CreateComponentData());
+		Components.Add(Metadata(FString::Format(TEXT("{0}:{1}"), { *PartitionName, EntityId })).CreateComponentData());
 
 		Components.Add(InterestF->CreatePartitionInterest(LBConstraint, false).CreateComponentData());
 
@@ -411,17 +412,11 @@ struct FPartitionManager::Impl
 	TMap<Worker_EntityId_Key, FPartitionHandle> IdToPartitionsMap;
 	TSet<FPartitionHandle> Partitions;
 
-	bool bStrategyPartitionsCreated = false;
-
 	TMap<Worker_EntityId_Key, ServerWorker> WorkersData;
 	TMap<Worker_EntityId_Key, Worker> SystemWorkersData;
-	int32 NumWorkerReady = 0;
 
 	Worker_EntityId FirstPartitionId = 0;
 	Worker_EntityId CurPartitionId = 0;
-	int32 ExpectedWorkers = 0;
-
-	bool bPartitionsDistributed = false;
 
 	TSet<FLBWorkerHandle> ConnectedWorkers;
 	TArray<FLBWorkerHandle> ConnectedWorkersThisFrame;
@@ -437,12 +432,11 @@ FPartitionManager::FPartitionManager(Worker_EntityId InStrategyWorkerEntityId, V
 	m_Impl->StrategyWorkerEntityId = InStrategyWorkerEntityId;
 }
 
-void FPartitionManager::Init(SpatialOSWorkerInterface* Connection /*, uint32 ExpectedWorkers*/)
+void FPartitionManager::Init(SpatialOSWorkerInterface* Connection)
 {
 	Worker_CommandRequest ClaimRequest = Worker::CreateClaimPartitionRequest(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
 	m_Impl->StrategyWorkerRequest =
 		Connection->SendCommandRequest(m_Impl->StrategyWorkerEntityId, &ClaimRequest, SpatialGDK::RETRY_UNTIL_COMPLETE, {});
-	// m_Impl->ExpectedWorkers = ExpectedWorkers;
 
 	m_Impl->PartitionReserveRequest = Connection->SendReserveEntityIdsRequest(Impl::k_PartitionsReserveRange, RETRY_UNTIL_COMPLETE);
 }

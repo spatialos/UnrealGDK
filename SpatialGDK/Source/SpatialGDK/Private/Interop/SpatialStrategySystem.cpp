@@ -133,6 +133,7 @@ void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 				Storage->OnRemoved(Delta.EntityId);
 			}
 			AuthorityIntentView.Remove(Delta.EntityId);
+			PendingMigrations.Remove(Delta.EntityId);
 		}
 		break;
 		case EntityDelta::TEMPORARILY_REMOVED:
@@ -209,6 +210,7 @@ void SpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
 			PendingMigrations.Add(EntityId, Partition);
 			continue;
 		}
+		PendingMigrations.Remove(EntityId);
 		AuthIntent.PartitionId = DestPartition.GetValue();
 		AuthIntent.AssignmentCounter++;
 
@@ -263,7 +265,7 @@ void SpatialStrategySystem::UpdateStrategySystemInterest(SpatialOSWorkerInterfac
 	Query ServerQuery = {};
 	ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
 									   SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
-									   SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID,
+									   SpatialConstants::AUTHORITY_INTENTV2_COMPONENT_ID, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID,
 									   SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID };
 
 	for (auto& Component : UpdatesToConsider)
