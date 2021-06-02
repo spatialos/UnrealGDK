@@ -437,7 +437,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 }
 
 USpatialDebugInterfaceMap::USpatialDebugInterfaceMap()
-	: UGeneratedTestMap(EMapCategory::CI_PREMERGE_SPATIAL_ONLY, TEXT("SpatialDebugInterfaceMap"))
+	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("SpatialDebugInterfaceMap"))
 {
 }
 
