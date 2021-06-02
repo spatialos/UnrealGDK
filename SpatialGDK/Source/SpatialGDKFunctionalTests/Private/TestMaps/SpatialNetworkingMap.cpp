@@ -2,8 +2,8 @@
 
 #include "TestMaps/SpatialNetworkingMap.h"
 
-#include "SpatialGDK/StaticSubobjectsTest/StaticSubobjectsTest.h"
 #include "SpatialGDK/StaticSubobjectsTest/StaticSubobjectTestActor.h"
+#include "SpatialGDK/StaticSubobjectsTest/StaticSubobjectsTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyAndTombstoneTest/DormancyAndTombstoneTest.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DormancyAndTombstoneTest/DormancyTestActor.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/DynamicSubobjectsTest/DynamicSubObjectTestActor.h"

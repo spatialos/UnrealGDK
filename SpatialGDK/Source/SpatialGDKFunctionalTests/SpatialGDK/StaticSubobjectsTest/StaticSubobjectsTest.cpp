@@ -3,9 +3,9 @@
 // #pragma optimize("", off)
 
 #include "StaticSubobjectsTest.h"
-#include "StaticSubObjectTestActor.h"
 #include "SpatialFunctionalTestFlowController.h"
 #include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
+#include "StaticSubObjectTestActor.h"
 
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
