@@ -315,7 +315,7 @@ void ActorSystem::Advance()
 			UE_LOG(LogActorSystem, Verbose, TEXT("The received actor with entity ID %lld was tombstoned. The actor will be deleted."),
 				   Delta.EntityId);
 			// We must first Resolve the EntityId to the Actor in order for RemoveActor to succeed.
-			NetDriver->PackageMap->ResolveEntityActor(EntityActor, Delta.EntityId);
+			NetDriver->PackageMap->ResolveEntityActorAndSubobjects(Delta.EntityId, EntityActor);
 			RemoveActor(Delta.EntityId);
 		}
 	}
@@ -1320,7 +1320,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	if (!NetDriver->PackageMap->ResolveEntityActor(EntityActor, EntityId))
+	if (!NetDriver->PackageMap->ResolveEntityActorAndSubobjects(EntityId, EntityActor))
 	{
 		UE_LOG(LogActorSystem, Warning,
 			   TEXT("Failed to resolve entity actor when receiving entity. Actor will not be spawned. Entity: %lld, actor: %s"), EntityId,
@@ -1671,7 +1671,7 @@ USpatialActorChannel* ActorSystem::SetUpActorChannel(AActor* Actor, const Worker
 
 USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, const Worker_EntityId EntityId)
 {
-	if (!NetDriver->PackageMap->ResolveEntityActor(StablyNamedActor, EntityId))
+	if (!NetDriver->PackageMap->ResolveEntityActorAndSubobjects(EntityId, StablyNamedActor))
 	{
 		UE_LOG(LogActorSystem, Warning,
 			   TEXT("Failed to restore actor channel for stably named actor: failed to resolve actor. Entity: %lld, actor: %s"), EntityId,

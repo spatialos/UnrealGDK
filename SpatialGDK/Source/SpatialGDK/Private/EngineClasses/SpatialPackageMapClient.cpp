@@ -94,7 +94,7 @@ Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor
 	}
 
 	// Register Actor with package map since we know what the entity id is.
-	if (!ResolveEntityActor(Actor, EntityId))
+	if (!ResolveEntityActorAndSubobjects(EntityId, Actor))
 	{
 		UE_LOG(LogSpatialPackageMap, Error, TEXT("Unable to resolve an Entity for Actor: %s"), *Actor->GetName());
 		return SpatialConstants::INVALID_ENTITY_ID;
@@ -149,7 +149,7 @@ void USpatialPackageMapClient::RemovePendingCreationEntityId(Worker_EntityId Ent
 	PendingCreationEntityIds.Remove(EntityId);
 }
 
-bool USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId)
+bool USpatialPackageMapClient::ResolveEntityActorAndSubobjects(const Worker_EntityId EntityId, AActor* Actor)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	FNetworkGUID NetGUID = SpatialGuidCache->GetNetGUIDFromEntityId(EntityId);
@@ -162,7 +162,7 @@ bool USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_EntityId
 
 	if (GetEntityIdFromObject(Actor) != EntityId)
 	{
-		UE_LOG(LogSpatialPackageMap, Error, TEXT("ResolveEntityActor failed for Actor: %s with NetGUID: %s and passed entity ID: %lld"),
+		UE_LOG(LogSpatialPackageMap, Error, TEXT("ResolveEntityActorAndSubobjects failed for Actor: %s with NetGUID: %s and passed entity ID: %lld"),
 			   *Actor->GetName(), *NetGUID.ToString(), EntityId);
 		return false;
 	}
