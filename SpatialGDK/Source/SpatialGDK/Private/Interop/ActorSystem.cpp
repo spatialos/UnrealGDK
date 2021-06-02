@@ -1272,8 +1272,6 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 
 	ActorData& ActorComponents = ActorDataStore[EntityId];
 
-	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
 	AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
 	if (EntityActor != nullptr)
 	{
@@ -1301,7 +1299,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 	}
 
 	// Make sure ClassInfo exists
-	const FClassInfo& ActorClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Class);
+	NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 	// If the received actor is torn off, don't bother spawning it.
 	// (This is only needed due to the delay between tearoff and deleting the entity. See https://improbableio.atlassian.net/browse/UNR-841)
