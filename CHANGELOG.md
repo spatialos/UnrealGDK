@@ -9,16 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
-## [`0.13.1`] - 2021-05-21
+## [`0.13.1`] - 2021-06-02
 ### Breaking changes:
-- Event tracing has been optimised to reduce overhead when tracing events in general and in particular when events are not sampled. The tracing API has been modified to accomidate these improvements. You will have to modify your project if you use the API.
+- Event tracing has been optimised to reduce overhead when tracing events in general and in particular when events are not sampled. The tracing API has been modified to accommodate these improvements. You will have to modify your project if you use the API.
 
 ### Features:
 - Added `SpatialExecServerCmd` console command with one command `StartInsights` to dynamically enable insights capturing.
   - Format: SpatialExecServerCmd < server > < command > < args >
   - Example usage: "SpatialExecServerCmd local StartInsights -trace=CustomChannel -tracefile=MyNewTrace"
 - Visual Logger now supports multi-worker environments.
-- The Unreal GDK has been updated to run against SpatialOS 15.1.0, older version of SpatialOS will no longer work with the Unreal GDK.
+- The Unreal GDK has been updated to run against SpatialOS 15.1.0, older versions of SpatialOS will no longer work with the Unreal GDK.
 - Event tracing rotating log support (via `bEnableEventTracingRotatingLogs`, `EventTracingRotatingLogsMaxFileSizeBytes` and `EventTracingRotatingLogsMaxFileCount`). 
 - Event tracing filter support (configured via `UEventTracingSamplingSettings`).
 
@@ -102,7 +102,6 @@ These functions and structs can be referenced in both code and blueprints and it
 - Running without Ring Buffered RPCs is no longer supported, and the option has been removed from SpatialGDKSettings.
 - The schema database format has been updated and versioning introduced. Please regenerate your schema after updating.
 - The CookAndGenerateSchemaCommandlet no longer automatically deletes previously generated schema. Deletion of previously generated schema is now controlled by the `-DeleteExistingGeneratedSchema` flag.
-- Event tracing has been optimised to reduce overhead when tracing events in general and in particular when events are not sampled. The tracing API has been modified to accommodate these improvements. You will have to modify your project if you use the API.
 
 ### Features:
 - The DeploymentLauncher tool can be used to start multiple simulated player deployments at once.
