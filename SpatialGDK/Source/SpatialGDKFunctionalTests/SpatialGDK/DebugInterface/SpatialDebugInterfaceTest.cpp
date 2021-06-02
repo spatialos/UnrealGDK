@@ -437,6 +437,7 @@ void ASpatialDebugInterfaceTest::PrepareTest()
 }
 
 USpatialDebugInterfaceMap::USpatialDebugInterfaceMap()
+	// TODO: make EMapCategory::CI_PREMERGE_SPATIAL_ONLY when fixed UNR-5141
 	: UGeneratedTestMap(EMapCategory::NO_CI, TEXT("SpatialDebugInterfaceMap"))
 {
 }
