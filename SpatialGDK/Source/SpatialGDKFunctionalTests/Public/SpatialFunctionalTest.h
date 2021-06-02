@@ -361,6 +361,12 @@ public:
 	// Clears all the snapshots taken, not meant to be used directly.
 	static void ClearAllTakenSnapshots();
 
+	// Get the player controller owned by the current flow controller.
+	APlayerController* GetFlowPlayerController();
+
+	// Get the pawn that belongs to the PlayerController associated with the current flow controller.
+	APawn* GetFlowPawn();
+
 protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }
 	void DeleteActorsRegisteredForAutoDestroy();

@@ -792,6 +792,30 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 	}
 }
 
+APlayerController* ASpatialFunctionalTest::GetFlowPlayerController()
+{
+	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
+	if (ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server.")))
+	{
+		return Cast<APlayerController>(FlowController->GetOwner());
+	}
+	return nullptr;
+}
+
+APawn* ASpatialFunctionalTest::GetFlowPawn()
+{
+	APlayerController* PlayerController = GetFlowPlayerController();
+	if (IsValid(PlayerController))
+	{
+		APawn* PlayerCharacter = PlayerController->GetPawn();
+		if (IsValid(PlayerCharacter))
+		{
+			return PlayerCharacter;
+		}
+	}
+	return nullptr;
+}
+
 namespace
 {
 USpatialNetDriver* GetNetDriverAndCheckDebuggingEnabled(AActor* Actor)

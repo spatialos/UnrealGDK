@@ -4,9 +4,9 @@
 #include "ClaimPartitionHandler.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
-#include "SpatialConstants.h"
 #include "Utils/RepDataUtils.h"
 
+#include "Interop/ClientNetLoadActorHelper.h"
 #include "Interop/CreateEntityHandler.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogActorSystem, Log, All);
@@ -22,7 +22,6 @@ struct FClassInfo;
 class USpatialNetDriver;
 
 class SpatialActorChannel;
-class USpatialNetDriver;
 
 using FChannelsToUpdatePosition =
 	TSet<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtrKeyFuncs<TWeakObjectPtr<USpatialActorChannel>, false>>;
@@ -80,6 +79,8 @@ public:
 	static Worker_ComponentData CreateLevelComponentData(const AActor& Actor, const UWorld& NetDriverWorld,
 														 const USpatialClassInfoManager& ClassInfoManager);
 
+	void DestroySubObject(const Worker_EntityId EntityId, UObject& Object, const FUnrealObjectRef& ObjectRef) const;
+
 private:
 	// Helper struct to manage FSpatialObjectRepState update cycle.
 	// TODO: move into own class.
@@ -134,7 +135,6 @@ private:
 	void ApplyComponentData(USpatialActorChannel& Channel, UObject& TargetObject, const Worker_ComponentId ComponentId,
 							Schema_ComponentData* Data);
 
-	bool IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset);
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FSpatialObjectRepState& RepState,
 								 FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data,
@@ -178,6 +178,7 @@ private:
 
 	USpatialNetDriver* NetDriver;
 	SpatialEventTracer* EventTracer;
+	FClientNetLoadActorHelper ClientNetLoadActorHelper;
 
 	CreateEntityHandler CreateEntityHandler;
 	ClaimPartitionHandler ClaimPartitionHandler;
