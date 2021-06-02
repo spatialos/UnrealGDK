@@ -162,8 +162,9 @@ bool USpatialPackageMapClient::ResolveEntityActorAndSubobjects(const Worker_Enti
 
 	if (GetEntityIdFromObject(Actor) != EntityId)
 	{
-		UE_LOG(LogSpatialPackageMap, Error, TEXT("ResolveEntityActorAndSubobjects failed for Actor: %s with NetGUID: %s and passed entity ID: %lld"),
-			   *Actor->GetName(), *NetGUID.ToString(), EntityId);
+		UE_LOG(LogSpatialPackageMap, Error,
+			   TEXT("ResolveEntityActorAndSubobjects failed for Actor: %s with NetGUID: %s and passed entity ID: %lld"), *Actor->GetName(),
+			   *NetGUID.ToString(), EntityId);
 		return false;
 	}
 
