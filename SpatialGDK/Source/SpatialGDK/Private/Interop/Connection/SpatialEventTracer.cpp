@@ -2,18 +2,33 @@
 
 #include "Interop/Connection/SpatialEventTracer.h"
 
-#include <inttypes.h>
-#include <string>
-
 #include "HAL/PlatformFile.h"
 #include "HAL/PlatformFilemanager.h"
-#include "Interop/Connection/SpatialTraceEventBuilder.h"
 #include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEventTracer);
 
 namespace SpatialGDK
 {
+TraceQueryPtr ParseOrDefault(const FString& Str, const TCHAR* FilterForLog)
+{
+	TraceQueryPtr Ptr;
+	if (Str.Len() > 0)
+	{
+		Ptr.Reset(Trace_ParseSimpleQuery(TCHAR_TO_ANSI(*Str)));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Applied %s query: %s"), FilterForLog, *Str);
+	}
+
+	if (!Ptr.IsValid())
+	{
+		UE_LOG(LogSpatialEventTracer, Warning, TEXT("The specified query \"%s\" is invalid; defaulting to \"false\" query. %s"),
+			   FilterForLog, Trace_GetLastError());
+		Ptr.Reset(Trace_ParseSimpleQuery("false"));
+	}
+
+	return Ptr;
+}
+
 void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 {
 	SpatialEventTracer* EventTracer = static_cast<SpatialEventTracer*>(UserData);
@@ -25,27 +40,34 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	}
 
 	uint32_t ItemSize = Trace_GetSerializedItemSize(Item);
-	if (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize)
+	// Depends whether we are using rotating logs or single-log mode (where we track max size).
+	const bool bTrackFileSize = EventTracer->MaxFileSize != 0;
+	if (!bTrackFileSize || (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize))
 	{
-		EventTracer->BytesWrittenToStream += ItemSize;
-		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
-		if (Code != 1)
+		if (bTrackFileSize) 
 		{
-			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s)"), Code, Trace_GetLastError());
+			EventTracer->BytesWrittenToStream += ItemSize;
+		}
+
+		int Code = Trace_SerializeItemToStream(Stream, Item, ItemSize);
+		if (Code == WORKER_RESULT_FAILURE)
+		{
+			UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to serialize to with error code %d (%s)"), Code,
+				   ANSI_TO_TCHAR(Trace_GetLastError()));
 		}
 
 		if (FPlatformAtomics::AtomicRead_Relaxed(&EventTracer->FlushOnWriteAtomic))
 		{
-			int64_t Flushresult = Io_Stream_Flush(Stream);
-			if (Flushresult == -1)
+			if (Io_Stream_Flush(Stream) == -1)
 			{
 				UE_LOG(LogSpatialEventTracer, Error, TEXT("Failed to flush stream with error code %d (%s)"), Code,
-					   Io_Stream_GetLastError(Stream));
+					   ANSI_TO_TCHAR(Io_Stream_GetLastError(Stream)));
 			}
 		}
 	}
 	else
 	{
+		// Went over max capacity so stop writing here.
 		EventTracer->BytesWrittenToStream = EventTracer->MaxFileSize;
 	}
 }
@@ -74,39 +96,50 @@ SpatialScopedActiveSpanId::~SpatialScopedActiveSpanId()
 SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
-	MaxFileSize = Settings->MaxEventTracingFileSizeBytes;
+	MaxFileSize = Settings->bEnableEventTracingRotatingLogs ? 0 : Settings->EventTracingSingleLogMaxFileSizeBytes; // 0 indicates unbounded.
 
-	Trace_EventTracer_Parameters parameters = {};
-	parameters.user_data = this;
-	parameters.callback = &SpatialEventTracer::TraceCallback;
-	EventTracer = Trace_EventTracer_Create(&parameters);
+	Trace_EventTracer_Parameters Parameters = {};
+	Parameters.user_data = this;
+	Parameters.callback = &SpatialEventTracer::TraceCallback;
+	Parameters.enabled = true;
 
-	Trace_SamplingParameters SamplingParameters = {};
-	SamplingParameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
+	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
 
 	UEventTracingSamplingSettings* SamplingSettings = Settings->GetEventTracingSamplingSettings();
 
-	UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing sampling probability. Probability: %f."),
+	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
+	// Storage for strings passed to the worker SDK Worker requires ansi const char*
+	FSpatialTraceEventDataBuilder::FStringCache AnsiStrings;
+
+	Parameters.span_sampling_parameters.sampling_mode = Trace_SamplingMode::TRACE_SAMPLING_MODE_PROBABILISTIC;
+
+	UE_LOG(LogSpatialEventTracer, Log, TEXT("Setting event tracing span sampling probabalistic. Probability: %f."),
 		   SamplingSettings->SamplingProbability);
 
-	TArray<Trace_SpanSamplingProbability> SpanSamplingProbabilities;
-	TArray<std::string> AnsiStrings; // Worker requires ansi const char*
+	SpanSamplingProbabilities.Reserve(SamplingSettings->EventSamplingModeOverrides.Num());
 	for (const auto& Pair : SamplingSettings->EventSamplingModeOverrides)
 	{
 		const FString& EventName = Pair.Key.ToString();
 		UE_LOG(LogSpatialEventTracer, Log, TEXT("Adding trace event sampling override. Event: %s Probability: %f."), *EventName,
 			   Pair.Value);
-		int32 Index = AnsiStrings.Add((const char*)TCHAR_TO_ANSI(*EventName));
-		SpanSamplingProbabilities.Add({ AnsiStrings[Index].c_str(), Pair.Value });
+		SpanSamplingProbabilities.Add({ AnsiStrings.Get(AnsiStrings.AddFString(EventName)), Pair.Value });
 	}
 
-	SamplingParameters.probabilistic_parameters.default_probability = SamplingSettings->SamplingProbability;
-	SamplingParameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
-	SamplingParameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
+	Parameters.span_sampling_parameters.probabilistic_parameters.default_probability = SamplingSettings->SamplingProbability;
+	Parameters.span_sampling_parameters.probabilistic_parameters.probability_count = SpanSamplingProbabilities.Num();
+	Parameters.span_sampling_parameters.probabilistic_parameters.probabilities = SpanSamplingProbabilities.GetData();
 
-	Trace_EventTracer_SetSampler(EventTracer, &SamplingParameters);
+	// Filters
+	TraceQueryPtr PreFilter = ParseOrDefault(SamplingSettings->GDKEventPreFilter, TEXT("pre-filter"));
+	TraceQueryPtr PostFilter = ParseOrDefault(SamplingSettings->GDKEventPostFilter, TEXT("post-filter"));
 
-	UE_LOG(LogSpatialEventTracer, Log, TEXT("Spatial event tracing enabled."));
+	checkf(PreFilter.Get() != nullptr, TEXT("Pre-filter is invalid."));
+	checkf(PostFilter.Get() != nullptr, TEXT("Post-filter is invalid."));
+
+	Parameters.filter_parameters.event_pre_filter_parameters.simple_query = PreFilter.Get();
+	Parameters.filter_parameters.event_post_filter_parameters.simple_query = PostFilter.Get();
+
+	EventTracer = Trace_EventTracer_Create(&Parameters);
 
 	// Open a local file
 	FString EventTracePath = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("EventTracing"));
@@ -117,14 +150,38 @@ SpatialEventTracer::SpatialEventTracer(const FString& WorkerId)
 	}
 
 	FolderPath = EventTracePath;
-	const FString FullFileName = FString::Printf(TEXT("EventTrace_%s_%s.trace"), *WorkerId, *FDateTime::Now().ToString());
-	const FString FilePath = FPaths::Combine(FolderPath, FullFileName);
+	const FString FolderWorkerPath = FPaths::Combine(EventTracePath, WorkerId);
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if (PlatformFile.CreateDirectoryTree(*FolderPath))
+	const FString FileName = TEXT("gdk");
+	const FString FileExt = TEXT(".etlog");
+	if (PlatformFile.CreateDirectoryTree(*FolderWorkerPath))
 	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace to %s."), *FilePath);
-		Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
+		UE_LOG(LogSpatialEventTracer, Log, TEXT("Capturing trace file%s to %s."),
+			   (Settings->bEnableEventTracingRotatingLogs) ? TEXT("s") : TEXT(""), *FolderWorkerPath);
+
+		if (Settings->bEnableEventTracingRotatingLogs)
+		{
+			FString FullFilePathPrefix = FString::Printf(TEXT("%s-"), *FPaths::Combine(FolderWorkerPath, FileName));
+			const FString FullFilePathSuffix = FileExt;
+
+			Io_RotatingFileStreamParameters FileParamters;
+			FileParamters.filename_prefix = AnsiStrings.Get(AnsiStrings.AddFString(FullFilePathPrefix));
+			FileParamters.filename_suffix = AnsiStrings.Get(AnsiStrings.AddFString(FullFilePathSuffix));
+			FileParamters.max_file_size_bytes = Settings->EventTracingRotatingLogsMaxFileSizeBytes;
+			FileParamters.max_file_count = Settings->EventTracingRotatingLogsMaxFileCount;
+			Stream.Reset(Io_CreateRotatingFileStream(&FileParamters));
+		}
+		else
+		{
+			const FString FullFilename = FString::Printf(TEXT("%s%s"), *FileName, *FileExt);
+			const FString FullFilePath = FPaths::Combine(FolderWorkerPath, FullFilename);
+			Stream.Reset(Io_CreateFileStream(TCHAR_TO_ANSI(*FullFilePath), Io_OpenMode::IO_OPEN_MODE_WRITE));
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialEventTracer, Error, TEXT("Error creating directory tree to %s"), *FolderWorkerPath);
 	}
 }
 
@@ -154,85 +211,6 @@ FSpatialGDKSpanId SpatialEventTracer::UserSpanIdToGDKSpanId(const FUserSpanId& U
 	return TraceSpanId;
 }
 
-FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes /* = nullptr*/,
-												 int32 NumCauses /* = 0*/) const
-{
-	if (Causes == nullptr && NumCauses > 0)
-	{
-		return {};
-	}
-
-	// Worker requires ansi const char*
-	std::string MessageSrc = (const char*)TCHAR_TO_ANSI(*SpatialTraceEvent.Message);	  // Worker requires platform ansi const char*
-	std::string TypeSrc = (const char*)TCHAR_TO_ANSI(*SpatialTraceEvent.Type.ToString()); // Worker requires platform ansi const char*
-
-	// We could add the data to this event if a custom sampling callback was used.
-	// This would allow for sampling dependent on trace event data.
-	Trace_Event Event = { nullptr, 0, MessageSrc.c_str(), TypeSrc.c_str(), nullptr };
-
-	Trace_SamplingResult SpanSamplingResult = Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event);
-	if (SpanSamplingResult.decision == Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE)
-	{
-		return {};
-	}
-
-	FSpatialGDKSpanId TraceSpanId;
-	Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, &Event, TraceSpanId.GetId());
-	Event.span_id = TraceSpanId.GetConstId();
-
-	Trace_SamplingResult EventSamplingResult = Trace_EventTracer_ShouldSampleEvent(EventTracer, &Event);
-	switch (EventSamplingResult.decision)
-	{
-	case Trace_SamplingDecision::TRACE_SHOULD_NOT_SAMPLE:
-	{
-		return TraceSpanId;
-	}
-	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE_WITHOUT_DATA:
-	{
-		Trace_EventTracer_AddEvent(EventTracer, &Event);
-		return TraceSpanId;
-	}
-	case Trace_SamplingDecision::TRACE_SHOULD_SAMPLE:
-	{
-		Trace_EventData* EventData = Trace_EventData_Create();
-
-		for (const auto& Pair : SpatialTraceEvent.Data)
-		{
-			std::string KeySrc = (const char*)TCHAR_TO_ANSI(*Pair.Key); // Worker requires platform ansi const char*
-			const char* Key = KeySrc.c_str();
-			std::string ValueSrc = (const char*)TCHAR_TO_ANSI(*Pair.Value); // Worker requires platform ansi const char*
-			const char* Value = ValueSrc.c_str();
-			Trace_EventData_AddStringFields(EventData, 1, &Key, &Value);
-		}
-
-		// Frame counter
-		{
-			const char* FrameCountStr = "FrameNum";
-			char TmpBuffer[64];
-			FCStringAnsi::Sprintf(TmpBuffer, "%" PRIu64, GFrameCounter);
-			const char* TmpBufferPtr = TmpBuffer;
-			Trace_EventData_AddStringFields(EventData, 1, &FrameCountStr, &TmpBufferPtr);
-		}
-
-		Event.data = EventData;
-		Trace_EventTracer_AddEvent(EventTracer, &Event);
-		Trace_EventData_Destroy(EventData);
-		return TraceSpanId;
-	}
-	default:
-	{
-		UE_LOG(LogSpatialEventTracer, Log, TEXT("Could not handle invalid sampling decision %d."),
-			   static_cast<int>(EventSamplingResult.decision));
-		return {};
-	}
-	}
-}
-
-void SpatialEventTracer::StreamDeleter::operator()(Io_Stream* StreamToDestroy) const
-{
-	Io_Stream_Destroy(StreamToDestroy);
-}
-
 void SpatialEventTracer::BeginOpsForFrame()
 {
 	for (auto& ConsumedKey : EntityComponentsConsumed)
@@ -244,19 +222,34 @@ void SpatialEventTracer::BeginOpsForFrame()
 
 void SpatialEventTracer::AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	TraceEvent(FSpatialTraceEventBuilder::CreateReceiveCreateEntity(Op.entity_id), /* Causes */ SpanId.GetConstId(), /* NumCauses */ 1);
+	Worker_EntityId EntityId = Op.entity_id;
+	TraceEvent(RECEIVE_CREATE_ENTITY_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1,
+			   [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
+				   EventBuilder.AddEntityId(EntityId);
+			   });
 }
 
 void SpatialEventTracer::RemoveEntity(const Worker_RemoveEntityOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	TraceEvent(FSpatialTraceEventBuilder::CreateReceiveRemoveEntity(Op.entity_id), /* Causes */ SpanId.GetConstId(), /* NumCauses */ 1);
+	Worker_EntityId EntityId = Op.entity_id;
+	TraceEvent(RECEIVE_REMOVE_ENTITY_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1,
+			   [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
+				   EventBuilder.AddEntityId(EntityId);
+			   });
 }
 
 void SpatialEventTracer::AuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	TraceEvent(
-		FSpatialTraceEventBuilder::CreateAuthorityChange(Op.entity_id, Op.component_set_id, static_cast<Worker_Authority>(Op.authority)),
-		/* Causes */ SpanId.GetConstId(), /* NumCauses */ 1);
+	Worker_EntityId EntityId = Op.entity_id;
+	Worker_ComponentSetId ComponentSetId = Op.component_set_id;
+	Worker_Authority Authority = static_cast<Worker_Authority>(Op.authority);
+
+	TraceEvent(AUTHORITY_CHANGE_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1,
+			   [EntityId, ComponentSetId, Authority](FSpatialTraceEventDataBuilder& EventBuilder) {
+				   EventBuilder.AddEntityId(EntityId);
+				   EventBuilder.AddComponentSetId(ComponentSetId);
+				   EventBuilder.AddAuthority(Authority);
+			   });
 }
 
 void SpatialEventTracer::AddComponent(const Worker_AddComponentOp& Op, const FSpatialGDKSpanId& SpanId)
@@ -345,8 +338,13 @@ void SpatialEventTracer::AddLatentPropertyUpdateSpanId(const TWeakObjectPtr<UObj
 	else
 	{
 		FSpatialGDKSpanId CauseSpanIds[2] = { SpanId, *ExistingSpanId };
-		*ExistingSpanId = TraceEvent(FSpatialTraceEventBuilder::CreateObjectPropertyComponentUpdate(Object.Get()),
-									 /* Causes */ reinterpret_cast<uint8_t*>(&CauseSpanIds), /* NumCauses */ 2);
+		uint8_t* Causes = reinterpret_cast<uint8_t*>(&CauseSpanIds);
+		const UObject* ObjectPtr = Object.Get();
+
+		*ExistingSpanId = TraceEvent(MERGE_PROPERTY_UPDATE_EVENT_NAME, "", Causes, /* NumCauses */ 2,
+									 [ObjectPtr](FSpatialTraceEventDataBuilder& EventBuilder) {
+										 EventBuilder.AddObject(ObjectPtr);
+									 });
 	}
 }
 

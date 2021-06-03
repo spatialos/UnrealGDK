@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Interop/Connection/SpatialGDKSpanId.h"
-#include "Interop/Connection/SpatialTraceEvent.h"
+#include "Interop/Connection/SpatialTraceEventDataBuilder.h"
 #include "Interop/Connection/UserSpanId.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialView/EntityComponentId.h"
@@ -12,11 +12,22 @@
 #include <WorkerSDK/improbable/c_trace.h>
 
 // Documentation for event tracing in the GDK can be found here: https://brevi.link/gdk-event-tracing-documentation
-
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracer, Log, All);
 
 namespace SpatialGDK
 {
+struct TraceQueryDeleter
+{
+	void operator()(Trace_Query* Query) const
+	{
+		if (Query != nullptr)
+		{
+			Trace_Query_Destroy(Query);
+		}
+	}
+};
+typedef TUniquePtr<Trace_Query, TraceQueryDeleter> TraceQueryPtr;
+
 // SpatialEventTracer wraps Trace_EventTracer related functionality
 class SPATIALGDK_API SpatialEventTracer
 {
@@ -24,11 +35,12 @@ public:
 	explicit SpatialEventTracer(const FString& WorkerId);
 	~SpatialEventTracer();
 
-	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; };
+	const Trace_EventTracer* GetConstWorkerEventTracer() const { return EventTracer; }
 	Trace_EventTracer* GetWorkerEventTracer() const { return EventTracer; }
 
-	FSpatialGDKSpanId TraceEvent(const FSpatialTraceEvent& SpatialTraceEvent, const Trace_SpanIdType* Causes = nullptr,
-								 int32 NumCauses = 0) const;
+	template <typename T>
+	FSpatialGDKSpanId TraceEvent(const char* EventType, const char* Message, const Trace_SpanIdType* Causes, int32 NumCauses,
+								 T&& DataCallback) const;
 
 	void BeginOpsForFrame();
 	void AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId);
@@ -60,7 +72,13 @@ public:
 private:
 	struct StreamDeleter
 	{
-		void operator()(Io_Stream* StreamToDestroy) const;
+		void operator()(Io_Stream* StreamToDestroy) const
+		{
+			if (StreamToDestroy != nullptr)
+			{
+				Io_Stream_Destroy(StreamToDestroy);
+			}
+		}
 	};
 
 	static void TraceCallback(void* UserData, const Trace_Item* Item);
@@ -100,5 +118,43 @@ private:
 	const FSpatialGDKSpanId& CurrentSpanId;
 	Trace_EventTracer* EventTracer;
 };
+
+template <typename T>
+FSpatialGDKSpanId SpatialEventTracer::TraceEvent(const char* EventType, const char* Message, const Trace_SpanIdType* Causes,
+												 int32 NumCauses, T&& DataCallback) const
+{
+	if (Causes == nullptr && NumCauses > 0)
+	{
+		return {};
+	}
+
+	// We could add the data to this event if a custom sampling callback was used.
+	// This would allow for sampling dependent on trace event data.
+	Trace_Event Event = { nullptr, 0, Message, EventType, nullptr };
+
+	if (!Trace_EventTracer_ShouldSampleSpan(EventTracer, Causes, NumCauses, &Event))
+	{
+		return {};
+	}
+
+	FSpatialGDKSpanId TraceSpanId;
+	Trace_EventTracer_AddSpan(EventTracer, Causes, NumCauses, &Event, TraceSpanId.GetId());
+	Event.span_id = TraceSpanId.GetConstId();
+
+	if (!Trace_EventTracer_PreFilterAcceptsEvent(EventTracer, &Event))
+	{
+		return TraceSpanId;
+	}
+
+	FSpatialTraceEventDataBuilder EventDataBuilder;
+	DataCallback(EventDataBuilder);
+
+	// Frame counter
+	EventDataBuilder.AddKeyValue("frame_num", GFrameCounter);
+
+	Event.data = EventDataBuilder.GetEventData();
+	Trace_EventTracer_AddEvent(EventTracer, &Event);
+	return TraceSpanId;
+}
 
 } // namespace SpatialGDK

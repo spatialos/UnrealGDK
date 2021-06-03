@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include "Interop/Connection/SpatialTraceEvent.h"
+#include "Containers/Map.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/Connection/UserSpanId.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 
@@ -10,16 +11,12 @@
 
 #include "SpatialEventTracerUserInterface.generated.h"
 
+class USpatialNetDriver;
+
 DECLARE_DYNAMIC_DELEGATE(FEventTracerRPCDelegate);
+DECLARE_DELEGATE_OneParam(FEventTracerAddDataDelegate, SpatialGDK::FSpatialTraceEventDataBuilder&);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEventTracerUserInterface, Log, All);
-
-namespace SpatialGDK
-{
-class SpatialEventTracer;
-}
-
-class USpatialNetDriver;
 
 // Docs on how to use the interface can be found:
 // https://docs.google.com/document/d/1i0fOdeldqeZ9kgBdmYcTD3fCwYXT9pX1RzpTIupgjcg/edit?usp=sharing
@@ -36,7 +33,8 @@ public:
 	 * (This API is subject to change)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static FUserSpanId TraceEvent(UObject* WorldContextObject, const FSpatialTraceEvent& SpatialTraceEvent);
+	static FUserSpanId TraceEvent(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage,
+								  const TMap<FString, FString>& Data);
 
 	/**
 	 * EXPERIMENTAL
@@ -44,16 +42,8 @@ public:
 	 * (This API is subject to change)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static FUserSpanId TraceEventBasic(UObject* WorldContextObject, FName Type, FString Message, const TArray<FUserSpanId>& Causes);
-
-	/**
-	 * EXPERIMENTAL
-	 * Will trace an event using the input data and associate it with the input SpanId
-	 * (This API is subject to change)
-	 */
-	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
-	static FUserSpanId TraceEventWithCauses(UObject* WorldContextObject, const FSpatialTraceEvent& SpatialTraceEvent,
-											const TArray<FUserSpanId>& Causes);
+	static FUserSpanId TraceEventWithCauses(UObject* WorldContextObject, const FString& EventType, const FString& EventMessage,
+											const TMap<FString, FString>& Data, const TArray<FUserSpanId>& Causes);
 
 	/**
 	 * EXPERIMENTAL
@@ -80,6 +70,24 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS|EventTracing", meta = (WorldContext = "WorldContextObject"))
 	static bool GetActiveSpanId(UObject* WorldContextObject, FUserSpanId& OutUserSpanId);
+
+	// ----- C++ Specific API -----
+
+	/**
+	 * EXPERIMENTAL
+	 * Will trace an event using the input data and associate it with the input SpanId
+	 * (This API is subject to change)
+	 */
+	static FUserSpanId TraceEvent(UObject* WorldContextObject, const char* EventType, const char* EventMessage,
+								  FEventTracerAddDataDelegate AddDataDelegate = {});
+
+	/**
+	 * EXPERIMENTAL
+	 * Will trace an event using the input data and associate it with the input SpanId
+	 * (This API is subject to change)
+	 */
+	static FUserSpanId TraceEventWithCauses(UObject* WorldContextObject, const char* EventType, const char* EventMessage,
+											const TArray<FUserSpanId>& Causes, FEventTracerAddDataDelegate AddDataDelegate = {});
 
 private:
 	static SpatialGDK::SpatialEventTracer* GetEventTracer(UObject* WorldContextObject);

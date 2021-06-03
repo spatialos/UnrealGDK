@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
+## [`0.13.1`] - 2021-06-02
+### Breaking changes:
+- Event tracing has been optimised to reduce overhead when tracing events in general and in particular when events are not sampled. The tracing API has been modified to accommodate these improvements. You will have to modify your project if you use the API.
+
+### Features:
+- Added `SpatialExecServerCmd` console command with one command `StartInsights` to dynamically enable insights capturing.
+  - Format: SpatialExecServerCmd < server > < command > < args >
+  - Example usage: "SpatialExecServerCmd local StartInsights -trace=CustomChannel -tracefile=MyNewTrace"
+- Visual Logger now supports multi-worker environments.
+- The Unreal GDK has been updated to run against SpatialOS 15.1.0, older versions of SpatialOS will no longer work with the Unreal GDK.
+- Event tracing rotating log support (via `bEnableEventTracingRotatingLogs`, `EventTracingRotatingLogsMaxFileSizeBytes` and `EventTracingRotatingLogsMaxFileCount`). 
+- Event tracing filter support (configured via `UEventTracingSamplingSettings`).
+
 ## [`0.13.0`] - 2021-05-17
 ### Breaking changes:
 - Removed support for Unreal Engine 4.24.
@@ -64,7 +77,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where on initial replication, actors with replicated TArrays would not have the array cleared if the local state was not empty.
 - Fixed an issue with replicating references to stably named dynamically added subobjects of dynamic actors.
 - Fixed an issue during client logout where a client's corresponding Actors were not cleaned up correctly.
-- Reverted a fix relating to the `dbghelp` file that previously caused the Editor to crash when loading the Session Front End. Our fix is no longer necessary, as Epic have fixed the issue and we've adopted their fix.
 - Fixed issue with `SpatialDebugger` crashing when client travelling.
 
 ## [`0.12.0`] - 2021-02-01
