@@ -351,8 +351,7 @@ FWorkerComponentData ComponentFactory::CreateComponentData(Worker_ComponentId Co
 
 	// We're currently ignoring ClearedId fields, which is problematic if the initial replicated state
 	// is different to what the default state is (the client will have the incorrect data). UNR:959
-	OutBytesWritten +=
-		FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, true);
+	OutBytesWritten += FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, true);
 
 	return ComponentData;
 }
