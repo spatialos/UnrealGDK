@@ -653,10 +653,19 @@ bool ASpatialAuthorityTest::VerifyTestActor(ASpatialAuthorityTestActor* Actor, E
 	ESpatialHasAuthority ActualAuthority;
 	USpatialStatics::SpatialSwitchHasAuthority(Actor, ActualAuthority);
 
+	RequireEqual_Int((int)ActualAuthority, (int)ExpectedAuthority, TEXT("ActualAuthority"));
+
 	if (ActualAuthority != ExpectedAuthority)
 	{
 		return false;
 	}
+
+	RequireEqual_Int(Actor->AuthorityComponent->AuthWorkerIdOnBeginPlay, AuthorityOnBeginPlay, TEXT("AuthorityOnBeginPlay"));
+	RequireEqual_Int(Actor->AuthorityComponent->AuthWorkerIdOnTick, AuthorityOnTick, TEXT("AuthorityOnTick"));
+	RequireEqual_Int(Actor->AuthorityComponent->NumAuthorityGains, NumAuthorityGains, TEXT("NumAuthorityGains"));
+	RequireEqual_Int(Actor->AuthorityComponent->NumAuthorityLosses, NumAuthorityLosses, TEXT("NumAuthorityLosses"));
+	RequireEqual_Int(Actor->AuthorityComponent->NumActorReadyAuth, NumActorReadyAuth, TEXT("NumActorReadyAuth"));
+	RequireEqual_Int(Actor->AuthorityComponent->NumActorReadyNonAuth, NumActorReadyNonAuth, TEXT("NumActorReadyNonAuth"));
 
 	return Actor->AuthorityComponent->AuthWorkerIdOnBeginPlay == AuthorityOnBeginPlay
 		   && Actor->AuthorityComponent->AuthWorkerIdOnTick == AuthorityOnTick
