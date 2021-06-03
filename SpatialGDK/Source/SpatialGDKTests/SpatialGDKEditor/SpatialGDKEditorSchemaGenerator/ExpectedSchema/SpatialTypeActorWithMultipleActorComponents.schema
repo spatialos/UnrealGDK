@@ -9,8 +9,7 @@ component SpatialTypeActorWithMultipleActorComponents {
 	bool bhidden = 1;
 	bool breplicatemovement = 2;
 	bool btearoff = 3;
-	bool bactorenablecollision = 4;
-	bool bcanbedamaged = 5;
+	bool bcanbedamaged = 4;
 	uint32 remoterole = 6;
 	bytes replicatedmovement = 7;
 	UnrealObjectRef attachmentreplication_attachparent = 8;
@@ -24,4 +23,9 @@ component SpatialTypeActorWithMultipleActorComponents {
 	UnrealObjectRef instigator = 16;
 	UnrealObjectRef firstspatialactorcomponent = 17;
 	UnrealObjectRef secondspatialactorcomponent = 18;
+}
+
+component SpatialTypeActorWithMultipleActorComponentsServerOnly {
+	id = {{id}};
+	bool bactorenablecollision = 5;
 }
