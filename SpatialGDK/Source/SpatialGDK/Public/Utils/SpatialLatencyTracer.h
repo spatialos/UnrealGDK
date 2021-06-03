@@ -136,8 +136,6 @@ public:
 #if TRACE_LIB_ACTIVE
 
 	bool IsValidKey(TraceKey Key);
-	TraceKey RetrievePendingTrace(const UObject* Obj, const UFunction* Function);
-	TraceKey RetrievePendingTrace(const UObject* Obj, const GDK_PROPERTY(Property) * Property);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const FString& Tag);
 
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);

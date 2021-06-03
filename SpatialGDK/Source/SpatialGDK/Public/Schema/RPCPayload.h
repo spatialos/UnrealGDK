@@ -74,12 +74,11 @@ struct RPCPayload
 {
 	RPCPayload() = default;
 
-	RPCPayload(uint32 InOffset, uint32 InIndex, TOptional<uint64> InId, TArray<uint8>&& Data, TraceKey InTraceKey = InvalidTraceKey)
+	RPCPayload(uint32 InOffset, uint32 InIndex, TOptional<uint64> InId, TArray<uint8>&& Data)
 		: Offset(InOffset)
 		, Index(InIndex)
 		, Id(InId)
 		, PayloadData(MoveTemp(Data))
-		, Trace(InTraceKey)
 	{
 	}
 
@@ -95,8 +94,6 @@ struct RPCPayload
 		}
 
 		PayloadData = GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
-
-		Trace = FSpatialLatencyTracerMinimal::ReadTraceFromSchemaObject(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
 	}
 
 	int64 CountDataBits() const { return PayloadData.Num() * 8; }
@@ -104,8 +101,6 @@ struct RPCPayload
 	void WriteToSchemaObject(Schema_Object* RPCObject) const
 	{
 		WriteToSchemaObject(RPCObject, Offset, Index, Id, PayloadData.GetData(), PayloadData.Num());
-
-		FSpatialLatencyTracerMinimal::WriteTraceToSchemaObject(Trace, RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_TRACE_ID);
 	}
 
 	static void WriteToSchemaObject(Schema_Object* RPCObject, uint32 Offset, uint32 Index, TOptional<uint64> UniqueId, const uint8* Data,
@@ -125,7 +120,6 @@ struct RPCPayload
 	uint32 Index;
 	TOptional<uint64> Id;
 	TArray<uint8> PayloadData;
-	TraceKey Trace = InvalidTraceKey;
 };
 
 } // namespace SpatialGDK

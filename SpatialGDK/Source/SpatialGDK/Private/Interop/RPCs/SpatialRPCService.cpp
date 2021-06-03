@@ -119,10 +119,6 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 	EPushRPCResult Result = EPushRPCResult::Success;
 	PendingRPCPayload PendingPayload = { Payload, SpanId };
 
-#if TRACE_LIB_ACTIVE
-	TraceKey Trace = Payload.Trace;
-#endif
-
 	if (Type == ERPCType::CrossServer)
 	{
 		Result = CrossServerRPCs->PushCrossServerRPC(EntityId, Sender, PendingPayload, bCreatedEntity);
@@ -150,10 +146,6 @@ EPushRPCResult SpatialRPCService::PushRPC(const Worker_EntityId EntityId, const 
 			}
 		}
 	}
-
-#if TRACE_LIB_ACTIVE
-	ProcessResultToLatencyTrace(Result, Trace);
-#endif
 
 	return Result;
 }
@@ -211,9 +203,6 @@ void SpatialRPCService::PushOverflowedRPCs()
 			default:
 				checkNoEntry();
 			}
-#if TRACE_LIB_ACTIVE
-			ProcessResultToLatencyTrace(Result, Payload.Payload.Trace);
-#endif
 
 			// This includes the valid case of RPCs still overflowing (EPushRPCResult::QueueOverflowed), as well as the error cases.
 			if (Result != EPushRPCResult::Success)
@@ -386,12 +375,7 @@ RPCPayload SpatialRPCService::CreateRPCPayloadFromParams(UObject* TargetObject, 
 		Id = FMath::RandRange(static_cast<int64>(0), INT64_MAX);
 	}
 
-#if TRACE_LIB_ACTIVE
-	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, Id, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()),
-					  USpatialLatencyTracer::GetTracer(TargetObject)->RetrievePendingTrace(TargetObject, Function));
-#else
 	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, Id, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
-#endif
 }
 
 EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId, const ERPCType Type, PendingRPCPayload Payload,
@@ -464,22 +448,6 @@ EPushRPCResult SpatialRPCService::PushRPCInternal(const Worker_EntityId EntityId
 		}
 
 		RPCRingBufferUtils::WriteRPCToSchema(EndpointObject, Type, NewRPCId, Payload.Payload);
-
-#if TRACE_LIB_ACTIVE
-		if (SpatialLatencyTracer != nullptr && Payload.Payload.Trace != InvalidTraceKey)
-		{
-			if (PendingTraces.Find(EntityComponent) == nullptr)
-			{
-				PendingTraces.Add(EntityComponent, Payload.Payload.Trace);
-			}
-			else
-			{
-				SpatialLatencyTracer->WriteAndEndTrace(Payload.Payload.Trace,
-													   TEXT("Multiple rpc updates in single update, ending further stack tracing"), true);
-			}
-		}
-#endif
-
 		RPCStore.LastSentRPCIds.Add(EntityType, NewRPCId);
 	}
 	else
@@ -862,50 +830,4 @@ FSpatialNetBitWriter SpatialRPCService::PackRPCDataToSpatialNetBitWriter(UFuncti
 
 	return PayloadWriter;
 }
-
-#if TRACE_LIB_ACTIVE
-void SpatialRPCService::ProcessResultToLatencyTrace(const EPushRPCResult Result, const TraceKey Trace)
-{
-	if (SpatialLatencyTracer != nullptr && Trace != InvalidTraceKey)
-	{
-		bool bEndTrace = false;
-		FString TraceMsg;
-		switch (Result)
-		{
-		case SpatialGDK::EPushRPCResult::Success:
-			// No further action
-			break;
-		case SpatialGDK::EPushRPCResult::QueueOverflowed:
-			TraceMsg = TEXT("Overflowed");
-			break;
-		case SpatialGDK::EPushRPCResult::DropOverflowed:
-			TraceMsg = TEXT("OverflowedAndDropped");
-			bEndTrace = true;
-			break;
-		case SpatialGDK::EPushRPCResult::HasAckAuthority:
-			TraceMsg = TEXT("NoAckAuth");
-			bEndTrace = true;
-			break;
-		case SpatialGDK::EPushRPCResult::NoRingBufferAuthority:
-			TraceMsg = TEXT("NoRingBufferAuth");
-			bEndTrace = true;
-			break;
-		default:
-			TraceMsg = TEXT("UnrecognisedResult");
-			break;
-		}
-
-		if (bEndTrace)
-		{
-			// This RPC has been dropped, end the trace
-			SpatialLatencyTracer->WriteAndEndTrace(Trace, TraceMsg, false);
-		}
-		else if (!TraceMsg.IsEmpty())
-		{
-			// This RPC will be sent later
-			SpatialLatencyTracer->WriteToLatencyTrace(Trace, TraceMsg);
-		}
-	}
-}
-#endif // TRACE_LIB_ACTIVE
 } // namespace SpatialGDK

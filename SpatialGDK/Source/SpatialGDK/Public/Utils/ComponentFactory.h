@@ -45,7 +45,7 @@ private:
 												 ESchemaComponentType PropertyGroup, uint32& OutBytesWritten);
 
 	uint32 FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes,
-							ESchemaComponentType PropertyGroup, bool bIsInitialData, TraceKey* OutLatencyTraceId,
+							ESchemaComponentType PropertyGroup, bool bIsInitialData,
 							TArray<Schema_FieldId>* ClearedIds = nullptr);
 
 	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, GDK_PROPERTY(Property) * Property, const uint8* Data,
@@ -58,8 +58,6 @@ private:
 	bool bInterestHasChanged;
 	bool bInitialOnlyDataWritten;
 	bool bInitialOnlyReplicationEnabled;
-
-	USpatialLatencyTracer* LatencyTracer;
 };
 
 } // namespace SpatialGDK

@@ -113,22 +113,15 @@ TOptional<FCrossServerRPCParams> RPCExecutor::TryRetrieveCrossServerRPCParams(co
 	}
 
 	AActor* TargetActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.op.command_request.entity_id));
-#if TRACE_LIB_ACTIVE
-	TraceKey TraceId = Payload.Trace;
-#else
-	TraceKey TraceId = InvalidTraceKey;
-#endif
-
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{
 		SpanId = EventTracer->TraceEvent(RECEIVE_COMMAND_REQUEST_EVENT_NAME, "", /* Causes */ nullptr, /* NumCauses */ 0,
-										 [TargetActor, TargetObject, Function, TraceId, Op](FSpatialTraceEventDataBuilder& EventBuilder) {
+										 [TargetActor, TargetObject, Function, Op](FSpatialTraceEventDataBuilder& EventBuilder) {
 											 EventBuilder.AddCommand("RPC_COMMAND_REQUEST");
 											 EventBuilder.AddObject(TargetActor);
 											 EventBuilder.AddObject(TargetActor != TargetObject ? TargetObject : nullptr, "TargetObject");
 											 EventBuilder.AddFunction(Function);
-											 EventBuilder.AddKeyValue("TraceId", TraceId);
 											 EventBuilder.AddRequestId(Op.op.command_request.request_id);
 										 });
 	}

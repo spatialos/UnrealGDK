@@ -196,26 +196,6 @@ bool USpatialLatencyTracer::IsValidKey(const TraceKey Key)
 	return (TraceMap.Find(Key) != nullptr);
 }
 
-TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const UFunction* Function)
-{
-	FScopeLock Lock(&Mutex);
-
-	ActorFuncKey FuncKey{ Cast<AActor>(Obj), Function };
-	TraceKey ReturnKey = InvalidTraceKey;
-	TrackingRPCs.RemoveAndCopyValue(FuncKey, ReturnKey);
-	return ReturnKey;
-}
-
-TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const GDK_PROPERTY(Property) * Property)
-{
-	FScopeLock Lock(&Mutex);
-
-	ActorPropertyKey PropKey{ Cast<AActor>(Obj), Property };
-	TraceKey ReturnKey = InvalidTraceKey;
-	TrackingProperties.RemoveAndCopyValue(PropKey, ReturnKey);
-	return ReturnKey;
-}
-
 TraceKey USpatialLatencyTracer::RetrievePendingTrace(const UObject* Obj, const FString& Tag)
 {
 	FScopeLock Lock(&Mutex);
