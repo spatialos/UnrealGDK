@@ -6,8 +6,6 @@
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
-#include "Utils/SpatialLatencyTracerMinimal.h"
-
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 

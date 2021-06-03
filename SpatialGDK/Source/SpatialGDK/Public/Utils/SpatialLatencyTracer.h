@@ -141,9 +141,6 @@ public:
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);
 	void WriteAndEndTrace(const TraceKey Key, const FString& TraceDesc, bool bOnlyEndIfTraceRootIsRemote);
 
-	void WriteTraceToSchemaObject(const TraceKey Key, Schema_Object* Obj, const Schema_FieldId FieldId);
-	TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId);
-
 	void SetWorkerId(const FString& NewWorkerId) { WorkerId = NewWorkerId; }
 	void ResetWorkerId();
 
