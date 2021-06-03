@@ -1,0 +1,16 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+component SkeletonEntityManifest {
+	id = 9989;
+	list<EntityId> skeleton_entities_to_populate = 1;
+	list<EntityId> populated_skeleton_entities = 2;
+}
+
+component_set SkeletonEntityAuthComponentSet {
+  id = 9909;
+  components = [
+	unreal.SkeletonEntityManifest,
+  ];
+}
+

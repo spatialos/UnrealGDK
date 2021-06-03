@@ -26,3 +26,11 @@ component GDKKnownEntityTag {
 component RoutingWorkerEntityTag {
     id = 2009;
 }
+
+component FleshoutRequiredTag {
+    id = 2012;
+}
+
+component FleshoutQueryTag {
+    id = 2013;
+}

@@ -214,6 +214,46 @@ inline FVector GetVectorFromSchema(Schema_Object* Object, Schema_FieldId Id)
 // Does not clear OutPath first.
 void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath);
 
+template <typename T>
+struct TSpatialComponent
+{
+	TSpatialComponent() = default;
+
+	T* This() { return (T*)(this); }
+	const T* This() const { return (const T*)(this); }
+
+	static void ApplyComponentData(T& Value, const ComponentData& Component)
+	{
+		const Schema_Object* ComponentObject = Component.GetFields();
+		if (ComponentObject != nullptr)
+		{
+			Value.T::ApplySchema(*ComponentObject);
+		}
+	}
+
+	ComponentData CreateComponentData() const
+	{
+		ComponentData Component(T::ComponentId);
+		Schema_Object* ComponentObject = Component.GetFields();
+		if (ensure(ComponentObject != nullptr))
+		{
+			This()->T::WriteSchema(*ComponentObject);
+		}
+		return Component;
+	}
+
+	ComponentUpdate CreateComponentUpdate() const
+	{
+		ComponentUpdate Component(T::ComponentId);
+		Schema_Object* ComponentObject = Component.GetFields();
+		if (ensure(ComponentObject != nullptr))
+		{
+			This()->T::WriteSchema(*ComponentObject);
+		}
+		return Component;
+	}
+};
+
 template <typename TComponent>
 ComponentUpdate CreateComponentUpdateHelper(const TComponent& Component)
 {

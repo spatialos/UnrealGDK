@@ -91,6 +91,7 @@ const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID = 9993;
 const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID = 9992;
 const Worker_ComponentId PLAYER_CONTROLLER_COMPONENT_ID = 9991;
 const Worker_ComponentId SNAPSHOT_VERSION_COMPONENT_ID = 9990;
+const Worker_ComponentId SKELETON_ENTITY_MANIFEST_COMPONENT_ID = 9989;
 
 const Worker_ComponentSetId SERVER_AUTH_COMPONENT_SET_ID = 9900;
 const Worker_ComponentSetId CLIENT_AUTH_COMPONENT_SET_ID = 9901;
@@ -101,6 +102,7 @@ const Worker_ComponentSetId GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID = 9905;
 const Worker_ComponentSetId ROUTING_WORKER_AUTH_COMPONENT_SET_ID = 9906;
 const Worker_ComponentSetId INITIAL_ONLY_COMPONENT_SET_ID = 9907;
 const Worker_ComponentSetId SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID = 9908;
+const Worker_ComponentSetId SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID = 9909;
 
 extern const FString SERVER_AUTH_COMPONENT_SET_NAME;
 extern const FString CLIENT_AUTH_COMPONENT_SET_NAME;
@@ -154,8 +156,11 @@ const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
 const Worker_ComponentId ROUTINGWORKER_TAG_COMPONENT_ID = 2009;
 const Worker_ComponentId STRATEGYWORKER_TAG_COMPONENT_ID = 2010;
 const Worker_ComponentId GDK_DEBUG_TAG_COMPONENT_ID = 2011;
+const Worker_ComponentId FLESHOUT_REQUIRED_TAG_COMPONENT_ID = 2012;
+const Worker_ComponentId FLESHOUT_QUERY_TAG_COMPONENT_ID = 2013;
+
 // Add component ids above here, this should always be last and be equal to the previous component id
-const Worker_ComponentId LAST_EC_COMPONENT_ID = 2011;
+const Worker_ComponentId LAST_EC_COMPONENT_ID = 2013;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;
@@ -163,6 +168,9 @@ const Schema_FieldId DEPLOYMENT_MAP_SESSION_ID = 3;
 const Schema_FieldId DEPLOYMENT_MAP_SCHEMA_HASH = 4;
 
 const Schema_FieldId SNAPSHOT_VERSION_NUMBER_ID = 1;
+
+const Schema_FieldId SKELETON_ENTITY_MANIFEST_ENTITIES_TO_POPULATE_ID = 1;
+const Schema_FieldId SKELETON_ENTITY_MANIFEST_POPULATED_SKELETON_ENTITIES_ID = 2;
 
 const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID = 1;
 
