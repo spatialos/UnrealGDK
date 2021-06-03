@@ -595,7 +595,12 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 	VirtualWorkerTranslator = MakeUnique<SpatialVirtualWorkerTranslator>(LoadBalanceStrategy, this, Connection->GetWorkerId());
 
 	const SpatialGDK::FSubView& LBSubView = Connection->GetCoordinator().CreateSubView(
-		SpatialConstants::LB_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
+		SpatialConstants::LB_TAG_COMPONENT_ID,
+		[](const Worker_EntityId EntityId, const SpatialGDK::EntityViewElement& Element) {
+			return !Element.Components.ContainsByPredicate(
+				SpatialGDK::ComponentIdEquality{ SpatialConstants::FLESHOUT_QUERY_TAG_COMPONENT_ID });
+		},
+		{ Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(SpatialConstants::FLESHOUT_QUERY_TAG_COMPONENT_ID) });
 
 	TUniqueFunction<void(SpatialGDK::EntityComponentUpdate AuthorityUpdate)> AuthorityUpdateSender =
 		[this](SpatialGDK::EntityComponentUpdate AuthorityUpdate) {
@@ -3348,8 +3353,7 @@ void USpatialNetDriver::RegisterSpatialDebugger(ASpatialDebugger* InSpatialDebug
 
 		if (IsServer())
 		{
-			DebuggerSubViewPtr = &Connection->GetCoordinator().CreateSubView(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID,
-																			 FSubView::NoFilter, FSubView::NoDispatcherCallbacks);
+			DebuggerSubViewPtr = &SpatialGDK::ActorSubviews::CreateActorAuthSubView(*this);
 		}
 		else
 		{
