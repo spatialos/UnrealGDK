@@ -154,7 +154,10 @@ private:
 	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentData* Data,
 										   USpatialActorChannel& Channel, TArray<ObjectPtrRefPair>& OutObjectsToResolve);
 
+public:
 	USpatialActorChannel* SetUpActorChannel(AActor* Actor, Worker_EntityId EntityId);
+
+private:
 	USpatialActorChannel* TryRestoreActorChannelForStablyNamedActor(AActor* StablyNamedActor, Worker_EntityId EntityId);
 
 	// Entity remove

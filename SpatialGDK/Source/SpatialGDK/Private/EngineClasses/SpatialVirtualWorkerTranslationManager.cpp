@@ -113,6 +113,12 @@ void SpatialVirtualWorkerTranslationManager::Advance(const TArray<Worker_Op>& Op
 	QueryHandler.ProcessOps(Ops);
 }
 
+const SpatialVirtualWorkerTranslationManager::FVirtualToPhysicalWorkerMapping&
+SpatialVirtualWorkerTranslationManager::GetVirtualWorkerMapping() const
+{
+	return VirtualToPhysicalWorkerMapping;
+}
+
 // For each entry in the map, write a VirtualWorkerMapping type object to the Schema object.
 void SpatialVirtualWorkerTranslationManager::WriteMappingToSchema(Schema_Object* Object) const
 {

@@ -32,6 +32,7 @@ private:
 
 	const FSubView* SubView;
 
+public:
 	TUniquePtr<SpatialVirtualWorkerTranslationManager> VirtualWorkerTranslationManager;
 	SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 	UGlobalStateManager* GlobalStateManager;
