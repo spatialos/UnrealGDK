@@ -88,6 +88,9 @@ private:
 	UPROPERTY(ReplicatedUsing = OnReadyToRegisterWithTest)
 	uint8 bReadyToRegisterWithTest : 1;
 
+	UPROPERTY(Transient)
+	bool bDidRegisterWithTest = false;
+
 	UPROPERTY(Replicated)
 	bool bIsReadyToRunTest;
 

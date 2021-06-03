@@ -63,7 +63,17 @@ void ASpatialFunctionalTestFlowController::BeginPlay()
 	}
 }
 
-void ASpatialFunctionalTestFlowController::OnAuthorityGained() {}
+void ASpatialFunctionalTestFlowController::OnAuthorityGained()
+{
+	FTimerHandle Handle;
+	GetWorldTimerManager().SetTimer(
+		Handle,
+		[this]() {
+			bReadyToRegisterWithTest = true;
+			OnReadyToRegisterWithTest();
+		},
+		1.0f, false);
+}
 
 void ASpatialFunctionalTestFlowController::Tick(float DeltaSeconds)
 {
@@ -101,6 +111,13 @@ void ASpatialFunctionalTestFlowController::TryRegisterFlowControllerWithOwningTe
 	{
 		return;
 	}
+
+	if (bDidRegisterWithTest)
+	{
+		return;
+	}
+
+	bDidRegisterWithTest = true;
 
 	OwningTest->RegisterFlowController(this);
 

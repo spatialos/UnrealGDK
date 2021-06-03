@@ -754,6 +754,13 @@ void ASpatialFunctionalTest::StartServerFlowControllerSpawn()
 		return;
 	}
 
+	if (bDidSpawnServerFlowController)
+	{
+		return;
+	}
+
+	bDidSpawnServerFlowController = true;
+
 	FlowControllerSpawner.SpawnServerFlowController();
 }
 
