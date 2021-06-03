@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
-## [`0.13.1`] - 2021-06-02
+## [`0.13.1`] - 2021-06-03
 ### Breaking changes:
 - Event tracing has been optimised to reduce overhead when tracing events in general and in particular when events are not sampled. The tracing API has been modified to accommodate these improvements. You will have to modify your project if you use the API.
 
