@@ -18,7 +18,7 @@ class SPATIALGDK_API FLoadBalancingCalculator
 public:
 	virtual ~FLoadBalancingCalculator() = default;
 
-	virtual void CollectPartitionsToAdd(FPartitionManager& Partitions, TArray<FPartitionHandle>& OutPartitions) {}
+	virtual void CollectPartitionsToAdd(const FString& Prefix, FPartitionManager& Partitions, TArray<FPartitionHandle>& OutPartitions) {}
 	virtual void CollectEntitiesToMigrate(FMigrationContext& Ctx) {}
 
 protected:
@@ -31,7 +31,8 @@ public:
 
 	void SetPositionData(FSpatialPositionStorage const& iStorage) { DataStorage = &iStorage; }
 
-	virtual void CollectPartitionsToAdd(FPartitionManager& Partitions, TArray<FPartitionHandle>& OutPartitions) override;
+	virtual void CollectPartitionsToAdd(const FString& Prefix, FPartitionManager& Partitions,
+										TArray<FPartitionHandle>& OutPartitions) override;
 
 	virtual void CollectEntitiesToMigrate(FMigrationContext& Ctx) override;
 
@@ -57,7 +58,8 @@ public:
 	FLayerLoadBalancingCalculator(const FLayerLoadBalancingCalculator&) = delete;
 	FLayerLoadBalancingCalculator& operator=(const FLayerLoadBalancingCalculator&) = delete;
 
-	virtual void CollectPartitionsToAdd(FPartitionManager& Partitions, TArray<FPartitionHandle>& OutPartitions) override;
+	virtual void CollectPartitionsToAdd(const FString& Prefix, FPartitionManager& Partitions,
+										TArray<FPartitionHandle>& OutPartitions) override;
 
 	virtual void CollectEntitiesToMigrate(FMigrationContext& Ctx) override;
 

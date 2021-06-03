@@ -21,6 +21,7 @@ struct FPartitionInternalState
 	TOptional<Worker_RequestId> CreationRequest;
 	TOptional<Worker_RequestId> AssignmentRequest;
 
+	FString DisplayName;
 	void* UserData = nullptr;
 	bool bAcked = false;
 	bool bInterestDirty = true;
@@ -333,7 +334,7 @@ struct FPartitionManager::Impl
 					IdToPartitionsMap.Add(PartitionState.Id, PartitionEntry);
 
 					TArray<FWorkerComponentData> Components =
-						CreatePartitionEntityComponents(TEXT("StrategyPartition"), PartitionState.Id, PartitionState.LBConstraint);
+						CreatePartitionEntityComponents(PartitionState.DisplayName, PartitionState.Id, PartitionState.LBConstraint);
 
 					Worker_EntityId PartitionEntity = PartitionState.Id;
 					const Worker_RequestId RequestId =
@@ -383,7 +384,7 @@ struct FPartitionManager::Impl
 		TArray<FWorkerComponentData> Components;
 		Components.Add(Position().CreateComponentData());
 		Components.Add(Persistence().CreateComponentData());
-		Components.Add(Metadata(FString::Format(TEXT("{0}:{1}"), { *PartitionName, EntityId })).CreateComponentData());
+		Components.Add(Metadata(PartitionName).CreateComponentData());
 
 		Components.Add(InterestF->CreatePartitionInterest(LBConstraint, false).CreateComponentData());
 
@@ -460,12 +461,13 @@ TOptional<Worker_PartitionId> FPartitionManager::GetPartitionId(FPartitionHandle
 	return PartitionState.Id;
 }
 
-FPartitionHandle FPartitionManager::CreatePartition(void* UserData, const QueryConstraint& Interest)
+FPartitionHandle FPartitionManager::CreatePartition(FString DisplayName, void* UserData, const QueryConstraint& Interest)
 {
 	FPartitionHandle NewPartition = MakeShared<FPartitionDesc>();
 	NewPartition->State = MakeUnique<FPartitionInternalState>();
 	NewPartition->State->UserData = UserData;
 	NewPartition->State->LBConstraint = Interest;
+	NewPartition->State->DisplayName = DisplayName;
 
 	m_Impl->Partitions.Add(NewPartition);
 

@@ -163,13 +163,14 @@ void FLegacyLoadBalancing::TickPartitions(FPartitionManager& PartitionMgr)
 
 		if (Calculator != nullptr)
 		{
-			Calculator->CollectPartitionsToAdd(PartitionMgr, Partitions);
+			Calculator->CollectPartitionsToAdd(FString(), PartitionMgr, Partitions);
 		}
 		else
 		{
 			for (VirtualWorkerId i = 1; i <= ExpectedWorkers; ++i)
 			{
-				Partitions.Add(PartitionMgr.CreatePartition(nullptr, QueryConstraint()));
+				Partitions.Add(
+					PartitionMgr.CreatePartition(FString::Printf(TEXT("VirtualWorker Partition %i"), i), nullptr, QueryConstraint()));
 			}
 		}
 

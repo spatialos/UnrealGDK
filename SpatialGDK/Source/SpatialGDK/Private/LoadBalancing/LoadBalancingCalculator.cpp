@@ -13,29 +13,30 @@ FGridBalancingCalculator::FGridBalancingCalculator(uint32 GridX, uint32 GridY, f
 {
 }
 
-void FGridBalancingCalculator::CollectPartitionsToAdd(FPartitionManager& PartitionMgr, TArray<FPartitionHandle>& OutPartitions)
+void FGridBalancingCalculator::CollectPartitionsToAdd(const FString& Prefix, FPartitionManager& PartitionMgr,
+													  TArray<FPartitionHandle>& OutPartitions)
 {
 	if (Partitions.Num() == 0)
 	{
-		const float WorldWidthMin = -(WorldWidth / 2.f);
-		const float WorldHeightMin = -(WorldHeight / 2.f);
+		const float WorldXMin = -(WorldWidth / 2.f);
+		const float WorldYMin = -(WorldHeight / 2.f);
 
-		const float ColumnWidth = WorldWidth / Cols;
-		const float RowHeight = WorldHeight / Rows;
+		const float XSize = WorldWidth / Cols;
+		const float YSize = WorldHeight / Rows;
 
 		// We would like the inspector's representation of the load balancing strategy to match our intuition.
 		// +x is forward, so rows are perpendicular to the x-axis and columns are perpendicular to the y-axis.
-		float XMin = WorldHeightMin;
-		float YMin = WorldWidthMin;
+		float XMin = WorldXMin;
+		float YMin = WorldYMin;
 		float XMax, YMax;
 
-		for (uint32 Col = 0; Col < Cols; ++Col)
+		for (uint32 GridX = 0; GridX < Cols; ++GridX)
 		{
-			YMax = YMin + ColumnWidth;
+			XMax = XMin + XSize;
 
-			for (uint32 Row = 0; Row < Rows; ++Row)
+			for (uint32 GridY = 0; GridY < Rows; ++GridY)
 			{
-				XMax = XMin + RowHeight;
+				YMax = YMin + YSize;
 
 				FVector2D Min(XMin, YMin);
 				FVector2D Max(XMax, YMax);
@@ -53,16 +54,21 @@ void FGridBalancingCalculator::CollectPartitionsToAdd(FPartitionManager& Partiti
 				Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D),
 																	  SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
 
-				FPartitionHandle NewPartition = PartitionMgr.CreatePartition(nullptr, Constraint);
+				FString DisplayName = FString::Printf(TEXT("GridCell %i (%i, %i)"), Cells.Num() - 1, GridX, GridY);
+				if (!Prefix.IsEmpty())
+				{
+					DisplayName = Prefix + TEXT(", ") + DisplayName;
+				}
+				FPartitionHandle NewPartition = PartitionMgr.CreatePartition(DisplayName, nullptr, Constraint);
 				Partitions.Add(NewPartition);
 
 				OutPartitions.Add(NewPartition);
 
-				XMin = XMax;
+				YMin = YMax;
 			}
 
-			XMin = WorldHeightMin;
-			YMin = YMax;
+			YMin = WorldYMin;
+			XMin = XMax;
 		}
 	}
 }
@@ -117,12 +123,18 @@ FLayerLoadBalancingCalculator::FLayerLoadBalancingCalculator(TArray<FName> InLay
 {
 }
 
-void FLayerLoadBalancingCalculator::CollectPartitionsToAdd(FPartitionManager& PartitionMgr, TArray<FPartitionHandle>& OutPartitions)
+void FLayerLoadBalancingCalculator::CollectPartitionsToAdd(const FString& Prefix, FPartitionManager& PartitionMgr,
+														   TArray<FPartitionHandle>& OutPartitions)
 {
 	for (int32 i = 0; i < Layers.Num(); ++i)
 	{
+		FString DisplayName = FString::Printf(TEXT("Layer %i"), i);
+		if (!Prefix.IsEmpty())
+		{
+			DisplayName = Prefix + TEXT(", ") + DisplayName;
+		}
 		FLoadBalancingCalculator* Calculator = Layers[i].Get();
-		Layers[i]->CollectPartitionsToAdd(PartitionMgr, OutPartitions);
+		Layers[i]->CollectPartitionsToAdd(DisplayName, PartitionMgr, OutPartitions);
 	}
 }
 

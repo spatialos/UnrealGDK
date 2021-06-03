@@ -28,7 +28,7 @@ public:
 	bool IsReady();
 
 	TOptional<Worker_PartitionId> GetPartitionId(FPartitionHandle);
-	FPartitionHandle CreatePartition(void* UserData, const SpatialGDK::QueryConstraint& Interest);
+	FPartitionHandle CreatePartition(FString DisplayName, void* UserData, const SpatialGDK::QueryConstraint& Interest);
 	void SetPartitionInterest(FPartitionHandle Partition, const SpatialGDK::QueryConstraint& NewInterest);
 	void AssignPartitionTo(FPartitionHandle Partition, FLBWorkerHandle Worker);
 	void SetPartitionMetadata(FPartitionHandle /*???*/);
