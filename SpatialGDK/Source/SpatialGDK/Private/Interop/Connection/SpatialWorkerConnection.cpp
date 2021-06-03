@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Schema/ServerWorker.h"
+#include "Schema/SkeletonEntityManifest.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialView/CommandRequest.h"
@@ -364,7 +365,9 @@ void USpatialWorkerConnection::CreateServerWorkerEntity()
 bool USpatialWorkerConnection::IsStartupComponent(Worker_ComponentId Id)
 {
 	return Id == SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID || Id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID
-		   || Id == SpatialConstants::SERVER_WORKER_COMPONENT_ID || Id == SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID;
+		   || Id == SpatialConstants::SERVER_WORKER_COMPONENT_ID || Id == SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID
+		   || Id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID || Id == SpatialConstants::FLESHOUT_QUERY_TAG_COMPONENT_ID
+		   || Id == SpatialConstants::FLESHOUT_REQUIRED_TAG_COMPONENT_ID || Id == SpatialConstants::SKELETON_ENTITY_MANIFEST_COMPONENT_ID;
 }
 
 void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, SpatialGDK::ExtractedOpListData& ExtractedOpList)
@@ -406,7 +409,9 @@ void USpatialWorkerConnection::ExtractStartupOps(SpatialGDK::OpList& OpList, Spa
 			break;
 		case WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE:
 			if (Op.op.component_set_authority_change.component_set_id == SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID
-				|| Op.op.component_set_authority_change.component_set_id == SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID)
+				|| Op.op.component_set_authority_change.component_set_id == SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID
+				|| Op.op.component_set_authority_change.component_set_id
+					   == SpatialConstants::SKELETON_ENTITY_MANIFEST_AUTH_COMPONENT_SET_ID)
 			{
 				ExtractedOpList.AddOp(Op);
 			}
