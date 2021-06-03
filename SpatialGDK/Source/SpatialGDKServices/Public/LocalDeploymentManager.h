@@ -68,6 +68,8 @@ private:
 
 	bool WaitForRuntimeProcessToShutDown();
 	bool StartLocalDeploymentShutDown();
+	bool GracefulShutdownAndWaitForTermination();
+	bool ForceShutdownAndWaitForTermination();
 	void FinishLocalDeploymentShutDown();
 
 	enum class ERuntimeStartResponse
@@ -104,6 +106,8 @@ private:
 	bool bStartingDeployment;
 	bool bStoppingDeployment;
 	bool bTestRunnning;
+
+	FString RuntimePath;
 
 	FString ExposedRuntimeIP;
 

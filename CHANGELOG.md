@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`x.y.z`] - Unreleased
 
 ### Breaking changes:
+- The `Handover` variable specifier has been deprecated. It should be replaced with the standard `Replicated` variable specifier and restricting the replication with the new `COND_ServerOnly` replication condition in `GetLifetimeReplicatedProps`. `Handover` variables will try to replicate using the new replication condition, but support will be removed in the next release.
 - Reworked AlwaysInterested functionality to run on authoritative servers, and owning clients. The previous behaviour was for it to only run on PlayerController classes, on the client only.
 - `bUseNetOwnerActorGroup` actor setting has been removed with the default behavior now true inside LayeredLBStrategy. Extend this class if you wish to alter this default behavior.
 
@@ -32,7 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix RPC timeouts for parameters referencing assets that can be asynchronously loaded.
 - Fixed the test settings overrides config filename in `Spatial World Settings` so that the file path is relative to the game directory.
 - Fix editor encountering exceptions when shutting down during a PIE session.
+- The runtime will shut down slightly faster after a PIE session.
 - Fixed a rare issue where one would see a change to the owner field but not the changes to owner-only fields.
+- Prevented a client crash that occurs if there is a mismatch between the client and server schema hash.
+- Fixed an issue for actors with bNetLoadOnClient. A dynamic subobject removed from such an actor while out of a client's view will now be properly removed on the client when the actor comes back into the client's view.
 
 ### Internal:
 - Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.

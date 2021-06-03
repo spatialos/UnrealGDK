@@ -217,16 +217,6 @@ RPCCONTAINER_TEST(GIVEN_a_container_with_one_value_WHEN_processing_after_RPCQueu
 	check(SpatialGDKSettings != nullptr);
 	FPlatformProcess::Sleep(SpatialGDKSettings->RPCQueueWarningDefaultTimeout);
 	RPCs.ProcessRPCs();
-	constexpr float ErrorRetryWaitTimeSeconds = 0.1f;
-	int32 NrRetries = 0;
-	// This test flaked because the error is logged on a different thread than the test, creating
-	// a race condition between the test finishing and the error being logged.
-	// This wait should allow the expected error to be logged if that really is what's causing the flake.
-	while (!HasMetExpectedErrors() && NrRetries <= 10)
-	{
-		NrRetries++;
-		FPlatformProcess::Sleep(ErrorRetryWaitTimeSeconds);
-	}
 
 	return true;
 }

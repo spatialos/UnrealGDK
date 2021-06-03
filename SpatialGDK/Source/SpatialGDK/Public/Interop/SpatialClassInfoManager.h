@@ -21,6 +21,9 @@ FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)
 
 FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condition)
 {
+	static_assert(SCHEMA_Count == 4,
+				  "Unexpected number of Schema type components, please make sure GetGroupFromCondition is still correct.");
+
 	switch (Condition)
 	{
 	case COND_AutonomousOnly:
@@ -29,6 +32,8 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 		return SCHEMA_OwnerOnly;
 	case COND_InitialOnly:
 		return SCHEMA_InitialOnly;
+	case COND_ServerOnly:
+		return SCHEMA_ServerOnly;
 	default:
 		return SCHEMA_Data;
 	}
@@ -38,15 +43,6 @@ struct FRPCInfo
 {
 	ERPCType Type;
 	uint32 Index;
-};
-
-struct FHandoverPropertyInfo
-{
-	uint16 Handle;
-	int32 Offset;
-	uint32 ShadowOffset;
-	int32 ArrayIdx;
-	GDK_PROPERTY(Property) * Property;
 };
 
 struct FInterestPropertyInfo
@@ -65,8 +61,6 @@ struct FClassInfo
 	// Exists for all classes
 	TArray<UFunction*> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
-	uint32 HandoverPropertiesSize;
-	TArray<FHandoverPropertyInfo> HandoverProperties;
 	TArray<FInterestPropertyInfo> InterestProperties;
 
 	// For Actors and default Subobjects belonging to Actors
@@ -147,8 +141,6 @@ private:
 
 	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
-
-	bool ShouldTrackHandoverProperties() const;
 
 private:
 	UPROPERTY()

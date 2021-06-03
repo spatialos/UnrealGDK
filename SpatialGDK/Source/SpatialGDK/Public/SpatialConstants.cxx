@@ -61,7 +61,7 @@ const FString SERVER_AUTH_COMPONENT_SET_NAME = TEXT("ServerAuthoritativeComponen
 const FString CLIENT_AUTH_COMPONENT_SET_NAME = TEXT("ClientAuthoritativeComponentSet");
 const FString DATA_COMPONENT_SET_NAME = TEXT("DataComponentSet");
 const FString OWNER_ONLY_COMPONENT_SET_NAME = TEXT("OwnerOnlyComponentSet");
-const FString HANDOVER_COMPONENT_SET_NAME = TEXT("HandoverComponentSet");
+const FString SERVER_ONLY_COMPONENT_SET_NAME = TEXT("ServerOnlyComponentSet");
 const FString ROUTING_WORKER_COMPONENT_SET_NAME = TEXT("RoutingWorkerComponentSet");
 const FString INITIAL_ONLY_COMPONENT_SET_NAME = TEXT("InitialOnlyComponentSet");
 

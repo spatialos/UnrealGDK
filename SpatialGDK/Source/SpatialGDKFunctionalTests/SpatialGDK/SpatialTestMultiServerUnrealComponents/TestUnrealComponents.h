@@ -39,7 +39,7 @@ public:
 	UPROPERTY(Replicated)
 	int32 DataReplicatedVar;
 
-	UPROPERTY(Handover)
+	UPROPERTY(Replicated)
 	int32 HandoverReplicatedVar;
 };
 

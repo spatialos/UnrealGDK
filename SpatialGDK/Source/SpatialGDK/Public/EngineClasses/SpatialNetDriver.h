@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Interop/CrossServerRPCHandler.h"
+#include "Engine/EngineBaseTypes.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/CrossServerRPCSender.h"
 #include "Interop/EntityQueryHandler.h"
@@ -302,6 +303,12 @@ private:
 	bool bIsReadyToStart;
 	bool bMapLoaded;
 
+	struct FPendingNetworkFailure
+	{
+		ENetworkFailure::Type FailureType;
+		FString Message;
+	};
+	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
 	FString SnapshotToLoad;
 
 	// Client variable which stores the SessionId given to us by the server in the URL options.

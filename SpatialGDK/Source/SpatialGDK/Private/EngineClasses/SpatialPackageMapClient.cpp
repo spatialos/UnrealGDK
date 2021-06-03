@@ -8,7 +8,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
@@ -26,8 +25,8 @@ DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
 void USpatialPackageMapClient::Init(USpatialNetDriver& NetDriver)
 {
-	bIsServer = NetDriver.IsServer();
 	// Entity Pools should never exist on clients
+	bIsServer = NetDriver.IsServer();
 	if (bIsServer)
 	{
 		EntityPool = NewObject<UEntityPool>();
@@ -242,32 +241,6 @@ TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromUnrealObjectRef(c
 	}
 
 	return nullptr;
-}
-
-FNetworkGUID* USpatialPackageMapClient::GetRemovedDynamicSubobjectNetGUID(const FUnrealObjectRef& ObjectRef)
-{
-	if (FNetworkGUID* NetGUID = RemovedDynamicSubobjectObjectRefs.Find(ObjectRef))
-	{
-		return NetGUID;
-	}
-	return nullptr;
-}
-
-void USpatialPackageMapClient::AddRemovedDynamicSubobjectObjectRef(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID)
-{
-	RemovedDynamicSubobjectObjectRefs.Emplace(ObjectRef, NetGUID);
-}
-
-void USpatialPackageMapClient::ClearRemovedDynamicSubobjectObjectRefs(const Worker_EntityId& InEntityId)
-{
-	for (auto DynamicSubobjectIterator = RemovedDynamicSubobjectObjectRefs.CreateIterator(); DynamicSubobjectIterator;
-		 ++DynamicSubobjectIterator)
-	{
-		if (DynamicSubobjectIterator->Key.Entity == InEntityId)
-		{
-			DynamicSubobjectIterator.RemoveCurrent();
-		}
-	}
 }
 
 TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const Worker_EntityId EntityId)
