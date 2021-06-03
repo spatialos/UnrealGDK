@@ -147,9 +147,6 @@ public:
 	void SetWorkerId(const FString& NewWorkerId) { WorkerId = NewWorkerId; }
 	void ResetWorkerId();
 
-	void OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*);
-	void OnDequeueMessage(const SpatialGDK::FOutgoingMessage*);
-
 private:
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
 	using ActorPropertyKey = TPair<const AActor*, const GDK_PROPERTY(Property)*>;

@@ -247,12 +247,6 @@ TArray<SpatialRPCService::UpdateToSend> SpatialRPCService::GetRPCsAndAcksToSend(
 															  EventBuilder.AddComponentId(UpdateToSend.Update.component_id);
 														  });
 		}
-
-#if TRACE_LIB_ACTIVE
-		TraceKey Trace = InvalidTraceKey;
-		PendingTraces.RemoveAndCopyValue(It.Key, Trace);
-		UpdateToSend.Update.Trace = Trace;
-#endif
 	}
 
 	RPCStore.PendingComponentUpdatesToSend.Empty();
@@ -293,11 +287,6 @@ TArray<FWorkerComponentData> SpatialRPCService::GetRPCComponentsOnEntityCreation
 			}
 
 			Component.schema_type = *ComponentData;
-#if TRACE_LIB_ACTIVE
-			TraceKey Trace = InvalidTraceKey;
-			PendingTraces.RemoveAndCopyValue(EntityComponent, Trace);
-			Component.Trace = Trace;
-#endif
 			RPCStore.PendingRPCsOnEntityCreation.Remove(EntityComponent);
 		}
 		else
