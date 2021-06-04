@@ -22,6 +22,8 @@
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorUtils.h"
 
+#include "ReplicationGraph.h"
+
 DEFINE_LOG_CATEGORY(LogActorSystem);
 
 DECLARE_CYCLE_STAT(TEXT("Actor System SendComponentUpdates"), STAT_ActorSystemSendComponentUpdates, STATGROUP_SpatialNet);
@@ -455,6 +457,12 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 					if (Channel != nullptr && Channel->IsAutonomousProxyOnAuthority())
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
+
+						// Flush PC interest on handover
+						if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
+						{
+							Channel->MarkInterestDirty();
+						}
 					}
 
 					if (!bDormantActor)
@@ -1418,6 +1426,16 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 
 	// Any Actor created here will have been received over the wire as an entity so we can mark it ready.
 	EntityActor.SetActorReady(NetDriver->IsServer() && EntityActor.bNetStartup);
+
+	// When we check out an Actor entity spawned by another server, call the notify function.
+	// This is important for entity ID assignment to non-auth startup Actors.
+	if (NetDriver->IsServer() && GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries && !EntityActor.HasAuthority())
+	{
+		if (UReplicationGraph* RepGraph = Cast<UReplicationGraph>(NetDriver->GetReplicationDriver()))
+		{
+			RepGraph->NotifyActorEntityCreation(&EntityActor);
+		}
+	}
 
 	// Taken from PostNetInit
 	if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor.HasActorBegunPlay())

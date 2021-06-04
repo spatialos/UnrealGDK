@@ -217,12 +217,11 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
-	if (!bInitAsClient && GetDefault<USpatialGDKSettings>()->bUseEntityIdListClientQueries)
+	if (!bInitAsClient && GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
 	{
 		if (UReplicationGraph* RepGraph = Cast<UReplicationGraph>(GetReplicationDriver()))
 		{
-			RepGraph->SetUseEntityIdListClientQueries(true);
-			RepGraph->SetUseNarrowPhaseNCDInterestCulling( GetDefault<USpatialGDKSettings>()->bUseNarrowPhaseNCDInterestCulling);
+			RepGraph->SetClientEntityInterestEnabled(true);
 		}
 		else
 		{
@@ -862,9 +861,17 @@ void USpatialNetDriver::QueryGSMToLoadMap()
 	GlobalStateManager->QueryGSM(QueryDelegate);
 }
 
-void USpatialNetDriver::OnActorSpawned(AActor* Actor) const
+void USpatialNetDriver::OnActorSpawned(AActor* Actor)
 {
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	// Assign dynamically spawned replicated Actors an entity ID on spawn.
+	if (SpatialGDKSettings->bUseClientEntityInterestQueries && Actor->GetIsReplicated() && Actor->HasAuthority()
+		&& Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_SpatialType) && World->GetWorldSettings()->GetGSMReadyForPlay())
+	{
+		GetOrCreateSpatialActorChannel(Actor);
+	}
+
 	if (SpatialGDKSettings->bEnableCrossLayerActorSpawning)
 	{
 		return;

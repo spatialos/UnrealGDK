@@ -294,7 +294,7 @@ private:
 
 	void ValidateChannelNotBroken();
 
-	bool ShouldUpdateClientEntityIdListQuery() const;
+	void CheckForClientEntityInterestUpdate();
 
 public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity creation request is issued.
@@ -333,8 +333,6 @@ private:
 
 	FVector LastPositionSinceUpdate;
 	double TimeWhenPositionLastUpdated;
-
-	double TimeWhenClientEntityIdListLastUpdated;
 
 	uint8 FramesTillDormancyAllowed = 0;
 

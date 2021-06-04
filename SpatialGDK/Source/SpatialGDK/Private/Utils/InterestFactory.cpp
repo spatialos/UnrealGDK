@@ -15,6 +15,7 @@
 
 #include "Engine/Classes/GameFramework/Actor.h"
 #include "Engine/World.h"
+#include "EngineClasses/SpatialReplicationGraph.h"
 #include "GameFramework/PlayerController.h"
 #include "ReplicationGraph.h"
 #include "UObject/UObjectIterator.h"
@@ -277,7 +278,7 @@ Interest UnrealServerInterestFactory::CreateInterest(AActor* InActor, const FCla
 
 void InterestFactory::AddClientPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const
 {
-	if (GetDefault<USpatialGDKSettings>()->bUseEntityIdListClientQueries)
+	if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
 	{
 		AddClientInterestEntityIdQuery(OutInterest, InActor);
 		return;
@@ -329,10 +330,9 @@ void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(I
 
 void InterestFactory::AddClientInterestEntityIdQuery(Interest& OutInterest, const AActor* InActor) const
 {
-	ensure(GetDefault<USpatialGDKSettings>()->bUseEntityIdListClientQueries);
-
 	const APlayerController* PlayerController = Cast<APlayerController>(InActor);
-	if (!ensureMsgf(PlayerController != nullptr, TEXT("Only PCs can use client entity interest: %s"), *GetNameSafe(InActor)))
+	if (!ensure(GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
+		|| !ensureMsgf(PlayerController != nullptr, TEXT("Only PCs can use client entity interest: %s"), *GetNameSafe(InActor)))
 	{
 		return;
 	}
@@ -341,13 +341,13 @@ void InterestFactory::AddClientInterestEntityIdQuery(Interest& OutInterest, cons
 	RepGraphEntityIdQuery.ResultComponentIds = ClientNonAuthInterestResultType.ComponentIds;
 	RepGraphEntityIdQuery.ResultComponentSetIds = ClientNonAuthInterestResultType.ComponentSetsIds;
 
+	// If and when the Runtime has a better interest changing API, we can ask for a diff here instead.
 	TArray<Worker_EntityId> ClientInterestedEntities = GetClientInterestedEntityIds(PlayerController);
 
-	// We don't do any checking whether we're resending a duplicate list here.
-	// I imagine a duplicate list might still involve the Runtime recalculating a bunch of stuff.
-	// We could sort list here then check against existing list?
-	// If doing this, would need to move retrieving the interest list earlier in the replication process
-	// (basically to inform whether interest is actually dirty).
+	// MAKE DEBUGGING EASIER, REVERT ME
+#if WITH_EDITOR
+	ClientInterestedEntities.Sort();
+#endif
 
 	for (Worker_EntityId EntityId : ClientInterestedEntities)
 	{
@@ -364,14 +364,14 @@ TArray<Worker_EntityId> InterestFactory::GetClientInterestedEntityIds(const APla
 	TArray<Worker_EntityId> InterestedEntityIdList{};
 
 	UNetConnection* NetConnection = InPlayerController->NetConnection;
-
-	UReplicationGraph* RepGraph = Cast<UReplicationGraph>(NetConnection->Driver->GetReplicationDriver());
+	USpatialReplicationGraph* RepGraph = Cast<USpatialReplicationGraph>(NetConnection->Driver->GetReplicationDriver());
 	if (RepGraph == nullptr)
 	{
-		UE_LOG(LogInterestFactory, Error, TEXT("Rep graph was nullptr when trying to get client entity interest list"));
+		UE_LOG(LogInterestFactory, Error, TEXT("Rep graph was nullptr or not a USpatialReplicationGraph subclass."));
 		return TArray<Worker_EntityId>();
 	}
 
+	// If and when the Runtime has a better interest changing API, we can ask for a diff here instead.
 	TArray<AActor*> ClientInterestedActors = RepGraph->GatherClientInterestedActors(NetConnection);
 
 	InterestedEntityIdList.Reserve(ClientInterestedActors.Num());
@@ -379,13 +379,22 @@ TArray<Worker_EntityId> InterestFactory::GetClientInterestedEntityIds(const APla
 	for (const AActor* Actor : ClientInterestedActors)
 	{
 		const Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
-		if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+		// We should be assigning entity IDs to replicated Actors as soon as they are created.
+		// The only exception is startup Actors that are authoritative on another server worker.
+		// In this case, we need to wait for the other server to replicate this Actor, and the Runtime
+		// to send us the entity data.
+		if (EntityId == SpatialConstants::INVALID_ENTITY_ID && !(Actor->bNetStartup && !Actor->HasAuthority()))
 		{
+			UE_LOG(LogInterestFactory, Error, TEXT("Frame %u. Failed getting entity ID for %s when creating client entity interest"),
+				   RepGraph->GetReplicationGraphFrame(), *GetNameSafe(Actor));
 			continue;
 		}
 
 		InterestedEntityIdList.Emplace(EntityId);
 	}
+
+	UE_LOG(LogInterestFactory, Log, TEXT("Frame %u. Sending %i interest entities for %s"), RepGraph->GetReplicationGraphFrame(),
+		   InterestedEntityIdList.Num(), *InPlayerController->GetName());
 
 	return InterestedEntityIdList;
 }
@@ -650,7 +659,7 @@ void InterestFactory::AddComponentQueryPairToInterestComponent(Interest& OutInte
 
 bool InterestFactory::ShouldAddNetCullDistanceInterest(const AActor* InActor) const
 {
-	if (GetDefault<USpatialGDKSettings>()->bUseEntityIdListClientQueries)
+	if (GetDefault<USpatialGDKSettings>()->bUseClientEntityInterestQueries)
 	{
 		return false;
 	}
