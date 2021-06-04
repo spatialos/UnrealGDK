@@ -225,7 +225,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseSecureClientConnection(false)
 	, bUseSecureServerConnection(false)
 	, bEnableClientQueriesOnServer(false)
-	, bUseEntityIdListClientQueries(false)
+	, bUseClientEntityInterestQueries(false)
 	, ClientEntityIdListQueryUpdateFrequency(1)
 	, bUseNarrowPhaseNCDInterestCulling(true)
 	, bEnableCrossLayerActorSpawning(true)
@@ -286,7 +286,7 @@ void USpatialGDKSettings::PostInitProperties()
 			}
 		});
 	CheckCmdLineOverrideBool(CommandLine, TEXT("EnableClientEntityInterest"), TEXT("Client interest using entity ID lists"),
-							 bUseEntityIdListClientQueries);
+							 bUseClientEntityInterestQueries);
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("Spatial Networking is %s."),
 		   USpatialStatics::IsSpatialNetworkingEnabled() ? TEXT("enabled") : TEXT("disabled"));
 
