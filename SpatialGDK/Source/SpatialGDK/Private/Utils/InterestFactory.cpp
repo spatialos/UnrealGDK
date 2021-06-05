@@ -393,7 +393,7 @@ TArray<Worker_EntityId> InterestFactory::GetClientInterestedEntityIds(const APla
 		InterestedEntityIdList.Emplace(EntityId);
 	}
 
-	UE_LOG(LogInterestFactory, Log, TEXT("Frame %u. Sending %i interest entities for %s"), RepGraph->GetReplicationGraphFrame(),
+	UE_LOG(LogInterestFactory, Verbose, TEXT("Frame %u. Sending %i interest entities for %s"), RepGraph->GetReplicationGraphFrame(),
 		   InterestedEntityIdList.Num(), *InPlayerController->GetName());
 
 	return InterestedEntityIdList;

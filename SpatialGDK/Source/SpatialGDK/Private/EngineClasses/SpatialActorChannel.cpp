@@ -1335,7 +1335,7 @@ void USpatialActorChannel::CheckForClientEntityInterestUpdate()
 
 	if (bHitInterestTimeThreshold)
 	{
-		UE_LOG(LogSpatialActorChannel, Log, TEXT("Frame %u. Hit client interest %f second threshold for %s"),
+		UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Frame %u. Hit client interest %f second threshold for %s"),
 			   RepGraph->GetReplicationGraphFrame(), UpdateThresholdSecs, *Actor->GetName());
 	}
 
