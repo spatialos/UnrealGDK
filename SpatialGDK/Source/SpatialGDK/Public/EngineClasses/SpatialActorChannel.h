@@ -271,6 +271,11 @@ public:
 
 	bool NeedOwnerInterestUpdate() const { return bNeedOwnerInterestUpdate; }
 
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnActorMigrationFailed, const FVector2D&);
+	FOnActorMigrationFailed OnActorMigrationFailed;
+	void NotifyMigrationFailed();
+
+
 protected:
 	// Begin UChannel interface
 	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;

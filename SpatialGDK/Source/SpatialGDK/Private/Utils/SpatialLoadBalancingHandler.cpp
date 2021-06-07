@@ -122,15 +122,13 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 
 				if (NewAuthVirtualWorkerId == SpatialConstants::INVALID_VIRTUAL_WORKER_ID)
 				{
-					UE_LOG(LogSpatialLoadBalancingHandler, Error,
-						   TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
-				}
-				else if (!bShouldHaveAuthority && NewAuthVirtualWorkerId == NetDriver->LoadBalanceStrategy->GetLocalVirtualWorkerId())
-				{
-					UE_LOG(LogSpatialLoadBalancingHandler, Error,
-						   TEXT("ShouldHaveAuthority returned false for actor %s, but WhoShouldHaveAuthority returned this worker's id. "
-								"Actor will not be migrated."),
-						   *Actor->GetName());
+					if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(NetOwner))
+					{
+						Channel->NotifyMigrationFailed();
+					}
+
+					//UE_LOG(LogSpatialLoadBalancingHandler, Error,
+					//	   TEXT("Load Balancing Strategy returned invalid virtual worker for actor %s"), *Actor->GetName());
 				}
 				else
 				{

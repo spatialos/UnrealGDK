@@ -48,6 +48,10 @@ public:
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 	virtual SpatialGDK::FActorLoadBalancingGroupId GetActorGroupId(const AActor& Actor) const override;
 
+	virtual void SetLocalVirtualWorkerHealth(const VirtualWorkerId WorkerId, const bool Healthy) override;
+	virtual bool GetSafePositionForActor(const AActor& Actor, FVector2D& SafePosition) const override;
+
+
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const override;
 
 	virtual bool RequiresHandoverData() const override { return Rows * Cols > 1; }
@@ -83,6 +87,9 @@ protected:
 
 private:
 	TArray<VirtualWorkerId> VirtualWorkerIds;
+
+	TArray<bool> VirtualWorkerHealth;
+
 
 	TArray<FBox2D> WorkerCells;
 	uint32 LocalCellId;

@@ -47,6 +47,10 @@ public:
 	virtual VirtualWorkerId WhoShouldHaveAuthority(const AActor& Actor) const override;
 	virtual SpatialGDK::FActorLoadBalancingGroupId GetActorGroupId(const AActor& Actor) const override;
 
+	virtual void SetLocalVirtualWorkerHealth(VirtualWorkerId WorkerId, bool Healthy) override;
+	virtual bool GetSafePositionForActor(const AActor& Actor, FVector2D& SafePosition) const override;
+
+
 	virtual SpatialGDK::QueryConstraint GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const override;
 
 	virtual bool RequiresHandoverData() const override;

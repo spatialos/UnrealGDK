@@ -52,6 +52,20 @@ public:
 	virtual SpatialGDK::FActorLoadBalancingGroupId GetActorGroupId(const AActor& Actor) const
 		PURE_VIRTUAL(UAbstractLBStrategy::GetActorGroupId, return 0;);
 
+
+	virtual void SetLocalVirtualWorkerHealth(VirtualWorkerId WorkerId, bool Healthy) {};
+
+	/**
+	 * GetSafeActorPosition returns a safe position to teleport the player to assuming there are areas in the load balancer
+	 * that are not safe for the actor to be in.  This allows for a worker to crash, and we redirect actors to a safe location.
+	 *
+	 * The position is a 2D position, you will need to trace down to find the correct height in world.
+	 *
+	 * Returns false if there is no safe position.
+	 */
+	virtual bool GetSafePositionForActor(const AActor& Actor, FVector2D& SafePosition) const { return false; }
+
+
 	/**
 	 * Get a logical worker entity position for this strategy. For example, the centre of a grid square in a grid-based strategy.
 	 * Optional- otherwise returns the origin.
