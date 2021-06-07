@@ -30,6 +30,7 @@
  * made by that server worker.
  */
 
+class AGameplayDebuggerCategoryReplicator;
 class UAbstractLBStrategy;
 class USpatialClassInfoManager;
 class USpatialPackageMapClient;
@@ -69,6 +70,11 @@ private:
 
 	// Defined Constraint AND Level Constraint
 	void AddClientPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
+#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+	// Entity ID query for the player controller responsible for the replicator
+	void AddServerGameplayDebuggerCategoryReplicatorActorInterest(Interest& OutInterest,
+																  const AGameplayDebuggerCategoryReplicator& Replicator) const;
+#endif
 	// The components clients need to see on entities they have authority over that they don't already see through authority.
 	void AddClientSelfInterest(Interest& OutInterest) const;
 	// The components servers need to see on entities they have authority over that they don't already see through authority.

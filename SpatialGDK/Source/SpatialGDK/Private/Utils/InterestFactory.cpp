@@ -18,6 +18,10 @@
 #include "GameFramework/PlayerController.h"
 #include "UObject/UObjectIterator.h"
 
+#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+#include "GameplayDebuggerCategoryReplicator.h"
+#endif
+
 DEFINE_LOG_CATEGORY(LogInterestFactory);
 
 DECLARE_STATS_GROUP(TEXT("InterestFactory"), STATGROUP_SpatialInterestFactory, STATCAT_Advanced);
@@ -239,6 +243,14 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 		AddClientPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
 	}
 
+#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+	if (InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass()))
+	{
+		// Put special server interest on the replicator for the auth server to ensure player controller visibility
+		AddServerGameplayDebuggerCategoryReplicatorActorInterest(ResultInterest, *Cast<AGameplayDebuggerCategoryReplicator>(InActor));
+	}
+#endif
+
 	// Clients need to see owner only and server RPC components on entities they have authority over
 	AddClientSelfInterest(ResultInterest);
 
@@ -268,6 +280,31 @@ void InterestFactory::AddClientPlayerControllerActorInterest(Interest& OutIntere
 		AddNetCullDistanceQueries(OutInterest, LevelConstraint);
 	}
 }
+
+#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(Interest& OutInterest,
+																			   const AGameplayDebuggerCategoryReplicator& Replicator) const
+{
+	APlayerController* PlayerController = Replicator.GetReplicationOwner();
+	if (PlayerController == nullptr)
+	{
+		return;
+	}
+
+	const UNetDriver* NetDriver = PlayerController->GetNetDriver();
+	if (NetDriver == nullptr)
+	{
+		return;
+	}
+
+	// Add a query for the authoritative server to see the player controller
+	Query PlayerControllerQuery;
+	PlayerControllerQuery.Constraint.EntityIdConstraint = NetDriver->GetActorEntityId(*PlayerController);
+	PlayerControllerQuery.ResultComponentIds = ServerNonAuthInterestResultType.ComponentIds;
+	PlayerControllerQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
+	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, PlayerControllerQuery);
+}
+#endif
 
 void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const
 {
