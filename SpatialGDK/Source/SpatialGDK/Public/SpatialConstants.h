@@ -236,6 +236,9 @@ const Schema_FieldId SPATIAL_DEBUGGING_IS_LOCKED = 5;
 const Schema_FieldId SERVER_WORKER_NAME_ID = 1;
 const Schema_FieldId SERVER_WORKER_READY_TO_BEGIN_PLAY_ID = 2;
 const Schema_FieldId SERVER_WORKER_SYSTEM_ENTITY_ID = 3;
+const Schema_FieldId SERVER_WORKER_HEALTHY_ID = 4;
+const Schema_FieldId SERVER_WORKER_HEALTHY_AS_OF_ID = 5;
+const Schema_FieldId SERVER_WORKER_VIRTUAL_WORKER_ID = 6;
 const Schema_FieldId SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID = 1;
 
 // SpawnPlayerRequest type IDs.

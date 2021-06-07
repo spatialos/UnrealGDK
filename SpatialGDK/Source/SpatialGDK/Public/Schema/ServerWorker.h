@@ -9,6 +9,7 @@
 #include "Utils/SchemaUtils.h"
 
 #include "Containers/UnrealString.h"
+#include "Logging/LogMacros.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -26,14 +27,20 @@ struct ServerWorker : Component
 		: WorkerName(SpatialConstants::INVALID_WORKER_NAME)
 		, bReadyToBeginPlay(false)
 		, SystemEntityId(SpatialConstants::INVALID_ENTITY_ID)
+		, bHealthy(false)
+		, HealthyAsOf(0)
+		, VirtualWorkerId(0)
 	{
 	}
 
-	ServerWorker(const PhysicalWorkerName& InWorkerName, const bool bInReadyToBeginPlay, const Worker_EntityId InSystemEntityId)
+	ServerWorker(const PhysicalWorkerName& InWorkerName, const bool bInReadyToBeginPlay, const Worker_EntityId InSystemEntityId, const bool bInHealthy, const int32 InHealthyAsOf, const uint32 InVirtualWorkerId)
 	{
 		WorkerName = InWorkerName;
 		bReadyToBeginPlay = bInReadyToBeginPlay;
 		SystemEntityId = InSystemEntityId;
+		bHealthy = bInHealthy;
+		HealthyAsOf = InHealthyAsOf;
+		VirtualWorkerId = InVirtualWorkerId;
 	}
 
 	ServerWorker(const Worker_ComponentData& Data)
@@ -43,6 +50,9 @@ struct ServerWorker : Component
 		WorkerName = GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
 		bReadyToBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
 		SystemEntityId = Schema_GetEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
+		bHealthy = GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_HEALTHY_ID);
+		HealthyAsOf = Schema_GetInt32(ComponentObject, SpatialConstants::SERVER_WORKER_HEALTHY_AS_OF_ID);
+		VirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::SERVER_WORKER_VIRTUAL_WORKER_ID);
 	}
 
 	Worker_ComponentData CreateServerWorkerData()
@@ -55,6 +65,9 @@ struct ServerWorker : Component
 		AddStringToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID, WorkerName);
 		Schema_AddBool(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, bReadyToBeginPlay);
 		Schema_AddEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID, SystemEntityId);
+		Schema_AddBool(ComponentObject, SpatialConstants::SERVER_WORKER_HEALTHY_ID, bHealthy);
+		Schema_AddInt32(ComponentObject, SpatialConstants::SERVER_WORKER_HEALTHY_AS_OF_ID, HealthyAsOf);
+		Schema_AddUint32(ComponentObject, SpatialConstants::SERVER_WORKER_VIRTUAL_WORKER_ID, VirtualWorkerId);
 
 		return Data;
 	}
@@ -69,6 +82,9 @@ struct ServerWorker : Component
 		AddStringToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID, WorkerName);
 		Schema_AddBool(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, bReadyToBeginPlay);
 		Schema_AddEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID, SystemEntityId);
+		Schema_AddBool(ComponentObject, SpatialConstants::SERVER_WORKER_HEALTHY_ID, bHealthy);
+		Schema_AddInt32(ComponentObject, SpatialConstants::SERVER_WORKER_HEALTHY_AS_OF_ID, HealthyAsOf);
+		Schema_AddUint32(ComponentObject, SpatialConstants::SERVER_WORKER_VIRTUAL_WORKER_ID, VirtualWorkerId);
 
 		return Update;
 	}
@@ -80,6 +96,9 @@ struct ServerWorker : Component
 		WorkerName = GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
 		bReadyToBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
 		SystemEntityId = Schema_GetEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
+		bHealthy = GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_HEALTHY_ID);
+		HealthyAsOf = Schema_GetInt32(ComponentObject, SpatialConstants::SERVER_WORKER_HEALTHY_AS_OF_ID);
+		VirtualWorkerId = Schema_GetUint32(ComponentObject, SpatialConstants::SERVER_WORKER_VIRTUAL_WORKER_ID);
 	}
 
 	static Worker_CommandRequest CreateForwardPlayerSpawnRequest(Schema_CommandRequest* SchemaCommandRequest)
@@ -121,6 +140,9 @@ struct ServerWorker : Component
 	PhysicalWorkerName WorkerName;
 	bool bReadyToBeginPlay;
 	Worker_EntityId SystemEntityId;
+	bool bHealthy;
+	int32 HealthyAsOf;
+	uint32 VirtualWorkerId;
 };
 
 } // namespace SpatialGDK

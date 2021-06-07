@@ -179,6 +179,8 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
     ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID,
 
     ACTOR_OWNERSHIP_COMPONENT_ID,
+    // ServerWorker component lets us see if other workers are healthy.
+    SERVER_WORKER_COMPONENT_ID
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
@@ -207,6 +209,7 @@ const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
     "unreal/gdk/query_tags.schema",
     "unreal/gdk/relevant.schema",
     "unreal/gdk/rpc_components.schema",
+    "unreal/gdk/server_worker.schema",
     "unreal/gdk/spatial_debugging.schema",
     "unreal/gdk/spawndata.schema",
     "unreal/gdk/tombstone.schema",
@@ -244,6 +247,7 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
     { CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
 	{ MIGRATION_DIAGNOSTIC_COMPONENT_ID, "unreal.MigrationDiagnostic" },
 	{ ACTOR_OWNERSHIP_COMPONENT_ID, "unreal.ActorOwnership" },
+    { SERVER_WORKER_COMPONENT_ID, "unreal.ServerWorker"},
 };
 
 const TArray<FString> ClientAuthorityWellKnownSchemaImports = { "unreal/gdk/player_controller.schema", "unreal/gdk/rpc_components.schema",

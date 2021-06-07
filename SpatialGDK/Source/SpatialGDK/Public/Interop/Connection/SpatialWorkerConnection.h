@@ -9,6 +9,7 @@
 
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
+#include "Schema/ServerWorker.h"
 #include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/ExtractedOpList.h"
 #include "SpatialView/OpList/OpList.h"
@@ -27,6 +28,7 @@ public:
 	ServerWorkerEntityCreator(USpatialNetDriver& InNetDriver, USpatialWorkerConnection& InConnection);
 	void CreateWorkerEntity();
 	void ProcessOps(const TArray<Worker_Op>& Ops);
+	bool Tick(const float Delta);
 
 private:
 	void OnEntityCreated(const Worker_CreateEntityResponseOp& Op);
@@ -42,6 +44,8 @@ private:
 
 	CreateEntityHandler CreateEntityHandler;
 	ClaimPartitionHandler ClaimPartitionHandler;
+	float TimeSinceLastUpdate;
+	TMap<Worker_EntityId_Key, ServerWorker> ServerWorkers;
 };
 } // namespace SpatialGDK
 
@@ -121,6 +125,7 @@ public:
 
 	SpatialGDK::SpatialEventTracer* GetEventTracer() const { return EventTracer; }
 
+	bool bHealthy = true;
 private:
 	TOptional<SpatialGDK::ServerWorkerEntityCreator> WorkerEntityCreator;
 
