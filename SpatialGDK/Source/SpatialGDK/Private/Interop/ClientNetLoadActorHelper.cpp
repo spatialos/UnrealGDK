@@ -29,8 +29,8 @@ UObject* FClientNetLoadActorHelper::GetReusableDynamicSubObject(const FUnrealObj
 		{
 			NetDriver->PackageMap->ResolveSubobject(DynamicSubObject, ObjectRef);
 			UE_LOG(LogClientNetLoadActorHelper, Verbose,
-				TEXT("Found reusable dynamic SubObject (ObjectRef offset: %u) for ClientNetLoad actor with entityId %d"),
-				ObjectRef.Offset, ObjectRef.Entity);
+				   TEXT("Found reusable dynamic SubObject (ObjectRef offset: %u) for ClientNetLoad actor with entityId %d"),
+				   ObjectRef.Offset, ObjectRef.Entity);
 			return DynamicSubObject;
 		}
 	}
@@ -89,13 +89,15 @@ void FClientNetLoadActorHelper::ClearDynamicSubobjectMetadata(const Worker_Entit
 	SpatialEntityRemovedSubobjectMetadata.Remove(InEntityId);
 }
 
-void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents, AActor& EntityActor)
+void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents,
+															   AActor& EntityActor)
 {
 	RemoveDynamicComponentsRemovedByRuntime(EntityId, NewComponents);
 	RemoveStaticComponentsRemovedByRuntime(EntityId, NewComponents, EntityActor);
 }
 
-void FClientNetLoadActorHelper::RemoveDynamicComponentsRemovedByRuntime(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents)
+void FClientNetLoadActorHelper::RemoveDynamicComponentsRemovedByRuntime(const Worker_EntityId EntityId,
+																		const TArray<ComponentData>& NewComponents)
 {
 	if (TMap<ObjectOffset, FNetworkGUID>* EntityOffsetToNetGuidMap = SpatialEntityRemovedSubobjectMetadata.Find(EntityId))
 	{
@@ -104,7 +106,8 @@ void FClientNetLoadActorHelper::RemoveDynamicComponentsRemovedByRuntime(const Wo
 			const ObjectOffset SubobjectOffset = OffsetToNetGuidIterator->Key;
 			if (!SubobjectWithOffsetStillExists(NewComponents, SubobjectOffset))
 			{
-				if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(OffsetToNetGuidIterator->Value, false /* bIgnoreMustBeMapped */))
+				if (UObject* Object =
+						NetDriver->PackageMap->GetObjectFromNetGUID(OffsetToNetGuidIterator->Value, false /* bIgnoreMustBeMapped */))
 				{
 					const FUnrealObjectRef EntityObjectRef(EntityId, SubobjectOffset);
 					SubobjectRemovedByRuntime(EntityObjectRef, *Object);
@@ -115,7 +118,8 @@ void FClientNetLoadActorHelper::RemoveDynamicComponentsRemovedByRuntime(const Wo
 	}
 }
 
-void FClientNetLoadActorHelper::RemoveStaticComponentsRemovedByRuntime(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents, AActor& EntityActor)
+void FClientNetLoadActorHelper::RemoveStaticComponentsRemovedByRuntime(const Worker_EntityId EntityId,
+																	   const TArray<ComponentData>& NewComponents, AActor& EntityActor)
 {
 	FSubobjectToOffsetMap SubobjectsToOffsets = CreateOffsetMapFromActor(*NetDriver, EntityActor);
 	for (auto& SubobjectToOffset : SubobjectsToOffsets)
@@ -133,14 +137,14 @@ void FClientNetLoadActorHelper::RemoveStaticComponentsRemovedByRuntime(const Wor
 void FClientNetLoadActorHelper::SubobjectRemovedByRuntime(const FUnrealObjectRef& EntityObjectRef, UObject& Subobject)
 {
 	UE_LOG(LogClientNetLoadActorHelper, Verbose,
-	TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
-			"actor was out of the client's interest. Destroying the SubObject now."),
-		EntityObjectRef.Offset, EntityObjectRef.Entity);
+		   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
+				"actor was out of the client's interest. Destroying the SubObject now."),
+		   EntityObjectRef.Offset, EntityObjectRef.Entity);
 	NetDriver->ActorSystem.Get()->DestroySubObject(EntityObjectRef, Subobject);
 }
 
 bool FClientNetLoadActorHelper::SubobjectWithOffsetStillExists(const TArray<ComponentData>& Components,
-																const ObjectOffset OffsetToCheckIfContained) const
+															   const ObjectOffset OffsetToCheckIfContained) const
 {
 	for (const ComponentData& Component : Components)
 	{

@@ -20,20 +20,22 @@
  * Outcome 1.
  *
  * A static subobject can be deleted on the server before the server has ever communicated with the client about that subobject.
- * When the client then gains interest in the actor, the subobject should remain UNDELETED. This is a byproduct of native's implementation which we are matching.
+ * When the client then gains interest in the actor, the subobject should remain UNDELETED. This is a byproduct of native's implementation
+ *which we are matching.
  *
  * Outcome 2.
  *
- * A static subobject is deleted on the server while its actor is not in the client's interest. However the client and the server have previously communicated about the subobject.
- * In this case, when the actor comes back into the clients interest, that subobject should be deleted on the client.
+ * A static subobject is deleted on the server while its actor is not in the client's interest. However the client and the server have
+ *previously communicated about the subobject. In this case, when the actor comes back into the clients interest, that subobject should be
+ *deleted on the client.
  *
  *
  * The test includes a single server and one client worker.
  *
  * The flow is as follows:
  *  - Setup:
- *	  - One cube actor already placed in the level at Location FVector(-20000.0f, -20000.0f, 40.0f) needs to be a startup actor - bNetLoadOnClient =
- *true.
+ *	  - One cube actor already placed in the level at Location FVector(-20000.0f, -20000.0f, 40.0f) needs to be a startup actor -
+ *bNetLoadOnClient = true.
  *    - The Server spawns a TestMovementCharacter and makes Client 1 possess it.
  *  - Test:
  *    - Each worker tests if the AStaticSubobjectTestActor has indeed been loaded into the map.
@@ -123,7 +125,7 @@ void AStaticSubobjectsTest::PrepareTest()
 
 		DestroyOneNonRootComponent();
 
-		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents-1,
+		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents - 1,
 						TEXT("AStaticSubobjectTestActor should have had one component removed"));
 		FinishStep();
 	});
@@ -150,12 +152,13 @@ void AStaticSubobjectsTest::PrepareTest()
 	// Step 12
 	CheckClientCanNotSeeIntPropertyWithWait(2);
 
-	// Step 12 - Remove another component from the subobject. This time the client should see the removal once the actor is back in its interest
+	// Step 12 - Remove another component from the subobject. This time the client should see the removal once the actor is back in its
+	// interest
 	AddStep(TEXT("StaticSubobjectsTestServerDestroySecondSubobject"), FWorkerDefinition::Server(1), nullptr, [this]() {
-		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents-1,
+		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents - 1,
 						TEXT("AStaticSubobjectTestActor should have one less than the initial number of components on the server."));
 		DestroyOneNonRootComponent();
-		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents-2,
+		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents - 2,
 						TEXT("AStaticSubobjectTestActor should have had another component removed"));
 		FinishStep();
 	});
@@ -170,7 +173,7 @@ void AStaticSubobjectsTest::PrepareTest()
 	CheckClientSeeIntProperty(2);
 
 	// Step 17
-	CheckClientNumberComponentsOnTestActorWithWait(InitialNumComponents-1);
+	CheckClientNumberComponentsOnTestActorWithWait(InitialNumComponents - 1);
 
 	// Step 18 - Server Cleanup.
 	AddStep(TEXT("StaticSubobjectsTestServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -193,12 +196,11 @@ void AStaticSubobjectsTest::MoveClientPawn(FVector& ToLocation)
 		if (AssertIsValid(ClientSpawnedPawn, TEXT("ClientSpawnedPawn should be valid")))
 		{
 			ClientSpawnedPawn->SetActorLocation(ToLocation);
-			AssertEqual_Vector(ClientSpawnedPawn->GetActorLocation(), ToLocation,
-							TEXT("Client pawn should have been moved to location"), 1.0f);
+			AssertEqual_Vector(ClientSpawnedPawn->GetActorLocation(), ToLocation, TEXT("Client pawn should have been moved to location"),
+							   1.0f);
 		}
 		FinishStep();
 	});
-
 
 	// Client 1 makes sure that the movement was correctly replicated
 	AddStep(
@@ -208,8 +210,7 @@ void AStaticSubobjectsTest::MoveClientPawn(FVector& ToLocation)
 
 			if (AssertIsValid(PlayerCharacter, TEXT("PlayerCharacter should be valid")))
 			{
-				RequireEqual_Vector(PlayerCharacter->GetActorLocation(), ToLocation,
-									TEXT("Character was not moved to location"), 1.0f);
+				RequireEqual_Vector(PlayerCharacter->GetActorLocation(), ToLocation, TEXT("Character was not moved to location"), 1.0f);
 				FinishStep();
 			}
 		},
@@ -224,7 +225,8 @@ void AStaticSubobjectsTest::CheckClientCanNotSeeIntPropertyWithWait(int Shouldnt
 			StepTimer = 0.f;
 		},
 		[this, ShouldntSeeVal](const float DeltaTime) {
-			RequireNotEqual_Int(TestActor->TestIntProperty, ShouldntSeeVal, TEXT("The updated TestIntProperty shouldn't have been replicated"));
+			RequireNotEqual_Int(TestActor->TestIntProperty, ShouldntSeeVal,
+								TEXT("The updated TestIntProperty shouldn't have been replicated"));
 			StepTimer += DeltaTime;
 			if (StepTimer >= 0.5f)
 			{
@@ -236,25 +238,25 @@ void AStaticSubobjectsTest::CheckClientCanNotSeeIntPropertyWithWait(int Shouldnt
 
 void AStaticSubobjectsTest::CheckClientNumberComponentsOnTestActorWithoutWait(int ExpectedNumComponents)
 {
-	AddStep(
-	TEXT("StaticSubobjectsTestClientSeeRightNumberComponentsWithoutWait"), FWorkerDefinition::Client(1), nullptr,
-		[this, ExpectedNumComponents]() {
-			AssertEqual_Int(GetNumComponentsOnTestActor(), ExpectedNumComponents,
-							TEXT("The client should see the right number of components."));
+	AddStep(TEXT("StaticSubobjectsTestClientSeeRightNumberComponentsWithoutWait"), FWorkerDefinition::Client(1), nullptr,
+			[this, ExpectedNumComponents]() {
+				AssertEqual_Int(GetNumComponentsOnTestActor(), ExpectedNumComponents,
+								TEXT("The client should see the right number of components."));
 
-			FinishStep();
-		});
+				FinishStep();
+			});
 }
 
 void AStaticSubobjectsTest::CheckClientNumberComponentsOnTestActorWithWait(int ExpectedNumComponents)
 {
 	AddStep(
-	TEXT("StaticSubobjectsTestClientSeeRightNumberComponentsWithWait"), FWorkerDefinition::Client(1), nullptr, [this]() {
-		StepTimer = 0.f;
-	},
+		TEXT("StaticSubobjectsTestClientSeeRightNumberComponentsWithWait"), FWorkerDefinition::Client(1), nullptr,
+		[this]() {
+			StepTimer = 0.f;
+		},
 		[this, ExpectedNumComponents](const float DeltaTime) {
 			RequireEqual_Int(GetNumComponentsOnTestActor(), ExpectedNumComponents,
-							TEXT("The client should see the right number of components."));
+							 TEXT("The client should see the right number of components."));
 
 			StepTimer += DeltaTime;
 			if (StepTimer >= 0.5f)
@@ -276,12 +278,13 @@ void AStaticSubobjectsTest::ServerSetIntProperty(int IntPropertyNewVal)
 void AStaticSubobjectsTest::CheckClientSeeIntProperty(int IntPropertyVal)
 {
 	AddStep(
-	TEXT("StaticSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr, nullptr,
-	[this, IntPropertyVal](const float DeltaTime) {
-		RequireEqual_Int(TestActor->TestIntProperty, IntPropertyVal, TEXT("Client should TestIntProperty see the updated int property"));
-		FinishStep();
-	},
-	StepTimeLimit);
+		TEXT("StaticSubobjectsTestClientCheckIntValueIncreased"), FWorkerDefinition::Client(1), nullptr, nullptr,
+		[this, IntPropertyVal](const float DeltaTime) {
+			RequireEqual_Int(TestActor->TestIntProperty, IntPropertyVal,
+							 TEXT("Client should TestIntProperty see the updated int property"));
+			FinishStep();
+		},
+		StepTimeLimit);
 }
 
 AStaticSubobjectTestActor* AStaticSubobjectsTest::GetReplicatedTestActor()
@@ -322,7 +325,9 @@ void AStaticSubobjectsTest::DestroyOneNonRootComponent() const
 			return;
 		}
 	}
-	ensureAlwaysMsgf(false, TEXT("DestroyOneNonRootComponent called when TestActor has no components left to destroy. DestroyOneNonRootComponent should only be called as many times as there are static components on TestActor."));
+	ensureAlwaysMsgf(false,
+					 TEXT("DestroyOneNonRootComponent called when TestActor has no components left to destroy. DestroyOneNonRootComponent "
+						  "should only be called as many times as there are static components on TestActor."));
 }
 
 void AStaticSubobjectsTest::WaitForRelevancyUpdateIfInNative()
