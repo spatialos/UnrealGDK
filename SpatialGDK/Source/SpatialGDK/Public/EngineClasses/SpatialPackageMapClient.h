@@ -88,7 +88,7 @@ class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
 
-	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId);
+	FNetworkGUID AssignNewEntityActorNetGUID(AActor& Actor, Worker_EntityId EntityId);
 	void AssignNewSubobjectNetGUID(UObject* Subobject, const FUnrealObjectRef& SubobjectRef);
 
 	void RemoveEntityNetGUID(Worker_EntityId EntityId);

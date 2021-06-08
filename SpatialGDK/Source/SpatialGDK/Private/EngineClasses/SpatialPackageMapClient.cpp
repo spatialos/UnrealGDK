@@ -20,6 +20,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "UObject/UObjectGlobals.h"
+#include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
@@ -157,7 +158,7 @@ bool USpatialPackageMapClient::ResolveEntityActorAndSubobjects(const Worker_Enti
 	// check we haven't already assigned a NetGUID to this object
 	if (!NetGUID.IsValid())
 	{
-		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor, EntityId);
+		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(*Actor, EntityId);
 	}
 
 	if (GetEntityIdFromObject(Actor) != EntityId)
@@ -390,61 +391,9 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 {
 }
 
-using FSubobjectToOffsetMap = TMap<UObject*, uint32>;
-
-static FSubobjectToOffsetMap CreateOffsetMapFromActor(USpatialPackageMapClient* PackageMap, AActor* Actor, const FClassInfo& Info)
+FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor& Actor, Worker_EntityId EntityId)
 {
-	FSubobjectToOffsetMap SubobjectNameToOffset;
-
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
-	{
-		UObject* Subobject = StaticFindObjectFast(UObject::StaticClass(), Actor, SubobjectInfoPair.Value->SubobjectName);
-		const uint32 Offset = SubobjectInfoPair.Key;
-
-		if (Subobject != nullptr && Subobject->IsPendingKill() == false && Subobject->IsSupportedForNetworking())
-		{
-			SubobjectNameToOffset.Add(Subobject, Offset);
-		}
-	}
-
-	if (Actor->GetInstanceComponents().Num() > 0)
-	{
-		// Process components attached to this object; this allows us to join up
-		// server- and client-side components added in the level.
-		TArray<UActorComponent*> ActorInstanceComponents;
-
-		// In non-editor builds, editor-only components can be allocated a slot in the array, but left as nullptrs.
-		Algo::CopyIf(Actor->GetInstanceComponents(), ActorInstanceComponents, [](UActorComponent* Component) -> bool {
-			return IsValid(Component);
-		});
-		// These need to be ordered in case there are more than one component of the same type, or
-		// we may end up with wrong component instances having associations between them.
-		ActorInstanceComponents.Sort([](const UActorComponent& Lhs, const UActorComponent& Rhs) -> bool {
-			return Lhs.GetName().Compare(Rhs.GetName()) < 0;
-		});
-
-		for (UActorComponent* DynamicComponent : ActorInstanceComponents)
-		{
-			if (!DynamicComponent->IsSupportedForNetworking())
-			{
-				continue;
-			}
-
-			const FClassInfo* DynamicComponentClassInfo = PackageMap->TryResolveNewDynamicSubobjectAndGetClassInfo(DynamicComponent);
-
-			if (DynamicComponentClassInfo != nullptr)
-			{
-				SubobjectNameToOffset.Add(DynamicComponent, DynamicComponentClassInfo->SchemaComponents[SCHEMA_Data]);
-			}
-		}
-	}
-
-	return SubobjectNameToOffset;
-}
-
-FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId)
-{
-	if (!ensureAlwaysMsgf(EntityId > 0, TEXT("Tried to assign net guid for invalid entity ID. Actor: %s"), *GetNameSafe(Actor)))
+	if (!ensureAlwaysMsgf(EntityId > 0, TEXT("Tried to assign net guid for invalid entity ID. Actor: %s"), *GetNameSafe(&Actor)))
 	{
 		return FNetworkGUID();
 	}
@@ -457,37 +406,36 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 	// Valid if Actor is stably named. Used for stably named subobject assignment further below
 	FUnrealObjectRef StablyNamedRef;
 
-	if (Actor->IsNameStableForNetworking())
+	if (Actor.IsNameStableForNetworking())
 	{
 		// Startup Actors have two valid UnrealObjectRefs: the entity id and the path.
 		// AssignNewStablyNamedObjectNetGUID will register the path ref.
-		NetGUID = AssignNewStablyNamedObjectNetGUID(Actor);
+		NetGUID = AssignNewStablyNamedObjectNetGUID(&Actor);
 
 		// We register the entity id ref here.
 		UnrealObjectRefToNetGUID.Emplace(EntityObjectRef, NetGUID);
 
 		// Once we have an entity id, we should always be using it to refer to entities.
-		// Since the path ref may have been registered previously, we first try to remove it
-		// and then register the entity id ref.
+		// Since the path ref may have been registered previously, we try to get it before we overwrite it
+		// with the entity id ref.
 		StablyNamedRef = NetGUIDToUnrealObjectRef[NetGUID];
 		NetGUIDToUnrealObjectRef.Emplace(NetGUID, EntityObjectRef);
 	}
 	else
 	{
-		NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
+		NetGUID = GetOrAssignNetGUID_SpatialGDK(&Actor);
 		RegisterObjectRef(NetGUID, EntityObjectRef);
 	}
 
-	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"), *Actor->GetName(),
+	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"), *Actor.GetName(),
 		   *NetGUID.ToString(), EntityId);
 
-	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	const FSubobjectToOffsetMap& SubobjectToOffset = CreateOffsetMapFromActor(SpatialNetDriver->PackageMap, Actor, Info);
+	const SpatialGDK::FSubobjectToOffsetMap& SubobjectsToOffsets = SpatialGDK::CreateOffsetMapFromActor(*SpatialNetDriver, Actor);
 
-	for (auto& Pair : SubobjectToOffset)
+	for (auto& SubobjectToOffset : SubobjectsToOffsets)
 	{
-		UObject* Subobject = Pair.Key;
-		uint32 Offset = Pair.Value;
+		UObject* Subobject = SubobjectToOffset.Key;
+		const ObjectOffset Offset = SubobjectToOffset.Value;
 
 		// AssignNewStablyNamedObjectNetGUID is not used due to using the wrong ObjectRef as the outer of the subobject.
 		// So it is ok to use RegisterObjectRef in both cases since no prior bookkeeping was done (unlike Actors)
@@ -520,7 +468,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 
 		UE_LOG(LogSpatialPackageMap, Verbose,
 			   TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"), *Subobject->GetName(),
-			   *Actor->GetName(), *SubobjectNetGUID.ToString(), *EntityIdSubobjectRef.ToString());
+			   *Actor.GetName(), *SubobjectNetGUID.ToString(), *EntityIdSubobjectRef.ToString());
 	}
 
 	return NetGUID;

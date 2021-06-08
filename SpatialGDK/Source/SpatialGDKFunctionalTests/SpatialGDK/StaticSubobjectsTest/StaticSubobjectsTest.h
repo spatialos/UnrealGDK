@@ -20,23 +20,30 @@ public:
 	AStaticSubobjectsTest();
 
 	virtual void PrepareTest() override;
+	void MoveClientPawn(FVector& ToLocation);
+	void CheckClientCanNotSeeIntPropertyWithWait(int ShouldntSeeVal);
+	void CheckClientNumberComponentsOnTestActorWithoutWait(int ExpectedNumComponents);
+	void CheckClientNumberComponentsOnTestActorWithWait(int ExpectedNumComponents);
+	void ServerSetIntProperty(int IntPropertyNewVal);
+	void CheckClientSeeIntProperty(int IntPropertyVal);
 
-	void DestroyNonRootComponents() const;
+	void DestroyOneNonRootComponent() const;
+	void WaitForRelevancyUpdateIfInNative();
 	int GetNumComponentsOnTestActor();
 	AStaticSubobjectTestActor* GetReplicatedTestActor();
 
 	// A reference to the Default Pawn of Client 1 to allow for repossession in the final step of the test.
-	APawn* ClientOneDefaultPawn;
+	APawn* ClientDefaultPawn;
 
-	ATestMovementCharacter* ClientOneSpawnedPawn;
+	ATestMovementCharacter* ClientSpawnedPawn;
 
 	AStaticSubobjectTestActor* TestActor;
 
-	const FVector PawnSpawnLocation = FVector(0.0f, 120.0f, 40.0f);
+	FVector PawnSpawnLocation = FVector(0.0f, 120.0f, 40.0f);
 
-	const FVector PawnMovedToRemoteLocation = FVector(20000.0f, 20000.0f, 40.0f);
+	FVector PawnRemoteLocation = FVector(-20000.0f, -20000.0f, 40.0f);
 
-	static constexpr int32 InitialNumComponents = 2;
+	static constexpr int32 InitialNumComponents = 3;
 
 	static constexpr float TimeLimit = 100.0f;
 

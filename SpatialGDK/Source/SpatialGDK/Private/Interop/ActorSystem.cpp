@@ -692,34 +692,35 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 
 	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
-		const FUnrealObjectRef ObjectRef(EntityId, ComponentId);
+		const FUnrealObjectRef EntityObjectRef(EntityId, ComponentId);
 		if (ComponentId == SpatialConstants::DORMANT_COMPONENT_ID)
 		{
 			GetOrRecreateChannelForDormantActor(Actor, EntityId);
 		}
-		else if (UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
+		else if (UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(EntityObjectRef).Get())
 		{
-			DestroySubObject(EntityId, *Object, ObjectRef);
+			DestroySubObject(EntityObjectRef, *Object);
 		}
 	}
 }
 
-void ActorSystem::DestroySubObject(const Worker_EntityId EntityId, UObject& Object, const FUnrealObjectRef& ObjectRef) const
+void ActorSystem::DestroySubObject(const FUnrealObjectRef& EntityObjectRef, UObject& Object) const
 {
+	const Worker_EntityId EntityId = EntityObjectRef.Entity;
 	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
-			UE_LOG(LogActorSystem, Verbose, TEXT("Destroying subobject with offset %u on entity %d"), ObjectRef.Offset, EntityId);
+			UE_LOG(LogActorSystem, Verbose, TEXT("Destroying subobject with offset %u on entity %d"), EntityObjectRef.Offset, EntityId);
 
-			Channel->OnSubobjectDeleted(ObjectRef, &Object, TWeakObjectPtr<UObject>(&Object));
+			Channel->OnSubobjectDeleted(EntityObjectRef, &Object, TWeakObjectPtr<UObject>(&Object));
 
 			Actor->OnSubobjectDestroyFromReplication(&Object);
 
 			Object.PreDestroyFromReplication();
 			Object.MarkPendingKill();
 
-			NetDriver->PackageMap->RemoveSubobject(ObjectRef);
+			NetDriver->PackageMap->RemoveSubobject(EntityObjectRef);
 		}
 	}
 }
@@ -1403,7 +1404,7 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 	if (EntityActor.IsFullNameStableForNetworking())
 	{
 		// bNetLoadOnClient actors could have components removed while out of the client's interest
-		ClientNetLoadActorHelper.RemoveRuntimeRemovedComponents(EntityId, EntityComponents);
+		ClientNetLoadActorHelper.RemoveRuntimeRemovedComponents(EntityId, EntityComponents, EntityActor);
 	}
 
 	// Resolve things like RepNotify or RPCs after applying component data.

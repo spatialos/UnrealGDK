@@ -23,5 +23,8 @@ public:
 	int TestIntProperty;
 
 	UPROPERTY(Replicated)
-	USceneComponent* TestStaticComponent;
+	USceneComponent* TestStaticComponent1;
+
+	UPROPERTY(Replicated)
+	USceneComponent* TestStaticComponent2;
 };

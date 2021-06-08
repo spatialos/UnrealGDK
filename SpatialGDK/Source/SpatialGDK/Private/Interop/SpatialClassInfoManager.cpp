@@ -438,14 +438,14 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHier
 	return OutComponentIds;
 }
 
-bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
+bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, ObjectOffset& OutOffset)
 {
 	if (!ComponentToOffsetMap.Contains(ComponentId))
 	{
 		TryCreateClassInfoForComponentId(ComponentId);
 	}
 
-	if (uint32* Offset = ComponentToOffsetMap.Find(ComponentId))
+	if (ObjectOffset* Offset = ComponentToOffsetMap.Find(ComponentId))
 	{
 		OutOffset = *Offset;
 		return true;

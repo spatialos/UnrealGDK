@@ -67,7 +67,7 @@ struct FClassInfo
 	Worker_ComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
 
 	// Only for Actors
-	TMap<uint32, TSharedRef<const FClassInfo>> SubobjectInfo;
+	TMap<ObjectOffset, TSharedRef<const FClassInfo>> SubobjectInfo;
 
 	// Only for default Subobjects belonging to Actors
 	FName SubobjectName;
@@ -104,7 +104,7 @@ public:
 	const FClassInfo& GetClassInfoByComponentId(Worker_ComponentId ComponentId);
 
 	UClass* GetClassByComponentId(Worker_ComponentId ComponentId);
-	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
+	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, ObjectOffset& OutOffset);
 	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
 	const TArray<Schema_FieldId>& GetFieldIdsByComponentId(Worker_ComponentId ComponentId);
 
@@ -150,6 +150,6 @@ private:
 		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>, false>>
 		ClassInfoMap;
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
-	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
+	TMap<Worker_ComponentId, ObjectOffset> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;
 };

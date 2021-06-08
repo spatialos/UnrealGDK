@@ -20,7 +20,7 @@ public:
 
 	// The runtime can remove components from a ClientNetLoad Actor while the actor is out of the client's interest
 	// The client doesn't receive these updates when they happen, so the difference must be reconciled
-	void RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents);
+	void RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents, AActor& EntityActor);
 
 private:
 	USpatialNetDriver* NetDriver;
@@ -28,12 +28,19 @@ private:
 	// Stores subobjects from client net load actors that have gone out of the client's interest
 	TMap<Worker_EntityId_Key, TMap<ObjectOffset, FNetworkGUID>> SpatialEntityRemovedSubobjectMetadata;
 
+	void SaveDynamicSubobjectsMetadata(Worker_EntityId EntityId, const AActor& Actor);
+
 	// BNetLoadOnClient component edge case handling
 	FNetworkGUID* GetSavedDynamicSubObjectNetGUID(const FUnrealObjectRef& ObjectRef);
 	void SaveDynamicSubobjectMetadata(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID);
 	void ClearDynamicSubobjectMetadata(const Worker_EntityId InEntityId);
 
-	bool OffsetContainedInComponentArray(const TArray<ComponentData>& Components, const ObjectOffset OffsetToCheckIfContained) const;
+	void RemoveStaticComponentsRemovedByRuntime(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents, AActor& EntityActor);
+	void SubobjectRemovedByRuntime(const FUnrealObjectRef& EntityObjectRef, UObject& Subobject);
+	void RemoveDynamicComponentsRemovedByRuntime(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents);
+
+	bool SubobjectWithOffsetStillExists(const TArray<ComponentData>& Components, const ObjectOffset OffsetToCheckIfContained) const;
+	bool SubobjectIsReplicated(const UObject& Object, AActor& EntityActor) const;
 };
 
 } // namespace SpatialGDK

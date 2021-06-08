@@ -29,8 +29,8 @@ UObject* FClientNetLoadActorHelper::GetReusableDynamicSubObject(const FUnrealObj
 		{
 			NetDriver->PackageMap->ResolveSubobject(DynamicSubObject, ObjectRef);
 			UE_LOG(LogClientNetLoadActorHelper, Verbose,
-				   TEXT("Found reusable dynamic SubObject (ObjectRef offset: %u) for ClientNetLoad actor with entityId %d"),
-				   ObjectRef.Offset, ObjectRef.Entity);
+				TEXT("Found reusable dynamic SubObject (ObjectRef offset: %u) for ClientNetLoad actor with entityId %d"),
+				ObjectRef.Offset, ObjectRef.Entity);
 			return DynamicSubObject;
 		}
 	}
@@ -40,6 +40,11 @@ UObject* FClientNetLoadActorHelper::GetReusableDynamicSubObject(const FUnrealObj
 void FClientNetLoadActorHelper::EntityRemoved(const Worker_EntityId EntityId, const AActor& Actor)
 {
 	ClearDynamicSubobjectMetadata(EntityId);
+	SaveDynamicSubobjectsMetadata(EntityId, Actor);
+}
+
+void FClientNetLoadActorHelper::SaveDynamicSubobjectsMetadata(const Worker_EntityId EntityId, const AActor& Actor)
+{
 	if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
 		for (UObject* DynamicSubObject : Channel->CreateSubObjects)
@@ -84,26 +89,25 @@ void FClientNetLoadActorHelper::ClearDynamicSubobjectMetadata(const Worker_Entit
 	SpatialEntityRemovedSubobjectMetadata.Remove(InEntityId);
 }
 
-void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents)
+void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents, AActor& EntityActor)
 {
-	if (TMap<ObjectOffset, FNetworkGUID>* SubobjectOffsetToNetGuid = SpatialEntityRemovedSubobjectMetadata.Find(EntityId))
+	RemoveDynamicComponentsRemovedByRuntime(EntityId, NewComponents);
+	RemoveStaticComponentsRemovedByRuntime(EntityId, NewComponents, EntityActor);
+}
+
+void FClientNetLoadActorHelper::RemoveDynamicComponentsRemovedByRuntime(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents)
+{
+	if (TMap<ObjectOffset, FNetworkGUID>* EntityOffsetToNetGuidMap = SpatialEntityRemovedSubobjectMetadata.Find(EntityId))
 	{
-		// Go over each stored sub-object and determine whether it is contained within the new components array
-		// If it is not contained within the new components array, it means the sub-object was removed while out of the client's interest
-		// If so, remove it now
-		for (auto OffsetToNetGuidIterator = SubobjectOffsetToNetGuid->CreateIterator(); OffsetToNetGuidIterator; ++OffsetToNetGuidIterator)
+		for (auto OffsetToNetGuidIterator = EntityOffsetToNetGuidMap->CreateIterator(); OffsetToNetGuidIterator; ++OffsetToNetGuidIterator)
 		{
-			const ObjectOffset ObjectOffset = OffsetToNetGuidIterator->Key;
-			if (!OffsetContainedInComponentArray(NewComponents, ObjectOffset))
+			const ObjectOffset SubobjectOffset = OffsetToNetGuidIterator->Key;
+			if (!SubobjectWithOffsetStillExists(NewComponents, SubobjectOffset))
 			{
-				if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(OffsetToNetGuidIterator->Value, false))
+				if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(OffsetToNetGuidIterator->Value, false /* bIgnoreMustBeMapped */))
 				{
-					UE_LOG(LogClientNetLoadActorHelper, Verbose,
-						   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
-								"actor was out of the client's interest. Destroying the SubObject now."),
-						   ObjectOffset, EntityId);
-					const FUnrealObjectRef ObjectRef(EntityId, ObjectOffset);
-					NetDriver->ActorSystem.Get()->DestroySubObject(EntityId, *Object, ObjectRef);
+					const FUnrealObjectRef EntityObjectRef(EntityId, SubobjectOffset);
+					SubobjectRemovedByRuntime(EntityObjectRef, *Object);
 				}
 				OffsetToNetGuidIterator.RemoveCurrent();
 			}
@@ -111,12 +115,35 @@ void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_Enti
 	}
 }
 
-bool FClientNetLoadActorHelper::OffsetContainedInComponentArray(const TArray<ComponentData>& Components,
+void FClientNetLoadActorHelper::RemoveStaticComponentsRemovedByRuntime(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents, AActor& EntityActor)
+{
+	FSubobjectToOffsetMap SubobjectsToOffsets = CreateOffsetMapFromActor(*NetDriver, EntityActor);
+	for (auto& SubobjectToOffset : SubobjectsToOffsets)
+	{
+		UObject& Subobject = *SubobjectToOffset.Key;
+		const ObjectOffset Offset = SubobjectToOffset.Value;
+		if (SubobjectIsReplicated(Subobject, EntityActor) && !SubobjectWithOffsetStillExists(NewComponents, Offset))
+		{
+			const FUnrealObjectRef ObjectRef(EntityId, Offset);
+			SubobjectRemovedByRuntime(ObjectRef, Subobject);
+		}
+	}
+}
+
+void FClientNetLoadActorHelper::SubobjectRemovedByRuntime(const FUnrealObjectRef& EntityObjectRef, UObject& Subobject)
+{
+	UE_LOG(LogClientNetLoadActorHelper, Verbose,
+	TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
+			"actor was out of the client's interest. Destroying the SubObject now."),
+		EntityObjectRef.Offset, EntityObjectRef.Entity);
+	NetDriver->ActorSystem.Get()->DestroySubObject(EntityObjectRef, Subobject);
+}
+
+bool FClientNetLoadActorHelper::SubobjectWithOffsetStillExists(const TArray<ComponentData>& Components,
 																const ObjectOffset OffsetToCheckIfContained) const
 {
 	for (const ComponentData& Component : Components)
 	{
-		// Skip if this isn't a generated component
 		if (Component.GetComponentId() < SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 		{
 			continue;
@@ -131,6 +158,16 @@ bool FClientNetLoadActorHelper::OffsetContainedInComponentArray(const TArray<Com
 		}
 	}
 	return false;
-};
+}
+
+bool FClientNetLoadActorHelper::SubobjectIsReplicated(const UObject& Object, AActor& EntityActor) const
+{
+	if (const USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(&EntityActor))
+	{
+		const bool IsReplicated = Channel->ReplicationMap.Contains(&Object);
+		return IsReplicated;
+	}
+	return false;
+}
 
 } // namespace SpatialGDK

@@ -79,7 +79,7 @@ public:
 	static Worker_ComponentData CreateLevelComponentData(const AActor& Actor, const UWorld& NetDriverWorld,
 														 const USpatialClassInfoManager& ClassInfoManager);
 
-	void DestroySubObject(const Worker_EntityId EntityId, UObject& Object, const FUnrealObjectRef& ObjectRef) const;
+	void DestroySubObject(const FUnrealObjectRef& EntityObjectRef, UObject& Object) const;
 
 private:
 	// Helper struct to manage FSpatialObjectRepState update cycle.
