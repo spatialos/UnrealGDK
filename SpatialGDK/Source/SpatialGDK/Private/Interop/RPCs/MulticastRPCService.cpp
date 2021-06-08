@@ -102,11 +102,11 @@ void MulticastRPCService::ProcessChanges()
 		{
 			for (const ComponentChange& Change : Delta.ComponentUpdates)
 			{
-				ComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update);
+				ComponentUpdate(Delta.EntityId, Change.ComponentId);
 			}
 			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
 			{
-				ComponentUpdate(Delta.EntityId, Change.ComponentId, nullptr);
+				ComponentUpdate(Delta.EntityId, Change.ComponentId);
 			}
 			break;
 		}
@@ -133,25 +133,20 @@ void MulticastRPCService::EntityAdded(const Worker_EntityId EntityId)
 
 void MulticastRPCService::EntityRefresh(Worker_EntityId EntityId)
 {
-	for (const Worker_ComponentSetId ComponentSetId : SubView->GetView()[EntityId].Authority)
+	if (SubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
 	{
-		if (ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-		{
-			const MulticastRPCs& Component = MulticastDataStore[EntityId];
+		const MulticastRPCs& Component = MulticastDataStore[EntityId];
 
-			// Update last seen and last sent ids to latest component data
-			LastSeenMulticastRPCIds.Add(EntityId, Component.MulticastRPCBuffer.LastSentRPCId);
-			RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::NetMulticast), Component.MulticastRPCBuffer.LastSentRPCId);
-			break;
-		}
+		// Update last seen and last sent ids to latest component data
+		LastSeenMulticastRPCIds.Add(EntityId, Component.MulticastRPCBuffer.LastSentRPCId);
+		RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::NetMulticast), Component.MulticastRPCBuffer.LastSentRPCId);
 	}
 
 	// If this is a non-auth refresh, process any new RPC updates. This is a no-op for the auth worker.
 	ExtractRPCs(EntityId);
 }
 
-void MulticastRPCService::ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-										  Schema_ComponentUpdate* Update)
+void MulticastRPCService::ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	if (ComponentId != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 	{
