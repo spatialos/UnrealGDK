@@ -104,13 +104,17 @@ void MulticastRPCService::ProcessChanges()
 			{
 				ComponentUpdate(Delta.EntityId, Change.ComponentId, Change.Update);
 			}
+			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
+			{
+				ComponentUpdate(Delta.EntityId, Change.ComponentId, nullptr);
+			}
 			break;
 		}
 		case EntityDelta::ADD:
 			EntityAdded(Delta.EntityId);
 			break;
 		case EntityDelta::TEMPORARILY_REMOVED:
-			EntityAdded(Delta.EntityId);
+			EntityRefresh(Delta.EntityId);
 			break;
 		default:
 			break;
@@ -127,6 +131,25 @@ void MulticastRPCService::EntityAdded(const Worker_EntityId EntityId)
 	}
 }
 
+void MulticastRPCService::EntityRefresh(Worker_EntityId EntityId)
+{
+	for (const Worker_ComponentSetId ComponentSetId : SubView->GetView()[EntityId].Authority)
+	{
+		if (ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+		{
+			const MulticastRPCs& Component = MulticastDataStore[EntityId];
+
+			// Update last seen and last sent ids to latest component data
+			LastSeenMulticastRPCIds.Add(EntityId, Component.MulticastRPCBuffer.LastSentRPCId);
+			RPCStore->LastSentRPCIds.Add(EntityRPCType(EntityId, ERPCType::NetMulticast), Component.MulticastRPCBuffer.LastSentRPCId);
+			break;
+		}
+	}
+
+	// If this is a non-auth refresh, process any new RPC updates. This is a no-op for the auth worker.
+	ExtractRPCs(EntityId);
+}
+
 void MulticastRPCService::ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
 										  Schema_ComponentUpdate* Update)
 {
@@ -137,22 +160,22 @@ void MulticastRPCService::ComponentUpdate(const Worker_EntityId EntityId, const 
 	ExtractRPCs(EntityId);
 }
 
-void MulticastRPCService::AuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+void MulticastRPCService::AuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
-	if (ComponentId != SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+	if (ComponentSetId != SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 	{
 		return;
 	}
-	OnEndpointAuthorityGained(EntityId, ComponentId);
+	OnEndpointAuthorityGained(EntityId, ComponentSetId);
 }
 
-void MulticastRPCService::AuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+void MulticastRPCService::AuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
-	if (ComponentId != SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
+	if (ComponentSetId != SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 	{
 		return;
 	}
-	OnEndpointAuthorityLost(EntityId, ComponentId);
+	OnEndpointAuthorityLost(EntityId, ComponentSetId);
 }
 
 void MulticastRPCService::PopulateDataStore(const Worker_EntityId EntityId)
@@ -181,7 +204,7 @@ void MulticastRPCService::OnRemoveMulticastRPCComponentForEntity(const Worker_En
 	LastSeenMulticastRPCIds.Remove(EntityId);
 }
 
-void MulticastRPCService::OnEndpointAuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+void MulticastRPCService::OnEndpointAuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
 	const MulticastRPCs& Component = MulticastDataStore[EntityId];
 
@@ -202,7 +225,7 @@ void MulticastRPCService::OnEndpointAuthorityGained(const Worker_EntityId Entity
 	}
 }
 
-void MulticastRPCService::OnEndpointAuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+void MulticastRPCService::OnEndpointAuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
 	// Set last seen to last sent, so we don't process own RPCs after crossing the boundary.
 	LastSeenMulticastRPCIds.Add(EntityId, RPCStore->LastSentRPCIds[EntityRPCType(EntityId, ERPCType::NetMulticast)]);

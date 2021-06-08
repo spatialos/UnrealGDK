@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -28,9 +28,10 @@ public:
 private:
 	// Process relevant view delta changes.
 	void EntityAdded(Worker_EntityId EntityId);
+	void EntityRefresh(Worker_EntityId EntityId);
 	void ComponentUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
-	void AuthorityGained(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void AuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
+	void AuthorityLost(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
 
 	// Maintain local state of multicast RPCs.
 	void PopulateDataStore(Worker_EntityId EntityId);
@@ -39,8 +40,8 @@ private:
 	// Multicast system responses to state changes.
 	void OnCheckoutMulticastRPCComponentOnEntity(Worker_EntityId EntityId);
 	void OnRemoveMulticastRPCComponentForEntity(Worker_EntityId EntityId);
-	void OnEndpointAuthorityGained(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void OnEndpointAuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
+	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId);
 
 	// Calls ExtractRPCCallback for each RPC it extracts from a given component. If the callback returns false,
 	// stops retrieving RPCs.
