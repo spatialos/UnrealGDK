@@ -448,6 +448,11 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						Actor->SetReplicates(true);
 					}
 
+					if (Actor->GetIntendedAutonomousProxy())
+					{
+						Actor->RemoteRole = ROLE_AutonomousProxy;
+					}
+
 					if (Actor->IsA<APlayerController>())
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
@@ -524,12 +529,17 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 		if (Channel != nullptr)
 		{
 			Channel->ClientProcessOwnershipChange(Authority == WORKER_AUTHORITY_AUTHORITATIVE);
-		}
 
-		// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
-		if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
-		{
-			Actor->Role = (Authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
+			if (Actor->GetIntendedAutonomousProxy() && Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+			{
+				Actor->Role = ROLE_AutonomousProxy;
+			}
+
+			if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
+			{
+				Actor->Role = (Authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
+			}
+
 		}
 	}
 }
