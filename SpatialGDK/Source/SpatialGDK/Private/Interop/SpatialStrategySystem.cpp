@@ -12,14 +12,12 @@
 #include "LoadBalancing/LBDataStorage.h"
 #include "LoadBalancing/PartitionManager.h"
 
-#pragma optimize("", off)
-
 DEFINE_LOG_CATEGORY(LogSpatialStrategySystem);
 
 namespace SpatialGDK
 {
-SpatialStrategySystem::SpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionsMgr, const FSubView& InLBView,
-											 TUniquePtr<FLoadBalancingStrategy>&& InStrategy)
+FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionsMgr, const FSubView& InLBView,
+											   TUniquePtr<FLoadBalancingStrategy>&& InStrategy)
 	: LBView(InLBView)
 	, PartitionsMgr(MoveTemp(InPartitionsMgr))
 	, Strategy(MoveTemp(InStrategy))
@@ -34,9 +32,9 @@ SpatialStrategySystem::SpatialStrategySystem(TUniquePtr<FPartitionManager> InPar
 	bStrategySystemInterestDirty = true;
 }
 
-SpatialStrategySystem::~SpatialStrategySystem() = default;
+FSpatialStrategySystem::~FSpatialStrategySystem() = default;
 
-void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
+void FSpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 {
 	PartitionsMgr->AdvanceView(Connection);
 
@@ -157,7 +155,7 @@ void SpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 	Strategy->Advance(Connection);
 }
 
-void SpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
+void FSpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
 {
 	PartitionsMgr->Flush(Connection);
 
@@ -252,9 +250,9 @@ void SpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
 	}
 }
 
-void SpatialStrategySystem::Destroy(SpatialOSWorkerInterface* Connection) {}
+void FSpatialStrategySystem::Destroy(SpatialOSWorkerInterface* Connection) {}
 
-void SpatialStrategySystem::UpdateStrategySystemInterest(SpatialOSWorkerInterface* Connection)
+void FSpatialStrategySystem::UpdateStrategySystemInterest(SpatialOSWorkerInterface* Connection)
 {
 	if (!PartitionsMgr->IsReady())
 	{
@@ -262,35 +260,44 @@ void SpatialStrategySystem::UpdateStrategySystemInterest(SpatialOSWorkerInterfac
 	}
 
 	Interest ServerInterest;
-	Query ServerQuery = {};
-	ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
-									   SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
-									   SpatialConstants::AUTHORITY_INTENTV2_COMPONENT_ID, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID,
-									   SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID };
 
-	for (auto& Component : UpdatesToConsider)
+	ComponentSetInterest& InterestSet = ServerInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
 	{
-		ServerQuery.ResultComponentIds.Add(Component);
+		Query ServerQuery = {};
+		ServerQuery.ResultComponentIds = { SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID,
+										   SpatialConstants::NET_OWNING_CLIENT_WORKER_COMPONENT_ID,
+										   SpatialConstants::AUTHORITY_INTENTV2_COMPONENT_ID,
+										   SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID,
+										   SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID };
+		for (auto& Component : UpdatesToConsider)
+		{
+			ServerQuery.ResultComponentIds.Add(Component);
+		}
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID;
+
+		InterestSet.Queries.Add(ServerQuery);
 	}
 
-	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::STRATEGYWORKER_TAG_COMPONENT_ID;
-	ServerInterest.ComponentInterestMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID);
-	ServerInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(ServerQuery);
+	{
+		Query ServerQuery = {};
+		ServerQuery.ResultComponentIds = { SpatialConstants::SERVER_WORKER_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
+		InterestSet.Queries.Add(ServerQuery);
+	}
 
-	ServerQuery = {};
-	ServerQuery.ResultComponentIds = { SpatialConstants::SERVER_WORKER_COMPONENT_ID };
-	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::SERVER_WORKER_COMPONENT_ID;
-	ServerInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(ServerQuery);
+	{
+		Query ServerQuery = {};
+		ServerQuery.ResultComponentIds = { SpatialConstants::WORKER_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
+		InterestSet.Queries.Add(ServerQuery);
+	}
 
-	ServerQuery = {};
-	ServerQuery.ResultComponentIds = { SpatialConstants::WORKER_COMPONENT_ID };
-	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::WORKER_COMPONENT_ID;
-	ServerInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(ServerQuery);
-
-	ServerQuery = {};
-	ServerQuery.ResultComponentIds = { SpatialConstants::PARTITION_ACK_COMPONENT_ID };
-	ServerQuery.Constraint.ComponentConstraint = SpatialConstants::PARTITION_ACK_COMPONENT_ID;
-	ServerInterest.ComponentInterestMap[SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID].Queries.Add(ServerQuery);
+	{
+		Query ServerQuery = {};
+		ServerQuery.ResultComponentIds = { SpatialConstants::PARTITION_ACK_COMPONENT_ID };
+		ServerQuery.Constraint.ComponentConstraint = SpatialConstants::PARTITION_ACK_COMPONENT_ID;
+		InterestSet.Queries.Add(ServerQuery);
+	}
 
 	FWorkerComponentUpdate Update;
 	Update.component_id = Interest::ComponentId;

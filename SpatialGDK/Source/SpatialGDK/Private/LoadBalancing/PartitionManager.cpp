@@ -374,7 +374,7 @@ struct FPartitionManager::Impl
 		}
 	}
 
-	TArray<FWorkerComponentData> CreatePartitionEntityComponents(FString const& PartitionName, const Worker_EntityId EntityId,
+	TArray<FWorkerComponentData> CreatePartitionEntityComponents(const FString& PartitionName, const Worker_EntityId EntityId,
 																 const QueryConstraint& LBConstraint)
 	{
 		AuthorityDelegationMap DelegationMap;
@@ -467,7 +467,7 @@ FPartitionHandle FPartitionManager::CreatePartition(FString DisplayName, void* U
 	NewPartition->State = MakeUnique<FPartitionInternalState>();
 	NewPartition->State->UserData = UserData;
 	NewPartition->State->LBConstraint = Interest;
-	NewPartition->State->DisplayName = DisplayName;
+	NewPartition->State->DisplayName = MoveTemp(DisplayName);
 
 	m_Impl->Partitions.Add(NewPartition);
 

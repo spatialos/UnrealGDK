@@ -80,7 +80,7 @@ class SpatialDebuggerSystem;
 class ActorSystem;
 class SpatialRPCService;
 class SpatialRoutingSystem;
-class SpatialHandoverManager;
+class FSpatialHandoverManager;
 class SpatialLoadBalanceEnforcer;
 class UnrealServerInterestFactory;
 class WellKnownEntitySystem;
@@ -88,7 +88,7 @@ class ClientConnectionManager;
 class InitialOnlyFilter;
 class CrossServerRPCSender;
 class CrossServerRPCHandler;
-class SpatialStrategySystem;
+class FSpatialStrategySystem;
 } // namespace SpatialGDK
 
 UCLASS()
@@ -234,9 +234,9 @@ public:
 	FSpatialNetDriverServerRPC* ServerRPCs = nullptr;
 
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
-	TUniquePtr<SpatialGDK::SpatialStrategySystem> StrategySystem;
+	TUniquePtr<SpatialGDK::FSpatialStrategySystem> StrategySystem;
 	TUniquePtr<SpatialGDK::SpatialLoadBalanceEnforcer> LoadBalanceEnforcer;
-	TUniquePtr<SpatialGDK::SpatialHandoverManager> HandoverManager;
+	TUniquePtr<SpatialGDK::FSpatialHandoverManager> HandoverManager;
 	TUniquePtr<SpatialGDK::UnrealServerInterestFactory> InterestFactory;
 	TUniquePtr<SpatialVirtualWorkerTranslator> VirtualWorkerTranslator;
 

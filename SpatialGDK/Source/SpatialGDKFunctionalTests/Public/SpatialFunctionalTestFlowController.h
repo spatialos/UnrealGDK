@@ -27,6 +27,7 @@ public:
 	virtual void BeginPlay() override;
 
 	virtual void OnAuthorityGained() override;
+	virtual void OnActorReady(bool bHasAuth) override;
 
 	virtual void Tick(float DeltaSeconds) override;
 

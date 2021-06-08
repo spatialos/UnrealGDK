@@ -47,10 +47,18 @@ void ASpatialCleanupConnectionTest::PrepareTest()
 	// so all client connections counts are + 1
 	AddStep(TEXT("Spawn player on server 1"), FWorkerDefinition::Server(1), nullptr, [this]() {
 		USpatialNetDriver* Driver = Cast<USpatialNetDriver>(GetNetDriver());
-		AssertIsValid(Driver, TEXT("Test is exclusive to using SpatialNetDriver"));
+		if (!AssertIsValid(Driver, TEXT("Test is exclusive to using SpatialNetDriver")))
+		{
+			FinishStep();
+			return;
+		}
 		ASpatialFunctionalTestFlowController* ClientOneFlowController = GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1);
 		PlayerController = Cast<APlayerController>(ClientOneFlowController->GetOwner());
-		AssertIsValid(PlayerController, TEXT("Must have valid PlayerController for test"));
+		if (!AssertIsValid(PlayerController, TEXT("Must have valid PlayerController for test")))
+		{
+			FinishStep();
+			return;
+		}
 		DefaultPawn = PlayerController->GetPawn();
 		PlayerController->UnPossess();
 		SpawnedPawn = GetWorld()->SpawnActor<ATestMovementCharacter>(Server1Position, FRotator::ZeroRotator, FActorSpawnParameters());

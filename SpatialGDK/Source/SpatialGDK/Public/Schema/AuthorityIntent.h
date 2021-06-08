@@ -77,7 +77,7 @@ struct AuthorityIntent : AbstractMutableComponent
 	VirtualWorkerId VirtualWorkerId;
 };
 
-struct AuthorityIntentV2 : AbstractMutableComponent
+struct AuthorityIntentV2
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENTV2_COMPONENT_ID;
 
@@ -101,7 +101,7 @@ struct AuthorityIntentV2 : AbstractMutableComponent
 		AssignmentCounter = Schema_GetUint64(ComponentObject, SpatialConstants::AUTHORITY_INTENTV2_ASSIGNMENT_COUNTER);
 	}
 
-	Worker_ComponentData CreateComponentData() const override
+	Worker_ComponentData CreateComponentData() const
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -140,7 +140,7 @@ struct AuthorityIntentV2 : AbstractMutableComponent
 	uint64 AssignmentCounter = 0;
 };
 
-struct AuthorityIntentACK : AbstractMutableComponent
+struct AuthorityIntentACK
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID;
 
@@ -163,7 +163,7 @@ struct AuthorityIntentACK : AbstractMutableComponent
 		AssignmentCounter = Schema_GetUint64(ComponentObject, SpatialConstants::AUTHORITY_INTENT_ACK_ASSIGNMENT_COUNTER);
 	}
 
-	Worker_ComponentData CreateComponentData() const override
+	Worker_ComponentData CreateComponentData() const
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;

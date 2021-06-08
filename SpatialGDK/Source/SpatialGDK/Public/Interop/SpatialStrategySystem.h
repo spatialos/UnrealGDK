@@ -24,13 +24,13 @@ class FLoadBalancingStrategy;
 class FLBDataStorage;
 class FPartitionManager;
 
-class SpatialStrategySystem
+class FSpatialStrategySystem
 {
 public:
-	SpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionMgr, const FSubView& InLBView,
-						  TUniquePtr<FLoadBalancingStrategy>&& Strategy);
+	FSpatialStrategySystem(TUniquePtr<FPartitionManager> InPartitionMgr, const FSubView& InLBView,
+						   TUniquePtr<FLoadBalancingStrategy>&& Strategy);
 
-	~SpatialStrategySystem();
+	~FSpatialStrategySystem();
 
 	void Advance(SpatialOSWorkerInterface* Connection);
 	void Flush(SpatialOSWorkerInterface* Connection);

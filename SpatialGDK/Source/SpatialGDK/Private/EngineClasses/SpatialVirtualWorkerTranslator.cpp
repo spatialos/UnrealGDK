@@ -2,7 +2,6 @@
 
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 
-//#include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialConstants.h"

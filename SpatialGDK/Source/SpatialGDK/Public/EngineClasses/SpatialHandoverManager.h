@@ -20,10 +20,10 @@ struct LBComponents2
 	AuthorityIntentACK IntentACK;
 };
 
-class SpatialHandoverManager
+class FSpatialHandoverManager
 {
 public:
-	SpatialHandoverManager(const FSubView& InActorView, const FSubView& InPartitionView);
+	FSpatialHandoverManager(const FSubView& InActorView, const FSubView& InPartitionView);
 
 	void Advance();
 

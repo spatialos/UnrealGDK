@@ -635,7 +635,7 @@ void USpatialNetDriver::CreateAndInitializeLoadBalancingClasses()
 		const SpatialGDK::FSubView& PartitionAuthSubView = Connection->GetCoordinator().CreateSubView(
 			SpatialConstants::PARTITION_AUTH_TAG_COMPONENT_ID, SpatialGDK::FSubView::NoFilter, SpatialGDK::FSubView::NoDispatcherCallbacks);
 
-		HandoverManager = MakeUnique<SpatialGDK::SpatialHandoverManager>(LBSubView, PartitionAuthSubView);
+		HandoverManager = MakeUnique<SpatialGDK::FSpatialHandoverManager>(LBSubView, PartitionAuthSubView);
 	}
 
 	LockingPolicy = NewObject<UOwnershipLockingPolicy>(this, LockingPolicyClass);
@@ -2178,32 +2178,28 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 				}
 				else
 				{
-					if (!Actor->HasAuthority())
+					if (!Actor->HasAuthority() || LockingPolicy->IsLocked(Actor))
 					{
 						continue;
 					}
 
-					if (!LockingPolicy->IsLocked(Actor))
+					if (FNetworkObjectInfo const* ActorInfo = FindNetworkObjectInfo(Actor))
 					{
-						if (FNetworkObjectInfo const* ActorInfo = FindNetworkObjectInfo(Actor))
+						if (!ActorInfo->bPendingNetUpdate)
 						{
-							if (!ActorInfo->bPendingNetUpdate)
-							{
-								LoadBalancingContext.AddActorToReplicate(Actor);
-							}
+							LoadBalancingContext.AddActorToReplicate(Actor);
 						}
-
-						if (USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(Actor))
-						{
-							Channel->ForcePositionReplication();
-						}
-
-						ActorsHandedOver.Add(Actor);
-						EntitiesHandedOver.Add(EntityId);
 					}
 
-					AActor* Owner = SpatialGDK::GetTopmostReplicatedOwner(Actor);
-					AActor* HierarchyRoot = Owner ? Owner : Actor;
+					if (USpatialActorChannel* Channel = GetOrCreateSpatialActorChannel(Actor))
+					{
+						Channel->ForcePositionReplication();
+					}
+
+					ActorsHandedOver.Add(Actor);
+					EntitiesHandedOver.Add(EntityId);
+
+					AActor* HierarchyRoot = SpatialGDK::GetReplicatedHierarchyRoot(Actor);
 					if (HierarchyRoot->HasAuthority())
 					{
 						TFunction<void(AActor*)> ForceReplicateChildren;
@@ -3347,7 +3343,7 @@ void USpatialNetDriver::TryFinishStartup()
 			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy =
 				MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);
 
-			StrategySystem = MakeUnique<SpatialGDK::SpatialStrategySystem>(MoveTemp(PartitionMgr), LBView, MoveTemp(Strategy));
+			StrategySystem = MakeUnique<SpatialGDK::FSpatialStrategySystem>(MoveTemp(PartitionMgr), LBView, MoveTemp(Strategy));
 
 			bIsReadyToStart = true;
 			Connection->SetStartupComplete();

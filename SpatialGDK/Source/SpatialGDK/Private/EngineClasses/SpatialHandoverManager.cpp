@@ -12,13 +12,13 @@
 
 namespace SpatialGDK
 {
-SpatialHandoverManager::SpatialHandoverManager(const FSubView& InActorView, const FSubView& InPartitionView)
+FSpatialHandoverManager::FSpatialHandoverManager(const FSubView& InActorView, const FSubView& InPartitionView)
 	: ActorView(InActorView)
 	, PartitionView(InPartitionView)
 {
 }
 
-void SpatialHandoverManager::Advance()
+void FSpatialHandoverManager::Advance()
 {
 	for (const EntityDelta& Delta : PartitionView.GetViewDelta().EntityDeltas)
 	{
@@ -71,7 +71,7 @@ void SpatialHandoverManager::Advance()
 	}
 }
 
-void SpatialHandoverManager::PopulateDataStore(const Worker_EntityId EntityId)
+void FSpatialHandoverManager::PopulateDataStore(const Worker_EntityId EntityId)
 {
 	LBComponents2& Components = DataStore.Emplace(EntityId, LBComponents2{});
 	for (const ComponentData& Data : ActorView.GetView()[EntityId].Components)
@@ -91,7 +91,7 @@ void SpatialHandoverManager::PopulateDataStore(const Worker_EntityId EntityId)
 	HandleChange(EntityId, Components);
 }
 
-void SpatialHandoverManager::HandleChange(Worker_EntityId EntityId, const LBComponents2& Components)
+void FSpatialHandoverManager::HandleChange(Worker_EntityId EntityId, const LBComponents2& Components)
 {
 	if (Components.Intent.AssignmentCounter != Components.IntentACK.AssignmentCounter)
 	{
@@ -106,8 +106,8 @@ void SpatialHandoverManager::HandleChange(Worker_EntityId EntityId, const LBComp
 	}
 }
 
-void SpatialHandoverManager::ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-												  Schema_ComponentUpdate* Update)
+void FSpatialHandoverManager::ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+												   Schema_ComponentUpdate* Update)
 {
 	LBComponents2& Components = DataStore[EntityId];
 	switch (ComponentId)
@@ -122,8 +122,8 @@ void SpatialHandoverManager::ApplyComponentUpdate(const Worker_EntityId EntityId
 	HandleChange(EntityId, Components);
 }
 
-void SpatialHandoverManager::ApplyComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
-												   Schema_ComponentData* Data)
+void FSpatialHandoverManager::ApplyComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId,
+													Schema_ComponentData* Data)
 {
 	LBComponents2& Components = DataStore[EntityId];
 	switch (ComponentId)
@@ -138,7 +138,7 @@ void SpatialHandoverManager::ApplyComponentRefresh(const Worker_EntityId EntityI
 	HandleChange(EntityId, Components);
 }
 
-void SpatialHandoverManager::Flush(SpatialOSWorkerInterface* Connection, TSet<Worker_EntityId_Key> const& ActorsReleased)
+void FSpatialHandoverManager::Flush(SpatialOSWorkerInterface* Connection, TSet<Worker_EntityId_Key> const& ActorsReleased)
 {
 	for (auto Partition : PartitionsToACK)
 	{
