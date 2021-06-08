@@ -50,6 +50,17 @@ void MulticastRPCService::AdvanceView()
 					break;
 				}
 			}
+			for (const ComponentChange& Change : Delta.ComponentsRefreshed)
+			{
+				if (Change.ComponentId == SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+				{
+					PopulateDataStore(Delta.EntityId);
+				}
+				else if (Change.ComponentId > SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
+				{
+					break;
+				}
+			}
 			for (const AuthorityChange& Change : Delta.AuthorityGained)
 			{
 				AuthorityGained(Delta.EntityId, Change.ComponentSetId);
