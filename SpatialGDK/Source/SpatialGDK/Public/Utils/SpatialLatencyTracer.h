@@ -64,7 +64,7 @@ public:
 	//
 	// EXPERIMENTAL: We do not support this functionality currently: Do not use it unless you are Improbable staff.
 	//
-	// `USpatialLatencyTracer` allows you to trace of gameplay events across multiple workers, from their user
+	// `USpatialLatencyTracer` allows you to trace gameplay events across multiple workers, from their user
 	// instigation to their observed results. Each of these multi-worker events are tracked through `traces`,
 	// which allow you to see collected timings of these events in a single location. Key timings related
 	// to these events are logged throughout the Unreal GDK networking stack. This API makes the assumption
