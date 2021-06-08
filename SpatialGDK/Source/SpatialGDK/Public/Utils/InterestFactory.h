@@ -70,7 +70,7 @@ private:
 
 	// Defined Constraint AND Level Constraint
 	void AddClientPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
-#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+#if WITH_GAMEPLAY_DEBUGGER
 	// Entity ID query for the player controller responsible for the replicator
 	void AddServerGameplayDebuggerCategoryReplicatorActorInterest(Interest& OutInterest,
 																  const AGameplayDebuggerCategoryReplicator& Replicator) const;

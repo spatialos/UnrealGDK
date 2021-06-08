@@ -18,7 +18,7 @@
 #include "GameFramework/PlayerController.h"
 #include "UObject/UObjectIterator.h"
 
-#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+#if WITH_GAMEPLAY_DEBUGGER
 #include "GameplayDebuggerCategoryReplicator.h"
 #endif
 
@@ -243,11 +243,11 @@ Interest InterestFactory::CreateInterest(AActor* InActor, const FClassInfo& InIn
 		AddClientPlayerControllerActorInterest(ResultInterest, InActor, InInfo);
 	}
 
-#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
-	if (InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass()))
+#if WITH_GAMEPLAY_DEBUGGER
+	if (AGameplayDebuggerCategoryReplicator* Replicator = Cast<AGameplayDebuggerCategoryReplicator>(InActor))
 	{
 		// Put special server interest on the replicator for the auth server to ensure player controller visibility
-		AddServerGameplayDebuggerCategoryReplicatorActorInterest(ResultInterest, *Cast<AGameplayDebuggerCategoryReplicator>(InActor));
+		AddServerGameplayDebuggerCategoryReplicatorActorInterest(ResultInterest, *Replicator);
 	}
 #endif
 
@@ -281,19 +281,27 @@ void InterestFactory::AddClientPlayerControllerActorInterest(Interest& OutIntere
 	}
 }
 
-#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+#if WITH_GAMEPLAY_DEBUGGER
 void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(Interest& OutInterest,
 																			   const AGameplayDebuggerCategoryReplicator& Replicator) const
 {
 	APlayerController* PlayerController = Replicator.GetReplicationOwner();
 	if (PlayerController == nullptr)
 	{
+		UE_LOG(LogInterestFactory, Warning,
+			   TEXT("Gameplay debugger category replicator actor %s doesn't have a player controller set as its replication owner. An "
+					"interest query for the authoritative server could not be added and using the gameplay debugger might fail."),
+			   *Replicator.GetName());
 		return;
 	}
 
 	const UNetDriver* NetDriver = PlayerController->GetNetDriver();
 	if (NetDriver == nullptr)
 	{
+		UE_LOG(LogInterestFactory, Warning,
+			   TEXT("Player controller actor %s doesn't have an associated net driver. An interest query for the authoritative server "
+					"could not be added and using the gameplay debugger might fail."),
+			   *PlayerController->GetName());
 		return;
 	}
 
