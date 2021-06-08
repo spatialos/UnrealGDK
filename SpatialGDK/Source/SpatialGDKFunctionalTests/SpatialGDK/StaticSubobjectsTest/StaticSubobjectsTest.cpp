@@ -13,7 +13,8 @@
 #include "EngineClasses/SpatialNetDriver.h"
 
 /**
- * Tests the deletion of replicated static subobjects on a bNetLoadOnClient actor by the server while that actor isn't in a client's interest.
+ * Tests the deletion of replicated static subobjects on a bNetLoadOnClient actor by the server while that actor isn't in a client's
+ *interest.
  *
  * There are two expected outcomes.
  *
