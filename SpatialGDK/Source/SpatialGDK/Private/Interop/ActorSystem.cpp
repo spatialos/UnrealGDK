@@ -448,7 +448,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						Actor->SetReplicates(true);
 					}
 
-					if (Actor->GetIntendedAutonomousProxy())
+					if (Actor->IsAutonomousProxyOnAuthority())
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 					}
@@ -530,7 +530,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 		{
 			Channel->ClientProcessOwnershipChange(Authority == WORKER_AUTHORITY_AUTHORITATIVE);
 
-			if (Actor->GetIntendedAutonomousProxy() && Authority == WORKER_AUTHORITY_AUTHORITATIVE)
+			if (Actor->IsAutonomousProxyOnAuthority() && Authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
 				Actor->Role = ROLE_AutonomousProxy;
 			}
@@ -539,7 +539,6 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 			{
 				Actor->Role = (Authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
-
 		}
 	}
 }
