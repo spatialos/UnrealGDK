@@ -417,8 +417,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		UnrealObjectRefToNetGUID.Emplace(EntityObjectRef, NetGUID);
 
 		// Once we have an entity id, we should always be using it to refer to entities.
-		// Since the path ref may have been registered previously, we try to get it before we overwrite it
-		// with the entity id ref.
+		// Since the path ref may have been registered previously, we first try to remove it
+		// and then register the entity id ref.
 		StablyNamedRef = NetGUIDToUnrealObjectRef[NetGUID];
 		NetGUIDToUnrealObjectRef.Emplace(NetGUID, EntityObjectRef);
 	}

@@ -1,7 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-PRAGMA_DISABLE_OPTIMIZATION
-
 #include "Interop/ClientNetLoadActorHelper.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
