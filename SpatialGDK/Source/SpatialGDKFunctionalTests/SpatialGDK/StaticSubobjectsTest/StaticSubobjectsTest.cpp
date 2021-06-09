@@ -61,7 +61,7 @@ static constexpr float StepTimeLimit = 15.0f;
 AStaticSubobjectsTest::AStaticSubobjectsTest()
 	: Super()
 {
-	Author = "Arthur&Miron";
+	Author = "Arthur";
 	Description = TEXT("Test Static Subobjects Deletion in Client");
 }
 
@@ -78,7 +78,7 @@ void AStaticSubobjectsTest::PrepareTest()
 
 		if (AssertIsValid(PlayerOneController, TEXT("PlayerOneController should be valid")))
 		{
-			ClientSpawnedPawn = GetWorld()->SpawnActor<ATestMovementCharacter>(PawnSpawnLocation, FRotator::ZeroRotator);
+			ClientSpawnedPawn = GetWorld()->SpawnActor<ATestPossessionPawn>(PawnSpawnLocation, FRotator::ZeroRotator);
 			RegisterAutoDestroyActor(ClientSpawnedPawn);
 			ClientDefaultPawn = PlayerOneController->GetPawn();
 			PlayerOneController->Possess(ClientSpawnedPawn);
