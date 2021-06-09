@@ -393,7 +393,8 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId)
 {
-	if (!ensureAlwaysMsgf(IsValid(Actor), TEXT("Tried to assign net guid for invalid actor")) || !ensureAlwaysMsgf(EntityId > 0, TEXT("Tried to assign net guid for invalid entity ID. Actor: %s"), *GetNameSafe(Actor)))
+	if (!ensureAlwaysMsgf(IsValid(Actor), TEXT("Tried to assign net guid for invalid actor. EntityId: %lld"), EntityId)
+		|| !ensureAlwaysMsgf(EntityId > 0, TEXT("Tried to assign net guid for invalid entity ID. Actor: %s"), *GetNameSafe(Actor)))
 	{
 		return FNetworkGUID();
 	}
