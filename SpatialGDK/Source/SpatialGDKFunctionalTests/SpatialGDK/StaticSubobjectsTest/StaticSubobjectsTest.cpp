@@ -2,7 +2,6 @@
 
 #include "StaticSubobjectsTest.h"
 #include "SpatialFunctionalTestFlowController.h"
-#include "SpatialGDKFunctionalTests/SpatialGDK/TestActors/TestMovementCharacter.h"
 #include "StaticSubObjectTestActor.h"
 
 #include "GameFramework/PlayerController.h"
@@ -11,6 +10,7 @@
 #include "Components/SceneComponent.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "SpatialGDK/TestActors/TestMovementCharacter.h"
 
 /**
  * Tests the deletion of replicated static subobjects on a bNetLoadOnClient actor by the server while that actor isn't in a client's
@@ -78,7 +78,7 @@ void AStaticSubobjectsTest::PrepareTest()
 
 		if (AssertIsValid(PlayerOneController, TEXT("PlayerOneController should be valid")))
 		{
-			ClientSpawnedPawn = GetWorld()->SpawnActor<ATestPossessionPawn>(PawnSpawnLocation, FRotator::ZeroRotator);
+			ClientSpawnedPawn = GetWorld()->SpawnActor<ATestMovementCharacter>(PawnSpawnLocation, FRotator::ZeroRotator);
 			RegisterAutoDestroyActor(ClientSpawnedPawn);
 			ClientDefaultPawn = PlayerOneController->GetPawn();
 			PlayerOneController->Possess(ClientSpawnedPawn);
