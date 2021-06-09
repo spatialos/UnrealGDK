@@ -184,6 +184,10 @@ public:
 		return NetDriver->HasClientAuthority(EntityId);
 	}
 
+	FORCEINLINE bool GetMakeAutonomousProxyOnAuthority() const { return bMakeAutonomousProxyOnAuthority; }
+
+	FORCEINLINE void SetMakeAutonomousProxyOnAuthority(bool bValue) { bMakeAutonomousProxyOnAuthority = bValue; }
+
 	inline void SetClientAuthority(const bool IsAuth) { bIsAuthClient = IsAuth; }
 
 	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
@@ -347,4 +351,6 @@ private:
 	// In case the actor's owner did not have an entity ID when trying to set interest to it
 	// We set this flag in order to try to add interest as soon as possible.
 	bool bNeedOwnerInterestUpdate;
+
+	bool bMakeAutonomousProxyOnAuthority;
 };

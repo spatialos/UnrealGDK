@@ -26,8 +26,35 @@ public:
 							  USpatialActorChannel& Channel, bool& bOutReferencesChanged);
 
 private:
+	struct ApplySchemaObjectDataStruct
+	{
+		ApplySchemaObjectDataStruct(FObjectReplicator* inReplicator, Schema_Object* inComponentObject, UObject& inObject, USpatialActorChannel& inChannel,
+			const TArray<Schema_FieldId>& inUpdatedIds, TArray<FSpatialGDKSpanId>& inCauseSpanIds, TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId>& inPropertySpanIds,
+			const Worker_ComponentId inComponentID, TArray<GDK_PROPERTY(Property)*>& inRepNotifies, bool inIsInitialData);
+
+		FObjectReplicator* Replicator;
+		Schema_Object* ComponentObject;
+		UObject& Object;
+		USpatialActorChannel& Channel;
+
+		const TArray<Schema_FieldId>& UpdatedIds;
+		TArray<FSpatialGDKSpanId>& CauseSpanIds;
+		TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId>& PropertySpanIds;
+		const Worker_ComponentId ComponentId;
+
+		TArray<GDK_PROPERTY(Property)*>& RepNotifies;
+
+		const bool bIsInitialData;
+
+		bool bOutReferencesChanged;
+		bool bProcessNonConditionalFieldsOnly;
+	};
+
+
 	void ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
 						   const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId, bool& bOutReferencesChanged);
+
+	void ApplySchemaObjectFields(ApplySchemaObjectDataStruct& ApplySchemaObjectData);
 
 	void ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index,
 					   GDK_PROPERTY(Property) * Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex,

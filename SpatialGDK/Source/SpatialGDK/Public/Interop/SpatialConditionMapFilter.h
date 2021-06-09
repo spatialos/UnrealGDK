@@ -17,8 +17,7 @@ public:
 		FReplicationFlags RepFlags;
 		RepFlags.bReplay = 0;
 		RepFlags.bNetInitial = 1; // Interest/queries controls initial only data visibility, so if the update is there let it through
-		RepFlags.bNetSimulated =
-			bIsClient ? ActorChannel->Actor->Role == ROLE_SimulatedProxy : ActorChannel->Actor->RemoteRole == ROLE_SimulatedProxy;
+		RepFlags.bNetSimulated = ActorChannel->Actor->Role == ROLE_SimulatedProxy;
 		RepFlags.bNetOwner = bIsClient;
 #if ENGINE_MINOR_VERSION <= 23
 		RepFlags.bRepPhysics = ActorChannel->Actor->ReplicatedMovement.bRepPhysics;
