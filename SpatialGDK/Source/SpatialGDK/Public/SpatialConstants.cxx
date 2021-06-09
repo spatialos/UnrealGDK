@@ -140,7 +140,8 @@ TArray<Worker_ComponentId>{ // Actor components
 
                             ACTOR_OWNERSHIP_COMPONENT_ID,
 
-                            FLESHOUT_QUERY_TAG_COMPONENT_ID,
+                            // Skeleton entity tags.
+                            FLESHOUT_QUERY_TAG_COMPONENT_ID, FLESHOUT_FINISHED_TAG_COMPONENT_ID,
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
@@ -151,8 +152,6 @@ TArray<Worker_ComponentId>{ // RPCs from the server
                             ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
 
                             ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID,
-
-                            FLESHOUT_QUERY_TAG_COMPONENT_ID,
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST = TArray<Worker_ComponentId>{
@@ -184,7 +183,8 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
 
     ACTOR_OWNERSHIP_COMPONENT_ID,
 
-    FLESHOUT_QUERY_TAG_COMPONENT_ID,
+    // Skeleton entity tags.
+    FLESHOUT_QUERY_TAG_COMPONENT_ID, FLESHOUT_FINISHED_TAG_COMPONENT_ID,
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
@@ -200,7 +200,10 @@ TArray<Worker_ComponentId>{ // RPCs from clients
                             // Actor tags
                             ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
 
-                            PARTITION_COMPONENT_ID, FLESHOUT_QUERY_TAG_COMPONENT_ID, FLESHOUT_REQUIRED_TAG_COMPONENT_ID,
+                            PARTITION_COMPONENT_ID,
+
+                            // Skeleton entity tags.
+                            FLESHOUT_QUERY_TAG_COMPONENT_ID, FLESHOUT_REQUIRED_TAG_COMPONENT_ID, FLESHOUT_FINISHED_TAG_COMPONENT_ID,
 };
 
 const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
@@ -252,8 +255,7 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
 	{ MIGRATION_DIAGNOSTIC_COMPONENT_ID, "unreal.MigrationDiagnostic" },
 	{ ACTOR_OWNERSHIP_COMPONENT_ID, "unreal.ActorOwnership" },
     
-    { FLESHOUT_REQUIRED_TAG_COMPONENT_ID, "unreal.FleshoutRequiredTag"},
-    { FLESHOUT_QUERY_TAG_COMPONENT_ID, "unreal.FleshoutQueryTag"},
+    { FLESHOUT_FINISHED_TAG_COMPONENT_ID, "unreal.FleshoutFinishedTag"},
 };
 
 const TArray<FString> ClientAuthorityWellKnownSchemaImports = { "unreal/gdk/player_controller.schema", "unreal/gdk/rpc_components.schema",

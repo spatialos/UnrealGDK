@@ -31,6 +31,8 @@ public:
 	void HackAddManifest(const Worker_EntityId EntityId, const FSkeletonEntityManifest& Manifest);
 
 private:
+	void ReadManifestFromEntity(Worker_EntityId ManifestEntityId);
+
 	USpatialNetDriver* NetDriver;
 	CreateEntityHandler CreateHandler;
 	TSet<Worker_EntityId_Key> RemainingSkeletonEntities;
@@ -80,12 +82,10 @@ private:
 
 	TFunction<void(Worker_EntityId, FSkeletonEntityManifest)> OnManifestUpdated;
 
-	TSet<Worker_EntityId_Key> EntitiesFleshedOut;
-
 	TOptional<Worker_EntityId> ManifestEntityId;
 	TOptional<FSkeletonEntityManifest> Manifest;
 
-	bool bStartedPopulatingEntities = false;
+	bool bIsFirstPopulatingEntitiesCall = true;
 
 	enum class EStage : uint8
 	{

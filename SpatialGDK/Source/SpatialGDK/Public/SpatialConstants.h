@@ -158,9 +158,10 @@ const Worker_ComponentId STRATEGYWORKER_TAG_COMPONENT_ID = 2010;
 const Worker_ComponentId GDK_DEBUG_TAG_COMPONENT_ID = 2011;
 const Worker_ComponentId FLESHOUT_REQUIRED_TAG_COMPONENT_ID = 2012;
 const Worker_ComponentId FLESHOUT_QUERY_TAG_COMPONENT_ID = 2013;
+const Worker_ComponentId FLESHOUT_FINISHED_TAG_COMPONENT_ID = 2014;
 
 // Add component ids above here, this should always be last and be equal to the previous component id
-const Worker_ComponentId LAST_EC_COMPONENT_ID = 2013;
+const Worker_ComponentId LAST_EC_COMPONENT_ID = 2014;
 
 const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID = 1;
 const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID = 2;

@@ -21,7 +21,7 @@ struct FSkeletonEntityManifest : public TSpatialComponent<FSkeletonEntityManifes
 	void ApplySchema(const Schema_Object& ComponentObject);
 	void WriteSchema(Schema_Object& ComponentObject) const;
 
-	TArray<Worker_EntityId> EntitiesToPopulate;
-	TArray<Worker_EntityId> PopulatedEntities;
+	TSet<Worker_EntityId_Key> EntitiesToPopulate;
+	TSet<Worker_EntityId_Key> PopulatedEntities;
 };
 } // namespace SpatialGDK

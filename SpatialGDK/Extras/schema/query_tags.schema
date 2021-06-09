@@ -34,3 +34,7 @@ component FleshoutRequiredTag {
 component FleshoutQueryTag {
     id = 2013;
 }
+
+component FleshoutFinishedTag {
+    id = 2014;
+}

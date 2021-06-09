@@ -2,7 +2,7 @@
 
 namespace SpatialGDK
 {
-static void ApplyArray(TArray<Worker_EntityId>& Array, const Schema_Object& ComponentObject, Schema_FieldId FieldId)
+static void ApplyCollection(TArray<Worker_EntityId>& Array, const Schema_Object& ComponentObject, Schema_FieldId FieldId)
 {
 	const uint32 EntitiesToPopulateCount = Schema_GetEntityIdCount(&ComponentObject, FieldId);
 	Array.SetNumUninitialized(EntitiesToPopulateCount);
@@ -12,23 +12,35 @@ static void ApplyArray(TArray<Worker_EntityId>& Array, const Schema_Object& Comp
 	}
 }
 
-void FSkeletonEntityManifest::ApplySchema(const Schema_Object& ComponentObject)
+static void ApplyCollection(TSet<Worker_EntityId_Key>& Set, const Schema_Object& ComponentObject, Schema_FieldId FieldId)
 {
-	ApplyArray(EntitiesToPopulate, ComponentObject, SpatialConstants::SKELETON_ENTITY_MANIFEST_ENTITIES_TO_POPULATE_ID);
-	ApplyArray(PopulatedEntities, ComponentObject, SpatialConstants::SKELETON_ENTITY_MANIFEST_POPULATED_SKELETON_ENTITIES_ID);
+	const uint32 EntitiesToPopulateCount = Schema_GetEntityIdCount(&ComponentObject, FieldId);
+	for (uint32 EntityToPopulateIndex = 0; EntityToPopulateIndex < EntitiesToPopulateCount; ++EntityToPopulateIndex)
+	{
+		const Worker_EntityId EntityId = Schema_IndexEntityId(&ComponentObject, FieldId, EntityToPopulateIndex);
+		Set.Emplace(EntityId);
+	}
 }
 
-static void WriteArray(const TArray<Worker_EntityId>& EntityIds, Schema_Object& ComponentObject, Schema_FieldId FieldId)
+void FSkeletonEntityManifest::ApplySchema(const Schema_Object& ComponentObject)
 {
-	for (const Worker_EntityId EntityId : EntityIds)
+	ApplyCollection(EntitiesToPopulate, ComponentObject, SpatialConstants::SKELETON_ENTITY_MANIFEST_ENTITIES_TO_POPULATE_ID);
+	ApplyCollection(PopulatedEntities, ComponentObject, SpatialConstants::SKELETON_ENTITY_MANIFEST_POPULATED_SKELETON_ENTITIES_ID);
+}
+
+template <class TCollection>
+void WriteCollection(const TCollection& EntityIds, Schema_Object& ComponentObject, Schema_FieldId FieldId)
+{
+	for (const auto CollectionEntityId : EntityIds)
 	{
+		const Worker_EntityId EntityId = CollectionEntityId;
 		Schema_AddEntityId(&ComponentObject, FieldId, EntityId);
 	}
 }
 
 void FSkeletonEntityManifest::WriteSchema(Schema_Object& ComponentObject) const
 {
-	WriteArray(EntitiesToPopulate, ComponentObject, SpatialConstants::SKELETON_ENTITY_MANIFEST_ENTITIES_TO_POPULATE_ID);
-	WriteArray(PopulatedEntities, ComponentObject, SpatialConstants::SKELETON_ENTITY_MANIFEST_POPULATED_SKELETON_ENTITIES_ID);
+	WriteCollection(EntitiesToPopulate, ComponentObject, SpatialConstants::SKELETON_ENTITY_MANIFEST_ENTITIES_TO_POPULATE_ID);
+	WriteCollection(PopulatedEntities, ComponentObject, SpatialConstants::SKELETON_ENTITY_MANIFEST_POPULATED_SKELETON_ENTITIES_ID);
 }
 } // namespace SpatialGDK
