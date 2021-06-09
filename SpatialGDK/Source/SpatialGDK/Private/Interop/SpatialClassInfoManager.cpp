@@ -23,7 +23,6 @@
 #include "LoadBalancing/SpatialMultiWorkerSettings.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
@@ -35,6 +34,15 @@ bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver)
 	FSoftObjectPath SchemaDatabasePath =
 		FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
 	SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
+
+	if (NetDriver->LoadBalanceStrategy != nullptr)
+	{
+		bHandoverActive = NetDriver->LoadBalanceStrategy->RequiresHandoverData();
+	}
+	else
+	{
+		UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("Load Balancing Strategy nullptr, handover will be disabled."));
+	}
 
 	if (SchemaDatabase == nullptr)
 	{
@@ -231,7 +239,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 {
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
-		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		if (IsComponentIdForTypeValid(ComponentId, Type))
 		{
 			Info->SchemaComponents[Type] = ComponentId;
 			ComponentToClassInfoMap.Add(ComponentId, Info);
@@ -263,7 +271,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 			Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
-			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+			if (IsComponentIdForTypeValid(ComponentId, Type))
 			{
 				ActorSubobjectInfo->SchemaComponents[Type] = ComponentId;
 				ComponentToClassInfoMap.Add(ComponentId, ActorSubobjectInfo);
@@ -294,7 +302,7 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 			Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
 
-			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+			if (IsComponentIdForTypeValid(ComponentId, Type))
 			{
 				SpecificDynamicSubobjectInfo->SchemaComponents[Type] = ComponentId;
 				ComponentToClassInfoMap.Add(ComponentId, SpecificDynamicSubobjectInfo);
@@ -305,6 +313,12 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 
 		Info->DynamicSubobjectInfo.Add(SpecificDynamicSubobjectInfo);
 	}
+}
+
+bool USpatialClassInfoManager::IsComponentIdForTypeValid(const Worker_ComponentId ComponentId, const ESchemaComponentType Type) const
+{
+	// If handover is inactive, mark server only components as invalid.
+	return ComponentId != SpatialConstants::INVALID_COMPONENT_ID && (Type != SCHEMA_ServerOnly || bHandoverActive);
 }
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
