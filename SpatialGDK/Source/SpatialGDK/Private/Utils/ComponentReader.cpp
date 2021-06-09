@@ -176,12 +176,14 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 			CauseSpanIds = EventTracer->GetAndConsumeSpansForComponent(EntityComponentId(EntityId, ComponentId));
 		}
 
-		ApplySchemaObjectDataStruct ApplySchemaObjectData(Replicator, ComponentObject, Object, Channel, UpdatedIds, CauseSpanIds, PropertySpanIds, ComponentId, RepNotifies, bIsInitialData);
-		/*ApplySchemaObjectData.bProcessNonConditionalFieldsOnly = true;
-		ApplySchemaObjectFields(ApplySchemaObjectData);*/
-
-		ApplySchemaObjectData.bProcessNonConditionalFieldsOnly = false;
+		ApplySchemaObjectDataStruct ApplySchemaObjectData(Replicator, ComponentObject, Object, Channel, UpdatedIds, CauseSpanIds,
+														  PropertySpanIds, ComponentId, RepNotifies, bIsInitialData);
+		ApplySchemaObjectData.bProcessOnlyCondNone = true;
 		ApplySchemaObjectFields(ApplySchemaObjectData);
+
+		ApplySchemaObjectData.bProcessOnlyCondNone = false;
+		ApplySchemaObjectFields(ApplySchemaObjectData);
+		bOutReferencesChanged = ApplySchemaObjectData.bOutReferencesChanged;
 	}
 
 	Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator->RepLayout, RootObjectReferencesMap, &Object);
@@ -215,9 +217,9 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 		if (FieldId == 0 || (int)FieldId - 1 >= BaseHandleToCmdIndex.Num())
 		{
 			UE_LOG(LogSpatialComponentReader, Error,
-				TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: "
-					"%lld, Component: %d"),
-				*Object.GetPathName(), FieldId, Channel.GetEntityId(), ComponentId);
+				   TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: "
+						"%lld, Component: %d"),
+				   *Object.GetPathName(), FieldId, Channel.GetEntityId(), ComponentId);
 			continue;
 		}
 
@@ -225,7 +227,8 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 		const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 
-		if (ApplySchemaObjectData.bProcessNonConditionalFieldsOnly && Parent.Condition != COND_None)
+		const bool isCondNone = Parent.Condition == COND_None;
+		if (ApplySchemaObjectData.bProcessOnlyCondNone != isCondNone)
 		{
 			continue;
 		}
@@ -280,7 +283,7 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 				if (ArrayProperty == nullptr)
 				{
 					UE_LOG(LogSpatialComponentReader, Error, TEXT("Failed to apply Schema Object %s. One of it's properties is null"),
-						*Object.GetName());
+						   *Object.GetName());
 					continue;
 				}
 
@@ -298,7 +301,7 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 					if (ValueData.Num() > 0)
 					{
 						FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, &Object, Parent.ArrayIndex,
-							Parent.Property, NetDeltaStruct);
+																		  Parent.Property, NetDeltaStruct);
 					}
 
 					FObjectReferences* CurEntry = RootObjectReferencesMap.Find(SwappedCmd.Offset);
@@ -310,8 +313,8 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 						{
 							RootObjectReferencesMap.Add(
 								SwappedCmd.Offset,
-								FObjectReferences(ValueData, CountBits, MoveTemp(NewMappedRefs), MoveTemp(NewUnresolvedRefs),
-									ShadowOffset, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
+								FObjectReferences(ValueData, CountBits, MoveTemp(NewMappedRefs), MoveTemp(NewUnresolvedRefs), ShadowOffset,
+												  Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
 						}
 						else
 						{
@@ -322,14 +325,14 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 				}
 				else
 				{
-					ApplyArray(ApplySchemaObjectData.ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, ShadowOffset,
-						Cmd.ParentIndex, ApplySchemaObjectData.bOutReferencesChanged);
+					ApplyArray(ApplySchemaObjectData.ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data,
+							   SwappedCmd.Offset, ShadowOffset, Cmd.ParentIndex, ApplySchemaObjectData.bOutReferencesChanged);
 				}
 			}
 			else
 			{
-				ApplyProperty(ApplySchemaObjectData.ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data, SwappedCmd.Offset, ShadowOffset,
-					Cmd.ParentIndex, ApplySchemaObjectData.bOutReferencesChanged);
+				ApplyProperty(ApplySchemaObjectData.ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data,
+							  SwappedCmd.Offset, ShadowOffset, Cmd.ParentIndex, ApplySchemaObjectData.bOutReferencesChanged);
 			}
 
 			if (Cmd.Property->GetFName() == NAME_RemoteRole)
@@ -337,10 +340,13 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 				// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
 				// the client RPCs component.
 				GDK_PROPERTY(ByteProperty)* ByteProperty = GDK_CASTFIELD<GDK_PROPERTY(ByteProperty)>(Cmd.Property);
-				if (!bIsAuthServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
+				if (ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
 				{
 					Channel.Actor->SetAutonomousProxyOnAuthority(true);
-					ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
+					if (!bIsAuthServer && !bAutonomousProxy)
+					{
+						ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
+					}
 				}
 			}
 
@@ -351,12 +357,12 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 				SpanId = EventTracer->TraceEvent(
 					RECEIVE_PROPERTY_UPDATE_EVENT_NAME, "", Causes, ApplySchemaObjectData.CauseSpanIds.Num(),
 					[&Object, EntityId, ComponentId, Cmd](FSpatialTraceEventDataBuilder& EventBuilder) {
-					EventBuilder.AddObject(&Object);
-					EventBuilder.AddEntityId(EntityId);
-					EventBuilder.AddComponentId(ComponentId);
-					EventBuilder.AddKeyValue("PropertyName", Cmd.Property->GetName());
-					EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property));
-				});
+						EventBuilder.AddObject(&Object);
+						EventBuilder.AddEntityId(EntityId);
+						EventBuilder.AddComponentId(ComponentId);
+						EventBuilder.AddKeyValue("PropertyName", Cmd.Property->GetName());
+						EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property));
+					});
 			}
 
 			// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
@@ -684,8 +690,11 @@ uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_Fie
 	}
 }
 
-ComponentReader::ApplySchemaObjectDataStruct::ApplySchemaObjectDataStruct(FObjectReplicator* inReplicator, Schema_Object* inComponentObject, UObject& inObject, USpatialActorChannel& inChannel, const TArray<Schema_FieldId>& inUpdatedIds, TArray<FSpatialGDKSpanId>& inCauseSpanIds,
-	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId>& inPropertySpanIds, const Worker_ComponentId inComponentID, TArray<GDK_PROPERTY(Property)*>& inRepNotifies, bool inIsInitialData)
+ComponentReader::ApplySchemaObjectDataStruct::ApplySchemaObjectDataStruct(
+	FObjectReplicator* inReplicator, Schema_Object* inComponentObject, UObject& inObject, USpatialActorChannel& inChannel,
+	const TArray<Schema_FieldId>& inUpdatedIds, TArray<FSpatialGDKSpanId>& inCauseSpanIds,
+	TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& inPropertySpanIds, const Worker_ComponentId inComponentID,
+	TArray<GDK_PROPERTY(Property) *>& inRepNotifies, bool inIsInitialData)
 	: Replicator(inReplicator)
 	, ComponentObject(inComponentObject)
 	, Object(inObject)
@@ -697,7 +706,7 @@ ComponentReader::ApplySchemaObjectDataStruct::ApplySchemaObjectDataStruct(FObjec
 	, RepNotifies(inRepNotifies)
 	, bIsInitialData(inIsInitialData)
 	, bOutReferencesChanged(false)
-	, bProcessNonConditionalFieldsOnly(false)
+	, bProcessOnlyCondNone(false)
 {
 }
 

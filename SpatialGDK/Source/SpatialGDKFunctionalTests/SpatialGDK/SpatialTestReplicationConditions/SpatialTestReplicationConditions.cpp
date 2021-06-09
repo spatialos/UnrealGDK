@@ -205,7 +205,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessPhysicsActorProperties(TestActor_PhysicsEnabled, bWrite, bPhysicsEnabled, bPhysicsExpected);
 		}
 
-		// if (!bSpatialEnabled) // TODO: UNR-5214 - fix physics condition replications
+		if (!bSpatialEnabled) // TODO: UNR-5214 - fix physics condition replications
 		{
 			if (AssertTrue(TestActor_PhysicsDisabled->AreAllDynamicComponentsValid(),
 						   TEXT("TestActor_PhysicsDisabled - All dynamic components should have arrived")))
