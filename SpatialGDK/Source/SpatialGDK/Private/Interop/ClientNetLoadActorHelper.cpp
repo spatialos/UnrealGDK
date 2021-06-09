@@ -1,8 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+PRAGMA_DISABLE_OPTIMIZATION
+
 #include "Interop/ClientNetLoadActorHelper.h"
 
-#include "Algo/AnyOf.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/ActorSystem.h"
 #include "Interop/SpatialReceiver.h"
@@ -126,7 +127,7 @@ void FClientNetLoadActorHelper::RemoveStaticComponentsRemovedByRuntime(const Wor
 	{
 		UObject& Subobject = *SubobjectToOffset.Key;
 		const ObjectOffset Offset = SubobjectToOffset.Value;
-		if (SubobjectIsReplicated(Subobject, EntityActor) && !SubobjectWithOffsetStillExists(NewComponents, Offset))
+		if (SubobjectIsReplicated(Subobject, EntityId) && !SubobjectWithOffsetStillExists(NewComponents, Offset))
 		{
 			const FUnrealObjectRef ObjectRef(EntityId, Offset);
 			SubobjectRemovedByRuntime(ObjectRef, Subobject);
@@ -137,7 +138,7 @@ void FClientNetLoadActorHelper::RemoveStaticComponentsRemovedByRuntime(const Wor
 void FClientNetLoadActorHelper::SubobjectRemovedByRuntime(const FUnrealObjectRef& EntityObjectRef, UObject& Subobject)
 {
 	UE_LOG(LogClientNetLoadActorHelper, Verbose,
-		   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
+		   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %lld was destroyed while the "
 				"actor was out of the client's interest. Destroying the SubObject now."),
 		   EntityObjectRef.Offset, EntityObjectRef.Entity);
 	NetDriver->ActorSystem.Get()->DestroySubObject(EntityObjectRef, Subobject);
@@ -164,9 +165,9 @@ bool FClientNetLoadActorHelper::SubobjectWithOffsetStillExists(const TArray<Comp
 	return false;
 }
 
-bool FClientNetLoadActorHelper::SubobjectIsReplicated(const UObject& Object, AActor& EntityActor) const
+bool FClientNetLoadActorHelper::SubobjectIsReplicated(const UObject& Object, const Worker_EntityId EntityId) const
 {
-	if (const USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(&EntityActor))
+	if (const USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
 		const bool IsReplicated = Channel->ReplicationMap.Contains(&Object);
 		return IsReplicated;

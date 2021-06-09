@@ -35,13 +35,13 @@ private:
 	void SaveDynamicSubobjectMetadata(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID);
 	void ClearDynamicSubobjectMetadata(const Worker_EntityId InEntityId);
 
+	void RemoveDynamicComponentsRemovedByRuntime(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents);
 	void RemoveStaticComponentsRemovedByRuntime(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents,
 												AActor& EntityActor);
 	void SubobjectRemovedByRuntime(const FUnrealObjectRef& EntityObjectRef, UObject& Subobject);
-	void RemoveDynamicComponentsRemovedByRuntime(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents);
 
 	bool SubobjectWithOffsetStillExists(const TArray<ComponentData>& Components, const ObjectOffset OffsetToCheckIfContained) const;
-	bool SubobjectIsReplicated(const UObject& Object, AActor& EntityActor) const;
+	bool SubobjectIsReplicated(const UObject& Object, Worker_EntityId EntityId) const;
 };
 
 } // namespace SpatialGDK

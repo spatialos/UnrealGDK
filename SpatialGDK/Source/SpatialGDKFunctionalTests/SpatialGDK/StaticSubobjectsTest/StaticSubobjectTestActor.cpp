@@ -10,8 +10,6 @@ AStaticSubobjectTestActor::AStaticSubobjectTestActor()
 	bNetLoadOnNonAuthServer = true;
 	bReplicates = true;
 
-	SetActorLocation(FVector(-20000.0f, -20000.0f, 40.0f));
-
 	TestStaticComponent1 = CreateDefaultSubobject<USceneComponent>(TEXT("ToRemoveComponent1"));
 	TestStaticComponent1->SetupAttachment(this->GetRootComponent(), TEXT("ToRemoveComp1Socket"));
 	TestStaticComponent1->SetIsReplicated(true);

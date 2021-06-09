@@ -158,7 +158,7 @@ bool USpatialPackageMapClient::ResolveEntityActorAndSubobjects(const Worker_Enti
 	// check we haven't already assigned a NetGUID to this object
 	if (!NetGUID.IsValid())
 	{
-		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(*Actor, EntityId);
+		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor, EntityId);
 	}
 
 	if (GetEntityIdFromObject(Actor) != EntityId)
@@ -391,9 +391,9 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 {
 }
 
-FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor& Actor, Worker_EntityId EntityId)
+FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId)
 {
-	if (!ensureAlwaysMsgf(EntityId > 0, TEXT("Tried to assign net guid for invalid entity ID. Actor: %s"), *GetNameSafe(&Actor)))
+	if (!ensureAlwaysMsgf(IsValid(Actor), TEXT("Tried to assign net guid for invalid actor")) || !ensureAlwaysMsgf(EntityId > 0, TEXT("Tried to assign net guid for invalid entity ID. Actor: %s"), *GetNameSafe(Actor)))
 	{
 		return FNetworkGUID();
 	}
@@ -406,11 +406,11 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor& Actor, Wo
 	// Valid if Actor is stably named. Used for stably named subobject assignment further below
 	FUnrealObjectRef StablyNamedRef;
 
-	if (Actor.IsNameStableForNetworking())
+	if (Actor->IsNameStableForNetworking())
 	{
 		// Startup Actors have two valid UnrealObjectRefs: the entity id and the path.
 		// AssignNewStablyNamedObjectNetGUID will register the path ref.
-		NetGUID = AssignNewStablyNamedObjectNetGUID(&Actor);
+		NetGUID = AssignNewStablyNamedObjectNetGUID(Actor);
 
 		// We register the entity id ref here.
 		UnrealObjectRefToNetGUID.Emplace(EntityObjectRef, NetGUID);
@@ -423,14 +423,14 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor& Actor, Wo
 	}
 	else
 	{
-		NetGUID = GetOrAssignNetGUID_SpatialGDK(&Actor);
+		NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
 		RegisterObjectRef(NetGUID, EntityObjectRef);
 	}
 
-	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"), *Actor.GetName(),
+	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"), *Actor->GetName(),
 		   *NetGUID.ToString(), EntityId);
 
-	const SpatialGDK::FSubobjectToOffsetMap& SubobjectsToOffsets = SpatialGDK::CreateOffsetMapFromActor(*SpatialNetDriver, Actor);
+	const SpatialGDK::FSubobjectToOffsetMap& SubobjectsToOffsets = SpatialGDK::CreateOffsetMapFromActor(*SpatialNetDriver, *Actor);
 
 	for (auto& SubobjectToOffset : SubobjectsToOffsets)
 	{
@@ -468,7 +468,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor& Actor, Wo
 
 		UE_LOG(LogSpatialPackageMap, Verbose,
 			   TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"), *Subobject->GetName(),
-			   *Actor.GetName(), *SubobjectNetGUID.ToString(), *EntityIdSubobjectRef.ToString());
+			   *Actor->GetName(), *SubobjectNetGUID.ToString(), *EntityIdSubobjectRef.ToString());
 	}
 
 	return NetGUID;

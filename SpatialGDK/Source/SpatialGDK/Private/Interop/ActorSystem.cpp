@@ -692,35 +692,35 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 
 	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
-		const FUnrealObjectRef EntityObjectRef(EntityId, ComponentId);
+		const FUnrealObjectRef ObjectRef(EntityId, ComponentId);
 		if (ComponentId == SpatialConstants::DORMANT_COMPONENT_ID)
 		{
 			GetOrRecreateChannelForDormantActor(Actor, EntityId);
 		}
-		else if (UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(EntityObjectRef).Get())
+		else if (UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
-			DestroySubObject(EntityObjectRef, *Object);
+			DestroySubObject(ObjectRef, *Object);
 		}
 	}
 }
 
-void ActorSystem::DestroySubObject(const FUnrealObjectRef& EntityObjectRef, UObject& Object) const
+void ActorSystem::DestroySubObject(const FUnrealObjectRef& ObjectRef, UObject& Object) const
 {
-	const Worker_EntityId EntityId = EntityObjectRef.Entity;
+	const Worker_EntityId EntityId = ObjectRef.Entity;
 	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
-			UE_LOG(LogActorSystem, Verbose, TEXT("Destroying subobject with offset %u on entity %d"), EntityObjectRef.Offset, EntityId);
+			UE_LOG(LogActorSystem, Verbose, TEXT("Destroying subobject with offset %u on entity %d"), ObjectRef.Offset, EntityId);
 
-			Channel->OnSubobjectDeleted(EntityObjectRef, &Object, TWeakObjectPtr<UObject>(&Object));
+			Channel->OnSubobjectDeleted(ObjectRef, &Object, TWeakObjectPtr<UObject>(&Object));
 
 			Actor->OnSubobjectDestroyFromReplication(&Object);
 
 			Object.PreDestroyFromReplication();
 			Object.MarkPendingKill();
 
-			NetDriver->PackageMap->RemoveSubobject(EntityObjectRef);
+			NetDriver->PackageMap->RemoveSubobject(ObjectRef);
 		}
 	}
 }

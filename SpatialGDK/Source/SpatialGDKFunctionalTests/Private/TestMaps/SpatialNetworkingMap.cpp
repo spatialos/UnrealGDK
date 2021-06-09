@@ -48,5 +48,5 @@ void USpatialNetworkingMap::CreateCustomContentForMap()
 	AddActorToLevel<ADormancyTestActor>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<AReplicatedVisibilityTestActor>(CurrentLevel, FTransform::Identity);
 	AddActorToLevel<ADynamicSubObjectTestActor>(CurrentLevel, FTransform::Identity);
-	AddActorToLevel<AStaticSubobjectTestActor>(CurrentLevel, FTransform::Identity);
+	AddActorToLevel<AStaticSubobjectTestActor>(CurrentLevel, FTransform(FVector(-20000.0f, -20000.0f, 40.0f)));
 }
