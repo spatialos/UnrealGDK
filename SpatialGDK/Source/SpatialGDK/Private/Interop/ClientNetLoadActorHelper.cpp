@@ -98,17 +98,20 @@ void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_Enti
 void FClientNetLoadActorHelper::RemoveDynamicComponentsRemovedByRuntime(const Worker_EntityId EntityId,
 																		const TArray<ComponentData>& NewComponents)
 {
-	if (TMap<ObjectOffset, FNetworkGUID>* EntityOffsetToNetGuidMap = SpatialEntityRemovedSubobjectMetadata.Find(EntityId))
+	if (TMap<ObjectOffset, FNetworkGUID>* SubobjectOffsetToNetGuid = SpatialEntityRemovedSubobjectMetadata.Find(EntityId))
 	{
-		for (auto OffsetToNetGuidIterator = EntityOffsetToNetGuidMap->CreateIterator(); OffsetToNetGuidIterator; ++OffsetToNetGuidIterator)
+		// Go over each stored sub-object and determine whether it is contained within the new components array
+		// If it is not contained within the new components array, it means the sub-object was removed while out of the client's interest
+		// If so, remove it now
+		for (auto OffsetToNetGuidIterator = SubobjectOffsetToNetGuid->CreateIterator(); OffsetToNetGuidIterator; ++OffsetToNetGuidIterator)
 		{
-			const ObjectOffset SubobjectOffset = OffsetToNetGuidIterator->Key;
-			if (!SubobjectWithOffsetStillExists(NewComponents, SubobjectOffset))
+			const ObjectOffset ObjectOffset = OffsetToNetGuidIterator->Key;
+			if (!SubobjectWithOffsetStillExists(NewComponents, ObjectOffset))
 			{
 				if (UObject* Object =
 						NetDriver->PackageMap->GetObjectFromNetGUID(OffsetToNetGuidIterator->Value, false /* bIgnoreMustBeMapped */))
 				{
-					const FUnrealObjectRef EntityObjectRef(EntityId, SubobjectOffset);
+					const FUnrealObjectRef EntityObjectRef(EntityId, ObjectOffset);
 					SubobjectRemovedByRuntime(EntityObjectRef, *Object);
 				}
 				OffsetToNetGuidIterator.RemoveCurrent();
@@ -147,6 +150,7 @@ bool FClientNetLoadActorHelper::SubobjectWithOffsetStillExists(const TArray<Comp
 {
 	for (const ComponentData& Component : Components)
 	{
+		// Skip if this isn't a generated component
 		if (Component.GetComponentId() < SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 		{
 			continue;
