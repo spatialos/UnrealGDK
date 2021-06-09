@@ -155,5 +155,5 @@ private:
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;
 
-	bool bHandoverActive = false;
+	TOptional<bool> bHandoverActive;
 };

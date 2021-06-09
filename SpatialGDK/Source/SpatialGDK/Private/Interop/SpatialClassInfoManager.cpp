@@ -35,15 +35,6 @@ bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver)
 		FSoftObjectPath(FPaths::SetExtension(SpatialConstants::SCHEMA_DATABASE_ASSET_PATH, TEXT(".SchemaDatabase")));
 	SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
 
-	if (NetDriver->LoadBalanceStrategy != nullptr)
-	{
-		bHandoverActive = NetDriver->LoadBalanceStrategy->RequiresHandoverData();
-	}
-	else
-	{
-		UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("Load Balancing Strategy nullptr, handover will be disabled."));
-	}
-
 	if (SchemaDatabase == nullptr)
 	{
 		UE_LOG(LogSpatialClassInfoManager, Error,
@@ -147,6 +138,19 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 #else
 	GEngine->NetworkRemapPath(NetDriver, ClassPath, false /*bIsReading*/);
 #endif
+
+	if (!bHandoverActive.IsSet())
+	{
+		if (NetDriver->LoadBalanceStrategy != nullptr)
+		{
+			bHandoverActive = NetDriver->LoadBalanceStrategy->RequiresHandoverData();
+		}
+		else
+		{
+			UE_LOG(LogSpatialClassInfoManager, Log, TEXT("Load Balancing Strategy not set, handover will be disabled."));
+			bHandoverActive = false;
+		}
+	}
 
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
@@ -318,7 +322,7 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 bool USpatialClassInfoManager::IsComponentIdForTypeValid(const Worker_ComponentId ComponentId, const ESchemaComponentType Type) const
 {
 	// If handover is inactive, mark server only components as invalid.
-	return ComponentId != SpatialConstants::INVALID_COMPONENT_ID && (Type != SCHEMA_ServerOnly || bHandoverActive);
+	return ComponentId != SpatialConstants::INVALID_COMPONENT_ID && (Type != SCHEMA_ServerOnly || bHandoverActive.Get(false));
 }
 
 void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
