@@ -1885,7 +1885,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	const FRPCInfo& Info = ClassInfoManager->GetRPCInfo(CallingObject, Function);
 
 	if (Info.Type == ERPCType::ServerReliable || Info.Type == ERPCType::ServerUnreliable || Info.Type == ERPCType::ClientReliable
-		|| Info.Type == ERPCType::ClientUnreliable)
+		|| Info.Type == ERPCType::ClientUnreliable || Info.Type == ERPCType::NetMulticast)
 	{
 		FRPCPayload Payload;
 		Payload.Index = Info.Index;
@@ -1918,6 +1918,12 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 			if (ensure(ClientRPCs != nullptr))
 			{
 				Queue = ClientRPCs->ServerUnreliableQueue.Get();
+			}
+			break;
+		case ERPCType::NetMulticast:
+			if (ensure(ServerRPCs != nullptr))
+			{
+				Queue = ServerRPCs->NetMulticastQueue.Get();
 			}
 			break;
 		}

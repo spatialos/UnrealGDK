@@ -183,8 +183,7 @@ protected:
 	std::atomic<bool> bUpdateCacheInUse;
 	struct RAIIUpdateContext;
 
-	// TODO UNR-5038
-	// TUniquePtr<SpatialGDK::TRPCBufferReceiver<FRPCPayload, TimestampAndETWrapper>> NetMulticastReceiver;
+	TUniquePtr<SpatialGDK::TRPCBufferReceiver<FRPCPayload, TimestampAndETWrapper>> NetMulticastReceiver;
 };
 
 /**
@@ -211,6 +210,7 @@ protected:
 
 	TUniquePtr<SpatialGDK::RPCBufferSender> ClientReliableSender;
 	TUniquePtr<SpatialGDK::RPCBufferSender> ClientUnreliableSender;
+	TUniquePtr<SpatialGDK::RPCBufferSender> NetMulticastSender;
 	TUniquePtr<SpatialGDK::TRPCBufferReceiver<FRPCPayload, TimestampAndETWrapper>> ServerReliableReceiver;
 	TUniquePtr<SpatialGDK::TRPCBufferReceiver<FRPCPayload, TimestampAndETWrapper>> ServerUnreliableReceiver;
 };
