@@ -1,25 +1,15 @@
 ---
-ci_version: &ci_version "1.2"
-# This is designed to trap and retry failures because agent lost
-# connection. Agent exits with -1 in this case.
-agent_transients: &agent_transients
-  exit_status: -1
-  limit: 3
-
-# BK system error
-bk_system_error: &bk_system_error
-  exit_status: 255
-  limit: 3
-  
-# Job was interrupted by a signal (e.g. ctrl+c etc)
-bk_interrupted_by_signal: &bk_interrupted_by_signal
-  exit_status: 15
-  limit: 3
-
-# Hook failure
-bk_hook_failure: &bk_hook_failure
-  exit_status: 127
-  limit: 3
+ci_version: &ci_version "${CI_VERSION:-1.3}"
+common_env_vars: &common_env_vars
+  BUILD_TYPE: "GDK"
+  GDK_BRANCH: "main_branch::${BUILDKITE_BRANCH}"
+  PROJECT_BRANCH: "${PROJECT_BRANCH:-match_branch_name_pref::master}"
+  USE_FASTBUILD: "${USE_FASTBUILD:-True}"
+  IS_BUILDKITE_BUILD: "${IS_BUILDKITE_BUILD:-True}"
+  BUILD_ANDROID: "${BUILD_ANDROID:-False}"
+  SKIP_TESTS: "${SKIP_TESTS:-False}"
+  CLEAN_BUILD: "${CLEAN_BUILD:-False}"
+  SLOW_TESTS: "${SLOW_TESTS}"
 
 steps:
   # New build pipeline
@@ -30,17 +20,10 @@ steps:
     build:
       branch: *ci_version
       message: "gdk-4.26 ${BUILDKITE_MESSAGE}"
-      env: 
-        BUILD_TYPE: "GDK"
-        GDK_BRANCH: "main_branch::${BUILDKITE_BRANCH}"
-        ENGINE_BRANCH: "${ENGINE_BRANCH_426:-match_branch_name_pref_engine::4.26-SpatialOSUnrealGDK-0.13.1}"
+      env:
+        <<: *common_env_vars
+        ENGINE_BRANCH: "${ENGINE_BRANCH_426:-match_branch_name_pref_engine::4.26-SpatialOSUnrealGDK}"
         ENGINE_MAJOR: "4.26"
-        PROJECT_BRANCH: "${PROJECT_BRANCH:-match_branch_name_pref::0.13.1}"
-        USE_FASTBUILD: "True"
-        IS_BUILDKITE_BUILD: "True"
-        BUILD_ANDROID: "False"
-        SKIP_TESTS: "False"
-        CLEAN_BUILD: "False"
 
   # Trigger a 4.25 build
   - trigger: "unrealgdkbuild-ci"
@@ -49,17 +32,10 @@ steps:
     build:
       branch: *ci_version
       message: "gdk-4.25 ${BUILDKITE_MESSAGE}"
-      env: 
-        BUILD_TYPE: "GDK" # GDK or ENGINE
-        GDK_BRANCH: "main_branch::${BUILDKITE_BRANCH}"
-        ENGINE_BRANCH: "${ENGINE_BRANCH_425:-match_branch_name_pref_engine::4.25-SpatialOSUnrealGDK-0.13.1}"
+      env:
+        <<: *common_env_vars
+        ENGINE_BRANCH: "${ENGINE_BRANCH_425:-match_branch_name_pref_engine::4.25-SpatialOSUnrealGDK}"
         ENGINE_MAJOR: "4.25"
-        PROJECT_BRANCH: "${PROJECT_BRANCH:-match_branch_name_pref::0.13.1}"
-        USE_FASTBUILD: "True"
-        IS_BUILDKITE_BUILD: "True"
-        BUILD_ANDROID: "False"
-        SKIP_TESTS: "False"
-        CLEAN_BUILD: "False"
 
   # Trigger an Example Project build for any merges into master, preview or release branches of UnrealGDK
   - trigger: "unrealgdkexampleproject-nightly"

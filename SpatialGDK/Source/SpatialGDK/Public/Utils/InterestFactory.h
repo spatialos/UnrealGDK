@@ -30,6 +30,7 @@
  * made by that server worker.
  */
 
+class AGameplayDebuggerCategoryReplicator;
 class UAbstractLBStrategy;
 class USpatialClassInfoManager;
 class USpatialPackageMapClient;
@@ -68,17 +69,24 @@ private:
 	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
 
 	// Defined Constraint AND Level Constraint
-	void AddPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
+	void AddClientPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
+#if WITH_GAMEPLAY_DEBUGGER
+	// Entity ID query for the player controller responsible for the replicator
+	void AddServerGameplayDebuggerCategoryReplicatorActorInterest(Interest& OutInterest,
+																  const AGameplayDebuggerCategoryReplicator& Replicator) const;
+#endif
 	// The components clients need to see on entities they have authority over that they don't already see through authority.
 	void AddClientSelfInterest(Interest& OutInterest) const;
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest) const;
 	// Add interest to the actor's owner.
-	void AddOwnerInterestOnServer(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const;
+	void AddServerActorOwnerInterest(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const;
 
 	// Add the always relevant and the always interested query.
-	void AddAlwaysRelevantAndInterestedQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
-											 const QueryConstraint& LevelConstraint) const;
+	void AddClientAlwaysRelevantQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,
+									  const QueryConstraint& LevelConstraint) const;
+
+	void AddAlwaysInterestedInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
 
 	void AddUserDefinedQueries(Interest& OutInterest, const AActor* InActor, const QueryConstraint& LevelConstraint) const;
 	FrequencyToConstraintsMap GetUserDefinedFrequencyToConstraintsMap(const AActor* InActor) const;

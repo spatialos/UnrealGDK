@@ -5,6 +5,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialNetDriverRPC.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
 #include "Interop/ActorGroupWriter.h"
@@ -12,6 +13,7 @@
 #include "Interop/RPCs/SpatialRPCService.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "Schema/ActorGroupMember.h"
+#include "Schema/ActorOwnership.h"
 #include "Schema/ActorSetMember.h"
 #include "Schema/AuthorityIntent.h"
 #include "Schema/NetOwningClientWorker.h"
@@ -93,6 +95,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 	// Add Actor completeness tags.
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID));
@@ -123,19 +126,21 @@ void EntityFactory::WriteLBComponents(TArray<FWorkerComponentData>& ComponentDat
 #if !UE_BUILD_SHIPPING
 	if (NetDriver->SpatialDebugger != nullptr)
 	{
-		check(NetDriver->VirtualWorkerTranslator != nullptr);
+		if (ensureAlwaysMsgf(NetDriver->VirtualWorkerTranslator != nullptr,
+							 TEXT("Failed to add debugging utilities. Translator was invalid")))
+		{
+			const PhysicalWorkerName* PhysicalWorkerName =
+				NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
+			const FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
+			const FColor IntentColor =
+				PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
 
-		const PhysicalWorkerName* PhysicalWorkerName =
-			NetDriver->VirtualWorkerTranslator->GetPhysicalWorkerForVirtualWorker(IntendedVirtualWorkerId);
-		FColor InvalidServerTintColor = NetDriver->SpatialDebugger->InvalidServerTintColor;
-		FColor IntentColor =
-			PhysicalWorkerName != nullptr ? SpatialGDK::GetColorForWorkerName(*PhysicalWorkerName) : InvalidServerTintColor;
+			const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
 
-		const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(Actor);
-
-		SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId,
-									   IntentColor, bIsLocked);
-		ComponentDatas.Add(DebuggingInfo.CreateComponentData());
+			SpatialDebugging DebuggingInfo(SpatialConstants::INVALID_VIRTUAL_WORKER_ID, InvalidServerTintColor, IntendedVirtualWorkerId,
+										   IntentColor, bIsLocked);
+			ComponentDatas.Add(DebuggingInfo.CreateComponentData());
+		}
 	}
 #endif // !UE_BUILD_SHIPPING
 
@@ -244,17 +249,17 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PLAYER_CONTROLLER_COMPONENT_ID));
 	}
 
-	USpatialLatencyTracer* Tracer = USpatialLatencyTracer::GetTracer(Actor);
-
-	ComponentFactory DataFactory(false, NetDriver, Tracer);
+	ComponentFactory DataFactory(false, NetDriver);
 
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
-	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
 
-	TArray<FWorkerComponentData> ActorDataComponents =
-		DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges, OutBytesWritten);
+	TArray<FWorkerComponentData> ActorDataComponents = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, OutBytesWritten);
 
 	ComponentDatas.Append(ActorDataComponents);
+
+	ComponentDatas.Add(Worker_ComponentData{ nullptr, ActorOwnership::ComponentId,
+											 ActorOwnership::CreateFromActor(*Actor, *PackageMap).CreateComponentData().Release(),
+											 nullptr });
 
 	ComponentDatas.Add(NetDriver->InterestFactory->CreateInterestData(Actor, Info, EntityId));
 
@@ -263,14 +268,15 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 	if (SpatialSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker)
 	{
 		// Addition of CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID is handled in GetRPCComponentsOnEntityCreation
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID));
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID));
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID));
 	}
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_TO_SERVER_COMMAND_ENDPOINT_COMPONENT_ID));
 
 	checkf(RPCService != nullptr, TEXT("Attempting to create an entity with a null RPCService."));
 	ComponentDatas.Append(RPCService->GetRPCComponentsOnEntityCreation(EntityId));
+	ComponentDatas.Append(NetDriver->RPCs->GetRPCComponentsOnEntityCreation(EntityId));
 
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
@@ -298,48 +304,11 @@ void EntityFactory::WriteUnrealComponents(TArray<FWorkerComponentData>& Componen
 			const FClassInfo& SubobjectInfo = ClassInfoManager->GetOrCreateClassInfoByObject(Subobject);
 
 			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
-			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
 			TArray<FWorkerComponentData> ActorSubobjectDatas =
-				DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges, OutBytesWritten);
+				DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, OutBytesWritten);
 			ComponentDatas.Append(ActorSubobjectDatas);
 		}
-	}
-
-	// Or if the subobject has handover properties, add it as well.
-	// NOTE: this is only for subobjects that are a part of the CDO.
-	// NOT dynamic subobjects which have been added before entity creation.
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
-	{
-		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
-
-		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding to delegation component
-		TWeakObjectPtr<UObject> WeakSubobject =
-			PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
-		if (!WeakSubobject.IsValid())
-		{
-			continue;
-		}
-
-		UObject* Subobject = WeakSubobject.Get();
-
-		if (SubobjectInfo.SchemaComponents[SCHEMA_Handover] == SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			continue;
-		}
-
-		// If it contains it, we've already created handover data for it.
-		if (Channel->ReplicationMap.Contains(Subobject))
-		{
-			continue;
-		}
-
-		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
-
-		FWorkerComponentData SubobjectHandoverData = DataFactory.CreateHandoverComponentData(
-			SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges, OutBytesWritten);
-
-		ComponentDatas.Add(SubobjectHandoverData);
 	}
 
 	if (DataFactory.WasInitialOnlyDataWritten())
@@ -362,9 +331,11 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 	{
 		if (ComponentIds.Contains(ComponentData.component_id))
 		{
-			UE_LOG(LogEntityFactory, Error,
-				   TEXT("Constructed entity components for an Unreal actor channel contained a duplicate component. This is unexpected and "
-						"could cause problems later on."));
+			UE_LOG(
+				LogEntityFactory, Error,
+				TEXT("Constructed entity components for an Unreal actor channel contained a duplicate component %i. This is unexpected and "
+					 "could cause problems later on."),
+				ComponentData.component_id);
 		}
 		ComponentIds.Add(ComponentData.component_id);
 	}
@@ -374,7 +345,10 @@ TArray<FWorkerComponentData> EntityFactory::CreateEntityComponents(USpatialActor
 
 TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AActor* Actor) const
 {
-	check(Actor->IsNetStartupActor());
+	if (!ensureAlwaysMsgf(Actor->IsNetStartupActor(), TEXT("Tried to create tombstone entity components for non-net-startup Actor")))
+	{
+		return TArray<FWorkerComponentData>{};
+	}
 
 	const UClass* Class = Actor->GetClass();
 
@@ -421,6 +395,7 @@ TArray<FWorkerComponentData> EntityFactory::CreateTombstoneEntityComponents(AAct
 	// Add Actor completeness tags.
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_TAG_COMPONENT_ID));
+	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 	Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 

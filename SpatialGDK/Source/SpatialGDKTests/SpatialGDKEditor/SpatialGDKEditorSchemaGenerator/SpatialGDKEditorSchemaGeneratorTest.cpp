@@ -106,18 +106,21 @@ ComponentNamesAndIds ParseAvailableNamesAndIdsFromSchemaFile(const TArray<FStrin
 
 FString ComponentTypeToString(ESchemaComponentType Type)
 {
+	static_assert(SCHEMA_Count == 4, "Unexpected number of Schema type components, please check ComponentTypeToString is still correct.");
+
 	switch (Type)
 	{
 	case SCHEMA_Data:
 		return TEXT("");
 	case SCHEMA_OwnerOnly:
 		return TEXT("OwnerOnly");
-	case SCHEMA_Handover:
-		return TEXT("Handover");
+	case SCHEMA_ServerOnly:
+		return TEXT("ServerOnly");
 	case SCHEMA_InitialOnly:
 		return TEXT("InitialOnly");
+	default:
+		return TEXT("");
 	}
-	return TEXT("");
 }
 
 bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FString& InSchemaOutputFolder,
@@ -135,11 +138,6 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 		}
 		else
 		{
-			if (ParsedNamesAndIds.Names.Num() != 1)
-			{
-				return false;
-			}
-
 			if (ActorData->GeneratedSchemaName.Compare(ParsedNamesAndIds.Names[0]) != 0)
 			{
 				return false;
@@ -166,9 +164,14 @@ bool TestEqualDatabaseEntryAndSchemaFile(const UClass* CurrentClass, const FStri
 			//	}
 			//}
 
-			for (int i = 0; i < ParsedNamesAndIds.Ids.Num(); ++i)
+			uint32 IdIndex = 0;
+			for (int i = 0; i < SCHEMA_Count; ++i)
 			{
-				if (ActorData->SchemaComponents[i] != ParsedNamesAndIds.Ids[i])
+				if (ActorData->SchemaComponents[i] == SpatialConstants::INVALID_COMPONENT_ID)
+				{
+					continue;
+				}
+				if (ActorData->SchemaComponents[i] != ParsedNamesAndIds.Ids[IdIndex++])
 				{
 					return false;
 				}
@@ -330,7 +333,16 @@ public:
 
 		FString ExpectedContent;
 		FFileHelper::LoadFileToString(ExpectedContent, *ExpectedContentFullPath);
-		ExpectedContent.ReplaceInline(TEXT("{{id}}"), *FString::FromInt(GetNextFreeId()));
+		while (true)
+		{
+			FString SearchString = TEXT("{{id}}");
+			int32 Index = ExpectedContent.Find(SearchString, ESearchCase::IgnoreCase, ESearchDir::FromStart, -1);
+			if (Index == -1)
+				break;
+			ExpectedContent.RemoveAt(Index, SearchString.Len());
+			ExpectedContent.InsertAt(Index, *FString::FromInt(GetNextFreeId()));
+		}
+
 		return (CleanSchema(GeneratedSchemaContent).Compare(CleanSchema(ExpectedContent)) == 0);
 	}
 
@@ -920,6 +932,7 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 										   "spatial_debugging.schema",
 										   "actor_group_member.schema",
 										   "actor_set_member.schema",
+										   "actor_ownership.schema",
 										   "spawndata.schema",
 										   "spawner.schema",
 										   "tombstone.schema",

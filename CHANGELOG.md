@@ -9,7 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`x.y.z`] - Unreleased
 
+### Breaking changes:
+- The `Handover` variable specifier has been deprecated. It should be replaced with the standard `Replicated` variable specifier and restricting the replication with the new `COND_ServerOnly` replication condition in `GetLifetimeReplicatedProps`. `Handover` variables will try to replicate using the new replication condition, but support will be removed in the next release.
+- Reworked AlwaysInterested functionality to run on authoritative servers, and owning clients. The previous behaviour was for it to only run on PlayerController classes, on the client only.
+- `bUseNetOwnerActorGroup` actor setting has been removed with the default behavior now true inside LayeredLBStrategy. Extend this class if you wish to alter this default behavior.
+
+### Features:
+- Added a "Clean and Generate Schema" option to the Schema menu, which lets you delete the SchemaDatabase.uasset, all generated schema files, and run a Full Scan in one click.
+- GDK heartbeat settings are now used to control the worker heartbeat configurations.
+- Added a setting to control which CrossServer RPC implementation is used. Both feature mentioned below are only enabled when the RoutingWorker is the chosen implementation. Spatial commands are still the default for now.
+- Added reliable CrossServer RPC. Reliable CrossServer RPC now require a sender actor which will be the reference point for ordering in a multi-worker environment. An additional UFUNCTION Tag, Unordered, was added to opt-out of this requirement.
+- Added NetWriteFence UFUNCTION Tag. This tag is used when Network writes to an actor should be ordered with regard to updates to another actor. This is relevant in worker recovery/snapshot reloading to get some ordering guarantees when SpatialOS can write updates to entities in any order.
+- Inspector process is automatically started when starting PIE. This means you can re-use existing inspector browser sessions.
+- Visual Logger now supports multi-worker environments.
+
+### Bug fixes:
+- Added a pop-up message when schema generation fails, which suggests running a Clean and Generate to fix a bad schema state.
+- Fixed a bug that left the SchemaDatabase.uasset file locked after a failed schema generation.
+- Fixed an issue with migration diagnostic logging failing, when the actor did not have authority.
+- Fixed an issue where migration diagnostic tool would crash if the target actor's owner couldn't be found.
+- Fixed an issue where during shutdown unregistering NetGUIDs could cause an asset load and program stall.
+- Fix RPC timeouts for parameters referencing assets that can be asynchronously loaded.
+- Fixed the test settings overrides config filename in `Spatial World Settings` so that the file path is relative to the game directory.
+- Fix editor encountering exceptions when shutting down during a PIE session.
+- The runtime will shut down slightly faster after a PIE session.
+- Fixed a rare issue where one would see a change to the owner field but not the changes to owner-only fields.
+- Prevented a client crash that occurs if there is a mismatch between the client and server schema hash.
+- Fixed an issue for actors with bNetLoadOnClient. A dynamic subobject removed from such an actor while out of a client's view will now be properly removed on the client when the actor comes back into the client's view.
+- Fixed an issue that caused `UnrealGDK/Setup.sh` to report `sed: can't read : No such file or directory` when run on macOS.
+
+### Internal:
+- Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.
+- Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs now no longer expire, and persist until used.
+- A test was calling `SetReplicates` on an actor over which it did not have authority. This was causing warnings to be triggered. We've fixed this by reverting the actor's role at the end of the test, so that the actor is not left in an unexpected state.
+- Added support for clients to disconnect during a test in the automated test framework.
+- Modified ActorSystem's Ownership and Simulated Subviews to take player ownership into account.
+
 ## [`0.13.1`] - 2021-06-02
+
 ### Breaking changes:
 - Event tracing has been optimised to reduce overhead when tracing events in general and in particular when events are not sampled. The tracing API has been modified to accommodate these improvements. You will have to modify your project if you use the API.
 
@@ -23,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Event tracing filter support (configured via `UEventTracingSamplingSettings`).
 
 ## [`0.13.0`] - 2021-05-17
+
 ### Breaking changes:
 - Removed support for Unreal Engine 4.24.
 - `MaxRPCRingBufferSize` setting has been removed. This was previously used to specify the RPC ring buffer size when generating schema. Now, `DefaultRPCRingBufferSize` is used, and can be overridden per RPC type using `RPCRingBufferSizeOverrides`.
@@ -57,6 +95,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `bOnlyRelevantToOwner` is now supported. Ownership must be setup prior to the first replication of the `Actor` otherwise it will be ignored.
 - Added a property to specify the test settings overrides config filename in the `World Settings` so that maps can share config files during automated testing. This replaces the option to automatically use the map name to determine the config filename.
 - Added a `-FailOnNetworkFailure` flag that makes a Spatial-enabled game fail on any NetworkFailure.
+- Simulated Player deployments no longer depend on DeploymentLauncher for readiness. You can now restart them via the Console and expect them to reconnect to your main deployment. DeploymentLauncher will also restart any crashed or incorrectly finished simulated players applications.
+- Added `URemotePossessionComponent` to deal with Cross-Server Possession. Add this componenet to an AController, it will possess the Target Pawn after OnAuthorityGained. It can be implemented in C++ and Blueprint.
 
 ### Bug fixes:
 - Fixed the exception that was thrown when adding and removing components in Spatial component callbacks.
@@ -78,6 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue with replicating references to stably named dynamically added subobjects of dynamic actors.
 - Fixed an issue during client logout where a client's corresponding Actors were not cleaned up correctly.
 - Fixed issue with `SpatialDebugger` crashing when client travelling.
+- Fixed an issue where a NetworkFailure won't be reported when connecting to a deployment that doesn't support dev_login with a developer token, and in some other configuration-dependent cases.
+- Fixed a Windows compile issue when updating the worker SDK which did not recompile code dependent on the updated libs/dlls.
 
 ## [`0.12.0`] - 2021-02-01
 
@@ -102,6 +144,7 @@ These functions and structs can be referenced in both code and blueprints and it
 - Running without Ring Buffered RPCs is no longer supported, and the option has been removed from SpatialGDKSettings.
 - The schema database format has been updated and versioning introduced. Please regenerate your schema after updating.
 - The CookAndGenerateSchemaCommandlet no longer automatically deletes previously generated schema. Deletion of previously generated schema is now controlled by the `-DeleteExistingGeneratedSchema` flag.
+- Event tracing has been optimised to reduce overhead when tracing events in general and in particular when events are not sampled. The tracing API has been modified to accomidate these improvements. You will have to modify your project if you use the API.
 
 ### Features:
 - The DeploymentLauncher tool can be used to start multiple simulated player deployments at once.
@@ -161,9 +204,7 @@ These functions and structs can be referenced in both code and blueprints and it
 - Added cross-server variants of ability activation functions on the Ability System Component.
 - Added `SpatialSwitchHasAuthority` function to differentiate authoritative server, non-authoritative server, and clients. This can be called in code or used in blueprints that derive from actor.
 - Added blueprint callable function `GetMaxDynamicallyAttachedSubobjectsPerClass` to `USpatialStatics` that gets the maximum dynamically attached subobjects per class as set in `SpatialGDKSettings`
-- Simulated Player deployments no longer depend on DeploymentLauncher for readiness. You can now restart them via the Console and expect them to reconnect to your main deployment. DeploymentLauncher will also restart any crashed or incorrectly finished simulated players applications.
 - Reworked schema generation (incremental + full) pop-ups to be clearer.
-- Added `URemotePossessionComponent` to deal with Cross-Server Possession. Add this componenet to an AController, it will possess the Target Pawn after OnAuthorityGained. It can be implemented in C++ and Blueprint.
 
 ### Bug fixes:
 - Fixed a bug that stopped the travel URL being used for initial Spatial connection if the command line arguments could not be used.
@@ -200,7 +241,6 @@ These functions and structs can be referenced in both code and blueprints and it
 - Fixed a bug where consecutive invocations of CookAndGenerateSchemaCommandlet for different levels could fail when running the schema compiler.
 - Fixed an issue where GameMode values won't be replicated between server workers if it's outside their Interest.
 - Fixed gameplay cues receiving OnActive/WhileActive events twice on the predicting client in a multi-worker single-process PIE environment.
-- Fixed an issue where a NetworkFailure won't be reported when connecting to a deployment that doesn't support dev_login with a developer token, and in some other configuration-dependent cases.
 - Fixed a crash that occured when opening the session frontend with VS 16.8.0 using the bundled dbghelp.dll.
 - Spatial Debugger no longer consumes input.
 - Fixed an issue where we would always create a folder for a snapshots for a deployment even when we made no snapshots

@@ -144,7 +144,7 @@ void ASpatialFunctionalTest::Tick(float DeltaSeconds)
 		bool bAllAcknowledgedFinishedTest = true;
 		for (const auto* FlowController : FlowControllers)
 		{
-			if (!FlowController->HasAckFinishedTest())
+			if (FlowController != nullptr && !FlowController->HasAckFinishedTest())
 			{
 				bAllAcknowledgedFinishedTest = false;
 				break;
@@ -449,6 +449,18 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 	FlowControllers.Add(FlowController);
 }
 
+void ASpatialFunctionalTest::DeregisterFlowController(ASpatialFunctionalTestFlowController* FlowController)
+{
+	if (FlowController->WorkerDefinition.Type == ESpatialFunctionalTestWorkerType::Client)
+	{
+		FlowControllers.Remove(FlowController);
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKFunctionalTests, Error, TEXT("DeregisterFlowController called on Server on test %s"), *GetName());
+	}
+}
+
 ASpatialFunctionalTestFlowController* ASpatialFunctionalTest::GetLocalFlowController()
 {
 	ensureMsgf(LocalFlowController, TEXT("GetLocalFlowController being called without it being set, shouldn't happen"));
@@ -493,7 +505,7 @@ FString ASpatialFunctionalTest::GetLocalWorkerString()
 
 void ASpatialFunctionalTest::AddStepBlueprint(const FString& StepName, const FWorkerDefinition& Worker,
 											  const FStepIsReadyDelegate& IsReadyEvent, const FStepStartDelegate& StartEvent,
-											  const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 0.0f*/)
+											  const FStepTickDelegate& TickEvent, float StepTimeLimit /*= 20.0f*/)
 {
 	if (StepName.IsEmpty())
 	{
@@ -565,9 +577,10 @@ void ASpatialFunctionalTest::StartStep(const int StepIndex)
 			}
 			for (auto* FlowController : FlowControllers)
 			{
-				if (WorkerType == ESpatialFunctionalTestWorkerType::All
-					|| (FlowController->WorkerDefinition.Type == WorkerType
-						&& (WorkerId <= FWorkerDefinition::ALL_WORKERS_ID || FlowController->WorkerDefinition.Id == WorkerId)))
+				if (FlowController != nullptr
+					&& (WorkerType == ESpatialFunctionalTestWorkerType::All
+						|| (FlowController->WorkerDefinition.Type == WorkerType
+							&& (WorkerId <= FWorkerDefinition::ALL_WORKERS_ID || FlowController->WorkerDefinition.Id == WorkerId))))
 				{
 					FlowControllersExecutingStep.AddUnique(FlowController);
 				}
@@ -608,7 +621,7 @@ FSpatialFunctionalTestStepDefinition& ASpatialFunctionalTest::AddStep(const FStr
 																	  FIsReadyEventFunc IsReadyEvent /*= nullptr*/,
 																	  FStartEventFunc StartEvent /*= nullptr*/,
 																	  FTickEventFunc TickEvent /*= nullptr*/,
-																	  float StepTimeLimit /*= 0.0f*/)
+																	  float StepTimeLimit /*= 20.0f*/)
 {
 	if (StepName.IsEmpty())
 	{
@@ -662,7 +675,7 @@ void ASpatialFunctionalTest::CrossServerNotifyStepFinished_Implementation(ASpati
 
 	const FString FlowControllerDisplayName = FlowController->GetDisplayName();
 
-	UE_LOG(LogSpatialGDKFunctionalTests, Display, TEXT("%s finished Step"), *FlowControllerDisplayName);
+	UE_LOG(LogSpatialGDKFunctionalTests, Verbose, TEXT("%s finished Step in %fs"), *FlowControllerDisplayName, TimeRunningStep);
 
 	if (FlowControllersExecutingStep.RemoveSwap(FlowController) == 0)
 	{
@@ -777,6 +790,30 @@ void ASpatialFunctionalTest::DeleteActorsRegisteredForAutoDestroy()
 			FoundActor->SetLifeSpan(0.01f);
 		}
 	}
+}
+
+APlayerController* ASpatialFunctionalTest::GetFlowPlayerController()
+{
+	ASpatialFunctionalTestFlowController* FlowController = GetLocalFlowController();
+	if (ensureAlwaysMsgf(IsValid(FlowController), TEXT("FlowController must be valid. You may be calling this on a server.")))
+	{
+		return Cast<APlayerController>(FlowController->GetOwner());
+	}
+	return nullptr;
+}
+
+APawn* ASpatialFunctionalTest::GetFlowPawn()
+{
+	APlayerController* PlayerController = GetFlowPlayerController();
+	if (IsValid(PlayerController))
+	{
+		APawn* PlayerCharacter = PlayerController->GetPawn();
+		if (IsValid(PlayerCharacter))
+		{
+			return PlayerCharacter;
+		}
+	}
+	return nullptr;
 }
 
 namespace

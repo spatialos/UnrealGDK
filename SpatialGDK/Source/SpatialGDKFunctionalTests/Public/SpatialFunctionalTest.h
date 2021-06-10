@@ -107,6 +107,7 @@ public:
 	// # FlowController related APIs.
 
 	void RegisterFlowController(ASpatialFunctionalTestFlowController* FlowController);
+	void DeregisterFlowController(ASpatialFunctionalTestFlowController* FlowController);
 
 	// Get all the FlowControllers registered in this Test.
 	const TArray<ASpatialFunctionalTestFlowController*>& GetFlowControllers() const { return FlowControllers; }
@@ -142,7 +143,7 @@ public:
 		ToolTip = "Adds a Test Step. Check GetAllWorkers(), GetAllServerWorkers() and GetAllClientWorkers() for convenience.\n\nIf you split the Worker pin you can define if you want to run on Server, Client or All.\n\nWorker Ids start from 1.\nIf you pass 0 it will run on all the Servers / Clients (there's also a convenience function GetAllWorkersId())\n\nIf you choose WorkerType 'All' it runs on all Servers and Clients (hence WorkerId is ignored).\n\nKeep in mind you can split the Worker pin for convenience."))
 	// clang-format on
 	void AddStepBlueprint(const FString& StepName, const FWorkerDefinition& Worker, const FStepIsReadyDelegate& IsReadyEvent,
-						  const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 0.0f);
+						  const FStepStartDelegate& StartEvent, const FStepTickDelegate& TickEvent, float StepTimeLimit = 20.0f);
 
 	// Add Steps for Blueprints and C++.
 
@@ -167,7 +168,7 @@ public:
 	 */
 	FSpatialFunctionalTestStepDefinition& AddStep(const FString& StepName, const FWorkerDefinition& Worker,
 												  FIsReadyEventFunc IsReadyEvent = nullptr, FStartEventFunc StartEvent = nullptr,
-												  FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 0.0f);
+												  FTickEventFunc TickEvent = nullptr, float StepTimeLimit = 20.0f);
 
 	// Start Running a Step.
 	void StartStep(const int StepIndex);
@@ -295,25 +296,25 @@ public:
 	bool RequireNotEqual_Bool(bool bValue, bool bNotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(bValue, bNotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Int)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Int(int Value, int Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Int(int Value, int NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Float)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Float(float Value, float Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Float(float Value, float NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (String)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_String(const FString& Value, const FString& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_String(const FString& Value, const FString& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Name)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Name(const FName& Value, const FName& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Name(const FName& Value, const FName& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Vector)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Vector(const FVector& Value, const FVector& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Vector(const FVector& Value, const FVector& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Rotator)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Rotator(const FRotator& Value, const FRotator& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Rotator(const FRotator& Value, const FRotator& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Require Not Equal (Transform)"), Category = "Spatial Functional Test")
-	bool RequireNotEqual_Transform(const FTransform& Value, const FTransform& Expected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, Expected, Msg); }
+	bool RequireNotEqual_Transform(const FTransform& Value, const FTransform& NotExpected, const FString& Msg) { return RequireHandler.RequireNotEqual(Value, NotExpected, Msg); }
 	// clang-format on
 
 	// # Snapshot APIs.
@@ -336,6 +337,18 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Spatial Functional Test")
 	bool WasLoadedFromTakenSnapshot();
 
+	template <typename T>
+	static int GetNumberOfActorsOfType(UWorld* World)
+	{
+		int Counter = 0;
+		for (TActorIterator<T> Iter(World); Iter; ++Iter)
+		{
+			Counter++;
+		}
+
+		return Counter;
+	}
+
 	// Get the path of the taken snapshot for this world's map. Returns an empty string if it's using the default snapshot.
 	static FString GetTakenSnapshotPath(UWorld* World);
 
@@ -347,6 +360,12 @@ public:
 
 	// Clears all the snapshots taken, not meant to be used directly.
 	static void ClearAllTakenSnapshots();
+
+	// Get the player controller owned by the current flow controller.
+	APlayerController* GetFlowPlayerController();
+
+	// Get the pawn that belongs to the PlayerController associated with the current flow controller.
+	APawn* GetFlowPawn();
 
 protected:
 	int GetNumExpectedServers() const { return NumExpectedServers; }

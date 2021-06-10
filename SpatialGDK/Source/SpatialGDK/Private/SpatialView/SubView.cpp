@@ -2,6 +2,7 @@
 
 #include "SpatialView/SubView.h"
 
+#include "Algo/Copy.h"
 #include "SpatialView/EntityComponentTypes.h"
 #include "Utils/ComponentFactory.h"
 
@@ -54,6 +55,28 @@ const FSubViewDelta& FSubView::GetViewDelta() const
 	return SubViewDelta;
 }
 
+TSet<Worker_EntityId_Key> FSubView::GetCompleteEntities() const
+{
+	TSet<Worker_EntityId_Key> CompleteEntitiesSet;
+
+	Algo::Copy(CompleteEntities, CompleteEntitiesSet);
+	Algo::Copy(NewlyCompleteEntities, CompleteEntitiesSet);
+
+	TSet<Worker_EntityId_Key> IncompleteEntitiesSet;
+
+	Algo::Copy(NewlyIncompleteEntities, IncompleteEntitiesSet);
+
+	return CompleteEntitiesSet.Difference(IncompleteEntitiesSet);
+}
+
+void FSubView::Refresh()
+{
+	for (const Worker_EntityId_Key TaggedEntityId : TaggedEntities)
+	{
+		CheckEntityAgainstFilter(TaggedEntityId);
+	}
+}
+
 void FSubView::RefreshEntity(const Worker_EntityId EntityId)
 {
 	if (TaggedEntities.Contains(EntityId))
@@ -75,7 +98,7 @@ bool FSubView::HasEntity(const Worker_EntityId EntityId) const
 
 bool FSubView::IsEntityComplete(const Worker_EntityId EntityId) const
 {
-	return CompleteEntities.Contains(EntityId);
+	return GetCompleteEntities().Contains(EntityId);
 }
 
 bool FSubView::HasComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const

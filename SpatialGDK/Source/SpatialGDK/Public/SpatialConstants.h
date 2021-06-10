@@ -36,7 +36,7 @@ enum ESchemaComponentType : int32
 	// Properties
 	SCHEMA_Data, // Represents properties being replicated to all workers
 	SCHEMA_OwnerOnly,
-	SCHEMA_Handover,
+	SCHEMA_ServerOnly,
 	SCHEMA_InitialOnly,
 
 	SCHEMA_Count,
@@ -106,7 +106,7 @@ extern const FString SERVER_AUTH_COMPONENT_SET_NAME;
 extern const FString CLIENT_AUTH_COMPONENT_SET_NAME;
 extern const FString DATA_COMPONENT_SET_NAME;
 extern const FString OWNER_ONLY_COMPONENT_SET_NAME;
-extern const FString HANDOVER_COMPONENT_SET_NAME;
+extern const FString SERVER_ONLY_COMPONENT_SET_NAME;
 extern const FString ROUTING_WORKER_COMPONENT_SET_NAME;
 extern const FString INITIAL_ONLY_COMPONENT_SET_NAME;
 
@@ -120,10 +120,10 @@ const Worker_ComponentId VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID = 9979;
 const Worker_ComponentId VISIBLE_COMPONENT_ID = 9970;
 const Worker_ComponentId SERVER_ONLY_ALWAYS_RELEVANT_COMPONENT_ID = 9968;
 
-const Worker_ComponentId CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID = 9960;
-const Worker_ComponentId CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID = 9961;
-const Worker_ComponentId CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID = 9962;
-const Worker_ComponentId CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID = 9963;
+const Worker_ComponentId CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID = 9960;
+const Worker_ComponentId CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID = 9961;
+const Worker_ComponentId CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID = 9962;
+const Worker_ComponentId CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID = 9963;
 
 const Worker_ComponentId CLIENT_ENDPOINT_COMPONENT_ID = 9978;
 const Worker_ComponentId SERVER_ENDPOINT_COMPONENT_ID = 9977;
@@ -139,12 +139,15 @@ const Worker_ComponentId INITIAL_ONLY_PRESENCE_COMPONENT_ID = 9966;
 const Worker_ComponentId ACTOR_SET_MEMBER_COMPONENT_ID = 9965;
 const Worker_ComponentId ACTOR_GROUP_MEMBER_COMPONENT_ID = 9964;
 
+const Worker_ComponentId ACTOR_OWNERSHIP_COMPONENT_ID = 9959;
+
 const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 10000;
 
 // System query tags for entity completeness
 const Worker_ComponentId FIRST_EC_COMPONENT_ID = 2001;
 const Worker_ComponentId ACTOR_AUTH_TAG_COMPONENT_ID = 2001;
 const Worker_ComponentId ACTOR_TAG_COMPONENT_ID = 2002;
+const Worker_ComponentId ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID = 2003;
 const Worker_ComponentId LB_TAG_COMPONENT_ID = 2005;
 
 const Worker_ComponentId GDK_KNOWN_ENTITY_TAG_COMPONENT_ID = 2007;
@@ -289,8 +292,8 @@ const Schema_FieldId ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID = 1;
 // ActorGroupMember field IDs
 const Schema_FieldId ACTOR_GROUP_MEMBER_COMPONENT_ACTOR_GROUP_ID = 1;
 
-// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
-const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
+// ActorOwnership field IDs
+const Schema_FieldId ACTOR_OWNERSHIP_COMPONENT_OWNER_ACTOR_ID = 1;
 
 const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;

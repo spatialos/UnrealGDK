@@ -15,10 +15,11 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialDeploymentManager, Log, All);
 
 class FJsonObject;
 
-class FLocalDeploymentManager
+class FLocalDeploymentManager final
 {
 public:
 	FLocalDeploymentManager();
+	~FLocalDeploymentManager();
 
 	void SPATIALGDKSERVICES_API PreInit(bool bChinaEnabled);
 
@@ -67,6 +68,8 @@ private:
 
 	bool WaitForRuntimeProcessToShutDown();
 	bool StartLocalDeploymentShutDown();
+	bool GracefulShutdownAndWaitForTermination();
+	bool ForceShutdownAndWaitForTermination();
 	void FinishLocalDeploymentShutDown();
 
 	enum class ERuntimeStartResponse
@@ -80,6 +83,8 @@ private:
 	ERuntimeStartResponse StartLocalDeployment(const FString& LaunchConfig, const FString& RuntimeVersion, const FString& LaunchArgs,
 											   const FString& SnapshotName, const FString& RuntimeIPToExpose,
 											   const LocalDeploymentCallback& CallBack);
+
+	FCriticalSection StoppingDeployment;
 
 	TFuture<bool> AttemptSpatialAuthResult;
 
@@ -101,6 +106,8 @@ private:
 	bool bStartingDeployment;
 	bool bStoppingDeployment;
 	bool bTestRunnning;
+
+	FString RuntimePath;
 
 	FString ExposedRuntimeIP;
 

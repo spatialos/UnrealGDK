@@ -3,9 +3,11 @@
 #pragma once
 
 #include "Interop/CrossServerRPCHandler.h"
+#include "Engine/EngineBaseTypes.h"
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/CrossServerRPCSender.h"
 #include "Interop/EntityQueryHandler.h"
+#include "Interop/OwnershipCompletenessHandler.h"
 #include "Utils/SpatialBasicAwaiter.h"
 #include "Utils/SpatialDebugger.h"
 
@@ -23,6 +25,9 @@
 class ASpatialDebugger;
 class ASpatialMetricsDisplay;
 class FSpatialLoadBalancingHandler;
+class FSpatialNetDriverRPC;
+class FSpatialNetDriverClientRPC;
+class FSpatialNetDriverServerRPC;
 class FSpatialOutputDevice;
 class SpatialDispatcher;
 class SpatialSnapshotManager;
@@ -121,7 +126,12 @@ public:
 	virtual void NotifyStreamingLevelUnload(class ULevel* Level) override;
 
 	virtual void PushCrossServerRPCSender(AActor* Sender) override;
-	virtual void PopCrossServerRPCSender(AActor* Sender) override;
+	virtual void PopCrossServerRPCSender() override;
+	virtual void PushDependentActor(AActor* Dependent) override;
+	virtual void PopDependentActor() override;
+	virtual void PushNetWriteFenceResolution();
+	virtual void PopNetWriteFenceResolution();
+	virtual bool RPCCallNeedWriteFence(AActor* Target, UFunction* Function) override;
 	// End UNetDriver interface.
 
 	void OnConnectionToSpatialOSSucceeded();
@@ -211,13 +221,13 @@ public:
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
 
-	// Stored as fields here to be reused for creating the debug context subview if the world settings dictates it.
-	FFilterPredicate ActorFilter;
-	TArray<FDispatcherRefreshCallback> ActorRefreshCallbacks;
-
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
+	TOptional<SpatialGDK::FOwnershipCompletenessHandler> OwnershipCompletenessHandler;
 	TUniquePtr<SpatialGDK::ActorSystem> ActorSystem;
 	TUniquePtr<SpatialGDK::SpatialRPCService> RPCService;
+	TUniquePtr<FSpatialNetDriverRPC> RPCs;
+	FSpatialNetDriverClientRPC* ClientRPCs = nullptr;
+	FSpatialNetDriverServerRPC* ServerRPCs = nullptr;
 
 	TUniquePtr<SpatialGDK::SpatialRoutingSystem> RoutingSystem;
 	TUniquePtr<SpatialGDK::SpatialStrategySystem> StrategySystem;
@@ -293,6 +303,12 @@ private:
 	bool bIsReadyToStart;
 	bool bMapLoaded;
 
+	struct FPendingNetworkFailure
+	{
+		ENetworkFailure::Type FailureType;
+		FString Message;
+	};
+	TOptional<FPendingNetworkFailure> PendingNetworkFailure;
 	FString SnapshotToLoad;
 
 	// Client variable which stores the SessionId given to us by the server in the URL options.

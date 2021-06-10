@@ -60,9 +60,10 @@ call :MarkStartOfBlock "Setup variables"
     set BINARIES_DIR=%~dp0SpatialGDK\Binaries\ThirdParty\Improbable
 
     rem Copy schema to the projects spatial directory.
-    set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
-    set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
     set SPATIAL_DIR=%~dp0..\..\..\spatial
+    set SPATIAL_TOOLS_COPY_DIR=%SPATIAL_DIR%\tools
+    set SCHEMA_COPY_DIR=%SPATIAL_DIR%\schema\unreal\gdk
+    set SCHEMA_STD_COPY_DIR=%SPATIAL_DIR%\build\dependencies\schema\standard_library
     set DOMAIN_ENVIRONMENT_VAR=
     set DOWNLOAD_MOBILE=
     for %%A in (%*) do (
@@ -94,6 +95,7 @@ call :MarkStartOfBlock "Clean folders"
     if exist "%SPATIAL_DIR%" (
         rd /s /q "%SCHEMA_STD_COPY_DIR%"    2>nul
         rd /s /q "%SCHEMA_COPY_DIR%"        2>nul
+        rd /s /q "%SPATIAL_TOOLS_COPY_DIR%" 2>nul
     )
 call :MarkEndOfBlock "Clean folders"
 
@@ -109,11 +111,13 @@ call :MarkStartOfBlock "Create folders"
     if exist "%SPATIAL_DIR%" (
         md "%SCHEMA_STD_COPY_DIR%"    >nul 2>nul
         md "%SCHEMA_COPY_DIR%"        >nul 2>nul
+        md "%SPATIAL_TOOLS_COPY_DIR%" >nul 2>nul
     )
 call :MarkEndOfBlock "Create folders"
 
 call :MarkStartOfBlock "Retrieve dependencies"
     call :ExecuteAndCheck spatial package retrieve tools         schema_compiler-x86_64-win32               %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
+    call :ExecuteAndCheck spatial package retrieve tools         snapshot_converter-x86_64-win32            %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\tools\snapshot_converter-x86_64-win32.zip"
     call :ExecuteAndCheck spatial package retrieve schema        standard_library                           %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\schema\standard_library.zip"
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c_headers                                  %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c_headers.zip"
     call :ExecuteAndCheck spatial package retrieve worker_sdk    c-dynamic-x86_64-vc141_md-win32            %PINNED_CORE_SDK_VERSION%    %DOMAIN_ENVIRONMENT_VAR%    "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-vc141_md-win32.zip"
@@ -137,6 +141,7 @@ call :MarkStartOfBlock "Unpack dependencies"
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-clang1000-linux.zip\"    -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\csharp_cinterop.zip\"                     -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\csharp_cinterop\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"             -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\snapshot_converter-x86_64-win32.zip\"          -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                        -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
 
     if defined DOWNLOAD_MOBILE (
@@ -148,6 +153,13 @@ call :MarkStartOfBlock "Unpack dependencies"
     xcopy /s /i /q "%BINARIES_DIR%\Headers\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
 
+REM When the worker libs are updated outside of the build system, timestamps are not updated on unzip so 
+REM no change is registered, resulting in broken builds (lib / dll mismatch). 
+call :MarkStartOfBlock "Touching worker libs"
+call :TouchFilesInFolder %BINARIES_DIR%\Win64\
+call :TouchFilesInFolder %BINARIES_DIR%\Linux\
+call :MarkEndOfBlock "Touching worker libs"
+
 if exist "%SPATIAL_DIR%" (
     call :MarkStartOfBlock "Copy standard library schema"
         echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"
@@ -158,6 +170,17 @@ if exist "%SPATIAL_DIR%" (
         echo Copying schemas to "%SCHEMA_COPY_DIR%".
         xcopy /s /i /q "%~dp0\SpatialGDK\Extras\schema" "%SCHEMA_COPY_DIR%"
     call :MarkEndOfBlock "Copy GDK schema"
+
+    call :MarkStartOfBlock "Copy schema compiler"
+        echo Copying schema compiler to "%SPATIAL_TOOLS_COPY_DIR%".
+        xcopy /s /i /q "%BINARIES_DIR%\Programs\schema_compiler.exe" "%SPATIAL_TOOLS_COPY_DIR%"
+    call :MarkEndOfBlock "Copy schema compiler
+
+    call :MarkStartOfBlock "Copy snapshot converter"
+        echo Copying snapshot converter to "%SPATIAL_TOOLS_COPY_DIR%"
+        xcopy /s /i /q "%BINARIES_DIR%\Programs\snapshot_converter.exe" "%SPATIAL_TOOLS_COPY_DIR%"
+        xcopy /s /i /q "%BINARIES_DIR%\Programs\snapshot.descriptor" "%SPATIAL_TOOLS_COPY_DIR%"
+    call :MarkEndOfBlock "Copy snapshot converter"
 )
 
 call :MarkStartOfBlock "Build C# utilities"
@@ -175,6 +198,13 @@ if not defined NO_PAUSE (
 )
 
 exit /b %ERRORLEVEL%
+
+:TouchFilesInFolder
+echo Touching lib/dll files in: %~1
+pushd "%~1"
+for /R %%f in (*.lib,*.dll,*.so) do copy /b %%f +,,
+popd 
+exit /b 0
 
 :MarkStartOfBlock
 echo Starting: %~1

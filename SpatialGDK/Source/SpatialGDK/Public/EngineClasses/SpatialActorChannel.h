@@ -243,14 +243,7 @@ public:
 
 	bool ReplicateSubobject(UObject* Obj, const FReplicationFlags& RepFlags);
 
-	TMap<UObject*, const FClassInfo*> GetHandoverSubobjects();
-
 	FRepChangeState CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object);
-	FHandoverChangeState CreateInitialHandoverChangeState(const FClassInfo& ClassInfo);
-
-	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an
-	// array.
-	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
 	FObjectReplicator* PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<GDK_PROPERTY(Property) *>& RepNotifies,
@@ -289,9 +282,6 @@ private:
 	void RetireEntityIfAuthoritative();
 
 	void SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition);
-
-	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
-	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
 
 	void UpdateVisibleComponent(AActor* Actor);
 
@@ -342,15 +332,6 @@ private:
 	// This is incremented in ReplicateActor. It represents how many bytes are sent per call to ReplicateActor.
 	// ReplicationBytesWritten is reset back to 0 at the start of ReplicateActor.
 	uint32 ReplicationBytesWritten = 0;
-
-	// Shadow data for Handover properties.
-	// For each object with handover properties, we store a blob of memory which contains
-	// the state of those properties at the last time we sent them, and is used to detect
-	// when those properties change.
-	TArray<uint8>* ActorHandoverShadowData;
-	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>, FDefaultSetAllocator,
-		 TWeakObjectPtrMapKeyFuncs<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>, false>>
-		HandoverShadowDataMap;
 
 	// Band-aid until we get Actor Sets.
 	// Used on server-side workers only.

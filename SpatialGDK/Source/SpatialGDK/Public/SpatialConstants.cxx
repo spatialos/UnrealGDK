@@ -61,7 +61,7 @@ const FString SERVER_AUTH_COMPONENT_SET_NAME = TEXT("ServerAuthoritativeComponen
 const FString CLIENT_AUTH_COMPONENT_SET_NAME = TEXT("ClientAuthoritativeComponentSet");
 const FString DATA_COMPONENT_SET_NAME = TEXT("DataComponentSet");
 const FString OWNER_ONLY_COMPONENT_SET_NAME = TEXT("OwnerOnlyComponentSet");
-const FString HANDOVER_COMPONENT_SET_NAME = TEXT("HandoverComponentSet");
+const FString SERVER_ONLY_COMPONENT_SET_NAME = TEXT("ServerOnlyComponentSet");
 const FString ROUTING_WORKER_COMPONENT_SET_NAME = TEXT("RoutingWorkerComponentSet");
 const FString INITIAL_ONLY_COMPONENT_SET_NAME = TEXT("InitialOnlyComponentSet");
 
@@ -136,7 +136,9 @@ TArray<Worker_ComponentId>{ // Actor components
                             ACTOR_SET_MEMBER_COMPONENT_ID, ACTOR_GROUP_MEMBER_COMPONENT_ID,
 
                             // Actor tag
-                            ACTOR_TAG_COMPONENT_ID
+                            ACTOR_TAG_COMPONENT_ID,
+
+                            ACTOR_OWNERSHIP_COMPONENT_ID,
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_CLIENT_INTEREST =
@@ -144,7 +146,9 @@ TArray<Worker_ComponentId>{ // RPCs from the server
                             SERVER_ENDPOINT_COMPONENT_ID,
 
                             // Actor tags
-                            ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID
+                            ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
+
+                            ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID,
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTEREST = TArray<Worker_ComponentId>{
@@ -170,7 +174,11 @@ const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_NON_AUTH_SERVER_INTERES
     // Strategy Worker LB components
     ACTOR_SET_MEMBER_COMPONENT_ID, ACTOR_GROUP_MEMBER_COMPONENT_ID,
 
-    PLAYER_CONTROLLER_COMPONENT_ID, PARTITION_COMPONENT_ID
+    PLAYER_CONTROLLER_COMPONENT_ID, PARTITION_COMPONENT_ID,
+
+    ACTOR_OWNER_ONLY_DATA_TAG_COMPONENT_ID,
+
+    ACTOR_OWNERSHIP_COMPONENT_ID,
 };
 
 const TArray<Worker_ComponentId> REQUIRED_COMPONENTS_FOR_AUTH_SERVER_INTEREST =
@@ -181,7 +189,7 @@ TArray<Worker_ComponentId>{ // RPCs from clients
                             PLAYER_CONTROLLER_COMPONENT_ID,
 
                             // Cross server endpoint
-                            CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
+                            CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID,
 
                             // Actor tags
                             ACTOR_TAG_COMPONENT_ID, ACTOR_AUTH_TAG_COMPONENT_ID,
@@ -205,6 +213,8 @@ const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
     "unreal/gdk/unreal_metadata.schema",
     "unreal/gdk/actor_group_member.schema",
     "unreal/gdk/actor_set_member.schema",
+    "unreal/gdk/migration_diagnostic.schema",
+    "unreal/gdk/actor_ownership.schema",
     "unreal/generated/rpc_endpoints.schema",
     "unreal/generated/NetCullDistance/ncdcomponents.schema",
 };
@@ -231,8 +241,10 @@ const TMap<Worker_ComponentId, FString> ServerAuthorityWellKnownComponents = {
     { SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },
     { MULTICAST_RPCS_COMPONENT_ID, "unreal.generated.UnrealMulticastRPCs" },
     { SERVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealServerEndpoint" },
-    { CROSSSERVER_SENDER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderRPCs" },
-    { CROSSSERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
+    { CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderRPCs" },
+    { CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
+	{ MIGRATION_DIAGNOSTIC_COMPONENT_ID, "unreal.MigrationDiagnostic" },
+	{ ACTOR_OWNERSHIP_COMPONENT_ID, "unreal.ActorOwnership" },
 };
 
 const TArray<FString> ClientAuthorityWellKnownSchemaImports = { "unreal/gdk/player_controller.schema", "unreal/gdk/rpc_components.schema",
@@ -244,8 +256,8 @@ const TMap<Worker_ComponentId, FString> ClientAuthorityWellKnownComponents = {
 };
 
 const TMap<Worker_ComponentId, FString> RoutingWorkerComponents = {
-    { CROSSSERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderACKRPCs" },
-    { CROSSSERVER_RECEIVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverRPCs" },
+    { CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderACKRPCs" },
+    { CROSS_SERVER_RECEIVER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverRPCs" },
 };
 
 const TArray<FString> RoutingWorkerSchemaImports = { "unreal/gdk/rpc_components.schema", "unreal/generated/rpc_endpoints.schema" };
@@ -254,6 +266,17 @@ const TArray<Worker_ComponentId> KnownEntityAuthorityComponents = { POSITION_COM
                                                                     INTEREST_COMPONENT_ID,		 PLAYER_SPAWNER_COMPONENT_ID,
                                                                     DEPLOYMENT_MAP_COMPONENT_ID, STARTUP_ACTOR_MANAGER_COMPONENT_ID,
                                                                     GSM_SHUTDOWN_COMPONENT_ID,	 VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID};
+
+const TMap<Worker_ComponentId, FString> WorkerEntityAuthorityComponents = {
+    { POSITION_COMPONENT_ID, "improbable.Position" },
+    { INTEREST_COMPONENT_ID, "improbable.Interest" },
+    { SERVER_WORKER_COMPONENT_ID, "unreal.ServerWorker"},
+    { AUTHORITY_DELEGATION_COMPONENT_ID, "improbable.AuthorityDelegation" },
+    { CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerSenderRPCs" },
+    { CROSS_SERVER_RECEIVER_ACK_ENDPOINT_COMPONENT_ID, "unreal.generated.UnrealCrossServerReceiverACKRPCs" },
+};
+
+const TArray<FString> WorkerEntitySchemaImports = { "unreal/gdk/rpc_components.schema", "unreal/generated/rpc_endpoints.schema" };
 
 }
 
