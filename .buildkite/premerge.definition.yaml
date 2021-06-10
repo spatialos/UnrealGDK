@@ -3,7 +3,7 @@ description: Build Unreal GDK
 github:
   branch_configuration: []
   default_branch: "master"
-  pull_request_branch_filter_configuration: []
+  pull_request_branch_filter_configuration: ['!dry-run/* !skip-ci/* !doc/* !docs/*']
 teams:
 - name: Everyone
   permission: BUILD_AND_READ
