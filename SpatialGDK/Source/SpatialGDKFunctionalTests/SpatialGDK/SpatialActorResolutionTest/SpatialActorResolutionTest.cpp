@@ -15,8 +15,11 @@ void ASelfDestroyingActor::PreReplication(IRepChangedPropertyTracker& ChangedPro
 	TSharedPtr<FDelegateHandle> DelegateHandle = MakeShared<FDelegateHandle>();
 
 	// OnEndFrame decouples us from tick rates and gives no opportunity for the NetDriver to tick in-between.
-	*DelegateHandle = FCoreDelegates::OnEndFrame.AddLambda([this, DelegateHandle]() {
-		Destroy();
+	*DelegateHandle = FCoreDelegates::OnEndFrame.AddLambda([WeakThis = MakeWeakObjectPtr(this), DelegateHandle]() {
+		if (WeakThis.IsValid())
+		{
+			WeakThis->Destroy();
+		}
 		FCoreDelegates::OnEndFrame.Remove(*DelegateHandle);
 	});
 
