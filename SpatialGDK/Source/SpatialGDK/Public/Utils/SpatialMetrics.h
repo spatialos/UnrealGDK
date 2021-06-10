@@ -72,6 +72,10 @@ public:
 	void RemoveCustomMetric(const FString& Metric);
 
 private:
+	bool StartInsightsCapture(const FString& Args);
+	bool StopInsightsCapture();
+
+private:
 	// Worker SDK metrics
 	WorkerGaugeMetric WorkerSDKGaugeMetrics;
 	WorkerHistogramMetrics WorkerSDKHistogramMetrics;

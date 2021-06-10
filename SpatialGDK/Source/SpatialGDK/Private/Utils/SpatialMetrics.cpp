@@ -2,8 +2,11 @@
 
 #include "Utils/SpatialMetrics.h"
 
+#include "CoreGlobals.h"
 #include "Engine/Engine.h"
 #include "EngineGlobals.h"
+#include "TimerManager.h"
+
 #if ENGINE_MINOR_VERSION >= 26
 #include "ProfilingDebugging/TraceAuxiliary.h"
 #endif
@@ -20,12 +23,13 @@ namespace SpatialMetricsPrivate
 enum class EServerCommands : uint8
 {
 	StartInsights,
+	StopInsights,
 
 	ServerCommandsCount,
 	ServerCommandInvalid = ServerCommandsCount,
 };
 
-const FString ServerCommandNames[static_cast<uint8>(EServerCommands::ServerCommandsCount) + 1] = { TEXT("StartInsights"), TEXT("Invalid") };
+const FString ServerCommandNames[static_cast<uint8>(EServerCommands::ServerCommandsCount) + 1] = { TEXT("StartInsights"), TEXT("StopInsights"), TEXT("Invalid") };
 
 const FString& ServerCommandsEnumToString(const EServerCommands Command)
 {
@@ -450,14 +454,53 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 			switch (ServerCommand)
 			{
 			case SpatialMetricsPrivate::EServerCommands::StartInsights:
-#if ENGINE_MINOR_VERSION >= 26
-				FTraceAuxiliary::UpdateTraceCapture(*Args);
-#else
+			{
+#if ENGINE_MINOR_VERSION < 26
 				UE_LOG(LogSpatialMetrics, Warning,
-					   TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. Command only available prior to 4.26."),
-					   *Command, *Args);
+					TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. Command only available prior to 4.26."));
+#elif !UE_TRACE_ENABLED
+				UE_LOG(LogSpatialMetrics, Warning,
+					TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. UE_TRACE_ENABLE not defined."));
+#else
+				if (StartInsightsCapture(Args))
+				{
+					FString TraceTimeString;
+					if (FParse::Value(*Args, TEXT("-tracetime="), TraceTimeString))
+					{
+						int32 TraceTime = FCString::Atoi(*TraceTimeString);
+
+						if (UWorld* World = GetWorld())
+						{
+							FTimerHandle Handle;
+							World->GetTimerManager().SetTimer(
+								Handle,
+								[WeakThis = TWeakObjectPtr<USpatialMetrics>(this)]() {
+								if (WeakThis.IsValid())
+								{
+									WeakThis->StopInsightsCapture();
+								}
+							},
+								TraceTime, false);
+						}
+					}
+				}
 #endif
 				break;
+			}
+
+			case SpatialMetricsPrivate::EServerCommands::StopInsights:
+			{
+#if ENGINE_MINOR_VERSION < 26
+				UE_LOG(LogSpatialMetrics, Warning,
+					TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. Command only available prior to 4.26."));
+#elif !UE_TRACE_ENABLED
+				UE_LOG(LogSpatialMetrics, Warning,
+					TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. UE_TRACE_ENABLE not defined."));
+#else
+				StopInsightsCapture();
+#endif
+				break;
+			}
 
 			default:
 				UE_LOG(LogSpatialMetrics, Error,
@@ -589,4 +632,18 @@ void USpatialMetrics::RemoveCustomMetric(const FString& Metric)
 			   ExistingMetric->GetUObject() ? *GetNameSafe(ExistingMetric->GetUObject()) : TEXT("Not attached to UObject"));
 		UserSuppliedMetrics.Remove(Metric);
 	}
+}
+
+bool USpatialMetrics::StartInsightsCapture(const FString& Args)
+{
+	GCycleStatsShouldEmitNamedEvents++;
+
+	return FTraceAuxiliary::StartTraceCapture(*Args);
+}
+
+bool USpatialMetrics::StopInsightsCapture()
+{
+	GCycleStatsShouldEmitNamedEvents = FMath::Max(0, GCycleStatsShouldEmitNamedEvents - 1);
+
+	return FTraceAuxiliary::StopTraceCapture();
 }
