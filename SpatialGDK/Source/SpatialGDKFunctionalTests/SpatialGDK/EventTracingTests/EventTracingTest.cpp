@@ -123,7 +123,7 @@ void AEventTracingTest::GatherData()
 	IFileManager& FileManager = IFileManager::Get();
 
 	TArray<FString> Files;
-	FileManager.FindFiles(Files, *EventsFolderPath, *FString(".trace"));
+	FileManager.FindFilesRecursive(Files, *EventsFolderPath, *FString("*.etlog"), true, false);
 
 	if (Files.Num() < 2)
 	{
@@ -140,15 +140,12 @@ void AEventTracingTest::GatherData()
 	TArray<FileCreationTime> FileCreationTimes;
 	for (const FString& File : Files)
 	{
-		FString FilePath = FPaths::Combine(EventsFolderPath, File);
-		FileCreationTimes.Add({ FilePath, FileManager.GetTimeStamp(*FilePath) });
+		FileCreationTimes.Add({ File, FileManager.GetTimeStamp(*File) });
 	}
 
 	FileCreationTimes.Sort([](const FileCreationTime& A, const FileCreationTime& B) {
 		return A.CreationTime > B.CreationTime;
 	});
-
-	FPlatformProcess::Sleep(1); // Worker bug means file may not be flushed by the OS (WRK-2396)
 
 	int RequiredClients = GetRequiredClients();
 	int RequiredWorkers = GetRequiredWorkers();
@@ -156,13 +153,13 @@ void AEventTracingTest::GatherData()
 	int FoundWorker = 0;
 	for (const FileCreationTime& FileCreation : FileCreationTimes)
 	{
-		if (FoundClient != RequiredClients && FileCreation.FilePath.Contains("UnrealClient"))
+		if (FoundClient != RequiredClients && FileCreation.FilePath.Contains("client"))
 		{
 			GatherDataFromFile(FileCreation.FilePath);
 			FoundClient++;
 		}
 
-		if (FoundWorker != RequiredWorkers && FileCreation.FilePath.Contains("UnrealWorker"))
+		if (FoundWorker != RequiredWorkers && FileCreation.FilePath.Contains("worker"))
 		{
 			GatherDataFromFile(FileCreation.FilePath);
 			FoundWorker++;
@@ -198,6 +195,10 @@ void AEventTracingTest::GatherDataFromFile(const FString& FilePath)
 	while (BytesToRead != 0 && ReturnCode == 1)
 	{
 		BytesToRead = Trace_GetNextSerializedItemSize(Stream.Get());
+		if (BytesToRead == 0)
+		{
+			break;
+		}
 
 		Trace_Item* Item = Trace_Item_GetThreadLocal();
 		if (BytesToRead != 0)

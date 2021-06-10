@@ -326,7 +326,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 							EventBuilder.AddObject(&Object);
 							EventBuilder.AddEntityId(EntityId);
 							EventBuilder.AddComponentId(ComponentId);
-							EventBuilder.AddKeyValue("PropertyName", Cmd.Property->GetName());
+							EventBuilder.AddKeyValue("property_name", Cmd.Property->GetName());
 							EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Cmd.Property));
 						});
 				}
