@@ -425,8 +425,7 @@ void ASpatialFunctionalTest::RegisterFlowController(ASpatialFunctionalTestFlowCo
 {
 	if (FlowController->IsLocalController())
 	{
-		checkf(LocalFlowController == nullptr,
-				   TEXT("OwningTest already had a LocalFlowController, this shouldn't happen"));
+		checkf(LocalFlowController == nullptr, TEXT("OwningTest already had a LocalFlowController, this shouldn't happen"));
 		LocalFlowController = FlowController;
 		LocalFlowController->TrySetReadyToRunTest();
 	}
