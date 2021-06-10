@@ -1273,19 +1273,19 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 	ActorData& ActorComponents = ActorDataStore[EntityId];
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
-	if (EntityActor != nullptr)
 	{
-		if (!EntityActor->IsActorReady())
+		AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get(/*bEvenIfPendingKill =*/true));
+		if (EntityActor != nullptr)
 		{
-			UE_LOG(LogActorSystem, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
-				   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
+			if (!EntityActor->IsActorReady())
+			{
+				UE_LOG(LogActorSystem, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
+					   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
+			}
+
+			return;
 		}
-
-		return;
 	}
-
 	UE_LOG(LogActorSystem, Verbose,
 		   TEXT("%s: Entity has been checked out on a worker which didn't spawn it. "
 				"Entity ID: %lld"),
@@ -1312,7 +1312,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	EntityActor = TryGetOrCreateActor(ActorComponents, EntityId);
+	AActor* EntityActor = TryGetOrCreateActor(ActorComponents, EntityId);
 
 	if (EntityActor == nullptr)
 	{
