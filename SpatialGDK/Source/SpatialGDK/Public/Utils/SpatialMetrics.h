@@ -41,8 +41,12 @@ public:
 	void OnStopRPCMetricsCommand();
 
 	UFUNCTION(Exec)
-	void SpatialModifySetting(const FString& Name, float Value);
+	void SpatialModifySetting(const FString& Name, const float Value);
 	void OnModifySettingCommand(Schema_Object* CommandPayload);
+
+	UFUNCTION(Exec)
+	void SpatialExecServerCmd(const FString& ServerName, const FString& Command, const FString& Args);
+	void OnExecServerCmdCommand(Schema_Object* CommandPayload);
 
 	void TrackSentRPC(UFunction* Function, ERPCType RPCType, int PayloadSize);
 
