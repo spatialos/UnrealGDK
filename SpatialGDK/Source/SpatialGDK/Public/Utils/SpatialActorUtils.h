@@ -14,7 +14,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Math/Vector.h"
 
-#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+#if WITH_GAMEPLAY_DEBUGGER
 #include "GameplayDebuggerCategoryReplicator.h"
 #endif
 
@@ -108,7 +108,7 @@ inline FVector GetActorSpatialPosition(const AActor* InActor)
 inline bool DoesActorClassIgnoreVisibilityCheck(AActor* InActor)
 {
 	if (InActor->IsA(APlayerController::StaticClass()) || InActor->IsA(AGameModeBase::StaticClass())
-#if WITH_UNREAL_DEVELOPER_TOOLS || (!UE_BUILD_SHIPPING && !UE_BUILD_TEST)
+#if WITH_GAMEPLAY_DEBUGGER
 		|| InActor->IsA(AGameplayDebuggerCategoryReplicator::StaticClass())
 #endif
 	)

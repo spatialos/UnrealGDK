@@ -5,7 +5,6 @@
 #include "Engine/Engine.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialClassInfoManager.h"
 
