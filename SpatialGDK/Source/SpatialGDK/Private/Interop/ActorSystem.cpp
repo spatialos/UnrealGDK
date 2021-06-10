@@ -197,7 +197,6 @@ void ActorSystem::Advance()
 			break;
 		}
 		case EntityDelta::ADD:
-			PopulateDataStore(Delta.EntityId);
 			EntityAdded(Delta.EntityId);
 			break;
 		case EntityDelta::REMOVE:
@@ -207,7 +206,6 @@ void ActorSystem::Advance()
 		case EntityDelta::TEMPORARILY_REMOVED:
 			EntityRemoved(Delta.EntityId);
 			ActorDataStore.Remove(Delta.EntityId);
-			PopulateDataStore(Delta.EntityId);
 			EntityAdded(Delta.EntityId);
 			break;
 		default:
@@ -298,15 +296,6 @@ void ActorSystem::AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetI
 	if (ComponentSetId != SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
 		&& ComponentSetId != SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
 	{
-		return;
-	}
-
-	if (HasEntityBeenRequestedForDelete(EntityId))
-	{
-		if (ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-		{
-			HandleEntityDeletedAuthority(EntityId);
-		}
 		return;
 	}
 
@@ -630,6 +619,15 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 
 void ActorSystem::EntityAdded(const Worker_EntityId EntityId)
 {
+	// Check if this entity is EntitiesToRetireOnAuthorityGain first,
+	// to avoid creating an actor that might've been deleted before.
+	if (HasEntityBeenRequestedForDelete(EntityId))
+	{
+		HandleEntityDeletedAuthority(EntityId);
+		return;
+	}
+
+	PopulateDataStore(EntityId);
 	ReceiveActor(EntityId);
 	for (const auto& AuthoritativeComponentSet : ActorSubView->GetView()[EntityId].Authority)
 	{
@@ -1199,17 +1197,18 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 	ActorData& ActorComponents = ActorDataStore[EntityId];
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-
-	AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId));
-	if (EntityActor != nullptr)
 	{
-		if (!EntityActor->IsActorReady())
+		AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get(/*bEvenIfPendingKill =*/true));
+		if (EntityActor != nullptr)
 		{
-			UE_LOG(LogActorSystem, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
-				   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
-		}
+			if (!EntityActor->IsActorReady())
+			{
+				UE_LOG(LogActorSystem, Verbose, TEXT("%s: Entity %lld for Actor %s has been checked out on the worker which spawned it."),
+					   *NetDriver->Connection->GetWorkerId(), EntityId, *EntityActor->GetName());
+			}
 
-		return;
+			return;
+		}
 	}
 
 	UE_LOG(LogActorSystem, Verbose,
@@ -1238,7 +1237,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	EntityActor = TryGetOrCreateActor(ActorComponents, EntityId);
+	AActor* EntityActor = TryGetOrCreateActor(ActorComponents, EntityId);
 
 	if (EntityActor == nullptr)
 	{
