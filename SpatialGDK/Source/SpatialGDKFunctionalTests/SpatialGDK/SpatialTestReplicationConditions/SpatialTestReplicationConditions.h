@@ -49,8 +49,8 @@ public:
 	UPROPERTY(Replicated)
 	ATestReplicationConditionsActor_Physics* TestActor_PhysicsEnabled;
 
-	UPROPERTY(Replicated)
-	ATestReplicationConditionsActor_Physics* TestActor_PhysicsDisabled;
+	//UPROPERTY(Replicated)
+	//ATestReplicationConditionsActor_Physics* TestActor_PhysicsDisabled;
 
 	const FVector ActorSpawnPosition = FVector(0.0f, 0.0f, 50.0f);
 	bool bSpatialEnabled;

@@ -453,19 +453,7 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 					}
 
-					if (Actor->IsA<APlayerController>())
-					{
-						Actor->RemoteRole = ROLE_AutonomousProxy;
-					}
-					else if (APawn* Pawn = Cast<APawn>(Actor))
-					{
-						// The following check will return false on non-authoritative servers if the PlayerState hasn't been received yet.
-						if (Pawn->IsPlayerControlled())
-						{
-							Pawn->RemoteRole = ROLE_AutonomousProxy;
-						}
-					}
-					else if (const APlayerState* PlayerState = Cast<APlayerState>(Actor))
+					if (const APlayerState* PlayerState = Cast<APlayerState>(Actor))
 					{
 						// The following check will return false on non-authoritative servers if the Pawn hasn't been received yet.
 						if (APawn* PawnFromPlayerState = PlayerState->GetPawn())
@@ -533,11 +521,6 @@ void ActorSystem::HandleActorAuthority(const Worker_EntityId EntityId, const Wor
 			if (Actor->IsAutonomousProxyOnAuthority() && Authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
 				Actor->Role = ROLE_AutonomousProxy;
-			}
-
-			if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
-			{
-				Actor->Role = (Authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
 		}
 	}

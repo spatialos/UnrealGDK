@@ -50,7 +50,7 @@ private:
 		const bool bIsInitialData;
 
 		bool bOutReferencesChanged;
-		bool bProcessOnlyCondNone;
+		bool bProcessOnlySpecialCases;
 	};
 
 	void ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
@@ -73,6 +73,8 @@ private:
 	class USpatialClassInfoManager* ClassInfoManager;
 	class SpatialEventTracer* EventTracer;
 	FObjectReferencesMap& RootObjectReferencesMap;
+
+	static const TArray<FString> SpecialCaseProperties;
 };
 
 } // namespace SpatialGDK

@@ -204,6 +204,10 @@ ATestReplicationConditionsActor_Physics::ATestReplicationConditionsActor_Physics
 		CreateDefaultSubobject<UTestReplicationConditionsComponent_Physics>(TEXT("UTestReplicationConditionsComponent_Physics"));
 
 	SetRootComponent(StaticComponent);
+
+	GetReplicatedMovement_Mutable().bRepPhysics = true;
+	SetReplicatingMovement(true);
+
 }
 
 void ATestReplicationConditionsActor_Physics::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -225,4 +229,5 @@ void ATestReplicationConditionsActor_Physics::SpawnDynamicComponents()
 void ATestReplicationConditionsActor_Physics::SetPhysicsEnabled(bool bEnabled)
 {
 	GetReplicatedMovement_Mutable().bRepPhysics = bEnabled;
+	SetReplicatingMovement(true);
 }

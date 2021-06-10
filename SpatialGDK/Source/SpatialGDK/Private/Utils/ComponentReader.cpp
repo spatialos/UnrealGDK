@@ -23,6 +23,8 @@ DECLARE_CYCLE_STAT(TEXT("Reader ApplyFastArrayUpdate"), STAT_ReaderApplyFastArra
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyProperty"), STAT_ReaderApplyProperty, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyArray"), STAT_ReaderApplyArray, STATGROUP_SpatialNet);
 
+const TArray<FString> SpatialGDK::ComponentReader::SpecialCaseProperties = { TEXT("Role"), TEXT("RemoteRole"), TEXT("ReplicatedMovement"), TEXT("bRepPhysics") };
+
 namespace
 {
 bool FORCEINLINE ObjectRefSetsAreSame(const TSet<FUnrealObjectRef>& A, const TSet<FUnrealObjectRef>& B)
@@ -178,10 +180,10 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 		ApplySchemaObjectDataStruct ApplySchemaObjectData(Replicator, ComponentObject, Object, Channel, UpdatedIds, CauseSpanIds,
 														  PropertySpanIds, ComponentId, RepNotifies, bIsInitialData);
-		ApplySchemaObjectData.bProcessOnlyCondNone = true;
+		ApplySchemaObjectData.bProcessOnlySpecialCases = true;
 		ApplySchemaObjectFields(ApplySchemaObjectData);
 
-		ApplySchemaObjectData.bProcessOnlyCondNone = false;
+		ApplySchemaObjectData.bProcessOnlySpecialCases = false;
 		ApplySchemaObjectFields(ApplySchemaObjectData);
 		bOutReferencesChanged = ApplySchemaObjectData.bOutReferencesChanged;
 	}
@@ -227,14 +229,15 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 		const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 
-		const bool isCondNone = Parent.Condition == COND_None;
-		if (ApplySchemaObjectData.bProcessOnlyCondNone != isCondNone)
+		TArray<FString> SpecialCaseProperties2 = { TEXT("Role"), TEXT("RemoteRole"), TEXT("ReplicatedMovement"), TEXT("bRepPhysics") };
+		bool IsSpecialCaseProperty = SpecialCaseProperties2.Contains(Cmd.Property->GetName());
+		if (ApplySchemaObjectData.bProcessOnlySpecialCases != IsSpecialCaseProperty)
 		{
 			continue;
 		}
 
 		int32 ShadowOffset = Cmd.ShadowOffset;
-		if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
+		if (NetDriver->IsServer() || IsSpecialCaseProperty || ConditionMap.IsRelevant(Parent.Condition))
 		{
 			// This is mostly copied from ReceivePropertyHelper in RepLayout.cpp
 			auto GetSwappedCmd = [&Cmd, &Cmds, &Parents, bIsAuthServer, &Replicator, &Channel, &Parent]() -> const FRepLayoutCmd& {
@@ -706,7 +709,7 @@ ComponentReader::ApplySchemaObjectDataStruct::ApplySchemaObjectDataStruct(
 	, RepNotifies(inRepNotifies)
 	, bIsInitialData(inIsInitialData)
 	, bOutReferencesChanged(false)
-	, bProcessOnlyCondNone(false)
+	, bProcessOnlySpecialCases(false)
 {
 }
 
