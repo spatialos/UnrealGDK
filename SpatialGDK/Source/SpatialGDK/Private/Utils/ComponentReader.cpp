@@ -23,7 +23,8 @@ DECLARE_CYCLE_STAT(TEXT("Reader ApplyFastArrayUpdate"), STAT_ReaderApplyFastArra
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyProperty"), STAT_ReaderApplyProperty, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyArray"), STAT_ReaderApplyArray, STATGROUP_SpatialNet);
 
-const TArray<FString> SpatialGDK::ComponentReader::SpecialCaseProperties = { TEXT("Role"), TEXT("RemoteRole"), TEXT("ReplicatedMovement"), TEXT("bRepPhysics") };
+const TArray<FString> SpatialGDK::ComponentReader::SpecialCaseProperties = { TEXT("Role"), TEXT("RemoteRole"), TEXT("ReplicatedMovement"),
+																			 TEXT("bRepPhysics") };
 
 namespace
 {

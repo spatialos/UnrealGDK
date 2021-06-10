@@ -207,7 +207,6 @@ ATestReplicationConditionsActor_Physics::ATestReplicationConditionsActor_Physics
 
 	GetReplicatedMovement_Mutable().bRepPhysics = true;
 	SetReplicatingMovement(true);
-
 }
 
 void ATestReplicationConditionsActor_Physics::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

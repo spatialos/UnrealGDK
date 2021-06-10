@@ -54,7 +54,7 @@ void ASpatialTestReplicationConditions::GetLifetimeReplicatedProps(TArray<FLifet
 	DOREPLIFETIME(ThisClass, TestActor_CustomDisabled);
 	DOREPLIFETIME(ThisClass, TestActor_AutonomousOnly);
 	DOREPLIFETIME(ThisClass, TestActor_PhysicsEnabled);
-	//DOREPLIFETIME(ThisClass, TestActor_PhysicsDisabled);
+	// DOREPLIFETIME(ThisClass, TestActor_PhysicsDisabled);
 }
 
 void ASpatialTestReplicationConditions::PrepareTest()
@@ -76,7 +76,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		AssertFalse(TestActor_CustomDisabled->HasAuthority(), TEXT("This server shouldn't have authority"));
 		AssertFalse(TestActor_AutonomousOnly->HasAuthority(), TEXT("This server shouldn't have authority"));
 		AssertFalse(TestActor_PhysicsEnabled->HasAuthority(), TEXT("This server shouldn't have authority"));
-		//AssertFalse(TestActor_PhysicsDisabled->HasAuthority(), TEXT("This server shouldn't have authority"));
+		// AssertFalse(TestActor_PhysicsDisabled->HasAuthority(), TEXT("This server shouldn't have authority"));
 
 		if (AssertTrue(TestActor_Common->AreAllDynamicComponentsValid(),
 					   TEXT("TestActor_Common - All dynamic components should have arrived")))
@@ -123,7 +123,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessPhysicsActorProperties(TestActor_PhysicsEnabled, bWrite, bPhysicsEnabled, bPhysicsExpected);
 		}
 
-		//if (AssertTrue(TestActor_PhysicsDisabled->AreAllDynamicComponentsValid(),
+		// if (AssertTrue(TestActor_PhysicsDisabled->AreAllDynamicComponentsValid(),
 		//			   TEXT("TestActor_PhysicsDisabled - All dynamic components should have arrived")))
 		//{
 		//	const bool bWrite = false;
@@ -147,12 +147,12 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		AssertFalse(TestActor_CustomDisabled->HasAuthority(), TEXT("This client shouldn't have authority"));
 		AssertFalse(TestActor_AutonomousOnly->HasAuthority(), TEXT("This client shouldn't have authority"));
 		AssertFalse(TestActor_PhysicsEnabled->HasAuthority(), TEXT("This client shouldn't have authority"));
-		//AssertFalse(TestActor_PhysicsDisabled->HasAuthority(), TEXT("This client shouldn't have authority"));
+		// AssertFalse(TestActor_PhysicsDisabled->HasAuthority(), TEXT("This client shouldn't have authority"));
 
 		AssertTrue(TestActor_Common->IsOwnedBy(GetLocalFlowController()->GetOwner()), TEXT("This client should own the actor"));
 		AssertTrue(TestActor_AutonomousOnly->IsOwnedBy(GetLocalFlowController()->GetOwner()), TEXT("This client should own the actor"));
 		AssertTrue(TestActor_PhysicsEnabled->IsOwnedBy(GetLocalFlowController()->GetOwner()), TEXT("This client should own the actor"));
-		//AssertTrue(TestActor_PhysicsDisabled->IsOwnedBy(GetLocalFlowController()->GetOwner()), TEXT("This client should own the actor"));
+		// AssertTrue(TestActor_PhysicsDisabled->IsOwnedBy(GetLocalFlowController()->GetOwner()), TEXT("This client should own the actor"));
 
 		if (AssertTrue(TestActor_Common->AreAllDynamicComponentsValid(),
 					   TEXT("TestActor_Common - All dynamic components should have arrived")))
@@ -205,7 +205,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessPhysicsActorProperties(TestActor_PhysicsEnabled, bWrite, bPhysicsEnabled, bPhysicsExpected);
 		}
 
-		//if (!bSpatialEnabled) // TODO: UNR-5214 - fix physics condition replications
+		// if (!bSpatialEnabled) // TODO: UNR-5214 - fix physics condition replications
 		//{
 		//	if (AssertTrue(TestActor_PhysicsDisabled->AreAllDynamicComponentsValid(),
 		//				   TEXT("TestActor_PhysicsDisabled - All dynamic components should have arrived")))
@@ -232,15 +232,15 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		AssertFalse(TestActor_CustomDisabled->HasAuthority(), TEXT("This client shouldn't have authority"));
 		AssertFalse(TestActor_AutonomousOnly->HasAuthority(), TEXT("This client shouldn't have authority"));
 		AssertFalse(TestActor_PhysicsEnabled->HasAuthority(), TEXT("This client shouldn't have authority"));
-		//AssertFalse(TestActor_PhysicsDisabled->HasAuthority(), TEXT("This client shouldn't have authority"));
+		// AssertFalse(TestActor_PhysicsDisabled->HasAuthority(), TEXT("This client shouldn't have authority"));
 
 		AssertFalse(TestActor_Common->IsOwnedBy(GetLocalFlowController()->GetOwner()), TEXT("This client should not own the actor"));
 		AssertFalse(TestActor_AutonomousOnly->IsOwnedBy(GetLocalFlowController()->GetOwner()),
 					TEXT("This client should not own the actor"));
 		AssertFalse(TestActor_PhysicsEnabled->IsOwnedBy(GetLocalFlowController()->GetOwner()),
 					TEXT("This client should not own the actor"));
-		//AssertFalse(TestActor_PhysicsDisabled->IsOwnedBy(GetLocalFlowController()->GetOwner()),
-					//TEXT("This client should not own the actor"));
+		// AssertFalse(TestActor_PhysicsDisabled->IsOwnedBy(GetLocalFlowController()->GetOwner()),
+		// TEXT("This client should not own the actor"));
 
 		if (AssertTrue(TestActor_Common->AreAllDynamicComponentsValid(),
 					   TEXT("TestActor_Common - All dynamic components should have arrived")))
@@ -291,7 +291,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessPhysicsActorProperties(TestActor_PhysicsEnabled, bWrite, bPhysicsEnabled, bPhysicsExpected);
 		}
 
-		//if (AssertTrue(TestActor_PhysicsDisabled->AreAllDynamicComponentsValid(),
+		// if (AssertTrue(TestActor_PhysicsDisabled->AreAllDynamicComponentsValid(),
 		//			   TEXT("TestActor_PhysicsDisabled - All dynamic components should have arrived")))
 		//{
 		//	const bool bWrite = false;
@@ -350,9 +350,9 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			return;
 		}
 
-		//TestActor_PhysicsDisabled = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Physics>(
+		// TestActor_PhysicsDisabled = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Physics>(
 		//	ActorSpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
-		//if (!AssertTrue(IsValid(TestActor_PhysicsDisabled), TEXT("Failed to spawn TestActor_PhysicsDisabled")))
+		// if (!AssertTrue(IsValid(TestActor_PhysicsDisabled), TEXT("Failed to spawn TestActor_PhysicsDisabled")))
 		//{
 		//	return;
 		//}
@@ -362,13 +362,13 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		TestActor_CustomDisabled->SpawnDynamicComponents();
 		TestActor_AutonomousOnly->SpawnDynamicComponents();
 		TestActor_PhysicsEnabled->SpawnDynamicComponents();
-		//TestActor_PhysicsDisabled->SpawnDynamicComponents();
+		// TestActor_PhysicsDisabled->SpawnDynamicComponents();
 
 		TestActor_CustomEnabled->SetCustomReplicationEnabled(true);
 		TestActor_CustomDisabled->SetCustomReplicationEnabled(false);
 
 		TestActor_PhysicsEnabled->SetPhysicsEnabled(true);
-		//TestActor_PhysicsDisabled->SetPhysicsEnabled(false);
+		// TestActor_PhysicsDisabled->SetPhysicsEnabled(false);
 
 		const bool bWrite = true;
 		bool bCondIgnore[COND_Max]{};
@@ -380,7 +380,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		ProcessAutonomousOnlyActorProperties(bWrite, /*bAutonomousExpected*/ false, /*bSimulatedExpected*/ false);
 
 		ProcessPhysicsActorProperties(TestActor_PhysicsEnabled, bWrite, /*bPhysicsEnabled*/ true, /*bPhysicsExpected*/ true);
-		//ProcessPhysicsActorProperties(TestActor_PhysicsDisabled, bWrite, /*bPhysicsEnabled*/ false, /*bPhysicsExpected*/ false);
+		// ProcessPhysicsActorProperties(TestActor_PhysicsDisabled, bWrite, /*bPhysicsEnabled*/ false, /*bPhysicsExpected*/ false);
 
 		AController* PlayerController = Cast<AController>(GetFlowController(ESpatialFunctionalTestWorkerType::Client, 1)->GetOwner());
 		if (!AssertTrue(IsValid(PlayerController), TEXT("Failed to retrieve player controller")))
@@ -396,9 +396,9 @@ void ASpatialTestReplicationConditions::PrepareTest()
 
 		// Set both physics actor to autonomous so properties won't be replicated through simulated condition
 		TestActor_PhysicsEnabled->SetOwner(PlayerController);
-		//TestActor_PhysicsDisabled->SetOwner(PlayerController);
+		// TestActor_PhysicsDisabled->SetOwner(PlayerController);
 		TestActor_PhysicsEnabled->SetAutonomousProxy(true);
-		//TestActor_PhysicsDisabled->SetAutonomousProxy(true);
+		// TestActor_PhysicsDisabled->SetAutonomousProxy(true);
 
 		// Set both custom actors to be owned by the PlayerController, just so we guarantee that they stay on server 1
 		TestActor_CustomEnabled->SetOwner(PlayerController);
@@ -409,7 +409,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		RegisterAutoDestroyActor(TestActor_CustomDisabled);
 		RegisterAutoDestroyActor(TestActor_AutonomousOnly);
 		RegisterAutoDestroyActor(TestActor_PhysicsEnabled);
-		//RegisterAutoDestroyActor(TestActor_PhysicsDisabled);
+		// RegisterAutoDestroyActor(TestActor_PhysicsDisabled);
 
 		FinishStep();
 	});
@@ -447,7 +447,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 				ProcessAutonomousOnlyActorProperties(bWrite, /*bAutonomousExpected*/ false, /*bSimulatedExpected*/ false);
 
 				ProcessPhysicsActorProperties(TestActor_PhysicsEnabled, bWrite, /*bPhysicsEnabled*/ true, /*bPhysicsExpected*/ true);
-				//ProcessPhysicsActorProperties(TestActor_PhysicsDisabled, bWrite, /*bPhysicsEnabled*/ false, /*bPhysicsExpected*/ false);
+				// ProcessPhysicsActorProperties(TestActor_PhysicsDisabled, bWrite, /*bPhysicsEnabled*/ false, /*bPhysicsExpected*/ false);
 
 				FinishStep();
 			});
@@ -474,7 +474,7 @@ bool ASpatialTestReplicationConditions::ActorsReady() const
 	bReady &= IsValid(TestActor_CustomDisabled) && TestActor_CustomDisabled->AreAllDynamicComponentsValid();
 	bReady &= IsValid(TestActor_AutonomousOnly) && TestActor_AutonomousOnly->AreAllDynamicComponentsValid();
 	bReady &= IsValid(TestActor_PhysicsEnabled) && TestActor_PhysicsEnabled->AreAllDynamicComponentsValid();
-	//bReady &= IsValid(TestActor_PhysicsDisabled) && TestActor_PhysicsDisabled->AreAllDynamicComponentsValid();
+	// bReady &= IsValid(TestActor_PhysicsDisabled) && TestActor_PhysicsDisabled->AreAllDynamicComponentsValid();
 
 	return bReady;
 }
