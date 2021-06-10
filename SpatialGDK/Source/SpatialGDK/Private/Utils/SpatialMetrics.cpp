@@ -29,7 +29,8 @@ enum class EServerCommands : uint8
 	ServerCommandInvalid = ServerCommandsCount,
 };
 
-const FString ServerCommandNames[static_cast<uint8>(EServerCommands::ServerCommandsCount) + 1] = { TEXT("StartInsights"), TEXT("StopInsights"), TEXT("Invalid") };
+const FString ServerCommandNames[static_cast<uint8>(EServerCommands::ServerCommandsCount) + 1] = { TEXT("StartInsights"),
+																								   TEXT("StopInsights"), TEXT("Invalid") };
 
 const FString& ServerCommandsEnumToString(const EServerCommands Command)
 {
@@ -457,10 +458,10 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 			{
 #if ENGINE_MINOR_VERSION < 26
 				UE_LOG(LogSpatialMetrics, Warning,
-					TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. Command only available prior to 4.26."));
+					   TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. Command only available prior to 4.26."));
 #elif !UE_TRACE_ENABLED
 				UE_LOG(LogSpatialMetrics, Warning,
-					TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. UE_TRACE_ENABLE not defined."));
+					   TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. UE_TRACE_ENABLE not defined."));
 #else
 				if (StartInsightsCapture(Args))
 				{
@@ -475,11 +476,11 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 							World->GetTimerManager().SetTimer(
 								Handle,
 								[WeakThis = TWeakObjectPtr<USpatialMetrics>(this)]() {
-								if (WeakThis.IsValid())
-								{
-									WeakThis->StopInsightsCapture();
-								}
-							},
+									if (WeakThis.IsValid())
+									{
+										WeakThis->StopInsightsCapture();
+									}
+								},
 								TraceTime, false);
 						}
 					}
@@ -492,10 +493,10 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 			{
 #if ENGINE_MINOR_VERSION < 26
 				UE_LOG(LogSpatialMetrics, Warning,
-					TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. Command only available prior to 4.26."));
+					   TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. Command only available prior to 4.26."));
 #elif !UE_TRACE_ENABLED
 				UE_LOG(LogSpatialMetrics, Warning,
-					TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. UE_TRACE_ENABLE not defined."));
+					   TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. UE_TRACE_ENABLE not defined."));
 #else
 				StopInsightsCapture();
 #endif
