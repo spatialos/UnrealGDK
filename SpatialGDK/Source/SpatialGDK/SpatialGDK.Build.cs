@@ -44,6 +44,11 @@ public class SpatialGDK : ModuleRules
                                             Target.Configuration != UnrealTargetConfiguration.Test))
         {
             PublicDependencyModuleNames.Add("GameplayDebugger");
+            PublicDefinitions.Add("WITH_GAMEPLAY_DEBUGGER=1");
+        }
+        else
+        {
+            PublicDefinitions.Add("WITH_GAMEPLAY_DEBUGGER=0");
         }
 
         if (Target.bBuildEditor)

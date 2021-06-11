@@ -197,6 +197,13 @@ Interest InterestFactory::CreatePartitionInterest(const UAbstractLBStrategy* LBS
 												 PartitionQuery);
 	}
 
+	// Query to know about all the actors tagged with a gameplay debugger component
+	PartitionQuery = Query();
+	PartitionQuery.ResultComponentIds = { SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID };
+	PartitionQuery.Constraint.ComponentConstraint = SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID;
+	AddComponentQueryPairToInterestComponent(PartitionInterest, SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID,
+												PartitionQuery);
+
 	return PartitionInterest;
 }
 
