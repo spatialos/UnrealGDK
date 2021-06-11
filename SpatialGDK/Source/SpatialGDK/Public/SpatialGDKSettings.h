@@ -436,7 +436,7 @@ public:
 
 	/**
 	 * Do we refresh client interest reactively when migrating servers.
-	 * I can't think why this would be strictly necessary so I'm turned it off.
+	 * I can't think why this would be strictly necessary so I've turned it off.
 	 */
 	UPROPERTY(EditAnywhere, config, Category = "Client Entity Interest", meta = (EditCondition = "bUseEntityIdListClientQueries"))
 	bool bRefreshClientInterestOnHandover;
