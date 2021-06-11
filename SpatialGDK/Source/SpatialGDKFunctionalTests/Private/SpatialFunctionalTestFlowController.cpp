@@ -80,7 +80,8 @@ void ASpatialFunctionalTestFlowController::TrySetReadyToRunTest()
 {
 	if (IsLocalController())
 	{
-		if (OwningTest->HasPreparedTest())
+		if (HasActorBegunPlay() && IsActorReady() && OwningTest->HasActorBegunPlay() && OwningTest->IsActorReady()
+			&& OwningTest->HasPreparedTest())
 		{
 			SetReadyToRunTest(true);
 		}
