@@ -24,8 +24,6 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	virtual void BeginPlay() override;
-
 	virtual void OnAuthorityGained() override;
 
 	virtual void Tick(float DeltaSeconds) override;
@@ -79,14 +77,15 @@ public:
 	bool HasAckFinishedTest() const { return bHasAckFinishedTest; }
 
 	UFUNCTION()
+	void RegisterFlowController();
+	UFUNCTION()
+	void TrySetReadyToRunTest();
+	UFUNCTION()
 	void DeregisterFlowController();
 
 private:
 	// Current Step being executed
 	SpatialFunctionalTestStep CurrentStep;
-
-	UPROPERTY(ReplicatedUsing = OnReadyToRegisterWithTest)
-	uint8 bReadyToRegisterWithTest : 1;
 
 	UPROPERTY(Replicated)
 	bool bIsReadyToRunTest;
@@ -95,12 +94,7 @@ private:
 	bool bHasAckFinishedTest;
 
 	UFUNCTION()
-	void OnReadyToRegisterWithTest();
-
-	UFUNCTION()
 	void OnRep_OwningTest();
-
-	void TryRegisterFlowControllerWithOwningTest();
 
 	UFUNCTION(Server, Reliable)
 	void ServerSetReadyToRunTest(bool bIsReady);
