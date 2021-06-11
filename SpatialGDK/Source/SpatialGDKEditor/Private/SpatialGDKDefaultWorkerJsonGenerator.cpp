@@ -46,18 +46,39 @@ bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired)
 
 	if (const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>())
 	{
-		const FName WorkerTypes[] = { SpatialConstants::DefaultServerWorkerType, SpatialConstants::RoutingWorkerType,
-									  SpatialConstants::StrategyWorkerType };
-		for (auto Worker : WorkerTypes)
+		TArray<TPair<FName, bool>> WorkerTypes;
+		WorkerTypes.Add(TPair<FName, bool>(SpatialConstants::DefaultServerWorkerType, true));
+		const bool bRoutingWorkerEnabled = SpatialGDKSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker;
+		WorkerTypes.Add(TPair<FName, bool>(SpatialConstants::RoutingWorkerType, bRoutingWorkerEnabled));
+		WorkerTypes.Add(TPair<FName, bool>(SpatialConstants::StrategyWorkerType, SpatialGDKSettings->bRunStrategyWorker));
+		for (const auto& Pair : WorkerTypes)
 		{
-			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.ToString()));
-			if (!FPaths::FileExists(JsonPath))
+			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Pair.Key.ToString()));
+			const bool bFileExists = FPaths::FileExists(JsonPath);
+			if (!bFileExists && Pair.Value)
 			{
 				UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
 
 				if (!GenerateDefaultWorkerJson(JsonPath, bOutRedeployRequired))
 				{
 					bAllJsonsGeneratedSuccessfully = false;
+				}
+			}
+			if (bFileExists && !Pair.Value)
+			{
+				UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Found worker json at %s"), *JsonPath);
+
+				IFileManager& FileManager = IFileManager::Get();
+				if (!FileManager.Delete(*JsonPath))
+				{
+					UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Failed to delete default worker json from %s"),
+						   *JsonPath);
+					bAllJsonsGeneratedSuccessfully = false;
+				}
+				else
+				{
+					bOutRedeployRequired = true;
+					UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Deleted default worker json from %s"), *JsonPath);
 				}
 			}
 		}
