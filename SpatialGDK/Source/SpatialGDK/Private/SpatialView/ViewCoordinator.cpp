@@ -60,11 +60,6 @@ const ViewDelta& ViewCoordinator::GetViewDelta() const
 	return View.GetViewDelta();
 }
 
-const EntityView& ViewCoordinator::GetView() const
-{
-	return View.GetView();
-}
-
 void ViewCoordinator::FlushMessagesToSend()
 {
 	ConnectionHandler->SendMessages(View.FlushLocalChanges());
@@ -83,6 +78,21 @@ void ViewCoordinator::RefreshEntityCompleteness(Worker_EntityId EntityId)
 	{
 		SubviewToRefresh->RefreshEntity(EntityId);
 	}
+}
+
+const TArray<EntityDelta>& ViewCoordinator::GetEntityDeltas() const
+{
+	return View.GetViewDelta().GetEntityDeltas();
+}
+
+const TArray<Worker_Op>& ViewCoordinator::GetWorkerMessages() const
+{
+	return View.GetViewDelta().GetWorkerMessages();
+}
+
+const EntityView& ViewCoordinator::GetView() const
+{
+	return View.GetView();
 }
 
 const ComponentData* ViewCoordinator::GetComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
@@ -112,36 +122,10 @@ void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_Compo
 	View.SendRemoveComponent(EntityId, ComponentId, SpanId);
 }
 
-Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, TOptional<uint32> TimeoutMillis)
+Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData,
+														   const FSpatialGDKSpanId& SpanId)
 {
-	View.SendReserveEntityIdsRequest({ NextRequestId, NumberOfEntityIds, TimeoutMillis });
-	return NextRequestId++;
-}
-
-Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
-														  TOptional<uint32> TimeoutMillis, const FSpatialGDKSpanId& SpanId)
-{
-	View.SendCreateEntityRequest({ NextRequestId, MoveTemp(EntityComponents), EntityId, TimeoutMillis, SpanId });
-	return NextRequestId++;
-}
-
-Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, TOptional<uint32> TimeoutMillis,
-														  const FSpatialGDKSpanId& SpanId)
-{
-	View.SendDeleteEntityRequest({ NextRequestId, EntityId, TimeoutMillis, SpanId });
-	return NextRequestId++;
-}
-
-Worker_RequestId ViewCoordinator::SendEntityQueryRequest(EntityQuery Query, TOptional<uint32> TimeoutMillis)
-{
-	View.SendEntityQueryRequest({ NextRequestId, MoveTemp(Query), TimeoutMillis });
-	return NextRequestId++;
-}
-
-Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request,
-														   TOptional<uint32> TimeoutMillis, const FSpatialGDKSpanId& SpanId)
-{
-	View.SendEntityCommandRequest({ EntityId, NextRequestId, MoveTemp(Request), TimeoutMillis, SpanId });
+	EntityCommandRetryHandler.SendRequest(NextRequestId, { EntityId, MoveTemp(Request), SpanId }, RetryData, View);
 	return NextRequestId++;
 }
 
@@ -153,16 +137,6 @@ void ViewCoordinator::SendEntityCommandResponse(Worker_RequestId RequestId, Comm
 void ViewCoordinator::SendEntityCommandFailure(Worker_RequestId RequestId, FString Message, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendEntityCommandFailure({ RequestId, MoveTemp(Message), SpanId });
-}
-
-void ViewCoordinator::SendMetrics(SpatialMetrics Metrics)
-{
-	View.SendMetrics(MoveTemp(Metrics));
-}
-
-void ViewCoordinator::SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message)
-{
-	View.SendLogMessage({ Level, LoggerName, MoveTemp(Message) });
 }
 
 Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEntityIds, FRetryData RetryData)
@@ -190,11 +164,37 @@ Worker_RequestId ViewCoordinator::SendEntityQueryRequest(EntityQuery Query, FRet
 	return NextRequestId++;
 }
 
-Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData,
-														   const FSpatialGDKSpanId& SpanId)
+void ViewCoordinator::SendMetrics(SpatialMetrics Metrics)
 {
-	EntityCommandRetryHandler.SendRequest(NextRequestId, { EntityId, MoveTemp(Request), SpanId }, RetryData, View);
-	return NextRequestId++;
+	View.SendMetrics(MoveTemp(Metrics));
+}
+
+void ViewCoordinator::SendLogMessage(Worker_LogLevel Level, const FName& LoggerName, FString Message)
+{
+	View.SendLogMessage({ Level, LoggerName, MoveTemp(Message) });
+}
+
+bool ViewCoordinator::HasEntity(Worker_EntityId EntityId) const
+{
+	return View.GetView().Contains(EntityId);
+}
+
+bool ViewCoordinator::HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
+{
+	if (const EntityViewElement* Element = View.GetView().Find(EntityId))
+	{
+		return Element->Components.ContainsByPredicate(ComponentIdEquality{ ComponentId });
+	}
+	return false;
+}
+
+bool ViewCoordinator::HasAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId) const
+{
+	if (const EntityViewElement* Element = View.GetView().Find(EntityId))
+	{
+		return Element->Authority.Contains(ComponentSetId);
+	}
+	return false;
 }
 
 CallbackId ViewCoordinator::RegisterComponentAddedCallback(Worker_ComponentId ComponentId, FComponentValueCallback Callback)
@@ -248,29 +248,6 @@ FDispatcherRefreshCallback ViewCoordinator::CreateAuthorityChangeRefreshCallback
 																				 const FAuthorityChangeRefreshPredicate& RefreshPredicate)
 {
 	return FSubView::CreateAuthorityChangeRefreshCallback(Dispatcher, ComponentId, RefreshPredicate);
-}
-
-bool ViewCoordinator::HasEntity(Worker_EntityId EntityId) const
-{
-	return View.GetView().Contains(EntityId);
-}
-
-bool ViewCoordinator::HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
-{
-	if (const EntityViewElement* Element = View.GetView().Find(EntityId))
-	{
-		return Element->Components.ContainsByPredicate(ComponentIdEquality{ ComponentId });
-	}
-	return false;
-}
-
-bool ViewCoordinator::HasAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId) const
-{
-	if (const EntityViewElement* Element = View.GetView().Find(EntityId))
-	{
-		return Element->Authority.Contains(ComponentSetId);
-	}
-	return false;
 }
 
 const FString& ViewCoordinator::GetWorkerId() const

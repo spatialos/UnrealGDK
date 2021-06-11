@@ -48,6 +48,8 @@ ASpatialFunctionalTestFlowController* SpatialFunctionalTestFlowControllerSpawner
 	ServerFlowController->FinishSpawning(FTransform(), true);
 	// TODO: Replace locking with custom LB strategy - UNR-3393
 	LockFlowControllerDelegations(ServerFlowController);
+	// register the auth flow controller
+	ServerFlowController->RegisterFlowController();
 
 	return ServerFlowController;
 }
@@ -64,6 +66,8 @@ ASpatialFunctionalTestFlowController* SpatialFunctionalTestFlowControllerSpawner
 						   INVALID_FLOW_CONTROLLER_ID }; // by default have invalid id, Test Authority will set it to ensure uniqueness
 
 	FlowController->FinishSpawning(OwningTest->GetActorTransform(), true);
+	// register the auth flow controller
+	FlowController->RegisterFlowController();
 
 	return FlowController;
 }
