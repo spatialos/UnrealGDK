@@ -435,6 +435,13 @@ public:
 	bool bUseNarrowPhaseNCDInterestCulling;
 
 	/**
+	 * Do we refresh client interest reactively when migrating servers.
+	 * I can't think why this would be strictly necessary so I'm turned it off.
+	 */
+	UPROPERTY(EditAnywhere, config, Category = "Client Entity Interest", meta = (EditCondition = "bUseEntityIdListClientQueries"))
+	bool bRefreshClientInterestOnHandover;
+
+	/**
 	 * By default, load balancing config will be read from the WorldSettings, but this can be toggled to override
 	 * the multi-worker settings class
 	 */
