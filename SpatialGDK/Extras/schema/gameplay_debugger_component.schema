@@ -1,0 +1,7 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+component GameplayDebuggerComponent {
+     id = 9997;
+     option<uint32> worker_id_delegation = 1;
+}

@@ -200,7 +200,8 @@ TArray<Worker_ComponentId>{ // RPCs from clients
 const TArray<FString> ServerAuthorityWellKnownSchemaImports = {
     "improbable/standard_library.schema",
     "unreal/gdk/authority_intent.schema",
-    "unreal/gdk/debug_component.schema",
+	"unreal/gdk/debug_component.schema",
+	"unreal/gdk/gameplay_debugger_component.schema",
     "unreal/gdk/debug_metrics.schema",
     "unreal/gdk/net_owning_client_worker.schema",
     "unreal/gdk/not_streamed.schema",
