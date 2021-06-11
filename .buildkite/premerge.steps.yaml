@@ -10,7 +10,7 @@ common_env_vars: &common_env_vars
   RUN_DEFAULT_TESTS: "${RUN_DEFAULT_TESTS:-True}"
   CLEAN_BUILD: "${CLEAN_BUILD:-False}"
   SLOW_TESTS: "${SLOW_TESTS}"
-  EXTRA_TESTS: "${EXTRA_TESTS}"
+  EXTRA_TESTS: "${EXTRA_TESTS:-}"
   EXTRA_TEST_RUNS: "${EXTRA_TEST_RUNS:-1}"
 steps:
   # New build pipeline
