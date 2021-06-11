@@ -7,10 +7,11 @@ common_env_vars: &common_env_vars
   USE_FASTBUILD: "${USE_FASTBUILD:-True}"
   IS_BUILDKITE_BUILD: "${IS_BUILDKITE_BUILD:-True}"
   BUILD_ANDROID: "${BUILD_ANDROID:-False}"
-  SKIP_TESTS: "${SKIP_TESTS:-False}"
+  RUN_DEFAULT_TESTS: "${RUN_DEFAULT_TESTS:-True}"
   CLEAN_BUILD: "${CLEAN_BUILD:-False}"
   SLOW_TESTS: "${SLOW_TESTS}"
-
+  EXTRA_TESTS: "${EXTRA_TESTS}"
+  EXTRA_TEST_RUNS: "${EXTRA_TEST_RUNS}"
 steps:
   # New build pipeline
   # Trigger a 4.26 build
