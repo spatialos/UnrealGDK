@@ -98,16 +98,16 @@ void USpatialGameInstance::CreateNewSpatialConnectionManager()
 
 void USpatialGameInstance::DestroySpatialConnectionManager()
 {
-	if (SpatialConnectionManager != nullptr)
-	{
-		SpatialConnectionManager->DestroyConnection();
-		SpatialConnectionManager = nullptr;
-	}
-
 	if (GlobalStateManager != nullptr)
 	{
 		GlobalStateManager->ConditionalBeginDestroy();
 		GlobalStateManager = nullptr;
+	}
+
+	if (SpatialConnectionManager != nullptr)
+	{
+		SpatialConnectionManager->DestroyConnection();
+		SpatialConnectionManager = nullptr;
 	}
 }
 

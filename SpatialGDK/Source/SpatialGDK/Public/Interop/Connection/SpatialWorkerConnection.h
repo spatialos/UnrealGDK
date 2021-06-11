@@ -113,6 +113,8 @@ public:
 
 	void SetStartupComplete();
 
+	SpatialGDK::ISpatialOSWorker* GetSpatialWorkerInterface() const;
+
 	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
 	FOnEnqueueMessage OnEnqueueMessage;
 
