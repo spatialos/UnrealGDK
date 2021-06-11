@@ -50,7 +50,6 @@ struct GameplayDebuggerComponent
 	}
 
 	VirtualWorkerId DelegatedWorkerId = 0;
-	;
 
 private:
 	void ReadFromSchema(Schema_Object* ComponentObject) { DelegatedWorkerId = Schema_GetInt32(ComponentObject, 1); }
