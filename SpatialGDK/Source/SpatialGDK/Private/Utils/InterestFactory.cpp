@@ -18,9 +18,7 @@
 #include "GameFramework/PlayerController.h"
 #include "UObject/UObjectIterator.h"
 
-#if WITH_GAMEPLAY_DEBUGGER
 #include "GameplayDebuggerCategoryReplicator.h"
-#endif
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);
 
@@ -289,7 +287,6 @@ void InterestFactory::AddClientPlayerControllerActorInterest(Interest& OutIntere
 	}
 }
 
-#if WITH_GAMEPLAY_DEBUGGER
 void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(Interest& OutInterest,
 																			   const AGameplayDebuggerCategoryReplicator& Replicator) const
 {
@@ -320,7 +317,6 @@ void InterestFactory::AddServerGameplayDebuggerCategoryReplicatorActorInterest(I
 	PlayerControllerQuery.ResultComponentSetIds = ServerNonAuthInterestResultType.ComponentSetsIds;
 	AddComponentQueryPairToInterestComponent(OutInterest, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, PlayerControllerQuery);
 }
-#endif
 
 void InterestFactory::AddClientSelfInterest(Interest& OutInterest) const
 {
