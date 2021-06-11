@@ -50,18 +50,12 @@ struct GameplayDebuggerComponent
 	}
 
 	VirtualWorkerId DelegatedWorkerId = 0;
-;
+	;
 
 private:
-	void ReadFromSchema(Schema_Object* ComponentObject)
-	{
-		DelegatedWorkerId = Schema_GetInt32(ComponentObject, 1);
-	}
+	void ReadFromSchema(Schema_Object* ComponentObject) { DelegatedWorkerId = Schema_GetInt32(ComponentObject, 1); }
 
-	void WriteToSchema(Schema_Object* ComponentObject) const
-	{
-		Schema_AddInt32(ComponentObject, 1, DelegatedWorkerId);
-	}
+	void WriteToSchema(Schema_Object* ComponentObject) const { Schema_AddInt32(ComponentObject, 1, DelegatedWorkerId); }
 };
 
 } // namespace SpatialGDK

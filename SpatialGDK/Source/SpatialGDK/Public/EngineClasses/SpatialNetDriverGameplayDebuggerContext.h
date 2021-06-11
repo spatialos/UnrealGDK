@@ -16,8 +16,8 @@ class USpatialNetDriver;
 
 namespace SpatialGDK
 {
-	class FSubView;
-	struct ComponentChange;
+class FSubView;
+struct ComponentChange;
 } // namespace SpatialGDK
 
 UCLASS()

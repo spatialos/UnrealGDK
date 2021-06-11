@@ -3247,7 +3247,7 @@ void USpatialNetDriver::TryFinishStartup()
 				}
 #endif
 
-#ifdef WITH_GAMEPLAY_DEBUGGER
+#if WITH_GAMEPLAY_DEBUGGER
 				const FFilterPredicate GameplayDebuggerCompFilter = [this](const Worker_EntityId EntityId,
 																		   const SpatialGDK::EntityViewElement& Element) {
 					return Element.Components.ContainsByPredicate(
@@ -3255,8 +3255,8 @@ void USpatialNetDriver::TryFinishStartup()
 				};
 
 				const TArray<FDispatcherRefreshCallback> GameplayDebuggerCompRefresh = {
-				Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
-					SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID)
+					Connection->GetCoordinator().CreateComponentExistenceRefreshCallback(
+						SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID)
 				};
 
 				const SpatialGDK::FSubView& GameplayDebuggerActorSubView =

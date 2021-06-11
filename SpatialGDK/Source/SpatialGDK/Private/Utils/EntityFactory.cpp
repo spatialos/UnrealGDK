@@ -104,12 +104,12 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID));
 
-#ifdef WITH_GAMEPLAY_DEBUGGER
-	if (Actor->IsA <AGameplayDebuggerCategoryReplicator>())
+#if WITH_GAMEPLAY_DEBUGGER
+	if (Actor->IsA<AGameplayDebuggerCategoryReplicator>())
 	{
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID));
 	}
-#endif  //WITH_GAMEPLAY_DEBUGGER
+#endif // WITH_GAMEPLAY_DEBUGGER
 
 	return ComponentDatas;
 }

@@ -15,7 +15,7 @@ UGameplayDebuggerLBStrategy::UGameplayDebuggerLBStrategy()
 }
 
 void UGameplayDebuggerLBStrategy::Init(USpatialNetDriverGameplayDebuggerContext& InGameplayDebuggerCtx,
-	UAbstractLBStrategy& InWrappedStrategy)
+									   UAbstractLBStrategy& InWrappedStrategy)
 {
 	GameplayDebuggerCtx = &InGameplayDebuggerCtx;
 	WrappedStrategy = &InWrappedStrategy;
@@ -98,7 +98,8 @@ uint32 UGameplayDebuggerLBStrategy::GetMinimumRequiredWorkers() const
 	return WrappedStrategy->GetMinimumRequiredWorkers();
 }
 
-void UGameplayDebuggerLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId)
+void UGameplayDebuggerLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId,
+													  const VirtualWorkerId& LastVirtualWorkerId)
 {
 	check(WrappedStrategy);
 	WrappedStrategy->SetVirtualWorkerIds(FirstVirtualWorkerId, LastVirtualWorkerId);
@@ -120,5 +121,3 @@ UAbstractLBStrategy* UGameplayDebuggerLBStrategy::GetWrappedStrategy() const
 {
 	return WrappedStrategy;
 }
-
-

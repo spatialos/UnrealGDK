@@ -399,7 +399,7 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerWorkerIdChange(AGameplayD
 	{
 		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Warning, TEXT("Callback from an entity we are not tracking?"));
 		return;
-	}	
+	}
 
 	if (EntityData->CurrentWorkerId != InServerWorkerId)
 	{
