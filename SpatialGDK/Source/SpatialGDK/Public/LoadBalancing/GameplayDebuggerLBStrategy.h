@@ -15,7 +15,9 @@ class UAbstractLBStrategy;
 DECLARE_LOG_CATEGORY_EXTERN(LogGameplayDebuggerLBStrategy, Log, All)
 
 /*
- * TODO
+ * Load balancing strategy to manage gameplay debugger replicated actors.
+ * This strategy wraps whatever LB strategy is already in place, and allows
+ * said replicated actors to be authority assigned to any server.
  */
 UCLASS(HideDropdown, NotBlueprintable)
 class SPATIALGDK_API UGameplayDebuggerLBStrategy : public UAbstractLBStrategy
