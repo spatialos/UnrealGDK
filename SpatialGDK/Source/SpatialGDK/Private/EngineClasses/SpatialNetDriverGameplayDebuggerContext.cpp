@@ -387,17 +387,23 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerRequest(AGameplayDebugger
 		return;
 	}
 
+	if (!InCategoryReplicator->HasAuthority())
+	{
+		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Warning, TEXT("Only expect to be registered and receive this callback when there is authority"));
+		return;
+	}
+
 	Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(InCategoryReplicator);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Warning, TEXT("Callback from an actor with no entity?"));
+		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Warning, TEXT("Callback from an actor with no entity"));
 		return;
 	}
 
 	FEntityData* EntityData = TrackedEntities.Find(EntityId);
 	if (EntityData == nullptr)
 	{
-		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Warning, TEXT("Callback from an entity we are not tracking?"));
+		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Warning, TEXT("Callback from an entity we are not tracking"));
 		return;
 	}
 
