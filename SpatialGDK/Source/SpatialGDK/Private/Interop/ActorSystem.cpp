@@ -178,6 +178,15 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 		{
 			const Worker_EntityId EntityId = Delta.EntityId;
 
+			if (HasEntityBeenRequestedForDelete(EntityId))
+			{
+				if (SubViewUpdate.SubViewType == ENetRole::ROLE_Authority)
+				{
+					HandleEntityDeletedAuthority(EntityId);
+				}
+				continue;
+			}
+			
 			if (!PresentEntities.Contains(Delta.EntityId))
 			{
 				// Create new actor for the entity.
@@ -383,15 +392,6 @@ void ActorSystem::AuthorityGained(Worker_EntityId EntityId, Worker_ComponentSetI
 	if (ComponentSetId != SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID
 		&& ComponentSetId != SpatialConstants::CLIENT_AUTH_COMPONENT_SET_ID)
 	{
-		return;
-	}
-
-	if (HasEntityBeenRequestedForDelete(EntityId))
-	{
-		if (ComponentSetId == SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-		{
-			HandleEntityDeletedAuthority(EntityId);
-		}
 		return;
 	}
 
@@ -1274,7 +1274,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	{
-		AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get(/*bEvenIfPendingKill =*/true));
+		AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get(/*bEvenIfPendingKill =*/ false));
 		if (EntityActor != nullptr)
 		{
 			if (!EntityActor->IsActorReady())
