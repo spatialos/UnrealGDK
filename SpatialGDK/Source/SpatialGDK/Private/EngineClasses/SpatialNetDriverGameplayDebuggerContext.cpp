@@ -239,8 +239,8 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 
 				if (!EntityData->Handle.IsValid())
 				{
-					EntityData->Handle = CategoryReplicator->OnServerRequest().AddUObject(
-						this, &USpatialNetDriverGameplayDebuggerContext::OnServerRequest);
+					EntityData->Handle =
+						CategoryReplicator->OnServerRequest().AddUObject(this, &USpatialNetDriverGameplayDebuggerContext::OnServerRequest);
 				}
 				else
 				{
