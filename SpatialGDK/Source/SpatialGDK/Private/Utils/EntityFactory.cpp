@@ -35,7 +35,9 @@
 #include "GameFramework/GameStateBase.h"
 #include "Runtime/Launch/Resources/Version.h"
 
+#if WITH_GAMEPLAY_DEBUGGER
 #include "GameplayDebuggerCategoryReplicator.h"
+#endif
 
 DEFINE_LOG_CATEGORY(LogEntityFactory);
 
