@@ -18,25 +18,25 @@ void FGridBalancingCalculator::CollectPartitionsToAdd(const FString& Prefix, FPa
 {
 	if (Partitions.Num() == 0)
 	{
-		const float WorldXMin = -(WorldWidth / 2.f);
-		const float WorldYMin = -(WorldHeight / 2.f);
+		const float WorldWidthMin = -(WorldWidth / 2.f);
+		const float WorldHeightMin = -(WorldHeight / 2.f);
 
-		const float XSize = WorldWidth / Cols;
-		const float YSize = WorldHeight / Rows;
+		const float ColumnWidth = WorldWidth / Cols;
+		const float RowHeight = WorldHeight / Rows;
 
 		// We would like the inspector's representation of the load balancing strategy to match our intuition.
 		// +x is forward, so rows are perpendicular to the x-axis and columns are perpendicular to the y-axis.
-		float XMin = WorldXMin;
-		float YMin = WorldYMin;
+		float XMin = WorldHeightMin;
+		float YMin = WorldWidthMin;
 		float XMax, YMax;
 
-		for (uint32 GridX = 0; GridX < Cols; ++GridX)
+		for (uint32 Col = 0; Col < Cols; ++Col)
 		{
-			XMax = XMin + XSize;
+			YMax = YMin + ColumnWidth;
 
-			for (uint32 GridY = 0; GridY < Rows; ++GridY)
+			for (uint32 Row = 0; Row < Rows; ++Row)
 			{
-				YMax = YMin + YSize;
+				XMax = XMin + RowHeight;
 
 				FVector2D Min(XMin, YMin);
 				FVector2D Max(XMax, YMax);
@@ -54,7 +54,7 @@ void FGridBalancingCalculator::CollectPartitionsToAdd(const FString& Prefix, FPa
 				Constraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center3D),
 																	  SpatialGDK::EdgeLength::FromFVector(EdgeLengths3D) };
 
-				FString DisplayName = FString::Printf(TEXT("GridCell %i (%i, %i)"), Cells.Num() - 1, GridX, GridY);
+				FString DisplayName = FString::Printf(TEXT("GridCell %i (%i, %i)"), Cells.Num() - 1, Row, Col);
 				if (!Prefix.IsEmpty())
 				{
 					DisplayName = Prefix + TEXT(", ") + DisplayName;
@@ -64,11 +64,11 @@ void FGridBalancingCalculator::CollectPartitionsToAdd(const FString& Prefix, FPa
 
 				OutPartitions.Add(NewPartition);
 
-				YMin = YMax;
+				XMin = XMax;
 			}
 
-			YMin = WorldYMin;
-			XMin = XMax;
+			XMin = WorldHeightMin;
+			YMin = YMax;
 		}
 	}
 }
