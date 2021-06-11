@@ -235,12 +235,12 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 			{
 				TArray<FString> PhysicalWorkerIds;
 				PhysicalToVirtualWorkerIdMap.GetKeys(PhysicalWorkerIds);
-				CategoryReplicator->SetServerWorkerIds(PhysicalWorkerIds);
+				CategoryReplicator->SetAvailableServers(PhysicalWorkerIds);
 
 				if (!EntityData->Handle.IsValid())
 				{
-					EntityData->Handle = CategoryReplicator->OnCurrentServerWorkerIdChange().AddUObject(
-						this, &USpatialNetDriverGameplayDebuggerContext::OnServerWorkerIdChange);
+					EntityData->Handle = CategoryReplicator->OnServerRequest().AddUObject(
+						this, &USpatialNetDriverGameplayDebuggerContext::OnServerRequest);
 				}
 				else
 				{
@@ -317,7 +317,7 @@ void USpatialNetDriverGameplayDebuggerContext::UntrackEntity(Worker_EntityId Ent
 			if (AGameplayDebuggerCategoryReplicator* CategoryReplicator =
 					Cast<AGameplayDebuggerCategoryReplicator>(EntityObjectWeakPtr.Get()))
 			{
-				CategoryReplicator->OnCurrentServerWorkerIdChange().Remove(EntityData->Handle);
+				CategoryReplicator->OnServerRequest().Remove(EntityData->Handle);
 			}
 		}
 	}
@@ -376,8 +376,8 @@ bool USpatialNetDriverGameplayDebuggerContext::NeedEntityInterestUpdate() const
 	return bNeedToUpdateInterest;
 }
 
-void USpatialNetDriverGameplayDebuggerContext::OnServerWorkerIdChange(AGameplayDebuggerCategoryReplicator* InCategoryReplicator,
-																	  FString InServerWorkerId)
+void USpatialNetDriverGameplayDebuggerContext::OnServerRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator,
+															   FString InServerWorkerId)
 {
 	check(NetDriver && NetDriver->PackageMap && NetDriver->Connection);
 
@@ -408,6 +408,8 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerWorkerIdChange(AGameplayD
 		{
 			EntityData->Component.DelegatedWorkerId = *VirtualWorkerId;
 			EntityData->CurrentWorkerId = InServerWorkerId;
+
+			InCategoryReplicator->SetCurrentServer(InServerWorkerId);
 
 			FWorkerComponentUpdate ComponentUpdate = EntityData->Component.CreateComponentUpdate();
 			NetDriver->Connection->SendComponentUpdate(EntityId, &ComponentUpdate);

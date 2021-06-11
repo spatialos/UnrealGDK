@@ -51,7 +51,7 @@ protected:
 	void OnComponentChange(Worker_EntityId EntityId, const SpatialGDK::ComponentChange& Change);
 	void ApplyComponentUpdate(Worker_EntityId EntityId, Schema_ComponentUpdate* Update);
 	bool NeedEntityInterestUpdate() const;
-	void OnServerWorkerIdChange(AGameplayDebuggerCategoryReplicator* InCategoryReplicator, FString InServerWorkerId);
+	void OnServerRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator, FString InServerWorkerId);
 
 	struct FEntityData
 	{
