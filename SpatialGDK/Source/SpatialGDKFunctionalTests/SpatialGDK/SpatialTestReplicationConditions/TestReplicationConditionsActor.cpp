@@ -3,6 +3,9 @@
 #include "TestReplicationConditionsActor.h"
 
 #include "Net/UnrealNetwork.h"
+#include "PhysXPublicCore.h"
+
+using namespace PhysicsInterfaceTypes;
 
 UTestReplicationConditionsComponentBase::UTestReplicationConditionsComponentBase()
 {
@@ -204,9 +207,12 @@ ATestReplicationConditionsActor_Physics::ATestReplicationConditionsActor_Physics
 		CreateDefaultSubobject<UTestReplicationConditionsComponent_Physics>(TEXT("UTestReplicationConditionsComponent_Physics"));
 
 	SetRootComponent(StaticComponent);
+}
 
-	GetReplicatedMovement_Mutable().bRepPhysics = true;
-	SetReplicatingMovement(true);
+void ATestReplicationConditionsActor_Physics::OnRep_ReplicatedMovement()
+{
+	InitFakePhysics();
+	Super::OnRep_ReplicatedMovement();
 }
 
 void ATestReplicationConditionsActor_Physics::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -217,6 +223,7 @@ void ATestReplicationConditionsActor_Physics::GetLifetimeReplicatedProps(TArray<
 	DOREPLIFETIME_CONDITION(ThisClass, CondSimulatedOrPhysicsNoReplay_Var, COND_SimulatedOrPhysicsNoReplay);
 	DOREPLIFETIME(ThisClass, StaticComponent);
 	DOREPLIFETIME(ThisClass, DynamicComponent);
+	DOREPLIFETIME(ThisClass, BodySetup);
 }
 
 void ATestReplicationConditionsActor_Physics::SpawnDynamicComponents()
@@ -225,8 +232,40 @@ void ATestReplicationConditionsActor_Physics::SpawnDynamicComponents()
 		SpawnDynamicComponent<UTestReplicationConditionsComponent_Physics>(TEXT("DynamicTestReplicationConditionsComponent_Physics"));
 }
 
+void ATestReplicationConditionsActor_Physics::InitFakePhysics()
+{
+	// This setup is required to have Unreal attempt to replicate any physics information, including Actor.ReplicatedMovement.
+	// Actor.ReplicatedMovement contains bRepPhysics, which is necessary to replicate to clients so that
+	// FSpatialConditionMapFilter can check it when determining the value of the COND_*Physics conditions.
+	if (UPrimitiveComponent* RootPrimComp = Cast<UPrimitiveComponent>(GetRootComponent()))
+	{
+		if (FBodyInstance* BodyInstance = RootPrimComp->GetBodyInstance())
+		{
+			if (BodyInstance->BodySetup == nullptr)
+			{
+				BodySetup = NewObject<UBodySetup>(this, NAME_None);
+				BodySetup->CollisionTraceFlag = CTF_UseSimpleAndComplex;
+				BodySetup->BodySetupGuid = FGuid::NewGuid();
+				BodyInstance->BodySetup = BodySetup;
+
+#if WITH_PHYSX
+				RigidActor = GPhysXSDK->createRigidStatic(U2PTransform(FTransform::Identity));
+				BodyInstance->ActorHandle.SyncActor = RigidActor;
+#endif
+			}
+		}
+	}
+}
+
 void ATestReplicationConditionsActor_Physics::SetPhysicsEnabled(bool bEnabled)
 {
+	InitFakePhysics();
+
 	GetReplicatedMovement_Mutable().bRepPhysics = bEnabled;
-	SetReplicatingMovement(true);
+	SetReplicatingMovement(bEnabled);
+
+	if (UPrimitiveComponent* RootPrimComp = Cast<UPrimitiveComponent>(GetRootComponent()))
+	{
+		RootPrimComp->SetSimulatePhysics(bEnabled);
+	}
 }

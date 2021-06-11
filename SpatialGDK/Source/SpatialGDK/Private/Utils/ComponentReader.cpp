@@ -230,8 +230,7 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 		const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 
-		TArray<FString> SpecialCaseProperties2 = { TEXT("Role"), TEXT("RemoteRole"), TEXT("ReplicatedMovement"), TEXT("bRepPhysics") };
-		bool IsSpecialCaseProperty = SpecialCaseProperties2.Contains(Cmd.Property->GetName());
+		bool IsSpecialCaseProperty = SpecialCaseProperties.Contains(Cmd.Property->GetName());
 		if (ApplySchemaObjectData.bProcessOnlySpecialCases != IsSpecialCaseProperty)
 		{
 			continue;
