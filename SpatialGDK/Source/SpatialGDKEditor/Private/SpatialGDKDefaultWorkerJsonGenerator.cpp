@@ -46,11 +46,14 @@ bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired)
 
 	if (const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>())
 	{
+		// Create an array of worker types with a bool signifying whether the associated worker json should exist or not.
+		// Then correct the file system state so it matches our expectations.
 		TArray<TPair<FName, bool>> WorkerTypes;
 		WorkerTypes.Add(TPair<FName, bool>(SpatialConstants::DefaultServerWorkerType, true));
 		const bool bRoutingWorkerEnabled = SpatialGDKSettings->CrossServerRPCImplementation == ECrossServerRPCImplementation::RoutingWorker;
 		WorkerTypes.Add(TPair<FName, bool>(SpatialConstants::RoutingWorkerType, bRoutingWorkerEnabled));
 		WorkerTypes.Add(TPair<FName, bool>(SpatialConstants::StrategyWorkerType, SpatialGDKSettings->bRunStrategyWorker));
+
 		for (const auto& Pair : WorkerTypes)
 		{
 			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Pair.Key.ToString()));
