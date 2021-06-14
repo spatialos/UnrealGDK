@@ -23,8 +23,7 @@ DECLARE_CYCLE_STAT(TEXT("Reader ApplyFastArrayUpdate"), STAT_ReaderApplyFastArra
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyProperty"), STAT_ReaderApplyProperty, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyArray"), STAT_ReaderApplyArray, STATGROUP_SpatialNet);
 
-const TArray<FString> SpatialGDK::ComponentReader::SpecialCaseProperties = { TEXT("Role"), TEXT("RemoteRole"), TEXT("ReplicatedMovement"),
-																			 TEXT("bRepPhysics") };
+const TArray<FName> SpatialGDK::ComponentReader::SpecialCaseProperties = { FName(TEXT("Role")),  FName(TEXT("RemoteRole")),  FName(TEXT("ReplicatedMovement")), FName(TEXT("bRepPhysics")) };
 
 namespace
 {
@@ -230,7 +229,7 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 		const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 
-		bool IsSpecialCaseProperty = SpecialCaseProperties.Contains(Cmd.Property->GetName());
+		bool IsSpecialCaseProperty = SpecialCaseProperties.Contains(Cmd.Property->GetFName());
 		if (ApplySchemaObjectData.bProcessOnlySpecialCases != IsSpecialCaseProperty)
 		{
 			continue;

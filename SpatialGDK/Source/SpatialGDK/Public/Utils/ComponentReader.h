@@ -74,7 +74,9 @@ private:
 	class SpatialEventTracer* EventTracer;
 	FObjectReferencesMap& RootObjectReferencesMap;
 
-	static const TArray<FString> SpecialCaseProperties;
+	// Special Case properties are properties that are used in building the FSpatialConditionMapFilter,
+	// and the client must read them before rebuilding the condition map for all other properties.
+	static const TArray<FName> SpecialCaseProperties;
 };
 
 } // namespace SpatialGDK

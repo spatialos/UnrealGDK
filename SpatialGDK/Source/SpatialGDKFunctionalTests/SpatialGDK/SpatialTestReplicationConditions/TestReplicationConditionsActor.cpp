@@ -223,7 +223,6 @@ void ATestReplicationConditionsActor_Physics::GetLifetimeReplicatedProps(TArray<
 	DOREPLIFETIME_CONDITION(ThisClass, CondSimulatedOrPhysicsNoReplay_Var, COND_SimulatedOrPhysicsNoReplay);
 	DOREPLIFETIME(ThisClass, StaticComponent);
 	DOREPLIFETIME(ThisClass, DynamicComponent);
-	DOREPLIFETIME(ThisClass, BodySetup);
 }
 
 void ATestReplicationConditionsActor_Physics::SpawnDynamicComponents()

@@ -123,7 +123,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessPhysicsActorProperties(TestActor_PhysicsEnabled, bWrite, bPhysicsEnabled, bPhysicsExpected);
 		}
 
-		 if (AssertTrue(TestActor_PhysicsDisabled->AreAllDynamicComponentsValid(),
+		if (AssertTrue(TestActor_PhysicsDisabled->AreAllDynamicComponentsValid(),
 					   TEXT("TestActor_PhysicsDisabled - All dynamic components should have arrived")))
 		{
 			const bool bWrite = false;
@@ -184,20 +184,17 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			}
 		}
 
-		// if (!bSpatialEnabled) // TODO: UNR-5213 - fix COND_AutonomousOnly replication
+		if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),
+			TEXT("TestActor_AutonomousOnly - All dynamic components should have arrived")))
 		{
-			if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),
-						   TEXT("TestActor_AutonomousOnly - All dynamic components should have arrived")))
-			{
-				const bool bWrite = false;
-				const bool bAutonomousExpected = true;
-				const bool bSimulatedExpected = false;
-				ProcessAutonomousOnlyActorProperties(bWrite, bAutonomousExpected, bSimulatedExpected);
-			}
+			const bool bWrite = false;
+			const bool bAutonomousExpected = true;
+			const bool bSimulatedExpected = false;
+			ProcessAutonomousOnlyActorProperties(bWrite, bAutonomousExpected, bSimulatedExpected);
 		}
 
 		if (AssertTrue(TestActor_PhysicsEnabled->AreAllDynamicComponentsValid(),
-					   TEXT("TestActor_PhysicsEnabled - All dynamic components should have arrived")))
+			TEXT("TestActor_PhysicsEnabled - All dynamic components should have arrived")))
 		{
 			const bool bWrite = false;
 			const bool bPhysicsEnabled = true;
@@ -206,7 +203,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		}
 
 		if (AssertTrue(TestActor_PhysicsDisabled->AreAllDynamicComponentsValid(),
-			TEXT("TestActor_PhysicsDisabled - All dynamic components should have arrived")))
+					   TEXT("TestActor_PhysicsDisabled - All dynamic components should have arrived")))
 		{
 			const bool bWrite = false;
 			const bool bPhysicsEnabled = false;
@@ -288,7 +285,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			ProcessPhysicsActorProperties(TestActor_PhysicsEnabled, bWrite, bPhysicsEnabled, bPhysicsExpected);
 		}
 
-		 if (AssertTrue(TestActor_PhysicsDisabled->AreAllDynamicComponentsValid(),
+		if (AssertTrue(TestActor_PhysicsDisabled->AreAllDynamicComponentsValid(),
 					   TEXT("TestActor_PhysicsDisabled - All dynamic components should have arrived")))
 		{
 			const bool bWrite = false;
@@ -347,9 +344,9 @@ void ASpatialTestReplicationConditions::PrepareTest()
 			return;
 		}
 
-		 TestActor_PhysicsDisabled = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Physics>(
+		TestActor_PhysicsDisabled = GetWorld()->SpawnActor<ATestReplicationConditionsActor_Physics>(
 			ActorSpawnPosition, FRotator::ZeroRotator, FActorSpawnParameters());
-		 if (!AssertTrue(IsValid(TestActor_PhysicsDisabled), TEXT("Failed to spawn TestActor_PhysicsDisabled")))
+		if (!AssertTrue(IsValid(TestActor_PhysicsDisabled), TEXT("Failed to spawn TestActor_PhysicsDisabled")))
 		{
 			return;
 		}

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/StaticMeshComponent.h"
+#include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "PhysX3/PhysX_3.4/Include/PxRigidActor.h"
 #include "TestReplicationConditionsActor.generated.h"
@@ -11,7 +11,7 @@
 #if WITH_PHYSX
 namespace physx
 {
-	class PxRigidActor;
+class PxRigidActor;
 }
 #endif
 
@@ -278,7 +278,6 @@ public:
 	UPROPERTY(Replicated)
 	UTestReplicationConditionsComponent_Physics* DynamicComponent;
 
-	UPROPERTY(Replicated)
 	UBodySetup* BodySetup;
 
 #if WITH_PHYSX
