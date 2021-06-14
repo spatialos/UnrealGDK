@@ -61,6 +61,11 @@ public:
 
 	LBStrategyRegions GetLBStrategyRegions() const;
 
+	uint32 GetRows() const { return Rows; }
+	uint32 GetCols() const { return Cols; }
+	uint32 GetWorldWidth() const { return WorldWidth; }
+	uint32 GetWorldHeight() const { return WorldHeight; }
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
