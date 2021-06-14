@@ -30,6 +30,7 @@ ASpatialFunctionalTestFlowController::ASpatialFunctionalTestFlowController(const
 #endif
 	OwningTest = nullptr;
 	bHasAckFinishedTest = true;
+	bReadyToRegisterWithTest = false;
 	bIsReadyToRunTest = false;
 }
 
@@ -37,10 +38,29 @@ void ASpatialFunctionalTestFlowController::GetLifetimeReplicatedProps(TArray<FLi
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bReadyToRegisterWithTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bIsReadyToRunTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, bHasAckFinishedTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, OwningTest);
 	DOREPLIFETIME(ASpatialFunctionalTestFlowController, WorkerDefinition);
+}
+
+void ASpatialFunctionalTestFlowController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (HasAuthority())
+	{
+		// Super hack
+		FTimerHandle Handle;
+		GetWorldTimerManager().SetTimer(
+			Handle,
+			[this]() {
+				bReadyToRegisterWithTest = true;
+				OnReadyToRegisterWithTest();
+			},
+			1.0f, false);
+	}
 }
 
 void ASpatialFunctionalTestFlowController::OnAuthorityGained() {}
@@ -65,32 +85,28 @@ void ASpatialFunctionalTestFlowController::CrossServerSetWorkerId_Implementation
 	WorkerDefinition.Id = NewWorkerId;
 }
 
+void ASpatialFunctionalTestFlowController::OnReadyToRegisterWithTest()
+{
+	TryRegisterFlowControllerWithOwningTest();
+}
+
 void ASpatialFunctionalTestFlowController::OnRep_OwningTest()
 {
-	// Register replicated flow controllers
-	RegisterFlowController();
+	TryRegisterFlowControllerWithOwningTest();
 }
 
-void ASpatialFunctionalTestFlowController::RegisterFlowController()
+void ASpatialFunctionalTestFlowController::TryRegisterFlowControllerWithOwningTest()
 {
-	OwningTest->RegisterFlowController(this);
-}
-
-void ASpatialFunctionalTestFlowController::TrySetReadyToRunTest()
-{
-	if (IsLocalController())
+	if (!bReadyToRegisterWithTest || OwningTest == nullptr)
 	{
-		if (HasActorBegunPlay() && IsActorReady() && OwningTest->HasActorBegunPlay() && OwningTest->IsActorReady()
-			&& OwningTest->HasPreparedTest())
-		{
-			SetReadyToRunTest(true);
-		}
-		else
-		{
-			GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
-				TrySetReadyToRunTest();
-			});
-		}
+		return;
+	}
+
+	OwningTest->RegisterFlowController(this);
+
+	if (OwningTest->HasPreparedTest())
+	{
+		SetReadyToRunTest(true);
 	}
 }
 
