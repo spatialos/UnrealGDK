@@ -102,7 +102,7 @@ void AStaticSubobjectsTest::PrepareTest()
 		TEXT("StaticSubobjectsTestClientCheckPawnPossesion"), FWorkerDefinition::Client(1), nullptr, nullptr,
 		[this](float DeltaTime) {
 			APawn* PlayerPawn = GetFlowPawn();
-			if (AssertIsValid(PlayerPawn, TEXT("PlayerCharacter should be valid")))
+			if (RequireTrue(IsValid(PlayerPawn), TEXT("PlayerCharacter should be valid")))
 			{
 				RequireTrue(PlayerPawn == GetFlowPlayerController()->AcknowledgedPawn, TEXT("The client should possess the pawn."));
 				FinishStep();
@@ -270,7 +270,7 @@ void AStaticSubobjectsTest::CheckClientNumberComponentsOnTestActorWithWait(int E
 
 void AStaticSubobjectsTest::ServerSetIntProperty(int IntPropertyNewVal)
 {
-	AddStep(TEXT("StaticSubobjectsTestServerIncreasesIntValue"), FWorkerDefinition::Server(1), nullptr, [this, IntPropertyNewVal]() {
+	AddStep(FString::Printf(TEXT("StaticSubobjectsTestServerSetsIntValueTo%d"), IntPropertyNewVal), FWorkerDefinition::Server(1), nullptr, [this, IntPropertyNewVal]() {
 		TestActor->TestIntProperty = IntPropertyNewVal;
 		FinishStep();
 	});
@@ -317,10 +317,10 @@ void AStaticSubobjectsTest::DestroyOneNonRootComponent() const
 	TArray<USceneComponent*> AllSceneComps;
 	TestActor->GetComponents<USceneComponent>(AllSceneComps);
 
-	const uint32 RootComponentId = TestActor->GetRootComponent()->GetUniqueID();
+	const USceneComponent* RootComponent = TestActor->GetRootComponent();
 	for (USceneComponent* SceneComponent : AllSceneComps)
 	{
-		if (SceneComponent->GetUniqueID() != RootComponentId)
+		if (SceneComponent != RootComponent)
 		{
 			SceneComponent->DestroyComponent();
 			return;
