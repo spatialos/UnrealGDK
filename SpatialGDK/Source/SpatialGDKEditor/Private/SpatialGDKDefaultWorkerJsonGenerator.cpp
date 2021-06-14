@@ -56,9 +56,11 @@ bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired)
 
 		for (const auto& Pair : WorkerTypes)
 		{
-			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Pair.Key.ToString()));
+			bool bShouldFileExist = Pair.Value;
+			FString WorkerType = Pair.Key.ToString();
+			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *WorkerType));
 			const bool bFileExists = FPaths::FileExists(JsonPath);
-			if (!bFileExists && Pair.Value)
+			if (!bFileExists && bShouldFileExist)
 			{
 				UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
 
@@ -67,14 +69,14 @@ bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired)
 					bAllJsonsGeneratedSuccessfully = false;
 				}
 			}
-			if (bFileExists && !Pair.Value)
+			else if (bFileExists && !bShouldFileExist)
 			{
 				UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Found worker json at %s"), *JsonPath);
 
 				IFileManager& FileManager = IFileManager::Get();
 				if (!FileManager.Delete(*JsonPath))
 				{
-					UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Failed to delete default worker json from %s"),
+					UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Error, TEXT("Failed to delete default worker json from %s"),
 						   *JsonPath);
 					bAllJsonsGeneratedSuccessfully = false;
 				}
