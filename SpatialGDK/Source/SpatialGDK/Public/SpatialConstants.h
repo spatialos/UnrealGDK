@@ -176,10 +176,16 @@ const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID = 1;
 const Schema_FieldId DEBUG_METRICS_START_RPC_METRICS_ID = 1;
 const Schema_FieldId DEBUG_METRICS_STOP_RPC_METRICS_ID = 2;
 const Schema_FieldId DEBUG_METRICS_MODIFY_SETTINGS_ID = 3;
+const Schema_FieldId DEBUG_METRICS_EXEC_SERVER_COMMAND_ID = 4;
 
 // ModifySettingPayload Field IDs
 const Schema_FieldId MODIFY_SETTING_PAYLOAD_NAME_ID = 1;
 const Schema_FieldId MODIFY_SETTING_PAYLOAD_VALUE_ID = 2;
+
+// ExecServerCommandPayload Field IDs
+const Schema_FieldId EXEC_SERVER_COMMAND_PAYLOAD_SERVER_NAME_ID = 1;
+const Schema_FieldId EXEC_SERVER_COMMAND_PAYLOAD_COMMAND_ID = 2;
+const Schema_FieldId EXEC_SERVER_COMMAND_PAYLOAD_ARGS_ID = 3;
 
 // UnrealObjectRef Field IDs
 const Schema_FieldId UNREAL_OBJECT_REF_ENTITY_ID = 1;
@@ -237,6 +243,7 @@ const Schema_FieldId SERVER_WORKER_NAME_ID = 1;
 const Schema_FieldId SERVER_WORKER_READY_TO_BEGIN_PLAY_ID = 2;
 const Schema_FieldId SERVER_WORKER_SYSTEM_ENTITY_ID = 3;
 const Schema_FieldId SERVER_WORKER_FORWARD_SPAWN_REQUEST_COMMAND_ID = 1;
+const Schema_FieldId SERVER_WORKER_EXEC_SERVER_COMMAND_COMMAND_ID = 2;
 
 // SpawnPlayerRequest type IDs.
 const Schema_FieldId SPAWN_PLAYER_URL_ID = 1;

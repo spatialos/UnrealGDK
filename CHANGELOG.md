@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Note**: Since GDK for Unreal v0.10.0, the changelog is published in both English and Chinese. The Chinese version of each changelog is shown after its English version.<br>
 **注意**：自虚幻引擎开发套件 v0.10.0 版本起，其日志提供中英文两个版本。每个日志的中文版本都置于英文版本之后。
 
-
 ## [`x.y.z`] - Unreleased
 
 ### Breaking changes:
@@ -37,13 +36,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The runtime will shut down slightly faster after a PIE session.
 - Fixed a rare issue where one would see a change to the owner field but not the changes to owner-only fields.
 - Prevented a client crash that occurs if there is a mismatch between the client and server schema hash.
+- Fixed an issue for actors with bNetLoadOnClient. A dynamic subobject removed from such an actor while out of a client's view will now be properly removed on the client when the actor comes back into the client's view.
+- Fixed an issue that caused `UnrealGDK/Setup.sh` to report `sed: can't read : No such file or directory` when run on macOS.
+- Fixed an issue where multicast rpcs could be overwritten and then dropped on authority flicker.
 
 ### Internal:
 - Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.
 - Reserved entity IDs previously expired after 3 minutes. Reserved Entity IDs now no longer expire, and persist until used.
 - A test was calling `SetReplicates` on an actor over which it did not have authority. This was causing warnings to be triggered. We've fixed this by reverting the actor's role at the end of the test, so that the actor is not left in an unexpected state.
-- Added support for clients to disconnect during a test in the automated test framework. 
+- Added support for clients to disconnect during a test in the automated test framework.
 - Modified ActorSystem's Ownership and Simulated Subviews to take player ownership into account.
+
+## [`0.13.1`] - 2021-06-02
+
+### Breaking changes:
+- Event tracing has been optimised to reduce overhead when tracing events in general and in particular when events are not sampled. The tracing API has been modified to accommodate these improvements. You will have to modify your project if you use the API.
+
+### Features:
+- Added `SpatialExecServerCmd` console command with one command `StartInsights` to dynamically enable insights capturing.
+  - Format: SpatialExecServerCmd < server > < command > < args >
+  - Example usage: "SpatialExecServerCmd local StartInsights -trace=CustomChannel -tracefile=MyNewTrace"
+- Visual Logger now supports multi-worker environments.
+- The Unreal GDK has been updated to run against SpatialOS 15.1.0, older versions of SpatialOS will no longer work with the Unreal GDK.
+- Event tracing rotating log support (via `bEnableEventTracingRotatingLogs`, `EventTracingRotatingLogsMaxFileSizeBytes` and `EventTracingRotatingLogsMaxFileCount`). 
+- Event tracing filter support (configured via `UEventTracingSamplingSettings`).
 
 ## [`0.13.0`] - 2021-05-17
 
@@ -103,11 +119,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where on initial replication, actors with replicated TArrays would not have the array cleared if the local state was not empty.
 - Fixed an issue with replicating references to stably named dynamically added subobjects of dynamic actors.
 - Fixed an issue during client logout where a client's corresponding Actors were not cleaned up correctly.
-- Reverted a fix relating to the `dbghelp` file that previously caused the Editor to crash when loading the Session Front End. Our fix is no longer necessary, as Epic have fixed the issue and we've adopted their fix.
 - Fixed issue with `SpatialDebugger` crashing when client travelling.
 - Fixed an issue where a NetworkFailure won't be reported when connecting to a deployment that doesn't support dev_login with a developer token, and in some other configuration-dependent cases.
-- Fixed a Windows compile issue when updating the worker SDK which did not recompile code dependent on the updated libs/dlls. 
-
+- Fixed a Windows compile issue when updating the worker SDK which did not recompile code dependent on the updated libs/dlls.
 
 ## [`0.12.0`] - 2021-02-01
 

@@ -235,6 +235,7 @@ ActorSystem::ActorSystem(const FSubView& InActorSubView, const FSubView& InAutho
 	, TombstoneSubView(&InTombstoneSubView)
 	, NetDriver(InNetDriver)
 	, EventTracer(InEventTracer)
+	, ClientNetLoadActorHelper(*InNetDriver)
 	, ClaimPartitionHandler(*InNetDriver->Connection)
 {
 }
@@ -649,7 +650,7 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 		EventTracer->TraceEvent(COMPONENT_UPDATE_EVENT_NAME, "", Causes, CauseSpanIds.Num(),
 								[Object, TargetObject, EntityId, ComponentId](FSpatialTraceEventDataBuilder& EventBuilder) {
 									EventBuilder.AddObject(Object);
-									EventBuilder.AddObject(TargetObject, "TargetObject");
+									EventBuilder.AddObject(TargetObject, "target_object");
 									EventBuilder.AddEntityId(EntityId);
 									EventBuilder.AddComponentId(ComponentId);
 								});
@@ -682,25 +683,34 @@ void ActorSystem::ComponentRemoved(const Worker_EntityId EntityId, const Worker_
 
 	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
 	{
-		FUnrealObjectRef ObjectRef(EntityId, ComponentId);
+		const FUnrealObjectRef ObjectRef(EntityId, ComponentId);
 		if (ComponentId == SpatialConstants::DORMANT_COMPONENT_ID)
 		{
 			GetOrRecreateChannelForDormantActor(Actor, EntityId);
 		}
 		else if (UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
-			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
-			{
-				TWeakObjectPtr<UObject> WeakPtr(Object);
-				Channel->OnSubobjectDeleted(ObjectRef, Object, WeakPtr);
+			DestroySubObject(EntityId, *Object, ObjectRef);
+		}
+	}
+}
 
-				Actor->OnSubobjectDestroyFromReplication(Object);
+void ActorSystem::DestroySubObject(const Worker_EntityId EntityId, UObject& Object, const FUnrealObjectRef& ObjectRef) const
+{
+	if (AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get()))
+	{
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
+		{
+			UE_LOG(LogActorSystem, Verbose, TEXT("Destroying subobject with offset %u on entity %d"), ObjectRef.Offset, EntityId);
 
-				Object->PreDestroyFromReplication();
-				Object->MarkPendingKill();
+			Channel->OnSubobjectDeleted(ObjectRef, &Object, TWeakObjectPtr<UObject>(&Object));
 
-				NetDriver->PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, ComponentId));
-			}
+			Actor->OnSubobjectDestroyFromReplication(&Object);
+
+			Object.PreDestroyFromReplication();
+			Object.MarkPendingKill();
+
+			NetDriver->PackageMap->RemoveSubobject(ObjectRef);
 		}
 	}
 }
@@ -826,7 +836,7 @@ void ActorSystem::HandleIndividualAddComponent(const Worker_EntityId EntityId, c
 	}
 
 	// Check if this is a static subobject that's been destroyed by the receiver.
-	if (!IsDynamicSubObject(Actor, Offset))
+	if (!IsDynamicSubObject(*NetDriver, *Actor, Offset))
 	{
 		UE_LOG(LogActorSystem, Verbose,
 			   TEXT("Tried to apply component data on add component for a static subobject that's been deleted, will skip. Entity: %lld, "
@@ -897,7 +907,7 @@ void ActorSystem::AttachDynamicSubobject(AActor* Actor, Worker_EntityId EntityId
 
 	TSet<Worker_ComponentId>& Components = PendingDynamicSubobjectComponents.FindChecked(EntityId);
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
-		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
+		const Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
 
 		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 		{
@@ -952,12 +962,6 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		UE_LOG(LogActorSystem, Verbose, TEXT("Entity: %d Component: %d - Skipping because RPC components don't have actual data."),
 			   Channel.GetEntityId(), ComponentId);
 	}
-}
-
-bool ActorSystem::IsDynamicSubObject(AActor* Actor, uint32 SubObjectOffset)
-{
-	const FClassInfo& ActorClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	return !ActorClassInfo.SubobjectInfo.Contains(SubObjectOffset);
 }
 
 void ActorSystem::ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
@@ -1361,10 +1365,12 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 {
 	TArray<ObjectPtrRefPair> ObjectsToResolvePendingOpsFor;
 
+	const TArray<ComponentData>& EntityComponents = ActorSubView->GetView()[EntityId].Components;
+
 	// Apply initial replicated properties.
 	// This was moved to after FinishingSpawning because components existing only in blueprints aren't added until spawning is complete
 	// Potentially we could split out the initial actor state and the initial component state
-	for (const ComponentData& Component : ActorSubView->GetView()[EntityId].Components)
+	for (const ComponentData& Component : EntityComponents)
 	{
 		if (NetDriver->ClassInfoManager->IsGeneratedQBIMarkerComponent(Component.GetComponentId())
 			|| Component.GetComponentId() < SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
@@ -1385,6 +1391,12 @@ void ActorSystem::ApplyFullState(const Worker_EntityId EntityId, USpatialActorCh
 												  ObjectsToResolvePendingOpsFor);
 			}
 		}
+	}
+
+	if (EntityActor.IsFullNameStableForNetworking())
+	{
+		// bNetLoadOnClient actors could have components removed while out of the client's interest
+		ClientNetLoadActorHelper.RemoveRuntimeRemovedComponents(EntityId, EntityComponents);
 	}
 
 	// Resolve things like RepNotify or RPCs after applying component data.
@@ -1581,7 +1593,7 @@ void ActorSystem::ApplyComponentDataOnActorCreation(const Worker_EntityId Entity
 	TWeakObjectPtr<UObject> TargetObject = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(TargetObjectRef);
 	if (!TargetObject.IsValid())
 	{
-		if (!IsDynamicSubObject(Actor, Offset))
+		if (!IsDynamicSubObject(*NetDriver, *Actor, Offset))
 		{
 			UE_LOG(LogActorSystem, Verbose,
 				   TEXT("Tried to apply component data on actor creation for a static subobject that's been deleted, will skip. Entity: "
@@ -1591,16 +1603,11 @@ void ActorSystem::ApplyComponentDataOnActorCreation(const Worker_EntityId Entity
 		}
 
 		// If we can't find this subobject, it's a dynamically attached object. Check if we created previously.
-		if (FNetworkGUID* SubobjectNetGUID = NetDriver->PackageMap->GetRemovedDynamicSubobjectNetGUID(TargetObjectRef))
+		if (UObject* DynamicSubObject = ClientNetLoadActorHelper.GetReusableDynamicSubObject(TargetObjectRef))
 		{
-			if (UObject* DynamicSubobject = NetDriver->PackageMap->GetObjectFromNetGUID(*SubobjectNetGUID, false))
-			{
-				NetDriver->PackageMap->ResolveSubobject(DynamicSubobject, TargetObjectRef);
-				ApplyComponentData(Channel, *DynamicSubobject, ComponentId, Data);
-
-				OutObjectsToResolve.Add(ObjectPtrRefPair(DynamicSubobject, TargetObjectRef));
-				return;
-			}
+			ApplyComponentData(Channel, *DynamicSubObject, ComponentId, Data);
+			OutObjectsToResolve.Add(ObjectPtrRefPair(DynamicSubObject, TargetObjectRef));
+			return;
 		}
 
 		// If the dynamically attached object was not created before. Create it now.
@@ -1760,27 +1767,11 @@ void ActorSystem::RemoveActor(const Worker_EntityId EntityId)
 		}
 	}
 
-	// Actor is a startup actor that is a part of the level. If it's not Tombstone'd, then it
+	// Actor is a startup actor that is a part of the level. If it's not Tombstone-d, then it
 	// has just fallen out of our view and we should only remove the entity.
 	if (Actor->IsFullNameStableForNetworking() && !ActorSubView->HasComponent(EntityId, SpatialConstants::TOMBSTONE_COMPONENT_ID))
 	{
-		NetDriver->PackageMap->ClearRemovedDynamicSubobjectObjectRefs(EntityId);
-		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
-		{
-			for (UObject* DynamicSubobject : Channel->CreateSubObjects)
-			{
-				FNetworkGUID SubobjectNetGUID = NetDriver->PackageMap->GetNetGUIDFromObject(DynamicSubobject);
-				if (SubobjectNetGUID.IsValid())
-				{
-					FUnrealObjectRef SubobjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromNetGUID(SubobjectNetGUID);
-
-					if (SubobjectRef.IsValid() && IsDynamicSubObject(Actor, SubobjectRef.Offset))
-					{
-						NetDriver->PackageMap->AddRemovedDynamicSubobjectObjectRef(SubobjectRef, SubobjectNetGUID);
-					}
-				}
-			}
-		}
+		ClientNetLoadActorHelper.EntityRemoved(EntityId, *Actor);
 		// We can't call CleanupDeletedEntity here as we need the NetDriver to maintain the EntityId
 		// to Actor Channel mapping for the DestroyActor to function correctly
 		NetDriver->PackageMap->RemoveEntityActor(EntityId);
@@ -1936,7 +1927,7 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 											GDK_PROPERTY(Property)* Property = *Itr;
 											EventBuilder.AddObject(Object);
 											EventBuilder.AddEntityId(EntityId);
-											EventBuilder.AddKeyValue("PropertyName", Property->GetName());
+											EventBuilder.AddKeyValue("property_name", Property->GetName());
 											EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Property));
 										});
 

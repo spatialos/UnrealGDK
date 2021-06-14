@@ -79,7 +79,7 @@ void LogRPCError(const FRPCErrorInfo& ErrorInfo, ERPCQueueType QueueType, const 
 		return;
 	}
 
-	if (TimeDiff.GetTotalSeconds() > SpatialGDKSettings->GetSecondsBeforeWarning(ErrorInfo.ErrorCode))
+	if (TimeDiff.GetTotalSeconds() >= SpatialGDKSettings->GetSecondsBeforeWarning(ErrorInfo.ErrorCode))
 	{
 		UE_LOG(LogRPCContainer, Warning, TEXT("%s"), *OutputLog);
 	}
