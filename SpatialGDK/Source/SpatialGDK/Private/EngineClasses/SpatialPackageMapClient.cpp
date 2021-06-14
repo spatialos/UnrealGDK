@@ -432,7 +432,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 		   *NetGUID.ToString(), EntityId);
 
 	const FClassInfo& ActorInfo = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	const SpatialGDK::FSubobjectToOffsetMap& SubobjectsToOffsets = SpatialGDK::CreateOffsetMapFromActor(*SpatialNetDriver->PackageMap, *Actor, ActorInfo);
+	const SpatialGDK::FSubobjectToOffsetMap& SubobjectsToOffsets =
+		SpatialGDK::CreateOffsetMapFromActor(*SpatialNetDriver->PackageMap, *Actor, ActorInfo);
 
 	for (auto& SubobjectToOffset : SubobjectsToOffsets)
 	{

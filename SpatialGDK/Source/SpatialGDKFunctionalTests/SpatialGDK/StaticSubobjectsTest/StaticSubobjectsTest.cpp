@@ -91,13 +91,11 @@ void AStaticSubobjectsTest::PrepareTest()
 	});
 
 	// Step 1 - All workers check for one AStaticSubobjectTestActor in the world and initialise it.
-	AddStep(
-		TEXT("StaticSubobjectsTestAllWorkersInitialise"), FWorkerDefinition::AllWorkers, nullptr,
-		[this]() {
-			TestActor = GetReplicatedTestActor();
-			TestActor->InitialiseTestIntProperty();
-			FinishStep();
-		});
+	AddStep(TEXT("StaticSubobjectsTestAllWorkersInitialise"), FWorkerDefinition::AllWorkers, nullptr, [this]() {
+		TestActor = GetReplicatedTestActor();
+		TestActor->InitialiseTestIntProperty();
+		FinishStep();
+	});
 
 	// Step 2 - Client 1 checks if it has correctly possessed the TestMovementCharacter.
 	AddStep(
@@ -113,17 +111,14 @@ void AStaticSubobjectsTest::PrepareTest()
 		StepTimeLimit);
 
 	// Step 3
-	AddStep(TEXT("StaticSubobjectsTestClientSeeRightNumberComponentsWithoutWait1"), FWorkerDefinition::Client(1), nullptr,
-		[this]() {
-			AssertIsValid(TestActor->TestStaticComponent1, TEXT("TestStaticComponent1 should be valid."));
-			AssertIsValid(TestActor->TestStaticComponent2, TEXT("TestStaticComponent2 should be valid."));
+	AddStep(TEXT("StaticSubobjectsTestClientSeeRightNumberComponentsWithoutWait1"), FWorkerDefinition::Client(1), nullptr, [this]() {
+		AssertIsValid(TestActor->TestStaticComponent1, TEXT("TestStaticComponent1 should be valid."));
+		AssertIsValid(TestActor->TestStaticComponent2, TEXT("TestStaticComponent2 should be valid."));
 
-			AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents,
-							TEXT("The client should see the right number of components."));
+		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents, TEXT("The client should see the right number of components."));
 
-			FinishStep();
-		});
-
+		FinishStep();
+	});
 
 	// Step 4
 	ServerSetIntProperty(1);
@@ -150,16 +145,14 @@ void AStaticSubobjectsTest::PrepareTest()
 	CheckClientSeeIntProperty(1);
 
 	// Step 9
-	AddStep(TEXT("StaticSubobjectsTestClientSeeRightNumberComponentsWithoutWait2"), FWorkerDefinition::Client(1), nullptr,
-		[this]() {
-			AssertIsValid(TestActor->TestStaticComponent1, TEXT("TestStaticComponent1 should be valid."));
-			AssertIsValid(TestActor->TestStaticComponent2, TEXT("TestStaticComponent2 should be valid."));
+	AddStep(TEXT("StaticSubobjectsTestClientSeeRightNumberComponentsWithoutWait2"), FWorkerDefinition::Client(1), nullptr, [this]() {
+		AssertIsValid(TestActor->TestStaticComponent1, TEXT("TestStaticComponent1 should be valid."));
+		AssertIsValid(TestActor->TestStaticComponent2, TEXT("TestStaticComponent2 should be valid."));
 
-			AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents,
-							TEXT("The client should see the right number of components."));
+		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents, TEXT("The client should see the right number of components."));
 
-			FinishStep();
-		});
+		FinishStep();
+	});
 
 	// Step 10
 	MoveClientPawn(PawnSpawnLocation);
@@ -191,7 +184,7 @@ void AStaticSubobjectsTest::PrepareTest()
 		},
 		[this](const float DeltaTime) {
 			RequireEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents,
-							TEXT("The client should see the right number of components."));
+							 TEXT("The client should see the right number of components."));
 
 			StepTimer += DeltaTime;
 			if (StepTimer >= ClientUpdateWaitTime)
@@ -208,16 +201,15 @@ void AStaticSubobjectsTest::PrepareTest()
 	CheckClientSeeIntProperty(2);
 
 	// Step 17
-	AddStep(TEXT("StaticSubobjectsTestClientSeeRightNumberComponentsWithoutWait3"), FWorkerDefinition::Client(1), nullptr,
-		[this]() {
-			AssertIsValid(TestActor->TestStaticComponent1, TEXT("TestStaticComponent1 should be valid."));
-			AssertTrue(!IsValid(TestActor->TestStaticComponent2), TEXT("TestStaticComponent2 should be nullptr."));
+	AddStep(TEXT("StaticSubobjectsTestClientSeeRightNumberComponentsWithoutWait3"), FWorkerDefinition::Client(1), nullptr, [this]() {
+		AssertIsValid(TestActor->TestStaticComponent1, TEXT("TestStaticComponent1 should be valid."));
+		AssertTrue(!IsValid(TestActor->TestStaticComponent2), TEXT("TestStaticComponent2 should be nullptr."));
 
-			AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents-1,
-							TEXT("The client should see the right number of components."));
+		AssertEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents - 1,
+						TEXT("The client should see the right number of components."));
 
-			FinishStep();
-		});
+		FinishStep();
+	});
 
 	// Step 18 - Server Cleanup.
 	AddStep(TEXT("StaticSubobjectsTestServerCleanup"), FWorkerDefinition::Server(1), nullptr, [this]() {
@@ -264,7 +256,8 @@ void AStaticSubobjectsTest::MoveClientPawn(FVector& ToLocation)
 void AStaticSubobjectsTest::CheckClientCanNotSeeIntPropertyWithWait(int ShouldntSeeVal)
 {
 	AddStep(
-		FString::Printf(TEXT("StaticSubobjectsTestClientCheckIntValueDidntIncreaseTo%dWithWait"), ShouldntSeeVal), FWorkerDefinition::Client(1), nullptr,
+		FString::Printf(TEXT("StaticSubobjectsTestClientCheckIntValueDidntIncreaseTo%dWithWait"), ShouldntSeeVal),
+		FWorkerDefinition::Client(1), nullptr,
 		[this]() {
 			StepTimer = 0.f;
 		},
@@ -282,16 +275,18 @@ void AStaticSubobjectsTest::CheckClientCanNotSeeIntPropertyWithWait(int Shouldnt
 
 void AStaticSubobjectsTest::ServerSetIntProperty(int IntPropertyNewVal)
 {
-	AddStep(FString::Printf(TEXT("StaticSubobjectsTestServerSetsIntValueTo%d"), IntPropertyNewVal), FWorkerDefinition::Server(1), nullptr, [this, IntPropertyNewVal]() {
-		TestActor->TestIntProperty = IntPropertyNewVal;
-		FinishStep();
-	});
+	AddStep(FString::Printf(TEXT("StaticSubobjectsTestServerSetsIntValueTo%d"), IntPropertyNewVal), FWorkerDefinition::Server(1), nullptr,
+			[this, IntPropertyNewVal]() {
+				TestActor->TestIntProperty = IntPropertyNewVal;
+				FinishStep();
+			});
 }
 
 void AStaticSubobjectsTest::CheckClientSeeIntProperty(int IntPropertyVal)
 {
 	AddStep(
-		FString::Printf(TEXT("StaticSubobjectsTestClientCheckIntValueIncreasedTo%d"), IntPropertyVal), FWorkerDefinition::Client(1), nullptr, nullptr,
+		FString::Printf(TEXT("StaticSubobjectsTestClientCheckIntValueIncreasedTo%d"), IntPropertyVal), FWorkerDefinition::Client(1),
+		nullptr, nullptr,
 		[this, IntPropertyVal](const float DeltaTime) {
 			RequireEqual_Int(TestActor->TestIntProperty, IntPropertyVal,
 							 TEXT("Client should TestIntProperty see the updated int property"));

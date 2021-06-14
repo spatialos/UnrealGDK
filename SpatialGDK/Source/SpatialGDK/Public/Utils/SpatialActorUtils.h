@@ -141,7 +141,6 @@ inline bool IsDynamicSubObject(const USpatialNetDriver& NetDriver, const AActor&
 using FSubobjectToOffsetMap = TMap<UObject*, ObjectOffset>;
 static FSubobjectToOffsetMap CreateStaticOffsetMapFromActor(AActor& Actor, const FClassInfo& ActorInfo)
 {
-
 	FSubobjectToOffsetMap SubobjectNameToOffset;
 
 	for (auto& SubobjectOffsetToInfoPair : ActorInfo.SubobjectInfo)
@@ -160,7 +159,6 @@ static FSubobjectToOffsetMap CreateStaticOffsetMapFromActor(AActor& Actor, const
 
 static FSubobjectToOffsetMap CreateOffsetMapFromActor(USpatialPackageMapClient& PackageMap, AActor& Actor, const FClassInfo& ActorInfo)
 {
-
 	FSubobjectToOffsetMap SubobjectNameToOffset = CreateStaticOffsetMapFromActor(Actor, ActorInfo);
 
 	if (Actor.GetInstanceComponents().Num() > 0)
