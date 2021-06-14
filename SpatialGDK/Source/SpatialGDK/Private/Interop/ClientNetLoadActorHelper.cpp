@@ -123,7 +123,9 @@ void FClientNetLoadActorHelper::RemoveDynamicComponentsRemovedByRuntime(const Wo
 void FClientNetLoadActorHelper::RemoveStaticComponentsRemovedByRuntime(const Worker_EntityId EntityId,
 																	   const TArray<ComponentData>& NewComponents, AActor& EntityActor)
 {
-	FSubobjectToOffsetMap SubobjectsToOffsets = CreateOffsetMapFromActor(*NetDriver, EntityActor);
+	const FClassInfo& ActorInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(EntityActor.GetClass());
+	FSubobjectToOffsetMap SubobjectsToOffsets = CreateStaticOffsetMapFromActor(EntityActor, ActorInfo);
+
 	for (auto& SubobjectToOffset : SubobjectsToOffsets)
 	{
 		UObject& Subobject = *SubobjectToOffset.Key;

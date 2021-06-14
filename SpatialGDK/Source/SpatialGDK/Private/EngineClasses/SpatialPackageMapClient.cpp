@@ -431,7 +431,8 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"), *Actor->GetName(),
 		   *NetGUID.ToString(), EntityId);
 
-	const SpatialGDK::FSubobjectToOffsetMap& SubobjectsToOffsets = SpatialGDK::CreateOffsetMapFromActor(*SpatialNetDriver, *Actor);
+	const FClassInfo& ActorInfo = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+	const SpatialGDK::FSubobjectToOffsetMap& SubobjectsToOffsets = SpatialGDK::CreateOffsetMapFromActor(*SpatialNetDriver->PackageMap, *Actor, ActorInfo);
 
 	for (auto& SubobjectToOffset : SubobjectsToOffsets)
 	{

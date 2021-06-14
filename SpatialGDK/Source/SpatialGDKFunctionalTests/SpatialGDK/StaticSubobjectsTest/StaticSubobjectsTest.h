@@ -22,12 +22,9 @@ public:
 	virtual void PrepareTest() override;
 	void MoveClientPawn(FVector& ToLocation);
 	void CheckClientCanNotSeeIntPropertyWithWait(int ShouldntSeeVal);
-	void CheckClientNumberComponentsOnTestActorWithoutWait(int ExpectedNumComponents);
-	void CheckClientNumberComponentsOnTestActorWithWait(int ExpectedNumComponents);
 	void ServerSetIntProperty(int IntPropertyNewVal);
 	void CheckClientSeeIntProperty(int IntPropertyVal);
 
-	void DestroyOneNonRootComponent() const;
 	void WaitForRelevancyUpdateIfInNative();
 	int GetNumComponentsOnTestActor();
 	AStaticSubobjectTestActor* GetReplicatedTestActor();
