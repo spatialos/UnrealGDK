@@ -23,7 +23,8 @@ DECLARE_CYCLE_STAT(TEXT("Reader ApplyFastArrayUpdate"), STAT_ReaderApplyFastArra
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyProperty"), STAT_ReaderApplyProperty, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("Reader ApplyArray"), STAT_ReaderApplyArray, STATGROUP_SpatialNet);
 
-const TArray<FName> SpatialGDK::ComponentReader::SpecialCaseProperties = { FName(TEXT("Role")),  FName(TEXT("RemoteRole")),  FName(TEXT("ReplicatedMovement")), FName(TEXT("bRepPhysics")) };
+const TArray<FName> SpatialGDK::ComponentReader::SpecialCaseProperties = { FName(TEXT("Role")), FName(TEXT("RemoteRole")),
+																		   FName(TEXT("ReplicatedMovement")), FName(TEXT("bRepPhysics")) };
 
 namespace
 {
@@ -208,10 +209,10 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 	const Worker_EntityId EntityId = Channel.GetEntityId();
 	const bool bEventTracerEnabled = EventTracer != nullptr;
 
-	bool bIsAuthServer = Channel.IsAuthoritativeServer();
-	bool bAutonomousProxy = Channel.IsClientAutonomousProxy();
-	bool bIsClient = NetDriver->GetNetMode() == NM_Client;
-	FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient);
+	const bool bIsAuthServer = Channel.IsAuthoritativeServer();
+	const bool bAutonomousProxy = Channel.IsClientAutonomousProxy();
+	const bool bIsClient = NetDriver->GetNetMode() == NM_Client;
+	const FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient);
 
 	for (uint32 FieldId : ApplySchemaObjectData.UpdatedIds)
 	{

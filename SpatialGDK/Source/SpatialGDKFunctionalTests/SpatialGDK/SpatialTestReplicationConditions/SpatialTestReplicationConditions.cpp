@@ -185,7 +185,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		}
 
 		if (AssertTrue(TestActor_AutonomousOnly->AreAllDynamicComponentsValid(),
-			TEXT("TestActor_AutonomousOnly - All dynamic components should have arrived")))
+					   TEXT("TestActor_AutonomousOnly - All dynamic components should have arrived")))
 		{
 			const bool bWrite = false;
 			const bool bAutonomousExpected = true;
@@ -194,7 +194,7 @@ void ASpatialTestReplicationConditions::PrepareTest()
 		}
 
 		if (AssertTrue(TestActor_PhysicsEnabled->AreAllDynamicComponentsValid(),
-			TEXT("TestActor_PhysicsEnabled - All dynamic components should have arrived")))
+					   TEXT("TestActor_PhysicsEnabled - All dynamic components should have arrived")))
 		{
 			const bool bWrite = false;
 			const bool bPhysicsEnabled = true;

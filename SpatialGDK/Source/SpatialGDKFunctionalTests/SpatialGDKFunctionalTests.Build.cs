@@ -25,7 +25,7 @@ public class SpatialGDKFunctionalTests : ModuleRules
                 "UnrealEd",
                 "EngineSettings",
                 "InputCore",
-                "Slate",
+                "Slate"
             });
 
         SetupModulePhysicsSupport(Target);
