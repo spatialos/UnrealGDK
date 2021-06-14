@@ -173,7 +173,9 @@ bool FClientNetLoadActorHelper::SubobjectIsReplicated(const UObject& Object, con
 {
 	if (const USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		const bool IsReplicated = Channel->ReplicationMap.Contains(&Object);
+		const TSharedRef<FObjectReplicator>* ReplicatorRefPtr = Channel->ReplicationMap.Find(&Object);
+		// Condition taken from private method UActorChannel::ObjectHasReplicator
+		const bool IsReplicated = ReplicatorRefPtr != nullptr && &Object == ReplicatorRefPtr->Get().GetObject();
 		return IsReplicated;
 	}
 	return false;
