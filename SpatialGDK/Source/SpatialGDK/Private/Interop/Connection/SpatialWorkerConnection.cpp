@@ -134,13 +134,13 @@ void USpatialWorkerConnection::FinishDestroy()
 const TArray<SpatialGDK::EntityDelta>& USpatialWorkerConnection::GetEntityDeltas()
 {
 	check(Coordinator.IsValid());
-	return Coordinator->GetViewDelta().GetEntityDeltas();
+	return Coordinator->GetEntityDeltas();
 }
 
 const TArray<Worker_Op>& USpatialWorkerConnection::GetWorkerMessages()
 {
 	check(Coordinator.IsValid());
-	return Coordinator->GetViewDelta().GetWorkerMessages();
+	return Coordinator->GetWorkerMessages();
 }
 
 void USpatialWorkerConnection::DestroyConnection()
@@ -350,6 +350,11 @@ void USpatialWorkerConnection::Flush()
 void USpatialWorkerConnection::SetStartupComplete()
 {
 	StartupComplete = true;
+}
+
+SpatialGDK::ISpatialOSWorker* USpatialWorkerConnection::GetSpatialWorkerInterface() const
+{
+	return Coordinator.Get();
 }
 
 void USpatialWorkerConnection::CreateServerWorkerEntity()

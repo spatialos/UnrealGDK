@@ -11,20 +11,7 @@
 #include "Utils/GDKPropertyMacros.h"
 
 #if TRACE_LIB_ACTIVE
-
-// As a result of using both the old and new trace.h, there's now a shadow warning for TraceSpan. Worker
-// will fix in the interim, but as a stop gap lets just ignore the warning - UNR-5460.
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wshadow"
-#endif
-
-#include <WorkerSDK/improbable/legacy/trace.h>
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-
+#include <WorkerSDK/improbable/legacy_trace.h>
 #endif // TRACE_LIB_ACTIVE
 
 #include "SpatialLatencyTracer.generated.h"
@@ -146,27 +133,19 @@ public:
 #if TRACE_LIB_ACTIVE
 
 	bool IsValidKey(TraceKey Key);
-	TraceKey RetrievePendingTrace(const UObject* Obj, const UFunction* Function);
-	TraceKey RetrievePendingTrace(const UObject* Obj, const GDK_PROPERTY(Property) * Property);
 	TraceKey RetrievePendingTrace(const UObject* Obj, const FString& Tag);
 
 	void WriteToLatencyTrace(const TraceKey Key, const FString& TraceDesc);
 	void WriteAndEndTrace(const TraceKey Key, const FString& TraceDesc, bool bOnlyEndIfTraceRootIsRemote);
 
-	void WriteTraceToSchemaObject(const TraceKey Key, Schema_Object* Obj, const Schema_FieldId FieldId);
-	TraceKey ReadTraceFromSchemaObject(Schema_Object* Obj, const Schema_FieldId FieldId);
-
 	void SetWorkerId(const FString& NewWorkerId) { WorkerId = NewWorkerId; }
 	void ResetWorkerId();
-
-	void OnEnqueueMessage(const SpatialGDK::FOutgoingMessage*);
-	void OnDequeueMessage(const SpatialGDK::FOutgoingMessage*);
 
 private:
 	using ActorFuncKey = TPair<const AActor*, const UFunction*>;
 	using ActorPropertyKey = TPair<const AActor*, const GDK_PROPERTY(Property)*>;
 	using ActorTagKey = TPair<const AActor*, FString>;
-	using TraceSpan = improbable::trace::Span;
+	using TraceSpan = improbable::legacy::trace::Span;
 
 	bool BeginLatencyTrace_Internal(const FString& TraceDesc, FSpatialLatencyPayload& OutLatencyPayload);
 	bool ContinueLatencyTrace_Internal(const AActor* Actor, const FString& Target, ETraceType::Type Type, const FString& TraceDesc,
