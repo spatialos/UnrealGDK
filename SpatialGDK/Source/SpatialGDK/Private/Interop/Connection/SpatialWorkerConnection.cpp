@@ -8,13 +8,16 @@
 #include "Schema/ServerWorker.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialGDKSettings.h"
+#include "LoadBalancing/AbstractLBStrategy.h"
 #include "SpatialView/CommandRequest.h"
 #include "SpatialView/CommandRetryHandler.h"
 #include "SpatialView/ComponentData.h"
 #include "SpatialView/ConnectionHandler/InitialOpListConnectionHandler.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
+#include "UObject/UObjectGlobals.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
+#include "Utils/SpatialStatics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
@@ -38,6 +41,7 @@ ServerWorkerEntityCreator::ServerWorkerEntityCreator(USpatialNetDriver& InNetDri
 	: NetDriver(InNetDriver)
 	, Connection(InConnection)
 	, ClaimPartitionHandler(InConnection)
+	, TimeSinceLastUpdate(0.0f)
 {
 	State = WorkerSystemEntityCreatorState::CreatingWorkerSystemEntity;
 
@@ -53,7 +57,7 @@ void ServerWorkerEntityCreator::CreateWorkerEntity()
 	TArray<FWorkerComponentData> Components;
 	Components.Add(Position().CreateComponentData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection.GetWorkerId() })).CreateComponentData());
-	Components.Add(ServerWorker(Connection.GetWorkerId(), false, Connection.GetWorkerSystemEntityId()).CreateServerWorkerData());
+	Components.Add(ServerWorker(Connection.GetWorkerId(), false, Connection.GetWorkerSystemEntityId(), true, FDateTime::UtcNow().ToUnixTimestamp(), 0).CreateServerWorkerData());
 
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::SERVER_WORKER_ENTITY_AUTH_COMPONENT_SET_ID, EntityId);
@@ -81,6 +85,78 @@ void ServerWorkerEntityCreator::CreateWorkerEntity()
 
 	CreateEntityHandler.AddRequest(CreateEntityRequestId,
 								   CreateEntityDelegate::CreateRaw(this, &ServerWorkerEntityCreator::OnEntityCreated));
+
+	const FComponentValueCallback Callback = [this](const FEntityComponentChange& Update) mutable {
+		switch(Update.Change.Type)
+		{
+			case ComponentChange::ADD:
+			{
+				ServerWorker WorkerComponent(Worker_ComponentData{nullptr, Update.Change.ComponentId, Update.Change.Data, nullptr});
+				ServerWorkers.Emplace(Update.EntityId, WorkerComponent);
+			}
+			break;
+			case ComponentChange::UPDATE:
+				if (ServerWorker * UpdatedComponent = ServerWorkers.Find(Update.EntityId))
+				{
+					UpdatedComponent->ApplyComponentUpdate(Worker_ComponentUpdate{nullptr, Update.Change.ComponentId, Update.Change.Update, nullptr});
+					UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("%s SENDING Update %s %d %d %d %d"), *Connection.GetWorkerId(), *UpdatedComponent->WorkerName, UpdatedComponent->bHealthy, UpdatedComponent->HealthyAsOf, UpdatedComponent->VirtualWorkerId, NetDriver.WorkerEntityId);
+
+				}
+			break;
+			default:
+				UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("UNEXPECTED UPDATE: %d"), Update.Change.Type);
+				break;
+		}
+	};
+
+	Connection.RegisterComponentValueCallback(SpatialConstants::SERVER_WORKER_COMPONENT_ID, Callback);
+}
+
+bool ServerWorkerEntityCreator::Tick(const float Delta)
+{
+	ServerWorker * Component = ServerWorkers.Find(NetDriver.WorkerEntityId);
+	if (!Component)
+	{
+		return true;
+	}
+
+	// Update local component.  Will be flushed periodically below
+	Component->HealthyAsOf = FDateTime::UtcNow().ToUnixTimestamp();
+	Component->bHealthy = Connection.bHealthy;
+	Component->VirtualWorkerId = NetDriver.LoadBalanceStrategy->GetLocalVirtualWorkerId();
+
+	TimeSinceLastUpdate += Delta;
+	// Only publish our health update every 10 seconds
+	if (TimeSinceLastUpdate > 10)
+	{
+		TimeSinceLastUpdate -= 10;
+		// Only update if we have a valid worker id.
+		if ( Component->VirtualWorkerId > 0 )
+		{
+			FWorkerComponentUpdate WorkerUpdate = Component->CreateServerWorkerUpdate();
+			UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("%s SENDING Update %s %d %d %d %d"), *Connection.GetWorkerId(), *Component->WorkerName, Component->bHealthy, Component->HealthyAsOf, Component->VirtualWorkerId, NetDriver.WorkerEntityId);
+			Connection.SendComponentUpdate(NetDriver.WorkerEntityId, &WorkerUpdate);
+		}
+
+		// Check health of all workers here so we don't need an update adjust the health if we timeout
+		for (auto &Pair : ServerWorkers)
+		{
+			const uint32 VirtualWorkerId = Pair.Value.VirtualWorkerId;
+			bool bHealthy = Pair.Value.bHealthy;
+			int64 UpdateAge = FDateTime::UtcNow().ToUnixTimestamp() - Pair.Value.HealthyAsOf;
+			if (UpdateAge > 30)
+			{
+				bHealthy = false;
+			}
+			if (VirtualWorkerId > 0)
+			{
+				UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("%s Settting VirtualWorker: %d to Healthy(%d) Update Age: %d"), *Connection.GetWorkerId(), VirtualWorkerId, bHealthy, UpdateAge);
+				NetDriver.LoadBalanceStrategy->SetLocalVirtualWorkerHealth(VirtualWorkerId, bHealthy);
+			}
+		}
+	}
+
+	return true;
 }
 
 void ServerWorkerEntityCreator::OnEntityCreated(const Worker_CreateEntityResponseOp& CreateEntityResponse)
@@ -250,6 +326,7 @@ void USpatialWorkerConnection::Advance(float DeltaTimeS)
 	if (WorkerEntityCreator.IsSet())
 	{
 		WorkerEntityCreator->ProcessOps(Coordinator->GetViewDelta().GetWorkerMessages());
+		WorkerEntityCreator->Tick(DeltaTimeS);
 	}
 }
 

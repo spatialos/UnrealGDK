@@ -1309,3 +1309,19 @@ void FObjectReferencesMapDeleter::operator()(FObjectReferencesMap* Ptr) const
 {
 	delete Ptr;
 }
+
+// NotifyMigrationFailed finds a safe position for the actor and broadcasts that to who ever is listening.
+void USpatialActorChannel::NotifyMigrationFailed()
+{
+	FVector2D SafePosition;
+	if(NetDriver->LoadBalanceStrategy->GetSafePositionForActor(*Actor, SafePosition))
+	{
+		OnActorMigrationFailed.Broadcast(SafePosition);
+	}
+	else
+	{
+		UE_LOG(LogSpatialActorChannel, Error,
+			TEXT("Actor has transitioned to a bad worker, we need to rescue them: %s"), *Actor->GetName());
+	}
+}
+

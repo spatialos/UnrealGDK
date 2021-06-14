@@ -85,6 +85,14 @@ void ULayeredLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtualW
 	}
 }
 
+void ULayeredLBStrategy::SetLocalVirtualWorkerHealth(VirtualWorkerId WorkerId, bool Healthy)
+{
+	for (const auto& Elem : LayerNameToLBStrategy)
+	{
+		Elem.Value->SetLocalVirtualWorkerHealth(WorkerId, Healthy);
+	}
+}
+
 TSet<VirtualWorkerId> ULayeredLBStrategy::GetVirtualWorkerIds() const
 {
 	return TSet<VirtualWorkerId>(VirtualWorkerIds);
@@ -151,6 +159,26 @@ VirtualWorkerId ULayeredLBStrategy::WhoShouldHaveAuthority(const AActor& Actor) 
 		   *AActor::GetDebugName(RootOwner));
 	return ReturnedWorkerId;
 }
+
+bool ULayeredLBStrategy::GetSafePositionForActor(const AActor& Actor, FVector2D& SafePosition) const
+{
+	const AActor* RootOwner = &Actor;
+	while (RootOwner->GetOwner() != nullptr && RootOwner->GetOwner()->GetIsReplicated())
+	{
+		RootOwner = RootOwner->GetOwner();
+	}
+
+	const FName& LayerName = GetLayerNameForActor(*RootOwner);
+	if (!LayerNameToLBStrategy.Contains(LayerName))
+	{
+		UE_LOG(LogLayeredLBStrategy, Error, TEXT("LayeredLBStrategy doesn't have a LBStrategy for Actor %s which is in Layer %s."),
+			*AActor::GetDebugName(RootOwner), *LayerName.ToString());
+		return false;
+	}
+
+	return LayerNameToLBStrategy[LayerName]->GetSafePositionForActor(Actor, SafePosition);
+}
+
 
 SpatialGDK::FActorLoadBalancingGroupId ULayeredLBStrategy::GetActorGroupId(const AActor& Actor) const
 {

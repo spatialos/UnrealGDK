@@ -84,6 +84,14 @@ void UGridBasedLBStrategy::SetLocalVirtualWorkerId(VirtualWorkerId InLocalVirtua
 	LocalVirtualWorkerId = InLocalVirtualWorkerId;
 }
 
+void UGridBasedLBStrategy::SetLocalVirtualWorkerHealth(const VirtualWorkerId WorkerId, const bool Healthy)
+{
+	if (VirtualWorkerIds.Contains(WorkerId))
+	{
+		VirtualWorkerHealth[VirtualWorkerIds.IndexOfByKey(WorkerId)] = Healthy;
+	}
+}
+
 TSet<VirtualWorkerId> UGridBasedLBStrategy::GetVirtualWorkerIds() const
 {
 	return TSet<VirtualWorkerId>(VirtualWorkerIds);
@@ -124,24 +132,76 @@ VirtualWorkerId UGridBasedLBStrategy::WhoShouldHaveAuthority(const AActor& Actor
 		return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 	}
 
+	const FVector2D Actor2DLocation = GetActorLoadBalancingPosition(Actor);
+
+	check(VirtualWorkerIds.Num() == WorkerCells.Num());
+	check(VirtualWorkerHealth.Num() == WorkerCells.Num());
+
 	for (int i = 0; i < WorkerCells.Num(); i++)
 	{
 		if (IsInside(WorkerCells[i], Actor2DLocation))
 		{
+			if (!VirtualWorkerHealth[i])
+			{
+				UE_LOG(LogGridBasedLBStrategy, VeryVerbose, TEXT("Actor: %s, grid %d, worker %d for position %s is not healthy, skipping worker"), *AActor::GetDebugName(&Actor), i,
+					VirtualWorkerIds[i], *Actor2DLocation.ToString());
+				break;
+			}
+
 			UE_LOG(LogGridBasedLBStrategy, Log, TEXT("Actor: %s, grid %d, worker %d for position %s"), *AActor::GetDebugName(&Actor), i,
 				   VirtualWorkerIds[i], *Actor2DLocation.ToString());
 			return VirtualWorkerIds[i];
 		}
 	}
 
-	UE_LOG(LogGridBasedLBStrategy, Error, TEXT("GridBasedLBStrategy couldn't determine virtual worker for Actor %s at position %s"),
-		   *AActor::GetDebugName(&Actor), *Actor2DLocation.ToString());
+	//UE_LOG(LogGridBasedLBStrategy, Error, TEXT("GridBasedLBStrategy couldn't determine virtual worker for Actor %s at position %s"),
+	//	*AActor::GetDebugName(&Actor), *Actor2DLocation.ToString());
+
 	return SpatialConstants::INVALID_VIRTUAL_WORKER_ID;
 }
 
 SpatialGDK::FActorLoadBalancingGroupId UGridBasedLBStrategy::GetActorGroupId(const AActor& Actor) const
 {
 	return 0;
+}
+
+bool UGridBasedLBStrategy::GetSafePositionForActor(const AActor& Actor, FVector2D& SafePosition) const
+{
+	const FVector2D Actor2DLocation = FVector2D(SpatialGDK::GetActorSpatialPosition(&Actor));
+	check(VirtualWorkerHealth.Num() == WorkerCells.Num());
+
+	// Find the WorkerCell we are closest to
+	int32 ClosestCell = -1;
+	float ClosestCenter = MAX_FLT;
+	for (int i = 0; i < WorkerCells.Num(); i++)
+	{
+		if (!VirtualWorkerHealth[i])
+		{
+			continue;
+		}
+
+		const float Dist = FVector2D::DistSquared(WorkerCells[i].GetCenter(), Actor2DLocation);
+		if (Dist < ClosestCenter)
+		{
+			ClosestCenter = Dist;
+			ClosestCell = i;
+		}
+	}
+
+	if (ClosestCell == -1 )
+	{
+		return false;
+	}
+
+	SafePosition = WorkerCells[ClosestCell].GetClosestPointTo(Actor2DLocation);
+	// Calculate the vector towards the center of the cell, this is done so when you are right in the corner
+	// of a cell it won't put you directly beside another boundary.
+	FVector2D Offset = WorkerCells[ClosestCell].GetCenter() - SafePosition;
+	Offset.Normalize();
+
+	// Move actor 10m in from worker edge to avoid teleporting people right to a worker boundary
+	SafePosition += 1000.0f * Offset;
+	return true;
 }
 
 SpatialGDK::QueryConstraint UGridBasedLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
@@ -208,6 +268,7 @@ void UGridBasedLBStrategy::SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtu
 		 CurrentVirtualWorkerId++)
 	{
 		VirtualWorkerIds.Add(CurrentVirtualWorkerId);
+		VirtualWorkerHealth.Add(true);
 	}
 }
 
