@@ -113,6 +113,7 @@ public:
 
 	void SetStartupComplete();
 
+	SpatialGDK::ISpatialOSWorker* GetSpatialWorkerInterface() const;
 	SpatialGDK::SpatialEventTracer* GetEventTracer() const { return EventTracer; }
 
 private:

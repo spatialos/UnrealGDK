@@ -12,6 +12,7 @@
 
 #if WITH_EDITOR
 #include "HAL/PlatformFilemanager.h"
+#include "Interop/Connection/SpatialEventTracer.h"
 #include "Misc/FileHelper.h"
 #include "Settings/LevelEditorPlaySettings.h"
 
@@ -94,7 +95,40 @@ void CheckCmdLineOverrideOptionalStringWithCallback(const TCHAR* CommandLine, co
 	UE_LOG(LogSpatialGDKSettings, Log, TEXT("%s is %s."), PrettyName,
 		   OverrideValue.IsSet() ? *(OverrideValue.GetValue()) : TEXT("not set"));
 }
+
 } // namespace
+
+#if WITH_EDITOR
+void UEventTracingSamplingSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+{
+	auto CheckQueryValid = [](const char* QueryStr) {
+		if (strlen(QueryStr) > 0 && SpatialGDK::TraceQueryPtr(Trace_ParseSimpleQuery(QueryStr)).Get() == nullptr)
+		{
+			FMessageDialog::Open(EAppMsgType::Ok,
+								 FText::Format(LOCTEXT("EventTracingSamplingSetting_QueryInvalid", "The query entered is not valid. {0}"),
+											   FText::FromString(ANSI_TO_TCHAR(Trace_GetLastError()))));
+		}
+	};
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
+	if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, GDKEventPreFilter))
+	{
+		CheckQueryValid(TCHAR_TO_ANSI(*GDKEventPreFilter));
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, RuntimeEventPreFilter))
+	{
+		CheckQueryValid(TCHAR_TO_ANSI(*RuntimeEventPreFilter));
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, GDKEventPostFilter))
+	{
+		CheckQueryValid(TCHAR_TO_ANSI(*GDKEventPostFilter));
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(UEventTracingSamplingSettings, RuntimeEventPostFilter))
+	{
+		CheckQueryValid(TCHAR_TO_ANSI(*RuntimeEventPostFilter));
+	}
+}
+#endif
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -152,7 +186,10 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, ActorMigrationLogRate(5.0f)
 	, bEventTracingEnabled(false)
 	, EventTracingSamplingSettingsClass(UEventTracingSamplingSettings::StaticClass())
-	, MaxEventTracingFileSizeBytes(DefaultEventTracingFileSize)
+	, EventTracingSingleLogMaxFileSizeBytes(DefaultEventTracingFileSize)
+	, bEnableEventTracingRotatingLogs(false)
+	, EventTracingRotatingLogsMaxFileSizeBytes(DefaultEventTracingFileSize)
+	, EventTracingRotatingLogsMaxFileCount(256)
 	, bEnableAlwaysWriteRPCs(false)
 	, bEnableInitialOnlyReplicationCondition(false)
 {
