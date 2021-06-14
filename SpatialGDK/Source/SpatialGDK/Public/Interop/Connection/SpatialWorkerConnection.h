@@ -113,12 +113,6 @@ public:
 
 	void SetStartupComplete();
 
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnqueueMessage, const SpatialGDK::FOutgoingMessage*);
-	FOnEnqueueMessage OnEnqueueMessage;
-
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnDequeueMessage, const SpatialGDK::FOutgoingMessage*);
-	FOnDequeueMessage OnDequeueMessage;
-
 	SpatialGDK::SpatialEventTracer* GetEventTracer() const { return EventTracer; }
 
 private:
