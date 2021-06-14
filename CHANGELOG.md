@@ -38,7 +38,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue for actors with bNetLoadOnClient. A dynamic subobject removed from such an actor while out of a client's view will now be properly removed on the client when the actor comes back into the client's view.
 - Fixed an issue that caused `UnrealGDK/Setup.sh` to report `sed: can't read : No such file or directory` when run on macOS.
 - Fixed an issue where multicast rpcs could be overwritten and then dropped on authority flicker.
-- Fixed an issue with registering spatial flow controllers in the Spatial Testing Framework.
 
 ### Internal:
 - Hide the Test MultiworkerSettings and GridStrategy classes from displaying in the editor. These are meant to only be used in Tests.
