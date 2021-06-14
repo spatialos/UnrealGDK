@@ -2,10 +2,10 @@
 
 #include "LoadBalancing/PartitionManager.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "LoadBalancing/PartitionManager.h"
 #include "Schema/ServerWorker.h"
 #include "Schema/StandardLibrary.h"
+#include "SpatialView/SpatialOSWorker.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 
@@ -49,6 +49,16 @@ FLBWorkerDesc::~FLBWorkerDesc() = default;
 
 FPartitionDesc::~FPartitionDesc() = default;
 
+namespace
+{
+CommandRequest CreateClaimPartitionRequest(Worker_PartitionId Partition)
+{
+	Worker_CommandRequest ClaimRequestData = Worker::CreateClaimPartitionRequest(Partition);
+	return CommandRequest(OwningCommandRequestPtr(ClaimRequestData.schema_type), ClaimRequestData.component_id,
+						  ClaimRequestData.command_index);
+}
+} // namespace
+
 struct FPartitionManager::Impl
 {
 	Impl(ViewCoordinator& Coordinator, TUniquePtr<InterestFactory>&& InInterestF)
@@ -62,9 +72,9 @@ struct FPartitionManager::Impl
 	{
 	}
 
-	void AdvanceView(SpatialOSWorkerInterface* Connection)
+	void AdvanceView(ISpatialOSWorker& Connection)
 	{
-		const TArray<Worker_Op>& Messages = Connection->GetWorkerMessages();
+		const TArray<Worker_Op>& Messages = Connection.GetWorkerMessages();
 
 		for (const auto& Message : Messages)
 		{
@@ -307,7 +317,7 @@ struct FPartitionManager::Impl
 		ConnectedWorkersThisFrame.Add(ConnectedWorker);
 	}
 
-	void Flush(SpatialOSWorkerInterface* Connection)
+	void Flush(ISpatialOSWorker& Connection)
 	{
 		if (FirstPartitionId == 0)
 		{
@@ -318,7 +328,7 @@ struct FPartitionManager::Impl
 		{
 			if (!PartitionReserveRequest.IsSet())
 			{
-				PartitionReserveRequest = Connection->SendReserveEntityIdsRequest(Impl::k_PartitionsReserveRange, RETRY_UNTIL_COMPLETE);
+				PartitionReserveRequest = Connection.SendReserveEntityIdsRequest(Impl::k_PartitionsReserveRange, RETRY_UNTIL_COMPLETE);
 			}
 			return;
 		}
@@ -333,12 +343,12 @@ struct FPartitionManager::Impl
 					PartitionState.Id = CurPartitionId++;
 					IdToPartitionsMap.Add(PartitionState.Id, PartitionEntry);
 
-					TArray<FWorkerComponentData> Components =
+					TArray<ComponentData> Components =
 						CreatePartitionEntityComponents(PartitionState.DisplayName, PartitionState.Id, PartitionState.LBConstraint);
 
 					Worker_EntityId PartitionEntity = PartitionState.Id;
 					const Worker_RequestId RequestId =
-						Connection->SendCreateEntityRequest(MoveTemp(Components), &PartitionEntity, SpatialGDK::RETRY_UNTIL_COMPLETE);
+						Connection.SendCreateEntityRequest(MoveTemp(Components), PartitionEntity, SpatialGDK::RETRY_UNTIL_COMPLETE);
 					PartitionState.CreationRequest = RequestId;
 					PartitionCreationRequests.Add(RequestId, PartitionEntry);
 				}
@@ -353,10 +363,9 @@ struct FPartitionManager::Impl
 					{
 						Worker_EntityId SystemWorkerEntityId = PartitionState.UserAssignment->State->SystemWorkerId;
 
-						Worker_CommandRequest ClaimRequest = Worker::CreateClaimPartitionRequest(PartitionState.Id);
 						PartitionState.RequestedAssignment = PartitionState.UserAssignment;
-						PartitionState.AssignmentRequest =
-							Connection->SendCommandRequest(SystemWorkerEntityId, &ClaimRequest, SpatialGDK::RETRY_UNTIL_COMPLETE, {});
+						PartitionState.AssignmentRequest = Connection.SendEntityCommandRequest(
+							SystemWorkerEntityId, CreateClaimPartitionRequest(PartitionState.Id), SpatialGDK::RETRY_UNTIL_COMPLETE, {});
 					}
 				}
 				continue;
@@ -374,14 +383,14 @@ struct FPartitionManager::Impl
 		}
 	}
 
-	TArray<FWorkerComponentData> CreatePartitionEntityComponents(const FString& PartitionName, const Worker_EntityId EntityId,
-																 const QueryConstraint& LBConstraint)
+	TArray<ComponentData> CreatePartitionEntityComponents(const FString& PartitionName, const Worker_EntityId EntityId,
+														  const QueryConstraint& LBConstraint)
 	{
 		AuthorityDelegationMap DelegationMap;
 		DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
 		DelegationMap.Add(SpatialConstants::PARTITION_WORKER_AUTH_COMPONENT_SET_ID, EntityId);
 
-		TArray<FWorkerComponentData> Components;
+		TArray<Worker_ComponentData> Components;
 		Components.Add(Position().CreateComponentData());
 		Components.Add(Persistence().CreateComponentData());
 		Components.Add(Metadata(PartitionName).CreateComponentData());
@@ -394,7 +403,13 @@ struct FPartitionManager::Impl
 		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_KNOWN_ENTITY_TAG_COMPONENT_ID));
 		Components.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::PARTITION_AUTH_TAG_COMPONENT_ID));
 
-		return Components;
+		TArray<ComponentData> Components_Owning;
+		for (auto& Component : Components)
+		{
+			Components_Owning.Add(ComponentData(OwningComponentDataPtr(Component.schema_type), Component.component_id));
+		}
+
+		return Components_Owning;
 	}
 
 	static constexpr uint32 k_PartitionsReserveRange = 1024;
@@ -433,13 +448,13 @@ FPartitionManager::FPartitionManager(Worker_EntityId InStrategyWorkerEntityId, V
 	m_Impl->StrategyWorkerEntityId = InStrategyWorkerEntityId;
 }
 
-void FPartitionManager::Init(SpatialOSWorkerInterface* Connection)
+void FPartitionManager::Init(ISpatialOSWorker& Connection)
 {
-	Worker_CommandRequest ClaimRequest = Worker::CreateClaimPartitionRequest(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
-	m_Impl->StrategyWorkerRequest =
-		Connection->SendCommandRequest(m_Impl->StrategyWorkerEntityId, &ClaimRequest, SpatialGDK::RETRY_UNTIL_COMPLETE, {});
+	m_Impl->StrategyWorkerRequest = Connection.SendEntityCommandRequest(
+		m_Impl->StrategyWorkerEntityId, CreateClaimPartitionRequest(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID),
+		SpatialGDK::RETRY_UNTIL_COMPLETE, {});
 
-	m_Impl->PartitionReserveRequest = Connection->SendReserveEntityIdsRequest(Impl::k_PartitionsReserveRange, RETRY_UNTIL_COMPLETE);
+	m_Impl->PartitionReserveRequest = Connection.SendReserveEntityIdsRequest(Impl::k_PartitionsReserveRange, RETRY_UNTIL_COMPLETE);
 }
 
 bool FPartitionManager::IsReady()
@@ -505,12 +520,12 @@ void FPartitionManager::SetPartitionMetadata(FPartitionHandle Partition)
 	// Later
 }
 
-void FPartitionManager::AdvanceView(SpatialOSWorkerInterface* Connection)
+void FPartitionManager::AdvanceView(ISpatialOSWorker& Connection)
 {
 	m_Impl->AdvanceView(Connection);
 }
 
-void FPartitionManager::Flush(SpatialOSWorkerInterface* Connection)
+void FPartitionManager::Flush(ISpatialOSWorker& Connection)
 {
 	m_Impl->Flush(Connection);
 }

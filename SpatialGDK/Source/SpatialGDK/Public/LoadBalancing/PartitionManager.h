@@ -9,11 +9,10 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPartitionManager, Log, All)
 
-class SpatialOSWorkerInterface;
-
 namespace SpatialGDK
 {
 struct QueryConstraint;
+class ISpatialOSWorker;
 class InterestFactory;
 class ViewCoordinator;
 
@@ -23,7 +22,7 @@ public:
 	FPartitionManager(Worker_EntityId InStrategyWorkerEntityId, ViewCoordinator& Coordinator, TUniquePtr<InterestFactory>&& InterestF);
 	~FPartitionManager();
 
-	void Init(SpatialOSWorkerInterface* Connection /*, uint32 ExpectedWorkers*/);
+	void Init(ISpatialOSWorker& Connection);
 
 	bool IsReady();
 
@@ -33,8 +32,8 @@ public:
 	void AssignPartitionTo(FPartitionHandle Partition, FLBWorkerHandle Worker);
 	void SetPartitionMetadata(FPartitionHandle /*???*/);
 
-	void AdvanceView(SpatialOSWorkerInterface* Connection);
-	void Flush(SpatialOSWorkerInterface* Connection);
+	void AdvanceView(ISpatialOSWorker& Connection);
+	void Flush(ISpatialOSWorker& Connection);
 
 	TArray<FLBWorkerHandle> GetConnectedWorkers();
 	TArray<FLBWorkerHandle> GetDisconnectedWorkers();

@@ -8,11 +8,10 @@
 
 #include "SpatialView/EntityComponentTypes.h"
 
-class SpatialOSWorkerInterface;
-
 namespace SpatialGDK
 {
 class FSubView;
+class ISpatialOSWorker;
 
 struct LBComponents2
 {
@@ -29,7 +28,7 @@ public:
 
 	const TSet<Worker_EntityId_Key>& GetActorsToHandover() { return ActorsToHandover; }
 
-	void Flush(SpatialOSWorkerInterface* Connection, const TSet<Worker_EntityId_Key>& ActorsReleased);
+	void Flush(ISpatialOSWorker& Connection, const TSet<Worker_EntityId_Key>& ActorsReleased);
 
 private:
 	void PopulateDataStore(const Worker_EntityId EntityId);

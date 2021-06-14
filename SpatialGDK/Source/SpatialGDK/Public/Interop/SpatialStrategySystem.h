@@ -15,11 +15,11 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialStrategySystem, Log, All)
 
-class SpatialOSWorkerInterface;
 class SpatialVirtualWorkerTranslator;
 
 namespace SpatialGDK
 {
+class ISpatialOSWorker;
 class FLoadBalancingStrategy;
 class FLBDataStorage;
 class FPartitionManager;
@@ -32,9 +32,9 @@ public:
 
 	~FSpatialStrategySystem();
 
-	void Advance(SpatialOSWorkerInterface* Connection);
-	void Flush(SpatialOSWorkerInterface* Connection);
-	void Destroy(SpatialOSWorkerInterface* Connection);
+	void Advance(ISpatialOSWorker& Connection);
+	void Flush(ISpatialOSWorker& Connection);
+	void Destroy(ISpatialOSWorker& Connection);
 
 private:
 	const FSubView& LBView;
@@ -52,7 +52,7 @@ private:
 	TMap<Worker_EntityId_Key, NetOwningClientWorker> NetOwningClientView;
 	TUniquePtr<FLoadBalancingStrategy> Strategy;
 
-	void UpdateStrategySystemInterest(SpatialOSWorkerInterface* Connection);
+	void UpdateStrategySystemInterest(ISpatialOSWorker& Connection);
 
 	bool bStrategySystemInterestDirty = false;
 };

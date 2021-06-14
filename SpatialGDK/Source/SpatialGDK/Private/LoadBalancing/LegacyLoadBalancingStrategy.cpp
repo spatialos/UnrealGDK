@@ -42,9 +42,9 @@ FLegacyLoadBalancing::FLegacyLoadBalancing(UAbstractLBStrategy& LegacyLBStrat, S
 
 FLegacyLoadBalancing::~FLegacyLoadBalancing() {}
 
-void FLegacyLoadBalancing::Advance(SpatialOSWorkerInterface* Connection)
+void FLegacyLoadBalancing::Advance(ISpatialOSWorker& Connection)
 {
-	const TArray<Worker_Op>& Messages = Connection->GetWorkerMessages();
+	const TArray<Worker_Op>& Messages = Connection.GetWorkerMessages();
 
 	for (const auto& Message : Messages)
 	{
@@ -83,7 +83,7 @@ void FLegacyLoadBalancing::Advance(SpatialOSWorkerInterface* Connection)
 	}
 }
 
-void FLegacyLoadBalancing::QueryTranslation(SpatialOSWorkerInterface* Connection)
+void FLegacyLoadBalancing::QueryTranslation(ISpatialOSWorker& Connection)
 {
 	if (WorkerTranslationRequest.IsSet())
 	{
@@ -101,10 +101,10 @@ void FLegacyLoadBalancing::QueryTranslation(SpatialOSWorkerInterface* Connection
 	Worker_EntityQuery TranslationQuery{};
 	TranslationQuery.constraint = TranslationConstraint;
 
-	WorkerTranslationRequest = Connection->SendEntityQueryRequest(&TranslationQuery, RETRY_UNTIL_COMPLETE);
+	WorkerTranslationRequest = Connection.SendEntityQueryRequest(EntityQuery(TranslationQuery), RETRY_UNTIL_COMPLETE);
 }
 
-void FLegacyLoadBalancing::Flush(SpatialOSWorkerInterface* Connection)
+void FLegacyLoadBalancing::Flush(ISpatialOSWorker& Connection)
 {
 	if (ConnectedWorkers.Num() == ExpectedWorkers && !bTranslatorIsReady)
 	{

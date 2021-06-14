@@ -2,10 +2,10 @@
 
 #include "Interop/SpatialStrategySystem.h"
 
-#include "Interop/SpatialOSDispatcherInterface.h"
 #include "LoadBalancing/LoadBalancingStrategy.h"
 #include "Schema/AuthorityIntent.h"
 #include "SpatialView/EntityComponentTypes.h"
+#include "SpatialView/SpatialOSWorker.h"
 #include "Utils/EntityFactory.h"
 #include "Utils/InterestFactory.h"
 
@@ -34,7 +34,7 @@ FSpatialStrategySystem::FSpatialStrategySystem(TUniquePtr<FPartitionManager> InP
 
 FSpatialStrategySystem::~FSpatialStrategySystem() = default;
 
-void FSpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
+void FSpatialStrategySystem::Advance(ISpatialOSWorker& Connection)
 {
 	PartitionsMgr->AdvanceView(Connection);
 
@@ -155,7 +155,7 @@ void FSpatialStrategySystem::Advance(SpatialOSWorkerInterface* Connection)
 	Strategy->Advance(Connection);
 }
 
-void FSpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
+void FSpatialStrategySystem::Flush(ISpatialOSWorker& Connection)
 {
 	PartitionsMgr->Flush(Connection);
 
@@ -212,10 +212,9 @@ void FSpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
 		AuthIntent.PartitionId = DestPartition.GetValue();
 		AuthIntent.AssignmentCounter++;
 
-		FWorkerComponentUpdate Update;
-		Update.component_id = AuthorityIntentV2::ComponentId;
-		Update.schema_type = AuthIntent.CreateAuthorityIntentUpdate().schema_type;
-		Connection->SendComponentUpdate(EntityId, &Update, {});
+		ComponentUpdate Update(OwningComponentUpdatePtr(AuthIntent.CreateAuthorityIntentUpdate().schema_type),
+							   AuthorityIntentV2::ComponentId);
+		Connection.SendComponentUpdate(EntityId, MoveTemp(Update), {});
 		MigratingEntities.Add(EntityId);
 	}
 
@@ -243,16 +242,15 @@ void FSpatialStrategySystem::Flush(SpatialOSWorkerInterface* Connection)
 	for (auto EntityToUpdate : EntitiesToUpdate)
 	{
 		AuthorityDelegation& AuthDelegation = AuthorityDelegationView.FindChecked(EntityToUpdate);
-		FWorkerComponentUpdate Update;
-		Update.component_id = SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID;
-		Update.schema_type = AuthDelegation.CreateAuthorityDelegationUpdate().schema_type;
-		Connection->SendComponentUpdate(EntityToUpdate, &Update, {});
+		ComponentUpdate Update(OwningComponentUpdatePtr(AuthDelegation.CreateAuthorityDelegationUpdate().schema_type),
+							   SpatialConstants::AUTHORITY_DELEGATION_COMPONENT_ID);
+		Connection.SendComponentUpdate(EntityToUpdate, MoveTemp(Update), {});
 	}
 }
 
-void FSpatialStrategySystem::Destroy(SpatialOSWorkerInterface* Connection) {}
+void FSpatialStrategySystem::Destroy(ISpatialOSWorker& Connection) {}
 
-void FSpatialStrategySystem::UpdateStrategySystemInterest(SpatialOSWorkerInterface* Connection)
+void FSpatialStrategySystem::UpdateStrategySystemInterest(ISpatialOSWorker& Connection)
 {
 	if (!PartitionsMgr->IsReady())
 	{
@@ -299,10 +297,8 @@ void FSpatialStrategySystem::UpdateStrategySystemInterest(SpatialOSWorkerInterfa
 		InterestSet.Queries.Add(ServerQuery);
 	}
 
-	FWorkerComponentUpdate Update;
-	Update.component_id = Interest::ComponentId;
-	Update.schema_type = ServerInterest.CreateInterestUpdate().schema_type;
-	Connection->SendComponentUpdate(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID, &Update, {});
+	ComponentUpdate Update(OwningComponentUpdatePtr(ServerInterest.CreateInterestUpdate().schema_type), Interest::ComponentId);
+	Connection.SendComponentUpdate(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID, MoveTemp(Update), {});
 
 	bStrategySystemInterestDirty = false;
 }

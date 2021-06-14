@@ -22,8 +22,8 @@ public:
 
 	virtual void Init(TArray<FLBDataStorage*>& OutLoadBalancingData) override;
 
-	virtual void Advance(SpatialOSWorkerInterface* Connection) override;
-	virtual void Flush(SpatialOSWorkerInterface* Connection) override;
+	virtual void Advance(ISpatialOSWorker& Connection) override;
+	virtual void Flush(ISpatialOSWorker& Connection) override;
 
 	virtual void OnWorkersConnected(TArrayView<FLBWorkerHandle> ConnectedWorkers) override;
 	virtual void OnWorkersDisconnected(TArrayView<FLBWorkerHandle> DisconnectedWorkers) override;
@@ -31,7 +31,7 @@ public:
 	virtual void CollectEntitiesToMigrate(FMigrationContext& Ctx) override;
 
 protected:
-	void QueryTranslation(SpatialOSWorkerInterface* Connection);
+	void QueryTranslation(ISpatialOSWorker& Connection);
 
 	TUniquePtr<FSpatialPositionStorage> PositionStorage;
 	TUniquePtr<FActorGroupStorage> GroupStorage;

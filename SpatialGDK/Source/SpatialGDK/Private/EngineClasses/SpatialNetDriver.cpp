@@ -1210,7 +1210,7 @@ void USpatialNetDriver::Shutdown()
 
 		if (StrategySystem)
 		{
-			StrategySystem->Destroy(Connection);
+			StrategySystem->Destroy(Connection->GetCoordinator());
 
 			Connection->Flush();
 			FPlatformProcess::Sleep(0.1f);
@@ -2302,7 +2302,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 					Actor->OnAuthorityLost();
 				}
 			}
-			HandoverManager->Flush(Connection, EntitiesHandedOver);
+			HandoverManager->Flush(Connection->GetCoordinator(), EntitiesHandedOver);
 		}
 		if (!bStrategyWorkerEnabled || bDirectAssignment)
 		{
@@ -2483,7 +2483,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 		if (StrategySystem.IsValid())
 		{
-			StrategySystem->Advance(Connection);
+			StrategySystem->Advance(Connection->GetCoordinator());
 		}
 
 		if (IsValid(PackageMap))
@@ -2663,7 +2663,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		}
 		else if (GameInstance->GetSpatialWorkerType() == SpatialConstants::StrategyWorkerType)
 		{
-			StrategySystem->Flush(Connection);
+			StrategySystem->Flush(Connection->GetCoordinator());
 		}
 		else
 		{
@@ -3338,7 +3338,7 @@ void USpatialNetDriver::TryFinishStartup()
 				MakeUnique<SpatialGDK::FPartitionManager>(Connection->GetWorkerSystemEntityId(), Connection->GetCoordinator(),
 														  MakeUnique<SpatialGDK::InterestFactory>(ClassInfoManager));
 
-			PartitionMgr->Init(Connection);
+			PartitionMgr->Init(Connection->GetCoordinator());
 
 			TUniquePtr<SpatialGDK::FLoadBalancingStrategy> Strategy =
 				MakeUnique<SpatialGDK::FLegacyLoadBalancing>(*LoadBalanceStrategy, *VirtualWorkerTranslator);

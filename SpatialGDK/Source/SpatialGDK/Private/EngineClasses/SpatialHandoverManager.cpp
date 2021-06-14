@@ -3,10 +3,10 @@
 #include "EngineClasses/SpatialHandoverManager.h"
 
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/Connection/SpatialOSWorkerInterface.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 #include "SpatialView/EntityDelta.h"
+#include "SpatialView/SpatialOSWorker.h"
 #include "SpatialView/SubView.h"
 #include "SpatialView/ViewDelta.h"
 
@@ -138,16 +138,14 @@ void FSpatialHandoverManager::ApplyComponentRefresh(const Worker_EntityId Entity
 	HandleChange(EntityId, Components);
 }
 
-void FSpatialHandoverManager::Flush(SpatialOSWorkerInterface* Connection, TSet<Worker_EntityId_Key> const& ActorsReleased)
+void FSpatialHandoverManager::Flush(ISpatialOSWorker& Connection, TSet<Worker_EntityId_Key> const& ActorsReleased)
 {
 	for (auto Partition : PartitionsToACK)
 	{
-		FWorkerComponentUpdate Update;
-		Update.component_id = SpatialConstants::PARTITION_ACK_COMPONENT_ID;
-		Update.schema_type = Schema_CreateComponentUpdate();
-		Schema_Object* ACKObj = Schema_GetComponentUpdateFields(Update.schema_type);
+		OwningComponentUpdatePtr UpdateData(Schema_CreateComponentUpdate());
+		Schema_Object* ACKObj = Schema_GetComponentUpdateFields(UpdateData.Get());
 		Schema_AddUint64(ACKObj, 1, 1);
-		Connection->SendComponentUpdate(Partition, &Update);
+		Connection.SendComponentUpdate(Partition, ComponentUpdate(MoveTemp(UpdateData), SpatialConstants::PARTITION_ACK_COMPONENT_ID));
 	}
 	PartitionsToACK.Empty();
 
@@ -159,10 +157,9 @@ void FSpatialHandoverManager::Flush(SpatialOSWorkerInterface* Connection, TSet<W
 		LBComponents2& Components = DataStore[ReleasedActor];
 		Components.IntentACK.AssignmentCounter = Components.Intent.AssignmentCounter;
 
-		FWorkerComponentUpdate Update;
-		Update.component_id = SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID;
-		Update.schema_type = Components.IntentACK.CreateAuthorityIntentUpdate().schema_type;
-		Connection->SendComponentUpdate(ReleasedActor, &Update);
+		OwningComponentUpdatePtr UpdateData(Components.IntentACK.CreateAuthorityIntentUpdate().schema_type);
+		Connection.SendComponentUpdate(ReleasedActor,
+									   ComponentUpdate(MoveTemp(UpdateData), SpatialConstants::AUTHORITY_INTENT_ACK_COMPONENT_ID));
 	}
 	ActorsToACK.Empty();
 }
