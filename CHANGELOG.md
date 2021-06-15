@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A test was calling `SetReplicates` on an actor over which it did not have authority. This was causing warnings to be triggered. We've fixed this by reverting the actor's role at the end of the test, so that the actor is not left in an unexpected state.
 - Added support for clients to disconnect during a test in the automated test framework. 
 - Modified ActorSystem's Ownership and Simulated Subviews to take player ownership into account.
+- Modified startup flow to only create ActorSystem, RPCService and some others after startup has otherwise finished; removed initial op reordering.
 
 ## [`0.13.0`] - 2021-05-17
 
