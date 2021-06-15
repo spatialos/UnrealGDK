@@ -18,7 +18,7 @@ SpatialSnapshotManager::SpatialSnapshotManager()
 {
 }
 
-void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager)
+void SpatialSnapshotManager::Init(USpatialWorkerConnection* InConnection, TSharedPtr<UGlobalStateManager> InGlobalStateManager)
 {
 	check(InConnection != nullptr);
 	Connection = InConnection;
@@ -185,7 +185,7 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 				if (ComponentData.component_id == SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID)
 				{
 					// Save the new GSM Entity ID.
-					GlobalStateManager->GlobalStateManagerEntityId = ReservedEntityID;
+					GlobalStateManager.Pin()->GlobalStateManagerEntityId = ReservedEntityID;
 				}
 			}
 
@@ -193,8 +193,8 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 			Connection->SendCreateEntityRequest(MoveTemp(EntityToSpawn), &ReservedEntityID, RETRY_UNTIL_COMPLETE);
 		}
 
-		GlobalStateManager->SetDeploymentState();
-		GlobalStateManager->SetAcceptingPlayers(true);
+		GlobalStateManager.Pin()->SetDeploymentState();
+		GlobalStateManager.Pin()->SetAcceptingPlayers(true);
 	});
 
 	// Reserve the Entity IDs

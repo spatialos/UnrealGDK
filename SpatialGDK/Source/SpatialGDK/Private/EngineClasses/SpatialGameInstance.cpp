@@ -93,7 +93,7 @@ void USpatialGameInstance::CreateNewSpatialConnectionManager()
 {
 	SpatialConnectionManager = NewObject<USpatialConnectionManager>(this);
 
-	GlobalStateManager = NewObject<UGlobalStateManager>();
+	GlobalStateManager = MakeShared<UGlobalStateManager>();
 }
 
 void USpatialGameInstance::DestroySpatialConnectionManager()
@@ -106,7 +106,7 @@ void USpatialGameInstance::DestroySpatialConnectionManager()
 
 	if (GlobalStateManager != nullptr)
 	{
-		GlobalStateManager->ConditionalBeginDestroy();
+		// GlobalStateManager->ConditionalBeginDestroy();
 		GlobalStateManager = nullptr;
 	}
 }

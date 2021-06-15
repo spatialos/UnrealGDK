@@ -14,8 +14,6 @@
 #include "Interop/EntityCommandHandler.h"
 #include "Utils/SchemaUtils.h"
 
-#include "GlobalStateManager.generated.h"
-
 class USpatialNetDriver;
 class USpatialActorChannel;
 class USpatialStaticComponentView;
@@ -29,12 +27,13 @@ class ViewCoordinator;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogGlobalStateManager, Log, All)
 
-UCLASS()
-class SPATIALGDK_API UGlobalStateManager : public UObject
-{
-	GENERATED_BODY()
+class FGlobalStateManager;
+using UGlobalStateManager = FGlobalStateManager;
 
+class SPATIALGDK_API FGlobalStateManager final : public TSharedFromThis<FGlobalStateManager>
+{
 public:
+	~FGlobalStateManager() { BeginDestroy(); }
 	void Init(USpatialNetDriver* InNetDriver);
 
 	void ApplyDeploymentMapData(Schema_ComponentData* Data);
@@ -49,10 +48,7 @@ public:
 	void QueryGSM(const QueryDelegate& Callback);
 	static bool GetAcceptingPlayersAndSessionIdFromQueryResponse(const Worker_EntityQueryResponseOp& Op, bool& OutAcceptingPlayers,
 																 int32& OutSessionId);
-	void ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const;
 	void ApplyDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
-
-	void QueryTranslation();
 
 	void SetDeploymentState();
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
@@ -70,7 +66,7 @@ public:
 
 	void ResetGSM();
 
-	void BeginDestroy() override;
+	void BeginDestroy();
 
 	void TrySendWorkerReadyToBeginPlay();
 	void TriggerBeginPlay();
@@ -123,7 +119,6 @@ private:
 #endif // WITH_EDITOR
 
 private:
-	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
 	SpatialGDK::ViewCoordinator* ViewCoordinator;

@@ -39,9 +39,8 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
 #if WITH_EDITOR
-	RequestHandler.AddRequestHandler(
-		SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID,
-		FOnCommandRequestWithOp::FDelegate::CreateUObject(this, &UGlobalStateManager::OnReceiveShutdownCommand));
+	RequestHandler.AddRequestHandler(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID,
+									 FOnCommandRequestWithOp::FDelegate::CreateRaw(this, &UGlobalStateManager::OnReceiveShutdownCommand));
 
 	const ULevelEditorPlaySettings* const PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
 
@@ -53,7 +52,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 
 		if (!bRunUnderOneProcess && !PrePIEEndedHandle.IsValid())
 		{
-			PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::OnPrePIEEnded);
+			PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &UGlobalStateManager::OnPrePIEEnded);
 		}
 	}
 #endif // WITH_EDITOR
@@ -352,7 +351,7 @@ void UGlobalStateManager::AuthorityChanged(const Worker_ComponentSetAuthorityCha
 	if (ViewCoordinator->HasComponent(AuthOp.entity_id, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
 	{
 		GlobalStateManagerEntityId = AuthOp.entity_id;
-		SetDeploymentState();
+		// SetDeploymentState();
 	}
 
 	if (ViewCoordinator->HasComponent(AuthOp.entity_id, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
@@ -385,7 +384,7 @@ void UGlobalStateManager::ResetGSM()
 
 void UGlobalStateManager::BeginDestroy()
 {
-	Super::BeginDestroy();
+	// Super::BeginDestroy();
 
 #if WITH_EDITOR
 	if (NetDriver != nullptr
@@ -413,7 +412,7 @@ void UGlobalStateManager::HandleActorBasedOnLoadBalancer(AActor* Actor) const
 		return;
 	}
 
-	if (USpatialStatics::IsSpatialOffloadingEnabled(GetWorld()) && !USpatialStatics::IsActorGroupOwnerForActor(Actor)
+	if (USpatialStatics::IsSpatialOffloadingEnabled(NetDriver->GetWorld()) && !USpatialStatics::IsActorGroupOwnerForActor(Actor)
 		&& !Actor->bNetLoadOnNonAuthServer)
 	{
 		Actor->Destroy(true);
@@ -571,64 +570,6 @@ void UGlobalStateManager::QueryGSM(const QueryDelegate& Callback)
 	});
 
 	QueryHandler.AddRequest(RequestID, GSMQueryDelegate);
-}
-
-void UGlobalStateManager::QueryTranslation()
-{
-	if (bTranslationQueryInFlight)
-	{
-		// Only allow one in flight query. Retries will be handled by the SpatialNetDriver.
-		return;
-	}
-
-	// Build a constraint for the Virtual Worker Translation.
-	Worker_ComponentConstraint TranslationComponentConstraint;
-	TranslationComponentConstraint.component_id = SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID;
-
-	Worker_Constraint TranslationConstraint;
-	TranslationConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
-	TranslationConstraint.constraint.component_constraint = TranslationComponentConstraint;
-
-	Worker_EntityQuery TranslationQuery{};
-	TranslationQuery.constraint = TranslationConstraint;
-
-	Worker_RequestId RequestID = NetDriver->Connection->SendEntityQueryRequest(&TranslationQuery, RETRY_UNTIL_COMPLETE);
-	bTranslationQueryInFlight = true;
-
-	TWeakObjectPtr<UGlobalStateManager> WeakGlobalStateManager(this);
-	EntityQueryDelegate TranslationQueryDelegate;
-	TranslationQueryDelegate.BindLambda([WeakGlobalStateManager](const Worker_EntityQueryResponseOp& Op) {
-		if (!WeakGlobalStateManager.IsValid())
-		{
-			// The GSM was destroyed before receiving the response.
-			return;
-		}
-
-		UGlobalStateManager* GlobalStateManager = WeakGlobalStateManager.Get();
-		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
-		{
-			if (GlobalStateManager->NetDriver->VirtualWorkerTranslator.IsValid())
-			{
-				GlobalStateManager->ApplyVirtualWorkerMappingFromQueryResponse(Op);
-			}
-		}
-		GlobalStateManager->bTranslationQueryInFlight = false;
-	});
-	QueryHandler.AddRequest(RequestID, TranslationQueryDelegate);
-}
-
-void UGlobalStateManager::ApplyVirtualWorkerMappingFromQueryResponse(const Worker_EntityQueryResponseOp& Op) const
-{
-	check(NetDriver->VirtualWorkerTranslator.IsValid());
-	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
-	{
-		Worker_ComponentData Data = Op.results[0].components[i];
-		if (Data.component_id == SpatialConstants::VIRTUAL_WORKER_TRANSLATION_COMPONENT_ID)
-		{
-			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-			NetDriver->VirtualWorkerTranslator->ApplyVirtualWorkerManagerData(ComponentObject);
-		}
-	}
 }
 
 void UGlobalStateManager::ApplyDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op)

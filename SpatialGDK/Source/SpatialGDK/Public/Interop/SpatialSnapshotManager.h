@@ -13,7 +13,7 @@
 
 #include "EntityQueryHandler.h"
 
-class UGlobalStateManager;
+class FGlobalStateManager;
 class USpatialReceiver;
 class USpatialWorkerConnection;
 
@@ -26,7 +26,7 @@ class SPATIALGDK_API SpatialSnapshotManager
 public:
 	SpatialSnapshotManager();
 
-	void Init(USpatialWorkerConnection* InConnection, UGlobalStateManager* InGlobalStateManager);
+	void Init(USpatialWorkerConnection* InConnection, TSharedPtr<FGlobalStateManager> InGlobalStateManager);
 
 	void WorldWipe(const PostWorldWipeDelegate& Delegate);
 	void LoadSnapshot(const FString& SnapshotName);
@@ -37,7 +37,7 @@ private:
 	static void DeleteEntities(const Worker_EntityQueryResponseOp& Op, TWeakObjectPtr<USpatialWorkerConnection> Connection);
 
 	TWeakObjectPtr<USpatialWorkerConnection> Connection;
-	TWeakObjectPtr<UGlobalStateManager> GlobalStateManager;
+	TWeakPtr<FGlobalStateManager> GlobalStateManager;
 	SpatialGDK::ReserveEntityIdsHandler ReserveEntityIdsHandler;
 	SpatialGDK::EntityQueryHandler QueryHandler;
 };

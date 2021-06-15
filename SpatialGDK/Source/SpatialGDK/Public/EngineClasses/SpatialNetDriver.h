@@ -35,7 +35,7 @@ class SpatialVirtualWorkerTranslator;
 class SpatialVirtualWorkerTranslationManager;
 class UAbstractLBStrategy;
 class UEntityPool;
-class UGlobalStateManager;
+class FGlobalStateManager;
 class USpatialActorChannel;
 class USpatialClassInfoManager;
 class USpatialConnectionManager;
@@ -87,12 +87,14 @@ class InitialOnlyFilter;
 class CrossServerRPCSender;
 class CrossServerRPCHandler;
 class SpatialStrategySystem;
+class FClientServerStartupHandler;
 } // namespace SpatialGDK
 
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 {
 	GENERATED_BODY()
+	friend class SpatialGDK::FClientServerStartupHandler;
 
 public:
 	USpatialNetDriver(const FObjectInitializer& ObjectInitializer);
@@ -195,8 +197,8 @@ public:
 	USpatialReceiver* Receiver;
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
-	UPROPERTY()
-	UGlobalStateManager* GlobalStateManager;
+
+	TSharedPtr<FGlobalStateManager> GlobalStateManager;
 	UPROPERTY()
 	USpatialPlayerSpawner* PlayerSpawner;
 	UPROPERTY()
@@ -220,6 +222,8 @@ public:
 	USpatialNetDriverDebugContext* DebugCtx;
 	UPROPERTY()
 	UAsyncPackageLoadFilter* AsyncPackageLoadFilter;
+
+	static FSimpleMulticastDelegate BeforeStartup;
 
 	TUniquePtr<SpatialGDK::SpatialDebuggerSystem> SpatialDebuggerSystem;
 	TOptional<SpatialGDK::FOwnershipCompletenessHandler> OwnershipCompletenessHandler;
@@ -280,6 +284,8 @@ public:
 
 	FShutdownEvent OnShutdown;
 
+	void OnStartupComplete();
+
 private:
 	TUniquePtr<SpatialDispatcher> Dispatcher;
 	TUniquePtr<SpatialSnapshotManager> SnapshotManager;
@@ -331,6 +337,10 @@ private:
 	void QueryGSMToLoadMap();
 
 	void TryFinishStartup();
+
+	class FDefaultServerClientStartup;
+
+	TUniquePtr<SpatialGDK::FClientServerStartupHandler> DefaultStartupStep;
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);

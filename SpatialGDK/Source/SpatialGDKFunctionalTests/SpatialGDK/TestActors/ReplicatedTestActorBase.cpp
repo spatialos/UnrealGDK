@@ -2,6 +2,7 @@
 
 #include "ReplicatedTestActorBase.h"
 #include "Components/StaticMeshComponent.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "Materials/Material.h"
 
 AReplicatedTestActorBase::AReplicatedTestActorBase()
@@ -17,3 +18,31 @@ AReplicatedTestActorBase::AReplicatedTestActorBase()
 
 	RootComponent = CubeComponent;
 }
+PRAGMA_DISABLE_OPTIMIZATION
+static void HackWreckHavok()
+{
+	// GWorld->SpawnActor<AEvilReplicatedTestActor>();
+}
+
+void AEvilReplicatedTestActor::PostCDOContruct()
+{
+	Super::PostCDOContruct();
+
+	if (HasAnyFlags(EObjectFlags::RF_ClassDefaultObject))
+	{
+		USpatialNetDriver::BeforeStartup.AddStatic(&HackWreckHavok);
+	}
+}
+
+bool AEvilReplicatedTestActor::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
+{
+	const bool bSuperSucceeded = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
+
+	// Destroy();
+	GetWorld()->GetTimerManager().SetTimerForNextTick([this] {
+		Destroy();
+	});
+
+	return bSuperSucceeded;
+}
+PRAGMA_ENABLE_OPTIMIZATION

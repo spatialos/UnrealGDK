@@ -142,7 +142,7 @@ void WellKnownEntitySystem::OnMapLoaded() const
 	{
 		// ServerTravel - Increment the session id, so users don't rejoin the old game.
 		GlobalStateManager->TriggerBeginPlay();
-		GlobalStateManager->SetDeploymentState();
+		// GlobalStateManager->SetDeploymentState();
 		GlobalStateManager->SetAcceptingPlayers(true);
 		GlobalStateManager->IncrementSessionID();
 	}

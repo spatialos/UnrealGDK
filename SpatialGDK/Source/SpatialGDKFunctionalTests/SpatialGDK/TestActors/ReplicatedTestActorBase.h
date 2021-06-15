@@ -20,3 +20,12 @@ public:
 	UPROPERTY()
 	UStaticMeshComponent* CubeComponent;
 };
+
+UCLASS(Blueprintable, BlueprintType)
+class AEvilReplicatedTestActor : public AReplicatedTestActorBase
+{
+	GENERATED_BODY()
+public:
+	virtual void PostCDOContruct() override;
+	virtual bool ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
+};

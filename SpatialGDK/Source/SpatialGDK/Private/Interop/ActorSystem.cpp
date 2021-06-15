@@ -186,7 +186,7 @@ void ActorSystem::ProcessAdds(const FEntitySubViewUpdate& SubViewUpdate)
 				}
 				continue;
 			}
-			
+
 			if (!PresentEntities.Contains(Delta.EntityId))
 			{
 				// Create new actor for the entity.
@@ -1274,7 +1274,7 @@ void ActorSystem::ReceiveActor(Worker_EntityId EntityId)
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	{
-		AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get(/*bEvenIfPendingKill =*/ false));
+		AActor* EntityActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(EntityId).Get(/*bEvenIfPendingKill =*/false));
 		if (EntityActor != nullptr)
 		{
 			if (!EntityActor->IsActorReady())

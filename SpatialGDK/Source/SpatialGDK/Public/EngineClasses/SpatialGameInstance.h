@@ -10,7 +10,7 @@
 
 class USpatialLatencyTracer;
 class USpatialConnectionManager;
-class UGlobalStateManager;
+class FGlobalStateManager;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
@@ -52,7 +52,7 @@ public:
 
 	FORCEINLINE USpatialConnectionManager* GetSpatialConnectionManager() { return SpatialConnectionManager; }
 	FORCEINLINE USpatialLatencyTracer* GetSpatialLatencyTracer() { return SpatialLatencyTracer; }
-	FORCEINLINE UGlobalStateManager* GetGlobalStateManager() { return GlobalStateManager; };
+	FORCEINLINE FGlobalStateManager* GetGlobalStateManager() { return GlobalStateManager.Get(); };
 
 	void HandleOnConnected(USpatialNetDriver& NetDriver);
 	void HandleOnConnectionFailed(const FString& Reason);
@@ -98,8 +98,7 @@ private:
 	USpatialLatencyTracer* SpatialLatencyTracer = nullptr;
 
 	// GlobalStateManager must persist when server traveling
-	UPROPERTY()
-	UGlobalStateManager* GlobalStateManager;
+	TSharedPtr<FGlobalStateManager> GlobalStateManager;
 
 	// A set of the levels which were loaded before the SpatialOS connection.
 	UPROPERTY()
