@@ -217,7 +217,7 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 		}
 	}
 	ComponentsUpdated.Reset();
-	
+
 	for (auto It = ActorsAdded.CreateIterator(); It; It++)
 	{
 		// If authority lost, then forget about this actor
@@ -225,7 +225,6 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 		{
 			It.RemoveCurrent();
 			continue;
-
 		}
 
 		// If entity lost, then forget about this actor
@@ -364,8 +363,7 @@ void USpatialNetDriverGameplayDebuggerContext::RemoveAuthority(Worker_EntityId I
 	if (OptionalEntityData->Handle.IsValid())
 	{
 		TWeakObjectPtr<UObject> EntityObjectWeakPtr = NetDriver->PackageMap->GetObjectFromEntityId(InEntityId);
-		if (AGameplayDebuggerCategoryReplicator* CategoryReplicator =
-				Cast<AGameplayDebuggerCategoryReplicator>(EntityObjectWeakPtr.Get()))
+		if (AGameplayDebuggerCategoryReplicator* CategoryReplicator = Cast<AGameplayDebuggerCategoryReplicator>(EntityObjectWeakPtr.Get()))
 		{
 			CategoryReplicator->OnServerRequest().Remove(OptionalEntityData->Handle);
 		}
@@ -399,7 +397,8 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerRequest(AGameplayDebugger
 
 	if (!InCategoryReplicator->HasAuthority())
 	{
-		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Warning, TEXT("Only expect to be registered and receive this callback when there is authority"));
+		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Warning,
+			   TEXT("Only expect to be registered and receive this callback when there is authority"));
 		return;
 	}
 
