@@ -7,7 +7,6 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/PlayerState.h"
-#include "Interop/ClientNetLoadActorHelper.h"
 #include "Interop/InitialOnlyFilter.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -659,7 +658,7 @@ void ActorSystem::ComponentUpdated(const Worker_EntityId EntityId, const Worker_
 		EventTracer->TraceEvent(COMPONENT_UPDATE_EVENT_NAME, "", Causes, CauseSpanIds.Num(),
 								[Object, TargetObject, EntityId, ComponentId](FSpatialTraceEventDataBuilder& EventBuilder) {
 									EventBuilder.AddObject(Object);
-									EventBuilder.AddObject(TargetObject, "TargetObject");
+									EventBuilder.AddObject(TargetObject, "target_object");
 									EventBuilder.AddEntityId(EntityId);
 									EventBuilder.AddComponentId(ComponentId);
 								});
@@ -1935,7 +1934,7 @@ void ActorSystem::SendComponentUpdates(UObject* Object, const FClassInfo& Info, 
 											GDK_PROPERTY(Property)* Property = *Itr;
 											EventBuilder.AddObject(Object);
 											EventBuilder.AddEntityId(EntityId);
-											EventBuilder.AddKeyValue("PropertyName", Property->GetName());
+											EventBuilder.AddKeyValue("property_name", Property->GetName());
 											EventBuilder.AddLinearTraceId(EventTraceUniqueId::GenerateForProperty(EntityId, Property));
 										});
 

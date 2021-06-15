@@ -33,6 +33,7 @@ void DebugMetricsSystem::ProcessOps(const TArray<Worker_Op>& Ops) const
 			const Worker_ComponentId ComponentId = CommandRequest.request.component_id;
 			const Worker_CommandIndex CommandIndex = CommandRequest.request.command_index;
 			const Worker_EntityId EntityId = CommandRequest.entity_id;
+			bool bCommandHandled = false;
 
 			if (ComponentId == SpatialConstants::DEBUG_METRICS_COMPONENT_ID)
 			{
@@ -50,32 +51,55 @@ void DebugMetricsSystem::ProcessOps(const TArray<Worker_Op>& Ops) const
 					SpatialMetrics.OnModifySettingCommand(Payload);
 					break;
 				}
+				case SpatialConstants::DEBUG_METRICS_EXEC_SERVER_COMMAND_ID:
+				{
+					Schema_Object* Payload = Schema_GetCommandRequestObject(CommandRequest.request.schema_type);
+					SpatialMetrics.OnExecServerCmdCommand(Payload);
+					break;
+				}
 				default:
 					UE_LOG(LogSpatialDebugMetrics, Error, TEXT("Unknown command index for DebugMetrics component: %d, entity: %lld"),
 						   CommandIndex, EntityId);
 					break;
 				}
 
+				bCommandHandled = true;
+			}
+
+			if (ComponentId == SpatialConstants::SERVER_WORKER_COMPONENT_ID)
+			{
+				switch (CommandIndex)
 				{
-					Worker_CommandResponse Response = {};
-					Response.component_id = ComponentId;
-					Response.command_index = CommandIndex;
-					Response.schema_type = Schema_CreateCommandResponse();
-
-					const FSpatialGDKSpanId CauseSpanId(Op.span_id);
-					FSpatialGDKSpanId SpanId;
-
-					if (EventTracer != nullptr)
-					{
-						SpanId = EventTracer->TraceEvent(SEND_COMMAND_RESPONSE_EVENT_NAME, "", CauseSpanId.GetConstId(), /* NumCauses */ 1,
-														 [RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
-															 EventBuilder.AddRequestId(RequestId);
-															 EventBuilder.AddKeyValue("Success", true);
-														 });
-					}
-
-					Connection.SendCommandResponse(RequestId, &Response, SpanId);
+				case SpatialConstants::SERVER_WORKER_EXEC_SERVER_COMMAND_COMMAND_ID:
+				{
+					Schema_Object* Payload = Schema_GetCommandRequestObject(CommandRequest.request.schema_type);
+					SpatialMetrics.OnExecServerCmdCommand(Payload);
+					bCommandHandled = true;
+					break;
 				}
+				}
+			}
+
+			if (bCommandHandled)
+			{
+				Worker_CommandResponse Response = {};
+				Response.component_id = ComponentId;
+				Response.command_index = CommandIndex;
+				Response.schema_type = Schema_CreateCommandResponse();
+
+				const FSpatialGDKSpanId CauseSpanId(Op.span_id);
+				FSpatialGDKSpanId SpanId;
+
+				if (EventTracer != nullptr)
+				{
+					SpanId = EventTracer->TraceEvent(SEND_COMMAND_RESPONSE_EVENT_NAME, "", CauseSpanId.GetConstId(), /* NumCauses */ 1,
+													 [RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
+														 EventBuilder.AddRequestId(RequestId);
+														 EventBuilder.AddKeyValue("success", true);
+													 });
+				}
+
+				Connection.SendCommandResponse(RequestId, &Response, SpanId);
 			}
 		}
 	}
