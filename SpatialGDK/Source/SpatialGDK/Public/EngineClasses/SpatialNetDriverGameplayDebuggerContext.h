@@ -1,4 +1,4 @@
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+	// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -31,13 +31,18 @@ class SPATIALGDK_API USpatialNetDriverGameplayDebuggerContext : public UObject
 	GENERATED_BODY()
 
 public:
+
+	USpatialNetDriverGameplayDebuggerContext() = default;
+	virtual ~USpatialNetDriverGameplayDebuggerContext();
+
 	static void Enable(const SpatialGDK::FSubView& InSubView, USpatialNetDriver& InNetDriver);
 	static void Disable(USpatialNetDriver& NetDriver);
 
 	void Init(const SpatialGDK::FSubView& InSubView, USpatialNetDriver& InNetDriver);
-	void Cleanup();
 	void Reset();
 
+	/** Given an actor, return the delegated worker ID if the actor is a gameplay
+	  * debugger replicator actor tracked by this context */
 	TOptional<VirtualWorkerId> GetActorDelegatedWorkerId(const AActor& InActor);
 
 	void AdvanceView();
@@ -52,6 +57,7 @@ protected:
 	struct FEntityData
 	{
 		SpatialGDK::GameplayDebuggerComponent Component;
+		TWeakObjectPtr<AGameplayDebuggerCategoryReplicator> ReplicatorWeakObjectPtr;
 		FString CurrentWorkerId;
 		FDelegateHandle Handle;
 	};
@@ -60,6 +66,8 @@ protected:
 	void UntrackEntity(Worker_EntityId InEntityId);
 	void AddAuthority(Worker_EntityId InEntityId, FEntityData* InOptionalEntityData);
 	void RemoveAuthority(Worker_EntityId InEntityId, FEntityData* InOptionalEntityData);
+	void RegisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
+	void UnregisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
 	void OnServerRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator, FString InServerWorkerId);
 
 	USpatialNetDriver* NetDriver = nullptr;

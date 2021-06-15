@@ -12,6 +12,11 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogSpatialNetDriverGameplayDebuggerContext, Log, All);
 
+USpatialNetDriverGameplayDebuggerContext::~USpatialNetDriverGameplayDebuggerContext()
+{
+	Reset();
+}
+
 void USpatialNetDriverGameplayDebuggerContext::Enable(const SpatialGDK::FSubView& InSubView, USpatialNetDriver& NetDriver)
 {
 	if (NetDriver.GameplayDebuggerCtx != nullptr)
@@ -38,7 +43,6 @@ void USpatialNetDriverGameplayDebuggerContext::Disable(USpatialNetDriver& NetDri
 		return;
 	}
 
-	NetDriver.GameplayDebuggerCtx->Cleanup();
 	NetDriver.GameplayDebuggerCtx = nullptr;
 }
 
@@ -55,6 +59,10 @@ void USpatialNetDriverGameplayDebuggerContext::Init(const SpatialGDK::FSubView& 
 		return;
 	}
 
+	// Allocate and assign a specific "gameplay debugger LB strategy". This new
+	// strategy wraps the existing default strategy, and allows "replicator actors"
+	// to be intercepted and handled through specific gameplay debugger LB rules.
+	// All other actors are handled by the (wrapped) default strategy.
 	LBStrategy = NewObject<UGameplayDebuggerLBStrategy>();
 	LBStrategy->Init(*this, *NetDriver->LoadBalanceStrategy);
 	NetDriver->LoadBalanceStrategy = LBStrategy;
@@ -77,41 +85,14 @@ void USpatialNetDriverGameplayDebuggerContext::Init(const SpatialGDK::FSubView& 
 	}
 }
 
-void USpatialNetDriverGameplayDebuggerContext::Cleanup()
-{
-	check(NetDriver && NetDriver->Sender);
-
-	Reset();
-
-	if (LBStrategy != nullptr)
-	{
-		UAbstractLBStrategy* WrappedStrategy = LBStrategy->GetWrappedStrategy();
-		if (WrappedStrategy != nullptr)
-		{
-			NetDriver->LoadBalanceStrategy = LBStrategy->GetWrappedStrategy();
-			NetDriver->GameplayDebuggerCtx = nullptr;
-			NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
-		}
-		else
-		{
-			UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Cleanup without a wrapped strategy"));
-		}
-	}
-}
-
 void USpatialNetDriverGameplayDebuggerContext::Reset()
 {
-	check(NetDriver && NetDriver->Connection && NetDriver->Sender);
-
-	for (const auto& Entry : NetDriver->Connection->GetView())
+	for (auto& TrackedEntity : TrackedEntities)
 	{
-		const SpatialGDK::EntityViewElement& ViewElement = Entry.Value;
-		if (ViewElement.Authority.Contains(SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
-			&& ViewElement.Components.ContainsByPredicate([](const SpatialGDK::ComponentData& Data) {
-				   return Data.GetComponentId() == SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID;
-			   }))
+		if (AGameplayDebuggerCategoryReplicator* Replicator =
+				Cast<AGameplayDebuggerCategoryReplicator>(TrackedEntity.Value.ReplicatorWeakObjectPtr.Get()))
 		{
-			NetDriver->Connection->SendRemoveComponent(Entry.Key, SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID);
+			UnregisterServerRequestCallback(*Replicator, TrackedEntity.Value);
 		}
 	}
 
@@ -119,8 +100,6 @@ void USpatialNetDriverGameplayDebuggerContext::Reset()
 	ComponentsAdded.Empty();
 	ComponentsUpdated.Empty();
 	ActorsAdded.Empty();
-
-	NetDriver->Sender->UpdatePartitionEntityInterestAndPosition();
 }
 
 TOptional<VirtualWorkerId> USpatialNetDriverGameplayDebuggerContext::GetActorDelegatedWorkerId(const AActor& InActor)
@@ -197,8 +176,6 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 		{
 			if (FEntityData* EntityData = TrackedEntities.Find(EntityAdded))
 			{
-				FWorkerComponentData CompData = EntityData->Component.CreateComponent();
-				NetDriver->Connection->SendAddComponent(EntityAdded, &CompData);
 				NetDriver->Connection->GetCoordinator().RefreshEntityCompleteness(EntityAdded);
 			}
 		}
@@ -229,7 +206,7 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 
 		// If entity lost, then forget about this actor
 		FEntityData* EntityData = TrackedEntities.Find(*It);
-		if (!EntityData)
+		if (EntityData == nullptr)
 		{
 			It.RemoveCurrent();
 			continue;
@@ -243,21 +220,21 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 			continue;
 		}
 
+		EntityData->ReplicatorWeakObjectPtr = TWeakObjectPtr < AGameplayDebuggerCategoryReplicator>(CategoryReplicator);
+
+		// If we have authority over this replicator:
+		//	a. Provide a list of available servers to the replicator actor - this allows the replicator
+		//		to provide an interface where an authorative server (from available servers) can be selected
+		//	b. Register a callback with the replicator actor, to handle authorative server change requests
 		if (CategoryReplicator->HasAuthority())
 		{
+			// a. Build and provide available servers
 			TArray<FString> PhysicalWorkerIds;
 			PhysicalToVirtualWorkerIdMap.GetKeys(PhysicalWorkerIds);
 			CategoryReplicator->SetAvailableServers(PhysicalWorkerIds);
 
-			if (!EntityData->Handle.IsValid())
-			{
-				EntityData->Handle =
-					CategoryReplicator->OnServerRequest().AddUObject(this, &USpatialNetDriverGameplayDebuggerContext::OnServerRequest);
-			}
-			else
-			{
-				UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Trying to bind change notification more than once"));
-			}
+			// b. Register callback
+			RegisterServerRequestCallback(*CategoryReplicator, *EntityData);
 		}
 
 		It.RemoveCurrent();
@@ -350,24 +327,45 @@ void USpatialNetDriverGameplayDebuggerContext::AddAuthority(Worker_EntityId InEn
 	ActorsAdded.AddUnique(InEntityId);
 }
 
-void USpatialNetDriverGameplayDebuggerContext::RemoveAuthority(Worker_EntityId InEntityId, FEntityData* OptionalEntityData)
+void USpatialNetDriverGameplayDebuggerContext::RemoveAuthority(Worker_EntityId InEntityId, FEntityData* InOptionalEntityData)
 {
-	if (OptionalEntityData == nullptr)
+	if (InOptionalEntityData == nullptr)
 	{
 		return;
 	}
 
-	OptionalEntityData->Component.DelegatedVirtualWorkerId = 0;
-	OptionalEntityData->CurrentWorkerId.Empty();
+	InOptionalEntityData->Component.DelegatedVirtualWorkerId = 0;
+	InOptionalEntityData->CurrentWorkerId.Empty();
 
-	if (OptionalEntityData->Handle.IsValid())
+	if (AGameplayDebuggerCategoryReplicator* Replicator =
+			Cast<AGameplayDebuggerCategoryReplicator>(InOptionalEntityData->ReplicatorWeakObjectPtr.Get()))
 	{
-		TWeakObjectPtr<UObject> EntityObjectWeakPtr = NetDriver->PackageMap->GetObjectFromEntityId(InEntityId);
-		if (AGameplayDebuggerCategoryReplicator* CategoryReplicator = Cast<AGameplayDebuggerCategoryReplicator>(EntityObjectWeakPtr.Get()))
-		{
-			CategoryReplicator->OnServerRequest().Remove(OptionalEntityData->Handle);
-		}
-		OptionalEntityData->Handle.Reset();
+		UnregisterServerRequestCallback(*Replicator, *InOptionalEntityData);
+	}
+}
+
+void USpatialNetDriverGameplayDebuggerContext::RegisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator,
+																			 FEntityData& InEntityData)
+{
+	if (!InEntityData.Handle.IsValid())
+	{
+		InEntityData.Handle = InReplicator.OnServerRequest().AddUObject(this, &USpatialNetDriverGameplayDebuggerContext::OnServerRequest);
+	}
+	else
+	{
+		UE_LOG(LogSpatialNetDriverGameplayDebuggerContext, Error, TEXT("Trying to bind change notification more than once"));
+	}
+}
+
+void USpatialNetDriverGameplayDebuggerContext::UnregisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator,
+																			   FEntityData& InEntityData)
+{
+	check(NetDriver && NetDriver->PackageMap);
+
+	if (InEntityData.Handle.IsValid())
+	{
+		InReplicator.OnServerRequest().Remove(InEntityData.Handle);
+		InEntityData.Handle.Reset();
 	}
 }
 

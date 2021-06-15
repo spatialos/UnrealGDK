@@ -69,20 +69,7 @@ SpatialGDK::FActorLoadBalancingGroupId UGameplayDebuggerLBStrategy::GetActorGrou
 SpatialGDK::QueryConstraint UGameplayDebuggerLBStrategy::GetWorkerInterestQueryConstraint(const VirtualWorkerId VirtualWorker) const
 {
 	check(WrappedStrategy);
-
-	SpatialGDK::QueryConstraint DefaultConstraint = WrappedStrategy->GetWorkerInterestQueryConstraint(VirtualWorker);
-	SpatialGDK::QueryConstraint AdditionalConstraint = GameplayDebuggerCtx->ComputeAdditionalEntityQueryConstraint();
-
-	if (AdditionalConstraint.IsValid())
-	{
-		SpatialGDK::QueryConstraint WorkerConstraint;
-		WorkerConstraint.OrConstraint.Add(DefaultConstraint);
-		WorkerConstraint.OrConstraint.Add(AdditionalConstraint);
-
-		return WorkerConstraint;
-	}
-
-	return DefaultConstraint;
+	return WrappedStrategy->GetWorkerInterestQueryConstraint(VirtualWorker);
 }
 
 FVector UGameplayDebuggerLBStrategy::GetWorkerEntityPosition() const
