@@ -17,6 +17,13 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialMetrics, Log, All);
 
 DECLARE_DELEGATE_RetVal(double, UserSuppliedMetric);
 
+UENUM()
+enum class ESpatialServerCommands : uint8
+{
+	StartInsights,
+	StopInsights,
+};
+
 UCLASS()
 class SPATIALGDK_API USpatialMetrics : public UObject
 {
@@ -72,6 +79,8 @@ public:
 	void RemoveCustomMetric(const FString& Metric);
 
 private:
+	void SpatialExecServerCmd_Internal(const FString& ServerName, const ESpatialServerCommands& Command, const FString& Args);
+
 	bool StartInsightsCapture(const FString& Args);
 	bool StopInsightsCapture();
 
