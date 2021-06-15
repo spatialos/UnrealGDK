@@ -176,8 +176,8 @@ bool FClientNetLoadActorHelper::SubobjectIsReplicated(const UObject& Object, con
 		const TSharedRef<FObjectReplicator>* ReplicatorRefPtr = Channel->ReplicationMap.Find(&Object);
 		// Condition taken from private method UActorChannel::ObjectHasReplicator
 		const bool IsReplicated = ReplicatorRefPtr != nullptr && &Object == ReplicatorRefPtr->Get().GetObject();
-		// NOTE: In theory, this could lead to a static subobject being unintentionally deleted on the client if the server sets it to not replicate while it is out of the client’s interest.
-		// See https://improbableio.atlassian.net/browse/UNR-5609 for more
+		// NOTE: In theory, this could lead to a static subobject being unintentionally deleted on the client if the server sets it to not
+		// replicate while it is out of the client’s interest. See https://improbableio.atlassian.net/browse/UNR-5609 for more
 		return IsReplicated;
 	}
 	return false;
