@@ -11,7 +11,6 @@
 #include "SpatialView/CommandRequest.h"
 #include "SpatialView/CommandRetryHandler.h"
 #include "SpatialView/ComponentData.h"
-#include "SpatialView/ConnectionHandler/InitialOpListConnectionHandler.h"
 #include "SpatialView/ConnectionHandler/SpatialOSConnectionHandler.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
@@ -113,15 +112,6 @@ void USpatialWorkerConnection::SetConnection(Worker_Connection* WorkerConnection
 	StartupComplete = false;
 	TUniquePtr<SpatialGDK::SpatialOSConnectionHandler> Handler =
 		MakeUnique<SpatialGDK::SpatialOSConnectionHandler>(WorkerConnectionIn, SharedEventTracer);
-	// TUniquePtr<SpatialGDK::InitialOpListConnectionHandler> InitialOpListHandler = MakeUnique<SpatialGDK::InitialOpListConnectionHandler>(
-	// 	MoveTemp(Handler), [this](SpatialGDK::OpList& Ops, SpatialGDK::ExtractedOpListData& ExtractedOps) {
-	// 		if (StartupComplete)
-	// 		{
-	// 			return true;
-	// 		}
-	// 		ExtractStartupOps(Ops, ExtractedOps);
-	// 		return false;
-	// 	});
 	Coordinator = MakeUnique<SpatialGDK::ViewCoordinator>(MoveTemp(Handler), SharedEventTracer, MoveTemp(ComponentSetData));
 }
 
