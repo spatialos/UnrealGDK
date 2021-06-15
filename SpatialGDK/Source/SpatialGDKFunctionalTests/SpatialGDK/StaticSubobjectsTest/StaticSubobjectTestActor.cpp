@@ -11,11 +11,9 @@ AStaticSubobjectTestActor::AStaticSubobjectTestActor()
 	bReplicates = true;
 
 	TestStaticComponent1 = CreateDefaultSubobject<USceneComponent>(TEXT("ToRemoveComponent1"));
-	TestStaticComponent1->SetupAttachment(RootComponent);
 	TestStaticComponent1->SetIsReplicated(true);
 
 	TestStaticComponent2 = CreateDefaultSubobject<USceneComponent>(TEXT("ToRemoveComponent2"));
-	TestStaticComponent2->SetupAttachment(RootComponent);
 	TestStaticComponent2->SetIsReplicated(true);
 }
 
