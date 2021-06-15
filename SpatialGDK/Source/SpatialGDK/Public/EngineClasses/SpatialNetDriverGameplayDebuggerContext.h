@@ -26,32 +26,24 @@ class SPATIALGDK_API USpatialNetDriverGameplayDebuggerContext : public UObject
 	GENERATED_BODY()
 
 public:
-	static void Enable(const SpatialGDK::FSubView& InSubView, USpatialNetDriver& NetDriver);
+	static void Enable(const SpatialGDK::FSubView& InSubView, USpatialNetDriver& InNetDriver);
 	static void Disable(USpatialNetDriver& NetDriver);
 
 	void Init(const SpatialGDK::FSubView& InSubView, USpatialNetDriver& InNetDriver);
 	void Cleanup();
 	void Reset();
 
-	TOptional<VirtualWorkerId> GetActorDelegatedWorkerId(const AActor& Actor);
+	TOptional<VirtualWorkerId> GetActorDelegatedWorkerId(const AActor& InActor);
 
 	void AdvanceView();
 	void TickServer();
 
 	SpatialGDK::QueryConstraint ComputeAdditionalEntityQueryConstraint() const;
 
-	void ClearNeedEntityInterestUpdate();
-
 	UPROPERTY()
 	UGameplayDebuggerLBStrategy* LBStrategy = nullptr;
 
 protected:
-	void TrackEntity(Worker_EntityId EntityId);
-	void UntrackEntity(Worker_EntityId EntityId);
-	void OnComponentChange(Worker_EntityId EntityId, const SpatialGDK::ComponentChange& Change);
-	void ApplyComponentUpdate(Worker_EntityId EntityId, Schema_ComponentUpdate* Update);
-	bool NeedEntityInterestUpdate() const;
-	void OnServerRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator, FString InServerWorkerId);
 
 	struct FEntityData
 	{
@@ -60,11 +52,17 @@ protected:
 		FDelegateHandle Handle;
 	};
 
+	void TrackEntity(Worker_EntityId InEntityId);
+	void UntrackEntity(Worker_EntityId InEntityId);
+	void AddAuthority(Worker_EntityId InEntityId, FEntityData* InOptionalEntityData);
+	void RemoveAuthority(Worker_EntityId InEntityId, FEntityData* InOptionalEntityData);
+	void OnServerRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator, FString InServerWorkerId);
+
 	USpatialNetDriver* NetDriver = nullptr;
 	const SpatialGDK::FSubView* SubView = nullptr;
 	TMap<Worker_EntityId_Key, FEntityData> TrackedEntities;
 	TSet<Worker_EntityId_Key> ComponentsAdded;
+	TSet<Worker_EntityId_Key> ComponentsUpdated;
 	TArray<Worker_EntityId_Key> ActorsAdded;
 	TMap<FString, uint32> PhysicalToVirtualWorkerIdMap;
-	bool bNeedToUpdateInterest = false;
 };

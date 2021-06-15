@@ -3,5 +3,5 @@ package unreal;
 
 component GameplayDebuggerComponent {
      id = 9997;
-     option<uint32> worker_id_delegation = 1;
+     uint32 delegated_virtual_worker_id = 1;
 }

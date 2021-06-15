@@ -72,7 +72,6 @@ SpatialGDK::QueryConstraint UGameplayDebuggerLBStrategy::GetWorkerInterestQueryC
 
 	SpatialGDK::QueryConstraint DefaultConstraint = WrappedStrategy->GetWorkerInterestQueryConstraint(VirtualWorker);
 	SpatialGDK::QueryConstraint AdditionalConstraint = GameplayDebuggerCtx->ComputeAdditionalEntityQueryConstraint();
-	GameplayDebuggerCtx->ClearNeedEntityInterestUpdate();
 
 	if (AdditionalConstraint.IsValid())
 	{
