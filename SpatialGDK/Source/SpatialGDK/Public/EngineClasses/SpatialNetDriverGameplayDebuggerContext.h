@@ -20,6 +20,11 @@ class FSubView;
 struct ComponentChange;
 } // namespace SpatialGDK
 
+/*
+ * A helper object that allocates a custom LB strategy to handle gameplay debugger
+ * replicated actors, through a custom subview that tracks actor add/remove/auth changes.
+ */
+
 UCLASS()
 class SPATIALGDK_API USpatialNetDriverGameplayDebuggerContext : public UObject
 {
@@ -44,7 +49,6 @@ public:
 	UGameplayDebuggerLBStrategy* LBStrategy = nullptr;
 
 protected:
-
 	struct FEntityData
 	{
 		SpatialGDK::GameplayDebuggerComponent Component;
