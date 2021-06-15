@@ -299,6 +299,8 @@ void ActorSystem::Advance()
 		ProcessAdds(SubView);
 	}
 
+	SendRepNotifies();
+
 	for (const EntityDelta& Delta : TombstoneSubView->GetViewDelta().EntityDeltas)
 	{
 		if (Delta.Type == EntityDelta::ADD || Delta.Type == EntityDelta::TEMPORARILY_REMOVED)
@@ -961,7 +963,9 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 
 		ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 		bool bOutReferencesChanged = false;
-		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, bOutReferencesChanged);
+
+		RepNotifiesToSend.Emplace(FObjectRepNotifies(TWeakObjectPtr<UObject>(&TargetObject)));
+		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, RepNotifiesToSend[RepNotifiesToSend.Num()-1], bOutReferencesChanged);
 
 		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 	}
@@ -1245,7 +1249,8 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 	bool bOutReferencesChanged = false;
-	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, bOutReferencesChanged);
+	RepNotifiesToSend.Emplace(TWeakObjectPtr<UObject>(&TargetObject));
+	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, RepNotifiesToSend[RepNotifiesToSend.Num()-1], bOutReferencesChanged);
 	RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 
 	// This is a temporary workaround, see UNR-841:
@@ -1689,6 +1694,39 @@ USpatialActorChannel* ActorSystem::TryRestoreActorChannelForStablyNamedActor(AAc
 	}
 
 	return Channel;
+}
+
+void ActorSystem::SendRepNotifies()
+{
+	for (FObjectRepNotifies ObjectRepNotifies : RepNotifiesToSend)
+	{
+		if (UObject* Object = ObjectRepNotifies.Object.Get())
+		{
+			Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Object);
+			if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+			{
+				USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+				if (IsValid(Channel))
+				{
+					RemoveRepNotifiesWithUnresolvedObjs(*Object, *Channel, ObjectRepNotifies.RepNotifies);
+					Channel->PostReceiveSpatialUpdate(Object, ObjectRepNotifies.RepNotifies, ObjectRepNotifies.PropertySpanIds);
+				}
+			}
+		}
+	}
+	RepNotifiesToSend.Empty();
+}
+
+void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, USpatialActorChannel& Channel, TArray<GDK_PROPERTY(Property)*>& RepNotifies)
+{
+	if (TSharedRef<FObjectReplicator>* ReplicatorRef = Channel.ReplicationMap.Find(&Object))
+	{
+		if (FSpatialObjectRepState* ObjectRepState = Channel.ObjectReferenceMap.Find(&Object))
+		{
+			FObjectReplicator& Replicator = ReplicatorRef->Get();
+			Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator.RepLayout, ObjectRepState->ReferenceMap, &Object);
+		}
+	}
 }
 
 void ActorSystem::RemoveActor(const Worker_EntityId EntityId)

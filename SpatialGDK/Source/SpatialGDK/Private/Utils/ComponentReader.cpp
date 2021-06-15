@@ -12,6 +12,7 @@
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
+#include "Interop/ActorSystem.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaUtils.h"
@@ -97,14 +98,8 @@ ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver,
 {
 }
 
-void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentData, UObject& Object, USpatialActorChannel& Channel,
-										 bool& bOutReferencesChanged)
-{
-	ApplyComponentData(ComponentData.component_id, ComponentData.schema_type, Object, Channel, bOutReferencesChanged);
-}
-
 void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object,
-										 USpatialActorChannel& Channel, bool& bOutReferencesChanged)
+										 USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged)
 {
 	if (Object.IsPendingKill())
 	{
@@ -118,11 +113,11 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 	// that component type (Data, OwnerOnly, Handover, etc.).
 	const TArray<Schema_FieldId>& InitialIds = ClassInfoManager->GetFieldIdsByComponentId(ComponentId);
 
-	ApplySchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentId, bOutReferencesChanged);
+	ApplySchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentId, ObjectRepNotifiesOut, bOutReferencesChanged);
 }
 
 void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& Object,
-										   USpatialActorChannel& Channel, bool& bOutReferencesChanged)
+										   USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged)
 {
 	if (Object.IsPendingKill())
 	{
@@ -146,13 +141,13 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId,
 
 	if (UpdatedIds.Num() > 0)
 	{
-		ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged);
+		ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, ObjectRepNotifiesOut, bOutReferencesChanged);
 	}
 }
 
 void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
 										const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId,
-										bool& bOutReferencesChanged)
+										FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged)
 {
 	FObjectReplicator* Replicator = Channel.PreReceiveSpatialUpdate(&Object);
 	if (Replicator == nullptr)
@@ -172,9 +167,6 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 	bool bEventTracerEnabled = EventTracer != nullptr;
 
 	FSpatialConditionMapFilter ConditionMap(&Channel, bIsClient);
-
-	TArray<GDK_PROPERTY(Property)*> RepNotifies;
-	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
 
 	{
 		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
@@ -339,7 +331,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 
 					if (bEventTracerEnabled)
 					{
-						PropertySpanIds.Add(Parent.Property, SpanId);
+						ObjectRepNotifiesOut.PropertySpanIds.Add(Parent.Property, SpanId);
 					}
 
 					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
@@ -347,14 +339,14 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 					{
 						if (!bIsIdentical)
 						{
-							RepNotifies.AddUnique(Parent.Property);
+							ObjectRepNotifiesOut.RepNotifies.AddUnique(Parent.Property);
 						}
 					}
 					else
 					{
 						if (Parent.RepNotifyCondition == REPNOTIFY_Always || !bIsIdentical)
 						{
-							RepNotifies.AddUnique(Parent.Property);
+							ObjectRepNotifiesOut.RepNotifies.AddUnique(Parent.Property);
 						}
 					}
 				}
@@ -362,9 +354,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject&
 		}
 	}
 
-	Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator->RepLayout, RootObjectReferencesMap, &Object);
-
-	Channel.PostReceiveSpatialUpdate(&Object, RepNotifies, PropertySpanIds);
+	// PostReceiveSpatialUpdate is called later when sending RepNotifies in ActorSystem
+	Object.PostNetReceive();
 }
 
 void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap,

@@ -6,6 +6,8 @@
 #include "SpatialFunctionalTest.h"
 #include "SpatialTestRepNotify.generated.h"
 
+class USpatialTestRepNotifySubobject;
+
 UCLASS()
 class SPATIALGDKFUNCTIONALTESTS_API ASpatialTestRepNotify : public ASpatialFunctionalTest
 {
@@ -43,6 +45,11 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_TestArray)
 	TArray<int32> TestArray;
 
+	UPROPERTY(Replicated)
+	USpatialTestRepNotifySubobject* TestSubobject;
+	int32 ExpectedSubobjectIntProperty = 0;
+	bool bSubobjectIntPropertyWasExpectedProperty;
+
 	UFUNCTION()
 	void OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNotifyInt1);
 
@@ -57,4 +64,6 @@ public:
 
 	UFUNCTION()
 	void OnRep_TestArray(TArray<int32> OldTestArray);
+
+	USpatialTestRepNotifySubobject* GetSubobject();
 };

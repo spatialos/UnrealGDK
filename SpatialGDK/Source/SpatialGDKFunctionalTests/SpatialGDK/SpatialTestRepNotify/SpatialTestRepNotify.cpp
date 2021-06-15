@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialTestRepNotify.h"
+
+#include "SpatialTestRepNotifySubobject.h"
 #include "SpatialGDK/Public/EngineClasses/SpatialNetDriver.h"
 
 #include "Net/UnrealNetwork.h"
@@ -24,7 +26,10 @@
 ASpatialTestRepNotify::ASpatialTestRepNotify()
 	: Super()
 {
-	Author = "Miron + Andrei";
+	TestSubobject = CreateDefaultSubobject<USpatialTestRepNotifySubobject>(TEXT("USpatialTestRepNotifySubobject"));
+	TestSubobject->SetIsReplicated(true);
+
+	Author = "Miron + Andrei + Arthur";
 	Description = TEXT("Test RepNotify replication and shadow data");
 }
 
@@ -256,11 +261,49 @@ void ASpatialTestRepNotify::PrepareTest()
 			FinishStep();
 		},
 		nullptr, 5.0f);
+
+	AddStep(TEXT("SpatialTestRepNotifyAllWorkersInitialiseExpectedOrderingProps"), FWorkerDefinition::AllWorkers, nullptr, [this]()
+	{
+		USpatialTestRepNotifySubobject* Subobject = GetSubobject();
+		Subobject->ExpectedParentInt1Property = 350;
+		Subobject->bParentPropertyWasExpectedProperty = false;
+		ExpectedSubobjectIntProperty = 400;
+		bSubobjectIntPropertyWasExpectedProperty = false;
+		FinishStep();
+	}, nullptr);
+
+	AddStep(TEXT("SpatialTestRepNotifyServerChangeReplicatedVariables2"), FWorkerDefinition::Server(1), nullptr, [this]()
+	{
+		USpatialTestRepNotifySubobject* Subobject = GetSubobject();
+		Subobject->OnChangedRepNotifyInt1 = 400;
+		OnChangedRepNotifyInt1 = 350;
+		FinishStep();
+	}, nullptr);
+
+	AddStep(TEXT("SpatialTestRepNotifyClientCheckOrderingWasCorrect"), FWorkerDefinition::AllClients, [this]() -> bool
+	{
+		USpatialTestRepNotifySubobject* Subobject = GetSubobject();
+		return Subobject->OnChangedRepNotifyInt1 == 400 && OnChangedRepNotifyInt1 == 350;
+	},
+	[this]()
+	{
+		USpatialTestRepNotifySubobject* Subobject = GetSubobject();
+		AssertEqual_Bool(Subobject->bParentPropertyWasExpectedProperty, true, TEXT("The OnChangedRepNotifyInt1 on parent actor ASpatialTestRepNotify should have been set to 350 before the subobject's RepNotify was called"));
+		AssertEqual_Bool(bSubobjectIntPropertyWasExpectedProperty, true, TEXT("The OnChangedRepNotifyInt1 on subobject USpatialTestRepNotifySubobject should have been set to 400 before the actor's RepNotify was called"));
+		FinishStep();
+	}, nullptr);
 }
 
 void ASpatialTestRepNotify::OnRep_OnChangedRepNotifyInt1(int32 OldOnChangedRepNotifyInt1)
 {
 	bOnRepOnChangedRepNotifyInt1Called = true;
+
+	bSubobjectIntPropertyWasExpectedProperty = false;
+	USpatialTestRepNotifySubobject* Subobject = GetSubobject();
+	if (Subobject->OnChangedRepNotifyInt1 == ExpectedSubobjectIntProperty)
+	{
+		bSubobjectIntPropertyWasExpectedProperty = true;
+	}
 }
 
 void ASpatialTestRepNotify::OnRep_AlwaysRepNotifyInt1(int32 OldAlwaysRepNotifyInt1)
@@ -292,4 +335,18 @@ void ASpatialTestRepNotify::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(ASpatialTestRepNotify, OnChangedRepNotifyInt2);
 	DOREPLIFETIME_CONDITION_NOTIFY(ASpatialTestRepNotify, AlwaysRepNotifyInt2, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME(ASpatialTestRepNotify, TestArray);
+
+	DOREPLIFETIME(ASpatialTestRepNotify, TestSubobject);
+}
+
+USpatialTestRepNotifySubobject* ASpatialTestRepNotify::GetSubobject()
+{
+	TArray<USpatialTestRepNotifySubobject*> Subobjects;
+	GetComponents<USpatialTestRepNotifySubobject>(Subobjects);
+
+	if (ensureAlwaysMsgf(Subobjects.Num() == 1, TEXT("There should only be one USpatialTestRepNotifySubobject")))
+	{
+		return Subobjects[0];
+	}
+	return nullptr;
 }

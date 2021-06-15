@@ -1019,7 +1019,6 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 													const TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& PropertySpanIds)
 {
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
-	TargetObject->PostNetReceive();
 
 	Replicator.RepState->GetReceivingRepState()->RepNotifies = RepNotifies;
 

@@ -37,6 +37,14 @@ struct ActorData
 	UnrealMetadata Metadata;
 };
 
+struct FObjectRepNotifies
+{
+	FObjectRepNotifies(const TWeakObjectPtr<UObject> WeakObjectPtr) : Object(WeakObjectPtr) {}
+	TWeakObjectPtr<UObject> Object;
+	TArray<GDK_PROPERTY(Property)*> RepNotifies;
+	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
+};
+
 class ActorSystem
 {
 public:
@@ -122,6 +130,9 @@ private:
 	void RefreshEntity(const Worker_EntityId EntityId);
 	void ApplyFullState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor);
 
+	void SendRepNotifies();
+	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, USpatialActorChannel& Channel, TArray<GDK_PROPERTY(Property)*>& RepNotifies);
+
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;
 	void HandleEntityDeletedAuthority(Worker_EntityId EntityId) const;
@@ -190,6 +201,8 @@ private:
 	TMap<Worker_EntityId_Key, TSet<Worker_ComponentId>> PendingDynamicSubobjectComponents;
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
+
+	TArray<FObjectRepNotifies> RepNotifiesToSend;
 
 	// Deserialized state store for Actor relevant components.
 	TMap<Worker_EntityId_Key, ActorData> ActorDataStore;
