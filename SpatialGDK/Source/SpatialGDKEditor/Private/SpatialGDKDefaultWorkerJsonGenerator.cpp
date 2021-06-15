@@ -10,6 +10,25 @@
 DEFINE_LOG_CATEGORY(LogSpatialGDKDefaultWorkerJsonGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKDefaultWorkerJsonGenerator"
 
+bool GenerateWorkerJsonFromUnused(const FString& JsonPath, const FString& UnusedJsonPath, bool& bOutRedeployRequired)
+{
+	IFileManager& FileManager = IFileManager::Get();
+	if (FileManager.Move(*JsonPath, *UnusedJsonPath))
+	{
+		bOutRedeployRequired = true;
+		UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Found an unused worker json at %s and moved it to %s"),
+			   *UnusedJsonPath, *JsonPath);
+		return true;
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Error, TEXT("Failed to move unused worker json from %s to %s"), *UnusedJsonPath,
+			   *JsonPath);
+	}
+
+	return false;
+}
+
 bool GenerateDefaultWorkerJson(const FString& JsonPath, bool& bOutRedeployRequired)
 {
 	const FString TemplateWorkerJsonPath =
@@ -59,32 +78,30 @@ bool GenerateAllDefaultWorkerJsons(bool& bOutRedeployRequired)
 			bool bShouldFileExist = Pair.Value;
 			FString WorkerType = Pair.Key.ToString();
 			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *WorkerType));
+			FString UnusedJsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.UNUSED.json"), *WorkerType));
 			const bool bFileExists = FPaths::FileExists(JsonPath);
+			const bool bUnusedFileExists = FPaths::FileExists(UnusedJsonPath);
+
 			if (!bFileExists && bShouldFileExist)
 			{
 				UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
 
-				if (!GenerateDefaultWorkerJson(JsonPath, bOutRedeployRequired))
-				{
-					bAllJsonsGeneratedSuccessfully = false;
-				}
+				bool bCreatedWorkerJson = bUnusedFileExists ? GenerateWorkerJsonFromUnused(JsonPath, UnusedJsonPath, bOutRedeployRequired)
+															: GenerateDefaultWorkerJson(JsonPath, bOutRedeployRequired);
+				bAllJsonsGeneratedSuccessfully = bAllJsonsGeneratedSuccessfully && bCreatedWorkerJson;
 			}
 			else if (bFileExists && !bShouldFileExist)
 			{
 				UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Found worker json at %s"), *JsonPath);
 
-				IFileManager& FileManager = IFileManager::Get();
-				if (!FileManager.Delete(*JsonPath))
+				if (bUnusedFileExists)
 				{
-					UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Error, TEXT("Failed to delete default worker json from %s"),
-						   *JsonPath);
-					bAllJsonsGeneratedSuccessfully = false;
+					UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Warning,
+						   TEXT("Found leftover unused worker json at %s, overwriting with %s"), *UnusedJsonPath, *JsonPath);
 				}
-				else
-				{
-					bOutRedeployRequired = true;
-					UE_LOG(LogSpatialGDKDefaultWorkerJsonGenerator, Verbose, TEXT("Deleted default worker json from %s"), *JsonPath);
-				}
+
+				bool bRemovedWorkerJson = GenerateWorkerJsonFromUnused(UnusedJsonPath, JsonPath, bOutRedeployRequired);
+				bAllJsonsGeneratedSuccessfully = bAllJsonsGeneratedSuccessfully && bRemovedWorkerJson;
 			}
 		}
 
