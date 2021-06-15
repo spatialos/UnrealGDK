@@ -345,7 +345,7 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 				GDK_PROPERTY(ByteProperty)* ByteProperty = GDK_CASTFIELD<GDK_PROPERTY(ByteProperty)>(Cmd.Property);
 				if (ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
 				{
-					Channel.Actor->SetAutonomousProxyOnAuthority(true);
+					Channel.SetAutonomousProxyOnAuthority(true);
 					if (!bIsAuthServer && !bAutonomousProxy)
 					{
 						ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);

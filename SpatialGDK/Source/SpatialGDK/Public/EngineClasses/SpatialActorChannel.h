@@ -215,6 +215,16 @@ public:
 
 	inline bool IsAuthoritativeServer() const { return bIsAuthServer; }
 
+	FORCEINLINE bool IsAutonomousProxyOnAuthority() const
+	{
+		return bIsAutonomousProxyOnAuthority;
+	}
+
+	FORCEINLINE bool SetAutonomousProxyOnAuthority(bool bAutonomousProxy)
+	{
+		return bIsAutonomousProxyOnAuthority = bAutonomousProxy;
+	}
+
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
 	{
 		check(ObjectHasReplicator(Object));
@@ -347,4 +357,7 @@ private:
 	// In case the actor's owner did not have an entity ID when trying to set interest to it
 	// We set this flag in order to try to add interest as soon as possible.
 	bool bNeedOwnerInterestUpdate;
+
+	// Track whether an Actor should have its Role upgrade to AutonomousProxy when it gains authority
+	uint8 bIsAutonomousProxyOnAuthority : 1;
 };

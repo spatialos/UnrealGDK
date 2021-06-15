@@ -210,6 +210,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, EventTracer(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
 	, TimeWhenPositionLastUpdated(0.0)
+	, bIsAutonomousProxyOnAuthority(false)
 {
 }
 
@@ -685,6 +686,8 @@ int64 USpatialActorChannel::ReplicateActor()
 			NetDriver->ActorSystem->SendCreateEntityRequest(*this, ReplicationBytesWritten);
 
 			bCreatedEntity = true;
+
+			SetAutonomousProxyOnAuthority(Actor->RemoteRole == ROLE_AutonomousProxy);
 
 			// We preemptively set the Actor role to SimulatedProxy if load balancing is disabled
 			// (since the legacy behaviour is to wait until Spatial tells us we have authority)

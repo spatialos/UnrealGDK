@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [`x.y.z`] - Unreleased
 
 ### Breaking changes:
-- An issue with `AActor::SetAutonomousProxy` has been fixed, where actors could get downgraded from `AutonomousProxy` to `SimulatedProxy`. The functions `SetAutonomousProxyOnAuthority` and `IsAutonomousProxyOnAuthority` have been added to AActor, along with a change to `ActorSystem::HandleActorAuthority` which will upgrade an actor's role from `SimulatedProxy` to `AutonomousProxy` if the actor gains Authority when `IsAutonomousProxyOnAuthority` is true.
 - The `Handover` variable specifier has been deprecated. It should be replaced with the standard `Replicated` variable specifier and restricting the replication with the new `COND_ServerOnly` replication condition in `GetLifetimeReplicatedProps`. `Handover` variables will try to replicate using the new replication condition, but support will be removed in the next release.
 - Reworked AlwaysInterested functionality to run on authoritative servers, and owning clients. The previous behaviour was for it to only run on PlayerController classes, on the client only.
 - `bUseNetOwnerActorGroup` actor setting has been removed with the default behavior now true inside LayeredLBStrategy. Extend this class if you wish to alter this default behavior.
@@ -25,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Visual Logger now supports multi-worker environments.
 
 ### Bug fixes:
+- An issue with `AActor::SetAutonomousProxy` has been fixed, where actors that were manually set as `AutonomousProxy` could get downgraded to `SimulatedProxy`. The functions `SetAutonomousProxyOnAuthority` and `IsAutonomousProxyOnAuthority` have been added to AActor, along with a change to `ActorSystem::HandleActorAuthority` which will upgrade an actor's role from `SimulatedProxy` to `AutonomousProxy` if the actor gains Authority when `IsAutonomousProxyOnAuthority` is true.
 - Added a pop-up message when schema generation fails, which suggests running a Clean and Generate to fix a bad schema state.
 - Fixed a bug that left the SchemaDatabase.uasset file locked after a failed schema generation.
 - Fixed an issue with migration diagnostic logging failing, when the actor did not have authority.
