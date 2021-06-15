@@ -9,10 +9,10 @@
 
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetBitReader.h"
+#include "Interop/ActorSystem.h"
 #include "Interop/Connection/SpatialEventTracer.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
-#include "Interop/ActorSystem.h"
 #include "Utils/GDKPropertyMacros.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaUtils.h"
@@ -99,7 +99,8 @@ ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver,
 }
 
 void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object,
-										 USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged)
+										 USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut,
+										 bool& bOutReferencesChanged)
 {
 	if (Object.IsPendingKill())
 	{
@@ -117,7 +118,8 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 }
 
 void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& Object,
-										   USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged)
+										   USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut,
+										   bool& bOutReferencesChanged)
 {
 	if (Object.IsPendingKill())
 	{

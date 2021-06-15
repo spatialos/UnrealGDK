@@ -10,8 +10,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialComponentReader, All, All);
 
 namespace SpatialGDK
 {
-	struct FObjectRepNotifies;
-	class SpatialEventTracer;
+struct FObjectRepNotifies;
+class SpatialEventTracer;
 
 class ComponentReader
 {
@@ -19,15 +19,15 @@ public:
 	explicit ComponentReader(class USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap,
 							 SpatialEventTracer* InEventTracer);
 
-	void ApplyComponentData(const Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object, USpatialActorChannel& Channel, FObjectRepNotifies
-	                        & ObjectRepNotifiesOut,
-	                        bool& bOutReferencesChanged);
+	void ApplyComponentData(const Worker_ComponentId ComponentId, Schema_ComponentData* Data, UObject& Object,
+							USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged);
 	void ApplyComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& Object,
-	                          USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged);
+							  USpatialActorChannel& Channel, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged);
 
 private:
 	void ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
-	                       const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId, FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged);
+						   const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId,
+						   FObjectRepNotifies& ObjectRepNotifiesOut, bool& bOutReferencesChanged);
 
 	void ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index,
 					   GDK_PROPERTY(Property) * Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex,

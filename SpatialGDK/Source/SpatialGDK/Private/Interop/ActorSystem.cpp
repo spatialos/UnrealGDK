@@ -965,7 +965,8 @@ void ActorSystem::ApplyComponentData(USpatialActorChannel& Channel, UObject& Tar
 		bool bOutReferencesChanged = false;
 
 		RepNotifiesToSend.Emplace(FObjectRepNotifies(TWeakObjectPtr<UObject>(&TargetObject)));
-		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, RepNotifiesToSend[RepNotifiesToSend.Num()-1], bOutReferencesChanged);
+		Reader.ApplyComponentData(ComponentId, Data, TargetObject, Channel, RepNotifiesToSend[RepNotifiesToSend.Num() - 1],
+								  bOutReferencesChanged);
 
 		RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 	}
@@ -1250,7 +1251,8 @@ void ActorSystem::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Sch
 	ComponentReader Reader(NetDriver, RepStateHelper.GetRefMap(), NetDriver->Connection->GetEventTracer());
 	bool bOutReferencesChanged = false;
 	RepNotifiesToSend.Emplace(TWeakObjectPtr<UObject>(&TargetObject));
-	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, RepNotifiesToSend[RepNotifiesToSend.Num()-1], bOutReferencesChanged);
+	Reader.ApplyComponentUpdate(ComponentId, ComponentUpdate, TargetObject, Channel, RepNotifiesToSend[RepNotifiesToSend.Num() - 1],
+								bOutReferencesChanged);
 	RepStateHelper.Update(*this, Channel, bOutReferencesChanged);
 
 	// This is a temporary workaround, see UNR-841:
@@ -1717,7 +1719,8 @@ void ActorSystem::SendRepNotifies()
 	RepNotifiesToSend.Empty();
 }
 
-void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, USpatialActorChannel& Channel, TArray<GDK_PROPERTY(Property)*>& RepNotifies)
+void ActorSystem::RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, USpatialActorChannel& Channel,
+													  TArray<GDK_PROPERTY(Property) *>& RepNotifies)
 {
 	if (TSharedRef<FObjectReplicator>* ReplicatorRef = Channel.ReplicationMap.Find(&Object))
 	{

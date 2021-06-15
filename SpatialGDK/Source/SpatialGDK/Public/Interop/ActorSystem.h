@@ -39,7 +39,10 @@ struct ActorData
 
 struct FObjectRepNotifies
 {
-	FObjectRepNotifies(const TWeakObjectPtr<UObject> WeakObjectPtr) : Object(WeakObjectPtr) {}
+	FObjectRepNotifies(const TWeakObjectPtr<UObject> WeakObjectPtr)
+		: Object(WeakObjectPtr)
+	{
+	}
 	TWeakObjectPtr<UObject> Object;
 	TArray<GDK_PROPERTY(Property)*> RepNotifies;
 	TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
@@ -131,7 +134,8 @@ private:
 	void ApplyFullState(const Worker_EntityId EntityId, USpatialActorChannel& EntityActorChannel, AActor& EntityActor);
 
 	void SendRepNotifies();
-	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, USpatialActorChannel& Channel, TArray<GDK_PROPERTY(Property)*>& RepNotifies);
+	static void RemoveRepNotifiesWithUnresolvedObjs(UObject& Object, USpatialActorChannel& Channel,
+													TArray<GDK_PROPERTY(Property) *>& RepNotifies);
 
 	// Authority
 	bool HasEntityBeenRequestedForDelete(Worker_EntityId EntityId) const;

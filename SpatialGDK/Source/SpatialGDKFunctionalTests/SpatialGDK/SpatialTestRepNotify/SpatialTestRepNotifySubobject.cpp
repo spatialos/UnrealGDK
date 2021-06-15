@@ -2,9 +2,8 @@
 
 #include "SpatialTestRepNotifySubobject.h"
 
-#include "SpatialTestRepNotify.h"
 #include "Net/UnrealNetwork.h"
-
+#include "SpatialTestRepNotify.h"
 
 USpatialTestRepNotifySubobject::USpatialTestRepNotifySubobject()
 	: Super()
