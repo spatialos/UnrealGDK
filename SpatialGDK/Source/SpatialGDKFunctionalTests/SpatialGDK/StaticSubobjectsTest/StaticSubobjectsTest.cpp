@@ -202,7 +202,7 @@ void AStaticSubobjectsTest::PrepareTest()
 		RequireTrue(!IsValid(TestActor->TestStaticComponent2), TEXT("TestStaticComponent2 should be nullptr."));
 
 		RequireEqual_Int(GetNumComponentsOnTestActor(), InitialNumComponents - 1,
-						TEXT("The client should see the right number of components."));
+						 TEXT("The client should see the right number of components."));
 
 		FinishStep();
 	});
