@@ -353,7 +353,7 @@ void USpatialMetrics::OnModifySettingCommand(Schema_Object* CommandPayload)
 
 void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FString& Command, const FString& Args)
 {
-	int32 Index = StaticEnum<ESpatialServerCommands>()->GetIndexByName(*Command);
+	int32 Index = StaticEnum<ESpatialServerCommands>()->GetIndexByNameString(Command);
 	if (Index == INDEX_NONE)
 	{
 		UE_LOG(LogSpatialMetrics, Error, TEXT("SpatialExecServerCmd: Failed to execute server command. Command not found. Command %s (%s)"),
