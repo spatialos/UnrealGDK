@@ -535,13 +535,6 @@ void USpatialMetrics::SpatialExecServerCmd_Internal(const FString& ServerName, c
 			{
 			case ESpatialServerCommands::StartInsights:
 			{
-#if ENGINE_MINOR_VERSION < 26
-				UE_LOG(LogSpatialMetrics, Warning,
-					   TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. Command only available post 4.26."));
-#elif !UE_TRACE_ENABLED
-				UE_LOG(LogSpatialMetrics, Warning,
-					   TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. UE_TRACE_ENABLE not defined."));
-#else
 				if (StartInsightsCapture(Args))
 				{
 					FString TraceTimeString;
@@ -569,21 +562,12 @@ void USpatialMetrics::SpatialExecServerCmd_Internal(const FString& ServerName, c
 						}
 					}
 				}
-#endif
 				break;
 			}
 
 			case ESpatialServerCommands::StopInsights:
 			{
-#if ENGINE_MINOR_VERSION < 26
-				UE_LOG(LogSpatialMetrics, Warning,
-					   TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. Command only available post 4.26."));
-#elif !UE_TRACE_ENABLED
-				UE_LOG(LogSpatialMetrics, Warning,
-					   TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. UE_TRACE_ENABLE not defined."));
-#else
 				StopInsightsCapture();
-#endif
 				break;
 			}
 
@@ -625,14 +609,32 @@ void USpatialMetrics::SpatialExecServerCmd_Internal(const FString& ServerName, c
 
 bool USpatialMetrics::StartInsightsCapture(const FString& Args)
 {
+#if ENGINE_MINOR_VERSION < 26
+	UE_LOG(LogSpatialMetrics, Warning,
+		TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. Command only available post 4.26."));
+#elif !UE_TRACE_ENABLED
+	UE_LOG(LogSpatialMetrics, Warning,
+		TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. UE_TRACE_ENABLE not defined."));
+#else
 	GCycleStatsShouldEmitNamedEvents++;
 
 	return FTraceAuxiliary::StartTraceCapture(*Args);
+#endif
+	return false;
 }
 
 bool USpatialMetrics::StopInsightsCapture()
 {
+#if ENGINE_MINOR_VERSION < 26
+	UE_LOG(LogSpatialMetrics, Warning,
+		TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. Command only available post 4.26."));
+#elif !UE_TRACE_ENABLED
+	UE_LOG(LogSpatialMetrics, Warning,
+		TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. UE_TRACE_ENABLE not defined."));
+#else
 	GCycleStatsShouldEmitNamedEvents = FMath::Max(0, GCycleStatsShouldEmitNamedEvents - 1);
 
 	return FTraceAuxiliary::StopTraceCapture();
+#endif
+	return false;
 }
