@@ -35,6 +35,10 @@
 #include "GameFramework/GameStateBase.h"
 #include "Runtime/Launch/Resources/Version.h"
 
+#if WITH_GAMEPLAY_DEBUGGER
+#include "GameplayDebuggerCategoryReplicator.h"
+#endif
+
 DEFINE_LOG_CATEGORY(LogEntityFactory);
 
 namespace SpatialGDK
@@ -99,6 +103,13 @@ TArray<FWorkerComponentData> EntityFactory::CreateSkeletonEntityComponents(AActo
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::LB_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_DEBUG_TAG_COMPONENT_ID));
+
+#if WITH_GAMEPLAY_DEBUGGER
+	if (Actor->IsA<AGameplayDebuggerCategoryReplicator>())
+	{
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::GDK_GAMEPLAY_DEBUGGER_COMPONENT_ID));
+	}
+#endif // WITH_GAMEPLAY_DEBUGGER
 
 	return ComponentDatas;
 }

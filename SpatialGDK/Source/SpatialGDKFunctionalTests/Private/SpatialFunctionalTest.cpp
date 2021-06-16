@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialNetDriverDebugContext.h"
+#include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/GameModeBase.h"
@@ -18,6 +19,7 @@
 #include "Interfaces/IHttpResponse.h"
 #include "LoadBalancing/AbstractLBStrategy.h"
 #include "LoadBalancing/DebugLBStrategy.h"
+#include "LoadBalancing/GameplayDebuggerLBStrategy.h"
 #include "LoadBalancing/LayeredLBStrategy.h"
 #include "Net/UnrealNetwork.h"
 #include "SpatialFunctionalTestAutoDestroyComponent.h"
@@ -849,6 +851,10 @@ ULayeredLBStrategy* ASpatialFunctionalTest::GetLoadBalancingStrategy()
 		if (NetDriver->DebugCtx != nullptr)
 		{
 			return Cast<ULayeredLBStrategy>(NetDriver->DebugCtx->DebugStrategy->GetWrappedStrategy());
+		}
+		else if (NetDriver->GameplayDebuggerCtx != nullptr)
+		{
+			return Cast<ULayeredLBStrategy>(NetDriver->GameplayDebuggerCtx->LBStrategy->GetWrappedStrategy());
 		}
 		else
 		{
