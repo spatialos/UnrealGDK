@@ -220,7 +220,7 @@ void USpatialNetDriverGameplayDebuggerContext::TickServer()
 			continue;
 		}
 
-		EntityData->ReplicatorWeakObjectPtr = TWeakObjectPtr < AGameplayDebuggerCategoryReplicator>(CategoryReplicator);
+		EntityData->ReplicatorWeakObjectPtr = TWeakObjectPtr<AGameplayDebuggerCategoryReplicator>(CategoryReplicator);
 
 		// If we have authority over this replicator:
 		//	a. Provide a list of available servers to the replicator actor - this allows the replicator
@@ -367,19 +367,6 @@ void USpatialNetDriverGameplayDebuggerContext::UnregisterServerRequestCallback(A
 		InReplicator.OnServerRequest().Remove(InEntityData.Handle);
 		InEntityData.Handle.Reset();
 	}
-}
-
-SpatialGDK::QueryConstraint USpatialNetDriverGameplayDebuggerContext::ComputeAdditionalEntityQueryConstraint() const
-{
-	SpatialGDK::QueryConstraint EntitiesConstraint;
-	for (const auto& EntityData : TrackedEntities)
-	{
-		SpatialGDK::QueryConstraint EntityQuery;
-		EntityQuery.EntityIdConstraint = EntityData.Key;
-		EntitiesConstraint.OrConstraint.Add(EntityQuery);
-	}
-
-	return EntitiesConstraint;
 }
 
 void USpatialNetDriverGameplayDebuggerContext::OnServerRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator,

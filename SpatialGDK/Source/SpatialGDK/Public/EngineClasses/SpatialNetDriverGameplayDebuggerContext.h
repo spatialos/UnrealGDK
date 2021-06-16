@@ -1,4 +1,4 @@
-	// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -31,7 +31,6 @@ class SPATIALGDK_API USpatialNetDriverGameplayDebuggerContext : public UObject
 	GENERATED_BODY()
 
 public:
-
 	USpatialNetDriverGameplayDebuggerContext() = default;
 	virtual ~USpatialNetDriverGameplayDebuggerContext();
 
@@ -42,13 +41,11 @@ public:
 	void Reset();
 
 	/** Given an actor, return the delegated worker ID if the actor is a gameplay
-	  * debugger replicator actor tracked by this context */
+	 * debugger replicator actor tracked by this context */
 	TOptional<VirtualWorkerId> GetActorDelegatedWorkerId(const AActor& InActor);
 
 	void AdvanceView();
 	void TickServer();
-
-	SpatialGDK::QueryConstraint ComputeAdditionalEntityQueryConstraint() const;
 
 	UPROPERTY()
 	UGameplayDebuggerLBStrategy* LBStrategy = nullptr;
