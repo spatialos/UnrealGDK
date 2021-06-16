@@ -445,7 +445,7 @@ bool ASpatialDebugger::IsSelectActorEnabled() const
 	return bSelectActor;
 }
 
-void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const Worker_EntityId EntityId, const FString& ActorName,
+void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation, const FSpatialEntityId EntityId, const FString& ActorName,
 							   const bool bCentre)
 {
 	SCOPE_CYCLE_COUNTER(STAT_DrawTag);
@@ -479,7 +479,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	static const float TextScale = 0.5f;
 	const float AuthIdWidth = NumberScale * GetNumberOfDigitsIn(DebuggingInfo->AuthoritativeVirtualWorkerId);
 	const float AuthIntentIdWidth = NumberScale * GetNumberOfDigitsIn(DebuggingInfo->IntentVirtualWorkerId);
-	const float EntityIdWidth = NumberScale * GetNumberOfDigitsIn(EntityId);
+	const float EntityIdWidth = NumberScale * GetNumberOfDigitsIn(EntityId.EntityId);
 
 	int32 HorizontalOffset = 0;
 	if (bCentre)
@@ -567,7 +567,7 @@ void ASpatialDebugger::DrawTag(UCanvas* Canvas, const FVector2D& ScreenLocation,
 	if (bShowEntityId)
 	{
 		SCOPE_CYCLE_COUNTER(STAT_BuildText);
-		Label += FString::Printf(TEXT("%lld "), EntityId);
+		Label += FString::Printf(TEXT("%s "), *EntityId.ToString());
 	}
 
 	if (bShowActorName)
@@ -633,7 +633,7 @@ void ASpatialDebugger::DrawDebug(UCanvas* Canvas, APlayerController* /* Controll
 		for (const TPair<Worker_EntityId_Key, TWeakObjectPtr<AActor>>& EntityActorPair : GetDebuggerSystem()->GetActors())
 		{
 			const TWeakObjectPtr<AActor> Actor = EntityActorPair.Value;
-			const Worker_EntityId EntityId = EntityActorPair.Key;
+			const FSpatialEntityId EntityId = EntityActorPair.Key;
 			FVector2D ScreenLocation;
 			if (Actor != nullptr && ProjectActorToScreen(Actor->GetActorLocation(), PlayerLocation, ScreenLocation, Canvas))
 			{
@@ -886,7 +886,7 @@ void ASpatialDebugger::DrawDebugLocalPlayer(UCanvas* Canvas)
 
 	for (int32 i = 0; i < ActorsToDisplay.Num(); ++i)
 	{
-		const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(ActorsToDisplay[i]);
+		const FSpatialEntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(ActorsToDisplay[i]);
 		DrawTag(Canvas, ScreenLocation, EntityId, ActorsToDisplay[i]->GetName(), false /*bCentre*/);
 		ScreenLocation.Y += PLAYER_TAG_VERTICAL_OFFSET;
 	}

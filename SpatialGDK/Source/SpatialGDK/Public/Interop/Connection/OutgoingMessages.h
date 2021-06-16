@@ -57,35 +57,35 @@ struct FReserveEntityIdsRequest : FOutgoingMessage
 
 struct FCreateEntityRequest : FOutgoingMessage
 {
-	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const Worker_EntityId* InEntityId, const FSpatialGDKSpanId& SpanId)
+	FCreateEntityRequest(TArray<FWorkerComponentData>&& InComponents, const FSpatialEntityId* InEntityId, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::CreateEntityRequest)
 		, Components(MoveTemp(InComponents))
-		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<Worker_EntityId>())
+		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<FSpatialEntityId>())
 		, SpanId(SpanId)
 	{
 	}
 
 	TArray<FWorkerComponentData> Components;
-	TOptional<Worker_EntityId> EntityId;
+	TOptional<FSpatialEntityId> EntityId;
 	FSpatialGDKSpanId SpanId;
 };
 
 struct FDeleteEntityRequest : FOutgoingMessage
 {
-	FDeleteEntityRequest(Worker_EntityId InEntityId, const FSpatialGDKSpanId& SpanId)
+	FDeleteEntityRequest(FSpatialEntityId InEntityId, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::DeleteEntityRequest)
 		, EntityId(InEntityId)
 		, SpanId(SpanId)
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	const FSpatialGDKSpanId SpanId;
 };
 
 struct FAddComponent : FOutgoingMessage
 {
-	FAddComponent(Worker_EntityId InEntityId, const FWorkerComponentData& InData, const FSpatialGDKSpanId& SpanId)
+	FAddComponent(FSpatialEntityId InEntityId, const FWorkerComponentData& InData, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::AddComponent)
 		, EntityId(InEntityId)
 		, Data(InData)
@@ -93,14 +93,14 @@ struct FAddComponent : FOutgoingMessage
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	FWorkerComponentData Data;
 	FSpatialGDKSpanId SpanId;
 };
 
 struct FRemoveComponent : FOutgoingMessage
 {
-	FRemoveComponent(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, const FSpatialGDKSpanId& SpanId)
+	FRemoveComponent(FSpatialEntityId InEntityId, Worker_ComponentId InComponentId, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::RemoveComponent)
 		, EntityId(InEntityId)
 		, ComponentId(InComponentId)
@@ -108,14 +108,14 @@ struct FRemoveComponent : FOutgoingMessage
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	Worker_ComponentId ComponentId;
 	FSpatialGDKSpanId SpanId;
 };
 
 struct FComponentUpdate : FOutgoingMessage
 {
-	FComponentUpdate(Worker_EntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate, const FSpatialGDKSpanId& SpanId)
+	FComponentUpdate(FSpatialEntityId InEntityId, const FWorkerComponentUpdate& InComponentUpdate, const FSpatialGDKSpanId& SpanId)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentUpdate)
 		, EntityId(InEntityId)
 		, Update(InComponentUpdate)
@@ -123,14 +123,14 @@ struct FComponentUpdate : FOutgoingMessage
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	FWorkerComponentUpdate Update;
 	FSpatialGDKSpanId SpanId;
 };
 
 struct FCommandRequest : FOutgoingMessage
 {
-	FCommandRequest(Worker_EntityId InEntityId, const Worker_CommandRequest& InRequest, uint32_t InCommandId)
+	FCommandRequest(FSpatialEntityId InEntityId, const Worker_CommandRequest& InRequest, uint32_t InCommandId)
 		: FOutgoingMessage(EOutgoingMessageType::CommandRequest)
 		, EntityId(InEntityId)
 		, Request(InRequest)
@@ -138,7 +138,7 @@ struct FCommandRequest : FOutgoingMessage
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	Worker_CommandRequest Request;
 	uint32_t CommandId;
 };

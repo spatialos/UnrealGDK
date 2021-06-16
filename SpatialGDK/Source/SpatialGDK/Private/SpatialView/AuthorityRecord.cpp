@@ -4,7 +4,7 @@
 
 namespace SpatialGDK
 {
-void AuthorityRecord::SetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority)
+void AuthorityRecord::SetAuthority(FSpatialEntityId EntityId, Worker_ComponentId ComponentId, Worker_Authority Authority)
 {
 	const EntityComponentId Id = { EntityId, ComponentId };
 

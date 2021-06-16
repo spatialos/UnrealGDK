@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Containers/Array.h"
+#include "SpatialCommonTypes.h"
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
@@ -109,7 +110,7 @@ private:
 
 struct EntityDelta
 {
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	enum
 	{
 		UPDATE,

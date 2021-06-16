@@ -59,10 +59,10 @@ protected:
 		FDelegateHandle Handle;
 	};
 
-	void TrackEntity(Worker_EntityId InEntityId);
-	void UntrackEntity(Worker_EntityId InEntityId);
-	void AddAuthority(Worker_EntityId InEntityId, FEntityData* InOptionalEntityData);
-	void RemoveAuthority(Worker_EntityId InEntityId, FEntityData* InOptionalEntityData);
+	void TrackEntity(FSpatialEntityId InEntityId);
+	void UntrackEntity(FSpatialEntityId InEntityId);
+	void AddAuthority(FSpatialEntityId InEntityId, FEntityData* InOptionalEntityData);
+	void RemoveAuthority(FSpatialEntityId InEntityId, FEntityData* InOptionalEntityData);
 	void RegisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
 	void UnregisterServerRequestCallback(AGameplayDebuggerCategoryReplicator& InReplicator, FEntityData& InEntityData);
 	void OnServerRequest(AGameplayDebuggerCategoryReplicator* InCategoryReplicator, FString InServerWorkerId);

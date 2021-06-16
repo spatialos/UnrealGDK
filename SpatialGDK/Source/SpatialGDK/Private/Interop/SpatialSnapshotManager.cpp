@@ -81,7 +81,7 @@ void SpatialSnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& 
 	{
 		UE_LOG(LogSnapshotManager, Verbose, TEXT("Sending delete request for: %i"), Op.results[i].entity_id);
 		check(Connection.IsValid());
-		Connection->SendDeleteEntityRequest(Op.results[i].entity_id, RETRY_UNTIL_COMPLETE);
+		Connection->SendDeleteEntityRequest(ToSpatialEntityId(Op.results[i].entity_id), RETRY_UNTIL_COMPLETE);
 	}
 }
 
@@ -177,7 +177,7 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 		{
 			// Get an entity to spawn and a reserved EntityID
 			TArray<FWorkerComponentData> EntityToSpawn = EntitiesToSpawn[i];
-			Worker_EntityId ReservedEntityID = Op.first_entity_id + i;
+			FSpatialEntityId ReservedEntityID = FSpatialEntityId(Op.first_entity_id + i);
 
 			// Check if this is the GSM
 			for (auto& ComponentData : EntityToSpawn)
@@ -189,7 +189,7 @@ void SpatialSnapshotManager::LoadSnapshot(const FString& SnapshotName)
 				}
 			}
 
-			UE_LOG(LogSnapshotManager, Log, TEXT("Sending entity create request for: %i"), ReservedEntityID);
+			UE_LOG(LogSnapshotManager, Log, TEXT("Sending entity create request for: %s"), *ReservedEntityID.ToString());
 			Connection->SendCreateEntityRequest(MoveTemp(EntityToSpawn), &ReservedEntityID, RETRY_UNTIL_COMPLETE);
 		}
 

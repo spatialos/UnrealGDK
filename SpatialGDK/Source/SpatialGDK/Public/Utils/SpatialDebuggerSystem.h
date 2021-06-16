@@ -23,15 +23,15 @@ public:
 
 	void Advance();
 
-	void UpdateSpatialDebuggingData(Worker_EntityId EntityId, const AActor& Actor);
+	void UpdateSpatialDebuggingData(FSpatialEntityId EntityId, const AActor& Actor);
 
-	void ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
+	void ActorAuthorityIntentChanged(FSpatialEntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const;
 
 	DECLARE_MULTICAST_DELEGATE_OneParam(FSpatialDebuggerActorAddedDelegate, AActor*);
 	FSpatialDebuggerActorAddedDelegate OnEntityActorAddedDelegate;
 
-	TOptional<SpatialDebugging> GetDebuggingData(Worker_EntityId Entity) const;
-	AActor* GetActor(Worker_EntityId EntityId) const;
+	TOptional<SpatialDebugging> GetDebuggingData(FSpatialEntityId Entity) const;
+	AActor* GetActor(FSpatialEntityId EntityId) const;
 
 	typedef TMap<Worker_EntityId_Key, TWeakObjectPtr<AActor>> FEntityToActorMap;
 
@@ -39,9 +39,9 @@ public:
 	const FEntityToActorMap& GetActors() const;
 
 private:
-	void OnEntityAdded(Worker_EntityId AddedEntityId);
-	void OnEntityRemoved(Worker_EntityId RemovedEntityId);
-	void ActorAuthorityGained(Worker_EntityId EntityId) const;
+	void OnEntityAdded(FSpatialEntityId AddedEntityId);
+	void OnEntityRemoved(FSpatialEntityId RemovedEntityId);
+	void ActorAuthorityGained(FSpatialEntityId EntityId) const;
 
 	static constexpr int ENTITY_ACTOR_MAP_RESERVATION_COUNT = 512;
 

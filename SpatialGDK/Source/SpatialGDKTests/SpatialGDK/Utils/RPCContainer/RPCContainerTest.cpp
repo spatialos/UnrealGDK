@@ -24,7 +24,7 @@ ERPCType AnyOtherSchemaComponentType = ERPCType::ClientUnreliable;
 
 FUnrealObjectRef GenerateObjectRef(UObject* TargetObject)
 {
-	return FUnrealObjectRef{ Worker_EntityId(TargetObject), 0 };
+	return FUnrealObjectRef{ FSpatialEntityId(reinterpret_cast<int64>(TargetObject)), 0 };
 }
 
 uint32 GeneratePayloadFunctionIndex()

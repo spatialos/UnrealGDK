@@ -251,20 +251,20 @@ int64 USpatialStatics::GetActorEntityId(const AActor* Actor)
 {
 	if (Actor == nullptr)
 	{
-		return SpatialConstants::INVALID_ENTITY_ID;
+		return SpatialConstants::INVALID_ENTITY_ID.EntityId;
 	}
 
 	if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Actor->GetNetDriver()))
 	{
-		return static_cast<int64>(SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor));
+		return static_cast<int64>(SpatialNetDriver->PackageMap->GetEntityIdFromObject(Actor).EntityId);
 	}
 
-	return SpatialConstants::INVALID_ENTITY_ID;
+	return SpatialConstants::INVALID_ENTITY_ID.EntityId;
 }
 
 FString USpatialStatics::EntityIdToString(int64 EntityId)
 {
-	if (EntityId <= SpatialConstants::INVALID_ENTITY_ID)
+	if (FSpatialEntityId(EntityId) <= SpatialConstants::INVALID_ENTITY_ID)
 	{
 		return FString("Invalid");
 	}

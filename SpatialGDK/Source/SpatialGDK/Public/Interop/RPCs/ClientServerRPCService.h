@@ -42,33 +42,33 @@ public:
 	bool ContainsOverflowedRPC(const EntityRPCType& EntityRPC) const;
 	TMap<EntityRPCType, TArray<PendingRPCPayload>>& GetOverflowedRPCs();
 	void AddOverflowedRPC(EntityRPCType EntityType, PendingRPCPayload&& Payload);
-	void IncrementAckedRPCID(Worker_EntityId EntityId, ERPCType Type);
-	uint64 GetAckFromView(Worker_EntityId EntityId, ERPCType Type);
+	void IncrementAckedRPCID(FSpatialEntityId EntityId, ERPCType Type);
+	uint64 GetAckFromView(FSpatialEntityId EntityId, ERPCType Type);
 
 private:
-	void SetEntityData(Worker_EntityId EntityId);
+	void SetEntityData(FSpatialEntityId EntityId);
 	// Process relevant view delta changes.
-	void EntityAdded(const Worker_EntityId EntityId);
-	void ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
+	void EntityAdded(const FSpatialEntityId EntityId);
+	void ComponentUpdate(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 
 	// Maintain local state of client server RPCs.
-	void PopulateDataStore(Worker_EntityId EntityId);
-	void ApplyComponentUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
+	void PopulateDataStore(FSpatialEntityId EntityId);
+	void ApplyComponentUpdate(FSpatialEntityId EntityId, Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 
 	// Client server RPC system responses to state changes.
-	void OnEndpointAuthorityGained(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void OnEndpointAuthorityLost(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void ClearOverflowedRPCs(Worker_EntityId EntityId);
+	void OnEndpointAuthorityGained(FSpatialEntityId EntityId, Worker_ComponentId ComponentId);
+	void OnEndpointAuthorityLost(FSpatialEntityId EntityId, Worker_ComponentId ComponentId);
+	void ClearOverflowedRPCs(FSpatialEntityId EntityId);
 
 	// The component with the given component ID was updated, and so there is an RPC to be handled.
-	void HandleRPC(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	void HandleRPC(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId);
 	// Calls ExtractRPCCallback for each RPC it extracts from a given component. If the callback returns false,
 	// stops retrieving RPCs.
-	void ExtractRPCsForEntity(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	void ExtractRPCsForType(Worker_EntityId EntityId, ERPCType Type);
+	void ExtractRPCsForEntity(FSpatialEntityId EntityId, Worker_ComponentId ComponentId);
+	void ExtractRPCsForType(FSpatialEntityId EntityId, ERPCType Type);
 
 	// Helpers
-	const RPCRingBuffer& GetBufferFromView(Worker_EntityId EntityId, ERPCType Type);
+	const RPCRingBuffer& GetBufferFromView(FSpatialEntityId EntityId, ERPCType Type);
 	static bool IsClientOrServerEndpoint(Worker_ComponentId ComponentId);
 
 	ActorCanExtractRPCDelegate CanExtractRPCDelegate;
@@ -79,7 +79,7 @@ private:
 	FRPCStore* RPCStore;
 
 	// Deserialized state store for client/server RPC components.
-	TMap<Worker_EntityId_Key, ClientServerEndpoints> ClientServerDataStore;
+	TMap<FSpatialEntityId, ClientServerEndpoints> ClientServerDataStore;
 
 	// Stored here for things we have authority over.
 	TMap<EntityRPCType, uint64> LastAckedRPCIds;

@@ -46,7 +46,7 @@ ServerWorkerEntityCreator::ServerWorkerEntityCreator(USpatialNetDriver& InNetDri
 
 void ServerWorkerEntityCreator::CreateWorkerEntity()
 {
-	const Worker_EntityId EntityId = NetDriver.PackageMap->AllocateEntityId();
+	const FSpatialEntityId EntityId = NetDriver.PackageMap->AllocateEntityId();
 
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
@@ -89,7 +89,7 @@ void ServerWorkerEntityCreator::OnEntityCreated(const Worker_CreateEntityRespons
 			TEXT("Worker system entity creation failed, SDK returned code %d [%s]"), (int)CreateEntityResponse.status_code,
 			UTF8_TO_TCHAR(CreateEntityResponse.message));
 
-	NetDriver.WorkerEntityId = CreateEntityResponse.entity_id;
+	NetDriver.WorkerEntityId = ToSpatialEntityId(CreateEntityResponse.entity_id);
 
 	const Worker_PartitionId PartitionId = static_cast<Worker_PartitionId>(CreateEntityResponse.entity_id);
 
@@ -154,11 +154,12 @@ Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t 
 	return Coordinator->SendReserveEntityIdsRequest(NumOfEntities, RetryData);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
+Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorkerComponentData> Components,
+																   const FSpatialEntityId* EntityId,
 																   const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
-	const TOptional<Worker_EntityId> Id = EntityId != nullptr ? *EntityId : TOptional<Worker_EntityId>();
+	const TOptional<FSpatialEntityId> Id = EntityId != nullptr ? *EntityId : TOptional<FSpatialEntityId>();
 	TArray<SpatialGDK::ComponentData> Data;
 	Data.Reserve(Components.Num());
 	for (auto& Component : Components)
@@ -169,35 +170,35 @@ Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<FWorke
 	return Coordinator->SendCreateEntityRequest(MoveTemp(Data), Id, RetryData, SpanId);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId, const SpatialGDK::FRetryData& RetryData,
+Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(FSpatialEntityId EntityId, const SpatialGDK::FRetryData& RetryData,
 																   const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
 	return Coordinator->SendDeleteEntityRequest(EntityId, RetryData, SpanId);
 }
 
-void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
+void USpatialWorkerConnection::SendAddComponent(FSpatialEntityId EntityId, FWorkerComponentData* ComponentData,
 												const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendAddComponent(EntityId, ToComponentData(ComponentData), SpanId);
 }
 
-void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+void USpatialWorkerConnection::SendRemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId,
 												   const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendRemoveComponent(EntityId, ComponentId, SpanId);
 }
 
-void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
+void USpatialWorkerConnection::SendComponentUpdate(FSpatialEntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 												   const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
 	Coordinator->SendComponentUpdate(EntityId, ToComponentUpdate(ComponentUpdate), SpanId);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
+Worker_RequestId USpatialWorkerConnection::SendCommandRequest(FSpatialEntityId EntityId, Worker_CommandRequest* Request,
 															  const SpatialGDK::FRetryData& RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	check(Coordinator.IsValid());
@@ -288,7 +289,7 @@ PhysicalWorkerName USpatialWorkerConnection::GetWorkerId() const
 	return Coordinator->GetWorkerId();
 }
 
-Worker_EntityId USpatialWorkerConnection::GetWorkerSystemEntityId() const
+FSpatialEntityId USpatialWorkerConnection::GetWorkerSystemEntityId() const
 {
 	check(Coordinator.IsValid());
 	return Coordinator->GetWorkerSystemEntityId();

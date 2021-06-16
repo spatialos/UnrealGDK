@@ -30,6 +30,6 @@ void ACrossServerRPCCube::RecordEntityId()
 	if (HasAuthority())
 	{
 		USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-		AuthEntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(this);
+		AuthEntityId = SpatialNetDriver->PackageMap->GetEntityIdFromObject(this).EntityId;
 	}
 }

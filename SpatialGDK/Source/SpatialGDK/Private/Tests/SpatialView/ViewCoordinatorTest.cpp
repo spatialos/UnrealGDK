@@ -36,20 +36,20 @@ public:
 
 	virtual const FString& GetWorkerId() const override { return WorkerId; }
 
-	virtual Worker_EntityId GetWorkerSystemEntityId() const override { return WorkerSystemEntityId; }
+	virtual FSpatialEntityId GetWorkerSystemEntityId() const override { return WorkerSystemEntityId; }
 
 private:
 	TArray<TArray<OpList>> ListsOfOpLists;
 	TArray<OpList> QueuedOpLists;
-	Worker_EntityId WorkerSystemEntityId = 1;
+	FSpatialEntityId WorkerSystemEntityId{ 1 };
 	FString WorkerId = TEXT("test_worker");
 	TArray<FString> Attributes = { TEXT("test") };
 };
 
 VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN_returns_sub_view_which_passes_through_only_tagged_entity)
 {
-	const Worker_EntityId EntityId = 1;
-	const Worker_EntityId TaggedEntityId = 2;
+	const FSpatialEntityId EntityId{ 1 };
+	const FSpatialEntityId TaggedEntityId{ 2 };
 	const Worker_ComponentId ComponentId = 1;
 	const Worker_ComponentId TagComponentId = 2;
 
@@ -85,8 +85,8 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_unfiltered_sub_view_THEN
 
 VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_returns_sub_view_which_filters_tagged_entities)
 {
-	const Worker_EntityId TaggedEntityId = 2;
-	const Worker_EntityId OtherTaggedEntityId = 3;
+	const FSpatialEntityId TaggedEntityId{ 2 };
+	const FSpatialEntityId OtherTaggedEntityId{ 3 };
 	const Worker_ComponentId TagComponentId = 2;
 	const Worker_ComponentId ValueComponentId = 3;
 	const double CorrectValue = 1;
@@ -119,7 +119,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 
 	auto& SubView = Coordinator.CreateSubView(
 		TagComponentId,
-		[CorrectValue, ValueComponentId](const Worker_EntityId&, const EntityViewElement& Element) {
+		[CorrectValue, ValueComponentId](const FSpatialEntityId&, const EntityViewElement& Element) {
 			const ComponentData* It = Element.Components.FindByPredicate(ComponentIdEquality{ ValueComponentId });
 			if (GetValueFromTestComponentData(It->GetUnderlying()) == CorrectValue)
 			{
@@ -156,7 +156,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_WHEN_create_filtered_sub_view_THEN_r
 
 VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_refresh_THEN_all_subviews_refreshed)
 {
-	const Worker_EntityId TaggedEntityId = 2;
+	const FSpatialEntityId TaggedEntityId{ 2 };
 	const Worker_ComponentId TagComponentId = 2;
 	FComponentSetData ComponentSetData;
 	ComponentSetData.ComponentSets.Add(TagComponentId, { TagComponentId });
@@ -186,7 +186,7 @@ VIEWCOORDINATOR_TEST(GIVEN_view_coordinator_with_multiple_tracked_subviews_WHEN_
 	{
 		SubViews.Emplace(&Coordinator.CreateSubView(
 			TagComponentId,
-			[&EntityComplete](const Worker_EntityId&, const EntityViewElement&) {
+			[&EntityComplete](const FSpatialEntityId&, const EntityViewElement&) {
 				return EntityComplete;
 			},
 			FSubView::NoDispatcherCallbacks));

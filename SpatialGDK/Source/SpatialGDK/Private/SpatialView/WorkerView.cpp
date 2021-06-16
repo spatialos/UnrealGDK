@@ -36,7 +36,7 @@ TUniquePtr<MessagesToSend> WorkerView::FlushLocalChanges()
 	return OutgoingMessages;
 }
 
-void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId)
+void WorkerView::SendAddComponent(FSpatialEntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId)
 {
 	EntityViewElement* Element = View.Find(EntityId);
 	if (ensure(Element != nullptr))
@@ -46,7 +46,7 @@ void WorkerView::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, 
 	}
 }
 
-void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId)
+void WorkerView::SendComponentUpdate(FSpatialEntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId)
 {
 	EntityViewElement* Element = View.Find(EntityId);
 	if (ensure(Element != nullptr))
@@ -60,7 +60,7 @@ void WorkerView::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate U
 	}
 }
 
-void WorkerView::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId)
+void WorkerView::SendRemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId)
 {
 	EntityViewElement* Element = View.Find(EntityId);
 	if (ensure(Element != nullptr))

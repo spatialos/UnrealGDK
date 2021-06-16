@@ -44,28 +44,28 @@ public:
 	void ProcessOrQueueIncomingRPC(const FUnrealObjectRef& InTargetObjectRef, const RPCSender& InSender, RPCPayload InPayload,
 								   TOptional<uint64> RPCIdForLinearEventTrace);
 
-	EPushRPCResult PushRPC(Worker_EntityId EntityId, const RPCSender& Sender, ERPCType Type, RPCPayload Payload, bool bCreatedEntity,
+	EPushRPCResult PushRPC(FSpatialEntityId EntityId, const RPCSender& Sender, ERPCType Type, RPCPayload Payload, bool bCreatedEntity,
 						   UObject* Target = nullptr, UFunction* Function = nullptr, const FSpatialGDKSpanId& SpanId = {});
 
 	void PushOverflowedRPCs();
 
 	struct UpdateToSend
 	{
-		Worker_EntityId EntityId;
+		FSpatialEntityId EntityId;
 		FWorkerComponentUpdate Update;
 		FSpatialGDKSpanId SpanId;
 	};
 	TArray<UpdateToSend> GetRPCsAndAcksToSend();
-	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(Worker_EntityId EntityId);
+	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(FSpatialEntityId EntityId);
 
-	void ClearPendingRPCs(Worker_EntityId EntityId);
+	void ClearPendingRPCs(FSpatialEntityId EntityId);
 
 	RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, const FUnrealObjectRef& TargetObjectRef, UFunction* Function,
 										  ERPCType Type, void* Params) const;
 	void ProcessOrQueueOutgoingRPC(const FUnrealObjectRef& InTargetObjectRef, const RPCSender& InSenderInfo, RPCPayload&& InPayload);
 
 private:
-	EPushRPCResult PushRPCInternal(Worker_EntityId EntityId, ERPCType Type, PendingRPCPayload Payload, bool bCreatedEntity);
+	EPushRPCResult PushRPCInternal(FSpatialEntityId EntityId, ERPCType Type, PendingRPCPayload Payload, bool bCreatedEntity);
 
 	FRPCErrorInfo ApplyRPC(const FPendingRPCParams& Params);
 	// Note: It's like applying an RPC, but more secretive
@@ -79,7 +79,7 @@ private:
 	void TrackRPC(AActor* Actor, UFunction* Function, const RPCPayload& Payload, ERPCType RPCType) const;
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters) const;
 
-	bool ActorCanExtractRPC(Worker_EntityId) const;
+	bool ActorCanExtractRPC(FSpatialEntityId) const;
 
 	USpatialNetDriver* NetDriver;
 	USpatialLatencyTracer* SpatialLatencyTracer;

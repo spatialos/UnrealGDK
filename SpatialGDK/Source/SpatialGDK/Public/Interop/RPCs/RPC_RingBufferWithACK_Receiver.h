@@ -25,7 +25,7 @@ public:
 		ComponentsToRead.Add(Serializer.GetACKComponentId());
 	}
 
-	virtual void OnAdded(FName ReceiverName, Worker_EntityId EntityId, EntityViewElement const& Element) override
+	virtual void OnAdded(FName ReceiverName, FSpatialEntityId EntityId, EntityViewElement const& Element) override
 	{
 		const ComponentData* RPCComponentData = Element.Components.FindByPredicate(ComponentIdEquality{ Serializer.GetComponentId() });
 		const ComponentData* ACKComponentData = Element.Components.FindByPredicate(ComponentIdEquality{ Serializer.GetACKComponentId() });
@@ -67,7 +67,7 @@ public:
 		State.LastWrittenACK = State.LastExecuted;
 	}
 
-	virtual void OnRemoved(Worker_EntityId EntityId) override
+	virtual void OnRemoved(FSpatialEntityId EntityId) override
 	{
 		ReceiverStates.Remove(EntityId);
 		this->ReceivedRPCs.Remove(EntityId);
@@ -86,7 +86,7 @@ public:
 	{
 		for (auto& Receiver : ReceiverStates)
 		{
-			Worker_EntityId EntityId = Receiver.Key;
+			FSpatialEntityId EntityId = Receiver.Key;
 			ReceiverState& State = Receiver.Value;
 			if (State.LastExecuted != State.LastWrittenACK)
 			{
@@ -101,7 +101,7 @@ public:
 	{
 		for (auto Iterator = this->ReceivedRPCs.CreateIterator(); Iterator; ++Iterator)
 		{
-			Worker_EntityId EntityId = Iterator->Key;
+			FSpatialEntityId EntityId = Iterator->Key;
 			if (!CanExtract(EntityId))
 			{
 				continue;

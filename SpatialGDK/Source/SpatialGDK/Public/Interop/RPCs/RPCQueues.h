@@ -38,7 +38,7 @@ struct TRPCUnboundedQueue : public TRPCQueue<Payload, AdditionalSendingData>
 		}
 	}
 
-	virtual void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx, const SentRPCCallback& SentCallback = SentRPCCallback(),
+	virtual void Flush(FSpatialEntityId EntityId, RPCWritingContext& Ctx, const SentRPCCallback& SentCallback = SentRPCCallback(),
 					   bool bIgnoreAdded = false) override
 	{
 		QueueData* Queue = this->Queues.Find(EntityId);
@@ -51,14 +51,14 @@ struct TRPCUnboundedQueue : public TRPCQueue<Payload, AdditionalSendingData>
 		CheckOverflow(EntityId, *Queue);
 	}
 
-	virtual void OnAuthLost(Worker_EntityId EntityId) override
+	virtual void OnAuthLost(FSpatialEntityId EntityId) override
 	{
 		Super::OnAuthLost(EntityId);
 		OverflowSizes.Remove(EntityId);
 	}
 
 protected:
-	void CheckOverflow(Worker_EntityId EntityId, QueueData& Queue)
+	void CheckOverflow(FSpatialEntityId EntityId, QueueData& Queue)
 	{
 		const int32 RemainingRPCs = Queue.RPCs.Num();
 		if (RemainingRPCs == 0)
@@ -113,7 +113,7 @@ struct TRPCFixedCapacityQueue : public TRPCQueue<Payload, AdditionalSendingData>
 
 	int32 Capacity;
 
-	virtual void Push(Worker_EntityId EntityId, Payload&& Data, AdditionalSendingData&& AddData = AdditionalSendingData()) override
+	virtual void Push(FSpatialEntityId EntityId, Payload&& Data, AdditionalSendingData&& AddData = AdditionalSendingData()) override
 	{
 		QueueData& Queue = this->Queues.FindOrAdd(EntityId);
 
@@ -142,7 +142,7 @@ struct TRPCFixedCapacityQueue : public TRPCQueue<Payload, AdditionalSendingData>
 		}
 	}
 
-	virtual void Flush(Worker_EntityId EntityId, RPCWritingContext& Ctx, const SentRPCCallback& SentCallback = SentRPCCallback(),
+	virtual void Flush(FSpatialEntityId EntityId, RPCWritingContext& Ctx, const SentRPCCallback& SentCallback = SentRPCCallback(),
 					   bool bIgnoreAdded = false) override
 	{
 		QueueData* Queue = this->Queues.Find(EntityId);
@@ -171,7 +171,7 @@ struct TRPCMostRecentQueue : public TRPCFixedCapacityQueue<Payload, AdditionalSe
 	{
 	}
 
-	virtual void Push(Worker_EntityId EntityId, Payload&& Data, AdditionalSendingData&& AddData = AdditionalSendingData()) override
+	virtual void Push(FSpatialEntityId EntityId, Payload&& Data, AdditionalSendingData&& AddData = AdditionalSendingData()) override
 	{
 		QueueData& Queue = this->Queues.FindOrAdd(EntityId);
 

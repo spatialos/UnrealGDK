@@ -29,15 +29,15 @@ public:
 		return FOwnershipCompletenessHandler(EOwnershipCompletenessStrategy::RequiresPlayerOwnership);
 	}
 
-	bool IsOwnershipComplete(Worker_EntityId EntityId, const EntityViewElement& Entity) const;
-	void AddPlayerEntity(Worker_EntityId EntityId);
-	void TryRemovePlayerEntity(Worker_EntityId EntityId);
+	bool IsOwnershipComplete(FSpatialEntityId EntityId, const EntityViewElement& Entity) const;
+	void AddPlayerEntity(FSpatialEntityId EntityId);
+	void TryRemovePlayerEntity(FSpatialEntityId EntityId);
 	void AddSubView(FSubView& InSubView);
 
 	static TArray<FDispatcherRefreshCallback> GetCallbacks(ViewCoordinator& Coordinator);
 
 private:
-	bool ShouldHaveOwnerOnlyComponents(Worker_EntityId EntityId, const EntityViewElement& Entity) const;
+	bool ShouldHaveOwnerOnlyComponents(FSpatialEntityId EntityId, const EntityViewElement& Entity) const;
 
 	explicit FOwnershipCompletenessHandler(const EOwnershipCompletenessStrategy InStrategy)
 		: Strategy(InStrategy)

@@ -6,11 +6,11 @@
 #include "SpatialView/Dispatcher.h"
 #include "Templates/Function.h"
 
-using FFilterPredicate = TFunction<bool(const Worker_EntityId, const SpatialGDK::EntityViewElement&)>;
-using FRefreshCallback = TFunction<void(const Worker_EntityId)>;
+using FFilterPredicate = TFunction<bool(const FSpatialEntityId, const SpatialGDK::EntityViewElement&)>;
+using FRefreshCallback = TFunction<void(const FSpatialEntityId)>;
 using FDispatcherRefreshCallback = TFunction<TArray<SpatialGDK::CallbackId>(const FRefreshCallback)>;
 using FComponentChangeRefreshPredicate = TFunction<bool(SpatialGDK::FEntityComponentChange)>;
-using FAuthorityChangeRefreshPredicate = TFunction<bool(Worker_EntityId)>;
+using FAuthorityChangeRefreshPredicate = TFunction<bool(FSpatialEntityId)>;
 
 namespace SpatialGDK
 {
@@ -40,15 +40,15 @@ public:
 
 	void Advance(const ViewDelta& Delta);
 	const FSubViewDelta& GetViewDelta() const;
-	TSet<Worker_EntityId_Key> GetCompleteEntities() const;
+	TSet<FSpatialEntityId> GetCompleteEntities() const;
 	void Refresh();
-	void RefreshEntity(const Worker_EntityId EntityId);
+	void RefreshEntity(const FSpatialEntityId EntityId);
 
 	const EntityView& GetView() const;
-	bool HasEntity(const Worker_EntityId EntityId) const;
-	bool IsEntityComplete(const Worker_EntityId EntityId) const;
-	bool HasComponent(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const;
-	bool HasAuthority(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId) const;
+	bool HasEntity(const FSpatialEntityId EntityId) const;
+	bool IsEntityComplete(const FSpatialEntityId EntityId) const;
+	bool HasComponent(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId) const;
+	bool HasAuthority(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId) const;
 
 	// Helper functions for creating dispatcher refresh callbacks for use when constructing a subview.
 	// Takes an optional predicate argument to further filter what causes a refresh. Example: Only trigger
@@ -63,11 +63,11 @@ public:
 private:
 	void RegisterTagCallbacks(IDispatcher& Dispatcher);
 	void RegisterRefreshCallbacks(IDispatcher& Dispatcher, const TArray<FDispatcherRefreshCallback>& DispatcherRefreshCallbacks);
-	void OnTaggedEntityAdded(const Worker_EntityId EntityId);
-	void OnTaggedEntityRemoved(const Worker_EntityId EntityId);
-	void CheckEntityAgainstFilter(const Worker_EntityId EntityId);
-	void EntityComplete(const Worker_EntityId EntityId);
-	void EntityIncomplete(const Worker_EntityId EntityId);
+	void OnTaggedEntityAdded(const FSpatialEntityId EntityId);
+	void OnTaggedEntityRemoved(const FSpatialEntityId EntityId);
+	void CheckEntityAgainstFilter(const FSpatialEntityId EntityId);
+	void EntityComplete(const FSpatialEntityId EntityId);
+	void EntityIncomplete(const FSpatialEntityId EntityId);
 
 	Worker_ComponentId TagComponentId;
 	FFilterPredicate Filter;
@@ -77,11 +77,11 @@ private:
 
 	FSubViewDelta SubViewDelta;
 
-	TArray<Worker_EntityId> TaggedEntities;
-	TArray<Worker_EntityId> CompleteEntities;
-	TArray<Worker_EntityId> NewlyCompleteEntities;
-	TArray<Worker_EntityId> NewlyIncompleteEntities;
-	TArray<Worker_EntityId> TemporarilyIncompleteEntities;
+	TArray<FSpatialEntityId> TaggedEntities;
+	TArray<FSpatialEntityId> CompleteEntities;
+	TArray<FSpatialEntityId> NewlyCompleteEntities;
+	TArray<FSpatialEntityId> NewlyIncompleteEntities;
+	TArray<FSpatialEntityId> TemporarilyIncompleteEntities;
 };
 
 } // namespace SpatialGDK

@@ -7,8 +7,15 @@
 #include "Algo/StableSort.h"
 #include <algorithm>
 
+#include "Utils/SchemaUtils.h"
+
 namespace SpatialGDK
 {
+// The sentinel entity ID has the property that when converted to a uint64 it will be greater than INT64_MAX.
+// If we convert all entity IDs to uint64s before comparing them we can then be assured that the sentinel values
+// will be greater than all valid IDs.
+FSpatialEntityId ViewDelta::SENTINEL_ENTITY_ID{ -1 };
+
 void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View, const FComponentSetData& ComponentSetData)
 {
 	Clear();
@@ -21,9 +28,9 @@ void ViewDelta::SetFromOpList(TArray<OpList> OpLists, EntityView& View, const FC
 	PopulateEntityDeltas(View);
 }
 
-void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& CompleteEntities,
-						const TArray<Worker_EntityId>& NewlyCompleteEntities, const TArray<Worker_EntityId>& NewlyIncompleteEntities,
-						const TArray<Worker_EntityId>& TemporarilyIncompleteEntities) const
+void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<FSpatialEntityId>& CompleteEntities,
+						const TArray<FSpatialEntityId>& NewlyCompleteEntities, const TArray<FSpatialEntityId>& NewlyIncompleteEntities,
+						const TArray<FSpatialEntityId>& TemporarilyIncompleteEntities) const
 {
 	SubDelta.EntityDeltas.Empty();
 
@@ -39,15 +46,15 @@ void ViewDelta::Project(FSubViewDelta& SubDelta, const TArray<Worker_EntityId>& 
 
 	for (;;)
 	{
-		const Worker_EntityId DeltaId = DeltaIt ? DeltaIt->EntityId : SENTINEL_ENTITY_ID;
-		const Worker_EntityId CompleteId = CompleteIt ? *CompleteIt : SENTINEL_ENTITY_ID;
-		const Worker_EntityId NewlyCompleteId = NewlyCompleteIt ? *NewlyCompleteIt : SENTINEL_ENTITY_ID;
-		const Worker_EntityId NewlyIncompleteId = NewlyIncompleteIt ? *NewlyIncompleteIt : SENTINEL_ENTITY_ID;
-		const Worker_EntityId TemporarilyIncompleteId = TemporarilyIncompleteIt ? *TemporarilyIncompleteIt : SENTINEL_ENTITY_ID;
-		const uint64 MinEntityId = FMath::Min3(FMath::Min(static_cast<uint64>(DeltaId), static_cast<uint64>(CompleteId)),
-											   FMath::Min(static_cast<uint64>(NewlyCompleteId), static_cast<uint64>(NewlyIncompleteId)),
-											   static_cast<uint64>(TemporarilyIncompleteId));
-		const Worker_EntityId CurrentEntityId = static_cast<Worker_EntityId>(MinEntityId);
+		const FSpatialEntityId DeltaId = DeltaIt ? DeltaIt->EntityId : SENTINEL_ENTITY_ID;
+		const FSpatialEntityId CompleteId = CompleteIt ? *CompleteIt : SENTINEL_ENTITY_ID;
+		const FSpatialEntityId NewlyCompleteId = NewlyCompleteIt ? *NewlyCompleteIt : SENTINEL_ENTITY_ID;
+		const FSpatialEntityId NewlyIncompleteId = NewlyIncompleteIt ? *NewlyIncompleteIt : SENTINEL_ENTITY_ID;
+		const FSpatialEntityId TemporarilyIncompleteId = TemporarilyIncompleteIt ? *TemporarilyIncompleteIt : SENTINEL_ENTITY_ID;
+		const uint64 MinEntityId = FMath::Min3(FMath::Min((uint64)(DeltaId.EntityId), (uint64)(CompleteId.EntityId)),
+											   FMath::Min((uint64)(NewlyCompleteId.EntityId), (uint64)(NewlyIncompleteId.EntityId)),
+											   (uint64)(TemporarilyIncompleteId.EntityId));
+		const FSpatialEntityId CurrentEntityId = FSpatialEntityId(static_cast<int64>(MinEntityId));
 		// If no list has elements left to read then stop.
 		if (CurrentEntityId == SENTINEL_ENTITY_ID)
 		{
@@ -191,7 +198,7 @@ bool ViewDelta::DifferentEntity::operator()(const ReceivedComponentChange& Op) c
 
 bool ViewDelta::DifferentEntity::operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const
 {
-	return Op.entity_id != EntityId;
+	return Op.entity_id != ToWorkerEntityId(EntityId);
 }
 
 bool ViewDelta::DifferentEntityComponent::operator()(const ReceivedComponentChange& Op) const
@@ -201,7 +208,7 @@ bool ViewDelta::DifferentEntityComponent::operator()(const ReceivedComponentChan
 
 bool ViewDelta::DifferentEntityComponent::operator()(const Worker_ComponentSetAuthorityChangeOp& Op) const
 {
-	return Op.component_set_id != ComponentId || Op.entity_id != EntityId;
+	return Op.component_set_id != ComponentId || Op.entity_id != ToWorkerEntityId(EntityId);
 }
 
 bool ViewDelta::EntityComponentComparison::operator()(const ReceivedComponentChange& Lhs, const ReceivedComponentChange& Rhs) const
@@ -344,10 +351,10 @@ void ViewDelta::ProcessOpList(const OpList& Ops, const EntityView& View, const F
 			// Ignore critical sections.
 			break;
 		case WORKER_OP_TYPE_ADD_ENTITY:
-			EntityChanges.Push(ReceivedEntityChange{ Op.op.add_entity.entity_id, true });
+			EntityChanges.Push(ReceivedEntityChange{ ToSpatialEntityId(Op.op.add_entity.entity_id), true });
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
-			EntityChanges.Push(ReceivedEntityChange{ Op.op.remove_entity.entity_id, false });
+			EntityChanges.Push(ReceivedEntityChange{ ToSpatialEntityId(Op.op.remove_entity.entity_id), false });
 			break;
 		case WORKER_OP_TYPE_METRICS:
 		case WORKER_OP_TYPE_FLAG_UPDATE:
@@ -390,7 +397,7 @@ void ViewDelta::GenerateComponentChangesFromSetData(const Worker_ComponentSetAut
 	const TSet<Worker_ComponentId>& Set = ComponentSetData.ComponentSets[Op.component_set_id];
 
 	// If a component on the entity is in the set then generate a remove operation.
-	if (const EntityViewElement* Entity = View.Find(Op.entity_id))
+	if (const EntityViewElement* Entity = View.Find(ToSpatialEntityId(Op.entity_id)))
 	{
 		for (const ComponentData& Component : Entity->Components)
 		{
@@ -429,8 +436,8 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 
 	// Add sentinel elements to the ends of the arrays.
 	// Prevents the need for bounds checks on the iterators.
-	ComponentChanges.Emplace(Worker_RemoveComponentOp{ SENTINEL_ENTITY_ID, 0 });
-	AuthorityChanges.Emplace(Worker_ComponentSetAuthorityChangeOp{ SENTINEL_ENTITY_ID, 0, 0 });
+	ComponentChanges.Emplace(Worker_RemoveComponentOp{ ToWorkerEntityId(SENTINEL_ENTITY_ID), 0 });
+	AuthorityChanges.Emplace(Worker_ComponentSetAuthorityChangeOp{ ToWorkerEntityId(SENTINEL_ENTITY_ID), 0, 0 });
 	EntityChanges.Emplace(ReceivedEntityChange{ SENTINEL_ENTITY_ID, false });
 
 	auto ComponentIt = ComponentChanges.GetData();
@@ -449,16 +456,17 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 	{
 		// Get the next entity ID. We want to pick the smallest entity referenced by the iterators.
 		// Convert to uint64 to ensure the sentinel value is larger than all valid IDs.
-		const uint64 MinEntityId = FMath::Min3(static_cast<uint64>(ComponentIt->EntityId), static_cast<uint64>(AuthorityIt->entity_id),
-											   static_cast<uint64>(EntityIt->EntityId));
+		const uint64 MinEntityId =
+			FMath::Min3(static_cast<uint64>(ComponentIt->EntityId.EntityId), static_cast<uint64>(AuthorityIt->entity_id),
+						static_cast<uint64>(EntityIt->EntityId.EntityId));
 
 		// If no list has elements left to read then stop.
-		if (static_cast<Worker_EntityId>(MinEntityId) == SENTINEL_ENTITY_ID)
+		if (static_cast<FSpatialEntityId>(MinEntityId) == SENTINEL_ENTITY_ID)
 		{
 			break;
 		}
 
-		const Worker_EntityId CurrentEntityId = static_cast<Worker_EntityId>(MinEntityId);
+		const FSpatialEntityId CurrentEntityId = static_cast<FSpatialEntityId>(MinEntityId);
 
 		EntityDelta Delta = {};
 		Delta.EntityId = CurrentEntityId;
@@ -476,7 +484,7 @@ void ViewDelta::PopulateEntityDeltas(EntityView& View)
 			ComponentIt = ProcessEntityComponentChanges(ComponentIt, ComponentChangesEnd, ViewElement->Components, Delta);
 		}
 
-		if (AuthorityIt->entity_id == CurrentEntityId)
+		if (AuthorityIt->entity_id == ToWorkerEntityId(CurrentEntityId))
 		{
 			AuthorityIt = ProcessEntityAuthorityChanges(AuthorityIt, AuthorityChangesEnd, ViewElement->Authority, Delta);
 		}
@@ -504,7 +512,7 @@ ViewDelta::ReceivedComponentChange* ViewDelta::ProcessEntityComponentChanges(Rec
 	int32 RemoveCount = 0;
 	int32 RefreshCount = 0;
 
-	const Worker_EntityId EntityId = It->EntityId;
+	const FSpatialEntityId EntityId = It->EntityId;
 	// At the end of each loop `It` should point to the first element for an entity-component.
 	// Stop and return when the component is for a different entity.
 	// There will always be at least one iteration of the loop.
@@ -584,7 +592,7 @@ Worker_ComponentSetAuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(W
 	int32 LossCount = 0;
 	int32 LossTempCount = 0;
 
-	const Worker_EntityId EntityId = It->entity_id;
+	const FSpatialEntityId EntityId = ToSpatialEntityId(It->entity_id);
 	// After each loop the iterator points to the first op relating to the next entity-component.
 	// Stop and return when that component is for a different entity.
 	// There will always be at least one iteration of the loop.
@@ -620,7 +628,7 @@ Worker_ComponentSetAuthorityChangeOp* ViewDelta::ProcessEntityAuthorityChanges(W
 		// Move to the next entity-component.
 		++It;
 
-		if (It->entity_id != EntityId)
+		if (It->entity_id != ToWorkerEntityId(EntityId))
 		{
 			Delta.AuthorityGained = { AuthorityGainedForDelta.GetData() + AuthorityGainedForDelta.Num() - GainCount, GainCount };
 			Delta.AuthorityLost = { AuthorityLostForDelta.GetData() + AuthorityLostForDelta.Num() - LossCount, LossCount };
@@ -635,7 +643,7 @@ ViewDelta::ReceivedEntityChange* ViewDelta::ProcessEntityExistenceChange(Receive
 																		 EntityDelta& Delta, bool bAlreadyInView, EntityView& View)
 {
 	// Find the last element relating to the same entity.
-	const Worker_EntityId EntityId = It->EntityId;
+	const FSpatialEntityId EntityId = It->EntityId;
 	It = std::find_if(It, End, DifferentEntity{ EntityId }) - 1;
 
 	const bool bEntityAdded = It->bAdded;

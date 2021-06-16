@@ -268,7 +268,7 @@ void ASpatialTestCrossServerRPC::PrepareTest()
 void ASpatialTestCrossServerRPC::CheckInvalidEntityID(ACrossServerRPCCube* TestCube)
 {
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-	Worker_EntityId Entity = SpatialNetDriver->PackageMap->GetEntityIdFromObject(TestCube);
+	FSpatialEntityId Entity = SpatialNetDriver->PackageMap->GetEntityIdFromObject(TestCube);
 	RequireTrue((Entity == SpatialConstants::INVALID_ENTITY_ID), TEXT("Not expecting a valid entity ID"));
 	FinishStep();
 }
@@ -276,8 +276,8 @@ void ASpatialTestCrossServerRPC::CheckInvalidEntityID(ACrossServerRPCCube* TestC
 void ASpatialTestCrossServerRPC::CheckValidEntityID(ACrossServerRPCCube* TestCube)
 {
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetNetDriver());
-	Worker_EntityId Entity = SpatialNetDriver->PackageMap->GetEntityIdFromObject(TestCube);
+	FSpatialEntityId Entity = SpatialNetDriver->PackageMap->GetEntityIdFromObject(TestCube);
 	RequireTrue((Entity != SpatialConstants::INVALID_ENTITY_ID), TEXT("Expected a valid entity ID"));
-	RequireTrue((Entity == TestCube->AuthEntityId), TEXT("Expected entity ID to be the same as the auth server"));
+	RequireTrue((Entity.EntityId == TestCube->AuthEntityId), TEXT("Expected entity ID to be the same as the auth server"));
 	FinishStep();
 }

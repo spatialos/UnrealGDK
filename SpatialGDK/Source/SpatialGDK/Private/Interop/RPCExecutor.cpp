@@ -84,7 +84,7 @@ TOptional<FCrossServerRPCParams> RPCExecutor::TryRetrieveCrossServerRPCParams(co
 {
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.op.command_request.request.schema_type);
 	RPCPayload Payload(RequestObject);
-	const FUnrealObjectRef ObjectRef = FUnrealObjectRef(Op.op.command_request.entity_id, Payload.Offset);
+	const FUnrealObjectRef ObjectRef = FUnrealObjectRef(FSpatialEntityId(Op.op.command_request.entity_id), Payload.Offset);
 	const TWeakObjectPtr<UObject> TargetObjectWeakPtr = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
@@ -112,7 +112,7 @@ TOptional<FCrossServerRPCParams> RPCExecutor::TryRetrieveCrossServerRPCParams(co
 		return {};
 	}
 
-	AActor* TargetActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.op.command_request.entity_id));
+	AActor* TargetActor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(FSpatialEntityId(Op.op.command_request.entity_id)));
 	FSpatialGDKSpanId SpanId;
 	if (EventTracer != nullptr)
 	{

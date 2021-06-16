@@ -15,12 +15,12 @@ class FClientNetLoadActorHelper
 {
 public:
 	FClientNetLoadActorHelper(USpatialNetDriver& InNetDriver);
-	void EntityRemoved(const Worker_EntityId EntityId, const AActor& Actor);
+	void EntityRemoved(const FSpatialEntityId EntityId, const AActor& Actor);
 	UObject* GetReusableDynamicSubObject(const FUnrealObjectRef ObjectRef);
 
 	// The runtime can remove components from a ClientNetLoad Actor while the actor is out of the client's interest
 	// The client doesn't receive these updates when they happen, so the difference must be reconciled
-	void RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents);
+	void RemoveRuntimeRemovedComponents(const FSpatialEntityId EntityId, const TArray<ComponentData>& NewComponents);
 
 private:
 	USpatialNetDriver* NetDriver;
@@ -31,7 +31,7 @@ private:
 	// BNetLoadOnClient component edge case handling
 	FNetworkGUID* GetSavedDynamicSubObjectNetGUID(const FUnrealObjectRef& ObjectRef);
 	void SaveDynamicSubobjectMetadata(const FUnrealObjectRef& ObjectRef, const FNetworkGUID& NetGUID);
-	void ClearDynamicSubobjectMetadata(const Worker_EntityId InEntityId);
+	void ClearDynamicSubobjectMetadata(const FSpatialEntityId InEntityId);
 
 	bool OffsetContainedInComponentArray(const TArray<ComponentData>& Components, const ObjectOffset OffsetToCheckIfContained) const;
 };

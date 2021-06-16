@@ -42,7 +42,7 @@ void SetEntityData(Worker_Entity& Entity, const TArray<FWorkerComponentData>& Co
 bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity SpawnerEntity;
-	SpawnerEntity.entity_id = SpatialConstants::INITIAL_SPAWNER_ENTITY_ID;
+	SpawnerEntity.entity_id = ToWorkerEntityId(SpatialConstants::INITIAL_SPAWNER_ENTITY_ID);
 
 	Worker_ComponentData PlayerSpawnerData = {};
 	PlayerSpawnerData.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
@@ -114,7 +114,7 @@ Worker_ComponentData CreateStartupActorManagerData()
 bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity GSM;
-	GSM.entity_id = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
+	GSM.entity_id = ToWorkerEntityId(SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID);
 
 	Interest SelfInterest;
 	Query AuthoritySelfQuery = {};
@@ -159,7 +159,7 @@ Worker_ComponentData CreateVirtualWorkerTranslatorData()
 bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity VirtualWorkerTranslator;
-	VirtualWorkerTranslator.entity_id = SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID;
+	VirtualWorkerTranslator.entity_id = ToWorkerEntityId(SpatialConstants::INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID);
 
 	Interest SelfInterest;
 	Query AuthoritySelfQuery = {};
@@ -193,7 +193,7 @@ bool CreateVirtualWorkerTranslator(Worker_SnapshotOutputStream* OutputStream)
 bool CreateSnapshotPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity SnapshotPartitionEntity;
-	SnapshotPartitionEntity.entity_id = SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID;
+	SnapshotPartitionEntity.entity_id = ToWorkerEntityId(SpatialConstants::INITIAL_SNAPSHOT_PARTITION_ENTITY_ID);
 
 	TArray<FWorkerComponentData> Components;
 
@@ -215,12 +215,12 @@ bool CreateSnapshotPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 bool CreateStrategyPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity StrategyPartitionEntity;
-	StrategyPartitionEntity.entity_id = SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID;
+	StrategyPartitionEntity.entity_id = ToWorkerEntityId(SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
 
 	TArray<FWorkerComponentData> Components;
 
 	AuthorityDelegationMap DelegationMap;
-	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, StrategyPartitionEntity.entity_id);
+	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_STRATEGY_PARTITION_ENTITY_ID);
 
 	Interest ServerInterest;
 	Query ServerQuery = {};
@@ -245,7 +245,7 @@ bool CreateStrategyPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 bool CreateRoutingWorkerPartitionEntity(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity StrategyPartitionEntity;
-	StrategyPartitionEntity.entity_id = SpatialConstants::INITIAL_ROUTING_PARTITION_ENTITY_ID;
+	StrategyPartitionEntity.entity_id = ToWorkerEntityId(SpatialConstants::INITIAL_ROUTING_PARTITION_ENTITY_ID);
 
 	AuthorityDelegationMap DelegationMap;
 	DelegationMap.Add(SpatialConstants::GDK_KNOWN_ENTITY_AUTH_COMPONENT_SET_ID, SpatialConstants::INITIAL_ROUTING_PARTITION_ENTITY_ID);
@@ -284,7 +284,7 @@ bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 	return true;
 }
 
-bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvailableEntityID)
+bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStream, FSpatialEntityId& NextAvailableEntityID)
 {
 	for (TObjectIterator<UClass> SnapshotGenerationClass; SnapshotGenerationClass; ++SnapshotGenerationClass)
 	{
@@ -349,7 +349,7 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 		return false;
 	}
 
-	Worker_EntityId NextAvailableEntityID = SpatialConstants::FIRST_AVAILABLE_ENTITY_ID;
+	FSpatialEntityId NextAvailableEntityID = SpatialConstants::FIRST_AVAILABLE_ENTITY_ID;
 	if (!RunUserSnapshotGenerationOverrides(OutputStream, NextAvailableEntityID))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error running user defined snapshot generation overrides in snapshot: %s"),

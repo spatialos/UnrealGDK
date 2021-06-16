@@ -22,14 +22,14 @@ public:
 
 	// Record a complete update for an entity-component.
 	// The entity-component will be recorded as completely-updated.
-	void AddComponentDataAsUpdate(Worker_EntityId EntityId, ComponentData CompleteUpdate);
+	void AddComponentDataAsUpdate(FSpatialEntityId EntityId, ComponentData CompleteUpdate);
 
 	// Record a update for an entity-component.
 	// If there is no record for the entity-component it will be recorded as updated.
-	void AddComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
+	void AddComponentUpdate(FSpatialEntityId EntityId, ComponentUpdate Update);
 
 	// Clear all records for an entity-component.
-	void RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	void RemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId);
 
 	// Clear all records.
 	void Clear();
@@ -40,8 +40,8 @@ public:
 	const TArray<EntityComponentCompleteUpdate>& GetCompleteUpdates() const;
 
 private:
-	void InsertOrMergeUpdate(Worker_EntityId EntityId, ComponentUpdate Update);
-	void InsertOrSetCompleteUpdate(Worker_EntityId EntityId, ComponentData CompleteUpdate);
+	void InsertOrMergeUpdate(FSpatialEntityId EntityId, ComponentUpdate Update);
+	void InsertOrSetCompleteUpdate(FSpatialEntityId EntityId, ComponentData CompleteUpdate);
 
 	TArray<EntityComponentUpdate> Updates;
 	TArray<EntityComponentCompleteUpdate> CompleteUpdates;

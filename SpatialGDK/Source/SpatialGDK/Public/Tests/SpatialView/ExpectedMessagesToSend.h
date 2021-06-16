@@ -11,11 +11,11 @@ namespace SpatialGDK
 class ExpectedMessagesToSend
 {
 public:
-	ExpectedMessagesToSend& AddCreateEntityRequest(Worker_RequestId RequestId, Worker_EntityId EntityId,
+	ExpectedMessagesToSend& AddCreateEntityRequest(Worker_RequestId RequestId, FSpatialEntityId EntityId,
 												   TArray<ComponentData> ComponentData);
-	ExpectedMessagesToSend& AddEntityCommandRequest(Worker_RequestId RequestId, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+	ExpectedMessagesToSend& AddEntityCommandRequest(Worker_RequestId RequestId, FSpatialEntityId EntityId, Worker_ComponentId ComponentId,
 													Worker_CommandIndex CommandIndex);
-	ExpectedMessagesToSend& AddDeleteEntityCommandRequest(Worker_RequestId RequestId, Worker_EntityId EntityId);
+	ExpectedMessagesToSend& AddDeleteEntityCommandRequest(Worker_RequestId RequestId, FSpatialEntityId EntityId);
 	ExpectedMessagesToSend& AddReserveEntityIdsRequest(Worker_RequestId RequestId, uint32 NumOfEntities);
 	ExpectedMessagesToSend& AddEntityQueryRequest(Worker_RequestId RequestId, EntityQuery Query);
 	ExpectedMessagesToSend& AddEntityCommandResponse(Worker_RequestId RequestId, Worker_ComponentId ComponentId,

@@ -117,7 +117,7 @@ void USpatialNetConnection::FlushDormancy(AActor* Actor)
 	}
 }
 
-Worker_EntityId USpatialNetConnection::GetPlayerControllerEntityId() const
+FSpatialEntityId USpatialNetConnection::GetPlayerControllerEntityId() const
 {
 	if (USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialPackageMapClient>(PackageMap))
 	{

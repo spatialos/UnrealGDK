@@ -29,15 +29,15 @@ public:
 	void Advance();
 	void OnRequestReceived(const Worker_Op&, const Worker_CommandResponseOp& CommandResponseOp);
 
-	void RegisterClientConnection(Worker_EntityId InWorkerEntityId, USpatialNetConnection* ClientConnection);
+	void RegisterClientConnection(FSpatialEntityId InWorkerEntityId, USpatialNetConnection* ClientConnection);
 	void CleanUpClientConnection(USpatialNetConnection* ConnectionCleanedUp);
 
-	void DisconnectPlayer(Worker_EntityId ClientEntityId);
+	void DisconnectPlayer(FSpatialEntityId ClientEntityId);
 
 private:
-	void EntityRemoved(const Worker_EntityId EntityId);
+	void EntityRemoved(const FSpatialEntityId EntityId);
 
-	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerEntityId(Worker_EntityId WorkerEntityId);
+	TWeakObjectPtr<USpatialNetConnection> FindClientConnectionFromWorkerEntityId(FSpatialEntityId WorkerEntityId);
 	static void CloseClientConnection(USpatialNetConnection* ClientConnection);
 
 	const FSubView* SubView;
@@ -45,9 +45,9 @@ private:
 
 	EntityCommandResponseHandler ResponseHandler;
 
-	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
+	TMap<FSpatialEntityId, TWeakObjectPtr<USpatialNetConnection>> WorkerConnections;
 
-	TMap<Worker_RequestId_Key, Worker_EntityId> DisconnectRequestToConnectionEntityId;
+	TMap<Worker_RequestId_Key, FSpatialEntityId> DisconnectRequestToConnectionEntityId;
 };
 
 } // namespace SpatialGDK

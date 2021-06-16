@@ -19,14 +19,14 @@ public:
 		TEMPORARILY_REMOVED
 	};
 
-	ExpectedViewDelta& AddEntityDelta(const Worker_EntityId EntityId, const EntityChangeType ChangeType);
-	ExpectedViewDelta& AddComponentAdded(const Worker_EntityId EntityId, ComponentData Data);
-	ExpectedViewDelta& AddComponentRemoved(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
-	ExpectedViewDelta& AddComponentUpdate(const Worker_EntityId EntityId, ComponentUpdate Update);
-	ExpectedViewDelta& AddComponentRefreshed(const Worker_EntityId EntityId, ComponentUpdate Update, ComponentData Data);
-	ExpectedViewDelta& AddAuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
-	ExpectedViewDelta& AddAuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
-	ExpectedViewDelta& AddAuthorityLostTemporarily(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddEntityDelta(const FSpatialEntityId EntityId, const EntityChangeType ChangeType);
+	ExpectedViewDelta& AddComponentAdded(const FSpatialEntityId EntityId, ComponentData Data);
+	ExpectedViewDelta& AddComponentRemoved(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddComponentUpdate(const FSpatialEntityId EntityId, ComponentUpdate Update);
+	ExpectedViewDelta& AddComponentRefreshed(const FSpatialEntityId EntityId, ComponentUpdate Update, ComponentData Data);
+	ExpectedViewDelta& AddAuthorityGained(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddAuthorityLost(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId);
+	ExpectedViewDelta& AddAuthorityLostTemporarily(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId);
 	ExpectedViewDelta& AddDisconnect(const uint8 StatusCode, FString StatusMessage);
 
 	// Compares the stored Entity Deltas
@@ -35,7 +35,7 @@ public:
 
 private:
 	void SortEntityDeltas();
-	TMap<uint32, ExpectedEntityDelta> EntityDeltas;
+	TMap<FSpatialEntityId, ExpectedEntityDelta> EntityDeltas;
 	uint8 ConnectionStatusCode = 0;
 	FString ConnectionStatusMessage;
 

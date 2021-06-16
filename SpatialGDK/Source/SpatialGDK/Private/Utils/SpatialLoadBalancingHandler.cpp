@@ -24,7 +24,7 @@ FSpatialLoadBalancingHandler::FSpatialLoadBalancingHandler(USpatialNetDriver* In
 FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::EvaluateSingleActor(AActor* Actor, AActor*& OutNetOwner,
 																									VirtualWorkerId& OutWorkerId)
 {
-	const Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+	const FSpatialEntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		return EvaluateActorResult::None;
@@ -58,8 +58,8 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 				{
 					if (NetDriver->LockingPolicy->IsLocked(Actor))
 					{
-						UE_LOG(LogSpatialLoadBalancingHandler, Verbose, TEXT("Actor %s (%llu) cannot migrate because it is locked"),
-							   *Actor->GetName(), EntityId);
+						UE_LOG(LogSpatialLoadBalancingHandler, Verbose, TEXT("Actor %s (%s) cannot migrate because it is locked"),
+							   *Actor->GetName(), *EntityId.ToString());
 						return EvaluateActorResult::None;
 					}
 					VirtualWorkerId TargetVirtualWorkerId;
@@ -73,8 +73,8 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 			}
 			else if (Components.Num() > 1)
 			{
-				UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Actor %s (%llu) has more than 1 URemotePossessionComponent"),
-					   *Actor->GetName(), EntityId);
+				UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Actor %s (%s) has more than 1 URemotePossessionComponent"),
+					   *Actor->GetName(), *EntityId.ToString());
 			}
 		}
 
@@ -106,7 +106,7 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 					// If we are separated from our owner, it could be prevented from migrating (if it has interest over the current actor),
 					// so the load balancing strategy could give us a worker different from where it should be.
 					// Instead, we read its currently assigned worker, which will eventually make us land where our owner is.
-					const Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+					const FSpatialEntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
 					const TOptional<AuthorityIntent> OwnerAuthorityIntent =
 						DeserializeComponent<AuthorityIntent>(NetDriver->Connection->GetCoordinator(), OwnerId);
 					if (OwnerAuthorityIntent.IsSet())
@@ -115,8 +115,8 @@ FSpatialLoadBalancingHandler::EvaluateActorResult FSpatialLoadBalancingHandler::
 					}
 					else
 					{
-						UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Actor %s (%llu) cannot join its owner %s (%llu)"),
-							   *Actor->GetName(), EntityId, *NetOwner->GetName(), OwnerId);
+						UE_LOG(LogSpatialLoadBalancingHandler, Error, TEXT("Actor %s (%s) cannot join its owner %s (%s)"),
+							   *Actor->GetName(), *EntityId.ToString(), *NetOwner->GetName(), *OwnerId.ToString());
 					}
 				}
 
@@ -222,7 +222,7 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 	// If a failure reason is returned log warning
 	if (!FailureReason.IsEmpty())
 	{
-		Worker_EntityId ActorEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
+		FSpatialEntityId ActorEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Actor);
 
 		// Check if we have recently logged this actor / reason and if so suppress the log
 		if (!NetDriver->IsLogged(ActorEntityId, ActorMigrationResult))
@@ -237,8 +237,8 @@ void FSpatialLoadBalancingHandler::LogMigrationFailure(EActorMigrationResult Act
 			{
 				AActor* HierarchyRoot = GetReplicatedHierarchyRoot(Actor);
 				UE_LOG(LogSpatialLoadBalancingHandler, Warning,
-					   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%llu) %s"), *HierarchyRoot->GetName(),
-					   *Actor->GetName(), ActorEntityId, *FailureReason);
+					   TEXT("Prevented Actor %s 's hierarchy from migrating because Actor %s (%s) %s"), *HierarchyRoot->GetName(),
+					   *Actor->GetName(), *ActorEntityId.ToString(), *FailureReason);
 			}
 		}
 	}
@@ -282,7 +282,7 @@ VirtualWorkerId FSpatialLoadBalancingHandler::GetWorkerId(const AActor* NetOwner
 	}
 	else
 	{
-		const Worker_EntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
+		const FSpatialEntityId OwnerId = NetDriver->PackageMap->GetEntityIdFromObject(NetOwner);
 		const TOptional<AuthorityIntent> OwnerAuthorityIntent =
 			DeserializeComponent<AuthorityIntent>(NetDriver->Connection->GetCoordinator(), OwnerId);
 		if (OwnerAuthorityIntent.IsSet())

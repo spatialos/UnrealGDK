@@ -26,9 +26,9 @@ public:
 
 	bool IsValid() const { return Hash != 0; }
 
-	static EventTraceUniqueId GenerateForRPC(Worker_EntityId Entity, uint8 Type, uint64 RPCId);
-	static EventTraceUniqueId GenerateForNamedRPC(Worker_EntityId Entity, FName Name, uint64 RPCId);
-	static EventTraceUniqueId GenerateForProperty(Worker_EntityId Entity, const GDK_PROPERTY(Property) * Property);
-	static EventTraceUniqueId GenerateForCrossServerRPC(Worker_EntityId Entity, uint64 UniqueRequestId);
+	static EventTraceUniqueId GenerateForRPC(FSpatialEntityId Entity, uint8 Type, uint64 RPCId);
+	static EventTraceUniqueId GenerateForNamedRPC(FSpatialEntityId Entity, FName Name, uint64 RPCId);
+	static EventTraceUniqueId GenerateForProperty(FSpatialEntityId Entity, const GDK_PROPERTY(Property) * Property);
+	static EventTraceUniqueId GenerateForCrossServerRPC(FSpatialEntityId Entity, uint64 UniqueRequestId);
 };
 } // namespace SpatialGDK

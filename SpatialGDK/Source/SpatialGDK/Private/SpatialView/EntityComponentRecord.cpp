@@ -4,7 +4,7 @@
 
 namespace SpatialGDK
 {
-void EntityComponentRecord::AddComponent(Worker_EntityId EntityId, ComponentData Data)
+void EntityComponentRecord::AddComponent(FSpatialEntityId EntityId, ComponentData Data)
 {
 	const EntityComponentId Id = { EntityId, Data.GetComponentId() };
 
@@ -20,7 +20,7 @@ void EntityComponentRecord::AddComponent(Worker_EntityId EntityId, ComponentData
 	}
 }
 
-void EntityComponentRecord::RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+void EntityComponentRecord::RemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId)
 {
 	const EntityComponentId Id = { EntityId, ComponentId };
 	const EntityComponentData* FoundComponentAdded = ComponentsAdded.FindByPredicate(EntityComponentIdEquality{ Id });
@@ -38,7 +38,7 @@ void EntityComponentRecord::RemoveComponent(Worker_EntityId EntityId, Worker_Com
 	}
 }
 
-void EntityComponentRecord::AddComponentAsUpdate(Worker_EntityId EntityId, ComponentData Data)
+void EntityComponentRecord::AddComponentAsUpdate(FSpatialEntityId EntityId, ComponentData Data)
 {
 	const EntityComponentId Id = { EntityId, Data.GetComponentId() };
 	EntityComponentData* FoundComponentAdded = ComponentsAdded.FindByPredicate(EntityComponentIdEquality{ Id });
@@ -55,7 +55,7 @@ void EntityComponentRecord::AddComponentAsUpdate(Worker_EntityId EntityId, Compo
 	}
 }
 
-void EntityComponentRecord::AddUpdate(Worker_EntityId EntityId, ComponentUpdate Update)
+void EntityComponentRecord::AddUpdate(FSpatialEntityId EntityId, ComponentUpdate Update)
 {
 	const EntityComponentId Id = { EntityId, Update.GetComponentId() };
 	EntityComponentData* FoundComponentAdded = ComponentsAdded.FindByPredicate(EntityComponentIdEquality{ Id });

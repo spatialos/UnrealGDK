@@ -16,8 +16,8 @@
 
 struct EntityRange
 {
-	Worker_EntityId CurrentEntityId;
-	Worker_EntityId LastEntityId;
+	FSpatialEntityId CurrentEntityId;
+	FSpatialEntityId LastEntityId;
 };
 
 class USpatialReceiver;
@@ -34,7 +34,7 @@ class SPATIALGDK_API UEntityPool : public UObject
 public:
 	void Init(USpatialNetDriver& InNetDriver);
 	void ReserveEntityIDs(uint32 EntitiesToReserve);
-	Worker_EntityId GetNextEntityId();
+	FSpatialEntityId GetNextEntityId();
 	FEntityPoolReadyEvent& GetEntityPoolReadyDelegate();
 
 	FORCEINLINE bool IsReady() const { return bIsReady; }

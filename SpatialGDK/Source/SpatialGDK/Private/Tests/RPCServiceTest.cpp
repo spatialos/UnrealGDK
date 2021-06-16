@@ -42,18 +42,18 @@ struct TestData
 
 struct EntityPayload
 {
-	EntityPayload(Worker_EntityId InEntityID, const SpatialGDK::RPCPayload& InPayload)
+	EntityPayload(FSpatialEntityId InEntityID, const SpatialGDK::RPCPayload& InPayload)
 		: EntityId(InEntityID)
 		, Payload(InPayload)
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	SpatialGDK::RPCPayload Payload;
 };
 
-constexpr Worker_EntityId RPCTestEntityId_1 = 201;
-constexpr Worker_EntityId RPCTestEntityId_2 = 42;
+constexpr FSpatialEntityId RPCTestEntityId_1{ 201 };
+constexpr FSpatialEntityId RPCTestEntityId_2{ 42 };
 
 const SpatialGDK::RPCPayload SimplePayload = SpatialGDK::RPCPayload(1, 0, 0, TArray<uint8>({ 1 }, 1));
 
@@ -74,7 +74,7 @@ SpatialGDK::ComponentData MakeComponentDataFromData(Schema_ComponentData* Data, 
 	return SpatialGDK::ComponentData(SpatialGDK::OwningComponentDataPtr(Data), ComponentId);
 }
 
-void AddClientAuthorityFromRPCEndpointType(SpatialGDK::EntityView& View, const Worker_EntityId EntityId,
+void AddClientAuthorityFromRPCEndpointType(SpatialGDK::EntityView& View, const FSpatialEntityId EntityId,
 										   const ERPCEndpointType RPCEndpointType)
 {
 	if (RPCEndpointType == CLIENT_AUTH || RPCEndpointType == SERVER_AND_CLIENT_AUTH)
@@ -83,7 +83,7 @@ void AddClientAuthorityFromRPCEndpointType(SpatialGDK::EntityView& View, const W
 	}
 }
 
-void AddServerAuthorityFromRPCEndpointType(SpatialGDK::EntityView& View, const Worker_EntityId EntityId,
+void AddServerAuthorityFromRPCEndpointType(SpatialGDK::EntityView& View, const FSpatialEntityId EntityId,
 										   const ERPCEndpointType RPCEndpointType)
 {
 	if (RPCEndpointType == SERVER_AUTH || RPCEndpointType == SERVER_AND_CLIENT_AUTH)
@@ -92,7 +92,7 @@ void AddServerAuthorityFromRPCEndpointType(SpatialGDK::EntityView& View, const W
 	}
 }
 
-void AddMulticastAuthorityFromRPCEndpointType(SpatialGDK::EntityView& View, const Worker_EntityId EntityId,
+void AddMulticastAuthorityFromRPCEndpointType(SpatialGDK::EntityView& View, const FSpatialEntityId EntityId,
 											  const ERPCEndpointType RPCEndpointType)
 {
 	if (RPCEndpointType == SERVER_AUTH || RPCEndpointType == SERVER_AND_CLIENT_AUTH)
@@ -101,7 +101,7 @@ void AddMulticastAuthorityFromRPCEndpointType(SpatialGDK::EntityView& View, cons
 	}
 }
 
-void AddRPCEntityToView(SpatialGDK::EntityView& View, const Worker_EntityId EntityId, const ERPCEndpointType RPCEndpointType,
+void AddRPCEntityToView(SpatialGDK::EntityView& View, const FSpatialEntityId EntityId, const ERPCEndpointType RPCEndpointType,
 						SpatialGDK::ComponentData ClientData = SpatialGDK::ComponentData{ SpatialConstants::CLIENT_ENDPOINT_COMPONENT_ID })
 {
 	AddEntityToView(View, EntityId);
@@ -118,9 +118,9 @@ void AddRPCEntityToView(SpatialGDK::EntityView& View, const Worker_EntityId Enti
 	AddMulticastAuthorityFromRPCEndpointType(View, EntityId, RPCEndpointType);
 };
 
-void PopulateView(SpatialGDK::EntityView& View, const TArray<Worker_EntityId>& EntityIdArray, const ERPCEndpointType RPCEndpointType)
+void PopulateView(SpatialGDK::EntityView& View, const TArray<FSpatialEntityId>& EntityIdArray, const ERPCEndpointType RPCEndpointType)
 {
-	for (Worker_EntityId EntityId : EntityIdArray)
+	for (FSpatialEntityId EntityId : EntityIdArray)
 	{
 		AddRPCEntityToView(View, EntityId, RPCEndpointType);
 	}
@@ -128,7 +128,7 @@ void PopulateView(SpatialGDK::EntityView& View, const TArray<Worker_EntityId>& E
 
 // Creates an RPC service with initial authority dependent on the RPCEndpointType for the entities specified in
 // EntityIdArray.
-SpatialGDK::SpatialRPCService CreateRPCService(const TArray<Worker_EntityId>& EntityIdArray, const ERPCEndpointType RPCEndpointType,
+SpatialGDK::SpatialRPCService CreateRPCService(const TArray<FSpatialEntityId>& EntityIdArray, const ERPCEndpointType RPCEndpointType,
 											   SpatialGDK::EntityView& View)
 {
 	// Remove all callbacks.
@@ -188,7 +188,7 @@ bool CompareComponentDataAndEntityPayload(const FWorkerComponentData& ComponentD
 }
 
 FWorkerComponentData GetComponentDataOnEntityCreationFromRPCService(SpatialGDK::SpatialRPCService& RPCService,
-																	const Worker_EntityId EntityID, const ERPCType RPCType)
+																	const FSpatialEntityId EntityID, const ERPCType RPCType)
 {
 	Worker_ComponentId ExpectedUpdateComponentId = SpatialGDK::RPCRingBufferUtils::GetRingBufferComponentId(RPCType);
 	TArray<FWorkerComponentData> ComponentDataArray = RPCService.GetRPCComponentsOnEntityCreation(EntityID);

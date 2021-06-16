@@ -9,11 +9,11 @@ namespace SpatialGDK
 {
 struct FEntityComponentChange
 {
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	const ComponentChange& Change;
 };
 
-using FEntityCallback = TCallbacks<Worker_EntityId>::CallbackType;
+using FEntityCallback = TCallbacks<FSpatialEntityId>::CallbackType;
 using FComponentValueCallback = TCallbacks<FEntityComponentChange>::CallbackType;
 
 class IDispatcher

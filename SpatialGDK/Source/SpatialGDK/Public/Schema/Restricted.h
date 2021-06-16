@@ -26,17 +26,17 @@ struct Partition : Component
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 
-		WorkerConnectionId = Schema_GetUint64(ComponentObject, 1);
+		WorkerConnectionId = GetEntityIdFromSchema(ComponentObject, 1);
 	}
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-		WorkerConnectionId = Schema_GetUint64(ComponentObject, 1);
+		WorkerConnectionId = GetEntityIdFromSchema(ComponentObject, 1);
 	}
 
-	Worker_EntityId_Key WorkerConnectionId;
+	FSpatialEntityId WorkerConnectionId;
 };
 
 } // namespace SpatialGDK

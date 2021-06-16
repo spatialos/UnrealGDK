@@ -12,11 +12,11 @@ namespace SpatialGDK
 {
 namespace
 {
-const Worker_EntityId TEST_ENTITY_ID = 1337;
+const FSpatialEntityId TEST_ENTITY_ID{ 1337 };
 
-const Worker_ComponentId TEST_COMPONENT_ID = 1338;
-const Worker_ComponentId COMPONENT_ID_TO_REMOVE = 1347;
-const Worker_ComponentId COMPONENT_ID_TO_KEEP = 1348;
+const Worker_ComponentId TEST_COMPONENT_ID{ 1338 };
+const Worker_ComponentId COMPONENT_ID_TO_REMOVE{ 1347 };
+const Worker_ComponentId COMPONENT_ID_TO_KEEP{ 1348 };
 
 const int EVENT_VALUE = 7332;
 

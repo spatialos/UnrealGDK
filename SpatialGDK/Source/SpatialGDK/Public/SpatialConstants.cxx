@@ -54,6 +54,16 @@ TOptional<ERPCType> RPCStringToType(const FString& String)
 	return {};
 }
 
+    const FSpatialEntityId INITIAL_SPAWNER_ENTITY_ID{ 1};
+    const FSpatialEntityId INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID {2};
+    const FSpatialEntityId INITIAL_VIRTUAL_WORKER_TRANSLATOR_ENTITY_ID { 3};
+    const FSpatialEntityId INITIAL_SNAPSHOT_PARTITION_ENTITY_ID {4
+};
+    const FSpatialEntityId INITIAL_STRATEGY_PARTITION_ENTITY_ID{ 5};
+    const FSpatialEntityId INITIAL_ROUTING_PARTITION_ENTITY_ID { 6};
+    const FSpatialEntityId FIRST_AVAILABLE_ENTITY_ID { 7 };
+
+    
 const FString SERVER_AUTH_COMPONENT_SET_NAME = TEXT("ServerAuthoritativeComponentSet");
 const FString CLIENT_AUTH_COMPONENT_SET_NAME = TEXT("ClientAuthoritativeComponentSet");
 const FString DATA_COMPONENT_SET_NAME = TEXT("DataComponentSet");

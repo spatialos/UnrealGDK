@@ -13,17 +13,17 @@ namespace SpatialGDK
 class EntityPresenceRecord
 {
 public:
-	void AddEntity(Worker_EntityId EntityId);
-	void RemoveEntity(Worker_EntityId EntityId);
+	void AddEntity(FSpatialEntityId EntityId);
+	void RemoveEntity(FSpatialEntityId EntityId);
 
 	void Clear();
 
-	const TArray<Worker_EntityId>& GetEntitiesAdded() const;
-	const TArray<Worker_EntityId>& GetEntitiesRemoved() const;
+	const TArray<FSpatialEntityId>& GetEntitiesAdded() const;
+	const TArray<FSpatialEntityId>& GetEntitiesRemoved() const;
 
 private:
-	TArray<Worker_EntityId> EntitiesAdded;
-	TArray<Worker_EntityId> EntitiesRemoved;
+	TArray<FSpatialEntityId> EntitiesAdded;
+	TArray<FSpatialEntityId> EntitiesRemoved;
 };
 
 } // namespace SpatialGDK

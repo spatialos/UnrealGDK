@@ -5,6 +5,8 @@
 #include "SpatialView/EntityView.h"
 #include "SpatialView/OpList/StringStorage.h"
 
+#include "Utils/SchemaUtils.h"
+
 namespace SpatialGDK
 {
 EntityComponentOpListBuilder::EntityComponentOpListBuilder()
@@ -12,31 +14,31 @@ EntityComponentOpListBuilder::EntityComponentOpListBuilder()
 {
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntity(Worker_EntityId EntityId)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntity(FSpatialEntityId EntityId)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_ADD_ENTITY;
-	Op.op.add_entity.entity_id = EntityId;
+	Op.op.add_entity.entity_id = ToWorkerEntityId(EntityId);
 
 	OpListData->Ops.Add(Op);
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveEntity(Worker_EntityId EntityId)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveEntity(FSpatialEntityId EntityId)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_REMOVE_ENTITY;
-	Op.op.remove_entity.entity_id = EntityId;
+	Op.op.remove_entity.entity_id = ToWorkerEntityId(EntityId);
 
 	OpListData->Ops.Add(Op);
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddComponent(Worker_EntityId EntityId, ComponentData Data)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddComponent(FSpatialEntityId EntityId, ComponentData Data)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_ADD_COMPONENT;
-	Op.op.add_component.entity_id = EntityId;
+	Op.op.add_component.entity_id = ToWorkerEntityId(EntityId);
 	Op.op.add_component.data = Data.GetWorkerComponentData();
 	OpListData->DataStorage.Emplace(MoveTemp(Data));
 
@@ -44,11 +46,11 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddComponent(Worker_
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::UpdateComponent(Worker_EntityId EntityId, ComponentUpdate Update)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::UpdateComponent(FSpatialEntityId EntityId, ComponentUpdate Update)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_COMPONENT_UPDATE;
-	Op.op.component_update.entity_id = EntityId;
+	Op.op.component_update.entity_id = ToWorkerEntityId(EntityId);
 	Op.op.component_update.update = Update.GetWorkerComponentUpdate();
 	OpListData->UpdateStorage.Emplace(MoveTemp(Update));
 
@@ -56,23 +58,23 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::UpdateComponent(Work
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::RemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_REMOVE_COMPONENT;
-	Op.op.remove_component.entity_id = EntityId;
+	Op.op.remove_component.entity_id = ToWorkerEntityId(EntityId);
 	Op.op.remove_component.component_id = ComponentId;
 
 	OpListData->Ops.Add(Op);
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId,
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::SetAuthority(FSpatialEntityId EntityId, Worker_ComponentSetId ComponentSetId,
 																		 Worker_Authority Authority, TArray<ComponentData> Components)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_COMPONENT_SET_AUTHORITY_CHANGE;
-	Op.op.component_set_authority_change.entity_id = EntityId;
+	Op.op.component_set_authority_change.entity_id = ToWorkerEntityId(EntityId);
 	Op.op.component_set_authority_change.component_set_id = ComponentSetId;
 	Op.op.component_set_authority_change.authority = Authority;
 	Op.op.component_set_authority_change.canonical_component_set_data_count = Components.Num();
@@ -111,14 +113,14 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::EndCriticalSection()
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddCreateEntityCommandResponse(Worker_EntityId EntityID,
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddCreateEntityCommandResponse(FSpatialEntityId EntityID,
 																						   Worker_RequestId RequestId,
 																						   Worker_StatusCode StatusCode,
 																						   StringStorage Message)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE;
-	Op.op.create_entity_response.entity_id = EntityID;
+	Op.op.create_entity_response.entity_id = ToWorkerEntityId(EntityID);
 	Op.op.create_entity_response.request_id = RequestId;
 	Op.op.create_entity_response.status_code = StatusCode;
 	Op.op.create_entity_response.message = StoreString(MoveTemp(Message));
@@ -127,11 +129,11 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddCreateEntityComma
 }
 
 EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddReserveEntityIdsCommandResponse(
-	Worker_EntityId EntityID, uint32 NumberOfEntities, Worker_RequestId RequestId, Worker_StatusCode StatusCode, StringStorage Message)
+	FSpatialEntityId EntityID, uint32 NumberOfEntities, Worker_RequestId RequestId, Worker_StatusCode StatusCode, StringStorage Message)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE;
-	Op.op.reserve_entity_ids_response.first_entity_id = EntityID;
+	Op.op.reserve_entity_ids_response.first_entity_id = ToWorkerEntityId(EntityID);
 	Op.op.reserve_entity_ids_response.number_of_entity_ids = NumberOfEntities;
 	Op.op.reserve_entity_ids_response.request_id = RequestId;
 	Op.op.reserve_entity_ids_response.status_code = StatusCode;
@@ -140,14 +142,14 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddReserveEntityIdsC
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddDeleteEntityCommandResponse(Worker_EntityId EntityID,
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddDeleteEntityCommandResponse(FSpatialEntityId EntityID,
 																						   Worker_RequestId RequestId,
 																						   Worker_StatusCode StatusCode,
 																						   StringStorage Message)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE;
-	Op.op.delete_entity_response.entity_id = EntityID;
+	Op.op.delete_entity_response.entity_id = ToWorkerEntityId(EntityID);
 	Op.op.delete_entity_response.request_id = RequestId;
 	Op.op.delete_entity_response.status_code = StatusCode;
 	Op.op.delete_entity_response.message = StoreString(MoveTemp(Message));
@@ -171,12 +173,12 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityQueryComman
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityCommandRequest(Worker_EntityId EntityID, Worker_RequestId RequestId,
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityCommandRequest(FSpatialEntityId EntityID, Worker_RequestId RequestId,
 																					CommandRequest CommandRequest)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_COMMAND_REQUEST;
-	Op.op.command_request.entity_id = EntityID;
+	Op.op.command_request.entity_id = ToWorkerEntityId(EntityID);
 	Op.op.command_response.request_id = RequestId;
 	Op.op.command_request.request.command_index = CommandRequest.GetCommandIndex();
 	Op.op.command_request.request.component_id = CommandRequest.GetComponentId();
@@ -185,12 +187,12 @@ EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityCommandRequ
 	return *this;
 }
 
-EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityCommandResponse(Worker_EntityId EntityID, Worker_RequestId RequestId,
+EntityComponentOpListBuilder& EntityComponentOpListBuilder::AddEntityCommandResponse(FSpatialEntityId EntityID, Worker_RequestId RequestId,
 																					 Worker_StatusCode StatusCode, StringStorage Message)
 {
 	Worker_Op Op = {};
 	Op.op_type = WORKER_OP_TYPE_COMMAND_RESPONSE;
-	Op.op.command_response.entity_id = EntityID;
+	Op.op.command_response.entity_id = ToWorkerEntityId(EntityID);
 	Op.op.command_response.request_id = RequestId;
 	Op.op.command_response.status_code = StatusCode;
 	Op.op.command_response.message = StoreString(MoveTemp(Message));
@@ -215,7 +217,7 @@ const Worker_Entity* EntityComponentOpListBuilder::StoreQueriedEntities(TArray<O
 	for (auto& Entity : Entities)
 	{
 		Worker_Entity CurrentEntity;
-		CurrentEntity.entity_id = Entity.EntityId;
+		CurrentEntity.entity_id = ToWorkerEntityId(Entity.EntityId);
 		CurrentEntity.component_count = Entity.Components.Num();
 		CurrentEntity.components = StoreComponentDataArray(MoveTemp(Entity.Components));
 		WorkerEntities.Add(MoveTemp(CurrentEntity));

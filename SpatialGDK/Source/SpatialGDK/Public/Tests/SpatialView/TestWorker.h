@@ -12,7 +12,7 @@ class FTestWorker
 {
 public:
 	static FTestWorker Create(TArray<Worker_ComponentSetId> ComponentSetIds, FString InWorkerId = {},
-							  Worker_EntityId InWorkerSystemEntityId = 0)
+							  FSpatialEntityId InWorkerSystemEntityId = FSpatialEntityId(0))
 	{
 		TUniquePtr<FTestConnectionHandler> Handler = MakeUnique<FTestConnectionHandler>(InWorkerId, InWorkerSystemEntityId);
 		FComponentSetData SetData;

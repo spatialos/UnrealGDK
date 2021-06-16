@@ -27,7 +27,7 @@ struct ACKItem
 	void ReadFromSchema(Schema_Object* SchemaObject);
 	void WriteToSchema(Schema_Object* SchemaObject);
 
-	Worker_EntityId Sender = SpatialConstants::INVALID_ENTITY_ID;
+	FSpatialEntityId Sender = SpatialConstants::INVALID_ENTITY_ID;
 	uint64 RPCId = 0;
 	uint64 Result = 0;
 };

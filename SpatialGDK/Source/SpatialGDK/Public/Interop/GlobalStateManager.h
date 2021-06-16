@@ -80,10 +80,10 @@ public:
 
 	void HandleActorBasedOnLoadBalancer(AActor* ActorIterator) const;
 
-	Worker_EntityId GetLocalServerWorkerEntityId() const;
+	FSpatialEntityId GetLocalServerWorkerEntityId() const;
 	void ClaimSnapshotPartition();
 
-	Worker_EntityId GlobalStateManagerEntityId;
+	FSpatialEntityId GlobalStateManagerEntityId;
 
 private:
 	// Deployment Map Component

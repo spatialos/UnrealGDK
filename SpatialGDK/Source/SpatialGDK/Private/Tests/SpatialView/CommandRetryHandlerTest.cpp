@@ -6,6 +6,7 @@
 #include "Tests/SpatialView/ExpectedMessagesToSend.h"
 #include "Tests/SpatialView/SpatialViewUtils.h"
 #include "Tests/TestDefinitions.h"
+#include "Utils/SchemaUtils.h"
 
 #define COMMANDRETRYHANDLER_TEST(TestName) GDK_TEST(Core, CommandRetryHandler, TestName)
 
@@ -13,10 +14,10 @@ namespace SpatialGDK
 {
 namespace
 {
-const Worker_EntityId TestEntityId = 1;
-const Worker_RequestId TestRequestId = 2;
-const Worker_RequestId RetryRequestId = -TestRequestId;
-const Worker_ComponentId TestComponentId = 3;
+const FSpatialEntityId TestEntityId{ 1 };
+const Worker_RequestId TestRequestId{ 2 };
+const Worker_RequestId RetryRequestId{ -TestRequestId };
+const Worker_ComponentId TestComponentId{ 3 };
 const double TestComponentValue = 20;
 const Worker_CommandIndex TestCommandIndex = 4;
 const uint32 TestNumOfEntities = 10;
@@ -31,7 +32,7 @@ EntityQuery CreateTestEntityQuery()
 {
 	Worker_EntityQuery WorkerEntityQuery{};
 	WorkerEntityQuery.constraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
-	WorkerEntityQuery.constraint.constraint.entity_id_constraint = Worker_EntityIdConstraint{ TestEntityId };
+	WorkerEntityQuery.constraint.constraint.entity_id_constraint = Worker_EntityIdConstraint{ ToWorkerEntityId(TestEntityId) };
 	WorkerEntityQuery.snapshot_result_type_component_id_count = 1;
 	TArray<Worker_ComponentId> WorkerComponentIds = { TestComponentId };
 	WorkerEntityQuery.snapshot_result_type_component_ids = WorkerComponentIds.GetData();

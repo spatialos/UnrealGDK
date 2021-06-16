@@ -77,7 +77,7 @@ void SpatialDebuggerSystem::Advance()
 	}
 }
 
-void SpatialDebuggerSystem::UpdateSpatialDebuggingData(Worker_EntityId EntityId, const AActor& Actor)
+void SpatialDebuggerSystem::UpdateSpatialDebuggingData(FSpatialEntityId EntityId, const AActor& Actor)
 {
 	TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
 	const bool bIsLocked = NetDriver->LockingPolicy->IsLocked(&Actor);
@@ -89,9 +89,9 @@ void SpatialDebuggerSystem::UpdateSpatialDebuggingData(Worker_EntityId EntityId,
 	}
 }
 
-void SpatialDebuggerSystem::OnEntityAdded(const Worker_EntityId EntityId)
+void SpatialDebuggerSystem::OnEntityAdded(const FSpatialEntityId EntityId)
 {
-	if (!ensureAlwaysMsgf(NetDriver != nullptr, TEXT("NetDriver was nullptr in OnEntityAdded %lld callback"), EntityId))
+	if (!ensureAlwaysMsgf(NetDriver != nullptr, TEXT("NetDriver was nullptr in OnEntityAdded %s callback"), *EntityId.ToString()))
 	{
 		return;
 	}
@@ -106,7 +106,8 @@ void SpatialDebuggerSystem::OnEntityAdded(const Worker_EntityId EntityId)
 		return;
 	}
 
-	if (!ensureAlwaysMsgf(!EntityActorMapping.Contains(EntityId), TEXT("NetDriver was nullptr in OnEntityAdded %lld callback"), EntityId))
+	if (!ensureAlwaysMsgf(!EntityActorMapping.Contains(EntityId), TEXT("NetDriver was nullptr in OnEntityAdded %s callback"),
+						  *EntityId.ToString()))
 	{
 		return;
 	}
@@ -119,7 +120,7 @@ void SpatialDebuggerSystem::OnEntityAdded(const Worker_EntityId EntityId)
 	}
 }
 
-void SpatialDebuggerSystem::OnEntityRemoved(const Worker_EntityId EntityId)
+void SpatialDebuggerSystem::OnEntityRemoved(const FSpatialEntityId EntityId)
 {
 	if (!NetDriver->IsServer())
 	{
@@ -127,7 +128,7 @@ void SpatialDebuggerSystem::OnEntityRemoved(const Worker_EntityId EntityId)
 	}
 }
 
-void SpatialDebuggerSystem::ActorAuthorityGained(const Worker_EntityId EntityId) const
+void SpatialDebuggerSystem::ActorAuthorityGained(const FSpatialEntityId EntityId) const
 {
 	if (!NetDriver->VirtualWorkerTranslator.IsValid())
 	{
@@ -166,11 +167,12 @@ void SpatialDebuggerSystem::ActorAuthorityGained(const Worker_EntityId EntityId)
 	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
 }
 
-void SpatialDebuggerSystem::ActorAuthorityIntentChanged(Worker_EntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
+void SpatialDebuggerSystem::ActorAuthorityIntentChanged(FSpatialEntityId EntityId, VirtualWorkerId NewIntentVirtualWorkerId) const
 {
 	TOptional<SpatialDebugging> DebuggingInfo = GetDebuggingData(EntityId);
 	if (!ensureAlwaysMsgf(DebuggingInfo.IsSet(),
-						  TEXT("Failed to process auth intent change for entity %lld because debugging info was invalid"), EntityId))
+						  TEXT("Failed to process auth intent change for entity %s because debugging info was invalid"),
+						  *EntityId.ToString()))
 	{
 		return;
 	}
@@ -190,7 +192,7 @@ void SpatialDebuggerSystem::ActorAuthorityIntentChanged(Worker_EntityId EntityId
 	NetDriver->Connection->SendComponentUpdate(EntityId, &DebuggingUpdate);
 }
 
-TOptional<SpatialDebugging> SpatialDebuggerSystem::GetDebuggingData(Worker_EntityId Entity) const
+TOptional<SpatialDebugging> SpatialDebuggerSystem::GetDebuggingData(FSpatialEntityId Entity) const
 {
 	const EntityViewElement* EntityViewElementPtr = SubView->GetView().Find(Entity);
 
@@ -210,7 +212,7 @@ TOptional<SpatialDebugging> SpatialDebuggerSystem::GetDebuggingData(Worker_Entit
 	return {};
 }
 
-AActor* SpatialDebuggerSystem::GetActor(Worker_EntityId EntityId) const
+AActor* SpatialDebuggerSystem::GetActor(FSpatialEntityId EntityId) const
 {
 	const TWeakObjectPtr<AActor>* ActorPtr = EntityActorMapping.Find(EntityId);
 

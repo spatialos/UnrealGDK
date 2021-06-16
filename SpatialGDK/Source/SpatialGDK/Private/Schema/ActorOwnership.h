@@ -18,13 +18,13 @@ struct ActorOwnership
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::ACTOR_OWNERSHIP_COMPONENT_ID;
 
-	explicit ActorOwnership(Worker_EntityId InLeaderEntityId)
+	explicit ActorOwnership(FSpatialEntityId InLeaderEntityId)
 		: OwnerActorEntityId(InLeaderEntityId)
 	{
 	}
 
 	ActorOwnership()
-		: ActorOwnership(Worker_EntityId(SpatialConstants::INVALID_ENTITY_ID))
+		: ActorOwnership(FSpatialEntityId(SpatialConstants::INVALID_ENTITY_ID))
 	{
 	}
 
@@ -44,7 +44,7 @@ struct ActorOwnership
 
 	void WriteSchema(Schema_Object* Schema) const;
 
-	Worker_EntityId OwnerActorEntityId;
+	FSpatialEntityId OwnerActorEntityId;
 
 	friend bool operator==(const ActorOwnership& Lhs, const ActorOwnership& Rhs)
 	{

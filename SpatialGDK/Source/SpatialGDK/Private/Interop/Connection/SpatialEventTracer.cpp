@@ -44,7 +44,7 @@ void SpatialEventTracer::TraceCallback(void* UserData, const Trace_Item* Item)
 	const bool bTrackFileSize = EventTracer->MaxFileSize != 0;
 	if (!bTrackFileSize || (EventTracer->BytesWrittenToStream + ItemSize <= EventTracer->MaxFileSize))
 	{
-		if (bTrackFileSize) 
+		if (bTrackFileSize)
 		{
 			EventTracer->BytesWrittenToStream += ItemSize;
 		}
@@ -222,7 +222,7 @@ void SpatialEventTracer::BeginOpsForFrame()
 
 void SpatialEventTracer::AddEntity(const Worker_AddEntityOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	Worker_EntityId EntityId = Op.entity_id;
+	FSpatialEntityId EntityId = ToSpatialEntityId(Op.entity_id);
 	TraceEvent(RECEIVE_CREATE_ENTITY_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1,
 			   [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
 				   EventBuilder.AddEntityId(EntityId);
@@ -231,7 +231,7 @@ void SpatialEventTracer::AddEntity(const Worker_AddEntityOp& Op, const FSpatialG
 
 void SpatialEventTracer::RemoveEntity(const Worker_RemoveEntityOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	Worker_EntityId EntityId = Op.entity_id;
+	FSpatialEntityId EntityId = ToSpatialEntityId(Op.entity_id);
 	TraceEvent(RECEIVE_REMOVE_ENTITY_EVENT_NAME, "", SpanId.GetConstId(), /* NumCauses */ 1,
 			   [EntityId](FSpatialTraceEventDataBuilder& EventBuilder) {
 				   EventBuilder.AddEntityId(EntityId);
@@ -240,7 +240,7 @@ void SpatialEventTracer::RemoveEntity(const Worker_RemoveEntityOp& Op, const FSp
 
 void SpatialEventTracer::AuthorityChange(const Worker_ComponentSetAuthorityChangeOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	Worker_EntityId EntityId = Op.entity_id;
+	FSpatialEntityId EntityId = ToSpatialEntityId(Op.entity_id);
 	Worker_ComponentSetId ComponentSetId = Op.component_set_id;
 	Worker_Authority Authority = static_cast<Worker_Authority>(Op.authority);
 
@@ -254,18 +254,19 @@ void SpatialEventTracer::AuthorityChange(const Worker_ComponentSetAuthorityChang
 
 void SpatialEventTracer::AddComponent(const Worker_AddComponentOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	TArray<FSpatialGDKSpanId>& StoredSpanIds = EntityComponentSpanIds.FindOrAdd({ Op.entity_id, Op.data.component_id });
+	TArray<FSpatialGDKSpanId>& StoredSpanIds = EntityComponentSpanIds.FindOrAdd({ ToSpatialEntityId(Op.entity_id), Op.data.component_id });
 	StoredSpanIds.Push(SpanId);
 }
 
 void SpatialEventTracer::RemoveComponent(const Worker_RemoveComponentOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	EntityComponentSpanIds.Remove({ Op.entity_id, Op.component_id });
+	EntityComponentSpanIds.Remove({ ToSpatialEntityId(Op.entity_id), Op.component_id });
 }
 
 void SpatialEventTracer::UpdateComponent(const Worker_ComponentUpdateOp& Op, const FSpatialGDKSpanId& SpanId)
 {
-	TArray<FSpatialGDKSpanId>& StoredSpanIds = EntityComponentSpanIds.FindOrAdd({ Op.entity_id, Op.update.component_id });
+	TArray<FSpatialGDKSpanId>& StoredSpanIds =
+		EntityComponentSpanIds.FindOrAdd({ ToSpatialEntityId(Op.entity_id), Op.update.component_id });
 	StoredSpanIds.Push(SpanId);
 }
 

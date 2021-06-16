@@ -537,7 +537,7 @@ const TMap<float, Worker_ComponentId>& USpatialClassInfoManager::GetNetCullDista
 	return SchemaDatabase->NetCullDistanceToComponentId;
 }
 
-const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject* Object, Worker_EntityId EntityId,
+const FClassInfo* USpatialClassInfoManager::GetClassInfoForNewSubobject(const UObject* Object, FSpatialEntityId EntityId,
 																		USpatialPackageMapClient* PackageMapClient)
 {
 	const FClassInfo* Info = nullptr;

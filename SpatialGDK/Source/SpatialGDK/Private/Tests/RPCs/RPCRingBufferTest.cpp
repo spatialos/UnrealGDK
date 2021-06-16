@@ -94,9 +94,9 @@ public:
 	}
 
 private:
-	RingBufferComponent& GetBufferComponent(Worker_EntityId EntityId) { return Data.Buffers[EntityId]; }
+	RingBufferComponent& GetBufferComponent(FSpatialEntityId EntityId) { return Data.Buffers[EntityId]; }
 
-	ACKComponent& GetACKComponent(Worker_EntityId EntityId) { return Data.ACKs[EntityId]; }
+	ACKComponent& GetACKComponent(FSpatialEntityId EntityId) { return Data.ACKs[EntityId]; }
 
 	EntityComponentMock& Data;
 	LocalRole Role;
@@ -121,7 +121,7 @@ struct RPCRingBufferTest_Fixture
 	{
 	}
 
-	void AddEntity(Worker_EntityId EntityId)
+	void AddEntity(FSpatialEntityId EntityId)
 	{
 		Data.Buffers.Add(EntityId);
 		Data.ACKs.Add(EntityId);
@@ -139,13 +139,13 @@ RPCRINGBUFFER_TEST(TestRingBufferRPCCapacityUpdate)
 	const uint32 BufferSize = 1;
 	RPCRingBufferTest_Fixture Fixture(BufferSize);
 
-	const Worker_EntityId Entity = 1;
+	const FSpatialEntityId Entity{ 1 };
 
 	Fixture.AddEntity(Entity);
 	Fixture.ServerQueue.Push(Entity, Payload(1));
 
 	bool bSentRPC = false;
-	auto SentRPCCallback = [&bSentRPC](FName, Worker_EntityId, Worker_ComponentId, uint64, const RPCEmptyData&) {
+	auto SentRPCCallback = [&bSentRPC](FName, FSpatialEntityId, Worker_ComponentId, uint64, const RPCEmptyData&) {
 		bSentRPC = true;
 	};
 
@@ -158,11 +158,11 @@ RPCRINGBUFFER_TEST(TestRingBufferRPCCapacityUpdate)
 	Fixture.ServerQueue.FlushAll(WritingCtx, SentRPCCallback);
 	TestFalse(TEXT("RPC Sent only once"), bSentRPC);
 
-	auto CanExtractCallback = [](Worker_EntityId) {
+	auto CanExtractCallback = [](FSpatialEntityId) {
 		return true;
 	};
 	bool bExtractedRPC = false;
-	auto ExtractCallback = [this, &bExtractedRPC](Worker_EntityId, const Payload& Data, const RPCEmptyData&) {
+	auto ExtractCallback = [this, &bExtractedRPC](FSpatialEntityId, const Payload& Data, const RPCEmptyData&) {
 		bExtractedRPC = true;
 		return true;
 	};
@@ -213,13 +213,15 @@ RPCRINGBUFFER_TEST(TestRingBufferPartialExtractionAndOverflow)
 	const uint32 BufferSize = 4;
 	RPCRingBufferTest_Fixture Fixture(BufferSize);
 
-	const Worker_EntityId EntityForTest = 1;
+	const FSpatialEntityId EntityForTest{ 1 };
+
+	const FSpatialEntityId EntityForTest2{ 1 };
 
 	Fixture.AddEntity(EntityForTest);
-	Fixture.AddEntity(EntityForTest + 1);
+	Fixture.AddEntity(EntityForTest2);
 
 	bool bQueueOverflowed = false;
-	auto QueueErrorCallback = [&bQueueOverflowed, EntityForTest, this](FName, Worker_EntityId Entity, QueueError Error) {
+	auto QueueErrorCallback = [&bQueueOverflowed, EntityForTest, this](FName, FSpatialEntityId Entity, QueueError Error) {
 		TestEqual(TEXT("Test right entity is reported"), Entity, EntityForTest);
 		TestEqual(TEXT("Test Queue error is overflow"), Error, QueueError::BufferOverflow);
 		bQueueOverflowed = true;
@@ -237,14 +239,14 @@ RPCRINGBUFFER_TEST(TestRingBufferPartialExtractionAndOverflow)
 	RPCWritingContext WritingCtx(Fixture.ServerQueue.Name, RPCCallbacks::UpdateWritten());
 	Fixture.ServerQueue.FlushAll(WritingCtx);
 
-	auto CanExtractCallback = [](Worker_EntityId) {
+	auto CanExtractCallback = [](FSpatialEntityId) {
 		return true;
 	};
 
 	int32 ExpectedRpcId = 1;
 	int32 Extracted = 0;
 	int32 NumRPCToExtract = BufferSize / 2;
-	auto ExtractCallback = [this, &NumRPCToExtract, &Extracted, &ExpectedRpcId, EntityForTest](Worker_EntityId Entity, const Payload& Data,
+	auto ExtractCallback = [this, &NumRPCToExtract, &Extracted, &ExpectedRpcId, EntityForTest](FSpatialEntityId Entity, const Payload& Data,
 																							   const RPCEmptyData&) {
 		if (Extracted >= NumRPCToExtract)
 		{

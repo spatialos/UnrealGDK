@@ -29,15 +29,15 @@ UObject* FClientNetLoadActorHelper::GetReusableDynamicSubObject(const FUnrealObj
 		{
 			NetDriver->PackageMap->ResolveSubobject(DynamicSubObject, ObjectRef);
 			UE_LOG(LogClientNetLoadActorHelper, Verbose,
-				   TEXT("Found reusable dynamic SubObject (ObjectRef offset: %u) for ClientNetLoad actor with entityId %d"),
-				   ObjectRef.Offset, ObjectRef.Entity);
+				   TEXT("Found reusable dynamic SubObject (ObjectRef offset: %u) for ClientNetLoad actor with entityId %s"),
+				   ObjectRef.Offset, *ObjectRef.Entity.ToString());
 			return DynamicSubObject;
 		}
 	}
 	return nullptr;
 }
 
-void FClientNetLoadActorHelper::EntityRemoved(const Worker_EntityId EntityId, const AActor& Actor)
+void FClientNetLoadActorHelper::EntityRemoved(const FSpatialEntityId EntityId, const AActor& Actor)
 {
 	ClearDynamicSubobjectMetadata(EntityId);
 	if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
@@ -53,8 +53,8 @@ void FClientNetLoadActorHelper::EntityRemoved(const Worker_EntityId EntityId, co
 					SaveDynamicSubobjectMetadata(SubObjectRef, SubObjectNetGUID);
 					UE_LOG(
 						LogClientNetLoadActorHelper, Verbose,
-						TEXT("Saved reusable dynamic SubObject ObjectRef (ObjectRef offset: %u) for ClientNetLoad actor with entityId %d"),
-						SubObjectRef.Offset, SubObjectRef.Entity);
+						TEXT("Saved reusable dynamic SubObject ObjectRef (ObjectRef offset: %u) for ClientNetLoad actor with entityId %s"),
+						SubObjectRef.Offset, *SubObjectRef.Entity.ToString());
 				}
 			}
 		}
@@ -79,12 +79,12 @@ void FClientNetLoadActorHelper::SaveDynamicSubobjectMetadata(const FUnrealObject
 	SubobjectOffsetToNetGuid.Emplace(ObjectRef.Offset, NetGUID);
 }
 
-void FClientNetLoadActorHelper::ClearDynamicSubobjectMetadata(const Worker_EntityId InEntityId)
+void FClientNetLoadActorHelper::ClearDynamicSubobjectMetadata(const FSpatialEntityId InEntityId)
 {
 	SpatialEntityRemovedSubobjectMetadata.Remove(InEntityId);
 }
 
-void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_EntityId EntityId, const TArray<ComponentData>& NewComponents)
+void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const FSpatialEntityId EntityId, const TArray<ComponentData>& NewComponents)
 {
 	if (TMap<ObjectOffset, FNetworkGUID>* SubobjectOffsetToNetGuid = SpatialEntityRemovedSubobjectMetadata.Find(EntityId))
 	{
@@ -99,9 +99,9 @@ void FClientNetLoadActorHelper::RemoveRuntimeRemovedComponents(const Worker_Enti
 				if (UObject* Object = NetDriver->PackageMap->GetObjectFromNetGUID(OffsetToNetGuidIterator->Value, false))
 				{
 					UE_LOG(LogClientNetLoadActorHelper, Verbose,
-						   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %d was destroyed while the "
+						   TEXT("A SubObject (ObjectRef offset: %u) on bNetLoadOnClient actor with entityId %s was destroyed while the "
 								"actor was out of the client's interest. Destroying the SubObject now."),
-						   ObjectOffset, EntityId);
+						   ObjectOffset, *EntityId.ToString());
 					const FUnrealObjectRef ObjectRef(EntityId, ObjectOffset);
 					NetDriver->ActorSystem.Get()->DestroySubObject(EntityId, *Object, ObjectRef);
 				}

@@ -18,20 +18,20 @@ struct CrossServerRPCInfo
 		, RPCId(0)
 	{
 	}
-	CrossServerRPCInfo(Worker_EntityId InCounterpart, uint64 InRPCId)
+	CrossServerRPCInfo(FSpatialEntityId InCounterpart, uint64 InRPCId)
 		: Entity(InCounterpart)
 		, RPCId(InRPCId)
 	{
 	}
 	bool operator==(const CrossServerRPCInfo& iInfo) const { return Entity == iInfo.Entity && RPCId == iInfo.RPCId; }
-	Worker_EntityId Entity;
+	FSpatialEntityId Entity;
 	uint64 RPCId;
 
 	static CrossServerRPCInfo ReadFromSchema(Schema_Object* Object, Schema_FieldId Id)
 	{
 		Schema_Object* InfoObject = Schema_GetObject(Object, Id);
 
-		Worker_EntityId EntityId = Schema_GetEntityId(InfoObject, 1);
+		FSpatialEntityId EntityId = GetEntityIdFromSchema(InfoObject, 1);
 		uint64 RPCId = Schema_GetUint64(InfoObject, 2);
 
 		return CrossServerRPCInfo(EntityId, RPCId);
@@ -41,7 +41,7 @@ struct CrossServerRPCInfo
 	{
 		Schema_Object* InfoObject = Schema_AddObject(Object, Id);
 
-		Schema_AddEntityId(InfoObject, 1, Entity);
+		AddEntityIdToSchema(InfoObject, 1, Entity);
 		Schema_AddUint64(InfoObject, 2, RPCId);
 	}
 };
@@ -58,7 +58,7 @@ struct RPCTarget : CrossServerRPCInfo
 struct RPCSender : CrossServerRPCInfo
 {
 	RPCSender() = default;
-	RPCSender(Worker_EntityId Sender, uint64 RPCId)
+	RPCSender(FSpatialEntityId Sender, uint64 RPCId)
 		: CrossServerRPCInfo(Sender, RPCId)
 	{
 	}

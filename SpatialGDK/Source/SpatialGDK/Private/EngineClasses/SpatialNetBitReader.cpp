@@ -33,7 +33,7 @@ void FSpatialNetBitReader::DeserializeObjectRef(FArchive& Archive, FUnrealObject
 {
 	int64 EntityId;
 	Archive << EntityId;
-	ObjectRef.Entity = EntityId;
+	ObjectRef.Entity.EntityId = EntityId;
 	Archive << ObjectRef.Offset;
 
 	uint8 HasPath;

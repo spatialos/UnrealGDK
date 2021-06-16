@@ -24,9 +24,9 @@ public:
 	// Ensure all local changes have been applied and return the resulting MessagesToSend.
 	TUniquePtr<MessagesToSend> FlushLocalChanges();
 
-	void SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId);
-	void SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId);
-	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
+	void SendAddComponent(FSpatialEntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId);
+	void SendComponentUpdate(FSpatialEntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId);
+	void SendRemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId);
 	void SendReserveEntityIdsRequest(ReserveEntityIdsRequest Request);
 	void SendCreateEntityRequest(CreateEntityRequest Request);
 	void SendDeleteEntityRequest(DeleteEntityRequest Request);

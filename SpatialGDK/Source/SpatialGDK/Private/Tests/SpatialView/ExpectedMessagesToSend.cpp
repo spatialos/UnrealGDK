@@ -5,7 +5,7 @@
 
 namespace SpatialGDK
 {
-ExpectedMessagesToSend& ExpectedMessagesToSend::AddCreateEntityRequest(Worker_RequestId RequestId, Worker_EntityId EntityId,
+ExpectedMessagesToSend& ExpectedMessagesToSend::AddCreateEntityRequest(Worker_RequestId RequestId, FSpatialEntityId EntityId,
 																	   TArray<ComponentData> ComponentData)
 {
 	CreateEntityRequest TestCreateEntityRequest;
@@ -17,14 +17,14 @@ ExpectedMessagesToSend& ExpectedMessagesToSend::AddCreateEntityRequest(Worker_Re
 	return *this;
 }
 
-ExpectedMessagesToSend& ExpectedMessagesToSend::AddEntityCommandRequest(Worker_RequestId RequestId, Worker_EntityId EntityId,
+ExpectedMessagesToSend& ExpectedMessagesToSend::AddEntityCommandRequest(Worker_RequestId RequestId, FSpatialEntityId EntityId,
 																		Worker_ComponentId ComponentId, Worker_CommandIndex CommandIndex)
 {
 	EntityCommandRequests.Push({ EntityId, RequestId, CommandRequest(ComponentId, CommandIndex), 0 });
 	return *this;
 }
 
-ExpectedMessagesToSend& ExpectedMessagesToSend::AddDeleteEntityCommandRequest(Worker_RequestId RequestId, Worker_EntityId EntityId)
+ExpectedMessagesToSend& ExpectedMessagesToSend::AddDeleteEntityCommandRequest(Worker_RequestId RequestId, FSpatialEntityId EntityId)
 {
 	DeleteEntityRequests.Push({ RequestId, EntityId, 0 });
 	return *this;

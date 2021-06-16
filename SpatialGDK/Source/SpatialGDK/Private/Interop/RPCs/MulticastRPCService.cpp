@@ -122,7 +122,7 @@ void MulticastRPCService::ProcessChanges()
 	}
 }
 
-void MulticastRPCService::EntityAdded(const Worker_EntityId EntityId)
+void MulticastRPCService::EntityAdded(const FSpatialEntityId EntityId)
 {
 	OnCheckoutMulticastRPCComponentOnEntity(EntityId);
 	for (const Worker_ComponentId ComponentId : SubView->GetView()[EntityId].Authority)
@@ -131,7 +131,7 @@ void MulticastRPCService::EntityAdded(const Worker_EntityId EntityId)
 	}
 }
 
-void MulticastRPCService::EntityRefresh(Worker_EntityId EntityId)
+void MulticastRPCService::EntityRefresh(FSpatialEntityId EntityId)
 {
 	if (SubView->HasAuthority(EntityId, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID))
 	{
@@ -146,7 +146,7 @@ void MulticastRPCService::EntityRefresh(Worker_EntityId EntityId)
 	ExtractRPCs(EntityId);
 }
 
-void MulticastRPCService::ComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+void MulticastRPCService::ComponentUpdate(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId)
 {
 	if (ComponentId != SpatialConstants::MULTICAST_RPCS_COMPONENT_ID)
 	{
@@ -155,7 +155,7 @@ void MulticastRPCService::ComponentUpdate(const Worker_EntityId EntityId, const 
 	ExtractRPCs(EntityId);
 }
 
-void MulticastRPCService::AuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
+void MulticastRPCService::AuthorityGained(const FSpatialEntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
 	if (ComponentSetId != SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 	{
@@ -164,7 +164,7 @@ void MulticastRPCService::AuthorityGained(const Worker_EntityId EntityId, const 
 	OnEndpointAuthorityGained(EntityId, ComponentSetId);
 }
 
-void MulticastRPCService::AuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
+void MulticastRPCService::AuthorityLost(const FSpatialEntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
 	if (ComponentSetId != SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID)
 	{
@@ -173,7 +173,7 @@ void MulticastRPCService::AuthorityLost(const Worker_EntityId EntityId, const Wo
 	OnEndpointAuthorityLost(EntityId, ComponentSetId);
 }
 
-void MulticastRPCService::PopulateDataStore(const Worker_EntityId EntityId)
+void MulticastRPCService::PopulateDataStore(const FSpatialEntityId EntityId)
 {
 	MulticastDataStore.Emplace(
 		EntityId, MulticastRPCs(SubView->GetView()[EntityId]
@@ -181,12 +181,12 @@ void MulticastRPCService::PopulateDataStore(const Worker_EntityId EntityId)
 									->GetUnderlying()));
 }
 
-void MulticastRPCService::ApplyComponentUpdate(const Worker_EntityId EntityId, Schema_ComponentUpdate* Update)
+void MulticastRPCService::ApplyComponentUpdate(const FSpatialEntityId EntityId, Schema_ComponentUpdate* Update)
 {
 	MulticastDataStore[EntityId].ApplyComponentUpdate(Update);
 }
 
-void MulticastRPCService::OnCheckoutMulticastRPCComponentOnEntity(const Worker_EntityId EntityId)
+void MulticastRPCService::OnCheckoutMulticastRPCComponentOnEntity(const FSpatialEntityId EntityId)
 {
 	const MulticastRPCs& Component = MulticastDataStore[EntityId];
 
@@ -194,12 +194,12 @@ void MulticastRPCService::OnCheckoutMulticastRPCComponentOnEntity(const Worker_E
 	LastSeenMulticastRPCIds.Add(EntityId, Component.MulticastRPCBuffer.LastSentRPCId);
 }
 
-void MulticastRPCService::OnRemoveMulticastRPCComponentForEntity(const Worker_EntityId EntityId)
+void MulticastRPCService::OnRemoveMulticastRPCComponentForEntity(const FSpatialEntityId EntityId)
 {
 	LastSeenMulticastRPCIds.Remove(EntityId);
 }
 
-void MulticastRPCService::OnEndpointAuthorityGained(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
+void MulticastRPCService::OnEndpointAuthorityGained(const FSpatialEntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
 	const MulticastRPCs& Component = MulticastDataStore[EntityId];
 
@@ -220,21 +220,21 @@ void MulticastRPCService::OnEndpointAuthorityGained(const Worker_EntityId Entity
 	}
 }
 
-void MulticastRPCService::OnEndpointAuthorityLost(const Worker_EntityId EntityId, const Worker_ComponentSetId ComponentSetId)
+void MulticastRPCService::OnEndpointAuthorityLost(const FSpatialEntityId EntityId, const Worker_ComponentSetId ComponentSetId)
 {
 	// Set last seen to last sent, so we don't process own RPCs after crossing the boundary.
 	LastSeenMulticastRPCIds.Add(EntityId, RPCStore->LastSentRPCIds[EntityRPCType(EntityId, ERPCType::NetMulticast)]);
 	RPCStore->LastSentRPCIds.Remove(EntityRPCType(EntityId, ERPCType::NetMulticast));
 }
 
-void MulticastRPCService::ExtractRPCs(const Worker_EntityId EntityId)
+void MulticastRPCService::ExtractRPCs(const FSpatialEntityId EntityId)
 {
 	if (!LastSeenMulticastRPCIds.Contains(EntityId))
 	{
 		UE_LOG(LogMulticastRPCService, Warning,
 			   TEXT("Tried to extract RPCs but no entry in Last Seen Map! This can happen after server travel. Entity: %lld, type: "
 					"Multicast"),
-			   EntityId);
+			   *EntityId.ToString());
 		return;
 	}
 	const uint64 LastSeenRPCId = LastSeenMulticastRPCIds[EntityId];
@@ -253,7 +253,8 @@ void MulticastRPCService::ExtractRPCs(const Worker_EntityId EntityId)
 				LogMulticastRPCService, Warning,
 				TEXT("MulticastRPCService::ExtractRPCsForType: RPCs were overwritten without being processed! Entity: %lld, RPC type: %s, "
 					 "last seen RPC ID: %d, last sent ID: %d, buffer size: %d"),
-				EntityId, *SpatialConstants::RPCTypeToString(ERPCType::NetMulticast), LastSeenRPCId, Buffer.LastSentRPCId, BufferSize);
+				*EntityId.ToString(), *SpatialConstants::RPCTypeToString(ERPCType::NetMulticast), LastSeenRPCId, Buffer.LastSentRPCId,
+				BufferSize);
 			FirstRPCIdToRead = Buffer.LastSentRPCId - BufferSize + 1;
 		}
 
@@ -268,18 +269,18 @@ void MulticastRPCService::ExtractRPCs(const Worker_EntityId EntityId)
 			else
 			{
 				UE_LOG(LogMulticastRPCService, Warning,
-					   TEXT("MulticastRPCService::ExtractRPCsForType: Ring buffer element empty. Entity: %lld, RPC type: %s, empty element "
+					   TEXT("MulticastRPCService::ExtractRPCsForType: Ring buffer element empty. Entity: %s, RPC type: %s, empty element "
 							"RPC id: %d"),
-					   EntityId, *SpatialConstants::RPCTypeToString(ERPCType::NetMulticast), RPCId);
+					   *EntityId.ToString(), *SpatialConstants::RPCTypeToString(ERPCType::NetMulticast), RPCId);
 			}
 		}
 	}
 	else
 	{
 		UE_LOG(LogMulticastRPCService, Warning,
-			   TEXT("MulticastRPCService::ExtractRPCsForType: Last sent RPC has smaller ID than last seen RPC. Entity: %lld, RPC type: %s, "
+			   TEXT("MulticastRPCService::ExtractRPCsForType: Last sent RPC has smaller ID than last seen RPC. Entity: %s, RPC type: %s, "
 					"last sent ID: %d, last seen ID: %d"),
-			   EntityId, *SpatialConstants::RPCTypeToString(ERPCType::NetMulticast), Buffer.LastSentRPCId, LastSeenRPCId);
+			   *EntityId.ToString(), *SpatialConstants::RPCTypeToString(ERPCType::NetMulticast), Buffer.LastSentRPCId, LastSeenRPCId);
 	}
 
 	if (LastProcessedRPCId > LastSeenRPCId)

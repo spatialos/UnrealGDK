@@ -24,8 +24,8 @@ public:
 private:
 	void ProcessComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
 	void ProcessComponentAdd(const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
-	void ProcessAuthorityGain(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
-	void ProcessEntityAdd(const Worker_EntityId EntityId);
+	void ProcessAuthorityGain(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId);
+	void ProcessEntityAdd(const FSpatialEntityId EntityId);
 
 	void InitializeVirtualWorkerTranslationManager();
 	void MaybeClaimSnapshotPartition();

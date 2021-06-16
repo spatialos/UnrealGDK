@@ -44,17 +44,17 @@ public:
 	virtual const TArray<SpatialGDK::EntityDelta>& GetEntityDeltas() override;
 	virtual const TArray<Worker_Op>& GetWorkerMessages() override;
 	virtual Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities, const SpatialGDK::FRetryData& Data) override;
-	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const Worker_EntityId* EntityId,
+	virtual Worker_RequestId SendCreateEntityRequest(TArray<FWorkerComponentData> Components, const FSpatialEntityId* EntityId,
 													 const SpatialGDK::FRetryData& Data, const FSpatialGDKSpanId& SpanId = {}) override;
-	virtual Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId, const SpatialGDK::FRetryData& Data,
+	virtual Worker_RequestId SendDeleteEntityRequest(FSpatialEntityId EntityId, const SpatialGDK::FRetryData& Data,
 													 const FSpatialGDKSpanId& SpanId = {}) override;
-	virtual void SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
+	virtual void SendAddComponent(FSpatialEntityId EntityId, FWorkerComponentData* ComponentData,
 								  const FSpatialGDKSpanId& SpanId = {}) override;
-	virtual void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+	virtual void SendRemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId,
 									 const FSpatialGDKSpanId& SpanId = {}) override;
-	virtual void SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
+	virtual void SendComponentUpdate(FSpatialEntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 									 const FSpatialGDKSpanId& SpanId = {}) override;
-	virtual Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
+	virtual Worker_RequestId SendCommandRequest(FSpatialEntityId EntityId, Worker_CommandRequest* Request,
 												const SpatialGDK::FRetryData& Data, const FSpatialGDKSpanId& SpanId = {}) override;
 	virtual void SendCommandResponse(Worker_RequestId RequestId, Worker_CommandResponse* Response,
 									 const FSpatialGDKSpanId& SpanId = {}) override;
@@ -104,13 +104,13 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendReserveEntityIdsRequest(uint3
 }
 
 Worker_RequestId SpatialOSWorkerConnectionSpy::SendCreateEntityRequest(TArray<FWorkerComponentData> Components,
-																	   const Worker_EntityId* EntityId, const SpatialGDK::FRetryData& Data,
+																	   const FSpatialEntityId* EntityId, const SpatialGDK::FRetryData& Data,
 																	   const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_EntityId EntityId, const SpatialGDK::FRetryData& Data,
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(FSpatialEntityId EntityId, const SpatialGDK::FRetryData& Data,
 																	   const FSpatialGDKSpanId& SpanId)
 {
 	if (Coordinator)
@@ -121,12 +121,12 @@ Worker_RequestId SpatialOSWorkerConnectionSpy::SendDeleteEntityRequest(Worker_En
 	return NextRequestId++;
 }
 
-void SpatialOSWorkerConnectionSpy::SendAddComponent(Worker_EntityId EntityId, FWorkerComponentData* ComponentData,
+void SpatialOSWorkerConnectionSpy::SendAddComponent(FSpatialEntityId EntityId, FWorkerComponentData* ComponentData,
 													const FSpatialGDKSpanId& SpanId)
 {
 }
 
-void SpatialOSWorkerConnectionSpy::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+void SpatialOSWorkerConnectionSpy::SendRemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId,
 													   const FSpatialGDKSpanId& SpanId)
 {
 	if (Coordinator)
@@ -136,7 +136,7 @@ void SpatialOSWorkerConnectionSpy::SendRemoveComponent(Worker_EntityId EntityId,
 	Builder.RemoveComponent(EntityId, ComponentId);
 }
 
-void SpatialOSWorkerConnectionSpy::SendComponentUpdate(Worker_EntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
+void SpatialOSWorkerConnectionSpy::SendComponentUpdate(FSpatialEntityId EntityId, FWorkerComponentUpdate* ComponentUpdate,
 													   const FSpatialGDKSpanId& SpanId)
 {
 	bHadUpdates = true;
@@ -152,7 +152,7 @@ void SpatialOSWorkerConnectionSpy::SendComponentUpdate(Worker_EntityId EntityId,
 	Builder.UpdateComponent(EntityId, SpatialGDK::ComponentUpdate(MoveTemp(UpdateData), ComponentUpdate->component_id));
 }
 
-Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(Worker_EntityId EntityId, Worker_CommandRequest* Request,
+Worker_RequestId SpatialOSWorkerConnectionSpy::SendCommandRequest(FSpatialEntityId EntityId, Worker_CommandRequest* Request,
 																  const SpatialGDK::FRetryData& Data, const FSpatialGDKSpanId& SpanId)
 {
 	return NextRequestId++;
@@ -232,7 +232,7 @@ public:
 
 	virtual const FString& GetWorkerId() const override { return WorkerId; }
 
-	virtual Worker_EntityId GetWorkerSystemEntityId() const override { return 0; }
+	virtual FSpatialEntityId GetWorkerSystemEntityId() const override { return FSpatialEntityId(); }
 
 private:
 	TArray<TArray<OpList>> ListsOfOpLists;
@@ -259,7 +259,7 @@ static FComponentSetData const& GetComponentSetData()
 	return s_ComponentSetData;
 }
 
-void AddEntityAndCrossServerComponents(EntityComponentOpListBuilder& Builder, Worker_EntityId Id)
+void AddEntityAndCrossServerComponents(EntityComponentOpListBuilder& Builder, FSpatialEntityId Id)
 {
 	Builder.AddEntity(Id);
 	Builder.AddComponent(Id, ComponentData{ SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID });
@@ -270,7 +270,7 @@ void AddEntityAndCrossServerComponents(EntityComponentOpListBuilder& Builder, Wo
 	Builder.AddComponent(Id, ComponentData{ SpatialConstants::ACTOR_AUTH_TAG_COMPONENT_ID });
 }
 
-void AddComponentAuthForRoutingWorker(EntityComponentOpListBuilder& Builder, Worker_EntityId Id)
+void AddComponentAuthForRoutingWorker(EntityComponentOpListBuilder& Builder, FSpatialEntityId Id)
 {
 	TArray<ComponentData> CanonicalData;
 	CanonicalData.Emplace(ComponentData{ SpatialConstants::CROSS_SERVER_SENDER_ACK_ENDPOINT_COMPONENT_ID });
@@ -279,7 +279,7 @@ void AddComponentAuthForRoutingWorker(EntityComponentOpListBuilder& Builder, Wor
 						 MoveTemp(CanonicalData));
 }
 
-void AddComponentAuthForServerWorker(EntityComponentOpListBuilder& Builder, Worker_EntityId Id)
+void AddComponentAuthForServerWorker(EntityComponentOpListBuilder& Builder, FSpatialEntityId Id)
 {
 	TArray<ComponentData> CanonicalData;
 	CanonicalData.Emplace(ComponentData{ SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID });
@@ -287,7 +287,7 @@ void AddComponentAuthForServerWorker(EntityComponentOpListBuilder& Builder, Work
 	Builder.SetAuthority(Id, SpatialConstants::SERVER_AUTH_COMPONENT_SET_ID, WORKER_AUTHORITY_AUTHORITATIVE, MoveTemp(CanonicalData));
 }
 
-void RemoveEntityAndCrossServerComponents(ViewCoordinator& Coordinator, EntityComponentOpListBuilder& Builder, Worker_EntityId Id)
+void RemoveEntityAndCrossServerComponents(ViewCoordinator& Coordinator, EntityComponentOpListBuilder& Builder, FSpatialEntityId Id)
 {
 	Coordinator.SendRemoveComponent(Id, SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID, {});
 	Builder.RemoveComponent(Id, SpatialConstants::CROSS_SERVER_SENDER_ENDPOINT_COMPONENT_ID);
@@ -307,21 +307,21 @@ void RemoveEntityAndCrossServerComponents(ViewCoordinator& Coordinator, EntityCo
 
 struct RPCToSend
 {
-	RPCToSend(Worker_EntityId InSender, Worker_EntityId InTarget, uint32 InPayloadId)
+	RPCToSend(FSpatialEntityId InSender, FSpatialEntityId InTarget, uint32 InPayloadId)
 		: Sender(InSender)
 		, Target(InTarget)
 		, PayloadId(InPayloadId)
 	{
 	}
 
-	Worker_EntityId Sender;
-	Worker_EntityId Target;
+	FSpatialEntityId Sender;
+	FSpatialEntityId Target;
 	uint32 PayloadId;
 };
 
 struct Components
 {
-	Components(Worker_EntityId Entity, const SpatialGDK::EntityView& View)
+	Components(FSpatialEntityId Entity, const SpatialGDK::EntityView& View)
 	{
 		const SpatialGDK::EntityViewElement& Element = View.FindChecked(Entity);
 
@@ -408,11 +408,11 @@ struct RoutingWorkerMock : WorkerMock
 {
 	RoutingWorkerMock()
 		: RoutingSystem(Coordinator.CreateSubView(SpatialConstants::ROUTINGWORKER_TAG_COMPONENT_ID,
-												  [](const Worker_EntityId, const SpatialGDK::EntityViewElement&) {
+												  [](const FSpatialEntityId, const SpatialGDK::EntityViewElement&) {
 													  return true;
 												  },
 												  {}),
-						0)
+						{})
 	{
 		Spy.Coordinator = &Coordinator;
 	}
@@ -460,12 +460,12 @@ struct TestRoutingFixture
 {
 	TestRoutingFixture()
 	{
-		CanExtractDelegate.BindLambda([](Worker_EntityId) {
+		CanExtractDelegate.BindLambda([](FSpatialEntityId) {
 			return true;
 		});
 	}
 
-	void Init(const TArray<Worker_EntityId>& Entities)
+	void Init(const TArray<FSpatialEntityId>& Entities)
 	{
 		{
 			EntityComponentOpListBuilder Builder;
@@ -525,17 +525,17 @@ struct TestRoutingFixture
 
 ROUTING_SERVICE_TEST(TestRoutingWorker_WhiteBox_SendOneMessage)
 {
-	TArray<Worker_EntityId> Entities;
+	TArray<FSpatialEntityId> Entities;
 	for (uint32 i = 0; i < 2; ++i)
 	{
-		Entities.Add((i + 1) * 10);
+		Entities.Add(FSpatialEntityId((i + 1) * 10));
 	}
 
 	TestRoutingFixture TestFixture;
 	TestFixture.Init(Entities);
 
-	Worker_EntityId Entity1 = Entities[0];
-	Worker_EntityId Entity2 = Entities[1];
+	FSpatialEntityId Entity1 = Entities[0];
+	FSpatialEntityId Entity2 = Entities[1];
 
 	PendingRPCPayload Payload(RPCPayload(0, 1337, {}, TArray<uint8>()), {});
 
@@ -546,7 +546,8 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_WhiteBox_SendOneMessage)
 	auto ExtractRPCCallback = [this, &ExpectedRPCs, &RPCServiceBackptr](const FUnrealObjectRef& Target, const RPCSender& Sender,
 																		SpatialGDK::RPCPayload Payload, TOptional<uint64>) {
 		int32 NumRemoved = ExpectedRPCs.Remove(MakeTuple((Worker_EntityId_Key)Target.Entity, Payload.Index));
-		FString DebugText = FString::Printf(TEXT("RPC %i from %llu to %llu was unexpected"), Payload.Index, Sender.Entity, Target.Entity);
+		FString DebugText = FString::Printf(TEXT("RPC %i from %s to %s was unexpected"), Payload.Index, *Sender.Entity.ToString(),
+											*Target.Entity.ToString());
 		TestTrue(*DebugText, NumRemoved > 0);
 
 		RPCServiceBackptr->WriteCrossServerACKFor(Target.Entity, Sender);
@@ -630,10 +631,10 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_WhiteBox_SendOneMessage)
 
 ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendSeveralMessagesToSeveralEntities)
 {
-	TArray<Worker_EntityId> Entities;
+	TArray<FSpatialEntityId> Entities;
 	for (uint32 i = 0; i < 4; ++i)
 	{
-		Entities.Add((i + 1) * 10);
+		Entities.Add(FSpatialEntityId((i + 1) * 10));
 	}
 
 	TestRoutingFixture TestFixture;
@@ -646,7 +647,8 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendSeveralMessagesToSeveralEnti
 	auto ExtractRPCCallback = [this, &ExpectedRPCs, &RPCServiceBackptr](const FUnrealObjectRef& Target, const RPCSender& Sender,
 																		SpatialGDK::RPCPayload Payload, TOptional<uint64>) {
 		int32 NumRemoved = ExpectedRPCs.Remove(MakeTuple((Worker_EntityId_Key)Target.Entity, Payload.Index));
-		FString DebugText = FString::Printf(TEXT("RPC %i from %llu to %llu was unexpected"), Payload.Index, Sender.Entity, Target.Entity);
+		FString DebugText = FString::Printf(TEXT("RPC %i from %s to %s was unexpected"), Payload.Index, *Sender.Entity.ToString(),
+											*Target.Entity.ToString());
 		TestTrue(*DebugText, NumRemoved > 0);
 
 		RPCServiceBackptr->WriteCrossServerACKFor(Target.Entity, Sender);
@@ -713,10 +715,10 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendOneMessageBetweenDeletedEnti
 {
 	const uint32 Delays = 4;
 
-	TArray<Worker_EntityId> Entities;
+	TArray<FSpatialEntityId> Entities;
 	for (uint32 i = 0; i < 4 * Delays * 2; ++i)
 	{
-		Entities.Add((i + 1) * 10);
+		Entities.Add(FSpatialEntityId((i + 1) * 10));
 	}
 
 	TestRoutingFixture TestFixture;
@@ -741,11 +743,11 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendOneMessageBetweenDeletedEnti
 	for (uint32 Attempt = 0; Attempt < 2; ++Attempt)
 		for (uint32 CurDelay = 0; CurDelay < Delays; ++CurDelay)
 		{
-			Worker_EntityId Sender = Entities[2 * (Attempt * Delays + CurDelay) + 0];
-			Worker_EntityId Receiver = Entities[2 * (Attempt * Delays + CurDelay) + 1];
+			FSpatialEntityId Sender = Entities[2 * (Attempt * Delays + CurDelay) + 0];
+			FSpatialEntityId Receiver = Entities[2 * (Attempt * Delays + CurDelay) + 1];
 
-			Worker_EntityId ToRemove = (Attempt % 2) == 0 ? Sender : Receiver;
-			Worker_EntityId ToCheck = (Attempt % 2) == 1 ? Sender : Receiver;
+			FSpatialEntityId ToRemove = (Attempt % 2) == 0 ? Sender : Receiver;
+			FSpatialEntityId ToCheck = (Attempt % 2) == 1 ? Sender : Receiver;
 
 			PendingRPCPayload DummyPayload(RPCPayload(0, 0, {}, TArray<uint8>()), {});
 			RPCService.PushCrossServerRPC(Receiver, RPCSender(Sender, 0), DummyPayload, false);
@@ -795,10 +797,10 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendOneMessageBetweenDeletedEnti
 
 ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendMoreMessagesThanRingBufferCapacityBetweenSeveralEntities)
 {
-	TArray<Worker_EntityId> Entities;
+	TArray<FSpatialEntityId> Entities;
 	for (uint32 i = 0; i < 4; ++i)
 	{
-		Entities.Add((i + 1) * 10);
+		Entities.Add(FSpatialEntityId((i + 1) * 10));
 	}
 
 	TestRoutingFixture TestFixture;
@@ -811,7 +813,8 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendMoreMessagesThanRingBufferCa
 	auto ExtractRPCCallback = [this, &ExpectedRPCs, &RPCServiceBackptr](const FUnrealObjectRef& Target, const RPCSender& Sender,
 																		SpatialGDK::RPCPayload Payload, TOptional<uint64>) {
 		int32 NumRemoved = ExpectedRPCs.Remove(MakeTuple((Worker_EntityId_Key)Target.Entity, Payload.Index));
-		FString DebugText = FString::Printf(TEXT("RPC %i from %llu to %llu was unexpected"), Payload.Index, Sender.Entity, Target.Entity);
+		FString DebugText = FString::Printf(TEXT("RPC %i from %s to %s was unexpected"), Payload.Index, *Sender.Entity.ToString(),
+											*Target.Entity.ToString());
 		TestTrue(*DebugText, NumRemoved > 0);
 		RPCServiceBackptr->WriteCrossServerACKFor(Target.Entity, Sender);
 	};
@@ -845,8 +848,8 @@ ROUTING_SERVICE_TEST(TestRoutingWorker_BlackBox_SendMoreMessagesThanRingBufferCa
 
 		for (uint32 i = 0; i < 4; ++i)
 		{
-			Worker_EntityId Sender = Entities[i];
-			Worker_EntityId Receiver = Entities[TargetIdx[i]];
+			FSpatialEntityId Sender = Entities[i];
+			FSpatialEntityId Receiver = Entities[TargetIdx[i]];
 			for (uint32 j = 0; j < RPCPerStep; ++j)
 			{
 				PendingRPCPayload DummyPayload(RPCPayload(0, RPCAlloc, {}, TArray<uint8>()), {});

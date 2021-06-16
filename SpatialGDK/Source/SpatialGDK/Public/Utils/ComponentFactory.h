@@ -31,7 +31,7 @@ public:
 
 	TArray<FWorkerComponentData> CreateComponentDatas(UObject* Object, const FClassInfo& Info, const FRepChangeState& RepChangeState,
 													  uint32& OutBytesWritten);
-	TArray<FWorkerComponentUpdate> CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId,
+	TArray<FWorkerComponentUpdate> CreateComponentUpdates(UObject* Object, const FClassInfo& Info, FSpatialEntityId EntityId,
 														  const FRepChangeState* RepChangeState, uint32& OutBytesWritten);
 
 	bool WasInitialOnlyDataWritten() const { return bInitialOnlyDataWritten; }

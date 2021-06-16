@@ -30,7 +30,7 @@ public:
 	virtual const FString& GetWorkerId() const = 0;
 
 	// Returns the worker system entity ID.
-	virtual Worker_EntityId GetWorkerSystemEntityId() const = 0;
+	virtual FSpatialEntityId GetWorkerSystemEntityId() const = 0;
 };
 
 } // namespace SpatialGDK

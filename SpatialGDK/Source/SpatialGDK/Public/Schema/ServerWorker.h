@@ -29,7 +29,7 @@ struct ServerWorker : Component
 	{
 	}
 
-	ServerWorker(const PhysicalWorkerName& InWorkerName, const bool bInReadyToBeginPlay, const Worker_EntityId InSystemEntityId)
+	ServerWorker(const PhysicalWorkerName& InWorkerName, const bool bInReadyToBeginPlay, const FSpatialEntityId InSystemEntityId)
 	{
 		WorkerName = InWorkerName;
 		bReadyToBeginPlay = bInReadyToBeginPlay;
@@ -42,7 +42,7 @@ struct ServerWorker : Component
 
 		WorkerName = GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
 		bReadyToBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
-		SystemEntityId = Schema_GetEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
+		SystemEntityId = GetEntityIdFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
 	}
 
 	Worker_ComponentData CreateServerWorkerData()
@@ -54,7 +54,7 @@ struct ServerWorker : Component
 
 		AddStringToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID, WorkerName);
 		Schema_AddBool(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, bReadyToBeginPlay);
-		Schema_AddEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID, SystemEntityId);
+		AddEntityIdToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID, SystemEntityId);
 
 		return Data;
 	}
@@ -68,7 +68,7 @@ struct ServerWorker : Component
 
 		AddStringToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID, WorkerName);
 		Schema_AddBool(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID, bReadyToBeginPlay);
-		Schema_AddEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID, SystemEntityId);
+		AddEntityIdToSchema(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID, SystemEntityId);
 
 		return Update;
 	}
@@ -79,7 +79,7 @@ struct ServerWorker : Component
 
 		WorkerName = GetStringFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_NAME_ID);
 		bReadyToBeginPlay = GetBoolFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_READY_TO_BEGIN_PLAY_ID);
-		SystemEntityId = Schema_GetEntityId(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
+		SystemEntityId = GetEntityIdFromSchema(ComponentObject, SpatialConstants::SERVER_WORKER_SYSTEM_ENTITY_ID);
 	}
 
 	static Worker_CommandRequest CreateForwardPlayerSpawnRequest(Schema_CommandRequest* SchemaCommandRequest)
@@ -106,7 +106,7 @@ struct ServerWorker : Component
 
 	static void CreateForwardPlayerSpawnSchemaRequest(Schema_CommandRequest* Request, const FUnrealObjectRef& PlayerStartObjectRef,
 													  const Schema_Object* OriginalPlayerSpawnRequest,
-													  const Worker_EntityId& ClientWorkerID)
+													  const FSpatialEntityId& ClientWorkerID)
 	{
 		Schema_Object* RequestFields = Schema_GetCommandRequestObject(Request);
 
@@ -115,12 +115,12 @@ struct ServerWorker : Component
 		Schema_Object* PlayerSpawnData = Schema_AddObject(RequestFields, SpatialConstants::FORWARD_SPAWN_PLAYER_DATA_ID);
 		PlayerSpawner::CopySpawnDataBetweenObjects(OriginalPlayerSpawnRequest, PlayerSpawnData);
 
-		Schema_AddEntityId(RequestFields, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID, ClientWorkerID);
+		AddEntityIdToSchema(RequestFields, SpatialConstants::FORWARD_SPAWN_PLAYER_CLIENT_SYSTEM_ENTITY_ID, ClientWorkerID);
 	}
 
 	PhysicalWorkerName WorkerName;
 	bool bReadyToBeginPlay;
-	Worker_EntityId SystemEntityId;
+	FSpatialEntityId SystemEntityId;
 };
 
 } // namespace SpatialGDK

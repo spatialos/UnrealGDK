@@ -100,7 +100,7 @@ void FSpatialTraceEventDataBuilder::AddObject(const UObject* Object, const char*
 			if (USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
 			{
 				AddKeyValue(StringConverter.CombineStrings(Key, "entity_id"),
-							StringConverter.AddInt64((NetDriver->PackageMap->GetEntityIdFromObject(Object))));
+							StringConverter.AddInt64((NetDriver->PackageMap->GetEntityIdFromObject(Object).EntityId)));
 			}
 		}
 		AddKeyValue(Key, Object->GetName());
@@ -115,9 +115,9 @@ void FSpatialTraceEventDataBuilder::AddFunction(const UFunction* Function, const
 	}
 }
 
-void FSpatialTraceEventDataBuilder::AddEntityId(const Worker_EntityId EntityId, const char* Key /*="entiy_id"*/)
+void FSpatialTraceEventDataBuilder::AddEntityId(const FSpatialEntityId EntityId, const char* Key /*="entiy_id"*/)
 {
-	AddKeyValue(Key, static_cast<int64>(EntityId));
+	AddKeyValue(Key, static_cast<int64>(EntityId.EntityId));
 }
 
 void FSpatialTraceEventDataBuilder::AddComponentId(const Worker_ComponentId ComponentId, const char* Key /*="component_id"*/)

@@ -49,7 +49,7 @@ void ClientConnectionManager::OnRequestReceived(const Worker_Op&, const Worker_C
 		if (CommandResponseOp.response.command_index == SpatialConstants::WORKER_DISCONNECT_COMMAND_ID)
 		{
 			const Worker_RequestId RequestId = CommandResponseOp.request_id;
-			Worker_EntityId ClientEntityId;
+			FSpatialEntityId ClientEntityId;
 			if (DisconnectRequestToConnectionEntityId.RemoveAndCopyValue(RequestId, ClientEntityId))
 			{
 				if (CommandResponseOp.status_code == WORKER_STATUS_CODE_SUCCESS)
@@ -70,7 +70,7 @@ void ClientConnectionManager::OnRequestReceived(const Worker_Op&, const Worker_C
 	}
 }
 
-void ClientConnectionManager::RegisterClientConnection(const Worker_EntityId InWorkerEntityId, USpatialNetConnection* ClientConnection)
+void ClientConnectionManager::RegisterClientConnection(const FSpatialEntityId InWorkerEntityId, USpatialNetConnection* ClientConnection)
 {
 	WorkerConnections.Add(InWorkerEntityId, ClientConnection);
 }
@@ -83,7 +83,7 @@ void ClientConnectionManager::CleanUpClientConnection(USpatialNetConnection* Con
 	}
 }
 
-void ClientConnectionManager::DisconnectPlayer(Worker_EntityId ClientEntityId)
+void ClientConnectionManager::DisconnectPlayer(FSpatialEntityId ClientEntityId)
 {
 	Worker_CommandRequest Request = {};
 	Request.component_id = SpatialConstants::WORKER_COMPONENT_ID;
@@ -95,7 +95,7 @@ void ClientConnectionManager::DisconnectPlayer(Worker_EntityId ClientEntityId)
 	DisconnectRequestToConnectionEntityId.Add(RequestId, ClientEntityId);
 }
 
-void ClientConnectionManager::EntityRemoved(const Worker_EntityId EntityId)
+void ClientConnectionManager::EntityRemoved(const FSpatialEntityId EntityId)
 {
 	// Check to see if we are removing a system entity for a client worker connection. If so clean up the
 	// ClientConnection to delete any and all actors for this connection's controller.
@@ -109,7 +109,7 @@ void ClientConnectionManager::EntityRemoved(const Worker_EntityId EntityId)
 	}
 }
 
-TWeakObjectPtr<USpatialNetConnection> ClientConnectionManager::FindClientConnectionFromWorkerEntityId(const Worker_EntityId WorkerEntityId)
+TWeakObjectPtr<USpatialNetConnection> ClientConnectionManager::FindClientConnectionFromWorkerEntityId(const FSpatialEntityId WorkerEntityId)
 {
 	if (TWeakObjectPtr<USpatialNetConnection>* ClientConnectionPtr = WorkerConnections.Find(WorkerEntityId))
 	{

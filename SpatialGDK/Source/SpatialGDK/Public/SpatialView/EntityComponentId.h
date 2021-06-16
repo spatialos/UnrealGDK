@@ -9,13 +9,13 @@ namespace SpatialGDK
 {
 struct EntityComponentId
 {
-	EntityComponentId(Worker_EntityId InEntityId, Worker_ComponentId InComponentId)
+	EntityComponentId(FSpatialEntityId InEntityId, Worker_ComponentId InComponentId)
 		: EntityId(InEntityId)
 		, ComponentId(InComponentId)
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	Worker_ComponentId ComponentId;
 
 	friend bool operator==(const EntityComponentId& Lhs, const EntityComponentId& Rhs)
@@ -25,7 +25,7 @@ struct EntityComponentId
 
 	friend uint32 GetTypeHash(EntityComponentId Value)
 	{
-		return HashCombine(::GetTypeHash(static_cast<int64>(Value.EntityId)), ::GetTypeHash(static_cast<uint32>(Value.ComponentId)));
+		return HashCombine(GetTypeHash(Value.EntityId), ::GetTypeHash(static_cast<uint32>(Value.ComponentId)));
 	}
 };
 

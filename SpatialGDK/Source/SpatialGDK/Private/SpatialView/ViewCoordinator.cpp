@@ -72,7 +72,7 @@ FSubView& ViewCoordinator::CreateSubView(Worker_ComponentId Tag, const FFilterPr
 	return *SubViews[Index];
 }
 
-void ViewCoordinator::RefreshEntityCompleteness(Worker_EntityId EntityId)
+void ViewCoordinator::RefreshEntityCompleteness(FSpatialEntityId EntityId)
 {
 	for (const TUniquePtr<FSubView>& SubviewToRefresh : SubViews)
 	{
@@ -95,7 +95,7 @@ const EntityView& ViewCoordinator::GetView() const
 	return View.GetView();
 }
 
-const ComponentData* ViewCoordinator::GetComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
+const ComponentData* ViewCoordinator::GetComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId) const
 {
 	const EntityViewElement* EntityDataPtr = GetView().Find(EntityId);
 
@@ -107,22 +107,22 @@ const ComponentData* ViewCoordinator::GetComponent(Worker_EntityId EntityId, Wor
 	return nullptr;
 }
 
-void ViewCoordinator::SendAddComponent(Worker_EntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId)
+void ViewCoordinator::SendAddComponent(FSpatialEntityId EntityId, ComponentData Data, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendAddComponent(EntityId, MoveTemp(Data), SpanId);
 }
 
-void ViewCoordinator::SendComponentUpdate(Worker_EntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId)
+void ViewCoordinator::SendComponentUpdate(FSpatialEntityId EntityId, ComponentUpdate Update, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendComponentUpdate(EntityId, MoveTemp(Update), SpanId);
 }
 
-void ViewCoordinator::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId)
+void ViewCoordinator::SendRemoveComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId, const FSpatialGDKSpanId& SpanId)
 {
 	View.SendRemoveComponent(EntityId, ComponentId, SpanId);
 }
 
-Worker_RequestId ViewCoordinator::SendEntityCommandRequest(Worker_EntityId EntityId, CommandRequest Request, FRetryData RetryData,
+Worker_RequestId ViewCoordinator::SendEntityCommandRequest(FSpatialEntityId EntityId, CommandRequest Request, FRetryData RetryData,
 														   const FSpatialGDKSpanId& SpanId)
 {
 	EntityCommandRetryHandler.SendRequest(NextRequestId, { EntityId, MoveTemp(Request), SpanId }, RetryData, View);
@@ -145,14 +145,14 @@ Worker_RequestId ViewCoordinator::SendReserveEntityIdsRequest(uint32 NumberOfEnt
 	return NextRequestId++;
 }
 
-Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<Worker_EntityId> EntityId,
+Worker_RequestId ViewCoordinator::SendCreateEntityRequest(TArray<ComponentData> EntityComponents, TOptional<FSpatialEntityId> EntityId,
 														  FRetryData RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	CreateEntityRetryHandler.SendRequest(NextRequestId, { MoveTemp(EntityComponents), EntityId, SpanId }, RetryData, View);
 	return NextRequestId++;
 }
 
-Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(Worker_EntityId EntityId, FRetryData RetryData, const FSpatialGDKSpanId& SpanId)
+Worker_RequestId ViewCoordinator::SendDeleteEntityRequest(FSpatialEntityId EntityId, FRetryData RetryData, const FSpatialGDKSpanId& SpanId)
 {
 	DeleteEntityRetryHandler.SendRequest(NextRequestId, { EntityId, SpanId }, RetryData, View);
 	return NextRequestId++;
@@ -174,12 +174,12 @@ void ViewCoordinator::SendLogMessage(Worker_LogLevel Level, const FName& LoggerN
 	View.SendLogMessage({ Level, LoggerName, MoveTemp(Message) });
 }
 
-bool ViewCoordinator::HasEntity(Worker_EntityId EntityId) const
+bool ViewCoordinator::HasEntity(FSpatialEntityId EntityId) const
 {
 	return View.GetView().Contains(EntityId);
 }
 
-bool ViewCoordinator::HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId) const
+bool ViewCoordinator::HasComponent(FSpatialEntityId EntityId, Worker_ComponentId ComponentId) const
 {
 	if (const EntityViewElement* Element = View.GetView().Find(EntityId))
 	{
@@ -188,7 +188,7 @@ bool ViewCoordinator::HasComponent(Worker_EntityId EntityId, Worker_ComponentId 
 	return false;
 }
 
-bool ViewCoordinator::HasAuthority(Worker_EntityId EntityId, Worker_ComponentSetId ComponentSetId) const
+bool ViewCoordinator::HasAuthority(FSpatialEntityId EntityId, Worker_ComponentSetId ComponentSetId) const
 {
 	if (const EntityViewElement* Element = View.GetView().Find(EntityId))
 	{
@@ -255,7 +255,7 @@ const FString& ViewCoordinator::GetWorkerId() const
 	return ConnectionHandler->GetWorkerId();
 }
 
-Worker_EntityId ViewCoordinator::GetWorkerSystemEntityId() const
+FSpatialEntityId ViewCoordinator::GetWorkerSystemEntityId() const
 {
 	return ConnectionHandler->GetWorkerSystemEntityId();
 }

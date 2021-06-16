@@ -52,7 +52,7 @@ struct FRPCCommandPayload : FRPCPayload
 struct FRPCCrossServerPayload : FRPCPayload
 {
 	uint64 UUID;
-	Worker_EntityId Counterpart;
+	FSpatialEntityId Counterpart;
 };
 
 /**
@@ -99,7 +99,7 @@ struct TimestampAndETWrapper
 		FRPCMetaData MetaData;
 	};
 
-	WrappedData MakeWrappedData(Worker_EntityId EntityId, T&& Data, uint64 RPCId)
+	WrappedData MakeWrappedData(FSpatialEntityId EntityId, T&& Data, uint64 RPCId)
 	{
 		WrappedData Wrapper(MoveTemp(Data), RPCName);
 		if (EventTracer != nullptr)
@@ -137,8 +137,8 @@ public:
 	virtual void ProcessReceivedRPCs();
 	virtual void FlushRPCUpdates();
 	void FlushRPCQueue(StandardQueue& Queue);
-	void FlushRPCQueueForEntity(Worker_EntityId, StandardQueue& Queue);
-	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId);
+	void FlushRPCQueueForEntity(FSpatialEntityId, StandardQueue& Queue);
+	TArray<FWorkerComponentData> GetRPCComponentsOnEntityCreation(const FSpatialEntityId EntityId);
 
 	FSpatialGDKSpanId CreatePushRPCEvent(UObject* TargetObject, UFunction* Function);
 	TArray<uint8> CreateRPCPayloadData(UFunction* Function, void* Parameters);
@@ -151,11 +151,11 @@ protected:
 	void MakeRingBufferWithACKReceiver(ERPCType RPCType, Worker_ComponentSetId AuthoritySet,
 									   TUniquePtr<SpatialGDK::TRPCBufferReceiver<FRPCPayload, TimestampAndETWrapper>>& ReceiverPtr);
 
-	virtual void GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId, TArray<FWorkerComponentData>& OutData);
+	virtual void GetRPCComponentsOnEntityCreation(const FSpatialEntityId EntityId, TArray<FWorkerComponentData>& OutData);
 
 	struct UpdateToSend : FNoHeapAllocation
 	{
-		Worker_EntityId EntityId;
+		FSpatialEntityId EntityId;
 		FWorkerComponentUpdate Update;
 		TArray<FSpatialGDKSpanId> Spans;
 	};
@@ -164,15 +164,15 @@ protected:
 	SpatialGDK::RPCCallbacks::UpdateWritten MakeUpdateWriteCallback();
 
 	static void OnRPCSent(SpatialGDK::SpatialEventTracer& EventTracer, TArray<UpdateToSend>& OutUpdates, FName Name,
-						  Worker_EntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId, const FSpatialGDKSpanId& SpanId);
-	static void OnDataWritten(TArray<FWorkerComponentData>& OutArray, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+						  FSpatialEntityId EntityId, Worker_ComponentId ComponentId, uint64 RPCId, const FSpatialGDKSpanId& SpanId);
+	static void OnDataWritten(TArray<FWorkerComponentData>& OutArray, FSpatialEntityId EntityId, Worker_ComponentId ComponentId,
 							  Schema_ComponentUpdate* InData);
-	static void OnUpdateWritten(TArray<UpdateToSend>& OutUpdates, Worker_EntityId EntityId, Worker_ComponentId ComponentId,
+	static void OnUpdateWritten(TArray<UpdateToSend>& OutUpdates, FSpatialEntityId EntityId, Worker_ComponentId ComponentId,
 								Schema_ComponentUpdate* InUpdate);
 
-	bool CanExtractRPC(Worker_EntityId EntityId) const;
-	bool CanExtractRPCOnServer(Worker_EntityId EntityId) const;
-	bool ApplyRPC(Worker_EntityId EntityId, const FRPCPayload& RPCData, const FRPCMetaData& MetaData) const;
+	bool CanExtractRPC(FSpatialEntityId EntityId) const;
+	bool CanExtractRPCOnServer(FSpatialEntityId EntityId) const;
+	bool ApplyRPC(FSpatialEntityId EntityId, const FRPCPayload& RPCData, const FRPCMetaData& MetaData) const;
 
 	USpatialNetDriver& NetDriver;
 	SpatialGDK::SpatialEventTracer* EventTracer = nullptr;
@@ -207,7 +207,7 @@ public:
 	TUniquePtr<SpatialGDK::TRPCQueue<FRPCPayload, FSpatialGDKSpanId>> NetMulticastQueue;
 
 protected:
-	void GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId, TArray<FWorkerComponentData>& OutData) override;
+	void GetRPCComponentsOnEntityCreation(const FSpatialEntityId EntityId, TArray<FWorkerComponentData>& OutData) override;
 
 	TUniquePtr<SpatialGDK::RPCBufferSender> ClientReliableSender;
 	TUniquePtr<SpatialGDK::RPCBufferSender> ClientUnreliableSender;
@@ -232,7 +232,7 @@ public:
 	TUniquePtr<SpatialGDK::TRPCQueue<FRPCPayload, FSpatialGDKSpanId>> ServerUnreliableQueue;
 
 protected:
-	void GetRPCComponentsOnEntityCreation(const Worker_EntityId EntityId, TArray<FWorkerComponentData>& OutData) override;
+	void GetRPCComponentsOnEntityCreation(const FSpatialEntityId EntityId, TArray<FWorkerComponentData>& OutData) override;
 
 	TUniquePtr<SpatialGDK::RPCBufferSender> ServerReliableSender;
 	TUniquePtr<SpatialGDK::RPCBufferSender> ServerUnreliableSender;

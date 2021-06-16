@@ -15,12 +15,12 @@ InitialOnlyFilter::InitialOnlyFilter(USpatialWorkerConnection& InConnection)
 {
 }
 
-bool InitialOnlyFilter::HasInitialOnlyData(Worker_EntityId EntityId) const
+bool InitialOnlyFilter::HasInitialOnlyData(FSpatialEntityId EntityId) const
 {
 	return (RetrievedInitialOnlyData.Find(EntityId) != nullptr);
 }
 
-bool InitialOnlyFilter::HasInitialOnlyDataOrRequestIfAbsent(Worker_EntityId EntityId)
+bool InitialOnlyFilter::HasInitialOnlyDataOrRequestIfAbsent(FSpatialEntityId EntityId)
 {
 	if (HasInitialOnlyData(EntityId))
 	{
@@ -50,11 +50,11 @@ void InitialOnlyFilter::FlushRequests()
 
 	for (auto EntityId : PendingInitialOnlyEntities)
 	{
-		UE_LOG(LogInitialOnlyFilter, Verbose, TEXT("Requested initial only data for entity %lld."), EntityId);
+		UE_LOG(LogInitialOnlyFilter, Verbose, TEXT("Requested initial only data for entity %s."), *EntityId.ToString());
 
 		Worker_Constraint Constraints{};
 		Constraints.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
-		Constraints.constraint.entity_id_constraint.entity_id = EntityId;
+		Constraints.constraint.entity_id_constraint.entity_id = ToWorkerEntityId(EntityId);
 
 		EntityConstraintArray.Add(Constraints);
 
@@ -92,15 +92,16 @@ void InitialOnlyFilter::HandleInitialOnlyResponse(const Worker_EntityQueryRespon
 	for (uint32_t i = 0; i < Op.result_count; ++i)
 	{
 		const Worker_Entity* Entity = &Op.results[i];
-		const Worker_EntityId EntityId = Entity->entity_id;
+		const FSpatialEntityId EntityId = ToSpatialEntityId(Entity->entity_id);
 
 		if (Connection.GetView().Find(EntityId) == nullptr)
 		{
-			UE_LOG(LogInitialOnlyFilter, Verbose, TEXT("Received initial only data for entity no longer in view. Entity: %lld."), EntityId);
+			UE_LOG(LogInitialOnlyFilter, Verbose, TEXT("Received initial only data for entity no longer in view. Entity: %s."),
+				   *EntityId.ToString());
 			continue;
 		}
 
-		UE_LOG(LogInitialOnlyFilter, Verbose, TEXT("Received initial only data for entity. Entity: %lld."), EntityId);
+		UE_LOG(LogInitialOnlyFilter, Verbose, TEXT("Received initial only data for entity. Entity: %s."), *EntityId.ToString());
 
 		// Extract and store the initial only data.
 		TArray<ComponentData>& ComponentDatas = RetrievedInitialOnlyData.FindOrAdd(EntityId);
@@ -111,18 +112,18 @@ void InitialOnlyFilter::HandleInitialOnlyResponse(const Worker_EntityQueryRespon
 			ComponentDatas.Emplace(ComponentData::CreateCopy(ComponentData.schema_type, ComponentData.component_id));
 		}
 
-		Connection.GetCoordinator().RefreshEntityCompleteness(Entity->entity_id);
+		Connection.GetCoordinator().RefreshEntityCompleteness(ToSpatialEntityId(Entity->entity_id));
 	}
 }
 
-const TArray<SpatialGDK::ComponentData>* InitialOnlyFilter::GetInitialOnlyData(Worker_EntityId EntityId) const
+const TArray<SpatialGDK::ComponentData>* InitialOnlyFilter::GetInitialOnlyData(FSpatialEntityId EntityId) const
 {
 	return RetrievedInitialOnlyData.Find(EntityId);
 }
 
-void InitialOnlyFilter::RemoveInitialOnlyData(Worker_EntityId EntityId)
+void InitialOnlyFilter::RemoveInitialOnlyData(FSpatialEntityId EntityId)
 {
-	UE_LOG(LogInitialOnlyFilter, Verbose, TEXT("Removed initial only data for entity %lld."), EntityId);
+	UE_LOG(LogInitialOnlyFilter, Verbose, TEXT("Removed initial only data for entity %s."), *EntityId.ToString());
 	RetrievedInitialOnlyData.FindAndRemoveChecked(EntityId);
 }
 

@@ -47,8 +47,8 @@ class SPATIALGDK_API InterestFactory
 public:
 	InterestFactory(USpatialClassInfoManager* InClassInfoManager, USpatialPackageMapClient* InPackageMap);
 
-	Worker_ComponentData CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
-	Worker_ComponentUpdate CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
+	Worker_ComponentData CreateInterestData(AActor* InActor, const FClassInfo& InInfo, const FSpatialEntityId InEntityId) const;
+	Worker_ComponentUpdate CreateInterestUpdate(AActor* InActor, const FClassInfo& InInfo, const FSpatialEntityId InEntityId) const;
 
 	Interest CreateServerWorkerInterest(const UAbstractLBStrategy* LBStrategy) const;
 	Interest CreatePartitionInterest(const UAbstractLBStrategy* LBStrategy, VirtualWorkerId VirtualWorker, bool bDebug) const;
@@ -69,7 +69,7 @@ private:
 	SchemaResultType CreateServerNonAuthInterestResultType();
 	SchemaResultType CreateServerAuthInterestResultType();
 
-	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const Worker_EntityId InEntityId) const;
+	Interest CreateInterest(AActor* InActor, const FClassInfo& InInfo, const FSpatialEntityId InEntityId) const;
 
 	// Defined Constraint AND Level Constraint
 	void AddClientPlayerControllerActorInterest(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo) const;
@@ -83,7 +83,7 @@ private:
 	// The components servers need to see on entities they have authority over that they don't already see through authority.
 	void AddServerSelfInterest(Interest& OutInterest) const;
 	// Add interest to the actor's owner.
-	void AddServerActorOwnerInterest(Interest& OutInterest, const AActor* InActor, const Worker_EntityId& EntityId) const;
+	void AddServerActorOwnerInterest(Interest& OutInterest, const AActor* InActor, const FSpatialEntityId& EntityId) const;
 
 	// Add the always relevant and the always interested query.
 	void AddClientAlwaysRelevantQuery(Interest& OutInterest, const AActor* InActor, const FClassInfo& InInfo,

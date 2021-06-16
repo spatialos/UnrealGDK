@@ -120,21 +120,21 @@ RPCWritingContext::RPCWritingContext(FName InQueueName, RPCCallbacks::ResponseWr
 {
 }
 
-RPCWritingContext::EntityWrite::EntityWrite(RPCWritingContext& InCtx, Worker_EntityId InEntityId, Worker_ComponentId InComponentID)
+RPCWritingContext::EntityWrite::EntityWrite(RPCWritingContext& InCtx, FSpatialEntityId InEntityId, Worker_ComponentId InComponentID)
 	: EntityId(InEntityId)
 	, ComponentId(InComponentID)
 	, Ctx(InCtx)
 {
 }
 
-RPCWritingContext::EntityWrite RPCWritingContext::WriteTo(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+RPCWritingContext::EntityWrite RPCWritingContext::WriteTo(FSpatialEntityId EntityId, Worker_ComponentId ComponentId)
 {
 	check(!bWriterOpened);
 	bWriterOpened = true;
 	return EntityWrite(*this, EntityId, ComponentId);
 }
 
-void RPCBufferSender::OnAuthGained(Worker_EntityId EntityId, EntityViewElement const& Element)
+void RPCBufferSender::OnAuthGained(FSpatialEntityId EntityId, EntityViewElement const& Element)
 {
 	RPCReadingContext readCtx;
 	readCtx.EntityId = EntityId;
@@ -150,7 +150,7 @@ void RPCBufferSender::OnAuthGained(Worker_EntityId EntityId, EntityViewElement c
 	}
 }
 
-void RPCBufferReceiver::OnAdded(FName ReceiverName, Worker_EntityId EntityId, EntityViewElement const& Element)
+void RPCBufferReceiver::OnAdded(FName ReceiverName, FSpatialEntityId EntityId, EntityViewElement const& Element)
 {
 	RPCReadingContext readCtx;
 	readCtx.ReaderName = ReceiverName;
@@ -167,7 +167,7 @@ void RPCBufferReceiver::OnAdded(FName ReceiverName, Worker_EntityId EntityId, En
 	}
 }
 
-void RPCQueue::OnAuthGained(Worker_EntityId EntityId, EntityViewElement const& Element)
+void RPCQueue::OnAuthGained(FSpatialEntityId EntityId, EntityViewElement const& Element)
 {
 	RPCReadingContext readCtx;
 	readCtx.EntityId = EntityId;

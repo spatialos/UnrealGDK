@@ -56,7 +56,7 @@ inline Worker_PartitionId GetConnectionOwningPartitionId(const AActor* Actor)
 	return SpatialConstants::INVALID_ENTITY_ID;
 }
 
-inline Worker_EntityId GetConnectionOwningClientSystemEntityId(const APlayerController* PC)
+inline FSpatialEntityId GetConnectionOwningClientSystemEntityId(const APlayerController* PC)
 {
 	const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PC->GetNetConnection());
 	checkf(NetConnection != nullptr, TEXT("PlayerController did not have NetConnection when trying to find client system entity ID."));

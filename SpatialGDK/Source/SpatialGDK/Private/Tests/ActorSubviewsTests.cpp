@@ -35,8 +35,8 @@ GDK_TEST(Core, OwnershipCompleteness, PlayerGainsEntityOwnership)
 {
 	using namespace ActorSubviews;
 
-	constexpr Worker_EntityId ActorEntityId = 1;
-	constexpr Worker_EntityId LocalClientControllerEntityId = 2;
+	constexpr FSpatialEntityId ActorEntityId{ 1 };
+	constexpr FSpatialEntityId LocalClientControllerEntityId{ 2 };
 
 	FOwnershipCompletenessTestFixture Fixture;
 
@@ -75,9 +75,9 @@ GDK_TEST(Core, OwnershipCompleteness, PlayerLosesEntityOwnership)
 {
 	using namespace ActorSubviews;
 
-	constexpr Worker_EntityId ActorEntityId = 1;
-	constexpr Worker_EntityId LocalClientControllerEntityId = 2;
-	constexpr Worker_EntityId RemoteClientControllerEntityId = 3;
+	constexpr FSpatialEntityId ActorEntityId{ 1 };
+	constexpr FSpatialEntityId LocalClientControllerEntityId{ 2 };
+	constexpr FSpatialEntityId RemoteClientControllerEntityId{ 3 };
 
 	FOwnershipCompletenessTestFixture Fixture;
 

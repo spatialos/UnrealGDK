@@ -67,10 +67,10 @@ private:
 	SpatialGDK::SpawnPlayerRequest ObtainPlayerParams() const;
 
 	// Authoritative server worker
-	void FindPlayerStartAndProcessPlayerSpawn(Schema_Object* Request, const Worker_EntityId& ClientWorkerId);
+	void FindPlayerStartAndProcessPlayerSpawn(Schema_Object* Request, const FSpatialEntityId& ClientWorkerId);
 	void ForwardSpawnRequestToStrategizedServer(const Schema_Object* OriginalPlayerSpawnRequest, AActor* PlayerStart,
-												const Worker_EntityId& ClientWorkerId, const VirtualWorkerId SpawningVirtualWorker);
-	void RetryForwardSpawnPlayerRequest(const Worker_EntityId EntityId, const Worker_RequestId RequestId,
+												const FSpatialEntityId& ClientWorkerId, const VirtualWorkerId SpawningVirtualWorker);
+	void RetryForwardSpawnPlayerRequest(const FSpatialEntityId EntityId, const Worker_RequestId RequestId,
 										const bool bShouldTryDifferentPlayerStart = false);
 
 	// Any server

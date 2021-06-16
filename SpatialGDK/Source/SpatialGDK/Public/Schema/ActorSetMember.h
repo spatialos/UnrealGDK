@@ -16,13 +16,13 @@ struct SPATIALGDK_API ActorSetMember
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_ID;
 
-	ActorSetMember(Worker_EntityId InLeaderEntityId)
+	ActorSetMember(FSpatialEntityId InLeaderEntityId)
 		: ActorSetId(InLeaderEntityId)
 	{
 	}
 
 	ActorSetMember()
-		: ActorSetMember(Worker_EntityId(SpatialConstants::INVALID_ENTITY_ID))
+		: ActorSetMember(FSpatialEntityId(SpatialConstants::INVALID_ENTITY_ID))
 	{
 	}
 
@@ -38,15 +38,15 @@ struct SPATIALGDK_API ActorSetMember
 	{
 		if (Schema_GetEntityIdCount(Schema, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID) == 1)
 		{
-			ActorSetId = Schema_GetEntityId(Schema, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID);
+			ActorSetId = GetEntityIdFromSchema(Schema, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID);
 		}
 	}
 
 	void WriteSchema(Schema_Object* Schema) const
 	{
-		Schema_AddInt64(Schema, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID, ActorSetId);
+		AddEntityIdToSchema(Schema, SpatialConstants::ACTOR_SET_MEMBER_COMPONENT_LEADER_ENTITY_ID, ActorSetId);
 	}
 
-	Worker_EntityId ActorSetId;
+	FSpatialEntityId ActorSetId;
 };
 } // namespace SpatialGDK

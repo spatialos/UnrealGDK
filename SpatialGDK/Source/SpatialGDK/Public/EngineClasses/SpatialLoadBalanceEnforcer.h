@@ -26,7 +26,7 @@ struct LBComponents
 
 struct AuthorityStateChange
 {
-	Worker_EntityId EntityId = 0;
+	FSpatialEntityId EntityId{ 0 };
 	TArray<Worker_ComponentId> ComponentIds;
 	VirtualWorkerId TargetVirtualWorker;
 };
@@ -52,22 +52,22 @@ public:
 							   TUniqueFunction<void(EntityComponentUpdate)> InUpdateSender);
 
 	void Advance();
-	void ShortCircuitMaybeRefreshAuthorityDelegation(const Worker_EntityId EntityId);
+	void ShortCircuitMaybeRefreshAuthorityDelegation(const FSpatialEntityId EntityId);
 
 private:
-	void PopulateDataStore(const Worker_EntityId EntityId);
-	bool ApplyComponentUpdate(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
-	bool ApplyComponentRefresh(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
+	void PopulateDataStore(const FSpatialEntityId EntityId);
+	bool ApplyComponentUpdate(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentUpdate* Update);
+	bool ApplyComponentRefresh(const FSpatialEntityId EntityId, const Worker_ComponentId ComponentId, Schema_ComponentData* Data);
 
-	void RefreshAuthority(const Worker_EntityId EntityId);
-	Worker_ComponentUpdate CreateAuthorityDelegationUpdate(const Worker_EntityId EntityId);
+	void RefreshAuthority(const FSpatialEntityId EntityId);
+	Worker_ComponentUpdate CreateAuthorityDelegationUpdate(const FSpatialEntityId EntityId);
 
 	const PhysicalWorkerName WorkerId;
 	const FSubView* SubView;
 	const SpatialVirtualWorkerTranslator* VirtualWorkerTranslator;
 
-	TArray<Worker_EntityId> PendingEntityAuthorityChanges;
-	TMap<Worker_EntityId_Key, LBComponents> DataStore;
+	TArray<FSpatialEntityId> PendingEntityAuthorityChanges;
+	TMap<FSpatialEntityId, LBComponents> DataStore;
 	TUniqueFunction<void(EntityComponentUpdate)> UpdateSender;
 };
 

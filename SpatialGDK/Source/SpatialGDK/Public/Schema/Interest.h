@@ -55,7 +55,7 @@ struct QueryConstraint
 	TSchemaOption<RelativeSphereConstraint> RelativeSphereConstraint;
 	TSchemaOption<RelativeCylinderConstraint> RelativeCylinderConstraint;
 	TSchemaOption<RelativeBoxConstraint> RelativeBoxConstraint;
-	TSchemaOption<int64> EntityIdConstraint;
+	TSchemaOption<FSpatialEntityId> EntityIdConstraint;
 	TSchemaOption<uint32> ComponentConstraint;
 	TArray<QueryConstraint> AndConstraint;
 	TArray<QueryConstraint> OrConstraint;
@@ -223,7 +223,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 	// option<int64> entity_id_constraint = 7;
 	if (Constraint.EntityIdConstraint.IsSet())
 	{
-		Schema_AddInt64(QueryConstraintObject, 7, *Constraint.EntityIdConstraint);
+		Schema_AddInt64(QueryConstraintObject, 7, Constraint.EntityIdConstraint->EntityId);
 	}
 
 	// option<uint32> component_constraint = 8;
@@ -362,7 +362,7 @@ inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Sch
 	// option<int64> entity_id_constraint = 7;
 	if (Schema_GetInt64Count(QueryConstraintObject, 7) > 0)
 	{
-		NewQueryConstraint.EntityIdConstraint = Schema_GetInt64(QueryConstraintObject, 7);
+		NewQueryConstraint.EntityIdConstraint = FSpatialEntityId{ Schema_GetInt64(QueryConstraintObject, 7) };
 	}
 
 	// option<uint32> component_constraint = 8;

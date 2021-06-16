@@ -17,12 +17,12 @@ ClaimPartitionHandler::ClaimPartitionHandler(SpatialOSWorkerInterface& InConnect
 {
 }
 
-void ClaimPartitionHandler::ClaimPartition(Worker_EntityId SystemEntityId, Worker_PartitionId PartitionToClaim)
+void ClaimPartitionHandler::ClaimPartition(FSpatialEntityId SystemEntityId, Worker_PartitionId PartitionToClaim)
 {
 	UE_LOG(LogClaimPartitionHandler, Log,
-		   TEXT("SendClaimPartitionRequest. SystemWorkerEntityId: %lld. "
-				"PartitionId: %lld"),
-		   SystemEntityId, PartitionToClaim);
+		   TEXT("SendClaimPartitionRequest. SystemWorkerEntityId: %s. "
+				"PartitionId: %s"),
+		   *SystemEntityId.ToString(), *PartitionToClaim.ToString());
 
 	Worker_CommandRequest CommandRequest = Worker::CreateClaimPartitionRequest(PartitionToClaim);
 	const Worker_RequestId ClaimEntityRequestId =
@@ -43,8 +43,8 @@ void ClaimPartitionHandler::ProcessOps(const TArray<Worker_Op>& Ops)
 			{
 				ensure(CommandResponse.response.component_id == SpatialConstants::WORKER_COMPONENT_ID);
 				UE_CLOG(CommandResponse.status_code != WORKER_STATUS_CODE_SUCCESS, LogClaimPartitionHandler, Error,
-						TEXT("Claim partition request for partition %lld finished, SDK returned code %d [%s]"), ClaimedPartitionId,
-						(int)CommandResponse.status_code, UTF8_TO_TCHAR(CommandResponse.message));
+						TEXT("Claim partition request for partition %s finished, SDK returned code %d [%s]"),
+						*ClaimedPartitionId.ToString(), (int)CommandResponse.status_code, UTF8_TO_TCHAR(CommandResponse.message));
 			}
 		}
 	}

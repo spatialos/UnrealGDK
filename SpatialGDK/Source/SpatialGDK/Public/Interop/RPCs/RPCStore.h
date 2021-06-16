@@ -7,7 +7,7 @@
 #include "SpatialConstants.h"
 #include "SpatialView/EntityComponentId.h"
 
-DECLARE_DELEGATE_RetVal_OneParam(bool, ActorCanExtractRPCDelegate, Worker_EntityId);
+DECLARE_DELEGATE_RetVal_OneParam(bool, ActorCanExtractRPCDelegate, FSpatialEntityId);
 DECLARE_DELEGATE_FourParams(ExtractRPCDelegate, const FUnrealObjectRef&, const SpatialGDK::RPCSender&, SpatialGDK::RPCPayload,
 							TOptional<uint64>);
 
@@ -15,13 +15,13 @@ namespace SpatialGDK
 {
 struct EntityRPCType
 {
-	EntityRPCType(Worker_EntityId EntityId, ERPCType Type)
+	EntityRPCType(FSpatialEntityId EntityId, ERPCType Type)
 		: EntityId(EntityId)
 		, Type(Type)
 	{
 	}
 
-	Worker_EntityId EntityId;
+	FSpatialEntityId EntityId;
 	ERPCType Type;
 
 	friend bool operator==(const EntityRPCType& Lhs, const EntityRPCType& Rhs)
@@ -31,7 +31,7 @@ struct EntityRPCType
 
 	friend uint32 GetTypeHash(EntityRPCType Value)
 	{
-		return HashCombine(::GetTypeHash(static_cast<int64>(Value.EntityId)), ::GetTypeHash(static_cast<uint32>(Value.Type)));
+		return HashCombine(GetTypeHash(Value.EntityId), ::GetTypeHash(static_cast<uint32>(Value.Type)));
 	}
 };
 

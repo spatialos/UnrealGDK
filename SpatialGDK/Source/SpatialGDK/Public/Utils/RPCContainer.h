@@ -106,9 +106,9 @@ public:
 	void ProcessOrQueueRPC(const FUnrealObjectRef& InTargetObjectRef, const SpatialGDK::RPCSender& InSenderInfo, ERPCType InType,
 						   SpatialGDK::RPCPayload&& InPayload, const FSpatialGDKSpanId& SpanId);
 	void ProcessRPCs();
-	void DropForEntity(const Worker_EntityId& EntityId);
+	void DropForEntity(const FSpatialEntityId& EntityId);
 
-	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ERPCType Type) const;
+	bool ObjectHasRPCsQueuedOfType(const FSpatialEntityId& EntityId, ERPCType Type) const;
 
 private:
 	using FArrayOfParams = TArray<FPendingRPCParams>;

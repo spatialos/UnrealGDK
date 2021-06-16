@@ -34,7 +34,7 @@ struct NetOwningClientWorker : AbstractMutableComponent
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data);
 		if (Schema_GetEntityIdCount(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID) == 1)
 		{
-			ClientPartitionId = Schema_GetEntityId(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID);
+			ClientPartitionId = GetEntityIdFromSchema(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID);
 		}
 	}
 
@@ -49,7 +49,7 @@ struct NetOwningClientWorker : AbstractMutableComponent
 
 		if (PartitionId.IsSet())
 		{
-			Schema_AddEntityId(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID, *PartitionId);
+			AddEntityIdToSchema(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID, *PartitionId);
 		}
 
 		return Data;
@@ -66,7 +66,7 @@ struct NetOwningClientWorker : AbstractMutableComponent
 
 		if (PartitionId.IsSet())
 		{
-			Schema_AddEntityId(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID, *PartitionId);
+			AddEntityIdToSchema(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID, *PartitionId);
 		}
 		else
 		{
@@ -84,7 +84,7 @@ struct NetOwningClientWorker : AbstractMutableComponent
 
 		if (Schema_GetEntityIdCount(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID) == 1)
 		{
-			ClientPartitionId = Schema_GetEntityId(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID);
+			ClientPartitionId = GetEntityIdFromSchema(ComponentObject, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID);
 		}
 		else if (Schema_IsComponentUpdateFieldCleared(Update, SpatialConstants::NET_OWNING_CLIENT_PARTITION_ENTITY_FIELD_ID))
 		{

@@ -145,7 +145,7 @@ struct WriterState
 
 struct RPCSlots
 {
-	Worker_EntityId CounterpartEntity;
+	FSpatialEntityId CounterpartEntity;
 	int32 CounterpartSlot = -1;
 	int32 ACKSlot = -1;
 };

@@ -12,10 +12,10 @@
 
 namespace
 {
-const Worker_EntityId TestEntityId = 1;
-const Worker_EntityId OtherTestEntityId = 2;
-const Worker_EntityId AnotherTestEntityId = 3;
-const Worker_EntityId YetAnotherTestEntityId = 4;
+const FSpatialEntityId TestEntityId{ 1 };
+const FSpatialEntityId OtherTestEntityId{ 2 };
+const FSpatialEntityId AnotherTestEntityId{ 3 };
+const FSpatialEntityId YetAnotherTestEntityId{ 4 };
 const Worker_ComponentId TestComponentId = 1;
 const Worker_ComponentId OtherTestComponentId = 2;
 const Worker_ComponentSetId TestComponentSetId = 3;
@@ -32,10 +32,10 @@ struct ViewDeltaTestFixture
 {
 	ViewDeltaTestFixture() { ComponentSetData.ComponentSets.Add(TestComponentSetId).Add(TestComponentId); }
 
-	Worker_EntityId TestEntityId = 1;
-	Worker_EntityId OtherTestEntityId = 2;
-	Worker_EntityId AnotherTestEntityId = 3;
-	Worker_EntityId YetAnotherTestEntityId = 4;
+	FSpatialEntityId TestEntityId{ 1 };
+	FSpatialEntityId OtherTestEntityId{ 2 };
+	FSpatialEntityId AnotherTestEntityId{ 3 };
+	FSpatialEntityId YetAnotherTestEntityId{ 4 };
 	Worker_ComponentId TestComponentId = 1;
 	Worker_ComponentSetId TestComponentSetId = 1;
 	double TestComponentValue = 20;
@@ -553,8 +553,8 @@ VIEWDELTA_TEST(GIVEN_view_delta_with_update_for_entity_complete_WHEN_project_THE
 	OpListBuilder.UpdateComponent(TestEntityId, CreateTestComponentUpdate(TestComponentId, OtherTestComponentValue));
 	SetFromOpList(Delta, View, MoveTemp(OpListBuilder), ComponentSetData);
 
-	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{ TestEntityId }, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{},
-				  TArray<Worker_EntityId>{});
+	Delta.Project(SubViewDelta, TArray<FSpatialEntityId>{ TestEntityId }, TArray<FSpatialEntityId>{}, TArray<FSpatialEntityId>{},
+				  TArray<FSpatialEntityId>{});
 
 	ExpectedViewDelta ExpectedSubViewDelta;
 	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE);
@@ -573,8 +573,8 @@ VIEWDELTA_TEST(GIVEN_empty_view_delta_with_newly_complete_entity_WHEN_project_TH
 	AddEntityToView(View, TestEntityId);
 	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
 
-	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{ TestEntityId }, TArray<Worker_EntityId>{},
-				  TArray<Worker_EntityId>{});
+	Delta.Project(SubViewDelta, TArray<FSpatialEntityId>{}, TArray<FSpatialEntityId>{ TestEntityId }, TArray<FSpatialEntityId>{},
+				  TArray<FSpatialEntityId>{});
 
 	ExpectedViewDelta ExpectedSubViewDelta;
 	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::ADD);
@@ -592,8 +592,8 @@ VIEWDELTA_TEST(GIVEN_empty_view_delta_with_newly_incomplete_entity_WHEN_project_
 	AddEntityToView(View, TestEntityId);
 	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
 
-	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{ TestEntityId },
-				  TArray<Worker_EntityId>{});
+	Delta.Project(SubViewDelta, TArray<FSpatialEntityId>{}, TArray<FSpatialEntityId>{}, TArray<FSpatialEntityId>{ TestEntityId },
+				  TArray<FSpatialEntityId>{});
 
 	ExpectedViewDelta ExpectedSubViewDelta;
 	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::REMOVE);
@@ -611,8 +611,8 @@ VIEWDELTA_TEST(GIVEN_empty_view_delta_with_temporarily_incomplete_entity_WHEN_pr
 	AddEntityToView(View, TestEntityId);
 	AddComponentToView(View, TestEntityId, CreateTestComponentData(TestComponentId, TestComponentValue));
 
-	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{}, TArray<Worker_EntityId>{},
-				  TArray<Worker_EntityId>{ TestEntityId });
+	Delta.Project(SubViewDelta, TArray<FSpatialEntityId>{}, TArray<FSpatialEntityId>{}, TArray<FSpatialEntityId>{},
+				  TArray<FSpatialEntityId>{ TestEntityId });
 
 	ExpectedViewDelta ExpectedSubViewDelta;
 	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::TEMPORARILY_REMOVED);
@@ -643,8 +643,9 @@ VIEWDELTA_TEST(GIVEN_arbitrary_delta_and_completeness_WHEN_project_THEN_subview_
 	OpLists.Push(MoveTemp(OpListBuilder).CreateOpList());
 	Delta.SetFromOpList(MoveTemp(OpLists), View, ComponentSetData);
 
-	Delta.Project(SubViewDelta, TArray<Worker_EntityId>{ TestEntityId, YetAnotherTestEntityId },
-				  TArray<Worker_EntityId>{ OtherTestEntityId }, TArray<Worker_EntityId>{ AnotherTestEntityId }, TArray<Worker_EntityId>{});
+	Delta.Project(SubViewDelta, TArray<FSpatialEntityId>{ TestEntityId, YetAnotherTestEntityId },
+				  TArray<FSpatialEntityId>{ OtherTestEntityId }, TArray<FSpatialEntityId>{ AnotherTestEntityId },
+				  TArray<FSpatialEntityId>{});
 
 	ExpectedViewDelta ExpectedSubViewDelta;
 	ExpectedSubViewDelta.AddEntityDelta(TestEntityId, ExpectedViewDelta::UPDATE);
