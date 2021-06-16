@@ -103,6 +103,12 @@ UAbstractLBStrategy* UGameplayDebuggerLBStrategy::GetLBStrategyForVisualRenderin
 	return WrappedStrategy->GetLBStrategyForVisualRendering();
 }
 
+bool UGameplayDebuggerLBStrategy::RequiresHandoverData() const
+{
+	check(WrappedStrategy);
+	return WrappedStrategy->RequiresHandoverData();
+}
+
 UAbstractLBStrategy* UGameplayDebuggerLBStrategy::GetWrappedStrategy() const
 {
 	return WrappedStrategy;

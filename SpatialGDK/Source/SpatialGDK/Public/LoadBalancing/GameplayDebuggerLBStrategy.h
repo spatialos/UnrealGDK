@@ -42,6 +42,7 @@ public:
 	virtual void SetVirtualWorkerIds(const VirtualWorkerId& FirstVirtualWorkerId, const VirtualWorkerId& LastVirtualWorkerId) override;
 	virtual TSet<VirtualWorkerId> GetVirtualWorkerIds() const override;
 	virtual UAbstractLBStrategy* GetLBStrategyForVisualRendering() const override;
+	virtual bool RequiresHandoverData() const override;
 	/* End UAbstractLBStrategy Interface */
 
 	UAbstractLBStrategy* GetWrappedStrategy() const;
