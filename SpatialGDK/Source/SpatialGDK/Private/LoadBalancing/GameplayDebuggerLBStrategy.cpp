@@ -38,11 +38,13 @@ bool UGameplayDebuggerLBStrategy::ShouldHaveAuthority(const AActor& Actor) const
 {
 	check(WrappedStrategy);
 
+#if WITH_GAMEPLAY_DEBUGGER
 	TOptional<VirtualWorkerId> WorkerId = GameplayDebuggerCtx->GetActorDelegatedWorkerId(Actor);
 	if (WorkerId)
 	{
 		return WorkerId.GetValue() == GetLocalVirtualWorkerId();
 	}
+#endif // WITH_GAMEPLAY_DEBUGGER
 
 	return WrappedStrategy->ShouldHaveAuthority(Actor);
 }
@@ -51,11 +53,13 @@ VirtualWorkerId UGameplayDebuggerLBStrategy::WhoShouldHaveAuthority(const AActor
 {
 	check(WrappedStrategy);
 
+#if WITH_GAMEPLAY_DEBUGGER
 	TOptional<VirtualWorkerId> WorkerId = GameplayDebuggerCtx->GetActorDelegatedWorkerId(Actor);
 	if (WorkerId)
 	{
 		return WorkerId.GetValue();
 	}
+#endif // WITH_GAMEPLAY_DEBUGGER
 
 	return WrappedStrategy->WhoShouldHaveAuthority(Actor);
 }
