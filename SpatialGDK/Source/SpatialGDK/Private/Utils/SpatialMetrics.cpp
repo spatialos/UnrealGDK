@@ -353,7 +353,7 @@ void USpatialMetrics::OnModifySettingCommand(Schema_Object* CommandPayload)
 
 void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FString& Command, const FString& Args)
 {
-	int32 Index = StaticEnum<ESpatialServerCommands>()->GetIndexByNameString(Command);
+	const int32 Index = StaticEnum<ESpatialServerCommands>()->GetIndexByNameString(Command);
 	if (Index == INDEX_NONE)
 	{
 		UE_LOG(LogSpatialMetrics, Error, TEXT("SpatialExecServerCmd: Failed to execute server command. Command not found. Command %s (%s)"),
@@ -361,7 +361,7 @@ void USpatialMetrics::SpatialExecServerCmd(const FString& ServerName, const FStr
 		return;
 	}
 
-	SpatialExecServerCmd_Internal(ServerName, static_cast<ESpatialServerCommands>(Index), Args);
+	SpatialExecServerCmd_Internal(ServerName, static_cast<const ESpatialServerCommands>(Index), Args);
 }
 
 void USpatialMetrics::OnExecServerCmdCommand(Schema_Object* CommandPayload)
@@ -537,7 +537,7 @@ void USpatialMetrics::SpatialExecServerCmd_Internal(const FString& ServerName, c
 			{
 #if ENGINE_MINOR_VERSION < 26
 				UE_LOG(LogSpatialMetrics, Warning,
-					   TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. Command only available prior to 4.26."));
+					   TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. Command only available post 4.26."));
 #elif !UE_TRACE_ENABLED
 				UE_LOG(LogSpatialMetrics, Warning,
 					   TEXT("SpatialExecServerCmd: Failed to execute server StartInsights command. UE_TRACE_ENABLE not defined."));
@@ -547,7 +547,7 @@ void USpatialMetrics::SpatialExecServerCmd_Internal(const FString& ServerName, c
 					FString TraceTimeString;
 					if (FParse::Value(*Args, TEXT("-tracetime="), TraceTimeString))
 					{
-						int32 TraceTime = FCString::Atoi(*TraceTimeString);
+						const int32 TraceTime = FCString::Atoi(*TraceTimeString);
 
 						if (TraceTime <= 0)
 						{
@@ -577,7 +577,7 @@ void USpatialMetrics::SpatialExecServerCmd_Internal(const FString& ServerName, c
 			{
 #if ENGINE_MINOR_VERSION < 26
 				UE_LOG(LogSpatialMetrics, Warning,
-					   TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. Command only available prior to 4.26."));
+					   TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. Command only available post 4.26."));
 #elif !UE_TRACE_ENABLED
 				UE_LOG(LogSpatialMetrics, Warning,
 					   TEXT("SpatialExecServerCmd: Failed to execute server StopInsights command. UE_TRACE_ENABLE not defined."));
