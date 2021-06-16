@@ -61,6 +61,7 @@ private:
 	void ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index,
 					   GDK_PROPERTY(Property) * Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex,
 					   bool& bOutReferencesChanged);
+
 	void ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap,
 					GDK_PROPERTY(ArrayProperty) * Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex,
 					bool& bOutReferencesChanged);
@@ -73,10 +74,6 @@ private:
 	class USpatialClassInfoManager* ClassInfoManager;
 	class SpatialEventTracer* EventTracer;
 	FObjectReferencesMap& RootObjectReferencesMap;
-
-	// Special Case properties are properties that are used in building the FSpatialConditionMapFilter,
-	// and the client must read them before rebuilding the condition map for all other properties.
-	static const TArray<FName> SpecialCaseProperties;
 };
 
 } // namespace SpatialGDK
