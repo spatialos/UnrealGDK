@@ -5,7 +5,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
-#include "GameplayDebuggerCategoryReplicator.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/GameplayDebuggerLBStrategy.h"
 #include "Utils/SpatialActorUtils.h"
