@@ -9,7 +9,7 @@
 #include "Schema/Interest.h"
 #include "SpatialCommonTypes.h"
 #include "UObject/WeakInterfacePtr.h"
-#endif //WITH_GAMEPLAY_DEBUGGER
+#endif // WITH_GAMEPLAY_DEBUGGER
 
 #include "SpatialNetDriverGameplayDebuggerContext.generated.h"
 
