@@ -443,7 +443,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		Sender = NewObject<USpatialSender>();
 		Receiver = NewObject<USpatialReceiver>();
 
-		if (IsServer())
+		if (IsServer() && SpatialSettings->bRunStrategyWorker)
 		{
 			SkeletonEntityCreationStep = MakeUnique<SpatialGDK::FSkeletonEntityCreationStep>(*this);
 		}
