@@ -431,7 +431,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	USpatialGameInstance* GameInstance = GetGameInstance();
 	check(GameInstance != nullptr);
 
-	SpatialMetrics = NewObject<USpatialMetrics>();
+	SpatialMetrics = NewObject<USpatialMetrics>(this);
 	SpatialMetrics->Init(Connection, NetServerMaxTickRate, IsServer());
 
 	SpatialWorkerFlags = NewObject<USpatialWorkerFlags>();
