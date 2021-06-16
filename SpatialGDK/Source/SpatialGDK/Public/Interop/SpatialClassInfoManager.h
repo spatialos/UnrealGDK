@@ -142,6 +142,8 @@ private:
 	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 
+	bool IsComponentIdForTypeValid(const Worker_ComponentId ComponentId, const ESchemaComponentType Type) const;
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
@@ -152,4 +154,6 @@ private:
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;
+
+	TOptional<bool> bHandoverActive;
 };

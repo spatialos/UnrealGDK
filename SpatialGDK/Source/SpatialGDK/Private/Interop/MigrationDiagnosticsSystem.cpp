@@ -40,7 +40,7 @@ void MigrationDiagnosticsSystem::OnMigrationDiagnosticRequest(const Worker_Op& O
 			EventTracer->TraceEvent(SEND_COMMAND_RESPONSE_EVENT_NAME, "", CauseSpanId.GetConstId(), /* NumCauses */ 1,
 									[RequestId](FSpatialTraceEventDataBuilder& EventBuilder) {
 										EventBuilder.AddRequestId(RequestId);
-										EventBuilder.AddKeyValue("Success", true);
+										EventBuilder.AddKeyValue("success", true);
 									});
 		}
 

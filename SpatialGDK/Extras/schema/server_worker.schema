@@ -2,6 +2,7 @@
 package unreal;
 
 import "unreal/gdk/core_types.schema";
+import "unreal/gdk/debug_metrics.schema";
 import "unreal/gdk/spawner.schema";
 import "unreal/generated/rpc_endpoints.schema";
 import "improbable/standard_library.schema";
@@ -22,15 +23,16 @@ component ServerWorker {
     bool ready_to_begin_play = 2;
     EntityId server_system_entity_id = 3;
     command ForwardSpawnPlayerResponse forward_spawn_player(ForwardSpawnPlayerRequest);
+    command Void exec_server_command(ExecServerCommandPayload);
 }
 
 component_set ServerWorkerAuthComponentSet {
   id = 9908;
   components = [
-	improbable.Position,
-	improbable.Metadata,
-	improbable.Interest,
-	unreal.ServerWorker,
-	unreal.generated.UnrealCrossServerSenderRPCs
+    improbable.Position,
+    improbable.Metadata,
+    improbable.Interest,
+    unreal.ServerWorker,
+    unreal.generated.UnrealCrossServerSenderRPCs
   ];
 }
