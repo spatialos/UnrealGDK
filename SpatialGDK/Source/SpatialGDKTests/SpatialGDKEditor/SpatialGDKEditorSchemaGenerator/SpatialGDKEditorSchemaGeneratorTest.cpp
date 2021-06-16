@@ -915,7 +915,6 @@ SCHEMA_GENERATOR_TEST(GIVEN_source_and_destination_of_well_known_schema_files_WH
 	TArray<FString> GDKSchemaFilePaths = { "authority_intent.schema",
 										   "core_types.schema",
 										   "debug_component.schema",
-										   "gameplay_debugger_component.schema",
 										   "debug_metrics.schema",
 										   "global_state_manager.schema",
 										   "initial_only_presence.schema",

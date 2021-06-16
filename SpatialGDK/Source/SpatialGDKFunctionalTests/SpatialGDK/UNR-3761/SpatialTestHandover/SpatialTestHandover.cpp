@@ -71,7 +71,7 @@ void ASpatialTestHandover::PrepareTest()
 
 				AssertTrue(IsValid(NetDriver), TEXT("This test should be run with Spatial Networking"));
 
-				LoadBalancingStrategy = GetLoadBalancingStrategy();
+				LoadBalancingStrategy = Cast<ULayeredLBStrategy>(NetDriver->LoadBalanceStrategy);
 
 				if (IsValid(HandoverCube) && IsValid(LoadBalancingStrategy))
 				{

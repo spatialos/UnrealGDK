@@ -14,7 +14,9 @@
 #include "GameFramework/PlayerController.h"
 #include "Math/Vector.h"
 
+#if WITH_GAMEPLAY_DEBUGGER
 #include "GameplayDebuggerCategoryReplicator.h"
+#endif
 
 namespace SpatialGDK
 {
