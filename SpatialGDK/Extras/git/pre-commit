@@ -11,7 +11,7 @@ fi
 
 # Hit 'em with that clang-format
 for FILE in $(git diff --cached --name-only --diff-filter=d); do
-  if [[ ( "${FILE}" == *.h ) || ( "${FILE}" == *.cpp ) ]]; then
+  if [[ ( "${FILE}" == *.h ) || ( "${FILE}" == *.cpp ) || ( "${FILE}" == *.cxx ) ]]; then
     ${clang_command} --verbose -i "${FILE}"
   fi
 done
