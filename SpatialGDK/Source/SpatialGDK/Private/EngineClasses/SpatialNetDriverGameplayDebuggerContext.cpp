@@ -2,6 +2,7 @@
 
 #include "EngineClasses/SpatialNetDriverGameplayDebuggerContext.h"
 
+#if WITH_GAMEPLAY_DEBUGGER
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialVirtualWorkerTranslator.h"
@@ -9,9 +10,11 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "LoadBalancing/GameplayDebuggerLBStrategy.h"
 #include "Utils/SpatialActorUtils.h"
+#endif // WITH_GAMEPLAY_DEBUGGER
 
 DEFINE_LOG_CATEGORY_STATIC(LogSpatialNetDriverGameplayDebuggerContext, Log, All);
 
+#if WITH_GAMEPLAY_DEBUGGER
 USpatialNetDriverGameplayDebuggerContext::~USpatialNetDriverGameplayDebuggerContext()
 {
 	Reset();
@@ -419,3 +422,5 @@ void USpatialNetDriverGameplayDebuggerContext::OnServerRequest(AGameplayDebugger
 		}
 	}
 }
+
+#endif // WITH_GAMEPLAY_DEBUGGER
