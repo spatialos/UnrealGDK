@@ -26,35 +26,36 @@ public:
 							  USpatialActorChannel& Channel, bool& bOutReferencesChanged);
 
 private:
+	enum EProcessFieldType
+	{
+		ProcessFieldType_OnlySpecialCase,
+		ProcessFieldType_AllButSpecialCase,
+		ProcessFieldType_All
+	};
+
 	struct ApplySchemaObjectDataStruct
 	{
-		ApplySchemaObjectDataStruct(FObjectReplicator* inReplicator, Schema_Object* inComponentObject, UObject& inObject,
-									USpatialActorChannel& inChannel, const TArray<Schema_FieldId>& inUpdatedIds,
-									TArray<FSpatialGDKSpanId>& inCauseSpanIds,
-									TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& inPropertySpanIds,
-									const Worker_ComponentId inComponentID, TArray<GDK_PROPERTY(Property) *>& inRepNotifies,
-									bool inIsInitialData);
+		ApplySchemaObjectDataStruct(Schema_Object* inComponentObject, UObject& inObject, USpatialActorChannel& inChannel, bool inIsInitialData,
+									const TArray<Schema_FieldId>& inUpdatedIds, Worker_ComponentId inComponentId, bool& inOutReferencesChanged);
 
 		FObjectReplicator* Replicator;
 		Schema_Object* ComponentObject;
 		UObject& Object;
 		USpatialActorChannel& Channel;
-
-		const TArray<Schema_FieldId>& UpdatedIds;
-		TArray<FSpatialGDKSpanId>& CauseSpanIds;
-		TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId>& PropertySpanIds;
-		const Worker_ComponentId ComponentId;
-
-		TArray<GDK_PROPERTY(Property)*>& RepNotifies;
-
 		const bool bIsInitialData;
 
-		bool bOutReferencesChanged;
-		bool bProcessOnlySpecialCases;
+		const TArray<Schema_FieldId>& UpdatedIds;
+		const Worker_ComponentId ComponentId;
+
+		TArray<FSpatialGDKSpanId> CauseSpanIds;
+		TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
+		TArray<GDK_PROPERTY(Property)*> RepNotifies;
+
+		EProcessFieldType ProcessFieldType;
+		bool& bOutReferencesChanged;
 	};
 
-	void ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
-						   const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId, bool& bOutReferencesChanged);
+	void ApplySchemaObject(ApplySchemaObjectDataStruct ApplySchemaObjectData);
 
 	void ApplySchemaObjectFields(ApplySchemaObjectDataStruct& ApplySchemaObjectData);
 

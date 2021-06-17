@@ -118,7 +118,7 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentId ComponentId, S
 	// that component type (Data, OwnerOnly, Handover, etc.).
 	const TArray<Schema_FieldId>& InitialIds = ClassInfoManager->GetFieldIdsByComponentId(ComponentId);
 
-	ApplySchemaObject(ComponentObject, Object, Channel, true, InitialIds, ComponentId, bOutReferencesChanged);
+	ApplySchemaObject({ComponentObject, Object, Channel, true, InitialIds, ComponentId, bOutReferencesChanged});
 }
 
 void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId, Schema_ComponentUpdate* ComponentUpdate, UObject& Object,
@@ -146,54 +146,49 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentId ComponentId,
 
 	if (UpdatedIds.Num() > 0)
 	{
-		ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged);
+		ApplySchemaObject({ComponentObject, Object, Channel, false, UpdatedIds, ComponentId, bOutReferencesChanged});
 	}
 }
 
-void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject& Object, USpatialActorChannel& Channel, bool bIsInitialData,
-const TArray<Schema_FieldId>& UpdatedIds, Worker_ComponentId ComponentId,
-bool& bOutReferencesChanged)
+void ComponentReader::ApplySchemaObject(ApplySchemaObjectDataStruct ApplySchemaObjectData)
 {
-FObjectReplicator* Replicator = Channel.PreReceiveSpatialUpdate(&Object);
-if (Replicator == nullptr)
-{
-	// Can't apply this schema object. Error printed from PreReceiveSpatialUpdate.
-	return;
-}
-
-const bool bEventTracerEnabled = EventTracer != nullptr;
-TArray<GDK_PROPERTY(Property)*> RepNotifies;
-TMap<GDK_PROPERTY(Property)*, FSpatialGDKSpanId> PropertySpanIds;
-
-{
-	// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
-	SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
-
-	Worker_EntityId EntityId = Channel.GetEntityId();
-	TArray<FSpatialGDKSpanId> CauseSpanIds;
-	if (bEventTracerEnabled)
+	ApplySchemaObjectData.Replicator = ApplySchemaObjectData.Channel.PreReceiveSpatialUpdate(&ApplySchemaObjectData.Object);
+	if (ApplySchemaObjectData.Replicator == nullptr)
 	{
-		CauseSpanIds = EventTracer->GetAndConsumeSpansForComponent(EntityComponentId(EntityId, ComponentId));
+		// Can't apply this schema object. Error printed from PreReceiveSpatialUpdate.
+		return;
 	}
 
-	ApplySchemaObjectDataStruct ApplySchemaObjectData(Replicator, ComponentObject, Object, Channel, UpdatedIds, CauseSpanIds,
-		PropertySpanIds, ComponentId, RepNotifies, bIsInitialData);
-
-	// Actors have special cases that we need to process before all other fields
-	if (EnumHasAnyFlags(Replicator->RepLayout->GetFlags(), ERepLayoutFlags::IsActor))
+	const bool bEventTracerEnabled = EventTracer != nullptr;
 	{
-		ApplySchemaObjectData.bProcessOnlySpecialCases = true;
-		ApplySchemaObjectFields(ApplySchemaObjectData);
+		// Scoped to exclude OnRep callbacks which are already tracked per OnRep function
+		SCOPE_CYCLE_COUNTER(STAT_ReaderApplyPropertyUpdates);
+
+		Worker_EntityId EntityId = ApplySchemaObjectData.Channel.GetEntityId();
+		if (bEventTracerEnabled)
+		{
+			ApplySchemaObjectData.CauseSpanIds = EventTracer->GetAndConsumeSpansForComponent(EntityComponentId(EntityId, ApplySchemaObjectData.ComponentId));
+		}
+
+		// Actors have special cases that we need to process before all other fields
+		if (EnumHasAnyFlags(ApplySchemaObjectData.Replicator->RepLayout->GetFlags(), ERepLayoutFlags::IsActor))
+		{
+			ApplySchemaObjectData.ProcessFieldType = ProcessFieldType_OnlySpecialCase;
+			ApplySchemaObjectFields(ApplySchemaObjectData);
+
+			ApplySchemaObjectData.ProcessFieldType = ProcessFieldType_AllButSpecialCase;
+			ApplySchemaObjectFields(ApplySchemaObjectData);
+		}
+		else
+		{
+			ApplySchemaObjectData.ProcessFieldType = ProcessFieldType_All;
+			ApplySchemaObjectFields(ApplySchemaObjectData);
+		}
 	}
 
-	ApplySchemaObjectData.bProcessOnlySpecialCases = false;
-	ApplySchemaObjectFields(ApplySchemaObjectData);
-	bOutReferencesChanged = ApplySchemaObjectData.bOutReferencesChanged;
-}
+	ApplySchemaObjectData.Channel.RemoveRepNotifiesWithUnresolvedObjs(ApplySchemaObjectData.RepNotifies, *ApplySchemaObjectData.Replicator->RepLayout, RootObjectReferencesMap, &ApplySchemaObjectData.Object);
 
-Channel.RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator->RepLayout, RootObjectReferencesMap, &Object);
-
-Channel.PostReceiveSpatialUpdate(&Object, RepNotifies, PropertySpanIds);
+	ApplySchemaObjectData.Channel.PostReceiveSpatialUpdate(&ApplySchemaObjectData.Object, ApplySchemaObjectData.RepNotifies, ApplySchemaObjectData.PropertySpanIds);
 }
 
 void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& ApplySchemaObjectData)
@@ -222,9 +217,9 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 		if (FieldId == 0 || (int)FieldId - 1 >= BaseHandleToCmdIndex.Num())
 		{
 			UE_LOG(LogSpatialComponentReader, Error,
-				TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: "
-					"%lld, Component: %d"),
-				*Object.GetPathName(), FieldId, Channel.GetEntityId(), ComponentId);
+				   TEXT("ApplySchemaObject: Encountered an invalid field Id while applying schema. Object: %s, Field: %d, Entity: "
+						"%lld, Component: %d"),
+				   *Object.GetPathName(), FieldId, Channel.GetEntityId(), ComponentId);
 			continue;
 		}
 
@@ -235,25 +230,30 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 
 		// Special Case properties are properties that are used in building the FSpatialConditionMapFilter,
 		// and the client must read them before rebuilding the condition map for all other properties.
-		const bool bProcessOnlySpecialCases = ApplySchemaObjectData.bProcessOnlySpecialCases;
-		auto ShouldConsiderProperty = [&Cmd, &bProcessOnlySpecialCases]() -> bool {
-			if (bProcessOnlySpecialCases)
-			{
-				return UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex)
-					|| UNLIKELY((int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex)
-					|| UNLIKELY((int32)AActor::ENetFields_Private::ReplicatedMovement == Cmd.ParentIndex);
-			}
-			// We still need to process the full ReplicatedMovement struct, because only its bRepPhysics member is a special case
-			return !(UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex)
-				|| UNLIKELY((int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex));
-		};
-
-		const bool bShouldConsiderProperty = ShouldConsiderProperty();
-		if (!bShouldConsiderProperty)
+		bool bIsSpecialCaseProperty = false;
+		if (ApplySchemaObjectData.ProcessFieldType != ProcessFieldType_All)
 		{
-			continue;
+			const bool bProcessOnlySpecialCases = ApplySchemaObjectData.ProcessFieldType == ProcessFieldType_OnlySpecialCase;
+			auto ShouldConsiderProperty = [&Cmd, &bProcessOnlySpecialCases]() -> bool {
+				if (bProcessOnlySpecialCases)
+				{
+					return UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex)
+						|| UNLIKELY((int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex)
+						|| UNLIKELY((int32)AActor::ENetFields_Private::ReplicatedMovement == Cmd.ParentIndex);
+				}
+				// We still need to process the full ReplicatedMovement struct, because only its bRepPhysics member is a special case.
+				// So if we're processing AllButSpecialCase, we only have to skip Role and Remote Role
+				return !(UNLIKELY((int32)AActor::ENetFields_Private::RemoteRole == Cmd.ParentIndex)
+					|| UNLIKELY((int32)AActor::ENetFields_Private::Role == Cmd.ParentIndex));
+			};
+
+			const bool bShouldConsiderProperty = ShouldConsiderProperty();
+			if (!bShouldConsiderProperty)
+			{
+				continue;
+			}
+			bIsSpecialCaseProperty = bShouldConsiderProperty && bProcessOnlySpecialCases;
 		}
-		const bool bIsSpecialCaseProperty = bShouldConsiderProperty && bProcessOnlySpecialCases;
 
 		if (NetDriver->IsServer() || bIsSpecialCaseProperty || ConditionMap.IsRelevant(Parent.Condition))
 		{
@@ -361,7 +361,7 @@ void ComponentReader::ApplySchemaObjectFields(ApplySchemaObjectDataStruct& Apply
 				else
 				{
 					ApplyProperty(ApplySchemaObjectData.ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data,
-							  SwappedCmd.Offset, ShadowOffset, Cmd.ParentIndex, ApplySchemaObjectData.bOutReferencesChanged);
+								  SwappedCmd.Offset, ShadowOffset, Cmd.ParentIndex, ApplySchemaObjectData.bOutReferencesChanged);
 				}
 			}
 
@@ -721,22 +721,17 @@ uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_Fie
 }
 
 ComponentReader::ApplySchemaObjectDataStruct::ApplySchemaObjectDataStruct(
-	FObjectReplicator* inReplicator, Schema_Object* inComponentObject, UObject& inObject, USpatialActorChannel& inChannel,
-	const TArray<Schema_FieldId>& inUpdatedIds, TArray<FSpatialGDKSpanId>& inCauseSpanIds,
-	TMap<GDK_PROPERTY(Property) *, FSpatialGDKSpanId>& inPropertySpanIds, const Worker_ComponentId inComponentID,
-	TArray<GDK_PROPERTY(Property) *>& inRepNotifies, bool inIsInitialData)
-	: Replicator(inReplicator)
+	Schema_Object* inComponentObject, UObject& inObject, USpatialActorChannel& inChannel, bool inIsInitialData,
+	const TArray<Schema_FieldId>& inUpdatedIds, Worker_ComponentId inComponentId, bool& inOutReferencesChanged)
+	: Replicator(nullptr)
 	, ComponentObject(inComponentObject)
 	, Object(inObject)
 	, Channel(inChannel)
-	, UpdatedIds(inUpdatedIds)
-	, CauseSpanIds(inCauseSpanIds)
-	, PropertySpanIds(inPropertySpanIds)
-	, ComponentId(inComponentID)
-	, RepNotifies(inRepNotifies)
 	, bIsInitialData(inIsInitialData)
-	, bOutReferencesChanged(false)
-	, bProcessOnlySpecialCases(false)
+	, UpdatedIds(inUpdatedIds)
+	, ComponentId(inComponentId)
+	, ProcessFieldType(ProcessFieldType_All)
+	, bOutReferencesChanged(inOutReferencesChanged)
 {
 }
 
